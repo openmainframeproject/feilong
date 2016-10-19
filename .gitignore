@@ -3,3 +3,5 @@
 .python-version
 .tox/
 *.pyc
+*.egg-info
+*.log
