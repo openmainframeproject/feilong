@@ -4,13 +4,14 @@ from log import LOG
 import utils as zvmutils
 
 
-VMOPS = None
+_VMOPS = None
 
 
 def _get_vmops():
-    if VMOPS is None:
-        VMOPS = VMOps()
-    return VMOPS
+    global _VMOPS
+    if _VMOPS is None:
+        _VMOPS = VMOps()
+    return _VMOPS
 
 
 def run_instance(instance_name, image_id, cpu, memory,
