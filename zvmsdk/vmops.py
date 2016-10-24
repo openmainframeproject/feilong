@@ -14,13 +14,13 @@ def _get_vmops():
     return _VMOPS
 
 
-def run_instance(instance_name, image_id, cpu, memory,
+def run_instance(instance_name, image_name, cpu, memory,
                  login_password, ip_addr):
     """Deploy and provision a virtual machine.
 
     Input parameters:
     :instance_name:   USERID of the instance, last 8 if length > 8
-    :image_id:        Image ID
+    :image_name:      Image name that defined in xCAT image repo
     :cpu:             vcpu
     :memory:          memory
     :login_password:  login password
@@ -37,6 +37,7 @@ def terminate_instance(instance_name):
     """
     pass
 
+
 def start_instance(instance_name):
     """Power on a virtual machine.
 
@@ -44,6 +45,7 @@ def start_instance(instance_name):
     :instance_name:   USERID of the instance, last 8 if length > 8
     """
     _get_vmops()._power_state(instance_name, "PUT", "on")
+
 
 def stop_instance(instance_name):
     """Shutdown a virtual machine.
@@ -54,41 +56,55 @@ def stop_instance(instance_name):
     pass
 
 
-def create_volume(volume_name, size):
+def create_volume(size):
     """Create a volume.
 
     Input parameters:
-    :volume_name:     volume name
-    :size:            size
+    :size:           size
+
+    Output parameters:
+    :volume_uuid:    volume uuid in zVM
     """
     pass
 
 
-def delete_volume(volume_name):
+def delete_volume(volume_uuid):
     """Create a volume.
 
     Input parameters:
-    :volume_name:     volume name
+    :volume_uuid:    volume uuid in zVM
     """
     pass
 
 
-def attach_volume(instance_name, volume_name):
+def attach_volume(instance_name, volume_uuid):
     """Create a volume.
 
     Input parameters:
     :instance_name:   USERID of the instance, last 8 if length > 8
-    :volume_name:     volume name
+    ::volume_uuid:    volume uuid in zVM
     """
     pass
 
 
-def capture_instance(instance_name, image_name):
+def detach_volume(instance_name, volume_uuid):
+    """Create a volume.
+
+    Input parameters:
+    :instance_name:   USERID of the instance, last 8 if length > 8
+    :volume_uuid:    volume uuid in zVM
+    """
+    pass
+
+
+def capture_instance(instance_name):
     """Caputre a virtual machine image.
 
     Input parameters:
     :instance_name:   USERID of the instance, last 8 if length > 8
-    :image_name:      Image name
+
+    Output parameters:
+    :image_name:      Image name that defined in xCAT image repo
     """
     pass
 
@@ -97,17 +113,7 @@ def delete_image(image_name):
     """Delete image.
 
     Input parameters:
-    :image_name:      Image name
-    """
-    pass
-
-
-def detach_volume(instance_name, volume_name):
-    """Create a volume.
-
-    Input parameters:
-    :instance_name:   USERID of the instance, last 8 if length > 8
-    :volume_name:     volume name
+    :image_name:      Image name that defined in xCAT image repo
     """
     pass
 
