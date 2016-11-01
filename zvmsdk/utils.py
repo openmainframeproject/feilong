@@ -56,6 +56,7 @@ class XCATUrl(object):
                                '&format=json'))
 
         # xcat objects
+        self.VMS = '/vms'
         self.NODES = '/nodes'
         self.TABLES = '/tables'
 
@@ -88,6 +89,40 @@ class XCATUrl(object):
     
     def _vms(self, arg='', vmuuid='', context=None):
         rurl = self.PREFIX + self.VMS + arg + self.SUFFIX
+        return rurl
+
+        self.PCONTEXT = '&requestid='
+        self.PUUID = '&objectid='
+
+    def _vms(self, arg='', vmuuid='', context=None):
+        rurl = self.PREFIX + self.VMS + arg + self.SUFFIX
+        rurl = self._append_context(rurl, context)
+        rurl = self._append_instanceid(rurl, vmuuid)
+        return rurl
+
+    def _append_context(self, rurl, context=None):
+        # The context is always optional, to allow incremental exploitation of
+        # the new parameter.  When it is present and it has a request ID, xCAT
+        # logs the request ID so it's easier to link xCAT log entries to
+        # OpenStack log entries.
+        if context is not None:
+            try:
+                rurl = rurl + self.PCONTEXT + context.request_id
+            except Exception as err:
+                # Cannot use format_message() in this context, because the
+                # Exception class does not implement that method.
+                msg = ("Failed to append request ID to URL %(url)s : %(err)s"
+                       ) % {'url': rurl, 'err': six.text_type(err)}
+                LOG.error(msg)
+                # Continue and return the original URL once the error is logged
+                # Failing the request over this is NOT desired.
+        return rurl
+
+    def _append_instanceid(self, rurl, vmuuid):
+        # The instance ID is always optional.  When it is present, xCAT logs it
+        # so it's easier to link xCAT log entries to OpenStack log entries.
+        if vmuuid:
+            rurl = rurl + self.PUUID + vmuuid
         return rurl
 
     def _append_addp(self, rurl, addp=None):
@@ -157,7 +192,8 @@ class XCATUrl(object):
     def rmvm(self, arg='', vmuuid='', context=None):
         rurl = self._vms(arg, vmuuid, context)
         return rurl
-    
+
+
 class XCATConnection(object):
     """Https requests to xCAT web service."""
 

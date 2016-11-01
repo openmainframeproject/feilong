@@ -7,14 +7,15 @@ LOG_FILE = 'zvmsdk.log'
 LOG_LEVEL = logging.DEBUG
 
 # The IP address that running python zvm sdk
-my_ip = "9.115.112.124"
+my_ip = "127.0.0.1"
 
 # <xCAT>
-zvm_xcat_server = "9.60.29.166"
+zvm_xcat_server = "9.60.29.150"
 zvm_xcat_username = "admin"
 zvm_xcat_password = "admin"
 zvm_xcat_master = 'ZSHUOCTR'
 zhcp = 'zhcp.ibm.com'
+zvm_zhcp_node = "ydycont"
 
 # <zVM>
 zvm_host = "opnstk1"
@@ -37,3 +38,11 @@ gateway_v4 = '192.168.166.1'
 netmask_v4 = '255.255.255.0'
 subchannels = '0.0.1000,0.0.1001,0.0.1002'
 nic_name = 'a2ca1e29-88ac-44f3-85eb-cc1f637366ef'
+
+# <Volume>
+volume_mgr_userid = "ldy-0006"
+volume_mgr_node = "ldy-0006"
+volume_diskpool = "xcatfba1"
+volume_filesystem = "ext3"
+volume_vdev_start = '2000'
+
