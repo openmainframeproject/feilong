@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<xcatimage>
+  <linuximage>
+    <imagename>IMAGE_NAME</imagename>
+    <rootimgdir>ROOTIMGDIR</rootimgdir>
+  </linuximage>
+  <osimage>
+    <osarch>s390x</osarch>
+    <profile>PROFILE</profile>
+    <imagename>IMAGE_NAME</imagename>
+    <osvers>IMAGE_VERSION</osvers>
+    <provmethod>netboot</provmethod>
+    <osname>Linux</osname>
+    <imagetype>linux</imagetype>
+    <isdeletable>LASTUSEDATE</isdeletable>
+  </osimage>
+  <rawimagefiles>
+    <files>ROOTIMGDIR/IMAGE_FILE_NAME</files>
+  </rawimagefiles>
+</xcatimage>

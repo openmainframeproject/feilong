@@ -4,7 +4,7 @@ import logging
 
 # <Logging>
 LOG_FILE = 'zvmsdk.log'
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 
 # The IP address that running python zvm sdk
 my_ip = "127.0.0.1"
@@ -45,4 +45,3 @@ volume_mgr_node = "ldy-0006"
 volume_diskpool = "xcatfba1"
 volume_filesystem = "ext3"
 volume_vdev_start = '2000'
-

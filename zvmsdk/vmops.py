@@ -3,6 +3,8 @@
 import time
 import os
 from log import LOG
+import uuid
+import time
 import utils as zvmutils
 import config as CONF
 import constants as const
@@ -19,7 +21,6 @@ import config as CONF
 from log import LOG
 import utils as zvmutils
 import constants as const
-
 
 _VMOPS = None
 
@@ -104,6 +105,7 @@ def terminate_instance(instance_name):
     _get_vmops().delete_userid(instance_name, CONF.zhcp)
     
 
+
 def start_instance(instance_name):
     """Power on a virtual machine.
 
@@ -111,6 +113,7 @@ def start_instance(instance_name):
     :instance_name:   USERID of the instance, last 8 if length > 8
     """
     _get_vmops()._power_state(instance_name, "PUT", "on")
+
 
 def stop_instance(instance_name):
     """Shutdown a virtual machine.
@@ -243,7 +246,13 @@ def capture_instance(instance_name):
     Output parameters:
     :image_name:      Image name that defined in xCAT image repo
     """
-    pass
+    if _get_vmops().get_power_state(instance_name) != "off":
+        msg = ("Instance is not in stopped state.")
+        raise zvmutils.ZVMException(msg=msg)
+    else:
+        _get_vmops().power_on(instance_name)
+
+    return _get_vmops().capture_instance(instance_name)
 
 
 def delete_image(image_name):
@@ -251,6 +260,17 @@ def delete_image(image_name):
 
     Input parameters:
     :image_name:      Image name that defined in xCAT image repo
+    :image_name:      Image name
+    """
+    _get_vmops().delete_image(image_name)
+
+
+def detach_volume(instance_name, volume_name):
+    """Create a volume.
+
+    Input parameters:
+    :instance_name:   USERID of the instance, last 8 if length > 8
+    :volume_name:     volume name
     """
     pass
 
@@ -258,8 +278,7 @@ def delete_image(image_name):
 class VMOps(object):
 
     def __init__(self):
-        self._xcat_url = zvmutils.get_xcat_url()
-                
+        self._xcat_url = zvmutils.get_xcat_url()            
         self._dist_manager = dist.ListDistManager()
 
     def _power_state(self, instance_name, method, state):
@@ -267,6 +286,26 @@ class VMOps(object):
         body = [state]
         url = self._xcat_url.rpower('/' + instance_name)
         return zvmutils.xcat_request(method, url, body)
+
+    def _wait_for_reachable(self, instance_name):
+        def is_reachable():
+            url = self._xcat_url.nodestat('/' + instance_name)
+            LOG.debug('Get instance status of %s' % instance_name)
+            res_dict = zvmutils.xcat_request("GET", url)
+            status = res_dict['node'][0][0]['data'][0]
+
+            if status is not None:
+                if status.__contains__('sshd'):
+                    return True
+
+        time.sleep(30)
+        for i in range(31):
+            if is_reachable():
+                LOG.debug("Instance %s reachable now" % instance_name)
+                return True
+            else:
+                time.sleep(1)
+        return False
 
     def get_power_state(self, instance_name):
         """Get power status of a z/VM instance."""
@@ -648,6 +687,46 @@ class VMOps(object):
             else:
                 raise err
 
+    def power_on(self, instance_name):
+        """Invoke xCAT REST API to power on a instance."""
+        self._power_state(instance_name, "PUT", "on")
+        _reachable = self._wait_for_reachable(instance_name)
+        if not _reachable:
+            msg = ('Failed to power on instance %s: timeout.' % instance_name)
+            raise zvmutils.ZVMException(msg=msg)
+
+    def capture_instance(self, instance_name):
+        """Invoke xCAT REST API to capture a instance."""
+        LOG.info('Begin to capture instance %s' % instance_name)
+        url = self._xcat_url.capture()
+        nodename = instance_name
+        image_id = str(uuid.uuid1())
+        image_uuid = image_id.replace('-', '_')
+        profile = image_uuid
+        body = ['nodename=' + nodename,
+                'profile=' + profile]
+        res = zvmutils.xcat_request("POST", url, body)
+        LOG.info(res['info'][3][0])
+        image_name = res['info'][3][0].split('(')[1].split(')')[0]
+        return image_name
+
+    def delete_image(self, image_name):
+        """"Invoke xCAT REST API to delete a image."""
+        url = self._xcat_url.rmimage('/' + image_name)
+        try:
+            zvmutils.xcat_request("DELETE", url)
+        except zvmutils.ZVMException:
+            LOG.warn(("Failed to delete image file %s from xCAT") %
+                    image_name)
+
+        url = self._xcat_url.rmobject('/' + image_name)
+        try:
+            zvmutils.xcat_request("DELETE", url)
+        except zvmutils.ZVMException:
+            LOG.warn(("Failed to delete image definition %s from xCAT") %
+                    image_name)
+        LOG.info('Image %s successfully deleted' % image_name)
+
 
 _VOLUMEOPS = None
 
@@ -830,3 +909,4 @@ class VOLUMEOps(object):
         else:
             msg = ("Cann't find z/VM volume management file")
             raise zvmutils.ZVMException(msg)
+

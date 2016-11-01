@@ -59,10 +59,15 @@ class XCATUrl(object):
         self.VMS = '/vms'
         self.NODES = '/nodes'
         self.TABLES = '/tables'
+        self.IMAGES = '/images'
+        self.OBJECTS = '/objects/osimage'
 
         # xcat actions
         self.POWER = '/power'
+        self.STATUS = '/status'
         self.XDSH = '/dsh'
+        self.CAPTURE = '/capture'
+        self.IMGIMPORT = '/import'
         
         self.VMS = '/vms'
         self.IMAGES = '/images'
@@ -134,9 +139,24 @@ class XCATUrl(object):
     def rpower(self, arg=''):
         return self.PREFIX + self.NODES + arg + self.POWER + self.SUFFIX
 
+    def nodestat(self, arg=''):
+        return self.PREFIX + self.NODES + arg + self.STATUS + self.SUFFIX
+
     def xdsh(self, arg=''):
         """Run shell command."""
         return ''.join((self.PREFIX, self.NODES, arg, self.XDSH, self.SUFFIX))
+
+    def capture(self, arg=''):
+        return self.PREFIX + self.IMAGES + arg + self.CAPTURE + self.SUFFIX
+
+    def rmimage(self, arg=''):
+        return self.PREFIX + self.IMAGES + arg + self.SUFFIX
+
+    def rmobject(self, arg=''):
+        return self.PREFIX + self.OBJECTS + arg + self.SUFFIX
+
+    def imgimport(self, arg=''):
+        return self.PREFIX + self.IMAGES + self.IMGIMPORT + arg + self.SUFFIX
 
     def gettab(self, arg='', addp=None):
         rurl = ''.join((self.PREFIX, self.TABLES, arg, self.SUFFIX))
