@@ -3,6 +3,8 @@ HYPERVISOR_TYPE = 'zvm'
 ARCHITECTURE = 's390x'
 ALLOWED_VM_TYPE = 'zLinux'
 XCAT_MGT = 'zvm'
+PROV_METHOD = 'netboot'
+
 
 XCAT_RINV_HOST_KEYWORDS = {
     "zvm_host": "z/VM Host:",

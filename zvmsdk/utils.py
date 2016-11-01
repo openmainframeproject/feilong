@@ -12,17 +12,27 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
+import pdb
 import contextlib
 import functools
 import json
 import os
 import pwd
+import shutil
 
+import six
 from six.moves import http_client as httplib
 import socket
 import time
 
+import tarfile
+import tempfile
+import stat
+import errno
+
 import config as CONF
+
 import constants as const
 from log import LOG
 
@@ -51,6 +61,60 @@ class XCATUrl(object):
         # xcat actions
         self.POWER = '/power'
         self.XDSH = '/dsh'
+        
+        self.VMS = '/vms'
+        self.IMAGES = '/images'
+        self.OBJECTS = '/objects/osimage'
+        self.OS = '/OS'
+        self.HV = '/hypervisor'
+        self.NETWORK = '/networks'
+
+        self.INVENTORY = '/inventory'
+        self.STATUS = '/status'
+        self.MIGRATE = '/migrate'
+        self.CAPTURE = '/capture'
+        self.EXPORT = '/export'
+        self.IMGIMPORT = '/import'
+        self.BOOTSTAT = '/bootstate'
+        self.VERSION = '/version'
+        self.PCONTEXT = '&requestid='
+        self.PUUID = '&objectid='
+        self.DIAGLOGS = '/logs/diagnostics'
+        self.PNODERANGE = '&nodeRange='
+        
+    def _nodes(self, arg=''):
+        return self.PREFIX + self.NODES + arg + self.SUFFIX
+    
+    def _vms(self, arg='', vmuuid='', context=None):
+        rurl = self.PREFIX + self.VMS + arg + self.SUFFIX
+        rurl = self._append_context(rurl, context)
+        rurl = self._append_instanceid(rurl, vmuuid)
+        return rurl
+        
+    def _append_context(self, rurl, context=None):
+        # The context is always optional, to allow incremental exploitation of
+        # the new parameter.  When it is present and it has a request ID, xCAT
+        # logs the request ID so it's easier to link xCAT log entries to
+        # OpenStack log entries.
+        if context is not None:
+            try:
+                rurl = rurl + self.PCONTEXT + context.request_id
+            except Exception as err:
+                # Cannot use format_message() in this context, because the
+                # Exception class does not implement that method.
+                msg = _("Failed to append request ID to URL %(url)s : %(err)s"
+                        ) % {'url': rurl, 'err': six.text_type(err)}
+                LOG.error(msg)
+                # Continue and return the original URL once the error is logged
+                # Failing the request over this is NOT desired.
+        return rurl
+
+    def _append_instanceid(self, rurl, vmuuid):
+        # The instance ID is always optional.  When it is present, xCAT logs it
+        # so it's easier to link xCAT log entries to OpenStack log entries.
+        if vmuuid:
+            rurl = rurl + self.PUUID + vmuuid
+        return rurl
 
     def _append_addp(self, rurl, addp=None):
         if addp is not None:
@@ -77,6 +141,41 @@ class XCATUrl(object):
         rurl = self.PREFIX + self.NODES + arg + self.SUFFIX
         return self._append_addp(rurl, addp)
 
+    def mkdef(self, arg=''):
+        return self._nodes(arg)
+
+    def mkvm(self, arg='', vmuuid='', context=None):
+        rurl = self._vms(arg, vmuuid, context)
+        return rurl
+
+    def chvm(self, arg=''):
+        return self._vms(arg)
+    
+    def network(self, arg='', addp=None):
+        rurl = self.PREFIX + self.NETWORK + arg + self.SUFFIX
+        if addp is not None:
+            return rurl + addp
+        else:
+            return rurl
+        
+    def chtab(self, arg=''):
+        return self.PREFIX + self.NODES + arg + self.SUFFIX
+    
+    def nodeset(self, arg=''):
+        return self.PREFIX + self.NODES + arg + self.BOOTSTAT + self.SUFFIX
+    
+    def rinv(self, arg='', addp=None):
+        rurl = self.PREFIX + self.NODES + arg + self.INVENTORY + self.SUFFIX
+        return self._append_addp(rurl, addp)
+    
+    def tabch(self, arg='', addp=None):
+        """Add/update/delete row(s) in table arg, with attribute addp."""
+        rurl = self.PREFIX + self.TABLES + arg + self.SUFFIX
+        return self._append_addp(rurl, addp)
+    
+    def lsdef_image(self, arg='', addp=None):
+        rurl = self.PREFIX + self.IMAGES + arg + self.SUFFIX
+        return self._append_addp(rurl, addp)
 
 def get_xcat_url():
     global _XCAT_URL
@@ -86,84 +185,6 @@ def get_xcat_url():
 
     _XCAT_URL = XCATUrl()
     return _XCAT_URL
-
-
-class XCATConnection(object):
-    """Https requests to xCAT web service."""
-
-    def __init__(self):
-        """Initialize https connection to xCAT service."""
-        self.host = CONF.zvm_xcat_server
-        self.conn = httplib.HTTPSConnection(self.host)
-
-    def request(self, method, url, body=None, headers={}):
-        """Send https request to xCAT server.
-
-        Will return a python dictionary including:
-        {'status': http return code,
-         'reason': http reason,
-         'message': response message}
-
-        """
-        if body is not None:
-            body = json.dumps(body)
-            headers = {'content-type': 'text/plain',
-                       'content-length': len(body)}
-
-        _rep_ptn = ''.join(('&password=', CONF.zvm_xcat_password))
-        LOG.debug("Sending request to xCAT. xCAT-Server:%(xcat_server)s "
-                  "Request-method:%(method)s "
-                  "URL:%(url)s "
-                  "Headers:%(headers)s "
-                  "Body:%(body)s" %
-                  {'xcat_server': CONF.zvm_xcat_server,
-                   'method': method,
-                   'url': url.replace(_rep_ptn, ''),  # hide password in log
-                   'headers': str(headers),
-                   'body': body})
-
-        try:
-            self.conn.request(method, url, body, headers)
-        except socket.gaierror as err:
-            msg = ("Failed to connect xCAT server %(srv)s: %(err)s" %
-                   {'srv': self.host, 'err': err})
-            raise ZVMException(msg)
-        except (socket.error, socket.timeout) as err:
-            msg = ("Communicate with xCAT server %(srv)s error: %(err)s" %
-                   {'srv': self.host, 'err': err})
-            raise ZVMException(msg)
-
-        try:
-            res = self.conn.getresponse()
-        except Exception as err:
-            msg = ("Failed to get response from xCAT server %(srv)s: "
-                     "%(err)s" % {'srv': self.host, 'err': err})
-            raise ZVMException(msg)
-
-        msg = res.read()
-        resp = {
-            'status': res.status,
-            'reason': res.reason,
-            'message': msg}
-
-        LOG.debug("xCAT response: %s" % str(resp))
-
-        # Only "200" or "201" returned from xCAT can be considered
-        # as good status
-        err = None
-        if method == "POST":
-            if res.status != 201:
-                err = str(resp)
-        else:
-            if res.status != 200:
-                err = str(resp)
-
-        if err is not None:
-            msg = ('Request to xCAT server %(srv)s failed:  %(err)s' %
-                   {'srv': self.host, 'err': err})
-            raise ZVMException(msg)
-
-        return resp
 
 
 def xcat_request(method, url, body=None, headers=None):
@@ -414,3 +435,384 @@ def looping_call(f, sleep=5, inc_sleep=0, max_sleep=60, timeout=600,
                 LOG.debug("Looping call %s timeout" % f.__name__)
             continue
         retry = False
+
+
+def create_xcat_node(instance_name, zhcp, userid=None):
+    """Create xCAT node for z/VM instance."""
+    LOG.debug("Creating xCAT node for %s" % instance_name)
+
+    user_id = instance_name
+    body = ['userid=%s' % user_id,
+            'hcp=%s' % zhcp,
+            'mgt=zvm',
+            'groups=%s' % CONF.zvm_xcat_group]
+    url = get_xcat_url().mkdef('/' + instance_name)
+
+    xcat_request("POST", url, body)
+
+
+def create_userid(instance_name, cpu, memory, image_id):
+    """Create z/VM userid into user directory for a z/VM instance."""
+    LOG.debug("Creating the z/VM user entry for instance %s"
+                  % instance_name)
+
+    kwprofile = 'profile=%s' % CONF.zvm_user_profile
+    body = [kwprofile,
+            'password=%s' % CONF.zvm_user_default_password,
+            'cpu=%i' % cpu,
+            'memory=%im' % memory,
+            'privilege=%s' % CONF.zvm_user_default_privilege,
+            'ipl=%s' % CONF.zvm_user_root_vdev,
+            'imagename=%s' % image_id]
+
+    url = get_xcat_url().mkvm('/' + instance_name)
+
+    try:
+        xcat_request("POST", url, body)
+        size = CONF.root_disk_units
+        # Add root disk and set ipl
+        add_mdisk(instance_name, CONF.zvm_diskpool,
+                       CONF.zvm_user_root_vdev,
+                           size)
+        _set_ipl(instance_name, CONF.zvm_user_root_vdev)
+
+    except Exception as err:
+        msg = ("Failed to create z/VM userid: %s") % err
+        LOG.error(msg)
+        raise ZVMException(msg=err)
+
+def add_mdisk(instance_name, diskpool, vdev, size, fmt=None):
+    """Add a 3390 mdisk for a z/VM user.
+
+    NOTE: No read, write and multi password specified, and
+    access mode default as 'MR'.
+
+    """
+    disk_type = CONF.zvm_diskpool_type
+    if (disk_type == 'ECKD'):
+        action = '--add3390'
+    elif (disk_type == 'FBA'):
+        action = '--add9336'
+    else:
+        errmsg = _("Disk type %s is not supported.") % disk_type
+        LOG.error(errmsg)
+        raise ZVMException(msg=errmsg)
+
+    if fmt:
+        body = [" ".join([action, diskpool, vdev, size, "MR", "''", "''",
+                "''", fmt])]
+    else:
+        body = [" ".join([action, diskpool, vdev, size])]
+    url = get_xcat_url().chvm('/' + instance_name)
+    xcat_request("PUT", url, body)
+
+def _set_ipl(instance_name, ipl_state):
+    body = ["--setipl %s" % ipl_state]
+    url = get_xcat_url().chvm('/' + instance_name)
+    xcat_request("PUT", url, body)
+    
+def _get_instances_path():
+        return os.path.normpath(CONF.instances_path)
+    
+def get_instance_path(os_node, instance_name):
+    instance_folder = os.path.join(_get_instances_path(), os_node,
+                                   instance_name)
+    if not os.path.exists(instance_folder):
+        LOG.debug("Creating the instance path %s", instance_folder)
+        os.makedirs(instance_folder)
+    return instance_folder
+
+def make_drive(mdfiles, path):
+    """Make the config drive.
+
+    :param path: the path to place the config drive image at
+    :raises ProcessExecuteError if a helper process has failed.
+
+    """
+    if CONF.config_drive_format in ['tgz', 'iso9660']:
+        _make_tgz(mdfiles, path)
+    else:
+        raise ZVMException('Invalid config drive format %s', CONF.config_drive_format)
+    
+def _make_tgz(mdfiles, path):
+    try:
+        olddir = os.getcwd()
+    except Exception:
+        olddir = CONF.state_path
+
+    with tempdir() as tmpdir:
+        _write_md_files(mdfiles, tmpdir)
+        tar = tarfile.open(path, "w:gz")
+        os.chdir(tmpdir)
+        tar.add("ec2")
+        try:
+            os.chdir(olddir)
+        except Exception as e:
+            LOG.debug('exception in _make_tgz %s', e)
+
+        tar.close()
+        
+_DEFAULT_MODE = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
+        
+def ensure_tree(path, mode=_DEFAULT_MODE):
+    """Create a directory (and any ancestor directories required)
+
+    :param path: Directory to create
+    :param mode: Directory creation permissions
+    """
+    try:
+        os.makedirs(path, mode)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST:
+            if not os.path.isdir(path):
+                raise
+        else:
+            raise
+
+        
+def _add_file(basedir, path, data):
+    filepath = os.path.join(basedir, path)
+    dirname = os.path.dirname(filepath)
+    ensure_tree(dirname)
+    with open(filepath, 'wb') as f:
+        # the given data can be either text or bytes. we can only write
+        # bytes into files.
+        if isinstance(data, six.text_type):
+            data = data.encode('utf-8')
+        f.write(data)
+
+def _write_md_files(mdfiles, basedir):
+    for data in mdfiles:
+        _add_file(basedir, data[0], data[1])
+        
+def tempdir(**kwargs):
+    argdict = kwargs.copy()
+    if 'dir' not in argdict:
+        argdict['dir'] = CONF.tempdir
+    tmpdir = tempfile.mkdtemp(**argdict)
+    try:
+        yield tmpdir
+    finally:
+        try:
+            shutil.rmtree(tmpdir)
+        except OSError as e:
+            LOG.error('Could not remove tmpdir: %s', e)
+            
+def add_xcat_host(node, ip, host_name):
+    """Add/Update hostname/ip bundle in xCAT MN nodes table."""
+    commands = "node=%s" % node + " hosts.ip=%s" % ip
+    commands += " hosts.hostnames=%s" % host_name
+    body = [commands]
+    url = get_xcat_url().tabch("/hosts")
+
+    
+    result_data = xcat_request("PUT", url, body)['data']
+
+    return result_data
+
+def config_xcat_mac(instance_name):
+    """Hook xCat to prevent assign MAC for instance."""
+    fake_mac_addr = "00:00:00:00:00:00"
+    nic_name = "fake"
+    add_xcat_mac(instance_name, nic_name, fake_mac_addr)
+    
+def add_xcat_mac(node, interface, mac, zhcp=None):
+    """Add node name, interface, mac address into xcat mac table."""
+    commands = "mac.node=%s" % node + " mac.mac=%s" % mac
+    commands += " mac.interface=%s" % interface
+    if zhcp is not None:
+        commands += " mac.comments=%s" % zhcp
+    url = get_xcat_url().tabch("/mac")
+    body = [commands]
+    return xcat_request("PUT", url, body)['data']
+    
+def makehosts():
+    """Update xCAT MN /etc/hosts file."""
+    url = get_xcat_url().network("/makehosts")
+    return xcat_request("PUT", url)['data']
+
+def create_xcat_table_about_nic(zhcpnode, inst_name,
+                                nic_name, mac_address, vdev):
+    _delete_xcat_mac(inst_name)
+    add_xcat_mac(inst_name, vdev, mac_address, zhcpnode)
+    add_xcat_switch(inst_name, nic_name, vdev, zhcpnode)
+    
+def _delete_xcat_mac(node_name):
+    """Remove node mac record from xcat mac table."""
+    commands = "-d node=%s mac" % node_name
+    url = get_xcat_url().tabch("/mac")
+    body = [commands]
+
+    return xcat_request("PUT", url, body)['data']
+
+def add_xcat_switch(node, nic_name, interface, zhcp=None):
+    """Add node name and nic name address into xcat switch table."""
+    commands = "switch.node=%s" % node
+    commands += " switch.port=%s" % nic_name
+    commands += " switch.interface=%s" % interface
+    if zhcp is not None:
+        commands += " switch.comments=%s" % zhcp
+    url = get_xcat_url().tabch("/switch")
+    body = [commands]
+
+    return xcat_request("PUT", url, body)['data']
+
+def update_node_info(instance_name, image_name):
+    LOG.debug("Update the node info for instance %s", instance_name)
+
+    image_id = CONF.image_id
+    profile_name = '_'.join((image_name, image_id.replace('-', '_')))
+
+    body = ['noderes.netboot=%s' % const.HYPERVISOR_TYPE,
+            'nodetype.os=%s' % CONF.os_type,
+            'nodetype.arch=%s' % const.ARCHITECTURE,
+            'nodetype.provmethod=%s' % const.PROV_METHOD,
+            'nodetype.profile=%s' % profile_name]
+    url = get_xcat_url().chtab('/' + instance_name)
+
+    xcat_request("PUT", url, body)
+    
+def deploy_node(instance_name, image_name, transportfiles=None, vdev=None):
+    LOG.debug("Begin to deploy image on instance %s", instance_name)
+    vdev = vdev or CONF.zvm_user_root_vdev
+    remote_host_info = get_host()
+    body = ['netboot',
+            'device=%s' % vdev,
+            'osimage=%s' % image_name]
+
+    if transportfiles:
+        body.append('transport=%s' % transportfiles)
+        body.append('remotehost=%s' % remote_host_info)
+
+    url = get_xcat_url().nodeset('/' + instance_name)
+
+    xcat_request("PUT", url, body)
+    
+def punch_xcat_auth_file(instance_path, instance_name):
+    """Make xCAT MN authorized by virtual machines."""
+    mn_pub_key = get_mn_pub_key()
+    auth_fn = ''.join([instance_path, '/xcatauth.sh'])
+    _generate_auth_file(auth_fn, mn_pub_key)
+    punch_file(instance_name, auth_fn, 'X')
+    
+def get_mn_pub_key():
+    cmd = 'cat /root/.ssh/id_rsa.pub'
+    resp = xdsh(CONF.zvm_xcat_master, cmd)
+    key = resp['data'][0][0]
+    start_idx = key.find('ssh-rsa')
+    key = key[start_idx:]
+    return key
+
+def _generate_auth_file(fn, pub_key):
+    lines = ['#!/bin/bash\n',
+    'echo "%s" >> /root/.ssh/authorized_keys' % pub_key]
+    with open(fn, 'w') as f:
+        f.writelines(lines)
+    
+def convert_to_mb(s):
+    """Convert memory size from GB to MB."""
+    s = s.upper()
+    try:
+        if s.endswith('G'):
+            return float(s[:-1].strip()) * 1024
+        elif s.endswith('T'):
+            return float(s[:-1].strip()) * 1024 * 1024
+        else:
+            return float(s[:-1].strip())
+    except (IndexError, ValueError, KeyError, TypeError) as e:
+        errmsg = _("Invalid memory format: %s") % e
+        raise ZVMException(msg=errmsg)
+    
+def get_imgname_xcat(self, image_id):
+        """Get the xCAT deployable image name by image id."""
+        image_uuid = image_id.replace('-', '_')
+        parm = '&criteria=profile=~' + image_uuid
+        url = self._xcat_url.lsdef_image(addp=parm)
+
+        res = xcat_request("GET", url)
+        res_image = res['info'][0][0]
+        res_img_name = res_image.strip().split(" ")[0]
+
+        if res_img_name:
+            return res_img_name
+        else:
+            LOG.error(_("Fail to find the right image to deploy"))
+        
+class XCATConnection(object):
+    """Https requests to xCAT web service."""
+
+    def __init__(self):
+        """Initialize https connection to xCAT service."""
+        self.host = CONF.zvm_xcat_server
+        self.conn = httplib.HTTPSConnection(self.host)
+
+    def request(self, method, url, body=None, headers={}):
+        """Send https request to xCAT server.
+
+        Will return a python dictionary including:
+        {'status': http return code,
+         'reason': http reason,
+         'message': response message}
+
+        """
+        if body is not None:
+            body = json.dumps(body)
+            headers = {'content-type': 'text/plain',
+                       'content-length': len(body)}
+
+        _rep_ptn = ''.join(('&password=', CONF.zvm_xcat_password))
+        LOG.debug("Sending request to xCAT. xCAT-Server:%(xcat_server)s "
+                  "Request-method:%(method)s "
+                  "URL:%(url)s "
+                  "Headers:%(headers)s "
+                  "Body:%(body)s" %
+                  {'xcat_server': CONF.zvm_xcat_server,
+                   'method': method,
+                   'url': url.replace(_rep_ptn, ''),  # hide password in log
+                   'headers': str(headers),
+                   'body': body})
+
+        try:
+            self.conn.request(method, url, body, headers)
+        except socket.gaierror as err:
+            msg = ("Failed to connect xCAT server %(srv)s: %(err)s" %
+                   {'srv': self.host, 'err': err})
+            raise ZVMException(msg)
+        except (socket.error, socket.timeout) as err:
+            msg = ("Communicate with xCAT server %(srv)s error: %(err)s" %
+                   {'srv': self.host, 'err': err})
+            raise ZVMException(msg)
+
+        try:
+            res = self.conn.getresponse()
+        except Exception as err:
+            msg = ("Failed to get response from xCAT server %(srv)s: "
+                     "%(err)s" % {'srv': self.host, 'err': err})
+            raise ZVMException(msg)
+
+        msg = res.read()
+        resp = {
+            'status': res.status,
+            'reason': res.reason,
+            'message': msg}
+
+        LOG.debug("xCAT response: %s" % str(resp))
+
+        # Only "200" or "201" returned from xCAT can be considered
+        # as good status
+        err = None
+        if method == "POST":
+            if res.status != 201:
+                err = str(resp)
+        else:
+            if res.status != 200:
+                err = str(resp)
+
+        if err is not None:
+            msg = ('Request to xCAT server %(srv)s failed:  %(err)s' %
+                   {'srv': self.host, 'err': err})
+            raise ZVMException(msg)
+
+        return resp
+    
+
