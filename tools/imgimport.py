@@ -1,5 +1,3 @@
-#!/root/env-tempest/bin/python
-# encoding: utf-8
 '''
 module -- imgimport
 
@@ -17,6 +15,7 @@ import datetime
 import tarfile
 import socket
 
+sys.path.append('..')
 import zvmsdk.utils as zvmutils
 import zvmsdk.config as CONF
 
@@ -25,8 +24,6 @@ from argparse import RawDescriptionHelpFormatter
 
 __all__ = []
 __version__ = 0.1
-__date__ = 'isodate'
-__updated__ = 'isodate'
 
 DEBUG = 1
 TESTRUN = 0
@@ -56,14 +53,12 @@ def main(argv=None):  # IGNORE:C0111
 
     program_name = os.path.basename(sys.argv[0])
     program_version = "v%s" % __version__
-    program_build_date = str(__updated__)
-    program_version_message = '%%(prog)s %s (%s)' % (program_version,
-                                                     program_build_date)
+    program_version_message = '%%(prog)s %s' % (program_version)
     program_shortdesc = __import__('__main__').__doc__.split("\n")[1]
     program_license = '''%s
 
 USAGE
-''' % (program_shortdesc, str(__date__))
+''' % (program_shortdesc)
 
     try:
         # Setup argument parser
@@ -79,81 +74,81 @@ USAGE
                             version=program_version_message)
 
         # Process arguments
-	del argv[0];
+        del argv[0];
         args = parser.parse_args(argv)
-	# Check argv 
-	if len(argv) < 4:
-		parser.print_help()
-		os._exit(1)
+        # Check argv 
+        if len(argv) < 4:
+            parser.print_help()
+            os._exit(1)
 
         if not os.path.exists(args.image_file):
-		print args.image_file + ": not exist,please check."
-		os._exit(1)
+            print args.image_file + ": not exist,please check."
+            os._exit(1)
         image_version = args.image_version
-	image_file = args.image_file
+        image_file = args.image_file
         image_name = os.path.basename(image_file)
-	print "Start import image_file :" + image_file + " to zvm xcat server:" + CONF.zvm_xcat_server
+        print "Start import image_file :" + image_file + " to zvm xcat server:" + CONF.zvm_xcat_server
 
         image_file_name = os.path.basename(image_file)
-	now = datetime.datetime.now()
-	date_now = now.strftime("%Y-%m-%d")
-	image_uuid = str(uuid.uuid1()).replace('-', '_')
-	running_path = os.path.abspath('.')
+        now = datetime.datetime.now()
+        date_now = now.strftime("%Y-%m-%d")
+        image_uuid = str(uuid.uuid1()).replace('-', '_')
+        running_path = os.path.abspath('.')
 
-	# generate manifest.xml
-	manifest_template = running_path + "/manifest.xml.template"
-	manifest_target = running_path + "/manifest.xml"
-	shutil.copyfile(manifest_template, manifest_target)
-	manifest = open("manifest.xml", 'rb+')
-	lines = manifest.readlines()
-	d=""
-	# 
-	for line in lines:
-		c = line.replace("IMAGE_NAME", image_version + "-s390x-netboot-" + image_uuid).replace("ROOTIMGDIR", "/install/netboot/" + image_version + "/s390x/" + image_uuid).replace("PROFILE", image_uuid).replace("IMAGE_VERSION", image_version).replace("LASTUSEDATE", "auto:last_use_date:" + date_now).replace("IMAGE_FILE_NAME", image_file_name)
-		d += c
-		manifest.seek(0)
-		manifest.truncate()
-		manifest.write(d)
+        # generate manifest.xml
+        manifest_template = running_path + "/manifest.xml.template"
+        manifest_target = running_path + "/manifest.xml"
+        shutil.copyfile(manifest_template, manifest_target)
+        manifest = open("manifest.xml", 'rb+')
+        lines = manifest.readlines()
+        d=""
+        # 
+        for line in lines:
+            c = line.replace("IMAGE_NAME", image_version + "-s390x-netboot-" + image_uuid).replace("ROOTIMGDIR", "/install/netboot/" + image_version + "/s390x/" + image_uuid).replace("PROFILE", image_uuid).replace("IMAGE_VERSION", image_version).replace("LASTUSEDATE", "auto:last_use_date:" + date_now).replace("IMAGE_FILE_NAME", image_file_name)
+            d += c
+            manifest.seek(0)
+            manifest.truncate()
+            manifest.write(d)
         manifest.close()
 
-	# Get bundle file directory
+        # Get bundle file directory
         date_dir = now.strftime("%Y%m%d%H%M%S")
-	image_package_path = os.path.dirname(image_file)
-	image_bundle_path = image_package_path + '/' + date_dir
-	os.makedirs(image_bundle_path)
-	dist_path = image_bundle_path + "/" + "manifest.xml"
-	shutil.copyfile(os.path.abspath('.') + "/" + "manifest.xml", dist_path)
+        image_package_path = os.path.dirname(image_file)
+        image_bundle_path = image_package_path + '/' + date_dir
+        os.makedirs(image_bundle_path)
+        dist_path = image_bundle_path + "/" + "manifest.xml"
+        shutil.copyfile(os.path.abspath('.') + "/" + "manifest.xml", dist_path)
 
-	# Generate the image bundle which is used to import to xCAT MN's image repository.
+        # Generate the image bundle which is used to import to xCAT MN's image repository.
         image_bundle_name = image_name + '.tar'
-	tar_file = image_package_path + '/' + date_dir + '_' + image_bundle_name
-	print "The generate the image bundle file is " + tar_file
-	os.chdir(image_package_path)
-	target_image_file = image_bundle_path + '/' + image_name
-	shutil.copyfile(image_file, target_image_file)
-	tarFile = tarfile.open(tar_file, mode='w')
-	tarFile.add(date_dir)
-	tarFile.close()
-	shutil.rmtree(image_bundle_path)
-	myhostname = socket.getfqdn(socket.gethostname(  ))
-	myaddrip = socket.gethostbyname(myhostname)
-	remote_host_info = ''.join(['root', '@', myaddrip])
+        tar_file = image_package_path + '/' + date_dir + '_' + image_bundle_name
+        print "The generate the image bundle file is " + tar_file
+        os.chdir(image_package_path)
+        target_image_file = image_bundle_path + '/' + image_name
+        shutil.copyfile(image_file, target_image_file)
+        tarFile = tarfile.open(tar_file, mode='w')
+        tarFile.add(date_dir)
+        tarFile.close()
+        shutil.rmtree(image_bundle_path)
+        myhostname = socket.getfqdn(socket.gethostname(  ))
+        myaddrip = socket.gethostbyname(myhostname)
+        remote_host_info = ''.join(['root', '@', myaddrip])
 
-	#Import the image bundle from compute node to xCAT MN's image repository.
+        #Import the image bundle from compute node to xCAT MN's image repository.
         _xcat_url = zvmutils.get_xcat_url()
 
         body = ['osimage=%s' % tar_file,
 		'profile=%s' % image_uuid,
 		'remotehost=%s' % remote_host_info,
 		'nozip']
-	url = _xcat_url.imgimport()
-	resp = zvmutils.xcat_request("POST", url, body)
-	for ind in range(0,5):
-		print resp['data'][ind][0]
-	print " to zvm xcat server :" + CONF.zvm_xcat_server
-	os.remove(tar_file)
-
-	return 0
+        url = _xcat_url.imgimport()
+        resp = zvmutils.xcat_request("POST", url, body)
+        for ind in range(0,5):
+            print resp['data'][ind][0]
+        print "to zvm xcat server :" + CONF.zvm_xcat_server
+        os.remove(tar_file)
+        os.remove(manifest_target)
+        return 0
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
         return 0
@@ -167,7 +162,7 @@ USAGE
 if __name__  == "__main__":
     if DEBUG:
         #sys.argv.append("-v rhel");
-	print ""
+        print ""
     if TESTRUN:
         import doctest
         doctest.testmod()

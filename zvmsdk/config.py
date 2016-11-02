@@ -45,3 +45,4 @@ volume_mgr_node = "ldy-0006"
 volume_diskpool = "xcatfba1"
 volume_filesystem = "ext3"
 volume_vdev_start = '2000'
+

@@ -246,13 +246,14 @@ def capture_instance(instance_name):
     Output parameters:
     :image_name:      Image name that defined in xCAT image repo
     """
-    if _get_vmops().get_power_state(instance_name) != "off":
+    _vmops = _get_vmops()
+    if _vmops.get_power_state(instance_name) != "off":
         msg = ("Instance is not in stopped state.")
         raise zvmutils.ZVMException(msg=msg)
     else:
-        _get_vmops().power_on(instance_name)
+        _vmops.power_on(instance_name)
 
-    return _get_vmops().capture_instance(instance_name)
+    return _vmops.capture_instance(instance_name)
 
 
 def delete_image(image_name):

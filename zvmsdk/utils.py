@@ -136,11 +136,17 @@ class XCATUrl(object):
         else:
             return rurl
 
+    def _nodes(self, arg=''):
+        return self.PREFIX + self.NODES + arg + self.SUFFIX
+
     def rpower(self, arg=''):
         return self.PREFIX + self.NODES + arg + self.POWER + self.SUFFIX
 
     def nodestat(self, arg=''):
         return self.PREFIX + self.NODES + arg + self.STATUS + self.SUFFIX
+
+    def mkdef(self, arg=''):
+        return self._nodes(arg)
 
     def xdsh(self, arg=''):
         """Run shell command."""
