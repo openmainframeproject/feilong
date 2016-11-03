@@ -19,7 +19,6 @@ def _get_vmops():
         _VMOPS = VMOps()
     return _VMOPS
 
-
 def run_instance(instance_name, image_name, cpu, memory,
                  login_password, ip_addr):
     """Deploy and provision a virtual machine.
@@ -35,13 +34,11 @@ def run_instance(instance_name, image_name, cpu, memory,
     image_name = CONF.image_name
     # For zVM instance, limit the maximum length of instance name to be 8
     if len(instance_name) > 8:
-        msg = (_("Don't support spawn vm on zVM hypervisor with instance "
+        msg = (("Don't support spawn vm on zVM hypervisor with instance "
             "name: %s, please change your instance name no longer than 8 "
             "characters") % instance_name)
         raise ZVMException(msg)
     
-    #zhcp = _get_vmops()._get_hcp_info()['hostname']
-    zhcp = CONF.zhcp
     instance_path = zvmutils.get_instance_path(CONF.zvm_host, instance_name)
     #net_conf_cmds = ''
     os_version = CONF.os_version
@@ -56,8 +53,8 @@ def run_instance(instance_name, image_name, cpu, memory,
     spawn_start = time.time()
     
     # Create xCAT node and userid for the instance
-    zvmutils.create_xcat_node(instance_name, zhcp)
-    zvmutils.create_userid(instance_name, cpu, memory, image_name)
+    zvmutils.create_xcat_node(instance_name, CONF.zhcp)
+    _get_vmops().create_userid(instance_name, cpu, memory, image_name)
     # Setup network for z/VM instance
     _get_vmops()._preset_instance_network(instance_name, ip_addr)
     _get_vmops()._add_nic_to_table(instance_name, ip_addr)
@@ -71,7 +68,7 @@ def run_instance(instance_name, image_name, cpu, memory,
     zvmutils.punch_xcat_auth_file(instance_path, instance_name)
     
     # Power on the instance, then put MN's public key into instance
-    _get_vmops().power_on()
+    _get_vmops().power_on(instance_name)
     spawn_time = time.time() - spawn_start
     LOG.info("Instance spawned succeeded in %s seconds", spawn_time)
 
@@ -162,20 +159,6 @@ class VMOps(object):
 
     def __init__(self):
         self._xcat_url = zvmutils.get_xcat_url()
-        self._host_stats = []
-        _inc_slp = [5, 10, 20, 30, 60]
-        _slp = 5
-
-        while (self._host_stats == []):
-            try:
-                self._host_stats = self.update_host_status()
-            except Exception as e:
-                # Ignore any exceptions and log as warning
-                _slp = len(_inc_slp) != 0 and _inc_slp.pop(0) or _slp
-                msg = "Failed to get host stats while initializing zVM driver due to reason %(reason)s, will re-try in %(slp)d seconds"
-                LOG.warning(msg, {'reason': six.text_type(e),
-                               'slp': _slp})
-                time.sleep(_slp)
                 
         self._dist_manager = dist.ListDistManager()
 
@@ -197,20 +180,7 @@ class VMOps(object):
 
         power_stat = _get_power_string(res_dict)
         return power_stat
-    
-    def _get_hcp_info(self, hcp_hostname=None):
-        if self._host_stats != []:
-            return self._host_stats[0]['zhcp']
-        else:
-            if hcp_hostname is not None:
-                hcp_node = hcp_hostname.partition('.')[0]
-                return {'hostname': hcp_hostname,
-                        'nodename': hcp_node,
-                        'userid': zvmutils.get_userid(hcp_node)}
-            else:
-                self._host_stats = self.update_host_status()
-                return self._host_stats[0]['zhcp']
-    
+
     def update_host_status(self):
         """Refresh host stats. One compute service entry possibly
         manages several hypervisors, so will return a list of host
@@ -239,7 +209,7 @@ class VMOps(object):
         data['hypervisor_hostname'] = info['hypervisor_hostname']
         data['supported_instances'] = [(const.ARCHITECTURE,
                                         const.HYPERVISOR_TYPE)]
-        data['zhcp'] = self._get_hcp_info(info['zhcp'])
+        data['zhcp'] = CONF.zhcp
         data['ipl_time'] = info['ipl_time']
 
         caps.append(data)
@@ -249,9 +219,9 @@ class VMOps(object):
     def _create_config_drive(self, instance_path, instance_name,
                              image_name, injected_files, login_password,
                              commands, linuxdist):
-        if CONF.config_drive_format not in ['tgz', 'iso9660']:
-            msg = (_("Invalid config drive format %s") %
-                   CONF.config_drive_format)
+        if const.CONFIG_DRIVE_FORMAT not in ['tgz', 'iso9660']:
+            msg = (("Invalid config drive format %s") %
+                   const.CONFIG_DRIVE_FORMAT)
             raise ZVMException(msg=msg)
 
         LOG.debug('Using config drive', instance_name)
@@ -302,7 +272,7 @@ class VMOps(object):
     def _add_nic_to_table(self, instance_name, ip_addr):
         nic_vdev = CONF.zvm_default_nic_vdev
         nic_name = CONF.nic_name
-        zhcpnode = self._get_hcp_info()['nodename']
+        zhcpnode = CONF.zhcp
         zvmutils.create_xcat_table_about_nic(zhcpnode,
                                          instance_name,
                                          nic_name,
@@ -310,19 +280,34 @@ class VMOps(object):
                                          nic_vdev)
         nic_vdev = str(hex(int(nic_vdev, 16) + 3))[2:]            
     
-    def _wait_for_reachable(self):
+    def _wait_for_reachable(self, instance_name):
         """Called at an interval until the instance is reachable."""
         self._reachable = False
 
         def _check_reachable():
-            if not self.is_reachable():
-                raise ZVMException(err='not reachable, retry')
+            if not self.is_reachable(instance_name):
+                pass
             else:
                 self._reachable = True
 
         zvmutils.looping_call(_check_reachable, 5, 5, 30,
                               CONF.zvm_reachable_timeout,
-                              ZVMException(err='not reachable, retry'))
+                              ZVMException(msg='not reachable, retry'))
+        
+    def is_reachable(self, instance_name):
+        """Return True is the instance is reachable."""
+        url = self._xcat_url.nodestat('/' + instance_name)
+        LOG.debug('Get instance status of %s', instance_name)
+        res_dict = zvmutils.xcat_request("GET", url)
+
+        with zvmutils.expect_invalid_xcat_resp_data(res_dict):
+            status = res_dict['node'][0][0]['data'][0]
+
+        if status is not None:
+            if status.__contains__('sshd'):
+                return True
+
+        return False
             
     def power_on(self, instance_name):
         """"Power on z/VM instance."""
@@ -336,10 +321,10 @@ class VMOps(object):
                 LOG.warning("z/VM instance %s already active", instance_name)
                 return
 
-        self._wait_for_reachable()
+        self._wait_for_reachable(instance_name)
         if not self._reachable:
-            LOG.error(_("Failed to power on instance %s: timeout"), instance_name)
-            raise ZVMException(reason="timeout")
+            LOG.error(("Failed to power on instance %s: timeout"), instance_name)
+            raise ZVMException(msg="timeout")
         
     def _get_host_inventory_info(self, host):
         url = self._xcat_url.rinv('/' + host)
@@ -399,9 +384,69 @@ class VMOps(object):
                     dp_info[k] = n_gb
                 else:
                     exp = "ending with a 'G' or 'M'"
-                    errmsg = _("Invalid diskpool size format: %(invalid)s; "
+                    errmsg = ("Invalid diskpool size format: %(invalid)s; "
                         "Expected: %(exp)s"), {'invalid': s, 'exp': exp}
                     LOG.error(errmsg)
                     raise ZVMException(msg=errmsg)
 
         return dp_info
+
+    def create_userid(self, instance_name, cpu, memory, image_id):
+        """Create z/VM userid into user directory for a z/VM instance."""
+        LOG.debug("Creating the z/VM user entry for instance %s"
+                      % instance_name)
+    
+        kwprofile = 'profile=%s' % const.ZVM_USER_PROFILE
+        body = [kwprofile,
+                'password=%s' % CONF.zvm_user_default_password,
+                'cpu=%i' % cpu,
+                'memory=%im' % memory,
+                'privilege=%s' % const.ZVM_USER_DEFAULT_PRIVILEGE,
+                'ipl=%s' % CONF.zvm_user_root_vdev,
+                'imagename=%s' % image_id]
+    
+        url = zvmutils.get_xcat_url().mkvm('/' + instance_name)
+    
+        try:
+            zvmutils.xcat_request("POST", url, body)
+            size = CONF.root_disk_units
+            # Add root disk and set ipl
+            self.add_mdisk(instance_name, CONF.zvm_diskpool,
+                           CONF.zvm_user_root_vdev,
+                               size)
+            self.set_ipl(instance_name, CONF.zvm_user_root_vdev)
+    
+        except Exception as err:
+            msg = ("Failed to create z/VM userid: %s") % err
+            LOG.error(msg)
+            raise ZVMException(msg=err)
+        
+    def add_mdisk(self, instance_name, diskpool, vdev, size, fmt=None):
+        """Add a 3390 mdisk for a z/VM user.
+    
+        NOTE: No read, write and multi password specified, and
+        access mode default as 'MR'.
+    
+        """
+        disk_type = CONF.zvm_diskpool_type
+        if (disk_type == 'ECKD'):
+            action = '--add3390'
+        elif (disk_type == 'FBA'):
+            action = '--add9336'
+        else:
+            errmsg = ("Disk type %s is not supported.") % disk_type
+            LOG.error(errmsg)
+            raise ZVMException(msg=errmsg)
+    
+        if fmt:
+            body = [" ".join([action, diskpool, vdev, size, "MR", "''", "''",
+                    "''", fmt])]
+        else:
+            body = [" ".join([action, diskpool, vdev, size])]
+        url = zvmutils.get_xcat_url().chvm('/' + instance_name)
+        zvmutils.xcat_request("PUT", url, body)
+        
+    def set_ipl(self, instance_name, ipl_state):
+        body = ["--setipl %s" % ipl_state]
+        url = zvmutils.get_xcat_url().chvm('/' + instance_name)
+        zvmutils.xcat_request("PUT", url, body)
