@@ -321,11 +321,6 @@ class VMOps(object):
                 LOG.warning("z/VM instance %s already active", instance_name)
                 return
 
-        self._wait_for_reachable(instance_name)
-        if not self._reachable:
-            LOG.error(("Failed to power on instance %s: timeout"), instance_name)
-            raise ZVMException(msg="timeout")
-        
     def _get_host_inventory_info(self, host):
         url = self._xcat_url.rinv('/' + host)
         inv_info_raw = zvmutils.xcat_request("GET", url)['info'][0]
