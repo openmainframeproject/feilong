@@ -15,12 +15,6 @@ import stat
 
 _DEFAULT_MODE = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
 
-def create_cfgdrive():
-    os_version = CONF.os_version
-    linuxdist = vmops._get_vmops()._dist_manager.get_linux_dist(os_version)()
-    create_config_drive(CONF.instance_path, 'instance1', 'image1', [], 'password', '', linuxdist)
-    
-
 def get_cfg_str(ip_v4, address_read = CONF.zvm_default_nic_vdev):
     cfg_str = 'DEVICE=\"' + CONF.device + '\"\n'
     cfg_str += 'BOOTPROTO=\"static\"\n'
@@ -39,15 +33,15 @@ def generate_net_file(ip_addr, net_file_path):
     cfg_str = get_cfg_str(ip_addr)
     generate_file(cfg_str, net_file_path)
     
-def get_znetconfig_str():
-    linuxdist = dist.ListDistManager().get_linux_dist(CONF.os_version)()
+def get_znetconfig_str(os_version):
+    linuxdist = dist.ListDistManager().get_linux_dist(os_version)()
     udev_settle = linuxdist.get_znetconfig_contents()
     znetconfig = '\n'.join(('# !/bin/sh', udev_settle))
     znetconfig += '\nrm -rf /tmp/znetconfig.sh\n'
     return znetconfig
     
-def generate_znetconfig_file(znetconfig_path):
-    znetconfig = get_znetconfig_str()
+def generate_znetconfig_file(znetconfig_path, os_version):
+    znetconfig = get_znetconfig_str(os_version)
     generate_file(znetconfig, znetconfig_path)
     
 def get_meta_data_str():
@@ -70,7 +64,7 @@ def generate_file(file_content, path):
     f.write(file_content)
     f.close()
     
-def create_config_drive(ip_addr):
+def create_config_drive(ip_addr, os_version):
     if not os.path.exists(CONF.tempdir):
         os.mkdir(CONF.tempdir)
     cfg_dir = os.path.join(CONF.tempdir, 'openstack')
@@ -85,7 +79,7 @@ def create_config_drive(ip_addr):
     net_file = os.path.join(content_dir, '0000')
     generate_net_file(ip_addr, net_file)
     znetconfig_file = os.path.join(content_dir, '0001')
-    generate_znetconfig_file(znetconfig_file)
+    generate_znetconfig_file(znetconfig_file, os_version)
     meta_data_path = os.path.join(latest_dir, 'meta_data.json')
     generate_meta_data(meta_data_path)
     network_data_path = os.path.join(latest_dir, 'network_data.json')

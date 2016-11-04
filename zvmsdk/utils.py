@@ -154,6 +154,10 @@ class XCATUrl(object):
     def nodestat(self, arg=''):
         return self.PREFIX + self.NODES + arg + self.STATUS + self.SUFFIX
     
+    def rmvm(self, arg='', vmuuid='', context=None):
+        rurl = self._vms(arg, vmuuid, context)
+        return rurl
+    
 class XCATConnection(object):
     """Https requests to xCAT web service."""
 
@@ -517,80 +521,6 @@ def get_instance_path(os_node, instance_name):
         LOG.debug("Creating the instance path %s", instance_folder)
         os.makedirs(instance_folder)
     return instance_folder
-
-def make_drive(mdfiles, path):
-    """Make the config drive.
-
-    :param path: the path to place the config drive image at
-    :raises ProcessExecuteError if a helper process has failed.
-
-    """
-    if CONF.config_drive_format in ['tgz', 'iso9660']:
-        _make_tgz(mdfiles, path)
-    else:
-        raise ZVMException('Invalid config drive format %s', CONF.config_drive_format)
-    
-def _make_tgz(mdfiles, path):
-    try:
-        olddir = os.getcwd()
-    except Exception:
-        olddir = CONF.instance_path
-
-    with tempdir() as tmpdir:
-        _write_md_files(mdfiles, tmpdir)
-        tar = tarfile.open(path, "w:gz")
-        os.chdir(tmpdir)
-        tar.add("ec2")
-        try:
-            os.chdir(olddir)
-        except Exception as e:
-            LOG.debug('exception in _make_tgz %s', e)
-
-        tar.close()
-        
-def ensure_tree(path, mode=_DEFAULT_MODE):
-    """Create a directory (and any ancestor directories required)
-
-    :param path: Directory to create
-    :param mode: Directory creation permissions
-    """
-    try:
-        os.makedirs(path, mode)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST:
-            if not os.path.isdir(path):
-                raise
-        else:
-            raise
-
-        
-def _add_file(basedir, path, data):
-    filepath = os.path.join(basedir, path)
-    dirname = os.path.dirname(filepath)
-    ensure_tree(dirname)
-    with open(filepath, 'wb') as f:
-        # the given data can be either text or bytes. we can only write
-        # bytes into files.
-        if isinstance(data, six.text_type):
-            data = data.encode('utf-8')
-        f.write(data)
-
-def _write_md_files(mdfiles, basedir):
-    for data in mdfiles:
-        _add_file(basedir, data[0], data[1])
-        
-def tempdir(**kwargs):
-    argdict = kwargs.copy()
-    if 'dir' not in argdict:
-        argdict['dir'] = CONF.tempdir
-    tmpdir = tempfile.mkdtemp(**argdict)
-    try:
-        yield tmpdir
-    finally: 
-        try:
-            shutil.rmtree(tmpdir)
-        except OSError as e:
-            LOG.error('Could not remove tmpdir: %s', e)
             
 def add_xcat_host(node, ip, host_name):
     """Add/Update hostname/ip bundle in xCAT MN nodes table."""
@@ -651,14 +581,13 @@ def add_xcat_switch(node, nic_name, interface, zhcp=None):
 
     return xcat_request("PUT", url, body)['data']
 
-def update_node_info(instance_name, image_name):
+def update_node_info(instance_name, image_name, os_version, image_id):
     LOG.debug("Update the node info for instance %s", instance_name)
 
-    image_id = CONF.image_id
     profile_name = '_'.join((image_name, image_id.replace('-', '_')))
 
     body = ['noderes.netboot=%s' % const.HYPERVISOR_TYPE,
-            'nodetype.os=%s' % CONF.os_type,
+            'nodetype.os=%s' % os_version,
             'nodetype.arch=%s' % const.ARCHITECTURE,
             'nodetype.provmethod=%s' % const.PROV_METHOD,
             'nodetype.profile=%s' % profile_name]
@@ -718,16 +647,53 @@ def convert_to_mb(s):
         raise ZVMException(msg=errmsg)
     
 def get_imgname_xcat(image_id):
-        """Get the xCAT deployable image name by image id."""
-        image_uuid = image_id.replace('-', '_')
-        parm = '&criteria=profile=~' + image_uuid
-        url = get_xcat_url().lsdef_image(addp=parm)
+    """Get the xCAT deployable image name by image id."""
+    image_uuid = image_id.replace('-', '_')
+    parm = '&criteria=profile=~' + image_uuid
+    url = get_xcat_url().lsdef_image(addp=parm)
 
-        res = xcat_request("GET", url)
-        res_image = res['info'][0][0]
-        res_img_name = res_image.strip().split(" ")[0]
+    res = xcat_request("GET", url)
+    res_image = res['info'][0][0]
+    res_img_name = res_image.strip().split(" ")[0]
 
-        if res_img_name:
-            return res_img_name
-        else:
-            LOG.error("Fail to find the right image to deploy")
+    if res_img_name:
+        return res_img_name
+    else:
+        LOG.error("Fail to find the right image to deploy")
+            
+def clean_mac_switch_host(node_name):
+    """Clean node records in xCAT mac, host and switch table."""
+    clean_mac_switch(node_name)
+    _delete_xcat_host(node_name)
+    
+def clean_mac_switch(node_name):
+    """Clean node records in xCAT mac and switch table."""
+    _delete_xcat_mac(node_name)
+    _delete_xcat_switch(node_name)
+    
+def _delete_xcat_switch(node_name):
+    """Remove node switch record from xcat switch table."""
+    commands = "-d node=%s switch" % node_name
+    url = get_xcat_url().tabch("/switch")
+    body = [commands]
+
+    return xcat_request("PUT", url, body)['data']
+
+def _delete_xcat_host(node_name):
+    """Remove xcat hosts table rows where node name is node_name."""
+    commands = "-d node=%s hosts" % node_name
+    body = [commands]
+    url = get_xcat_url().tabch("/hosts")
+
+    return xcat_request("PUT", url, body)['data']
+
+def parse_image_name(os_image_name):
+    profile = os_image_name.split('-')[3]
+    image_name = profile.split('_')[0]
+    xcat_image_id = profile.split('_', 1)[1]
+    image_id = xcat_image_id.replace('_', '-')
+    return image_name, image_id
+
+def get_image_version(os_image_name):
+    os_version = os_image_name.split('-')[0]
+    return os_version
