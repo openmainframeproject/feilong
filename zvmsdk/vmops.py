@@ -8,6 +8,7 @@ import constants as const
 from zvmsdk.utils import ZVMException
 import dist
 import six
+import configdrive
 
 
 _VMOPS = None
@@ -40,27 +41,23 @@ def run_instance(instance_name, image_name, cpu, memory,
         raise ZVMException(msg)
     
     instance_path = zvmutils.get_instance_path(CONF.zvm_host, instance_name)
-    #net_conf_cmds = ''
     os_version = CONF.os_version
     linuxdist = _get_vmops()._dist_manager.get_linux_dist(os_version)()
-    #injected_files = []
-    #transportfiles = _get_vmops()._create_config_drive(
-    #            instance_path, instance_name, image_name, injected_files,
-    #            login_password, net_conf_cmds, linuxdist)
-    
-    transportfiles = os.path.join(CONF.instances_path, 'cfgdrive.tgz')
+    transportfiles = configdrive.create_config_drive(ip_addr)
     
     spawn_start = time.time()
     
     # Create xCAT node and userid for the instance
     zvmutils.create_xcat_node(instance_name, CONF.zhcp)
     _get_vmops().create_userid(instance_name, cpu, memory, image_name)
+    
     # Setup network for z/VM instance
     _get_vmops()._preset_instance_network(instance_name, ip_addr)
     _get_vmops()._add_nic_to_table(instance_name, ip_addr)
     zvmutils.update_node_info(instance_name, image_name)
     deploy_image_name = zvmutils.get_imgname_xcat(CONF.image_id)
     zvmutils.deploy_node(instance_name, deploy_image_name, transportfiles)
+    
     # Change vm's admin password during spawn
     zvmutils.punch_adminpass_file(instance_path, instance_name,
                                   login_password, linuxdist)
@@ -71,6 +68,8 @@ def run_instance(instance_name, image_name, cpu, memory,
     _get_vmops().power_on(instance_name)
     spawn_time = time.time() - spawn_start
     LOG.info("Instance spawned succeeded in %s seconds", spawn_time)
+    
+    return instance_name
 
 def terminate_instance(instance_name):
     """Destroy a virtual machine.
@@ -320,7 +319,7 @@ class VMOps(object):
                 # Instance already not active
                 LOG.warning("z/VM instance %s already active", instance_name)
                 return
-
+        
     def _get_host_inventory_info(self, host):
         url = self._xcat_url.rinv('/' + host)
         inv_info_raw = zvmutils.xcat_request("GET", url)['info'][0]
