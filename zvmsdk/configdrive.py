@@ -1,10 +1,9 @@
-import pdb
 import config as CONF
 import constants as const
 import os
 import dist
 import vmops
-from zvmsdk.utils import ZVMException
+from utils import ZVMException
 from log import LOG
 import utils as zvmutils
 import tarfile
@@ -13,7 +12,9 @@ import tempfile
 import shutil
 import stat
 
+
 _DEFAULT_MODE = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
+
 
 def get_cfg_str(ip_v4, address_read = CONF.zvm_default_nic_vdev):
     cfg_str = 'DEVICE=\"' + CONF.device + '\"\n'
@@ -29,21 +30,25 @@ def get_cfg_str(ip_v4, address_read = CONF.zvm_default_nic_vdev):
     cfg_str += 'SUBCHANNELS=\"' + CONF.subchannels + '\"\n'
     return cfg_str
 
+
 def generate_net_file(ip_addr, net_file_path):
     cfg_str = get_cfg_str(ip_addr)
     generate_file(cfg_str, net_file_path)
-    
+
+
 def get_znetconfig_str(os_version):
     linuxdist = dist.ListDistManager().get_linux_dist(os_version)()
     udev_settle = linuxdist.get_znetconfig_contents()
     znetconfig = '\n'.join(('# !/bin/sh', udev_settle))
     znetconfig += '\nrm -rf /tmp/znetconfig.sh\n'
     return znetconfig
-    
+
+
 def generate_znetconfig_file(znetconfig_path, os_version):
     znetconfig = get_znetconfig_str(os_version)
     generate_file(znetconfig, znetconfig_path)
-    
+
+
 def get_meta_data_str():
     meta_data = '{\"files\": [{\"path\": \"/etc/sysconfig/network-scripts/ifcfg-enccw0.0.1000\", '
     meta_data += '\"content_path\": \"/content/0000\"}, {\"path\": \"/tmp/znetconfig.sh\", \"content_path\": \"/content/0001\"}], '
@@ -55,15 +60,18 @@ def get_meta_data_str():
     meta_data += '\"name\": \"eckdrh72.5\"}'
     return meta_data
 
+
 def generate_meta_data(meta_data_path):
     meta_data = get_meta_data_str()
     generate_file(meta_data, meta_data_path)
-    
+
+
 def generate_file(file_content, path):
     f = open(path, 'w')
     f.write(file_content)
     f.close()
-    
+
+
 def create_config_drive(ip_addr, os_version):
     if not os.path.exists(CONF.tempdir):
         os.mkdir(CONF.tempdir)
@@ -92,5 +100,6 @@ def create_config_drive(ip_addr, os_version):
     os.chdir(CONF.tempdir)
     tar.add('openstack')
     tar.close()
-    
+
     return tar_path
+

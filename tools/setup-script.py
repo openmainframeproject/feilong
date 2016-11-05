@@ -45,7 +45,6 @@ try:
     zvmutils.xcat_request("GET", url)['info'][0]
     print "xcat node - volmgr already defined"
 except zvmutils.ZVMException:
-    print "Create xcat node - volmgr successfully"
     #LOG.info("Create xcat node - volmgr")
     url = _xcat_url.mkdef('/volmgr')
     body = ['userid=volmgr',
@@ -53,3 +52,4 @@ except zvmutils.ZVMException:
             'mgt=zvm',
             'groups=all']
     zvmutils.xcat_request("POST", url, body)
+    print "Create xcat node - volmgr successfully"

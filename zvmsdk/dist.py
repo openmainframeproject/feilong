@@ -1,23 +1,10 @@
-# Copyright 2015 IBM Corp.
-#
-#    Licensed under the Apache License, Version 2.0 (the "License"); you may
-#    not use this file except in compliance with the License. You may obtain
-#    a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#    License for the specific language governing permissions and limitations
-#    under the License.
 
 import abc
 
 from log import LOG
 import six
 import config as CONF
-from zvmsdk.utils import ZVMException
+from utils import ZVMException
 
 @six.add_metaclass(abc.ABCMeta)
 class LinuxDist(object):
@@ -556,7 +543,7 @@ class ListDistManager(object):
             if remain.startswith(r):
                 return r
         else:
-            msg = _('Can not handle os: %s') % os_version
+            msg = 'Can not handle os: %s' % os_version
             raise ZVMException(msg=msg)
 
     def parse_dist(self, os_version):
@@ -577,5 +564,6 @@ class ListDistManager(object):
                     release = self._parse_release(os_version, distro, remain)
                     return distro, release
 
-        msg = _('Can not handle os: %s') % os_version
+        msg = 'Can not handle os: %s' % os_version
         raise ZVMException(msg=msg)
+

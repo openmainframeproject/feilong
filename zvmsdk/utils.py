@@ -1,19 +1,4 @@
-# Copyright 2013 IBM Corp.
-#
-#    Licensed under the Apache License, Version 2.0 (the "License"); you may
-#    not use this file except in compliance with the License. You may obtain
-#    a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#    License for the specific language governing permissions and limitations
-#    under the License.
 
-
-import pdb
 import contextlib
 import functools
 import json
@@ -61,6 +46,9 @@ class XCATUrl(object):
         self.TABLES = '/tables'
         self.IMAGES = '/images'
         self.OBJECTS = '/objects/osimage'
+        self.OS = '/OS'
+        self.HV = '/hypervisor'
+        self.NETWORK = '/networks'
 
         # xcat actions
         self.POWER = '/power'
@@ -68,14 +56,6 @@ class XCATUrl(object):
         self.XDSH = '/dsh'
         self.CAPTURE = '/capture'
         self.IMGIMPORT = '/import'
-        
-        self.VMS = '/vms'
-        self.IMAGES = '/images'
-        self.OBJECTS = '/objects/osimage'
-        self.OS = '/OS'
-        self.HV = '/hypervisor'
-        self.NETWORK = '/networks'
-
         self.INVENTORY = '/inventory'
         self.STATUS = '/status'
         self.MIGRATE = '/migrate'
@@ -84,50 +64,14 @@ class XCATUrl(object):
         self.IMGIMPORT = '/import'
         self.BOOTSTAT = '/bootstate'
         self.VERSION = '/version'
-        self.PCONTEXT = '&requestid='
-        self.PUUID = '&objectid='
         self.DIAGLOGS = '/logs/diagnostics'
         self.PNODERANGE = '&nodeRange='
-        
+
     def _nodes(self, arg=''):
         return self.PREFIX + self.NODES + arg + self.SUFFIX
-    
-    def _vms(self, arg='', vmuuid='', context=None):
+
+    def _vms(self, arg=''):
         rurl = self.PREFIX + self.VMS + arg + self.SUFFIX
-        return rurl
-
-        self.PCONTEXT = '&requestid='
-        self.PUUID = '&objectid='
-
-    def _vms(self, arg='', vmuuid='', context=None):
-        rurl = self.PREFIX + self.VMS + arg + self.SUFFIX
-        rurl = self._append_context(rurl, context)
-        rurl = self._append_instanceid(rurl, vmuuid)
-        return rurl
-
-    def _append_context(self, rurl, context=None):
-        # The context is always optional, to allow incremental exploitation of
-        # the new parameter.  When it is present and it has a request ID, xCAT
-        # logs the request ID so it's easier to link xCAT log entries to
-        # OpenStack log entries.
-        if context is not None:
-            try:
-                rurl = rurl + self.PCONTEXT + context.request_id
-            except Exception as err:
-                # Cannot use format_message() in this context, because the
-                # Exception class does not implement that method.
-                msg = ("Failed to append request ID to URL %(url)s : %(err)s"
-                       ) % {'url': rurl, 'err': six.text_type(err)}
-                LOG.error(msg)
-                # Continue and return the original URL once the error is logged
-                # Failing the request over this is NOT desired.
-        return rurl
-
-    def _append_instanceid(self, rurl, vmuuid):
-        # The instance ID is always optional.  When it is present, xCAT logs it
-        # so it's easier to link xCAT log entries to OpenStack log entries.
-        if vmuuid:
-            rurl = rurl + self.PUUID + vmuuid
         return rurl
 
     def _append_addp(self, rurl, addp=None):
@@ -135,9 +79,6 @@ class XCATUrl(object):
             return ''.join((rurl, addp))
         else:
             return rurl
-
-    def _nodes(self, arg=''):
-        return self.PREFIX + self.NODES + arg + self.SUFFIX
 
     def rpower(self, arg=''):
         return self.PREFIX + self.NODES + arg + self.POWER + self.SUFFIX
@@ -176,47 +117,45 @@ class XCATUrl(object):
         rurl = self.PREFIX + self.NODES + arg + self.SUFFIX
         return self._append_addp(rurl, addp)
 
-    def mkdef(self, arg=''):
-        return self._nodes(arg)
-
     def mkvm(self, arg=''):
         rurl = self._vms(arg)
         return rurl
 
     def chvm(self, arg=''):
         return self._vms(arg)
-    
+
     def network(self, arg='', addp=None):
         rurl = self.PREFIX + self.NETWORK + arg + self.SUFFIX
         if addp is not None:
             return rurl + addp
         else:
             return rurl
-        
+
     def chtab(self, arg=''):
         return self.PREFIX + self.NODES + arg + self.SUFFIX
-    
+
     def nodeset(self, arg=''):
         return self.PREFIX + self.NODES + arg + self.BOOTSTAT + self.SUFFIX
-    
+
     def rinv(self, arg='', addp=None):
         rurl = self.PREFIX + self.NODES + arg + self.INVENTORY + self.SUFFIX
         return self._append_addp(rurl, addp)
-    
+
     def tabch(self, arg='', addp=None):
         """Add/update/delete row(s) in table arg, with attribute addp."""
         rurl = self.PREFIX + self.TABLES + arg + self.SUFFIX
         return self._append_addp(rurl, addp)
-    
+
     def lsdef_image(self, arg='', addp=None):
         rurl = self.PREFIX + self.IMAGES + arg + self.SUFFIX
         return self._append_addp(rurl, addp)
-    
-    def nodestat(self, arg=''):
-        return self.PREFIX + self.NODES + arg + self.STATUS + self.SUFFIX
-    
-    def rmvm(self, arg='', vmuuid='', context=None):
-        rurl = self._vms(arg, vmuuid, context)
+
+    def rmvm(self, arg=''):
+        rurl = self._vms(arg)
+        return rurl
+
+    def lsvm(self, arg=''):
+        rurl = self._vms(arg)
         return rurl
 
 
@@ -591,7 +530,7 @@ def add_xcat_host(node, ip, host_name):
     body = [commands]
     url = get_xcat_url().tabch("/hosts")
 
-    
+
     result_data = xcat_request("PUT", url, body)['data']
 
     return result_data
@@ -643,10 +582,11 @@ def add_xcat_switch(node, nic_name, interface, zhcp=None):
 
     return xcat_request("PUT", url, body)['data']
 
-def update_node_info(instance_name, image_name, os_version, image_id):
+
+def update_node_info(instance_name, image_name, os_version):
     LOG.debug("Update the node info for instance %s", instance_name)
 
-    profile_name = '_'.join((image_name, image_id.replace('-', '_')))
+    profile_name = image_name.rpartition('-')[2]
 
     body = ['noderes.netboot=%s' % const.HYPERVISOR_TYPE,
             'nodetype.os=%s' % os_version,
@@ -656,7 +596,8 @@ def update_node_info(instance_name, image_name, os_version, image_id):
     url = get_xcat_url().chtab('/' + instance_name)
 
     xcat_request("PUT", url, body)
-    
+
+
 def deploy_node(instance_name, image_name, transportfiles=None, vdev=None):
     LOG.debug("Begin to deploy image on instance %s", instance_name)
     vdev = vdev or CONF.zvm_user_root_vdev
@@ -672,14 +613,14 @@ def deploy_node(instance_name, image_name, transportfiles=None, vdev=None):
     url = get_xcat_url().nodeset('/' + instance_name)
 
     xcat_request("PUT", url, body)
-    
+
 def punch_xcat_auth_file(instance_path, instance_name):
     """Make xCAT MN authorized by virtual machines."""
     mn_pub_key = get_mn_pub_key()
     auth_fn = ''.join([instance_path, '/xcatauth.sh'])
     _generate_auth_file(auth_fn, mn_pub_key)
     punch_file(instance_name, auth_fn, 'X')
-    
+
 def get_mn_pub_key():
     cmd = 'cat /root/.ssh/id_rsa.pub'
     resp = xdsh(CONF.zvm_xcat_master, cmd)
@@ -693,46 +634,18 @@ def _generate_auth_file(fn, pub_key):
     'echo "%s" >> /root/.ssh/authorized_keys' % pub_key]
     with open(fn, 'w') as f:
         f.writelines(lines)
-    
-def convert_to_mb(s):
-    """Convert memory size from GB to MB."""
-    s = s.upper()
-    try:
-        if s.endswith('G'):
-            return float(s[:-1].strip()) * 1024
-        elif s.endswith('T'):
-            return float(s[:-1].strip()) * 1024 * 1024
-        else:
-            return float(s[:-1].strip())
-    except (IndexError, ValueError, KeyError, TypeError) as e:
-        errmsg = ("Invalid memory format: %s") % e
-        raise ZVMException(msg=errmsg)
-    
-def get_imgname_xcat(image_id):
-    """Get the xCAT deployable image name by image id."""
-    image_uuid = image_id.replace('-', '_')
-    parm = '&criteria=profile=~' + image_uuid
-    url = get_xcat_url().lsdef_image(addp=parm)
 
-    res = xcat_request("GET", url)
-    res_image = res['info'][0][0]
-    res_img_name = res_image.strip().split(" ")[0]
 
-    if res_img_name:
-        return res_img_name
-    else:
-        LOG.error("Fail to find the right image to deploy")
-            
 def clean_mac_switch_host(node_name):
     """Clean node records in xCAT mac, host and switch table."""
     clean_mac_switch(node_name)
     _delete_xcat_host(node_name)
-    
+
 def clean_mac_switch(node_name):
     """Clean node records in xCAT mac and switch table."""
     _delete_xcat_mac(node_name)
     _delete_xcat_switch(node_name)
-    
+
 def _delete_xcat_switch(node_name):
     """Remove node switch record from xcat switch table."""
     commands = "-d node=%s switch" % node_name
@@ -759,3 +672,4 @@ def parse_image_name(os_image_name):
 def get_image_version(os_image_name):
     os_version = os_image_name.split('-')[0]
     return os_version
+

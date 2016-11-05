@@ -7,6 +7,7 @@ It defines osimage objects in xCAT, and upload image file to xCAT.
 
 '''
 
+
 import sys
 import os
 import shutil
@@ -21,6 +22,7 @@ import zvmsdk.config as CONF
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
+
 
 __all__ = []
 __version__ = 0.1
@@ -102,7 +104,7 @@ USAGE
         manifest = open("manifest.xml", 'rb+')
         lines = manifest.readlines()
         d=""
-        # 
+
         for line in lines:
             c = line.replace("IMAGE_NAME", image_version + "-s390x-netboot-" + image_uuid).replace("ROOTIMGDIR", "/install/netboot/" + image_version + "/s390x/" + image_uuid).replace("PROFILE", image_uuid).replace("IMAGE_VERSION", image_version).replace("LASTUSEDATE", "auto:last_use_date:" + date_now).replace("IMAGE_FILE_NAME", image_file_name)
             d += c
@@ -113,7 +115,7 @@ USAGE
 
         # Get bundle file directory
         date_dir = now.strftime("%Y%m%d%H%M%S")
-        image_package_path = os.path.dirname(image_file)
+        image_package_path = os.path.dirname(os.path.abspath(image_file))
         image_bundle_path = image_package_path + '/' + date_dir
         os.makedirs(image_bundle_path)
         dist_path = image_bundle_path + "/" + "manifest.xml"
@@ -130,17 +132,17 @@ USAGE
         tarFile.add(date_dir)
         tarFile.close()
         shutil.rmtree(image_bundle_path)
-        myhostname = socket.getfqdn(socket.gethostname(  ))
-        myaddrip = socket.gethostbyname(myhostname)
-        remote_host_info = ''.join(['root', '@', myaddrip])
+#         myhostname = socket.getfqdn(socket.gethostname(  ))
+#         myaddrip = socket.gethostbyname(myhostname)
+        remote_host_info = ''.join(['root', '@', CONF.my_ip])
 
         #Import the image bundle from compute node to xCAT MN's image repository.
         _xcat_url = zvmutils.get_xcat_url()
 
         body = ['osimage=%s' % tar_file,
-		'profile=%s' % image_uuid,
-		'remotehost=%s' % remote_host_info,
-		'nozip']
+                'profile=%s' % image_uuid,
+                'remotehost=%s' % remote_host_info,
+                'nozip']
         url = _xcat_url.imgimport()
         resp = zvmutils.xcat_request("POST", url, body)
         for ind in range(0,5):
@@ -159,6 +161,8 @@ USAGE
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
         sys.stderr.write(indent + "  for help use --help")
         return 2
+
+
 if __name__  == "__main__":
     if DEBUG:
         #sys.argv.append("-v rhel");
@@ -177,4 +181,5 @@ if __name__  == "__main__":
         stats.print_stats()
         statsfile.close()
         sys.exit(0)
-    sys.exit(main())
+    main()
+
