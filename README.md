@@ -1,5 +1,5 @@
 # python-zvm-sdk
-z/VM system management took kit in python
+z/VM system management tool kit in python
 
 
 Introduction
