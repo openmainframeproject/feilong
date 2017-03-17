@@ -1,48 +1,154 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
+import ConfigParser
+import config_default
+import argparse
+import collections
+import copy
+import errno
+import functools
+import glob
+import itertools
 import logging
+import os
+import string
+import sys
+
+class ConfigOpts(object):
+
+    int_type = ('zvm_reachable_timeout', 'zvm_xcat_connection_timeout', 'zvm_console_log_size',
+                      'xcat_free_space_threshold', 'xcat_image_clean_period', 'default_config_dirs')
+    def __init__(self):
+        self.dicts={}
+    
+    def register(self):
+        cf = ConfigParser.ConfigParser()
+        read_file = self.find_config_file(project="zvmsdk")
+        cf.read(read_file)
+        # return all sections in a list
+        secs = cf.sections()
+        config_dicts_override=self.config_dicts_func(secs,cf)
+        try:
+            configs = self.merge(config_default.configs, config_dicts_override)
+        except ImportError:
+            pass
+        con={}
+        for v in configs.values():
+            for dk,dv in v.items():
+                con[dk]=dv
+        con=self.toDict(con)
+        return con
+
+    def config_dicts_func(self,secs,cf):
+        for sec in secs:
+            self.dicts[sec]={}
+            # get all options of the section in a list
+            opts=cf.options(sec)
+            for opt in opts:
+                # type 
+                if opt in self.int_type:
+                    val=cf.getint(sec,opt)
+                else:
+                    val=cf.get(sec,opt)
+                self.dicts[sec][opt]=val
+        return self.dicts
+
+    def merge(self,defaults, override):
+        r = {}
+        for k, v in defaults.items():
+            if k in override:
+                if isinstance(v, dict):
+                    r[k] = self.merge(v, override[k])
+                else:
+                    r[k] = override[k]
+            else:
+                r[k] = v
+
+        for k, v in override.items():
+            if k not in defaults:
+                r[k] = v
+        return r
+
+    def toDict(self,d):
+        D = Dict()
+        for k, v in d.items():
+            D[k] = self.toDict(v) if isinstance(v, dict) else v
+        return D
+
+    def _fixpath(self,p):
+        """Apply tilde expansion and absolutization to a path."""
+        return os.path.abspath(os.path.expanduser(p))
 
 
-# <Logging>
-LOG_FILE = 'zvmsdk.log'
-LOG_LEVEL = logging.INFO
+    def _get_config_dirs(self,project=None):
+        """Return a list of directories where config files may be located.
 
-# The IP address that running python zvm sdk
-my_ip = "192.168.0.1"
+        following directories are returned::
 
-# <xCAT>
-zvm_xcat_server = "192.168.0.1"
-zvm_xcat_username = "admin"
-zvm_xcat_password = "passowrd"
-zvm_xcat_master = 'xcat'
-zvm_zhcp_node = "zhcp"
-zhcp = 'zhcp.ibm.com'
+          ./
+          ~/
+          nova/
+        """
+        cfg_dirs = [
+            self._fixpath('./'),
+            self._fixpath('~'),
+            # '/nova'
+        ]
+        return [x for x in cfg_dirs if x]
 
-# <zVM>
-zvm_host = "zvmhost1"
-zvm_default_nic_vdev = '1000'
-zvm_user_default_password = 'password'
-zvm_diskpool = 'xcateckd'
-zvm_user_root_vdev = '0100'
-root_disk_units = '3338'
-zvm_diskpool_type = 'ECKD'
 
-# <instance>
-instances_path = '/home/user/'
-tempdir = '/home/user/tmp/'
-zvm_reachable_timeout = 10000
+    def _search_dirs(self,dirs, basename, extension=""):
+        """Search a list of directories for a given filename or directory name.
 
-# <network>
-device = 'enccw0.0.1000'
-broadcast_v4 = '192.168.0.2'
-gateway_v4 = '192.168.0.1'
-netmask_v4 = '255.255.255.0'
-subchannels = '0.0.1000,0.0.1001,0.0.1002'
-nic_name = 'a2ca1e29-88ac-44f3-85eb-cc1f637366ef'
+        Iterator over the supplied directories, returning the first file
+        found with the supplied name and extension.
 
-# <Volume>
-volume_mgr_userid = "volmgr"
-volume_mgr_node = "volmgr"
-volume_diskpool = "fbapool"
-volume_filesystem = "ext3"
-volume_vdev_start = '2000'
+        :param dirs: a list of directories
+        :param basename: the filename
+        :param extension: the file extension, for example '.conf'
+        :returns: the path to a matching file, or None
+        """
+        for d in dirs:
+            path = os.path.join(d, '%s%s' % (basename, extension))
+            if os.path.exists(path):
+                return path
 
+
+    def find_config_file(self,project=None, extension='.conf'):
+        """Return the config file.
+
+        :param project: zvmsdk
+        :param extension: the type of the config file
+
+        """
+
+        cfg_dirs = self._get_config_dirs(project)
+        config_files = self._search_dirs(cfg_dirs, project, extension)
+
+        return config_files
+ 
+
+
+class Dict(dict):
+    '''
+    Simple dict but support access as x.y style.
+    '''
+    def __init__(self, names=(), values=(), **kw):
+        super(Dict, self).__init__(**kw)
+        for k, v in zip(names, values):
+            self[k] = v
+
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            raise AttributeError(r"'CONF' object has no attribute '%s'" % key)
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+
+
+CONF = ConfigOpts()
+CONF=CONF.register()

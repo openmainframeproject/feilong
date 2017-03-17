@@ -16,7 +16,7 @@ import tempfile
 import stat
 import errno
 
-import config as CONF
+from config import CONF
 
 import constants as const
 from log import LOG

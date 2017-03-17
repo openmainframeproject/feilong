@@ -1,4 +1,4 @@
-import config as CONF
+# import config as CONF
 import constants as const
 import os
 import dist
@@ -11,6 +11,7 @@ import six
 import tempfile
 import shutil
 import stat
+from config import CONF
 
 
 _DEFAULT_MODE = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO

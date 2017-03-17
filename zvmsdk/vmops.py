@@ -6,7 +6,6 @@ from log import LOG
 import uuid
 import time
 import utils as zvmutils
-import config as CONF
 import constants as const
 from utils import ZVMException, get_xcat_url
 import dist
@@ -17,7 +16,7 @@ import configdrive
 import os
 import commands
 
-import config as CONF
+from config import CONF
 from log import LOG
 import utils as zvmutils
 import constants as const
@@ -95,7 +94,7 @@ def terminate_instance(instance_name):
         if vmops.is_reachable(instance_name):
             LOG.debug(("Node %s is reachable, "
                       "skipping diagnostics collection"), instance_name)
-        elif vmops.is_powered_off():
+        elif vmops.is_powered_off(instance_name):
             LOG.debug(("Node %s is powered off, "
                       "skipping diagnostics collection"), instance_name)
         else:
@@ -513,12 +512,12 @@ class VMOps(object):
 
     def is_powered_off(self, instance_name):
         """Return True if the instance is powered off."""
-        return self._check_power_stat() == 'off'
+        return self._check_power_stat(instance_name) == 'off'
 
     def _check_power_stat(self, instance_name):
         """Get power status of a z/VM instance."""
         LOG.debug('Query power stat of %s', instance_name)
-        res_dict = self._power_state("GET", "stat")
+        res_dict = self._power_state(instance_name,"GET", "stat")
 
         @zvmutils.wrap_invalid_xcat_resp_data_error
         def _get_power_string(d):
