@@ -4,18 +4,15 @@ import functools
 import json
 import os
 import pwd
-import shutil
-
-import six
+# import shutil
+# import six
 from six.moves import http_client as httplib
 import socket
 import time
-
-import tarfile
-import tempfile
+# import tarfile
+# import tempfile
 import stat
-import errno
-
+# import errno
 import config as CONF
 
 import constants as const
@@ -87,6 +84,9 @@ class XCATUrl(object):
         return self.PREFIX + self.NODES + arg + self.STATUS + self.SUFFIX
 
     def mkdef(self, arg=''):
+        return self._nodes(arg)
+
+    def rmdef(self, arg=''):
         return self._nodes(arg)
 
     def xdsh(self, arg=''):
@@ -235,6 +235,7 @@ class XCATConnection(object):
             raise ZVMException(msg)
 
         return resp
+
 
 def get_xcat_url():
     global _XCAT_URL
@@ -480,9 +481,11 @@ def looping_call(f, sleep=5, inc_sleep=0, max_sleep=60, timeout=600,
     retry = True
     while retry:
         expired = timeout and (time.time() > expiration)
-        LOG.debug("*********-============timeout is %(timeout)s, expiration is %(expiration)s, time_start is %(time_start)s" % 
-                  {"timeout": timeout, "expiration": expiration, "time_start": time_start})
-
+        LOG.debug("timeout is %(timeout)s, expiration is %(expiration)s,\
+                time_start is %(time_start)s" %
+                {"timeout": timeout,
+                 "expiration": expiration,
+                 "time_start": time_start})
         try:
             f(*args, **kwargs)
         except exceptions:
@@ -511,10 +514,11 @@ def create_xcat_node(instance_name, zhcp, userid=None):
 
     xcat_request("POST", url, body)
 
-    
+
 def _get_instances_path():
         return os.path.normpath(CONF.instances_path)
-    
+
+
 def get_instance_path(os_node, instance_name):
     instance_folder = os.path.join(_get_instances_path(), os_node,
                                    instance_name)
@@ -522,7 +526,8 @@ def get_instance_path(os_node, instance_name):
         LOG.debug("Creating the instance path %s", instance_folder)
         os.makedirs(instance_folder)
     return instance_folder
-            
+
+
 def add_xcat_host(node, ip, host_name):
     """Add/Update hostname/ip bundle in xCAT MN nodes table."""
     commands = "node=%s" % node + " hosts.ip=%s" % ip
@@ -530,17 +535,18 @@ def add_xcat_host(node, ip, host_name):
     body = [commands]
     url = get_xcat_url().tabch("/hosts")
 
-
     result_data = xcat_request("PUT", url, body)['data']
 
     return result_data
+
 
 def config_xcat_mac(instance_name):
     """Hook xCat to prevent assign MAC for instance."""
     fake_mac_addr = "00:00:00:00:00:00"
     nic_name = "fake"
     add_xcat_mac(instance_name, nic_name, fake_mac_addr)
-    
+
+
 def add_xcat_mac(node, interface, mac, zhcp=None):
     """Add node name, interface, mac address into xcat mac table."""
     commands = "mac.node=%s" % node + " mac.mac=%s" % mac
@@ -550,18 +556,21 @@ def add_xcat_mac(node, interface, mac, zhcp=None):
     url = get_xcat_url().tabch("/mac")
     body = [commands]
     return xcat_request("PUT", url, body)['data']
-    
+
+
 def makehosts():
     """Update xCAT MN /etc/hosts file."""
     url = get_xcat_url().network("/makehosts")
     return xcat_request("PUT", url)['data']
+
 
 def create_xcat_table_about_nic(zhcpnode, inst_name,
                                 nic_name, mac_address, vdev):
     _delete_xcat_mac(inst_name)
     add_xcat_mac(inst_name, vdev, mac_address, zhcpnode)
     add_xcat_switch(inst_name, nic_name, vdev, zhcpnode)
-    
+
+
 def _delete_xcat_mac(node_name):
     """Remove node mac record from xcat mac table."""
     commands = "-d node=%s mac" % node_name
@@ -569,6 +578,7 @@ def _delete_xcat_mac(node_name):
     body = [commands]
 
     return xcat_request("PUT", url, body)['data']
+
 
 def add_xcat_switch(node, nic_name, interface, zhcp=None):
     """Add node name and nic name address into xcat switch table."""
@@ -614,12 +624,14 @@ def deploy_node(instance_name, image_name, transportfiles=None, vdev=None):
 
     xcat_request("PUT", url, body)
 
+
 def punch_xcat_auth_file(instance_path, instance_name):
     """Make xCAT MN authorized by virtual machines."""
     mn_pub_key = get_mn_pub_key()
     auth_fn = ''.join([instance_path, '/xcatauth.sh'])
     _generate_auth_file(auth_fn, mn_pub_key)
     punch_file(instance_name, auth_fn, 'X')
+
 
 def get_mn_pub_key():
     cmd = 'cat /root/.ssh/id_rsa.pub'
@@ -628,6 +640,7 @@ def get_mn_pub_key():
     start_idx = key.find('ssh-rsa')
     key = key[start_idx:]
     return key
+
 
 def _generate_auth_file(fn, pub_key):
     lines = ['#!/bin/bash\n',
@@ -641,10 +654,12 @@ def clean_mac_switch_host(node_name):
     clean_mac_switch(node_name)
     _delete_xcat_host(node_name)
 
+
 def clean_mac_switch(node_name):
     """Clean node records in xCAT mac and switch table."""
     _delete_xcat_mac(node_name)
     _delete_xcat_switch(node_name)
+
 
 def _delete_xcat_switch(node_name):
     """Remove node switch record from xcat switch table."""
@@ -654,6 +669,7 @@ def _delete_xcat_switch(node_name):
 
     return xcat_request("PUT", url, body)['data']
 
+
 def _delete_xcat_host(node_name):
     """Remove xcat hosts table rows where node name is node_name."""
     commands = "-d node=%s hosts" % node_name
@@ -662,6 +678,7 @@ def _delete_xcat_host(node_name):
 
     return xcat_request("PUT", url, body)['data']
 
+
 def parse_image_name(os_image_name):
     profile = os_image_name.split('-')[3]
     image_name = profile.split('_')[0]
@@ -669,7 +686,7 @@ def parse_image_name(os_image_name):
     image_id = xcat_image_id.replace('_', '-')
     return image_name, image_id
 
+
 def get_image_version(os_image_name):
     os_version = os_image_name.split('-')[0]
     return os_version
-

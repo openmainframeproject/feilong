@@ -45,4 +45,3 @@ volume_mgr_node = "volmgr"
 volume_diskpool = "fbapool"
 volume_filesystem = "ext3"
 volume_vdev_start = '2000'
-
