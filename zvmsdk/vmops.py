@@ -1,26 +1,16 @@
 
-
-import time
-import os
-from log import LOG
-import uuid
-import time
-import utils as zvmutils
-import config as CONF
-import constants as const
-from utils import ZVMException, get_xcat_url
-import dist
-import six
 import configdrive
-
-
-import os
 import commands
-
 import config as CONF
-from log import LOG
-import utils as zvmutils
 import constants as const
+import dist
+import time
+import os
+import utils as zvmutils
+import uuid
+from log import LOG
+from utils import ZVMException, get_xcat_url
+# import six
 
 _VMOPS = None
 
@@ -31,13 +21,14 @@ def _get_vmops():
         _VMOPS = VMOps()
     return _VMOPS
 
+
 def run_instance(instance_name, image_name, cpu, memory,
                  login_password, ip_addr):
     """Deploy and provision a virtual machine.
 
     Input parameters:
     :instance_name:   USERID of the instance, no more than 8.
-    :image_name:      e.g. rhel7.2-s390x-netboot-7e5efe8a_9f4e_11e6_b85d_02000b000015
+    :image_name:e.g. rhel7.2-s390x-netboot-7e5efe8a_9f4e_11e6_b85d_02000b000015
     :cpu:             vcpu
     :memory:          memory
     :login_password:  login password
@@ -82,6 +73,7 @@ def run_instance(instance_name, image_name, cpu, memory,
     LOG.info("Instance spawned succeeded in %s seconds", spawn_time)
 
     return instance_name
+
 
 def terminate_instance(instance_name):
     """Destroy a virtual machine.
@@ -277,7 +269,7 @@ def delete_image(image_name):
 class VMOps(object):
 
     def __init__(self):
-        self._xcat_url = zvmutils.get_xcat_url()            
+        self._xcat_url = zvmutils.get_xcat_url()
         self._dist_manager = dist.ListDistManager()
 
     def _power_state(self, instance_name, method, state):
@@ -377,7 +369,7 @@ class VMOps(object):
                                          nic_name,
                                          ip_addr,
                                          nic_vdev)
-        nic_vdev = str(hex(int(nic_vdev, 16) + 3))[2:]            
+        nic_vdev = str(hex(int(nic_vdev, 16) + 3))[2:]
 
     def _wait_for_reachable(self, instance_name):
         """Called at an interval until the instance is reachable."""
@@ -452,10 +444,10 @@ class VMOps(object):
 
     def add_mdisk(self, instance_name, diskpool, vdev, size, fmt=None):
         """Add a 3390 mdisk for a z/VM user.
-    
+
         NOTE: No read, write and multi password specified, and
         access mode default as 'MR'.
-    
+
         """
         disk_type = CONF.zvm_diskpool_type
         if (disk_type == 'ECKD'):
@@ -466,7 +458,7 @@ class VMOps(object):
             errmsg = ("Disk type %s is not supported.") % disk_type
             LOG.error(errmsg)
             raise ZVMException(msg=errmsg)
-    
+
         if fmt:
             body = [" ".join([action, diskpool, vdev, size, "MR", "''", "''",
                     "''", fmt])]
