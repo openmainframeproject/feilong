@@ -16,7 +16,6 @@ import string
 import sys
 
 class ConfigOpts(object):
-
     int_type = ('zvm_reachable_timeout', 'zvm_xcat_connection_timeout', 'zvm_console_log_size',
                       'xcat_free_space_threshold', 'xcat_image_clean_period', 'default_config_dirs')
     def __init__(self):
@@ -152,3 +151,4 @@ class Dict(dict):
 
 CONF = ConfigOpts()
 CONF=CONF.register()
+

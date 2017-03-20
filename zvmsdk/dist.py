@@ -1,10 +1,9 @@
-
 import abc
-
 from log import LOG
 import six
 import config as CONF
 from utils import ZVMException
+
 
 @six.add_metaclass(abc.ABCMeta)
 class LinuxDist(object):
@@ -566,4 +565,3 @@ class ListDistManager(object):
 
         msg = 'Can not handle os: %s' % os_version
         raise ZVMException(msg=msg)
-

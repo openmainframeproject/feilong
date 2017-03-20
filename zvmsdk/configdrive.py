@@ -1,14 +1,7 @@
-# import config as CONF
-import constants as const
+
 import os
 import dist
-import vmops
-from utils import ZVMException
-from log import LOG
-import utils as zvmutils
 import tarfile
-import six
-import tempfile
 import shutil
 import stat
 from config import CONF
@@ -51,8 +44,11 @@ def generate_znetconfig_file(znetconfig_path, os_version):
 
 
 def get_meta_data_str():
-    meta_data = '{\"files\": [{\"path\": \"/etc/sysconfig/network-scripts/ifcfg-enccw0.0.1000\", '
-    meta_data += '\"content_path\": \"/content/0000\"}, {\"path\": \"/tmp/znetconfig.sh\", \"content_path\": \"/content/0001\"}], '
+    meta_data = '{\"files\":[{\"path\":\
+            \"/etc/sysconfig/network-scripts/ifcfg-enccw0.0.1000\",'
+    meta_data += '\"content_path\":\"/content/0000\"},\
+            {\"path\": \"/tmp/znetconfig.sh\",\
+            \"content_path\": \"/content/0001\"}], '
     meta_data += '\"uuid\": \"4ec7a80d-201a-4c17-afbc-b0a93b66133b\", '
     meta_data += '\"availability_zone\": \"nova\", '
     meta_data += '\"hostname\": \"eckdrh72.5.novalocal\", '
@@ -103,4 +99,3 @@ def create_config_drive(ip_addr, os_version):
     tar.close()
 
     return tar_path
-
