@@ -13,12 +13,12 @@ my_ip = "192.168.0.1"
 zvm_xcat_server = "192.168.0.1"
 zvm_xcat_username = "admin"
 zvm_xcat_password = "passowrd"
-zvm_xcat_master = 'xcat'
-zvm_zhcp_node = "zhcp"
-zhcp = 'zhcp.ibm.com'
+zvm_xcat_master = 'opnstk2'
+zvm_zhcp_node = "zhcp2"
+zhcp = 'zhcp2.ibm.com'
 
 # <zVM>
-zvm_host = "zvmhost1"
+zvm_host = "cmacbiao"
 zvm_default_nic_vdev = '1000'
 zvm_user_default_password = 'password'
 zvm_diskpool = 'xcateckd'
