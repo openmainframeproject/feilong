@@ -10,18 +10,6 @@ class SDKTestCase(unittest.TestCase):
     def setUp(self):
         self.vmops = sdkapi._get_vmops()
         self.volumeops = sdkapi._get_volumeops()
-        '''
-        return_value = {
-                'os':'rhel7',
-                'vcpus':1,
-                'ip_addr':'192.168.114.6',
-                'power_state':'off',
-                'memory':'1024m',
-                }
-        '''
-
-    def tearDown(self):
-        pass
 
     def _fake_fun(self, value = None):
         return lambda *args, **kwargs: value
@@ -34,10 +22,10 @@ class SDKBasicAPITestCase(SDKTestCase):
         "rhel7-s390x-netboot-testimage_dc410d84_86a0_4ac2_b841_1701bf065730"
 
     def test_run_instance(self):
-        self.assertFalse('foo'.isupper())
+        pass
 
     def test_terminate_instance(self):
-        self.assertFalse('foo'.isupper())
+        pass
 
     # TODO:version 1.0
     @mock.patch('vmops.VMOps.get_info')
@@ -102,11 +90,11 @@ class SDKBasicAPITestCase(SDKTestCase):
 
     # TODO
     def test_attach_volume(self):
-        self.assertFalse('foo'.isupper())
+        pass
 
     # TODO
     def test_detach_volume(self):
-        self.assertFalse('foo'.isupper())
+        pass
 
 
 class SDKVMOpsTestCase(SDKTestCase):
@@ -302,7 +290,7 @@ class SDKVMOpsTestCase(SDKTestCase):
 
 class SDKVolumeOpsTestCase(SDKTestCase):
     def test_temp(self):
-        self.assertFalse('foo'.isupper())
+        pass
 
 
 if __name__ == '__main__':
