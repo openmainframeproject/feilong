@@ -151,4 +151,3 @@ class Dict(dict):
 
 CONF = ConfigOpts()
 CONF=CONF.register()
-
