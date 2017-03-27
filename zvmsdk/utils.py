@@ -14,10 +14,8 @@ import time
 import tarfile
 import tempfile
 import stat
-import errno
-
+#import errno
 from config import CONF
-
 import constants as const
 from log import LOG
 

@@ -59,7 +59,6 @@ config_dicts_default = {
     }
 }
 class ConfigOpts(object):
-
     def __init__(self):
         self.dicts={}
         self.confs={}
@@ -252,3 +251,4 @@ class RequiredOptError(Exception):
 
 CONF = ConfigOpts()
 CONF=CONF.register()
+
