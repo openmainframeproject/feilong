@@ -16,53 +16,53 @@ import sys
 
 config_dicts_default = {
     'xCAT':{
-        'zvm_xcat_server':{"default":None,"type":None,"required":"ture"},
-        'zvm_xcat_username':{"default":None,"type":None,"required":"ture"},
-        'zvm_xcat_password':{"default":None,"type":None,"required":"ture"},
-        'zvm_xcat_master':{"default":None,"type":None,"required":"ture"},
-        'zvm_zhcp_node':{"default":None,"type":None,"required":"ture"},
+        'zvm_xcat_server':{"required":"ture"},
+        'zvm_xcat_username':{"type":None,"required":"ture"},
+        'zvm_xcat_password':{"default":None,"required":"ture"},
+        'zvm_xcat_master':{},
+        'zvm_zhcp_node':{},
         'zhcp':{"default":None,"type":None,"required":"ture"},
     },
     'logging':{
-        'LOG_FILE':{"default":"zvmsdk.log","type":None,"required":"false"},
-        'LOG_LEVEL':{"default":"logging.INFO","type":None,"required":"false"},
+        'LOG_FILE':{"default":"zvmsdk.log"},
+        'LOG_LEVEL':{"default":"logging.INFO"},
     },
     'zVM':{
-        'zvm_host':{"default":None,"type":None,"required":"false"},
-        'zvm_default_nic_vdev':{"default":'1000',"type":None,"required":"false"},
-        'zvm_user_default_password':'dfltpass',
-        'zvm_diskpool':{"default":None,"type":None,"required":"false"},
-        'zvm_user_root_vdev':{"default":'0100',"type":None,"required":"false"},
-        'root_disk_units':{"default":'3338',"type":None,"required":"false"},
-        'zvm_diskpool_type':{"default":'ECKD',"type":None,"required":"false"},
+        'zvm_host':{},
+        'zvm_default_nic_vdev':{"default":'1000'},
+        'zvm_user_default_password':{"default":'dfltpass'},
+        'zvm_diskpool':{},
+        'zvm_user_root_vdev':{"default":'0100'},
+        'root_disk_units':{"default":'3338'},
+        'zvm_diskpool_type':{"default":'ECKD'},
     },
     'network':{
-        'my_ip':{"default":None,"type":None,"required":"false"},
-        'device':{"default":None,"type":None,"required":"false"},
-        'broadcast_v4':{"default":None,"type":None,"required":"false"},
-        'gateway_v4':{"default":None,"type":None,"required":"false"},
-        'netmask_v4':{"default":None,"type":None,"required":"false"},
-        'subchannels':{"default":None,"type":None,"required":"false"},
-        'nic_name':{"default":None,"type":None,"required":"false"},
+        'my_ip':{},
+        'device':{},
+        'broadcast_v4':{},
+        'gateway_v4':{},
+        'netmask_v4':{},
+        'subchannels':{},
+        'nic_name':{},
     },
     'Volume':{
-        'volume_mgr_userid':{"default":None,"type":None,"required":"false"},
-        'volume_mgr_node':{"default":None,"type":None,"required":"false"},
-        'volume_diskpool':{"default":None,"type":None,"required":"false"},
-        'volume_filesystem':{"default":None,"type":None,"required":"false"},
-        'volume_vdev_start':{"default":None,"type":None,"required":"false"},
+        'volume_mgr_userid':{},
+        'volume_mgr_node':{},
+        'volume_diskpool':{},
+        'volume_filesystem':{},
+        'volume_vdev_start':{},
     },
     'instance':{
-        'instances_path':{"default":None,"type":None,"required":"false"},
-        'tempdir':{"default":None,"type":None,"required":"false"},
-        'zvm_reachable_timeout':{"default":300,"type":'int',"required":"false"},
+        'instances_path':{},
+        'tempdir':{},
+        'zvm_reachable_timeout':{"default":300,"type":'int'},
     }
 }
 class ConfigOpts(object):
 
     def __init__(self):
         self.dicts={}
-        self.conf={}
+        self.confs={}
     
     def register(self):
         cf = ConfigParser.ConfigParser()
@@ -70,26 +70,13 @@ class ConfigOpts(object):
         cf.read(read_file)
         # return all sections in a list
         secs = cf.sections()
-        config_dicts_override=self.config_dicts_func(secs,cf)
+        config_dicts_override=self.config_ini_to_dicts(secs,cf)
         try:
-            
             configs = self.merge(config_dicts_default, config_dicts_override)
         except ImportError:
             pass
-        
-        con={}
-        for v in configs.values():
-            for dk,dv in v.items():
-                if isinstance(dv,dict):
-                    self.conf[dk]=dv
-                else:
-                    dv={}
-                    dv['type']=None
-                    dv['required']="false"
-                    dv['default']=v[dk]
-                    self.conf[dk]=dv
-
-        con=self.toDict(self.conf)
+        conf_fill=self._config_fill_option(configs)
+        con=self.toDict(conf_fill)
         self._check_required(con)
         self._check_type(con)
 
@@ -112,7 +99,29 @@ class ConfigOpts(object):
             if v.type is 'int':
                 v.default=int(v.default)
 
-    def config_dicts_func(self,secs,cf):
+    def _config_fill_option(self,conf):
+        for v in conf.values():
+            for dk,dv in v.items():
+                '''
+                the format of dk,dv :   
+                          'zvm_xcat_server':{"default":xx,"type":int,"required":true}
+                          'zvm_xcat_server':{}
+                          'zvm_xcat_server':xx,
+                '''
+                if isinstance(dv,dict):
+                    dv.setdefault('type',None)
+                    dv.setdefault('required',"false")
+                    dv.setdefault('default',None)
+                    self.confs[dk]=dv
+                else:
+                    dv={}
+                    dv['type']=None
+                    dv['required']="false"
+                    dv['default']=v[dk]
+                    self.confs[dk]=dv
+        return self.confs
+
+    def config_ini_to_dicts(self,secs,cf):
         for sec in secs:
             self.dicts[sec]={}
             # get all options of the section in a list
@@ -131,7 +140,7 @@ class ConfigOpts(object):
                          'zvm_xcat_server':None,
                          }
 
-        returns r is a dict and the format is same as the parameter 'default'
+        returns r: is a dict and the format is same as the parameter 'default' or 'override'
  
         ''' 
         r = {}
@@ -140,7 +149,8 @@ class ConfigOpts(object):
                 if isinstance(v, dict) and isinstance(override[k],dict):
                     r[k] = self.merge(v, override[k])
                 elif isinstance(v,dict):
-                    v['default']=override[k]
+                    if override[k] is not None:
+                        v['default']=override[k]
                     r[k]=v
                 else:
                     r[k] = override[k]
@@ -200,7 +210,7 @@ class ConfigOpts(object):
     def find_config_file(self,project=None, extension='.conf'):
         """Return the config file.
 
-        :param project: zvmsdk
+        :param project: "zvmsdk"
         :param extension: the type of the config file
 
         """
