@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
 import ConfigParser
 import argparse
 import collections
@@ -14,14 +15,15 @@ import os
 import string
 import sys
 
+
 config_dicts_default = {
     'xCAT':{
-        'zvm_xcat_server':{"required":"ture"},
-        'zvm_xcat_username':{"type":None,"required":"ture"},
-        'zvm_xcat_password':{"default":None,"required":"ture"},
+        'zvm_xcat_server':{"required": True},
+        'zvm_xcat_username':{"type":None,"required": True},
+        'zvm_xcat_password':{"default":None,"required": True},
         'zvm_xcat_master':{},
         'zvm_zhcp_node':{},
-        'zhcp':{"default":None,"type":None,"required":"ture"},
+        'zhcp':{"default":None,"type":None,"required": True},
     },
     'logging':{
         'LOG_FILE':{"default":"zvmsdk.log"},
@@ -58,12 +60,14 @@ config_dicts_default = {
         'zvm_reachable_timeout':{"default":300,"type":'int'},
     }
 }
+
+
 class ConfigOpts(object):
 
     def __init__(self):
         self.dicts={}
         self.confs={}
-    
+
     def register(self):
         cf = ConfigParser.ConfigParser()
         read_file = self.find_config_file(project="zvmsdk")
@@ -102,12 +106,11 @@ class ConfigOpts(object):
     def _config_fill_option(self,conf):
         for v in conf.values():
             for dk,dv in v.items():
-                '''
-                the format of dk,dv :   
-                          'zvm_xcat_server':{"default":xx,"type":int,"required":true}
-                          'zvm_xcat_server':{}
-                          'zvm_xcat_server':xx,
-                '''
+                # the format of dk,dv:
+                # 'zvm_xcat_server':{"default":xx,"type":int,"required":true}
+                #     'zvm_xcat_server':{}
+                #     'zvm_xcat_server':xx,
+                # }
                 if isinstance(dv,dict):
                     dv.setdefault('type',None)
                     dv.setdefault('required',"false")
@@ -142,7 +145,7 @@ class ConfigOpts(object):
 
         returns r: is a dict and the format is same as the parameter 'default' or 'override'
  
-        ''' 
+        '''
         r = {}
         for k, v in defaults.items():
             if k in override:
@@ -172,7 +175,6 @@ class ConfigOpts(object):
         """Apply tilde expansion and absolutization to a path."""
         return os.path.abspath(os.path.expanduser(p))
 
-
     def _get_config_dirs(self,project=None):
         """Return a list of directories where config files may be located.
 
@@ -190,7 +192,6 @@ class ConfigOpts(object):
         ]
         return [x for x in cfg_dirs if x]
 
-
     def _search_dirs(self,dirs, basename, extension=""):
         """Search a list of directories for a given filename or directory name.
 
@@ -207,7 +208,6 @@ class ConfigOpts(object):
             if os.path.exists(path):
                 return path
 
-
     def find_config_file(self,project=None, extension='.conf'):
         """Return the config file.
 
@@ -221,7 +221,6 @@ class ConfigOpts(object):
 
         return config_files
  
-
 
 class Dict(dict):
     '''
@@ -250,6 +249,7 @@ class RequiredOptError(Exception):
 
     def __str__(self):
         return "value required for option %s" % (self.opt_name)
+
 
 CONF = ConfigOpts()
 CONF=CONF.register()
