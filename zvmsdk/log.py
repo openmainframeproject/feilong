@@ -1,23 +1,45 @@
-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import logging
+import os
+from config import CONF
 
-# import config.CONF as cfg
+class Logger():
+    def __init__(self, logger,path="/var/log/nova/zvmsdk.log",Clevel = logging.DEBUG,Flevel = logging.DEBUG):
+        # create a logger
+        self.logger = logging.getLogger(logger)
+        self.logger.setLevel(logging.INFO)
 
-from config import CONF as cfg
-LOG = logging.getLogger('ZVMSDK')
-# LOG.setLevel(cfg.LOG_LEVEL)
-LOG.setLevel(logging.INFO)
+        # create a handler for the file
+        fh = logging.FileHandler(path)
+        fh.setLevel(Flevel)
+        
+        # create a hander for the console
+        ch = logging.StreamHandler()
+        ch.setLevel(Clevel)
+        
+        # set the formate of the handler
+        formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s', '%Y-%m-%d %H:%M:%S')
+        fh.setFormatter(formatter)
+        ch.setFormatter(formatter)
+        
+        # add handler in the logger
+        self.logger.addHandler(fh)
+        self.logger.addHandler(ch)
+        
+    def getlog(self):
+        return self.logger
 
-formatter = logging.Formatter('%(name)-6s %(asctime)s %(levelname)-8s '
-                              '%(message)s', '%a, %d %b %Y %H:%M:%S',)
+log_level=CONF.LOG_LEVEL
+if log_level is "logging.INFO" or "logging.info":
+    log_level = logging.INFO
+elif log_level is "logging.DEBUG" or "logging.debug":
+    log_level = logging.DEBUG
+elif log_level is "logging.WARN" or "logging.warn":
+    log_level = logging.WARN
+elif log_level is "logging.ERROR" or "logging.error":
+    log_level = logging.ERROR
+elif log_level is "logging.CRITICAL" or "logging.critical":
+    log_level = logging.CRITICAL
 
-# file_handler = logging.FileHandler(cfg.LOG_FILE)
-file_handler = logging.FileHandler("zvmsdk.log")
-# 
-file_handler.setFormatter(formatter)
-
-stream_handler = logging.StreamHandler()
-stream_handler.setFormatter(formatter)
-
-LOG.addHandler(file_handler)
-LOG.addHandler(stream_handler)
+LOG = Logger(path=CONF.LOG_FILE,logger='ZVMSDK',Clevel = log_level,Flevel = log_level).getlog()

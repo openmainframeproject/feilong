@@ -185,6 +185,7 @@ class ConfigOpts(object):
         cfg_dirs = [
             self._fixpath('./'),
             self._fixpath('~'),
+            self._fixpath('/etc/nova/')
             # '/nova'
         ]
         return [x for x in cfg_dirs if x]
