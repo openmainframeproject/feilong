@@ -1,0 +1,45 @@
+
+config_dicts_default = {
+    'xCAT':{
+        'zvm_xcat_server':{"required":"ture"},
+        'zvm_xcat_username':{"type":None,"required":"ture"},
+        'zvm_xcat_password':{"default":None,"required":"ture"},
+        'zvm_xcat_master':{"default":None,"type":None,"required":"false"},
+        'zvm_zhcp_node':{},
+        'zhcp':{"default":None,"type":None,"required":"ture"},
+    },
+    'logging':{
+        'LOG_FILE':{"default":"zvmsdk.log","type":None,"required":"false"},
+        'LOG_LEVEL':{"default":"logging.INFO","type":None,"required":"false"},
+    },
+    'zVM':{
+        'zvm_host':{"default":None,"type":None,"required":"false"},
+        'zvm_default_nic_vdev':{"default":'1000',"type":None,"required":"false"},
+        'zvm_user_default_password':'dfltpass',
+        'zvm_diskpool':{"default":None,"type":None,"required":"false"},
+        'zvm_user_root_vdev':{"default":'0100',"type":None,"required":"false"},
+        'root_disk_units':{"default":'3338',"type":None,"required":"false"},
+        'zvm_diskpool_type':{"default":'ECKD',"type":None,"required":"false"},
+    },
+    'network':{
+        'my_ip':{"default":None,"type":None,"required":"false"},
+        'device':{"default":None,"type":None,"required":"false"},
+        'broadcast_v4':{"default":None,"type":None,"required":"false"},
+        'gateway_v4':{"default":None,"type":None,"required":"false"},
+        'netmask_v4':{"default":None,"type":None,"required":"false"},
+        'subchannels':{"default":None,"type":None,"required":"false"},
+        'nic_name':{"default":None,"type":None,"required":"false"},
+    },
+    'Volume':{
+        'volume_mgr_userid':{"default":None,"type":None,"required":"false"},
+        'volume_mgr_node':{"default":None,"type":None,"required":"false"},
+        'volume_diskpool':{"default":None,"type":None,"required":"false"},
+        'volume_filesystem':{"default":None,"type":None,"required":"false"},
+        'volume_vdev_start':{"default":None,"type":None,"required":"false"},
+    },
+    'instance':{
+        'instances_path':{"default":None,"type":None,"required":"false"},
+        'tempdir':{"default":None,"type":None,"required":"false"},
+        'zvm_reachable_timeout':{"default":300,"type":'int',"required":"false"},
+    }
+}
