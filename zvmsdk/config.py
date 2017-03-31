@@ -175,20 +175,24 @@ class ConfigOpts(object):
         """Apply tilde expansion and absolutization to a path."""
         return os.path.abspath(os.path.expanduser(p))
 
-    def _get_config_dirs(self,project=None):
+    def _get_config_dirs(self):
         """Return a list of directories where config files may be located.
 
         following directories are returned::
 
           ./
+          ../etc
           ~/
-          nova/
+          /etc/zvmsdk/
         """
+        _cwd = os.path.split(os.path.abspath(__file__))[0]
+        _pdir = os.path.split(_cwd)[0]
+        _etcdir = ''.join((_pdir, '/', 'etc/'))
         cfg_dirs = [
-            self._fixpath('./'),
+            self._fixpath(_cwd),
+            self._fixpath(_etcdir),
             self._fixpath('~'),
-            self._fixpath('/etc/nova/')
-            # '/nova'
+            self._fixpath('/etc/zvmsdk/')
         ]
         return [x for x in cfg_dirs if x]
 
@@ -216,7 +220,7 @@ class ConfigOpts(object):
 
         """
 
-        cfg_dirs = self._get_config_dirs(project)
+        cfg_dirs = self._get_config_dirs()
         config_files = self._search_dirs(cfg_dirs, project, extension)
 
         return config_files
