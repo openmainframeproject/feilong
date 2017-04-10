@@ -6,6 +6,7 @@ import six
 import config as CONF
 from utils import ZVMException
 
+
 @six.add_metaclass(abc.ABCMeta)
 class LinuxDist(object):
     """Linux distribution base class
@@ -566,4 +567,3 @@ class ListDistManager(object):
 
         msg = 'Can not handle os: %s' % os_version
         raise ZVMException(msg=msg)
-

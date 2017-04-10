@@ -2,7 +2,7 @@
 import mock
 import unittest
 
-import zvmsdk.config as CONF
+from zvmsdk.config import CONF
 import zvmsdk.utils as zvmutils
 import zvmsdk.vmops as sdkapi
 
@@ -29,44 +29,47 @@ class SDKBasicAPITestCase(SDKTestCase):
         pass
 
     # TODO:version 1.0
-    @mock.patch('vmops.VMOps.get_info')
+    @mock.patch('zvmsdk.vmops.VMOps.get_info')
     def test_describe_instance(self, getInfo):
         sdkapi.describe_instance('cbi00038')
         getInfo.assert_called_with('cbi00038')
 
     # TODO:version 1.0
-    @mock.patch('vmops.VMOps._power_state')
+    @mock.patch('zvmsdk.vmops.VMOps._power_state')
     def test_start_instance(self, ChangePowerState):
         sdkapi.start_instance('cbi00038')
         ChangePowerState.assert_called_with('cbi00038', 'PUT', 'on')
 
     # TODO:version 1.0
-    @mock.patch('vmops.VMOps._power_state')
+    @mock.patch('zvmsdk.vmops.VMOps._power_state')
     def test_stop_instance(self, ChangePowerState):
         sdkapi.stop_instance('cbi00038')
         ChangePowerState.assert_called_with('cbi00038', 'PUT', 'off')
 
     # TODO:version 1.0
-    @mock.patch('vmops.VMOps.get_power_state')
-    @mock.patch('vmops.VMOps.capture_instance')
+    @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
+    @mock.patch('zvmsdk.vmops.VMOps.capture_instance')
     def test_capture_instance(self, snapshot, power_state):
         power_state.return_value = 'on'
         sdkapi.capture_instance('cbi00038')
         snapshot.assert_called_with('cbi00038')
 
-    @mock.patch('vmops.VMOps.delete_image')
+    @mock.patch('zvmsdk.vmops.VMOps.delete_image')
     def test_delete_image(self, deleteImage):
         sdkapi.delete_image(self.image_name)
         deleteImage.assert_called_with(self.image_name)
 
     @mock.patch.object(zvmutils, 'xcat_request')
-    @mock.patch('vmops.VOLUMEOps.add_volume_info')
-    @mock.patch('vmops.VOLUMEOps.get_free_mgr_vdev')
+    @mock.patch('zvmsdk.vmops.VOLUMEOps.add_volume_info')
+    @mock.patch('zvmsdk.vmops.VOLUMEOps.get_free_mgr_vdev')
     def test_create_volume(self, gfmv, add_info, xrequest):
         # this url is made up
-        url = "/xcatws/vms/volmgr?" + \
-                "userName=admin&password=passowrd&format=json"
-        body = ['--add9336 fbapool  1024 MR read write MULTI ext3']
+        url = "/xcatws/vms/volmgr?userName=" + CONF.zvm_xcat_username +\
+                "&password=" + CONF.zvm_xcat_password + "&format=json"
+        body_str = '--add9336 ' + CONF.zvm_diskpool +\
+                '  1024 MR read write MULTI ext3'
+        body = []
+        body.append(body_str)
         size = 1024
         gfmv.return_value = ''
         sdkapi.create_volume(size)
@@ -75,13 +78,14 @@ class SDKBasicAPITestCase(SDKTestCase):
         add_info.assert_called_with(' free volmgr ')
 
     @mock.patch.object(zvmutils, 'xcat_request')
-    @mock.patch('vmops.VOLUMEOps.delete_volume_info')
-    @mock.patch('vmops.VOLUMEOps.get_volume_info')
+    @mock.patch('zvmsdk.vmops.VOLUMEOps.delete_volume_info')
+    @mock.patch('zvmsdk.vmops.VOLUMEOps.get_volume_info')
     def test_delete_volume(self, get_info, delete_info, xrequest):
         # this url is made up
         uuid = 'asdf'
-        url = "/xcatws/vms/volmgr?" + \
-                "userName=admin&password=passowrd&format=json"
+        url = "/xcatws/vms/volmgr?userName=" + CONF.zvm_xcat_username +\
+                "&password=" + CONF.zvm_xcat_password +\
+                "&format=json"
         body = ['--removedisk asdf']
         sdkapi.delete_volume(uuid)
 
@@ -105,8 +109,9 @@ class SDKVMOpsTestCase(SDKTestCase):
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_power_state(self, xrequest):
-        url = "/xcatws/nodes/cbi00063/power?" + \
-                "userName=admin&password=passowrd&format=json"
+        url = "/xcatws/nodes/cbi00063/power?" +\
+                "userName=" + CONF.zvm_xcat_username +\
+                "&password=" + CONF.zvm_xcat_password + "&format=json"
         body = ['stat']
         self.vmops._power_state('cbi00063', 'GET', 'stat')
 
@@ -115,7 +120,8 @@ class SDKVMOpsTestCase(SDKTestCase):
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_get_power_state(self, xrequest):
         url = "/xcatws/nodes/cbi00063/power?" + \
-                "userName=admin&password=passowrd&format=json"
+                "userName=" + CONF.zvm_xcat_username +\
+                "&password=" + CONF.zvm_xcat_password + "&format=json"
         body = ['stat']
         self.vmops.get_power_state('cbi00063')
         xrequest.assert_called_with('GET', url, body)
@@ -130,9 +136,9 @@ class SDKVMOpsTestCase(SDKTestCase):
     'memory': u'1024m'
     }
     '''
-    @mock.patch('vmops.VMOps._lsvm')
-    @mock.patch('vmops.VMOps._lsdef')
-    @mock.patch('vmops.VMOps._power_state')
+    @mock.patch('zvmsdk.vmops.VMOps._lsvm')
+    @mock.patch('zvmsdk.vmops.VMOps._lsdef')
+    @mock.patch('zvmsdk.vmops.VMOps._power_state')
     def test_get_info(self, power_state, lsdef, lsvm):
         power_state.return_value = {'info': [[u'cbi00063: on\n']],
                 'node': [], 'errorcode': [], 'data': [], 'error': []}
@@ -169,17 +175,18 @@ class SDKVMOpsTestCase(SDKTestCase):
 
         self.assertEqual(ret, True)
 
-    @mock.patch('vmops.VMOps._power_state')
+    @mock.patch('zvmsdk.vmops.VMOps._power_state')
     def test_power_on(self, power_state, ):
         self.vmops.power_on('cbi00063')
         power_state.assert_called_once_with('cbi00063', 'PUT', 'on')
 
-    @mock.patch('vmops.VMOps.set_ipl')
-    @mock.patch('vmops.VMOps.add_mdisk')
+    @mock.patch('zvmsdk.vmops.VMOps.set_ipl')
+    @mock.patch('zvmsdk.vmops.VMOps.add_mdisk')
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_create_userid(self, xrequest, add_mdisk, set_ipl):
-        url = "/xcatws/vms/cbi00063?" + \
-                "userName=admin&password=passowrd&format=json"
+        url = "/xcatws/vms/cbi00063?userName=" + CONF.zvm_xcat_username +\
+                "&password=" + CONF.zvm_xcat_password +\
+                "&format=json"
         body = ['profile=QCDFLT',
                 'password=password',
                 'cpu=1', 'memory=1024m',
@@ -194,8 +201,8 @@ class SDKVMOpsTestCase(SDKTestCase):
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_delete_userid(self, xrequest):
-        url = "/xcatws/vms/cbi00038?" + \
-                "userName=admin&password=passowrd&format=json"
+        url = "/xcatws/vms/cbi00038?userName=" + CONF.zvm_xcat_username +\
+                "&password=" + CONF.zvm_xcat_password + "&format=json"
         self.vmops.delete_userid('cbi00038', 'zhcp2')
 
         xrequest.assert_called_once_with('DELETE', url)
@@ -204,9 +211,11 @@ class SDKVMOpsTestCase(SDKTestCase):
     def test_add_mdisk(self, xrequest):
         # TODO
         url = "/xcatws/vms/cbi00063?" + \
-                "userName=admin&password=passowrd&format=json"
-        # TODO
-        body = ['--add3390 xcateckd 0100 3338']
+                "userName=" + CONF.zvm_xcat_username +\
+                "&password=" + CONF.zvm_xcat_password + "&format=json"
+        body_str = '--add3390 ' + CONF.zvm_diskpool + ' 0100 3338'
+        body = []
+        body.append(body_str)
         self.vmops.add_mdisk('cbi00063', CONF.zvm_diskpool,
                                           CONF.zvm_user_root_vdev,
                                           CONF.root_disk_units)
@@ -215,8 +224,8 @@ class SDKVMOpsTestCase(SDKTestCase):
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_set_ipl(self, xrequest):
         # TODO
-        url = "/xcatws/vms/cbi00063?" + \
-                "userName=admin&password=passowrd&format=json"
+        url = "/xcatws/vms/cbi00063?userName=" + CONF.zvm_xcat_username +\
+                "&password=" + CONF.zvm_xcat_password + "&format=json"
         # TODO
         body = ['--setipl 0100']
         self.vmops.set_ipl('cbi00063', CONF.zvm_user_root_vdev)
@@ -224,27 +233,26 @@ class SDKVMOpsTestCase(SDKTestCase):
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_list_instances(self, xrequest):
-        res_dict = {'info': [], 'node': [], 'errorcode': [],
-        'data': [
-            [u'#table head',
-            u'"opnstk2","zhcp2.ibm.com",,"zvm",,,,,',
-            u'"cbi00021","zhcp2.ibm.com","cbi00021",,,,,,',
-            u'"cbi00038","zhcp2.ibm.com","cbi00038",,,,,,',
-            u'"zli00038","zhcp2.ibm.com","zli00038",,,,,,',
-            u'"cmacbiao","zhcp2.ibm.com","CMACBIAO","vm","opnstk2",,,,',
-            u'"zhcp2","zhcp2.ibm.com","CMACBIAO","vm","opnstk2",,,,',
-            u'"cbi00063","zhcp2.ibm.com","cbi00063",,,,,,"IUCV=1"',
-            u'"cbi00039","zhcp2.ibm.com","cbi00039",,,,,,"IUCV=1"',
-            u'"zli00039","zhcp2.ibm.com","zli00039",,,,,,']
-            ], 'error': []}
+        res_dict = {
+                'info': [],
+                'node': [],
+                'errorcode': [],
+                'data': [],
+                'error': []}
+        items = []
+        test_item1 = '#table header...'
+        test_item2 = '"cbi00021","' + CONF.zhcp + '","cbi00021",,,,,,'
+        test_item3 = '"cbi00038","' + CONF.zhcp + '","cbi00038",,,,,,'
+        items.append(test_item1)
+        items.append(test_item2)
+        items.append(test_item3)
+        res_dict['data'].append(items)
         xrequest.return_value = res_dict
-        instances = [
-                u'cbi00021', u'cbi00038', u'zli00038',
-                u'cbi00063', u'cbi00039', u'zli00039']
+        instances = [u'cbi00021', u'cbi00038']
         ret = self.vmops.list_instances()
         self.assertEqual(ret, instances)
 
-    @mock.patch('vmops.VMOps._check_power_stat')
+    @mock.patch('zvmsdk.vmops.VMOps._check_power_stat')
     def test_is_powered_off(self, check_stat):
         check_stat.return_value = 'off'
         ret = self.vmops.is_powered_off('cbi00063')
@@ -253,11 +261,12 @@ class SDKVMOpsTestCase(SDKTestCase):
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_delete_xcat_node(self, xrequest):
         url = "/xcatws/nodes/cbi00063" + \
-                "?userName=admin&password=passowrd&format=json"
+                "?userName=" + CONF.zvm_xcat_username +\
+                "&password=" + CONF.zvm_xcat_password + "&format=json"
         self.vmops.delete_xcat_node('cbi00063')
         xrequest.assert_called_once_with('DELETE', url)
 
-    @mock.patch('vmops.VMOps.list_instances')
+    @mock.patch('zvmsdk.vmops.VMOps.list_instances')
     def test_instance_exists(self, list_instances):
         list_instances.return_value = ['cbi00063', 'cbi00064']
         ret = self.vmops.instance_exists('cbi00063')
@@ -282,8 +291,9 @@ class SDKVMOpsTestCase(SDKTestCase):
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_delete_image(self, xrequest):
-        url = "/xcatws/objects/osimage/test-image-name?" + \
-                "userName=admin&password=passowrd&format=json"
+        url = "/xcatws/objects/osimage/test-image-name?userName=" +\
+                CONF.zvm_xcat_username + "&password=" +\
+                CONF.zvm_xcat_password + "&format=json"
         self.vmops.delete_image('test-image-name')
 
         xrequest.assert_called_with('DELETE', url)

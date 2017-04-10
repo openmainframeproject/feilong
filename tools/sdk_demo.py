@@ -1,6 +1,9 @@
 #!/usr/bin/env python
+import sys
+from zvmsdk import vmops
 
-import vmops
+sys.path.append(..)
+
 
 def boot_instance():
 	instance_name = "zli00038"
