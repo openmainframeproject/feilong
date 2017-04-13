@@ -1,18 +1,18 @@
 
-
 import commands
-import configdrive
 import constants as const
 import dist
-import time
 import os
 import uuid
-import utils as zvmutils
-from config import CONF
-from log import LOG
-from utils import ZVMException, get_xcat_url
+
+from zvmsdk import config
+from zvmsdk import log
+from zvmsdk import utils as zvmutils
+
 
 _VMOPS = None
+CONF = config.CONF
+LOG = log.LOG
 
 
 def _get_vmops():
@@ -20,250 +20,6 @@ def _get_vmops():
     if _VMOPS is None:
         _VMOPS = VMOps()
     return _VMOPS
-
-
-def run_instance(instance_name, image_name, cpu, memory,
-                 login_password, ip_addr):
-    """Deploy and provision a virtual machine.
-
-    Input parameters:
-    :instance_name:   USERID of the instance, no more than 8.
-    :image_name:      e.g. rhel7.2-s390x-netboot-7e5_9f4e_11e6_b85d_02000b15
-    :cpu:             vcpu
-    :memory:          memory
-    :login_password:  login password
-    :ip_addr:         ip address
-    """
-    vmops = _get_vmops()
-
-    os_version = zvmutils.get_image_version(image_name)
-
-    # For zVM instance, limit the maximum length of instance name to be 8
-    if len(instance_name) > 8:
-        msg = (("Don't support spawn vm on zVM hypervisor with instance "
-            "name: %s, please change your instance name no longer than 8 "
-            "characters") % instance_name)
-        raise ZVMException(msg)
-
-    instance_path = zvmutils.get_instance_path(CONF.zvm_host, instance_name)
-    linuxdist = vmops._dist_manager.get_linux_dist(os_version)()
-    transportfiles = configdrive.create_config_drive(ip_addr, os_version)
-
-    spawn_start = time.time()
-
-    # Create xCAT node and userid for the instance
-    zvmutils.create_xcat_node(instance_name, CONF.zhcp)
-    vmops.create_userid(instance_name, cpu, memory, image_name)
-
-    # Setup network for z/VM instance
-    vmops._preset_instance_network(instance_name, ip_addr)
-    vmops._add_nic_to_table(instance_name, ip_addr)
-    zvmutils.update_node_info(instance_name, image_name, os_version)
-    zvmutils.deploy_node(instance_name, image_name, transportfiles)
-
-    # Change vm's admin password during spawn
-    zvmutils.punch_adminpass_file(instance_path, instance_name,
-                                  login_password, linuxdist)
-    # Unlock the instance
-    zvmutils.punch_xcat_auth_file(instance_path, instance_name)
-
-    # Power on the instance, then put MN's public key into instance
-    vmops.power_on(instance_name)
-    spawn_time = time.time() - spawn_start
-    LOG.info("Instance spawned succeeded in %s seconds", spawn_time)
-
-    return instance_name
-
-
-def terminate_instance(instance_name):
-    """Destroy a virtual machine.
-
-    Input parameters:
-    :instance_name:   USERID of the instance, last 8 if length > 8
-    """
-    vmops = _get_vmops()
-    if vmops.instance_exists(instance_name):
-        LOG.info(("Destroying instance %s"), instance_name)
-        if vmops.is_reachable(instance_name):
-            LOG.debug(("Node %s is reachable, "
-                      "skipping diagnostics collection"), instance_name)
-        elif vmops.is_powered_off(instance_name):
-            LOG.debug(("Node %s is powered off, "
-                      "skipping diagnostics collection"), instance_name)
-        else:
-            LOG.debug(("Node %s is powered on but unreachable"), instance_name)
-
-    zvmutils.clean_mac_switch_host(instance_name)
-
-    vmops.delete_userid(instance_name, CONF.zhcp)
-
-
-def describe_instance(instance_name):
-    """Get virtual machine basic information.
-
-    Input parameters:
-    :instance_name:   USERID of the instance, last 8 if length > 8
-    """
-    inst_info = _get_vmops().get_info(instance_name)
-    return inst_info
-
-
-def start_instance(instance_name):
-    """Power on a virtual machine.
-
-    Input parameters:
-    :instance_name:   USERID of the instance, last 8 if length > 8
-    """
-    _get_vmops()._power_state(instance_name, "PUT", "on")
-
-
-def stop_instance(instance_name):
-    """Shutdown a virtual machine.
-
-    Input parameters:
-    :instance_name:   USERID of the instance, last 8 if length > 8
-    """
-    _get_vmops()._power_state(instance_name, "PUT", "off")
-
-
-def create_volume(size):
-    """Create a volume.
-
-    Input parameters:
-    :size:           size
-
-    Output parameters:
-    :volume_uuid:    volume uuid in zVM
-    """
-    volumeops = _get_volumeops()
-    volume_uuid = ""
-
-    action = '--add9336'
-    diskpool = CONF.volume_diskpool
-    vdev = volumeops.get_free_mgr_vdev()
-    multipass = const.VOLUME_MULTI_PASS
-    fmt = CONF.volume_filesystem
-    body = [" ".join([action, diskpool, vdev, str(size), "MR", "read", "write",
-                      multipass, fmt])]
-    url = zvmutils.get_xcat_url().chvm('/' + CONF.volume_mgr_node)
-    # Update the volume management file before sending xcat request
-    volumeops.add_volume_info(" ".join([vdev, "free",
-                                     CONF.volume_mgr_userid, vdev]))
-    zvmutils.xcat_request("PUT", url, body)
-    volume_uuid = vdev
-    return volume_uuid
-
-
-def delete_volume(volume_uuid):
-    """Delete a volume.
-
-    Input parameters:
-    :volume_uuid:    volume uuid in zVM
-    """
-    volumeops = _get_volumeops()
-    volume_info = volumeops.get_volume_info(volume_uuid)
-    # Check volume status
-    if (volume_info is None):
-        msg = ("Volume %s does not exist.") % volume_uuid
-        raise zvmutils.ZVMException(msg)
-    if (volume_info['status'] == 'in-use'):
-        msg = ("Cann't delete volume %(uuid)s, attached to "
-               "instance %(vm)s" % {'uuid': volume_uuid,
-                                    'vm': volume_info['userid']})
-        raise zvmutils.ZVMException(msg)
-    # Delete volume from volume manager user
-    action = '--removedisk'
-    vdev = volume_uuid
-    body = [" ".join([action, vdev])]
-    url = zvmutils.get_xcat_url().chvm('/' + CONF.volume_mgr_node)
-    zvmutils.xcat_request("PUT", url, body)
-    # Delete volume from volume management file
-    volumeops.delete_volume_info(volume_uuid)
-
-
-def attach_volume(instance_name, volume_uuid):
-    """Attach a volume to a target vm.
-
-    Input parameters:
-    :instance_name:   USERID of the instance, last 8 if length > 8
-    ::volume_uuid:    volume uuid in zVM
-    """
-    volumeops = _get_volumeops()
-    volume_info = volumeops.get_volume_info(volume_uuid)
-    if (volume_info is None) or (volume_info['status'] != 'free'):
-        msg = ("Volume %s does not exist or status is not free.") % volume_uuid
-        raise zvmutils.ZVMException(msg)
-    target_vdev = volumeops.get_free_vdev(instance_name)
-    # First update the status in the management file and then call smcli
-    volumeops.update_volume_info(" ".join([volume_uuid, "in-use",
-                                          instance_name, target_vdev]))
-    cmd = ("/opt/zhcp/bin/smcli Image_Disk_Share_DM -T %(dst)s"
-           " -v %(dst_vdev)s -t %(src)s -r %(src_vdev)s -a MR"
-           " -p multi" % {'dst': instance_name, 'dst_vdev': target_vdev,
-           'src': CONF.volume_mgr_userid, 'src_vdev': volume_uuid})
-    zhcp_node = CONF.zvm_zhcp_node
-    zvmutils.xdsh(zhcp_node, cmd)
-    cmd = ("/opt/zhcp/bin/smcli Image_Disk_Create -T %(dst)s -v %(dst_vdev)s"
-           " -m MR" % {'dst': instance_name, 'dst_vdev': target_vdev})
-    zvmutils.xdsh(zhcp_node, cmd)
-
-
-def detach_volume(instance_name, volume_uuid):
-    """Detach a volume.
-
-    Input parameters:
-    :instance_name:   USERID of the instance, last 8 if length > 8
-    :volume_uuid:    volume uuid in zVM
-    """
-    volumeops = _get_volumeops()
-    volume_info = volumeops.get_volume_info(volume_uuid)
-    # Check volume status
-    if (volume_info is None):
-        msg = ("Volume %s does not exist.") % volume_uuid
-        raise zvmutils.ZVMException(msg)
-    if (volume_info['status'] != 'in-use') or (
-        volume_info['userid'] != instance_name):
-        msg = ("Volume %(uuid)s is not attached to"
-               "instance %(vm)s" % {'uuid': volume_uuid, 'vm': instance_name})
-        raise zvmutils.ZVMException(msg)
-    # Detach volume
-    cmd = ("/opt/zhcp/bin/smcli Image_Disk_Unshare_DM -T %(dst)s"
-       " -v %(dst_vdev)s -t %(src)s -r %(src_vdev)s" %
-       {'dst': instance_name, 'dst_vdev': volume_info['vdev'],
-       'src': CONF.volume_mgr_userid, 'src_vdev': volume_uuid})
-    zhcp_node = CONF.zvm_zhcp_node
-    zvmutils.xdsh(zhcp_node, cmd)
-    cmd = ("/opt/zhcp/bin/smcli Image_Disk_Delete -T %(dst)s -v %(dst_vdev)s"
-           % {'dst': instance_name, 'dst_vdev': volume_info['vdev']})
-    zvmutils.xdsh(zhcp_node, cmd)
-    # Update volume status to free in management file
-    volumeops.update_volume_info(" ".join([volume_uuid, "free",
-                                        CONF.volume_mgr_userid, volume_uuid]))
-
-
-def capture_instance(instance_name):
-    """Caputre a virtual machine image.
-
-    Input parameters:
-    :instance_name:   USERID of the instance, last 8 if length > 8
-
-    Output parameters:
-    :image_name:      Image name that defined in xCAT image repo
-    """
-    _vmops = _get_vmops()
-    if _vmops.get_power_state(instance_name) == "off":
-        _vmops.power_on(instance_name)
-
-    return _vmops.capture_instance(instance_name)
-
-
-def delete_image(image_name):
-    """Delete image.
-
-    Input parameters:
-    :image_name:      Image name that defined in xCAT image repo
-    """
-    _get_vmops().delete_image(image_name)
 
 
 class VMOps(object):
@@ -382,8 +138,8 @@ class VMOps(object):
                 self._reachable = True
 
         zvmutils.looping_call(_check_reachable, 5, 5, 30,
-                              CONF.zvm_reachable_timeout,
-                              ZVMException(msg='not reachable, retry'))
+            CONF.zvm_reachable_timeout,
+            zvmutils.ZVMException(msg='not reachable, retry'))
 
     def is_reachable(self, instance_name):
         """Return True is the instance is reachable."""
@@ -440,7 +196,7 @@ class VMOps(object):
         except Exception as err:
             msg = ("Failed to create z/VM userid: %s") % err
             LOG.error(msg)
-            raise ZVMException(msg=err)
+            raise zvmutils.ZVMException(msg=err)
 
     def add_mdisk(self, instance_name, diskpool, vdev, size, fmt=None):
         """Add a 3390 mdisk for a z/VM user.
@@ -457,7 +213,7 @@ class VMOps(object):
         else:
             errmsg = ("Disk type %s is not supported.") % disk_type
             LOG.error(errmsg)
-            raise ZVMException(msg=errmsg)
+            raise zvmutils.ZVMException(msg=errmsg)
 
         if fmt:
             body = [" ".join([action, diskpool, vdev, size, "MR", "''", "''",
@@ -539,7 +295,7 @@ class VMOps(object):
         """
         # Versions of xCAT that do not understand the instance ID and
         # request ID will silently ignore them.
-        url = get_xcat_url().rmvm('/' + instance_name)
+        url = zvmutils.get_xcat_url().rmvm('/' + instance_name)
 
         try:
             self._delete_userid(url)

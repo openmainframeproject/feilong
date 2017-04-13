@@ -17,7 +17,7 @@ class Logger():
 
         # create a hander for the console
         ch = logging.StreamHandler()
-        ch.setLevel(Clevel)
+        ch.setLevel(logging.ERROR)
 
         # set the formate of the handler
         formatter = logging.Formatter(
