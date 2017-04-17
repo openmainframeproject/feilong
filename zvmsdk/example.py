@@ -8,6 +8,7 @@
 import client as zvmclient
 from zvmsdk import config
 from zvmsdk import log
+from zvmsdk import utils as zvmutils
 
 CONF = config.CONF
 LOG = log.LOG
@@ -53,4 +54,4 @@ def create_userid(self, instance_name, cpu, memory, image_name):
     except Exception as err:
         msg = ("Failed to create z/VM userid: %s" % err)
         LOG.error(msg)
-        raise ZVMException(msg=err)
+        raise zvmutils.ZVMException(msg=err)

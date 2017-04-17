@@ -4,14 +4,18 @@
 from zvmsdk import config
 from zvmsdk import log
 import constants as const
+from zvmsdk import utils as zvmutils
 
 CONF = config.CONF
 LOG = log.LOG
 
 
 class Interface(object):
-    # xcat and libvirt both have these functions,and parm are same.  e.g: create_userid_request
-    # already exist in utils.py 
+    """
+    xcat and libvirt both have these functions,and parm are same.  e.g: create_userid_request
+    already exist in utils.py 
+    """
+
     def common_function(self):
         # it's the common function for libxcat and libvirt
         pass
@@ -21,8 +25,11 @@ class Interface(object):
 
 
 class XcatInterface(Interface):
-    # These functions are only for libXcat
-    # already exist in utils.py 
+    """
+    These functions are only for xcat
+    already exist in utils.py  
+    """
+
     def request(self, func_name, **kws):
         return getattr(self, func_name)()
 
@@ -61,9 +68,9 @@ class XcatInterface(Interface):
         nic_vdev = CONF.zvm_default_nic_vdev
         nic_name = CONF.nic_name
         zhcpnode = CONF.zhcp
-        _delete_xcat_mac(kws['instance_name'])
-        add_xcat_mac(kws['instance_name'], nic_vdev, kws['ip_addr'], zhcpnode)
-        add_xcat_switch(kws['instance_name'], nic_name, nic_vdev, zhcpnode)
+        # zvmutils._delete_xcat_mac(kws['instance_name'])
+        zvmutils.add_xcat_mac(kws['instance_name'], nic_vdev, kws['ip_addr'], zhcpnode)
+        zvmutils.add_xcat_switch(kws['instance_name'], nic_name, nic_vdev, zhcpnode)
 
 
 class LibvirtInterface(Interface):
@@ -91,3 +98,11 @@ class InterfaceManager(object):
         else:
             raise Exception(r"the interface_type is not exist'%s'" %
                             interface_type)
+
+
+class RequiredOptError(Exception):
+    def __init__(self, name):
+        self.name = name
+
+    def __str__(self):
+        return "value required for option %s" % self.name
