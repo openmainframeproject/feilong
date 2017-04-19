@@ -22,16 +22,6 @@ class SDKVMOpsTestCase(SDKTestCase):
         self.xcat_url = zvmutils.get_xcat_url()
 
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_power_state(self, xrequest):
-        url = "/xcatws/nodes/cbi00063/power?" +\
-                "userName=" + CONF.zvm_xcat_username +\
-                "&password=" + CONF.zvm_xcat_password + "&format=json"
-        body = ['stat']
-        self.vmops._power_state('cbi00063', 'GET', 'stat')
-
-        xrequest.assert_called_with("GET", url, body)
-
-    @mock.patch.object(zvmutils, 'xcat_request')
     def test_get_power_state(self, xrequest):
         url = "/xcatws/nodes/cbi00063/power?" + \
                 "userName=" + CONF.zvm_xcat_username +\
@@ -40,19 +30,9 @@ class SDKVMOpsTestCase(SDKTestCase):
         self.vmops.get_power_state('cbi00063')
         xrequest.assert_called_with('GET', url, body)
 
-    '''
-    example output of get_info:
-    {
-    'os': u'rhel7',
-    'vcpus': 1,
-    'ip_addr': u'192.168.114.3',
-    'power_state': u'on',
-    'memory': u'1024m'
-    }
-    '''
-    @mock.patch('zvmsdk.vmops.VMOps._lsvm')
-    @mock.patch('zvmsdk.vmops.VMOps._lsdef')
-    @mock.patch('zvmsdk.vmops.VMOps._power_state')
+    @mock.patch('zvmsdk.client.XCATClient._lsvm')
+    @mock.patch('zvmsdk.client.XCATClient._lsdef')
+    @mock.patch('zvmsdk.client.XCATClient._power_state')
     def test_get_info(self, power_state, lsdef, lsvm):
         power_state.return_value = {'info': [[u'cbi00063: on\n']],
                 'node': [], 'errorcode': [], 'data': [], 'error': []}
@@ -89,7 +69,7 @@ class SDKVMOpsTestCase(SDKTestCase):
 
         self.assertEqual(ret, True)
 
-    @mock.patch('zvmsdk.vmops.VMOps._power_state')
+    @mock.patch('zvmsdk.client.XCATClient._power_state')
     def test_power_on(self, power_state, ):
         self.vmops.power_on('cbi00063')
         power_state.assert_called_once_with('cbi00063', 'PUT', 'on')
@@ -166,19 +146,11 @@ class SDKVMOpsTestCase(SDKTestCase):
         ret = self.vmops.list_instances()
         self.assertEqual(ret, instances)
 
-    @mock.patch('zvmsdk.vmops.VMOps._check_power_stat')
+    @mock.patch('zvmsdk.client.XCATClient.get_power_state')
     def test_is_powered_off(self, check_stat):
         check_stat.return_value = 'off'
         ret = self.vmops.is_powered_off('cbi00063')
         self.assertEqual(True, ret)
-
-    @mock.patch.object(zvmutils, 'xcat_request')
-    def test_delete_xcat_node(self, xrequest):
-        url = "/xcatws/nodes/cbi00063" + \
-                "?userName=" + CONF.zvm_xcat_username +\
-                "&password=" + CONF.zvm_xcat_password + "&format=json"
-        self.vmops.delete_xcat_node('cbi00063')
-        xrequest.assert_called_once_with('DELETE', url)
 
     @mock.patch('zvmsdk.vmops.VMOps.list_instances')
     def test_instance_exists(self, list_instances):

@@ -1,12 +1,12 @@
-
 import commands
-import constants as const
-import dist
 import os
 import uuid
 
+from zvmsdk import client as zvmclient
 from zvmsdk import config
+from zvmsdk import constants as const
 from zvmsdk import log
+from zvmsdk import dist
 from zvmsdk import utils as zvmutils
 
 
@@ -25,33 +25,12 @@ def _get_vmops():
 class VMOps(object):
 
     def __init__(self):
-        self._xcat_url = zvmutils.get_xcat_url()
+        self.zvmclient = zvmclient.get_zvmclient()
         self._dist_manager = dist.ListDistManager()
 
-    def _power_state(self, instance_name, method, state):
-        """Invoke xCAT REST API to set/get power state for a instance."""
-        body = [state]
-        url = self._xcat_url.rpower('/' + instance_name)
-        return zvmutils.xcat_request(method, url, body)
-
-    def get_power_state(self, instance_name):
+    def get_power_state(self, vm_id):
         """Get power status of a z/VM instance."""
-        LOG.debug('Query power stat of %s' % instance_name)
-        res_dict = self._power_state(instance_name, "GET", "stat")
-
-        @zvmutils.wrap_invalid_xcat_resp_data_error
-        def _get_power_string(d):
-            tempstr = d['info'][0][0]
-            return tempstr[(tempstr.find(':') + 2):].strip()
-
-        power_stat = _get_power_string(res_dict)
-        return power_stat
-
-    @zvmutils.wrap_invalid_xcat_resp_data_error
-    def _lsdef(self, instance_name):
-        url = self._xcat_url.lsdef_node('/' + instance_name)
-        resp_info = zvmutils.xcat_request("GET", url)['info'][0]
-        return resp_info
+        return self.zvmclient.get_power_state(vm_id)
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def _get_ip_addr_from_lsdef_info(self, info):
@@ -59,6 +38,8 @@ class VMOps(object):
             if 'ip=' in inf:
                 ip_addr = inf.rpartition('ip=')[2].strip(' \n')
                 return ip_addr
+            else:
+                pass
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def _get_os_from_lsdef_info(self, info):
@@ -66,12 +47,8 @@ class VMOps(object):
             if 'os=' in inf:
                 _os = inf.rpartition('os=')[2].strip(' \n')
                 return _os
-
-    @zvmutils.wrap_invalid_xcat_resp_data_error
-    def _lsvm(self, instance_name):
-        url = self._xcat_url.lsvm('/' + instance_name)
-        resp_info = zvmutils.xcat_request("GET", url)['info'][0][0]
-        return resp_info.split('\n')
+            else:
+                pass
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def _get_cpu_num_from_lsvm_info(self, info):
@@ -88,11 +65,11 @@ class VMOps(object):
     def get_info(self, instance_name):
         power_stat = self.get_power_state(instance_name)
 
-        lsdef_info = self._lsdef(instance_name)
+        lsdef_info = self.zvmclient.get_lsdef_info(instance_name)
         ip_addr = self._get_ip_addr_from_lsdef_info(lsdef_info)
         _os = self._get_os_from_lsdef_info(lsdef_info)
 
-        lsvm_info = self._lsvm(instance_name)
+        lsvm_info = self.zvmclient.get_lsvm_info(instance_name)
         vcpus = self._get_cpu_num_from_lsvm_info(lsvm_info)
         mem = self._get_memory_from_lsvm_info(lsvm_info)
 
@@ -143,9 +120,8 @@ class VMOps(object):
 
     def is_reachable(self, instance_name):
         """Return True is the instance is reachable."""
-        url = self._xcat_url.nodestat('/' + instance_name)
+        res_dict = self.zvmclient.get_node_status(instance_name)
         LOG.debug('Get instance status of %s', instance_name)
-        res_dict = zvmutils.xcat_request("GET", url)
 
         with zvmutils.expect_invalid_xcat_resp_data(res_dict):
             status = res_dict['node'][0][0]['data'][0]
@@ -159,14 +135,16 @@ class VMOps(object):
     def power_on(self, instance_name):
         """"Power on z/VM instance."""
         try:
-            self._power_state(instance_name, "PUT", "on")
+            self.zvmclient.power_on(instance_name)
         except Exception as err:
-            err_str = err.format_message()
+            err_str = str(err)
             if ("Return Code: 200" in err_str and
                     "Reason Code: 8" in err_str):
                 # Instance already not active
                 LOG.warning("z/VM instance %s already active", instance_name)
                 return
+            else:
+                raise
 
     def create_userid(self, instance_name, cpu, memory, image_name):
         """Create z/VM userid into user directory for a z/VM instance."""
@@ -174,18 +152,10 @@ class VMOps(object):
                       % instance_name)
 
         kwprofile = 'profile=%s' % const.ZVM_USER_PROFILE
-        body = [kwprofile,
-                'password=%s' % CONF.zvm_user_default_password,
-                'cpu=%i' % cpu,
-                'memory=%im' % memory,
-                'privilege=%s' % const.ZVM_USER_DEFAULT_PRIVILEGE,
-                'ipl=%s' % CONF.zvm_user_root_vdev,
-                'imagename=%s' % image_name]
-
-        url = zvmutils.get_xcat_url().mkvm('/' + instance_name)
 
         try:
-            zvmutils.xcat_request("POST", url, body)
+            self.zvmclient.make_vm(instance_name, kwprofile,
+                                   cpu, memory, image_name)
             size = CONF.root_disk_units
             # Add root disk and set ipl
             self.add_mdisk(instance_name, CONF.zvm_diskpool,
@@ -215,18 +185,11 @@ class VMOps(object):
             LOG.error(errmsg)
             raise zvmutils.ZVMException(msg=errmsg)
 
-        if fmt:
-            body = [" ".join([action, diskpool, vdev, size, "MR", "''", "''",
-                    "''", fmt])]
-        else:
-            body = [" ".join([action, diskpool, vdev, size])]
-        url = zvmutils.get_xcat_url().chvm('/' + instance_name)
-        zvmutils.xcat_request("PUT", url, body)
+        self.zvmclient.change_vm_fmt(instance_name, fmt, action,
+                                     diskpool, vdev, size)
 
     def set_ipl(self, instance_name, ipl_state):
-        body = ["--setipl %s" % ipl_state]
-        url = zvmutils.get_xcat_url().chvm('/' + instance_name)
-        zvmutils.xcat_request("PUT", url, body)
+        self.zvmclient.change_vm_ipl_state(instance_name, ipl_state)
 
     def instance_exists(self, instance_name):
         """Overwrite this to using instance name as input parameter."""
@@ -239,9 +202,7 @@ class VMOps(object):
         zvm_host = CONF.zvm_host
         hcp_base = CONF.zhcp
 
-        url = self._xcat_url.tabdump("/zvm")
-        res_dict = zvmutils.xcat_request("GET", url)
-
+        res_dict = self.zvmclient.get_tabdump_info()
         instances = []
 
         with zvmutils.expect_invalid_xcat_resp_data(res_dict):
@@ -261,56 +222,47 @@ class VMOps(object):
 
     def is_powered_off(self, instance_name):
         """Return True if the instance is powered off."""
-        return self._check_power_stat(instance_name) == 'off'
-
-    def _check_power_stat(self, instance_name):
-        """Get power status of a z/VM instance."""
-        LOG.debug('Query power stat of %s', instance_name)
-        res_dict = self._power_state(instance_name, "GET", "stat")
-
-        @zvmutils.wrap_invalid_xcat_resp_data_error
-        def _get_power_string(d):
-            tempstr = d['info'][0][0]
-            return tempstr[(tempstr.find(':') + 2):].strip()
-
-        power_stat = _get_power_string(res_dict)
-        return power_stat
+        return self.zvmclient.get_power_state(instance_name) == 'off'
 
     def _delete_userid(self, url):
         try:
             zvmutils.xcat_request("DELETE", url)
         except Exception as err:
-            emsg = err.format_message()
+            # TODO:implement after exception merged
+            # emsg = err.format_message()
+            emsg = ""
             LOG.debug("error emsg in delete_userid: %s", emsg)
             if (emsg.__contains__("Return Code: 400") and
                     emsg.__contains__("Reason Code: 4")):
                 # zVM user definition not found, delete xCAT node directly
-                self.delete_xcat_node()
+                self.zvmclient.delete_xcat_node()
             else:
-                raise
+                raise err
 
-    def delete_userid(self, instance_name, zhcp_node):
+    def delete_userid(self, userid, zhcp_node):
         """Delete z/VM userid for the instance.This will remove xCAT node
         at same time.
         """
         # Versions of xCAT that do not understand the instance ID and
         # request ID will silently ignore them.
-        url = zvmutils.get_xcat_url().rmvm('/' + instance_name)
-
         try:
-            self._delete_userid(url)
+            self.zvmclient.remove_vm(userid)
         except Exception as err:
-            emsg = err.format_message()
+            # TODO:implement after exception merged
+            # emsg = err.format_message()
+            emsg = ""
             if (emsg.__contains__("Return Code: 400") and
                (emsg.__contains__("Reason Code: 16") or
                 emsg.__contains__("Reason Code: 12"))):
-                self._delete_userid(url)
+                self.zvmclient.remove_vm(userid)
             else:
                 LOG.debug("exception not able to handle in delete_userid "
                           "%s", self._name)
                 raise err
         except Exception as err:
-            emsg = err.format_message()
+            # TODO:implement after exception merged
+            # emsg = err.format_message()
+            emsg = ""
             if (emsg.__contains__("Invalid nodes and/or groups") and
                     emsg.__contains__("Forbidden")):
                 # Assume neither zVM userid nor xCAT node exist in this case
@@ -318,45 +270,28 @@ class VMOps(object):
             else:
                 raise err
 
-    def delete_xcat_node(self, instance_name):
-        """Remove xCAT node for z/VM instance."""
-        url = self._xcat_url.rmdef('/' + instance_name)
-        try:
-            zvmutils.xcat_request("DELETE", url)
-        except Exception as err:
-            if err.format_message().__contains__("Could not find an object"):
-                # The xCAT node not exist
-                return
-            else:
-                raise err
-
     def capture_instance(self, instance_name):
         """Invoke xCAT REST API to capture a instance."""
         LOG.info('Begin to capture instance %s' % instance_name)
-        url = self._xcat_url.capture()
         nodename = instance_name
         image_id = str(uuid.uuid1())
         image_uuid = image_id.replace('-', '_')
         profile = image_uuid
-        body = ['nodename=' + nodename,
-                'profile=' + profile]
-        res = zvmutils.xcat_request("POST", url, body)
+        res = self.zvmclient.do_capture(nodename, profile)
         LOG.info(res['info'][3][0])
         image_name = res['info'][3][0].split('(')[1].split(')')[0]
         return image_name
 
     def delete_image(self, image_name):
         """"Invoke xCAT REST API to delete a image."""
-        url = self._xcat_url.rmimage('/' + image_name)
         try:
-            zvmutils.xcat_request("DELETE", url)
+            self.zvmclient.remove_image_file(image_name)
         except zvmutils.ZVMException:
             LOG.warn(("Failed to delete image file %s from xCAT") %
                     image_name)
 
-        url = self._xcat_url.rmobject('/' + image_name)
         try:
-            zvmutils.xcat_request("DELETE", url)
+            self.zvmclient.remove_image_definition(image_name)
         except zvmutils.ZVMException:
             LOG.warn(("Failed to delete image definition %s from xCAT") %
                     image_name)
