@@ -5,6 +5,7 @@ import dist
 import os
 import uuid
 
+from zvmsdk import client as zvmclient
 from zvmsdk import config
 from zvmsdk import log
 from zvmsdk import utils as zvmutils
@@ -25,27 +26,12 @@ def _get_vmops():
 class VMOps(object):
 
     def __init__(self):
-        self._xcat_url = zvmutils.get_xcat_url()
+        self.zvmclient = zvmclient.get_zvmclient()
         self._dist_manager = dist.ListDistManager()
 
-    def _power_state(self, instance_name, method, state):
-        """Invoke xCAT REST API to set/get power state for a instance."""
-        body = [state]
-        url = self._xcat_url.rpower('/' + instance_name)
-        return zvmutils.xcat_request(method, url, body)
-
-    def get_power_state(self, instance_name):
+    def get_power_state(self, vm_id):
         """Get power status of a z/VM instance."""
-        LOG.debug('Query power stat of %s' % instance_name)
-        res_dict = self._power_state(instance_name, "GET", "stat")
-
-        @zvmutils.wrap_invalid_xcat_resp_data_error
-        def _get_power_string(d):
-            tempstr = d['info'][0][0]
-            return tempstr[(tempstr.find(':') + 2):].strip()
-
-        power_stat = _get_power_string(res_dict)
-        return power_stat
+        return self.zvmclient.get_power_state(vm_id)
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def _lsdef(self, instance_name):
@@ -159,14 +145,16 @@ class VMOps(object):
     def power_on(self, instance_name):
         """"Power on z/VM instance."""
         try:
-            self._power_state(instance_name, "PUT", "on")
+            self.zvmclient.power_on(instance_name)
         except Exception as err:
-            err_str = err.format_message()
+            err_str = str(err)
             if ("Return Code: 200" in err_str and
                     "Reason Code: 8" in err_str):
                 # Instance already not active
                 LOG.warning("z/VM instance %s already active", instance_name)
                 return
+            else:
+                raise
 
     def create_userid(self, instance_name, cpu, memory, image_name):
         """Create z/VM userid into user directory for a z/VM instance."""

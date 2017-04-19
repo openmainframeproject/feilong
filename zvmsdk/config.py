@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 
 import ConfigParser
@@ -27,6 +25,7 @@ config_dicts_default = {
         'zvm_user_root_vdev': {"default": '0100'},
         'root_disk_units': {"default": '3338'},
         'zvm_diskpool_type': {"default": 'ECKD'},
+        'client_type': {"default": 'xcat'},
     },
     'network': {
         'my_ip': {},
@@ -85,7 +84,7 @@ class ConfigOpts(object):
         raises: RequiredOptError
         '''
         for k, v in conf.items():
-            if v.required and v.default is None:
+            if v.required and (v.default is None):
                 raise RequiredOptError(k)
 
     def _check_type(self, conf):
@@ -103,13 +102,13 @@ class ConfigOpts(object):
                 # }
                 if isinstance(dv, dict):
                     dv.setdefault('type', None)
-                    dv.setdefault('required', "false")
+                    dv.setdefault('required', False)
                     dv.setdefault('default', None)
                     self.confs[dk] = dv
                 else:
                     dv = {}
                     dv['type'] = None
-                    dv['required'] = "false"
+                    dv['required'] = False
                     dv['default'] = v[dk]
                     self.confs[dk] = dv
         return self.confs
