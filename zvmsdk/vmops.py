@@ -109,9 +109,9 @@ class VMOps(object):
         zvmutils.makehosts()
 
     def _add_nic_to_table(self, instance_name, ip_addr):
-        nic_vdev = CONF.zvm_default_nic_vdev
-        nic_name = CONF.nic_name
-        zhcpnode = CONF.zhcp
+        nic_vdev = CONF.zvm.default_nic_vdev
+        nic_name = CONF.network.nic_name
+        zhcpnode = CONF.xcat.zhcp
         zvmutils.create_xcat_table_about_nic(zhcpnode,
                                          instance_name,
                                          nic_name,
@@ -130,7 +130,7 @@ class VMOps(object):
                 self._reachable = True
 
         zvmutils.looping_call(_check_reachable, 5, 5, 30,
-            CONF.zvm_reachable_timeout,
+            CONF.instance.reachable_timeout,
             zvmutils.ZVMException(msg='not reachable, retry'))
 
     def is_reachable(self, instance_name):
@@ -171,12 +171,12 @@ class VMOps(object):
         try:
             self.zvmclient.make_vm(instance_name, kwprofile,
                                    cpu, memory, image_name)
-            size = CONF.root_disk_units
+            size = CONF.zvm.root_disk_units
             # Add root disk and set ipl
-            self.add_mdisk(instance_name, CONF.zvm_diskpool,
-                           CONF.zvm_user_root_vdev,
+            self.add_mdisk(instance_name, CONF.zvm.diskpool,
+                           CONF.zvm.user_root_vdev,
                                size)
-            self.set_ipl(instance_name, CONF.zvm_user_root_vdev)
+            self.set_ipl(instance_name, CONF.zvm.user_root_vdev)
 
         except Exception as err:
             msg = ("Failed to create z/VM userid: %s") % err
@@ -190,7 +190,7 @@ class VMOps(object):
         access mode default as 'MR'.
 
         """
-        disk_type = CONF.zvm_diskpool_type
+        disk_type = CONF.zvm.diskpool_type
         if (disk_type == 'ECKD'):
             action = '--add3390'
         elif (disk_type == 'FBA'):
@@ -214,8 +214,8 @@ class VMOps(object):
         """Return the names of all the instances known to the virtualization
         layer, as a list.
         """
-        zvm_host = CONF.zvm_host
-        hcp_base = CONF.zhcp
+        zvm_host = CONF.zvm.host
+        hcp_base = CONF.xcat.zhcp
 
         res_dict = self.zvmclient.get_tabdump_info()
         instances = []
@@ -230,7 +230,7 @@ class VMOps(object):
                 # zvm host and zhcp are not included in the list
                 if (hcp.upper() == hcp_base.upper() and
                         node.upper() not in (zvm_host.upper(),
-                        hcp_short.upper(), CONF.zvm_xcat_master.upper())):
+                        hcp_short.upper(), CONF.xcat.master_node.upper())):
                     instances.append(node)
 
         return instances
@@ -348,60 +348,6 @@ class VOLUMEOps(object):
         """
         vdev = hex(int(base, 16) + offset)[2:]
         return vdev.rjust(4, '0')
-
-    def get_free_mgr_vdev(self):
-        """Get a free vdev address in volume_mgr userid
-
-        Returns:
-        :vdev:   virtual device number, string of 4 bit hex
-        """
-        vdev = CONF.volume_vdev_start
-        if os.path.exists(self._zvm_volumes_file):
-            volumes = []
-            with open(self._zvm_volumes_file, 'r') as f:
-                volumes = f.readlines()
-            if len(volumes) >= 1:
-                last_line = volumes[-1]
-                last_vdev = last_line.strip().split(" ")[0]
-                vdev = self._generate_vdev(last_vdev)
-                LOG.debug("last_vdev used in volumes file: %s,"
-                          " return vdev: %s", last_vdev, vdev)
-            else:
-                LOG.debug("volumes file has no vdev defined. ")
-        else:
-            msg = ("Cann't find z/VM volume management file")
-            raise zvmutils.ZVMException(msg)
-        return vdev
-
-    def get_free_vdev(self, userid):
-        """Get a free vdev address in target userid
-
-        Returns:
-        :vdev:   virtual device number, string of 4 bit hex
-        """
-        vdev = CONF.volume_vdev_start
-        if os.path.exists(self._zvm_volumes_file):
-            volumes = []
-            with open(self._zvm_volumes_file, 'r') as f:
-                volumes = f.readlines()
-            max_vdev = ''
-            for volume in volumes:
-                volume_info = volume.strip().split(' ')
-                attached_userid = volume_info[2]
-                curr_vdev = volume_info[3]
-                if (attached_userid == userid) and (
-                    (max_vdev == '') or (
-                        int(curr_vdev, 16) > int(max_vdev, 16))):
-                    max_vdev = curr_vdev
-            if max_vdev != '':
-                vdev = self._generate_vdev(max_vdev)
-                LOG.debug("max_vdev used in volumes file: %s,"
-                              " return vdev: %s", max_vdev, vdev)
-        else:
-            msg = ("Cann't find z/VM volume management file")
-            raise zvmutils.ZVMException(msg)
-        LOG.debug("Final link address in target VM: %s", vdev)
-        return vdev
 
     def get_volume_info(self, uuid):
         """Get the volume status from the volume management file

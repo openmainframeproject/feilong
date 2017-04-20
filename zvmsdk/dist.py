@@ -269,13 +269,13 @@ class rhel7(rhel):
 
     def _get_device_filename(self, device_num):
         # Construct a device like ifcfg-enccw0.0.1000, ifcfg-enccw0.0.1003
-        base = int(CONF.zvm_default_nic_vdev, 16)
+        base = int(CONF.zvm.default_nic_vdev, 16)
         device = str(hex(base + device_num * 3))[2:]
         return 'ifcfg-enccw0.0.' + str(device).zfill(4)
 
     def _get_device_name(self, device_num):
         # Construct a device like enccw0.0.1000, enccw0.0.1003
-        base = int(CONF.zvm_default_nic_vdev, 16)
+        base = int(CONF.zvm.default_nic_vdev, 16)
         device = str(hex(base + device_num * 3))[2:]
         return 'enccw0.0.' + str(device).zfill(4)
 

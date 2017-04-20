@@ -46,7 +46,7 @@ class Logger():
         return self.logger
 
 
-log_level = CONF.LOG_LEVEL
+log_level = CONF.logging.log_level
 if log_level is "logging.INFO" or "logging.info":
     log_level = logging.INFO
 elif log_level is "logging.DEBUG" or "logging.debug":
@@ -59,5 +59,5 @@ elif log_level is "logging.CRITICAL" or "logging.critical":
     log_level = logging.CRITICAL
 
 LOG = Logger(
-        path=CONF.LOG_FILE, logger='ZVMSDK',
+        path=CONF.logging.log_level, logger='ZVMSDK',
         Clevel = log_level, Flevel = log_level).getlog()

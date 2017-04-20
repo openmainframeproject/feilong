@@ -28,18 +28,18 @@ CONF = config.CONF
 _DEFAULT_MODE = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
 
 
-def get_cfg_str(ip_v4, address_read = CONF.zvm_default_nic_vdev):
-    cfg_str = 'DEVICE=\"' + CONF.device + '\"\n'
+def get_cfg_str(ip_v4, address_read = CONF.zvm.default_nic_vdev):
+    cfg_str = 'DEVICE=\"' + CONF.network.device + '\"\n'
     cfg_str += 'BOOTPROTO=\"static\"\n'
-    cfg_str += 'BROADCAST=\"' + CONF.broadcast_v4 + '\"\n'
-    cfg_str += 'GATEWAY=\"' + CONF.gateway_v4 + '\"\n'
+    cfg_str += 'BROADCAST=\"' + CONF.network.broadcast_v4 + '\"\n'
+    cfg_str += 'GATEWAY=\"' + CONF.network.gateway_v4 + '\"\n'
     cfg_str += 'IPADDR=\"' + ip_v4 + '\"\n'
-    cfg_str += 'NETMASK=\"' + CONF.netmask_v4 + '\"\n'
+    cfg_str += 'NETMASK=\"' + CONF.network.netmask_v4 + '\"\n'
     cfg_str += 'NETTYPE=\"qeth\"\n'
     cfg_str += 'ONBOOT=\"yes\"\n'
     cfg_str += 'PORTNAME=\"PORT' + address_read + '\"\n'
     cfg_str += 'OPTIONS=\"layer2=1\"\n'
-    cfg_str += 'SUBCHANNELS=\"' + CONF.subchannels + '\"\n'
+    cfg_str += 'SUBCHANNELS=\"' + CONF.network.subchannels + '\"\n'
     return cfg_str
 
 
@@ -88,9 +88,9 @@ def generate_file(file_content, path):
 
 
 def create_config_drive(ip_addr, os_version):
-    if not os.path.exists(CONF.tempdir):
-        os.mkdir(CONF.tempdir)
-    cfg_dir = os.path.join(CONF.tempdir, 'openstack')
+    if not os.path.exists(CONF.instance.tempdir):
+        os.mkdir(CONF.instance.tempdir)
+    cfg_dir = os.path.join(CONF.instance.tempdir, 'openstack')
     if os.path.exists(cfg_dir):
         shutil.rmtree(cfg_dir)
     content_dir = os.path.join(cfg_dir, 'content')
@@ -110,9 +110,9 @@ def create_config_drive(ip_addr, os_version):
     vendor_data_path = os.path.join(latest_dir, 'vendor_data.json')
     generate_file('{}', vendor_data_path)
 
-    tar_path = os.path.join(CONF.tempdir, 'cfgdrive.tgz')
+    tar_path = os.path.join(CONF.instance.tempdir, 'cfgdrive.tgz')
     tar = tarfile.open(tar_path, "w:gz")
-    os.chdir(CONF.tempdir)
+    os.chdir(CONF.instance.tempdir)
     tar.add('openstack')
     tar.close()
 

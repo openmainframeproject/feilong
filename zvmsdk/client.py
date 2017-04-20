@@ -86,11 +86,11 @@ class XCATClient(ZVMClient):
 
     def make_vm(self, userid, kwprofile, cpu, memory, image_name):
         body = [kwprofile,
-                'password=%s' % CONF.zvm_user_default_password,
+                'password=%s' % CONF.zvm.user_default_password,
                 'cpu=%i' % cpu,
                 'memory=%im' % memory,
                 'privilege=%s' % const.ZVM_USER_DEFAULT_PRIVILEGE,
-                'ipl=%s' % CONF.zvm_user_root_vdev,
+                'ipl=%s' % CONF.zvm.user_root_vdev,
                 'imagename=%s' % image_name]
 
         url = zvmutils.get_xcat_url().mkvm('/' + userid)
@@ -161,7 +161,7 @@ class XCATClient(ZVMClient):
 
 
 def get_zvmclient():
-    if CONF.client_type == 'xcat':
+    if CONF.zvm.client_type == 'xcat':
         return XCATClient()
     else:
         # TODO: raise Exception

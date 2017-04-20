@@ -44,8 +44,8 @@ class XCATUrl(object):
 
     def __init__(self):
         self.PREFIX = '/xcatws'
-        self.SUFFIX = ''.join(('?userName=', CONF.zvm_xcat_username,
-                               '&password=', CONF.zvm_xcat_password,
+        self.SUFFIX = ''.join(('?userName=', CONF.xcat.username,
+                               '&password=', CONF.xcat.password,
                                '&format=json'))
 
         # xcat objects
@@ -175,7 +175,7 @@ class XCATConnection(object):
 
     def __init__(self):
         """Initialize https connection to xCAT service."""
-        self.host = CONF.zvm_xcat_server
+        self.host = CONF.xcat.server
         self.conn = httplib.HTTPSConnection(self.host)
 
     def request(self, method, url, body=None, headers={}):
@@ -192,13 +192,13 @@ class XCATConnection(object):
             headers = {'content-type': 'text/plain',
                        'content-length': len(body)}
 
-        _rep_ptn = ''.join(('&password=', CONF.zvm_xcat_password))
+        _rep_ptn = ''.join(('&password=', CONF.xcat.password))
         LOG.debug("Sending request to xCAT. xCAT-Server:%(xcat_server)s "
                   "Request-method:%(method)s "
                   "URL:%(url)s "
                   "Headers:%(headers)s "
                   "Body:%(body)s" %
-                  {'xcat_server': CONF.zvm_xcat_server,
+                  {'xcat_server': CONF.xcat.server,
                    'method': method,
                    'url': url.replace(_rep_ptn, ''),  # hide password in log
                    'headers': str(headers),
@@ -444,7 +444,8 @@ def xdsh(node, commands):
 
 
 def get_host():
-    return ''.join([pwd.getpwuid(os.geteuid()).pw_name, '@', CONF.my_ip])
+    return ''.join([pwd.getpwuid(os.geteuid()).pw_name, '@',
+                    CONF.network.my_ip])
 
 
 def punch_file(node, fn, fclass):
@@ -528,7 +529,7 @@ def create_xcat_node(instance_name, zhcp, userid=None):
 
 
 def _get_instances_path():
-        return os.path.normpath(CONF.instances_path)
+        return os.path.normpath(CONF.instance.instances_path)
 
 
 def get_instance_path(os_node, instance_name):
@@ -622,7 +623,7 @@ def update_node_info(instance_name, image_name, os_version):
 
 def deploy_node(instance_name, image_name, transportfiles=None, vdev=None):
     LOG.debug("Begin to deploy image on instance %s", instance_name)
-    vdev = vdev or CONF.zvm_user_root_vdev
+    vdev = vdev or CONF.zvm.user_root_vdev
     remote_host_info = get_host()
     body = ['netboot',
             'device=%s' % vdev,
@@ -647,7 +648,7 @@ def punch_xcat_auth_file(instance_path, instance_name):
 
 def get_mn_pub_key():
     cmd = 'cat /root/.ssh/id_rsa.pub'
-    resp = xdsh(CONF.zvm_xcat_master, cmd)
+    resp = xdsh(CONF.xcat.master_node, cmd)
     key = resp['data'][0][0]
     start_idx = key.find('ssh-rsa')
     key = key[start_idx:]
