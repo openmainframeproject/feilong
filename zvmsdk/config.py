@@ -18,7 +18,7 @@ import os
 
 
 config_dicts_default = {
-    'xCAT': {
+    'xcat': {
         'zvm_xcat_server': {"required": True},
         'zvm_xcat_username': {"type": None, "required": True},
         'zvm_xcat_password': {"default": None, "required": True},
@@ -27,10 +27,10 @@ config_dicts_default = {
         'zhcp': {"default": None, "type": None, "required": True},
     },
     'logging': {
-        'LOG_FILE': {"default": "zvmsdk.log"},
-        'LOG_LEVEL': {"default": "logging.INFO"},
+        'log_file': {"default": "zvmsdk.log"},
+        'log_level': {"default": "logging.INFO"},
     },
-    'zVM': {
+    'zvm': {
         'zvm_host': {},
         'zvm_default_nic_vdev': {"default": '1000'},
         'zvm_user_default_password': {"default": 'dfltpass'},
@@ -49,7 +49,7 @@ config_dicts_default = {
         'subchannels': {},
         'nic_name': {},
     },
-    'Volume': {
+    'volume': {
         'volume_mgr_userid': {},
         'volume_mgr_node': {},
         'volume_diskpool': {},
@@ -68,7 +68,6 @@ class ConfigOpts(object):
 
     def __init__(self):
         self.dicts = {}
-        self.confs = {}
 
     def register(self):
         cf = ConfigParser.ConfigParser()
@@ -81,32 +80,58 @@ class ConfigOpts(object):
             configs = self.merge(config_dicts_default, config_dicts_override)
         except ImportError:
             pass
-        conf_fill = self._config_fill_option(configs)
-        con = self.toDict(conf_fill)
+        con = self._config_fill_option(configs)
         self._check_required(con)
         self._check_type(con)
 
-        r_con = {}
-        for k, v in con.items():
-            r_con[k] = v.default
-        r_con = self.toDict(r_con)
-        return r_con
+        for k1, v1 in con.items():
+            r_con = {}
+            for k2, v2 in v1.items():
+                r_con[k2] = v2.default
+            con[k1] = r_con
+        # the format of conf : xCAT:{'zvm_xcat_server':xxx,'zvm_xcat_username':xxx}
+        # call method :CONF.group.option   e.g: CONF.xCAT.zvm_xcat_server
+        con = self.toDict(con)
+        return con
 
     def _check_required(self, conf):
         '''Check that all opts marked as required have values specified.
         raises: RequiredOptError
+        the format of conf:
+        xat:{
+            'zvm_xcat_server':{"default":xx,"type":int,"required":true}
+            }
         '''
-        for k, v in conf.items():
-            if v.required and (v.default is None):
-                raise RequiredOptError(k)
+        for v1 in conf.values():
+            for k2, v2 in v1.items():
+                if v2.required and (v2.default is None):
+                    raise RequiredOptError(k2)
 
     def _check_type(self, conf):
-        for k, v in conf.items():
-            if v.type is 'int':
-                v.default = int(v.default)
+        '''
+        the format of conf:
+        xat:{
+            'zvm_xcat_server':{"default":xx,"type":int,"required":true}
+            }
+        '''
+        for v1 in conf.values():
+            for k2, v2 in v1.items():
+                if v2.type is 'int':
+                    v2.default = int(v2.default)
 
     def _config_fill_option(self, conf):
-        for v in conf.values():
+        '''
+        :param conf: 
+        xat:{
+            'zvm_xcat_server':{"default":xx,"type":int,"required":true}
+            }
+        :return conf:
+        xat:{
+            'zvm_xcat_server':{"default":xx,"type":int,"required":true}
+            }
+        '''
+        for k, v in conf.items():
+            confs = {}
             for dk, dv in v.items():
                 # the format of dk,dv:
                 # 'zvm_xcat_server':{"default":xx,"type":int,"required":true}
@@ -117,14 +142,15 @@ class ConfigOpts(object):
                     dv.setdefault('type', None)
                     dv.setdefault('required', False)
                     dv.setdefault('default', None)
-                    self.confs[dk] = dv
+                    confs[dk] = dv
                 else:
                     dv = {}
                     dv['type'] = None
                     dv['required'] = False
                     dv['default'] = v[dk]
-                    self.confs[dk] = dv
-        return self.confs
+                    confs[dk] = dv
+            conf[k] = confs
+        return conf
 
     def config_ini_to_dicts(self, secs, cf):
         for sec in secs:
@@ -143,12 +169,11 @@ class ConfigOpts(object):
             'zvm_xcat_server':{"default":None,"type":None,"required":false}
             }
         param override:
-        'xCAT':{
+        'xcat':{
             'zvm_xcat_server':None,
             }
         returns r: is a dict and the format is same as
         the parameter 'default' or 'override'
-
         '''
         r = {}
         for k, v in defaults.items():
