@@ -1,18 +1,34 @@
+# Copyright 2017 IBM Corp.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+
 import config
 import log
 import six
+
 
 CONF = config.CONF
 LOG = log.LOG
 
 
-class BaseException(Exception):
+class SDKBaseException(Exception):
     """
     Inherit from this class and define a 'msg_fmt' property.
     That msg_fmt will get printf'd with the keyword arguments
     provided to the constructor.
     """
-    msg_fmt = "An unknown exception occurred."
+    msg_fmt = "z/VM SDK error: %(msg)s"
     code = 500
     headers = {}
     safe = False
@@ -36,67 +52,63 @@ class BaseException(Exception):
                 message = self.msg_fmt
 
         self.message = message
-        super(BaseException, self).__init__(message)
+        super(SDKBaseException, self).__init__(message)
 
     def format_message(self):
         return self.args[0]
 
 
-class ZVMDriverError(BaseException):
-    msg_fmt = 'z/VM driver error: %(msg)s'
-
-
-class ZVMXCATRequestFailed(BaseException):
+class ZVMXCATRequestFailed(SDKBaseException):
     msg_fmt = 'Request to xCAT server %(xcatserver)s failed: %(msg)s'
 
 
-class ZVMInvalidXCATResponseDataError(BaseException):
+class ZVMInvalidXCATResponseDataError(SDKBaseException):
     msg_fmt = 'Invalid data returned from xCAT: %(msg)s'
 
 
-class ZVMXCATInternalError(BaseException):
+class ZVMXCATInternalError(SDKBaseException):
     msg_fmt = 'Error returned from xCAT: %(msg)s'
 
 
-class ZVMVolumeError(BaseException):
+class ZVMVolumeError(SDKBaseException):
     msg_fmt = 'Volume error: %(msg)s'
 
 
-class ZVMImageError(BaseException):
+class ZVMImageError(SDKBaseException):
     msg_fmt = "Image error: %(msg)s"
 
 
-class ZVMGetImageFromXCATFailed(BaseException):
+class ZVMGetImageFromXCATFailed(SDKBaseException):
     msg_fmt = 'Get image from xCAT failed: %(msg)s'
 
 
-class ZVMNetworkError(BaseException):
+class ZVMNetworkError(SDKBaseException):
     msg_fmt = "z/VM network error: %(msg)s"
 
 
-class ZVMXCATXdshFailed(BaseException):
+class ZVMXCATXdshFailed(SDKBaseException):
     msg_fmt = 'Execute xCAT xdsh command failed: %(msg)s'
 
 
-class ZVMXCATCreateNodeFailed(BaseException):
+class ZVMXCATCreateNodeFailed(SDKBaseException):
     msg_fmt = 'Create xCAT node %(node)s failed: %(msg)s'
 
 
-class ZVMXCATCreateUserIdFailed(BaseException):
+class ZVMXCATCreateUserIdFailed(SDKBaseException):
     msg_fmt = 'Create xCAT user id %(instance)s failed: %(msg)s'
 
 
-class ZVMXCATUpdateNodeFailed(BaseException):
+class ZVMXCATUpdateNodeFailed(SDKBaseException):
     msg_fmt = 'Update node %(node)s info failed: %(msg)s'
 
 
-class ZVMXCATDeployNodeFailed(BaseException):
+class ZVMXCATDeployNodeFailed(SDKBaseException):
     msg_fmt = 'Deploy image on node %(node)s failed: %(msg)s'
 
 
-class ZVMConfigDriveError(BaseException):
+class ZVMConfigDriveError(SDKBaseException):
     msg_fmt = 'Create configure drive failed: %(msg)s'
 
 
-class ZVMRetryException(BaseException):
+class ZVMRetryException(SDKBaseException):
     pass
