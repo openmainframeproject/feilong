@@ -1,17 +1,28 @@
-# import config as CONF
-# import constants as const
+# Copyright 2017 IBM Corp.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+
 import os
 import dist
-# import vmops
-# import utils as zvmutils
-# import six
 import tarfile
-# import tempfile
 import shutil
 import stat
-from config import CONF
-# from log import LOG
-# from utils import ZVMException
+
+from zvmsdk import config
+
+
+CONF = config.CONF
 
 
 _DEFAULT_MODE = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
