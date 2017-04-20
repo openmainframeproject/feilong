@@ -81,6 +81,7 @@ class ConfigOpts(object):
         except ImportError:
             pass
         con = self._config_fill_option(configs)
+        con = self.toDict(con)
         self._check_required(con)
         self._check_type(con)
 
@@ -103,9 +104,7 @@ class ConfigOpts(object):
             }
         '''
         for v1 in conf.values():
-            print v1, 1111111111111
             for k2, v2 in v1.items():
-                print v2, 22222222222
                 if v2.required and (v2.default is None):
                     raise RequiredOptError(k2)
 
