@@ -17,7 +17,7 @@ from zvmsdk import config
 from zvmsdk import log
 from zvmsdk import utils as zvmutils
 from zvmsdk import constants as const
-
+from zvmsdk import exception
 
 CONF = config.CONF
 LOG = log.LOG
@@ -44,8 +44,18 @@ class XCATClient(ZVMClient):
         return zvmutils.xcat_request(method, url, body)
 
     def power_on(self, userid):
-        """"Power on z/VM instance."""
-        self._power_state(userid, "PUT", "on")
+        """"Power on VM."""
+        try:
+            self._power_state(userid, "PUT", "on")
+        except exception.ZVMXCATInternalError as err:
+            err_str = str(err)
+            if ("Return Code: 200" in err_str and
+                    "Reason Code: 8" in err_str):
+                # VM already active
+                LOG.warning("VM %s already active", userid)
+                return
+            else:
+                raise
 
     def get_power_state(self, userid):
         """Get power status of a z/VM instance."""
