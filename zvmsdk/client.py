@@ -14,13 +14,16 @@
 
 
 from zvmsdk import config
-from zvmsdk import log
-from zvmsdk import utils as zvmutils
 from zvmsdk import constants as const
 from zvmsdk import exception
+from zvmsdk import log
+from zvmsdk import utils as zvmutils
+
 
 CONF = config.CONF
 LOG = log.LOG
+
+_XCAT_CLIENT = None
 
 
 class ZVMClient(object):
@@ -172,7 +175,11 @@ class XCATClient(ZVMClient):
 
 def get_zvmclient():
     if CONF.zvm.client_type == 'xcat':
-        return XCATClient()
+        global _XCAT_CLIENT
+        if _XCAT_CLIENT is None:
+            return XCATClient()
+        else:
+            return _XCAT_CLIENT
     else:
         # TODO: raise Exception
         pass
