@@ -149,17 +149,7 @@ class VMOps(object):
 
     def power_on(self, instance_name):
         """"Power on z/VM instance."""
-        try:
-            self.zvmclient.power_on(instance_name)
-        except Exception as err:
-            err_str = str(err)
-            if ("Return Code: 200" in err_str and
-                    "Reason Code: 8" in err_str):
-                # Instance already not active
-                LOG.warning("z/VM instance %s already active", instance_name)
-                return
-            else:
-                raise
+        self.zvmclient.power_on(instance_name)
 
     def create_userid(self, instance_name, cpu, memory, image_name):
         """Create z/VM userid into user directory for a z/VM instance."""
