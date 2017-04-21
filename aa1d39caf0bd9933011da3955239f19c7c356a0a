@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "43b51535_83715731",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-04-21T10:23:45Z",
+      "side": 1,
+      "message": "should not be ZVMXCATInternalError",
+      "range": {
+        "startLine": 50,
+        "startChar": 25,
+        "endLine": 50,
+        "endChar": 45
+      },
+      "revId": "aa1d39caf0bd9933011da3955239f19c7c356a0a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
