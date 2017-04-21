@@ -59,5 +59,5 @@ elif log_level is "logging.CRITICAL" or "logging.critical":
     log_level = logging.CRITICAL
 
 LOG = Logger(
-        path=CONF.logging.log_level, logger='ZVMSDK',
+        path=CONF.logging.log_file, logger='ZVMSDK',
         Clevel = log_level, Flevel = log_level).getlog()
