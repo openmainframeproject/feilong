@@ -24,19 +24,17 @@ import time
 
 from six.moves import http_client as httplib
 
-from config import CONF
-from log import LOG
+from zvmsdk import config
+from zvmsdk import exception
+from zvmsdk import log
 
 import constants as const
 
 
+CONF = config.CONF
+LOG = log.LOG
 _XCAT_URL = None
 _DEFAULT_MODE = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
-
-
-class ZVMException(Exception):
-    def __init__(self, msg=None):
-        super(ZVMException, self).__init__(msg)
 
 
 class XCATUrl(object):
@@ -209,18 +207,18 @@ class XCATConnection(object):
         except socket.gaierror as err:
             msg = ("Failed to connect xCAT server %(srv)s: %(err)s" %
                    {'srv': self.host, 'err': err})
-            raise ZVMException(msg)
+            raise exception.ZVMXCATRequestFailed(msg)
         except (socket.error, socket.timeout) as err:
             msg = ("Communicate with xCAT server %(srv)s error: %(err)s" %
                    {'srv': self.host, 'err': err})
-            raise ZVMException(msg)
+            raise exception.ZVMXCATRequestFailed(msg)
 
         try:
             res = self.conn.getresponse()
         except Exception as err:
             msg = ("Failed to get response from xCAT server %(srv)s: "
                      "%(err)s" % {'srv': self.host, 'err': err})
-            raise ZVMException(msg)
+            raise exception.ZVMXCATRequestFailed(msg)
 
         msg = res.read()
         resp = {
@@ -243,7 +241,7 @@ class XCATConnection(object):
         if err is not None:
             msg = ('Request to xCAT server %(srv)s failed:  %(err)s' %
                    {'srv': self.host, 'err': err})
-            raise ZVMException(msg)
+            raise exception.ZVMXCATRequestFailed(msg)
 
         return resp
 
@@ -271,7 +269,7 @@ def jsonloads(jsonstr):
     except ValueError:
         errmsg = "xCAT response data is not in JSON format"
         LOG.error(errmsg)
-        raise ZVMException(msg=errmsg)
+        raise exception.ZVMInvalidXCATResponseDataError(msg=errmsg)
 
 
 @contextlib.contextmanager
@@ -282,7 +280,7 @@ def expect_invalid_xcat_resp_data(data=''):
     except (ValueError, TypeError, IndexError, AttributeError,
             KeyError) as err:
         LOG.error('Parse %s encounter error', data)
-        raise ZVMException(msg=err)
+        raise exception.ZVMInvalidXCATResponseDataError(msg=err)
 
 
 def wrap_invalid_xcat_resp_data_error(function):
@@ -294,7 +292,7 @@ def wrap_invalid_xcat_resp_data_error(function):
             return function(*arg, **kwargs)
         except (ValueError, TypeError, IndexError, AttributeError,
                 KeyError) as err:
-            raise ZVMException(msg=err)
+            raise exception.ZVMInvalidXCATResponseDataError(msg=err)
 
     return decorated_function
 
@@ -329,7 +327,7 @@ def translate_xcat_resp(rawdata, dirt):
     if data == {}:
         msg = "No value matched with keywords. Raw Data: %(raw)s; " \
                 "Keywords: %(kws)s" % {'raw': rawdata, 'kws': str(dirt)}
-        raise ZVMException(msg=msg)
+        raise exception.ZVMInvalidXCATResponseDataError(msg=msg)
 
     return data
 
@@ -369,7 +367,7 @@ def load_xcat_resp(message):
                 # ignore known warnings or errors:
                 continue
             else:
-                raise ZVMException(msg=message)
+                raise exception.ZVMXCATInternalError(msg=message)
 
     _log_warnings(resp)
 
