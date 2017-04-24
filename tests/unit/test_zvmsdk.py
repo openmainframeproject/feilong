@@ -4,13 +4,14 @@ import unittest
 
 from zvmsdk.config import CONF
 import zvmsdk.utils as zvmutils
-import zvmsdk.vmops as sdkapi
+from zvmsdk import vmops
+from zvmsdk import networkops
 
 
 class SDKTestCase(unittest.TestCase):
     def setUp(self):
-        self.vmops = sdkapi._get_vmops()
-        self.volumeops = sdkapi._get_volumeops()
+        self.vmops = vmops._get_vmops()
+        self.networkops = networkops._get_networkops()
 
     def _fake_fun(self, value = None):
         return lambda *args, **kwargs: value
@@ -186,6 +187,11 @@ class SDKVMOpsTestCase(SDKTestCase):
 
 
 class SDKVolumeOpsTestCase(SDKTestCase):
+    def test_temp(self):
+        pass
+
+
+class SDKNetworkOpsTestCase(SDKTestCase):
     def test_temp(self):
         pass
 
