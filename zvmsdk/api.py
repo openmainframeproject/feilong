@@ -16,6 +16,7 @@
 from zvmsdk import vmops
 from zvmsdk import hostops
 from zvmsdk import config
+from zvmsdk import networkops
 
 
 CONF = config.CONF
@@ -27,6 +28,7 @@ class SDKAPI(object):
     def __init__(self):
         self._vmops = vmops.get_vmops()
         self._hostops = hostops.get_hostops()
+        self._networkops = networkops.get_networkops()
 
     def power_on(self, vm_id):
         self._vmops.power_on(vm_id)
