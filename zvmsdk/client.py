@@ -13,6 +13,7 @@
 #    under the License.
 
 
+import os
 from zvmsdk import config
 from zvmsdk import constants as const
 from zvmsdk import exception
@@ -109,6 +110,16 @@ class XCATClient(ZVMClient):
         url = zvmutils.get_xcat_url().mkvm('/' + userid)
         zvmutils.xcat_request("POST", url, body)
 
+    def create_xcat_node(self, userid):
+        """Create xCAT node for z/VM instance."""
+        LOG.debug("Creating xCAT node for %s" % userid)
+        body = ['userid=%s' % userid,
+                'hcp=%s' % CONF.zhcp,
+                'mgt=zvm',
+                'groups=%s' % const.ZVM_XCAT_GROUP]
+        url = self._xcat_url.mkdef('/' + userid)
+        zvmutils.xcat_request("POST", url, body)
+
     def delete_xcat_node(self, userid):
         """Remove xCAT node for z/VM instance."""
         url = self._xcat_url.rmdef('/' + userid)
@@ -171,6 +182,42 @@ class XCATClient(ZVMClient):
                 'profile=' + profile]
         res = zvmutils.xcat_request("POST", url, body)
         return res
+
+    def lsdef_image(self, image_uuid):
+        parm = '&criteria=profile=~' + image_uuid
+        url = self._xcat_url.lsdef_image(addp=parm)
+        with zvmutils.except_xcat_call_failed_and_reraise(
+                exception.ZVMImageError):
+            res = zvmutils.xcat_request("GET", url)
+        return res
+
+    def check_space_imgimport_xcat(self, tar_file, xcat_free_space_threshold,
+                                   zvm_xcat_master):
+        pass
+
+    def export_image(self, image_file_path):
+        pass
+
+    def import_image(self, image_bundle_package, image_profile):
+        """Import the image bundle from computenode to
+        xCAT's image repository."""
+        remote_host_info = zvmutils.get_host()
+        body = ['osimage=%s' % image_bundle_package,
+                'profile=%s' % image_profile,
+                'remotehost=%s' % remote_host_info,
+                'nozip']
+        url = self._xcat_url.imgimport()
+
+        try:
+            zvmutils.xcat_request("POST", url, body)
+        except (exception.ZVMXCATRequestFailed,
+                exception.ZVMInvalidXCATResponseDataError,
+                exception.ZVMXCATInternalError) as err:
+            msg = ("Import the image bundle to xCAT MN failed: %s" %
+                   err.format_message())
+            raise exception.ZVMImageError(msg=msg)
+        finally:
+            os.remove(image_bundle_package)
 
 
 def get_zvmclient():

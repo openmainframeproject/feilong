@@ -18,6 +18,8 @@ import functools
 import json
 import os
 import pwd
+import shutil
+import six
 import socket
 import stat
 import time
@@ -256,6 +258,13 @@ def get_xcat_url():
     return _XCAT_URL
 
 
+def remove_prefix_of_unicode(str_unicode):
+    str_unicode = str_unicode.encode('unicode_escape')
+    str_unicode = str_unicode.replace('\u', '')
+    str_unicode = str_unicode.decode('utf-8')
+    return str_unicode
+
+
 def xcat_request(method, url, body=None, headers=None):
     headers = headers or {}
     conn = XCATConnection()
@@ -281,6 +290,23 @@ def expect_invalid_xcat_resp_data(data=''):
             KeyError) as err:
         LOG.error('Parse %s encounter error', data)
         raise exception.ZVMInvalidXCATResponseDataError(msg=err)
+
+
+@contextlib.contextmanager
+def except_xcat_call_failed_and_reraise(exc, **kwargs):
+    """Catch all kinds of xCAT call failure and reraise.
+
+    exc: the exception that would be raised.
+    """
+    try:
+        yield
+    except (exception.ZVMXCATRequestFailed,
+            exception.ZVMInvalidXCATResponseDataError,
+            exception.ZVMXCATInternalError) as err:
+        msg = err.format_message()
+        kwargs['msg'] = msg
+        LOG.error('XCAT response return error: %s', msg)
+        raise exc(**kwargs)
 
 
 def wrap_invalid_xcat_resp_data_error(function):
@@ -701,3 +727,85 @@ def parse_image_name(os_image_name):
 def get_image_version(os_image_name):
     os_version = os_image_name.split('-')[0]
     return os_version
+
+
+class PathUtils(object):
+    def open(self, path, mode):
+        """Wrapper on six.moves.builtins.open used to simplify unit testing."""
+        return six.moves.builtins.open(path, mode)
+
+    def _get_image_tmp_path(self):
+        image_tmp_path = os.path.normpath(CONF.zvm_image_tmp_path)
+        if not os.path.exists(image_tmp_path):
+            LOG.debug('Creating folder %s for image temp files',
+                     image_tmp_path)
+            os.makedirs(image_tmp_path)
+        return image_tmp_path
+
+    def get_bundle_tmp_path(self, tmp_file_fn):
+        bundle_tmp_path = os.path.join(self._get_image_tmp_path(), "spawn_tmp",
+                                       tmp_file_fn)
+        if not os.path.exists(bundle_tmp_path):
+            LOG.debug('Creating folder %s for image bundle temp file',
+                      bundle_tmp_path)
+            os.makedirs(bundle_tmp_path)
+        return bundle_tmp_path
+
+    def get_img_path(self, bundle_file_path, image_name):
+        return os.path.join(bundle_file_path, image_name)
+
+    def _get_snapshot_path(self):
+        snapshot_folder = os.path.join(self._get_image_tmp_path(),
+                                       "snapshot_tmp")
+        if not os.path.exists(snapshot_folder):
+            LOG.debug("Creating the snapshot folder %s", snapshot_folder)
+            os.makedirs(snapshot_folder)
+        return snapshot_folder
+
+    def _get_punch_path(self):
+        punch_folder = os.path.join(self._get_image_tmp_path(), "punch_tmp")
+        if not os.path.exists(punch_folder):
+            LOG.debug("Creating the punch folder %s", punch_folder)
+            os.makedirs(punch_folder)
+        return punch_folder
+
+    def get_spawn_folder(self):
+        spawn_folder = os.path.join(self._get_image_tmp_path(), "spawn_tmp")
+        if not os.path.exists(spawn_folder):
+            LOG.debug("Creating the spawn folder %s", spawn_folder)
+            os.makedirs(spawn_folder)
+        return spawn_folder
+
+    def make_time_stamp(self):
+        tmp_file_fn = time.strftime('%Y%m%d%H%M%S',
+                                            time.localtime(time.time()))
+        return tmp_file_fn
+
+    def get_snapshot_time_path(self):
+        snapshot_time_path = os.path.join(self._get_snapshot_path(),
+                                          self.make_time_stamp())
+        if not os.path.exists(snapshot_time_path):
+            LOG.debug('Creating folder %s for image bundle temp file',
+                      snapshot_time_path)
+            os.makedirs(snapshot_time_path)
+        return snapshot_time_path
+
+    def clean_temp_folder(self, tmp_file_fn):
+        if os.path.isdir(tmp_file_fn):
+            LOG.debug('Removing existing folder %s ', tmp_file_fn)
+            shutil.rmtree(tmp_file_fn)
+
+    def _get_instances_path(self):
+        return os.path.normpath(CONF.instances_path)
+
+    def get_instance_path(self, os_node, instance_name):
+        instance_folder = os.path.join(self._get_instances_path(), os_node,
+                                       instance_name)
+        if not os.path.exists(instance_folder):
+            LOG.debug("Creating the instance path %s", instance_folder)
+            os.makedirs(instance_folder)
+        return instance_folder
+
+    def get_console_log_path(self, os_node, instance_name):
+        return os.path.join(self.get_instance_path(os_node, instance_name),
+                            "console.log")
