@@ -16,6 +16,7 @@
 from zvmsdk import vmops
 from zvmsdk import hostops
 from zvmsdk import config
+from zvmsdk import networkops
 
 
 CONF = config.CONF
@@ -27,6 +28,7 @@ class SDKAPI(object):
     def __init__(self):
         self._vmops = vmops.get_vmops()
         self._hostops = hostops.get_hostops()
+        self._networkops = networkops._get_networkops()
 
     def power_on(self, vm_id):
         self._vmops.power_on(vm_id)
@@ -50,3 +52,9 @@ class SDKAPI(object):
         :returns: Dictionary describing diskpool usage info
         """
         return self._hostops.get_diskpool_info(host, pool)
+
+    def clean_mac_switch_host(self, node_name):
+        return self.clean_mac_switch_host(node_name)
+
+    def clean_mac_switch(self, node_name):
+        return self.clean_mac_switch(node_name)

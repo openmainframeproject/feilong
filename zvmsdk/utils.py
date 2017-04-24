@@ -660,36 +660,6 @@ def _generate_auth_file(fn, pub_key):
         f.writelines(lines)
 
 
-def clean_mac_switch_host(node_name):
-    """Clean node records in xCAT mac, host and switch table."""
-    clean_mac_switch(node_name)
-    _delete_xcat_host(node_name)
-
-
-def clean_mac_switch(node_name):
-    """Clean node records in xCAT mac and switch table."""
-    _delete_xcat_mac(node_name)
-    _delete_xcat_switch(node_name)
-
-
-def _delete_xcat_switch(node_name):
-    """Remove node switch record from xcat switch table."""
-    commands = "-d node=%s switch" % node_name
-    url = get_xcat_url().tabch("/switch")
-    body = [commands]
-
-    return xcat_request("PUT", url, body)['data']
-
-
-def _delete_xcat_host(node_name):
-    """Remove xcat hosts table rows where node name is node_name."""
-    commands = "-d node=%s hosts" % node_name
-    body = [commands]
-    url = get_xcat_url().tabch("/hosts")
-
-    return xcat_request("PUT", url, body)['data']
-
-
 def parse_image_name(os_image_name):
     profile = os_image_name.split('-')[3]
     image_name = profile.split('_')[0]

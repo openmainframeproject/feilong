@@ -46,6 +46,15 @@ class ZVMClient(object):
     def get_power_state(self, userid):
         pass
 
+    def delete_mac(self, userid):
+        pass
+
+    def delete_switch(self, userid):
+        pass
+
+    def delete_host(self, userid):
+        pass
+
 
 class XCATClient(ZVMClient):
 
@@ -250,3 +259,27 @@ class XCATClient(ZVMClient):
                 'profile=' + profile]
         res = zvmutils.xcat_request("POST", url, body)
         return res
+
+    def delete_mac(self, userid):
+        """Remove node mac record from xcat mac table."""
+        commands = "-d node=%s mac" % userid
+        url = self._xcat_url.tabch("/mac")
+        body = [commands]
+
+        return zvmutils.xcat_request("PUT", url, body)['data']
+
+    def delete_host(self, userid):
+        """Remove xcat hosts table rows where node name is node_name."""
+        commands = "-d node=%s hosts" % userid
+        body = [commands]
+        url = self._xcat_url.tabch("/hosts")
+
+        return zvmutils.xcat_request("PUT", url, body)['data']
+
+    def delete_switch(self, userid):
+        """Remove node switch record from xcat switch table."""
+        commands = "-d node=%s switch" % userid
+        url = self._xcat_url.tabch("/switch")
+        body = [commands]
+
+        return zvmutils.xcat_request("PUT", url, body)['data']
