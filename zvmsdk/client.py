@@ -250,3 +250,33 @@ class XCATClient(ZVMClient):
                 'profile=' + profile]
         res = zvmutils.xcat_request("POST", url, body)
         return res
+
+    def clean_network_resource(self, userid):
+        """Clean node records in xCAT mac, host and switch table."""
+        self._delete_mac(userid)
+        self._delete_switch(userid)
+        self._delete_host(userid)
+
+    def _delete_mac(self, userid):
+        """Remove node mac record from xcat mac table."""
+        commands = "-d node=%s mac" % userid
+        url = self._xcat_url.tabch("/mac")
+        body = [commands]
+
+        return zvmutils.xcat_request("PUT", url, body)['data']
+
+    def _delete_host(self, userid):
+        """Remove xcat hosts table rows where node name is node_name."""
+        commands = "-d node=%s hosts" % userid
+        body = [commands]
+        url = self._xcat_url.tabch("/hosts")
+
+        return zvmutils.xcat_request("PUT", url, body)['data']
+
+    def _delete_switch(self, userid):
+        """Remove node switch record from xcat switch table."""
+        commands = "-d node=%s switch" % userid
+        url = self._xcat_url.tabch("/switch")
+        body = [commands]
+
+        return zvmutils.xcat_request("PUT", url, body)['data']
