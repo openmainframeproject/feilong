@@ -18,9 +18,9 @@ import uuid
 from zvmsdk import client as zvmclient
 from zvmsdk import config
 from zvmsdk import constants as const
+from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import log
-from zvmsdk import dist
 from zvmsdk import utils as zvmutils
 
 
@@ -47,51 +47,53 @@ class VMOps(object):
         return self._zvmclient.get_power_state(vm_id)
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
-    def _get_ip_addr_from_lsdef_info(self, info):
-        for inf in info:
-            if 'ip=' in inf:
-                ip_addr = inf.rpartition('ip=')[2].strip(' \n')
-                return ip_addr
-            else:
-                pass
-
-    @zvmutils.wrap_invalid_xcat_resp_data_error
-    def _get_os_from_lsdef_info(self, info):
-        for inf in info:
-            if 'os=' in inf:
-                _os = inf.rpartition('os=')[2].strip(' \n')
-                return _os
-            else:
-                pass
-
-    @zvmutils.wrap_invalid_xcat_resp_data_error
-    def _get_cpu_num_from_lsvm_info(self, info):
+    def _get_cpu_num_from_user_dict(self, dict_info):
         cpu_num = 0
-        for inf in info:
-            if ': CPU ' in inf:
+        for inf in dict_info:
+            if 'CPU ' in inf:
                 cpu_num += 1
         return cpu_num
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
-    def _get_memory_from_lsvm_info(self, info):
-        return info[0].split(' ')[4]
+    def _get_max_memory_from_user_dict(self, dict_info):
+        mem = dict_info[0].split(' ')[4]
+        return zvmutils.convert_to_mb(mem) * 1024
 
-    def get_info(self, instance_name):
-        power_stat = self.get_power_state(instance_name)
+    def get_user_direct(self, userid):
+        raw_dict = self._zvmclient.get_user_direct(userid)
+        return [ent.partition(': ')[2] for ent in raw_dict]
 
-        lsdef_info = self._zvmclient.get_lsdef_info(instance_name)
-        ip_addr = self._get_ip_addr_from_lsdef_info(lsdef_info)
-        _os = self._get_os_from_lsdef_info(lsdef_info)
+    def get_info(self, userid):
+        power_stat = self.get_power_state(userid)
 
-        lsvm_info = self._zvmclient.get_lsvm_info(instance_name)
-        vcpus = self._get_cpu_num_from_lsvm_info(lsvm_info)
-        mem = self._get_memory_from_lsvm_info(lsvm_info)
+        if power_stat == 'on':
+            # virtual machine in active or paused state
+            perf_info = self._zvmclient.get_image_performance_info(userid)
+            try:
+                max_mem_kb = int(perf_info['max_memory'].split()[0])
+                mem_kb = int(perf_info['used_memory'].split()[0])
+                num_cpu = int(perf_info['guest_cpus'])
+                cpu_time_ns = int(perf_info['used_cpu_time'].split()[0]) * 1000
+            except (ValueError, TypeError, IndexError, AttributeError,
+                    KeyError) as err:
+                LOG.error('Parse performance_info encounter error: %s',
+                          str(perf_info))
+                raise exception.ZVMSDKInteralError(msg=str(err))
 
-        return {'power_state': power_stat,
-                'vcpus': vcpus,
-                'memory': mem,
-                'ip_addr': ip_addr,
-                'os': _os}
+            return {'power_state': power_stat,
+                    'max_mem_kb': max_mem_kb,
+                    'mem_kb': mem_kb,
+                    'num_cpu': num_cpu,
+                    'cpu_time_ns': cpu_time_ns}
+        else:
+            # virtual machine in shutdown state
+            dict_info = self.get_user_direct(userid)
+            return {
+                'power_state': power_stat,
+                'max_mem_kb': self._get_max_memory_from_user_dict(dict_info),
+                'mem_kb': 0,
+                'num_cpu': self._get_cpu_num_from_user_dict(dict_info),
+                'cpu_time_ns': 0}
 
     def instance_metadata(self, instance, content, extra_md):
         pass

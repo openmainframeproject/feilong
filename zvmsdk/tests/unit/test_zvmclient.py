@@ -32,6 +32,13 @@ class SDKZVMClientTestCase(base.SDKTestCase):
         if CONF.zvm.client_type == 'xcat':
             self.assertTrue(isinstance(self._zvmclient, zvmclient.XCATClient))
 
+
+class SDKXCATCientTestCases(SDKZVMClientTestCase):
+    """Test cases for xcat zvm client."""
+
+    def setUp(self):
+        super(SDKXCATCientTestCases, self).setUp()
+
     def _fake_host_rinv_info(self):
         fake_host_rinv_info = ["fakenode: z/VM Host: FAKENODE\n"
                                "fakenode: zHCP: fakehcp.fake.com\n"
@@ -134,13 +141,6 @@ class SDKZVMClientTestCase(base.SDKTestCase):
                 CONF.xcat.password + "&format=json"
         xrequest.assert_called_once_with("GET", url)
 
-
-class SDKXCATCientTestCases(SDKZVMClientTestCase):
-    """Test cases for xcat zvm client."""
-
-    def setUp(self):
-        super(SDKXCATCientTestCases, self).setUp()
-
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_delete_mac(self, xrequest):
         xrequest.return_value = {"data": ["fakereturn"]}
@@ -197,3 +197,124 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         xrequest.side_effect = exception.ZVMNetworkError(msg='msg')
         self.assertRaises(exception.ZVMNetworkError,
                           self._zvmclient._delete_host, 'fakenode')
+
+    @mock.patch('zvmsdk.client.XCATClient._image_performance_query')
+    def test_get_image_performance_info(self, ipq):
+        ipq.return_value = {
+            u'FAKEVM': {
+                'used_memory': u'5222192 KB',
+                'used_cpu_time': u'25640530229 uS',
+                'guest_cpus': u'2',
+                'userid': u'FKAEVM',
+                'max_memory': u'8388608 KB'}}
+        info = self._zvmclient.get_image_performance_info('fakevm')
+        self.assertEqual(info['used_memory'], '5222192 KB')
+
+    @mock.patch('zvmsdk.utils.xdsh')
+    def test_private_get_image_performance_info_single(self, dsh):
+        dsh.return_value = {
+            'info': [], 'node': [], 'errorcode': [[u'0']],
+            'data': [['zhcp2: Number of virtual server IDs: 1 \n'
+                      'zhcp2: Virtual server ID: fakevm\n'
+                      'zhcp2: Record version: "1"\n'
+                      'zhcp2: Guest flags: "0"\n'
+                      'zhcp2: Used CPU time: "26238001893 uS"\n'
+                      'zhcp2: Elapsed time: "89185770400 uS"\n'
+                      'zhcp2: Minimum memory: "0 KB"\n'
+                      'zhcp2: Max memory: "8388608 KB"\n'
+                      'zhcp2: Shared memory: "5222192 KB"\n'
+                      'zhcp2: Used memory: "5222184 KB"\n'
+                      'zhcp2: Active CPUs in CEC: "44"\n'
+                      'zhcp2: Logical CPUs in VM: "6"\n'
+                      'zhcp2: Guest CPUs: "2"\nz'
+                      'hcp2: Minimum CPU count: "2"\n'
+                      'zhcp2: Max CPU limit: "10000"\n'
+                      'zhcp2: Processor share: "100"\n'
+                      'zhcp2: Samples CPU in use: "16659"\n'
+                      'zhcp2: ,Samples CPU delay: "638"\n'
+                      'zhcp2: Samples page wait: "0"\n'
+                      'zhcp2: Samples idle: "71550"\n'
+                      'zhcp2: Samples other: "337"\n'
+                      'zhcp2: Samples total: "89184"\n'
+                      'zhcp2: Guest name: "FAKEVM  "', None]], 'error': []}
+        pi_info = self._zvmclient._image_performance_query('fakevm')
+        self.assertEqual(pi_info['FAKEVM']['used_memory'], "5222184 KB")
+        self.assertEqual(pi_info['FAKEVM']['used_cpu_time'], "26238001893 uS")
+        self.assertEqual(pi_info['FAKEVM']['guest_cpus'], "2")
+        self.assertEqual(pi_info['FAKEVM']['userid'], "FAKEVM")
+        self.assertEqual(pi_info['FAKEVM']['max_memory'], "8388608 KB")
+
+    @mock.patch('zvmsdk.utils.xdsh')
+    def test_private_get_image_performance_info_multiple(self, dsh):
+        dsh.return_value = {
+            'info': [], 'node': [], 'errorcode': [[u'0']],
+            'data': [['zhcp2: Number of virtual server IDs: 2 \n'
+                      'zhcp2: Virtual server ID: fakevm\n'
+                      'zhcp2: Record version: "1"\n'
+                      'zhcp2: Guest flags: "0"\n'
+                      'zhcp2: Used CPU time: "26238001893 uS"\n'
+                      'zhcp2: Elapsed time: "89185770400 uS"\n'
+                      'zhcp2: Minimum memory: "0 KB"\n'
+                      'zhcp2: Max memory: "8388608 KB"\n'
+                      'zhcp2: Shared memory: "5222192 KB"\n'
+                      'zhcp2: Used memory: "5222184 KB"\n'
+                      'zhcp2: Active CPUs in CEC: "44"\n'
+                      'zhcp2: Logical CPUs in VM: "6"\n'
+                      'zhcp2: Guest CPUs: "2"\nz'
+                      'hcp2: Minimum CPU count: "2"\n'
+                      'zhcp2: Max CPU limit: "10000"\n'
+                      'zhcp2: Processor share: "100"\n'
+                      'zhcp2: Samples CPU in use: "16659"\n'
+                      'zhcp2: ,Samples CPU delay: "638"\n'
+                      'zhcp2: Samples page wait: "0"\n'
+                      'zhcp2: Samples idle: "71550"\n'
+                      'zhcp2: Samples other: "337"\n'
+                      'zhcp2: Samples total: "89184"\n'
+                      'zhcp2: Guest name: "FAKEVM  "\n'
+                      'zhcp2: \n'
+                      'zhcp2: Virtual server ID: fakevm2\n'
+                      'zhcp2: Record version: "1"\n'
+                      'zhcp2: Guest flags: "0"\n'
+                      'zhcp2: Used CPU time: "26238001893 uS"\n'
+                      'zhcp2: Elapsed time: "89185770400 uS"\n'
+                      'zhcp2: Minimum memory: "0 KB"\n'
+                      'zhcp2: Max memory: "8388608 KB"\n'
+                      'zhcp2: Shared memory: "5222192 KB"\n'
+                      'zhcp2: Used memory: "5222184 KB"\n'
+                      'zhcp2: Active CPUs in CEC: "44"\n'
+                      'zhcp2: Logical CPUs in VM: "6"\n'
+                      'zhcp2: Guest CPUs: "1"\nz'
+                      'hcp2: Minimum CPU count: "1"\n'
+                      'zhcp2: Max CPU limit: "10000"\n'
+                      'zhcp2: Processor share: "100"\n'
+                      'zhcp2: Samples CPU in use: "16659"\n'
+                      'zhcp2: ,Samples CPU delay: "638"\n'
+                      'zhcp2: Samples page wait: "0"\n'
+                      'zhcp2: Samples idle: "71550"\n'
+                      'zhcp2: Samples other: "337"\n'
+                      'zhcp2: Samples total: "89184"\n'
+                      'zhcp2: Guest name: "FAKEVM2 "\n', None]], 'error': []}
+        pi_info = self._zvmclient._image_performance_query(['fakevm',
+                                                            'fakevm2'])
+        self.assertEqual(pi_info['FAKEVM']['used_memory'], "5222184 KB")
+        self.assertEqual(pi_info['FAKEVM']['used_cpu_time'], "26238001893 uS")
+        self.assertEqual(pi_info['FAKEVM']['guest_cpus'], "2")
+        self.assertEqual(pi_info['FAKEVM']['userid'], "FAKEVM")
+        self.assertEqual(pi_info['FAKEVM']['max_memory'], "8388608 KB")
+        self.assertEqual(pi_info['FAKEVM2']['used_memory'], "5222184 KB")
+        self.assertEqual(pi_info['FAKEVM2']['used_cpu_time'], "26238001893 uS")
+        self.assertEqual(pi_info['FAKEVM2']['guest_cpus'], "1")
+        self.assertEqual(pi_info['FAKEVM2']['userid'], "FAKEVM2")
+        self.assertEqual(pi_info['FAKEVM2']['max_memory'], "8388608 KB")
+
+    @mock.patch('zvmsdk.utils.xdsh')
+    def test_private_get_image_performance_info_err1(self, dsh):
+        dsh.return_value = {}
+        self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
+                          self._zvmclient._image_performance_query, 'fakevm')
+
+    @mock.patch('zvmsdk.utils.xdsh')
+    def test_private_get_image_performance_info_err21(self, dsh):
+        dsh.return_value = {'data': [[]]}
+        self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
+                          self._zvmclient._image_performance_query, 'fakevm')
