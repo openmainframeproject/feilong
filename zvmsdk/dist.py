@@ -18,6 +18,7 @@ import abc
 import six
 
 from zvmsdk import config
+from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import utils as zvmutils
 
@@ -564,7 +565,7 @@ class ListDistManager(object):
                 return r
         else:
             msg = 'Can not handle os: %s' % os_version
-            raise zvmutils.ZVMException(msg=msg)
+            raise exception.ZVMException(msg=msg)
 
     def parse_dist(self, os_version):
         """Separate os and version from os_version.
@@ -585,4 +586,4 @@ class ListDistManager(object):
                     return distro, release
 
         msg = 'Can not handle os: %s' % os_version
-        raise zvmutils.ZVMException(msg=msg)
+        raise exception.ZVMException(msg=msg)
