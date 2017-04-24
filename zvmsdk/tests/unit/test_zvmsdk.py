@@ -1,16 +1,28 @@
+# Copyright 2017 IBM Corp.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
 
 import mock
 import unittest
 
 from zvmsdk.config import CONF
 import zvmsdk.utils as zvmutils
-import zvmsdk.vmops as sdkapi
+from zvmsdk import vmops
 
 
 class SDKTestCase(unittest.TestCase):
     def setUp(self):
-        self.vmops = sdkapi._get_vmops()
-        self.volumeops = sdkapi._get_volumeops()
+        self.vmops = vmops.get_vmops()
 
     def _fake_fun(self, value = None):
         return lambda *args, **kwargs: value
@@ -70,7 +82,7 @@ class SDKVMOpsTestCase(SDKTestCase):
         self.assertEqual(ret, True)
 
     @mock.patch('zvmsdk.client.XCATClient._power_state')
-    def test_power_on(self, power_state, ):
+    def test_power_on(self, power_state):
         self.vmops.power_on('cbi00063')
         power_state.assert_called_once_with('cbi00063', 'PUT', 'on')
 
@@ -188,7 +200,3 @@ class SDKVMOpsTestCase(SDKTestCase):
 class SDKVolumeOpsTestCase(SDKTestCase):
     def test_temp(self):
         pass
-
-
-if __name__ == '__main__':
-    unittest.main()

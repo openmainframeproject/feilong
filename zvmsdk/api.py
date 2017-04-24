@@ -14,16 +14,39 @@
 
 
 from zvmsdk import vmops
+from zvmsdk import hostops
+from zvmsdk import config
+
+
+CONF = config.CONF
 
 
 class ComputeAPI(object):
     """Compute action interfaces."""
 
     def __init__(self):
-        self.vmops = vmops._get_vmops()
+        self._vmops = vmops.get_vmops()
+        self._hostops = hostops.get_hostops()
 
     def power_on(self, vm_id):
-        self.vmops.power_on(vm_id)
+        self._vmops.power_on(vm_id)
 
     def get_power_state(self, vm_id):
-        return self.vmops.get_power_state(vm_id)
+        return self._vmops.get_power_state(vm_id)
+
+    def get_host_info(self, host):
+        """ Retrieve host information including host, memory, disk etc.
+        :param host:
+            the name of the host which the caller want to get resources from
+        :returns: Dictionary describing resources
+        """
+        return self._hostops.get_host_info(host)
+
+    def get_diskpool_info(self, host, pool=CONF.zvm.diskpool):
+        """ Retrieve diskpool information.
+        :param host: the name of the host which owns the diskpool
+        :param pool: the name of the diskpool which the caller wants
+            to get the usage info
+        :returns: Dictionary describing diskpool usage info
+        """
+        return self._hostops.get_diskpool_info(host, pool)

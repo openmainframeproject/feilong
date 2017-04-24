@@ -701,3 +701,18 @@ def parse_image_name(os_image_name):
 def get_image_version(os_image_name):
     os_version = os_image_name.split('-')[0]
     return os_version
+
+
+def convert_to_mb(s):
+    """Convert memory size from GB to MB."""
+    s = s.upper()
+    try:
+        if s.endswith('G'):
+            return float(s[:-1].strip()) * 1024
+        elif s.endswith('T'):
+            return float(s[:-1].strip()) * 1024 * 1024
+        else:
+            return float(s[:-1].strip())
+    except (IndexError, ValueError, KeyError, TypeError) as e:
+        errmsg = ("Invalid memory format: %s") % e
+        raise exception.ZVMSDKInteralError(msg=errmsg)

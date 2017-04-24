@@ -30,7 +30,7 @@ CONF = config.CONF
 LOG = log.LOG
 
 
-def _get_vmops():
+def get_vmops():
     global _VMOPS
     if _VMOPS is None:
         _VMOPS = VMOps()
@@ -40,12 +40,12 @@ def _get_vmops():
 class VMOps(object):
 
     def __init__(self):
-        self.zvmclient = zvmclient.get_zvmclient()
+        self._zvmclient = zvmclient.get_zvmclient()
         self._dist_manager = dist.ListDistManager()
 
     def get_power_state(self, vm_id):
         """Get power status of a z/VM instance."""
-        return self.zvmclient.get_power_state(vm_id)
+        return self._zvmclient.get_power_state(vm_id)
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def _get_ip_addr_from_lsdef_info(self, info):
@@ -80,11 +80,11 @@ class VMOps(object):
     def get_info(self, instance_name):
         power_stat = self.get_power_state(instance_name)
 
-        lsdef_info = self.zvmclient.get_lsdef_info(instance_name)
+        lsdef_info = self._zvmclient.get_lsdef_info(instance_name)
         ip_addr = self._get_ip_addr_from_lsdef_info(lsdef_info)
         _os = self._get_os_from_lsdef_info(lsdef_info)
 
-        lsvm_info = self.zvmclient.get_lsvm_info(instance_name)
+        lsvm_info = self._zvmclient.get_lsvm_info(instance_name)
         vcpus = self._get_cpu_num_from_lsvm_info(lsvm_info)
         mem = self._get_memory_from_lsvm_info(lsvm_info)
 
@@ -135,7 +135,7 @@ class VMOps(object):
 
     def is_reachable(self, instance_name):
         """Return True is the instance is reachable."""
-        res_dict = self.zvmclient.get_node_status(instance_name)
+        res_dict = self._zvmclient.get_node_status(instance_name)
         LOG.debug('Get instance status of %s', instance_name)
 
         with zvmutils.expect_invalid_xcat_resp_data(res_dict):
@@ -149,7 +149,7 @@ class VMOps(object):
 
     def power_on(self, instance_name):
         """"Power on z/VM instance."""
-        self.zvmclient.power_on(instance_name)
+        self._zvmclient.power_on(instance_name)
 
     def create_userid(self, instance_name, cpu, memory, image_name):
         """Create z/VM userid into user directory for a z/VM instance."""
@@ -159,7 +159,7 @@ class VMOps(object):
         kwprofile = 'profile=%s' % const.ZVM_USER_PROFILE
 
         try:
-            self.zvmclient.make_vm(instance_name, kwprofile,
+            self._zvmclient.make_vm(instance_name, kwprofile,
                                    cpu, memory, image_name)
             size = CONF.zvm.root_disk_units
             # Add root disk and set ipl
@@ -190,11 +190,11 @@ class VMOps(object):
             LOG.error(errmsg)
             raise zvmutils.ZVMException(msg=errmsg)
 
-        self.zvmclient.change_vm_fmt(instance_name, fmt, action,
+        self._zvmclient.change_vm_fmt(instance_name, fmt, action,
                                      diskpool, vdev, size)
 
     def set_ipl(self, instance_name, ipl_state):
-        self.zvmclient.change_vm_ipl_state(instance_name, ipl_state)
+        self._zvmclient.change_vm_ipl_state(instance_name, ipl_state)
 
     def instance_exists(self, instance_name):
         """Overwrite this to using instance name as input parameter."""
@@ -207,7 +207,7 @@ class VMOps(object):
         zvm_host = CONF.zvm.host
         hcp_base = CONF.xcat.zhcp
 
-        res_dict = self.zvmclient.get_tabdump_info()
+        res_dict = self._zvmclient.get_tabdump_info()
         instances = []
 
         with zvmutils.expect_invalid_xcat_resp_data(res_dict):
@@ -227,7 +227,7 @@ class VMOps(object):
 
     def is_powered_off(self, instance_name):
         """Return True if the instance is powered off."""
-        return self.zvmclient.get_power_state(instance_name) == 'off'
+        return self._zvmclient.get_power_state(instance_name) == 'off'
 
     def _delete_userid(self, url):
         try:
@@ -240,7 +240,7 @@ class VMOps(object):
             if (emsg.__contains__("Return Code: 400") and
                     emsg.__contains__("Reason Code: 4")):
                 # zVM user definition not found, delete xCAT node directly
-                self.zvmclient.delete_xcat_node()
+                self._zvmclient.delete_xcat_node()
             else:
                 raise err
 
@@ -251,7 +251,7 @@ class VMOps(object):
         # Versions of xCAT that do not understand the instance ID and
         # request ID will silently ignore them.
         try:
-            self.zvmclient.remove_vm(userid)
+            self._zvmclient.remove_vm(userid)
         except Exception as err:
             # TODO:implement after exception merged
             # emsg = err.format_message()
@@ -259,7 +259,7 @@ class VMOps(object):
             if (emsg.__contains__("Return Code: 400") and
                (emsg.__contains__("Reason Code: 16") or
                 emsg.__contains__("Reason Code: 12"))):
-                self.zvmclient.remove_vm(userid)
+                self._zvmclient.remove_vm(userid)
             else:
                 LOG.debug("exception not able to handle in delete_userid "
                           "%s", self._name)
@@ -282,7 +282,7 @@ class VMOps(object):
         image_id = str(uuid.uuid1())
         image_uuid = image_id.replace('-', '_')
         profile = image_uuid
-        res = self.zvmclient.do_capture(nodename, profile)
+        res = self._zvmclient.do_capture(nodename, profile)
         LOG.info(res['info'][3][0])
         image_name = res['info'][3][0].split('(')[1].split(')')[0]
         return image_name
@@ -290,13 +290,13 @@ class VMOps(object):
     def delete_image(self, image_name):
         """"Invoke xCAT REST API to delete a image."""
         try:
-            self.zvmclient.remove_image_file(image_name)
+            self._zvmclient.remove_image_file(image_name)
         except zvmutils.ZVMException:
             LOG.warn(("Failed to delete image file %s from xCAT") %
                     image_name)
 
         try:
-            self.zvmclient.remove_image_definition(image_name)
+            self._zvmclient.remove_image_definition(image_name)
         except zvmutils.ZVMException:
             LOG.warn(("Failed to delete image definition %s from xCAT") %
                     image_name)
