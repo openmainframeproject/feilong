@@ -18,7 +18,9 @@ import socket
 
 sys.path.append('..')
 import zvmsdk.utils as zvmutils
-import zvmsdk.config as CONF
+from zvmsdk import config
+
+CONF = config.CONF
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
@@ -89,7 +91,7 @@ USAGE
         image_version = args.image_version
         image_file = args.image_file
         image_name = os.path.basename(image_file)
-        print "Start import image_file :" + image_file + " to zvm xcat server:" + CONF.zvm_xcat_server
+        print "Start import image_file :" + image_file + " to zvm xcat server:" + CONF.xcat.server
 
         image_file_name = os.path.basename(image_file)
         now = datetime.datetime.now()
@@ -124,9 +126,9 @@ USAGE
         # Generate the image bundle which is used to import to xCAT MN's image repository.
         image_bundle_name = image_name + '.tar'
         tar_file = image_package_path + '/' + date_dir + '_' + image_bundle_name
-        print "The generate the image bundle file is " + tar_file
         os.chdir(image_package_path)
         target_image_file = image_bundle_path + '/' + image_name
+        print 'image_bundle__path is:' + image_bundle_path
         shutil.copyfile(image_file, target_image_file)
         tarFile = tarfile.open(tar_file, mode='w')
         tarFile.add(date_dir)
@@ -134,7 +136,7 @@ USAGE
         shutil.rmtree(image_bundle_path)
 #         myhostname = socket.getfqdn(socket.gethostname(  ))
 #         myaddrip = socket.gethostbyname(myhostname)
-        remote_host_info = ''.join(['root', '@', CONF.my_ip])
+        remote_host_info = ''.join(['root', '@', CONF.network.my_ip])
 
         #Import the image bundle from compute node to xCAT MN's image repository.
         _xcat_url = zvmutils.get_xcat_url()
@@ -147,7 +149,7 @@ USAGE
         resp = zvmutils.xcat_request("POST", url, body)
         for ind in range(0,5):
             print resp['data'][ind][0]
-        print "to zvm xcat server :" + CONF.zvm_xcat_server
+        print "to zvm xcat server :" + CONF.xcat.server
         os.remove(tar_file)
         os.remove(manifest_target)
         return 0

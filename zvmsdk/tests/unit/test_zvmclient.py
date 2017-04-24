@@ -14,6 +14,7 @@
 
 
 import mock
+import os
 
 
 from zvmsdk import client as zvmclient
@@ -27,6 +28,7 @@ class SDKZVMClientTestCase(base.SDKTestCase):
     def setUp(self):
         super(SDKZVMClientTestCase, self).setUp()
         self._zvmclient = zvmclient.get_zvmclient()
+        self._xcat_url = zvmutils.get_xcat_url()
 
     def test_get_zvmclient(self):
         if CONF.zvm.client_type == 'xcat':
@@ -38,6 +40,33 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
     def setUp(self):
         super(SDKXCATCientTestCases, self).setUp()
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_power_state(self, xrequest):
+        fake_userid = 'fake_userid'
+        fake_url = self._xcat_url.rpower('/' + fake_userid)
+        fake_body = ['on']
+        self._zvmclient._power_state(fake_userid, 'PUT', 'on')
+        xrequest.assert_called_once_with('PUT', fake_url, fake_body)
+
+    @mock.patch.object(zvmclient.XCATClient, '_power_state')
+    def test_power_on(self, power_state):
+        fake_userid = 'fake_userid'
+        self._zvmclient.power_on(fake_userid)
+        power_state.assert_called_once_with(fake_userid, 'PUT', 'on')
+
+    @mock.patch.object(zvmclient.XCATClient, '_power_state')
+    def test_get_power_state(self, power_state):
+        fake_userid = 'fake_userid'
+        fake_ret = {'info': [[fake_userid + ': on\n']],
+                    'node': [],
+                    'errocode': [],
+                    'data': []}
+        power_state.return_value = fake_ret
+        ret = self._zvmclient.get_power_state(fake_userid)
+
+        power_state.assert_called_once_with(fake_userid, 'GET', 'stat')
+        self.assertEqual('on', ret)
 
     def _fake_host_rinv_info(self):
         fake_host_rinv_info = ["fakenode: z/VM Host: FAKENODE\n"
@@ -442,3 +471,149 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
             msg='error: Invalid nodes and/or groups: fakenode')
         self.assertRaises(exception.ZVMVirtualMachineNotExist,
             self._zvmclient._power_state, 'fakeid', 'GET', ['state'])
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_lsdef(self, xrequest):
+        fake_userid = 'fake_userid'
+        fake_url = self._xcat_url.lsdef_node('/' + fake_userid)
+        self._zvmclient._lsdef(fake_userid)
+        xrequest.assert_called_once_with('GET', fake_url)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_lsvm(self, xrequest):
+        fake_userid = 'fake_userid'
+        fake_resp = {'info': [[fake_userid]],
+                    'node': [],
+                    'errocode': [],
+                    'data': []}
+        xrequest.return_value = fake_resp
+        ret = self._zvmclient._lsvm(fake_userid)
+        self.assertEqual(ret[0], fake_userid)
+
+    def test_get_node_status(self):
+        # TODO:moving to vmops and change name to ''
+        pass
+
+    def test_make_vm(self):
+        pass
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_create_xcat_node(self, xrequest):
+        # TODO:moving to vmops and change name to 'create_vm_node'
+        pass
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_delete_xcat_node(self, xrequest):
+        fake_userid = 'fake_userid'
+        fake_url = self._xcat_url.rmdef('/' + fake_userid)
+
+        self._zvmclient._delete_xcat_node(fake_userid)
+        xrequest.assert_called_once_with('DELETE', fake_url)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    @mock.patch.object(zvmclient.XCATClient, '_delete_xcat_node')
+    def test_delete_userid(self, delete_xcat_node, xrequest):
+        fake_userid = 'fake_userid'
+        fake_url = self._xcat_url.rmvm('/' + fake_userid)
+
+        self._zvmclient._delete_userid(fake_url)
+        xrequest.assert_called_once_with('DELETE', fake_url)
+
+    @mock.patch.object(zvmclient.XCATClient, '_delete_userid')
+    def test_remove_vm(self, delete_userid):
+        fake_userid = 'fake_userid'
+        fake_url = self._xcat_url.rmvm('/' + fake_userid)
+        self._zvmclient.remove_vm(fake_userid)
+        delete_userid.assert_called_once_with(fake_url)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_remove_image_file(self, xrequest):
+        fake_image_name = 'fake_image_name'
+        fake_url = self._xcat_url.rmimage('/' + fake_image_name)
+        self._zvmclient.remove_image_file(fake_image_name)
+
+        xrequest.assert_called_once_with('DELETE', fake_url)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_remove_image_definition(self, xrequest):
+        fake_image_name = 'fake_image_name'
+        fake_url = self._xcat_url.rmobject('/' + fake_image_name)
+
+        self._zvmclient.remove_image_definition(fake_image_name)
+        xrequest.assert_called_once_with('DELETE', fake_url)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_change_vm_ipl_state(self, xrequest):
+        fake_userid = 'fake_userid'
+        fake_state = 0100
+        fake_body = ['--setipl %s' % fake_state]
+        fake_url = self._xcat_url.chvm('/' + fake_userid)
+
+        self._zvmclient.change_vm_ipl_state(fake_userid, fake_state)
+        xrequest.assert_called_once_with('PUT', fake_url, fake_body)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_change_vm_fmt(self, xrequest):
+        fake_userid = 'fake_userid'
+        fmt = False
+        action = ''
+        diskpool = ''
+        vdev = ''
+        size = '1000M'
+        fake_url = self._xcat_url.chvm('/' + fake_userid)
+        fake_body = [" ".join([action, diskpool, vdev, size])]
+
+        self._zvmclient.change_vm_fmt(fake_userid, fmt, action,
+                                      diskpool, vdev, size)
+        xrequest.assert_called_once_with('PUT', fake_url, fake_body)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_get_tabdum_info(self, xrequest):
+        fake_url = self._xcat_url.tabdump('/zvm')
+
+        self._zvmclient.get_tabdump_info()
+        xrequest.assert_called_once_with('GET', fake_url)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_do_capture(self, xrequest):
+        fake_url = self._xcat_url.capture()
+        fake_nodename = 'nodename'
+        fake_profile = 'profiiiillle'
+        fake_body = ['nodename=' + fake_nodename,
+                     'profile=' + fake_profile]
+
+        self._zvmclient.do_capture(fake_nodename, fake_profile)
+        xrequest.assert_called_once_with('POST', fake_url, fake_body)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_lsdef_image(self, xrequest):
+        fake_image_uuid = 'image_uuid_xxxx'
+        fake_parm = '&criteria=profile=~' + fake_image_uuid
+        fake_url = self._xcat_url.lsdef_image(addp=fake_parm)
+
+        self._zvmclient.lsdef_image(fake_image_uuid)
+        xrequest.assert_called_once_with('GET', fake_url)
+
+    def test_check_space_imgimport_xcat(self):
+        pass
+
+    def test_export_image(self):
+        pass
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    @mock.patch.object(zvmutils, 'get_host')
+    @mock.patch.object(os, 'remove')
+    def test_import_image(self, remove_file, get_host, xrequest):
+        image_bundle_package = 'asdfe'
+        image_profile = 'imagep_prooooffffille'
+        remote_host_info = {}
+        get_host.return_value = remote_host_info
+        fake_url = self._xcat_url.imgimport()
+        fake_body = ['osimage=%s' % image_bundle_package,
+                     'profile=%s' % image_profile,
+                     'remotehost=%s' % remote_host_info,
+                     'nozip']
+        remove_file.return_value = None
+
+        self._zvmclient.import_image(image_bundle_package, image_profile)
+        xrequest.assert_called_once_with('POST', fake_url, fake_body)

@@ -12,11 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
 import mock
+import zvmsdk.client as zvmclient
+import zvmsdk.utils as zvmutils
 
 from zvmsdk.config import CONF
 from zvmsdk import exception
-from zvmsdk import utils as zvmutils
 from zvmsdk import vmops
 from zvmsdk.tests.unit import base
 
@@ -46,7 +48,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
 
         self.assertEqual(ret, True)
 
-    @mock.patch('zvmsdk.client.XCATClient._power_state')
+    @mock.patch.object(zvmclient.XCATClient, '_power_state')
     def test_power_on(self, power_state):
         self.vmops.power_on('cbi00063')
         power_state.assert_called_once_with('cbi00063', 'PUT', 'on')
