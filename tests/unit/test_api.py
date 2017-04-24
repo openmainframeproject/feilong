@@ -8,7 +8,7 @@ class ComputeAPITestCase(unittest.TestCase):
     """Testcases for compute APIs."""
     def setUp(self):
         super(ComputeAPITestCase, self).setUp()
-        self.api = api.ComputeAPI()
+        self.api = api.SDKAPI()
 
     def test_init_ComputeAPI(self):
-        self.assertTrue(isinstance(self.api, api.ComputeAPI))
+        self.assertTrue(isinstance(self.api, api.SDKAPI))

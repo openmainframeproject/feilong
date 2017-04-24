@@ -16,7 +16,7 @@
 from zvmsdk import vmops
 
 
-class ComputeAPI(object):
+class SDKAPI(object):
     """Compute action interfaces."""
 
     def __init__(self):
