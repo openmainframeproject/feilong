@@ -26,6 +26,18 @@ LOG = log.LOG
 _XCAT_CLIENT = None
 
 
+def get_zvmclient():
+    if CONF.zvm.client_type == 'xcat':
+        global _XCAT_CLIENT
+        if _XCAT_CLIENT is None:
+            return XCATClient()
+        else:
+            return _XCAT_CLIENT
+    else:
+        # TODO: raise Exception
+        pass
+
+
 class ZVMClient(object):
 
     def power_on(self, userid):
@@ -71,6 +83,73 @@ class XCATClient(ZVMClient):
             return tempstr[(tempstr.find(':') + 2):].strip()
 
         return _get_power_string(res_dict)
+
+    def get_host_info(self, host):
+        """ Retrive host information"""
+        url = self._xcat_url.rinv('/' + host)
+        inv_info_raw = zvmutils.xcat_request("GET", url)['info'][0]
+        inv_keys = const.XCAT_RINV_HOST_KEYWORDS
+        inv_info = zvmutils.translate_xcat_resp(inv_info_raw[0], inv_keys)
+        dp_info = self.get_diskpool_info(host)
+
+        host_info = {}
+
+        with zvmutils.expect_invalid_xcat_resp_data(inv_info):
+            host_info['vcpus'] = int(inv_info['lpar_cpu_total'])
+            host_info['vcpus_used'] = int(inv_info['lpar_cpu_used'])
+            host_info['cpu_info'] = {}
+            host_info['cpu_info'] = {'architecture': const.ARCHITECTURE,
+                                     'cec_model': inv_info['cec_model'], }
+            host_info['disk_total'] = dp_info['disk_total']
+            host_info['disk_used'] = dp_info['disk_used']
+            host_info['disk_available'] = dp_info['disk_available']
+            mem_mb = zvmutils.convert_to_mb(inv_info['lpar_memory_total'])
+            host_info['memory_mb'] = mem_mb
+            mem_mb_used = zvmutils.convert_to_mb(inv_info['lpar_memory_used'])
+            host_info['memory_mb_used'] = mem_mb_used
+            host_info['hypervisor_type'] = const.HYPERVISOR_TYPE
+            verl = inv_info['hypervisor_os'].split()[1].split('.')
+            version = int(''.join(verl))
+            host_info['hypervisor_version'] = version
+            host_info['hypervisor_hostname'] = inv_info['hypervisor_name']
+            host_info['zhcp'] = inv_info['zhcp']
+            host_info['ipl_time'] = inv_info['ipl_time']
+
+        return host_info
+
+    def get_diskpool_info(self, host, pool=CONF.zvm.diskpool):
+        """Retrive diskpool info"""
+        addp = '&field=--diskpoolspace&field=' + pool
+        url = self._xcat_url.rinv('/' + host, addp)
+        res_dict = zvmutils.xcat_request("GET", url)
+
+        dp_info_raw = res_dict['info'][0]
+        dp_keys = const.XCAT_DISKPOOL_KEYWORDS
+        dp_info = zvmutils.translate_xcat_resp(dp_info_raw[0], dp_keys)
+
+        with zvmutils.expect_invalid_xcat_resp_data(dp_info):
+            for k in list(dp_info.keys()):
+                s = dp_info[k].strip().upper()
+                if s.endswith('G'):
+                    sl = s[:-1].split('.')
+                    n1, n2 = int(sl[0]), int(sl[1])
+                    if n2 >= 5:
+                        n1 += 1
+                    dp_info[k] = n1
+                elif s.endswith('M'):
+                    n_mb = int(s[:-1])
+                    n_gb, n_ad = n_mb / 1024, n_mb % 1024
+                    if n_ad >= 512:
+                        n_gb += 1
+                    dp_info[k] = n_gb
+                else:
+                    exp = "ending with a 'G' or 'M'"
+                    errmsg = ("Invalid diskpool size format: %(invalid)s; "
+                        "Expected: %(exp)s") % {'invalid': s, 'exp': exp}
+                    LOG.error(errmsg)
+                    raise exception.ZVMSDKInternalError(msg=errmsg)
+
+        return dp_info
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def _lsdef(self, userid):
@@ -171,15 +250,3 @@ class XCATClient(ZVMClient):
                 'profile=' + profile]
         res = zvmutils.xcat_request("POST", url, body)
         return res
-
-
-def get_zvmclient():
-    if CONF.zvm.client_type == 'xcat':
-        global _XCAT_CLIENT
-        if _XCAT_CLIENT is None:
-            return XCATClient()
-        else:
-            return _XCAT_CLIENT
-    else:
-        # TODO: raise Exception
-        pass

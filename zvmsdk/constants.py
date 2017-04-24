@@ -23,7 +23,6 @@ ZVM_USER_PROFILE = 'QCDFLT'
 ZVM_USER_DEFAULT_PRIVILEGE = 'G'
 CONFIG_DRIVE_FORMAT = 'tgz'
 
-
 XCAT_RINV_HOST_KEYWORDS = {
     "zvm_host": "z/VM Host:",
     "zhcp": "zHCP:",

@@ -58,6 +58,10 @@ class SDKBaseException(Exception):
         return self.args[0]
 
 
+class ZVMSDKInteralError(SDKBaseException):
+    msg_fmt = 'z/VM SDK internal error: %(msg)s'
+
+
 class ZVMXCATRequestFailed(SDKBaseException):
     msg_fmt = 'Request to xCAT server %(xcatserver)s failed: %(msg)s'
 
