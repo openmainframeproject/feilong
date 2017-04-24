@@ -203,9 +203,44 @@ class XCATClient(ZVMClient):
         resp_info = zvmutils.xcat_request("GET", url)['info'][0]
         return resp_info
 
-    def get_lsdef_info(self, userid):
-        lsdef_info = self._lsdef(userid)
-        return lsdef_info
+    def _image_performance_query(self, uid_list):
+        """Call Image_Performance_Query to get guest current status.
+
+        :uid_list: A list of zvm userids to be queried
+        """
+        if not isinstance(uid_list, list):
+            uid_list = [uid_list]
+
+        cmd = ('smcli Image_Performance_Query -T "%(uid_list)s" -c %(num)s' %
+               {'uid_list': " ".join(uid_list), 'num': len(uid_list)})
+
+        with zvmutils.expect_invalid_xcat_resp_data():
+            resp = zvmutils.xdsh(CONF.xcat.zhcp_node, cmd)
+            raw_data = resp["data"][0][0]
+
+        ipq_kws = {
+            'userid': "Guest name:",
+            'guest_cpus': "Guest CPUs:",
+            'used_cpu_time': "Used CPU time:",
+            'used_memory': "Used memory:",
+            'max_memory': " Max memory:",
+        }
+
+        pi_dict = {}
+        with zvmutils.expect_invalid_xcat_resp_data():
+            rpi_list = raw_data.split(": \n")
+            for rpi in rpi_list:
+                pi = zvmutils.translate_xcat_resp(rpi, ipq_kws)
+                for k, v in pi.items():
+                    pi[k] = v.strip('" ')
+                if pi.get('userid') is not None:
+                    pi_dict[pi['userid']] = pi
+
+        return pi_dict
+
+    def get_image_performance_info(self, userid):
+        pi_dict = self._image_performance_query([userid])
+        return pi_dict[userid.upper()]
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def _lsvm(self, userid):
@@ -213,7 +248,7 @@ class XCATClient(ZVMClient):
         resp_info = zvmutils.xcat_request("GET", url)['info'][0][0]
         return resp_info.split('\n')
 
-    def get_lsvm_info(self, userid):
+    def get_user_direct(self, userid):
         resp_info = self._lsvm(userid)
         return resp_info
 

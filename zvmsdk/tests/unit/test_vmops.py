@@ -15,6 +15,7 @@
 import mock
 
 from zvmsdk.config import CONF
+from zvmsdk import exception
 from zvmsdk import utils as zvmutils
 from zvmsdk import vmops
 from zvmsdk.tests.unit import base
@@ -34,35 +35,6 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         body = ['stat']
         self.vmops.get_power_state('cbi00063')
         xrequest.assert_called_with('GET', url, body)
-
-    @mock.patch('zvmsdk.client.XCATClient._lsvm')
-    @mock.patch('zvmsdk.client.XCATClient._lsdef')
-    @mock.patch('zvmsdk.client.XCATClient._power_state')
-    def test_get_info(self, power_state, lsdef, lsvm):
-        power_state.return_value = {'info': [[u'cbi00063: on\n']],
-                'node': [], 'errorcode': [], 'data': [], 'error': []}
-        lsdef.return_value = [
-                'Object name: cbi00063',
-                'arch=s390x', 'groups=all', 'hcp=zhcp2.ibm.com',
-                'hostnames=cbi00063', 'interface=1000', 'ip=192.168.114.3',
-                'mac=02:00:00:0e:02:fc', 'mgt=zvm', 'netboot=zvm',
-                'os=rhel7', 'postbootscripts=otherpkgs',
-                'postscripts=syslog, remoteshell,syncfiles',
-                'profile=sdkimage_b9bbd236_547b_49d7_9282_d4443e9f9334',
-                'provmethod=netboot', 'switch=xcatvsw2',
-                'switchinterface=1000',
-                'switchport=3c793024-13c9-4056-a2ef-569704ed1bd5',
-                'switchvlan=-1', 'userid=cbi00063']
-        lsvm.return_value = [u'cbi00064: USER CBI00063 DFLTPASS 1024m 1024m G',
-                u'cbi00063: INCLUDE OSDFLT', u'cbi00063: CPU 00 BASE',
-                u'cbi00063: ',
-                u'cbi00063: ',
-                u'cbi00063: ', u'']
-        info = self.vmops.get_info('cbi00063')
-        self.assertEqual(info['power_state'], 'on')
-        self.assertEqual(info['vcpus'], 1)
-        power_state.assert_called_once_with('cbi00063', 'GET', 'stat')
-        lsdef.assert_called_once_with('cbi00063')
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_is_reachable(self, xrequest):
@@ -87,7 +59,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                 "&password=" + CONF.xcat.password +\
                 "&format=json"
         body = ['profile=QCDFLT',
-                'password=password',
+                'password=%s' % CONF.zvm.user_default_password,
                 'cpu=1', 'memory=1024m',
                 'privilege=G', 'ipl=0100',
                 'imagename=test-image-name']
@@ -188,3 +160,50 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.delete_image('test-image-name')
 
         xrequest.assert_called_with('DELETE', url)
+
+    @mock.patch('zvmsdk.client.XCATClient.get_image_performance_info')
+    @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
+    def test_get_info(self, gps, gipi):
+        gps.return_value = 'on'
+        gipi.return_value = {'used_memory': u'4872872 KB',
+                             'used_cpu_time': u'6911844399 uS',
+                             'guest_cpus': u'2',
+                             'userid': u'CMABVT',
+                             'max_memory': u'8388608 KB'}
+        vm_info = self.vmops.get_info('fakeid')
+        gps.assert_called_once_with('fakeid')
+        gipi.assert_called_once_with('fakeid')
+        self.assertEqual(vm_info['power_state'], 'on')
+        self.assertEqual(vm_info['max_mem_kb'], 8388608)
+        self.assertEqual(vm_info['mem_kb'], 4872872)
+        self.assertEqual(vm_info['num_cpu'], 2)
+        self.assertEqual(vm_info['cpu_time_ns'], 6911844399000)
+
+    @mock.patch('zvmsdk.client.XCATClient.get_image_performance_info')
+    @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
+    def test_get_info_error(self, gps, gipi):
+        gps.return_value = 'on'
+        gipi.return_value = {}
+        self.assertRaises(exception.ZVMSDKInteralError,
+                          self.vmops.get_info, 'fakeid')
+
+    @mock.patch('zvmsdk.vmops.VMOps.get_user_direct')
+    @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
+    def test_get_info_shutdown(self, gps, gud):
+        gps.return_value = 'off'
+        gud.return_value = [
+            u'USER FAKEUSER DFLTPASS 2048m 2048m G',
+            u'INCLUDE PROFILE',
+            u'CPU 00 BASE',
+            u'CPU 01',
+            u'IPL 0100',
+            u'NICDEF 1000 TYPE QDIO LAN SYSTEM VSW2 MACID 0E4E8E',
+            u'MDISK 0100 3390 34269 3338 OMB1A9 MR', u'']
+        vm_info = self.vmops.get_info('fakeid')
+        gps.assert_called_once_with('fakeid')
+        gud.assert_called_once_with('fakeid')
+        self.assertEqual(vm_info['power_state'], 'off')
+        self.assertEqual(vm_info['max_mem_kb'], 2097152)
+        self.assertEqual(vm_info['mem_kb'], 0)
+        self.assertEqual(vm_info['num_cpu'], 2)
+        self.assertEqual(vm_info['cpu_time_ns'], 0)

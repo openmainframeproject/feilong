@@ -13,6 +13,8 @@
 #    under the License.
 
 
+import mock
+
 from zvmsdk import api
 from zvmsdk.tests.unit import base
 
@@ -25,3 +27,8 @@ class SDKAPITestCase(base.SDKTestCase):
 
     def test_init_ComputeAPI(self):
         self.assertTrue(isinstance(self.api, api.SDKAPI))
+
+    @mock.patch("zvmsdk.vmops.VMOps.get_info")
+    def test_get_vm_info(self, ginfo):
+        self.api.get_vm_info('fakevm')
+        ginfo.assert_called_once_with('fakevm')
