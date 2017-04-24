@@ -77,22 +77,21 @@ class VMOps(object):
     def _get_memory_from_lsvm_info(self, info):
         return info[0].split(' ')[4]
 
-    def get_info(self, instance_name):
-        power_stat = self.get_power_state(instance_name)
+    def get_info(self, vm_id):
+        power_stat = self.get_power_state(vm_id)
 
-        lsdef_info = self.zvmclient.get_lsdef_info(instance_name)
-        ip_addr = self._get_ip_addr_from_lsdef_info(lsdef_info)
-        _os = self._get_os_from_lsdef_info(lsdef_info)
-
-        lsvm_info = self.zvmclient.get_lsvm_info(instance_name)
-        vcpus = self._get_cpu_num_from_lsvm_info(lsvm_info)
-        mem = self._get_memory_from_lsvm_info(lsvm_info)
+        perf_info = self.zvmclient.get_image_performance_info(vm_id)
+        with zvmutils.expect_invalid_xcat_resp_data():
+            max_mem_kb = int(perf_info['max_memory'].split()[0])
+            mem_kb = int(perf_info['used_memory'].split()[0])
+            num_cpu = int(perf_info['guest_cpus'])
+            cpu_time_ns = int(perf_info['used_cpu_time'].split()[0]) * 1000
 
         return {'power_state': power_stat,
-                'vcpus': vcpus,
-                'memory': mem,
-                'ip_addr': ip_addr,
-                'os': _os}
+                'max_mem_kb': max_mem_kb,
+                'mem_kb': mem_kb,
+                'num_cpu': num_cpu,
+                'cpu_time_ns': cpu_time_ns}
 
     def instance_metadata(self, instance, content, extra_md):
         pass
