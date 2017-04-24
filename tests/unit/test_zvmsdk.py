@@ -30,35 +30,6 @@ class SDKVMOpsTestCase(SDKTestCase):
         self.vmops.get_power_state('cbi00063')
         xrequest.assert_called_with('GET', url, body)
 
-    @mock.patch('zvmsdk.client.XCATClient._lsvm')
-    @mock.patch('zvmsdk.client.XCATClient._lsdef')
-    @mock.patch('zvmsdk.client.XCATClient._power_state')
-    def test_get_info(self, power_state, lsdef, lsvm):
-        power_state.return_value = {'info': [[u'cbi00063: on\n']],
-                'node': [], 'errorcode': [], 'data': [], 'error': []}
-        lsdef.return_value = [
-                'Object name: cbi00063',
-                'arch=s390x', 'groups=all', 'hcp=zhcp2.ibm.com',
-                'hostnames=cbi00063', 'interface=1000', 'ip=192.168.114.3',
-                'mac=02:00:00:0e:02:fc', 'mgt=zvm', 'netboot=zvm',
-                'os=rhel7', 'postbootscripts=otherpkgs',
-                'postscripts=syslog, remoteshell,syncfiles',
-                'profile=sdkimage_b9bbd236_547b_49d7_9282_d4443e9f9334',
-                'provmethod=netboot', 'switch=xcatvsw2',
-                'switchinterface=1000',
-                'switchport=3c793024-13c9-4056-a2ef-569704ed1bd5',
-                'switchvlan=-1', 'userid=cbi00063']
-        lsvm.return_value = [u'cbi00064: USER CBI00063 DFLTPASS 1024m 1024m G',
-                u'cbi00063: INCLUDE OSDFLT', u'cbi00063: CPU 00 BASE',
-                u'cbi00063: ',
-                u'cbi00063: ',
-                u'cbi00063: ', u'']
-        info = self.vmops.get_info('cbi00063')
-        self.assertEqual(info['power_state'], 'on')
-        self.assertEqual(info['vcpus'], 1)
-        power_state.assert_called_once_with('cbi00063', 'GET', 'stat')
-        lsdef.assert_called_once_with('cbi00063')
-
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_is_reachable(self, xrequest):
         xrequest.return_value = {

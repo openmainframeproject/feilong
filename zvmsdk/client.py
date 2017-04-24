@@ -78,9 +78,97 @@ class XCATClient(ZVMClient):
         resp_info = zvmutils.xcat_request("GET", url)['info'][0]
         return resp_info
 
-    def get_lsdef_info(self, userid):
-        lsdef_info = self._lsdef(userid)
-        return lsdef_info
+    @zvmutils.wrap_invalid_xcat_resp_data_error
+    def _get_current_memory(self, rec_list):
+        """Return the max memory can be used."""
+        _mem = None
+
+        for rec in rec_list:
+            if rec.__contains__("Total Memory: "):
+                tmp_list = rec.split()
+                _mem = tmp_list[3]
+                break
+
+        _mem = self._modify_storage_format(_mem)
+        return _mem
+
+    @zvmutils.wrap_invalid_xcat_resp_data_error
+    def _get_cpu_used_time(self, rec_list):
+        """Return the cpu used time in."""
+        cpu_time = 0
+
+        for rec in rec_list:
+            if rec.__contains__("CPU Used Time: "):
+                tmp_list = rec.split()
+                cpu_time = tmp_list[4]
+                break
+
+        return float(cpu_time)
+
+    @zvmutils.wrap_invalid_xcat_resp_data_error
+    def _get_guest_cpus(self, rec_list):
+        """Return the processer count, used by cpumempowerstat"""
+        guest_cpus = 0
+
+        for rec in rec_list:
+            if rec.__contains__("Guest CPUs: "):
+                tmp_list = rec.split()
+                guest_cpus = tmp_list[3]
+                break
+
+        return int(guest_cpus)
+
+    @zvmutils.wrap_invalid_xcat_resp_data_error
+    def _get_power_stat(self, rec_list):
+        """Return the power stat, used by cpumempowerstat"""
+        power_stat = None
+
+        for rec in rec_list:
+            if rec.__contains__("Power state: "):
+                tmp_list = rec.split()
+                power_stat = tmp_list[3]
+                break
+
+        return power_stat
+
+    def _image_performance_query(self, uid_list):
+        """Call Image_Performance_Query to get guest current status.
+
+        :uid_list: A list of zvm userids to be queried
+        """
+        if not isinstance(uid_list, list):
+            uid_list = [uid_list]
+
+        cmd = ('smcli Image_Performance_Query -T "%(uid_list)s" -c %(num)s' %
+               {'uid_list': " ".join(uid_list), 'num': len(uid_list)})
+
+        with zvmutils.expect_invalid_xcat_resp_data():
+            resp = zvmutils.xdsh(CONF.xcat.zhcp_node, cmd)
+            raw_data = resp["data"][0][0]
+
+        ipq_kws = {
+            'userid': "Guest name:",
+            'guest_cpus': "Guest CPUs:",
+            'used_cpu_time': "Used CPU time:",
+            'used_memory': "Used memory:",
+            'max_memory': " Max memory:",
+        }
+
+        pi_dict = {}
+        with zvmutils.expect_invalid_xcat_resp_data():
+            rpi_list = raw_data.split("".join((CONF.xcat.zhcp_node, ": \n")))
+            for rpi in rpi_list:
+                pi = zvmutils.translate_xcat_resp(rpi, ipq_kws)
+                for k, v in pi.items():
+                    pi[k] = v.strip('"')
+                if pi.get('userid') is not None:
+                    pi_dict[pi['userid']] = pi
+
+        return pi_dict
+
+    def get_image_performance_info(self, userid):
+        pi_dict = self._image_performance_query([userid])
+        return pi_dict[userid.upper()]
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def _lsvm(self, userid):
