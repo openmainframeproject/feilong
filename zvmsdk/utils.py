@@ -283,6 +283,23 @@ def expect_invalid_xcat_resp_data(data=''):
         raise exception.ZVMInvalidXCATResponseDataError(msg=err)
 
 
+@contextlib.contextmanager
+def except_xcat_call_failed_and_reraise(exc, **kwargs):
+    """Catch all kinds of xCAT call failure and reraise.
+
+    exc: the exception that would be raised.
+    """
+    try:
+        yield
+    except (exception.ZVMXCATRequestFailed,
+            exception.ZVMInvalidXCATResponseDataError,
+            exception.ZVMXCATInternalError) as err:
+        msg = err.format_message()
+        kwargs['msg'] = msg
+        LOG.error('XCAT response return error: %s', msg)
+        raise exc(**kwargs)
+
+
 def wrap_invalid_xcat_resp_data_error(function):
     """Catch exceptions when using xCAT response data."""
 
@@ -658,36 +675,6 @@ def _generate_auth_file(fn, pub_key):
     'echo "%s" >> /root/.ssh/authorized_keys' % pub_key]
     with open(fn, 'w') as f:
         f.writelines(lines)
-
-
-def clean_mac_switch_host(node_name):
-    """Clean node records in xCAT mac, host and switch table."""
-    clean_mac_switch(node_name)
-    _delete_xcat_host(node_name)
-
-
-def clean_mac_switch(node_name):
-    """Clean node records in xCAT mac and switch table."""
-    _delete_xcat_mac(node_name)
-    _delete_xcat_switch(node_name)
-
-
-def _delete_xcat_switch(node_name):
-    """Remove node switch record from xcat switch table."""
-    commands = "-d node=%s switch" % node_name
-    url = get_xcat_url().tabch("/switch")
-    body = [commands]
-
-    return xcat_request("PUT", url, body)['data']
-
-
-def _delete_xcat_host(node_name):
-    """Remove xcat hosts table rows where node name is node_name."""
-    commands = "-d node=%s hosts" % node_name
-    body = [commands]
-    url = get_xcat_url().tabch("/hosts")
-
-    return xcat_request("PUT", url, body)['data']
 
 
 def parse_image_name(os_image_name):
