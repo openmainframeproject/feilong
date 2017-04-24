@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9be9ff4b_f97615b8",
+        "filename": "tests/unit/test_zvmsdk.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-24T10:02:34Z",
+      "side": 1,
+      "message": "I really think we should move this to a new file\ne.g test_zvmsdk_hosts.py",
+      "range": {
+        "startLine": 194,
+        "startChar": 6,
+        "endLine": 194,
+        "endChar": 24
+      },
+      "revId": "11448433417f5da5009ddafb7fa31eeaf4b22f40",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
