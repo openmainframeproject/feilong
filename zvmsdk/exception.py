@@ -58,8 +58,12 @@ class SDKBaseException(Exception):
         return self.args[0]
 
 
+class ZVMException(SDKBaseException):
+    msg_fmt = 'ZVMException happened: %(msg)s'
+
+
 class ZVMXCATRequestFailed(SDKBaseException):
-    msg_fmt = 'Request to xCAT server %(xcatserver)s failed: %(msg)s'
+    msg_fmt = 'Request to xCAT server failed: %(msg)s'
 
 
 class ZVMInvalidXCATResponseDataError(SDKBaseException):
