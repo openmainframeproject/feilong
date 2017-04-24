@@ -20,6 +20,7 @@ import uuid
 from zvmsdk import client as zvmclient
 from zvmsdk import config
 from zvmsdk import constants as const
+from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import dist
 from zvmsdk import utils as zvmutils
@@ -131,7 +132,7 @@ class VMOps(object):
 
         zvmutils.looping_call(_check_reachable, 5, 5, 30,
             CONF.instance.reachable_timeout,
-            zvmutils.ZVMException(msg='not reachable, retry'))
+            exception.ZVMException(msg='not reachable, retry'))
 
     def is_reachable(self, instance_name):
         """Return True is the instance is reachable."""
@@ -171,7 +172,7 @@ class VMOps(object):
         except Exception as err:
             msg = ("Failed to create z/VM userid: %s") % err
             LOG.error(msg)
-            raise zvmutils.ZVMException(msg=err)
+            raise exception.ZVMException(msg=err)
 
     def add_mdisk(self, instance_name, diskpool, vdev, size, fmt=None):
         """Add a 3390 mdisk for a z/VM user.
@@ -188,7 +189,7 @@ class VMOps(object):
         else:
             errmsg = ("Disk type %s is not supported.") % disk_type
             LOG.error(errmsg)
-            raise zvmutils.ZVMException(msg=errmsg)
+            raise exception.ZVMException(msg=errmsg)
 
         self._zvmclient.change_vm_fmt(instance_name, fmt, action,
                                      diskpool, vdev, size)
@@ -290,14 +291,14 @@ class VMOps(object):
     def delete_image(self, image_name):
         """"Invoke xCAT REST API to delete a image."""
         try:
-            self._zvmclient.remove_image_file(image_name)
-        except zvmutils.ZVMException:
+            self.zvmclient.remove_image_file(image_name)
+        except exception.ZVMException:
             LOG.warn(("Failed to delete image file %s from xCAT") %
                     image_name)
 
         try:
-            self._zvmclient.remove_image_definition(image_name)
-        except zvmutils.ZVMException:
+            self.zvmclient.remove_image_definition(image_name)
+        except exception.ZVMException:
             LOG.warn(("Failed to delete image definition %s from xCAT") %
                     image_name)
         LOG.info('Image %s successfully deleted' % image_name)
@@ -326,7 +327,7 @@ class VOLUMEOps(object):
             except Exception as err:
                 msg = ("Failed to create the z/VM volume management file, "
                        "error: %s" % str(err))
-                raise zvmutils.ZVMException(msg)
+                raise exception.ZVMException(msg)
 
     def _generate_vdev(self, base, offset=1):
         """Generate virtual device number based on base vdev.
@@ -366,7 +367,7 @@ class VOLUMEOps(object):
                     break
         else:
             msg = ("Cann't find z/VM volume management file")
-            raise zvmutils.ZVMException(msg)
+            raise exception.ZVMException(msg)
         return volume_info
 
     def add_volume_info(self, volinfo):
@@ -380,7 +381,7 @@ class VOLUMEOps(object):
                 f.write(volinfo + '\n')
         else:
             msg = ("Cann't find z/VM volume management file")
-            raise zvmutils.ZVMException(msg)
+            raise exception.ZVMException(msg)
 
     def delete_volume_info(self, uuid):
         """Delete the volume from the z/VM volume management file
@@ -395,7 +396,7 @@ class VOLUMEOps(object):
             if len(status_lines) != 1:
                 msg = ("Found %(count) line status for volume %(uuid)s."
                        ) % {'count': len(status_lines), 'uuid': uuid}
-                raise zvmutils.ZVMException(msg)
+                raise exception.ZVMException(msg)
             # Delete the volume status line
             cmd = ("sed -i \'/^%(uuid)s.*/d\' %(file)s"
                    ) % {'uuid': uuid, 'file': self._zvm_volumes_file}
@@ -403,7 +404,7 @@ class VOLUMEOps(object):
             commands.getstatusoutput(cmd)
         else:
             msg = ("Cann't find z/VM volume management file")
-            raise zvmutils.ZVMException(msg)
+            raise exception.ZVMException(msg)
 
     def update_volume_info(self, volinfo):
         """Update volume info in the z/VM volume management file
@@ -420,7 +421,7 @@ class VOLUMEOps(object):
             if len(status_lines) != 1:
                 msg = ("Found %(count) line status for volume %(uuid)s."
                        ) % {'count': len(status_lines), 'uuid': uuid}
-                raise zvmutils.ZVMException(msg)
+                raise exception.ZVMException(msg)
             # Write the new status
             cmd = ("sed -i \'s/^%(uuid)s.*/%(new_line)s/g\' %(file)s"
                    ) % {'uuid': uuid, 'new_line': volinfo,
@@ -429,4 +430,4 @@ class VOLUMEOps(object):
             commands.getstatusoutput(cmd)
         else:
             msg = ("Cann't find z/VM volume management file")
-            raise zvmutils.ZVMException(msg)
+            raise exception.ZVMException(msg)
