@@ -14,6 +14,7 @@
 
 
 from zvmsdk import vmops
+from zvmsdk import networkops
 
 
 class ComputeAPI(object):
@@ -21,9 +22,16 @@ class ComputeAPI(object):
 
     def __init__(self):
         self.vmops = vmops._get_vmops()
+        self.networkops = networkops._get_networkops()
 
     def power_on(self, vm_id):
         self.vmops.power_on(vm_id)
 
     def get_power_state(self, vm_id):
         return self.vmops.get_power_state(vm_id)
+
+    def clean_mac_switch_host(self, node_name):
+        return self.clean_mac_switch_host(node_name) 
+    
+    def clean_mac_switch(self, node_name):
+        return self.clean_mac_switch(node_name)
