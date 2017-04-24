@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "60f25c2d_34392ab1",
+        "filename": "zvmsdk/imageop.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-24T12:25:34Z",
+      "side": 1,
+      "message": "new file, please add a header like other files",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 6
+      },
+      "revId": "fa24e25b886227dc5e3806468ecc5d14cf18a40c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
