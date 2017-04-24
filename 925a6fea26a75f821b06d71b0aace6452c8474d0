@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1894ad87_5ef007f7",
+        "filename": "tests/unit/test_api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-24T10:45:07Z",
+      "side": 1,
+      "message": "this should be changed as well",
+      "range": {
+        "startLine": 7,
+        "startChar": 6,
+        "endLine": 7,
+        "endChar": 24
+      },
+      "revId": "925a6fea26a75f821b06d71b0aace6452c8474d0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "edf9175f_c552bb04",
+        "filename": "tests/unit/test_api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-24T10:45:07Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 10,
+        "startChar": 14,
+        "endLine": 10,
+        "endChar": 32
+      },
+      "revId": "925a6fea26a75f821b06d71b0aace6452c8474d0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
