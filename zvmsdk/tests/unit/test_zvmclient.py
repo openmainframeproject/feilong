@@ -13,7 +13,12 @@
 #    under the License.
 
 
+import mock
+
+
 from zvmsdk import client
+from zvmsdk import exception
+from zvmsdk import utils as zvmutils
 from zvmsdk.config import CONF
 from zvmsdk.tests.unit import base
 
@@ -27,3 +32,67 @@ class SDKZVMClientTestCase(base.SDKTestCase):
     def test_get_zvmclient(self):
         if CONF.zvm.client_type == 'xcat':
             self.assertTrue(isinstance(self.zvmclient, client.XCATClient))
+
+
+class SDKXCATCientTestCases(SDKZVMClientTestCase):
+    """Test cases for xcat zvm client."""
+
+    def setUp(self):
+        super(SDKXCATCientTestCases, self).setUp()
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_delete_mac(self, xrequest):
+        xrequest.return_value = ["fakereturn: 1234"]
+        url = "/xcatws/tables/mac?userName=" +\
+                CONF.xcat.username + "&password=" +\
+                CONF.xcat.password + "&format=json"
+        commands = "-d node=fakenode mac"
+        body = [commands]
+
+        info = self.zvmclient._delete_mac("fakenode")
+        xrequest.assert_called_once_with("PUT", url, body)
+        self.assertEqual(info["fakereturn"], 1234)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_delete_mac_fail(self, xrequest):
+        xrequest.side_effect = exception.ZVMNetworkError(msg='msg')
+        self.assertRaises(exception.ZVMNetworkError,
+                          self.zvmclient._delete_mac, 'fakenode')
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_delete_switch(self, xrequest):
+        xrequest.return_value = ["fakereturn: 1234"]
+        url = "/xcatws/tables/switch?userName=" +\
+                CONF.xcat.username + "&password=" +\
+                CONF.xcat.password + "&format=json"
+        commands = "-d node=fakenode switch"
+        body = [commands]
+
+        info = self.zvmclient._delete_switch("fakenode")
+        xrequest.assert_called_once_with("PUT", url, body)
+        self.assertEqual(info["fakereturn"], 1234)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_delete_switch_fail(self, xrequest):
+        xrequest.side_effect = exception.ZVMNetworkError(msg='msg')
+        self.assertRaises(exception.ZVMNetworkError,
+                          self.zvmclient._delete_switch, 'fakenode')
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_delete_host(self, xrequest):
+        xrequest.return_value = ["fakereturn: 1234"]
+        url = "/xcatws/tables/hosts?userName=" +\
+                CONF.xcat.username + "&password=" +\
+                CONF.xcat.password + "&format=json"
+        commands = "-d node=fakenode hosts"
+        body = [mac_commands]
+
+        info = self.zvmclient._delete_host("fakenode")
+        xrequest.assert_called_once_with("PUT", url, body)
+        self.assertEqual(info["fakereturn"], 1234)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_delete_host_fail(self, xrequest):
+        xrequest.side_effect = exception.ZVMNetworkError(msg='msg')
+        self.assertRaises(exception.ZVMNetworkError,
+                          self.zvmclient._delete_host, 'fakenode')
