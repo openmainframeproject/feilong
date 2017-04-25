@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "292e1fe9_d3eb1d16",
+        "filename": "tests/unit/test_zvmsdk.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-25T05:41:16Z",
+      "side": 1,
+      "message": "I\u0027d suggest split this to test_zvm_sdk_network.py",
+      "range": {
+        "startLine": 194,
+        "startChar": 6,
+        "endLine": 194,
+        "endChar": 27
+      },
+      "revId": "10996f93b7a241422c4a76efb530a72a83f2aa7e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0a197e3a_f5121469",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-25T05:41:16Z",
+      "side": 1,
+      "message": "do we have a \u0027node\u0027 concept if we don\u0027t have xcat ?",
+      "range": {
+        "startLine": 37,
+        "startChar": 25,
+        "endLine": 37,
+        "endChar": 34
+      },
+      "revId": "10996f93b7a241422c4a76efb530a72a83f2aa7e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d248cd10_635dde88",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-25T05:41:16Z",
+      "side": 1,
+      "message": "I think we can submit a patch to make those functions to be abstract class, of course, that\u0027s a follow up work",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 12
+      },
+      "revId": "10996f93b7a241422c4a76efb530a72a83f2aa7e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5079c915_cd90f52d",
+        "filename": "zvmsdk/networkops.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-25T05:41:16Z",
+      "side": 1,
+      "message": "this will be used later? in this file or other files?\n\n_ indicate it\u0027s a local variable/function",
+      "range": {
+        "startLine": 22,
+        "startChar": 4,
+        "endLine": 22,
+        "endChar": 19
+      },
+      "revId": "10996f93b7a241422c4a76efb530a72a83f2aa7e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
