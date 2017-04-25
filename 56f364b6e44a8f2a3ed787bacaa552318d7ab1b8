@@ -45,6 +45,30 @@
       "revId": "56f364b6e44a8f2a3ed787bacaa552318d7ab1b8",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e12a6c1a_c182e5cf",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-04-25T07:41:39Z",
+      "side": 1,
+      "message": "Maybe I should create a new exception class to handle this case.",
+      "parentUuid": "24a18b56_1dd42d80",
+      "range": {
+        "startLine": 84,
+        "startChar": 22,
+        "endLine": 84,
+        "endChar": 51
+      },
+      "revId": "56f364b6e44a8f2a3ed787bacaa552318d7ab1b8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
