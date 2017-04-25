@@ -22,6 +22,75 @@
       "revId": "fa24e25b886227dc5e3806468ecc5d14cf18a40c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c6731a06_06be0ac2",
+        "filename": "zvmsdk/imageop.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-04-25T02:36:38Z",
+      "side": 1,
+      "message": "image_profile should only contain uuid. \nimage_profile \u003d image_id.replace(\u0027-\u0027,\u0027_\u0027)",
+      "range": {
+        "startLine": 55,
+        "startChar": 34,
+        "endLine": 55,
+        "endChar": 44
+      },
+      "revId": "fa24e25b886227dc5e3806468ecc5d14cf18a40c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ed3df718_aaf35a4d",
+        "filename": "zvmsdk/imageop.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-04-25T02:36:38Z",
+      "side": 1,
+      "message": "May be changed to get_tmp_image_folder? Spawn is openstack terminology.",
+      "range": {
+        "startLine": 153,
+        "startChar": 37,
+        "endLine": 153,
+        "endChar": 53
+      },
+      "revId": "fa24e25b886227dc5e3806468ecc5d14cf18a40c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7c960695_378772df",
+        "filename": "zvmsdk/imageop.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-04-25T02:36:38Z",
+      "side": 1,
+      "message": "image_file_name \u003d image_uuid + \".img\" would be ok , since there is no special characters in image_uuid",
+      "range": {
+        "startLine": 155,
+        "startChar": 33,
+        "endLine": 155,
+        "endChar": 40
+      },
+      "revId": "fa24e25b886227dc5e3806468ecc5d14cf18a40c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
