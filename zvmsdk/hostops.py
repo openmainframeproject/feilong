@@ -40,3 +40,9 @@ class HOSTOps(object):
 
     def get_diskpool_info(self, host, pool=CONF.zvm.diskpool):
         return self._zvmclient.get_diskpool_info(host, pool)
+
+    def get_hcp_info(self, hcp_hostname=None):
+        return self._zvmclient.get_hcp_info(hcp_hostname)
+
+    def get_vm_list(self):
+        return self._zvmclient.get_vm_list()

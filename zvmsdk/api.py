@@ -50,3 +50,15 @@ class SDKAPI(object):
         :returns: Dictionary describing diskpool usage info
         """
         return self._hostops.get_diskpool_info(host, pool)
+
+    def get_hcp_info(self, hcp_hostname=None):
+        """ Return a Dictionary containing zhcp's hostname,
+        nodename and userid
+        """
+        return self._hostops.get_hcp_info(hcp_hostname)
+
+    def list_vms(self):
+        """Return the names of all the VMs known to the virtualization
+        layer, as a list.
+        """
+        return self._hostops.get_vm_list()
