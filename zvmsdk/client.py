@@ -51,6 +51,7 @@ class XCATClient(ZVMClient):
 
     def __init__(self):
         self._xcat_url = zvmutils.get_xcat_url()
+        self._zhcp_info = {}
 
     def _power_state(self, userid, method, state):
         """Invoke xCAT REST API to set/get power state for a instance."""
@@ -84,7 +85,7 @@ class XCATClient(ZVMClient):
 
         return _get_power_string(res_dict)
 
-    def get_host_info(self, host):
+    def get_host_info(self, host=CONF.zvm.host):
         """ Retrive host information"""
         url = self._xcat_url.rinv('/' + host)
         inv_info_raw = zvmutils.xcat_request("GET", url)['info'][0]
@@ -114,6 +115,8 @@ class XCATClient(ZVMClient):
             host_info['hypervisor_hostname'] = inv_info['hypervisor_name']
             host_info['zhcp'] = inv_info['zhcp']
             host_info['ipl_time'] = inv_info['ipl_time']
+            hcp_hostname = host_info['zhcp']
+            self._zhcp_info = self._construct_zhcp_info(hcp_hostname)
 
         return host_info
 
@@ -150,6 +153,49 @@ class XCATClient(ZVMClient):
                     raise exception.ZVMSDKInternalError(msg=errmsg)
 
         return dp_info
+
+    def _get_hcp_info(self, hcp_hostname=None):
+        """ Return a Dictionary containing zhcp's hostname,
+        nodename and userid
+        """
+        if self._zhcp_info != {}:
+            return self._zhcp_info
+        else:
+            if hcp_hostname is not None:
+                return self._construct_zhcp_info(hcp_hostname)
+            else:
+                self.get_host_info()
+                return self._zhcp_info
+
+    def _construct_zhcp_info(self, hcp_hostname):
+        hcp_node = hcp_hostname.partition('.')[0]
+        return {'hostname': hcp_hostname,
+                'nodename': hcp_node,
+                'userid': zvmutils.get_userid(hcp_node)}
+
+    def get_vm_list(self):
+        zvm_host = CONF.zvm.host
+        hcp_base = self._get_hcp_info()['hostname']
+
+        url = self._xcat_url.tabdump("/zvm")
+        res_dict = zvmutils.xcat_request("GET", url)
+
+        vms = []
+
+        with zvmutils.expect_invalid_xcat_resp_data(res_dict):
+            data_entries = res_dict['data'][0][1:]
+            for data in data_entries:
+                l = data.split(",")
+                node, hcp = l[0].strip("\""), l[1].strip("\"")
+                hcp_short = hcp_base.partition('.')[0]
+
+                # exclude zvm host and zhcp node from the list
+                if (hcp.upper() == hcp_base.upper() and
+                        node.upper() not in (zvm_host.upper(),
+                        hcp_short.upper(), CONF.xcat.master_node.upper())):
+                    vms.append(node)
+
+        return vms
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def _lsdef(self, userid):
