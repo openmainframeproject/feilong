@@ -302,6 +302,27 @@ class VMOps(object):
                     image_name)
         LOG.info('Image %s successfully deleted' % image_name)
 
+    def deploy_image_to_vm(self, user_id, image_name, transportfiles=None,
+                           vdev=None):
+        vdev = vdev or CONF.zvm_user_root_vdev
+        try:
+            self.update_vm_info(user_id, image_name)
+            LOG.debug("Begin to deploy image on vm %s", user_id)
+
+            self._zvmclient.deploy_image_to_vm(user_id, image_name,
+                                               transportfiles, vdev)
+
+        except zvmutils.ZVMException:
+            LOG.warn(('Failed to deploy image %(img)s to vm %(vm)s') %
+            {'img': image_name,
+             'vm': user_id})
+
+    def update_vm_info(self, user_id, image_name):
+        """image_name format looks like:
+        sles12-s390x-netboot-0a0c576a_157f_42c8_bde5_2a254d8b77fc"""
+        vm_meta = image_name.split('-')
+        self._zvmclient.update_node_info(user_id, vm_meta)
+
 
 _VOLUMEOPS = None
 

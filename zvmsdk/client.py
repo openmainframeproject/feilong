@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 from zvmsdk import config
 from zvmsdk import constants as const
 from zvmsdk import exception
@@ -250,3 +249,25 @@ class XCATClient(ZVMClient):
                 'profile=' + profile]
         res = zvmutils.xcat_request("POST", url, body)
         return res
+
+    def update_vm_info(self, node, node_info):
+        """sles12-s390x-netboot-0a0c576a_157f_42c8_bde5_2a254d8b77fc"""
+        url = self._xcat_url.chtab('/' + node)
+        body = ['noderes.netboot=%s' % const.HYPERVISOR_TYPE,
+                'nodetype.os=%s' % node_info[0],
+                'nodetype.arch=%s' % node_info[1],
+                'nodetype.provmethod=%s' % node_info[2],
+                'nodetype.profile=%s' % node_info[3]]
+        zvmutils.xcat_request("PUT", url, body)
+
+    def deploy_image_to_vm(self, user_id, image_name, transportfiles=None,
+                           vdev=None):
+            body = ['netboot',
+                    'device=%s' % vdev,
+                    'osimage=%s' % image_name]
+
+            if transportfiles:
+                body.append('transport=%s' % transportfiles)
+
+            url = self._xcat_url.nodeset('/' + user_id)
+            zvmutils.xcat_request("PUT", url, body)
