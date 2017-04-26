@@ -13,24 +13,17 @@
 #    under the License.
 
 import mock
-import unittest
 
 from zvmsdk.config import CONF
-import zvmsdk.utils as zvmutils
+from zvmsdk import utils as zvmutils
 from zvmsdk import vmops
+from zvmsdk.tests.unit import base
 
 
-class SDKTestCase(unittest.TestCase):
-    def setUp(self):
-        self.vmops = vmops.get_vmops()
-
-    def _fake_fun(self, value = None):
-        return lambda *args, **kwargs: value
-
-
-class SDKVMOpsTestCase(SDKTestCase):
+class SDKVMOpsTestCase(base.SDKTestCase):
     def setUp(self):
         super(SDKVMOpsTestCase, self).setUp()
+        self.vmops = vmops.get_vmops()
         self.xcat_url = zvmutils.get_xcat_url()
 
     @mock.patch.object(zvmutils, 'xcat_request')
@@ -195,8 +188,3 @@ class SDKVMOpsTestCase(SDKTestCase):
         self.vmops.delete_image('test-image-name')
 
         xrequest.assert_called_with('DELETE', url)
-
-
-class SDKVolumeOpsTestCase(SDKTestCase):
-    def test_temp(self):
-        pass

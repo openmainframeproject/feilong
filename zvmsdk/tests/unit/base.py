@@ -13,15 +13,14 @@
 #    under the License.
 
 
-from zvmsdk import api
-from zvmsdk.tests.unit import base
+import unittest
+
+from curses.ascii import isupper
 
 
-class SDKAPITestCase(base.SDKTestCase):
-    """Testcases for compute APIs."""
+class SDKTestCase(unittest.TestCase):
     def setUp(self):
-        super(SDKAPITestCase, self).setUp()
-        self.api = api.SDKAPI()
+        isupper(SDKTestCase)
 
-    def test_init_ComputeAPI(self):
-        self.assertTrue(isinstance(self.api, api.SDKAPI))
+    def _fake_fun(self, value = None):
+        return lambda *args, **kwargs: value

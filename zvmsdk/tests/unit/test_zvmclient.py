@@ -13,15 +13,17 @@
 #    under the License.
 
 
-from zvmsdk import api
+from zvmsdk import client
+from zvmsdk.config import CONF
 from zvmsdk.tests.unit import base
 
 
-class SDKAPITestCase(base.SDKTestCase):
+class SDKZVMClientTestCase(base.SDKTestCase):
     """Testcases for compute APIs."""
     def setUp(self):
-        super(SDKAPITestCase, self).setUp()
-        self.api = api.SDKAPI()
+        super(SDKZVMClientTestCase, self).setUp()
+        self.zvmclient = client.get_zvmclient()
 
-    def test_init_ComputeAPI(self):
-        self.assertTrue(isinstance(self.api, api.SDKAPI))
+    def test_get_zvmclient(self):
+        if CONF.zvm.client_type == 'xcat':
+            self.assertTrue(isinstance(self.zvmclient, client.XCATClient))

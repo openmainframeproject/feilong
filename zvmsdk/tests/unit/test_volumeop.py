@@ -13,15 +13,10 @@
 #    under the License.
 
 
-from zvmsdk import api
 from zvmsdk.tests.unit import base
 
 
-class SDKAPITestCase(base.SDKTestCase):
-    """Testcases for compute APIs."""
-    def setUp(self):
-        super(SDKAPITestCase, self).setUp()
-        self.api = api.SDKAPI()
+class SDKVolumeOpsTestCase(base.SDKTestCase):
 
-    def test_init_ComputeAPI(self):
-        self.assertTrue(isinstance(self.api, api.SDKAPI))
+    def test_temp(self):
+        pass

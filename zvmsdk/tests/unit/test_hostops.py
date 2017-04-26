@@ -13,15 +13,14 @@
 #    under the License.
 
 import mock
-import unittest
 
 from zvmsdk.config import CONF
-import zvmsdk.utils as zvmutils
 from zvmsdk import hostops
-from zvmsdk.tests.unit import test_zvmsdk
+from zvmsdk import utils as zvmutils
+from zvmsdk.tests.unit import base
 
 
-class SDKHostOpsTestCase(test_zvmsdk.SDKTestCase):
+class SDKHostOpsTestCase(base.SDKTestCase):
     def setUp(self):
         self.hostops = hostops.get_hostops()
 
@@ -76,7 +75,3 @@ class SDKHostOpsTestCase(test_zvmsdk.SDKTestCase):
         self.assertEqual(dp_info['disk_total'], 406105)
         self.assertEqual(dp_info['disk_used'], 367263)
         self.assertEqual(dp_info['disk_available'], 38843)
-
-
-if __name__ == '__main__':
-    unittest.main()
