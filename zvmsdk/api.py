@@ -50,3 +50,14 @@ class SDKAPI(object):
         :returns: Dictionary describing diskpool usage info
         """
         return self._hostops.get_diskpool_info(host, pool)
+
+    def deploy_image_to_vm(self, user_id, image_name, transportfiles=None,
+                           vdev=None):
+        """ Deploy the image to vm.
+        :param user_id: the user id of the vm
+        :param image_name: the name of image that used to deploy the vm
+        :param transportfiles: the files that used to customize the vm
+        :param vdev: the device that image will be deploy to
+        """
+        return self._vmops.deploy_image_to_vm(user_id, image_name,
+                                              transportfiles=None, vdev=None)
