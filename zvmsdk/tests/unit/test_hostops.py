@@ -15,6 +15,8 @@
 import mock
 
 from zvmsdk.config import CONF
+import zvmsdk.utils as zvmutils
+import zvmsdk.client as zvmclient
 from zvmsdk import hostops
 from zvmsdk import utils as zvmutils
 from zvmsdk.tests.unit import base
@@ -22,7 +24,7 @@ from zvmsdk.tests.unit import base
 
 class SDKHostOpsTestCase(base.SDKTestCase):
     def setUp(self):
-        self.hostops = hostops.get_hostops()
+        self._hostops = hostops.get_hostops()
 
     def _fake_host_rinv_info(self):
         fake_host_rinv_info = ["fakenode: z/VM Host: FAKENODE\n"
@@ -47,26 +49,33 @@ class SDKHostOpsTestCase(base.SDKTestCase):
                           "fakenode: FAKEDP Free: 38842.7 G\n"]
         return {'info': [fake_disk_info, ]}
 
+    @mock.patch.object(zvmutils, 'get_userid')
     @mock.patch('zvmsdk.client.XCATClient.get_diskpool_info')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_get_host_info(self, xrequest, get_diskpool_info):
+    def test_get_host_info(self, xrequest, get_diskpool_info, get_userid):
         xrequest.return_value = self._fake_host_rinv_info()
         get_diskpool_info.return_value = {'disk_total': 100, 'disk_used': 80,
                                           'disk_available': 20}
-        host_info = self.hostops.get_host_info('fakenode')
+        get_userid.return_value = "fakehcp"
+        host_info = self._hostops.get_host_info('fakenode')
         self.assertEqual(host_info['vcpus'], 10)
         self.assertEqual(host_info['hypervisor_version'], 610)
         self.assertEqual(host_info['disk_total'], 100)
+        self.assertEqual(self._hostops._zvmclient._zhcp_info,
+                         {'hostname': 'fakehcp.fake.com',
+                          'nodename': 'fakehcp',
+                          'userid': 'fakehcp'})
         url = "/xcatws/nodes/fakenode/inventory?userName=" +\
                 CONF.xcat.username + "&password=" +\
                 CONF.xcat.password + "&format=json"
         xrequest.assert_called_once_with('GET', url)
         get_diskpool_info.assert_called_once_with('fakenode')
+        get_userid.assert_called_once_with("fakehcp")
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_get_diskpool_info(self, xrequest):
         xrequest.return_value = self._fake_disk_info()
-        dp_info = self.hostops.get_diskpool_info('fakenode', 'FAKEDP')
+        dp_info = self._hostops.get_diskpool_info('fakenode', 'FAKEDP')
         url = "/xcatws/nodes/fakenode/inventory?userName=" +\
                 CONF.xcat.username + "&password=" +\
                 CONF.xcat.password + "&format=json" +\
@@ -75,3 +84,13 @@ class SDKHostOpsTestCase(base.SDKTestCase):
         self.assertEqual(dp_info['disk_total'], 406105)
         self.assertEqual(dp_info['disk_used'], 367263)
         self.assertEqual(dp_info['disk_available'], 38843)
+
+    @mock.patch.object(zvmclient.XCATClient, 'get_hcp_info')
+    def test_get_hcp_info(self, get_hcp_info):
+        self._hostops.get_hcp_info("fakehcp.fake.com")
+        get_hcp_info.assert_called_once_with("fakehcp.fake.com")
+
+    @mock.patch.object(zvmclient.XCATClient, 'get_vm_list')
+    def test_get_vm_list(self, get_vm_list):
+        self._hostops.get_vm_list()
+        get_vm_list.assert_called_once_with()
