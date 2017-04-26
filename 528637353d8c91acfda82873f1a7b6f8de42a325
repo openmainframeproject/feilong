@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7688bfc6_30d5364b",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-26T03:00:06Z",
+      "side": 1,
+      "message": "are we sure we will have zhcp concept in both xcat and non-xcat implementation?",
+      "range": {
+        "startLine": 44,
+        "startChar": 13,
+        "endLine": 44,
+        "endChar": 23
+      },
+      "revId": "528637353d8c91acfda82873f1a7b6f8de42a325",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
