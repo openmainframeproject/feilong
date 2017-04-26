@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "753f3827_49b44412",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-26T02:41:17Z",
+      "side": 1,
+      "message": "maybe a follow up question, what if the request failed?\ndo we need to handle?",
+      "range": {
+        "startLine": 266,
+        "startChar": 8,
+        "endLine": 266,
+        "endChar": 62
+      },
+      "revId": "b616db5038a7028feaa19a06bb626d9e0b6a9691",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba2d53b7_ee162c74",
+        "filename": "zvmsdk/tests/unit/test_networkops.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-26T02:41:17Z",
+      "side": 1,
+      "message": "why we need add it?",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 19
+      },
+      "revId": "b616db5038a7028feaa19a06bb626d9e0b6a9691",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
