@@ -22,6 +22,30 @@
       "revId": "528637353d8c91acfda82873f1a7b6f8de42a325",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d31bcc03_422b9d78",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-04-26T06:05:15Z",
+      "side": 1,
+      "message": "Even if we replaced xcat with other implementation, I think we still need such a control point.",
+      "parentUuid": "7688bfc6_30d5364b",
+      "range": {
+        "startLine": 44,
+        "startChar": 13,
+        "endLine": 44,
+        "endChar": 23
+      },
+      "revId": "528637353d8c91acfda82873f1a7b6f8de42a325",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
