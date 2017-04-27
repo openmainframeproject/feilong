@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bcb403a7_53246e73",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-27T09:33:54Z",
+      "side": 1,
+      "message": "intent can be moved to left 4 columns",
+      "range": {
+        "startLine": 385,
+        "startChar": 7,
+        "endLine": 393,
+        "endChar": 51
+      },
+      "revId": "9e0d739e03c9cdd0ff49bedb4f497659459f37c1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a1ec070a_6bf62656",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-27T09:33:54Z",
+      "side": 1,
+      "message": "should this and below be in volumeops.py?",
+      "range": {
+        "startLine": 332,
+        "startChar": 0,
+        "endLine": 336,
+        "endChar": 21
+      },
+      "revId": "9e0d739e03c9cdd0ff49bedb4f497659459f37c1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
