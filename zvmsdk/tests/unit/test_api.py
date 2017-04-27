@@ -11,8 +11,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-
 import mock
 
 from zvmsdk import api
@@ -24,6 +22,7 @@ class SDKAPITestCase(base.SDKTestCase):
     def setUp(self):
         super(SDKAPITestCase, self).setUp()
         self.api = api.SDKAPI()
+        self._vmops = mock.MagicMock()
 
     def test_init_ComputeAPI(self):
         self.assertTrue(isinstance(self.api, api.SDKAPI))
@@ -32,3 +31,14 @@ class SDKAPITestCase(base.SDKTestCase):
     def test_get_vm_info(self, ginfo):
         self.api.get_vm_info('fakevm')
         ginfo.assert_called_once_with('fakevm')
+
+    def test_deploy_image_to_vm(self):
+        self._vmops.deploy_image_to_vm(mock.sentinel.user_id,
+                                mock.sentinel.image_name,
+                                mock.sentinel.transportfiles,
+                                mock.sentinel.vdev)
+        self._vmops.deploy_image_to_vm.assert_called_with(
+                                mock.sentinel.user_id,
+                                mock.sentinel.image_name,
+                                mock.sentinel.transportfiles,
+                                mock.sentinel.vdev)
