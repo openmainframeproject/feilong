@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "37ac3549_76406dd2",
+        "filename": "zvmsdk/networkops.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-27T09:30:37Z",
+      "side": 1,
+      "message": "what\u0027s the purpose of this line? \n\nshould we return something to caller?",
+      "range": {
+        "startLine": 49,
+        "startChar": 8,
+        "endLine": 49,
+        "endChar": 54
+      },
+      "revId": "c4bddb47688c330c8634b9df2e6549f0f33a919e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
