@@ -14,9 +14,13 @@
 
 
 from zvmsdk import client as zvmclient
+from zvmsdk import config
+from zvmsdk import log
 
 
 _NetworkOPS = None
+CONF = config.CONF
+LOG = log.LOG
 
 
 def get_networkops():
@@ -32,3 +36,14 @@ class NetworkOPS(object):
     """
     def __init__(self):
         self.zvmclient = zvmclient.get_zvmclient()
+
+    # def _add_nic_to_table(self, inst_name, network_info):
+    def create_port(self, vm_id, nic_id, mac_addr):
+        nic_vdev = CONF.zvm.default_nic_vdev
+        LOG.debug('Nic attributes: '
+                  'ID is %(id)s, address is %(address)s, '
+                  'vdev is %(vdev)s',
+                  {'id': nic_id, 'address': mac_addr,
+                   'vdev': nic_vdev})
+        self.zvmclient.create_port(vm_id, nic_id, mac_addr, nic_vdev)
+        nic_vdev = str(hex(int(nic_vdev, 16) + 3))[2:]

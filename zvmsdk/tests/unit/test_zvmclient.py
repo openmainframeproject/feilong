@@ -318,3 +318,70 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         dsh.return_value = {'data': [[]]}
         self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
                           self._zvmclient._image_performance_query, 'fakevm')
+
+    @mock.patch.object(zvmclient.XCATClient, '_add_switch')
+    @mock.patch.object(zvmclient.XCATClient, '_add_mac')
+    @mock.patch.object(zvmclient.XCATClient, '_delete_mac')
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
+    def test_create_port(self, _get_hcp_info, _delete_mac,
+                         _add_mac, _add_switch):
+        _get_hcp_info.return_value = {'hostname': "fakehcp.fake.com",
+                                      'nodename': "fakehcp",
+                                      'userid': "fakeuserid"}
+        self._zvmclient.create_port("fakenode", "face_nic",
+                                    "fake_mac", "fake_vdev")
+        _get_hcp_info.assert_called_once_with()
+        zhcpnode = _get_hcp_info['nodename']
+        _delete_mac.assert_called_once_with("fakenode")
+        _add_mac.assert_called_once_with("fakenode", "fake_vdev",
+                                          "fake_mac", zhcpnode)
+        _add_switch.assert_called_once_with("fakenode", "fake_nic"
+                                             "fake_vdev", zhcpnode)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_add_mac(self, xrequest):
+        xrequest.return_value = {"data": ["fakereturn"]}
+        url = "/xcatws/tables/mac?userName=" +\
+                CONF.xcat.username + "&password=" +\
+                CONF.xcat.password + "&format=json"
+        commands = "mac.node=fakenode" + " mac.mac=00:00:00:00:00:00"
+        commands += " mac.interface=fake"
+        commands += " mac.comments=fakezhcp"
+        body = [commands]
+
+        info = self._zvmclient._add_mac("fakenode", "00:00:00:00:00:00",
+                                        "fake", "fakezhcp")
+        xrequest.assert_called_once_with("PUT", url, body)
+        self.assertEqual(info[0], "fakereturn")
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_add_mac_fail(self, xrequest):
+        xrequest.side_effect = exception.ZVMNetworkError(msg='msg')
+        self.assertRaises(exception.ZVMNetworkError,
+                          self._zvmclient._add_mac,
+                          "fakenode", "00:00:00:00:00:00",
+                          "fake", "fakezhcp")
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_add_switch(self, xrequest):
+        xrequest.return_value = {"data": ["fakereturn"]}
+        url = "/xcatws/tables/switch?userName=" +\
+                CONF.xcat.username + "&password=" +\
+                CONF.xcat.password + "&format=json"
+        commands = "switch.node=fakenode" + " switch.port=fake-port"
+        commands += " switch.interface=fake"
+        commands += " switch.comments=fakezhcp"
+        body = [commands]
+
+        info = self._zvmclient._add_mac("fakenode", "fake-port",
+                                        "fake", "fakezhcp")
+        xrequest.assert_called_once_with("PUT", url, body)
+        self.assertEqual(info[0], "fakereturn")
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_add_switch_fail(self, xrequest):
+        xrequest.side_effect = exception.ZVMNetworkError(msg='msg')
+        self.assertRaises(exception.ZVMNetworkError,
+                          self._zvmclient._add_mac,
+                          "fakenode", "fake-port",
+                          "fake", "fakezhcp")
