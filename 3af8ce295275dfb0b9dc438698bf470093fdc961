@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0b3345e8_98c004ff",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-27T09:38:20Z",
+      "side": 1,
+      "message": "I am not sure ,but whether we can detect whether userid is power on through this API call ? if so we can avoid get_power_state call above..",
+      "range": {
+        "startLine": 71,
+        "startChar": 40,
+        "endLine": 71,
+        "endChar": 66
+      },
+      "revId": "3af8ce295275dfb0b9dc438698bf470093fdc961",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
