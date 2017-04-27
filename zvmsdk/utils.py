@@ -621,38 +621,6 @@ def add_xcat_switch(node, nic_name, interface, zhcp=None):
     return xcat_request("PUT", url, body)['data']
 
 
-def update_node_info(instance_name, image_name, os_version):
-    LOG.debug("Update the node info for instance %s", instance_name)
-
-    profile_name = image_name.rpartition('-')[2]
-
-    body = ['noderes.netboot=%s' % const.HYPERVISOR_TYPE,
-            'nodetype.os=%s' % os_version,
-            'nodetype.arch=%s' % const.ARCHITECTURE,
-            'nodetype.provmethod=%s' % const.PROV_METHOD,
-            'nodetype.profile=%s' % profile_name]
-    url = get_xcat_url().chtab('/' + instance_name)
-
-    xcat_request("PUT", url, body)
-
-
-def deploy_node(instance_name, image_name, transportfiles=None, vdev=None):
-    LOG.debug("Begin to deploy image on instance %s", instance_name)
-    vdev = vdev or CONF.zvm.user_root_vdev
-    remote_host_info = get_host()
-    body = ['netboot',
-            'device=%s' % vdev,
-            'osimage=%s' % image_name]
-
-    if transportfiles:
-        body.append('transport=%s' % transportfiles)
-        body.append('remotehost=%s' % remote_host_info)
-
-    url = get_xcat_url().nodeset('/' + instance_name)
-
-    xcat_request("PUT", url, body)
-
-
 def punch_xcat_auth_file(instance_path, instance_name):
     """Make xCAT MN authorized by virtual machines."""
     mn_pub_key = get_mn_pub_key()
