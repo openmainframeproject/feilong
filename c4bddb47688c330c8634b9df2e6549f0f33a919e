@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "eca39b20_c2039b7d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-04-27T09:31:18Z",
+      "side": 1,
+      "message": "as a normal rule, you don\u0027t need mention UT in the commit msg",
+      "range": {
+        "startLine": 7,
+        "startChar": 17,
+        "endLine": 7,
+        "endChar": 22
+      },
+      "revId": "c4bddb47688c330c8634b9df2e6549f0f33a919e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "37ac3549_76406dd2",
         "filename": "zvmsdk/networkops.py",
         "patchSetId": 4
