@@ -12,7 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
+import commands
+import os
 import uuid
 
 from zvmsdk import client as zvmclient
@@ -302,3 +303,153 @@ class VMOps(object):
             LOG.warn(("Failed to delete image definition %s from xCAT") %
                     image_name)
         LOG.info('Image %s successfully deleted' % image_name)
+
+    def deploy_image_to_vm(self, user_id, image_name, transportfiles=None,
+                           vdev=None):
+        vdev = vdev or CONF.zvm.user_root_vdev
+        try:
+            self.update_vm_info(user_id, image_name)
+            LOG.debug("Begin to deploy image on vm %s", user_id)
+
+            self._zvmclient.deploy_image_to_vm(user_id, image_name,
+                                               transportfiles, vdev)
+
+        except zvmutils.ZVMException:
+            LOG.warn(('Failed to deploy image %(img)s to vm %(vm)s') %
+                     {'img': image_name,
+                      'vm': user_id})
+
+    def update_vm_info(self, user_id, image_name):
+        """image_name format looks like:
+        sles12-s390x-netboot-0a0c576a_157f_42c8_bde5_2a254d8b77fc"""
+        vm_meta = image_name.split('-')
+        self._zvmclient.update_vm_info(user_id, vm_meta)
+
+
+_VOLUMEOPS = None
+
+
+def _get_volumeops():
+    global _VOLUMEOPS
+    if _VOLUMEOPS is None:
+        _VOLUMEOPS = VOLUMEOps()
+    return _VOLUMEOPS
+
+
+class VOLUMEOps(object):
+
+    def __init__(self):
+        cwd = os.getcwd()
+        self._zvm_volumes_file = os.path.join(cwd, const.ZVM_VOLUMES_FILE)
+        if not os.path.exists(self._zvm_volumes_file):
+            LOG.debug("z/VM volume management file %s does not exist, "
+            "creating it." % self._zvm_volumes_file)
+            try:
+                os.mknod(self._zvm_volumes_file)
+            except Exception as err:
+                msg = ("Failed to create the z/VM volume management file, "
+                       "error: %s" % str(err))
+                raise zvmutils.ZVMException(msg)
+
+    def _generate_vdev(self, base, offset=1):
+        """Generate virtual device number based on base vdev.
+
+        :param base: base virtual device number, string of 4 bit hex.
+        :param offset: offset to base, integer.
+
+        :output: virtual device number, string of 4 bit hex.
+        """
+        vdev = hex(int(base, 16) + offset)[2:]
+        return vdev.rjust(4, '0')
+
+    def get_volume_info(self, uuid):
+        """Get the volume status from the volume management file
+
+        Input parameters:
+        :uuid: the uuid of the volume
+
+        Returns a dict containing:
+        :uuid:   the volume uuid, it's also the vdev in volume_mgr_userid
+        :status: the status of the volume, one of the const.ZVM_VOLUME_STATUS
+        :userid: the userid to which the volume belongs to
+        :vdev:   the vdev of the volume in target vm
+        """
+        volume_info = {}
+        if os.path.exists(self._zvm_volumes_file):
+            volumes = []
+            with open(self._zvm_volumes_file, 'r') as f:
+                volumes = f.readlines()
+            for volume in volumes:
+                info = volume.strip().split(" ")
+                if info[0] == uuid:
+                    volume_info['uuid'] = info[0]
+                    volume_info['status'] = info[1]
+                    volume_info['userid'] = info[2]
+                    volume_info['vdev'] = info[3]
+                    break
+        else:
+            msg = ("Cann't find z/VM volume management file")
+            raise zvmutils.ZVMException(msg)
+        return volume_info
+
+    def add_volume_info(self, volinfo):
+        """Add one new volume in the z/VM volume management file
+
+        Input parameters:
+        a string containing the volume info string: uuid status userid vdev
+        """
+        if os.path.exists(self._zvm_volumes_file):
+            with open(self._zvm_volumes_file, 'a') as f:
+                f.write(volinfo + '\n')
+        else:
+            msg = ("Cann't find z/VM volume management file")
+            raise zvmutils.ZVMException(msg)
+
+    def delete_volume_info(self, uuid):
+        """Delete the volume from the z/VM volume management file
+
+        Input parameters:
+        :uuid: uuid of the volume to be deleted
+        """
+        if os.path.exists(self._zvm_volumes_file):
+            cmd = ("grep -i \"^%(uuid)s\" %(file)s") % {'uuid': uuid,
+                   'file': self._zvm_volumes_file}
+            status_lines = commands.getstatusoutput(cmd)[1].split("\n")
+            if len(status_lines) != 1:
+                msg = ("Found %(count) line status for volume %(uuid)s."
+                       ) % {'count': len(status_lines), 'uuid': uuid}
+                raise zvmutils.ZVMException(msg)
+            # Delete the volume status line
+            cmd = ("sed -i \'/^%(uuid)s.*/d\' %(file)s"
+                   ) % {'uuid': uuid, 'file': self._zvm_volumes_file}
+            LOG.debug("Deleting volume status, cmd: %s" % cmd)
+            commands.getstatusoutput(cmd)
+        else:
+            msg = ("Cann't find z/VM volume management file")
+            raise zvmutils.ZVMException(msg)
+
+    def update_volume_info(self, volinfo):
+        """Update volume info in the z/VM volume management file
+
+        Input parameters:
+        a string containing the volume info string: uuid status userid vdev
+        """
+        if os.path.exists(self._zvm_volumes_file):
+            uuid = volinfo.split(' ')[0]
+            # Check whether there are multiple lines correspond to this uuid
+            cmd = ("grep -i \"^%(uuid)s\" %(file)s") % {'uuid': uuid,
+                   'file': self._zvm_volumes_file}
+            status_lines = commands.getstatusoutput(cmd)[1].split("\n")
+            if len(status_lines) != 1:
+                msg = ("Found %(count) line status for volume %(uuid)s."
+                       ) % {'count': len(status_lines), 'uuid': uuid}
+                raise zvmutils.ZVMException(msg)
+            # Write the new status
+            cmd = ("sed -i \'s/^%(uuid)s.*/%(new_line)s/g\' %(file)s"
+                   ) % {'uuid': uuid, 'new_line': volinfo,
+                   'file': self._zvm_volumes_file}
+            LOG.debug("Updating volume status, cmd: %s" % cmd)
+            commands.getstatusoutput(cmd)
+        else:
+            msg = ("Cann't find z/VM volume management file")
+            raise zvmutils.ZVMException(msg)

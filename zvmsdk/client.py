@@ -367,3 +367,27 @@ class XCATClient(ZVMClient):
         with zvmutils.except_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
             return zvmutils.xcat_request("PUT", url, body)['data']
+
+    def update_vm_info(self, node, node_info):
+        """node_info looks like : ['sles12', 's390x', 'netboot',
+        '0a0c576a_157f_42c8_bde5_2a254d8b77f']
+        """
+        url = self._xcat_url.chtab('/' + node)
+        body = ['noderes.netboot=%s' % const.HYPERVISOR_TYPE,
+                'nodetype.os=%s' % node_info[0],
+                'nodetype.arch=%s' % node_info[1],
+                'nodetype.provmethod=%s' % node_info[2],
+                'nodetype.profile=%s' % node_info[3]]
+        zvmutils.xcat_request("PUT", url, body)
+
+    def deploy_image_to_vm(self, user_id, image_name, transportfiles=None,
+                           vdev=None):
+            body = ['netboot',
+                    'device=%s' % vdev,
+                    'osimage=%s' % image_name]
+
+            if transportfiles:
+                body.append('transport=%s' % transportfiles)
+
+            url = self._xcat_url.nodeset('/' + user_id)
+            zvmutils.xcat_request("PUT", url, body)

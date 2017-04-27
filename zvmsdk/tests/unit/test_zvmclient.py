@@ -318,3 +318,36 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         dsh.return_value = {'data': [[]]}
         self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
                           self._zvmclient._image_performance_query, 'fakevm')
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_update_vm_info(self, xrequest):
+        node = 'fakenode'
+        node_info = ['sles12', 's390x', 'netboot',
+                     '0a0c576a_157f_42c8_2a254d8b77f']
+        url = "/xcatws/nodes/fakenode?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        self._zvmclient.update_vm_info(node, node_info)
+        xrequest.assert_called_with('PUT', url,
+                ['noderes.netboot=zvm',
+                 'nodetype.os=sles12',
+                 'nodetype.arch=s390x',
+                 'nodetype.provmethod=netboot',
+                 'nodetype.profile=0a0c576a_157f_42c8_2a254d8b77f'])
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_deploy_image_to_vm(self, xrequest):
+        user_id = "testnode"
+        image_name = "sles12-s390x-netboot-0a0c576a_157f_42c8_2a254d8b77fc"
+        transportfiles = '/tmp/transport.tgz'
+        vdev = '0100'
+        url = "/xcatws/nodes/testnode/bootstate?userName=" +\
+                CONF.xcat.username +\
+               "&password=" + CONF.xcat.password +\
+               "&format=json"
+        self._zvmclient.deploy_image_to_vm(user_id, image_name, transportfiles,
+                                          vdev)
+        xrequest.assert_called_with('PUT', url,
+            ['netboot', 'device=0100',
+             'osimage=sles12-s390x-netboot-0a0c576a_157f_42c8_2a254d8b77fc',
+             'transport=/tmp/transport.tgz'])

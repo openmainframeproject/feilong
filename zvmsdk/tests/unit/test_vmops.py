@@ -207,3 +207,20 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertEqual(vm_info['mem_kb'], 0)
         self.assertEqual(vm_info['num_cpu'], 2)
         self.assertEqual(vm_info['cpu_time_ns'], 0)
+
+    @mock.patch('zvmsdk.client.XCATClient.deploy_image_to_vm')
+    @mock.patch('zvmsdk.vmops.VMOps.update_vm_info')
+    def test_deploy_image_to_vm(self, update_vm_info, deploy_image_to_vm):
+        self.vmops.deploy_image_to_vm('fakevm', 'fakeimg',
+                                      '/test/transport.tgz')
+        update_vm_info.assert_called_with('fakevm', 'fakeimg')
+        deploy_image_to_vm.assert_called_with('fakevm', 'fakeimg',
+                                              '/test/transport.tgz', '0100')
+
+    @mock.patch('zvmsdk.client.XCATClient.update_vm_info')
+    def test_update_vm_info(self, update_vm_info):
+        image_name = 'sles12-s390x-netboot-0a0c576a_157f_42c8_2a254d8b77fc'
+        self.vmops.update_vm_info('fakevm', image_name)
+        update_vm_info.assert_called_with(
+            'fakevm', ['sles12', 's390x', 'netboot',
+            '0a0c576a_157f_42c8_2a254d8b77fc'])
