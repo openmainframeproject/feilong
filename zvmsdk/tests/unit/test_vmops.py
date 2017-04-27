@@ -207,3 +207,10 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertEqual(vm_info['mem_kb'], 0)
         self.assertEqual(vm_info['num_cpu'], 2)
         self.assertEqual(vm_info['cpu_time_ns'], 0)
+
+    @mock.patch('zvmsdk.client.XCATClient.deploy_image_to_vm')
+    def test_deploy_image_to_vm(self, deploy_image_to_vm):
+        self.vmops.deploy_image_to_vm('fakevm', 'fakeimg',
+                                      '/test/transport.tgz')
+        deploy_image_to_vm.assert_called_with('fakevm', 'fakeimg',
+                                              '/test/transport.tgz')
