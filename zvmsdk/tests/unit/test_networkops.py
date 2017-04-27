@@ -12,8 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
 
 from zvmsdk.tests.unit import base
+from zvmsdk import client as zvmclient
 from zvmsdk import networkops
 
 
@@ -22,5 +24,9 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
     def setUp(self):
         self.networkops = networkops.get_networkops()
 
-    def test_temp(self):
-        pass
+    @mock.patch.object(zvmclient.XCATClient, 'create_port')
+    def test_create_port(self, create_port):
+        self.networkops.create_port("fakeid", "fake_nic_id",
+                                    "fake_mac", "fake_nic_vdev")
+        create_port.assert_called_with("fakeid", "fake_nic_id",
+                                       "fake_mac", "fake_nic_vdev")

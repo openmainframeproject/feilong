@@ -173,6 +173,9 @@ class XCATClient(ZVMClient):
                 'nodename': hcp_node,
                 'userid': zvmutils.get_userid(hcp_node)}
 
+    def get_hcpnode_info(self, hcp_hostname=None):
+        return self._get_hcp_info(hcp_hostname)['nodename']
+
     def get_vm_list(self):
         zvm_host = CONF.zvm.host
         hcp_base = self._get_hcp_info()['hostname']
@@ -361,6 +364,41 @@ class XCATClient(ZVMClient):
     def _delete_switch(self, userid):
         """Remove node switch record from xcat switch table."""
         commands = "-d node=%s switch" % userid
+        url = self._xcat_url.tabch("/switch")
+        body = [commands]
+
+        with zvmutils.except_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            return zvmutils.xcat_request("PUT", url, body)['data']
+
+    #    def create_xcat_table_about_nic(self, zhcpnode, inst_name,
+    #                                    nic_name, mac_address, vdev):
+    def create_port(self, userid, nic_id, mac_address, vdev):
+        zhcpnode = self._get_hcp_info()['nodename']
+        self._delete_mac(userid)
+        self._add_mac(userid, vdev, mac_address, zhcpnode)
+        self._add_switch(userid, nic_id, vdev, zhcpnode)
+
+    def _add_mac(self, userid, interface, mac, zhcp=None):
+        """Add node name, interface, mac address into xcat mac table."""
+        commands = "mac.node=%s" % userid + " mac.mac=%s" % mac
+        commands += " mac.interface=%s" % interface
+        if zhcp is not None:
+            commands += " mac.comments=%s" % zhcp
+        url = self._xcat_url.tabch("/mac")
+        body = [commands]
+
+        with zvmutils.except_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            return zvmutils.xcat_request("PUT", url, body)['data']
+
+    def _add_switch(self, userid, nic_id, interface, zhcp=None):
+        """Add node name and nic name address into xcat switch table."""
+        commands = "switch.node=%s" % userid
+        commands += " switch.port=%s" % nic_id
+        commands += " switch.interface=%s" % interface
+        if zhcp is not None:
+            commands += " switch.comments=%s" % zhcp
         url = self._xcat_url.tabch("/switch")
         body = [commands]
 
