@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1422f9ef_7441ac64",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-04-28T06:05:17Z",
+      "side": 1,
+      "message": "it looks get hcp node info is a xcatclient method, not zvmclient method. so rename to _get_hcpnode_info?",
+      "range": {
+        "startLine": 176,
+        "startChar": 8,
+        "endLine": 176,
+        "endChar": 26
+      },
+      "revId": "361dc736a38d3f2991811d96f1cea4892e2b698f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e42c6919_192d216a",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-04-28T06:05:17Z",
+      "side": 1,
+      "message": "remove the two lines",
+      "range": {
+        "startLine": 374,
+        "startChar": 0,
+        "endLine": 375,
+        "endChar": 70
+      },
+      "revId": "361dc736a38d3f2991811d96f1cea4892e2b698f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e83ecd51_a333bd78",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 382,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-04-28T06:05:17Z",
+      "side": 1,
+      "message": "_add_mac_table_record ?",
+      "range": {
+        "startLine": 382,
+        "startChar": 8,
+        "endLine": 382,
+        "endChar": 16
+      },
+      "revId": "361dc736a38d3f2991811d96f1cea4892e2b698f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "658d909c_16b78494",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 395,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-04-28T06:05:17Z",
+      "side": 1,
+      "message": "_add_switch_table_record ?",
+      "range": {
+        "startLine": 395,
+        "startChar": 8,
+        "endLine": 395,
+        "endChar": 19
+      },
+      "revId": "361dc736a38d3f2991811d96f1cea4892e2b698f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3e935df9_cc0968d7",
+        "filename": "zvmsdk/networkops.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-04-28T06:05:17Z",
+      "side": 1,
+      "message": "remove the line",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 59
+      },
+      "revId": "361dc736a38d3f2991811d96f1cea4892e2b698f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
