@@ -425,3 +425,52 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
             ['netboot', 'device=0100',
              'osimage=sles12-s390x-netboot-0a0c576a_157f_42c8_2a254d8b77fc',
              'transport=/tmp/transport.tgz'])
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_add_host_table_record(self, xrequest):
+        """Add/Update hostname/ip bundle in xCAT MN nodes table."""
+        commands = "node=fakeid" + " hosts.ip=fakeip"
+        commands += " hosts.hostnames=fakehost"
+        body = [commands]
+        url = "/xcatws/tables/hosts?userName=" +\
+                CONF.xcat.username + "&password=" +\
+                CONF.xcat.password + "&format=json"
+
+        self._zvmclient._add_host_table_record("fakeid", "fakeip", "fakehost")
+        xrequest.assert_called_once_with("PUT", url, body)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_add_host_table_record_fail(self, xrequest):
+        xrequest.side_effect = exception.ZVMNetworkError(msg='msg')
+        self.assertRaises(exception.ZVMNetworkError,
+                          self._zvmclient._add_host_table_record,
+                          "fakeid", "fakeip", "fakehost")
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_makehost(self, xrequest):
+        url = "/xcatws/networks/makehosts?userName=" +\
+                CONF.xcat.username + "&password=" +\
+                CONF.xcat.password + "&format=json"
+
+        self._zvmclient._makehost()
+        xrequest.assert_called_once_with("PUT", url)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_makehost_fail(self, xrequest):
+        xrequest.side_effect = exception.ZVMNetworkError(msg='msg')
+        self.assertRaises(exception.ZVMNetworkError,
+                          self._zvmclient._makehost)
+
+    @mock.patch.object(zvmclient.XCATClient, '_makehost')
+    @mock.patch.object(zvmclient.XCATClient, '_add_host_table_record')
+    @mock.patch.object(zvmclient.XCATClient, '_config_xcat_mac')
+    def test_preset_vm_network(self, config_mac, add_host, makehost):
+        self._zvmclient.preset_vm_network("fakeid", "fakeip")
+        config_mac.assert_called_with("fakeid")
+        add_host.assert_called_with("fakeid", "fakeip", "fakeid")
+        makehost.assert_called_with()
+
+    @mock.patch.object(zvmclient.XCATClient, '_add_mac_table_record')
+    def test_config_xcat_mac(self, add_mac):
+        self._zvmclient._config_xcat_mac("fakeid")
+        add_mac.assert_called_with("fakeid", "fake", "00:00:00:00:00:00")
