@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "76e2c3a6_990afad3",
+        "filename": "etc/zvmsdk.conf",
+        "patchSetId": 8
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-04-28T05:50:02Z",
+      "side": 1,
+      "message": "you should add config option in config.py\n\nand /tmp/zvmsdk/images is better",
+      "range": {
+        "startLine": 24,
+        "startChar": 44,
+        "endLine": 24,
+        "endChar": 45
+      },
+      "revId": "af66a57f48837f99f5046385485b012d69bb4251",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "830f01be_ff52775a",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-04-28T05:50:02Z",
+      "side": 1,
+      "message": "node is xcat only concept, so create xcat node should not be an exposed zvmclient method",
+      "range": {
+        "startLine": 238,
+        "startChar": 8,
+        "endLine": 238,
+        "endChar": 24
+      },
+      "revId": "af66a57f48837f99f5046385485b012d69bb4251",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5c8adc62_6a9e57a7",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-04-28T05:50:02Z",
+      "side": 1,
+      "message": "should not be an exposed zvmclient method",
+      "range": {
+        "startLine": 311,
+        "startChar": 8,
+        "endLine": 311,
+        "endChar": 19
+      },
+      "revId": "af66a57f48837f99f5046385485b012d69bb4251",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
