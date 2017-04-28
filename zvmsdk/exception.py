@@ -120,3 +120,7 @@ class ZVMRetryException(SDKBaseException):
 
 class ZVMVirtualMachineNotExist(SDKBaseException):
     msg_fmt = 'Virtual machine %(userid)s does not exist in %(zvm_host)s'
+
+
+class NotFound(SDKBaseException):
+    msg_fmt = 'The resource can not be found'
