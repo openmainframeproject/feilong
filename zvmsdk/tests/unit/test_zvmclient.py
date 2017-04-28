@@ -74,26 +74,27 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
                           'nodename': 'fakehcp',
                           'userid': 'fakehcp'}
         _construct_zhcp_info.return_value = fake_zhcp_info
-        host_info = self._zvmclient.get_host_info('fakenode')
+        host_info = self._zvmclient.get_host_info()
         self.assertEqual(host_info['vcpus'], 10)
         self.assertEqual(host_info['hypervisor_version'], 610)
         self.assertEqual(host_info['disk_total'], 100)
         self.assertEqual(self._zvmclient._zhcp_info, fake_zhcp_info)
-        url = "/xcatws/nodes/fakenode/inventory?userName=" +\
-                CONF.xcat.username + "&password=" +\
-                CONF.xcat.password + "&format=json"
+        url = "/xcatws/nodes/" + CONF.zvm.host +\
+                "/inventory?userName=" + CONF.xcat.username +\
+                "&password=" + CONF.xcat.password +\
+                "&format=json"
         xrequest.assert_called_once_with('GET', url)
-        get_diskpool_info.assert_called_once_with('fakenode')
+        get_diskpool_info.assert_called_once_with()
         _construct_zhcp_info.assert_called_once_with("fakehcp.fake.com")
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_get_diskpool_info(self, xrequest):
         xrequest.return_value = self._fake_disk_info()
-        dp_info = self._zvmclient.get_diskpool_info('fakenode', 'FAKEDP')
-        url = "/xcatws/nodes/fakenode/inventory?userName=" +\
-                CONF.xcat.username + "&password=" +\
-                CONF.xcat.password + "&format=json" +\
-                "&field=--diskpoolspace&field=FAKEDP"
+        dp_info = self._zvmclient.get_diskpool_info('FAKEDP')
+        url = "/xcatws/nodes/" + CONF.zvm.host +\
+                "/inventory?userName=" + CONF.xcat.username +\
+                "&password=" + CONF.xcat.password +\
+                "&format=json&field=--diskpoolspace&field=FAKEDP"
         xrequest.assert_called_once_with('GET', url)
         self.assertEqual(dp_info['disk_total'], 406105)
         self.assertEqual(dp_info['disk_used'], 367263)

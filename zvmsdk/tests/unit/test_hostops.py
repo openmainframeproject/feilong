@@ -25,13 +25,13 @@ class SDKHostOpsTestCase(base.SDKTestCase):
 
     @mock.patch.object(zvmclient.XCATClient, 'get_host_info')
     def test_get_host_info(self, get_host_info):
-        self._hostops.get_host_info("zvmhost")
-        get_host_info.assert_called_once_with("zvmhost")
+        self._hostops.get_host_info()
+        get_host_info.assert_called_once_with()
 
     @mock.patch.object(zvmclient.XCATClient, 'get_diskpool_info')
     def test_get_diskpool_info(self, get_diskpool_info):
-        self._hostops.get_diskpool_info("zvmhost", "fakepool")
-        get_diskpool_info.assert_called_once_with("zvmhost", "fakepool")
+        self._hostops.get_diskpool_info("fakepool")
+        get_diskpool_info.assert_called_once_with("fakepool")
 
     @mock.patch.object(zvmclient.XCATClient, 'get_vm_list')
     def test_get_vm_list(self, get_vm_list):

@@ -31,10 +31,10 @@ config_dicts_default = {
         'log_level': {"default": "logging.INFO"},
     },
     'zvm': {
-        'host': {},
+        'host': {"required": True},
         'default_nic_vdev': {"default": '1000'},
         'user_default_password': {"default": 'dfltpass'},
-        'diskpool': {"default": 'diskpoolname'},
+        'diskpool': {"required": True},
         'user_root_vdev': {"default": '0100'},
         'root_disk_units': {"default": '3338'},
         'diskpool_type': {"default": 'ECKD'},

@@ -35,11 +35,11 @@ class HOSTOps(object):
     def __init__(self):
         self._zvmclient = zvmclient.get_zvmclient()
 
-    def get_host_info(self, host):
-        return self._zvmclient.get_host_info(host)
+    def get_host_info(self):
+        return self._zvmclient.get_host_info()
 
-    def get_diskpool_info(self, host, pool=CONF.zvm.diskpool):
-        return self._zvmclient.get_diskpool_info(host, pool)
+    def get_diskpool_info(self, pool=CONF.zvm.diskpool):
+        return self._zvmclient.get_diskpool_info(pool)
 
     def get_vm_list(self):
         return self._zvmclient.get_vm_list()

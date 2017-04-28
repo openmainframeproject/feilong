@@ -85,13 +85,14 @@ class XCATClient(ZVMClient):
 
         return _get_power_string(res_dict)
 
-    def get_host_info(self, host=CONF.zvm.host):
+    def get_host_info(self):
         """ Retrive host information"""
+        host = CONF.zvm.host
         url = self._xcat_url.rinv('/' + host)
         inv_info_raw = zvmutils.xcat_request("GET", url)['info'][0]
         inv_keys = const.XCAT_RINV_HOST_KEYWORDS
         inv_info = zvmutils.translate_xcat_resp(inv_info_raw[0], inv_keys)
-        dp_info = self.get_diskpool_info(host)
+        dp_info = self.get_diskpool_info()
 
         host_info = {}
 
@@ -120,8 +121,9 @@ class XCATClient(ZVMClient):
 
         return host_info
 
-    def get_diskpool_info(self, host, pool=CONF.zvm.diskpool):
+    def get_diskpool_info(self, pool=CONF.zvm.diskpool):
         """Retrive diskpool info"""
+        host = CONF.zvm.host
         addp = '&field=--diskpoolspace&field=' + pool
         url = self._xcat_url.rinv('/' + host, addp)
         res_dict = zvmutils.xcat_request("GET", url)
