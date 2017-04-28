@@ -30,3 +30,8 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
                                     "fake_mac", "fake_nic_vdev")
         create_port.assert_called_with("fakeid", "fake_nic_id",
                                        "fake_mac", "fake_nic_vdev")
+
+    @mock.patch.object(zvmclient.XCATClient, 'preset_vm_network')
+    def test_preset_vm_network(self, preset_vm_network):
+        self.networkops.preset_vm_network("fake_id", "fake_ip")
+        preset_vm_network.assert_called_with("fake_id", "fake_ip")
