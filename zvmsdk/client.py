@@ -436,3 +436,35 @@ class XCATClient(ZVMClient):
         with zvmutils.except_xcat_call_failed_and_reraise(
                 exception.ZVMXCATUpdateNodeFailed):
             zvmutils.xcat_request("PUT", url, body)
+
+    def _config_xcat_mac(self, vm_id):
+        """Hook xCat to prevent assign MAC for instance."""
+        fake_mac_addr = "00:00:00:00:00:00"
+        nic_name = "fake"
+        self._add_mac_table_record(vm_id, nic_name, fake_mac_addr)
+
+    def _add_host_table_record(self, vm_id, ip, host_name):
+        """Add/Update hostname/ip bundle in xCAT MN nodes table."""
+        commands = "node=%s" % vm_id + " hosts.ip=%s" % ip
+        commands += " hosts.hostnames=%s" % host_name
+        body = [commands]
+        url = self._xcat_url.tabch("/hosts")
+
+        with zvmutils.except_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            zvmutils.xcat_request("PUT", url, body)['data']
+
+    def _makehost(self):
+        """Update xCAT MN /etc/hosts file."""
+        url = self._xcat_url.network("/makehosts")
+        with zvmutils.except_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            zvmutils.xcat_request("PUT", url)['data']
+
+    def preset_vm_network(self, vm_id, ip_addr):
+        self._config_xcat_mac(vm_id)
+        LOG.debug("Add ip/host name on xCAT MN for instance %s",
+                  vm_id)
+
+        self._add_host_table_record(vm_id, ip_addr, vm_id)
+        self._makehost()
