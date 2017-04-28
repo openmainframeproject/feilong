@@ -48,21 +48,19 @@ class SDKAPI(object):
         """
         return self._vmops.get_info(vm_id)
 
-    def get_host_info(self, host):
+    def get_host_info(self):
         """ Retrieve host information including host, memory, disk etc.
-        :param host:
-            the name of the host which the caller want to get resources from
         :returns: Dictionary describing resources
         """
+        host = CONF.zvm.host
         return self._hostops.get_host_info(host)
 
-    def get_diskpool_info(self, host, pool=CONF.zvm.diskpool):
+    def get_diskpool_info(self):
         """ Retrieve diskpool information.
-        :param host: the name of the host which owns the diskpool
-        :param pool: the name of the diskpool which the caller wants
-            to get the usage info
         :returns: Dictionary describing diskpool usage info
         """
+        host = CONF.zvm.host
+        pool = CONF.zvm.diskpool
         return self._hostops.get_diskpool_info(host, pool)
 
     def list_vms(self):
