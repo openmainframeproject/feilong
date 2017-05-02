@@ -425,3 +425,21 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
             ['netboot', 'device=0100',
              'osimage=sles12-s390x-netboot-0a0c576a_157f_42c8_2a254d8b77fc',
              'transport=/tmp/transport.tgz'])
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_get_nic_info(self, xrequest):
+        url = "/xcatws/vms/fakenode?userName=" +\
+                CONF.xcat.username +\
+               "&password=" + CONF.xcat.password +\
+               "&format=json&checknics=1000"
+        self._zvmclient._get_nic_info("1000", "fakenode")
+        xrequest.assert_called_with('GET', url)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_get_nic_switch_info(self, xrequest):
+        url = "/xcatws/tables/switch?userName=" +\
+                CONF.xcat.username +\
+               "&password=" + CONF.xcat.password +\
+               "&format=json"
+        self._zvmclient._get_nic_switch_info("fakenode")
+        xrequest.assert_called_with('GET', url)
