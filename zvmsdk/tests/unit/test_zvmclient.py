@@ -63,28 +63,21 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         return {'info': [fake_disk_info, ]}
 
     @mock.patch.object(zvmclient.XCATClient, '_construct_zhcp_info')
-    @mock.patch.object(zvmclient.XCATClient, 'get_diskpool_info')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_get_host_info(self, xrequest, get_diskpool_info,
-                           _construct_zhcp_info):
+    def test_get_host_info(self, xrequest, _construct_zhcp_info):
         xrequest.return_value = self._fake_host_rinv_info()
-        get_diskpool_info.return_value = {'disk_total': 100, 'disk_used': 80,
-                                          'disk_available': 20}
         fake_zhcp_info = {'hostname': 'fakehcp.fake.com',
                           'nodename': 'fakehcp',
                           'userid': 'fakehcp'}
         _construct_zhcp_info.return_value = fake_zhcp_info
         host_info = self._zvmclient.get_host_info()
-        self.assertEqual(host_info['vcpus'], 10)
-        self.assertEqual(host_info['hypervisor_version'], 610)
-        self.assertEqual(host_info['disk_total'], 100)
+        self.assertEqual(host_info['zvm_host'], "FAKENODE")
         self.assertEqual(self._zvmclient._zhcp_info, fake_zhcp_info)
         url = "/xcatws/nodes/" + CONF.zvm.host +\
                 "/inventory?userName=" + CONF.xcat.username +\
                 "&password=" + CONF.xcat.password +\
                 "&format=json"
         xrequest.assert_called_once_with('GET', url)
-        get_diskpool_info.assert_called_once_with()
         _construct_zhcp_info.assert_called_once_with("fakehcp.fake.com")
 
     @mock.patch.object(zvmutils, 'xcat_request')
@@ -96,9 +89,9 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
                 "&password=" + CONF.xcat.password +\
                 "&format=json&field=--diskpoolspace&field=FAKEDP"
         xrequest.assert_called_once_with('GET', url)
-        self.assertEqual(dp_info['disk_total'], 406105)
-        self.assertEqual(dp_info['disk_used'], 367263)
-        self.assertEqual(dp_info['disk_available'], 38843)
+        self.assertEqual(dp_info['disk_total'], "406105.3 G")
+        self.assertEqual(dp_info['disk_used'], "367262.6 G")
+        self.assertEqual(dp_info['disk_available'], "38842.7 G")
 
     @mock.patch.object(zvmclient.XCATClient, 'get_host_info')
     @mock.patch.object(zvmclient.XCATClient, '_construct_zhcp_info')
