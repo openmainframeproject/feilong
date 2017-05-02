@@ -17,46 +17,98 @@ import ConfigParser
 import os
 
 
-config_dicts_default = {
-    'xcat': {
-        'server': {"required": True},
-        'username': {"type": None, "required": True},
-        'password': {"default": None, "required": True},
-        'master_node': {},
-        'zhcp_node': {},
-        'zhcp': {"default": None, "type": None, "required": True},
-        'ca_file': {},
-        'connection_timeout': {"default": 3600, "type": int},
-    },
-    'logging': {
-        'log_file': {"default": "zvmsdk.log"},
-        'log_level': {"default": "logging.INFO"},
-    },
-    'zvm': {
-        'host': {"required": True},
-        'default_nic_vdev': {"default": '1000'},
-        'user_default_password': {"default": 'dfltpass'},
-        'diskpool': {"required": True},
-        'user_root_vdev': {"default": '0100'},
-        'root_disk_units': {"default": '3338'},
-        'diskpool_type': {"default": 'ECKD'},
-        'client_type': {"default": 'xcat'},
-    },
-    'network': {
-        'my_ip': {},
-        'device': {},
-        'broadcast_v4': {},
-        'gateway_v4': {},
-        'netmask_v4': {},
-        'subchannels': {},
-        'nic_name': {},
-    },
-    'instance': {
-        'instances_path': {},
-        'tempdir': {},
-        'reachable_timeout': {"default": 300, "type": 'int'},
-    }
-}
+class Opt(object):
+    def __init__(self, opt_name, descritpion='', section='default',
+                 opt_type='str', default=None, required=False):
+        self.name = opt_name
+        self.decsription = descritpion
+        self.section = section
+        self.opt_type = opt_type
+        self.default = default
+        self.required = required
+
+
+zvm_opts = [
+    # xcat options
+    Opt('server',
+        section='xcat',
+        required=True),
+    Opt('username',
+        section='xcat',
+        required=True),
+    Opt('password',
+        section='xcat',
+        required=True),
+    Opt('master_node',
+        section='xcat'),
+    Opt('zhcp_node',
+        section='xcat'),
+    Opt('zhcp',
+        section='xcat',
+        required=True),
+    Opt('ca_file',
+        section='xcat'),
+    Opt('connection_timeout',
+        section='xcat',
+        default=3600,
+        type='int'),
+    # logging options
+    Opt('log_file',
+        section='logging',
+        default='/var/log/zvmsdk/zvmsdk.log'),
+    Opt('log_level',
+        section='logging',
+        default='logging.INFO'),
+    # zvm options
+    Opt('host',
+        section='zvm',
+        required=True),
+    Opt('default_nic_vdev',
+        section='zvm',
+        default='1000'),
+    Opt('root_disk_units',
+        section='zvm',
+        default='3338'),
+    Opt('user_default_password',
+        section='zvm',
+        default='dfltpass'),
+    Opt('diskpool',
+        section='zvm',
+        required=True),
+    Opt('user_root_vdev',
+        section='zvm',
+        default='0100'),
+    Opt('diskpool_type',
+        section='zvm',
+        default='ECKD'),
+    Opt('client_type',
+        section='zvm',
+        default='xcat'),
+    # network options
+    Opt('my_ip',
+        section='network'),
+    Opt('device',
+        section='network'),
+    Opt('broadcast_v4',
+        section='network'),
+    Opt('gateway_v4',
+        section='network'),
+    Opt('netmask_v4',
+        section='network'),
+    Opt('subchannels',
+        section='network'),
+    Opt('nic_name',
+        section='network'),
+    # instance options
+    Opt('instance_path',
+        section='instance'),
+    Opt('tempdir',
+        section='instance'),
+    Opt('reachable_timeout',
+        section='instance',
+        default=300,
+        opt_type='int'),
+    ]
 
 
 class ConfigOpts(object):
@@ -64,13 +116,27 @@ class ConfigOpts(object):
     def __init__(self):
         self.dicts = {}
 
-    def register(self):
+    def _get_config_dicts_default(self, opts):
+        _dict = {}
+        for opt in opts:
+            sec = opt.section
+            if _dict.get(sec) is None:
+                _dict[sec] = {}
+            _dict[sec][opt.name] = {'required': opt.required,
+                                    'default': opt.default,
+                                    'type': opt.opt_type}
+        return _dict
+
+    def register(self, opts):
         cf = ConfigParser.ConfigParser()
         read_file = self.find_config_file(project="zvmsdk")
         cf.read(read_file)
         # return all sections in a list
         secs = cf.sections()
         config_dicts_override = self.config_ini_to_dicts(secs, cf)
+
+        config_dicts_default = self._get_config_dicts_default(opts)
+
         try:
             configs = self.merge(config_dicts_default, config_dicts_override)
         except ImportError:
@@ -283,4 +349,4 @@ class RequiredOptMissingError(Exception):
 
 
 CONF = ConfigOpts()
-CONF = CONF.register()
+CONF = CONF.register(zvm_opts)
