@@ -45,3 +45,6 @@ class NetworkOPS(object):
                   {'id': nic_id, 'address': mac_addr,
                    'vdev': nic_vdev})
         self.zvmclient.create_port(vm_id, nic_id, mac_addr, nic_vdev)
+
+    def wait_port_created(self, vm_id):
+        self.zvmclient.wait_port_created(vm_id)

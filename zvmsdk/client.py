@@ -438,3 +438,59 @@ class XCATClient(ZVMClient):
         with zvmutils.except_xcat_call_failed_and_reraise(
                 exception.ZVMXCATUpdateNodeFailed):
             zvmutils.xcat_request("PUT", url, body)
+
+    def _get_nic_switch_info(self, vm_id):
+        url = self._xcat_url.tabdump("/switch")
+        with zvmutils.expect_invalid_xcat_resp_data():
+            switch_info = zvmutils.xcat_request("GET", url)['data'][0]
+            switch_info.pop(0)
+            switch_dict = {}
+            for item in switch_info:
+                switch_list = item.split(',')
+                if switch_list[0].strip('"') == vm_id:
+                    switch_dict[switch_list[4].strip('"')] = \
+                                            switch_list[1].strip('"')
+
+            LOG.debug("Switch info the %(vm_id)s is %(switch_dict)s",
+                      {"vm_id": vm_id, "switch_dict": switch_dict})
+            return switch_dict
+
+    def _get_nic_info(self, key, vm_id):
+        args = '&checknics=' + key
+        url = self._xcat_url.lsvm('/' + vm_id)
+        url = url + args
+        return zvmutils.xcat_request("GET", url)
+
+    def wait_port_created(self, vm_id):
+        """Wait until neutron zvm-agent add NICs into user direct done."""
+        def _wait_for_nic_add_in_direct():
+            try:
+                switch_dict = self._get_nic_switch_info(vm_id)
+                if switch_dict and '' not in switch_dict.values():
+                    for key, value in switch_dict.items():
+                        res_info = self.zvmclient._get_nic_info(key,
+                                                                vm_id)
+                        with zvmutils.expect_invalid_xcat_resp_data(res_info):
+                            if ("errorcode" in res_info and
+                                (len(res_info["errorcode"]) > 0) and
+                                res_info["errorcode"][0] != '0'):
+                                # we didn't found the definition
+                                raise exception.ZVMRetryException
+                else:
+                    # in this case, the nic switch info is not ready yet
+                    # need another loop to check until time out or find it
+                    raise exception.ZVMRetryException
+
+            except exception.SDKBaseException as e:
+                # Ignore any zvm driver exceptions
+                LOG.info('encounter error %s during get vswitch info' %
+                         e.format_message())
+                raise exception.ZVMRetryException
+
+            # Enter here means all NIC granted
+            LOG.info("All NICs are added in user direct for "
+                     "VM %s." % vm_id)
+            return
+        zvmutils.looping_call(_wait_for_nic_add_in_direct, 10, 0, 10,
+                              CONF.instance.reachable_timeout,
+                              exception.ZVMRetryException, vm_id)
