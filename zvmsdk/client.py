@@ -92,34 +92,11 @@ class XCATClient(ZVMClient):
         inv_info_raw = zvmutils.xcat_request("GET", url)['info'][0]
         inv_keys = const.XCAT_RINV_HOST_KEYWORDS
         inv_info = zvmutils.translate_xcat_resp(inv_info_raw[0], inv_keys)
-        dp_info = self.get_diskpool_info()
 
-        host_info = {}
+        hcp_hostname = inv_info['zhcp']
+        self._zhcp_info = self._construct_zhcp_info(hcp_hostname)
 
-        with zvmutils.expect_invalid_xcat_resp_data(inv_info):
-            host_info['vcpus'] = int(inv_info['lpar_cpu_total'])
-            host_info['vcpus_used'] = int(inv_info['lpar_cpu_used'])
-            host_info['cpu_info'] = {}
-            host_info['cpu_info'] = {'architecture': const.ARCHITECTURE,
-                                     'cec_model': inv_info['cec_model'], }
-            host_info['disk_total'] = dp_info['disk_total']
-            host_info['disk_used'] = dp_info['disk_used']
-            host_info['disk_available'] = dp_info['disk_available']
-            mem_mb = zvmutils.convert_to_mb(inv_info['lpar_memory_total'])
-            host_info['memory_mb'] = mem_mb
-            mem_mb_used = zvmutils.convert_to_mb(inv_info['lpar_memory_used'])
-            host_info['memory_mb_used'] = mem_mb_used
-            host_info['hypervisor_type'] = const.HYPERVISOR_TYPE
-            verl = inv_info['hypervisor_os'].split()[1].split('.')
-            version = int(''.join(verl))
-            host_info['hypervisor_version'] = version
-            host_info['hypervisor_hostname'] = inv_info['hypervisor_name']
-            host_info['zhcp'] = inv_info['zhcp']
-            host_info['ipl_time'] = inv_info['ipl_time']
-            hcp_hostname = host_info['zhcp']
-            self._zhcp_info = self._construct_zhcp_info(hcp_hostname)
-
-        return host_info
+        return inv_info
 
     def get_diskpool_info(self, pool=CONF.zvm.diskpool):
         """Retrive diskpool info"""
@@ -131,28 +108,6 @@ class XCATClient(ZVMClient):
         dp_info_raw = res_dict['info'][0]
         dp_keys = const.XCAT_DISKPOOL_KEYWORDS
         dp_info = zvmutils.translate_xcat_resp(dp_info_raw[0], dp_keys)
-
-        with zvmutils.expect_invalid_xcat_resp_data(dp_info):
-            for k in list(dp_info.keys()):
-                s = dp_info[k].strip().upper()
-                if s.endswith('G'):
-                    sl = s[:-1].split('.')
-                    n1, n2 = int(sl[0]), int(sl[1])
-                    if n2 >= 5:
-                        n1 += 1
-                    dp_info[k] = n1
-                elif s.endswith('M'):
-                    n_mb = int(s[:-1])
-                    n_gb, n_ad = n_mb / 1024, n_mb % 1024
-                    if n_ad >= 512:
-                        n_gb += 1
-                    dp_info[k] = n_gb
-                else:
-                    exp = "ending with a 'G' or 'M'"
-                    errmsg = ("Invalid diskpool size format: %(invalid)s; "
-                        "Expected: %(exp)s") % {'invalid': s, 'exp': exp}
-                    LOG.error(errmsg)
-                    raise exception.ZVMSDKInternalError(msg=errmsg)
 
         return dp_info
 
