@@ -18,6 +18,7 @@ import functools
 import json
 import os
 import pwd
+import ssl
 import socket
 import stat
 import time
@@ -173,8 +174,11 @@ class XCATConnection(object):
 
     def __init__(self):
         """Initialize https connection to xCAT service."""
+        self.port = 443
         self.host = CONF.xcat.server
-        self.conn = httplib.HTTPSConnection(self.host)
+        self.conn = HTTPSClientAuthConnection(self.host, self.port,
+                        CONF.xcat.ca_file,
+                        timeout=CONF.xcat.connection_timeout)
 
     def request(self, method, url, body=None, headers={}):
         """Send https request to xCAT server.
@@ -244,6 +248,46 @@ class XCATConnection(object):
             raise exception.ZVMXCATRequestFailed(msg)
 
         return resp
+
+
+class HTTPSClientAuthConnection(httplib.HTTPSConnection):
+    """For https://wiki.openstack.org/wiki/OSSN/OSSN-0033"""
+
+    def __init__(self, host, port, ca_file, timeout=None, key_file=None,
+                 cert_file=None):
+        httplib.HTTPSConnection.__init__(self, host, port,
+                                         key_file=key_file,
+                                         cert_file=cert_file)
+        self.key_file = key_file
+        self.cert_file = cert_file
+        self.ca_file = ca_file
+        self.timeout = timeout
+        self.use_ca = True
+
+        if self.ca_file is None:
+            LOG.debug("no xCAT CA file specified, this is considered "
+                      "not secure")
+            self.use_ca = False
+
+    def connect(self):
+        sock = socket.create_connection((self.host, self.port), self.timeout)
+        if self._tunnel_host:
+            self.sock = sock
+            self._tunnel()
+
+        if (self.ca_file is not None and
+            not os.path.exists(self.ca_file)):
+            LOG.warning(("the CA file %(ca_file) does not exist!"),
+                        {'ca_file': self.ca_file})
+            self.use_ca = False
+
+        if not self.use_ca:
+            self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
+                                        cert_reqs=ssl.CERT_NONE)
+        else:
+            self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
+                                        ca_certs=self.ca_file,
+                                        cert_reqs=ssl.CERT_REQUIRED)
 
 
 def get_xcat_url():

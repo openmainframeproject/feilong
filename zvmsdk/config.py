@@ -25,6 +25,8 @@ config_dicts_default = {
         'master_node': {},
         'zhcp_node': {},
         'zhcp': {"default": None, "type": None, "required": True},
+        'ca_file': {},
+        'connection_timeout': {"default": 3600, "type": int},
     },
     'logging': {
         'log_file': {"default": "zvmsdk.log"},
