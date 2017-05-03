@@ -4,6 +4,4 @@
 import setuptools
 
 
-setuptools.setup(
-    name="python-zvm-sdk"
-)
+setuptools.setup()
