@@ -156,14 +156,17 @@ class SDKVMOpsTestCase(base.SDKTestCase):
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
     def test_get_info_error(self, gps, gipi):
         gps.return_value = 'on'
-        gipi.return_value = {}
-        self.assertRaises(exception.ZVMSDKInteralError,
+        gipi.side_effect = exception.ZVMVirtualMachineNotExist(
+            zvm_host='fakehost', userid='fakeid')
+        self.assertRaises(exception.ZVMVirtualMachineNotExist,
                           self.vmops.get_info, 'fakeid')
 
     @mock.patch('zvmsdk.vmops.VMOps.get_user_direct')
+    @mock.patch('zvmsdk.client.XCATClient.get_image_performance_info')
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    def test_get_info_shutdown(self, gps, gud):
+    def test_get_info_shutdown(self, gps, gipi, gud):
         gps.return_value = 'off'
+        gipi.return_value = None
         gud.return_value = [
             u'USER FAKEUSER DFLTPASS 2048m 2048m G',
             u'INCLUDE PROFILE',
@@ -180,6 +183,17 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertEqual(vm_info['mem_kb'], 0)
         self.assertEqual(vm_info['num_cpu'], 2)
         self.assertEqual(vm_info['cpu_time_ns'], 0)
+
+    @mock.patch('zvmsdk.vmops.VMOps.get_user_direct')
+    @mock.patch('zvmsdk.client.XCATClient.get_image_performance_info')
+    @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
+    def test_get_info_get_uid_failed(self, gps, gipi, gud):
+        gps.return_value = 'off'
+        gipi.return_value = None
+        gud.side_effect = exception.ZVMVirtualMachineNotExist(userid='fakeid',
+                                                        zvm_host='fakehost')
+        self.assertRaises(exception.ZVMVirtualMachineNotExist,
+                          self.vmops.get_info, 'fakeid')
 
     @mock.patch('zvmsdk.client.XCATClient.deploy_image_to_vm')
     def test_deploy_image_to_vm(self, deploy_image_to_vm):

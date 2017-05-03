@@ -204,6 +204,12 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         info = self._zvmclient.get_image_performance_info('fakevm')
         self.assertEqual(info['used_memory'], '5222192 KB')
 
+    @mock.patch('zvmsdk.client.XCATClient._image_performance_query')
+    def test_get_image_performance_info_not_exist(self, ipq):
+        ipq.return_value = {}
+        info = self._zvmclient.get_image_performance_info('fakevm')
+        self.assertEqual(info, None)
+
     @mock.patch('zvmsdk.utils.xdsh')
     def test_private_get_image_performance_info_single(self, dsh):
         dsh.return_value = {
@@ -418,3 +424,19 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
             ['netboot', 'device=0100',
              'osimage=sles12-s390x-netboot-0a0c576a_157f_42c8_2a254d8b77fc',
              'transport=/tmp/transport.tgz'])
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_private_power_state(self, xreq):
+        expt = {'info': [[u'fakeid: on\n']]}
+        xreq.return_value = expt
+        resp = self._zvmclient._power_state('fakeid', 'GET', 'state')
+        xreq.assert_called_once_with('GET', '/xcatws/nodes/fakeid/power'
+                    '?userName=admin&password=admin&format=json', ['state'])
+        self.assertEqual(resp, expt)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_private_power_state_invalid_node(self, xreq):
+        xreq.side_effect = exception.ZVMXCATRequestFailed(xcatserver='xcat',
+            msg='error: Invalid nodes and/or groups: fakenode')
+        self.assertRaises(exception.ZVMVirtualMachineNotExist,
+            self._zvmclient._power_state, 'fakeid', 'GET', ['state'])
