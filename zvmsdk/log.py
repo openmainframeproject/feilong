@@ -28,19 +28,13 @@ class Logger():
         fh = logging.FileHandler(path)
         fh.setLevel(Flevel)
 
-        # create a hander for the console
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.ERROR)
-
         # set the formate of the handler
         formatter = logging.Formatter(
             '[%(asctime)s] [%(levelname)s] %(message)s', '%Y-%m-%d %H:%M:%S')
         fh.setFormatter(formatter)
-        ch.setFormatter(formatter)
 
         # add handler in the logger
         self.logger.addHandler(fh)
-        self.logger.addHandler(ch)
 
     def getlog(self):
         return self.logger
