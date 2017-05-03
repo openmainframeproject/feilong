@@ -18,15 +18,15 @@ from config import CONF
 
 
 class Logger():
-    def __init__(self, logger, path="/var/log/nova/zvmsdk.log",
-                    Clevel=logging.DEBUG, Flevel = logging.DEBUG):
+    def __init__(self, logger, path="/tmp/zvmsdk.log",
+                 level=logging.INFO):
         # create a logger
         self.logger = logging.getLogger(logger)
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(level)
 
         # create a handler for the file
         fh = logging.FileHandler(path)
-        fh.setLevel(Flevel)
+        fh.setLevel(level)
 
         # set the formate of the handler
         formatter = logging.Formatter(
@@ -40,18 +40,21 @@ class Logger():
         return self.logger
 
 
-log_level = CONF.logging.log_level
-if log_level is "logging.INFO" or "logging.info":
+log_level = CONF.logging.log_level.upper()
+if log_level in ('LOGGING.INFO', 'INFO'):
     log_level = logging.INFO
-elif log_level is "logging.DEBUG" or "logging.debug":
+elif log_level in ('LOGGING.DEBUG', 'DEBUG'):
     log_level = logging.DEBUG
-elif log_level is "logging.WARN" or "logging.warn":
+elif log_level in ('LOGGING.WARN', 'WARN'):
     log_level = logging.WARN
-elif log_level is "logging.ERROR" or "logging.error":
+elif log_level in ('LOGGING.ERROR', 'ERROR'):
     log_level = logging.ERROR
-elif log_level is "logging.CRITICAL" or "logging.critical":
+elif log_level in ('LOGGING.CRITICAL', 'CRITICAL'):
     log_level = logging.CRITICAL
+else:
+    # default to logging.INFO
+    log_level = logging.INFO
 
-LOG = Logger(
-        path=CONF.logging.log_file, logger='ZVMSDK',
-        Clevel = log_level, Flevel = log_level).getlog()
+
+LOG = Logger(path=CONF.logging.log_file, logger='ZVMSDK',
+             level=log_level).getlog()

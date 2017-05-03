@@ -55,7 +55,7 @@ zvm_opts = [
     # logging options
     Opt('log_file',
         section='logging',
-        default='/var/log/zvmsdk/zvmsdk.log'),
+        default='/tmp/zvmsdk.log'),
     Opt('log_level',
         section='logging',
         default='logging.INFO'),
