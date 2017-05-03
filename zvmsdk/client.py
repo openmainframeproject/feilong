@@ -57,14 +57,15 @@ class XCATClient(ZVMClient):
         """Invoke xCAT REST API to set/get power state for a instance."""
         body = [state]
         url = self._xcat_url.rpower('/' + userid)
-        return zvmutils.xcat_request(method, url, body)
+        with zvmutils.except_invalid_xcat_node_and_reraise(userid):
+            return zvmutils.xcat_request(method, url, body)
 
     def power_on(self, userid):
         """"Power on VM."""
         try:
             self._power_state(userid, "PUT", "on")
         except exception.ZVMXCATInternalError as err:
-            err_str = str(err)
+            err_str = err.format_message()
             if ("Return Code: 200" in err_str and
                     "Reason Code: 8" in err_str):
                 # VM already active
@@ -197,12 +198,13 @@ class XCATClient(ZVMClient):
 
     def get_image_performance_info(self, userid):
         pi_dict = self._image_performance_query([userid])
-        return pi_dict[userid.upper()]
+        return pi_dict.get(userid.upper(), None)
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def _lsvm(self, userid):
         url = self._xcat_url.lsvm('/' + userid)
-        resp_info = zvmutils.xcat_request("GET", url)['info'][0][0]
+        with zvmutils.except_invalid_xcat_node_and_reraise(userid):
+            resp_info = zvmutils.xcat_request("GET", url)['info'][0][0]
         return resp_info.split('\n')
 
     def get_user_direct(self, userid):

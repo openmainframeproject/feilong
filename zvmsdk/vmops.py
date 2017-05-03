@@ -65,10 +65,9 @@ class VMOps(object):
 
     def get_info(self, userid):
         power_stat = self.get_power_state(userid)
+        perf_info = self._zvmclient.get_image_performance_info(userid)
 
-        if power_stat == 'on':
-            # virtual machine in active or paused state
-            perf_info = self._zvmclient.get_image_performance_info(userid)
+        if perf_info:
             try:
                 max_mem_kb = int(perf_info['max_memory'].split()[0])
                 mem_kb = int(perf_info['used_memory'].split()[0])
@@ -86,8 +85,9 @@ class VMOps(object):
                     'num_cpu': num_cpu,
                     'cpu_time_ns': cpu_time_ns}
         else:
-            # virtual machine in shutdown state
-            dict_info = self.get_user_direct(userid)
+            # virtual machine in shutdown state or not exists
+            with zvmutils.except_invalid_xcat_node_and_reraise(userid):
+                dict_info = self.get_user_direct(userid)
             return {
                 'power_state': power_stat,
                 'max_mem_kb': self._get_max_memory_from_user_dict(dict_info),

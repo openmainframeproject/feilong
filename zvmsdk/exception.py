@@ -116,3 +116,7 @@ class ZVMConfigDriveError(SDKBaseException):
 
 class ZVMRetryException(SDKBaseException):
     pass
+
+
+class ZVMVirtualMachineNotExist(SDKBaseException):
+    msg_fmt = 'Virtual machine %(userid)s does not exist in %(zvm_host)s'

@@ -344,6 +344,21 @@ def except_xcat_call_failed_and_reraise(exc, **kwargs):
         raise exc(**kwargs)
 
 
+@contextlib.contextmanager
+def except_invalid_xcat_node_and_reraise(userid):
+    """Catch <Invalid nodes and/or groups in noderange: > and reraise."""
+    try:
+        yield
+    except (exception.ZVMXCATRequestFailed,
+            exception.ZVMXCATInternalError) as err:
+        msg = err.format_message()
+        if "Invalid nodes and/or groups" in msg:
+            raise exception.ZVMVirtualMachineNotExist(
+                    zvm_host=CONF.zvm.host, userid=userid)
+        else:
+            raise err
+
+
 def wrap_invalid_xcat_resp_data_error(function):
     """Catch exceptions when using xCAT response data."""
 
