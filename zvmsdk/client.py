@@ -393,3 +393,50 @@ class XCATClient(ZVMClient):
         with zvmutils.except_xcat_call_failed_and_reraise(
                 exception.ZVMXCATUpdateNodeFailed):
             zvmutils.xcat_request("PUT", url, body)
+
+    def _get_nic_ids(self):
+        addp = ''
+        url = self._xcat_url.tabdump("/switch", addp)
+        with zvmutils.expect_invalid_xcat_resp_data():
+            nic_settings = zvmutils.xcat_request("GET", url)['data'][0]
+        # remove table header
+        nic_settings.pop(0)
+        # it's possible to return empty array
+        return nic_settings
+
+    def update_ports(self, registered_ports):
+        ports_info = self._get_nic_ids()
+        ports = set()
+        for p in ports_info:
+            target_host = p.split(',')[5].strip('"')
+            new_port_id = p.split(',')[2].strip('"')
+            if target_host == CONF.xcat.zhcp_node:
+                ports.add(new_port_id)
+
+        if ports == registered_ports:
+            return
+
+        added = ports - registered_ports
+        removed = registered_ports - ports
+        return {'current': ports, 'added': added, 'removed': removed}
+
+    def _get_userid_from_node(self, vm_id):
+        addp = '&col=node&value=%s&attribute=userid' % vm_id
+        url = self._xcat_url.gettab("/zvm", addp)
+        with zvmutils.expect_invalid_xcat_resp_data():
+            return zvmutils.xcat_request("GET", url)['data'][0][0]
+
+    def _get_nic_settings(self, port_id, field=None, get_node=False):
+        """Get NIC information from xCat switch table."""
+        LOG.debug("Get nic information for port: %s", port_id)
+        addp = '&col=port&value=%s' % port_id + '&attribute=%s' % (
+                                                field and field or 'node')
+        url = self._xcat_url.gettab("/switch", addp)
+        with zvmutils.expect_invalid_xcat_resp_data():
+            ret_value = zvmutils.xcat_request("GET", url)['data'][0][0]
+        if field is None and not get_node:
+            ret_value = self._get_userid_from_node(ret_value)
+        return ret_value
+
+    def _get_node_from_port(self, port_id):
+        return self._get_nic_settings(port_id, get_node=True)

@@ -45,3 +45,6 @@ class NetworkOPS(object):
                   {'id': nic_id, 'address': mac_addr,
                    'vdev': nic_vdev})
         self.zvmclient.create_port(vm_id, nic_id, mac_addr, nic_vdev)
+
+    def update_ports(self, registered_ports):
+        self.zvmclient.update_ports(registered_ports)
