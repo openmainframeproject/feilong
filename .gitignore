@@ -9,3 +9,5 @@
 *.conf
 *.py.*.py
 *.py.orig
+build/*
+dist/*
