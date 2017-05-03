@@ -197,35 +197,6 @@ class VMOps(object):
     def set_ipl(self, instance_name, ipl_state):
         self._zvmclient.change_vm_ipl_state(instance_name, ipl_state)
 
-    def instance_exists(self, instance_name):
-        """Overwrite this to using instance name as input parameter."""
-        return instance_name in self.list_instances()
-
-    def list_instances(self):
-        """Return the names of all the instances known to the virtualization
-        layer, as a list.
-        """
-        zvm_host = CONF.zvm.host
-        hcp_base = CONF.xcat.zhcp
-
-        res_dict = self._zvmclient.get_tabdump_info()
-        instances = []
-
-        with zvmutils.expect_invalid_xcat_resp_data(res_dict):
-            data_entries = res_dict['data'][0][1:]
-            for data in data_entries:
-                l = data.split(",")
-                node, hcp = l[0].strip("\""), l[1].strip("\"")
-                hcp_short = hcp_base.partition('.')[0]
-
-                # zvm host and zhcp are not included in the list
-                if (hcp.upper() == hcp_base.upper() and
-                        node.upper() not in (zvm_host.upper(),
-                        hcp_short.upper(), CONF.xcat.master_node.upper())):
-                    instances.append(node)
-
-        return instances
-
     def is_powered_off(self, instance_name):
         """Return True if the instance is powered off."""
         return self._zvmclient.get_power_state(instance_name) == 'off'

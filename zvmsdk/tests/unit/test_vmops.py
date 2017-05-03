@@ -102,37 +102,10 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.set_ipl('cbi00063', CONF.zvm.user_root_vdev)
         xrequest.assert_called_once_with('PUT', url, body)
 
-    @mock.patch.object(zvmutils, 'xcat_request')
-    def test_list_instances(self, xrequest):
-        res_dict = {
-                'info': [],
-                'node': [],
-                'errorcode': [],
-                'data': [],
-                'error': []}
-        items = []
-        test_item1 = '#table header...'
-        test_item2 = '"cbi00021","' + CONF.xcat.zhcp + '","cbi00021",,,,,,'
-        test_item3 = '"cbi00038","' + CONF.xcat.zhcp + '","cbi00038",,,,,,'
-        items.append(test_item1)
-        items.append(test_item2)
-        items.append(test_item3)
-        res_dict['data'].append(items)
-        xrequest.return_value = res_dict
-        instances = [u'cbi00021', u'cbi00038']
-        ret = self.vmops.list_instances()
-        self.assertEqual(ret, instances)
-
     @mock.patch('zvmsdk.client.XCATClient.get_power_state')
     def test_is_powered_off(self, check_stat):
         check_stat.return_value = 'off'
         ret = self.vmops.is_powered_off('cbi00063')
-        self.assertEqual(True, ret)
-
-    @mock.patch('zvmsdk.vmops.VMOps.list_instances')
-    def test_instance_exists(self, list_instances):
-        list_instances.return_value = ['cbi00063', 'cbi00064']
-        ret = self.vmops.instance_exists('cbi00063')
         self.assertEqual(True, ret)
 
     @mock.patch.object(zvmutils, 'xcat_request')
