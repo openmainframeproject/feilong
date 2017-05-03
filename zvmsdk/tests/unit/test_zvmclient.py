@@ -684,3 +684,52 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
     def test_config_xcat_mac(self, add_mac):
         self._zvmclient._config_xcat_mac("fakeid")
         add_mac.assert_called_with("fakeid", "fake", "00:00:00:00:00:00")
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_get_nic_ids(self, xrequest):
+        xrequest.return_value = {"data": [["test1", "test2"]]}
+        url = "/xcatws/tables/switch?userName=" +\
+                CONF.xcat.username +\
+               "&password=" + CONF.xcat.password +\
+               "&format=json"
+        info = self._zvmclient._get_nic_ids()
+        xrequest.assert_called_with('GET', url)
+        self.assertEqual(info[0], "test2")
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_nic_ids')
+    def test_update_ports(self, get_nic_ids):
+        get_nic_ids.return_value = []
+        ports = set(["d9"])
+        info = self._zvmclient.update_ports(ports)
+        get_nic_ids.assert_called_with()
+        self.assertEqual(info['removed'], set(["d9"]))
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_get_userid_from_node(self, xrequest):
+        xrequest.return_value = {"data": ["fake"]}
+        url = "/xcatws/tables/zvm?userName=" +\
+                CONF.xcat.username +\
+               "&password=" + CONF.xcat.password +\
+               "&format=json" +\
+               "&col=node&value=fakenode&attribute=userid"
+        info = self._zvmclient._get_userid_from_node("fakenode")
+        xrequest.assert_called_with('GET', url)
+        self.assertEqual(info, xrequest.return_value['data'][0][0])
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_userid_from_node')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_get_nic_settings(self, xrequest, get_userid_from_node):
+        xrequest.return_value = {"data": [["fake"]]}
+        url = "/xcatws/tables/switch?userName=" +\
+                CONF.xcat.username +\
+               "&password=" + CONF.xcat.password +\
+               "&format=json" +\
+               "&col=port&value=fakeport&attribute=node"
+        self._zvmclient._get_nic_settings("fakeport")
+        xrequest.assert_called_once_with('GET', url)
+        get_userid_from_node.assert_called_once_with("fake")
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_nic_settings')
+    def test_get_node_from_port(self, get_nic_settings):
+        self._zvmclient._get_node_from_port("fakeport")
+        get_nic_settings.assert_called_with("fakeport", get_node=True)

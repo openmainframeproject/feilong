@@ -54,3 +54,6 @@ class NetworkOPS(object):
 
     def preset_vm_network(self, vm_id, ip_addr):
         self.zvmclient.preset_vm_network(vm_id, ip_addr)
+
+    def update_ports(self, registered_ports):
+        self.zvmclient.update_ports(registered_ports)
