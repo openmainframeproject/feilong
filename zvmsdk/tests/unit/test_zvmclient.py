@@ -647,7 +647,6 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_add_host_table_record(self, xrequest):
-        """Add/Update hostname/ip bundle in xCAT MN nodes table."""
         commands = "node=fakeid" + " hosts.ip=fakeip"
         commands += " hosts.hostnames=fakehost"
         body = [commands]
@@ -742,3 +741,85 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
     def test_get_node_from_port(self, get_nic_settings):
         self._zvmclient._get_node_from_port("fakeport")
         get_nic_settings.assert_called_with("fakeport", get_node=True)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_grant_user(self, xrequest):
+        url = "/xcatws/nodes/fakezhcp/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
+        commands += " -T fakeuserid"
+        commands += " -k switch_name=fakevs"
+        commands += " -k grant_userid=fakeuserid"
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+
+        self._zvmclient.grant_user("fakezhcp", "fakevs", "fakeuserid")
+        xrequest.assert_called_once_with("PUT", url, body)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_revoke_user(self, xrequest):
+        url = "/xcatws/nodes/fakezhcp/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
+        commands += " -T fakeuserid"
+        commands += " -k switch_name=fakevs"
+        commands += " -k revoke_userid=fakeuserid"
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+
+        self._zvmclient.revoke_user("fakezhcp", "fakevs", "fakeuserid")
+        xrequest.assert_called_once_with("PUT", url, body)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_get_all_userid(self, xrequest):
+        url = "/xcatws/tables/zvm?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        xrequest.return_value = {"data": [["test",
+                                           'R7,vs1,u1,-1,1000,zhcp']]}
+        result = {'R7': {'userid': 'u1'}}
+        info = self._zvmclient._get_all_userid()
+        xrequest.assert_called_once_with("GET", url)
+        self.assertEqual(info, result)
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_nic_ids')
+    @mock.patch.object(zvmclient.XCATClient, '_get_all_userid')
+    def test_get_userid_vswitch_vlan_id_mapping(self, get_all_userid,
+                                                get_nic_ids):
+        get_nic_ids.return_value = ['R7,vs1,p1,-1,1000,zhcp']
+        get_all_userid.return_value = {'R7': {'userid': 'u1'}}
+        result = {'p1': {'nodename': 'R7', 'vswitch': 'vs1',
+                         'userid': 'u1', 'vlan_id': '-1'}}
+        info = self._zvmclient._get_userid_vswitch_vlan_id_mapping('zhcp')
+        get_nic_ids.assert_called_once_with()
+        get_all_userid.assert_called_once_with()
+        self.assertEqual(info, result)
+
+    @mock.patch.object(zvmclient.XCATClient,
+                       '_get_userid_vswitch_vlan_id_mapping')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_re_grant_user(self, xrequest, get_mapping):
+        get_mapping.return_value = {'p1': {'nodename': 'R7', 'vswitch': 'vs1',
+                                           'userid': 'u1', 'vlan_id': '-1'}}
+        url = "/xcatws/nodes/zhcp/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        self._zvmclient.re_grant_user('zhcp')
+        cmd = ''
+        cmd += '/opt/zhcp/bin/smcli '
+        cmd += 'Virtual_Network_Vswitch_Set_Extended '
+        cmd += '-T u1 '
+        cmd += '-k switch_name=vs1 '
+        cmd += '-k grant_userid=u1'
+        cmd += '\n'
+        commands = 'echo -e "#!/bin/sh\n%s" > grant.sh' % cmd[:-1]
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        xrequest.assert_any_call("PUT", url, body)
+
+        commands = 'sh grant.sh;rm -f grant.sh'
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        xrequest.assert_any_call("PUT", url, body)
