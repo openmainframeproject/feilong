@@ -53,6 +53,7 @@ class XCATClient(ZVMClient):
     def __init__(self):
         self._xcat_url = zvmutils.get_xcat_url()
         self._zhcp_info = {}
+        self._MAX_REGRANT_USER_NUMBER = 1000
 
     def _power_state(self, userid, method, state):
         """Invoke xCAT REST API to set/get power state for a instance."""
@@ -567,3 +568,27 @@ class XCATClient(ZVMClient):
 
     def _get_node_from_port(self, port_id):
         return self._get_nic_settings(port_id, get_node=True)
+
+    def grant_user_to_vswitch(self, zhcp, vswitch_name, userid):
+        """Set vswitch to grant user."""
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
+        commands += " -T %s" % userid
+        commands += " -k switch_name=%s" % vswitch_name
+        commands += " -k grant_userid=%s" % userid
+        commands += " -h persist=YES"
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        zvmutils.xcat_request("PUT", url, body)
+
+    def revoke_user_from_vswitch(self, zhcp, vswitch_name, userid):
+        """Revoke user for vswitch."""
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
+        commands += " -T %s" % userid
+        commands += " -k switch_name=%s" % vswitch_name
+        commands += " -k revoke_userid=%s" % userid
+        commands += " -h persist=YES"
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        zvmutils.xcat_request("PUT", url, body)
