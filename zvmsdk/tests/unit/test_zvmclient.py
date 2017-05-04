@@ -647,7 +647,6 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_add_host_table_record(self, xrequest):
-        """Add/Update hostname/ip bundle in xCAT MN nodes table."""
         commands = "node=fakeid" + " hosts.ip=fakeip"
         commands += " hosts.hostnames=fakehost"
         body = [commands]
@@ -742,3 +741,37 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
     def test_get_node_from_port(self, get_nic_settings):
         self._zvmclient._get_node_from_port("fakeport")
         get_nic_settings.assert_called_with("fakeport", get_node=True)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_grant_user_to_vswitch(self, xrequest):
+        url = "/xcatws/nodes/fakezhcp/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
+        commands += " -T fakeuserid"
+        commands += " -k switch_name=fakevs"
+        commands += " -k grant_userid=fakeuserid"
+        commands += " -h persist=YES"
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+
+        self._zvmclient.grant_user_to_vswitch("fakezhcp",
+                                              "fakevs", "fakeuserid")
+        xrequest.assert_called_once_with("PUT", url, body)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_revoke_user_from_vswitch(self, xrequest):
+        url = "/xcatws/nodes/fakezhcp/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
+        commands += " -T fakeuserid"
+        commands += " -k switch_name=fakevs"
+        commands += " -k revoke_userid=fakeuserid"
+        commands += " -h persist=YES"
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+
+        self._zvmclient.revoke_user_from_vswitch("fakezhcp",
+                                                 "fakevs", "fakeuserid")
+        xrequest.assert_called_once_with("PUT", url, body)
