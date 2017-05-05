@@ -86,7 +86,7 @@ class VMOps(object):
                     'cpu_time_ns': cpu_time_ns}
         else:
             # virtual machine in shutdown state or not exists
-            with zvmutils.except_invalid_xcat_node_and_reraise(userid):
+            with zvmutils.expect_invalid_xcat_node_and_reraise(userid):
                 dict_info = self.get_user_direct(userid)
             return {
                 'power_state': power_stat,

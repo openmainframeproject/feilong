@@ -58,7 +58,7 @@ class XCATClient(ZVMClient):
         """Invoke xCAT REST API to set/get power state for a instance."""
         body = [state]
         url = self._xcat_url.rpower('/' + userid)
-        with zvmutils.except_invalid_xcat_node_and_reraise(userid):
+        with zvmutils.expect_invalid_xcat_node_and_reraise(userid):
             return zvmutils.xcat_request(method, url, body)
 
     def power_on(self, userid):
@@ -214,7 +214,7 @@ class XCATClient(ZVMClient):
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def _lsvm(self, userid):
         url = self._xcat_url.lsvm('/' + userid)
-        with zvmutils.except_invalid_xcat_node_and_reraise(userid):
+        with zvmutils.expect_invalid_xcat_node_and_reraise(userid):
             resp_info = zvmutils.xcat_request("GET", url)['info'][0][0]
         return resp_info.split('\n')
 
@@ -326,7 +326,7 @@ class XCATClient(ZVMClient):
         url = self._xcat_url.tabch("/mac")
         body = [commands]
 
-        with zvmutils.except_xcat_call_failed_and_reraise(
+        with zvmutils.expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
             return zvmutils.xcat_request("PUT", url, body)['data']
 
@@ -336,7 +336,7 @@ class XCATClient(ZVMClient):
         body = [commands]
         url = self._xcat_url.tabch("/hosts")
 
-        with zvmutils.except_xcat_call_failed_and_reraise(
+        with zvmutils.expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
             return zvmutils.xcat_request("PUT", url, body)['data']
 
@@ -346,7 +346,7 @@ class XCATClient(ZVMClient):
         url = self._xcat_url.tabch("/switch")
         body = [commands]
 
-        with zvmutils.except_xcat_call_failed_and_reraise(
+        with zvmutils.expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
             return zvmutils.xcat_request("PUT", url, body)['data']
 
@@ -365,7 +365,7 @@ class XCATClient(ZVMClient):
         url = self._xcat_url.tabch("/mac")
         body = [commands]
 
-        with zvmutils.except_xcat_call_failed_and_reraise(
+        with zvmutils.expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
             return zvmutils.xcat_request("PUT", url, body)['data']
 
@@ -379,7 +379,7 @@ class XCATClient(ZVMClient):
         url = self._xcat_url.tabch("/switch")
         body = [commands]
 
-        with zvmutils.except_xcat_call_failed_and_reraise(
+        with zvmutils.expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
             return zvmutils.xcat_request("PUT", url, body)['data']
 
@@ -394,7 +394,7 @@ class XCATClient(ZVMClient):
                 'nodetype.provmethod=%s' % node_info[2],
                 'nodetype.profile=%s' % node_info[3]]
 
-        with zvmutils.except_xcat_call_failed_and_reraise(
+        with zvmutils.expect_xcat_call_failed_and_reraise(
                 exception.ZVMXCATUpdateNodeFailed):
             zvmutils.xcat_request("PUT", url, body)
 
@@ -415,14 +415,14 @@ class XCATClient(ZVMClient):
         if transportfiles:
             body.append('transport=%s' % transportfiles)
 
-        with zvmutils.except_xcat_call_failed_and_reraise(
+        with zvmutils.expect_xcat_call_failed_and_reraise(
                 exception.ZVMXCATUpdateNodeFailed):
             zvmutils.xcat_request("PUT", url, body)
 
     def lsdef_image(self, image_uuid):
         parm = '&criteria=profile=~' + image_uuid
         url = self._xcat_url.lsdef_image(addp=parm)
-        with zvmutils.except_xcat_call_failed_and_reraise(
+        with zvmutils.expect_xcat_call_failed_and_reraise(
                 exception.ZVMImageError):
             res = zvmutils.xcat_request("GET", url)
         return res
@@ -502,14 +502,14 @@ class XCATClient(ZVMClient):
         body = [commands]
         url = self._xcat_url.tabch("/hosts")
 
-        with zvmutils.except_xcat_call_failed_and_reraise(
+        with zvmutils.expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
             zvmutils.xcat_request("PUT", url, body)['data']
 
     def _makehost(self):
         """Update xCAT MN /etc/hosts file."""
         url = self._xcat_url.network("/makehosts")
-        with zvmutils.except_xcat_call_failed_and_reraise(
+        with zvmutils.expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
             zvmutils.xcat_request("PUT", url)['data']
 

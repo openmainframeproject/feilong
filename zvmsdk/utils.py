@@ -337,7 +337,7 @@ def expect_invalid_xcat_resp_data(data=''):
 
 
 @contextlib.contextmanager
-def except_xcat_call_failed_and_reraise(exc, **kwargs):
+def expect_xcat_call_failed_and_reraise(exc, **kwargs):
     """Catch all kinds of xCAT call failure and reraise.
 
     exc: the exception that would be raised.
@@ -354,7 +354,7 @@ def except_xcat_call_failed_and_reraise(exc, **kwargs):
 
 
 @contextlib.contextmanager
-def except_invalid_xcat_node_and_reraise(userid):
+def expect_invalid_xcat_node_and_reraise(userid):
     """Catch <Invalid nodes and/or groups in noderange: > and reraise."""
     try:
         yield
