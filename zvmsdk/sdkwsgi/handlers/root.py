@@ -15,8 +15,8 @@ from oslo_serialization import jsonutils
 from oslo_utils import encodeutils
 
 
-from api import microversion
-from api import wsgi_wrapper
+from zvmsdk.sdkwsgi import microversion
+from zvmsdk.sdkwsgi import wsgi_wrapper
 
 
 @wsgi_wrapper.SdkWsgify
