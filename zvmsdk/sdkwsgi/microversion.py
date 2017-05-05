@@ -16,9 +16,9 @@ import collections
 import inspect
 
 import microversion_parse
-import webob
+import webob.dec
 
-import zvmsdk.sdkapi
+import zvmsdk.sdkwsgi
 
 
 SERVICE_TYPE = 'sdk'
@@ -93,7 +93,7 @@ class MicroversionMiddleware(object):
     @webob.dec.wsgify
     def __call__(self, req):
         try:
-            util = zvmsdk.sdkapi.util
+            util = zvmsdk.sdkwsgi.util
             microversion = extract_version(req.headers)
         except ValueError as exc:
             raise webob.exc.HTTPNotAcceptable(
