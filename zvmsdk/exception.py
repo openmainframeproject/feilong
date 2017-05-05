@@ -70,6 +70,10 @@ class ZVMXCATRequestFailed(SDKBaseException):
     msg_fmt = 'Request to xCAT server failed: %(msg)s'
 
 
+class ZVMInvalidInput(SDKBaseException):
+    msg_fmt = 'Input parameters is invalid: %(msg)s'
+
+
 class ZVMInvalidXCATResponseDataError(SDKBaseException):
     msg_fmt = 'Invalid data returned from xCAT: %(msg)s'
 
