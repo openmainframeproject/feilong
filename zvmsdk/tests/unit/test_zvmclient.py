@@ -617,3 +617,21 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
         self._zvmclient.import_image(image_bundle_package, image_profile)
         xrequest.assert_called_once_with('POST', fake_url, fake_body)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_get_vm_nic_info(self, xrequest):
+        url = "/xcatws/vms/fakenode?userName=" +\
+                CONF.xcat.username +\
+               "&password=" + CONF.xcat.password +\
+               "&format=json&checknics=1000"
+        self._zvmclient.get_vm_nic_info("1000", "fakenode")
+        xrequest.assert_called_with('GET', url)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_get_vm_nic_switch_info(self, xrequest):
+        url = "/xcatws/tables/switch?userName=" +\
+                CONF.xcat.username +\
+               "&password=" + CONF.xcat.password +\
+               "&format=json"
+        self._zvmclient.get_vm_nic_switch_info("fakenode")
+        xrequest.assert_called_with('GET', url)

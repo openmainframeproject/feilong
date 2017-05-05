@@ -450,3 +450,31 @@ class XCATClient(ZVMClient):
         finally:
             os.remove(image_bundle_package)
             return resp
+
+    def get_vm_nic_switch_info(self, vm_id):
+        """
+        Get NIC and switch mapping for the specified virtual machine.
+        """
+        url = self._xcat_url.tabdump("/switch")
+        with zvmutils.expect_invalid_xcat_resp_data():
+            switch_info = zvmutils.xcat_request("GET", url)['data'][0]
+            switch_info.pop(0)
+            switch_dict = {}
+            for item in switch_info:
+                switch_list = item.split(',')
+                if switch_list[0].strip('"') == vm_id:
+                    switch_dict[switch_list[4].strip('"')] = \
+                                            switch_list[1].strip('"')
+
+            LOG.debug("Switch info the %(vm_id)s is %(switch_dict)s",
+                      {"vm_id": vm_id, "switch_dict": switch_dict})
+            return switch_dict
+
+    def get_vm_nic_info(self, key, vm_id):
+        """
+        Check nic info for the specified virtual machine.
+        """
+        args = '&checknics=' + key
+        url = self._xcat_url.lsvm('/' + vm_id)
+        url = url + args
+        return zvmutils.xcat_request("GET", url)
