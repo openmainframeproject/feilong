@@ -281,9 +281,10 @@ class ConfigOpts(object):
         _etcdir = ''.join((_pdir, '/', 'etc/'))
         cfg_dirs = [
             self._fixpath(_cwd),
-            self._fixpath(_etcdir),
+            self._fixpath('/etc/zvmsdk/'),
+            self._fixpath('/etc/'),
             self._fixpath('~'),
-            self._fixpath('/etc/zvmsdk/')
+            self._fixpath(_etcdir),
         ]
         return [x for x in cfg_dirs if x]
 
