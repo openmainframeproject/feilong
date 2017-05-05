@@ -597,6 +597,7 @@ def looping_call(f, sleep=5, inc_sleep=0, max_sleep=60, timeout=600,
         retry = False
 
 
+# TODO:this is duplicate, need to DELETE?
 def create_xcat_node(instance_name, zhcp, userid=None):
     """Create xCAT node for z/VM instance."""
     LOG.debug("Creating xCAT node for %s" % instance_name)
