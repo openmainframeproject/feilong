@@ -343,10 +343,19 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
                           self._zvmclient._image_performance_query, 'fakevm')
 
     @mock.patch('zvmsdk.utils.xdsh')
-    def test_private_get_image_performance_info_err21(self, dsh):
+    def test_private_get_image_performance_info_err2(self, dsh):
         dsh.return_value = {'data': [[]]}
         self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
                           self._zvmclient._image_performance_query, 'fakevm')
+
+    @mock.patch('zvmsdk.utils.xdsh')
+    def test_private_get_image_performance_info_err3(self, dsh):
+        dsh.return_value = {
+            'info': [], 'node': [], 'errorcode': [[u'0']],
+            'data': [['zhcp2: Number of virtual server IDs: 1 ', None]],
+            'error': []}
+        pi_info = self._zvmclient._image_performance_query('fakevm')
+        self.assertEqual(pi_info, {})
 
     @mock.patch.object(zvmclient.XCATClient, '_add_switch_table_record')
     @mock.patch.object(zvmclient.XCATClient, '_add_mac_table_record')
