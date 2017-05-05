@@ -742,3 +742,13 @@ class PathUtils(object):
     def get_console_log_path(self, os_node, instance_name):
         return os.path.join(self.get_instance_path(os_node, instance_name),
                             "console.log")
+
+
+def to_utf8(text):
+    if isinstance(text, bytes):
+        return text
+    elif isinstance(text, six.text_type):
+        return text.encode('utf-8')
+    else:
+        raise TypeError("bytes or Unicode expected, got %s"
+                        % type(text).__name__)

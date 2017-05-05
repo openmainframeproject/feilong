@@ -11,25 +11,24 @@
 #    under the License.
 """Handler for the root of the sdk API."""
 
-import json
+import datetime
+import jwt
 
-from zvmsdk.sdkwsgi import microversion
 from zvmsdk.sdkwsgi import wsgi_wrapper
-from zvmsdk import utils
+from zvmsdk import api
+from zvmsdk import config
+from zvmsdk import log
+
+
+TOKEN_EXPIRE_TIME = 30
 
 
 @wsgi_wrapper.SdkWsgify
-def home(req):
-    min_version = microversion.min_version_string()
-    max_version = microversion.max_version_string()
+def create(req):
+    expired_elapse = datetime.timedelta(seconds=TOKEN_EXPIRE_TIME)
+    expired_time = datetime.datetime.utcnow() + expired_elapse
+    payload = jwt.encode({'exp': expired_time}, 'username')
 
-    version_data = {
-        'id': 'v%s' % min_version,
-        'max_version': max_version,
-        'min_version': min_version,
-    }
-    version_json = json.dumps({'versions': [version_data]})
-    req.response.body = utils.to_utf8(version_json)
-    req.response.content_type = 'application/json'
+    req.response.headers.add('X-Auth-Token', payload)
 
     return req.response
