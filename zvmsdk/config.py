@@ -52,6 +52,10 @@ zvm_opts = [
         section='xcat',
         default=3600,
         opt_type='int'),
+    Opt('free_space_threshold',
+        section='xcat',
+        default=50,
+        opt_type='int'),
     # logging options
     Opt('log_file',
         section='logging',
@@ -84,6 +88,9 @@ zvm_opts = [
     Opt('client_type',
         section='zvm',
         default='xcat'),
+    Opt('image_tmp_path',
+        section='zvm',
+        default='/tmp/zvmsdk/images/'),
     # network options
     Opt('my_ip',
         section='network'),
