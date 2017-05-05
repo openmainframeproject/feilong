@@ -45,3 +45,9 @@ class NetworkOPS(object):
                   {'id': nic_id, 'address': mac_addr,
                    'vdev': nic_vdev})
         self.zvmclient.create_port(vm_id, nic_id, mac_addr, nic_vdev)
+
+    def get_vm_nic_switch_info(self, vm_id):
+        return self.zvmclient.get_vm_nic_switch_info(vm_id)
+
+    def get_vm_nic_info(self, key, vm_id):
+        return self.zvmclient.get_vm_nic_info(key, vm_id)
