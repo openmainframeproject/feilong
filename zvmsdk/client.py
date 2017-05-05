@@ -228,6 +228,16 @@ class XCATClient(ZVMClient):
         res_dict = zvmutils.xcat_request("GET", url)
         return res_dict
 
+    def validate_vm_id(self, userid):
+        if len(userid) > 8:
+            msg = ("Don't support spawn vm on zVM hypervisor with name:%s,"
+                   "please make sure vm_id not longer than 8." % userid)
+            raise exception.ZVMInvalidInput(msg)
+        resp = None
+        with zvmutils.except_invalid_xcat_node_and_reraise(userid):
+            resp = self._lsdef(userid)
+        return resp is not None
+
     def make_vm(self, userid, kwprofile, cpu, memory, image_name):
         body = [kwprofile,
                 'password=%s' % CONF.zvm.user_default_password,
