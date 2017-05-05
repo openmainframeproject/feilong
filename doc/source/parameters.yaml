@@ -1,0 +1,6 @@
+id:
+  description: |
+    id
+  in: header
+  required: true
+  type: string
