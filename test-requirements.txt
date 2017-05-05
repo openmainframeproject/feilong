@@ -1,1 +1,8 @@
 mock
+python-subunit
+gabbi
+routes
+webob
+jsonschema
+microversion_parse
+jwt

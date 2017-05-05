@@ -1,0 +1,11 @@
+defaults:
+    request_headers:
+        accept: application/json
+        x-auth-token: admin
+
+tests:
+
+- name: get an encoded snowman
+  desc: this should fall through to a NotFound on the resource provider object
+  GET: /resources_providers/%e2%98%83
+  status: 403
