@@ -233,8 +233,8 @@ class ImageOps(object):
         LOG.debug("Importing the image %s to xCAT", image_meta['id'])
         image_profile = image_uuid
         self.zvmclient.check_space_imgimport_xcat(image_bundle_package,
-                        CONF.xcat.xcat_free_space_threshold,
-                        CONF.xcat.zvm_xcat_master)
+                        CONF.xcat.free_space_threshold,
+                        CONF.xcat.master_node)
         resp = self.zvmclient.import_image(image_bundle_package,
                                     image_profile)
         for i in range(0, 5):
