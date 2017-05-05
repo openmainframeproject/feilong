@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c818399b_6b544fdf",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-05-05T06:03:55Z",
+      "side": 1,
+      "message": "add a blank line between subject and content",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 52
+      },
+      "revId": "77bab0e2985762667fddeff3fca7ca8db9eeb345",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1c7f5149_6f812e6d",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-05-05T06:03:55Z",
+      "side": 1,
+      "message": "validate xcat node in this method? Why?",
+      "range": {
+        "startLine": 228,
+        "startChar": 12,
+        "endLine": 228,
+        "endChar": 38
+      },
+      "revId": "77bab0e2985762667fddeff3fca7ca8db9eeb345",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "42420924_a1abb7c4",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-05-05T06:03:55Z",
+      "side": 1,
+      "message": "equals:  \nreturn resp is not None",
+      "range": {
+        "startLine": 229,
+        "startChar": 0,
+        "endLine": 232,
+        "endChar": 24
+      },
+      "revId": "77bab0e2985762667fddeff3fca7ca8db9eeb345",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
