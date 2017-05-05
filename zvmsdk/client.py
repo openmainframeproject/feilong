@@ -189,7 +189,17 @@ class XCATClient(ZVMClient):
         with zvmutils.expect_invalid_xcat_resp_data():
             rpi_list = raw_data.split(": \n")
             for rpi in rpi_list:
-                pi = zvmutils.translate_xcat_resp(rpi, ipq_kws)
+                try:
+                    pi = zvmutils.translate_xcat_resp(rpi, ipq_kws)
+                except exception.ZVMInvalidXCATResponseDataError as err:
+                    emsg = err.format_message()
+                    # when there is only one userid queried and this userid is
+                    # in 'off'state, the smcli will only returns the queried
+                    # userid number, no valid performance info returned.
+                    if(emsg.__contains__("No value matched with keywords.")):
+                        continue
+                    else:
+                        raise err
                 for k, v in pi.items():
                     pi[k] = v.strip('" ')
                 if pi.get('userid') is not None:
