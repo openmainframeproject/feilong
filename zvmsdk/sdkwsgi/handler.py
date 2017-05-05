@@ -29,6 +29,8 @@ import webob
 from zvmsdk import exception
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi.handlers import root
+#from zvmsdk.sdkwsgi.handlers import tokens
+from zvmsdk.sdkwsgi.handlers import vm
 
 
 # When adding URLs here, do not use regex patterns in
@@ -38,6 +40,9 @@ from zvmsdk.sdkwsgi.handlers import root
 ROUTE_DECLARATIONS = {
     '/': {
         'GET': root.home,
+    },
+    '/vm': {
+        'GET': vm.list_vm,
     },
 }
 
