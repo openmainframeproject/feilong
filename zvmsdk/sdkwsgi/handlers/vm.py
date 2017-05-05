@@ -11,25 +11,16 @@
 #    under the License.
 """Handler for the root of the sdk API."""
 
-import json
 
-from zvmsdk.sdkwsgi import microversion
 from zvmsdk.sdkwsgi import wsgi_wrapper
-from zvmsdk import utils
+from zvmsdk import config
+from zvmsdk import log
+
+
+CONF = config.CONF
+LOG = log.LOG
 
 
 @wsgi_wrapper.SdkWsgify
-def home(req):
-    min_version = microversion.min_version_string()
-    max_version = microversion.max_version_string()
-
-    version_data = {
-        'id': 'v%s' % min_version,
-        'max_version': max_version,
-        'min_version': min_version,
-    }
-    version_json = json.dumps({'versions': [version_data]})
-    req.response.body = utils.to_utf8(version_json)
-    req.response.content_type = 'application/json'
-
-    return req.response
+def list_vm(req):
+    pass
