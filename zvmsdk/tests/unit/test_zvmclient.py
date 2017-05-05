@@ -499,6 +499,23 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         ret = self._zvmclient._lsvm(fake_userid)
         self.assertEqual(ret[0], fake_userid)
 
+    @mock.patch.object(zvmclient.XCATClient, '_lsdef')
+    def test_validate_vm_id(self, lsdef):
+        fake_userid = 'fake_userid'
+
+        msg = ("Don't support spawn vm on zVM hypervisor with name:%s,"
+               "please make sure vm_id not longer than 8." % fake_userid)
+
+        with self.assertRaises(exception.ZVMInvalidInput) as err:
+            self._zvmclient.validate_vm_id(fake_userid)
+        exc = err.exception
+        self.assertEqual(exc.format_message(), msg)
+
+        fake_userid = '12345678'
+        lsdef.return_value = 'not nuuuull'
+        ret = self._zvmclient.validate_vm_id(fake_userid)
+        self.assertEqual(ret, True)
+
     def test_get_node_status(self):
         # TODO:moving to vmops and change name to ''
         pass
