@@ -40,22 +40,30 @@ class SDKAPI(object):
 
     def get_vm_info(self, vm_id):
         """Returns a dict containing:
+
         :param power_state: the running state, one of on | off
         :param max_mem_kb: (int) the maximum memory in KBytes allowed
         :param mem_kb: (int) the memory in KBytes used by the instance
         :param num_cpu: (int) the number of virtual CPUs for the instance
         :param cpu_time_ns: (int) the CPU time used in nanoseconds
+
+        :returns: Dictionary describing resources
+        :raises: Exception
+
         """
         return self._vmops.get_info(vm_id)
 
     def get_host_info(self):
         """ Retrieve host information including host, memory, disk etc.
+
         :returns: Dictionary describing resources
+        :raises: Exception
         """
         return self._hostops.get_host_info()
 
     def get_diskpool_info(self, diskpool_name=CONF.zvm.diskpool):
         """ Retrieve diskpool information.
+
         :returns: Dictionary describing diskpool usage info
         """
         return self._hostops.get_diskpool_info(diskpool_name)
@@ -69,6 +77,7 @@ class SDKAPI(object):
     def deploy_image_to_vm(self, user_id, image_name, transportfiles=None,
                            vdev=None):
         """ Deploy the image to vm.
+
         :param user_id: the user id of the vm
         :param image_name: the name of image that used to deploy the vm
         :param transportfiles: the files that used to customize the vm
