@@ -597,20 +597,6 @@ def looping_call(f, sleep=5, inc_sleep=0, max_sleep=60, timeout=600,
         retry = False
 
 
-def create_xcat_node(instance_name, zhcp, userid=None):
-    """Create xCAT node for z/VM instance."""
-    LOG.debug("Creating xCAT node for %s" % instance_name)
-
-    user_id = instance_name
-    body = ['userid=%s' % user_id,
-            'hcp=%s' % zhcp,
-            'mgt=zvm',
-            'groups=%s' % const.ZVM_XCAT_GROUP]
-    url = get_xcat_url().mkdef('/' + instance_name)
-
-    xcat_request("POST", url, body)
-
-
 def _get_instances_path():
         return os.path.normpath(CONF.instance.instances_path)
 
