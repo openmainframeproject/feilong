@@ -101,39 +101,6 @@ class VMOps(object):
     def add_instance_metadata(self):
         pass
 
-    def _preset_instance_network(self, instance_name, ip_addr):
-        zvmutils.config_xcat_mac(instance_name)
-        LOG.debug("Add ip/host name on xCAT MN for instance %s",
-                    instance_name)
-
-        zvmutils.add_xcat_host(instance_name, ip_addr, instance_name)
-        zvmutils.makehosts()
-
-    def _add_nic_to_table(self, instance_name, ip_addr):
-        nic_vdev = CONF.zvm.default_nic_vdev
-        nic_name = CONF.network.nic_name
-        zhcpnode = CONF.xcat.zhcp
-        zvmutils.create_xcat_table_about_nic(zhcpnode,
-                                         instance_name,
-                                         nic_name,
-                                         ip_addr,
-                                         nic_vdev)
-        nic_vdev = str(hex(int(nic_vdev, 16) + 3))[2:]
-
-    def _wait_for_reachable(self, instance_name):
-        """Called at an interval until the instance is reachable."""
-        self._reachable = False
-
-        def _check_reachable():
-            if not self.is_reachable(instance_name):
-                pass
-            else:
-                self._reachable = True
-
-        zvmutils.looping_call(_check_reachable, 5, 5, 30,
-            CONF.instance.reachable_timeout,
-            exception.ZVMException(msg='not reachable, retry'))
-
     def is_reachable(self, instance_name):
         """Return True is the instance is reachable."""
         res_dict = self._zvmclient.get_node_status(instance_name)
