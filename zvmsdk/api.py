@@ -31,7 +31,12 @@ class SDKAPI(object):
         self._networkops = networkops.get_networkops()
 
     def power_on(self, vm_id):
-        """Power on a virtual machine."""
+        """Power on a virtual machine.
+
+        :param vm_id: the id of the vm to be power on
+
+        :returns: None
+        """
         self._vmops.power_on(vm_id)
 
     def get_power_state(self, vm_id):
@@ -40,6 +45,7 @@ class SDKAPI(object):
 
     def get_vm_info(self, vm_id):
         """Returns a dict containing:
+
         :param power_state: the running state, one of on | off
         :param max_mem_kb: (int) the maximum memory in KBytes allowed
         :param mem_kb: (int) the memory in KBytes used by the instance
@@ -50,29 +56,34 @@ class SDKAPI(object):
 
     def get_host_info(self):
         """ Retrieve host information including host, memory, disk etc.
+
         :returns: Dictionary describing resources
         """
         return self._hostops.get_host_info()
 
     def get_diskpool_info(self, diskpool_name=CONF.zvm.diskpool):
         """ Retrieve diskpool information.
+
         :returns: Dictionary describing diskpool usage info
         """
         return self._hostops.get_diskpool_info(diskpool_name)
 
     def list_vms(self):
-        """Return the names of all the VMs known to the virtualization
-        layer, as a list.
+        """list names of all the VMs on this host.
+
+        :returns: names of the vm on this host, in a list.
         """
         return self._hostops.get_vm_list()
 
     def deploy_image_to_vm(self, user_id, image_name, transportfiles=None,
                            vdev=None):
         """ Deploy the image to vm.
+
         :param user_id: the user id of the vm
         :param image_name: the name of image that used to deploy the vm
         :param transportfiles: the files that used to customize the vm
         :param vdev: the device that image will be deploy to
+
         """
         return self._vmops.deploy_image_to_vm(user_id, image_name,
                                               transportfiles=None, vdev=None)
