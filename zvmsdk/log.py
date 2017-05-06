@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 import logging
-from config import CONF
+
+from zvmsdk.config import CONF
 
 
 class Logger():
