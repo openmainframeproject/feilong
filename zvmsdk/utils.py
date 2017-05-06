@@ -14,7 +14,6 @@
 
 
 import contextlib
-import commands
 import functools
 import json
 import os
@@ -24,15 +23,15 @@ import shutil
 import six
 import socket
 import stat
+import subprocess
 import time
 
 from six.moves import http_client as httplib
 
+from zvmsdk import constants as const
 from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import log
-
-import constants as const
 
 
 CONF = config.CONF
@@ -529,11 +528,7 @@ def xdsh(node, commands):
 
 def execute(cmd):
     """execute command in shell and return output"""
-    # TODO:do some exception in future
-    status, output = commands.getstatusoutput(cmd)
-    # if success status will be 0
-    # if status != 0:
-    return output
+    return subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
 
 
 def get_host():

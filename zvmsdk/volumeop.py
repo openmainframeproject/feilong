@@ -15,8 +15,8 @@
 
 import re
 
-from log import LOG
-from exception import ZVMVolumeError
+from zvmsdk.exception import ZVMVolumeError
+from zvmsdk.log import LOG
 
 
 class VolumeOperatorAPI(object):

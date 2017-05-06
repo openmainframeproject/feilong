@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-import ConfigParser
 import os
+
+from six.moves import configparser
 
 
 class Opt(object):
@@ -135,7 +135,7 @@ class ConfigOpts(object):
         return _dict
 
     def register(self, opts):
-        cf = ConfigParser.ConfigParser()
+        cf = configparser.ConfigParser()
         read_file = self.find_config_file(project="zvmsdk")
         cf.read(read_file)
         # return all sections in a list

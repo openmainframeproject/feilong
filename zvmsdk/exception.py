@@ -12,10 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-import config
-import log
 import six
+
+from zvmsdk import config
+from zvmsdk import log
 
 
 CONF = config.CONF
