@@ -305,8 +305,8 @@ def get_xcat_url():
 
 def remove_prefix_of_unicode(str_unicode):
     str_unicode = str_unicode.encode('unicode_escape')
-    str_unicode = str_unicode.replace('\u', '')
     str_unicode = str_unicode.decode('utf-8')
+    str_unicode = str_unicode.replace('\\u', '')
     return str_unicode
 
 

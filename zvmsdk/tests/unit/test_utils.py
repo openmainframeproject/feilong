@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 #         http://www.apache.org/licenses/LICENSE-2.0
 #
@@ -16,3 +17,12 @@ class ZVMUtilsTestCases(base.SDKTestCase):
         self.assertEqual(2355.2, zvmutils.convert_to_mb('2.3G'))
         self.assertEqual(20, zvmutils.convert_to_mb('20M'))
         self.assertEqual(1153433.6, zvmutils.convert_to_mb('1.1T'))
+
+    def test_remove_prefix_of_unicode(self):
+        name = 'abc'
+        ret = zvmutils.remove_prefix_of_unicode(name)
+        self.assertEqual('abc', ret)
+
+        name = u'测试'
+        ret = zvmutils.remove_prefix_of_unicode(name)
+        self.assertEqual('6d4b8bd5', ret)
