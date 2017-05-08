@@ -21,8 +21,10 @@ from zvmsdk import client as zvmclient
 from zvmsdk import constants as const
 from zvmsdk import exception
 from zvmsdk import utils as zvmutils
-from zvmsdk.config import CONF
+from zvmsdk import config
 from zvmsdk.tests.unit import base
+
+CONF = config.CONF
 
 
 class SDKZVMClientTestCase(base.SDKTestCase):
@@ -755,7 +757,8 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_grant_user_to_vswitch(self, xrequest):
-        url = "/xcatws/nodes/fakezhcp/dsh?userName=" + CONF.xcat.username +\
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"
         commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
@@ -766,13 +769,13 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
 
-        self._zvmclient.grant_user_to_vswitch("fakezhcp",
-                                              "fakevs", "fakeuserid")
+        self._zvmclient.grant_user_to_vswitch("fakevs", "fakeuserid")
         xrequest.assert_called_once_with("PUT", url, body)
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_revoke_user_from_vswitch(self, xrequest):
-        url = "/xcatws/nodes/fakezhcp/dsh?userName=" + CONF.xcat.username +\
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"
         commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
@@ -783,6 +786,217 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
 
-        self._zvmclient.revoke_user_from_vswitch("fakezhcp",
-                                                 "fakevs", "fakeuserid")
+        self._zvmclient.revoke_user_from_vswitch("fakevs", "fakeuserid")
         xrequest.assert_called_once_with("PUT", url, body)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_couple_nic(self, xrequest):
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
+               "&password=" + CONF.xcat.password +\
+               "&format=json"
+        commands = '/opt/zhcp/bin/smcli'
+        commands += ' Virtual_Network_Adapter_Connect_Vswitch_DM'
+        commands += " -T fakeuserid " + "-v fakecdev"
+        commands += " -n fakevs"
+        xdsh_commands = 'command=%s' % commands
+        body1 = [xdsh_commands]
+
+        commands = '/opt/zhcp/bin/smcli'
+        commands += ' Virtual_Network_Adapter_Connect_Vswitch'
+        commands += " -T fakeuserid " + "-v fakecdev"
+        commands += " -n fakevs"
+        xdsh_commands = 'command=%s' % commands
+        body2 = [xdsh_commands]
+
+        self._zvmclient._couple_nic("fakevs",
+                                    "fakeuserid", "fakecdev", True)
+        xrequest.assert_any_call("PUT", url, body1)
+        xrequest.assert_any_call("PUT", url, body2)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_uncouple_nic(self, xrequest):
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
+               "&password=" + CONF.xcat.password +\
+               "&format=json"
+        commands = '/opt/zhcp/bin/smcli'
+        commands += ' Virtual_Network_Adapter_Disconnect_DM'
+        commands += " -T fakeuserid " + "-v fakecdev"
+        xdsh_commands = 'command=%s' % commands
+        body1 = [xdsh_commands]
+
+        commands = '/opt/zhcp/bin/smcli'
+        commands += ' Virtual_Network_Adapter_Disconnect'
+        commands += " -T fakeuserid " + "-v fakecdev"
+        xdsh_commands = 'command=%s' % commands
+        body2 = [xdsh_commands]
+
+        self._zvmclient._uncouple_nic("fakeuserid",
+                                      "fakecdev", True)
+        xrequest.assert_any_call("PUT", url, body1)
+        xrequest.assert_any_call("PUT", url, body2)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_get_xcat_node_ip(self, xrequest):
+        xrequest.return_value = {"data": [["fakeip"]]}
+        url = "/xcatws/tables/site?userName=" +\
+                CONF.xcat.username +\
+               "&password=" + CONF.xcat.password +\
+               "&format=json" +\
+               "&col=key&value=master&attribute=value"
+
+        info = self._zvmclient._get_xcat_node_ip()
+        xrequest.assert_called_with("GET", url)
+        self.assertEqual(info, "fakeip")
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_xcat_node_ip')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_get_xcat_node_name(self, xrequest, get_ip):
+        get_ip.return_value = "fakeip"
+        xrequest.return_value = {"data": [["fakename"]]}
+        url = "/xcatws/tables/hosts?userName=" +\
+              CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json" +\
+              "&col=ip&value=fakeip&attribute=node"
+
+        info = self._zvmclient._get_xcat_node_name()
+        get_ip.assert_called_with()
+        xrequest.assert_called_with("GET", url)
+        self.assertEqual(info, "fakename")
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_xcat_node_name')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_get_admin_created_vsw(self, xrequest, get_xcat_node_name):
+        get_xcat_node_name.return_value = "fakenode"
+        xrequest.return_value = {
+            "data": [["0"]],
+            "errorcode": [['0']]
+                            }
+        url = "/xcatws/nodes/fakenode/dsh?userName=" +\
+              CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = 'command=vmcp q v nic'
+        body = [commands]
+        self._zvmclient.get_admin_created_vsw()
+        get_xcat_node_name.assert_called_with()
+        xrequest.assert_called_with("PUT", url, body)
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_nic_settings')
+    @mock.patch.object(zvmclient.XCATClient, '_couple_nic')
+    def test_couple_nic_to_vswitch(self, couple_nic, get_nic_settings):
+        get_nic_settings.return_value = "fakevdev"
+        self._zvmclient.couple_nic_to_vswitch("fake_VS_name",
+                                              "fake_port_name",
+                                              "fake_userid",
+                                              True)
+
+        get_nic_settings.assert_called_with("fake_port_name", "interface")
+        couple_nic.assert_called_with("fake_VS_name",
+                                      "fake_userid",
+                                      "fakevdev", True)
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_nic_settings')
+    @mock.patch.object(zvmclient.XCATClient, '_uncouple_nic')
+    def test_uncouple_nic_from_vswitch(self, uncouple_nic, get_nic_settings):
+        get_nic_settings.return_value = "fakevdev"
+        self._zvmclient.uncouple_nic_from_vswitch("fake_VS_name",
+                                                  "fake_port_name",
+                                                  "fake_userid",
+                                                  True)
+
+        get_nic_settings.assert_called_with("fake_port_name", "interface")
+        uncouple_nic.assert_called_with("fake_userid",
+                                        "fakevdev", True)
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_userid_from_node')
+    def test_get_zhcp_userid(self, get_userid_from_node):
+        self._zvmclient._get_zhcp_userid()
+        get_userid_from_node.assert_called_with(CONF.xcat.zhcp_node)
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_check_vswitch_status(self, xrequest, get_zhcp_userid):
+        get_zhcp_userid.return_value = "fakeuserid"
+        xrequest.return_value = {
+            "data": [["0"]],
+            "errorcode": [['0']]
+                            }
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+
+        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Query'
+        commands += " -T fakeuserid"
+        commands += " -s fakevsw"
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+
+        self._zvmclient._check_vswitch_status("fakevsw")
+        get_zhcp_userid.assert_called_with()
+        xrequest.assert_called_with("PUT", url, body)
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_set_vswitch_rdev(self, xrequest, get_zhcp_userid):
+        get_zhcp_userid.return_value = "fakeuserid"
+        xrequest.return_value = {
+            "data": [["0"]],
+            "errorcode": [['0']]
+                            }
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
+        commands += ' -T fakeuserid'
+        commands += ' -k switch_name=fakevsw'
+        commands += ' -k real_device_address=fakerdev'
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+
+        self._zvmclient._set_vswitch_rdev("fakevsw", "fakerdev")
+        get_zhcp_userid.assert_called_with()
+        xrequest.assert_called_with("PUT", url, body)
+
+    @mock.patch.object(zvmclient.XCATClient, '_set_vswitch_rdev')
+    @mock.patch.object(zvmclient.XCATClient, '_check_vswitch_status')
+    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_add_vswitch(self, xrequest, get_zhcp_userid,
+                         check_vswitch_status, set_vswitch_rdev):
+        check_vswitch_status.return_value = None
+        get_zhcp_userid.return_value = "fakeuserid"
+        xrequest.return_value = {
+            "data": [["0"]],
+            "errorcode": [['0']]
+                            }
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Create'
+        commands += " -T fakeuserid"
+        commands += ' -n fakename'
+        commands += " -r fakerdev"
+        commands += " -c 1"
+        commands += " -q 8"
+        commands += " -e 0"
+        commands += " -t 2"
+        commands += " -v f-a"
+        commands += " -p 1"
+        commands += " -u 1"
+        commands += " -G 2"
+        commands += " -V 1"
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+
+        self.assertRaises(exception.ZVMException,
+                          self._zvmclient.add_vswitch,
+                          "fakename", "fakerdev",
+                          '*', 1, 8, 0, 2, ["fake_vid"], 1, 1, 2, 1)
+        check_vswitch_status.assert_called_with("fakename")
+        xrequest.assert_called_with("PUT", url, body)
