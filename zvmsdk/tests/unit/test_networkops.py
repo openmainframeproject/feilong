@@ -55,3 +55,38 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
     def test_clean_network_resource(self, clean_network_resource):
         self.networkops.clean_network_resource("fake_user_id")
         clean_network_resource.assert_called_with("fake_user_id")
+
+    @mock.patch.object(zvmclient.XCATClient, 'get_admin_created_vsw')
+    def test_get_admin_created_vsw(self, get_admin_created_vsw):
+        self.networkops.get_admin_created_vsw()
+        get_admin_created_vsw.assert_called_with()
+
+    @mock.patch.object(zvmclient.XCATClient, 'couple_nic_to_vswitch')
+    def test_couple_nic_to_vswitch(self, couple_nic_to_vswitch):
+        self.networkops.couple_nic_to_vswitch("fake_VS_name", "fake_VS_port",
+                                              "fake_userid",
+                                              True)
+        couple_nic_to_vswitch.assert_called_with("fake_VS_name",
+                                                 "fake_VS_port",
+                                                 "fake_userid",
+                                                 True)
+
+    @mock.patch.object(zvmclient.XCATClient, 'uncouple_nic_from_vswitch')
+    def test_uncouple_nic_from_vswitch(self, uncouple_nic_from_vswitch):
+        self.networkops.uncouple_nic_from_vswitch("fake_VS_name",
+                                                  "fake_VS_port",
+                                                  "fake_userid",
+                                                  True)
+        uncouple_nic_from_vswitch.assert_called_with("fake_VS_name",
+                                                     "fake_VS_port",
+                                                     "fake_userid",
+                                                     True)
+
+    @mock.patch.object(zvmclient.XCATClient, 'add_vswitch')
+    def test_add_vswitch(self, add_vswitch):
+        self.networkops.add_vswitch("fakename",
+                                    "fakerdev",
+                                    '*', 1, 8, 0, 2, 0, 1, 1, 2, 1)
+        add_vswitch.assert_called_with("fakename",
+                                       "fakerdev",
+                                       '*', 1, 8, 0, 2, 0, 1, 1, 2, 1)
