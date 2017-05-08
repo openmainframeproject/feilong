@@ -17,6 +17,7 @@ from zvmsdk import vmops
 from zvmsdk import hostops
 from zvmsdk import config
 from zvmsdk import networkops
+from zvmsdk import exception
 
 
 CONF = config.CONF
@@ -76,3 +77,29 @@ class SDKAPI(object):
         """
         return self._vmops.deploy_image_to_vm(user_id, image_name,
                                               transportfiles=None, vdev=None)
+
+    def create_port(self, vm_id, nic_info):
+        """ Create the nic for the vm.
+        :param vm_id: the user id of the vm
+        :param nic_info: the list used to contain nic info,
+                         including nic id and mac address
+                         format sample: [{'nic_id': XXX, 'mac_addr': YYY}]
+        """
+        if len(nic_info) == 0:
+            msg = ("no nic info is provided to create port")
+            raise exception.ZVMInvalidInput(msg)
+            return
+
+        nic_vdev = CONF.zvm.default_nic_vdev
+        for nic_item in nic_info:
+            nic_id = nic_item['nic_id']
+            mac_addr = nic_item['mac_addr']
+            self._networkop.create_port(vm_id, nic_id, mac_addr, nic_vdev)
+            nic_vdev = str(hex(int(nic_vdev, 16) + 3))[2:]
+
+    def preset_vm_network(self, vm_id, ip_addr):
+        """ Add ip/host name for vm.
+        :param vm_id: the user id of the vm
+        :param ip_addr: the ip address of the vm
+        """
+        return self._networkops.preset_vm_network(vm_id, ip_addr)
