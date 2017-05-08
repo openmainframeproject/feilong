@@ -187,3 +187,56 @@ class SDKAPI(object):
         """
         self._vmops.create_vm(userid, vcpus, memory,
                               spawn_image_name, root_gb, eph_disks)
+
+    def couple_nic_to_vswitch(self, vswitch_name, switch_port_name,
+                              userid, persist=True):
+        """ Couple nic device to specified vswitch.
+        :param vswitch_name: the name of the vswitch
+        :param switch_port_name: the interface id
+        :param userid: the user's name who owns the port
+        :param persist: whether keep the change in the permanent
+                        configuration for the system
+        """
+        self._networkops.couple_nic_to_vswitch(vswitch_name, switch_port_name,
+                                               userid, persist)
+
+    def uncouple_nic_from_vswitch(self, vswitch_name, switch_port_name,
+                                  userid, persist=True):
+        """ Couple nic device to specified vswitch.
+        :param vswitch_name: the name of the vswitch
+        :param switch_port_name: the interface id
+        :param userid: the user's name who owns the port
+        :param persist: whether keep the change in the permanent
+                        configuration for the system
+        """
+        self._networkops.uncouple_nic_from_vswitch(vswitch_name,
+                                                   switch_port_name,
+                                                   userid, persist)
+
+    def get_admin_created_vsw(self):
+        """ Get the vswitch which is created by the admin."""
+        self._networkops.get_admin_created_vsw()
+
+    def add_vswitch(self, name, rdev,
+                    controller='*', connection=1,
+                    queue_mem=8, router=0, network_type=2, vid=0,
+                    port_type=1, update=1, gvrp=2, native_vid=1):
+        """ Create vswitch.
+        :param name: the vswitch name
+        :param rdev: the real device number
+        :param controller: the vswitch's controller
+        :param connection: 0-unspecified 1-Actice 2-non-Active
+        :param queue_mem: the max number of megabytes on a single port
+        :param router: 0-unspecified 1-nonrouter 2-prirouter
+        :param network_type: 0-unspecified 1-IP 2-ethernet
+        :param vid: 1-4094 for access port defaut vlan
+        :param port_type: 0-unspecified 1-access 2-trunk
+        :param update: 0-unspecified 1-create 2-create and add to system
+                       configuration file 3-add to system configuration
+        :param gvrp: 0-unspecified 1-gvrp 2-nogvrp
+        :param native_vid: the native vlan id
+        """
+        self._networkops.add_vswitch(name, rdev,
+                                     controller, connection, queue_mem,
+                                     router, network_type, vid,
+                                     port_type, update, gvrp, native_vid)
