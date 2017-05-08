@@ -22,10 +22,15 @@ CONF = config.CONF
 LOG = log.LOG
 
 
+class VMAction(object):
+    def start(self, id):
+        LOG.info('start vm %s', id)
+
+
 @wsgi_wrapper.SdkWsgify
 def list_vm(req):
     @tokens.validate(req)
-    def _list_vm(req):
+    def _list_vm(req)
         pass
 
     _list_vm(req)
@@ -35,8 +40,12 @@ def list_vm(req):
 def action(req):
     @tokens.validate(req)
     def _action(uuid, req):
-        LOG.info('start to action %s', uuid)
-        pass
+        vmaction = VMAction()
+        data = util.extract_json(req.body)
+        for method, parm in data.items():
+            f = getattr(vmaction, method, None)
+            if f:
+                f(uuid)
 
     uuid = util.wsgi_path_item(req.environ, 'uuid')
     _action(uuid, req)

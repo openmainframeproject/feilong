@@ -14,7 +14,6 @@
 import functools
 import json
 
-import jsonschema
 import webob
 
 from zvmsdk.sdkwsgi import microversion
@@ -48,20 +47,12 @@ def check_accept(*types):
     return decorator
 
 
-def extract_json(body, schema):
-    """Extract JSON from a body and validate with the provided schema."""
+def extract_json(body):
     try:
         data = loads(body)
     except ValueError as exc:
         raise webob.exc.HTTPBadRequest(
             ('Malformed JSON: %(error)s') % {'error': exc},
-            json_formatter=json_error_formatter)
-    try:
-        jsonschema.validate(data, schema,
-                            format_checker=jsonschema.FormatChecker())
-    except jsonschema.ValidationError as exc:
-        raise webob.exc.HTTPBadRequest(
-            ('JSON does not validate: %(error)s') % {'error': exc},
             json_formatter=json_error_formatter)
     return data
 
