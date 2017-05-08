@@ -76,3 +76,20 @@ class SDKAPI(object):
         """
         return self._vmops.deploy_image_to_vm(user_id, image_name,
                                               transportfiles=None, vdev=None)
+
+    def create_port(self, vm_id, nic_id, mac_addr,
+                    nic_vdev=CONF.zvm.default_nic_vdev):
+        """ Create the nic for the vm.
+        :param vm_id: the user id of the vm
+        :param nic_id: the id of the nic
+        :param mac_addr: the mac address of the nic
+        :param nic_vdev: virtual device number for the nic
+        """
+        return self._networkops.create_port(vm_id, nic_id, mac_addr, nic_vdev)
+
+    def preset_vm_network(self, vm_id, ip_addr):
+        """ Add ip/host name for vm.
+        :param vm_id: the user id of the vm
+        :param ip_addr: the ip address of the vm
+        """
+        return self._networkops.preset_vm_network(vm_id, ip_addr)
