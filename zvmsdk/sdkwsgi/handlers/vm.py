@@ -28,3 +28,14 @@ def list_vm(req):
         pass
 
     _list_vm(req)
+
+
+@wsgi_wrapper.SdkWsgify
+def action(req):
+    @tokens.validate(req)
+    def _action(uuid, req):
+        LOG.info('start to action %s', uuid)
+        pass
+
+    uuid = util.wsgi_path_item(req.environ, 'uuid')
+    _action(uuid, req)
