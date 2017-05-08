@@ -59,6 +59,30 @@ class SDKImageOpsTestCase(base.SDKTestCase):
         ret = self._image_ops.get_image_name(image_uuid)
         self.assertEqual(ret, image_name)
 
+    def test_get_image_path_by_name(self):
+        fake_name = 'rhel7.2-s390x-netboot-fake_image_uuid'
+        expected_path = '/install/netboot/rhel7.2/s390x/fake_image_uuid/' +\
+                fake_name + '.img'
+        ret = self._image_ops.get_image_path_by_name(fake_name)
+        self.assertEqual(ret, expected_path)
+
+    @mock.patch.object(zvmutils, 'execute')
+    def test_get_root_disk_size(self, execute_cmd):
+        fake_name = 'rhel7.2-s390x-netboot-fake_image_uuid'
+        execute_cmd.return_value =\
+            '00000000  78 43 41 54 20 43 4b 44  20 44 69 73 6b 20 49 6d  ' +\
+            '|xCAT CKD Disk Im|\n' +\
+            '00000010  61 67 65 3a 20 20 20 20  20 20 20 20 33 33 33 38  ' +\
+            '|age:        3338|\n' +\
+            '00000020  20 43 59 4c 20 48 4c 65  6e 3a 20 30 30 35 35 20  ' +\
+            '| CYL HLen: 0055 |\n' +\
+            '00000030  47 5a 49 50 3a 20 36 20  20 20 20 20 20 20 20 20  ' +\
+            '|GZIP: 6         |\n' +\
+            '00000040'
+
+        ret = self._image_ops.get_root_disk_size(fake_name)
+        self.assertEqual(ret, 3338)
+
     @mock.patch.object(xml.dom.minidom, 'Document')
     @mock.patch.object(xml.dom.minidom.Document, 'createElement')
     def test_generate_manifest_file(self, create_element, document):
@@ -69,7 +93,7 @@ class SDKImageOpsTestCase(base.SDKTestCase):
                                u'os_version': u'rhel7.2',
                                u'os_name': u'Linux',
                                u'architecture': u's390x',
-                               u'provision_method': u'netboot'}
+                             u'provision_metuot'}
                 }
         image_name = 'image_name_123'
         tmp_date_dir = 'tmp_date_dir'

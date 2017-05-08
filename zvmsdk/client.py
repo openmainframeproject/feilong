@@ -47,6 +47,15 @@ class ZVMClient(object):
     def get_power_state(self, userid):
         pass
 
+    def prepare_for_spawn(self, userid):
+        """
+        Every kind of client can do someting special for themselves before
+        spawn.Because some keywords can not appear in ops modules, so we can
+        put them in this interface.
+        eg. xcat client can create xcat node here.
+        """
+        pass
+
 
 class XCATClient(ZVMClient):
 
@@ -237,7 +246,7 @@ class XCATClient(ZVMClient):
                 'ipl=%s' % CONF.zvm.user_root_vdev,
                 'imagename=%s' % image_name]
 
-        url = zvmutils.get_xcat_url().mkvm('/' + userid)
+        url = self._xcat_url.mkvm('/' + userid)
         zvmutils.xcat_request("POST", url, body)
 
     # TODO:moving to vmops and change name to 'create_vm_node'
@@ -245,11 +254,15 @@ class XCATClient(ZVMClient):
         """Create xCAT node for z/VM instance."""
         LOG.debug("Creating xCAT node for %s" % userid)
         body = ['userid=%s' % userid,
-                'hcp=%s' % CONF.zhcp,
+                'hcp=%s' % CONF.xcat.zhcp,
                 'mgt=zvm',
                 'groups=%s' % const.ZVM_XCAT_GROUP]
         url = self._xcat_url.mkdef('/' + userid)
         zvmutils.xcat_request("POST", url, body)
+
+    # xCAT client can something special for xCAT here
+    def prepare_for_spawn(self, userid):
+        self.create_xcat_node(userid)
 
     def _delete_xcat_node(self, userid):
         """Remove xCAT node for z/VM instance."""
@@ -263,7 +276,7 @@ class XCATClient(ZVMClient):
             else:
                 raise err
 
-    def _delete_userid(self, url):
+    def delete_userid(self, url):
         try:
             zvmutils.xcat_request("DELETE", url)
         except Exception as err:
@@ -278,7 +291,7 @@ class XCATClient(ZVMClient):
 
     def remove_vm(self, userid):
         url = zvmutils.get_xcat_url().rmvm('/' + userid)
-        self._delete_userid(url)
+        self.delete_userid(url)
 
     def remove_image_file(self, image_name):
         url = self._xcat_url.rmimage('/' + image_name)

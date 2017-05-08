@@ -21,6 +21,7 @@ from zvmsdk import constants as const
 from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk import imageops
 from zvmsdk import utils as zvmutils
 
 
@@ -41,6 +42,7 @@ class VMOps(object):
     def __init__(self):
         self._zvmclient = zvmclient.get_zvmclient()
         self._dist_manager = dist.ListDistManager()
+        self._imageops = imageops.get_imageops()
 
     def get_power_state(self, vm_id):
         """Get power status of a z/VM instance."""
@@ -152,21 +154,33 @@ class VMOps(object):
         """"Power on z/VM instance."""
         self._zvmclient.power_on(instance_name)
 
-    def create_userid(self, instance_name, cpu, memory, image_name):
+    def create_userid(self, instance_name, cpu, memory,
+                      image_name, root_gb, eph_disks):
         """Create z/VM userid into user directory for a z/VM instance."""
         LOG.debug("Creating the z/VM user entry for instance %s"
                       % instance_name)
 
         kwprofile = 'profile=%s' % const.ZVM_USER_PROFILE
-
         try:
             self._zvmclient.make_vm(instance_name, kwprofile,
                                    cpu, memory, image_name)
-            size = CONF.zvm.root_disk_units
-            # Add root disk and set ipl
+            # Get root disk size
+            if root_gb == 0:
+                size = self._imageops.get_root_disk_size(image_name)
+                if size == 0:
+                    size = CONF.zvm.root_disk_units
+                size = str(size)
+            else:
+                size = '%ig' % root_gb
+            # Add root disk
             self.add_mdisk(instance_name, CONF.zvm.diskpool,
-                           CONF.zvm.user_root_vdev,
+                               CONF.zvm.user_root_vdev,
                                size)
+            # TODO:process eph disks
+            if eph_disks != 0:
+                pass
+            # Set ipl
+            # TODO:check whether need ipl or not
             self.set_ipl(instance_name, CONF.zvm.user_root_vdev)
 
         except Exception as err:
@@ -201,22 +215,21 @@ class VMOps(object):
         """Return True if the instance is powered off."""
         return self._zvmclient.get_power_state(instance_name) == 'off'
 
-    def _delete_userid(self, url):
-        try:
-            zvmutils.xcat_request("DELETE", url)
-        except Exception as err:
-            # TODO:implement after exception merged
-            # emsg = err.format_message()
-            emsg = ""
-            LOG.debug("error emsg in delete_userid: %s", emsg)
-            if (emsg.__contains__("Return Code: 400") and
-                    emsg.__contains__("Reason Code: 4")):
-                # zVM user definition not found, delete xCAT node directly
-                self._zvmclient.delete_xcat_node()
-            else:
-                raise err
+    def create_vm(self, userid, cpu, memory, root_gb, eph_disks, image_name):
+        """
+        create_vm will create the node and userid for instance
+        :parm userid: eg. lil00033
+        :parm cpu: amount of vcpus
+        :parm memory: size of memory
+        :parm root_gb:
+        :parm eph_disks:
+        :parm image_name: spawn image name
+        """
+        # TODO:image_name -> image_file_path
+        self._zvmclient.prepare_for_spawn(userid)
+        self.create_userid(userid, cpu, memory, image_name, root_gb, eph_disks)
 
-    def delete_userid(self, userid, zhcp_node):
+    def delete_vm(self, userid, zhcp_node):
         """Delete z/VM userid for the instance.This will remove xCAT node
         at same time.
         """
@@ -233,7 +246,7 @@ class VMOps(object):
                 emsg.__contains__("Reason Code: 12"))):
                 self._zvmclient.remove_vm(userid)
             else:
-                LOG.debug("exception not able to handle in delete_userid "
+                LOG.debug("exception not able to handle in delete_vm "
                           "%s", self._name)
                 raise err
         except Exception as err:

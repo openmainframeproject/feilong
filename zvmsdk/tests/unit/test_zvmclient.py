@@ -18,6 +18,7 @@ import os
 
 
 from zvmsdk import client as zvmclient
+from zvmsdk import constants as const
 from zvmsdk import exception
 from zvmsdk import utils as zvmutils
 from zvmsdk.config import CONF
@@ -508,7 +509,17 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_create_xcat_node(self, xrequest):
-        # TODO:moving to vmops and change name to 'create_vm_node'
+        fake_userid = 'userid'
+        fake_url = self._xcat_url.mkdef('/' + fake_userid)
+        fake_body = ['userid=%s' % fake_userid,
+                'hcp=%s' % CONF.xcat.zhcp,
+                'mgt=zvm',
+                'groups=%s' % const.ZVM_XCAT_GROUP]
+
+        self._zvmclient.create_xcat_node(fake_userid)
+        xrequest.assert_called_once_with("POST", fake_url, fake_body)
+
+    def test_prepare_for_spawn(self):
         pass
 
     @mock.patch.object(zvmutils, 'xcat_request')
@@ -525,10 +536,10 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         fake_userid = 'fake_userid'
         fake_url = self._xcat_url.rmvm('/' + fake_userid)
 
-        self._zvmclient._delete_userid(fake_url)
+        self._zvmclient.delete_userid(fake_url)
         xrequest.assert_called_once_with('DELETE', fake_url)
 
-    @mock.patch.object(zvmclient.XCATClient, '_delete_userid')
+    @mock.patch.object(zvmclient.XCATClient, 'delete_userid')
     def test_remove_vm(self, delete_userid):
         fake_userid = 'fake_userid'
         fake_url = self._xcat_url.rmvm('/' + fake_userid)

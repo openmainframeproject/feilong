@@ -14,6 +14,7 @@
 
 
 import contextlib
+import commands
 import functools
 import json
 import os
@@ -524,6 +525,15 @@ def xdsh(node, commands):
     res_dict = xdsh_execute(node, commands)
 
     return res_dict
+
+
+def execute(cmd):
+    """execute command in shell and return output"""
+    # TODO:do some exception in future
+    status, output = commands.getstatusoutput(cmd)
+    # if success status will be 0
+    # if status != 0:
+    return output
 
 
 def get_host():
