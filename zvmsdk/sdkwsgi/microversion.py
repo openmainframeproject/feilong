@@ -127,7 +127,7 @@ class Version(collections.namedtuple('Version', 'major minor')):
     Since it is a tuple is automatically comparable.
     """
 
-    HEADER = 'OpenStack-API-Version'
+    HEADER = 'ZVM-SDK-API-Version'
 
     MIN_VERSION = None
     MAX_VERSION = None
