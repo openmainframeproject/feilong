@@ -132,3 +132,7 @@ class ZVMVirtualMachineNotExist(SDKBaseException):
 
 class NotFound(SDKBaseException):
     msg_fmt = 'The resource can not be found'
+
+
+class ZVMInvalidDataError(SDKBaseException):
+    msg_fmt = 'Invalid data returned from xCAT: %(msg)s'

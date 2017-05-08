@@ -13,6 +13,7 @@
 #    under the License.
 
 
+import re
 import os
 from zvmsdk import config
 from zvmsdk import constants as const
@@ -53,6 +54,8 @@ class XCATClient(ZVMClient):
     def __init__(self):
         self._xcat_url = zvmutils.get_xcat_url()
         self._zhcp_info = {}
+        self._zhcp_userid = None
+        self._xcat_node_name = None
 
     def _power_state(self, userid, method, state):
         """Invoke xCAT REST API to set/get power state for a instance."""
@@ -597,3 +600,218 @@ class XCATClient(ZVMClient):
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
         zvmutils.xcat_request("PUT", url, body)
+
+    def _couple_nic(self, zhcp, vswitch_name, userid, vdev, dm, immdt):
+        """Couple NIC to vswitch by adding vswitch into user direct."""
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        if dm:
+            commands = '/opt/zhcp/bin/smcli'
+            commands += ' Virtual_Network_Adapter_Connect_Vswitch_DM'
+            commands += " -T %s " % userid + "-v %s" % vdev
+            commands += " -n %s" % vswitch_name
+            xdsh_commands = 'command=%s' % commands
+            body = [xdsh_commands]
+            zvmutils.xcat_request("PUT", url, body)
+        if immdt:
+            # the inst must be active, or this call will failed
+            commands = '/opt/zhcp/bin/smcli'
+            commands += ' Virtual_Network_Adapter_Connect_Vswitch'
+            commands += " -T %s " % userid + "-v %s" % vdev
+            commands += " -n %s" % vswitch_name
+            xdsh_commands = 'command=%s' % commands
+            body = [xdsh_commands]
+            zvmutils.xcat_request("PUT", url, body)
+
+    def couple_nic_to_vswitch(self, vswitch_name, switch_port_name,
+                              zhcp, userid, dm, immdt):
+        """Couple nic to vswitch."""
+        LOG.debug("Connect nic to switch: %s", vswitch_name)
+        vdev = self._get_nic_settings(switch_port_name, "interface")
+        if vdev:
+            self._couple_nic(zhcp, vswitch_name, userid, vdev, dm, immdt)
+        else:
+            raise exception.ZVMInvalidDataError(msg=('Cannot get vdev for '
+                            'user %s, couple to port %s') %
+                            (userid, switch_port_name))
+        return vdev
+
+    def _uncouple_nic(self, zhcp, userid, vdev, dm, immdt):
+        """Uncouple NIC from vswitch"""
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        if dm:
+            commands = '/opt/zhcp/bin/smcli'
+            commands += ' Virtual_Network_Adapter_Disconnect_DM'
+            commands += " -T %s " % userid + "-v %s" % vdev
+            xdsh_commands = 'command=%s' % commands
+            body = [xdsh_commands]
+            zvmutils.xcat_request("PUT", url, body)
+        if immdt:
+            # the inst must be active, or this call will failed
+            commands = '/opt/zhcp/bin/smcli'
+            commands += ' Virtual_Network_Adapter_Disconnect'
+            commands += " -T %s " % userid + "-v %s" % vdev
+            xdsh_commands = 'command=%s' % commands
+            body = [xdsh_commands]
+            zvmutils.xcat_request("PUT", url, body)
+
+    def uncouple_nic_from_vswitch(self, vswitch_name, switch_port_name,
+                                  zhcp, userid, dm, immdt):
+        """Uncouple nic from vswitch."""
+        LOG.debug("Disconnect nic from switch: %s", vswitch_name)
+        vdev = self._get_nic_settings(switch_port_name, "interface")
+        self._uncouple_nic(zhcp, userid, vdev, dm, immdt)
+
+    def _get_xcat_node_ip(self):
+        addp = '&col=key&value=master&attribute=value'
+        url = self._xcat_url.gettab("/site", addp)
+        with zvmutils.expect_invalid_xcat_resp_data():
+            return zvmutils.xcat_request("GET", url)['data'][0][0]
+
+    def _get_xcat_node_name(self):
+        if self._xcat_node_name is not None:
+            return self._xcat_node_name
+
+        xcat_ip = self._get_xcat_node_ip()
+        addp = '&col=ip&value=%s&attribute=node' % (xcat_ip)
+        url = self._xcat_url.gettab("/hosts", addp)
+        with zvmutils.expect_invalid_xcat_resp_data():
+            self._xcat_node_name = zvmutils.xcat_request(
+                "GET", url)['data'][0][0]
+            return self._xcat_node_name
+
+    @zvmutils.wrap_invalid_xcat_resp_data_error
+    def get_admin_created_vsw(self):
+        '''Check whether the vswitch is preinstalled in env'''
+        xcat_node_name = self._get_xcat_node_name()
+        url = self._xcat_url.xdsh('/%s' % xcat_node_name)
+        commands = 'command=vmcp q v nic'
+        body = [commands]
+        result = zvmutils.xcat_request("PUT", url, body)
+        if (result['errorcode'][0][0] != '0'):
+            raise exception.ZVMException(
+                msg=("Query xcat nic info failed, %s") % result['data'][0][0])
+
+        output = result['data'][0][0].split('\n')
+        vswitch = []
+        index = 0
+        for i in output:
+            if ('Adapter 0600' in i) or ('Adapter 0700' in i):
+                vsw_start = output[index + 1].rfind(' ') + 1
+                vswitch.append(output[index + 1][vsw_start:])
+            index += 1
+        LOG.debug("admin config vswitch is %s" % vswitch)
+
+        return vswitch
+
+    def get_zhcp_userid(self, zhcp):
+        if not self._zhcp_userid:
+            self._zhcp_userid = self._get_userid_from_node(zhcp)
+        return self._zhcp_userid
+
+    @zvmutils.wrap_invalid_xcat_resp_data_error
+    def add_vswitch(self, zhcp, name, rdev,
+                    controller, connection, queue_mem,
+                    router, network_type, vid,
+                    port_type, update, gvrp, native_vid):
+        vswitch_info = self._check_vswitch_status(zhcp, name)
+        if vswitch_info is not None:
+            LOG.info('Vswitch %s already exists,check rdev info.' % name)
+            if rdev is None:
+                LOG.debug('vswitch %s is not changed', name)
+                return
+            else:
+                # as currently zvm-agent can only set one rdev for vswitch
+                # so as long one of rdev in vswitch env are same as rdevs
+                # list in config file, we think the vswitch does not change.
+                rdev_list = rdev.split(',')
+                for i in vswitch_info:
+                    for j in rdev_list:
+                        if i.strip() == j.strip():
+                            LOG.debug('vswitch %s is not changed', name)
+                            return
+
+                LOG.info('start changing vswitch %s ' % name)
+                self._set_vswitch_rdev(zhcp, name, rdev)
+                return
+
+        # if vid = 0, port_type, gvrp and native_vlanid are not
+        # allowed to specified
+        if not len(vid):
+            vid = 0
+            port_type = 0
+            gvrp = 0
+            native_vid = -1
+        else:
+            vid = str(vid[0][0]) + '-' + str(vid[0][1])
+
+        userid = self.get_zhcp_userid(zhcp)
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Create'
+        commands += " -T %s" % userid
+        commands += ' -n %s' % name
+        if rdev:
+            commands += " -r %s" % rdev.replace(',', ' ')
+        # commands += " -a %s" % osa_name
+        if controller != '*':
+            commands += " -i %s" % controller
+        commands += " -c %s" % connection
+        commands += " -q %s" % queue_mem
+        commands += " -e %s" % router
+        commands += " -t %s" % network_type
+        commands += " -v %s" % vid
+        commands += " -p %s" % port_type
+        commands += " -u %s" % update
+        commands += " -G %s" % gvrp
+        commands += " -V %s" % native_vid
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+
+        result = zvmutils.xcat_request("PUT", url, body)
+        if ((result['errorcode'][0][0] != '0') or
+            (self._check_vswitch_status(zhcp, name) is None)):
+            raise exception.ZVMException(
+                msg=("switch: %s add failed, %s") %
+                    (name, result['data']))
+
+    @zvmutils.wrap_invalid_xcat_resp_data_error
+    def _check_vswitch_status(self, zhcp, vsw):
+        '''
+        check the vswitch exists or not,return rdev info
+        return value:
+        None: vswitch does not exist
+        []: vswitch exists but does not connect to a rdev
+        ['xxxx','xxxx']:vswitch exists and 'xxxx' is rdev value
+        '''
+        userid = self.get_zhcp_userid(zhcp)
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Query'
+        commands += " -T %s" % userid
+        commands += " -s %s" % vsw
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        result = zvmutils.xcat_request("PUT", url, body)
+        if (result['errorcode'][0][0] != '0' or not
+                result['data'] or not result['data'][0]):
+            return None
+        else:
+            output = re.findall('Real device: (.*)\n', result['data'][0][0])
+            return output
+
+    @zvmutils.wrap_invalid_xcat_resp_data_error
+    def _set_vswitch_rdev(self, zhcp, vsw, rdev):
+        """Set vswitch's rdev."""
+        userid = self.get_zhcp_userid(zhcp)
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
+        commands += ' -T %s' % userid
+        commands += ' -k switch_name=%s' % vsw
+        if rdev:
+            commands += ' -k real_device_address=%s' % rdev.replace(',', ' ')
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        result = zvmutils.xcat_request("PUT", url, body)
+        if (result['errorcode'][0][0] != '0'):
+            raise exception.ZVMException(
+                msg=("switch: %s changes failed, %s") %
+                    (vsw, result['data']))
+        LOG.info('change vswitch %s done.' % vsw)

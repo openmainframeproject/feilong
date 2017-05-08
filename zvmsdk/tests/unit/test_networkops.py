@@ -50,3 +50,49 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
     def test_update_ports(self, update_ports):
         self.networkops.update_ports(set())
         update_ports.assert_called_with(set())
+
+    @mock.patch.object(zvmclient.XCATClient, 'get_admin_created_vsw')
+    def test_get_admin_created_vsw(self, get_admin_created_vsw):
+        self.networkops.get_admin_created_vsw()
+        get_admin_created_vsw.assert_called_with()
+
+    @mock.patch.object(zvmclient.XCATClient, 'couple_nic_to_vswitch')
+    def test_couple_nic_to_vswitch(self, couple_nic_to_vswitch):
+        self.networkops.couple_nic_to_vswitch("fake_VS_name", "fake_VS_port",
+                                              "fake_zhcp", "fake_userid",
+                                              True,
+                                              True)
+        couple_nic_to_vswitch.assert_called_with("fake_VS_name",
+                                                 "fake_VS_port",
+                                                 "fake_zhcp", "fake_userid",
+                                                 True,
+                                                 True)
+
+    @mock.patch.object(zvmclient.XCATClient, 'uncouple_nic_from_vswitch')
+    def test_uncouple_nic_from_vswitch(self, uncouple_nic_from_vswitch):
+        self.networkops.uncouple_nic_from_vswitch("fake_VS_name",
+                                                  "fake_VS_port",
+                                                  "fake_zhcp", "fake_userid",
+                                                  True,
+                                                  True)
+        uncouple_nic_from_vswitch.assert_called_with("fake_VS_name",
+                                                     "fake_VS_port",
+                                                     "fake_zhcp",
+                                                     "fake_userid",
+                                                     True,
+                                                     True)
+
+    @mock.patch.object(zvmclient.XCATClient, 'add_vswitch')
+    def test_add_vswitch(self, add_vswitch):
+        self.networkops.add_vswitch("fakezhcp", "fakename",
+                                    "fakerdev", "controller",
+                                    "connection", "queue_mem",
+                                    "router", "network_type", "vid",
+                                    "port_type", "update", "gvrp",
+                                    "native_vid")
+        add_vswitch.assert_called_with("fakezhcp", "fakename",
+                                       "fakerdev", "controller",
+                                       "connection", "queue_mem",
+                                       "router", "network_type", "vid",
+                                       "port_type", "update", "gvrp",
+                                       "native_vid")
