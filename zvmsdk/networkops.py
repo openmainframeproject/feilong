@@ -60,3 +60,26 @@ class NetworkOPS(object):
 
     def clean_network_resource(self, user_id):
         self.zvmclient.clean_network_resource(user_id)
+
+    def get_admin_created_vsw(self):
+        self.zvmclient.get_admin_created_vsw()
+
+    def couple_nic_to_vswitch(self, vswitch_name, switch_port_name,
+                              userid, persist):
+        self.zvmclient.couple_nic_to_vswitch(vswitch_name, switch_port_name,
+                                             userid, persist)
+
+    def uncouple_nic_from_vswitch(self, vswitch_name, switch_port_name,
+                                  userid, persist):
+        self.zvmclient.uncouple_nic_from_vswitch(vswitch_name,
+                                                 switch_port_name,
+                                                 userid, persist)
+
+    def add_vswitch(self, name, rdev,
+                    controller, connection,
+                    queue_mem, router, network_type, vid,
+                    port_type, update, gvrp, native_vid):
+        self.zvmclient.add_vswitch(name, rdev,
+                                   controller, connection, queue_mem,
+                                   router, network_type, vid,
+                                   port_type, update, gvrp, native_vid)
