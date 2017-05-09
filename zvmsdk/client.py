@@ -486,14 +486,23 @@ class XCATClient(ZVMClient):
                       {"vm_id": vm_id, "switch_dict": switch_dict})
             return switch_dict
 
-    def get_vm_nic_info(self, key, vm_id):
+    def check_nic_coupled(self, key, vm_id):
         """
-        Check nic info for the specified virtual machine.
+        whether the specified nic has already been defined in a vm and
+        coupled to a switch.
         """
         args = '&checknics=' + key
         url = self._xcat_url.lsvm('/' + vm_id)
         url = url + args
-        return zvmutils.xcat_request("GET", url)
+        res_info = zvmutils.xcat_request("GET", url)
+        with zvmutils.expect_invalid_xcat_resp_data(res_info):
+            if ("errorcode" in res_info and
+                (len(res_info["errorcode"]) > 0) and
+                res_info["errorcode"][0] != '0'):
+                # we didn't found the definition
+                return False
+            else:
+                return True
 
     def _config_xcat_mac(self, vm_id):
         """Hook xCat to prevent assign MAC for instance."""
