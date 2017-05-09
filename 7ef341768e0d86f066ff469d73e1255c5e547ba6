@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "92aa250b_098bba5d",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-05-09T05:49:08Z",
+      "side": 1,
+      "message": "zhcp is not required",
+      "range": {
+        "startLine": 85,
+        "startChar": 8,
+        "endLine": 85,
+        "endChar": 39
+      },
+      "revId": "7ef341768e0d86f066ff469d73e1255c5e547ba6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e631feaf_b9564d99",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-05-09T05:49:08Z",
+      "side": 1,
+      "message": "rename to persist?",
+      "range": {
+        "startLine": 87,
+        "startChar": 9,
+        "endLine": 87,
+        "endChar": 61
+      },
+      "revId": "7ef341768e0d86f066ff469d73e1255c5e547ba6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f522dbe3_820ad37e",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-05-09T05:49:08Z",
+      "side": 1,
+      "message": "the purpose of this parameter?",
+      "range": {
+        "startLine": 88,
+        "startChar": 9,
+        "endLine": 88,
+        "endChar": 68
+      },
+      "revId": "7ef341768e0d86f066ff469d73e1255c5e547ba6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a5f28127_6d6a3fea",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 706,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-05-09T05:49:08Z",
+      "side": 1,
+      "message": "should be a \u0027_\u0027 method?",
+      "range": {
+        "startLine": 706,
+        "startChar": 8,
+        "endLine": 706,
+        "endChar": 23
+      },
+      "revId": "7ef341768e0d86f066ff469d73e1255c5e547ba6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "137a3e4d_79e3df30",
+        "filename": "zvmsdk/exception.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-05-09T05:49:08Z",
+      "side": 1,
+      "message": "reuse ZVMInvalidXCATResponseDataError ?",
+      "range": {
+        "startLine": 137,
+        "startChar": 6,
+        "endLine": 137,
+        "endChar": 25
+      },
+      "revId": "7ef341768e0d86f066ff469d73e1255c5e547ba6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
