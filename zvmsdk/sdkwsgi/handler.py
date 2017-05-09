@@ -30,7 +30,7 @@ from zvmsdk import exception
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi.handlers import root
 from zvmsdk.sdkwsgi.handlers import tokens
-from zvmsdk.sdkwsgi.handlers import vm
+from zvmsdk.sdkwsgi.handlers import guest
 
 
 # When adding URLs here, do not use regex patterns in
@@ -44,11 +44,11 @@ ROUTE_DECLARATIONS = {
     '/token': {
         'POST': tokens.create,
     },
-    '/vm': {
-        'GET': vm.list_vm,
+    '/guest': {
+        'GET': guest.guest_list,
     },
-    '/vm/{uuid}/action': {
-        'POST': vm.action,
+    '/guest/{uuid}/action': {
+        'POST': guest.guest_action,
     }
 }
 

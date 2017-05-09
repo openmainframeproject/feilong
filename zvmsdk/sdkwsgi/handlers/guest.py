@@ -11,13 +11,15 @@
 #    under the License.
 """Handler for the root of the sdk API."""
 
+import webob.exc
+
 from zvmsdk import config
 from zvmsdk import log
+from zvmsdk.sdkwsgi import wsgi_wrapper
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi import util
-from zvmsdk.sdkwsgi import wsgi_wrapper
 
-
+_VMACTION = None
 CONF = config.CONF
 LOG = log.LOG
 
@@ -26,26 +28,50 @@ class VMAction(object):
     def start(self, id):
         LOG.info('start vm %s', id)
 
+    def list(self):
+        LOG.info('list vms')
+
+    def stop(self, id):
+        LOG.info('stop vm %s', id)
+
+    def pause(self, id):
+        LOG.info('pause vm %s', id)
+
+    def unpause(self, id):
+        LOG.info('unpause vm %s', id)
+
+
+def get_action():
+    global _VMACTION
+    if _VMACTION is None:
+        _VMACTION = VMAction()
+    return _VMACTION
+
 
 @wsgi_wrapper.SdkWsgify
-def list_vm(req):
+def guest_list(req):
     @tokens.validate(req)
-    def _list_vm(req):
+    def _guest_list(req):
+        action = get_action()
+        action.list()
         pass
 
-    _list_vm(req)
+    _guest_list(req)
 
 
 @wsgi_wrapper.SdkWsgify
-def action(req):
+def guest_action(req):
     @tokens.validate(req)
-    def _action(uuid, req):
-        vmaction = VMAction()
+    def _guest_action(uuid, req):
+        action = get_action()
         data = util.extract_json(req.body)
         for method, parm in data.items():
-            f = getattr(vmaction, method, None)
-            if f:
-                f(uuid)
+            func = getattr(action, method, None)
+            if func:
+                func(uuid)
+            else:
+                LOG.info('action %s is invalid', method)
+                raise webob.exc.HTTPBadRequest()
 
     uuid = util.wsgi_path_item(req.environ, 'uuid')
-    _action(uuid, req)
+    _guest_action(uuid, req)
