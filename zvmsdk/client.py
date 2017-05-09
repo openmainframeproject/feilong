@@ -490,10 +490,20 @@ class XCATClient(ZVMClient):
         """
         Check nic info for the specified virtual machine.
         """
+        nic = None
         args = '&checknics=' + key
         url = self._xcat_url.lsvm('/' + vm_id)
         url = url + args
-        return zvmutils.xcat_request("GET", url)
+        res_info = zvmutils.xcat_request("GET", url)
+        with zvmutils.expect_invalid_xcat_resp_data(res_info):
+            if ("errorcode" in res_info and
+                (len(res_info["errorcode"]) > 0) and
+                res_info["errorcode"][0] != '0'):
+                # we didn't found the definition
+                return nic
+            else:
+                nic = res_info
+                return nic
 
     def _config_xcat_mac(self, vm_id):
         """Hook xCat to prevent assign MAC for instance."""

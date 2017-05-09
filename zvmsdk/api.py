@@ -76,3 +76,18 @@ class SDKAPI(object):
         """
         return self._vmops.deploy_image_to_vm(user_id, image_name,
                                               transportfiles=None, vdev=None)
+
+    def get_vm_nic_switch_info(self, user_id):
+        """ Return the nic and switch pair for the specified vm.
+        :param user_id: the user id of the vm
+        :returns: Dictionary describing nic and switch info
+        """
+        return self.zvmclient.get_vm_nic_switch_info(user_id)
+
+    def get_vm_nic_info(self, key, user_id):
+        """ Check the specified nic info in the vm.
+        :param user_id: the user id of the vm
+        :param key: nic device number
+        :returns: Nic info, it is None if the nic is not defined for the vm
+        """
+        return self.zvmclient.get_vm_nic_info(key, user_id)
