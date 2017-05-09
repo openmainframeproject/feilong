@@ -49,7 +49,7 @@ class NetworkOPS(object):
     def get_vm_nic_switch_info(self, vm_id):
         return self.zvmclient.get_vm_nic_switch_info(vm_id)
 
-    def get_vm_nic_info(self, key, vm_id):
+    def check_nic_coupled(self, key, vm_id):
         return self.zvmclient.get_vm_nic_info(key, vm_id)
 
     def preset_vm_network(self, vm_id, ip_addr):
