@@ -103,3 +103,20 @@ class SDKAPI(object):
         :param ip_addr: the ip address of the vm
         """
         return self._networkops.preset_vm_network(vm_id, ip_addr)
+
+    def get_vm_nic_switch_info(self, user_id):
+        """ Return the nic and switch pair for the specified vm.
+        :param user_id: the user id of the vm
+        :returns: Dictionary describing nic and switch info
+        """
+        return self._networkops.get_vm_nic_switch_info(user_id)
+
+    def check_nic_coupled(self, key, user_id):
+        """ whether the specified nic has already been defined in a vm and
+            coupled to a switch.
+        :param user_id: the user id of the vm
+        :param key: nic device number
+        :returns: If it is defined and coupled to a switch, return True.
+                  Otherwise, return False
+        """
+        return self._networkops.check_nic_coupled(key, user_id)
