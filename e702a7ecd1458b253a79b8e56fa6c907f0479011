@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "750c5f4f_f5181973",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-05-09T05:54:28Z",
+      "side": 1,
+      "message": "use \"for ... in ...\" is better here.",
+      "range": {
+        "startLine": 94,
+        "startChar": 8,
+        "endLine": 95,
+        "endChar": 32
+      },
+      "revId": "e702a7ecd1458b253a79b8e56fa6c907f0479011",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b43da86e_06d15454",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-05-09T05:54:28Z",
+      "side": 1,
+      "message": "If not using xcat, does this method required?",
+      "range": {
+        "startLine": 102,
+        "startChar": 8,
+        "endLine": 102,
+        "endChar": 25
+      },
+      "revId": "e702a7ecd1458b253a79b8e56fa6c907f0479011",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
