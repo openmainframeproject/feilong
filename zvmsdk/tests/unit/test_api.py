@@ -42,3 +42,42 @@ class SDKAPITestCase(base.SDKTestCase):
                                 mock.sentinel.image_name,
                                 mock.sentinel.transportfiles,
                                 mock.sentinel.vdev)
+
+    @mock.patch("zvmsdk.vmops.VMOps.validate_vm_id")
+    def test_validate_vm_id(self, validate_id):
+        userid = 'userid'
+        self.api.validate_vm_id(userid)
+        validate_id.assert_called_once_with(userid)
+
+    @mock.patch("zvmsdk.imageops.ImageOps.check_image_exist")
+    def test_check_image_exist(self, check_image_exist):
+        image_uuid = 'image_uuid'
+        self.api.check_image_exist(image_uuid)
+        check_image_exist.assert_called_once_with(image_uuid)
+
+    @mock.patch("zvmsdk.imageops.ImageOps.get_image_name")
+    def test_get_image_name(self, get_image_name):
+        image_uuid = 'image_uuid'
+        self.api.get_image_name(image_uuid)
+        get_image_name.assert_called_once_with(image_uuid)
+
+    @mock.patch("zvmsdk.imageops.ImageOps.import_spawn_image")
+    def test_import_spawn_image(self, import_image):
+        image_file_path = "/install/temp/test.img"
+        os_version = "1.0"
+        self.api.import_spawn_image(image_file_path, os_version)
+        import_image.assert_called_once_with(image_file_path, os_version)
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
+    def test_create_vm(self, create_vm):
+        userid = 'userid'
+        vcpus = 1
+        memory = 1024
+        root_gb = 0
+        eph_disks = []
+        image_name = 'rhel7.2-s390x-netboot-image_uuid_asdafdfa'
+
+        self.api.create_vm(userid, vcpus, memory,
+                           root_gb, eph_disks, image_name)
+        create_vm.assert_called_once_with(userid, vcpus, memory,
+                           root_gb, eph_disks, image_name)

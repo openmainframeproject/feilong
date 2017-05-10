@@ -17,6 +17,7 @@ from zvmsdk import vmops
 from zvmsdk import hostops
 from zvmsdk import config
 from zvmsdk import networkops
+from zvmsdk import imageops
 from zvmsdk import exception
 
 
@@ -30,6 +31,7 @@ class SDKAPI(object):
         self._vmops = vmops.get_vmops()
         self._hostops = hostops.get_hostops()
         self._networkops = networkops.get_networkops()
+        self._imageops = imageops.get_imageops()
 
     def power_on(self, vm_id):
         """Power on a virtual machine."""
@@ -126,3 +128,37 @@ class SDKAPI(object):
         :param user_id: the user id of the vm
         """
         return self._networkops.clean_network_resource(user_id)
+
+    def check_image_exist(self, image_uuid):
+        """check if the image exist in z/VM
+        """
+        return self._imageops.check_image_exist(image_uuid)
+
+    def validate_vm_id(self, userid):
+        return self._vmops.validate_vm_id(userid)
+
+    def get_image_name(self, image_uuid):
+        """get the osimage name in z/VM
+        """
+        return self._imageops.get_image_name(image_uuid)
+
+    def import_spawn_image(self, image_file_path, os_version):
+        """import image to z/VM according to the file path and os_version
+        :param image_file_path:the absolute path for image file
+        :param os_version:the os version of the image
+        """
+        self._imageops.import_spawn_image(image_file_path, os_version)
+
+    def create_vm(self, userid, vcpus, memory,
+                  root_gb, eph_disks, spawn_image_name):
+        """create a vm in z/VM
+        :param userid:the userid of the vm to be created
+        :param vcpus: amount of vcpus
+        :param memory: size of memory
+        :param root_gb: size(GB) of mdisk of the vm, if set 0, will use
+        the value in configuration files(zvm.root_disk_units)
+        :param eph_disks:
+        :param spawn_image_name:the name in tabdump tables
+        """
+        self._vmops.create_vm(userid, vcpus, memory,
+                              root_gb, eph_disks, spawn_image_name)
