@@ -53,6 +53,21 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.power_on('cbi00063')
         power_state.assert_called_once_with('cbi00063', 'PUT', 'on')
 
+    def test_validate_vm_id(self):
+        fake_userid = 'fake_userid'
+
+        msg = ("Don't support spawn vm on zVM hypervisor with name:%s,"
+               "please make sure vm_id not longer than 8." % fake_userid)
+
+        with self.assertRaises(exception.ZVMInvalidInput) as err:
+            self.vmops.validate_vm_id(fake_userid)
+        exc = err.exception
+        self.assertEqual(exc.format_message(), msg)
+
+        fake_userid = '12345678'
+        ret = self.vmops.validate_vm_id(fake_userid)
+        self.assertEqual(ret, None)
+
     @mock.patch('zvmsdk.imageops.ImageOps.get_root_disk_size')
     @mock.patch('zvmsdk.vmops.VMOps.set_ipl')
     @mock.patch('zvmsdk.vmops.VMOps.add_mdisk')
