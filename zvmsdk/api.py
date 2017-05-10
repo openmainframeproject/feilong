@@ -120,3 +120,9 @@ class SDKAPI(object):
                   Otherwise, return False
         """
         return self._networkops.check_nic_coupled(key, user_id)
+
+    def clean_network_resource(self, user_id):
+        """Clean the network resource (mac. switch, host) for the vm
+        :param user_id: the user id of the vm
+        """
+        return self._networkops.clean_network_resource(user_id)
