@@ -57,3 +57,6 @@ class NetworkOPS(object):
 
     def update_ports(self, registered_ports):
         self.zvmclient.update_ports(registered_ports)
+
+    def clean_network_resource(self, user_id):
+        self.zvmclient.clean_network_resource(user_id)

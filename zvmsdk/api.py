@@ -94,7 +94,7 @@ class SDKAPI(object):
         for nic_item in nic_info:
             nic_id = nic_item['nic_id']
             mac_addr = nic_item['mac_addr']
-            self._networkop.create_port(vm_id, nic_id, mac_addr, nic_vdev)
+            self._networkops.create_port(vm_id, nic_id, mac_addr, nic_vdev)
             nic_vdev = str(hex(int(nic_vdev, 16) + 3))[2:]
 
     def preset_vm_network(self, vm_id, ip_addr):
@@ -120,3 +120,9 @@ class SDKAPI(object):
                   Otherwise, return False
         """
         return self._networkops.check_nic_coupled(key, user_id)
+
+    def clean_network_resource(self, user_id):
+        """Clean the network resource (mac. switch, host) for the vm
+        :param user_id: the user id of the vm
+        """
+        return self._networkops.clean_network_resource(user_id)

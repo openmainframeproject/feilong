@@ -32,14 +32,14 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
                                        "fake_mac", "fake_nic_vdev")
 
     @mock.patch.object(zvmclient.XCATClient, 'get_vm_nic_switch_info')
-    def get_vm_nic_switch_info(self, get_nic_switch_info):
+    def test_get_vm_nic_switch_info(self, get_nic_switch_info):
         self.networkops.get_vm_nic_switch_info("fakenode")
         get_nic_switch_info.assert_called_with("fakenode")
 
-    @mock.patch.object(zvmclient.XCATClient, 'get_vm_nic_info')
-    def get_vm_nic_info(self, key, get_nic_info):
-        self.networkops.get_vm_nic_info("key", "fakenode")
-        get_nic_info.assert_called_with("key", "fakenode")
+    @mock.patch.object(zvmclient.XCATClient, 'check_nic_coupled')
+    def test_check_nic_coupled(self, check_nic_coupled):
+        self.networkops.check_nic_coupled("key", "fakenode")
+        check_nic_coupled.assert_called_with("key", "fakenode")
 
     @mock.patch.object(zvmclient.XCATClient, 'preset_vm_network')
     def test_preset_vm_network(self, preset_vm_network):
@@ -50,3 +50,8 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
     def test_update_ports(self, update_ports):
         self.networkops.update_ports(set())
         update_ports.assert_called_with(set())
+
+    @mock.patch.object(zvmclient.XCATClient, 'clean_network_resource')
+    def test_clean_network_resource(self, clean_network_resource):
+        self.networkops.clean_network_resource("fake_user_id")
+        clean_network_resource.assert_called_with("fake_user_id")
