@@ -53,10 +53,11 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.power_on('cbi00063')
         power_state.assert_called_once_with('cbi00063', 'PUT', 'on')
 
+    @mock.patch('zvmsdk.imageops.ImageOps.get_root_disk_size')
     @mock.patch('zvmsdk.vmops.VMOps.set_ipl')
     @mock.patch('zvmsdk.vmops.VMOps.add_mdisk')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_create_userid(self, xrequest, add_mdisk, set_ipl):
+    def test_create_userid(self, xrequest, add_mdisk, set_ipl, get_root_size):
         url = "/xcatws/vms/cbi00063?userName=" + CONF.xcat.username +\
                 "&password=" + CONF.xcat.password +\
                 "&format=json"
@@ -65,7 +66,8 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                 'cpu=1', 'memory=1024m',
                 'privilege=G', 'ipl=0100',
                 'imagename=test-image-name']
-        self.vmops.create_userid('cbi00063', 1, 1024, 'test-image-name')
+        get_root_size.return_value = CONF.zvm.root_disk_units
+        self.vmops.create_userid('cbi00063', 1, 1024, 'test-image-name', 0, 0)
         xrequest.assert_called_once_with('POST', url, body)
         add_mdisk.assert_called_once_with('cbi00063', CONF.zvm.diskpool,
                                           CONF.zvm.user_root_vdev,
@@ -73,10 +75,10 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         set_ipl.assert_called_once_with('cbi00063', CONF.zvm.user_root_vdev)
 
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_delete_userid(self, xrequest):
+    def test_delete_vm(self, xrequest):
         url = "/xcatws/vms/cbi00038?userName=" + CONF.xcat.username +\
                 "&password=" + CONF.xcat.password + "&format=json"
-        self.vmops.delete_userid('cbi00038', 'zhcp2')
+        self.vmops.delete_vm('cbi00038', 'zhcp2')
 
         xrequest.assert_called_once_with('DELETE', url)
 
@@ -103,6 +105,9 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         body = ['--setipl 0100']
         self.vmops.set_ipl('cbi00063', CONF.zvm.user_root_vdev)
         xrequest.assert_called_once_with('PUT', url, body)
+
+    def test_create_vm(self):
+        pass
 
     @mock.patch('zvmsdk.client.XCATClient.get_power_state')
     def test_is_powered_off(self, check_stat):
