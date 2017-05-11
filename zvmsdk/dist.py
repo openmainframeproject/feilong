@@ -35,9 +35,9 @@ class LinuxDist(object):
     according to the dist version. Currently only RHEL and SLES are supported
     """
 
-    def create_network_configuration_files(self, file_path, network_info,
-                                           base_vdev):
+    def create_network_configuration_files(self, file_path, network_info):
         """Generate network configuration files to instance."""
+        base_vdev = CONF.zvm.default_nic_vdev
         device_num = 0
         cfg_files = []
         cmd_strings = ''
@@ -438,9 +438,9 @@ class sles12(sles):
 
 
 class ubuntu(LinuxDist):
-    def create_network_configuration_files(self, file_path, network_info,
-                                           base_vdev):
+    def create_network_configuration_files(self, file_path, network_info):
         """Generate network configuration files to instance."""
+        base_vdev = CONF.zvm.default_nic_vdev
         cfg_files = []
         cmd_strings = ''
         network_config_file_name = self._get_network_file()
