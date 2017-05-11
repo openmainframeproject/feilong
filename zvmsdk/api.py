@@ -112,16 +112,16 @@ class SDKAPI(object):
             self._networkops.create_port(vm_id, nic_id, mac_addr, nic_vdev)
             nic_vdev = str(hex(int(nic_vdev, 16) + 3))[2:]
 
-    def preset_vm_network(self, vm_id, ip_addr):
+    def guest_preset_network(self, vm_id, ip_addr):
         """ Add ip/host name for vm.
 
         :param vm_id: the user id of the vm
         :param ip_addr: the ip address of the vm
 
         """
-        return self._networkops.preset_vm_network(vm_id, ip_addr)
+        self._networkops.preset_vm_network(vm_id, ip_addr)
 
-    def get_vm_nic_switch_info(self, user_id):
+    def guest_get_nic_switch_info(self, user_id):
         """ Return the nic and switch pair for the specified vm.
 
         :param user_id: the user id of the vm
@@ -142,13 +142,13 @@ class SDKAPI(object):
         """
         return self._networkops.check_nic_coupled(key, user_id)
 
-    def clean_network_resource(self, user_id):
+    def guest_clean_network_resource(self, user_id):
         """Clean the network resource (mac. switch, host) for the vm.
 
         :param user_id: the user id of the vm
 
         """
-        return self._networkops.clean_network_resource(user_id)
+        self._networkops.clean_network_resource(user_id)
 
     def check_image_exist(self, image_uuid):
         """check if the image exist in z/VM.
@@ -191,8 +191,8 @@ class SDKAPI(object):
         """
         return self._imageops.get_image_root_disk_size(image_file_name)
 
-    def couple_nic_to_vswitch(self, vswitch_name, switch_port_name,
-                              userid, persist=True):
+    def guest_nic_couple_to_vswitch(self, vswitch_name, switch_port_name,
+                                    userid, persist=True):
         """ Couple nic device to specified vswitch.
 
         :param vswitch_name: the name of the vswitch
@@ -205,8 +205,8 @@ class SDKAPI(object):
         self._networkops.couple_nic_to_vswitch(vswitch_name, switch_port_name,
                                                userid, persist)
 
-    def uncouple_nic_from_vswitch(self, vswitch_name, switch_port_name,
-                                  userid, persist=True):
+    def guest_nic_uncouple_from_vswitch(self, vswitch_name, switch_port_name,
+                                        userid, persist=True):
         """ Couple nic device to specified vswitch.
 
         :param vswitch_name: the name of the vswitch
@@ -220,14 +220,23 @@ class SDKAPI(object):
                                                    switch_port_name,
                                                    userid, persist)
 
-    def get_admin_created_vsw(self):
-        """ Get the vswitch which is created by the admin."""
-        self._networkops.get_admin_created_vsw()
+    def guest_port_get_user_info(self, port_id):
+        """ Get the node name and user id for the specified interface.
+        :param port_id: interface id
+        :returns: guest and user id where port_id belongs to
+        """
+        return self._networkops.guest_port_get_user_info(port_id)
 
-    def add_vswitch(self, name, rdev,
-                    controller='*', connection=1,
-                    queue_mem=8, router=0, network_type=2, vid=0,
-                    port_type=1, update=1, gvrp=2, native_vid=1):
+    def vswitch_get_list_created_by_admin(self):
+        """ Get the vswitch which is created by the admin.
+        :returns: vswitch name list which is created by the admin
+        """
+        return self._networkops.get_admin_created_vsw()
+
+    def vswitch_create(self, name, rdev,
+                       controller='*', connection=1,
+                       queue_mem=8, router=0, network_type=2, vid=0,
+                       port_type=1, update=1, gvrp=2, native_vid=1):
         """ Create vswitch.
 
         :param name: the vswitch name
@@ -249,3 +258,56 @@ class SDKAPI(object):
                                      controller, connection, queue_mem,
                                      router, network_type, vid,
                                      port_type, update, gvrp, native_vid)
+
+    def vswitch_bound_port(self, port_id, network_type,
+                         vswitch_name, vlan_id, user_id):
+        """ bind port to a network.
+        :param port_id: interface id
+        :param network_type: network type, zvm support local, flat and vlan
+        :param vswitch_name: the network name
+        :param vlan_id: VLAN id, it is None if not vlan network
+        :param user_id: the user id of the vm
+        """
+        self._networkops.vswitch_bound_port(port_id, network_type,
+                                            vswitch_name, vlan_id,
+                                            user_id)
+
+    def vswitch_unbound_port(self, port_id, vswitch_name, user_id):
+        """ unbind port from a network.
+        :param port_id: interface id
+        :param vswitch_name: the network name
+        :param user_id: the user id of the vm
+        """
+        self._networkops.vswitch_unbound_port(port_id, vswitch_name, user_id)
+
+    def vswitch_update_port_info(self, port_id, vswitch_name, vlan_id):
+        """ update the vswitch port info.
+        :param port_id: interface id
+        :param vswitch_name: the network name
+        :param vlan_id: VLAN id
+        """
+        self._networkops.vswitch_update_port_info(port_id,
+                                                         vswitch_name,
+                                                         vlan_id)
+
+    def host_put_user_direct_online(self):
+        """The changes to the vm take effect immediately"""
+        self._networkops.host_put_user_direct_online()
+
+    def host_add_nic_to_user_direct(self, user_id, port_id,
+                                    mac, switch_name):
+        """ insert nic info into the user direct.
+        :param user_id: the user id of the vm
+        :param port_id: interface id
+        :param mac: mac address
+        :param switch_name: the network name
+        """
+        self._networkops.host_add_nic_to_user_direct(user_id,
+                                                   port_id, mac,
+                                                   switch_name)
+
+    def host_get_port_list(self):
+        """Get the port list
+        :returns: set info including the port list
+        """
+        return self._networkops.host_get_port_list()

@@ -36,20 +36,15 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         self.networkops.get_vm_nic_switch_info("fakenode")
         get_nic_switch_info.assert_called_with("fakenode")
 
-    @mock.patch.object(zvmclient.XCATClient, 'check_nic_coupled')
-    def test_check_nic_coupled(self, check_nic_coupled):
-        self.networkops.check_nic_coupled("key", "fakenode")
-        check_nic_coupled.assert_called_with("key", "fakenode")
-
     @mock.patch.object(zvmclient.XCATClient, 'preset_vm_network')
     def test_preset_vm_network(self, preset_vm_network):
         self.networkops.preset_vm_network("fake_id", "fake_ip")
         preset_vm_network.assert_called_with("fake_id", "fake_ip")
 
-    @mock.patch.object(zvmclient.XCATClient, 'update_ports')
-    def test_update_ports(self, update_ports):
-        self.networkops.update_ports(set())
-        update_ports.assert_called_with(set())
+    @mock.patch.object(zvmclient.XCATClient, 'host_get_port_list')
+    def test_host_get_port_list(self, get_port):
+        self.networkops.host_get_port_list()
+        get_port.assert_called_with()
 
     @mock.patch.object(zvmclient.XCATClient, 'clean_network_resource')
     def test_clean_network_resource(self, clean_network_resource):
@@ -90,3 +85,45 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         add_vswitch.assert_called_with("fakename",
                                        "fakerdev",
                                        '*', 1, 8, 0, 2, 0, 1, 1, 2, 1)
+
+    @mock.patch.object(zvmclient.XCATClient, 'port_bound')
+    def test_vswitch_bound_port(self, port_bound):
+        self.networkops.vswitch_bound_port("port_id", "network_type",
+                                          "physical_network",
+                                          "segmentation_id", "userid")
+        port_bound.assert_called_with("port_id", "network_type",
+                                      "physical_network",
+                                      "segmentation_id", "userid")
+
+    @mock.patch.object(zvmclient.XCATClient, 'port_unbound')
+    def test_vswitch_unbound_port(self, port_unbound):
+        self.networkops.vswitch_unbound_port("port_id", "physical_network",
+                                             "userid")
+        port_unbound.assert_called_with("port_id", "physical_network",
+                                        "userid")
+
+    @mock.patch.object(zvmclient.XCATClient, 'vswitch_update_port_info')
+    def vswitch_update_port_info(self, vswitch_update_port_info):
+        self.networkops.vswitch_update_port_info("port_id",
+                                                 "switch_name",
+                                                 "vlan")
+        vswitch_update_port_info.assert_called_with("port_id",
+                                                    "switch_name",
+                                                    "vlan")
+
+    @mock.patch.object(zvmclient.XCATClient, 'guest_port_get_user_info')
+    def test_guest_port_get_user_info(self, get_port_info):
+        self.networkops.guest_port_get_user_info("port_id")
+        get_port_info.assert_called_with("port_id")
+
+    @mock.patch.object(zvmclient.XCATClient, 'host_put_user_direct_online')
+    def test_host_put_user_direct_online(self, put_online):
+        self.networkops.host_put_user_direct_online()
+        put_online.assert_called_with()
+
+    @mock.patch.object(zvmclient.XCATClient, 'host_add_nic_to_user_direct')
+    def test_host_add_nic_to_user_direct(self, add_nic):
+        self.networkops.host_add_nic_to_user_direct("user_id", "port_id",
+                                                    "mac", "switch_name")
+        add_nic.assert_called_with("user_id", "port_id",
+                                   "mac", "switch_name")

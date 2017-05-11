@@ -47,6 +47,11 @@ XCAT_DISKPOOL_KEYWORDS = {
 
 XCAT_RESPONSE_KEYS = ('info', 'data', 'node', 'errorcode', 'error')
 
+# Network Type constants
+TYPE_FLAT = 'flat'
+TYPE_LOCAL = 'local'
+TYPE_VLAN = 'vlan'
+
 ZVM_VOLUMES_FILE = 'zvm_volumes'
 ZVM_VOLUME_STATUS = ['free', 'in-use']
 VOLUME_MULTI_PASS = 'MULTI'

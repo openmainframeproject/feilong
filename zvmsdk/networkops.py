@@ -55,14 +55,11 @@ class NetworkOPS(object):
     def preset_vm_network(self, vm_id, ip_addr):
         self.zvmclient.preset_vm_network(vm_id, ip_addr)
 
-    def update_ports(self, registered_ports):
-        self.zvmclient.update_ports(registered_ports)
-
-    def clean_network_resource(self, user_id):
-        self.zvmclient.clean_network_resource(user_id)
+    def clean_network_resource(self, vm_id):
+        self.zvmclient.clean_network_resource(vm_id)
 
     def get_admin_created_vsw(self):
-        self.zvmclient.get_admin_created_vsw()
+        return self.zvmclient.get_admin_created_vsw()
 
     def couple_nic_to_vswitch(self, vswitch_name, switch_port_name,
                               userid, persist):
@@ -83,3 +80,29 @@ class NetworkOPS(object):
                                    controller, connection, queue_mem,
                                    router, network_type, vid,
                                    port_type, update, gvrp, native_vid)
+
+    def host_get_port_list(self):
+        return self.zvmclient.host_get_port_list()
+
+    def guest_port_get_user_info(self, port_id):
+        return self.zvmclient.guest_port_get_user_info(port_id)
+
+    def host_put_user_direct_online(self):
+        self.zvmclient.host_put_user_direct_online()
+
+    def host_add_nic_to_user_direct(self, user_id, port_id,
+                                    mac, switch_name):
+        self.zvmclient.host_add_nic_to_user_direct(user_id,
+                                                          port_id, mac,
+                                                          switch_name)
+
+    def vswitch_bound_port(self, port_id, network_type,
+                           vswitch_name, vlan_id, userid):
+        self.zvmclient.port_bound(port_id, network_type,
+                                         vswitch_name, vlan_id, userid)
+
+    def vswitch_unbound_port(self, port_id, vswitch_name, userid):
+        self.zvmclient.port_unbound(port_id, vswitch_name, userid)
+
+    def vswitch_update_port_info(self, port, vswitch, vlan):
+        return self.zvmclient.vswitch_update_port_info(port, vswitch, vlan)
