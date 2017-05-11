@@ -93,10 +93,12 @@ class SDKAPI(object):
 
     def create_port(self, vm_id, nic_info):
         """ Create the nic for the vm.
+
         :param vm_id: the user id of the vm
         :param nic_info: the list used to contain nic info,
                          including nic id and mac address
                          format sample: [{'nic_id': XXX, 'mac_addr': YYY}]
+
         """
         if len(nic_info) == 0:
             msg = ("no nic info is provided to create port")
@@ -112,14 +114,18 @@ class SDKAPI(object):
 
     def preset_vm_network(self, vm_id, ip_addr):
         """ Add ip/host name for vm.
+
         :param vm_id: the user id of the vm
         :param ip_addr: the ip address of the vm
+
         """
         return self._networkops.preset_vm_network(vm_id, ip_addr)
 
     def get_vm_nic_switch_info(self, user_id):
         """ Return the nic and switch pair for the specified vm.
+
         :param user_id: the user id of the vm
+
         :returns: Dictionary describing nic and switch info
         """
         return self._networkops.get_vm_nic_switch_info(user_id)
@@ -127,21 +133,25 @@ class SDKAPI(object):
     def check_nic_coupled(self, key, user_id):
         """ whether the specified nic has already been defined in a vm and
             coupled to a switch.
+
         :param user_id: the user id of the vm
         :param key: nic device number
+
         :returns: If it is defined and coupled to a switch, return True.
                   Otherwise, return False
         """
         return self._networkops.check_nic_coupled(key, user_id)
 
     def clean_network_resource(self, user_id):
-        """Clean the network resource (mac. switch, host) for the vm
+        """Clean the network resource (mac. switch, host) for the vm.
+
         :param user_id: the user id of the vm
+
         """
         return self._networkops.clean_network_resource(user_id)
 
     def check_image_exist(self, image_uuid):
-        """check if the image exist in z/VM
+        """check if the image exist in z/VM.
         """
         return self._imageops.check_image_exist(image_uuid)
 
@@ -149,20 +159,23 @@ class SDKAPI(object):
         return self._vmops.validate_vm_id(userid)
 
     def get_image_name(self, image_uuid):
-        """get the osimage name in z/VM
+        """get the osimage name in z/VM.
         """
         return self._imageops.get_image_name(image_uuid)
 
     def import_spawn_image(self, image_file_path, os_version):
         """import image to z/VM according to the file path and os_version
+
         :param image_file_path:the absolute path for image file
         :param os_version:the os version of the image
+
         """
         self._imageops.import_spawn_image(image_file_path, os_version)
 
     def create_vm(self, userid, vcpus, memory,
                   root_gb, eph_disks, spawn_image_name):
         """create a vm in z/VM
+
         :param userid:the userid of the vm to be created
         :param vcpus: amount of vcpus
         :param memory: size of memory
@@ -170,6 +183,7 @@ class SDKAPI(object):
         the value in configuration files(zvm.root_disk_units)
         :param eph_disks:
         :param spawn_image_name:the name in tabdump tables
+
         """
         self._vmops.create_vm(userid, vcpus, memory,
                               root_gb, eph_disks, spawn_image_name)
