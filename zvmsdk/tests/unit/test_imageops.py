@@ -152,12 +152,12 @@ class SDKImageOpsTestCase(base.SDKTestCase):
                                              ['3.output line 3'],
                                              ['4.output line 3'],
                                              ['5.output line 5']]}
-        image_file_path = './test/test.img'
+        image_file_path = './test/image-uuid'
         time_stamp_dir = self._pathutil.make_time_stamp()
         bundle_file_path = self._pathutil.get_bundle_tmp_path(time_stamp_dir)
         os_version = '7.2'
         image_meta = {
-                u'id': 'test',
+                u'id': 'image-uuid',
                 u'properties': {u'image_type_xcat': u'linux',
                                u'os_version': os_version,
                                u'os_name': u'Linux',
@@ -166,6 +166,6 @@ class SDKImageOpsTestCase(base.SDKTestCase):
                 }
         self._image_ops.import_spawn_image(image_file_path, os_version)
         generate_manifest_file.assert_called_with(image_meta,
-                                                  'test.img',
-                                                  'test.img',
+                                                  '0100.img',
+                                                  '0100.img',
                                                   bundle_file_path)
