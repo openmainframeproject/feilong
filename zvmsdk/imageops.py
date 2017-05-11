@@ -52,6 +52,7 @@ class ImageOps(object):
         'rhel72eckdbug1555_edbcfbb9_2e17_4876_befa_834f2f6b0f6c'
         """
         LOG.debug("Checking if the image %s exists or not." % image_uuid)
+        image_uuid = image_uuid.replace('-', '_')
         res = self.zvmclient.lsdef_image(image_uuid)
         res_image = res['info']
 
@@ -62,6 +63,7 @@ class ImageOps(object):
 
     def get_image_name(self, image_uuid):
         """Get the image name by image_uuid"""
+        image_uuid = image_uuid.replace('-', '_')
         res = self.zvmclient.lsdef_image(image_uuid)
         res_image = res['info'][0][0]
         res_img_name = res_image.strip().split(" ")[0]
@@ -246,12 +248,11 @@ class ImageOps(object):
     def import_spawn_image(self, image_file_path, os_version):
         """import a spawn image to XCAT"""
         LOG.debug("Getting a spawn image...")
-        disk_file_name = image_file_path.split('/')[-1]
+        image_uuid = image_file_path.split('/')[-1]
+        disk_file_name = CONF.zvm.user_root_vdev + '.img'
         image_name = disk_file_name
         image_name = zvmutils.remove_prefix_of_unicode(image_name)
         spawn_path = self._pathutils.get_spawn_folder()
-        image_uuid = disk_file_name.split('-')[-1]
-        image_uuid = image_uuid.split('.img')[0]
 
         time_stamp_dir = self._pathutils.make_time_stamp()
         bundle_file_path = self._pathutils.get_bundle_tmp_path(time_stamp_dir)
@@ -278,7 +279,8 @@ class ImageOps(object):
 
         # Import image bundle to xCAT MN's image repository
         LOG.debug("Importing the image %s to xCAT", image_meta['id'])
-        image_profile = image_uuid
+        profile_str = image_uuid.replace('-', '_')
+        image_profile = profile_str
         self.zvmclient.check_space_imgimport_xcat(image_bundle_package,
                         CONF.xcat.free_space_threshold,
                         CONF.xcat.master_node)
