@@ -173,7 +173,7 @@ class SDKAPI(object):
         self._imageops.import_spawn_image(image_file_path, os_version)
 
     def create_vm(self, userid, vcpus, memory,
-                  root_gb, eph_disks, spawn_image_name):
+                  spawn_image_name, root_gb, eph_disks):
         """create a vm in z/VM
 
         :param userid:the userid of the vm to be created
@@ -186,4 +186,4 @@ class SDKAPI(object):
 
         """
         self._vmops.create_vm(userid, vcpus, memory,
-                              root_gb, eph_disks, spawn_image_name)
+                              spawn_image_name, root_gb, eph_disks)

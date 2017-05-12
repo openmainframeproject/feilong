@@ -78,6 +78,6 @@ class SDKAPITestCase(base.SDKTestCase):
         image_name = 'rhel7.2-s390x-netboot-image_uuid_asdafdfa'
 
         self.api.create_vm(userid, vcpus, memory,
-                           root_gb, eph_disks, image_name)
+                           image_name, root_gb, eph_disks)
         create_vm.assert_called_once_with(userid, vcpus, memory,
-                           root_gb, eph_disks, image_name)
+                                          image_name, root_gb, eph_disks)
