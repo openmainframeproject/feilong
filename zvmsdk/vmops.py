@@ -62,8 +62,7 @@ class VMOps(object):
         return zvmutils.convert_to_mb(mem) * 1024
 
     def get_user_direct(self, userid):
-        raw_dict = self._zvmclient.get_user_direct(userid)
-        return [ent.partition(': ')[2] for ent in raw_dict]
+        return self._zvmclient.get_user_direct(userid)
 
     def get_info(self, userid):
         power_stat = self.get_power_state(userid)

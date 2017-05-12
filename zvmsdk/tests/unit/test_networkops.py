@@ -36,11 +36,6 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         self.networkops.get_vm_nic_switch_info("fakenode")
         get_nic_switch_info.assert_called_with("fakenode")
 
-    @mock.patch.object(zvmclient.XCATClient, 'check_nic_coupled')
-    def test_check_nic_coupled(self, check_nic_coupled):
-        self.networkops.check_nic_coupled("key", "fakenode")
-        check_nic_coupled.assert_called_with("key", "fakenode")
-
     @mock.patch.object(zvmclient.XCATClient, 'preset_vm_network')
     def test_preset_vm_network(self, preset_vm_network):
         self.networkops.preset_vm_network("fake_id", "fake_ip")
