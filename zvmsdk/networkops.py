@@ -14,6 +14,7 @@
 
 
 from zvmsdk import client as zvmclient
+from zvmsdk import exception
 from zvmsdk import config
 from zvmsdk import log
 
@@ -49,8 +50,28 @@ class NetworkOPS(object):
     def get_vm_nic_switch_info(self, vm_id):
         return self.zvmclient.get_vm_nic_switch_info(vm_id)
 
-    def check_nic_coupled(self, key, vm_id):
-        return self.zvmclient.check_nic_coupled(key, vm_id)
+    def get_user_direct(self, userid, **kwargs):
+        check_command = ["nic_coupled"]
+        direct_info = self.zvmclient.get_user_direct(userid)
+        info = {}
+        info['user_direct'] = direct_info
+        if kwargs is None:
+            return info
+
+        for k, v in kwargs.items():
+            if k in check_command:
+                if (k == 'nic_coupled'):
+                    info['nic_coupled'] = False
+                    str = "NICDEF %s TYPE QDIO LAN SYSTEM" % v
+                    for inf in direct_info:
+                        if str in inf:
+                            info['nic_coupled'] = True
+                            break
+            else:
+                raise exception.ZVMInvalidInput(
+                    msg=("invalid check option for user direct: %s") % k)
+
+        return info
 
     def preset_vm_network(self, vm_id, ip_addr):
         self.zvmclient.preset_vm_network(vm_id, ip_addr)

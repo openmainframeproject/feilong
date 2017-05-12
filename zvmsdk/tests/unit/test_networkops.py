@@ -36,11 +36,6 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         self.networkops.get_vm_nic_switch_info("fakenode")
         get_nic_switch_info.assert_called_with("fakenode")
 
-    @mock.patch.object(zvmclient.XCATClient, 'check_nic_coupled')
-    def test_check_nic_coupled(self, check_nic_coupled):
-        self.networkops.check_nic_coupled("key", "fakenode")
-        check_nic_coupled.assert_called_with("key", "fakenode")
-
     @mock.patch.object(zvmclient.XCATClient, 'preset_vm_network')
     def test_preset_vm_network(self, preset_vm_network):
         self.networkops.preset_vm_network("fake_id", "fake_ip")
@@ -55,3 +50,12 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
     def test_clean_network_resource(self, clean_network_resource):
         self.networkops.clean_network_resource("fake_user_id")
         clean_network_resource.assert_called_with("fake_user_id")
+
+    @mock.patch.object(zvmclient.XCATClient, 'get_user_direct')
+    def test_get_user_direct(self, get_user_direct):
+        get_user_direct.return_value = [
+            'line1',
+            'NICDEF 1000 TYPE QDIO LAN SYSTEM VSWITCH']
+
+        self.networkops.get_user_direct("fake_user_id", nic_coupled='1000')
+        get_user_direct.assert_called_with("fake_user_id")
