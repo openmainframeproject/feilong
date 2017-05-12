@@ -231,8 +231,8 @@ class XCATClient(ZVMClient):
         return resp_info.split('\n')
 
     def get_user_direct(self, userid):
-        resp_info = self._lsvm(userid)
-        return resp_info
+        raw_dict = self._lsvm(userid)
+        return [ent.partition(': ')[2] for ent in raw_dict]
 
     # TODO:moving to vmops and change name to ''
     def get_node_status(self, userid):
@@ -495,24 +495,6 @@ class XCATClient(ZVMClient):
             LOG.debug("Switch info the %(vm_id)s is %(switch_dict)s",
                       {"vm_id": vm_id, "switch_dict": switch_dict})
             return switch_dict
-
-    def check_nic_coupled(self, key, vm_id):
-        """
-        whether the specified nic has already been defined in a vm and
-        coupled to a switch.
-        """
-        args = '&checknics=' + key
-        url = self._xcat_url.lsvm('/' + vm_id)
-        url = url + args
-        res_info = zvmutils.xcat_request("GET", url)
-        with zvmutils.expect_invalid_xcat_resp_data(res_info):
-            if ("errorcode" in res_info and
-                (len(res_info["errorcode"]) > 0) and
-                res_info["errorcode"][0] != '0'):
-                # we didn't found the definition
-                return False
-            else:
-                return True
 
     def _config_xcat_mac(self, vm_id):
         """Hook xCat to prevent assign MAC for instance."""
