@@ -493,12 +493,12 @@ class XCATClient(ZVMClient):
                       {"vm_id": vm_id, "switch_dict": switch_dict})
             return switch_dict
 
-    def check_nic_coupled(self, key, vm_id):
+    def check_nic_coupled(self, vm_id, nic_vdev):
         """
         whether the specified nic has already been defined in a vm and
         coupled to a switch.
         """
-        args = '&checknics=' + key
+        args = '&checknics=' + nic_vdev
         url = self._xcat_url.lsvm('/' + vm_id)
         url = url + args
         res_info = zvmutils.xcat_request("GET", url)

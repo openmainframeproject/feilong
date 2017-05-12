@@ -130,17 +130,17 @@ class SDKAPI(object):
         """
         return self._networkops.get_vm_nic_switch_info(user_id)
 
-    def check_nic_coupled(self, key, user_id):
+    def check_nic_coupled(self, user_id, nic_vdev):
         """ whether the specified nic has already been defined in a vm and
             coupled to a switch.
 
         :param user_id: the user id of the vm
-        :param key: nic device number
+        :param nic_vdev: nic device number
 
         :returns: If it is defined and coupled to a switch, return True.
                   Otherwise, return False
         """
-        return self._networkops.check_nic_coupled(key, user_id)
+        return self._networkops.check_nic_coupled(user_id, nic_vdev)
 
     def clean_network_resource(self, user_id):
         """Clean the network resource (mac. switch, host) for the vm.

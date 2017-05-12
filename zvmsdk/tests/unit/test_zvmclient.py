@@ -644,7 +644,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
                 CONF.xcat.username +\
                "&password=" + CONF.xcat.password +\
                "&format=json&checknics=1000"
-        self._zvmclient.check_nic_coupled("1000", "fakenode")
+        self._zvmclient.check_nic_coupled("fakenode", "1000")
         xrequest.assert_called_with('GET', url)
 
     @mock.patch.object(zvmutils, 'xcat_request')
