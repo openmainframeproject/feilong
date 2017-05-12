@@ -16,6 +16,7 @@
 import mock
 import zvmsdk.client as zvmclient
 import zvmsdk.utils as zvmutils
+import zvmsdk.constants as const
 
 from zvmsdk.config import CONF
 from zvmsdk import exception
@@ -76,7 +77,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         url = "/xcatws/vms/cbi00063?userName=" + CONF.xcat.username +\
                 "&password=" + CONF.xcat.password +\
                 "&format=json"
-        body = ['profile=QCDFLT',
+        body = ['profile=%s' % const.ZVM_USER_PROFILE,
                 'password=%s' % CONF.zvm.user_default_password,
                 'cpu=1', 'memory=1024m',
                 'privilege=G', 'ipl=0100',

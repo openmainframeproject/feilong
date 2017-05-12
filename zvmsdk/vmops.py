@@ -189,7 +189,7 @@ class VMOps(object):
         """Return True if the instance is powered off."""
         return self._zvmclient.get_power_state(instance_name) == 'off'
 
-    def create_vm(self, userid, cpu, memory, root_gb, eph_disks, image_name):
+    def create_vm(self, userid, cpu, memory, image_name, root_gb, eph_disks):
         """
         create_vm will create the node and userid for instance
         :parm userid: eg. lil00033
