@@ -61,10 +61,6 @@ class VMOps(object):
         mem = dict_info[0].split(' ')[4]
         return zvmutils.convert_to_mb(mem) * 1024
 
-    def get_user_direct(self, userid):
-        raw_dict = self._zvmclient.get_user_direct(userid)
-        return [ent.partition(': ')[2] for ent in raw_dict]
-
     def get_info(self, userid):
         power_stat = self.get_power_state(userid)
         perf_info = self._zvmclient.get_image_performance_info(userid)
@@ -260,3 +256,26 @@ class VMOps(object):
                      {'img': image_name,
                       'vm': user_id})
             raise err
+
+    def get_user_direct(self, userid, **kwargs):
+        check_command = ["nic_coupled"]
+        direct_info = self._zvmclient.get_user_direct(userid)
+        info = {}
+        info['user_direct'] = direct_info
+        if kwargs is None:
+            return info
+
+        for k, v in kwargs.items():
+            if k in check_command:
+                if (k == 'nic_coupled'):
+                    info['nic_coupled'] = False
+                    str = "NICDEF %s TYPE QDIO LAN SYSTEM" % v
+                    for inf in direct_info:
+                        if str in inf:
+                            info['nic_coupled'] = True
+                            break
+            else:
+                raise exception.ZVMInvalidInput(
+                    msg=("invalid check option for user direct: %s") % k)
+
+        return info
