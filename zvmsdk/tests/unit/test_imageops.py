@@ -80,7 +80,7 @@ class SDKImageOpsTestCase(base.SDKTestCase):
             '|GZIP: 6         |\n' +\
             '00000040'
 
-        ret = self._image_ops.get_root_disk_size(fake_name)
+        ret = self._image_ops.get_image_root_disk_size(fake_name)
         self.assertEqual(ret, 3338)
 
     @mock.patch.object(xml.dom.minidom, 'Document')
