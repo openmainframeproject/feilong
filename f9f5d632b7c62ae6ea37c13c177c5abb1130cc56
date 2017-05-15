@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "03c83cc9_34015841",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-15T07:02:47Z",
+      "side": 0,
+      "message": "you removed this logic\n\nwhere do we handle this \u0027size\u003d0 means root disk unit size\u0027 logic or plugin (driver) will handle it?",
+      "range": {
+        "startLine": 142,
+        "startChar": 12,
+        "endLine": 148,
+        "endChar": 38
+      },
+      "revId": "f9f5d632b7c62ae6ea37c13c177c5abb1130cc56",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
