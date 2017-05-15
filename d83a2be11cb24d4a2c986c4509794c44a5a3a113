@@ -22,6 +22,30 @@
       "revId": "d83a2be11cb24d4a2c986c4509794c44a5a3a113",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c78bb730_4329d6d1",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-05-15T09:40:24Z",
+      "side": 1,
+      "message": "Yes, it will be removed, we will expose another api to create ephemeral disks.",
+      "parentUuid": "69bc459e_c90dee44",
+      "range": {
+        "startLine": 175,
+        "startChar": 63,
+        "endLine": 175,
+        "endChar": 72
+      },
+      "revId": "d83a2be11cb24d4a2c986c4509794c44a5a3a113",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
