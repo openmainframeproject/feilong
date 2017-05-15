@@ -92,7 +92,7 @@ class ImageOps(object):
                 '/' + spawn_image_name + '.img'
         return image_file_path
 
-    def get_root_disk_size(self, spawn_image_name):
+    def get_image_root_disk_size(self, spawn_image_name):
         """use 'hexdump' to get the root_disk_size."""
         image_file_path = self.get_image_path_by_name(spawn_image_name)
         try:
