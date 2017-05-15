@@ -89,7 +89,7 @@ class SDKAPI(object):
 
         """
         return self._vmops.deploy_image_to_vm(user_id, image_name,
-                                              transportfiles=None, vdev=None)
+                                              transportfiles, vdev)
 
     def create_port(self, vm_id, nic_info):
         """ Create the nic for the vm.

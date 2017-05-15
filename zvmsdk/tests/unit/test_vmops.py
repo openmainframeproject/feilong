@@ -223,4 +223,4 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.deploy_image_to_vm('fakevm', 'fakeimg',
                                       '/test/transport.tgz')
         deploy_image_to_vm.assert_called_with('fakevm', 'fakeimg',
-                                              '/test/transport.tgz')
+                                              '/test/transport.tgz', None)

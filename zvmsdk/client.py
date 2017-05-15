@@ -411,7 +411,8 @@ class XCATClient(ZVMClient):
                 exception.ZVMXCATUpdateNodeFailed):
             zvmutils.xcat_request("PUT", url, body)
 
-    def deploy_image_to_vm(self, node, image_name, transportfiles=None):
+    def deploy_image_to_vm(self, node, image_name, transportfiles=None,
+                           vdev=None):
         """image_name format looks like:
         sles12-s390x-netboot-0a0c576a_157f_42c8_bde5_2a254d8b77fc"""
         # Update node info before deploy
@@ -420,7 +421,7 @@ class XCATClient(ZVMClient):
 
         # Deploy the image to node
         url = self._xcat_url.nodeset('/' + node)
-        vdev = CONF.zvm.user_root_vdev
+        vdev = vdev or CONF.zvm.user_root_vdev
         body = ['netboot',
                 'device=%s' % vdev,
                 'osimage=%s' % image_name]

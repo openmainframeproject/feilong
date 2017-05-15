@@ -261,12 +261,13 @@ class VMOps(object):
                     image_name)
         LOG.info('Image %s successfully deleted' % image_name)
 
-    def deploy_image_to_vm(self, user_id, image_name, transportfiles=None):
+    def deploy_image_to_vm(self, user_id, image_name, transportfiles=None,
+                           vdev=None):
         try:
             LOG.debug("Begin to deploy image on vm %s", user_id)
 
             self._zvmclient.deploy_image_to_vm(user_id, image_name,
-                                               transportfiles)
+                                               transportfiles, vdev)
 
         except exception as err:
             LOG.error(('Failed to deploy image %(img)s to vm %(vm)s') %
