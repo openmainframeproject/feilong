@@ -22,6 +22,30 @@
       "revId": "f9f5d632b7c62ae6ea37c13c177c5abb1130cc56",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8a5e3bca_e5915d14",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-05-15T09:40:24Z",
+      "side": 0,
+      "message": "plugin will handle , it will pass the root_disk_size to SDK.",
+      "parentUuid": "03c83cc9_34015841",
+      "range": {
+        "startLine": 142,
+        "startChar": 12,
+        "endLine": 148,
+        "endChar": 38
+      },
+      "revId": "f9f5d632b7c62ae6ea37c13c177c5abb1130cc56",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
