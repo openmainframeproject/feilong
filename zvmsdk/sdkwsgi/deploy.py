@@ -28,14 +28,6 @@ def deploy(project_name):
 
     application = handler.SdkHandler()
 
-    # The ordering here is important. The list is ordered
-    # from the inside out. For a single request req_id_middleware is called
-    # first and microversion_middleware last. Then the request is finally
-    # passed to the application (the PlacementHandler). At that point
-    # the response ascends the middleware in the reverse of the
-    # order the request went in. This order ensures that log messages
-    # all see the same contextual information including request id and
-    # authentication information.
     for middleware in (microversion_middleware,
                        request_log,
                        ):
