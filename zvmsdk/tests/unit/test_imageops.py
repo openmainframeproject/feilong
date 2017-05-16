@@ -164,7 +164,7 @@ class SDKImageOpsTestCase(base.SDKTestCase):
                                u'architecture': u's390x',
                                u'provision_method': u'netboot'}
                 }
-        self._image_ops.import_spawn_image(image_file_path, os_version)
+        self._image_ops.import_image(image_file_path, os_version)
         generate_manifest_file.assert_called_with(image_meta,
                                                   '0100.img',
                                                   '0100.img',
