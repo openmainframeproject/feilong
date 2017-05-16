@@ -163,14 +163,14 @@ class SDKAPI(object):
         """
         return self._imageops.get_image_name(image_uuid)
 
-    def import_spawn_image(self, image_file_path, os_version):
+    def image_import(self, image_file_path, os_version):
         """import image to z/VM according to the file path and os_version
 
         :param image_file_path:the absolute path for image file
         :param os_version:the os version of the image
 
         """
-        self._imageops.import_spawn_image(image_file_path, os_version)
+        self._imageops.image_import(image_file_path, os_version)
 
     def create_vm(self, userid, vcpus, memory, root_disk_size, eph_disks):
         """create a vm in z/VM

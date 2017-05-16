@@ -623,7 +623,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
     @mock.patch.object(zvmutils, 'xcat_request')
     @mock.patch.object(zvmutils, 'get_host')
     @mock.patch.object(os, 'remove')
-    def test_import_image(self, remove_file, get_host, xrequest):
+    def test_image_import(self, remove_file, get_host, xrequest):
         image_bundle_package = 'asdfe'
         image_profile = 'imagep_prooooffffille'
         remote_host_info = {}
@@ -635,7 +635,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
                      'nozip']
         remove_file.return_value = None
 
-        self._zvmclient.import_image(image_bundle_package, image_profile)
+        self._zvmclient.image_import(image_bundle_package, image_profile)
         xrequest.assert_called_once_with('POST', fake_url, fake_body)
 
     @mock.patch.object(zvmutils, 'xcat_request')

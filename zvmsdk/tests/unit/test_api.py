@@ -61,12 +61,12 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.get_image_name(image_uuid)
         get_image_name.assert_called_once_with(image_uuid)
 
-    @mock.patch("zvmsdk.imageops.ImageOps.import_spawn_image")
-    def test_import_spawn_image(self, import_image):
+    @mock.patch("zvmsdk.imageops.ImageOps.image_import")
+    def test_image_import(self, image_import):
         image_file_path = "/install/temp/test.img"
         os_version = "1.0"
-        self.api.import_spawn_image(image_file_path, os_version)
-        import_image.assert_called_once_with(image_file_path, os_version)
+        self.api.image_import(image_file_path, os_version)
+        image_import.assert_called_once_with(image_file_path, os_version)
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_create_vm(self, create_vm):

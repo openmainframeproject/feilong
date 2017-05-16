@@ -133,11 +133,11 @@ class SDKImageOpsTestCase(base.SDKTestCase):
                                              mode='w')
 
     @mock.patch.object(os.path, 'exists')
-    @mock.patch.object(zvmclient.XCATClient, 'import_image')
+    @mock.patch.object(zvmclient.XCATClient, 'image_import')
     @mock.patch.object(zvmclient.XCATClient, 'check_space_imgimport_xcat')
     @mock.patch.object(imageops.ImageOps, 'generate_image_bundle')
     @mock.patch.object(imageops.ImageOps, 'generate_manifest_file')
-    def test_import_spawn_image(self, generate_manifest_file,
+    def test_image_import(self, generate_manifest_file,
                                 generate_bundle_file,
                                 check_space,
                                 import_image,
@@ -164,7 +164,7 @@ class SDKImageOpsTestCase(base.SDKTestCase):
                                u'architecture': u's390x',
                                u'provision_method': u'netboot'}
                 }
-        self._image_ops.import_spawn_image(image_file_path, os_version)
+        self._image_ops.image_import(image_file_path, os_version)
         generate_manifest_file.assert_called_with(image_meta,
                                                   '0100.img',
                                                   '0100.img',

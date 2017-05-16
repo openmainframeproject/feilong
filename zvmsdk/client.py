@@ -447,7 +447,7 @@ class XCATClient(ZVMClient):
     def export_image(self, image_file_path):
         pass
 
-    def import_image(self, image_bundle_package, image_profile):
+    def image_import(self, image_bundle_package, image_profile):
         """
         Import the image bundle from computenode to xCAT's image repository.
         :param image_bundle_package: image bundle file path
