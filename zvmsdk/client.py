@@ -876,3 +876,56 @@ class XCATClient(ZVMClient):
                 msg=("switch: %s changes failed, %s") %
                     (vsw, result['data']))
         LOG.info('change vswitch %s done.' % vsw)
+
+    def _generate_vdev(self, base, offset=1):
+        """Generate virtual device number based on base vdev
+        :param base: base virtual device number, string of 4 bit hex.
+        :param offset: offset to base, integer.
+        """
+        vdev = hex(int(base, 16) + offset)[2:]
+        return vdev.rjust(4, '0')
+
+    def generate_eph_vdev(self, offset=1):
+        """Generate virtual device number for ephemeral disks
+        :param offset: offset ot user_adde_vdev.
+        :return: virtua device number, string of 4 bit hex.
+        """
+        vdev = self._generate_vdev(CONF.zvm.user_adde_vdev, offset + 1)
+        if offset >= 0 and offset < 254:
+            return vdev
+        else:
+            msg = "Invalid virtual device number for ephemeral disk:%s" % vdev
+            LOG.error(msg)
+            raise exception.ZVMDriverError(msg=msg)
+
+    def _generate_eph_parmline(self, vdev, fmt, mntdir):
+        parms = [
+                'action=addMdisk',
+                'vaddr=' + vdev,
+                'filesys=' + fmt,
+                'mntdir=' + mntdir
+                ]
+        parmline = ''.join(parms)
+        return parmline
+
+    def process_eph_disk(self, instance_name, vdev=None,
+                         fmt=None, mntdir=None):
+        if not fmt:
+            fmt = CONF.zvm.default_ephemeral_format or\
+                  const.DEFAULT_EPH_DISK_FMT
+        vdev = vdev or CONF.zvm.user_adde_vdev
+        mntdir = mntdir or CONF.zvm.default_ephemeral_mntdir
+        eph_parms = self._generate_eph_parmline(vdev, fmt, mntdir)
+        self.aemod_handler(instance_name, const.DISK_FUNC_NAME, eph_parms)
+
+    def aemod_handler(self, instance_name, func_name, parms):
+        url = self._xcat_url.chvm('/' + instance_name)
+        body = [" ".join(['--aemod', func_name, parms])]
+        try:
+            zvmutils.xcat_request("PUT", url, body)
+        except Exception as err:
+            emsg = err.format_message()
+            LOG.error('Invoke AE method function: %(func)s on %(node)s '
+                      'failed with reason: %(msg)s',
+                      {'func': func_name, 'node': instance_name, 'msg': emsg})
+            raise exception.ZVMDriverError(msg=emsg)
