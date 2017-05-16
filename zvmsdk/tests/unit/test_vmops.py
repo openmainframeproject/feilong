@@ -69,7 +69,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         ret = self.vmops.validate_vm_id(fake_userid)
         self.assertEqual(ret, True)
 
-    @mock.patch('zvmsdk.imageops.ImageOps.get_root_disk_size')
+    @mock.patch('zvmsdk.imageops.ImageOps.get_image_root_disk_size')
     @mock.patch('zvmsdk.vmops.VMOps.set_ipl')
     @mock.patch('zvmsdk.vmops.VMOps.add_mdisk')
     @mock.patch.object(zvmutils, 'xcat_request')
@@ -80,14 +80,12 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         body = ['profile=%s' % const.ZVM_USER_PROFILE,
                 'password=%s' % CONF.zvm.user_default_password,
                 'cpu=1', 'memory=1024m',
-                'privilege=G', 'ipl=0100',
-                'imagename=test-image-name']
-        get_root_size.return_value = CONF.zvm.root_disk_units
-        self.vmops.create_userid('cbi00063', 1, 1024, 'test-image-name', 0, 0)
+                'privilege=G', 'ipl=0100']
+        self.vmops.create_userid('cbi00063', 1, 1024, 3338, [])
         xrequest.assert_called_once_with('POST', url, body)
         add_mdisk.assert_called_once_with('cbi00063', CONF.zvm.diskpool,
                                           CONF.zvm.user_root_vdev,
-                                          CONF.zvm.root_disk_units)
+                                          3338)
         set_ipl.assert_called_once_with('cbi00063', CONF.zvm.user_root_vdev)
 
     @mock.patch.object(zvmutils, 'xcat_request')

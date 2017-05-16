@@ -172,18 +172,24 @@ class SDKAPI(object):
         """
         self._imageops.import_spawn_image(image_file_path, os_version)
 
-    def create_vm(self, userid, vcpus, memory,
-                  spawn_image_name, root_gb, eph_disks):
+    def create_vm(self, userid, vcpus, memory, root_disk_size, eph_disks):
         """create a vm in z/VM
 
         :param userid:the userid of the vm to be created
         :param vcpus: amount of vcpus
         :param memory: size of memory
-        :param root_gb: size(GB) of mdisk of the vm, if set 0, will use
-        the value in configuration files(zvm.root_disk_units)
+        :param root_disk_size: the size of root minidisk, the value would be
+        a string eg. '1g', '1024m' or a just a integer value eg. 3338
         :param eph_disks:
-        :param spawn_image_name:the name in tabdump tables
 
         """
         self._vmops.create_vm(userid, vcpus, memory,
-                              spawn_image_name, root_gb, eph_disks)
+                              root_disk_size, eph_disks)
+
+    def get_image_root_disk_size(self, image_file_name):
+        """Get the root disk size of the image
+
+        :param image_file_name: the image file name in image Repository
+        :returns: the disk size in units CYL or BLK
+        """
+        return self._imageops.get_image_root_disk_size(image_file_name)

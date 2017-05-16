@@ -237,14 +237,13 @@ class XCATClient(ZVMClient):
         res_dict = zvmutils.xcat_request("GET", url)
         return res_dict
 
-    def make_vm(self, userid, kwprofile, cpu, memory, image_name):
+    def make_vm(self, userid, kwprofile, cpu, memory):
         body = [kwprofile,
                 'password=%s' % CONF.zvm.user_default_password,
                 'cpu=%i' % cpu,
                 'memory=%im' % memory,
                 'privilege=%s' % const.ZVM_USER_DEFAULT_PRIVILEGE,
-                'ipl=%s' % CONF.zvm.user_root_vdev,
-                'imagename=%s' % image_name]
+                'ipl=%s' % CONF.zvm.user_root_vdev]
 
         url = self._xcat_url.mkvm('/' + userid)
         zvmutils.xcat_request("POST", url, body)

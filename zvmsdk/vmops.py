@@ -128,8 +128,8 @@ class VMOps(object):
             raise exception.ZVMInvalidInput(msg)
         return True
 
-    def create_userid(self, instance_name, cpu, memory,
-                      image_name, root_gb, eph_disks):
+    def create_userid(self, instance_name, cpu, memory, root_disk_size,
+                      eph_disks):
         """Create z/VM userid into user directory for a z/VM instance."""
         LOG.debug("Creating the z/VM user entry for instance %s"
                       % instance_name)
@@ -137,19 +137,12 @@ class VMOps(object):
         kwprofile = 'profile=%s' % const.ZVM_USER_PROFILE
         try:
             self._zvmclient.make_vm(instance_name, kwprofile,
-                                   cpu, memory, image_name)
-            # Get root disk size
-            if root_gb == 0:
-                size = self._imageops.get_root_disk_size(image_name)
-                if size == 0:
-                    size = CONF.zvm.root_disk_units
-                size = str(size)
-            else:
-                size = '%ig' % root_gb
+                                   cpu, memory)
+
             # Add root disk
             self.add_mdisk(instance_name, CONF.zvm.diskpool,
                                CONF.zvm.user_root_vdev,
-                               size)
+                               root_disk_size)
             # TODO:process eph disks
             if eph_disks != []:
                 pass
@@ -189,7 +182,7 @@ class VMOps(object):
         """Return True if the instance is powered off."""
         return self._zvmclient.get_power_state(instance_name) == 'off'
 
-    def create_vm(self, userid, cpu, memory, image_name, root_gb, eph_disks):
+    def create_vm(self, userid, cpu, memory, root_disk_size, eph_disks):
         """
         create_vm will create the node and userid for instance
         :parm userid: eg. lil00033
@@ -201,7 +194,7 @@ class VMOps(object):
         """
         # TODO:image_name -> image_file_path
         self._zvmclient.prepare_for_spawn(userid)
-        self.create_userid(userid, cpu, memory, image_name, root_gb, eph_disks)
+        self.create_userid(userid, cpu, memory, root_disk_size, eph_disks)
 
     def delete_vm(self, userid, zhcp_node):
         """Delete z/VM userid for the instance.This will remove xCAT node
