@@ -136,9 +136,9 @@ class VMOps(object):
             self.add_mdisk(instance_name, CONF.zvm.diskpool,
                                CONF.zvm.user_root_vdev,
                                root_disk_size)
-            # TODO:process eph disks
+            # Process eph disks
             if eph_disks != []:
-                pass
+                self.process_additional_disks(instance_name, eph_disks)
             # Set ipl
             # TODO:check whether need ipl or not
             self.set_ipl(instance_name, CONF.zvm.user_root_vdev)
@@ -147,6 +147,19 @@ class VMOps(object):
             msg = ("Failed to create z/VM userid: %s") % err
             LOG.error(msg)
             raise exception.ZVMException(msg=err)
+
+    def process_additional_disks(self, instance_name, eph_list):
+        if eph_list != []:
+            LOG.debug("Start to add ephemeral disks to %s." % instance_name)
+            for idx, eph in enumerate(eph_list):
+                vdev = self._zvmclient.generate_eph_vdev(idx)
+                fmt = eph.get('format')
+                mount_dir = ''.join([CONF.zvm.default_ephemeral_mntdir,
+                                    str(idx)])
+                self._zvmclient.process_eph_disk(instance_name, vdev,
+                                                 fmt, mount_dir)
+        else:
+            LOG.debug("No ephemeral disks to add on %s." % instance_name)
 
     def add_mdisk(self, instance_name, diskpool, vdev, size, fmt=None):
         """Add a 3390 mdisk for a z/VM user.
@@ -167,6 +180,17 @@ class VMOps(object):
 
         self._zvmclient.change_vm_fmt(instance_name, fmt, action,
                                      diskpool, vdev, size)
+
+    def add_mdisks(self, instance_name, eph_list):
+        """add more than one disk
+        """
+        for idx, eph in eph_list:
+            vdev = self._zvmclient.generate_eph_vdev(idx)
+            size = eph['size']
+            fmt = (eph.get('format') or
+                   CONF.zvm.default_ephemeral_format or
+                   const.DEFAULT_EPH_DISK_FMT)
+            self.add_mdisk(CONF.zvm.diskpool, vdev, size, fmt)
 
     def set_ipl(self, instance_name, ipl_state):
         self._zvmclient.change_vm_ipl_state(instance_name, ipl_state)
