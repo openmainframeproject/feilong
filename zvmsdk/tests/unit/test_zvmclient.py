@@ -1027,3 +1027,27 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         xreq.return_value = {}
         self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
                         self._zvmclient.get_user_console_log, 'fakeid', 100)
+
+    def test_generate_vdev(self):
+        base = '0100'
+        idx = 1
+        vdev = self._zvmclient._generate_vdev(base, idx)
+        self.assertEqual(vdev, '0101')
+
+    @mock.patch.object(zvmclient.XCATClient, 'aemod_handler')
+    def test_process_eph_disk(self, aemod_handler):
+        instance_name = 'inst001'
+        vdev = '0101'
+        fmt = 'ext3'
+        mntdir = '/mnt/ephemeral/'
+        func_name = 'setupDisk'
+        parms = [
+                'action=addMdisk',
+                'vaddr=' + vdev,
+                'filesys=' + fmt,
+                'mntdir=' + mntdir
+                ]
+        parmline = ''.join(parms)
+        self._zvmclient.process_eph_disk(instance_name, vdev,
+                                         fmt, mntdir)
+        aemod_handler.assert_called_with(instance_name, func_name, parmline)

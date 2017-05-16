@@ -81,6 +81,18 @@ class SDKVMOpsTestCase(base.SDKTestCase):
 
         xrequest.assert_called_once_with('DELETE', url)
 
+    @mock.patch('zvmsdk.client.XCATClient.generate_eph_vdev')
+    @mock.patch('zvmsdk.client.XCATClient.process_eph_disk')
+    def test_process_additional_disks(self, process_eph_disk,
+                                      generate_vdev):
+        fake_eph_list = [{'size': 1, 'format': 'ext3'}]
+        fake_instance = 'inst001'
+        mount_dir = '/mnt/ephemeral/'
+        generate_vdev.return_value = '0111'
+        self.vmops.process_additional_disks(fake_instance, fake_eph_list)
+        process_eph_disk.assert_called_with(fake_instance, '0111', 'ext3',
+                                            mount_dir + '0')
+
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_add_mdisk(self, xrequest):
         # TODO
