@@ -1287,3 +1287,44 @@ class XCATClient(ZVMClient):
                 name_split[0] + '/' + name_split[1] + '/' + image_uuid +\
                 '/' + CONF.zvm.user_root_vdev + '.img'
         return image_file_path
+
+    def set_vswitch(self, switch_name, **kwargs):
+        """Set vswitch"""
+        set_vswitch_command = ["grant_userid", "user_vlan_id",
+                               "revoke_userid", "real_device_address",
+                               "port_name", "controller_name",
+                               "connection_value", "queue_memory_limit",
+                               "routing_value", "port_type", "persist",
+                               "gvrp_value", "mac_id", "uplink",
+                               "nic_userid", "nic_vdev",
+                               "lacp", "interval", "group_rdev",
+                               "iptimeout", "port_isolation", "promiscuous",
+                               "MAC_protect", "VLAN_counters"]
+        zhcp = CONF.xcat.zhcp_node
+        userid = self._get_zhcp_userid()
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        commands = ' '.join((
+            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
+            "-T %s" % userid,
+            "-k switch_name=%s" % switch_name))
+
+        for k, v in kwargs.items():
+            if k in set_vswitch_command:
+                commands = ' '.join((commands,
+                                     '-k %(key)s=%(value)s' %
+                                     {'key': k, 'value': v}))
+            else:
+                raise exception.ZVMInvalidInput(
+                    msg=("switch %s changes failed, invalid keyword %s") %
+                    (switch_name, k))
+
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            result = zvmutils.xcat_request("PUT", url, body)
+            if (result['errorcode'][0][0] != '0'):
+                    raise exception.ZVMException(
+                    msg=("switch %s changes failed, %s") %
+                        (switch_name, result['data']))
+        LOG.info('change vswitch %s done.' % switch_name)

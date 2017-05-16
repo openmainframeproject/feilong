@@ -1266,3 +1266,41 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
                 CONF.zvm.user_root_vdev + '.img'
         ret = self._zvmclient.get_image_path_by_name(fake_name)
         self.assertEqual(ret, expected_path)
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    def test_set_vswitch_with_invalid_key(self, get_userid):
+        get_userid.return_value = "fakenode"
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self._zvmclient.set_vswitch,
+                          "vswitch_name", unknown='fake_id')
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_set_vswitch(self, xrequest, get_userid):
+        xrequest.return_value = {"errorcode": [['0']]}
+        get_userid.return_value = "fakenode"
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = ' '.join((
+            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
+            "-T fakenode",
+            "-k switch_name=fake_vs",
+            "-k grant_userid=fake_id"))
+
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        self._zvmclient.set_vswitch("fake_vs", grant_userid='fake_id')
+        xrequest.assert_called_with("PUT", url, body)
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_set_vswitch_with_errorcode(self, xrequest, get_userid):
+        xrequest.return_value = {"data": "Returned data",
+                                 "errorcode": [['1']]}
+        get_userid.return_value = "fakenode"
+
+        self.assertRaises(exception.ZVMException,
+                          self._zvmclient.set_vswitch,
+                          "vswitch_name", grant_userid='fake_id')
