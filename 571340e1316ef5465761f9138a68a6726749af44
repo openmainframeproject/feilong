@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "60a0ff6b_eba3b565",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-17T08:52:29Z",
+      "side": 1,
+      "message": "please use user_id to consitent to others",
+      "range": {
+        "startLine": 133,
+        "startChar": 36,
+        "endLine": 133,
+        "endChar": 44
+      },
+      "revId": "571340e1316ef5465761f9138a68a6726749af44",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba0cade6_0d9f2a9b",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-17T08:52:29Z",
+      "side": 1,
+      "message": "typo, please change it as well",
+      "range": {
+        "startLine": 137,
+        "startChar": 15,
+        "endLine": 137,
+        "endChar": 23
+      },
+      "revId": "571340e1316ef5465761f9138a68a6726749af44",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1e46764f_992945a2",
+        "filename": "zvmsdk/networkops.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-17T08:52:29Z",
+      "side": 1,
+      "message": "I am not sure this is a good check\n\nif no kwargs given, we can default to None and check None\nor you might check length instead?",
+      "range": {
+        "startLine": 58,
+        "startChar": 10,
+        "endLine": 58,
+        "endChar": 25
+      },
+      "revId": "571340e1316ef5465761f9138a68a6726749af44",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6839fbbb_aeb8cd5c",
+        "filename": "zvmsdk/networkops.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-17T08:52:29Z",
+      "side": 1,
+      "message": "this is not necessary",
+      "range": {
+        "startLine": 73,
+        "startChar": 16,
+        "endLine": 73,
+        "endChar": 22
+      },
+      "revId": "571340e1316ef5465761f9138a68a6726749af44",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
