@@ -121,13 +121,6 @@ class VMOps(object):
         """"Power on z/VM instance."""
         self._zvmclient.power_on(instance_name)
 
-    def validate_vm_id(self, userid):
-        if len(userid) > 8:
-            msg = ("Don't support spawn vm on zVM hypervisor with name:%s,"
-                   "please make sure vm_id not longer than 8." % userid)
-            raise exception.ZVMInvalidInput(msg)
-        return True
-
     def create_userid(self, instance_name, cpu, memory, root_disk_size,
                       eph_disks):
         """Create z/VM userid into user directory for a z/VM instance."""

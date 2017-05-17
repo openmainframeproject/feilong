@@ -155,9 +155,6 @@ class SDKAPI(object):
         """
         return self._imageops.check_image_exist(image_uuid)
 
-    def validate_vm_id(self, userid):
-        return self._vmops.validate_vm_id(userid)
-
     def get_image_name(self, image_uuid):
         """get the osimage name in z/VM.
         """

@@ -43,12 +43,6 @@ class SDKAPITestCase(base.SDKTestCase):
                                 mock.sentinel.transportfiles,
                                 mock.sentinel.vdev)
 
-    @mock.patch("zvmsdk.vmops.VMOps.validate_vm_id")
-    def test_validate_vm_id(self, validate_id):
-        userid = 'userid'
-        self.api.validate_vm_id(userid)
-        validate_id.assert_called_once_with(userid)
-
     @mock.patch("zvmsdk.imageops.ImageOps.check_image_exist")
     def test_check_image_exist(self, check_image_exist):
         image_uuid = 'image_uuid'
