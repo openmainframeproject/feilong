@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3e9671fc_2b78f4ad",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-05-17T06:11:16Z",
+      "side": 1,
+      "message": "The default_ephemeral_mntdir is /mnt, so the final mount_dir is /mnt/1 ? /mnt/2 ?   default_ephemeral_mntdir can be set to /mnt/ephemeral",
+      "range": {
+        "startLine": 164,
+        "startChar": 41,
+        "endLine": 164,
+        "endChar": 65
+      },
+      "revId": "fbac1b881ded73abfda1da932338634edd630959",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "16d78259_a1b6c10c",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-05-17T06:11:16Z",
+      "side": 1,
+      "message": "I will pass the format to you directly, so don\u0027t need get it from CONF",
+      "range": {
+        "startLine": 198,
+        "startChar": 25,
+        "endLine": 198,
+        "endChar": 45
+      },
+      "revId": "fbac1b881ded73abfda1da932338634edd630959",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
