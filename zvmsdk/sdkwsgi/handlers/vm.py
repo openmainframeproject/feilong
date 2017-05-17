@@ -13,8 +13,9 @@
 
 from zvmsdk import config
 from zvmsdk import log
-from zvmsdk.sdkwsgi import wsgi_wrapper
 from zvmsdk.sdkwsgi.handlers import tokens
+from zvmsdk.sdkwsgi import util
+from zvmsdk.sdkwsgi import wsgi_wrapper
 
 
 CONF = config.CONF
@@ -28,3 +29,14 @@ def list_vm(req):
         pass
 
     _list_vm(req)
+
+
+@wsgi_wrapper.SdkWsgify
+def action(req):
+    @tokens.validate(req)
+    def _action(uuid, req):
+        LOG.info('start to action %s', uuid)
+        pass
+
+    uuid = util.wsgi_path_item(req.environ, 'uuid')
+    _action(uuid, req)

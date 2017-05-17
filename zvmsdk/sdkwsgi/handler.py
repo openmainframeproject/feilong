@@ -29,7 +29,7 @@ import webob
 from zvmsdk import exception
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi.handlers import root
-# from zvmsdk.sdkwsgi.handlers import tokens
+from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.handlers import vm
 
 
@@ -41,9 +41,15 @@ ROUTE_DECLARATIONS = {
     '/': {
         'GET': root.home,
     },
+    '/token': {
+        'POST': tokens.create,
+    },
     '/vm': {
         'GET': vm.list_vm,
     },
+    '/vm/{uuid}/action': {
+        'POST': vm.action,
+    }
 }
 
 
