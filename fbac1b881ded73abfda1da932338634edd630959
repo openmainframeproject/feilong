@@ -2,6 +2,121 @@
   "comments": [
     {
       "key": {
+        "uuid": "c60b984a_939f3664",
+        "filename": "etc/zvmsdk.conf",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-17T08:35:42Z",
+      "side": 1,
+      "message": "this should be a typo before? \ncan we enhance this ?",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 23,
+        "endChar": 21
+      },
+      "revId": "fbac1b881ded73abfda1da932338634edd630959",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7a8d6706_5565d46a",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 636,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-17T08:35:42Z",
+      "side": 1,
+      "message": "where\u0027s the unit test for this function? should we move from old driver or create a new one?",
+      "range": {
+        "startLine": 625,
+        "startChar": 4,
+        "endLine": 636,
+        "endChar": 51
+      },
+      "revId": "fbac1b881ded73abfda1da932338634edd630959",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "70cbe299_1414c8be",
+        "filename": "zvmsdk/constants.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-17T08:35:42Z",
+      "side": 1,
+      "message": "just curious , we have conf and default to ext3 ,why add a definition here?",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 20
+      },
+      "revId": "fbac1b881ded73abfda1da932338634edd630959",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da77fc9d_e9c7268e",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-17T08:35:42Z",
+      "side": 1,
+      "message": "can we remove it?",
+      "range": {
+        "startLine": 146,
+        "startChar": 12,
+        "endLine": 146,
+        "endChar": 36
+      },
+      "revId": "fbac1b881ded73abfda1da932338634edd630959",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e07d3fe2_e0048613",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-17T08:35:42Z",
+      "side": 1,
+      "message": "please add instance name",
+      "range": {
+        "startLine": 160,
+        "startChar": 12,
+        "endLine": 160,
+        "endChar": 56
+      },
+      "revId": "fbac1b881ded73abfda1da932338634edd630959",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3e9671fc_2b78f4ad",
         "filename": "zvmsdk/vmops.py",
         "patchSetId": 1
@@ -18,6 +133,29 @@
         "startChar": 41,
         "endLine": 164,
         "endChar": 65
+      },
+      "revId": "fbac1b881ded73abfda1da932338634edd630959",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5d2ab770_a7fb6a28",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-17T08:35:42Z",
+      "side": 1,
+      "message": "please add instance name into log",
+      "range": {
+        "startLine": 168,
+        "startChar": 12,
+        "endLine": 168,
+        "endChar": 51
       },
       "revId": "fbac1b881ded73abfda1da932338634edd630959",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
