@@ -43,36 +43,6 @@ class ImageOps(object):
         self.zvmclient = zvmclient.get_zvmclient()
         self._pathutils = zvmutils.PathUtils()
 
-    def check_image_exist(self, image_uuid):
-        """
-        Check if the specific image exist or not
-        :param image_uuid: eg. when we get an item from 'tabdump osimage'
-        the imagename is 'rhel7.2-s390x-netboot-rhel72eckdbug1555_edbcfbb9
-        _2e17_4876_befa_834f2f6b0f6c',the image_uuid should be
-        'rhel72eckdbug1555_edbcfbb9_2e17_4876_befa_834f2f6b0f6c'
-        """
-        LOG.debug("Checking if the image %s exists or not." % image_uuid)
-        image_uuid = image_uuid.replace('-', '_')
-        res = self.zvmclient.lsdef_image(image_uuid)
-        res_image = res['info']
-
-        if '_' in str(res_image):
-            return True
-        else:
-            return False
-
-    def get_image_name(self, image_uuid):
-        """Get the image name by image_uuid"""
-        image_uuid = image_uuid.replace('-', '_')
-        res = self.zvmclient.lsdef_image(image_uuid)
-        res_image = res['info'][0][0]
-        res_img_name = res_image.strip().split(" ")[0]
-
-        if res_img_name:
-            return res_img_name
-        else:
-            LOG.error("Fail to find the right image name")
-
     def get_image_path_by_name(self, spawn_image_name):
         # eg. rhel7.2-s390x-netboot-<image_uuid>
         # eg. /install/netboot/rhel7.2/s390x/<image_uuid>/image_name.img
@@ -289,3 +259,6 @@ class ImageOps(object):
 
         # TODO(Cao Biao): Add log info
         pass
+
+    def image_query(self, imagekeyword=None):
+        return self.zvmclient.image_query(imagekeyword)
