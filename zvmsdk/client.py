@@ -435,14 +435,6 @@ class XCATClient(ZVMClient):
                 exception.ZVMXCATUpdateNodeFailed):
             zvmutils.xcat_request("PUT", url, body)
 
-    def lsdef_image(self, image_uuid):
-        parm = '&criteria=profile=~' + image_uuid
-        url = self._xcat_url.lsdef_image(addp=parm)
-        with zvmutils.expect_xcat_call_failed_and_reraise(
-                exception.ZVMImageError):
-            res = zvmutils.xcat_request("GET", url)
-        return res
-
     def check_space_imgimport_xcat(self, tar_file, xcat_free_space_threshold,
                                    zvm_xcat_master):
         pass
@@ -876,3 +868,26 @@ class XCATClient(ZVMClient):
                 msg=("switch: %s changes failed, %s") %
                     (vsw, result['data']))
         LOG.info('change vswitch %s done.' % vsw)
+
+    def image_query(self, imagekeyword=None):
+        """List the images"""
+        if imagekeyword:
+            imagekeyword = imagekeyword.replace('-', '_')
+            parm = '&criteria=profile=~' + imagekeyword
+        else:
+            parm = None
+        url = self._xcat_url.lsdef_image(addp=parm)
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMImageError):
+            res = zvmutils.xcat_request("GET", url)
+        image_list = []
+        if res['info']:
+            if imagekeyword:
+                image_name = res['info'][0][0].strip().split(" ")[0]
+                image_list.append(image_name)
+            elif len(res['info'][0]) >= 2:
+                for img in res['info'][0]:
+                    image_name = img.strip().split(" ")[0]
+                    image_list.append(image_name)
+
+        return image_list
