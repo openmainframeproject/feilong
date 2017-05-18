@@ -150,16 +150,6 @@ class SDKAPI(object):
         """
         return self._networkops.clean_network_resource(user_id)
 
-    def check_image_exist(self, image_uuid):
-        """check if the image exist in z/VM.
-        """
-        return self._imageops.check_image_exist(image_uuid)
-
-    def get_image_name(self, image_uuid):
-        """get the osimage name in z/VM.
-        """
-        return self._imageops.get_image_name(image_uuid)
-
     def image_import(self, image_file_path, os_version):
         """import image to z/VM according to the file path and os_version
 
@@ -249,3 +239,13 @@ class SDKAPI(object):
                                      controller, connection, queue_mem,
                                      router, network_type, vid,
                                      port_type, update, gvrp, native_vid)
+
+    def image_query(self, imagekeyword=None):
+        """Get the list of image names in image repository
+
+        :parm imagekeyword: The key string that can be used to uniquely
+        retrieve an image, if not specified, all image names will be listed
+
+        :returns: A list that contains image names
+        """
+        return self._imageops.image_query(imagekeyword)

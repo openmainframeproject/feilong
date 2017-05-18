@@ -607,15 +607,6 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self._zvmclient.do_capture(fake_nodename, fake_profile)
         xrequest.assert_called_once_with('POST', fake_url, fake_body)
 
-    @mock.patch.object(zvmutils, 'xcat_request')
-    def test_lsdef_image(self, xrequest):
-        fake_image_uuid = 'image_uuid_xxxx'
-        fake_parm = '&criteria=profile=~' + fake_image_uuid
-        fake_url = self._xcat_url.lsdef_image(addp=fake_parm)
-
-        self._zvmclient.lsdef_image(fake_image_uuid)
-        xrequest.assert_called_once_with('GET', fake_url)
-
     def test_check_space_imgimport_xcat(self):
         pass
 
@@ -1000,3 +991,40 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
                           '*', 1, 8, 0, 2, 1, 1, 1, 2, 1)
         check_vswitch_status.assert_called_with("fakename")
         xrequest.assert_called_with("PUT", url, body)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_image_query_with_keyword(self, xrequest):
+        xrequest.return_value = {'info':
+            [[u'sles12-s390x-netboot-0a0c576a_157f_42c8_bde5  (osimage)']],
+            'node': [],
+            'errorcode': [],
+            'data': [],
+            'error': []}
+
+        imagekeyword = '0a0c576a-157f-42c8-bde5'
+        url = "/xcatws/images?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json&criteria=profile=~" + imagekeyword.replace('-',
+                                                                       '_')
+        image_list = [u'sles12-s390x-netboot-0a0c576a_157f_42c8_bde5']
+        ret = self._zvmclient.image_query(imagekeyword)
+        xrequest.assert_called_once_with("GET", url)
+        self.assertEqual(ret, image_list)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_image_query_without_keyword(self, xrequest):
+        xrequest.return_value = {'info':
+            [[u'rhel7.2-s390x-netboot-eae09a9f_7958_4024_a58c  (osimage)',
+              u'sles12-s390x-netboot-0a0c576a_157f_42c8_bde5  (osimage)']],
+            'node': [],
+            'errorcode': [],
+            'data': [],
+            'error': []}
+        image_list = [u'rhel7.2-s390x-netboot-eae09a9f_7958_4024_a58c',
+                      u'sles12-s390x-netboot-0a0c576a_157f_42c8_bde5']
+        url = "/xcatws/images?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        ret = self._zvmclient.image_query()
+        xrequest.assert_called_once_with("GET", url)
+        self.assertEqual(ret, image_list)
