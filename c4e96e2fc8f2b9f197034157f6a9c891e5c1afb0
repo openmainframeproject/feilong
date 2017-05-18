@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "945eedc2_f92f71a4",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-18T06:55:30Z",
+      "side": 1,
+      "message": "not sure you want this default to None?",
+      "range": {
+        "startLine": 260,
+        "startChar": 38,
+        "endLine": 260,
+        "endChar": 46
+      },
+      "revId": "c4e96e2fc8f2b9f197034157f6a9c891e5c1afb0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e6a09c51_49eeaefe",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-18T06:55:30Z",
+      "side": 1,
+      "message": "please add additional test for this logic in follow up patch",
+      "range": {
+        "startLine": 278,
+        "startChar": 16,
+        "endLine": 279,
+        "endChar": 73
+      },
+      "revId": "c4e96e2fc8f2b9f197034157f6a9c891e5c1afb0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
