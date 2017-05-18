@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f2e5825a_a54e3fa4",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 899,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-18T06:59:18Z",
+      "side": 1,
+      "message": "a follow up patch can check this logic as well",
+      "range": {
+        "startLine": 897,
+        "startChar": 12,
+        "endLine": 899,
+        "endChar": 51
+      },
+      "revId": "5e89715313549ccd6cc5deb47936492771c72c23",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
