@@ -31,34 +31,6 @@ class SDKImageOpsTestCase(base.SDKTestCase):
         self._image_ops = imageops.get_imageops()
         self._pathutil = zvmutils.PathUtils()
 
-    @mock.patch.object(zvmclient.XCATClient, 'lsdef_image')
-    def test_check_image_exist(self, lsdef_image):
-        lsdef_image.return_value = {
-                'info': [[u'rhel7.2-s390x-netboot-rhel72eckdbug1555_' +
-                    'edbcfbb9_2e17_4876_befa_834f2f6b0f6c  (osimage)']],
-                'node': [],
-                'errorcode': [],
-                'data': [],
-                'error': []}
-        image_uuid = 'rhel72eckdbug1555_edbcfbb9_2e17_4876_befa_834f2f6b0f6c'
-        ret = self._image_ops.check_image_exist(image_uuid)
-        self.assertEqual(ret, True)
-
-    @mock.patch.object(zvmclient.XCATClient, 'lsdef_image')
-    def test_get_image_name(self, lsdef_image):
-        lsdef_image.return_value = {
-                'info': [[u'rhel7.2-s390x-netboot-rhel72eckdbug1555_' +
-                    'edbcfbb9_2e17_4876_befa_834f2f6b0f6c  (osimage)']],
-                'node': [],
-                'errorcode': [],
-                'data': [],
-                'error': []}
-        image_uuid = 'rhel72eckdbug1555_edbcfbb9_2e17_4876_befa_834f2f6b0f6c'
-        image_name = 'rhel7.2-s390x-netboot-rhel72eckdbug1555_' +\
-                     'edbcfbb9_2e17_4876_befa_834f2f6b0f6c'
-        ret = self._image_ops.get_image_name(image_uuid)
-        self.assertEqual(ret, image_name)
-
     def test_get_image_path_by_name(self):
         fake_name = 'rhel7.2-s390x-netboot-fake_image_uuid'
         expected_path = '/install/netboot/rhel7.2/s390x/fake_image_uuid/' +\
@@ -169,3 +141,9 @@ class SDKImageOpsTestCase(base.SDKTestCase):
                                                   '0100.img',
                                                   '0100.img',
                                                   bundle_file_path)
+
+    @mock.patch.object(zvmclient.XCATClient, 'image_query')
+    def test_image_query(self, image_query):
+        imagekeyword = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'
+        self._image_ops.image_query(imagekeyword)
+        image_query.assert_called_once_with(imagekeyword)

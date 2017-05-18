@@ -43,18 +43,6 @@ class SDKAPITestCase(base.SDKTestCase):
                                 mock.sentinel.transportfiles,
                                 mock.sentinel.vdev)
 
-    @mock.patch("zvmsdk.imageops.ImageOps.check_image_exist")
-    def test_check_image_exist(self, check_image_exist):
-        image_uuid = 'image_uuid'
-        self.api.check_image_exist(image_uuid)
-        check_image_exist.assert_called_once_with(image_uuid)
-
-    @mock.patch("zvmsdk.imageops.ImageOps.get_image_name")
-    def test_get_image_name(self, get_image_name):
-        image_uuid = 'image_uuid'
-        self.api.get_image_name(image_uuid)
-        get_image_name.assert_called_once_with(image_uuid)
-
     @mock.patch("zvmsdk.imageops.ImageOps.image_import")
     def test_image_import(self, image_import):
         image_file_path = "/install/temp/test.img"
@@ -73,3 +61,9 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.create_vm(userid, vcpus, memory, root_disk_size, eph_disks)
         create_vm.assert_called_once_with(userid, vcpus, memory,
                                           root_disk_size, eph_disks)
+
+    @mock.patch("zvmsdk.imageops.ImageOps.image_query")
+    def test_image_query(self, image_query):
+        imagekeyword = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'
+        self.api.image_query(imagekeyword)
+        image_query.assert_called_once_with(imagekeyword)
