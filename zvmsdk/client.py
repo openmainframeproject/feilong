@@ -365,8 +365,27 @@ class XCATClient(ZVMClient):
                 exception.ZVMNetworkError):
             return zvmutils.xcat_request("PUT", url, body)['data']
 
-    def create_port(self, userid, nic_id, mac_address, vdev):
+    def create_port(self, userid, nic_info, ip_addr=None):
+        if ip_addr is None:
+            raise exception.ZVMInvalidInput(
+                msg=("IP address is required"))
+
+        self._preset_vm_network(userid, ip_addr)
+        nic_vdev = CONF.zvm.default_nic_vdev
         zhcpnode = self._get_hcp_info()['nodename']
+        for nic_item in nic_info:
+            nic_id = nic_item['nic_id']
+            mac_addr = nic_item['mac_addr']
+            LOG.debug('Nic attributes: '
+                      'ID is %(id)s, address is %(address)s, '
+                      'vdev is %(vdev)s',
+                      {'id': nic_id, 'address': mac_addr,
+                      'vdev': nic_vdev})
+            self._create_port(userid, nic_id, mac_addr,
+                              nic_vdev, zhcpnode)
+            nic_vdev = str(hex(int(nic_vdev, 16) + 3))[2:]
+
+    def _create_port(self, userid, nic_id, mac_address, vdev, zhcpnode):
         self._delete_mac(userid)
         self._add_mac_table_record(userid, vdev, mac_address, zhcpnode)
         self._add_switch_table_record(userid, nic_id, vdev, zhcpnode)
@@ -532,7 +551,7 @@ class XCATClient(ZVMClient):
                 exception.ZVMNetworkError):
             zvmutils.xcat_request("PUT", url)['data']
 
-    def preset_vm_network(self, vm_id, ip_addr):
+    def _preset_vm_network(self, vm_id, ip_addr):
         self._config_xcat_mac(vm_id)
         LOG.debug("Add ip/host name on xCAT MN for instance %s",
                   vm_id)
