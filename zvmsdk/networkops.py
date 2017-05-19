@@ -37,23 +37,14 @@ class NetworkOPS(object):
     def __init__(self):
         self.zvmclient = zvmclient.get_zvmclient()
 
-    def create_port(self, vm_id, nic_id, mac_addr,
-                    nic_vdev=CONF.zvm.default_nic_vdev):
-        LOG.debug('Nic attributes: '
-                  'ID is %(id)s, address is %(address)s, '
-                  'vdev is %(vdev)s',
-                  {'id': nic_id, 'address': mac_addr,
-                   'vdev': nic_vdev})
-        self.zvmclient.create_port(vm_id, nic_id, mac_addr, nic_vdev)
+    def create_port(self, vm_id, nic_info, ip_addr=None):
+        self.zvmclient.create_port(vm_id, nic_info, ip_addr=ip_addr)
 
     def get_vm_nic_switch_info(self, vm_id):
         return self.zvmclient.get_vm_nic_switch_info(vm_id)
 
     def check_nic_coupled(self, key, vm_id):
         return self.zvmclient.check_nic_coupled(key, vm_id)
-
-    def preset_vm_network(self, vm_id, ip_addr):
-        self.zvmclient.preset_vm_network(vm_id, ip_addr)
 
     def update_ports(self, registered_ports):
         self.zvmclient.update_ports(registered_ports)

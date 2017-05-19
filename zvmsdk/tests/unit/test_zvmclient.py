@@ -363,21 +363,16 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
     @mock.patch.object(zvmclient.XCATClient, '_add_switch_table_record')
     @mock.patch.object(zvmclient.XCATClient, '_add_mac_table_record')
     @mock.patch.object(zvmclient.XCATClient, '_delete_mac')
-    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
-    def test_create_port(self, _get_hcp_info, _delete_mac,
+    def test_create_port(self, _delete_mac,
                          _add_mac, _add_switch):
-        _get_hcp_info.return_value = {'hostname': "fakehcp.fake.com",
-                                      'nodename': "fakehcp",
-                                      'userid': "fakeuserid"}
-        self._zvmclient.create_port("fakenode", "fake_nic",
-                                    "fake_mac", "fake_vdev")
-        _get_hcp_info.assert_called_once_with()
-        zhcpnode = _get_hcp_info.return_value['nodename']
+        self._zvmclient._create_port("fakenode", "fake_nic",
+                                     "fake_mac", "fake_vdev",
+                                     "fakehcp")
         _delete_mac.assert_called_once_with("fakenode")
         _add_mac.assert_called_once_with("fakenode", "fake_vdev",
-                                         "fake_mac", zhcpnode)
+                                         "fake_mac", "fakehcp")
         _add_switch.assert_called_once_with("fakenode", "fake_nic",
-                                            "fake_vdev", zhcpnode)
+                                            "fake_vdev", "fakehcp")
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_add_mac_table_record(self, xrequest):
@@ -687,7 +682,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
     @mock.patch.object(zvmclient.XCATClient, '_add_host_table_record')
     @mock.patch.object(zvmclient.XCATClient, '_config_xcat_mac')
     def test_preset_vm_network(self, config_mac, add_host, makehost):
-        self._zvmclient.preset_vm_network("fakeid", "fakeip")
+        self._zvmclient._preset_vm_network("fakeid", "fakeip")
         config_mac.assert_called_with("fakeid")
         add_host.assert_called_with("fakeid", "fakeip", "fakeid")
         makehost.assert_called_with()
