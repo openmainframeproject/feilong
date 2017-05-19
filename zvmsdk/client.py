@@ -373,8 +373,9 @@ class XCATClient(ZVMClient):
 
     def _add_mac_table_record(self, userid, interface, mac, zhcp=None):
         """Add node name, interface, mac address into xcat mac table."""
-        commands = "mac.node=%s" % userid + " mac.mac=%s" % mac
-        commands += " mac.interface=%s" % interface
+        commands = ' '.join(("mac.node=%s" % userid,
+                             "mac.mac=%s" % mac,
+                             "mac.interface=%s" % interface))
         if zhcp is not None:
             commands += " mac.comments=%s" % zhcp
         url = self._xcat_url.tabch("/mac")
@@ -386,9 +387,9 @@ class XCATClient(ZVMClient):
 
     def _add_switch_table_record(self, userid, nic_id, interface, zhcp=None):
         """Add node name and nic name address into xcat switch table."""
-        commands = "switch.node=%s" % userid
-        commands += " switch.port=%s" % nic_id
-        commands += " switch.interface=%s" % interface
+        commands = ' '.join(("switch.node=%s" % userid,
+                             "switch.port=%s" % nic_id,
+                             "switch.interface=%s" % interface))
         if zhcp is not None:
             commands += " switch.comments=%s" % zhcp
         url = self._xcat_url.tabch("/switch")
@@ -514,8 +515,9 @@ class XCATClient(ZVMClient):
 
     def _add_host_table_record(self, vm_id, ip, host_name):
         """Add/Update hostname/ip bundle in xCAT MN nodes table."""
-        commands = "node=%s" % vm_id + " hosts.ip=%s" % ip
-        commands += " hosts.hostnames=%s" % host_name
+        commands = ' '.join(("node=%s" % vm_id,
+                             "hosts.ip=%s" % ip,
+                             "hosts.hostnames=%s" % host_name))
         body = [commands]
         url = self._xcat_url.tabch("/hosts")
 
@@ -589,11 +591,12 @@ class XCATClient(ZVMClient):
         """Set vswitch to grant user."""
         zhcp = CONF.xcat.zhcp_node
         url = self._xcat_url.xdsh("/%s" % zhcp)
-        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
-        commands += " -T %s" % userid
-        commands += " -k switch_name=%s" % vswitch_name
-        commands += " -k grant_userid=%s" % userid
-        commands += " -h persist=YES"
+        commands = ' '.join((
+            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
+            "-T %s" % userid,
+            "-k switch_name=%s" % vswitch_name,
+            "-k grant_userid=%s" % userid,
+            "-h persist=YES"))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
         zvmutils.xcat_request("PUT", url, body)
@@ -602,11 +605,12 @@ class XCATClient(ZVMClient):
         """Revoke user for vswitch."""
         zhcp = CONF.xcat.zhcp_node
         url = self._xcat_url.xdsh("/%s" % zhcp)
-        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
-        commands += " -T %s" % userid
-        commands += " -k switch_name=%s" % vswitch_name
-        commands += " -k revoke_userid=%s" % userid
-        commands += " -h persist=YES"
+        commands = ' '.join((
+            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
+            "-T %s" % userid,
+            "-k switch_name=%s" % vswitch_name,
+            "-k revoke_userid=%s" % userid,
+            "-h persist=YES"))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
         zvmutils.xcat_request("PUT", url, body)
@@ -616,19 +620,21 @@ class XCATClient(ZVMClient):
         zhcp = CONF.xcat.zhcp_node
         url = self._xcat_url.xdsh("/%s" % zhcp)
         if persist:
-            commands = '/opt/zhcp/bin/smcli'
-            commands += ' Virtual_Network_Adapter_Connect_Vswitch_DM'
-            commands += " -T %s " % userid + "-v %s" % vdev
-            commands += " -n %s" % vswitch_name
+            commands = ' '.join(('/opt/zhcp/bin/smcli',
+                                 'Virtual_Network_Adapter_Connect_Vswitch_DM',
+                                 "-T %s" % userid,
+                                 "-v %s" % vdev,
+                                 "-n %s" % vswitch_name))
             xdsh_commands = 'command=%s' % commands
             body = [xdsh_commands]
             zvmutils.xcat_request("PUT", url, body)
 
         # the inst must be active, or this call will failed
-        commands = '/opt/zhcp/bin/smcli'
-        commands += ' Virtual_Network_Adapter_Connect_Vswitch'
-        commands += " -T %s " % userid + "-v %s" % vdev
-        commands += " -n %s" % vswitch_name
+        commands = ' '.join(('/opt/zhcp/bin/smcli',
+                             'Virtual_Network_Adapter_Connect_Vswitch',
+                             "-T %s" % userid,
+                             "-v %s" % vdev,
+                             "-n %s" % vswitch_name))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
         zvmutils.xcat_request("PUT", url, body)
@@ -651,17 +657,19 @@ class XCATClient(ZVMClient):
         zhcp = CONF.xcat.zhcp_node
         url = self._xcat_url.xdsh("/%s" % zhcp)
         if persist:
-            commands = '/opt/zhcp/bin/smcli'
-            commands += ' Virtual_Network_Adapter_Disconnect_DM'
-            commands += " -T %s " % userid + "-v %s" % vdev
+            commands = ' '.join(('/opt/zhcp/bin/smcli',
+                                 'Virtual_Network_Adapter_Disconnect_DM',
+                                 "-T %s" % userid,
+                                 "-v %s" % vdev))
             xdsh_commands = 'command=%s' % commands
             body = [xdsh_commands]
             zvmutils.xcat_request("PUT", url, body)
 
         # the inst must be active, or this call will failed
-        commands = '/opt/zhcp/bin/smcli'
-        commands += ' Virtual_Network_Adapter_Disconnect'
-        commands += " -T %s " % userid + "-v %s" % vdev
+        commands = ' '.join(('/opt/zhcp/bin/smcli',
+                             'Virtual_Network_Adapter_Disconnect',
+                             "-T %s" % userid,
+                             "-v %s" % vdev))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
         zvmutils.xcat_request("PUT", url, body)
