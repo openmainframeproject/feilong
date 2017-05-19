@@ -260,3 +260,6 @@ class VMOps(object):
                      {'img': image_name,
                       'vm': user_id})
             raise err
+
+    def get_console_log(self, userid, log_size):
+        return self._zvmclient.get_user_console_log(userid, log_size)
