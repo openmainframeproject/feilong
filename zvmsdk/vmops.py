@@ -279,3 +279,6 @@ class VMOps(object):
                     msg=("invalid check option for user direct: %s") % k)
 
         return info
+
+    def get_console_log(self, userid, log_size):
+        return self._zvmclient.get_user_console_log(userid, log_size)
