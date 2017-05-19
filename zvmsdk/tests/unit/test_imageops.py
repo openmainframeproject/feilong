@@ -67,7 +67,7 @@ class SDKImageOpsTestCase(base.SDKTestCase):
         self.assertEqual(ret, expected_path)
 
     @mock.patch.object(zvmutils, 'execute')
-    def test_get_root_disk_size(self, execute_cmd):
+    def test_image_get_root_disk_size(self, execute_cmd):
         fake_name = 'rhel7.2-s390x-netboot-fake_image_uuid'
         execute_cmd.return_value =\
             '00000000  78 43 41 54 20 43 4b 44  20 44 69 73 6b 20 49 6d  ' +\
@@ -80,7 +80,7 @@ class SDKImageOpsTestCase(base.SDKTestCase):
             '|GZIP: 6         |\n' +\
             '00000040'
 
-        ret = self._image_ops.get_image_root_disk_size(fake_name)
+        ret = self._image_ops.image_get_root_disk_size(fake_name)
         self.assertEqual(ret, 3338)
 
     @mock.patch.object(xml.dom.minidom, 'Document')

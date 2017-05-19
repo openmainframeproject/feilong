@@ -73,7 +73,7 @@ class XCATClient(ZVMClient):
         with zvmutils.expect_invalid_xcat_node_and_reraise(userid):
             return zvmutils.xcat_request(method, url, body)
 
-    def power_on(self, userid):
+    def guest_start(self, userid):
         """"Power on VM."""
         try:
             self._power_state(userid, "PUT", "on")
@@ -240,7 +240,7 @@ class XCATClient(ZVMClient):
         res_dict = zvmutils.xcat_request("GET", url)
         return res_dict
 
-    def make_vm(self, userid, kwprofile, cpu, memory):
+    def guest_create(self, userid, kwprofile, cpu, memory):
         body = [kwprofile,
                 'password=%s' % CONF.zvm.user_default_password,
                 'cpu=%i' % cpu,
@@ -413,8 +413,7 @@ class XCATClient(ZVMClient):
                 exception.ZVMXCATUpdateNodeFailed):
             zvmutils.xcat_request("PUT", url, body)
 
-    def deploy_image_to_vm(self, node, image_name, transportfiles=None,
-                           vdev=None):
+    def guest_deploy(self, node, image_name, transportfiles=None, vdev=None):
         """image_name format looks like:
         sles12-s390x-netboot-0a0c576a_157f_42c8_bde5_2a254d8b77fc"""
         # Update node info before deploy

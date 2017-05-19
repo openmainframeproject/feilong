@@ -50,15 +50,15 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertEqual(ret, True)
 
     @mock.patch.object(zvmclient.XCATClient, '_power_state')
-    def test_power_on(self, power_state):
-        self.vmops.power_on('cbi00063')
+    def test_guest_start(self, power_state):
+        self.vmops.guest_start('cbi00063')
         power_state.assert_called_once_with('cbi00063', 'PUT', 'on')
 
-    @mock.patch('zvmsdk.imageops.ImageOps.get_image_root_disk_size')
+    @mock.patch('zvmsdk.imageops.ImageOps.image_get_root_disk_size')
     @mock.patch('zvmsdk.vmops.VMOps.set_ipl')
     @mock.patch('zvmsdk.vmops.VMOps.add_mdisk')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_create_userid(self, xrequest, add_mdisk, set_ipl, get_root_size):
+    def test_guest_create(self, xrequest, add_mdisk, set_ipl, get_root_size):
         url = "/xcatws/vms/cbi00063?userName=" + CONF.xcat.username +\
                 "&password=" + CONF.xcat.password +\
                 "&format=json"
@@ -66,7 +66,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                 'password=%s' % CONF.zvm.user_default_password,
                 'cpu=1', 'memory=1024m',
                 'privilege=G', 'ipl=0100']
-        self.vmops.create_userid('cbi00063', 1, 1024, 3338, [])
+        self.vmops.guest_create('cbi00063', 1, 1024, 3338, [])
         xrequest.assert_called_once_with('POST', url, body)
         add_mdisk.assert_called_once_with('cbi00063', CONF.zvm.diskpool,
                                           CONF.zvm.user_root_vdev,
@@ -201,9 +201,9 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertRaises(exception.ZVMVirtualMachineNotExist,
                           self.vmops.get_info, 'fakeid')
 
-    @mock.patch('zvmsdk.client.XCATClient.deploy_image_to_vm')
-    def test_deploy_image_to_vm(self, deploy_image_to_vm):
-        self.vmops.deploy_image_to_vm('fakevm', 'fakeimg',
-                                      '/test/transport.tgz')
+    @mock.patch('zvmsdk.client.XCATClient.guest_deploy')
+    def test_guest_deploy(self, deploy_image_to_vm):
+        self.vmops.guest_deploy('fakevm', 'fakeimg',
+                                '/test/transport.tgz')
         deploy_image_to_vm.assert_called_with('fakevm', 'fakeimg',
                                               '/test/transport.tgz', None)

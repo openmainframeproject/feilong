@@ -117,11 +117,11 @@ class VMOps(object):
 
         return False
 
-    def power_on(self, instance_name):
+    def guest_start(self, instance_name):
         """"Power on z/VM instance."""
-        self._zvmclient.power_on(instance_name)
+        self._zvmclient.guest_start(instance_name)
 
-    def create_userid(self, instance_name, cpu, memory, root_disk_size,
+    def guest_create(self, instance_name, cpu, memory, root_disk_size,
                       eph_disks):
         """Create z/VM userid into user directory for a z/VM instance."""
         LOG.debug("Creating the z/VM user entry for instance %s"
@@ -129,8 +129,8 @@ class VMOps(object):
 
         kwprofile = 'profile=%s' % const.ZVM_USER_PROFILE
         try:
-            self._zvmclient.make_vm(instance_name, kwprofile,
-                                   cpu, memory)
+            self._zvmclient.guest_create(instance_name, kwprofile,
+                                         cpu, memory)
 
             # Add root disk
             self.add_mdisk(instance_name, CONF.zvm.diskpool,
@@ -247,13 +247,13 @@ class VMOps(object):
                     image_name)
         LOG.info('Image %s successfully deleted' % image_name)
 
-    def deploy_image_to_vm(self, user_id, image_name, transportfiles=None,
-                           vdev=None):
+    def guest_deploy(self, user_id, image_name, transportfiles=None,
+                     vdev=None):
         try:
             LOG.debug("Begin to deploy image on vm %s", user_id)
 
-            self._zvmclient.deploy_image_to_vm(user_id, image_name,
-                                               transportfiles, vdev)
+            self._zvmclient.guest_deploy(user_id, image_name,
+                                         transportfiles, vdev)
 
         except exception as err:
             LOG.error(('Failed to deploy image %(img)s to vm %(vm)s') %
