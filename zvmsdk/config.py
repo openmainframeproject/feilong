@@ -115,6 +115,10 @@ zvm_opts = [
         section='instance',
         default=300,
         opt_type='int'),
+    Opt('console_log_size',
+        section='instance',
+        default=100,
+        opt_type='int'),
     ]
 
 

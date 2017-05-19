@@ -236,3 +236,13 @@ class SDKAPI(object):
         :returns: A list that contains image names
         """
         return self._imageops.image_query(imagekeyword)
+
+    def guest_get_console_log(self, userid, log_size):
+        """Get the console log of the guest virtual machine.
+
+        :param userid: the user id of the vm
+        :param log_size: the size of the console log
+
+        :returns: console log string
+        """
+        return self._vmops.get_console_log(userid, log_size)

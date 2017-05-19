@@ -917,3 +917,16 @@ class XCATClient(ZVMClient):
                     image_list.append(image_name)
 
         return image_list
+
+    def get_user_console_log(self, userid, log_size):
+        """get console log."""
+        url = self._xcat_url.rinv('/' + userid, '&field=--consoleoutput'
+                                  '&field=%s') % log_size
+
+        # Because we might have logs in the console, we need ignore the warning
+        res_info = zvmutils.xcat_request("GET", url)
+
+        with zvmutils.expect_invalid_xcat_resp_data(res_info):
+            log_data = res_info['info'][0][0]
+
+        return log_data
