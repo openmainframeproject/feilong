@@ -53,9 +53,9 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         xrequest.assert_called_once_with('PUT', fake_url, fake_body)
 
     @mock.patch.object(zvmclient.XCATClient, '_power_state')
-    def test_power_on(self, power_state):
+    def test_guest_start(self, power_state):
         fake_userid = 'fake_userid'
-        self._zvmclient.power_on(fake_userid)
+        self._zvmclient.guest_start(fake_userid)
         power_state.assert_called_once_with(fake_userid, 'PUT', 'on')
 
     @mock.patch.object(zvmclient.XCATClient, '_power_state')
@@ -443,7 +443,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
     @mock.patch.object(zvmutils, 'xcat_request')
     @mock.patch.object(zvmclient.XCATClient, '_update_vm_info')
-    def test_deploy_image_to_vm(self, _update_vm_info, xrequest):
+    def test_guest_deploy(self, _update_vm_info, xrequest):
         node = "testnode"
         image_name = "sles12-s390x-netboot-0a0c576a_157f_42c8_2a254d8b77fc"
         transportfiles = '/tmp/transport.tgz'
@@ -452,7 +452,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
                 CONF.xcat.username +\
                "&password=" + CONF.xcat.password +\
                "&format=json"
-        self._zvmclient.deploy_image_to_vm(node, image_name, transportfiles)
+        self._zvmclient.guest_deploy(node, image_name, transportfiles)
         _update_vm_info.assert_called_with('testnode',
             ['sles12', 's390x', 'netboot', '0a0c576a_157f_42c8_2a254d8b77fc'])
 
@@ -501,7 +501,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         # TODO:moving to vmops and change name to ''
         pass
 
-    def test_make_vm(self):
+    def test_guest_create(self):
         pass
 
     @mock.patch.object(zvmutils, 'xcat_request')

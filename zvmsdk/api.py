@@ -33,14 +33,14 @@ class SDKAPI(object):
         self._networkops = networkops.get_networkops()
         self._imageops = imageops.get_imageops()
 
-    def power_on(self, vm_id):
+    def guest_start(self, vm_id):
         """Power on a virtual machine.
 
         :param vm_id: the id of the vm to be power on
 
         :returns: None
         """
-        self._vmops.power_on(vm_id)
+        self._vmops.guest_start(vm_id)
 
     def get_power_state(self, vm_id):
         """Returns power state."""
@@ -78,8 +78,8 @@ class SDKAPI(object):
         """
         return self._hostops.get_vm_list()
 
-    def deploy_image_to_vm(self, user_id, image_name, transportfiles=None,
-                           vdev=None):
+    def guest_deploy(self, user_id, image_name, transportfiles=None,
+                     vdev=None):
         """ Deploy the image to vm.
 
         :param user_id: the user id of the vm
@@ -88,8 +88,8 @@ class SDKAPI(object):
         :param vdev: the device that image will be deploy to
 
         """
-        return self._vmops.deploy_image_to_vm(user_id, image_name,
-                                              transportfiles, vdev)
+        return self._vmops.guest_deploy(user_id, image_name,
+                                        transportfiles, vdev)
 
     def guest_create_port(self, vm_id, nic_info, ip_addr=None):
         """ Create the nic for the vm.
@@ -145,7 +145,7 @@ class SDKAPI(object):
         """
         self._imageops.image_import(image_file_path, os_version)
 
-    def create_vm(self, userid, vcpus, memory, root_disk_size, eph_disks):
+    def guest_create(self, userid, vcpus, memory, root_disk_size, eph_disks):
         """create a vm in z/VM
 
         :param userid:the userid of the vm to be created
@@ -156,16 +156,16 @@ class SDKAPI(object):
         :param eph_disks:
 
         """
-        self._vmops.create_vm(userid, vcpus, memory,
-                              root_disk_size, eph_disks)
+        self._vmops.guest_create(userid, vcpus, memory,
+                                 root_disk_size, eph_disks)
 
-    def get_image_root_disk_size(self, image_file_name):
+    def image_get_root_disk_size(self, image_file_name):
         """Get the root disk size of the image
 
         :param image_file_name: the image file name in image Repository
         :returns: the disk size in units CYL or BLK
         """
-        return self._imageops.get_image_root_disk_size(image_file_name)
+        return self._imageops.image_get_root_disk_size(image_file_name)
 
     def couple_nic_to_vswitch(self, vswitch_name, switch_port_name,
                               userid, persist=True):

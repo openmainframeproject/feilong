@@ -32,16 +32,15 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.get_vm_info('fakevm')
         ginfo.assert_called_once_with('fakevm')
 
-    def test_deploy_image_to_vm(self):
-        self._vmops.deploy_image_to_vm(mock.sentinel.user_id,
-                                mock.sentinel.image_name,
-                                mock.sentinel.transportfiles,
-                                mock.sentinel.vdev)
-        self._vmops.deploy_image_to_vm.assert_called_with(
-                                mock.sentinel.user_id,
-                                mock.sentinel.image_name,
-                                mock.sentinel.transportfiles,
-                                mock.sentinel.vdev)
+    @mock.patch("zvmsdk.vmops.VMOps.guest_deploy")
+    def test_guest_deploy(self, guest_deploy):
+        user_id = 'fakevm'
+        image_name = 'fakeimg'
+        transportfiles = '/tmp/transport.tgz'
+        vdev = None
+        self.api.guest_deploy(user_id, image_name, transportfiles, vdev)
+        guest_deploy.assert_called_with(user_id, image_name, transportfiles,
+                                        vdev)
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_import")
     def test_image_import(self, image_import):
@@ -50,15 +49,15 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.image_import(image_file_path, os_version)
         image_import.assert_called_once_with(image_file_path, os_version)
 
-    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
-    def test_create_vm(self, create_vm):
+    @mock.patch("zvmsdk.vmops.VMOps.guest_create")
+    def test_guest_create(self, create_vm):
         userid = 'userid'
         vcpus = 1
         memory = 1024
         root_disk_size = 3338
         eph_disks = []
 
-        self.api.create_vm(userid, vcpus, memory, root_disk_size, eph_disks)
+        self.api.guest_create(userid, vcpus, memory, root_disk_size, eph_disks)
         create_vm.assert_called_once_with(userid, vcpus, memory,
                                           root_disk_size, eph_disks)
 
