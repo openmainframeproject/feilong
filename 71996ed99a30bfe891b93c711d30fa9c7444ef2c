@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f3c4d7f2_2f82b0e5",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-19T11:23:59Z",
+      "side": 1,
+      "message": "please help to change to userid or user_id, need sync with folks",
+      "range": {
+        "startLine": 94,
+        "startChar": 32,
+        "endLine": 94,
+        "endChar": 37
+      },
+      "revId": "71996ed99a30bfe891b93c711d30fa9c7444ef2c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e2775895_fffcb6d0",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-19T11:23:59Z",
+      "side": 1,
+      "message": "this is weird, the ip_addr is no in nic_info?\n\nand we will check and raise exception if ip_addr is None\nin _networkops.create_port\nwhat\u0027s the logic to offer a default value \u003d None here?",
+      "range": {
+        "startLine": 101,
+        "startChar": 24,
+        "endLine": 101,
+        "endChar": 44
+      },
+      "revId": "71996ed99a30bfe891b93c711d30fa9c7444ef2c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8a78ab3d_6c1f3afa",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 383,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-19T11:23:59Z",
+      "side": 1,
+      "message": "I suggest you add userid here, it\u0027s common we have multiple logs at same time",
+      "range": {
+        "startLine": 379,
+        "startChar": 12,
+        "endLine": 383,
+        "endChar": 39
+      },
+      "revId": "71996ed99a30bfe891b93c711d30fa9c7444ef2c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
