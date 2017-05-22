@@ -107,7 +107,7 @@ class SDKAPI(object):
 
         self._networkops.create_port(vm_id, nic_info, ip_addr=ip_addr)
 
-    def get_vm_nic_switch_info(self, user_id):
+    def guest_get_nic_switch_info(self, user_id):
         """ Return the nic and switch pair for the specified vm.
 
         :param user_id: the user id of the vm
@@ -128,13 +128,13 @@ class SDKAPI(object):
         """
         return self._networkops.check_nic_coupled(key, user_id)
 
-    def clean_network_resource(self, user_id):
+    def guest_clean_network_resource(self, user_id):
         """Clean the network resource (mac. switch, host) for the vm.
 
         :param user_id: the user id of the vm
 
         """
-        return self._networkops.clean_network_resource(user_id)
+        self._networkops.clean_network_resource(user_id)
 
     def image_import(self, image_file_path, os_version):
         """import image to z/VM according to the file path and os_version
@@ -167,8 +167,8 @@ class SDKAPI(object):
         """
         return self._imageops.image_get_root_disk_size(image_file_name)
 
-    def couple_nic_to_vswitch(self, vswitch_name, switch_port_name,
-                              userid, persist=True):
+    def guest_nic_couple_to_vswitch(self, vswitch_name, switch_port_name,
+                                 userid, persist=True):
         """ Couple nic device to specified vswitch.
 
         :param vswitch_name: the name of the vswitch
@@ -181,8 +181,8 @@ class SDKAPI(object):
         self._networkops.couple_nic_to_vswitch(vswitch_name, switch_port_name,
                                                userid, persist)
 
-    def uncouple_nic_from_vswitch(self, vswitch_name, switch_port_name,
-                                  userid, persist=True):
+    def guest_nic_uncouple_from_vswitch(self, vswitch_name, switch_port_name,
+                                        userid, persist=True):
         """ Couple nic device to specified vswitch.
 
         :param vswitch_name: the name of the vswitch
@@ -196,14 +196,16 @@ class SDKAPI(object):
                                                    switch_port_name,
                                                    userid, persist)
 
-    def get_admin_created_vsw(self):
-        """ Get the vswitch which is created by the admin."""
-        self._networkops.get_admin_created_vsw()
+    def vswitch_get_list_created_by_admin(self):
+        """ Get the vswitch which is created by the admin.
+        :return: vswitch name list which is created by the admin
+        """
+        return self._networkops.get_admin_created_vsw()
 
-    def add_vswitch(self, name, rdev,
-                    controller='*', connection=1,
-                    queue_mem=8, router=0, network_type=2, vid=0,
-                    port_type=1, update=1, gvrp=2, native_vid=1):
+    def vswitch_create(self, name, rdev,
+                       controller='*', connection=1,
+                       queue_mem=8, router=0, network_type=2, vid=0,
+                       port_type=1, update=1, gvrp=2, native_vid=1):
         """ Create vswitch.
 
         :param name: the vswitch name

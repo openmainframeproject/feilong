@@ -53,15 +53,15 @@ class NetworkOPS(object):
         self.zvmclient.clean_network_resource(user_id)
 
     def get_admin_created_vsw(self):
-        self.zvmclient.get_admin_created_vsw()
+        return self.zvmclient.get_admin_created_vsw()
 
     def couple_nic_to_vswitch(self, vswitch_name, switch_port_name,
-                              userid, persist):
+                              userid, persist=True):
         self.zvmclient.couple_nic_to_vswitch(vswitch_name, switch_port_name,
                                              userid, persist)
 
     def uncouple_nic_from_vswitch(self, vswitch_name, switch_port_name,
-                                  userid, persist):
+                                  userid, persist=True):
         self.zvmclient.uncouple_nic_from_vswitch(vswitch_name,
                                                  switch_port_name,
                                                  userid, persist)
