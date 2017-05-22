@@ -16,7 +16,6 @@ import webob.exc
 from zvmsdk import config
 from zvmsdk import log
 from zvmsdk.sdkwsgi import wsgi_wrapper
-from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi import util
 
 _VMACTION = None
@@ -50,18 +49,18 @@ def get_action():
 
 @wsgi_wrapper.SdkWsgify
 def guest_list(req):
-    @tokens.validate(req)
+
+    # @tokens.validate(req)
     def _guest_list(req):
         action = get_action()
         action.list()
-        pass
 
     _guest_list(req)
 
 
 @wsgi_wrapper.SdkWsgify
 def guest_action(req):
-    @tokens.validate(req)
+    # @tokens.validate(req)
     def _guest_action(uuid, req):
         action = get_action()
         data = util.extract_json(req.body)
