@@ -5,3 +5,4 @@ routes
 webob
 jsonschema
 microversion_parse
+pyjwt
