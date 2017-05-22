@@ -845,10 +845,10 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
     @mock.patch.object(zvmclient.XCATClient, '_get_xcat_node_name')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_get_admin_created_vsw(self, xrequest, get_xcat_node_name):
+    def test_get_vswitch_list(self, xrequest, get_xcat_node_name):
         get_xcat_node_name.return_value = "fakenode"
         xrequest.return_value = {
-            "data": [["0"]],
+            "data": [["VSWITCH: SYSTEM TEST"]],
             "errorcode": [['0']]
                             }
         url = "/xcatws/nodes/fakenode/dsh?userName=" +\
@@ -857,9 +857,10 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
               "&format=json"
         commands = 'command=vmcp q v nic'
         body = [commands]
-        self._zvmclient.get_admin_created_vsw()
+        info = self._zvmclient.get_vswitch_list()
         get_xcat_node_name.assert_called_with()
         xrequest.assert_called_with("PUT", url, body)
+        self.assertEqual(info[0], "TEST")
 
     @mock.patch.object(zvmclient.XCATClient, '_get_nic_settings')
     @mock.patch.object(zvmclient.XCATClient, '_couple_nic')
