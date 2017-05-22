@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "908b6551_86a96942",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-22T06:14:49Z",
+      "side": 1,
+      "message": "you need follow above rules\n\nhttp://9.114.144.38:8080/job/python-zvm-lib-checks/ws/builds/58/build/html/index.html\n\nis the output of the doc",
+      "range": {
+        "startLine": 200,
+        "startChar": 8,
+        "endLine": 202,
+        "endChar": 11
+      },
+      "revId": "7d18614ee0a61df53e4736ca6285aa49f452da4f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
