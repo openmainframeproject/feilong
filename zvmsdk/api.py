@@ -71,12 +71,12 @@ class SDKAPI(object):
         """
         return self._hostops.diskpool_get_info(diskpool_name)
 
-    def list_vms(self):
+    def host_list_guests(self):
         """list names of all the VMs on this host.
 
         :returns: names of the vm on this host, in a list.
         """
-        return self._hostops.get_vm_list()
+        return self._hostops.list_guests()
 
     def guest_deploy(self, user_id, image_name, transportfiles=None,
                      vdev=None):

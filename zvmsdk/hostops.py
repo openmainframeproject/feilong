@@ -90,5 +90,5 @@ class HOSTOps(object):
 
         return dp_info
 
-    def get_vm_list(self):
+    def list_guests(self):
         return self._zvmclient.get_vm_list()
