@@ -16,6 +16,7 @@ import datetime
 import jwt
 import mock
 import unittest
+import webob.exc
 
 from zvmsdk.sdkwsgi.handlers import guest
 from zvmsdk.sdkwsgi import util
@@ -59,3 +60,23 @@ class HandlersGuestTest(unittest.TestCase):
 
         guest.guest_action(self.req)
         mock_action.assert_called_once_with(FAKE_UUID)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(guest.VMAction, 'stop')
+    def test_guest_stop(self, mock_action,
+                        mock_uuid):
+        self.req.body = '{"stop": "None"}'
+
+        mock_uuid.return_value = FAKE_UUID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with(FAKE_UUID)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_invalid_action(self, mock_uuid):
+        self.req.body = '{"fake": "None"}'
+
+        mock_uuid.return_value = FAKE_UUID
+
+        self.assertRaises(webob.exc.HTTPBadRequest, guest.guest_action,
+                          self.req)
