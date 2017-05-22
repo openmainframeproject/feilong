@@ -46,7 +46,7 @@ class SDKAPI(object):
         """Returns power state."""
         return self._vmops.get_power_state(guest_id)
 
-    def get_vm_info(self, vm_id):
+    def guest_get_info(self, guest_id):
         """Returns a dict containing:
 
         :param power_state: the running state, one of on | off
@@ -55,7 +55,7 @@ class SDKAPI(object):
         :param num_cpu: (int) the number of virtual CPUs for the instance
         :param cpu_time_ns: (int) the CPU time used in nanoseconds
         """
-        return self._vmops.get_info(vm_id)
+        return self._vmops.get_info(guest_id)
 
     def host_get_info(self):
         """ Retrieve host information including host, memory, disk etc.

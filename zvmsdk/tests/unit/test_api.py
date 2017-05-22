@@ -28,8 +28,8 @@ class SDKAPITestCase(base.SDKTestCase):
         self.assertTrue(isinstance(self.api, api.SDKAPI))
 
     @mock.patch("zvmsdk.vmops.VMOps.get_info")
-    def test_get_vm_info(self, ginfo):
-        self.api.get_vm_info('fakevm')
+    def test_guest_get_info(self, ginfo):
+        self.api.guest_get_info('fakevm')
         ginfo.assert_called_once_with('fakevm')
 
     @mock.patch("zvmsdk.vmops.VMOps.guest_deploy")
