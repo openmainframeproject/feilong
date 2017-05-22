@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2c0c978f_2712cac4",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-22T06:17:18Z",
+      "side": 0,
+      "message": "I\u0027d suggest add something here to describe the usage of the function...maybe a follow up patch",
+      "range": {
+        "startLine": 50,
+        "startChar": 11,
+        "endLine": 50,
+        "endChar": 37
+      },
+      "revId": "270cbf9256c0ea50504dbfb4537b1c3606702fcf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
