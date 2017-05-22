@@ -615,7 +615,7 @@ class XCATClient(ZVMClient):
         body = [xdsh_commands]
         zvmutils.xcat_request("PUT", url, body)
 
-    def _couple_nic(self, vswitch_name, userid, vdev, persist):
+    def _couple_nic(self, vswitch_name, userid, vdev, persist=True):
         """Couple NIC to vswitch by adding vswitch into user direct."""
         zhcp = CONF.xcat.zhcp_node
         url = self._xcat_url.xdsh("/%s" % zhcp)
@@ -640,7 +640,7 @@ class XCATClient(ZVMClient):
         zvmutils.xcat_request("PUT", url, body)
 
     def couple_nic_to_vswitch(self, vswitch_name, switch_port_name,
-                              userid, persist):
+                              userid, persist=True):
         """Couple nic to vswitch."""
         LOG.debug("Connect nic to switch: %s", vswitch_name)
         vdev = self._get_nic_settings(switch_port_name, "interface")
@@ -652,7 +652,7 @@ class XCATClient(ZVMClient):
                             (userid, switch_port_name))
         return vdev
 
-    def _uncouple_nic(self, userid, vdev, persist):
+    def _uncouple_nic(self, userid, vdev, persist=True):
         """Uncouple NIC from vswitch"""
         zhcp = CONF.xcat.zhcp_node
         url = self._xcat_url.xdsh("/%s" % zhcp)
@@ -675,7 +675,7 @@ class XCATClient(ZVMClient):
         zvmutils.xcat_request("PUT", url, body)
 
     def uncouple_nic_from_vswitch(self, vswitch_name, switch_port_name,
-                                  userid, persist):
+                                  userid, persist=True):
         """Uncouple nic from vswitch."""
         LOG.debug("Disconnect nic from switch: %s", vswitch_name)
         vdev = self._get_nic_settings(switch_port_name, "interface")
