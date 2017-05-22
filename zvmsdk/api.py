@@ -42,9 +42,9 @@ class SDKAPI(object):
         """
         self._vmops.guest_start(vm_id)
 
-    def get_power_state(self, vm_id):
+    def guest_get_power_state(self, guest_id):
         """Returns power state."""
-        return self._vmops.get_power_state(vm_id)
+        return self._vmops.get_power_state(guest_id)
 
     def get_vm_info(self, vm_id):
         """Returns a dict containing:

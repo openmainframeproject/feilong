@@ -44,9 +44,9 @@ class VMOps(object):
         self._dist_manager = dist.ListDistManager()
         self._imageops = imageops.get_imageops()
 
-    def get_power_state(self, vm_id):
+    def get_power_state(self, guest_id):
         """Get power status of a z/VM instance."""
-        return self._zvmclient.get_power_state(vm_id)
+        return self._zvmclient.get_power_state(guest_id)
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def _get_cpu_num_from_user_dict(self, dict_info):
