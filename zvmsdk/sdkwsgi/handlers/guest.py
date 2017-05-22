@@ -26,19 +26,22 @@ LOG = log.LOG
 
 class VMAction(object):
     def start(self, id):
-        LOG.info('start vm %s', id)
+        LOG.info('start guest %s', id)
 
     def list(self):
-        LOG.info('list vms')
+        LOG.info('list guests')
 
     def stop(self, id):
-        LOG.info('stop vm %s', id)
+        LOG.info('stop guest %s', id)
 
     def pause(self, id):
-        LOG.info('pause vm %s', id)
+        LOG.info('pause guest %s', id)
 
     def unpause(self, id):
-        LOG.info('unpause vm %s', id)
+        LOG.info('unpause guest %s', id)
+
+    def create(self, data):
+        LOG.info('create guest')
 
 
 def get_action():
@@ -57,6 +60,19 @@ def guest_list(req):
         action.list()
 
     _guest_list(req)
+
+
+@wsgi_wrapper.SdkWsgify
+def guest_create(req):
+    tokens.validate(req)
+
+    def _guest_create(req):
+        action = get_action()
+        data = util.extract_json(req.body)
+
+        action.create(data)
+
+    _guest_create(req)
 
 
 @wsgi_wrapper.SdkWsgify

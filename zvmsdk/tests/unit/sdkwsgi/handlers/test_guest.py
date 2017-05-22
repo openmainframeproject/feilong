@@ -80,3 +80,12 @@ class HandlersGuestTest(unittest.TestCase):
 
         self.assertRaises(webob.exc.HTTPBadRequest, guest.guest_action,
                           self.req)
+
+    @mock.patch.object(guest.VMAction, 'create')
+    def test_guest_create(self, mock_create):
+        body_str = '{"name": "name1"}'
+        self.req.body = body_str
+
+        guest.guest_create(self.req)
+        body = util.extract_json(body_str)
+        mock_create.assert_called_once_with(body)
