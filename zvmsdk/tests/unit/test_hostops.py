@@ -23,9 +23,9 @@ class SDKHostOpsTestCase(base.SDKTestCase):
     def setUp(self):
         self._hostops = hostops.get_hostops()
 
-    @mock.patch.object(hostops.HOSTOps, 'get_diskpool_info')
+    @mock.patch.object(hostops.HOSTOps, 'diskpool_get_info')
     @mock.patch.object(zvmclient.XCATClient, 'get_host_info')
-    def test_get_host_info(self, get_host_info, get_diskpool_info):
+    def test_get_host_info(self, get_host_info, diskpool_get_info):
         get_host_info.return_value = {
             "zvm_host": "FAKENODE",
             "zhcp": "fakehcp.fake.com",
@@ -41,14 +41,14 @@ class SDKHostOpsTestCase(base.SDKTestCase):
             "lpar_memory_offline": "0",
             "ipl_time": "IPL at 03/13/14 21:43:12 EDT",
             }
-        get_diskpool_info.return_value = {
+        diskpool_get_info.return_value = {
             "disk_total": 406105,
             "disk_used": 367263,
             "disk_available": 38843,
             }
-        host_info = self._hostops.get_host_info()
+        host_info = self._hostops.get_info()
         get_host_info.assert_called_once_with()
-        get_diskpool_info.assert_called_once_with()
+        diskpool_get_info.assert_called_once_with()
         self.assertEqual(host_info['vcpus'], 10)
         self.assertEqual(host_info['hypervisor_version'], 610)
         self.assertEqual(host_info['disk_total'], 406105)
@@ -60,7 +60,7 @@ class SDKHostOpsTestCase(base.SDKTestCase):
             "disk_used": "367262.6 G",
             "disk_available": "38842.7 G",
             }
-        dp_info = self._hostops.get_diskpool_info("fakepool")
+        dp_info = self._hostops.diskpool_get_info("fakepool")
         get_diskpool_info.assert_called_once_with("fakepool")
         self.assertEqual(dp_info['disk_total'], 406105)
         self.assertEqual(dp_info['disk_used'], 367263)
