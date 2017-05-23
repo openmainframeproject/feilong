@@ -28,10 +28,11 @@ import webob
 
 from zvmsdk import exception
 from zvmsdk.sdkwsgi import util
+from zvmsdk.sdkwsgi.handlers import guest
 from zvmsdk.sdkwsgi.handlers import image
 from zvmsdk.sdkwsgi.handlers import root
 from zvmsdk.sdkwsgi.handlers import tokens
-from zvmsdk.sdkwsgi.handlers import guest
+from zvmsdk.sdkwsgi.handlers import vswitch
 
 
 # When adding URLs here, do not use regex patterns in
@@ -54,6 +55,10 @@ ROUTE_DECLARATIONS = {
     },
     '/token': {
         'POST': tokens.create,
+    },
+    '/vswitch': {
+        'GET': vswitch.vswitch_list,
+        'POST': vswitch.vswitch_create,
     },
 }
 
