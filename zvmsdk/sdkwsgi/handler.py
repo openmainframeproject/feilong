@@ -28,6 +28,7 @@ import webob
 
 from zvmsdk import exception
 from zvmsdk.sdkwsgi import util
+from zvmsdk.sdkwsgi.handlers import image
 from zvmsdk.sdkwsgi.handlers import root
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.handlers import guest
@@ -41,16 +42,19 @@ ROUTE_DECLARATIONS = {
     '/': {
         'GET': root.home,
     },
-    '/token': {
-        'POST': tokens.create,
-    },
     '/guest': {
         'GET': guest.guest_list,
         'POST': guest.guest_create,
     },
     '/guest/{uuid}/action': {
         'POST': guest.guest_action,
-    }
+    },
+    '/image': {
+        'POST': image.image_create,
+    },
+    '/token': {
+        'POST': tokens.create,
+    },
 }
 
 
