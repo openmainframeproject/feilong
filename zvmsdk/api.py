@@ -246,3 +246,27 @@ class SDKAPI(object):
         :returns: console log string
         """
         return self._vmops.get_console_log(userid, log_size)
+
+    def vswitch_bound_nic(self, user_id, vswitch_name, nic_id,
+                           network_type=None, vlan_id=None):
+        """ bind port to a network.
+
+        :param userid: the user id of the vm
+        :param vswitch_name: the network name
+        :param nic_id: interface id
+        :parma network_type: network type, zvm support flat and vlan
+        :param vlan_id: VLAN id, it is None if not vlan network
+
+        """
+        self._networkops.port_bound(user_id, vswitch_name, nic_id,
+                                    network_type, vlan_id)
+
+    def vswitch_unbound_nic(self, user_id, vswitch_name, nic_id):
+        """ unbind port from a network.
+
+        :param user_id: the user id of the vm
+        :param vswitch_name: the network name
+        :param nic_id: interface id
+
+        """
+        self._networkops.port_unbound(user_id, vswitch_name, nic_id)
