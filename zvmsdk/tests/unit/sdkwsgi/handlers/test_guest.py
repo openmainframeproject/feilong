@@ -18,6 +18,7 @@ import mock
 import unittest
 import webob.exc
 
+from zvmsdk import exception
 from zvmsdk.sdkwsgi.handlers import guest
 from zvmsdk.sdkwsgi import util
 
@@ -83,9 +84,16 @@ class HandlersGuestTest(unittest.TestCase):
 
     @mock.patch.object(guest.VMAction, 'create')
     def test_guest_create(self, mock_create):
-        body_str = '{"name": "name1"}'
+        body_str = '{"guest": {"name": "name1"}}'
         self.req.body = body_str
 
         guest.guest_create(self.req)
         body = util.extract_json(body_str)
-        mock_create.assert_called_once_with(body)
+        mock_create.assert_called_once_with(body=body)
+
+    def test_guest_create_invalidname(self):
+        body_str = '{"guest": {"name": ""}}'
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, guest.guest_create,
+                          self.req)

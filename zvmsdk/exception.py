@@ -136,3 +136,11 @@ class NotFound(SDKBaseException):
 
 class zVMInvalidDataError(SDKBaseException):
     msg_fmt = 'Invalid data error: %(msg)s'
+
+
+class InvalidName(SDKBaseException):
+    msg_fmt = 'Invalid name provided, reason is %(reason)s'
+
+
+class ValidationError(SDKBaseException):
+    msg_fmt = 'Validation error: %(detail)s'

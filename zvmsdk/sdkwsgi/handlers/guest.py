@@ -16,7 +16,9 @@ import webob.exc
 from zvmsdk import config
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
+from zvmsdk.sdkwsgi.schemas import guest
 from zvmsdk.sdkwsgi import util
+from zvmsdk.sdkwsgi import validation
 from zvmsdk.sdkwsgi import wsgi_wrapper
 
 _VMACTION = None
@@ -40,7 +42,8 @@ class VMAction(object):
     def unpause(self, id):
         LOG.info('unpause guest %s', id)
 
-    def create(self, data):
+    @validation.schema(guest.create)
+    def create(self, body):
         LOG.info('create guest')
 
 
@@ -68,9 +71,9 @@ def guest_create(req):
 
     def _guest_create(req):
         action = get_action()
-        data = util.extract_json(req.body)
+        body = util.extract_json(req.body)
 
-        action.create(data)
+        action.create(body=body)
 
     _guest_create(req)
 
