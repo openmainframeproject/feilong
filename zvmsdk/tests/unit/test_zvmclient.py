@@ -363,16 +363,26 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
     @mock.patch.object(zvmclient.XCATClient, '_add_switch_table_record')
     @mock.patch.object(zvmclient.XCATClient, '_add_mac_table_record')
     @mock.patch.object(zvmclient.XCATClient, '_delete_mac')
-    def test_create_port(self, _delete_mac,
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_create_nic(self, xrequest, _delete_mac,
                          _add_mac, _add_switch):
-        self._zvmclient._create_port("fakenode", "fake_nic",
-                                     "fake_mac", "fake_vdev",
-                                     "fakehcp")
+        self._zvmclient._create_nic("fakenode", "fake_nic",
+                                    "00:00:00:12:34:56", "fake_vdev",
+                                    "fakehcp")
         _delete_mac.assert_called_once_with("fakenode")
         _add_mac.assert_called_once_with("fakenode", "fake_vdev",
-                                         "fake_mac", "fakehcp")
+                                         "00:00:00:12:34:56", "fakehcp")
         _add_switch.assert_called_once_with("fakenode", "fake_nic",
                                             "fake_vdev", "fakehcp")
+
+        url = self._xcat_url.chvm('/fakenode')
+        commands = ' '.join((
+            'Image_Definition_Update_DM -T %userid%',
+            '-k \'NICDEF=VDEV=fake_vdev TYPE=QDIO',
+            'MACID=123456\''))
+        body = ['--smcli', commands]
+
+        xrequest.assert_called_once_with("PUT", url, body)
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_add_mac_table_record(self, xrequest):

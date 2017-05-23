@@ -365,7 +365,7 @@ class XCATClient(ZVMClient):
                 exception.ZVMNetworkError):
             return zvmutils.xcat_request("PUT", url, body)['data']
 
-    def create_port(self, userid, nic_info, ip_addr=None):
+    def create_nic(self, userid, nic_info, ip_addr=None):
         if ip_addr is None:
             raise exception.ZVMInvalidInput(
                 msg=("IP address is required"))
@@ -381,14 +381,25 @@ class XCATClient(ZVMClient):
                       'vdev is %(vdev)s',
                       {'id': nic_id, 'address': mac_addr,
                       'vdev': nic_vdev})
-            self._create_port(userid, nic_id, mac_addr,
-                              nic_vdev, zhcpnode)
+            self._create_nic(userid, nic_id, mac_addr,
+                             nic_vdev, zhcpnode)
             nic_vdev = str(hex(int(nic_vdev, 16) + 3))[2:]
 
-    def _create_port(self, userid, nic_id, mac_address, vdev, zhcpnode):
+    def _create_nic(self, userid, nic_id, mac_address, vdev, zhcpnode):
         self._delete_mac(userid)
         self._add_mac_table_record(userid, vdev, mac_address, zhcpnode)
         self._add_switch_table_record(userid, nic_id, vdev, zhcpnode)
+
+        mac = ''.join(mac_address.split(':'))[6:]
+        url = self._xcat_url.chvm('/' + userid)
+        commands = ' '.join((
+            'Image_Definition_Update_DM -T %userid%',
+            '-k \'NICDEF=VDEV=%s TYPE=QDIO' % vdev,
+            'MACID=%s\'' % mac))
+        body = ['--smcli', commands]
+
+        with zvmutils.expect_invalid_xcat_resp_data():
+            zvmutils.xcat_request("PUT", url, body)
 
     def _add_mac_table_record(self, userid, interface, mac, zhcp=None):
         """Add node name, interface, mac address into xcat mac table."""
