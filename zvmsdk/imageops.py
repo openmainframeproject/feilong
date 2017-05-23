@@ -215,7 +215,7 @@ class ImageOps(object):
 
         return tar_file
 
-    def image_import(self, image_file_path, os_version):
+    def image_import(self, image_file_path, os_version=None, remote_host=None):
         """import a spawn image to XCAT"""
         LOG.debug("Getting a spawn image...")
         image_uuid = image_file_path.split('/')[-1]

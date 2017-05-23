@@ -47,7 +47,7 @@ class SDKAPITestCase(base.SDKTestCase):
         image_file_path = "/install/temp/test.img"
         os_version = "1.0"
         self.api.image_import(image_file_path, os_version)
-        image_import.assert_called_once_with(image_file_path, os_version)
+        image_import.assert_called_once_with(image_file_path, os_version, None)
 
     @mock.patch("zvmsdk.vmops.VMOps.guest_create")
     def test_guest_create(self, create_vm):
