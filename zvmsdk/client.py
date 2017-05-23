@@ -587,7 +587,8 @@ class XCATClient(ZVMClient):
     def _get_node_from_port(self, port_id):
         return self._get_nic_settings(port_id, get_node=True)
 
-    def grant_user_to_vswitch(self, vswitch_name, userid):
+    def grant_user_to_vswitch(self, userid, vswitch_name, port_id,
+                              network_type=None, vlan_id=None):
         """Set vswitch to grant user."""
         zhcp = CONF.xcat.zhcp_node
         url = self._xcat_url.xdsh("/%s" % zhcp)
@@ -597,8 +598,28 @@ class XCATClient(ZVMClient):
             "-k switch_name=%s" % vswitch_name,
             "-k grant_userid=%s" % userid,
             "-h persist=YES"))
+
+        if network_type == const.TYPE_VLAN:
+            LOG.info('Binding VLAN, VLAN ID: %(vlan_id)s, '
+                     'port_id: %(port_id)s',
+                     {'vlan_id': vlan_id,
+                     'port_id': port_id})
+            commands = ' '.join((commands,
+                                 "-k user_vlan_id=%s" % vlan_id))
+
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
+        zvmutils.xcat_request("PUT", url, body)
+
+        self._update_vswitch(port_id, vswitch_name, vlan_id)
+
+    def _update_vswitch(self, port, vswitch, vlan):
+        """Update information in xCAT switch table."""
+        commands = ' '.join(("port=%s" % port,
+                             "switch.switch=%s" % vswitch,
+                             "switch.vlan=%s" % (vlan and vlan or -1)))
+        url = self._xcat_url.tabch("/switch")
+        body = [commands]
         zvmutils.xcat_request("PUT", url, body)
 
     def revoke_user_from_vswitch(self, vswitch_name, userid):
@@ -912,3 +933,26 @@ class XCATClient(ZVMClient):
             log_data = res_info['info'][0][0]
 
         return log_data
+
+    def port_bound(self, port_id, network_type,
+                   vswitch_name, vlan_id, user_id):
+        LOG.info("Start to bind port port_id:%(port_id)s, "
+                 "network_type: %(network_type)s, "
+                 "physical_network: %(vswitch_name)s, "
+                 "userid: %(userid)s, vlan_id:%(vlan_id)s",
+                 {'port_id': port_id,
+                  'network_type': network_type,
+                  'vswitch_name': vswitch_name,
+                  'vlan_id': vlan_id,
+                  'userid': user_id})
+
+        self.grant_user_to_vswitch(user_id, vswitch_name, port_id,
+                                   network_type=network_type,
+                                   vlan_id=vlan_id)
+        LOG.info('Bind %s port done' % port_id)
+
+    def port_unbound(self, port_id, vswitch_name, userid):
+        LOG.info("Unbinding port %s" % port_id)
+        # uncouple is not necessary, because revoke user will uncouple it
+        # automatically.
+        self.revoke_user_from_vswitch(vswitch_name, userid)

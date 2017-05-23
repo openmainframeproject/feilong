@@ -78,3 +78,28 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         add_vswitch.assert_called_with("fakename",
                                        "fakerdev",
                                        '*', 1, 8, 0, 2, 0, 1, 1, 2, 1)
+
+    @mock.patch.object(zvmclient.XCATClient, 'port_bound')
+    def test_port_bound(self, port_bound):
+        self.networkops.port_bound("port_id", "network_type",
+                                   "physical_network",
+                                   "segmentation_id", "userid")
+        port_bound.assert_called_with("port_id", "network_type",
+                                      "physical_network",
+                                      "segmentation_id", "userid")
+
+    @mock.patch.object(zvmclient.XCATClient, 'port_unbound')
+    def test_port_unbound(self, port_unbound):
+        self.networkops.port_unbound("port_id", "physical_network",
+                                     "userid")
+        port_unbound.assert_called_with("port_id", "physical_network",
+                                        "userid")
+
+    @mock.patch.object(zvmclient.XCATClient, 'grant_user_to_vswitch')
+    def test_grant_user_to_vswitch(self, grant_user):
+        self.networkops.grant_user_to_vswitch("userid", "vswitch_name",
+                                              "port_id", "network_type",
+                                              "vlan_id")
+        grant_user.assert_called_with("userid", "vswitch_name",
+                                      "port_id", "network_type",
+                                      "vlan_id")

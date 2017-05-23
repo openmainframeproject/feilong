@@ -70,3 +70,16 @@ class NetworkOPS(object):
                                    controller, connection, queue_mem,
                                    router, network_type, vid,
                                    port_type, update, gvrp, native_vid)
+
+    def port_bound(self, port_id, network_type,
+                   vswitch_name, vlan_id, userid):
+        self.zvmclient.port_bound(port_id, network_type,
+                                  vswitch_name, vlan_id, userid)
+
+    def port_unbound(self, port_id, vswitch_name, userid):
+        self.zvmclient.port_unbound(port_id, vswitch_name, userid)
+
+    def grant_user_to_vswitch(self, userid, vswitch_name, port_id,
+                              network_type=None, vlan_id=None):
+        self.zvmclient.grant_user_to_vswitch(userid, vswitch_name, port_id,
+                                             network_type, vlan_id)
