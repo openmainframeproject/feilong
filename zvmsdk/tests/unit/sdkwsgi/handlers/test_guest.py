@@ -97,3 +97,30 @@ class HandlersGuestTest(unittest.TestCase):
 
         self.assertRaises(exception.ValidationError, guest.guest_create,
                           self.req)
+
+    def test_guest_create_invalid_cpu(self):
+        body_str = '{"guest": {"name": "name1", "cpu": "dummy"}}'
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, guest.guest_create,
+                          self.req)
+
+    def test_guest_create_invalid_mem(self):
+        body_str = '{"guest": {"name": "name1", "memory": "dummy"}}'
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, guest.guest_create,
+                          self.req)
+
+    def test_guest_create_false_input(self):
+        body_str = '{"guest": {"name": "name1", "dummy": "dummy"}}'
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, guest.guest_create,
+                          self.req)
+
+        body_str = '{"guest": {"name": "name1"}, "dummy": "dummy"}'
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, guest.guest_create,
+                          self.req)

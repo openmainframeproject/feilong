@@ -20,8 +20,12 @@ create = {
             'type': 'object',
             'properties': {
                 'name': parameter_types.name,
+                'cpu': parameter_types.positive_integer,
+                'memory': parameter_types.positive_integer,
             },
+            'additionalProperties': False,
         },
+        'additionalProperties': False,
     },
     'required': ['guest'],
     'additionalProperties': False,

@@ -115,3 +115,9 @@ name = {
     'type': 'string', 'minLength': 1, 'maxLength': 255,
     'format': 'name'
 }
+
+
+positive_integer = {
+    'type': ['integer', 'string'],
+    'pattern': '^[0-9]*$', 'minimum': 1
+}
