@@ -262,8 +262,6 @@ class VMOps(object):
         direct_info = self._zvmclient.get_user_direct(userid)
         info = {}
         info['user_direct'] = direct_info
-        if kwargs is None:
-            return info
 
         for k, v in kwargs.items():
             if k in check_command:
