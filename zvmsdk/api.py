@@ -136,14 +136,15 @@ class SDKAPI(object):
         """
         return self._networkops.clean_network_resource(user_id)
 
-    def image_import(self, image_file_path, os_version):
+    def image_import(self, image_file_path, os_version=None, remote_host=None):
         """import image to z/VM according to the file path and os_version
 
-        :param image_file_path:the absolute path for image file
-        :param os_version:the os version of the image
+        :param image_file_path: the absolute path for image file
+        :param os_version: the os version of the image
+        :param remote_host: the host of the source image eg. test@192.168.0.1
 
         """
-        self._imageops.image_import(image_file_path, os_version)
+        self._imageops.image_import(image_file_path, os_version, remote_host)
 
     def guest_create(self, userid, vcpus, memory, root_disk_size, eph_disks):
         """create a vm in z/VM
