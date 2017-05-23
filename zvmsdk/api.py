@@ -91,8 +91,8 @@ class SDKAPI(object):
         return self._vmops.guest_deploy(user_id, image_name,
                                         transportfiles, vdev)
 
-    def guest_create_port(self, vm_id, nic_info, ip_addr=None):
-        """ Create the nic for the vm.
+    def guest_create_nic(self, vm_id, nic_info, ip_addr=None):
+        """ Create the nic for the vm, add NICDEF record into the user direct.
 
         :param vm_id: the user id of the vm
         :param nic_info: the list used to contain nic info,
@@ -105,7 +105,7 @@ class SDKAPI(object):
             msg = ("no nic info is provided to create port")
             raise exception.ZVMInvalidInput(msg)
 
-        self._networkops.create_port(vm_id, nic_info, ip_addr=ip_addr)
+        self._networkops.create_nic(vm_id, nic_info, ip_addr=ip_addr)
 
     def get_vm_nic_switch_info(self, user_id):
         """ Return the nic and switch pair for the specified vm.
