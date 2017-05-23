@@ -558,7 +558,7 @@ class XCATClient(ZVMClient):
     def _get_node_from_port(self, port_id):
         return self._get_nic_settings(port_id, get_node=True)
 
-    def grant_user_to_vswitch(self, vswitch_name, userid):
+    def _grant_user_to_vswitch(self, userid, vswitch_name):
         """Set vswitch to grant user."""
         zhcp = CONF.xcat.zhcp_node
         url = self._xcat_url.xdsh("/%s" % zhcp)
@@ -568,11 +568,12 @@ class XCATClient(ZVMClient):
             "-k switch_name=%s" % vswitch_name,
             "-k grant_userid=%s" % userid,
             "-h persist=YES"))
+
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
         zvmutils.xcat_request("PUT", url, body)
 
-    def revoke_user_from_vswitch(self, vswitch_name, userid):
+    def _revoke_user_from_vswitch(self, vswitch_name, userid):
         """Revoke user for vswitch."""
         zhcp = CONF.xcat.zhcp_node
         url = self._xcat_url.xdsh("/%s" % zhcp)
@@ -1019,3 +1020,61 @@ class XCATClient(ZVMClient):
                 self.delete_xcat_node(userid)
             else:
                 raise
+
+    def port_bound(self, user_id, vswitch_name, port_id,
+                   network_type=None, vlan_id=None):
+        LOG.info("Start to bind port port_id:%(port_id)s, "
+                 "network_type: %(network_type)s, "
+                 "physical_network: %(vswitch_name)s, "
+                 "userid: %(userid)s, vlan_id:%(vlan_id)s",
+                 {'port_id': port_id,
+                  'network_type': network_type,
+                  'vswitch_name': vswitch_name,
+                  'vlan_id': vlan_id,
+                  'userid': user_id})
+
+        self._grant_user_to_vswitch(user_id, vswitch_name)
+        if network_type == const.TYPE_VLAN:
+            LOG.info('Binding VLAN, VLAN ID: %(vlan_id)s, '
+                     'port_id: %(port_id)s',
+                     {'vlan_id': vlan_id,
+                      'port_id': port_id})
+            self._set_vswitch_port_vlan_id(port_id,
+                                           vswitch_name, vlan_id)
+        else:
+            LOG.info('Bind %s port done' % port_id)
+
+        self._update_vswitch(port_id, vswitch_name, vlan_id)
+
+    def _update_vswitch(self, port, vswitch, vlan):
+        """Update information in xCAT switch table."""
+        commands = ' '.join(("port=%s" % port,
+                             "switch.switch=%s" % vswitch,
+                             "switch.vlan=%s" % (vlan and vlan or -1)))
+        url = self._xcat_url.tabch("/switch")
+        body = [commands]
+        zvmutils.xcat_request("PUT", url, body)
+
+    def _set_vswitch_port_vlan_id(self, port_id,
+                                  vswitch_name, vlan_id):
+        zhcp = CONF.xcat.zhcp_node
+        userid = self._get_nic_settings(port_id)
+        if not userid:
+            raise exception.zVMInvalidDataError(msg=('Cannot get userid by '
+                            'port %s') % (port_id))
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        commands = ' '.join((
+            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
+            "-T %s" % userid,
+            "-k grant_userid=%s" % userid,
+            "-k switch_name=%s" % vswitch_name,
+            "-k user_vlan_id=%s" % vlan_id))
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        zvmutils.xcat_request("PUT", url, body)
+
+    def port_unbound(self, user_id, vswitch_name, port_id):
+        LOG.info("Unbinding port %s" % port_id)
+        # uncouple is not necessary, because revoke user will uncouple it
+        # automatically.
+        self._revoke_user_from_vswitch(vswitch_name, user_id)
