@@ -92,7 +92,7 @@ class SDKAPI(object):
                                         transportfiles, vdev)
 
     def guest_create_port(self, vm_id, nic_info, ip_addr=None):
-        """ Create the nic for the vm.
+        """ Create the nic for the vm, add NICDEF record into the user direct.
 
         :param vm_id: the user id of the vm
         :param nic_info: the list used to contain nic info,

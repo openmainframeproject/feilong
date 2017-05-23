@@ -390,6 +390,17 @@ class XCATClient(ZVMClient):
         self._add_mac_table_record(userid, vdev, mac_address, zhcpnode)
         self._add_switch_table_record(userid, nic_id, vdev, zhcpnode)
 
+        mac = ''.join(mac_address.split(':'))[6:]
+        url = self._xcat_url.chvm('/' + userid)
+        commands = ' '.join((
+            'Image_Definition_Update_DM -T %userid%',
+            '-k \'NICDEF=VDEV=%s TYPE=QDIO' % vdev,
+            'MACID=%s' % mac))
+        body = ['--smcli', commands]
+
+        with zvmutils.expect_invalid_xcat_resp_data():
+            zvmutils.xcat_request("PUT", url, body)
+
     def _add_mac_table_record(self, userid, interface, mac, zhcp=None):
         """Add node name, interface, mac address into xcat mac table."""
         commands = ' '.join(("mac.node=%s" % userid,
