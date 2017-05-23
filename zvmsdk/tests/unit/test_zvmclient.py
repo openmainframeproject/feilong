@@ -732,8 +732,9 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self._zvmclient._get_node_from_port("fakeport")
         get_nic_settings.assert_called_with("fakeport", get_node=True)
 
+    @mock.patch.object(zvmclient.XCATClient, '_update_vswitch')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_grant_user_to_vswitch(self, xrequest):
+    def test_grant_user_to_vswitch(self, xrequest, update_vswitch):
         url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
@@ -743,11 +744,14 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         commands += " -k switch_name=fakevs"
         commands += " -k grant_userid=fakeuserid"
         commands += " -h persist=YES"
+        commands += " -k user_vlan_id=vlan_id"
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
 
-        self._zvmclient.grant_user_to_vswitch("fakevs", "fakeuserid")
+        self._zvmclient.grant_user_to_vswitch("fakeuserid", "fakevs",
+                                              "port_id", "vlan", "vlan_id")
         xrequest.assert_called_once_with("PUT", url, body)
+        update_vswitch.assert_called_once_with("port_id", "fakevs", "vlan_id")
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_revoke_user_from_vswitch(self, xrequest):
@@ -1051,3 +1055,31 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self._zvmclient.process_eph_disk(instance_name, vdev,
                                          fmt, mntdir)
         aemod_handler.assert_called_with(instance_name, func_name, parmline)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_update_vswitch(self, xrequest):
+        url = "/xcatws/tables/switch?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = "port=port"
+        commands += " switch.switch=vswitch"
+        commands += " switch.vlan=vlan"
+        body = [commands]
+        self._zvmclient._update_vswitch("port", "vswitch", "vlan")
+        xrequest.assert_called_with("PUT", url, body)
+
+    @mock.patch.object(zvmclient.XCATClient, 'grant_user_to_vswitch')
+    def test_port_bound(self, grant_user):
+        self._zvmclient.port_bound("port_id",
+                                   "vlan", "physical_network",
+                                   "segmentation_id", "userid")
+        grant_user.assert_called_with("userid", "physical_network", "port_id",
+                                      network_type="vlan",
+                                      vlan_id="segmentation_id")
+
+    @mock.patch.object(zvmclient.XCATClient, 'revoke_user_from_vswitch')
+    def test_port_unbound(self, revoke_user):
+        self._zvmclient.port_unbound("port_id", "physical_network",
+                                     "userid")
+        revoke_user.assert_called_with("physical_network",
+                                       "userid")
