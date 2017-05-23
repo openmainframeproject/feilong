@@ -58,11 +58,7 @@ def extract_json(body):
 
 
 def json_error_formatter(body, status, title, environ):
-    """A json_formatter for webob exceptions.
-
-    Follows API-WG guidelines at
-    http://specs.openstack.org/openstack/api-wg/guidelines/errors.html
-    """
+    """A json_formatter for webob exceptions."""
     # Clear out the html that webob sneaks in.
     body = webob.exc.strip_tags(body)
     # Get status code out of status message. webob's error formatter

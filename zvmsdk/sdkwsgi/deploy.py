@@ -9,15 +9,13 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-"""Deployment handling for Placmenent API."""
+"""Deployment handling for sdk API."""
 
 from zvmsdk.sdkwsgi import handler
 from zvmsdk.sdkwsgi import microversion
 from zvmsdk.sdkwsgi import requestlog
 
 
-# TODO(cdent): NAME points to the config project being used, so for
-# now this is "nova" but we probably want "placement" eventually.
 NAME = "sdk"
 
 
