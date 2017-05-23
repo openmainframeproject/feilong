@@ -167,7 +167,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertRaises(exception.ZVMVirtualMachineNotExist,
                           self.vmops.get_info, 'fakeid')
 
-    @mock.patch('zvmsdk.vmops.VMOps.get_user_direct')
+    @mock.patch('zvmsdk.client.XCATClient.get_user_direct')
     @mock.patch('zvmsdk.client.XCATClient.get_image_performance_info')
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
     def test_get_info_shutdown(self, gps, gipi, gud):
@@ -190,7 +190,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertEqual(vm_info['num_cpu'], 2)
         self.assertEqual(vm_info['cpu_time_ns'], 0)
 
-    @mock.patch('zvmsdk.vmops.VMOps.get_user_direct')
+    @mock.patch('zvmsdk.client.XCATClient.get_user_direct')
     @mock.patch('zvmsdk.client.XCATClient.get_image_performance_info')
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
     def test_get_info_get_uid_failed(self, gps, gipi, gud):
