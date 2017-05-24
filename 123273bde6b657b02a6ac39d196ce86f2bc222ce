@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b5a0236d_5a4aa133",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-24T02:33:18Z",
+      "side": 1,
+      "message": "guess this is nic",
+      "range": {
+        "startLine": 105,
+        "startChar": 54,
+        "endLine": 105,
+        "endChar": 58
+      },
+      "revId": "123273bde6b657b02a6ac39d196ce86f2bc222ce",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c63ca9f9_1ea2e7ee",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-24T02:33:18Z",
+      "side": 1,
+      "message": "the result will be following? do we need additional \u0027 here?\n\n-k  \u0027NICDEV\u003dxxx   TYPE\u003dxxx MACID\u003dxxx",
+      "range": {
+        "startLine": 397,
+        "startChar": 16,
+        "endLine": 397,
+        "endChar": 18
+      },
+      "revId": "123273bde6b657b02a6ac39d196ce86f2bc222ce",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
