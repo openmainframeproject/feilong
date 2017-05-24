@@ -43,7 +43,7 @@ def dummy(status, headerlist):
     pass
 
 
-class HandlerTest(unittest.TestCase):
+class GuestHandlerTest(unittest.TestCase):
 
     def setUp(self):
         self.env = env
@@ -78,3 +78,20 @@ class HandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             get_power.assert_called_once_with('1')
+
+
+class ImageHandlerTest(unittest.TestCase):
+
+    def setUp(self):
+        self.env = env
+
+    @mock.patch.object(tokens, 'validate')
+    def test_image_root_disk_size(self, mock_validate):
+        self.env['PATH_INFO'] = '/image/image1/root_disk_size'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.image.ImageAction'\
+                   '.get_root_disk_size'
+        with mock.patch(function) as get_size:
+            h(self.env, dummy)
+
+            get_size.assert_called_once_with('image1')
