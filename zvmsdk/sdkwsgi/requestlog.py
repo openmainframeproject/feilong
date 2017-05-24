@@ -15,7 +15,6 @@
 import logging
 
 from zvmsdk import log
-from zvmsdk.sdkwsgi import microversion
 
 
 LOG = log.LOG
@@ -28,8 +27,7 @@ class RequestLog(object):
     """
 
     format = ('%(REMOTE_ADDR)s "%(REQUEST_METHOD)s %(REQUEST_URI)s" '
-              'status: %(status)s len: %(bytes)s '
-              'microversion: %(microversion)s')
+              'status: %(status)s len: %(bytes)s ')
 
     def __init__(self, application):
         self.application = application
@@ -79,7 +77,5 @@ class RequestLog(object):
                 'REQUEST_URI': req_uri,
                 'status': status.split(None, 1)[0],
                 'bytes': size,
-                'microversion': environ.get(
-                    microversion.MICROVERSION_ENVIRON, '-'),
         }
         LOG.info(self.format, log_format)

@@ -41,6 +41,8 @@ def create(req):
 # To validate the token, it is possible the token is expired or the
 # token is not validated at all
 def validate(req):
+    return
+
     if 'X-Auth-Token' not in req.headers:
         LOG.debug('no X-Auth-Token given in reqeust header')
         raise webob.exc.HTTPUnauthorized()

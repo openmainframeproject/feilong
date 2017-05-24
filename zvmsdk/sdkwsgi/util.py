@@ -17,8 +17,6 @@ import six
 
 import webob
 
-from zvmsdk.sdkwsgi import microversion
-
 
 def loads(s, **kwargs):
     return json.loads(s, **kwargs)
@@ -72,13 +70,6 @@ def json_error_formatter(body, status, title, environ):
     }
     # If the request id middleware has had a chance to add an id,
     # put it in the error response.
-
-    # When there is a no microversion in the environment and a 406,
-    # microversion parsing failed so we need to include microversion
-    # min and max information in the error response.
-    if status_code == 406 and microversion.MICROVERSION_ENVIRON not in environ:
-        error_dict['max_version'] = microversion.max_version_string()
-        error_dict['min_version'] = microversion.min_version_string()
 
     return {'errors': [error_dict]}
 

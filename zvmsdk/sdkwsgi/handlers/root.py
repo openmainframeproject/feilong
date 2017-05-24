@@ -13,15 +13,16 @@
 
 import json
 
-from zvmsdk.sdkwsgi import microversion
 from zvmsdk.sdkwsgi import wsgi_wrapper
 from zvmsdk import utils
 
 
 @wsgi_wrapper.SdkWsgify
 def home(req):
-    min_version = microversion.min_version_string()
-    max_version = microversion.max_version_string()
+    #min_version = microversion.min_version_string()
+    #max_version = microversion.max_version_string()
+    max_version = '0'
+    min_version = '0'
 
     version_data = {
         'id': 'v%s' % min_version,
