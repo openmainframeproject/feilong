@@ -59,3 +59,11 @@ class HandlersImageTest(unittest.TestCase):
 
         self.assertRaises(exception.ValidationError, image.image_create,
                           self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(image.ImageAction, 'get_root_disk_size')
+    def test_image_get_root_disk_size(self, mock_get, mock_name):
+        mock_name.return_value = 'dummy'
+
+        image.image_get_root_disk_size(self.req)
+        mock_get.assert_called_once_with('dummy')

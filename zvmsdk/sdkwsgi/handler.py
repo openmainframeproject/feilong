@@ -76,6 +76,9 @@ ROUTE_DECLARATIONS = {
     '/image': {
         'POST': image.image_create,
     },
+    '/image/{name}/root_disk_size': {
+        'GET': image.image_get_root_disk_size,
+    },
     '/token': {
         'POST': tokens.create,
     },

@@ -27,7 +27,10 @@ LOG = log.LOG
 class ImageAction(object):
     @validation.schema(image.create)
     def create(self):
-        LOG.info('import image %s')
+        LOG.info('import image')
+
+    def get_root_disk_size(self, name):
+        LOG.info('get root disk size')
 
 
 def get_action():
@@ -47,3 +50,15 @@ def image_create(req):
         action.create(body=body)
 
     _image_create(req)
+
+
+@wsgi_wrapper.SdkWsgify
+def image_get_root_disk_size(req):
+    tokens.validate(req)
+
+    def _image_get_root_disk_size(name):
+        action = get_action()
+        action.get_root_disk_size(name)
+
+    name = util.wsgi_path_item(req.environ, 'name')
+    _image_get_root_disk_size(name)
