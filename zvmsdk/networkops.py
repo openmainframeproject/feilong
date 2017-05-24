@@ -70,3 +70,11 @@ class NetworkOPS(object):
                                    controller, connection, queue_mem,
                                    router, network_type, vid,
                                    port_type, update, gvrp, native_vid)
+
+    def update_nic_definition(self, user_id, nic_id, mac, switch_name):
+        LOG.debug("Adding NIC for %(user)s, vswitch: %(vswitch)s," +
+                  " mac: %(mac)s, nic_id: %(nic)s",
+                  {'user': user_id, 'vswitch': switch_name,
+                   "mac": mac, "nic": nic_id})
+        self.zvmclient.update_nic_definition(user_id, nic_id, mac,
+                                             switch_name)

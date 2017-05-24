@@ -246,3 +246,14 @@ class SDKAPI(object):
         :returns: console log string
         """
         return self._vmops.get_console_log(userid, log_size)
+
+    def guest_update_nic_definition(self, user_id, nic_id, mac,
+                                    switch_name):
+        """ add nic and coupled network info into the user direct.
+        :param user_id: the user id of the vm
+        :param nic_id: interface id
+        :param mac: mac address
+        :param switch_name: the network name
+        """
+        self.zvmclient.update_nic_definition(user_id, nic_id, mac,
+                                             switch_name)

@@ -78,3 +78,10 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         add_vswitch.assert_called_with("fakename",
                                        "fakerdev",
                                        '*', 1, 8, 0, 2, 0, 1, 1, 2, 1)
+
+    @mock.patch.object(zvmclient.XCATClient, 'update_nic_definition')
+    def test_update_nic_definition(self, add_nic):
+        self.networkops.update_nic_definition("user_id", "port_id",
+                                              "mac", "switch_name")
+        add_nic.assert_called_with("user_id", "port_id",
+                                   "mac", "switch_name")
