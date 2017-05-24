@@ -246,3 +246,10 @@ class SDKAPI(object):
         :returns: console log string
         """
         return self._vmops.get_console_log(userid, log_size)
+
+    def guest_delete(self, userid):
+        """Delete guest
+        :param userid: the user id of the vm
+
+        """
+        return self._vmops.delete_vm(userid)

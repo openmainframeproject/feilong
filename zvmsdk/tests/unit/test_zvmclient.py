@@ -520,30 +520,6 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         pass
 
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_delete_xcat_node(self, xrequest):
-        fake_userid = 'fake_userid'
-        fake_url = self._xcat_url.rmdef('/' + fake_userid)
-
-        self._zvmclient._delete_xcat_node(fake_userid)
-        xrequest.assert_called_once_with('DELETE', fake_url)
-
-    @mock.patch.object(zvmutils, 'xcat_request')
-    @mock.patch.object(zvmclient.XCATClient, '_delete_xcat_node')
-    def test_delete_userid(self, delete_xcat_node, xrequest):
-        fake_userid = 'fake_userid'
-        fake_url = self._xcat_url.rmvm('/' + fake_userid)
-
-        self._zvmclient.delete_userid(fake_url)
-        xrequest.assert_called_once_with('DELETE', fake_url)
-
-    @mock.patch.object(zvmclient.XCATClient, 'delete_userid')
-    def test_remove_vm(self, delete_userid):
-        fake_userid = 'fake_userid'
-        fake_url = self._xcat_url.rmvm('/' + fake_userid)
-        self._zvmclient.remove_vm(fake_userid)
-        delete_userid.assert_called_once_with(fake_url)
-
-    @mock.patch.object(zvmutils, 'xcat_request')
     def test_remove_image_file(self, xrequest):
         fake_image_name = 'fake_image_name'
         fake_url = self._xcat_url.rmimage('/' + fake_image_name)
@@ -1026,7 +1002,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
     def test_get_user_console_log_invalid_output(self, xreq):
         xreq.return_value = {}
         self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
-                        self._zvmclient.get_user_console_log, 'fakeid', 100)
+        self._zvmclient.get_user_console_log, 'fakeid', 100)
 
     def test_generate_vdev(self):
         base = '0100'
@@ -1051,3 +1027,71 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self._zvmclient.process_eph_disk(instance_name, vdev,
                                          fmt, mntdir)
         aemod_handler.assert_called_with(instance_name, func_name, parmline)
+
+    @mock.patch.object(zvmutils, 'xdsh')
+    def test_unlock_userid(self, xdsh):
+        userid = 'fakeuser'
+        cmd = "/opt/zhcp/bin/smcli Image_Unlock_DM -T %s" % userid
+        self._zvmclient.unlock_userid(userid)
+        xdsh.assert_called_once_with(CONF.xcat.zhcp_node, cmd)
+
+    @mock.patch.object(zvmutils, 'xdsh')
+    def test_unlock_device(self, xdsh):
+        userid = 'fakeuser'
+        resp = {'data': [['Locked type: DEVICE\nDevice address: 0100\n'
+                'Device locked by: fake\nDevice address: 0101\n'
+                'Device locked by: fake']]}
+        xdsh.side_effect = [resp, None, None]
+        self._zvmclient.unlock_devices(userid)
+
+        xdsh.assert_any_call(CONF.xcat.zhcp_node,
+            '/opt/zhcp/bin/smcli Image_Lock_Query_DM -T fakeuser')
+        xdsh.assert_any_call(CONF.xcat.zhcp_node,
+            '/opt/zhcp/bin/smcli Image_Unlock_DM -T fakeuser -v 0100')
+        xdsh.assert_any_call(CONF.xcat.zhcp_node,
+            '/opt/zhcp/bin/smcli Image_Unlock_DM -T fakeuser -v 0101')
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_delete_xcat_node(self, xrequest):
+        fake_userid = 'fakeuser'
+        fake_url = self._xcat_url.rmdef('/' + fake_userid)
+
+        self._zvmclient.delete_xcat_node(fake_userid)
+        xrequest.assert_called_once_with('DELETE', fake_url)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    @mock.patch.object(zvmclient.XCATClient, 'delete_xcat_node')
+    def test_delete_userid_not_exist(self, delete_xcat_node, xrequest):
+        fake_userid = 'fakeuser'
+        fake_url = self._xcat_url.rmvm('/' + fake_userid)
+        xrequest.side_effect = exception.ZVMXCATInternalError(
+            'Return Code: 400\nReason Code: 4\n')
+
+        self._zvmclient.delete_userid(fake_userid)
+        xrequest.assert_called_once_with('DELETE', fake_url)
+        delete_xcat_node.assert_called_once_with(fake_userid)
+
+    @mock.patch.object(zvmclient.XCATClient, 'delete_userid')
+    def test_delete_vm(self, delete_userid):
+        fake_userid = 'fakeuser'
+        self._zvmclient.delete_vm(fake_userid)
+        delete_userid.assert_called_once_with(fake_userid)
+
+    @mock.patch.object(zvmclient.XCATClient, 'unlock_devices')
+    @mock.patch.object(zvmclient.XCATClient, 'delete_userid')
+    def test_delete_vm_with_locked_device(self, delete_userid, unlock_devices):
+        fake_userid = 'fakeuser'
+        delete_userid.side_effect = [exception.ZVMXCATInternalError(
+        'Return Code: 408\n Reason Code: 12\n'), None]
+
+        self._zvmclient.delete_vm(fake_userid)
+        delete_userid.assert_called_with(fake_userid)
+        unlock_devices.assert_called_with(fake_userid)
+
+    @mock.patch.object(zvmclient.XCATClient, 'delete_userid')
+    def test_delete_vm_node_not_exist(self, delete_userid):
+        fake_userid = 'fakeuser'
+        delete_userid.side_effect = exception.ZVMXCATRequestFailed('msg')
+
+        self.assertRaises(exception.ZVMXCATRequestFailed,
+                          self._zvmclient.delete_vm, fake_userid)

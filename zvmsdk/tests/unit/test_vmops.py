@@ -73,14 +73,6 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                                           3338)
         set_ipl.assert_called_once_with('cbi00063', CONF.zvm.user_root_vdev)
 
-    @mock.patch.object(zvmutils, 'xcat_request')
-    def test_delete_vm(self, xrequest):
-        url = "/xcatws/vms/cbi00038?userName=" + CONF.xcat.username +\
-                "&password=" + CONF.xcat.password + "&format=json"
-        self.vmops.delete_vm('cbi00038', 'zhcp2')
-
-        xrequest.assert_called_once_with('DELETE', url)
-
     @mock.patch('zvmsdk.client.XCATClient.generate_eph_vdev')
     @mock.patch('zvmsdk.client.XCATClient.process_eph_disk')
     def test_process_additional_disks(self, process_eph_disk,
@@ -228,3 +220,9 @@ class SDKVMOpsTestCase(base.SDKTestCase):
 
         self.vmops.get_user_direct("fake_user_id", nic_coupled='1000')
         get_user_direct.assert_called_with("fake_user_id")
+
+    @mock.patch.object(zvmclient.XCATClient, 'delete_vm')
+    def test_delete_vm(self, delete_vm):
+        userid = 'userid'
+        self.vmops.delete_vm(userid)
+        delete_vm.assert_called_once_with(userid)
