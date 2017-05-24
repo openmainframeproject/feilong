@@ -116,17 +116,20 @@ class SDKAPI(object):
         """
         return self._networkops.get_vm_nic_switch_info(user_id)
 
-    def guest_get_user_direct(self, user_id, **kwargs):
-        """ Get user direct info for the specified vm, also could used
+    def guest_get_definition_info(self, userid, **kwargs):
+        """Get definition info for the specified guest vm, also could be used
         to check specific info.
 
-        :param user_id: the user id of the vm
-        :param kwargs: Dictionary used to check info in the user direct
-               currently only nic_coupled is supported.
-
+        :param str userid: the user id of the guest vm
+        :param dict kwargs: Dictionary used to check specific info in user
+                            direct. Valid keywords for kwargs:
+                            nic_coupled=<vdev>, where <vdev> is the virtual
+                            device number of the nic to be checked the couple
+                            status.
         :returns: Dictionary describing user direct and check info result
+        :rtype: dict
         """
-        return self._vmops.get_user_direct(user_id, **kwargs)
+        return self._vmops.get_definition_info(userid, **kwargs)
 
     def clean_network_resource(self, user_id):
         """Clean the network resource (mac. switch, host) for the vm.

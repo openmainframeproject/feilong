@@ -281,7 +281,7 @@ class VMOps(object):
                       'vm': user_id})
             raise err
 
-    def get_user_direct(self, userid, **kwargs):
+    def get_definition_info(self, userid, **kwargs):
         check_command = ["nic_coupled"]
         direct_info = self._zvmclient.get_user_direct(userid)
         info = {}
