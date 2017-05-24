@@ -13,6 +13,7 @@
 
 import functools
 import json
+import six
 
 import webob
 
@@ -119,3 +120,30 @@ def wsgi_path_item(environ, name):
         return environ['wsgiorg.routing_args'][1][name]
     except (KeyError, IndexError):
         return None
+
+
+TRUE_STRINGS = ('1', 't', 'true', 'on', 'y', 'yes')
+FALSE_STRINGS = ('0', 'f', 'false', 'off', 'n', 'no')
+
+
+def bool_from_string(subject, strict=False, default=False):
+    if isinstance(subject, bool):
+        return subject
+    if not isinstance(subject, six.string_types):
+        subject = six.text_type(subject)
+
+    lowered = subject.strip().lower()
+
+    if lowered in TRUE_STRINGS:
+        return True
+    elif lowered in FALSE_STRINGS:
+        return False
+    elif strict:
+        acceptable = ', '.join(
+            "'%s'" % s for s in sorted(TRUE_STRINGS + FALSE_STRINGS))
+        msg = ("Unrecognized value '%(val)s', acceptable values are:"
+               " %(acceptable)s") % {'val': subject,
+                                     'acceptable': acceptable}
+        raise ValueError(msg)
+    else:
+        return default

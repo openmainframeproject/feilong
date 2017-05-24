@@ -18,6 +18,7 @@ import mock
 import unittest
 import webob.exc
 
+from zvmsdk import api
 from zvmsdk import exception
 from zvmsdk.sdkwsgi.handlers import guest
 from zvmsdk.sdkwsgi import util
@@ -203,3 +204,82 @@ class HandlersGuestTest(SDKWSGITest):
 
         guest.guest_get_nic_info(self.req)
         mock_get.assert_called_once_with(FAKE_UUID)
+
+    @mock.patch.object(api.SDKAPI, 'guest_nic_couple_to_vswitch')
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_couple_nic(self, mock_uuid, mock_couple):
+        body_str = """{"info": {"couple": "true",
+                       "vswitch": "v1", "port": "p1"}}"""
+        self.req.body = body_str
+
+        mock_uuid.return_value = FAKE_UUID
+
+        guest.guest_couple_uncouple_nic(self.req)
+        mock_couple.assert_called_once_with("v1", "p1",
+            FAKE_UUID, persist=True)
+
+    @mock.patch.object(api.SDKAPI, 'guest_nic_uncouple_from_vswitch')
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_uncouple_nic(self, mock_uuid, mock_uncouple):
+
+        body_str = """{"info": {"couple": "false",
+                       "vswitch": "v1", "port": "p1",
+                       "persist": "false"}}"""
+        self.req.body = body_str
+
+        mock_uuid.return_value = FAKE_UUID
+
+        guest.guest_couple_uncouple_nic(self.req)
+        mock_uncouple.assert_called_once_with("v1", "p1",
+            FAKE_UUID, persist=False)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_couple_nic_missing_required_1(self, mock_uuid):
+
+        body_str = """{"info": {"couple": "true",
+                       "vswitch": "v1"}}"""
+        self.req.body = body_str
+
+        mock_uuid.return_value = FAKE_UUID
+
+        self.assertRaises(exception.ValidationError,
+                          guest.guest_couple_uncouple_nic,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_couple_nic_missing_required_2(self, mock_uuid):
+
+        body_str = '{"info1": {}}'
+        self.req.body = body_str
+
+        mock_uuid.return_value = FAKE_UUID
+
+        self.assertRaises(exception.ValidationError,
+                          guest.guest_couple_uncouple_nic,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_uncouple_nic_bad_vswitch(self, mock_uuid):
+
+        body_str = """{"info": {"couple": "false",
+                       "vswitch": 1233, "port": "p1"}}"""
+        self.req.body = body_str
+
+        mock_uuid.return_value = FAKE_UUID
+
+        self.assertRaises(exception.ValidationError,
+                          guest.guest_couple_uncouple_nic,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_uncouple_nic_bad_couple(self, mock_uuid):
+
+        body_str = """{"info": {"couple": "couple",
+                       "vswitch": "v1", "port": "p1"}}"""
+        self.req.body = body_str
+
+        mock_uuid.return_value = FAKE_UUID
+
+        self.assertRaises(exception.ValidationError,
+                          guest.guest_couple_uncouple_nic,
+                          self.req)

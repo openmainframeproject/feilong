@@ -54,6 +54,7 @@ ROUTE_DECLARATIONS = {
     '/guest/{uuid}/nic': {
         'GET': guest.guest_get_nic_info,
         'POST': guest.guest_create_nic,
+        'PUT': guest.guest_couple_uncouple_nic,
     },
     '/guest/{uuid}/info': {
         'GET': guest.guest_get_info,

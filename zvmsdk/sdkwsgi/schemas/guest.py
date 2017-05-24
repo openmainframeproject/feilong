@@ -49,3 +49,24 @@ create_nic = {
     'required': ['nic'],
     'additionalProperties': False,
 }
+
+
+couple_uncouple_nic = {
+    'type': 'object',
+    'properties': {
+        'info': {
+            'type': 'object',
+            'properties': {
+                'couple': parameter_types.boolean,
+                'vswitch': parameter_types.name,
+                'port': parameter_types.name,
+                'persist': parameter_types.boolean,
+            },
+            'required': ['couple', 'vswitch', 'port'],
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
+    },
+    'required': ['info'],
+    'additionalProperties': False,
+}

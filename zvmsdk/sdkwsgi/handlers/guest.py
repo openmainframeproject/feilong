@@ -13,6 +13,7 @@
 
 import webob.exc
 
+from zvmsdk import api as sdkapi
 from zvmsdk import config
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
@@ -50,6 +51,24 @@ class VMHandler(object):
     @validation.schema(guest.create_nic)
     def create_nic(self, id, body=None):
         LOG.info('create nic for %s', id)
+
+    @validation.schema(guest.couple_uncouple_nic)
+    def couple_uncouple_nic(self, id, body=None):
+        LOG.info('couple uncouple nic %s', id)
+        info = body['info']
+        api = sdkapi.SDKAPI()
+
+        persist = info.get('persist', True)
+        persist = util.bool_from_string(persist, strict=True)
+
+        couple = util.bool_from_string(info['couple'], strict=True)
+
+        if couple:
+            api.guest_nic_couple_to_vswitch(info['vswitch'],
+                info['port'], id, persist=persist)
+        else:
+            api.guest_nic_uncouple_from_vswitch(info['vswitch'],
+                info['port'], id, persist=persist)
 
 
 class VMAction(object):
@@ -186,3 +205,17 @@ def guest_create_nic(req):
 
     uuid = util.wsgi_path_item(req.environ, 'uuid')
     _guest_create_nic(uuid, req)
+
+
+@wsgi_wrapper.SdkWsgify
+def guest_couple_uncouple_nic(req):
+    tokens.validate(req)
+
+    def _guest_couple_uncouple_nic(uuid, req):
+        action = get_handler()
+        body = util.extract_json(req.body)
+
+        action.couple_uncouple_nic(uuid, body=body)
+
+    uuid = util.wsgi_path_item(req.environ, 'uuid')
+    _guest_couple_uncouple_nic(uuid, req)
