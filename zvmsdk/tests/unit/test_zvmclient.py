@@ -1098,9 +1098,11 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         delete_userid.assert_called_once_with(fake_userid)
         clean_net.assert_called_once_with(fake_userid)
 
+    @mock.patch.object(zvmclient.XCATClient, '_clean_network_resource')
     @mock.patch.object(zvmclient.XCATClient, 'unlock_devices')
     @mock.patch.object(zvmclient.XCATClient, 'delete_userid')
-    def test_delete_vm_with_locked_device(self, delete_userid, unlock_devices):
+    def test_delete_vm_with_locked_device(self, delete_userid, unlock_devices,
+                                          clean_net):
         fake_userid = 'fakeuser'
         delete_userid.side_effect = [exception.ZVMXCATInternalError(
         'Return Code: 408\n Reason Code: 12\n'), None]
@@ -1109,8 +1111,9 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         delete_userid.assert_called_with(fake_userid)
         unlock_devices.assert_called_with(fake_userid)
 
+    @mock.patch.object(zvmclient.XCATClient, '_clean_network_resource')
     @mock.patch.object(zvmclient.XCATClient, 'delete_userid')
-    def test_delete_vm_node_not_exist(self, delete_userid):
+    def test_delete_vm_node_not_exist(self, delete_userid, clean_net):
         fake_userid = 'fakeuser'
         delete_userid.side_effect = exception.ZVMXCATRequestFailed('msg')
 
