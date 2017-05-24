@@ -147,7 +147,6 @@ class SdkHandler(object):
     """
 
     def __init__(self, **local_config):
-        # NOTE(cdent): Local config currently unused.
         self._map = make_map(ROUTE_DECLARATIONS)
 
     def __call__(self, environ, start_response):
