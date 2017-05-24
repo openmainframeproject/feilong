@@ -303,3 +303,14 @@ class SDKAPI(object):
             userid_list = [userid_list]
         # parsed_uid_list = [uid.upper() for uid in userid_list]
         return self._monitor.inspect_cpus(userid_list)
+
+    def guest_update_nic_definition(self, user_id, nic_vdev, mac,
+                                    switch_name):
+        """ add nic and coupled network info into the user direct.
+        :param str user_id: the user id of the vm
+        :param str nic_vdev: nic device number
+        :param str mac: mac address
+        :param str switch_name: the network name
+        """
+        self.zvmclient.update_nic_definition(user_id, nic_vdev, mac,
+                                             switch_name)

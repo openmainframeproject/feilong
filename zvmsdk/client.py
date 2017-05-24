@@ -1239,3 +1239,17 @@ class XCATClient(ZVMClient):
             self._pathutils.clean_temp_folder(time_stamp_dir)
 
         return tar_file
+
+    def update_nic_definition(self, userid, nic_vdev, mac, switch_name):
+        """add one NIC's info to user direct."""
+        url = self._xcat_url.chvm('/' + userid)
+        commands = ' '.join((
+            'Image_Definition_Update_DM -T %userid%',
+            '-k \'NICDEF=VDEV=%s TYPE=QDIO' % nic_vdev,
+            'MACID=%s' % mac,
+            'LAN=SYSTEM',
+            'SWITCHNAME=%s\'' % switch_name))
+        body = ['--smcli', commands]
+
+        with zvmutils.expect_invalid_xcat_resp_data():
+            zvmutils.xcat_request("PUT", url, body)

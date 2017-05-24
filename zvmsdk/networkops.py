@@ -67,3 +67,7 @@ class NetworkOPS(object):
                                    controller, connection, queue_mem,
                                    router, network_type, vid,
                                    port_type, update, gvrp, native_vid)
+
+    def update_nic_definition(self, user_id, nic_vdev, mac, switch_name):
+        self.zvmclient.update_nic_definition(user_id, nic_vdev, mac,
+                                             switch_name)

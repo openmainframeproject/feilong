@@ -1233,3 +1233,20 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
         self._zvmclient._add_mdisk(userid, disk, vdev),
         xrequest.assert_called_once_with('PUT', url, body)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_update_nic_definition(self, xrequest):
+        url = "/xcatws/vms/node?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+
+        command = 'Image_Definition_Update_DM -T %userid%'
+        command += ' -k \'NICDEF=VDEV=vdev TYPE=QDIO '
+        command += 'MACID=mac '
+        command += 'LAN=SYSTEM '
+        command += 'SWITCHNAME=vswitch\''
+        body = ['--smcli', command]
+
+        self._zvmclient.update_nic_definition("node", "vdev",
+                                              "mac", "vswitch")
+        xrequest.assert_called_with("PUT", url, body)
