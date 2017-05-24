@@ -965,3 +965,19 @@ class XCATClient(ZVMClient):
                       'failed with reason: %(msg)s',
                       {'func': func_name, 'node': instance_name, 'msg': emsg})
             raise exception.ZVMDriverError(msg=emsg)
+
+    def update_port_definition(self, userid, port_id, mac, switch_name):
+        """add one NIC's info to user direct."""
+        vdev = self._get_nic_settings(port_id, "interface")
+
+        url = self._xcat_url.chvm('/' + userid)
+        commands = ' '.join((
+            'Image_Definition_Update_DM -T %userid%',
+            '-k \'NICDEF=VDEV=%s TYPE=QDIO' % vdev,
+            'MACID=%s' % mac,
+            'LAN=SYSTEM',
+            'SWITCHNAME=%s\'' % switch_name))
+        body = ['--smcli', commands]
+
+        with zvmutils.expect_invalid_xcat_resp_data():
+            zvmutils.xcat_request("PUT", url, body)
