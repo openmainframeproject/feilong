@@ -48,6 +48,9 @@ ROUTE_DECLARATIONS = {
         'GET': guest.guest_list,
         'POST': guest.guest_create,
     },
+    '/guest/{uuid}': {
+        'DELETE', guest.guest_delete,
+    },
     '/guest/{uuid}/info': {
         'GET': guest.guest_get_info,
     },

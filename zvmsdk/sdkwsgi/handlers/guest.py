@@ -52,6 +52,9 @@ class VMAction(object):
     def get_power_state(self, id):
         LOG.info('guest get power %s', id)
 
+    def delete(self, id):
+        LOG.info('guest delete %s', id)
+
 
 def get_action():
     global _VMACTION
@@ -110,6 +113,7 @@ def guest_create(req):
 
 @wsgi_wrapper.SdkWsgify
 def guest_action(req):
+    tokens.validate(req)
 
     def _guest_action(uuid, req):
         action = get_action()
@@ -124,3 +128,15 @@ def guest_action(req):
 
     uuid = util.wsgi_path_item(req.environ, 'uuid')
     _guest_action(uuid, req)
+
+
+@wsgi_wrapper.SdkWsgify
+def guest_delete(req):
+    tokens.validate(req)
+
+    def _guest_delete(uuid):
+        action = get_action()
+        action.delete(uuid)
+
+    uuid = util.wsgi_path_item(req.environ, 'uuid')
+    _guest_delete(uuid)

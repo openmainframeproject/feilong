@@ -136,3 +136,9 @@ class HandlersGuestTest(unittest.TestCase):
 
         guest.guest_get_power_state(self.req)
         self.assertTrue(mock_get.called)
+
+    @mock.patch.object(guest.VMAction, 'delete')
+    def test_guest_delete(self, mock_delete):
+
+        guest.guest_delete(self.req)
+        self.assertTrue(mock_delete.called)
