@@ -22,6 +22,30 @@
       "revId": "8fdcc7b1ec3a41705f39f74d79d408217b5930fb",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e3bb90bb_a4e093c2",
+        "filename": "zvmsdk/imageops.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-05-24T05:08:48Z",
+      "side": 1,
+      "message": "Not used now, leave it for future if SDK and compute node is not on same host.",
+      "parentUuid": "30b0e4d6_847689f2",
+      "range": {
+        "startLine": 218,
+        "startChar": 61,
+        "endLine": 218,
+        "endChar": 72
+      },
+      "revId": "8fdcc7b1ec3a41705f39f74d79d408217b5930fb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
