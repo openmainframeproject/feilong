@@ -1101,3 +1101,23 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
         self.assertRaises(exception.ZVMXCATRequestFailed,
                           self._zvmclient.delete_vm, fake_userid)
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_nic_settings')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_update_nic_definition(self, xrequest, get_nic_settings):
+        get_nic_settings.return_value = 'vdev'
+        url = "/xcatws/vms/node?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+
+        command = 'Image_Definition_Update_DM -T %userid%'
+        command += ' -k \'NICDEF=VDEV=vdev TYPE=QDIO '
+        command += 'MACID=mac '
+        command += 'LAN=SYSTEM '
+        command += 'SWITCHNAME=vswitch\''
+        body = ['--smcli', command]
+
+        self._zvmclient.update_nic_definition("node", "port",
+                                              "mac", "vswitch")
+        get_nic_settings.assert_called_with('port', 'interface')
+        xrequest.assert_called_with("PUT", url, body)
