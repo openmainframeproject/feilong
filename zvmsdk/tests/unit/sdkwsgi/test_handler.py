@@ -95,3 +95,29 @@ class ImageHandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             get_size.assert_called_once_with('image1')
+
+
+class HostHandlerTest(unittest.TestCase):
+
+    def setUp(self):
+        self.env = env
+
+    @mock.patch.object(tokens, 'validate')
+    def test_host_list(self, mock_validate):
+        self.env['PATH_INFO'] = '/host/host1'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.list'
+        with mock.patch(function) as list:
+            h(self.env, dummy)
+
+            list.assert_called_once_with('host1')
+
+    @mock.patch.object(tokens, 'validate')
+    def test_host_get_info(self, mock_validate):
+        self.env['PATH_INFO'] = '/host/host1/info'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.get_info'
+        with mock.patch(function) as get_info:
+            h(self.env, dummy)
+
+            get_info.assert_called_once_with('host1')

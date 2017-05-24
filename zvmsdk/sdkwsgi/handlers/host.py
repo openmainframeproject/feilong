@@ -44,9 +44,9 @@ def get_action():
 def host_list_guests(req):
     tokens.validate(req)
 
-    def _host_list_guests(req):
+    def _host_list_guests(name):
         action = get_action()
-        action.list()
+        action.list(name)
 
     name = util.wsgi_path_item(req.environ, 'name')
     _host_list_guests(name)
