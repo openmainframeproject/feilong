@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "a66af882_9ee47c65",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-24T02:36:27Z",
+      "side": 1,
+      "message": "please follow the format above\n\nyou might need check the output of this API doc",
+      "range": {
+        "startLine": 252,
+        "startChar": 8,
+        "endLine": 258,
+        "endChar": 11
+      },
+      "revId": "c5cf24b9196fc9f7423d54f60d373342be77004d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6958c72d_7aaec423",
         "filename": "zvmsdk/api.py",
         "patchSetId": 2
@@ -18,6 +41,29 @@
         "startChar": 12,
         "endLine": 273,
         "endChar": 38
+      },
+      "revId": "c5cf24b9196fc9f7423d54f60d373342be77004d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "41bcf6be_e039a86e",
+        "filename": "zvmsdk/constants.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-24T02:36:27Z",
+      "side": 1,
+      "message": "just curious, do we really support local?",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 20
       },
       "revId": "c5cf24b9196fc9f7423d54f60d373342be77004d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
