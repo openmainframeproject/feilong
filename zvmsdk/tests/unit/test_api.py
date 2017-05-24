@@ -66,3 +66,9 @@ class SDKAPITestCase(base.SDKTestCase):
         imagekeyword = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'
         self.api.image_query(imagekeyword)
         image_query.assert_called_once_with(imagekeyword)
+
+    @mock.patch("zvmsdk.vmops.VMOps.delete_vm")
+    def test_guest_delete(self, delete_vm):
+        userid = 'userid'
+        self.api.guest_delete(userid)
+        delete_vm.assert_called_once_with(userid)

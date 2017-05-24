@@ -209,36 +209,11 @@ class VMOps(object):
         self._zvmclient.prepare_for_spawn(userid)
         self.create_userid(userid, cpu, memory, root_disk_size, eph_disks)
 
-    def delete_vm(self, userid, zhcp_node):
+    def delete_vm(self, userid):
         """Delete z/VM userid for the instance.This will remove xCAT node
         at same time.
         """
-        # Versions of xCAT that do not understand the instance ID and
-        # request ID will silently ignore them.
-        try:
-            self._zvmclient.remove_vm(userid)
-        except Exception as err:
-            # TODO:implement after exception merged
-            # emsg = err.format_message()
-            emsg = ""
-            if (emsg.__contains__("Return Code: 400") and
-               (emsg.__contains__("Reason Code: 16") or
-                emsg.__contains__("Reason Code: 12"))):
-                self._zvmclient.remove_vm(userid)
-            else:
-                LOG.debug("exception not able to handle in delete_vm "
-                          "%s", self._name)
-                raise err
-        except Exception as err:
-            # TODO:implement after exception merged
-            # emsg = err.format_message()
-            emsg = ""
-            if (emsg.__contains__("Invalid nodes and/or groups") and
-                    emsg.__contains__("Forbidden")):
-                # Assume neither zVM userid nor xCAT node exist in this case
-                return
-            else:
-                raise err
+        self._zvmclient.delete_vm(userid)
 
     def capture_instance(self, instance_name):
         """Invoke xCAT REST API to capture a instance."""
