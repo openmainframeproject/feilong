@@ -13,8 +13,13 @@
 #    under the License.
 
 
-import re
+import datetime
 import os
+import re
+import shutil
+import tarfile
+import xml.dom.minidom as Dom
+
 from zvmsdk import config
 from zvmsdk import constants as const
 from zvmsdk import exception
@@ -65,6 +70,7 @@ class XCATClient(ZVMClient):
         self._zhcp_info = {}
         self._zhcp_userid = None
         self._xcat_node_name = None
+        self._pathutils = zvmutils.PathUtils()
 
     def _power_state(self, userid, method, state):
         """Invoke xCAT REST API to set/get power state for a instance."""
@@ -965,3 +971,115 @@ class XCATClient(ZVMClient):
                       'failed with reason: %(msg)s',
                       {'func': func_name, 'node': instance_name, 'msg': emsg})
             raise exception.ZVMDriverError(msg=emsg)
+
+    def generate_manifest_file(self, image_meta, image_name, disk_file_name,
+                               manifest_path):
+        """
+        Generate the manifest.xml file from glance's image metadata
+        as a part of the image bundle.
+        """
+        image_id = image_meta['id']
+        image_type = image_meta['properties']['image_type_xcat']
+        os_version = image_meta['properties']['os_version']
+        os_name = image_meta['properties']['os_name']
+        os_arch = image_meta['properties']['architecture']
+        prov_method = image_meta['properties']['provision_method']
+
+        image_profile = image_id.replace('-', '_')
+        image_name_xcat = '-'.join((os_version, os_arch,
+                               prov_method, image_profile))
+        rootimgdir_str = ('/install', prov_method, os_version,
+                          os_arch, image_profile)
+        rootimgdir = '/'.join(rootimgdir_str)
+        today_date = datetime.date.today()
+        last_use_date_string = today_date.strftime("%Y-%m-%d")
+        is_deletable = "auto:last_use_date:" + last_use_date_string
+
+        doc = Dom.Document()
+        xcatimage = doc.createElement('xcatimage')
+        doc.appendChild(xcatimage)
+
+        # Add linuximage section
+        imagename = doc.createElement('imagename')
+        imagename_value = doc.createTextNode(image_name_xcat)
+        imagename.appendChild(imagename_value)
+        rootimagedir = doc.createElement('rootimgdir')
+        rootimagedir_value = doc.createTextNode(rootimgdir)
+        rootimagedir.appendChild(rootimagedir_value)
+        linuximage = doc.createElement('linuximage')
+        linuximage.appendChild(imagename)
+        linuximage.appendChild(rootimagedir)
+        xcatimage.appendChild(linuximage)
+
+        # Add osimage section
+        osimage = doc.createElement('osimage')
+        manifest = {'imagename': image_name_xcat,
+                    'imagetype': image_type,
+                    'isdeletable': is_deletable,
+                    'osarch': os_arch,
+                    'osname': os_name,
+                    'osvers': os_version,
+                    'profile': image_profile,
+                    'provmethod': prov_method}
+
+        if 'image_comments' in image_meta['properties']:
+            manifest['comments'] = image_meta['properties']['image_comments']
+
+        for item in list(manifest.keys()):
+            itemkey = doc.createElement(item)
+            itemvalue = doc.createTextNode(manifest[item])
+            itemkey.appendChild(itemvalue)
+            osimage.appendChild(itemkey)
+            xcatimage.appendChild(osimage)
+            f = open(manifest_path + '/manifest.xml', 'w')
+            f.write(doc.toprettyxml(indent=''))
+            f.close()
+
+        # Add the rawimagefiles section
+        rawimagefiles = doc.createElement('rawimagefiles')
+        xcatimage.appendChild(rawimagefiles)
+
+        files = doc.createElement('files')
+        files_value = doc.createTextNode(rootimgdir + '/' + disk_file_name)
+        files.appendChild(files_value)
+
+        rawimagefiles.appendChild(files)
+
+        f = open(manifest_path + '/manifest.xml', 'w')
+        f.write(doc.toprettyxml(indent='  '))
+        f.close()
+
+        self._rewr(manifest_path)
+
+        return manifest_path + '/manifest.xml'
+
+    def generate_image_bundle(self, spawn_path, time_stamp_dir,
+                              image_name, image_file_path):
+        """
+        Generate the image bundle which is used to import to xCAT MN's
+        image repository.
+        """
+        image_bundle_name = image_name + '.tar'
+        tar_file = spawn_path + '/' + time_stamp_dir + '_' + image_bundle_name
+        LOG.debug("The generate the image bundle file is %s", tar_file)
+
+        # copy tmp image file to bundle path
+        bundle_file_path = self._pathutils.get_bundle_tmp_path(time_stamp_dir)
+        image_file_copy = os.path.join(bundle_file_path, image_name)
+        shutil.copyfile(image_file_path, image_file_copy)
+
+        os.chdir(spawn_path)
+        tarFile = tarfile.open(tar_file, mode='w')
+        try:
+            tarFile.add(time_stamp_dir)
+            tarFile.close()
+        except Exception as err:
+            msg = ("Generate image bundle failed: %s" % err)
+            LOG.error(msg)
+            if os.path.isfile(tar_file):
+                os.remove(tar_file)
+            raise exception.ZVMImageError(msg=msg)
+        finally:
+            self._pathutils.clean_temp_folder(time_stamp_dir)
+
+        return tar_file

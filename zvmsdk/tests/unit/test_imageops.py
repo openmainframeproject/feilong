@@ -15,9 +15,6 @@
 
 import mock
 import os
-import shutil
-import tarfile
-import xml
 
 # from zvmsdk.config import CONF
 from zvmsdk import client as zvmclient
@@ -55,60 +52,11 @@ class SDKImageOpsTestCase(base.SDKTestCase):
         ret = self._image_ops.image_get_root_disk_size(fake_name)
         self.assertEqual(ret, 3338)
 
-    @mock.patch.object(xml.dom.minidom, 'Document')
-    @mock.patch.object(xml.dom.minidom.Document, 'createElement')
-    def test_generate_manifest_file(self, create_element, document):
-        """
-        image_meta = {
-                u'id': 'image_uuid_123',
-                u'properties': {u'image_type_xcat': u'linux',
-                               u'os_version': u'rhel7.2',
-                               u'os_name': u'Linux',
-                               u'architecture': u's390x',
-                             u'provision_metuot'}
-                }
-        image_name = 'image_name_123'
-        tmp_date_dir = 'tmp_date_dir'
-        disk_file_name = 'asdf'
-        manifest_path = os.getcwd()
-        manifest_path = manifest_path + '/' + tmp_date_dir
-        """
-        pass
-
-    @mock.patch.object(os.path, 'exists')
-    @mock.patch.object(tarfile, 'open')
-    @mock.patch.object(tarfile.TarFile, 'add')
-    @mock.patch.object(tarfile.TarFile, 'close')
-    @mock.patch.object(shutil, 'copyfile')
-    @mock.patch.object(os, 'chdir')
-    def test_generate_image_bundle(self, change_dir,
-                                   copy_file, close_file,
-                                   add_file, tarfile_open,
-                                   file_exist):
-        time_stamp_dir = 'tmp_date_dir'
-        image_name = 'test'
-        spawn_path = '.'
-        spawn_path = spawn_path + '/' + time_stamp_dir
-        image_file_path = spawn_path + '/images/test.img'
-        change_dir.return_value = None
-        copy_file.return_value = None
-        close_file.return_value = None
-        add_file.return_value = None
-        tarfile_open.return_value = tarfile.TarFile
-        file_exist.return_value = True
-
-        self._image_ops.generate_image_bundle(
-                                    spawn_path, time_stamp_dir,
-                                    image_name, image_file_path)
-        tarfile_open.assert_called_once_with(spawn_path +
-                                             '/tmp_date_dir_test.tar',
-                                             mode='w')
-
     @mock.patch.object(os.path, 'exists')
     @mock.patch.object(zvmclient.XCATClient, 'image_import')
     @mock.patch.object(zvmclient.XCATClient, 'check_space_imgimport_xcat')
-    @mock.patch.object(imageops.ImageOps, 'generate_image_bundle')
-    @mock.patch.object(imageops.ImageOps, 'generate_manifest_file')
+    @mock.patch.object(zvmclient.XCATClient, 'generate_image_bundle')
+    @mock.patch.object(zvmclient.XCATClient, 'generate_manifest_file')
     def test_image_import(self, generate_manifest_file,
                                 generate_bundle_file,
                                 check_space,
