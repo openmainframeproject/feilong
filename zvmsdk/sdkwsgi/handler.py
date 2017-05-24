@@ -49,7 +49,11 @@ ROUTE_DECLARATIONS = {
         'POST': guest.guest_create,
     },
     '/guest/{uuid}': {
-        'DELETE', guest.guest_delete,
+        'DELETE': guest.guest_delete,
+    },
+    '/guest/{uuid}/nic': {
+        'GET': guest.guest_get_nic_info,
+        'POST': guest.guest_create_nic,
     },
     '/guest/{uuid}/info': {
         'GET': guest.guest_get_info,

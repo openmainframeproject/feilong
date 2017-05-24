@@ -44,6 +44,13 @@ class VMHandler(object):
     def delete(self, id):
         LOG.info('guest delete %s', id)
 
+    def get_nic_info(self, id):
+        LOG.info('guest get nic info %s', id)
+
+    @validation.schema(guest.create_nic)
+    def create_nic(self, id, body=None):
+        LOG.info('create nic for %s', id)
+
 
 class VMAction(object):
     def start(self, id):
@@ -153,3 +160,29 @@ def guest_delete(req):
 
     uuid = util.wsgi_path_item(req.environ, 'uuid')
     _guest_delete(uuid)
+
+
+@wsgi_wrapper.SdkWsgify
+def guest_get_nic_info(req):
+    tokens.validate(req)
+
+    def _guest_get_nic_info(uuid):
+        action = get_handler()
+        action.get_nic_info(uuid)
+
+    uuid = util.wsgi_path_item(req.environ, 'uuid')
+    _guest_get_nic_info(uuid)
+
+
+@wsgi_wrapper.SdkWsgify
+def guest_create_nic(req):
+    tokens.validate(req)
+
+    def _guest_create_nic(uuid, req):
+        action = get_handler()
+        body = util.extract_json(req.body)
+
+        action.create_nic(uuid, body=body)
+
+    uuid = util.wsgi_path_item(req.environ, 'uuid')
+    _guest_create_nic(uuid, req)

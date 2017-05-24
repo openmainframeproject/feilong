@@ -121,3 +121,21 @@ positive_integer = {
     'type': ['integer', 'string'],
     'pattern': '^[0-9]*$', 'minimum': 1
 }
+
+
+ipv4 = {
+    'type': 'string', 'format': 'ipv4'
+}
+
+
+nic_info = {
+    'type': 'array',
+    'items': {
+        'type': 'object',
+        'properties': {
+            'nic_id': {'type': 'string'},
+            'mac_addr': {'type': 'string'},
+        },
+        'additionalProperties': False,
+    }
+}

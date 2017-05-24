@@ -30,3 +30,22 @@ create = {
     'required': ['guest'],
     'additionalProperties': False,
 }
+
+
+create_nic = {
+    'type': 'object',
+    'properties': {
+        'nic': {
+            'type': 'object',
+            'properties': {
+                'nic_info': parameter_types.nic_info,
+                'ip': parameter_types.ipv4,
+            },
+            'required': ['nic_info'],
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
+    },
+    'required': ['nic'],
+    'additionalProperties': False,
+}
