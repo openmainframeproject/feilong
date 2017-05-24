@@ -35,6 +35,9 @@ from zvmsdk.sdkwsgi.handlers import root
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.handlers import vswitch
 
+from zvmsdk import log
+LOG = log.LOG
+
 
 ROUTE_DECLARATIONS = {
     '/': {
@@ -101,7 +104,11 @@ def dispatch(environ, start_response, mapper):
     handler = result.pop('action')
 
     environ['wsgiorg.routing_args'] = ((), result)
-    return handler(environ, start_response)
+    try:
+        return handler(environ, start_response)
+    except exception.ValidationError as exc:
+        raise webob.exc.HTTPBadRequest(
+            ('JSON does not validate: %(error)s') % {'error': exc})
 
 
 def handle_405(environ, start_response):
