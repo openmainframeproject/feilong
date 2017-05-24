@@ -12,7 +12,6 @@
 """Deployment handling for sdk API."""
 
 from zvmsdk.sdkwsgi import handler
-from zvmsdk.sdkwsgi import microversion
 from zvmsdk.sdkwsgi import requestlog
 
 
@@ -21,12 +20,11 @@ NAME = "sdk"
 
 def deploy(project_name):
     """Assemble the middleware pipeline leading to the placement app."""
-    microversion_middleware = microversion.MicroversionMiddleware
     request_log = requestlog.RequestLog
 
     application = handler.SdkHandler()
 
-    for middleware in (microversion_middleware,
+    for middleware in (
                        request_log,
                        ):
         if middleware:
