@@ -43,6 +43,7 @@ class VMOps(object):
         self._zvmclient = zvmclient.get_zvmclient()
         self._dist_manager = dist.ListDistManager()
         self._imageops = imageops.get_imageops()
+        self._pathutils = zvmutils.PathUtils()
 
     def get_power_state(self, guest_id):
         """Get power status of a z/VM instance."""
@@ -277,5 +278,32 @@ class VMOps(object):
 
         return info
 
-    def get_console_log(self, userid, log_size):
-        return self._zvmclient.get_user_console_log(userid, log_size)
+    def get_console_output(self, userid):
+        def append_to_log(log_data, log_path):
+            LOG.debug('log_data: %(log_data)r, log_path: %(log_path)r',
+                         {'log_data': log_data, 'log_path': log_path})
+            fp = open(log_path, 'a+')
+            fp.write(log_data)
+            fp.close()
+            return log_path
+
+        log_size = CONF.instance.console_log_size * 1024
+        console_log = ""
+
+        try:
+            console_log = self._zvmclient.get_user_console_output(userid,
+                                                                  log_size)
+        except exception.ZVMXCATInternalError:
+            # Ignore no console log avaiable error
+            LOG.info("No new console log avaiable.")
+
+        log_path = self._pathutils.get_console_log_path(CONF.zvm.host, userid)
+        # TODO: need consider shrink log file size
+        append_to_log(console_log, log_path)
+
+        log_fp = file(log_path, 'rb')
+        log_data, remaining = zvmutils.last_bytes(log_fp, log_size)
+        if remaining > 0:
+            LOG.info('Truncated console log returned, %d bytes ignored' %
+                     remaining)
+        return log_data

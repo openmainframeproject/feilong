@@ -110,13 +110,18 @@ zvm_opts = [
     Opt('nic_name',
         section='network'),
     # instance options
-    Opt('instance_path',
-        section='instance'),
+    Opt('instances_path',
+        section='instance',
+        default='/tmp/zvmsdk/'),
     Opt('tempdir',
         section='instance'),
     Opt('reachable_timeout',
         section='instance',
         default=300,
+        opt_type='int'),
+    Opt('console_log_size',
+        section='instance',
+        default=100,
         opt_type='int'),
     ]
 

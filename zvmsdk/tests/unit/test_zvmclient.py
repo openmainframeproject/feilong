@@ -998,17 +998,17 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self.assertEqual(ret, image_list)
 
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_get_user_console_log(self, xreq):
+    def test_get_user_console_output(self, xreq):
         log_str = 'fakeid: this is console log for fakeid\n'
         xreq.return_value = {'info': [[log_str]]}
-        clog = self._zvmclient.get_user_console_log('fakeid', 100)
-        self.assertEqual(clog, log_str)
+        clog = self._zvmclient.get_user_console_output('fakeid', 100)
+        self.assertEqual(clog, 'this is console log for fakeid\n')
 
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_get_user_console_log_invalid_output(self, xreq):
+    def test_get_user_console_output_invalid_output(self, xreq):
         xreq.return_value = {}
         self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
-        self._zvmclient.get_user_console_log, 'fakeid', 100)
+                        self._zvmclient.get_user_console_output, 'fakeid', 100)
 
     def test_generate_vdev(self):
         base = '0100'

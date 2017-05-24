@@ -15,6 +15,7 @@
 
 import contextlib
 import commands
+import errno
 import functools
 import json
 import os
@@ -762,3 +763,19 @@ def to_utf8(text):
     else:
         raise TypeError("bytes or Unicode expected, got %s"
                         % type(text).__name__)
+
+
+def last_bytes(file_like_object, num):
+    try:
+        file_like_object.seek(-num, os.SEEK_END)
+    except IOError as e:
+        # seek() fails with EINVAL when trying to go before the start of the
+        # file. It means that num is larger than the file size, so just
+        # go to the start.
+        if e.errno == errno.EINVAL:
+            file_like_object.seek(0, os.SEEK_SET)
+        else:
+            raise
+
+    remaining = file_like_object.tell()
+    return (file_like_object.read(), remaining)
