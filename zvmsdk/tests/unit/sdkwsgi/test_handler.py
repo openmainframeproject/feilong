@@ -121,3 +121,32 @@ class HostHandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             get_info.assert_called_once_with('host1')
+
+
+class VswitchHandlerTest(unittest.TestCase):
+    def setUp(self):
+        self.env = env
+
+    @mock.patch.object(tokens, 'validate')
+    def test_vswitch_list(self, mock_validate):
+        self.env['PATH_INFO'] = '/vswitch'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.list'
+        with mock.patch(function) as list:
+            h(self.env, dummy)
+
+            self.assertTrue(list.called)
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_vswitch_create(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/vswitch'
+        self.env['REQUEST_METHOD'] = 'POST'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.create'
+        with mock.patch(function) as create:
+            h(self.env, dummy)
+
+            self.assertTrue(create.called)
