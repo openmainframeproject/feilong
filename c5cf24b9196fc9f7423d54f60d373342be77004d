@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6958c72d_7aaec423",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-05-24T01:47:02Z",
+      "side": 1,
+      "message": "incorrect description",
+      "range": {
+        "startLine": 273,
+        "startChar": 12,
+        "endLine": 273,
+        "endChar": 38
+      },
+      "revId": "c5cf24b9196fc9f7423d54f60d373342be77004d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
