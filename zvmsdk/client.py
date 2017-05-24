@@ -900,7 +900,7 @@ class XCATClient(ZVMClient):
 
         return image_list
 
-    def get_user_console_log(self, userid, log_size):
+    def get_user_console_output(self, userid, log_size):
         """get console log."""
         url = self._xcat_url.rinv('/' + userid, '&field=--consoleoutput'
                                   '&field=%s') % log_size
@@ -911,7 +911,8 @@ class XCATClient(ZVMClient):
         with zvmutils.expect_invalid_xcat_resp_data(res_info):
             log_data = res_info['info'][0][0]
 
-        return log_data
+        raw_log_list = log_data.split('\n')
+        return '\n'.join([rec.partition(': ')[2] for rec in raw_log_list])
 
     def _generate_vdev(self, base, offset=1):
         """Generate virtual device number based on base vdev

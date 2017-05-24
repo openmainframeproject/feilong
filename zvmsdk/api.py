@@ -237,12 +237,11 @@ class SDKAPI(object):
         """
         return self._imageops.image_query(imagekeyword)
 
-    def guest_get_console_log(self, userid, log_size=102400):
-        """Get the console log of the guest virtual machine.
+    def guest_get_console_output(self, userid):
+        """Get the console output of the guest virtual machine.
 
-        :param userid: the user id of the vm
-        :param log_size: the size of the console log in byte, default as 100KB
-
+        :param str userid: the user id of the vm
         :returns: console log string
+        :rtype: str
         """
-        return self._vmops.get_console_log(userid, log_size)
+        return self._vmops.get_console_output(userid)
