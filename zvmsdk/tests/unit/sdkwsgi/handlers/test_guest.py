@@ -45,7 +45,7 @@ class HandlersGuestTest(unittest.TestCase):
         self.req = FakeReq()
         self.req.headers['X-Auth-Token'] = payload
 
-    @mock.patch.object(guest.VMAction, 'list')
+    @mock.patch.object(guest.VMHandler, 'list')
     def test_guest_list(self, mock_list):
 
         guest.guest_list(self.req)
@@ -74,6 +74,17 @@ class HandlersGuestTest(unittest.TestCase):
         mock_action.assert_called_once_with(FAKE_UUID)
 
     @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(guest.VMAction, 'get_conole_output')
+    def test_guest_get_conole_output(self, mock_action,
+                        mock_uuid):
+        self.req.body = '{"get_conole_output": "None"}'
+
+        mock_uuid.return_value = FAKE_UUID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with(FAKE_UUID)
+
+    @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_invalid_action(self, mock_uuid):
         self.req.body = '{"fake": "None"}'
 
@@ -82,7 +93,7 @@ class HandlersGuestTest(unittest.TestCase):
         self.assertRaises(webob.exc.HTTPBadRequest, guest.guest_action,
                           self.req)
 
-    @mock.patch.object(guest.VMAction, 'create')
+    @mock.patch.object(guest.VMHandler, 'create')
     def test_guest_create(self, mock_create):
         body_str = '{"guest": {"name": "name1"}}'
         self.req.body = body_str
@@ -125,19 +136,19 @@ class HandlersGuestTest(unittest.TestCase):
         self.assertRaises(exception.ValidationError, guest.guest_create,
                           self.req)
 
-    @mock.patch.object(guest.VMAction, 'get_info')
+    @mock.patch.object(guest.VMHandler, 'get_info')
     def test_guest_get_info(self, mock_get):
 
         guest.guest_get_info(self.req)
         self.assertTrue(mock_get.called)
 
-    @mock.patch.object(guest.VMAction, 'get_power_state')
+    @mock.patch.object(guest.VMHandler, 'get_power_state')
     def test_guest_power_state(self, mock_get):
 
         guest.guest_get_power_state(self.req)
         self.assertTrue(mock_get.called)
 
-    @mock.patch.object(guest.VMAction, 'delete')
+    @mock.patch.object(guest.VMHandler, 'delete')
     def test_guest_delete(self, mock_delete):
 
         guest.guest_delete(self.req)

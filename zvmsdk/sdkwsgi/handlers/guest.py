@@ -22,25 +22,14 @@ from zvmsdk.sdkwsgi import validation
 from zvmsdk.sdkwsgi import wsgi_wrapper
 
 _VMACTION = None
+_VMHANDLER = None
 CONF = config.CONF
 LOG = log.LOG
 
 
-class VMAction(object):
-    def start(self, id):
-        LOG.info('start guest %s', id)
-
+class VMHandler(object):
     def list(self):
         LOG.info('list guests')
-
-    def stop(self, id):
-        LOG.info('stop guest %s', id)
-
-    def pause(self, id):
-        LOG.info('pause guest %s', id)
-
-    def unpause(self, id):
-        LOG.info('unpause guest %s', id)
 
     @validation.schema(guest.create)
     def create(self, body):
@@ -56,6 +45,23 @@ class VMAction(object):
         LOG.info('guest delete %s', id)
 
 
+class VMAction(object):
+    def start(self, id):
+        LOG.info('start guest %s', id)
+
+    def stop(self, id):
+        LOG.info('stop guest %s', id)
+
+    def pause(self, id):
+        LOG.info('pause guest %s', id)
+
+    def unpause(self, id):
+        LOG.info('unpause guest %s', id)
+
+    def get_conole_output(self, id):
+        LOG.info('get console %s', id)
+
+
 def get_action():
     global _VMACTION
     if _VMACTION is None:
@@ -63,12 +69,19 @@ def get_action():
     return _VMACTION
 
 
+def get_handler():
+    global _VMHANDLER
+    if _VMHANDLER is None:
+        _VMHANDLER = VMHandler()
+    return _VMHANDLER
+
+
 @wsgi_wrapper.SdkWsgify
 def guest_list(req):
     tokens.validate(req)
 
     def _guest_list(req):
-        action = get_action()
+        action = get_handler()
         action.list()
 
     _guest_list(req)
@@ -79,7 +92,7 @@ def guest_get_info(req):
     tokens.validate(req)
 
     def _guest_get_info(uuid):
-        action = get_action()
+        action = get_handler()
         action.get_info(uuid)
 
     uuid = util.wsgi_path_item(req.environ, 'uuid')
@@ -91,7 +104,7 @@ def guest_get_power_state(req):
     tokens.validate(req)
 
     def _guest_get_power_state(uuid):
-        action = get_action()
+        action = get_handler()
         action.get_power_state(uuid)
 
     uuid = util.wsgi_path_item(req.environ, 'uuid')
@@ -103,7 +116,7 @@ def guest_create(req):
     tokens.validate(req)
 
     def _guest_create(req):
-        action = get_action()
+        action = get_handler()
         body = util.extract_json(req.body)
 
         action.create(body=body)
@@ -135,7 +148,7 @@ def guest_delete(req):
     tokens.validate(req)
 
     def _guest_delete(uuid):
-        action = get_action()
+        action = get_handler()
         action.delete(uuid)
 
     uuid = util.wsgi_path_item(req.environ, 'uuid')
