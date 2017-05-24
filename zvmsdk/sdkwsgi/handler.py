@@ -48,6 +48,12 @@ ROUTE_DECLARATIONS = {
         'GET': guest.guest_list,
         'POST': guest.guest_create,
     },
+    '/guest/{uuid}/info': {
+        'GET': guest.guest_get_info,
+    },
+    '/guest/{uuid}/power_state': {
+        'GET': guest.guest_get_power_state,
+    },
     '/guest/{uuid}/action': {
         'POST': guest.guest_action,
     },

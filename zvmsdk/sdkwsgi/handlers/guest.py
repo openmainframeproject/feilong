@@ -46,6 +46,12 @@ class VMAction(object):
     def create(self, body):
         LOG.info('create guest')
 
+    def get_info(self, id):
+        LOG.info('guest get info %s', id)
+
+    def get_power_state(self, id):
+        LOG.info('guest get power %s', id)
+
 
 def get_action():
     global _VMACTION
@@ -63,6 +69,30 @@ def guest_list(req):
         action.list()
 
     _guest_list(req)
+
+
+@wsgi_wrapper.SdkWsgify
+def guest_get_info(req):
+    tokens.validate(req)
+
+    def _guest_get_info(uuid):
+        action = get_action()
+        action.get_info(uuid)
+
+    uuid = util.wsgi_path_item(req.environ, 'uuid')
+    _guest_get_info(uuid)
+
+
+@wsgi_wrapper.SdkWsgify
+def guest_get_power_state(req):
+    tokens.validate(req)
+
+    def _guest_get_power_state(uuid):
+        action = get_action()
+        action.get_power_state(uuid)
+
+    uuid = util.wsgi_path_item(req.environ, 'uuid')
+    _guest_get_power_state(uuid)
 
 
 @wsgi_wrapper.SdkWsgify

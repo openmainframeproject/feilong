@@ -124,3 +124,15 @@ class HandlersGuestTest(unittest.TestCase):
 
         self.assertRaises(exception.ValidationError, guest.guest_create,
                           self.req)
+
+    @mock.patch.object(guest.VMAction, 'get_info')
+    def test_guest_get_info(self, mock_get):
+
+        guest.guest_get_info(self.req)
+        self.assertTrue(mock_get.called)
+
+    @mock.patch.object(guest.VMAction, 'get_power_state')
+    def test_guest_power_state(self, mock_get):
+
+        guest.guest_get_power_state(self.req)
+        self.assertTrue(mock_get.called)
