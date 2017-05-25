@@ -55,11 +55,10 @@ class SDKAPITestCase(base.SDKTestCase):
         vcpus = 1
         memory = 1024
         root_disk_size = 3338
-        eph_disks = []
 
-        self.api.guest_create(userid, vcpus, memory, root_disk_size, eph_disks)
+        self.api.guest_create(userid, vcpus, memory, root_disk_size)
         create_vm.assert_called_once_with(userid, vcpus, memory,
-                                          root_disk_size, eph_disks)
+                                          root_disk_size)
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_query")
     def test_image_query(self, image_query):
