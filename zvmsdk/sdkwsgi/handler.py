@@ -36,10 +36,6 @@ from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.handlers import vswitch
 
 
-# When adding URLs here, do not use regex patterns in
-# the path parameters (e.g. {uuid:[0-9a-zA-Z-]+}) as that will lead
-# to 404s that are controlled outside of the individual resources
-# and thus do not include specific information on the why of the 404.
 ROUTE_DECLARATIONS = {
     '/': {
         'GET': root.home,
@@ -101,8 +97,9 @@ def dispatch(environ, start_response, mapper):
     if result is None:
         raise webob.exc.HTTPNotFound(
             json_formatter=util.json_error_formatter)
-    # We can't reach this code without action being present.
+
     handler = result.pop('action')
+
     environ['wsgiorg.routing_args'] = ((), result)
     return handler(environ, start_response)
 
@@ -150,9 +147,6 @@ class SdkHandler(object):
         self._map = make_map(ROUTE_DECLARATIONS)
 
     def __call__(self, environ, start_response):
-        # Check that an incoming request with a content-length header
-        # that is an integer > 0 and not empty, also has a content-type
-        # header that is not empty. If not raise a 400.
         clen = environ.get('CONTENT_LENGTH')
         try:
             if clen and (int(clen) > 0) and not environ.get('CONTENT_TYPE'):
@@ -165,15 +159,9 @@ class SdkHandler(object):
                 json_formatter=util.json_error_formatter)
         try:
             return dispatch(environ, start_response, self._map)
-        # Trap the NotFound exceptions raised by the objects used
-        # with the API and transform them into webob.exc.HTTPNotFound.
         except exception.NotFound as exc:
             raise webob.exc.HTTPNotFound(
                 exc, json_formatter=util.json_error_formatter)
-        # Trap the HTTPNotFound that can be raised by dispatch()
-        # when no route is found. The exception is passed through to
-        # the FaultWrap middleware without causing an alarming log
-        # message.
         except webob.exc.HTTPNotFound:
             raise
         except Exception as exc:
