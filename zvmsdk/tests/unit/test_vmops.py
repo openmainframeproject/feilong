@@ -221,10 +221,10 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                                               '/test/transport.tgz', None)
 
     @mock.patch.object(zvmclient.XCATClient, 'get_user_direct')
-    def test_get_user_direct(self, get_user_direct):
+    def test_get_definition_info(self, get_user_direct):
         get_user_direct.return_value = [
             'line1',
             'NICDEF 1000 TYPE QDIO LAN SYSTEM VSWITCH']
 
-        self.vmops.get_user_direct("fake_user_id", nic_coupled='1000')
+        self.vmops.get_definition_info("fake_user_id", nic_coupled='1000')
         get_user_direct.assert_called_with("fake_user_id")
