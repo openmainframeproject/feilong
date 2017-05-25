@@ -148,19 +148,17 @@ class SDKAPI(object):
         """
         self._imageops.image_import(image_file_path, os_version)
 
-    def guest_create(self, userid, vcpus, memory, root_disk_size, eph_disks):
+    def guest_create(self, userid, vcpus, memory, root_disk_size):
         """create a vm in z/VM
 
         :param userid:the userid of the vm to be created
         :param vcpus: amount of vcpus
         :param memory: size of memory
-        :param root_disk_size: the size of root minidisk, the value would be
-        a string eg. '1g', '1024m' or a just a integer value eg. 3338
-        :param eph_disks:
+        :param root_disk_size: a string to indicate the size of root minidisk,
+                               eg. '1g', '1024m' or without units eg '3338'
 
         """
-        self._vmops.guest_create(userid, vcpus, memory,
-                                 root_disk_size, eph_disks)
+        self._vmops.guest_create(userid, vcpus, memory, root_disk_size)
 
     def image_get_root_disk_size(self, image_file_name):
         """Get the root disk size of the image
