@@ -118,26 +118,18 @@ class VMOps(object):
         """"Power on z/VM instance."""
         self._zvmclient.guest_start(instance_name)
 
-    def guest_create(self, instance_name, cpu, memory, root_disk_size,
-                      eph_disks):
+    def guest_create(self, instance_name, cpu, memory, root_disk_size):
         """Create z/VM userid into user directory for a z/VM instance."""
         LOG.debug("Creating the z/VM user entry for instance %s"
-                      % instance_name)
+                  % instance_name)
 
         kwprofile = 'profile=%s' % const.ZVM_USER_PROFILE
         try:
-            self._zvmclient.guest_create(instance_name, kwprofile,
-                                         cpu, memory)
-
+            self._zvmclient.guest_create(instance_name, kwprofile, cpu, memory)
             # Add root disk
             self.add_mdisk(instance_name, CONF.zvm.diskpool,
-                               CONF.zvm.user_root_vdev,
-                               root_disk_size)
-            # Process eph disks
-            if eph_disks != []:
-                self.process_additional_disks(instance_name, eph_disks)
+                           CONF.zvm.user_root_vdev, root_disk_size)
             # Set ipl
-            # TODO:check whether need ipl or not
             self.set_ipl(instance_name, CONF.zvm.user_root_vdev)
 
         except Exception as err:
