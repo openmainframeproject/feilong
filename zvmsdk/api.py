@@ -148,19 +148,17 @@ class SDKAPI(object):
         """
         self._imageops.image_import(image_file_path, os_version)
 
-    def guest_create(self, userid, vcpus, memory, root_disk_size, eph_disks):
+    def guest_create(self, userid, vcpus, memory, root_disk_size):
         """create a vm in z/VM
 
-        :param userid:the userid of the vm to be created
+        :param userid: the userid of the vm to be created
         :param vcpus: amount of vcpus
         :param memory: size of memory
-        :param root_disk_size: the size of root minidisk, the value would be
-        a string eg. '1g', '1024m' or a just a integer value eg. 3338
-        :param eph_disks:
+        :param root_disk_size: a string to indicate the size of root minidisk,
+               eg. '1g', '1024m' or without units eg '3338'
 
         """
-        self._vmops.guest_create(userid, vcpus, memory,
-                                 root_disk_size, eph_disks)
+        self._vmops.guest_create(userid, vcpus, memory, root_disk_size)
 
     def image_get_root_disk_size(self, image_file_name):
         """Get the root disk size of the image
@@ -171,7 +169,7 @@ class SDKAPI(object):
         return self._imageops.image_get_root_disk_size(image_file_name)
 
     def guest_nic_couple_to_vswitch(self, vswitch_name, switch_port_name,
-                                 userid, persist=True):
+                                    userid, persist=True):
         """ Couple nic device to specified vswitch.
 
         :param vswitch_name: the name of the vswitch
