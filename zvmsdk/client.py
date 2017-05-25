@@ -266,35 +266,6 @@ class XCATClient(ZVMClient):
     def prepare_for_spawn(self, userid):
         self.create_xcat_node(userid)
 
-    def _delete_xcat_node(self, userid):
-        """Remove xCAT node for z/VM instance."""
-        url = self._xcat_url.rmdef('/' + userid)
-        try:
-            zvmutils.xcat_request("DELETE", url)
-        except Exception as err:
-            if err.format_message().__contains__("Could not find an object"):
-                # The xCAT node not exist
-                return
-            else:
-                raise err
-
-    def delete_userid(self, url):
-        try:
-            zvmutils.xcat_request("DELETE", url)
-        except Exception as err:
-            emsg = err.format_message()
-            LOG.debug("error emsg in delete_userid: %s", emsg)
-            if (emsg.__contains__("Return Code: 400") and
-                    emsg.__contains__("Reason Code: 4")):
-                # zVM user definition not found, delete xCAT node directly
-                self._delete_xcat_node()
-            else:
-                raise err
-
-    def remove_vm(self, userid):
-        url = zvmutils.get_xcat_url().rmvm('/' + userid)
-        self.delete_userid(url)
-
     def remove_image_file(self, image_name):
         url = self._xcat_url.rmimage('/' + image_name)
         zvmutils.xcat_request("DELETE", url)
@@ -962,3 +933,88 @@ class XCATClient(ZVMClient):
                       'failed with reason: %(msg)s',
                       {'func': func_name, 'node': instance_name, 'msg': emsg})
             raise exception.ZVMDriverError(msg=emsg)
+
+    def delete_vm(self, userid):
+        """Delete z/VM userid for the instance.This will remove xCAT node
+        at same time.
+        """
+        try:
+            self.delete_userid(userid)
+        except exception.ZVMXCATInternalError as err:
+            emsg = err.format_message()
+            if (emsg.__contains__("Return Code: 400") and
+                    emsg.__contains__("Reason Code: 12")):
+                # The vm was locked. Unlock before deleting
+                self.unlock_userid(userid)
+            elif (emsg.__contains__("Return Code: 408") and
+                    emsg.__contains__("Reason Code: 12")):
+                # The vm device was locked. Unlock the device before deleting
+                self.unlock_devices(userid)
+            else:
+                LOG.debug("exception not able to handle in delete_userid "
+                          "%s", self._name)
+                raise err
+            # delete the vm after unlock
+            self.delete_userid(userid)
+        except exception.ZVMXCATRequestFailed as err:
+            emsg = err.format_message()
+            if (emsg.__contains__("Invalid nodes and/or groups") and
+                    emsg.__contains__("Forbidden")):
+                # Assume neither zVM userid nor xCAT node exist in this case
+                return
+            else:
+                raise err
+
+    def delete_xcat_node(self, nodename):
+        """Remove xCAT node for z/VM instance."""
+        url = self._xcat_url.rmdef('/' + nodename)
+        try:
+            zvmutils.xcat_request("DELETE", url)
+        except exception.ZVMXCATInternalError as err:
+            if err.format_message().__contains__("Could not find an object"):
+                # The xCAT node not exist
+                return
+            else:
+                raise err
+
+    def unlock_userid(self, userid):
+        """Unlock the specified userid"""
+        cmd = "/opt/zhcp/bin/smcli Image_Unlock_DM -T %s" % userid
+        zhcp_node = CONF.xcat.zhcp_node
+        zvmutils.xdsh(zhcp_node, cmd)
+
+    def unlock_devices(self, userid):
+        cmd = "/opt/zhcp/bin/smcli Image_Lock_Query_DM -T %s" % userid
+        zhcp_node = CONF.xcat.zhcp_node
+        resp = zvmutils.xdsh(zhcp_node, cmd)
+        with zvmutils.expect_invalid_xcat_resp_data(resp):
+            resp_str = resp['data'][0][0]
+
+        if resp_str.__contains__("is Unlocked..."):
+            # unlocked automatically, do nothing
+            return
+
+        def _unlock_device(vdev):
+            cmd = ("/opt/zhcp/bin/smcli Image_Unlock_DM -T %(uid)s -v %(vdev)s"
+                   % {'uid': userid, 'vdev': vdev})
+            zvmutils.xdsh(zhcp_node, cmd)
+
+        resp_list = resp_str.split('\n')
+        for s in resp_list:
+            if s.__contains__('Device address:'):
+                vdev = s.rpartition(':')[2].strip()
+                _unlock_device(vdev)
+
+    def delete_userid(self, userid):
+        url = self._xcat_url.rmvm('/' + userid)
+        try:
+            zvmutils.xcat_request("DELETE", url)
+        except exception.ZVMXCATInternalError as err:
+            emsg = err.format_message()
+            LOG.debug("error emsg in delete_userid: %s", emsg)
+            if (emsg.__contains__("Return Code: 400") and
+                    emsg.__contains__("Reason Code: 4")):
+                # zVM user definition not found, delete xCAT node directly
+                self.delete_xcat_node(userid)
+            else:
+                raise
