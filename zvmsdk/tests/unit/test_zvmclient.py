@@ -843,23 +843,29 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         xrequest.assert_called_with("GET", url)
         self.assertEqual(info, "fakename")
 
-    @mock.patch.object(zvmclient.XCATClient, '_get_xcat_node_name')
+    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_get_admin_created_vsw(self, xrequest, get_xcat_node_name):
-        get_xcat_node_name.return_value = "fakenode"
+    def test_get_vswitch_list(self, xrequest, get_userid):
+        get_userid.return_value = "fakenode"
         xrequest.return_value = {
-            "data": [["0"]],
+            "data": [[u"VSWITCH:  Name: TEST", u"VSWITCH:  Name: TEST2"]],
             "errorcode": [['0']]
                             }
-        url = "/xcatws/nodes/fakenode/dsh?userName=" +\
-              CONF.xcat.username +\
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"
-        commands = 'command=vmcp q v nic'
-        body = [commands]
-        self._zvmclient.get_admin_created_vsw()
-        get_xcat_node_name.assert_called_with()
+        commands = ' '.join((
+            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Query',
+            "-T fakenode",
+            "-s \'*\'"))
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        info = self._zvmclient.get_vswitch_list()
+        get_userid.assert_called_with()
         xrequest.assert_called_with("PUT", url, body)
+        self.assertEqual(info[0], "TEST")
+        self.assertEqual(info[1], "TEST2")
 
     @mock.patch.object(zvmclient.XCATClient, '_get_nic_settings')
     @mock.patch.object(zvmclient.XCATClient, '_couple_nic')

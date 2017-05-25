@@ -44,10 +44,10 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         self.networkops.clean_network_resource("fake_user_id")
         clean_network_resource.assert_called_with("fake_user_id")
 
-    @mock.patch.object(zvmclient.XCATClient, 'get_admin_created_vsw')
-    def test_get_admin_created_vsw(self, get_admin_created_vsw):
-        self.networkops.get_admin_created_vsw()
-        get_admin_created_vsw.assert_called_with()
+    @mock.patch.object(zvmclient.XCATClient, 'get_vswitch_list')
+    def test_get_vswitch_list(self, get_vswitch_list):
+        self.networkops.get_vswitch_list()
+        get_vswitch_list.assert_called_with()
 
     @mock.patch.object(zvmclient.XCATClient, 'couple_nic_to_vswitch')
     def test_couple_nic_to_vswitch(self, couple_nic_to_vswitch):
