@@ -131,14 +131,6 @@ class SDKAPI(object):
         """
         return self._vmops.get_definition_info(userid, **kwargs)
 
-    def guest_clean_network_resource(self, user_id):
-        """Clean the network resource (mac. switch, host) for the vm.
-
-        :param user_id: the user id of the vm
-
-        """
-        self._networkops.clean_network_resource(user_id)
-
     def image_import(self, image_file_path, os_version):
         """import image to z/VM according to the file path and os_version
 

@@ -39,11 +39,6 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         self.networkops.update_ports(set())
         update_ports.assert_called_with(set())
 
-    @mock.patch.object(zvmclient.XCATClient, 'clean_network_resource')
-    def test_clean_network_resource(self, clean_network_resource):
-        self.networkops.clean_network_resource("fake_user_id")
-        clean_network_resource.assert_called_with("fake_user_id")
-
     @mock.patch.object(zvmclient.XCATClient, 'get_vswitch_list')
     def test_get_vswitch_list(self, get_vswitch_list):
         self.networkops.get_vswitch_list()
