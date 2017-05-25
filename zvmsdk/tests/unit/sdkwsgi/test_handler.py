@@ -51,6 +51,7 @@ class GuestHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_guest_list(self, mock_validate):
         self.env['PATH_INFO'] = '/guest'
+        self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMHandler.list') \
             as list:
@@ -61,6 +62,7 @@ class GuestHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_info(self, mock_validate):
         self.env['PATH_INFO'] = '/guest/1/info'
+        self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_info') \
             as get_info:
@@ -69,8 +71,20 @@ class GuestHandlerTest(unittest.TestCase):
             get_info.assert_called_once_with('1')
 
     @mock.patch.object(tokens, 'validate')
+    def test_guest_get_nic_info(self, mock_validate):
+        self.env['PATH_INFO'] = '/guest/1/nic'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_nic_info'
+        with mock.patch(func) as get_nic_info:
+            h(self.env, dummy)
+
+            get_nic_info.assert_called_once_with('1')
+
+    @mock.patch.object(tokens, 'validate')
     def test_guest_get_power_state(self, mock_validate):
         self.env['PATH_INFO'] = '/guest/1/power_state'
+        self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler'\
                    '.get_power_state'
@@ -78,6 +92,44 @@ class GuestHandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             get_power.assert_called_once_with('1')
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_guest_create(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/guest'
+        self.env['REQUEST_METHOD'] = 'POST'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.create'
+        with mock.patch(function) as create:
+            h(self.env, dummy)
+
+            self.assertTrue(create.called)
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_guest_delete(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/guest/1'
+        self.env['REQUEST_METHOD'] = 'DELETE'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.delete'
+        with mock.patch(function) as delete:
+            h(self.env, dummy)
+            delete.assert_called_once_with('1')
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_guest_create_nic(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/guest/1/nic'
+        self.env['REQUEST_METHOD'] = 'POST'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.create_nic'
+        with mock.patch(function) as create_nic:
+            h(self.env, dummy)
+
+            self.assertTrue(create_nic.called)
 
 
 class ImageHandlerTest(unittest.TestCase):
@@ -88,6 +140,7 @@ class ImageHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_image_root_disk_size(self, mock_validate):
         self.env['PATH_INFO'] = '/image/image1/root_disk_size'
+        self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.image.ImageAction'\
                    '.get_root_disk_size'
@@ -95,6 +148,19 @@ class ImageHandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             get_size.assert_called_once_with('image1')
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_vswitch_create(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/image'
+        self.env['REQUEST_METHOD'] = 'POST'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.image.ImageAction.create'
+        with mock.patch(function) as create:
+            h(self.env, dummy)
+
+            self.assertTrue(create.called)
 
 
 class HostHandlerTest(unittest.TestCase):
@@ -105,6 +171,7 @@ class HostHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_host_list(self, mock_validate):
         self.env['PATH_INFO'] = '/host/host1'
+        self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.list'
         with mock.patch(function) as list:
@@ -115,12 +182,24 @@ class HostHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_host_get_info(self, mock_validate):
         self.env['PATH_INFO'] = '/host/host1/info'
+        self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.get_info'
         with mock.patch(function) as get_info:
             h(self.env, dummy)
 
             get_info.assert_called_once_with('host1')
+
+    @mock.patch.object(tokens, 'validate')
+    def test_host_get_disk_info(self, mock_validate):
+        self.env['PATH_INFO'] = '/host/host1/disk_info/disk1'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.get_disk_info'
+        with mock.patch(function) as get_disk_info:
+            h(self.env, dummy)
+
+            get_disk_info.assert_called_once_with('host1', 'disk1')
 
 
 class VswitchHandlerTest(unittest.TestCase):
