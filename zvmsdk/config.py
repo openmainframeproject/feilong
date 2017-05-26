@@ -123,6 +123,11 @@ zvm_opts = [
         section='instance',
         default=100,
         opt_type='int'),
+    Opt('cache_interval',
+        section='monitor',
+        default=600,
+        opt_type='int',
+        ),
     ]
 
 

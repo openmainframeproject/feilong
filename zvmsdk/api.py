@@ -16,6 +16,7 @@
 from zvmsdk import vmops
 from zvmsdk import hostops
 from zvmsdk import config
+from zvmsdk import monitor
 from zvmsdk import networkops
 from zvmsdk import imageops
 from zvmsdk import exception
@@ -32,6 +33,7 @@ class SDKAPI(object):
         self._hostops = hostops.get_hostops()
         self._networkops = networkops.get_networkops()
         self._imageops = imageops.get_imageops()
+        self._monitor = monitor.get_monitor()
 
     def guest_start(self, vm_id):
         """Power on a virtual machine.
@@ -258,3 +260,18 @@ class SDKAPI(object):
 
         """
         return self._vmops.delete_vm(userid)
+
+    def guest_inspect_cpus(self, userid_list):
+        """Get the cpu statistics of the guest virtual machines
+
+        :param list userid_list: the list of guest userids
+        :returns: dictionary describing the cpu statistics of the vm
+                 in the form {'uid1': {'cpus': xxx, 'used_cpu_time':yyy},
+                              'uid2': {'cpus': xxx, 'used_cpu_time':yyy}
+                             }
+                for the guests that are shutoff or not exist, no data returned
+                in the dictionary
+        """
+        if not isinstance(userid_list, list):
+            userid_list = [userid_list]
+        return self._monitor.inspect_cpus(userid_list)

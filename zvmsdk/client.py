@@ -174,7 +174,7 @@ class XCATClient(ZVMClient):
         resp_info = zvmutils.xcat_request("GET", url)['info'][0]
         return resp_info
 
-    def _image_performance_query(self, uid_list):
+    def image_performance_query(self, uid_list):
         """Call Image_Performance_Query to get guest current status.
 
         :uid_list: A list of zvm userids to be queried
@@ -220,7 +220,7 @@ class XCATClient(ZVMClient):
         return pi_dict
 
     def get_image_performance_info(self, userid):
-        pi_dict = self._image_performance_query([userid])
+        pi_dict = self.image_performance_query([userid])
         return pi_dict.get(userid.upper(), None)
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
