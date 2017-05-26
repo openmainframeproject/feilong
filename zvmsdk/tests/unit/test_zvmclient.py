@@ -224,7 +224,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self.assertRaises(exception.ZVMNetworkError,
                           self._zvmclient._delete_host, 'fakenode')
 
-    @mock.patch('zvmsdk.client.XCATClient._image_performance_query')
+    @mock.patch('zvmsdk.client.XCATClient.image_performance_query')
     def test_get_image_performance_info(self, ipq):
         ipq.return_value = {
             u'FAKEVM': {
@@ -236,14 +236,14 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         info = self._zvmclient.get_image_performance_info('fakevm')
         self.assertEqual(info['used_memory'], '5222192 KB')
 
-    @mock.patch('zvmsdk.client.XCATClient._image_performance_query')
+    @mock.patch('zvmsdk.client.XCATClient.image_performance_query')
     def test_get_image_performance_info_not_exist(self, ipq):
         ipq.return_value = {}
         info = self._zvmclient.get_image_performance_info('fakevm')
         self.assertEqual(info, None)
 
     @mock.patch('zvmsdk.utils.xdsh')
-    def test_private_get_image_performance_info_single(self, dsh):
+    def test_image_performance_query_single(self, dsh):
         dsh.return_value = {
             'info': [], 'node': [], 'errorcode': [[u'0']],
             'data': [['zhcp2: Number of virtual server IDs: 1 \n'
@@ -269,7 +269,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
                       'zhcp2: Samples other: "337"\n'
                       'zhcp2: Samples total: "89184"\n'
                       'zhcp2: Guest name: "FAKEVM  "', None]], 'error': []}
-        pi_info = self._zvmclient._image_performance_query('fakevm')
+        pi_info = self._zvmclient.image_performance_query('fakevm')
         self.assertEqual(pi_info['FAKEVM']['used_memory'], "5222184 KB")
         self.assertEqual(pi_info['FAKEVM']['used_cpu_time'], "26238001893 uS")
         self.assertEqual(pi_info['FAKEVM']['guest_cpus'], "2")
@@ -277,7 +277,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self.assertEqual(pi_info['FAKEVM']['max_memory'], "8388608 KB")
 
     @mock.patch('zvmsdk.utils.xdsh')
-    def test_private_get_image_performance_info_multiple(self, dsh):
+    def test_image_performance_query_multiple(self, dsh):
         dsh.return_value = {
             'info': [], 'node': [], 'errorcode': [[u'0']],
             'data': [['zhcp2: Number of virtual server IDs: 2 \n'
@@ -326,7 +326,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
                       'zhcp2: Samples other: "337"\n'
                       'zhcp2: Samples total: "89184"\n'
                       'zhcp2: Guest name: "FAKEVM2 "\n', None]], 'error': []}
-        pi_info = self._zvmclient._image_performance_query(['fakevm',
+        pi_info = self._zvmclient.image_performance_query(['fakevm',
                                                             'fakevm2'])
         self.assertEqual(pi_info['FAKEVM']['used_memory'], "5222184 KB")
         self.assertEqual(pi_info['FAKEVM']['used_cpu_time'], "26238001893 uS")
@@ -340,24 +340,24 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self.assertEqual(pi_info['FAKEVM2']['max_memory'], "8388608 KB")
 
     @mock.patch('zvmsdk.utils.xdsh')
-    def test_private_get_image_performance_info_err1(self, dsh):
+    def test_image_performance_query_err1(self, dsh):
         dsh.return_value = {}
         self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
-                          self._zvmclient._image_performance_query, 'fakevm')
+                          self._zvmclient.image_performance_query, 'fakevm')
 
     @mock.patch('zvmsdk.utils.xdsh')
-    def test_private_get_image_performance_info_err2(self, dsh):
+    def test_image_performance_query_err2(self, dsh):
         dsh.return_value = {'data': [[]]}
         self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
-                          self._zvmclient._image_performance_query, 'fakevm')
+                          self._zvmclient.image_performance_query, 'fakevm')
 
     @mock.patch('zvmsdk.utils.xdsh')
-    def test_private_get_image_performance_info_err3(self, dsh):
+    def test_image_performance_query_err3(self, dsh):
         dsh.return_value = {
             'info': [], 'node': [], 'errorcode': [[u'0']],
             'data': [['zhcp2: Number of virtual server IDs: 1 ', None]],
             'error': []}
-        pi_info = self._zvmclient._image_performance_query('fakevm')
+        pi_info = self._zvmclient.image_performance_query('fakevm')
         self.assertEqual(pi_info, {})
 
     @mock.patch.object(zvmclient.XCATClient, '_add_switch_table_record')
