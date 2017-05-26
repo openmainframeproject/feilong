@@ -54,6 +54,7 @@ def host_list_guests(req):
 
 @wsgi_wrapper.SdkWsgify
 def host_get_info(req):
+    tokens.validate(req)
 
     def _host_get_info(name):
         action = get_action()
@@ -65,6 +66,7 @@ def host_get_info(req):
 
 @wsgi_wrapper.SdkWsgify
 def host_get_disk_info(req):
+    tokens.validate(req)
 
     def _host_get_disk_info(name, diskname):
         action = get_action()

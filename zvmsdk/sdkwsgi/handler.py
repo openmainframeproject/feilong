@@ -9,19 +9,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-"""Handlers for sdk API.
-
-Individual handlers are associated with URL paths in the
-ROUTE_DECLARATIONS dictionary. At the top level each key is a Routes
-compliant path. The value of that key is a dictionary mapping
-individual HTTP request methods to a Python function representing a
-simple WSGI application for satisfying that request.
-
-The ``make_map`` method processes ROUTE_DECLARATIONS to create a
-Routes.Mapper, including automatic handlers to respond with a
-405 when a request is made against a valid URL with an invalid
-method.
-"""
 
 import routes
 import webob
