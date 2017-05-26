@@ -779,3 +779,40 @@ def last_bytes(file_like_object, num):
 
     remaining = file_like_object.tell()
     return (file_like_object.read(), remaining)
+
+
+class MeteringCache(object):
+    """Cache for metering data."""
+    _CTYPES = ('cpumem', 'vnics')
+
+    def __init__(self):
+        self._reset()
+
+    def _reset(self):
+        for type in self._CTYPES:
+            self.cache[type]['expiredate'] = time.time()
+            self.cache[type]['data'] = {}
+
+    def set(self, ctype, data):
+        """Set or update cache content.
+
+        @ctype:    cache type.
+        @data:    cache data.
+        """
+        self.cache[ctype]['data'][data['userid']] = data
+
+    def get(self, ctype, userid):
+        if(time.time() > self.cache[ctype]['expiredate']):
+            return None
+        else:
+            return self.cache[ctype]['data'].get(userid, None)
+
+    def delete(self, ctype, userid):
+        if userid in self.cache[ctype]['data']:
+            del self.cache[ctype]['data'][userid]
+
+    def clear(self, ctype='all'):
+        if ctype == 'all':
+            self._reset()
+        else:
+            self.cache[ctype]['data'] = {}
