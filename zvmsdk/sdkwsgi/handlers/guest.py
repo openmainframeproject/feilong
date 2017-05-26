@@ -157,6 +157,10 @@ def guest_action(req):
     def _guest_action(uuid, req):
         action = get_action()
         data = util.extract_json(req.body)
+        if len(data) == 0:
+            LOG.info('action is empty')
+            raise webob.exc.HTTPBadRequest()
+
         for method, parm in data.items():
             func = getattr(action, method, None)
             if func:
