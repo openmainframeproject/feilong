@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "40b2f351_aef8bb26",
+        "filename": "zvmsdk/monitor.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-05-26T08:43:19Z",
+      "side": 1,
+      "message": "\u0027expiration\u0027 is better",
+      "range": {
+        "startLine": 27,
+        "startChar": 30,
+        "endLine": 27,
+        "endChar": 40
+      },
+      "revId": "3adf5b6ba6166daab2d521000d88d507c2285239",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "89b21ab1_3a618c9d",
+        "filename": "zvmsdk/monitor.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-05-26T08:43:19Z",
+      "side": 1,
+      "message": "add a line before:\nif ctype in self._CTYPES:",
+      "range": {
+        "startLine": 52,
+        "startChar": 12,
+        "endLine": 52,
+        "endChar": 42
+      },
+      "revId": "3adf5b6ba6166daab2d521000d88d507c2285239",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
