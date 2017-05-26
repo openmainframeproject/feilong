@@ -1090,11 +1090,13 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         xrequest.assert_called_once_with('DELETE', fake_url)
         delete_xcat_node.assert_called_once_with(fake_userid)
 
+    @mock.patch.object(zvmclient.XCATClient, '_clean_network_resource')
     @mock.patch.object(zvmclient.XCATClient, 'delete_userid')
-    def test_delete_vm(self, delete_userid):
+    def test_delete_vm(self, delete_userid, clean_net):
         fake_userid = 'fakeuser'
         self._zvmclient.delete_vm(fake_userid)
         delete_userid.assert_called_once_with(fake_userid)
+        clean_net.assert_called_once_with(fake_userid)
 
     @mock.patch.object(zvmclient.XCATClient, 'unlock_devices')
     @mock.patch.object(zvmclient.XCATClient, 'delete_userid')

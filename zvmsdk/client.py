@@ -306,7 +306,7 @@ class XCATClient(ZVMClient):
         res = zvmutils.xcat_request("POST", url, body)
         return res
 
-    def clean_network_resource(self, userid):
+    def _clean_network_resource(self, userid):
         """Clean node records in xCAT mac, host and switch table."""
         self._delete_mac(userid)
         self._delete_switch(userid)
@@ -954,8 +954,12 @@ class XCATClient(ZVMClient):
 
     def delete_vm(self, userid):
         """Delete z/VM userid for the instance.This will remove xCAT node
-        at same time.
+        and network resource info at same time.
         """
+        try:
+            self._clean_network_resource(userid)
+        except exception.ZVMNetworkError:
+            LOG.warning("Clean MAC and VSWITCH failed in delete_userid")
         try:
             self.delete_userid(userid)
         except exception.ZVMXCATInternalError as err:
