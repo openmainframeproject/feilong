@@ -13,19 +13,76 @@
 #    under the License.
 
 import time
+from zvmsdk import client as zvmclient
+from zvmsdk import config
+
+
+_MONITOR = None
+CONF = config.CONF
+
+
+def get_monitor():
+    global _MONITOR
+    if _MONITOR is None:
+        _MONITOR = ZVMMonitor()
+    return _MONITOR
+
+
+class ZVMMonitor(object):
+    """Monitor support for ZVM"""
+    _TYPES = ('cpumem', 'vnics')
+
+    def __init__(self):
+        self._cache = MeteringCache(self._TYPES)
+        self._zvmclient = zvmclient.get_zvmclient()
+
+    def inspect_cpus(self, uid_list):
+        return self._get_inspect_data('cpumem', uid_list)
+
+    def _cache_enabled(self):
+        return CONF.monitor.cache_interval > 0
+
+    def _get_inspect_data(self, type, uid_list):
+        inspect_data = {}
+        update_needed = False
+        for uid in uid_list:
+            cpu_data = self._cache.get(type, uid_list)
+            if not (cpu_data is None):
+                inspect_data[uid] = cpu_data
+            else:
+                update_needed = True
+                inspect_data = {}
+                break
+        # If all data are found in cache, just return
+        if not update_needed:
+            return inspect_data
+
+        # Call client to query latest data
+        if self._cache_enabled():
+            rdata = self._zvmclient.image_performance_query(
+                self._zvmclient.get_vm_list())
+            self._cache.refresh(type, rdata)
+        else:
+            rdata = self._zvmclient.image_performance_query(uid_list)
+        # construct and return final result
+        for uid in uid_list:
+            if uid.upper() in rdata:
+                inspect_data[uid] = rdata[uid]
+        return inspect_data
 
 
 class MeteringCache(object):
     """Cache for metering data."""
-    _CTYPES = ('cpumem', 'vnics')
 
-    def __init__(self):
-        self._reset()
+    def __init__(self, types):
+        self.cache = {}
+        self._reset(types)
 
-    def _reset(self):
-        for type in self._CTYPES:
-            self.cache[type]['expiration'] = time.time()
-            self.cache[type]['data'] = {}
+    def _reset(self, types):
+        for type in types:
+            self.cache[type] = {'expiration': time.time(),
+                                'data': {},
+                                }
 
     def set(self, ctype, data):
         """Set or update cache content.
@@ -49,5 +106,11 @@ class MeteringCache(object):
         if ctype == 'all':
             self._reset()
         else:
-            if ctype in self._CTYPES:
-                self.cache[ctype]['data'] = {}
+            self.cache[ctype]['data'] = {}
+
+    def refresh(self, ctype, data):
+        self.clear(ctype)
+        self.cache[ctype]['expiredate'] = (time.time() +
+                                           float(CONF.monitor.cache_interval))
+        for d in data:
+            self.set(ctype, d)
