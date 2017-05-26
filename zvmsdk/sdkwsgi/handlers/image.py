@@ -26,7 +26,7 @@ LOG = log.LOG
 
 class ImageAction(object):
     @validation.schema(image.create)
-    def create(self):
+    def create(self, body):
         LOG.info('import image')
 
     def get_root_disk_size(self, name):
