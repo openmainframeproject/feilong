@@ -317,6 +317,7 @@ class VswitchHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.list'
         with mock.patch(function) as list:
+            list.return_value = ''
             h(self.env, dummy)
 
             self.assertTrue(list.called)

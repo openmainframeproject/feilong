@@ -25,11 +25,17 @@ from zvmsdk.sdkwsgi import util
 FAKE_UUID = '00000000-0000-0000-0000-000000000000'
 
 
+class FakeResp(object):
+    def __init__(self):
+        self.body = {}
+
+
 class FakeReq(object):
     def __init__(self):
         self.headers = {}
         self.environ = {}
         self.__name__ = ''
+        self.response = FakeResp()
 
     def __getitem__(self, name):
         return self.headers
@@ -48,6 +54,7 @@ class HandlersGuestTest(unittest.TestCase):
     @mock.patch.object(vswitch.VswitchAction, 'list')
     def test_vswitch_list(self, mock_list):
 
+        mock_list.return_value = ''
         vswitch.vswitch_list(self.req)
         self.assertTrue(mock_list.called)
 
