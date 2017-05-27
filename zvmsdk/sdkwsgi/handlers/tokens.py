@@ -12,6 +12,7 @@
 """Handler for the root of the sdk API."""
 
 import datetime
+import functools
 import jwt
 import webob.exc
 
@@ -40,21 +41,27 @@ def create(req):
 
 # To validate the token, it is possible the token is expired or the
 # token is not validated at all
-def validate(req):
-    return
+def validate(function):
+    @functools.wraps(function)
+    def wrap_func(*args, **kwargs):
+        # FIXME
+        return function(*args, **kwargs)
 
-    if 'X-Auth-Token' not in req.headers:
-        LOG.debug('no X-Auth-Token given in reqeust header')
-        raise webob.exc.HTTPUnauthorized()
+        if 'X-Auth-Token' not in req.headers:
+            LOG.debug('no X-Auth-Token given in reqeust header')
+            raise webob.exc.HTTPUnauthorized()
 
-    try:
-        jwt.decode(req.headers['X-Auth-Token'], 'username')
-    except jwt.ExpiredSignatureError:
-        LOG.debug('token validation failed because it is expired')
-        raise webob.exc.HTTPUnauthorized()
-    except jwt.DecodeError:
-        LOG.debug('token not valid')
-        raise webob.exc.HTTPUnauthorized()
-    except Exception:
-        LOG.debug('unknown exception occur during token validation')
-        raise webob.exc.HTTPUnauthorized()
+        try:
+            jwt.decode(req.headers['X-Auth-Token'], 'username')
+        except jwt.ExpiredSignatureError:
+            LOG.debug('token validation failed because it is expired')
+            raise webob.exc.HTTPUnauthorized()
+        except jwt.DecodeError:
+            LOG.debug('token not valid')
+            raise webob.exc.HTTPUnauthorized()
+        except Exception:
+            LOG.debug('unknown exception occur during token validation')
+            raise webob.exc.HTTPUnauthorized()
+
+        return function(*args, **kwargs)
+    return wrap_func

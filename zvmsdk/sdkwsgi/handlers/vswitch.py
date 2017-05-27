@@ -41,9 +41,8 @@ def get_action():
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def vswitch_list(req):
-    tokens.validate(req)
-
     def _vswitch_list(req):
         action = get_action()
         action.list()
@@ -52,8 +51,8 @@ def vswitch_list(req):
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def vswitch_create(req):
-    tokens.validate(req)
 
     def _vswitch_create(req):
         action = get_action()

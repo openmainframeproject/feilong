@@ -41,8 +41,8 @@ def get_action():
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def image_create(req):
-    tokens.validate(req)
 
     def _image_create(req):
         action = get_action()
@@ -53,8 +53,8 @@ def image_create(req):
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def image_get_root_disk_size(req):
-    tokens.validate(req)
 
     def _image_get_root_disk_size(name):
         action = get_action()

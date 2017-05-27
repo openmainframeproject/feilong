@@ -103,8 +103,8 @@ def get_handler():
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def guest_list(req):
-    tokens.validate(req)
 
     def _guest_list(req):
         action = get_handler()
@@ -114,8 +114,8 @@ def guest_list(req):
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def guest_get_info(req):
-    tokens.validate(req)
 
     def _guest_get_info(uuid):
         action = get_handler()
@@ -126,8 +126,8 @@ def guest_get_info(req):
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def guest_get_power_state(req):
-    tokens.validate(req)
 
     def _guest_get_power_state(uuid):
         action = get_handler()
@@ -138,8 +138,8 @@ def guest_get_power_state(req):
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def guest_create(req):
-    tokens.validate(req)
 
     def _guest_create(req):
         action = get_handler()
@@ -151,8 +151,8 @@ def guest_create(req):
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def guest_action(req):
-    tokens.validate(req)
 
     def _guest_action(uuid, req):
         action = get_action()
@@ -186,8 +186,8 @@ def guest_delete(req):
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def guest_get_nic_info(req):
-    tokens.validate(req)
 
     def _guest_get_nic_info(uuid):
         action = get_handler()
@@ -198,8 +198,8 @@ def guest_get_nic_info(req):
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def guest_create_nic(req):
-    tokens.validate(req)
 
     def _guest_create_nic(uuid, req):
         action = get_handler()
@@ -212,8 +212,8 @@ def guest_create_nic(req):
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def guest_couple_uncouple_nic(req):
-    tokens.validate(req)
 
     def _guest_couple_uncouple_nic(uuid, req):
         action = get_handler()
