@@ -31,7 +31,6 @@ ROUTE_DECLARATIONS = {
         'GET': root.home,
     },
     '/guest': {
-        'GET': guest.guest_list,
         'POST': guest.guest_create,
     },
     '/guest/{uuid}': {

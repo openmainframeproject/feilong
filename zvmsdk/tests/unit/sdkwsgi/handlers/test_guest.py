@@ -31,6 +31,7 @@ class FakeReq(object):
     def __init__(self):
         self.headers = {}
         self.environ = {}
+        self.__name__ = ''
 
     def __getitem__(self, name):
         return self.headers
@@ -91,12 +92,6 @@ class GuestActionsTest(SDKWSGITest):
 
 
 class HandlersGuestTest(SDKWSGITest):
-
-    @mock.patch.object(guest.VMHandler, 'list')
-    def test_guest_list(self, mock_list):
-
-        guest.guest_list(self.req)
-        self.assertTrue(mock_list.called)
 
     @mock.patch.object(guest.VMHandler, 'create')
     def test_guest_create(self, mock_create):

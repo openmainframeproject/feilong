@@ -11,9 +11,9 @@
 #    under the License.
 """Handler for the root of the sdk API."""
 
+from zvmsdk import api
 from zvmsdk import config
 from zvmsdk import log
-from zvmsdk import api
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi import wsgi_wrapper
@@ -29,12 +29,15 @@ class HostAction(object):
         self.api = api.SDKAPI()
 
     def list(self):
-        LOG.info('list guest for a host')
+        LOG.info('list guest')
+        guests = self.api.host_list_guests()
+
+        LOG.info('get guests %s', guests)
 
     def get_info(self):
         LOG.info('get host info')
         info = self.api.host_get_info()
-        LOG.info('get host info', info)
+        LOG.info('get host info %s', info)
 
     def get_disk_info(self, diskname):
         LOG.info('get host disk info')
@@ -50,8 +53,8 @@ def get_action():
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def host_list_guests(req):
-    tokens.validate(req)
 
     def _host_list_guests():
         action = get_action()
@@ -61,8 +64,8 @@ def host_list_guests(req):
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def host_get_info(req):
-    tokens.validate(req)
 
     def _host_get_info():
         action = get_action()
@@ -72,8 +75,8 @@ def host_get_info(req):
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def host_get_disk_info(req):
-    tokens.validate(req)
 
     def _host_get_disk_info(diskname):
         action = get_action()
