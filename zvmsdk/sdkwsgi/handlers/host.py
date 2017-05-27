@@ -28,15 +28,15 @@ class HostAction(object):
     def __init__(self):
         self.api = api.SDKAPI()
 
-    def list(self, name):
+    def list(self):
         LOG.info('list guest for a host')
 
-    def get_info(self, name):
-        LOG.info('get host info for name %s', name)
+    def get_info(self):
+        LOG.info('get host info')
         info = self.api.host_get_info()
         LOG.info('get host info', info)
 
-    def get_disk_info(self, name, diskname):
+    def get_disk_info(self, diskname):
         LOG.info('get host disk info')
         info = self.api.host_diskpool_get_info(disk_pool=diskname)
         LOG.info('get disk info %s', info)
@@ -53,35 +53,32 @@ def get_action():
 def host_list_guests(req):
     tokens.validate(req)
 
-    def _host_list_guests(name):
+    def _host_list_guests():
         action = get_action()
-        action.list(name)
+        action.list()
 
-    name = util.wsgi_path_item(req.environ, 'name')
-    _host_list_guests(name)
+    _host_list_guests()
 
 
 @wsgi_wrapper.SdkWsgify
 def host_get_info(req):
     tokens.validate(req)
 
-    def _host_get_info(name):
+    def _host_get_info():
         action = get_action()
-        action.get_info(name)
+        action.get_info()
 
-    name = util.wsgi_path_item(req.environ, 'name')
-    _host_get_info(name)
+    _host_get_info()
 
 
 @wsgi_wrapper.SdkWsgify
 def host_get_disk_info(req):
     tokens.validate(req)
 
-    def _host_get_disk_info(name, diskname):
+    def _host_get_disk_info(diskname):
         action = get_action()
-        action.get_disk_info(name, diskname)
+        action.get_disk_info(diskname)
 
-    name = util.wsgi_path_item(req.environ, 'name')
     diskname = util.wsgi_path_item(req.environ, 'disk')
 
-    _host_get_disk_info(name, diskname)
+    _host_get_disk_info(diskname)

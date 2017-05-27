@@ -237,28 +237,28 @@ class HostHandlerNegativeTest(unittest.TestCase):
         self.env = env
 
     def test_host_get_resource_invalid(self):
-        self.env['PATH_INFO'] = '/host'
+        self.env['PATH_INFO'] = '/host1'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         self.assertRaises(webob.exc.HTTPNotFound,
                           h, self.env, dummy)
 
     def test_host_put_method_invalid(self):
-        self.env['PATH_INFO'] = '/host/host1'
+        self.env['PATH_INFO'] = '/host'
         self.env['REQUEST_METHOD'] = 'PUT'
         h = handler.SdkHandler()
         self.assertRaises(webob.exc.HTTPMethodNotAllowed,
                           h, self.env, dummy)
 
     def test_host_get_info_invalid(self):
-        self.env['PATH_INFO'] = '/host/host1/inf'
+        self.env['PATH_INFO'] = '/host/inf'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         self.assertRaises(webob.exc.HTTPNotFound,
                           h, self.env, dummy)
 
     def test_host_get_disk_size_invalid(self):
-        self.env['PATH_INFO'] = '/host/host1/disk_inf/d1'
+        self.env['PATH_INFO'] = '/host/disk_inf/d1'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         self.assertRaises(webob.exc.HTTPNotFound,
@@ -272,36 +272,36 @@ class HostHandlerTest(unittest.TestCase):
 
     @mock.patch.object(tokens, 'validate')
     def test_host_list(self, mock_validate):
-        self.env['PATH_INFO'] = '/host/host1'
+        self.env['PATH_INFO'] = '/host'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.list'
         with mock.patch(function) as list:
             h(self.env, dummy)
 
-            list.assert_called_once_with('host1')
+            self.assertTrue(list.called)
 
     @mock.patch.object(tokens, 'validate')
     def test_host_get_info(self, mock_validate):
-        self.env['PATH_INFO'] = '/host/host1/info'
+        self.env['PATH_INFO'] = '/host/info'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.get_info'
         with mock.patch(function) as get_info:
             h(self.env, dummy)
 
-            get_info.assert_called_once_with('host1')
+            self.assertTrue(get_info.called)
 
     @mock.patch.object(tokens, 'validate')
     def test_host_get_disk_info(self, mock_validate):
-        self.env['PATH_INFO'] = '/host/host1/disk_info/disk1'
+        self.env['PATH_INFO'] = '/host/disk_info/disk1'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.get_disk_info'
         with mock.patch(function) as get_disk_info:
             h(self.env, dummy)
 
-            get_disk_info.assert_called_once_with('host1', 'disk1')
+            get_disk_info.assert_called_once_with('disk1')
 
 
 class VswitchHandlerNegativeTest(unittest.TestCase):

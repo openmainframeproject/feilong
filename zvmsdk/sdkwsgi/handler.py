@@ -51,13 +51,13 @@ ROUTE_DECLARATIONS = {
     '/guest/{uuid}/action': {
         'POST': guest.guest_action,
     },
-    '/host/{name}': {
+    '/host': {
         'GET': host.host_list_guests,
     },
-    '/host/{name}/info': {
+    '/host/info': {
         'GET': host.host_get_info,
     },
-    '/host/{name}/disk_info/{disk}': {
+    '/host/disk_info/{disk}': {
         'GET': host.host_get_disk_info,
     },
     '/image': {
