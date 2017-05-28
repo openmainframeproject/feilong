@@ -62,6 +62,9 @@ ROUTE_DECLARATIONS = {
     '/image': {
         'POST': image.image_create,
     },
+    '/image/{name}': {
+        'DELETE': image.image_delete,
+    },
     '/image/{name}/root_disk_size': {
         'GET': image.image_get_root_disk_size,
     },

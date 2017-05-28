@@ -219,6 +219,19 @@ class ImageHandlerTest(unittest.TestCase):
 
             self.assertTrue(create.called)
 
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_image_delete(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/image/image1'
+        self.env['REQUEST_METHOD'] = 'DELETE'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.image.ImageAction.delete'
+        with mock.patch(function) as delete:
+            h(self.env, dummy)
+
+            delete.assert_called_once_with('image1')
+
 
 class HostHandlerNegativeTest(unittest.TestCase):
 
