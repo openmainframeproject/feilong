@@ -269,7 +269,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                                                       update_cpumem_data,
                                                       get_ps, cache_get):
         cache_get.return_value = None
-        get_ps.side_effect = exception.ZVMVirtualMachineNotExist(msg='msg')
+        get_ps.side_effect = exception.ZVMVirtualMachineNotExist(
+            userid='userid1', zvm_host='dummy')
         rdata = self._monitor._get_inspect_data('cpumem',
                                                 ['userid1'])
         get_ps.assert_called_once_with('userid1')
