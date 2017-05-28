@@ -10,24 +10,29 @@
 
 import unittest
 
+from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
 
 
 class HostTestCase(unittest.TestCase):
     def __init__(self, methodName='runTest'):
         super(HostTestCase, self).__init__(methodName)
+        self.apibase = api_sample.APITestBase()
 
     def setUp(self):
         self.client = test_sdkwsgi.TestSDKClient()
 
-    def test_host_list(self):
-        resp = self.client.api_request(url='/host')
+    def test_host_list_guests(self):
+        resp = self.client.api_request(url='/host/guests')
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_host_list_guests', resp.content)
 
     def test_host_info(self):
         resp = self.client.api_request(url='/host/info')
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_host_info', resp.content)
 
     def test_host_disk_info(self):
         resp = self.client.api_request(url='/host/disk_info/ECKD:xcateckd')
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_host_disk_info', resp.content)

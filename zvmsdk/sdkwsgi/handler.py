@@ -50,7 +50,7 @@ ROUTE_DECLARATIONS = {
     '/guest/{uuid}/action': {
         'POST': guest.guest_action,
     },
-    '/host': {
+    '/host/guests': {
         'GET': host.host_list_guests,
     },
     '/host/info': {

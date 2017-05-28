@@ -11,12 +11,16 @@
 #    under the License.
 """Handler for the root of the sdk API."""
 
+import json
+
 from zvmsdk import api
 from zvmsdk import config
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi import wsgi_wrapper
+from zvmsdk import utils
+
 
 _HOSTACTION = None
 CONF = config.CONF
@@ -29,20 +33,16 @@ class HostAction(object):
         self.api = api.SDKAPI()
 
     def list(self):
-        LOG.info('list guest')
         guests = self.api.host_list_guests()
-
-        LOG.info('get guests %s', guests)
+        return guests
 
     def get_info(self):
-        LOG.info('get host info')
         info = self.api.host_get_info()
-        LOG.info('get host info %s', info)
+        return info
 
     def get_disk_info(self, diskname):
-        LOG.info('get host disk info')
         info = self.api.host_diskpool_get_info(disk_pool=diskname)
-        LOG.info('get disk info %s', info)
+        return info
 
 
 def get_action():
@@ -55,12 +55,15 @@ def get_action():
 @wsgi_wrapper.SdkWsgify
 @tokens.validate
 def host_list_guests(req):
-
     def _host_list_guests():
         action = get_action()
-        action.list()
+        return action.list()
 
-    _host_list_guests()
+    info = _host_list_guests()
+    info_json = json.dumps({'guests': info})
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
@@ -69,9 +72,13 @@ def host_get_info(req):
 
     def _host_get_info():
         action = get_action()
-        action.get_info()
+        return action.get_info()
 
-    _host_get_info()
+    info = _host_get_info()
+    info_json = json.dumps({'host': info})
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
@@ -80,8 +87,12 @@ def host_get_disk_info(req):
 
     def _host_get_disk_info(diskname):
         action = get_action()
-        action.get_disk_info(diskname)
+        return action.get_disk_info(diskname)
 
     diskname = util.wsgi_path_item(req.environ, 'disk')
 
-    _host_get_disk_info(diskname)
+    info = _host_get_disk_info(diskname)
+    info_json = json.dumps({'disk_info': info})
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response

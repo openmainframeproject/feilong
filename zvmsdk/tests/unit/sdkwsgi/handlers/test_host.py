@@ -20,11 +20,17 @@ import unittest
 from zvmsdk.sdkwsgi.handlers import host
 
 
+class FakeResp(object):
+    def __init__(self):
+        self.body = {}
+
+
 class FakeReq(object):
     def __init__(self):
         self.headers = {}
         self.environ = {}
         self.__name__ = ''
+        self.response = FakeResp()
 
     def __getitem__(self, name):
         return self.headers
@@ -43,17 +49,20 @@ class HandlersGuestTest(unittest.TestCase):
     @mock.patch.object(host.HostAction, 'list')
     def test_host_list(self, mock_list):
 
+        mock_list.return_value = ''
         host.host_list_guests(self.req)
         self.assertTrue(mock_list.called)
 
     @mock.patch.object(host.HostAction, 'get_info')
     def test_host_get_info(self, mock_get_info):
 
+        mock_get_info.return_value = ''
         host.host_get_info(self.req)
         self.assertTrue(mock_get_info.called)
 
     @mock.patch.object(host.HostAction, 'get_disk_info')
     def test_host_get_disk_info(self, mock_get_disk_info):
 
+        mock_get_disk_info.return_value = ''
         host.host_get_disk_info(self.req)
         self.assertTrue(mock_get_disk_info.called)

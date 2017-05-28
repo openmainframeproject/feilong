@@ -34,7 +34,6 @@ class VswitchAction(object):
         self.api = api.SDKAPI()
 
     def list(self):
-        LOG.info('list vswitchs')
         info = self.api.vswitch_get_list()
 
         return info

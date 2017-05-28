@@ -208,7 +208,7 @@ class ImageHandlerTest(unittest.TestCase):
 
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
     @mock.patch.object(tokens, 'validate')
-    def test_vswitch_create(self, mock_validate, mock_json):
+    def test_image_create(self, mock_validate, mock_json):
         mock_json.return_value = {}
         self.env['PATH_INFO'] = '/image'
         self.env['REQUEST_METHOD'] = 'POST'
@@ -233,7 +233,7 @@ class HostHandlerNegativeTest(unittest.TestCase):
                           h, self.env, dummy)
 
     def test_host_put_method_invalid(self):
-        self.env['PATH_INFO'] = '/host'
+        self.env['PATH_INFO'] = '/host/guests'
         self.env['REQUEST_METHOD'] = 'PUT'
         h = handler.SdkHandler()
         self.assertRaises(webob.exc.HTTPMethodNotAllowed,
@@ -261,11 +261,12 @@ class HostHandlerTest(unittest.TestCase):
 
     @mock.patch.object(tokens, 'validate')
     def test_host_list(self, mock_validate):
-        self.env['PATH_INFO'] = '/host'
+        self.env['PATH_INFO'] = '/host/guests'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.list'
         with mock.patch(function) as list:
+            list.return_value = ''
             h(self.env, dummy)
 
             self.assertTrue(list.called)
@@ -277,6 +278,7 @@ class HostHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.get_info'
         with mock.patch(function) as get_info:
+            get_info.return_value = ''
             h(self.env, dummy)
 
             self.assertTrue(get_info.called)
@@ -288,6 +290,7 @@ class HostHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.get_disk_info'
         with mock.patch(function) as get_disk_info:
+            get_disk_info.return_value = ''
             h(self.env, dummy)
 
             get_disk_info.assert_called_once_with('disk1')
