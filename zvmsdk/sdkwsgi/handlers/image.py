@@ -32,6 +32,12 @@ class ImageAction(object):
     def get_root_disk_size(self, name):
         LOG.info('get root disk size')
 
+    def delete(self, name):
+        LOG.info('image delete')
+
+    def query(self, key):
+        LOG.info('image query')
+
 
 def get_action():
     global _IMAGEACTION
@@ -62,3 +68,15 @@ def image_get_root_disk_size(req):
 
     name = util.wsgi_path_item(req.environ, 'name')
     _image_get_root_disk_size(name)
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def image_delete(req):
+
+    def _image_delete(name):
+        action = get_action()
+        action.delete(name)
+
+    name = util.wsgi_path_item(req.environ, 'name')
+    _image_delete(name)
