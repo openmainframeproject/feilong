@@ -163,8 +163,8 @@ def guest_action(req):
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def guest_delete(req):
-    tokens.validate(req)
 
     def _guest_delete(uuid):
         action = get_handler()
