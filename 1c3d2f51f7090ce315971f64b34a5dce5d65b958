@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "71864f1a_2305f0e3",
+        "filename": "zvmsdk/monitor.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-31T03:02:25Z",
+      "side": 1,
+      "message": "I am not sure whether we added ut for this logic\nif we don\u0027t , I guess we need it because this logic is a little bit complicated",
+      "range": {
+        "startLine": 45,
+        "startChar": 4,
+        "endLine": 71,
+        "endChar": 27
+      },
+      "revId": "1c3d2f51f7090ce315971f64b34a5dce5d65b958",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
