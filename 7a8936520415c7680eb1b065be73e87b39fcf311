@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a9cd7e96_6ac3f02e",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-05-31T05:52:32Z",
+      "side": 1,
+      "message": "I don\u0027t fully know what\u0027s done below those\n\nwill it in turn call DIRMAINT several times? can we consider to decrease it as less as possible?",
+      "range": {
+        "startLine": 128,
+        "startChar": 12,
+        "endLine": 133,
+        "endChar": 64
+      },
+      "revId": "7a8936520415c7680eb1b065be73e87b39fcf311",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
