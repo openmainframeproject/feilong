@@ -16,7 +16,6 @@
 import mock
 import zvmsdk.client as zvmclient
 import zvmsdk.utils as zvmutils
-import zvmsdk.constants as const
 
 from zvmsdk.config import CONF
 from zvmsdk import exception
@@ -54,63 +53,28 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.guest_start('cbi00063')
         power_state.assert_called_once_with('cbi00063', 'PUT', 'on')
 
-    @mock.patch('zvmsdk.imageops.ImageOps.image_get_root_disk_size')
-    @mock.patch('zvmsdk.vmops.VMOps.set_ipl')
-    @mock.patch('zvmsdk.vmops.VMOps.add_mdisk')
-    @mock.patch.object(zvmutils, 'xcat_request')
-    def test_guest_create(self, xrequest, add_mdisk, set_ipl, get_root_size):
-        url = "/xcatws/vms/cbi00063?userName=" + CONF.xcat.username +\
-                "&password=" + CONF.xcat.password +\
-                "&format=json"
-        body = ['profile=%s' % const.ZVM_USER_PROFILE,
-                'password=%s' % CONF.zvm.user_default_password,
-                'cpu=1', 'memory=1024m',
-                'privilege=G', 'ipl=0100']
-        self.vmops.guest_create('cbi00063', 1, 1024, 3338, [])
-        xrequest.assert_called_once_with('POST', url, body)
-        add_mdisk.assert_called_once_with('cbi00063', CONF.zvm.diskpool,
-                                          CONF.zvm.user_root_vdev,
-                                          3338)
-        set_ipl.assert_called_once_with('cbi00063', CONF.zvm.user_root_vdev)
+    @mock.patch.object(zvmclient.XCATClient, 'create_vm')
+    def test_create_vm(self, create_vm):
+        userid = 'fakeuser'
+        cpu = 2
+        memory = '2g'
+        disk_list = []
+        user_profile = 'testprof'
+        self.vmops.create_vm(userid, cpu, memory, disk_list, user_profile)
+        create_vm.assert_called_once_with(userid, cpu, memory, disk_list,
+                                          user_profile)
 
-    @mock.patch('zvmsdk.client.XCATClient.generate_eph_vdev')
+    @mock.patch('zvmsdk.client.XCATClient.generate_disk_vdev')
     @mock.patch('zvmsdk.client.XCATClient.process_eph_disk')
     def test_process_additional_disks(self, process_eph_disk,
-                                      generate_vdev):
+                                      generate_disk_vdev):
         fake_eph_list = [{'size': 1, 'format': 'ext3'}]
         fake_instance = 'inst001'
         mount_dir = '/mnt/ephemeral/'
-        generate_vdev.return_value = '0111'
+        generate_disk_vdev.return_value = '0111'
         self.vmops.process_additional_disks(fake_instance, fake_eph_list)
         process_eph_disk.assert_called_with(fake_instance, '0111', 'ext3',
                                             mount_dir + '0')
-
-    @mock.patch.object(zvmutils, 'xcat_request')
-    def test_add_mdisk(self, xrequest):
-        # TODO
-        url = "/xcatws/vms/cbi00063?" + \
-                "userName=" + CONF.xcat.username +\
-                "&password=" + CONF.xcat.password + "&format=json"
-        body_str = '--add3390 ' + CONF.zvm.diskpool + ' 0100 3338'
-        body = []
-        body.append(body_str)
-        self.vmops.add_mdisk('cbi00063', CONF.zvm.diskpool,
-                                          CONF.zvm.user_root_vdev,
-                                          CONF.zvm.root_disk_units)
-        xrequest.assert_called_once_with('PUT', url, body)
-
-    @mock.patch.object(zvmutils, 'xcat_request')
-    def test_set_ipl(self, xrequest):
-        # TODO
-        url = "/xcatws/vms/cbi00063?userName=" + CONF.xcat.username +\
-                "&password=" + CONF.xcat.password + "&format=json"
-        # TODO
-        body = ['--setipl 0100']
-        self.vmops.set_ipl('cbi00063', CONF.zvm.user_root_vdev)
-        xrequest.assert_called_once_with('PUT', url, body)
-
-    def test_create_vm(self):
-        pass
 
     @mock.patch('zvmsdk.client.XCATClient.get_power_state')
     def test_is_powered_off(self, check_stat):
