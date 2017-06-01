@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "874183cc_c990ddc7",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-01T08:14:09Z",
+      "side": 1,
+      "message": "this disk_list at least contains one value or can be []?\n\nI have to change rest API again :(",
+      "range": {
+        "startLine": 143,
+        "startChar": 9,
+        "endLine": 144,
+        "endChar": 40
+      },
+      "revId": "a752215e3d0e4dd7f804f661c76bf2d022ed4b61",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f9f0ec02_2a358bdc",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-01T08:14:09Z",
+      "side": 1,
+      "message": "you can do this now, but I suggest you take a look at our existing driver which deprecated the password",
+      "range": {
+        "startLine": 255,
+        "startChar": 32,
+        "endLine": 255,
+        "endChar": 63
+      },
+      "revId": "a752215e3d0e4dd7f804f661c76bf2d022ed4b61",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b5c0ed0a_94ce357b",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-01T08:14:09Z",
+      "side": 1,
+      "message": "yes, this is exactly what I want\nwe need talk to Steve G on this requirement..",
+      "range": {
+        "startLine": 264,
+        "startChar": 8,
+        "endLine": 265,
+        "endChar": 44
+      },
+      "revId": "a752215e3d0e4dd7f804f661c76bf2d022ed4b61",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "eb1a0b52_a3738f37",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-01T08:14:09Z",
+      "side": 1,
+      "message": "will this also support swap now?",
+      "range": {
+        "startLine": 284,
+        "startChar": 1,
+        "endLine": 286,
+        "endChar": 47
+      },
+      "revId": "a752215e3d0e4dd7f804f661c76bf2d022ed4b61",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
