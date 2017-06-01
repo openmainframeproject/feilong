@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c2f8276b_7d52eeb5",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-06-01T08:51:10Z",
+      "side": 1,
+      "message": "It can be [] to support boot from volume, in that case, we don\u0027t need to create disks.",
+      "parentUuid": "874183cc_c990ddc7",
+      "range": {
+        "startLine": 143,
+        "startChar": 9,
+        "endLine": 144,
+        "endChar": 40
+      },
+      "revId": "a752215e3d0e4dd7f804f661c76bf2d022ed4b61",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9f0ec02_2a358bdc",
         "filename": "zvmsdk/client.py",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2017-06-01T08:14:09Z",
       "side": 1,
       "message": "you can do this now, but I suggest you take a look at our existing driver which deprecated the password",
+      "range": {
+        "startLine": 255,
+        "startChar": 32,
+        "endLine": 255,
+        "endChar": 63
+      },
+      "revId": "a752215e3d0e4dd7f804f661c76bf2d022ed4b61",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6f0980c5_566f21df",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-06-01T08:51:10Z",
+      "side": 1,
+      "message": "OK，will change it",
+      "parentUuid": "f9f0ec02_2a358bdc",
       "range": {
         "startLine": 255,
         "startChar": 32,
@@ -82,6 +130,30 @@
       "writtenOn": "2017-06-01T08:14:09Z",
       "side": 1,
       "message": "will this also support swap now?",
+      "range": {
+        "startLine": 284,
+        "startChar": 1,
+        "endLine": 286,
+        "endChar": 47
+      },
+      "revId": "a752215e3d0e4dd7f804f661c76bf2d022ed4b61",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fb277e09_00c20617",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 286,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-06-01T08:51:10Z",
+      "side": 1,
+      "message": "How do you add mdisk for swap? Add as a normal mdisk(eg 103)? Do you format it? I can\u0027t find the code in driver",
+      "parentUuid": "eb1a0b52_a3738f37",
       "range": {
         "startLine": 284,
         "startChar": 1,
