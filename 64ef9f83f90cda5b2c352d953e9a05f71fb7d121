@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e250a264_ff85f778",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-01T08:23:34Z",
+      "side": 1,
+      "message": "seems we allow {} to be input here\nthis is important info for user consumed API",
+      "range": {
+        "startLine": 267,
+        "startChar": 33,
+        "endLine": 267,
+        "endChar": 58
+      },
+      "revId": "64ef9f83f90cda5b2c352d953e9a05f71fb7d121",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ac23c700_17ead391",
+        "filename": "zvmsdk/monitor.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-01T08:23:34Z",
+      "side": 1,
+      "message": "looks like you want exactly same result from xcat and new ultrathin layer, we can guarantee that?",
+      "revId": "64ef9f83f90cda5b2c352d953e9a05f71fb7d121",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "782efc7f_f4453943",
+        "filename": "zvmsdk/monitor.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-01T08:23:34Z",
+      "side": 1,
+      "message": "don\u0027t fully understand, uid is uuid, why upper ?",
+      "range": {
+        "startLine": 47,
+        "startChar": 12,
+        "endLine": 47,
+        "endChar": 29
+      },
+      "revId": "64ef9f83f90cda5b2c352d953e9a05f71fb7d121",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4c52a942_c91ada1c",
+        "filename": "zvmsdk/monitor.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-01T08:23:34Z",
+      "side": 1,
+      "message": "forgive me if my understand is incorrect\nthis cache is to store some data like cpu count/cpu time etc? we are sure it\u0027s always accurate?",
+      "range": {
+        "startLine": 78,
+        "startChar": 16,
+        "endLine": 78,
+        "endChar": 54
+      },
+      "revId": "64ef9f83f90cda5b2c352d953e9a05f71fb7d121",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
