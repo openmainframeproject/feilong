@@ -140,19 +140,37 @@ class SDKAPI(object):
         """
         self._imageops.image_import(image_file_path, os_version)
 
-    def guest_create(self, userid, vcpus, memory, root_disk_size, eph_disks):
+    def guest_create(self, userid, vcpus, memory, disk_list=[],
+                     user_profile=None):
         """create a vm in z/VM
 
-        :param userid:the userid of the vm to be created
-        :param vcpus: amount of vcpus
-        :param memory: size of memory
-        :param root_disk_size: the size of root minidisk, the value would be
-        a string eg. '1g', '1024m' or a just a integer value eg. 3338
-        :param eph_disks:
+        :param str userid:the userid of the vm to be created
+        :param int vcpus: amount of vcpus
+        :param int memory: size of memory
+        :param dict disk_list: a list of disks info for the guest, it contains
+               one dictionary that contain some of the below keys for each
+               disk, the root disk should be the first element in the list.
+               {'size': str,
+               'format': str,
+               'is_boot_disk': bool,
+               'disk_pool': str}
+
+               For example:
+               [{'size': '1g',
+               'is_boot_disk': True,
+               'disk_pool': 'ECKD:eckdpool1'},
+               {'size': '200000',
+               'disk_pool': 'FBA:fbapool1',
+               'format': 'ext3'}]
+               In this case it will create one disk 0100(in case the vdev
+               for root disk is 0100) with size 1g from ECKD disk pool
+               eckdpool1 for guest , then set IPL 0100 in guest's user
+               directory, and it will create 0101 with 200000 blocks from
+               FBA disk pool fbapool1, and formated with ext3.
+        :param user_profile: the profile for the guest
 
         """
-        self._vmops.guest_create(userid, vcpus, memory,
-                                 root_disk_size, eph_disks)
+        self._vmops.create_vm(userid, vcpus, memory, disk_list, user_profile)
 
     def image_get_root_disk_size(self, image_file_name):
         """Get the root disk size of the image
