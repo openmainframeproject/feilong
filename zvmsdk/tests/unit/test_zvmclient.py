@@ -514,9 +514,6 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         # TODO:moving to vmops and change name to ''
         pass
 
-    def test_guest_create(self):
-        pass
-
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_create_xcat_node(self, xrequest):
         fake_userid = 'userid'
@@ -1168,3 +1165,53 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         tarfile_open.assert_called_once_with(spawn_path +
                                              '/tmp_date_dir_test.tar',
                                              mode='w')
+
+    @mock.patch.object(zvmclient.XCATClient, 'add_mdisks')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    @mock.patch.object(zvmclient.XCATClient, 'prepare_for_spawn')
+    def test_create_vm(self, prepare_for_spawn, xrequest, add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '1g',
+                      'is_boot_disk': True,
+                      'disk_pool': 'ECKD:eckdpool1'}]
+        profile = 'dfltprof'
+        url = "/xcatws/vms/fakeuser?userName=" + CONF.xcat.username +\
+            "&password=" + CONF.xcat.password +\
+            "&format=json"
+        body = ['profile=dfltprof', 'cpu=2', 'memory=1024m',
+                'privilege=G', 'password=LBYONLY', 'ipl=0100']
+        self._zvmclient.create_vm(user_id, cpu, memory, disk_list, profile)
+        prepare_for_spawn.assert_called_once_with(user_id)
+        xrequest.assert_called_once_with('POST', url, body)
+        add_mdisks.assert_called_once_with(user_id, disk_list)
+
+    @mock.patch.object(zvmclient.XCATClient, '_add_mdisk')
+    def test_add_mdisks(self, add_mdisk):
+        userid = 'fakeuser'
+        disk_list = [{'size': '1g',
+                      'is_boot_disk': True,
+                      'disk_pool': 'ECKD:eckdpool1'},
+                     {'size': '200000',
+                      'disk_pool': 'FBA:fbapool1',
+                      'format': 'ext3'}]
+        self._zvmclient.add_mdisks(userid, disk_list)
+        add_mdisk.assert_any_call(userid, disk_list[0], '0100')
+        add_mdisk.assert_any_call(userid, disk_list[1], '0101')
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_add_mdisk(self, xrequest):
+        userid = 'fakeuser'
+        disk = {'size': '1g',
+                'disk_pool': 'ECKD:eckdpool1',
+                'format': 'ext3'}
+        vdev = '0101'
+        url = "/xcatws/vms/fakeuser?" + \
+            "userName=" + CONF.xcat.username +\
+            "&password=" + CONF.xcat.password + "&format=json"
+        body = [" ".join(['--add3390', 'eckdpool1', vdev, '1g', "MR", "''",
+                "''", "''", 'ext3'])]
+
+        self._zvmclient._add_mdisk(userid, disk, vdev),
+        xrequest.assert_called_once_with('PUT', url, body)

@@ -246,16 +246,83 @@ class XCATClient(ZVMClient):
         res_dict = zvmutils.xcat_request("GET", url)
         return res_dict
 
-    def guest_create(self, userid, kwprofile, cpu, memory):
-        body = [kwprofile,
-                'password=%s' % CONF.zvm.user_default_password,
+    def create_vm(self, userid, cpu, memory, disk_list, profile):
+        # Create node for the vm
+        self.prepare_for_spawn(userid)
+        profile = 'profile=%s' % profile or CONF.zvm.user_profile
+
+        body = [profile,
                 'cpu=%i' % cpu,
                 'memory=%im' % memory,
-                'privilege=%s' % const.ZVM_USER_DEFAULT_PRIVILEGE,
-                'ipl=%s' % CONF.zvm.user_root_vdev]
+                'privilege=%s' % const.ZVM_USER_DEFAULT_PRIVILEGE]
+
+        if not CONF.zvm.zvm_default_admin_userid:
+            body.append('password=LBYONLY')
+        else:
+            body.append('password=LBYONLY')
+            body.append('logonby=%s' % CONF.zvm.zvm_default_admin_userid)
+
+        ipl_disk = None
+        if disk_list and 'is_boot_disk' in disk_list[0]:
+            ipl_disk = CONF.zvm.user_root_vdev
+
+        if ipl_disk:
+            body.append('ipl=%s' % ipl_disk)
 
         url = self._xcat_url.mkvm('/' + userid)
         zvmutils.xcat_request("POST", url, body)
+
+        if disk_list:
+            # Add disks for vm
+            self.add_mdisks(userid, disk_list)
+
+    def add_mdisks(self, userid, disk_list, start_vdev=None):
+        """Add disks for the userid
+
+        :disks: A list dictionary to describe disk info, for example:
+                disk: [{'size': '1g',
+                       'format': 'ext3',
+                       'disk_pool': 'ECKD:eckdpool1'}]
+
+        """
+
+        for idx, disk in enumerate(disk_list):
+            vdev = self.generate_disk_vdev(start_vdev=start_vdev, offset=idx)
+            self._add_mdisk(userid, disk, vdev)
+
+    def _add_mdisk(self, userid, disk, vdev):
+        """Create one disk for userid
+
+        NOTE: No read, write and multi password specified, and
+        access mode default as 'MR'.
+
+        """
+
+        size = disk['size']
+        fmt = disk.get('format')
+
+        disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+
+        disk_type = disk_pool.split(':')[0]
+        diskpool_name = disk_pool.split(':')[1]
+
+        if (disk_type == 'ECKD'):
+            action = '--add3390'
+        elif (disk_type == 'FBA'):
+            action = '--add9336'
+        else:
+            errmsg = ("Disk type %s is not supported.") % disk_type
+            LOG.error(errmsg)
+            raise exception.ZVMException(msg=errmsg)
+
+        if fmt:
+            body = [" ".join([action, diskpool_name, vdev, size, "MR", "''",
+                    "''", "''", fmt])]
+        else:
+            body = [" ".join([action, diskpool_name, vdev, size])]
+
+        url = zvmutils.get_xcat_url().chvm('/' + userid)
+        zvmutils.xcat_request("PUT", url, body)
 
     # TODO:moving to vmops and change name to 'create_vm_node'
     def create_xcat_node(self, userid):
@@ -899,7 +966,7 @@ class XCATClient(ZVMClient):
         raw_log_list = log_data.split('\n')
         return '\n'.join([rec.partition(': ')[2] for rec in raw_log_list])
 
-    def _generate_vdev(self, base, offset=1):
+    def _generate_vdev(self, base, offset):
         """Generate virtual device number based on base vdev
         :param base: base virtual device number, string of 4 bit hex.
         :param offset: offset to base, integer.
@@ -907,18 +974,20 @@ class XCATClient(ZVMClient):
         vdev = hex(int(base, 16) + offset)[2:]
         return vdev.rjust(4, '0')
 
-    def generate_eph_vdev(self, offset=1):
-        """Generate virtual device number for ephemeral disks
-        :param offset: offset ot user_adde_vdev.
-        :return: virtua device number, string of 4 bit hex.
+    def generate_disk_vdev(self, start_vdev=None, offset=0):
+        """Generate virtual device number for disks
+        :param offset: offset of user_root_vdev.
+        :return: virtual device number, string of 4 bit hex.
         """
-        vdev = self._generate_vdev(CONF.zvm.user_adde_vdev, offset + 1)
+        if not start_vdev:
+            start_vdev = CONF.zvm.user_root_vdev
+        vdev = self._generate_vdev(start_vdev, offset)
         if offset >= 0 and offset < 254:
             return vdev
         else:
-            msg = "Invalid virtual device number for ephemeral disk:%s" % vdev
+            msg = "Invalid virtual device number for disk:%s" % vdev
             LOG.error(msg)
-            raise exception.ZVMDriverError(msg=msg)
+            raise
 
     def _generate_eph_parmline(self, vdev, fmt, mntdir):
         parms = [
