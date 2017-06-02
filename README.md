@@ -16,5 +16,8 @@ The python-zvm-sdk project uses the [Apache License Version 2.0](LICENSE) softwa
 ## Maintainers
 The project's [maintainers](MAINTAINERS.txt): are responsible for reviewing and merging all pull requests and they guide the over-all technical direction of the project.
 
+## Reporting bugs
+If you are a user and you find a bug, please submit a [bug](https://bugs.launchpad.net/python-zvm-sdk). Please try to provide sufficient information for someone else to reproduce the issue. One of the project's maintainers should respond to your issue within 24 hours. If not, please bump the issue and request that it be reviewed.
+
 ## Contributing
 We welcome contributions to the python-zvm-sdk! Full details of how to contribute to this project are documented in the [CONTRIBUTING.md](CONTRIBUTING.md) file.
