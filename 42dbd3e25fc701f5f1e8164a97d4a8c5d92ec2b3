@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c60ecebd_ac0bcf10",
+        "filename": "etc/zvmsdk.conf",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-02T07:28:07Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 20
+      },
+      "revId": "42dbd3e25fc701f5f1e8164a97d4a8c5d92ec2b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba6643b6_f50ab131",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-02T07:28:07Z",
+      "side": 1,
+      "message": "what happens if disk_list \u003d [] ?",
+      "range": {
+        "startLine": 262,
+        "startChar": 8,
+        "endLine": 262,
+        "endChar": 56
+      },
+      "revId": "42dbd3e25fc701f5f1e8164a97d4a8c5d92ec2b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "38b27519_2bddd765",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-02T07:28:07Z",
+      "side": 1,
+      "message": "description of this method should be updated accordingly.\n\nAnother question: does this method support to add mdisk to an existing guest vm? Considering we may expose an API to add mdisk and re-use this method in client.py",
+      "range": {
+        "startLine": 276,
+        "startChar": 11,
+        "endLine": 276,
+        "endChar": 52
+      },
+      "revId": "42dbd3e25fc701f5f1e8164a97d4a8c5d92ec2b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "06e2f22c_114ef338",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-02T07:28:07Z",
+      "side": 1,
+      "message": "add a check to disk_pool, before use it.",
+      "range": {
+        "startLine": 302,
+        "startChar": 0,
+        "endLine": 303,
+        "endChar": 47
+      },
+      "revId": "42dbd3e25fc701f5f1e8164a97d4a8c5d92ec2b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "39dce8ad_dd8facd5",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-02T07:28:07Z",
+      "side": 1,
+      "message": "this should be a required option, and no default value.",
+      "range": {
+        "startLine": 81,
+        "startChar": 16,
+        "endLine": 81,
+        "endChar": 30
+      },
+      "revId": "42dbd3e25fc701f5f1e8164a97d4a8c5d92ec2b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "95949147_7998af3e",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-02T07:28:07Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 82,
+        "startChar": 4,
+        "endLine": 83,
+        "endChar": 23
+      },
+      "revId": "42dbd3e25fc701f5f1e8164a97d4a8c5d92ec2b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
