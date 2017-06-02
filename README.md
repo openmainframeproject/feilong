@@ -1,8 +1,16 @@
 # python-zvm-sdk - z/VM system management tool kit in python
 
-# Description
+## Description
 python-zvm-sdk is a libary that helps to invoke zvm system mangagement APIs.
 z/VM is a virtualized operating system that running on mainframe LPAR, has ability to hosting virtual machines.
+
+## Installation
+Clone python-zvm-sdk then install it:
+```
+git clone https://github.com/mfcloud/python-zvm-sdk.git
+cd python-zvm-sdk
+python setup.py install
+```
 
 ## Quickstart
 TODO
