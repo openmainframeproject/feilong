@@ -66,7 +66,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                 'password=%s' % CONF.zvm.user_default_password,
                 'cpu=1', 'memory=1024m',
                 'privilege=G', 'ipl=0100']
-        self.vmops.guest_create('cbi00063', 1, 1024, 3338, [])
+        self.vmops.guest_create('cbi00063', 1, 1024, 3338)
         xrequest.assert_called_once_with('POST', url, body)
         add_mdisk.assert_called_once_with('cbi00063', CONF.zvm.diskpool,
                                           CONF.zvm.user_root_vdev,
