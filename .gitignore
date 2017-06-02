@@ -11,3 +11,4 @@
 *.py.orig
 build/*
 dist/*
+doc/build/*
