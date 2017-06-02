@@ -22,6 +22,30 @@
       "revId": "7a8936520415c7680eb1b065be73e87b39fcf311",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a297169c_eb47a132",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-02T07:01:36Z",
+      "side": 1,
+      "message": "we can leave it as it is at first stage. Consider to reduce dirmaint calls after move to thin layer.",
+      "parentUuid": "a9cd7e96_6ac3f02e",
+      "range": {
+        "startLine": 128,
+        "startChar": 12,
+        "endLine": 133,
+        "endChar": 64
+      },
+      "revId": "7a8936520415c7680eb1b065be73e87b39fcf311",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
