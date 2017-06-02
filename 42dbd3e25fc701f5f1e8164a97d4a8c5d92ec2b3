@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "733808fc_13da9936",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-06-02T09:56:07Z",
+      "side": 1,
+      "message": "if disk_list \u003d [], the first condition \u0027if disk_list\u0027will not be satisfied, so it can\u0027t lead to disk_list[0]error",
+      "parentUuid": "ba6643b6_f50ab131",
+      "range": {
+        "startLine": 262,
+        "startChar": 8,
+        "endLine": 262,
+        "endChar": 56
+      },
+      "revId": "42dbd3e25fc701f5f1e8164a97d4a8c5d92ec2b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "38b27519_2bddd765",
         "filename": "zvmsdk/client.py",
         "patchSetId": 4
@@ -59,6 +83,30 @@
       "writtenOn": "2017-06-02T07:28:07Z",
       "side": 1,
       "message": "description of this method should be updated accordingly.\n\nAnother question: does this method support to add mdisk to an existing guest vm? Considering we may expose an API to add mdisk and re-use this method in client.py",
+      "range": {
+        "startLine": 276,
+        "startChar": 11,
+        "endLine": 276,
+        "endChar": 52
+      },
+      "revId": "42dbd3e25fc701f5f1e8164a97d4a8c5d92ec2b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b68fd259_97f00aa2",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-06-02T09:56:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "38b27519_2bddd765",
       "range": {
         "startLine": 276,
         "startChar": 11,
@@ -94,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "c4df4fad_e5fded92",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-06-02T09:56:07Z",
+      "side": 1,
+      "message": "Will use JiChen\u0027s framework to check the parameters for all the functions",
+      "parentUuid": "06e2f22c_114ef338",
+      "range": {
+        "startLine": 302,
+        "startChar": 0,
+        "endLine": 303,
+        "endChar": 47
+      },
+      "revId": "42dbd3e25fc701f5f1e8164a97d4a8c5d92ec2b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "115e138a_de0e0f57",
         "filename": "zvmsdk/config.py",
         "patchSetId": 4
@@ -105,6 +177,30 @@
       "writtenOn": "2017-06-02T08:13:18Z",
       "side": 1,
       "message": "this should also be removed, if no admin userid,\nwe don\u0027t allow anyone to log on",
+      "range": {
+        "startLine": 78,
+        "startChar": 17,
+        "endLine": 78,
+        "endChar": 22
+      },
+      "revId": "42dbd3e25fc701f5f1e8164a97d4a8c5d92ec2b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1736a266_0a729a03",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-06-02T09:56:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "115e138a_de0e0f57",
       "range": {
         "startLine": 78,
         "startChar": 17,
@@ -164,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "6fdeac42_8fd253ee",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-06-02T09:56:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "39dce8ad_dd8facd5",
+      "range": {
+        "startLine": 81,
+        "startChar": 16,
+        "endLine": 81,
+        "endChar": 30
+      },
+      "revId": "42dbd3e25fc701f5f1e8164a97d4a8c5d92ec2b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "95949147_7998af3e",
         "filename": "zvmsdk/config.py",
         "patchSetId": 4
@@ -187,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "d3708928_2d557adc",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-06-02T09:56:07Z",
+      "side": 1,
+      "message": "This will be removed in one new patch, remove this now will cause many functions fail to work when driver initialize such as get_diskpool info and rinv opnstk1 --diskpool",
+      "parentUuid": "95949147_7998af3e",
+      "range": {
+        "startLine": 82,
+        "startChar": 4,
+        "endLine": 83,
+        "endChar": 23
+      },
+      "revId": "42dbd3e25fc701f5f1e8164a97d4a8c5d92ec2b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f3a7c861_5b9ff906",
         "filename": "zvmsdk/config.py",
         "patchSetId": 4
@@ -198,6 +342,30 @@
       "writtenOn": "2017-06-02T08:13:18Z",
       "side": 1,
       "message": "why \u0027section\u0027 \u003d osdflt?",
+      "range": {
+        "startLine": 85,
+        "startChar": 8,
+        "endLine": 85,
+        "endChar": 24
+      },
+      "revId": "42dbd3e25fc701f5f1e8164a97d4a8c5d92ec2b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9b1d4f6b_d263389b",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-06-02T09:56:07Z",
+      "side": 1,
+      "message": "it\u0027s a typo",
+      "parentUuid": "f3a7c861_5b9ff906",
       "range": {
         "startLine": 85,
         "startChar": 8,
