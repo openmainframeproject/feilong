@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2b0bf96e_bfb4f687",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-06-05T05:26:25Z",
+      "side": 1,
+      "message": "In the current logic, we only allow a single userid string or a list of userids. If a [] list is specified, no data will be returned. \nI will update this API param to be more clear.",
+      "parentUuid": "e250a264_ff85f778",
+      "range": {
+        "startLine": 267,
+        "startChar": 33,
+        "endLine": 267,
+        "endChar": 58
+      },
+      "revId": "64ef9f83f90cda5b2c352d953e9a05f71fb7d121",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ac23c700_17ead391",
         "filename": "zvmsdk/monitor.py",
         "patchSetId": 16
@@ -36,6 +60,24 @@
       "writtenOn": "2017-06-01T08:23:34Z",
       "side": 1,
       "message": "looks like you want exactly same result from xcat and new ultrathin layer, we can guarantee that?",
+      "revId": "64ef9f83f90cda5b2c352d953e9a05f71fb7d121",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6e834591_0e5ab208",
+        "filename": "zvmsdk/monitor.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-06-05T05:26:25Z",
+      "side": 1,
+      "message": "actually the data is got from smcli, so as long as thin layer supports smcli, we are good here.",
+      "parentUuid": "ac23c700_17ead391",
       "revId": "64ef9f83f90cda5b2c352d953e9a05f71fb7d121",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "76049dad_e209117c",
+        "filename": "zvmsdk/monitor.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-06-05T05:26:25Z",
+      "side": 1,
+      "message": "This is the userid, the cache uses the uppercase userid as the dictionary key.",
+      "parentUuid": "782efc7f_f4453943",
+      "range": {
+        "startLine": 47,
+        "startChar": 12,
+        "endLine": 47,
+        "endChar": 29
+      },
+      "revId": "64ef9f83f90cda5b2c352d953e9a05f71fb7d121",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c52a942_c91ada1c",
         "filename": "zvmsdk/monitor.py",
         "patchSetId": 16
@@ -76,6 +142,30 @@
       "writtenOn": "2017-06-01T08:23:34Z",
       "side": 1,
       "message": "forgive me if my understand is incorrect\nthis cache is to store some data like cpu count/cpu time etc? we are sure it\u0027s always accurate?",
+      "range": {
+        "startLine": 78,
+        "startChar": 16,
+        "endLine": 78,
+        "endChar": 54
+      },
+      "revId": "64ef9f83f90cda5b2c352d953e9a05f71fb7d121",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "34a9c586_c582a1d2",
+        "filename": "zvmsdk/monitor.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-06-05T05:26:25Z",
+      "side": 1,
+      "message": "yes, this cache is to store metering related data, this is for performance consideration, we don\u0027t want each metering call to result in a smcli call. The cost to the cache is some accuration decrease, the data is not always the latest statistics, but since we have provided a conf to adjust the cache_interval, user can tune this value to fit in their env.",
+      "parentUuid": "4c52a942_c91ada1c",
       "range": {
         "startLine": 78,
         "startChar": 16,
