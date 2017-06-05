@@ -17,7 +17,6 @@ import uuid
 
 from zvmsdk import client as zvmclient
 from zvmsdk import config
-from zvmsdk import constants as const
 from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import log
@@ -118,20 +117,15 @@ class VMOps(object):
         """"Power on z/VM instance."""
         self._zvmclient.guest_start(instance_name)
 
-    def guest_create(self, instance_name, cpu, memory, root_disk_size):
+    def create_vm(self, instance_name, cpu, memory, disk_list=[],
+                  user_profile=None):
         """Create z/VM userid into user directory for a z/VM instance."""
         LOG.debug("Creating the z/VM user entry for instance %s"
                   % instance_name)
 
-        kwprofile = 'profile=%s' % const.ZVM_USER_PROFILE
         try:
-            self._zvmclient.guest_create(instance_name, kwprofile, cpu, memory)
-            # Add root disk
-            self.add_mdisk(instance_name, CONF.zvm.diskpool,
-                           CONF.zvm.user_root_vdev, root_disk_size)
-            # Set ipl
-            self.set_ipl(instance_name, CONF.zvm.user_root_vdev)
-
+            self._zvmclient.create_vm(instance_name, cpu, memory,
+                                      disk_list, user_profile)
         except Exception as err:
             msg = ("Failed to create z/VM userid: %s") % err
             LOG.error(msg)
@@ -141,7 +135,7 @@ class VMOps(object):
         if eph_list != []:
             LOG.debug("Start to add ephemeral disks to %s." % instance_name)
             for idx, eph in enumerate(eph_list):
-                vdev = self._zvmclient.generate_eph_vdev(idx)
+                vdev = self._zvmclient.generate_disk_vdev(idx)
                 fmt = eph.get('format')
                 mount_dir = ''.join([CONF.zvm.default_ephemeral_mntdir,
                                     str(idx)])
@@ -150,57 +144,9 @@ class VMOps(object):
         else:
             LOG.debug("No ephemeral disks to add on %s." % instance_name)
 
-    def add_mdisk(self, instance_name, diskpool, vdev, size, fmt=None):
-        """Add a 3390 mdisk for a z/VM user.
-
-        NOTE: No read, write and multi password specified, and
-        access mode default as 'MR'.
-
-        """
-        disk_type = CONF.zvm.diskpool_type
-        if (disk_type == 'ECKD'):
-            action = '--add3390'
-        elif (disk_type == 'FBA'):
-            action = '--add9336'
-        else:
-            errmsg = ("Disk type %s is not supported.") % disk_type
-            LOG.error(errmsg)
-            raise exception.ZVMException(msg=errmsg)
-
-        self._zvmclient.change_vm_fmt(instance_name, fmt, action,
-                                     diskpool, vdev, size)
-
-    def add_mdisks(self, instance_name, eph_list):
-        """add more than one disk
-        """
-        for idx, eph in eph_list:
-            vdev = self._zvmclient.generate_eph_vdev(idx)
-            size = eph['size']
-            fmt = (eph.get('format') or
-                   CONF.zvm.default_ephemeral_format or
-                   const.DEFAULT_EPH_DISK_FMT)
-            self.add_mdisk(CONF.zvm.diskpool, vdev, size, fmt)
-
-    def set_ipl(self, instance_name, ipl_state):
-        self._zvmclient.change_vm_ipl_state(instance_name, ipl_state)
-
     def is_powered_off(self, instance_name):
         """Return True if the instance is powered off."""
         return self._zvmclient.get_power_state(instance_name) == 'off'
-
-    def create_vm(self, userid, cpu, memory, root_disk_size, eph_disks):
-        """
-        create_vm will create the node and userid for instance
-        :parm userid: eg. lil00033
-        :parm cpu: amount of vcpus
-        :parm memory: size of memory
-        :parm root_gb:
-        :parm eph_disks:
-        :parm image_name: spawn image name
-        """
-        # TODO:image_name -> image_file_path
-        self._zvmclient.prepare_for_spawn(userid)
-        self.create_userid(userid, cpu, memory, root_disk_size, eph_disks)
 
     def delete_vm(self, userid):
         """Delete z/VM userid for the instance.This will remove xCAT node
@@ -226,13 +172,13 @@ class VMOps(object):
             self._zvmclient.remove_image_file(image_name)
         except exception.ZVMException:
             LOG.warn(("Failed to delete image file %s from xCAT") %
-                    image_name)
+                     image_name)
 
         try:
             self._zvmclient.remove_image_definition(image_name)
         except exception.ZVMException:
             LOG.warn(("Failed to delete image definition %s from xCAT") %
-                    image_name)
+                     image_name)
         LOG.info('Image %s successfully deleted' % image_name)
 
     def guest_deploy(self, user_id, image_name, transportfiles=None,
@@ -245,8 +191,8 @@ class VMOps(object):
 
         except exception as err:
             LOG.error(('Failed to deploy image %(img)s to vm %(vm)s') %
-                     {'img': image_name,
-                      'vm': user_id})
+                      {'img': image_name,
+                       'vm': user_id})
             raise err
 
     def get_definition_info(self, userid, **kwargs):

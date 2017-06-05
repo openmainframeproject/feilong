@@ -49,16 +49,18 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.image_import(image_file_path, os_version)
         image_import.assert_called_once_with(image_file_path, os_version)
 
-    @mock.patch("zvmsdk.vmops.VMOps.guest_create")
+    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create(self, create_vm):
         userid = 'userid'
         vcpus = 1
         memory = 1024
-        root_disk_size = 3338
+        disk_list = []
+        user_profile = 'profile'
 
-        self.api.guest_create(userid, vcpus, memory, root_disk_size)
-        create_vm.assert_called_once_with(userid, vcpus, memory,
-                                          root_disk_size)
+        self.api.guest_create(userid, vcpus, memory, disk_list,
+                              user_profile)
+        create_vm.assert_called_once_with(userid, vcpus, memory, disk_list,
+                                          user_profile)
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_query")
     def test_image_query(self, image_query):
