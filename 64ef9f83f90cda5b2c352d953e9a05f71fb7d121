@@ -175,6 +175,30 @@
       "revId": "64ef9f83f90cda5b2c352d953e9a05f71fb7d121",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "769e01a9_ef3eb7f3",
+        "filename": "zvmsdk/monitor.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-05T05:35:16Z",
+      "side": 1,
+      "message": "NOTE that no one requires real time monitoring data.",
+      "parentUuid": "4c52a942_c91ada1c",
+      "range": {
+        "startLine": 78,
+        "startChar": 16,
+        "endLine": 78,
+        "endChar": 54
+      },
+      "revId": "64ef9f83f90cda5b2c352d953e9a05f71fb7d121",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
