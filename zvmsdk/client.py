@@ -1239,3 +1239,16 @@ class XCATClient(ZVMClient):
             self._pathutils.clean_temp_folder(time_stamp_dir)
 
         return tar_file
+
+    def set_vswitch_port_vlan_id(self, vswitch_name, userid, vlan_id):
+        zhcp = CONF.xcat.zhcp_node
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        commands = ' '.join((
+            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
+            "-T %s" % userid,
+            "-k grant_userid=%s" % userid,
+            "-k switch_name=%s" % vswitch_name,
+            "-k user_vlan_id=%s" % vlan_id))
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        zvmutils.xcat_request("PUT", url, body)

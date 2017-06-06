@@ -1233,3 +1233,22 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
         self._zvmclient._add_mdisk(userid, disk, vdev),
         xrequest.assert_called_once_with('PUT', url, body)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_set_vswitch_port_vlan_id(self, xrequest):
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
+        commands += " -T userid"
+        commands += ' -k grant_userid=userid'
+        commands += " -k switch_name=vswitch_name"
+        commands += " -k user_vlan_id=vlan_id"
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+
+        self._zvmclient.set_vswitch_port_vlan_id("vswitch_name",
+                                                 "userid",
+                                                 "vlan_id")
+        xrequest.assert_called_once_with("PUT", url, body)
