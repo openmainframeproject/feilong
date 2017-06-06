@@ -65,7 +65,7 @@ class HOSTOps(object):
 
         return host_info
 
-    def diskpool_get_info(self, pool=CONF.zvm.diskpool):
+    def diskpool_get_info(self, pool):
         dp_info = self._zvmclient.get_diskpool_info(pool)
         with zvmutils.expect_invalid_xcat_resp_data(dp_info):
             for k in list(dp_info.keys()):

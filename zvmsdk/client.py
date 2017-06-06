@@ -118,7 +118,7 @@ class XCATClient(ZVMClient):
 
         return inv_info
 
-    def get_diskpool_info(self, pool=CONF.zvm.diskpool):
+    def get_diskpool_info(self, pool):
         """Retrive diskpool info"""
         host = CONF.zvm.host
         addp = '&field=--diskpoolspace&field=' + pool
