@@ -51,3 +51,6 @@ XCAT_RESPONSE_KEYS = ('info', 'data', 'node', 'errorcode', 'error')
 ZVM_VOLUMES_FILE = 'zvm_volumes'
 ZVM_VOLUME_STATUS = ['free', 'in-use']
 VOLUME_MULTI_PASS = 'MULTI'
+
+POWER_STATE_ON = u'on'
+POWER_STATE_OFF = u'off'

@@ -93,6 +93,9 @@ class XCATClient(ZVMClient):
             else:
                 raise
 
+    def guest_stop(self, userid):
+        self._power_state(userid, "PUT", "off")
+
     def get_power_state(self, userid):
         """Get power status of a z/VM instance."""
         LOG.debug('Query power stat of %s' % userid)
