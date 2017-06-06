@@ -610,22 +610,6 @@ class XCATClient(ZVMClient):
         # it's possible to return empty array
         return nic_settings
 
-    def update_ports(self, registered_ports):
-        ports_info = self._get_nic_ids()
-        ports = set()
-        for p in ports_info:
-            target_host = p.split(',')[5].strip('"')
-            new_port_id = p.split(',')[2].strip('"')
-            if target_host == CONF.xcat.zhcp_node:
-                ports.add(new_port_id)
-
-        if ports == registered_ports:
-            return
-
-        added = ports - registered_ports
-        removed = registered_ports - ports
-        return {'current': ports, 'added': added, 'removed': removed}
-
     def _get_userid_from_node(self, vm_id):
         addp = '&col=node&value=%s&attribute=userid' % vm_id
         url = self._xcat_url.gettab("/zvm", addp)
@@ -699,18 +683,11 @@ class XCATClient(ZVMClient):
         body = [xdsh_commands]
         zvmutils.xcat_request("PUT", url, body)
 
-    def couple_nic_to_vswitch(self, vswitch_name, switch_port_name,
+    def couple_nic_to_vswitch(self, vswitch_name, nic_vdev,
                               userid, persist=True):
         """Couple nic to vswitch."""
         LOG.debug("Connect nic to switch: %s", vswitch_name)
-        vdev = self._get_nic_settings(switch_port_name, "interface")
-        if vdev:
-            self._couple_nic(vswitch_name, userid, vdev, persist)
-        else:
-            raise exception.zVMInvalidDataError(msg=('Cannot get vdev for '
-                            'user %s, couple to port %s') %
-                            (userid, switch_port_name))
-        return vdev
+        self._couple_nic(vswitch_name, userid, nic_vdev, persist)
 
     def _uncouple_nic(self, userid, vdev, persist=True):
         """Uncouple NIC from vswitch"""
@@ -734,12 +711,11 @@ class XCATClient(ZVMClient):
         body = [xdsh_commands]
         zvmutils.xcat_request("PUT", url, body)
 
-    def uncouple_nic_from_vswitch(self, vswitch_name, switch_port_name,
+    def uncouple_nic_from_vswitch(self, vswitch_name, nic_vdev,
                                   userid, persist=True):
         """Uncouple nic from vswitch."""
         LOG.debug("Disconnect nic from switch: %s", vswitch_name)
-        vdev = self._get_nic_settings(switch_port_name, "interface")
-        self._uncouple_nic(userid, vdev, persist)
+        self._uncouple_nic(userid, nic_vdev, persist)
 
     def _get_xcat_node_ip(self):
         addp = '&col=key&value=master&attribute=value'

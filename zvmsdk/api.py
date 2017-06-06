@@ -181,33 +181,33 @@ class SDKAPI(object):
         """
         return self._imageops.image_get_root_disk_size(image_file_name)
 
-    def guest_nic_couple_to_vswitch(self, vswitch_name, switch_port_name,
+    def guest_nic_couple_to_vswitch(self, vswitch_name, nic_vdev,
                                     userid, persist=True):
         """ Couple nic device to specified vswitch.
 
         :param vswitch_name: the name of the vswitch
-        :param switch_port_name: the interface id
+        :param nic_vdev: nic device number
         :param userid: the user's name who owns the port
         :param persist: whether keep the change in the permanent
                configuration for the system
 
         """
-        self._networkops.couple_nic_to_vswitch(vswitch_name, switch_port_name,
+        self._networkops.couple_nic_to_vswitch(vswitch_name, nic_vdev,
                                                userid, persist)
 
-    def guest_nic_uncouple_from_vswitch(self, vswitch_name, switch_port_name,
+    def guest_nic_uncouple_from_vswitch(self, vswitch_name, nic_vdev,
                                         userid, persist=True):
         """ Couple nic device to specified vswitch.
 
         :param vswitch_name: the name of the vswitch
-        :param switch_port_name: the interface id
+        :param nic_vdev: nic device number
         :param userid: the user's name who owns the port
         :param persist: whether keep the change in the permanent
                configuration for the system
 
         """
         self._networkops.uncouple_nic_from_vswitch(vswitch_name,
-                                                   switch_port_name,
+                                                   nic_vdev,
                                                    userid, persist)
 
     def vswitch_get_list(self):

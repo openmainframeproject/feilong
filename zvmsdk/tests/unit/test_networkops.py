@@ -34,11 +34,6 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         self.networkops.get_vm_nic_switch_info("fakenode")
         get_nic_switch_info.assert_called_with("fakenode")
 
-    @mock.patch.object(zvmclient.XCATClient, 'update_ports')
-    def test_update_ports(self, update_ports):
-        self.networkops.update_ports(set())
-        update_ports.assert_called_with(set())
-
     @mock.patch.object(zvmclient.XCATClient, 'get_vswitch_list')
     def test_get_vswitch_list(self, get_vswitch_list):
         self.networkops.get_vswitch_list()
@@ -46,22 +41,22 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
 
     @mock.patch.object(zvmclient.XCATClient, 'couple_nic_to_vswitch')
     def test_couple_nic_to_vswitch(self, couple_nic_to_vswitch):
-        self.networkops.couple_nic_to_vswitch("fake_VS_name", "fake_VS_port",
+        self.networkops.couple_nic_to_vswitch("fake_VS_name", "nic_vdev",
                                               "fake_userid",
                                               True)
         couple_nic_to_vswitch.assert_called_with("fake_VS_name",
-                                                 "fake_VS_port",
+                                                 "nic_vdev",
                                                  "fake_userid",
                                                  True)
 
     @mock.patch.object(zvmclient.XCATClient, 'uncouple_nic_from_vswitch')
     def test_uncouple_nic_from_vswitch(self, uncouple_nic_from_vswitch):
         self.networkops.uncouple_nic_from_vswitch("fake_VS_name",
-                                                  "fake_VS_port",
+                                                  "nic_vdev",
                                                   "fake_userid",
                                                   True)
         uncouple_nic_from_vswitch.assert_called_with("fake_VS_name",
-                                                     "fake_VS_port",
+                                                     "nic_vdev",
                                                      "fake_userid",
                                                      True)
 
