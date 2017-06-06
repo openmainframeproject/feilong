@@ -64,7 +64,7 @@ class SDKAPITestCase(unittest.TestCase):
         self.assertTrue(isinstance(disk_info.get('disk_used'), int))
 
     def test_host_diskpool_get_info_with_parameter(self):
-        disk_info = self.sdkapi.host_diskpool_get_info('xcatfba1')
+        disk_info = self.sdkapi.host_diskpool_get_info('FBA:xcatfba1')
         self.assertTrue(isinstance(disk_info.get('disk_available'), int))
         self.assertTrue(isinstance(disk_info.get('disk_total'), int))
         self.assertTrue(isinstance(disk_info.get('disk_used'), int))
@@ -72,4 +72,4 @@ class SDKAPITestCase(unittest.TestCase):
     def test_host_diskpool_get_info_invalid_diskpool(self):
         self.assertRaises(exception.SDKBaseException,
                           self.sdkapi.host_diskpool_get_info,
-                          'invalidpoolname')
+                          'ECKD:invalidpoolname')

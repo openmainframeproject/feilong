@@ -15,8 +15,11 @@
 import mock
 
 import zvmsdk.client as zvmclient
+from zvmsdk import config
 from zvmsdk import hostops
 from zvmsdk.tests.unit import base
+
+CONF = config.CONF
 
 
 class SDKHostOpsTestCase(base.SDKTestCase):
@@ -48,7 +51,8 @@ class SDKHostOpsTestCase(base.SDKTestCase):
             }
         host_info = self._hostops.get_info()
         get_host_info.assert_called_once_with()
-        diskpool_get_info.assert_called_once_with()
+        diskpool = CONF.zvm.disk_pool.split(':')[1]
+        diskpool_get_info.assert_called_once_with(diskpool)
         self.assertEqual(host_info['vcpus'], 10)
         self.assertEqual(host_info['hypervisor_version'], 610)
         self.assertEqual(host_info['disk_total'], 406105)

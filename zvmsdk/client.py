@@ -118,7 +118,7 @@ class XCATClient(ZVMClient):
 
         return inv_info
 
-    def get_diskpool_info(self, pool=CONF.zvm.diskpool):
+    def get_diskpool_info(self, pool):
         """Retrive diskpool info"""
         host = CONF.zvm.host
         addp = '&field=--diskpoolspace&field=' + pool
@@ -308,7 +308,7 @@ class XCATClient(ZVMClient):
 
         disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
 
-        disk_type = disk_pool.split(':')[0]
+        disk_type = disk_pool.split(':')[0].upper()
         diskpool_name = disk_pool.split(':')[1]
 
         if (disk_type == 'ECKD'):
