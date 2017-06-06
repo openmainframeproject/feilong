@@ -59,13 +59,13 @@ class HOSTOps(object):
             host_info['hypervisor_version'] = version
             host_info['hypervisor_hostname'] = inv_info['hypervisor_name']
             host_info['ipl_time'] = inv_info['ipl_time']
-
-        dp_info = self.diskpool_get_info()
+        diskpool_name = CONF.zvm.disk_pool.split(':')[1]
+        dp_info = self.diskpool_get_info(diskpool_name)
         host_info.update(dp_info)
 
         return host_info
 
-    def diskpool_get_info(self, pool=CONF.zvm.diskpool):
+    def diskpool_get_info(self, pool):
         dp_info = self._zvmclient.get_diskpool_info(pool)
         with zvmutils.expect_invalid_xcat_resp_data(dp_info):
             for k in list(dp_info.keys()):

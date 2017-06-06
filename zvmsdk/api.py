@@ -66,11 +66,12 @@ class SDKAPI(object):
         """
         return self._hostops.get_info()
 
-    def host_diskpool_get_info(self, diskpool_name=CONF.zvm.diskpool):
+    def host_diskpool_get_info(self, disk_pool=CONF.zvm.disk_pool):
         """ Retrieve diskpool information.
 
         :returns: Dictionary describing diskpool usage info
         """
+        diskpool_name = disk_pool.split(':')[1]
         return self._hostops.diskpool_get_info(diskpool_name)
 
     def host_list_guests(self):
