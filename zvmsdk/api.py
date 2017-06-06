@@ -35,14 +35,23 @@ class SDKAPI(object):
         self._imageops = imageops.get_imageops()
         self._monitor = monitor.get_monitor()
 
-    def guest_start(self, vm_id):
+    def guest_start(self, userid):
         """Power on a virtual machine.
 
-        :param vm_id: the id of the vm to be power on
+        :param str userid: the id of thevirtual machine to be power on
 
         :returns: None
         """
-        self._vmops.guest_start(vm_id)
+        self._vmops.guest_start(userid)
+
+    def guest_stop(self, userid):
+        """Power off a virtual machine.
+
+        :param str userid: the id of the virtual machine to be power off
+
+        :returns: None
+        """
+        self._vmops.guest_stop(userid)
 
     def guest_get_power_state(self, guest_id):
         """Returns power state."""

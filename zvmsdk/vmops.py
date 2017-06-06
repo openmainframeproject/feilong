@@ -117,6 +117,9 @@ class VMOps(object):
         """"Power on z/VM instance."""
         self._zvmclient.guest_start(instance_name)
 
+    def guest_stop(self, instance_name):
+        self._zvmclient.guest_stop(instance_name)
+
     def create_vm(self, instance_name, cpu, memory, disk_list=[],
                   user_profile=None):
         """Create z/VM userid into user directory for a z/VM instance."""

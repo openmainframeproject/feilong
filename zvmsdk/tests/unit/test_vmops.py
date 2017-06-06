@@ -190,3 +190,9 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         userid = 'userid'
         self.vmops.delete_vm(userid)
         delete_vm.assert_called_once_with(userid)
+
+    @mock.patch.object(zvmclient.XCATClient, 'guest_stop')
+    def test_guest_stop(self, gs):
+        userid = 'userid'
+        self.vmops.guest_stop(userid)
+        gs.assert_called_once_with(userid)
