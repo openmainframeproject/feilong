@@ -78,3 +78,12 @@ class NetworkOPS(object):
     def update_nic_definition(self, user_id, nic_vdev, mac, switch_name):
         self.zvmclient.update_nic_definition(user_id, nic_vdev, mac,
                                              switch_name)
+
+    def grant_user_to_vswitch(self, vswitch_name, userid):
+        self.zvmclient.grant_user_to_vswitch(vswitch_name, userid)
+
+    def revoke_user_from_vswitch(self, vswitch_name, userid):
+        self.zvmclient.revoke_user_from_vswitch(vswitch_name, userid)
+
+    def set_vswitch_port_vlan_id(self, vswitch_name, userid, vlan_id):
+        self.zvmclient.set_vswitch_port_vlan_id(vswitch_name, userid, vlan_id)
