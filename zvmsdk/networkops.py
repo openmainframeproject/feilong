@@ -41,7 +41,8 @@ class NetworkOPS(object):
         self.zvmclient.create_nic(vm_id, nic_info, ip_addr=ip_addr)
 
     def get_vm_nic_switch_info(self, vm_id):
-        return self.zvmclient.get_vm_nic_switch_info(vm_id)
+        return self.zvmclient.get_vm_nic_switch_info(vm_id)
+
     def update_ports(self, registered_ports):
         self.zvmclient.update_ports(registered_ports)
 
