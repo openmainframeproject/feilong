@@ -514,7 +514,7 @@ class XCATClient(ZVMClient):
             body.append('transport=%s' % transportfiles)
 
         with zvmutils.expect_xcat_call_failed_and_reraise(
-                exception.ZVMXCATUpdateNodeFailed):
+                exception.ZVMXCATInternalError):
             zvmutils.xcat_request("PUT", url, body)
 
     def check_space_imgimport_xcat(self, tar_file, xcat_free_space_threshold,
