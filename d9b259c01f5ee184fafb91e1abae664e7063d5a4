@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6cfd65d5_e1883786",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-07T02:53:45Z",
+      "side": 1,
+      "message": "Will submit a new patch to change all parameters in same terminology later.",
+      "parentUuid": "c703d0d1_67d915d1",
+      "range": {
+        "startLine": 70,
+        "startChar": 36,
+        "endLine": 70,
+        "endChar": 44
+      },
+      "revId": "d9b259c01f5ee184fafb91e1abae664e7063d5a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0d1271e0_26a16d4e",
         "filename": "zvmsdk/vmops.py",
         "patchSetId": 2
