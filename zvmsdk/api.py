@@ -353,3 +353,14 @@ class SDKAPI(object):
         """
         self._networkops.set_vswitch_port_vlan_id(vswitch_name,
                                                   userid, vlan_id)
+
+    def guest_update_nic_definition(self, user_id, nic_vdev, mac,
+                                    switch_name):
+        """ add nic and coupled network info into the user direct.
+        :param str user_id: the user id of the vm
+        :param str nic_vdev: nic device number
+        :param str mac: mac address
+        :param str switch_name: the network name
+        """
+        self._networkops.update_nic_definition(user_id, nic_vdev, mac,
+                                               switch_name)
