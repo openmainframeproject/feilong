@@ -28,23 +28,26 @@ CONF = config.CONF
 _DEFAULT_MODE = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
 
 
-def get_cfg_str(ip_v4, address_read = CONF.zvm.default_nic_vdev):
-    cfg_str = 'DEVICE=\"' + CONF.network.device + '\"\n'
-    cfg_str += 'BOOTPROTO=\"static\"\n'
-    cfg_str += 'BROADCAST=\"' + CONF.network.broadcast_v4 + '\"\n'
-    cfg_str += 'GATEWAY=\"' + CONF.network.gateway_v4 + '\"\n'
-    cfg_str += 'IPADDR=\"' + ip_v4 + '\"\n'
-    cfg_str += 'NETMASK=\"' + CONF.network.netmask_v4 + '\"\n'
-    cfg_str += 'NETTYPE=\"qeth\"\n'
-    cfg_str += 'ONBOOT=\"yes\"\n'
-    cfg_str += 'PORTNAME=\"PORT' + address_read + '\"\n'
+def get_cfg_str(ip_v4, os_version, address_read = CONF.zvm.default_nic_vdev):
+    linuxdist = dist.ListDistManager().get_linux_dist(os_version)()
+    device_num = 0
+    device_name = linuxdist.get_device_name(device_num)
+    cfg_str = 'DEVICE=' + device_name + '\n'
+    cfg_str += 'BOOTPROTO=static\n'
+    cfg_str += 'BROADCAST=' + CONF.network.broadcast_v4 + '\n'
+    cfg_str += 'GATEWAY=' + CONF.network.gateway_v4 + '\n'
+    cfg_str += 'IPADDR=' + ip_v4 + '\n'
+    cfg_str += 'NETMASK=' + CONF.network.netmask_v4 + '\n'
+    cfg_str += 'NETTYPE=qeth\n'
+    cfg_str += 'ONBOOT=yes\n'
+    cfg_str += 'PORTNAME=PORT' + address_read + '\n'
     cfg_str += 'OPTIONS=\"layer2=1\"\n'
-    cfg_str += 'SUBCHANNELS=\"' + CONF.network.subchannels + '\"\n'
+    cfg_str += 'SUBCHANNELS=' + CONF.network.subchannels + '\n'
     return cfg_str
 
 
-def generate_net_file(ip_addr, net_file_path):
-    cfg_str = get_cfg_str(ip_addr)
+def generate_net_file(ip_addr, net_file_path, os_version):
+    cfg_str = get_cfg_str(ip_addr, os_version)
     generate_file(cfg_str, net_file_path)
 
 
@@ -100,7 +103,7 @@ def create_config_drive(ip_addr, os_version):
     os.mkdir(latest_dir)
 
     net_file = os.path.join(content_dir, '0000')
-    generate_net_file(ip_addr, net_file)
+    generate_net_file(ip_addr, net_file, os_version)
     znetconfig_file = os.path.join(content_dir, '0001')
     generate_znetconfig_file(znetconfig_file, os_version)
     meta_data_path = os.path.join(latest_dir, 'meta_data.json')
