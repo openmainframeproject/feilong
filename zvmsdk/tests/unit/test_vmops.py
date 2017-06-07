@@ -64,17 +64,14 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(userid, cpu, memory, disk_list,
                                           user_profile)
 
-    @mock.patch('zvmsdk.client.XCATClient.generate_disk_vdev')
-    @mock.patch('zvmsdk.client.XCATClient.process_eph_disk')
-    def test_process_additional_disks(self, process_eph_disk,
-                                      generate_disk_vdev):
-        fake_eph_list = [{'size': 1, 'format': 'ext3'}]
-        fake_instance = 'inst001'
-        mount_dir = '/mnt/ephemeral/'
-        generate_disk_vdev.return_value = '0111'
-        self.vmops.process_additional_disks(fake_instance, fake_eph_list)
-        process_eph_disk.assert_called_with(fake_instance, '0111', 'ext3',
-                                            mount_dir + '0')
+    @mock.patch('zvmsdk.client.XCATClient.process_additional_minidisks')
+    def test_guest_config_minidisks(self, process_additional_minidisks):
+        userid = 'userid'
+        disk_list = [{'vdev': '0101',
+                      'format': 'ext3',
+                      'mntdir': '/mnt/0101'}]
+        self.vmops.guest_config_minidisks(userid, disk_list)
+        process_additional_minidisks.assert_called_once_with(userid, disk_list)
 
     @mock.patch('zvmsdk.client.XCATClient.get_power_state')
     def test_is_powered_off(self, check_stat):

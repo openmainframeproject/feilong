@@ -91,3 +91,12 @@ class SDKAPITestCase(base.SDKTestCase):
         userid = 'fakeuser'
         self.api.guest_stop(userid)
         gs.assert_called_once_with(userid, 0, 10)
+
+    @mock.patch("zvmsdk.vmops.VMOps.guest_config_minidisks")
+    def test_guest_process_additional_disks(self, config_disks):
+        userid = 'userid'
+        disk_list = [{'vdev': '0101',
+                      'format': 'ext3',
+                      'mntdir': '/mnt/0101'}]
+        self.api.guest_config_minidisks(userid, disk_list)
+        config_disks.assert_called_once_with(userid, disk_list)
