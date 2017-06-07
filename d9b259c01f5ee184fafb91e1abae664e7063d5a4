@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c703d0d1_67d915d1",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-06-07T01:57:38Z",
+      "side": 1,
+      "message": "Need to change guest_id to userid?",
+      "range": {
+        "startLine": 70,
+        "startChar": 36,
+        "endLine": 70,
+        "endChar": 44
+      },
+      "revId": "d9b259c01f5ee184fafb91e1abae664e7063d5a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0d1271e0_26a16d4e",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-06-07T01:57:38Z",
+      "side": 1,
+      "message": "retry_count \u003d timeout/retry_interval ?",
+      "range": {
+        "startLine": 127,
+        "startChar": 26,
+        "endLine": 127,
+        "endChar": 33
+      },
+      "revId": "d9b259c01f5ee184fafb91e1abae664e7063d5a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
