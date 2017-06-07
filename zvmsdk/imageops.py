@@ -88,6 +88,7 @@ class ImageOps(object):
         """import a spawn image to XCAT"""
         LOG.debug("Getting a spawn image...")
         image_uuid = image_file_path.split('/')[-1]
+        image_uuid = image_uuid.split('.img')[0]
         disk_file_name = CONF.zvm.user_root_vdev + '.img'
         image_name = disk_file_name
         image_name = zvmutils.remove_prefix_of_unicode(image_name)

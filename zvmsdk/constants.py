@@ -26,7 +26,7 @@ DISK_FUNC_NAME = 'setupDisk'
 
 XCAT_RINV_HOST_KEYWORDS = {
     "zvm_host": "z/VM Host:",
-    "zhcp": "zHCP:",
+    "zhcp": "HCP:",
     "cec_vendor": "CEC Vendor:",
     "cec_model": "CEC Model:",
     "hypervisor_os": "Hypervisor OS:",
