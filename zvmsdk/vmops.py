@@ -151,18 +151,12 @@ class VMOps(object):
             LOG.error(msg)
             raise exception.ZVMException(msg=err)
 
-    def process_additional_disks(self, instance_name, eph_list):
-        if eph_list != []:
-            LOG.debug("Start to add ephemeral disks to %s." % instance_name)
-            for idx, eph in enumerate(eph_list):
-                vdev = self._zvmclient.generate_disk_vdev(idx)
-                fmt = eph.get('format')
-                mount_dir = ''.join([CONF.zvm.default_ephemeral_mntdir,
-                                    str(idx)])
-                self._zvmclient.process_eph_disk(instance_name, vdev,
-                                                 fmt, mount_dir)
+    def guest_config_minidisks(self, userid, disk_info):
+        if disk_info != []:
+            LOG.debug("Start to configure disks to %s." % userid)
+            self._zvmclient.process_additional_minidisks(userid, disk_info)
         else:
-            LOG.debug("No ephemeral disks to add on %s." % instance_name)
+            LOG.debug("No disk to handle on %s." % userid)
 
     def is_powered_off(self, instance_name):
         """Return True if the instance is powered off."""

@@ -364,3 +364,17 @@ class SDKAPI(object):
         """
         self._networkops.update_nic_definition(user_id, nic_vdev, mac,
                                                switch_name)
+
+    def guest_config_minidisks(self, userid, disk_info):
+        """Punch the script that used to process additional disks to vm
+
+        :param str userid: the user id of the vm
+        :param dict disk_info: a list contains disks info for the guest. It
+               has one dictionary that describes the disk info for each disk.
+               For example,
+               [{'vdev': '0101',
+                 'format': 'ext3',
+                 'mntdir': '/mnt/0101'}]
+
+        """
+        self._vmops.guest_config_minidisks(userid, disk_info)
