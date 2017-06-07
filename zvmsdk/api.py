@@ -89,11 +89,23 @@ class SDKAPI(object):
         """
         return self._hostops.get_info()
 
-    def host_diskpool_get_info(self, diskpool_name=CONF.zvm.diskpool):
+    def host_diskpool_get_info(self, disk_pool=CONF.zvm.disk_pool):
         """ Retrieve diskpool information.
-
+        :param str disk_pool: the disk pool info. It use ':' to separate
+        disk pool type and name, eg "ECKD:eckdpool" or "FBA:fbapool"
         :returns: Dictionary describing diskpool usage info
         """
+        if ':' not in disk_pool:
+            LOG.error('Invalid input parameter disk_pool, expect ":" in'
+                      'disk_pool, eg. ECKD:eckdpool')
+            raise exception.ZVMInvalidInput('disk_pool')
+        diskpool_type = disk_pool.split(':')[0].upper()
+        diskpool_name = disk_pool.split(':')[1]
+        if diskpool_type not in ('ECKD', 'FBA'):
+            LOG.error('Invalid disk pool type found in disk_pool, expect'
+                      'disk_pool like ECKD:eckdpool or FBA:fbapool')
+            raise exception.ZVMInvalidInput('disk_pool')
+
         return self._hostops.diskpool_get_info(diskpool_name)
 
     def host_list_guests(self):
