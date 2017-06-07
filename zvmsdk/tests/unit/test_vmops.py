@@ -70,11 +70,11 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                                       generate_disk_vdev):
         fake_eph_list = [{'size': 1, 'format': 'ext3'}]
         fake_instance = 'inst001'
-        mount_dir = '/mnt/ephemeral/'
+        mount_dir = '/mnt/ephemeral'
         generate_disk_vdev.return_value = '0111'
         self.vmops.process_additional_disks(fake_instance, fake_eph_list)
         process_eph_disk.assert_called_with(fake_instance, '0111', 'ext3',
-                                            mount_dir + '0')
+                                            mount_dir + '1')
 
     @mock.patch('zvmsdk.client.XCATClient.get_power_state')
     def test_is_powered_off(self, check_stat):

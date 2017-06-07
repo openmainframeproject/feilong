@@ -96,7 +96,7 @@ zvm_opts = [
         default='/tmp/zvmsdk/images/'),
     Opt('default_ephemeral_mntdir',
         section='zvm',
-        default='/mnt/ephemeral/'),
+        default='/mnt/ephemeral'),
     # network options
     Opt('my_ip',
         section='network'),

@@ -364,3 +364,19 @@ class SDKAPI(object):
         """
         self._networkops.update_nic_definition(user_id, nic_vdev, mac,
                                                switch_name)
+
+    def guest_process_additional_disks(self, userid, disk_list):
+        """Punch the script that used to process additional disks to vm
+
+        :param str userid: the user id of the vm
+        :param disk_list: (dict) a list of additional disks info for the guest,
+               it has one dictionary that describes the disk info. For example,
+               [{'size': '1g',
+                 'format': 'ext3'},
+               {'size': '2g',
+               'format': 'ext4'}]
+               It will create one script for each disk and punched to the
+               reader of target vm
+
+        """
+        self._vmops.process_additional_disks(userid, disk_list)

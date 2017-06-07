@@ -514,7 +514,7 @@ class XCATClient(ZVMClient):
             body.append('transport=%s' % transportfiles)
 
         with zvmutils.expect_xcat_call_failed_and_reraise(
-                exception.ZVMXCATUpdateNodeFailed):
+                exception.ZVMXCATDeployNodeFailed):
             zvmutils.xcat_request("PUT", url, body)
 
     def check_space_imgimport_xcat(self, tar_file, xcat_free_space_threshold,
@@ -1003,7 +1003,7 @@ class XCATClient(ZVMClient):
             LOG.error('Invoke AE method function: %(func)s on %(node)s '
                       'failed with reason: %(msg)s',
                       {'func': func_name, 'node': instance_name, 'msg': emsg})
-            raise exception.ZVMDriverError(msg=emsg)
+            raise exception.ZVMSDKInteralError(msg=emsg)
 
     def delete_vm(self, userid):
         """Delete z/VM userid for the instance.This will remove xCAT node

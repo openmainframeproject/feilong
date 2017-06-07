@@ -91,3 +91,10 @@ class SDKAPITestCase(base.SDKTestCase):
         userid = 'fakeuser'
         self.api.guest_stop(userid)
         gs.assert_called_once_with(userid, 0, 10)
+
+    @mock.patch("zvmsdk.vmops.VMOps.process_additional_disks")
+    def test_guest_process_additional_disks(self, process_disks):
+        userid = 'userid'
+        disk_list = [{'size': '1g', 'format': 'ext3'}]
+        self.api.guest_process_additional_disks(userid, disk_list)
+        process_disks.assert_called_once_with(userid, disk_list)

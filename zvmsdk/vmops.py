@@ -155,10 +155,10 @@ class VMOps(object):
         if eph_list != []:
             LOG.debug("Start to add ephemeral disks to %s." % instance_name)
             for idx, eph in enumerate(eph_list):
-                vdev = self._zvmclient.generate_disk_vdev(idx)
+                vdev = self._zvmclient.generate_disk_vdev(idx + 1)
                 fmt = eph.get('format')
                 mount_dir = ''.join([CONF.zvm.default_ephemeral_mntdir,
-                                    str(idx)])
+                                    str(idx + 1)])
                 self._zvmclient.process_eph_disk(instance_name, vdev,
                                                  fmt, mount_dir)
         else:
