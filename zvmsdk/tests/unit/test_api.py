@@ -85,3 +85,9 @@ class SDKAPITestCase(base.SDKTestCase):
         userid_list = "userid1"
         self.api.guest_inspect_cpus(userid_list)
         inspect_cpus.assert_called_once_with(["userid1"])
+
+    @mock.patch("zvmsdk.vmops.VMOps.guest_stop")
+    def test_guest_stop(self, gs):
+        userid = 'fakeuser'
+        self.api.guest_stop(userid)
+        gs.assert_called_once_with(userid, 0, 10)

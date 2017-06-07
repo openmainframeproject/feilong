@@ -13,10 +13,12 @@
 #    under the License.
 
 
+import time
 import uuid
 
 from zvmsdk import client as zvmclient
 from zvmsdk import config
+from zvmsdk import constants
 from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import log
@@ -113,9 +115,27 @@ class VMOps(object):
 
         return False
 
-    def guest_start(self, instance_name):
+    def guest_start(self, userid):
         """"Power on z/VM instance."""
-        self._zvmclient.guest_start(instance_name)
+        self._zvmclient.guest_start(userid)
+
+    def guest_stop(self, userid, timeout, retry_interval):
+        self._zvmclient.guest_stop(userid)
+
+        # retry shutdown until timeout
+        if timeout > 0:
+            retry_count = timeout // retry_interval
+            while (retry_count > 0):
+                if self.get_power_state(userid) == constants.POWER_STATE_OFF:
+                    # In shutdown state already
+                    return
+                else:
+                    self._zvmclient.guest_stop(userid)
+                    time.sleep(retry_interval)
+                    retry_count -= 1
+
+            LOG.warning("Failed to shutdown guest vm %(userid)s in %(time)d "
+                         "seconds" % {'userid': userid, 'time': timeout})
 
     def create_vm(self, instance_name, cpu, memory, disk_list=[],
                   user_profile=None):

@@ -190,3 +190,26 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         userid = 'userid'
         self.vmops.delete_vm(userid)
         delete_vm.assert_called_once_with(userid)
+
+    @mock.patch.object(zvmclient.XCATClient, 'guest_stop')
+    def test_guest_stop(self, gs):
+        userid = 'userid'
+        self.vmops.guest_stop(userid, 0, 10)
+        gs.assert_called_once_with(userid)
+
+    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
+    @mock.patch.object(zvmclient.XCATClient, 'guest_stop')
+    def test_guest_stop_with_retry(self, gs, gps):
+        userid = 'userid'
+        gps.return_value = u'off'
+        self.vmops.guest_stop(userid, 60, 10)
+        gs.assert_called_once_with(userid)
+        gps.assert_called_once_with(userid)
+
+    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
+    @mock.patch.object(zvmclient.XCATClient, 'guest_stop')
+    def test_guest_stop_timeout(self, gs, gps):
+        userid = 'userid'
+        gps.return_value = u'on'
+        self.vmops.guest_stop(userid, 1, 1)
+        gps.assert_called_once_with(userid)

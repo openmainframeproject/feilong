@@ -16,6 +16,7 @@
 from zvmsdk import vmops
 from zvmsdk import hostops
 from zvmsdk import config
+from zvmsdk import log
 from zvmsdk import monitor
 from zvmsdk import networkops
 from zvmsdk import imageops
@@ -23,6 +24,7 @@ from zvmsdk import exception
 
 
 CONF = config.CONF
+LOG = log.LOG
 
 
 class SDKAPI(object):
@@ -35,14 +37,35 @@ class SDKAPI(object):
         self._imageops = imageops.get_imageops()
         self._monitor = monitor.get_monitor()
 
-    def guest_start(self, vm_id):
+    def guest_start(self, userid):
         """Power on a virtual machine.
 
-        :param vm_id: the id of the vm to be power on
+        :param str userid: the id of thevirtual machine to be power on
 
         :returns: None
         """
-        self._vmops.guest_start(vm_id)
+        self._vmops.guest_start(userid)
+
+    def guest_stop(self, userid, timeout=0, retry_interval=10):
+        """Power off a virtual machine.
+
+        :param str userid: the id of the virtual machine to be power off
+        :param int timeout: time to wait for GuestOS to shutdown
+        :param int retry_interval: How often to signal guest while
+                                   waiting for it to shutdown
+
+        :returns: None
+        """
+        if not isinstance(timeout, int):
+            LOG.error('Invalid input parameter - timeout, expect an integer')
+            raise exception.ZVMInvalidInput('timeout')
+
+        if not (isinstance(retry_interval, int) and retry_interval > 0):
+            LOG.error('Invalid input parameter - retry_interval, '
+                      'expect an integer > 0')
+            raise exception.ZVMInvalidInput('retry_interval')
+
+        self._vmops.guest_stop(userid, timeout, retry_interval)
 
     def guest_get_power_state(self, guest_id):
         """Returns power state."""
