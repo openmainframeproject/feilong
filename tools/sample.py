@@ -1,68 +1,112 @@
-
-
 import time
-
-from zvmsdk import config
+from zvmsdk import api
 from zvmsdk import configdrive
-from zvmsdk import log
-from zvmsdk import utils as zvmutils
-from zvmsdk import vmops
+from zvmsdk import dist
 
 
-CONF = config.CONF
-LOG = log.LOG
-VMOPS = vmops._get_vmops()
+sdkapi = api.SDKAPI()
+
+def do_test():
+    """ A sample for run_instance
+    """
+    instance_name = 'cbi00004'
+    image_path = '/root/images/img/rhel72-eckd-tempest.img'
+    os_version = 'rhel7'
+    cpu = 1
+    memory = 1024
+    login_password = ''
+    network_info = {'ip_addr': '192.168.114.12',
+                    'vswitch_name': 'xcatvsw2',
+                    'vdev': '1000',
+                    'nic_list':
+                        [{'nic_id': 'ce71a70c-bbf3-480e-b0f7-01a0fcbbb44c',
+                          'mac_addr': '02:00:00:0E:11:40'}]}
+    disks_list = [{'size': '3g',
+                   'is_boot_disk': True,
+                   'disk_pool': 'ECKD:xcateckd'}]
 
 
-def run_instance(instance_name, image_name, cpu, memory,
-                 login_password, ip_addr):
+    run_instance(instance_name, image_path, os_version,
+                 cpu, memory, login_password,
+                 network_info, disks_list)
+
+
+def run_instance(instance_name, image_path, os_version,
+                 cpu, memory, login_password,
+                 network_info, disks_list):
     """Deploy and provision a virtual machine.
 
     Input parameters:
-    :instance_name:   USERID of the instance, no more than 8.
-    :image_name:      e.g. rhel7.2-s390x-netboot-7e5_9f4e_11e6_b85d_02000b15
-    :cpu:             vcpu
-    :memory:          memory
-    :login_password:  login password
-    :ip_addr:         ip address
+    :instance_name:     USERID of the instance, no more than 8.
+    :image_name:        path of the image file
+    :image_name:        os version of the image file
+    :cpu:               vcpu
+    :memory:            memory
+    :login_password:    login password
+    :network_info:      dict of network info.members:
+        :ip_addr:           ip address of vm
+        :gateway:           gateway of net
+        :vswitch_name:      switch name
+        :vdev:              vdev
+        :nic_list:          list of NICs to add
+        example refer to do_test()
+    :disks_list:            list of dikks to add.eg:  
+        disks_list = [{'size': '3g',
+                       'is_boot_disk': True,
+                       'disk_pool': 'ECKD:xcateckd'}]
     """
-    os_version = zvmutils.get_image_version(image_name)
+    # Import image to zvmclient
+    image_name = sdkapi.image_import(image_path, os_version)
 
-    # For zVM instance, limit the maximum length of instance name to be 8
-    if len(instance_name) > 8:
-        msg = (("Don't support spawn vm on zVM hypervisor with instance "
-            "name: %s, please change your instance name no longer than 8 "
-            "characters") % instance_name)
-        raise zvmutils.ZVMException(msg)
+    # Get OS distribution
+    dist_manager = dist.ListDistManager()
+    linuxdist = dist_manager.get_linux_dist(os_version)()
 
-    instance_path = zvmutils.get_instance_path(CONF.zvm_host, instance_name)
-    linuxdist = VMOPS._dist_manager.get_linux_dist(os_version)()
+    # Prepare network configuration file to inject into vm
+    ip_addr = network_info['ip_addr']
     transportfiles = configdrive.create_config_drive(ip_addr, os_version)
+    user_profile = 'osdflt'
 
+    # Start time
     spawn_start = time.time()
 
-    # Create xCAT node and userid for the instance
-    zvmutils.create_xcat_node(instance_name, CONF.zhcp)
-    VMOPS.create_userid(instance_name, cpu, memory, image_name)
+    # Create vm in zVM
+    sdkapi.guest_create(instance_name, cpu, memory,
+                        disks_list, user_profile)
 
-    # Setup network for z/VM instance
-    VMOPS._preset_instance_network(instance_name, ip_addr)
-    VMOPS._add_nic_to_table(instance_name, ip_addr)
-    zvmutils.update_node_info(instance_name, image_name, os_version)
-    zvmutils.deploy_node(instance_name, image_name, transportfiles)
+    # Setup network for vm
+    nic_list = network_info['nic_list']
+    sdkapi.guest_create_nic(instance_name, nic_list, ip_addr)
 
-    # Change vm's admin password during spawn
-    zvmutils.punch_adminpass_file(instance_path, instance_name,
-                                  login_password, linuxdist)
-    # Unlock the instance
-    zvmutils.punch_xcat_auth_file(instance_path, instance_name)
+    # Deploy image on vm
+    sdkapi.guest_deploy(instance_name, image_name, transportfiles)
+
+    # Couple nic to vswitch
+    vdev = network_info['vdev']
+    vswitch_name = network_info['vswitch_name']
+    # TODO: loop to process multi NICs
+    mac_info = nic_list[0]['mac_addr'].split(':')
+    mac = mac_info[3] + mac_info[4] + mac_info[5]
+    print 'MAC value is:',mac
+    sdkapi.vswitch_grant_user(vswitch_name, instance_name)
+    sdkapi.guest_update_nic_definition(instance_name, vdev,
+                                       mac, vswitch_name)
+    # Check network ready
+    result = sdkapi.guest_get_definition_info(
+                                            instance_name,
+                                            nic_coupled=vdev)
+    print "definition info:", result
+    if not result['nic_coupled']:
+        print 'Network not ready in %s.' % instance_name
+        return
 
     # Power on the instance, then put MN's public key into instance
-    VMOPS.power_on(instance_name)
-    spawn_time = time.time() - spawn_start
-    LOG.info("Instance spawned succeeded in %s seconds", spawn_time)
+    sdkapi.guest_start(instance_name)
 
-    return instance_name
+    # End time
+    spawn_time = time.time() - spawn_start
+    print "Instance-%s pawned succeeded in %s seconds" % (instance_name,
+                                                          spawn_time)
 
 
 def terminate_instance(instance_name):
@@ -71,20 +115,17 @@ def terminate_instance(instance_name):
     Input parameters:
     :instance_name:   USERID of the instance, last 8 if length > 8
     """
-    if VMOPS.instance_exists(instance_name):
-        LOG.info(("Destroying instance %s"), instance_name)
-        if VMOPS.is_reachable(instance_name):
-            LOG.debug(("Node %s is reachable, "
-                      "skipping diagnostics collection"), instance_name)
-        elif VMOPS.is_powered_off(instance_name):
-            LOG.debug(("Node %s is powered off, "
-                      "skipping diagnostics collection"), instance_name)
-        else:
-            LOG.debug(("Node %s is powered on but unreachable"), instance_name)
+    
+    guest_info = sdkapi.guest_get_info(instance_name)
+    if guest_info['power_state'] == 'on':
+        print "Destroying instance %s." % instance_name
+    else:
+        print "Node %s is powered off." % instance_name
 
-    zvmutils.clean_mac_switch_host(instance_name)
+    # TODO: clean mac vswitch host ?
 
-    VMOPS.delete_userid(instance_name, CONF.zhcp)
+    # Delete instance
+    sdkapi.guest_delete(instance_name)
 
 
 def describe_instance(instance_name):
@@ -93,7 +134,8 @@ def describe_instance(instance_name):
     Input parameters:
     :instance_name:   USERID of the instance, last 8 if length > 8
     """
-    inst_info = VMOPS.get_info(instance_name)
+
+    inst_info = sdkapi.guest_get_info(instance_name)
     return inst_info
 
 
@@ -103,7 +145,7 @@ def start_instance(instance_name):
     Input parameters:
     :instance_name:   USERID of the instance, last 8 if length > 8
     """
-    VMOPS._power_state(instance_name, "PUT", "on")
+    sdkapi.guest_start(instance_name)
 
 
 def stop_instance(instance_name):
@@ -112,7 +154,7 @@ def stop_instance(instance_name):
     Input parameters:
     :instance_name:   USERID of the instance, last 8 if length > 8
     """
-    VMOPS._power_state(instance_name, "PUT", "off")
+    sdkapi.guest_start(instance_name)
 
 
 def capture_instance(instance_name):
@@ -124,10 +166,10 @@ def capture_instance(instance_name):
     Output parameters:
     :image_name:      Image name that defined in xCAT image repo
     """
-    if VMOPS.get_power_state(instance_name) == "off":
-        VMOPS.power_on(instance_name)
+    # TODO: check power state ,if down ,start
 
-    return VMOPS.capture_instance(instance_name)
+    # do capture
+    pass
 
 
 def delete_image(image_name):
@@ -136,4 +178,4 @@ def delete_image(image_name):
     Input parameters:
     :image_name:      Image name that defined in xCAT image repo
     """
-    VMOPS.delete_image(image_name)
+    pass
