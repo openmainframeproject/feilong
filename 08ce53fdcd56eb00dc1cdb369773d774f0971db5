@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0e3cfcb0_423a78e8",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-07T02:18:27Z",
+      "side": 1,
+      "message": "typo? expect networkops here?",
+      "range": {
+        "startLine": 315,
+        "startChar": 13,
+        "endLine": 315,
+        "endChar": 22
+      },
+      "revId": "08ce53fdcd56eb00dc1cdb369773d774f0971db5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
