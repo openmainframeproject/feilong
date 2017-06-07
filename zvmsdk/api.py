@@ -44,6 +44,15 @@ class SDKAPI(object):
         """
         self._vmops.guest_start(vm_id)
 
+    def guest_stop(self, vm_id):
+        """Power off a virtual machine.
+
+        :param vm_id: the id of the vm to be power off
+
+        :returns: None
+        """
+        self._vmops.guest_stop(vm_id)
+
     def guest_get_power_state(self, guest_id):
         """Returns power state."""
         return self._vmops.get_power_state(guest_id)

@@ -62,6 +62,12 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         power_state.assert_called_once_with(fake_userid, 'PUT', 'on')
 
     @mock.patch.object(zvmclient.XCATClient, '_power_state')
+    def test_guest_stop(self, power_state):
+        fake_userid = 'fake_userid'
+        self._zvmclient.guest_stop(fake_userid)
+        power_state.assert_called_once_with(fake_userid, 'PUT', 'off')
+
+    @mock.patch.object(zvmclient.XCATClient, '_power_state')
     def test_get_power_state(self, power_state):
         fake_userid = 'fake_userid'
         fake_ret = {'info': [[fake_userid + ': on\n']],

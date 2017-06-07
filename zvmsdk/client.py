@@ -93,6 +93,20 @@ class XCATClient(ZVMClient):
             else:
                 raise
 
+    def guest_stop(self, userid):
+        """"Power on VM."""
+        try:
+            self._power_state(userid, "PUT", "off")
+        except exception.ZVMXCATInternalError as err:
+            err_str = err.format_message()
+            if ("Return Code: 200" in err_str and
+                    "Reason Code: 8" in err_str):
+                # VM already active
+                LOG.warning("VM %s already stop", userid)
+                return
+            else:
+                raise
+
     def get_power_state(self, userid):
         """Get power status of a z/VM instance."""
         LOG.debug('Query power stat of %s' % userid)
