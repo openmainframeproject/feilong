@@ -105,6 +105,9 @@ class LinuxDist(object):
 
         return cfg_str, cmd_str, dns_str, route_str
 
+    def get_device_name(self, device_num):
+        return self._get_device_name(device_num)
+
     @abc.abstractmethod
     def _get_network_file_path(self):
         """Get network file configuration path."""

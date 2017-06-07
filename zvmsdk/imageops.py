@@ -88,6 +88,7 @@ class ImageOps(object):
         """import a spawn image to XCAT"""
         LOG.debug("Getting a spawn image...")
         image_uuid = image_file_path.split('/')[-1]
+        image_uuid = image_uuid.split('.img')[0]
         disk_file_name = CONF.zvm.user_root_vdev + '.img'
         image_name = disk_file_name
         image_name = zvmutils.remove_prefix_of_unicode(image_name)
@@ -127,7 +128,12 @@ class ImageOps(object):
                                     image_profile)
 
         # TODO(Cao Biao): Add log info
-        pass
+        # Return image_name in storage
+        res_image_name = '-'.join((image_meta['properties']['os_version'],
+                                  image_meta['properties']['architecture'],
+                                  image_meta['properties']['provision_method'],
+                                  image_profile))
+        return res_image_name
 
     def image_query(self, imagekeyword=None):
         return self.zvmclient.image_query(imagekeyword)

@@ -178,7 +178,7 @@ class SDKAPI(object):
         :param os_version:the os version of the image
 
         """
-        self._imageops.image_import(image_file_path, os_version)
+        return self._imageops.image_import(image_file_path, os_version)
 
     def guest_create(self, userid, vcpus, memory, disk_list=[],
                      user_profile=None):
