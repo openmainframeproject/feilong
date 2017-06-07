@@ -64,7 +64,6 @@ class NetworkOPS(object):
         self.zvmclient.add_vswitch(name, rdev,
                                    controller, connection, queue_mem,
                                    router, network_type, vid,
-                                   port_type, update, gvrp, native_vid)
 
     def grant_user_to_vswitch(self, vswitch_name, userid):
         self.zvmclient.grant_user_to_vswitch(vswitch_name, userid)
