@@ -1,17 +1,14 @@
-
-
 import time
-
+from zvmsdk import api
 from zvmsdk import config
 from zvmsdk import configdrive
 from zvmsdk import log
-from zvmsdk import utils as zvmutils
-from zvmsdk import vmops
+from zvmsdk import dist
 
 
 CONF = config.CONF
 LOG = log.LOG
-VMOPS = vmops._get_vmops()
+sdkapi = api.SDKAPI()
 
 
 def run_instance(instance_name, image_name, cpu, memory,
@@ -26,41 +23,45 @@ def run_instance(instance_name, image_name, cpu, memory,
     :login_password:  login password
     :ip_addr:         ip address
     """
-    os_version = zvmutils.get_image_version(image_name)
+    os_version = image_name.split('-')[0]
 
-    # For zVM instance, limit the maximum length of instance name to be 8
-    if len(instance_name) > 8:
-        msg = (("Don't support spawn vm on zVM hypervisor with instance "
-            "name: %s, please change your instance name no longer than 8 "
-            "characters") % instance_name)
-        raise zvmutils.ZVMException(msg)
-
-    instance_path = zvmutils.get_instance_path(CONF.zvm_host, instance_name)
-    linuxdist = VMOPS._dist_manager.get_linux_dist(os_version)()
+    # Prepare data
+    dist_manager = dist.ListDistManager()
+    linuxdist = dist_manager.get_linux_dist(os_version)()
     transportfiles = configdrive.create_config_drive(ip_addr, os_version)
+    disks_list = [{'size': '3g', 'is_boot_disk': True, 'disk_pool': 'ECKD:xcateckd'}]
+    user_profile = 'osdflt'
 
     spawn_start = time.time()
+    # Create vm in zVM
+    sdkapi.guest_create(instance_name, cpu, memory,
+                        disks_list, user_profile)
 
-    # Create xCAT node and userid for the instance
-    zvmutils.create_xcat_node(instance_name, CONF.zhcp)
-    VMOPS.create_userid(instance_name, cpu, memory, image_name)
+    # Setup network for vm
+    nic_list = [{'nic_id': 'ce71a70c-bbf3-480e-b0f7-01a0fcbbb44c',
+                 'mac_addr': 'ff:ff:ff:ff:ff:ff'}]
+    sdkapi.guest_create_nic(instance_name, nic_list, ip_addr)
 
-    # Setup network for z/VM instance
-    VMOPS._preset_instance_network(instance_name, ip_addr)
-    VMOPS._add_nic_to_table(instance_name, ip_addr)
-    zvmutils.update_node_info(instance_name, image_name, os_version)
-    zvmutils.deploy_node(instance_name, image_name, transportfiles)
+    # Deploy image on vm
+    sdkapi.guest_deploy(instance_name, image_name, transportfiles)
 
-    # Change vm's admin password during spawn
-    zvmutils.punch_adminpass_file(instance_path, instance_name,
-                                  login_password, linuxdist)
-    # Unlock the instance
-    zvmutils.punch_xcat_auth_file(instance_path, instance_name)
+    # Check network ready
+    switch_info = sdkapi.guest_get_nic_switch_info(instance_name)
+    if switch_info and '' not in switch_info.values():
+        for key in switch_info:
+            result = sdkapi.guest_get_definition_info(
+                                            instance_name,
+                                            nic_coupled=key)
+            if not result['nic_coupled']:
+                print 'Network not ready in %s.' % instance_name
+                return
 
     # Power on the instance, then put MN's public key into instance
-    VMOPS.power_on(instance_name)
+    sdkapi.guest_start(instance_name)
+
+    # End time
     spawn_time = time.time() - spawn_start
-    LOG.info("Instance spawned succeeded in %s seconds", spawn_time)
+    print("Instance spawned succeeded in %s seconds", spawn_time)
 
     return instance_name
 
