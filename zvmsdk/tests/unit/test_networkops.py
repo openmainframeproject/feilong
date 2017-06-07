@@ -68,3 +68,19 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         add_vswitch.assert_called_with("fakename",
                                        "fakerdev",
                                        '*', 1, 8, 0, 2, 0, 1, 1, 2, 1)
+
+    @mock.patch.object(zvmclient.XCATClient, 'grant_user_to_vswitch')
+    def test_grant_user_to_vswitch(self, grant_user):
+        self.networkops.grant_user_to_vswitch("vswitch_name", "userid")
+        grant_user.assert_called_with("vswitch_name", "userid")
+
+    @mock.patch.object(zvmclient.XCATClient, 'revoke_user_from_vswitch')
+    def test_revoke_user_from_vswitch(self, revoke_user):
+        self.networkops.revoke_user_from_vswitch("vswitch_name", "userid")
+        revoke_user.assert_called_with("vswitch_name", "userid")
+
+    @mock.patch.object(zvmclient.XCATClient, 'set_vswitch_port_vlan_id')
+    def test_set_vswitch_port_vlan_id(self, set_vswitch):
+        self.networkops.set_vswitch_port_vlan_id("vswitch_name",
+                                                 "userid", "vlan_id")
+        set_vswitch.assert_called_with("vswitch_name", "userid", "vlan_id")

@@ -303,3 +303,30 @@ class SDKAPI(object):
             userid_list = [userid_list]
         # parsed_uid_list = [uid.upper() for uid in userid_list]
         return self._monitor.inspect_cpus(userid_list)
+
+    def vswitch_grant_user(self, vswitch_name, userid):
+        """Set vswitch to grant user
+
+        :param str vswitch_name: the name of the vswitch
+        :param str userid: the user id of the vm
+        """
+
+        self._networkops.grant_user_to_vswitch(vswitch_name, userid)
+
+    def vswitch_revoke_user(self, vswitch_name, userid):
+        """Revoke user for vswitch
+
+        :param str vswitch_name: the name of the vswitch
+        :param str userid: the user id of the vm
+        """
+        self._networkops.revoke_user_from_vswitch(vswitch_name, userid)
+
+    def vswitch_set_vlan_id_for_user(self, vswitch_name, userid, vlan_id):
+        """Set vlan id for user when connecting to the vswitch
+
+        :param str vswitch_name: the name of the vswitch
+        :param str userid: the user id of the vm
+        :param str vlan_id: the VLAN id
+        """
+        self._networkops.set_vswitch_port_vlan_id(vswitch_name,
+                                                  userid, vlan_id)

@@ -65,3 +65,12 @@ class NetworkOPS(object):
                                    controller, connection, queue_mem,
                                    router, network_type, vid,
                                    port_type, update, gvrp, native_vid)
+
+    def grant_user_to_vswitch(self, vswitch_name, userid):
+        self.zvmclient.grant_user_to_vswitch(vswitch_name, userid)
+
+    def revoke_user_from_vswitch(self, vswitch_name, userid):
+        self.zvmclient.revoke_user_from_vswitch(vswitch_name, userid)
+
+    def set_vswitch_port_vlan_id(self, vswitch_name, userid, vlan_id):
+        self.zvmclient.set_vswitch_port_vlan_id(vswitch_name, userid, vlan_id)
