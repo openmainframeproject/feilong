@@ -1,6 +1,5 @@
 mock
 python-subunit
-gabbi
 routes
 webob
 jsonschema
