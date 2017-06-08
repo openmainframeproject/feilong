@@ -124,7 +124,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertEqual(vm_info['max_mem_kb'], 8388608)
         self.assertEqual(vm_info['mem_kb'], 4872872)
         self.assertEqual(vm_info['num_cpu'], 2)
-        self.assertEqual(vm_info['cpu_time_ns'], 6911844399000)
+        self.assertEqual(vm_info['cpu_time_us'], 6911844399)
 
     @mock.patch('zvmsdk.client.XCATClient.get_image_performance_info')
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')

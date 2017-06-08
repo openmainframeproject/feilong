@@ -72,7 +72,7 @@ class VMOps(object):
                 max_mem_kb = int(perf_info['max_memory'].split()[0])
                 mem_kb = int(perf_info['used_memory'].split()[0])
                 num_cpu = int(perf_info['guest_cpus'])
-                cpu_time_ns = int(perf_info['used_cpu_time'].split()[0]) * 1000
+                cpu_time_us = int(perf_info['used_cpu_time'].split()[0])
             except (ValueError, TypeError, IndexError, AttributeError,
                     KeyError) as err:
                 LOG.error('Parse performance_info encounter error: %s',
@@ -83,7 +83,7 @@ class VMOps(object):
                     'max_mem_kb': max_mem_kb,
                     'mem_kb': mem_kb,
                     'num_cpu': num_cpu,
-                    'cpu_time_ns': cpu_time_ns}
+                    'cpu_time_us': cpu_time_us}
         else:
             # virtual machine in shutdown state or not exists
             with zvmutils.expect_invalid_xcat_node_and_reraise(userid):

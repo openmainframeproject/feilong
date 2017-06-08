@@ -40,7 +40,7 @@ class SDKAPI(object):
     def guest_start(self, userid):
         """Power on a virtual machine.
 
-        :param str userid: the id of thevirtual machine to be power on
+        :param str userid: the id of the virtual machine to be power on
 
         :returns: None
         """
@@ -71,16 +71,19 @@ class SDKAPI(object):
         """Returns power state."""
         return self._vmops.get_power_state(guest_id)
 
-    def guest_get_info(self, guest_id):
-        """Returns a dict containing:
+    def guest_get_info(self, userid):
+        """Get the status of a virtual machine.
 
-        :param power_state: the running state, one of on | off
-        :param max_mem_kb: (int) the maximum memory in KBytes allowed
-        :param mem_kb: (int) the memory in KBytes used by the instance
-        :param num_cpu: (int) the number of virtual CPUs for the instance
-        :param cpu_time_ns: (int) the CPU time used in nanoseconds
+        :param str userid: the id of the virtual machine
+
+        :returns: Dictionary contains:
+                  power_state: (str) the running state, one of on | off
+                  max_mem_kb: (int) the maximum memory in KBytes allowed
+                  mem_kb: (int) the memory in KBytes used by the instance
+                  num_cpu: (int) the number of virtual CPUs for the instance
+                  cpu_time_us: (int) the CPU time used in microseconds
         """
-        return self._vmops.get_info(guest_id)
+        return self._vmops.get_info(userid)
 
     def host_get_info(self):
         """ Retrieve host information including host, memory, disk etc.
