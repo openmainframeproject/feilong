@@ -823,7 +823,8 @@ class XCATClient(ZVMClient):
             raise exception.ZVMInvalidInput(
                 msg=("switch: %s add failed, %s") %
                     (name, 'valid GVRP value should be 0, 1, 2'))
-        if (((native_vid < 1) or (native_vid > 8)) and (native_vid != 1)):
+        if (((native_vid < 1) or (native_vid > 4094)) and
+            (native_vid != -1)):
             raise exception.ZVMInvalidInput(
                 msg=("switch: %s add failed, %s") %
                     (name, 'valid native VLAN id should be -1 or 1-4094'))

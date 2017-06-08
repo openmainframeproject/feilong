@@ -258,19 +258,19 @@ class SDKAPI(object):
                        port_type=1, update=1, gvrp=2, native_vid=1):
         """ Create vswitch.
 
-        :param name: the vswitch name
-        :param rdev: the real device number
-        :param controller: the vswitch's controller
-        :param connection: 0-unspecified 1-Actice 2-non-Active
-        :param queue_mem: the max number of megabytes on a single port
-        :param router: 0-unspecified 1-nonrouter 2-prirouter
-        :param network_type: 0-unspecified 1-IP 2-ethernet
-        :param vid: 1-4094 for access port defaut vlan
-        :param port_type: 0-unspecified 1-access 2-trunk
-        :param update: 0-unspecified 1-create 2-create and add to system
+        :param str name: the vswitch name
+        :param str rdev: the real device number
+        :param str controller: the vswitch's controller
+        :param int connection: 0-unspecified 1-Actice 2-non-Active
+        :param int queue_mem: the max number of megabytes on a single port
+        :param int router: 0-unspecified 1-nonrouter 2-prirouter
+        :param int network_type: 0-unspecified 1-IP 2-ethernet
+        :param int vid: 1-4094 for access port defaut vlan
+        :param int port_type: 0-unspecified 1-access 2-trunk
+        :param int update: 0-unspecified 1-create 2-create and add to system
                configuration file 3-add to system configuration
-        :param gvrp: 0-unspecified 1-gvrp 2-nogvrp
-        :param native_vid: the native vlan id
+        :param int gvrp: 0-unspecified 1-gvrp 2-nogvrp
+        :param int native_vid: the native vlan id
 
         """
         self._networkops.add_vswitch(name, rdev,
