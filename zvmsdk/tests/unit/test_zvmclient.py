@@ -1188,8 +1188,8 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         url = "/xcatws/vms/fakeuser?userName=" + CONF.xcat.username +\
             "&password=" + CONF.xcat.password +\
             "&format=json"
-        body = ['profile=dfltprof', 'cpu=2', 'memory=1024m',
-                'privilege=G', 'password=LBYONLY', 'ipl=0100']
+        body = ['profile=dfltprof', 'password=dfltpass', 'cpu=2',
+                'memory=1024m', 'privilege=G', 'ipl=0100']
         self._zvmclient.create_vm(user_id, cpu, memory, disk_list, profile)
         prepare_for_spawn.assert_called_once_with(user_id)
         xrequest.assert_called_once_with('POST', url, body)
