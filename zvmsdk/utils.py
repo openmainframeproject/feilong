@@ -172,6 +172,9 @@ class XCATUrl(object):
         rurl = self._vms(arg)
         return rurl
 
+    def version(self):
+        return self.PREFIX + self.VERSION + self.SUFFIX
+
 
 class XCATConnection(object):
     """Https requests to xCAT web service."""
@@ -656,6 +659,17 @@ def parse_image_name(os_image_name):
 def get_image_version(os_image_name):
     os_version = os_image_name.split('-')[0]
     return os_version
+
+
+def get_xcat_version():
+    """Return the version of xCAT."""
+
+    url = get_xcat_url().version()
+    with expect_invalid_xcat_resp_data():
+        data = xcat_request('GET', url)['data']
+        version = data[0][0].split()[1]
+        version = version.strip()
+        return version
 
 
 def convert_to_mb(s):
