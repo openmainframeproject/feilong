@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a9a408e3_d3793bf7",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 995,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-12T07:02:03Z",
+      "side": 1,
+      "message": "this is hard coded?",
+      "range": {
+        "startLine": 995,
+        "startChar": 55,
+        "endLine": 995,
+        "endChar": 62
+      },
+      "revId": "5c6ad2492a9e3beeceb7ca12a070a2c52afe986f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "14b8fb93_f0fc7b3f",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 1009,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-12T07:02:03Z",
+      "side": 1,
+      "message": "why it\u0027s an internal error? \nit\u0027s calling xcat rest API and maybe error caused by xcat side?",
+      "range": {
+        "startLine": 1009,
+        "startChar": 12,
+        "endLine": 1009,
+        "endChar": 56
+      },
+      "revId": "5c6ad2492a9e3beeceb7ca12a070a2c52afe986f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "31e6e8d8_fc7eebbe",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-12T07:02:03Z",
+      "side": 1,
+      "message": "we can add disk_info here",
+      "range": {
+        "startLine": 156,
+        "startChar": 12,
+        "endLine": 156,
+        "endChar": 65
+      },
+      "revId": "5c6ad2492a9e3beeceb7ca12a070a2c52afe986f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
