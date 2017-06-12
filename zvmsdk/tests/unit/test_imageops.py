@@ -18,9 +18,13 @@ import os
 
 # from zvmsdk.config import CONF
 from zvmsdk import client as zvmclient
+from zvmsdk import config
 from zvmsdk import imageops
 from zvmsdk import utils as zvmutils
 from zvmsdk.tests.unit import base
+
+
+CONF = config.CONF
 
 
 class SDKImageOpsTestCase(base.SDKTestCase):
@@ -31,7 +35,7 @@ class SDKImageOpsTestCase(base.SDKTestCase):
     def test_get_image_path_by_name(self):
         fake_name = 'rhel7.2-s390x-netboot-fake_image_uuid'
         expected_path = '/install/netboot/rhel7.2/s390x/fake_image_uuid/' +\
-                fake_name + '.img'
+                CONF.zvm.user_root_vdev + '.img'
         ret = self._image_ops.get_image_path_by_name(fake_name)
         self.assertEqual(ret, expected_path)
 
@@ -50,7 +54,7 @@ class SDKImageOpsTestCase(base.SDKTestCase):
             '00000040'
 
         ret = self._image_ops.image_get_root_disk_size(fake_name)
-        self.assertEqual(ret, 3338)
+        self.assertEqual(ret, '3338')
 
     @mock.patch.object(os.path, 'exists')
     @mock.patch.object(zvmclient.XCATClient, 'image_import')
