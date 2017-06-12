@@ -156,7 +156,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertEqual(vm_info['max_mem_kb'], 2097152)
         self.assertEqual(vm_info['mem_kb'], 0)
         self.assertEqual(vm_info['num_cpu'], 2)
-        self.assertEqual(vm_info['cpu_time_ns'], 0)
+        self.assertEqual(vm_info['cpu_time_us'], 0)
 
     @mock.patch('zvmsdk.client.XCATClient.get_user_direct')
     @mock.patch('zvmsdk.client.XCATClient.get_image_performance_info')

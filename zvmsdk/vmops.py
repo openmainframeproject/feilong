@@ -93,7 +93,7 @@ class VMOps(object):
                 'max_mem_kb': self._get_max_memory_from_user_dict(dict_info),
                 'mem_kb': 0,
                 'num_cpu': self._get_cpu_num_from_user_dict(dict_info),
-                'cpu_time_ns': 0}
+                'cpu_time_us': 0}
 
     def instance_metadata(self, instance, content, extra_md):
         pass
