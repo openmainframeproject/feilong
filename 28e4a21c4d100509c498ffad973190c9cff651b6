@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5f77c689_8e9c3eb1",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-12T06:52:48Z",
+      "side": 1,
+      "message": "you added this validation, we can have more discussion on how we want to verify them......",
+      "range": {
+        "startLine": 276,
+        "startChar": 8,
+        "endLine": 312,
+        "endChar": 74
+      },
+      "revId": "28e4a21c4d100509c498ffad973190c9cff651b6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
