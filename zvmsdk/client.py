@@ -260,15 +260,17 @@ class XCATClient(ZVMClient):
         profile = 'profile=%s' % profile or CONF.zvm.user_profile
 
         body = [profile,
+                'password=%s' % CONF.zvm.user_default_password,
                 'cpu=%i' % cpu,
                 'memory=%im' % memory,
                 'privilege=%s' % const.ZVM_USER_DEFAULT_PRIVILEGE]
 
-        if not CONF.zvm.zvm_default_admin_userid:
-            body.append('password=LBYONLY')
-        else:
-            body.append('password=LBYONLY')
-            body.append('logonby=%s' % CONF.zvm.zvm_default_admin_userid)
+#         # TODO: add it until xcat support it
+#         if not CONF.zvm.zvm_default_admin_userid:
+#             body.append('password=LBYONLY')
+#         else:
+#             body.append('password=LBYONLY')
+#             body.append('logonby=%s' % CONF.zvm.zvm_default_admin_userid)
 
         ipl_disk = None
         if disk_list and 'is_boot_disk' in disk_list[0]:
