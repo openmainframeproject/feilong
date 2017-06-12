@@ -645,7 +645,7 @@ class XCATClient(ZVMClient):
             "-T %s" % userid,
             "-k switch_name=%s" % vswitch_name,
             "-k grant_userid=%s" % userid,
-            "-h persist=YES"))
+            "-k persist=YES"))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
         zvmutils.xcat_request("PUT", url, body)
@@ -659,7 +659,7 @@ class XCATClient(ZVMClient):
             "-T %s" % userid,
             "-k switch_name=%s" % vswitch_name,
             "-k revoke_userid=%s" % userid,
-            "-h persist=YES"))
+            "-k persist=YES"))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
         zvmutils.xcat_request("PUT", url, body)
@@ -1188,7 +1188,8 @@ class XCATClient(ZVMClient):
             "-T %s" % userid,
             "-k grant_userid=%s" % userid,
             "-k switch_name=%s" % vswitch_name,
-            "-k user_vlan_id=%s" % vlan_id))
+            "-k user_vlan_id=%s" % vlan_id,
+            "-k persist=YES"))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
         zvmutils.xcat_request("PUT", url, body)

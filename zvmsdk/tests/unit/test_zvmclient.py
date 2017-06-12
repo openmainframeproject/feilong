@@ -744,7 +744,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         commands += " -T fakeuserid"
         commands += " -k switch_name=fakevs"
         commands += " -k grant_userid=fakeuserid"
-        commands += " -h persist=YES"
+        commands += " -k persist=YES"
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
 
@@ -761,7 +761,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         commands += " -T fakeuserid"
         commands += " -k switch_name=fakevs"
         commands += " -k revoke_userid=fakeuserid"
-        commands += " -h persist=YES"
+        commands += " -k persist=YES"
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
 
@@ -1238,6 +1238,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         commands += ' -k grant_userid=userid'
         commands += " -k switch_name=vswitch_name"
         commands += " -k user_vlan_id=vlan_id"
+        commands += " -k persist=YES"
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
 
