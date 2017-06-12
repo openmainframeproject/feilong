@@ -791,50 +791,6 @@ class XCATClient(ZVMClient):
                 self._set_vswitch_rdev(name, rdev)
                 return
 
-        if ((vid < 0) or (vid > 4094)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid vlan id should be 0-4094'))
-        if ((connection < 0) or (connection > 2)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid connection value should be 0, 1, 2'))
-        if ((queue_mem < 1) or (queue_mem > 8)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid query memory value should be 0-8'))
-        if ((router < 0) or (router > 2)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid router value should be 0, 1, 2'))
-        if ((network_type < 0) or (network_type > 2)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid network type value should be 0, 1, 2'))
-        if ((port_type < 0) or (port_type > 2)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid port type value should be 0, 1, 2'))
-        if ((update < 0) or (update > 3)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid update indicator should be 0, 1, 2, 3'))
-        if ((gvrp < 0) or (gvrp > 2)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid GVRP value should be 0, 1, 2'))
-        if (((native_vid < 1) or (native_vid > 8)) and (native_vid != 1)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid native VLAN id should be -1 or 1-4094'))
-        # if vid = 0, port_type, gvrp and native_vlanid are not
-        # allowed to specified
-        if int(vid) == 0:
-            vid = 0
-            port_type = 0
-            gvrp = 0
-            native_vid = -1
-
         userid = self._get_zhcp_userid()
         url = self._xcat_url.xdsh("/%s" % zhcp)
         commands = ' '.join((

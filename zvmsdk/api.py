@@ -261,21 +261,66 @@ class SDKAPI(object):
                        port_type=1, update=1, gvrp=2, native_vid=1):
         """ Create vswitch.
 
-        :param name: the vswitch name
-        :param rdev: the real device number
-        :param controller: the vswitch's controller
-        :param connection: 0-unspecified 1-Actice 2-non-Active
-        :param queue_mem: the max number of megabytes on a single port
-        :param router: 0-unspecified 1-nonrouter 2-prirouter
-        :param network_type: 0-unspecified 1-IP 2-ethernet
-        :param vid: 1-4094 for access port defaut vlan
-        :param port_type: 0-unspecified 1-access 2-trunk
-        :param update: 0-unspecified 1-create 2-create and add to system
+        :param str name: the vswitch name
+        :param str rdev: the real device number
+        :param str controller: the vswitch's controller
+        :param int connection: 0-unspecified 1-Actice 2-non-Active
+        :param int queue_mem: the max number of megabytes on a single port
+        :param int router: 0-unspecified 1-nonrouter 2-prirouter
+        :param int network_type: 0-unspecified 1-IP 2-ethernet
+        :param int vid: 1-4094 for access port defaut vlan
+        :param int port_type: 0-unspecified 1-access 2-trunk
+        :param int update: 0-unspecified 1-create 2-create and add to system
                configuration file 3-add to system configuration
-        :param gvrp: 0-unspecified 1-gvrp 2-nogvrp
-        :param native_vid: the native vlan id
+        :param int gvrp: 0-unspecified 1-gvrp 2-nogvrp
+        :param int native_vid: the native vlan id
 
         """
+        if ((vid < 0) or (vid > 4094)):
+            raise exception.ZVMInvalidInput(
+                msg=("switch: %s add failed, %s") %
+                    (name, 'valid vlan id should be 0-4094'))
+        if ((connection < 0) or (connection > 2)):
+            raise exception.ZVMInvalidInput(
+                msg=("switch: %s add failed, %s") %
+                    (name, 'valid connection value should be 0, 1, 2'))
+        if ((queue_mem < 1) or (queue_mem > 8)):
+            raise exception.ZVMInvalidInput(
+                msg=("switch: %s add failed, %s") %
+                    (name, 'valid query memory value should be 0-8'))
+        if ((router < 0) or (router > 2)):
+            raise exception.ZVMInvalidInput(
+                msg=("switch: %s add failed, %s") %
+                    (name, 'valid router value should be 0, 1, 2'))
+        if ((network_type < 0) or (network_type > 2)):
+            raise exception.ZVMInvalidInput(
+                msg=("switch: %s add failed, %s") %
+                    (name, 'valid network type value should be 0, 1, 2'))
+        if ((port_type < 0) or (port_type > 2)):
+            raise exception.ZVMInvalidInput(
+                msg=("switch: %s add failed, %s") %
+                    (name, 'valid port type value should be 0, 1, 2'))
+        if ((update < 0) or (update > 3)):
+            raise exception.ZVMInvalidInput(
+                msg=("switch: %s add failed, %s") %
+                    (name, 'valid update indicator should be 0, 1, 2, 3'))
+        if ((gvrp < 0) or (gvrp > 2)):
+            raise exception.ZVMInvalidInput(
+                msg=("switch: %s add failed, %s") %
+                    (name, 'valid GVRP value should be 0, 1, 2'))
+        if (((native_vid < 1) or (native_vid > 4094)) and
+            (native_vid != -1)):
+            raise exception.ZVMInvalidInput(
+                msg=("switch: %s add failed, %s") %
+                    (name, 'valid native VLAN id should be -1 or 1-4094'))
+        # if vid = 0, port_type, gvrp and native_vlanid are not
+        # allowed to specified
+        if int(vid) == 0:
+            vid = 0
+            port_type = 0
+            gvrp = 0
+            native_vid = -1
+
         self._networkops.add_vswitch(name, rdev,
                                      controller, connection, queue_mem,
                                      router, network_type, vid,
