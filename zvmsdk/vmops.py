@@ -138,7 +138,7 @@ class VMOps(object):
                          "seconds" % {'userid': userid, 'time': timeout})
 
     def create_vm(self, instance_name, cpu, memory, disk_list=[],
-                  user_profile=None):
+                  user_profile=CONF.zvm.user_profile):
         """Create z/VM userid into user directory for a z/VM instance."""
         LOG.debug("Creating the z/VM user entry for instance %s"
                   % instance_name)

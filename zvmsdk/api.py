@@ -181,7 +181,7 @@ class SDKAPI(object):
         self._imageops.image_import(image_file_path, os_version)
 
     def guest_create(self, userid, vcpus, memory, disk_list=[],
-                     user_profile=None):
+                     user_profile=CONF.zvm.user_profile):
         """create a vm in z/VM
 
         :param userid: (str) the userid of the vm to be created

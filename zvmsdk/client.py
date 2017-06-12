@@ -257,7 +257,7 @@ class XCATClient(ZVMClient):
     def create_vm(self, userid, cpu, memory, disk_list, profile):
         # Create node for the vm
         self.prepare_for_spawn(userid)
-        profile = 'profile=%s' % profile or CONF.zvm.user_profile
+        profile = 'profile=%s' % profile
 
         body = [profile,
                 'password=%s' % CONF.zvm.user_default_password,

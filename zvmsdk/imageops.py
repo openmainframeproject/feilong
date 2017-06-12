@@ -53,7 +53,7 @@ class ImageOps(object):
         image_uuid = name_split[-1]
         image_file_path = tmpdir + '/' + name_split[2] + '/' +\
                 name_split[0] + '/' + name_split[1] + '/' + image_uuid +\
-                '/' + spawn_image_name + '.img'
+                '/' + CONF.zvm.user_root_vdev + '.img'
         return image_file_path
 
     def image_get_root_disk_size(self, spawn_image_name):
@@ -69,7 +69,7 @@ class ImageOps(object):
 
         LOG.debug("hexdump result is %s", output)
         try:
-            root_disk_size = int(output[144:156])
+            root_disk_size = output[144:156].strip()
         except ValueError:
             msg = ("Image file at %s is missing built-in disk size "
                     "metadata, it was probably not captured with xCAT"
