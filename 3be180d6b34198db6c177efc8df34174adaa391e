@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fb7bc521_1095b309",
+        "filename": "zvmsdk/imageops.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-12T07:05:13Z",
+      "side": 1,
+      "message": "remove this",
+      "range": {
+        "startLine": 131,
+        "startChar": 8,
+        "endLine": 131,
+        "endChar": 12
+      },
+      "revId": "3be180d6b34198db6c177efc8df34174adaa391e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
