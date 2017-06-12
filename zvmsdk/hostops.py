@@ -44,6 +44,7 @@ class HOSTOps(object):
 
         with zvmutils.expect_invalid_xcat_resp_data(inv_info):
             host_info['zvm_host'] = inv_info['zvm_host']
+            host_info['zhcp_node'] = inv_info['zhcp'].partition('.')[0]
             host_info['vcpus'] = int(inv_info['lpar_cpu_total'])
             host_info['vcpus_used'] = int(inv_info['lpar_cpu_used'])
             host_info['cpu_info'] = {}
