@@ -516,7 +516,7 @@ class XCATClient(ZVMClient):
             body.append('transport=%s' % transportfiles)
 
         with zvmutils.expect_xcat_call_failed_and_reraise(
-                exception.ZVMXCATUpdateNodeFailed):
+                exception.ZVMXCATDeployNodeFailed):
             zvmutils.xcat_request("PUT", url, body)
 
     def check_space_imgimport_xcat(self, tar_file, xcat_free_space_threshold,
@@ -931,7 +931,7 @@ class XCATClient(ZVMClient):
             LOG.error(msg)
             raise
 
-    def _generate_eph_parmline(self, vdev, fmt, mntdir):
+    def _generate_disk_parmline(self, vdev, fmt, mntdir):
         parms = [
                 'action=addMdisk',
                 'vaddr=' + vdev,
@@ -941,15 +941,18 @@ class XCATClient(ZVMClient):
         parmline = ''.join(parms)
         return parmline
 
-    def process_eph_disk(self, instance_name, vdev=None,
-                         fmt=None, mntdir=None):
-        if not fmt:
-            fmt = CONF.zvm.default_ephemeral_format or\
-                  const.DEFAULT_EPH_DISK_FMT
-        vdev = vdev or CONF.zvm.user_adde_vdev
-        mntdir = mntdir or CONF.zvm.default_ephemeral_mntdir
-        eph_parms = self._generate_eph_parmline(vdev, fmt, mntdir)
-        self.aemod_handler(instance_name, const.DISK_FUNC_NAME, eph_parms)
+    def process_additional_minidisks(self, userid, disk_info):
+        """
+        Generate and punch the scripts used to process additional disk into
+        target vm's reader.
+        """
+        for idx, disk in enumerate(disk_info):
+            vdev = disk.get('vdev') or self.generate_disk_vdev(
+                                                    offset=(idx + 1))
+            fmt = disk.get('format')
+            mount_dir = disk.get('mntdir') or ''.join(['/mnt/', str(vdev)])
+            disk_parms = self._generate_disk_parmline(vdev, fmt, mount_dir)
+            self.aemod_handler(userid, const.DISK_FUNC_NAME, disk_parms)
 
     def aemod_handler(self, instance_name, func_name, parms):
         url = self._xcat_url.chvm('/' + instance_name)
@@ -961,7 +964,7 @@ class XCATClient(ZVMClient):
             LOG.error('Invoke AE method function: %(func)s on %(node)s '
                       'failed with reason: %(msg)s',
                       {'func': func_name, 'node': instance_name, 'msg': emsg})
-            raise exception.ZVMDriverError(msg=emsg)
+            raise exception.ZVMSDKInteralError(msg=emsg)
 
     def delete_vm(self, userid):
         """Delete z/VM userid for the instance.This will remove xCAT node

@@ -1035,11 +1035,14 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self.assertEqual(vdev, '0101')
 
     @mock.patch.object(zvmclient.XCATClient, 'aemod_handler')
-    def test_process_eph_disk(self, aemod_handler):
-        instance_name = 'inst001'
+    def test_process_additional_minidisks(self, aemod_handler):
+        userid = 'inst001'
+        disk_list = [{'vdev': '0101',
+                      'format': 'ext3',
+                      'mntdir': '/mnt/0101'}]
         vdev = '0101'
         fmt = 'ext3'
-        mntdir = '/mnt/ephemeral/'
+        mntdir = '/mnt/0101'
         func_name = 'setupDisk'
         parms = [
                 'action=addMdisk',
@@ -1048,9 +1051,8 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
                 'mntdir=' + mntdir
                 ]
         parmline = ''.join(parms)
-        self._zvmclient.process_eph_disk(instance_name, vdev,
-                                         fmt, mntdir)
-        aemod_handler.assert_called_with(instance_name, func_name, parmline)
+        self._zvmclient.process_additional_minidisks(userid, disk_list)
+        aemod_handler.assert_called_with(userid, func_name, parmline)
 
     @mock.patch.object(zvmutils, 'xdsh')
     def test_unlock_userid(self, xdsh):
