@@ -20,6 +20,7 @@ import functools
 import json
 import os
 import pwd
+import re
 import ssl
 import shutil
 import six
@@ -793,3 +794,73 @@ def last_bytes(file_like_object, num):
 
     remaining = file_like_object.tell()
     return (file_like_object.read(), remaining)
+
+
+@wrap_invalid_xcat_resp_data_error
+def create_xcat_mgt_network(mgt_vswitch):
+    '''To talk to xCAT MN, xCAT MN requires every instance has a NIC which is
+    in the same subnet as xCAT. The xCAT MN's IP address is mgt_ip,
+    mask is mgt_mask in the config file,
+    by default zvmsdk.conf.
+    '''
+
+    mgt_ip = CONF.xcat.mgt_ip
+    mgt_mask = CONF.xcat.mgt_mask
+    if (mgt_ip is None or
+        mgt_mask is None):
+        LOG.info("User does not configure management IP. Don't need to"
+                 " initialize xCAT management network.")
+        return
+
+    xcat_node_name = CONF.xcat.master_node
+    url = get_xcat_url().xdsh("/%s" % xcat_node_name)
+    xdsh_commands = ('command=vmcp q v nic 800')
+    body = [xdsh_commands]
+    result = xcat_request("PUT", url, body)['data'][0][0]
+    cmd = ''
+    # nic does not exist
+    if 'does not exist' in result:
+        cmd = ('vmcp define nic 0800 type qdio\n' +
+               'vmcp couple 0800 system %s\n' % (mgt_vswitch))
+    # nic is created but not couple
+    elif 'LAN: *' in result:
+        cmd = ('vmcp couple 0800 system %s\n' % (mgt_vswitch))
+    # couple and active
+    elif "VSWITCH: SYSTEM" in result:
+        # Only support one management network.
+        url = get_xcat_url().xdsh("/%s") % xcat_node_name
+        xdsh_commands = "command=ifconfig enccw0.0.0800|grep 'inet '"
+        body = [xdsh_commands]
+        result = xcat_request("PUT", url, body)
+        if result['errorcode'][0][0] == '0' and result['data']:
+            cur_ip = re.findall('inet (.*)  netmask',
+                               result['data'][0][0])
+            cur_mask = re.findall('netmask (.*)  broadcast',
+                               result['data'][0][0])
+            if not cur_ip:
+                LOG.warning(("Nic 800 has been created, but IP "
+                      "address is not correct, will config it again"))
+            elif mgt_ip != cur_ip[0]:
+                raise exception.zVMConfigException(
+                    msg=("Only support one Management network,"
+                         "it has been assigned by other agent!"
+                         "Please use current management network"
+                         "(%s/%s) to deploy." % (cur_ip[0], cur_mask)))
+            else:
+                LOG.debug("IP address has been assigned for NIC 800.")
+                return
+        else:
+            LOG.warning(("Nic 800 has been created, but IP address "
+                            "doesn't exist, will config it again"))
+    else:
+        message = ("Command 'query v nic' return %s,"
+                   " it is unkown information for zvm-agent") % result
+        LOG.error(("Error: %s") % message)
+        raise exception.zvmException(msg=message)
+    url = get_xcat_url().xdsh("/%s") % xcat_node_name
+    cmd += ('/usr/bin/perl /usr/sbin/sspqeth2.pl ' +
+            '-a %s -d 0800 0801 0802 -e enccw0.0.0800 -m %s -g %s'
+          % (mgt_ip, mgt_mask, mgt_ip))
+    xdsh_commands = 'command=%s' % cmd
+    body = [xdsh_commands]
+    xcat_request("PUT", url, body)
