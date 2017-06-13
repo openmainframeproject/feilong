@@ -43,5 +43,31 @@ class VolumeOpTestCase(unittest.TestCase):
         inst = {'name': 'inst1', 'os_type': 'sles12'}
         self.assertEqual(self._vol_op._validate_instance(inst), None)
 
+    def test_validate_volume(self):
+        self.assertRaises(err, self._vol_op._validate_volume, None)
+        volume = ['fcp', '0123456789abcdef', 'abcdef0987654321']
+        self.assertRaises(err, self._vol_op._validate_volume, volume)
+        volume = {'type': 'unknown',
+                  'lun': 'abcdef0987654321'}
+        self.assertRaises(err, self._vol_op._validate_volume, volume)
+        volume = {'type': 'fc',
+                  'lun': 'abcdef0987654321'}
+        self.assertEqual(self._vol_op._validate_volume(volume), None)
+
+    def test_is_16bit_hex(self):
+        self.assertFalse(self._vol_op._is_16bit_hex(None))
+        self.assertFalse(self._vol_op._is_16bit_hex('1234'))
+        self.assertFalse(self._vol_op._is_16bit_hex('1234567890abcdefg'))
+        self.assertFalse(self._vol_op._is_16bit_hex('1234567890abcdeg'))
+        self.assertTrue(self._vol_op._is_16bit_hex('1234567890abcdef'))
+
+    def test_validate_fc_volume(self):
+        volume = {'type': 'fc'}
+        self.assertRaises(err, self._vol_op._validate_fc_volume, volume)
+
+        volume = {'type': 'fc',
+                  'lun': 'abcdef0987654321'}
+        self.assertEqual(self._vol_op._validate_fc_volume(volume), None)
+
     def test_get_configurator(self):
         pass

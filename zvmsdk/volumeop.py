@@ -57,37 +57,37 @@ class VolumeConfiguratorAPI(object):
         self.volume = volume
         self.connection_info = connection_info
 
-    def config_attach(self, is_rollback_on_failure=False):
+    def config_attach(self):
         raise NotImplementedError
 
-    def config_detach(self, is_rollback_on_failure=False):
+    def config_detach(self):
         raise NotImplementedError
 
 
 class Configurator_RHEL7(VolumeConfiguratorAPI):
 
-    def config_attach(self, is_rollback_on_failure=False):
+    def config_attach(self):
         pass
 
-    def config_detach(self, is_rollback_on_failure=False):
+    def config_detach(self):
         pass
 
 
 class Configurator_SLES12(VolumeConfiguratorAPI):
 
-    def config_attach(self, is_rollback_on_failure=False):
+    def config_attach(self):
         pass
 
-    def config_detach(self, is_rollback_on_failure=False):
+    def config_detach(self):
         pass
 
 
 class Configurator_Ubuntu16(VolumeConfiguratorAPI):
 
-    def config_attach(self, is_rollback_on_failure=False):
+    def config_attach(self):
         pass
 
-    def config_detach(self, is_rollback_on_failure=False):
+    def config_detach(self):
         pass
 
 
@@ -117,7 +117,7 @@ class VolumeOperator(VolumeOperatorAPI):
 
         configurator = self._get_configurator(instance, volume,
                                               connection_info)
-        configurator.config_attach(is_rollback_on_failure)
+        configurator.config_attach()
 
         LOG.debug("Exit VolumeOperator.attach_volume_to_instance.")
 
@@ -142,13 +142,42 @@ class VolumeOperator(VolumeOperatorAPI):
         # rhel7: rhel7, rhel7.2
         # sles12: sles12, sles12sp2
         # ubuntu16: ubuntu16, ubuntu16.04
-        OS_TYPE_PATTERN = (self.__PATTERN_RHEL7 +
+        os_type_pattern = (self.__PATTERN_RHEL7 +
                            '|' + self.__PATTERN_SLES12 +
                            '|' + self.__PATTERN_UBUNTU16)
-        if not re.match(OS_TYPE_PATTERN, instance['os_type']):
+        if not re.match(os_type_pattern, instance['os_type']):
             msg = ("unknown instance os_type: %s . It must be one of set "
                    "'rhel7, sles12, or ubuntu16'." % instance['os_type'])
             raise ZVMVolumeError(msg)
+
+    def _is_16bit_hex(self, value):
+        pattern = '^[0-9a-f]{16}$'
+        try:
+            return re.match(pattern, value)
+        except:
+            return False
+
+    def _validate_volume(self, volume):
+        if not volume:
+            raise ZVMVolumeError("volume object is not passed in!")
+
+        if not isinstance(volume, dict):
+            raise ZVMVolumeError("volume object must be of type dict!")
+
+        if 'type' not in volume.keys():
+            raise ZVMVolumeError("volume type is not passed in!")
+
+        # support only FiberChannel volumes at this moment
+        if volume['type'] != 'fc':
+            raise ZVMVolumeError("only FiberChannel volumes are supported!")
+        self._validate_fc_volume(volume)
+
+    def _validate_fc_volume(self, volume):
+        if 'lun' not in volume.keys():
+            raise ZVMVolumeError("volume LUN is not passed in!")
+
+        if not self._is_16bit_hex(volume['lun']):
+            raise ZVMVolumeError("volume LUN value is illegal!")
 
     def _get_configurator(self, instance, volume, connection_info):
         pass
