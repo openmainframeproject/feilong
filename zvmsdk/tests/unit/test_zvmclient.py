@@ -1263,3 +1263,21 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self._zvmclient.update_nic_definition("node", "vdev",
                                               "mac", "vswitch")
         xrequest.assert_called_with("PUT", url, body)
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_query_zvm_uptime(self, xrequest):
+        log_str = 'test0\ntest1\ntest2\ntest3\n' +\
+                  'zhcp2: zVM IPL time: 2017-06-02 11:07:10 EDT\ntest5'
+        xrequest.return_value = {'data': [[log_str]]}
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        cmd = '/opt/zhcp/bin/smcli System_Info_Query'
+        xdsh_commands = 'command=%s' % cmd
+        body = [xdsh_commands]
+
+        ret = self._zvmclient.query_zvm_uptime()
+        xrequest.assert_called_with("PUT", url, body)
+
+        self.assertEqual(ret, '2017-06-02 11:07:10 EDT')

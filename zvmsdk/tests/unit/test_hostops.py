@@ -74,3 +74,8 @@ class SDKHostOpsTestCase(base.SDKTestCase):
     def test_list_guests(self, get_vm_list):
         self._hostops.list_guests()
         get_vm_list.assert_called_once_with()
+
+    @mock.patch.object(zvmclient.XCATClient, 'query_zvm_uptime')
+    def test_query_zvm_uptime(self, query_zvm_uptime):
+        self._hostops.query_zvm_uptime()
+        query_zvm_uptime.assert_called_once_with()
