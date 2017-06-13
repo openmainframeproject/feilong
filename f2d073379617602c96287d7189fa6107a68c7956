@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f790a795_d65c1f9a",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 798,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-13T04:43:30Z",
+      "side": 1,
+      "message": "As API layer will handle some checks, should we skip it when the request comes from REST API layer?",
+      "range": {
+        "startLine": 798,
+        "startChar": 0,
+        "endLine": 798,
+        "endChar": 30
+      },
+      "revId": "f2d073379617602c96287d7189fa6107a68c7956",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e793d3b5_618488b4",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 811,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-13T04:43:30Z",
+      "side": 1,
+      "message": "need further unit test",
+      "range": {
+        "startLine": 809,
+        "startChar": 12,
+        "endLine": 811,
+        "endChar": 47
+      },
+      "revId": "f2d073379617602c96287d7189fa6107a68c7956",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6becb204_5df067fa",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 816,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-13T04:43:30Z",
+      "side": 1,
+      "message": "this is user input, right? I thought LOG.error indicates it\u0027s system issue, not user input issue",
+      "range": {
+        "startLine": 816,
+        "startChar": 16,
+        "endLine": 816,
+        "endChar": 30
+      },
+      "revId": "f2d073379617602c96287d7189fa6107a68c7956",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
