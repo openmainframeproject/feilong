@@ -793,3 +793,28 @@ def last_bytes(file_like_object, num):
 
     remaining = file_like_object.tell()
     return (file_like_object.read(), remaining)
+
+
+def check_input_types(*types):
+    """This is a function decorator to check all input parameters given to
+    decorated function are in expected types.
+
+    :param tuple types: expected types of input parameters to the decorated
+                        function
+    """
+    def decorator(function):
+        @functools.wraps(function)
+        def wrap_func(*args, **kwargs):
+            # drop class object self
+            inputs = args[1:]
+            assert len(inputs) == len(types)
+            argtypes = tuple(map(type, inputs))
+            if argtypes != types:
+                msg = ("Invalid input types: %(argtypes)s; "
+                       "Expected types: %(types)s" %
+                       {'argtypes': str(argtypes), 'types': str(types)})
+                LOG.error(msg)
+                raise exception.ZVMInvalidInput(msg=msg)
+            return function(*args, **kwargs)
+        return wrap_func
+    return decorator
