@@ -13,14 +13,16 @@
 #    under the License.
 
 
-from zvmsdk import vmops
-from zvmsdk import hostops
+
 from zvmsdk import config
+from zvmsdk import exception
+from zvmsdk import hostops
+from zvmsdk import imageops
 from zvmsdk import log
 from zvmsdk import monitor
 from zvmsdk import networkops
-from zvmsdk import imageops
-from zvmsdk import exception
+from zvmsdk import utils
+from zvmsdk import vmops
 
 
 CONF = config.CONF
@@ -37,6 +39,7 @@ class SDKAPI(object):
         self._imageops = imageops.get_imageops()
         self._monitor = monitor.get_monitor()
 
+    @utils.check_input_types(str)
     def guest_start(self, userid):
         """Power on a virtual machine.
 
