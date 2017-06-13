@@ -13,30 +13,65 @@
 #    under the License.
 
 
-from zvmsdk import vmops
-from zvmsdk import hostops
+import functools
+
 from zvmsdk import config
+from zvmsdk import exception
+from zvmsdk import hostops
+from zvmsdk import imageops
 from zvmsdk import log
 from zvmsdk import monitor
 from zvmsdk import networkops
-from zvmsdk import imageops
-from zvmsdk import exception
+from zvmsdk import vmops
 
 
 CONF = config.CONF
 LOG = log.LOG
 
 
+def check_input_types(*types):
+    """This is a function decorator to check all input parameters given to
+    decorated function are in expected types.
+
+    The checks can be skipped by specify skip_input_checks=True in decorated
+    function.
+
+    :param tuple types: expected types of input parameters to the decorated
+                        function
+    """
+    def decorator(function):
+        @functools.wraps(function)
+        def wrap_func(*args, **kwargs):
+            if args[0]._skip_input_check:
+                # skip input check
+                return function(*args, **kwargs)
+            # drop class object self
+            inputs = args[1:]
+            assert len(inputs) == len(types)
+            argtypes = tuple(map(type, inputs))
+            if argtypes != types:
+                msg = ("Invalid input types: %(argtypes)s; "
+                       "Expected types: %(types)s" %
+                       {'argtypes': str(argtypes), 'types': str(types)})
+                LOG.info(msg)
+                raise exception.ZVMInvalidInput(msg=msg)
+            return function(*args, **kwargs)
+        return wrap_func
+    return decorator
+
+
 class SDKAPI(object):
     """Compute action interfaces."""
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self._vmops = vmops.get_vmops()
         self._hostops = hostops.get_hostops()
         self._networkops = networkops.get_networkops()
         self._imageops = imageops.get_imageops()
         self._monitor = monitor.get_monitor()
+        self._skip_input_check = kwargs.get('skip_input_check')
 
+    @check_input_types(str)
     def guest_start(self, userid):
         """Power on a virtual machine.
 

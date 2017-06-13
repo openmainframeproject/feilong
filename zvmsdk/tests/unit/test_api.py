@@ -14,6 +14,7 @@
 import mock
 
 from zvmsdk import api
+from zvmsdk import exception
 from zvmsdk.tests.unit import base
 
 
@@ -100,3 +101,12 @@ class SDKAPITestCase(base.SDKTestCase):
                       'mntdir': '/mnt/0101'}]
         self.api.guest_config_minidisks(userid, disk_list)
         config_disks.assert_called_once_with(userid, disk_list)
+
+    @mock.patch("zvmsdk.api.SDKAPI.guest_start")
+    def test_skip_api_input_check(self, gs):
+        zapi = api.SDKAPI(skip_input_check=True)
+        zapi.guest_start(1)
+        gs.assert_called_once()
+
+    def test_api_input_check_failed(self):
+        self.assertRaises(exception.ZVMInvalidInput, self.api.guest_start, 1)
