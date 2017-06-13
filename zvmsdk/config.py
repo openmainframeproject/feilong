@@ -56,6 +56,12 @@ zvm_opts = [
         section='xcat',
         default=50,
         opt_type='int'),
+    Opt('mgt_ip',
+        section='xcat',
+        required=True),
+    Opt('mgt_mask',
+        section='xcat',
+        required=True),
     # logging options
     Opt('log_file',
         section='logging',
