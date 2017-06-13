@@ -938,7 +938,7 @@ class XCATClient(ZVMClient):
                 'filesys=' + fmt,
                 'mntdir=' + mntdir
                 ]
-        parmline = ''.join(parms)
+        parmline = ' '.join(parms)
         return parmline
 
     def process_additional_minidisks(self, userid, disk_info):
