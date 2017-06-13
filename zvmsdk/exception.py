@@ -144,3 +144,7 @@ class InvalidName(SDKBaseException):
 
 class ValidationError(SDKBaseException):
     msg_fmt = 'Validation error: %(detail)s'
+
+
+class zVMConfigException(SDKBaseException):
+    msg_fmt = 'zVMConfig Error: %(msg)s'
