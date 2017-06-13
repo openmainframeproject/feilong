@@ -1207,3 +1207,13 @@ class XCATClient(ZVMClient):
 
         with zvmutils.expect_invalid_xcat_resp_data():
             zvmutils.xcat_request("PUT", url, body)
+
+    def query_zvm_uptime(self):
+        zhcp = CONF.xcat.zhcp_node
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        cmd = '/opt/zhcp/bin/smcli System_Info_Query'
+        xdsh_commands = 'command=%s' % cmd
+        body = [xdsh_commands]
+        with zvmutils.expect_invalid_xcat_resp_data():
+            ret_str = zvmutils.xcat_request("PUT", url, body)['data'][0][0]
+        return ret_str.split('\n')[4].split(': ', 3)[2]

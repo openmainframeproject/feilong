@@ -438,3 +438,10 @@ class SDKAPI(object):
 
         """
         self._vmops.guest_config_minidisks(userid, disk_info)
+
+    def host_get_zvm_uptime(self):
+        """Obtain z/VM CP IPL time info that zHCP is running on
+        :returns: time string, for example '2017-06-02 11:07:10 EDT'
+        :rtype: str
+        """
+        return self._hostops.query_zvm_uptime()

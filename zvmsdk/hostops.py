@@ -93,3 +93,6 @@ class HOSTOps(object):
 
     def list_guests(self):
         return self._zvmclient.get_vm_list()
+
+    def query_zvm_uptime(self):
+        return self._zvmclient.query_zvm_uptime()
