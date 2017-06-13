@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "27f2f42f_182800c3",
+        "filename": "zvmsdk/volumeop.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-13T06:16:53Z",
+      "side": 1,
+      "message": "you can print volume for debug purpose",
+      "range": {
+        "startLine": 164,
+        "startChar": 7,
+        "endLine": 168,
+        "endChar": 65
+      },
+      "revId": "7d103aee02e0dd689c5657a94eee7a6d523c9163",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9d8c64b2_6ae0d54f",
+        "filename": "zvmsdk/volumeop.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-13T06:16:53Z",
+      "side": 1,
+      "message": "you can print type for debug purpose",
+      "range": {
+        "startLine": 172,
+        "startChar": 33,
+        "endLine": 172,
+        "endChar": 72
+      },
+      "revId": "7d103aee02e0dd689c5657a94eee7a6d523c9163",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7b0288b7_4dd3eede",
+        "filename": "zvmsdk/volumeop.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-06-13T06:16:53Z",
+      "side": 1,
+      "message": "you can print lun value here for debug purpose",
+      "range": {
+        "startLine": 180,
+        "startChar": 33,
+        "endLine": 180,
+        "endChar": 63
+      },
+      "revId": "7d103aee02e0dd689c5657a94eee7a6d523c9163",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
