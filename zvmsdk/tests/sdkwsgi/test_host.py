@@ -29,5 +29,5 @@ class HostTestCase(unittest.TestCase):
         self.assertEqual(200, resp.status_code)
 
     def test_host_disk_info(self):
-        resp = self.client.api_request(url='/host/host1/disk_info/disk1')
+        resp = self.client.api_request(url='/host/h1/disk_info/ECKD:xcateckd')
         self.assertEqual(200, resp.status_code)

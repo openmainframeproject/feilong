@@ -13,6 +13,7 @@
 
 from zvmsdk import config
 from zvmsdk import log
+from zvmsdk import api
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi import wsgi_wrapper
@@ -23,14 +24,22 @@ LOG = log.LOG
 
 
 class HostAction(object):
+
+    def __init__(self):
+        self.api = api.SDKAPI()
+
     def list(self, name):
         LOG.info('list guest for a host')
 
     def get_info(self, name):
-        LOG.info('get host info')
+        LOG.info('get host info for name %s', name)
+        info = self.api.host_get_info()
+        LOG.info('get host info', info)
 
     def get_disk_info(self, name, diskname):
         LOG.info('get host disk info')
+        info = self.api.host_diskpool_get_info(disk_pool=diskname)
+        LOG.info('get disk info %s', info)
 
 
 def get_action():
