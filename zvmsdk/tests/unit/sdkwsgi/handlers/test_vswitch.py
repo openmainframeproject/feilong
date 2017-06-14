@@ -29,6 +29,7 @@ class FakeReq(object):
     def __init__(self):
         self.headers = {}
         self.environ = {}
+        self.__name__ = ''
 
     def __getitem__(self, name):
         return self.headers

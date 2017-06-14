@@ -11,6 +11,7 @@
 #    under the License.
 """Handler for the root of the sdk API."""
 
+from zvmsdk import api
 from zvmsdk import config
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
@@ -25,8 +26,14 @@ LOG = log.LOG
 
 
 class VswitchAction(object):
+    def __init__(self):
+        self.api = api.SDKAPI()
+
     def list(self):
         LOG.info('list vswitchs')
+        info = self.api.vswitch_get_list()
+
+        LOG.info('get info %s', info)
 
     @validation.schema(vswitch.create)
     def create(self, body):
@@ -41,9 +48,8 @@ def get_action():
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def vswitch_list(req):
-    tokens.validate(req)
-
     def _vswitch_list(req):
         action = get_action()
         action.list()
@@ -52,8 +58,8 @@ def vswitch_list(req):
 
 
 @wsgi_wrapper.SdkWsgify
+@tokens.validate
 def vswitch_create(req):
-    tokens.validate(req)
 
     def _vswitch_create(req):
         action = get_action()

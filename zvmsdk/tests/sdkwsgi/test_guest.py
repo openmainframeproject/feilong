@@ -20,10 +20,6 @@ class GuestHandlerTestCase(unittest.TestCase):
     def setUp(self):
         self.client = test_sdkwsgi.TestSDKClient()
 
-    def test_guest_list(self):
-        resp = self.client.api_request(url='/guest')
-        self.assertEqual(200, resp.status_code)
-
     def test_guest_create(self):
         body = '{"guest": {"name": "name1"}}'
         resp = self.client.api_request(url='/guest', method='POST',

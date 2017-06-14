@@ -84,17 +84,6 @@ class GuestHandlerTest(unittest.TestCase):
         self.env = env
 
     @mock.patch.object(tokens, 'validate')
-    def test_guest_list(self, mock_validate):
-        self.env['PATH_INFO'] = '/guest'
-        self.env['REQUEST_METHOD'] = 'GET'
-        h = handler.SdkHandler()
-        with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMHandler.list') \
-            as list:
-            h(self.env, dummy)
-
-            self.assertTrue(list.called)
-
-    @mock.patch.object(tokens, 'validate')
     def test_guest_get_info(self, mock_validate):
         self.env['PATH_INFO'] = '/guest/1/info'
         self.env['REQUEST_METHOD'] = 'GET'
