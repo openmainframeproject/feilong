@@ -46,7 +46,13 @@ class VolumeOpTestCase(unittest.TestCase):
         inst = {'name': 'inst1', 'os_type': 'centos'}
         self.assertRaises(err, self._vol_op._validate_instance, inst)
 
-        inst = {'name': 'inst1', 'os_type': 'sles12'}
+        inst = {'name': 'inst1', 'os_type': 'rhel7.2'}
+        self._vol_op._validate_instance(inst)
+
+        inst = {'name': 'inst1', 'os_type': 'sles12sp2'}
+        self._vol_op._validate_instance(inst)
+
+        inst = {'name': 'inst1', 'os_type': 'ubuntu16.10'}
         self._vol_op._validate_instance(inst)
 
     @mock.patch.object(volumeop.VolumeOperator, '_validate_fc_volume')
@@ -180,4 +186,14 @@ class VolumeOpTestCase(unittest.TestCase):
         self._vol_op._validate_fcp('09af')
 
     def test_get_configurator(self):
-        pass
+        instance = {'os_type': 'rhel7'}
+        self.assertIsInstance(self._vol_op._get_configurator(instance),
+                              volumeop.Configurator_RHEL7)
+        instance = {'os_type': 'sles12'}
+        self.assertIsInstance(self._vol_op._get_configurator(instance),
+                              volumeop.Configurator_SLES12)
+        instance = {'os_type': 'ubuntu16'}
+        self.assertIsInstance(self._vol_op._get_configurator(instance),
+                              volumeop.Configurator_Ubuntu16)
+        instance = {'os_type': 'centos'}
+        self.assertRaises(err, self._vol_op._get_configurator, instance)
