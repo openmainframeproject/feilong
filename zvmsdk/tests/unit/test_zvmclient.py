@@ -1044,12 +1044,12 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         fmt = 'ext3'
         mntdir = '/mnt/0101'
         func_name = 'setupDisk'
-        parms = [
-                'action=addMdisk',
-                'vaddr=' + vdev,
-                'filesys=' + fmt,
-                'mntdir=' + mntdir
-                ]
+        parms = ' '.join([
+                          'action=addMdisk',
+                          'vaddr=' + vdev,
+                          'filesys=' + fmt,
+                          'mntdir=' + mntdir
+                        ])
         parmline = ''.join(parms)
         self._zvmclient.process_additional_minidisks(userid, disk_list)
         aemod_handler.assert_called_with(userid, func_name, parmline)
