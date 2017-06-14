@@ -130,7 +130,9 @@ class VolumeOperator(VolumeOperatorAPI):
             raise ZVMVolumeError("instance object is not passed in!")
 
         if not isinstance(instance, dict):
-            raise ZVMVolumeError("instance object must be of type dict!")
+            msg = ("instance object must be of type dict, however the object "
+                   "passed in is: %s !" % instance)
+            raise ZVMVolumeError(msg)
 
         if 'os_type' not in instance.keys():
             raise ZVMVolumeError("instance os_type is not passed in!")
@@ -162,22 +164,93 @@ class VolumeOperator(VolumeOperatorAPI):
             raise ZVMVolumeError("volume object is not passed in!")
 
         if not isinstance(volume, dict):
-            raise ZVMVolumeError("volume object must be of type dict!")
+            msg = ("volume object must be of type dict, however the object "
+                   "passed in is: %s !" % volume)
+            raise ZVMVolumeError(msg)
 
         if 'type' not in volume.keys():
             raise ZVMVolumeError("volume type is not passed in!")
 
         # support only FiberChannel volumes at this moment
         if volume['type'] != 'fc':
-            raise ZVMVolumeError("only FiberChannel volumes are supported!")
+            msg = ("volume type: %s is illegal!" % volume['type'])
+            raise ZVMVolumeError(msg)
         self._validate_fc_volume(volume)
 
     def _validate_fc_volume(self, volume):
+        # exclusively entering from _validate_volume at this moment, so will
+        # not check volume object again. Modify it if necessary in the future
         if 'lun' not in volume.keys():
             raise ZVMVolumeError("volume LUN is not passed in!")
 
+        volume['lun'] = volume['lun'].lower()
         if not self._is_16bit_hex(volume['lun']):
-            raise ZVMVolumeError("volume LUN value is illegal!")
+            msg = ("volume LUN value: %s is illegal!" % volume['lun'])
+            raise ZVMVolumeError(msg)
+
+    def _validate_connection_info(self, connection_info):
+        if not connection_info:
+            raise ZVMVolumeError("connection info is not passed in!")
+
+        if not isinstance(connection_info, dict):
+            msg = ("connection info must be of type dict, however the object "
+                   "passed in is: %s !" % connection_info)
+            raise ZVMVolumeError(msg)
+
+        if 'protocol' not in connection_info.keys():
+            raise ZVMVolumeError("connection protocol is not passed in!")
+
+        # support only FiberChannel volumes at this moment
+        if connection_info['protocol'] != 'fc':
+            raise ZVMVolumeError("connection protocol: %s is illegal!"
+                                 % connection_info['protocol'])
+        self._validate_fc_connection_info(connection_info)
+
+    def _validate_fc_connection_info(self, connection_info):
+        # exclusively entering from _validate_connection_info at this moment,
+        # so will not check connection_info object again. Modify it if
+        # necessary in the future
+        if 'fcps' not in connection_info.keys():
+            raise ZVMVolumeError("fcp devices are not passed in!")
+
+        if not isinstance(connection_info['fcps'], list):
+            msg = ("fcp devices in connection info must be of type dict, "
+                   "however the object passed in is: %s !"
+                   % connection_info['fcps'])
+            raise ZVMVolumeError(msg)
+
+        if 'wwpns' not in connection_info.keys():
+            raise ZVMVolumeError("WWPNS are not passed in!")
+
+        if not isinstance(connection_info['wwpns'], list):
+            msg = ("wwpns in connection info must be of type dict, however "
+                   "the object passed in is: %s !" % connection_info['wwpns'])
+            raise ZVMVolumeError(msg)
+
+        for i in range(len(connection_info['fcps'])):
+            connection_info['fcps'][i] = connection_info['fcps'][i].lower()
+        for fcp in connection_info['fcps']:
+            self._validate_fcp(fcp)
+
+        for i in range(len(connection_info['wwpns'])):
+            connection_info['wwpns'][i] = connection_info['wwpns'][i].lower()
+        for wwpn in connection_info['wwpns']:
+            if not self._is_16bit_hex(wwpn):
+                msg = ("WWPN value: %s is illegal!" % wwpn)
+                raise ZVMVolumeError(msg)
+
+    def _validate_fcp(self, fcp):
+        # exclusively entering from _validate_fc_connection_info at this
+        # moment, so will not check fcp object again. Modify it if necessary
+        # in the future
+        pattern = '^[0-9a-f]{1,4}$'
+        try:
+            if not re.match(pattern, fcp):
+                raise ZVMVolumeError("fcp value: %s is illegal!" % fcp)
+        except:
+            msg = ("fcp object must be of type string, "
+                   "however the object passed in is: %s !" % fcp)
+            raise ZVMVolumeError(msg)
 
     def _get_configurator(self, instance, volume, connection_info):
         pass
