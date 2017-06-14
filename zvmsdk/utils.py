@@ -672,6 +672,11 @@ def get_xcat_version():
         return version
 
 
+def get_zhcp_node():
+    """Return zhcp node."""
+    return CONF.xcat.zhcp.partition('.')[0]
+
+
 def convert_to_mb(s):
     """Convert memory size from GB to MB."""
     s = s.upper()
