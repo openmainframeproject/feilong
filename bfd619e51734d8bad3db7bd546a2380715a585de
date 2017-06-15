@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c5d88ffa_897a98b0",
+        "filename": "tools/sample.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-15T09:13:16Z",
+      "side": 1,
+      "message": "replace instance_name with userid in whole sample.py",
+      "range": {
+        "startLine": 34,
+        "startChar": 17,
+        "endLine": 34,
+        "endChar": 30
+      },
+      "revId": "bfd619e51734d8bad3db7bd546a2380715a585de",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "440b96d8_2ee76eb2",
+        "filename": "tools/sample.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-15T09:13:16Z",
+      "side": 1,
+      "message": "fix tailing writespaces",
+      "revId": "bfd619e51734d8bad3db7bd546a2380715a585de",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "43708887_f8c93d63",
+        "filename": "tools/sample.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-15T09:13:16Z",
+      "side": 1,
+      "message": "fix this",
+      "revId": "bfd619e51734d8bad3db7bd546a2380715a585de",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
