@@ -15,8 +15,27 @@
 
 import re
 
+from config import CONF
 from log import LOG
 from exception import ZVMVolumeError
+import dist
+import utils as zvmutils
+import vmops
+
+
+# instance parameters:
+NAME = 'name'
+OS_TYPE = 'os_type'
+# volume parameters:
+SIZE = 'size'
+TYPE = 'type'
+LUN = 'lun'
+# connection_info parameters:
+ALIAS = 'alias'
+PROTOCOL = 'protocol'
+FCPS = 'fcps'
+WWPNS = 'wwpns'
+DEDICATE = 'dedicate'
 
 
 class VolumeOperatorAPI(object):
@@ -55,34 +74,180 @@ class VolumeConfiguratorAPI(object):
     def config_attach(self, instance, volume, connection_info):
         raise NotImplementedError
 
+    def config_force_attach(self, instance, volume, connection_info):
+        # roll back when detaching fails
+        raise NotImplementedError
+
     def config_detach(self, instance, volume, connection_info):
         raise NotImplementedError
 
+    def config_force_detach(self, instance, volume, connection_info):
+        # roll back when attaching fails
+        raise NotImplementedError
 
-class Configurator_RHEL7(VolumeConfiguratorAPI):
+
+class _BaseConfigurator(VolumeConfiguratorAPI):
+    """Contain common code for all distros."""
+
+    def __init__(self):
+        self._vmop = vmops.get_vmops()
+        self._xCAT_proxy = _xCATProxy()
 
     def config_attach(self, instance, volume, connection_info):
-        pass
+        if self._vmop.is_reachable(instance[NAME]):
+            self.config_attach_active(instance, volume, connection_info)
+        else:
+            self.config_attach_inactive(instance, volume, connection_info)
 
     def config_detach(self, instance, volume, connection_info):
         pass
 
+    def config_attach_active(self, instance, volume, connection_info):
+        raise NotImplementedError
 
-class Configurator_SLES12(VolumeConfiguratorAPI):
+    def config_attach_inactive(self, instance, volume, connection_info):
+        raise NotImplementedError
 
-    def config_attach(self, instance, volume, connection_info):
+
+class _xCATProxy(object):
+    """provide assistant functions related to xCAT"""
+
+    _ZFCP_POOL = 'zvmsdk'
+    _ACTIONS = {'attach_volume': 'addScsiVolume',
+                'detach_volume': 'removeScsiVolume',
+                'create_mountpoint': 'createfilesysnode',
+                'remove_mountpoint': 'removefilesysnode'}
+    _TARGET = 'setupDisk'
+
+    def __init__(self):
+        self._xcat_url = zvmutils.get_xcat_url()
+        self._dist_manager = dist.ListDistManager()
+        self._host = CONF.zvm.host
+
+    def dedicate_device(self, instance, device):
+        body = [' '.join(['--dedicatedevice', device, device, '0'])]
+        self._xcat_chvm(instance[NAME], body)
+
+    def add_zfcp_to_pool(self, fcp, wwpn, lun, size):
+        body = [' '.join(['--addzfcp2pool', self._ZFCP_POOL, 'free', wwpn,
+                          lun, size, fcp])]
+        self._xcat_chhy(body)
+
+    def _xcat_chhy(self, body):
+        url = self._xcat_url.chhv('/' + self._host)
+        zvmutils.xcat_request('PUT', url, body)
+
+    def allocate_zfcp(self, instance, fcp, size, wwpn, lun):
+        body = [" ".join(['--reservezfcp', self._ZFCP_POOL, 'used',
+                          instance[NAME], fcp, size, wwpn, lun])]
+        self._xcat_chhy(body)
+
+    def notice_attach(self, instance, fcp, wwpn, lun, mountpoint, os_version):
+        # Create and send volume file
+        action = self._ACTIONS['attach_volume']
+        parms = self._get_volume_parms(action, fcp, wwpn, lun)
+        self._send_notice(instance, parms)
+
+        # Create and send mount point file
+        action = self._ACTIONS['create_mountpoint']
+        parms = self._get_mountpoint_parms(action, fcp, wwpn, lun, mountpoint,
+                                           os_version)
+        self._send_notice(instance, parms)
+
+    def _get_volume_parms(self, action, fcp, wwpn, lun):
+        action = "action=%s" % action
+        # Replace the ';' in wwpn/fcp to ',' in script file since shell will
+        # treat ';' as a new line
+        fcp = fcp.replace(';', ',')
+        fcp = "fcpAddr=%s" % fcp
+        wwpn = wwpn.replace(';', ',')
+        wwpn = "wwpn=%s" % wwpn
+        lun = "lun=%s" % lun
+        parmline = ' '.join([action, fcp, wwpn, lun])
+        return parmline
+
+    def _send_notice(self, instance, parms):
+        body = [" ".join(['--aemod', self._TARGET, parms])]
+        self._xcat_chvm(instance[NAME], body)
+
+    def _xcat_chvm(self, node, body):
+        url = self._xcat_url.chvm('/' + node)
+        zvmutils.xcat_request('PUT', url, body)
+
+    def _get_mountpoint_parms(self, action, fcp, wwpn, lun,
+                              mountpoint, os_version):
+        action_parm = "action=%s" % action
+        mountpoint = "tgtFile=%s" % mountpoint
+
+        if action == self._ACTIONS['create_mountpoint']:
+            # Replace the ';' in wwpn/fcp to ',' in script file since shell
+            # will treat ';' as a new line
+            wwpn = wwpn.replace(';', ',')
+            fcp = fcp.replace(';', ',')
+            dist = self._dist_manager.get_linux_dist(os_version)()
+            srcdev = dist.assemble_zfcp_srcdev(fcp, wwpn, lun)
+            srcfile = "srcFile=%s" % srcdev
+            parmline = ' '.join([action_parm, mountpoint, srcfile])
+        else:
+            parmline = ' '.join([action_parm, mountpoint])
+        return parmline
+
+
+class _Configurator_RHEL7(_BaseConfigurator):
+
+    def config_attach_active(self, instance, volume, connection_info):
         pass
 
-    def config_detach(self, instance, volume, connection_info):
+    def config_attach_inactive(self, instance, volume, connection_info):
         pass
 
 
-class Configurator_Ubuntu16(VolumeConfiguratorAPI):
+class _Configurator_SLES12(_BaseConfigurator):
 
-    def config_attach(self, instance, volume, connection_info):
+    def config_attach_active(self, instance, volume, connection_info):
         pass
 
-    def config_detach(self, instance, volume, connection_info):
+    def config_attach_inactive(self, instance, volume, connection_info):
+        self._config_attach_inactive_with_xCAT(instance,
+                                               volume,
+                                               connection_info)
+
+    def _config_attach_inactive_with_xCAT(self, instance, volume,
+                                          connection_info):
+        if connection_info[PROTOCOL] == 'fc':
+            self._config_fc_attach_inactive_with_xCAT(instance,
+                                                      volume,
+                                                      connection_info)
+        else:
+            # iSCSI protocol
+            raise NotImplementedError
+
+    def _config_fc_attach_inactive_with_xCAT(self, instance, volume,
+                                             connection_info):
+        fcp = ';'.join(connection_info[FCPS])
+        wwpn = ';'.join(connection_info[WWPNS])
+        lun = volume[LUN]
+        size = volume[SIZE]
+
+        if DEDICATE in connection_info.keys():
+            for dev in connection_info[DEDICATE]:
+                self._xCAT_proxy.dedicate_device(instance, dev)
+        self._xCAT_proxy.add_zfcp_to_pool(fcp, wwpn, lun, size)
+        self._xCAT_proxy.allocate_zfcp(instance, fcp, size, wwpn, lun)
+        self._xCAT_proxy.notice_attach(instance,
+                                       fcp,
+                                       wwpn,
+                                       lun,
+                                       connection_info[ALIAS],
+                                       instance[OS_TYPE])
+
+
+class _Configurator_Ubuntu16(_BaseConfigurator):
+
+    def config_attach_active(self, instance, volume, connection_info):
+        pass
+
+    def config_attach_inactive(self, instance, volume, connection_info):
         pass
 
 
@@ -128,10 +293,10 @@ class VolumeOperator(VolumeOperatorAPI):
                    "passed in is: %s !" % instance)
             raise ZVMVolumeError(msg)
 
-        if 'os_type' not in instance.keys():
+        if OS_TYPE not in instance.keys():
             raise ZVMVolumeError("instance os_type is not passed in!")
 
-        if 'name' not in instance.keys():
+        if NAME not in instance.keys():
             raise ZVMVolumeError("instance name is not passed in!")
 
         # os_type patterns for rhel7, sles12 and ubuntu 16, i.e.
@@ -141,9 +306,9 @@ class VolumeOperator(VolumeOperatorAPI):
         os_type_pattern = (self._PATTERN_RHEL7 +
                            '|' + self._PATTERN_SLES12 +
                            '|' + self._PATTERN_UBUNTU16)
-        if not re.match(os_type_pattern, instance['os_type']):
+        if not re.match(os_type_pattern, instance[OS_TYPE]):
             msg = ("unknown instance os_type: %s . It must be one of set "
-                   "'rhel7, sles12, or ubuntu16'." % instance['os_type'])
+                   "'rhel7, sles12, or ubuntu16'." % instance[OS_TYPE])
             raise ZVMVolumeError(msg)
 
     def _is_16bit_hex(self, value):
@@ -162,24 +327,31 @@ class VolumeOperator(VolumeOperatorAPI):
                    "passed in is: %s !" % volume)
             raise ZVMVolumeError(msg)
 
-        if 'type' not in volume.keys():
+        # 'size' is a mandatory parameter of xCAT API addzfcp2pool, however,
+        # it's totally absent in the process of volume_attach in OpenStack.
+        # So it's left here because we still need xCAT in this moment, please
+        # remove it when xCAT is gone.
+        if SIZE not in volume.keys():
+            raise ZVMVolumeError("volume size is not passed in!")
+
+        if TYPE not in volume.keys():
             raise ZVMVolumeError("volume type is not passed in!")
 
         # support only FiberChannel volumes at this moment
-        if volume['type'] != 'fc':
-            msg = ("volume type: %s is illegal!" % volume['type'])
+        if volume[TYPE] != 'fc':
+            msg = ("volume type: %s is illegal!" % volume[TYPE])
             raise ZVMVolumeError(msg)
         self._validate_fc_volume(volume)
 
     def _validate_fc_volume(self, volume):
         # exclusively entering from _validate_volume at this moment, so will
         # not check volume object again. Modify it if necessary in the future
-        if 'lun' not in volume.keys():
+        if LUN not in volume.keys():
             raise ZVMVolumeError("volume LUN is not passed in!")
 
-        volume['lun'] = volume['lun'].lower()
-        if not self._is_16bit_hex(volume['lun']):
-            msg = ("volume LUN value: %s is illegal!" % volume['lun'])
+        volume[LUN] = volume[LUN].lower()
+        if not self._is_16bit_hex(volume[LUN]):
+            msg = ("volume LUN value: %s is illegal!" % volume[LUN])
             raise ZVMVolumeError(msg)
 
     def _validate_connection_info(self, connection_info):
@@ -191,44 +363,57 @@ class VolumeOperator(VolumeOperatorAPI):
                    "passed in is: %s !" % connection_info)
             raise ZVMVolumeError(msg)
 
-        if 'protocol' not in connection_info.keys():
+        if ALIAS not in connection_info.keys():
+            raise ZVMVolumeError("device alias is not passed in!")
+
+        if PROTOCOL not in connection_info.keys():
             raise ZVMVolumeError("connection protocol is not passed in!")
 
         # support only FiberChannel volumes at this moment
-        if connection_info['protocol'] != 'fc':
+        if connection_info[PROTOCOL] != 'fc':
             raise ZVMVolumeError("connection protocol: %s is illegal!"
-                                 % connection_info['protocol'])
+                                 % connection_info[PROTOCOL])
         self._validate_fc_connection_info(connection_info)
 
     def _validate_fc_connection_info(self, connection_info):
         # exclusively entering from _validate_connection_info at this moment,
         # so will not check connection_info object again. Modify it if
         # necessary in the future
-        if 'fcps' not in connection_info.keys():
+        if DEDICATE in connection_info.keys():
+            if not isinstance(connection_info[DEDICATE], list):
+                msg = ("dedicate devices in connection info must be of type "
+                       "list, however the object passed in is: %s !"
+                       % connection_info[DEDICATE])
+                raise ZVMVolumeError(msg)
+            for i in range(len(connection_info[DEDICATE])):
+                connection_info[DEDICATE][i] = (
+                        connection_info[DEDICATE][i].lower())
+
+        if FCPS not in connection_info.keys():
             raise ZVMVolumeError("fcp devices are not passed in!")
 
-        if not isinstance(connection_info['fcps'], list):
-            msg = ("fcp devices in connection info must be of type dict, "
+        if not isinstance(connection_info[FCPS], list):
+            msg = ("fcp devices in connection info must be of type list, "
                    "however the object passed in is: %s !"
-                   % connection_info['fcps'])
+                   % connection_info[FCPS])
             raise ZVMVolumeError(msg)
 
-        if 'wwpns' not in connection_info.keys():
+        if WWPNS not in connection_info.keys():
             raise ZVMVolumeError("WWPNS are not passed in!")
 
-        if not isinstance(connection_info['wwpns'], list):
-            msg = ("wwpns in connection info must be of type dict, however "
-                   "the object passed in is: %s !" % connection_info['wwpns'])
+        if not isinstance(connection_info[WWPNS], list):
+            msg = ("wwpns in connection info must be of type list, however "
+                   "the object passed in is: %s !" % connection_info[WWPNS])
             raise ZVMVolumeError(msg)
 
-        for i in range(len(connection_info['fcps'])):
-            connection_info['fcps'][i] = connection_info['fcps'][i].lower()
-        for fcp in connection_info['fcps']:
+        for i in range(len(connection_info[FCPS])):
+            connection_info[FCPS][i] = connection_info[FCPS][i].lower()
+        for fcp in connection_info[FCPS]:
             self._validate_fcp(fcp)
 
-        for i in range(len(connection_info['wwpns'])):
-            connection_info['wwpns'][i] = connection_info['wwpns'][i].lower()
-        for wwpn in connection_info['wwpns']:
+        for i in range(len(connection_info[WWPNS])):
+            connection_info[WWPNS][i] = connection_info[WWPNS][i].lower()
+        for wwpn in connection_info[WWPNS]:
             if not self._is_16bit_hex(wwpn):
                 msg = ("WWPN value: %s is illegal!" % wwpn)
                 raise ZVMVolumeError(msg)
@@ -249,12 +434,12 @@ class VolumeOperator(VolumeOperatorAPI):
     def _get_configurator(self, instance):
         # all input object should have been validated by _validate_xxx method
         # before being passed in
-        if re.match(self._PATTERN_RHEL7, instance['os_type']):
-            return Configurator_RHEL7()
-        elif re.match(self._PATTERN_SLES12, instance['os_type']):
-            return Configurator_SLES12()
-        elif re.match(self._PATTERN_UBUNTU16, instance['os_type']):
-            return Configurator_Ubuntu16()
+        if re.match(self._PATTERN_RHEL7, instance[OS_TYPE]):
+            return _Configurator_RHEL7()
+        elif re.match(self._PATTERN_SLES12, instance[OS_TYPE]):
+            return _Configurator_SLES12()
+        elif re.match(self._PATTERN_UBUNTU16, instance[OS_TYPE]):
+            return _Configurator_Ubuntu16()
         else:
             raise ZVMVolumeError("unknown instance os: %s!"
-                                 % instance['os_type'])
+                                 % instance[OS_TYPE])

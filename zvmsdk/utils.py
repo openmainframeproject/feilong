@@ -176,6 +176,9 @@ class XCATUrl(object):
     def version(self):
         return self.PREFIX + self.VERSION + self.SUFFIX
 
+    def chhv(self, arg=''):
+        return self._hv(arg)
+
 
 class XCATConnection(object):
     """Https requests to xCAT web service."""
