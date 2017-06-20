@@ -422,6 +422,34 @@ class SDKAPI(object):
         # parsed_uid_list = [uid.upper() for uid in userid_list]
         return self._monitor.inspect_cpus(userid_list)
 
+    def guest_inspect_mem(self, userid_list):
+        """Get the mem usage statistics of the guest virtual machines
+
+        :param userid_list: a single userid string or a list of guest userids
+        :returns: dictionary describing the mem statistics of the vm
+                  in the form {'UID1':
+                  {
+                  'used_mem_kb': xx,
+                  'max_mem_kb': xx,
+                  'min_mem_kb': xx,
+                  'shared_mem_kb': xx
+                  },
+                  'UID2':
+                  {
+                  'used_mem_kb': xx,
+                  'max_mem_kb': xx,
+                  'min_mem_kb': xx,
+                  'shared_mem_kb': xx
+                  }
+                  }
+                  for the guests that are shutdown or not exist, no data
+                  returned in the dictionary
+        """
+        if not isinstance(userid_list, list):
+            userid_list = [userid_list]
+        # parsed_uid_list = [uid.upper() for uid in userid_list]
+        return self._monitor.inspect_mem(userid_list)
+
     def vswitch_grant_user(self, vswitch_name, userid):
         """Set vswitch to grant user
 

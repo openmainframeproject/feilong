@@ -40,6 +40,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
             'samples_cpu_delay': '0',
             'used_memory': '290232 KB',
             'max_memory': '2097152 KB',
+            'min_memory': '0 KB',
+            'shared_memory': '5222192 KB',
             }
         rdata = self._monitor._get_inspect_data('cpumem', ['userid1'])
         self.assertEqual(rdata.keys(), ['USERID1'])
@@ -49,10 +51,12 @@ class SDKMonitorTestCase(base.SDKTestCase):
                                  'min_cpu_count', 'max_cpu_limit',
                                  'samples_cpu_in_use',
                                  'samples_cpu_delay',
-                                 'used_memory', 'max_memory']))
+                                 'used_memory', 'max_memory',
+                                 'min_memory', 'shared_memory']))
         self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
         self.assertEqual(rdata['USERID1']['used_cpu_time'], '6185838 uS')
         self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
+        self.assertEqual(rdata['USERID1']['shared_memory'], '5222192 KB')
         get_ps.assert_not_called()
         cache_enabled.assert_not_called()
 
@@ -72,6 +76,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
             'samples_cpu_delay': '0',
             'used_memory': '290232 KB',
             'max_memory': '2097152 KB',
+            'min_memory': '0 KB',
+            'shared_memory': '5222192 KB',
             },
             {
             'userid': 'USERID2',
@@ -84,6 +90,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
             'samples_cpu_delay': '0',
             'used_memory': '305020 KB',
             'max_memory': '2097152 KB',
+            'min_memory': '0 KB',
+            'shared_memory': '5222190 KB',
             }]
         rdata = self._monitor._get_inspect_data('cpumem',
                                                 ['userid1', 'userid2'])
@@ -94,13 +102,16 @@ class SDKMonitorTestCase(base.SDKTestCase):
                                  'min_cpu_count', 'max_cpu_limit',
                                  'samples_cpu_in_use',
                                  'samples_cpu_delay',
-                                 'used_memory', 'max_memory']))
+                                 'used_memory', 'max_memory',
+                                 'min_memory', 'shared_memory']))
         self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
         self.assertEqual(rdata['USERID1']['used_cpu_time'], '6185838 uS')
         self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
+        self.assertEqual(rdata['USERID1']['shared_memory'], '5222192 KB')
         self.assertEqual(rdata['USERID2']['guest_cpus'], '3')
         self.assertEqual(rdata['USERID2']['used_cpu_time'], '14293629 uS')
         self.assertEqual(rdata['USERID2']['used_memory'], '305020 KB')
+        self.assertEqual(rdata['USERID2']['shared_memory'], '5222190 KB')
         get_ps.assert_not_called()
         cache_enabled.assert_not_called()
 
@@ -128,6 +139,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                 'samples_cpu_delay': '0',
                 'used_memory': '290232 KB',
                 'max_memory': '2097152 KB',
+                'min_memory': '0 KB',
+                'shared_memory': '5222192 KB',
                 },
             'USERID2': {
                 'userid': 'USERID2',
@@ -140,6 +153,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                 'samples_cpu_delay': '0',
                 'used_memory': '305020 KB',
                 'max_memory': '2097152 KB',
+                'min_memory': '0 KB',
+                'shared_memory': '5222190 KB',
                 }
             }
         get_vm_list.return_value = ['userid1', 'userid2']
@@ -154,7 +169,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                                  'min_cpu_count', 'max_cpu_limit',
                                  'samples_cpu_in_use',
                                  'samples_cpu_delay',
-                                 'used_memory', 'max_memory']))
+                                 'used_memory', 'max_memory',
+                                 'min_memory', 'shared_memory']))
         self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
         self.assertEqual(rdata['USERID1']['used_cpu_time'], '6185838 uS')
         self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
@@ -182,6 +198,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
             'samples_cpu_delay': '0',
             'used_memory': '290232 KB',
             'max_memory': '2097152 KB',
+            'min_memory': '0 KB',
+            'shared_memory': '4222192 KB',
             }, None]
         get_ps.return_value = 'on'
         cache_enabled.return_value = True
@@ -197,6 +215,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                 'samples_cpu_delay': '0',
                 'used_memory': '390232 KB',
                 'max_memory': '3097152 KB',
+                'min_memory': '0 KB',
+                'shared_memory': '5222192 KB',
                 },
             'USERID2': {
                 'userid': 'USERID2',
@@ -209,6 +229,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                 'samples_cpu_delay': '0',
                 'used_memory': '305020 KB',
                 'max_memory': '2097152 KB',
+                'min_memory': '0 KB',
+                'shared_memory': '5222190 KB',
                 }
             }
         get_vm_list.return_value = ['userid1', 'userid2']
@@ -224,10 +246,12 @@ class SDKMonitorTestCase(base.SDKTestCase):
                                  'min_cpu_count', 'max_cpu_limit',
                                  'samples_cpu_in_use',
                                  'samples_cpu_delay',
-                                 'used_memory', 'max_memory']))
+                                 'used_memory', 'max_memory',
+                                 'min_memory', 'shared_memory']))
         self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
         self.assertEqual(rdata['USERID1']['used_cpu_time'], '7185838 uS')
         self.assertEqual(rdata['USERID1']['used_memory'], '390232 KB')
+        self.assertEqual(rdata['USERID1']['shared_memory'], '5222192 KB')
         self.assertEqual(
         self._monitor._cache._cache['cpumem']['data']['USERID2']['guest_cpus'],
         '4')
@@ -256,6 +280,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                 'samples_cpu_delay': '0',
                 'used_memory': '390232 KB',
                 'max_memory': '3097152 KB',
+                'min_memory': '0 KB',
+                'shared_memory': '5222192 KB',
                 }
             }
         rdata = self._monitor._get_inspect_data('cpumem',
@@ -270,7 +296,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                                  'min_cpu_count', 'max_cpu_limit',
                                  'samples_cpu_in_use',
                                  'samples_cpu_delay',
-                                 'used_memory', 'max_memory']))
+                                 'used_memory', 'max_memory',
+                                 'min_memory', 'shared_memory']))
         self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
         self.assertEqual(rdata['USERID1']['used_cpu_time'], '7185838 uS')
         self.assertEqual(rdata['USERID1']['used_memory'], '390232 KB')
@@ -331,6 +358,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                 'samples_cpu_delay': '0',
                 'used_memory': '390232 KB',
                 'max_memory': '3097152 KB',
+                'min_memory': '0 KB',
+                'shared_memory': '5222192 KB',
                 },
             'USERID2': {
                 'userid': 'USERID2',
@@ -343,6 +372,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                 'samples_cpu_delay': '0',
                 'used_memory': '305020 KB',
                 'max_memory': '2097152 KB',
+                'min_memory': '0 KB',
+                'shared_memory': '5222190 KB',
                 }
             }
         rdata = self._monitor.inspect_cpus(['userid1'])
@@ -375,6 +406,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                 'samples_cpu_delay': '0',
                 'used_memory': '390232 KB',
                 'max_memory': '3097152 KB',
+                'min_memory': '0 KB',
+                'shared_memory': '5222192 KB',
                 },
             'USERID2': {
                 'userid': 'USERID2',
@@ -387,6 +420,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                 'samples_cpu_delay': '0',
                 'used_memory': '305020 KB',
                 'max_memory': '2097152 KB',
+                'min_memory': '0 KB',
+                'shared_memory': '5222190 KB',
                 }
             }
         rdata = self._monitor.inspect_cpus(['userid1', 'userid2'])
@@ -425,6 +460,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                 'samples_cpu_delay': '0',
                 'used_memory': '390232 KB',
                 'max_memory': '3097152 KB',
+                'min_memory': '0 KB',
+                'shared_memory': '5222192 KB',
                 }
             }
         rdata = self._monitor.inspect_cpus(['userid1'])
@@ -445,6 +482,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                 'samples_cpu_delay': '0',
                 'used_memory': '390232 KB',
                 'max_memory': '3097152 KB',
+                'min_memory': '0 KB',
+                'shared_memory': '5222192 KB',
                 }
             }
         rdata = self._monitor.inspect_cpus(['userid1', 'userid2'])

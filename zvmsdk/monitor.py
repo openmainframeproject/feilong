@@ -66,6 +66,30 @@ class ZVMMonitor(object):
 
         return cpu_data
 
+    def inspect_mem(self, uid_list):
+        cpumem_data = self._get_inspect_data('cpumem', uid_list)
+        # construct and return final result
+        mem_data = {}
+        for uid in uid_list:
+            uid = uid.upper()
+            if uid in cpumem_data:
+                with zvmutils.expect_invalid_xcat_resp_data():
+                    user_data = cpumem_data[uid]
+                    used_mem = int(user_data['used_memory'].partition(' ')[0])
+                    max_mem = int(user_data['max_memory'].partition(' ')[0])
+                    min_mem = int(user_data['min_memory'].partition(' ')[0])
+                    shared_mem = int(
+                        user_data['shared_memory'].partition(' ')[0])
+
+                    mem_data[uid] = {
+                    'used_mem_kb': used_mem,
+                    'max_mem_kb': max_mem,
+                    'min_mem_kb': min_mem,
+                    'shared_mem_kb': shared_mem
+                    }
+
+        return mem_data
+
     def _cache_enabled(self):
         return CONF.monitor.cache_interval > 0
 

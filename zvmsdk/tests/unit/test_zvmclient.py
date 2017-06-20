@@ -290,6 +290,8 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self.assertEqual(pi_info['FAKEVM']['guest_cpus'], "2")
         self.assertEqual(pi_info['FAKEVM']['userid'], "FAKEVM")
         self.assertEqual(pi_info['FAKEVM']['max_memory'], "8388608 KB")
+        self.assertEqual(pi_info['FAKEVM']['min_memory'], "0 KB")
+        self.assertEqual(pi_info['FAKEVM']['shared_memory'], "5222192 KB")
 
     @mock.patch('zvmsdk.utils.xdsh')
     def test_image_performance_query_multiple(self, dsh):
@@ -326,7 +328,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
                       'zhcp2: Elapsed time: "89185770400 uS"\n'
                       'zhcp2: Minimum memory: "0 KB"\n'
                       'zhcp2: Max memory: "8388608 KB"\n'
-                      'zhcp2: Shared memory: "5222192 KB"\n'
+                      'zhcp2: Shared memory: "5222190 KB"\n'
                       'zhcp2: Used memory: "5222184 KB"\n'
                       'zhcp2: Active CPUs in CEC: "44"\n'
                       'zhcp2: Logical CPUs in VM: "6"\n'
@@ -354,6 +356,8 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self.assertEqual(pi_info['FAKEVM']['guest_cpus'], "2")
         self.assertEqual(pi_info['FAKEVM']['userid'], "FAKEVM")
         self.assertEqual(pi_info['FAKEVM']['max_memory'], "8388608 KB")
+        self.assertEqual(pi_info['FAKEVM']['min_memory'], "0 KB")
+        self.assertEqual(pi_info['FAKEVM']['shared_memory'], "5222192 KB")
         self.assertEqual(pi_info['FAKEVM2']['used_memory'], "5222184 KB")
         self.assertEqual(pi_info['FAKEVM2']['used_cpu_time'], "26238001893 uS")
         self.assertEqual(pi_info['FAKEVM2']['elapsed_cpu_time'],
@@ -365,6 +369,8 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self.assertEqual(pi_info['FAKEVM2']['guest_cpus'], "1")
         self.assertEqual(pi_info['FAKEVM2']['userid'], "FAKEVM2")
         self.assertEqual(pi_info['FAKEVM2']['max_memory'], "8388608 KB")
+        self.assertEqual(pi_info['FAKEVM2']['min_memory'], "0 KB")
+        self.assertEqual(pi_info['FAKEVM2']['shared_memory'], "5222190 KB")
 
     @mock.patch('zvmsdk.utils.xdsh')
     def test_image_performance_query_err1(self, dsh):
