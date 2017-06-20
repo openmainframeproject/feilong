@@ -52,42 +52,37 @@ class VolumeConfiguratorAPI(object):
     different Linux distributions and releases.
     """
 
-    def __init__(self, instance, volume, connection_info):
-        self.instance = instance
-        self.volume = volume
-        self.connection_info = connection_info
-
-    def config_attach(self):
+    def config_attach(self, instance, volume, connection_info):
         raise NotImplementedError
 
-    def config_detach(self):
+    def config_detach(self, instance, volume, connection_info):
         raise NotImplementedError
 
 
 class Configurator_RHEL7(VolumeConfiguratorAPI):
 
-    def config_attach(self):
+    def config_attach(self, instance, volume, connection_info):
         pass
 
-    def config_detach(self):
+    def config_detach(self, instance, volume, connection_info):
         pass
 
 
 class Configurator_SLES12(VolumeConfiguratorAPI):
 
-    def config_attach(self):
+    def config_attach(self, instance, volume, connection_info):
         pass
 
-    def config_detach(self):
+    def config_detach(self, instance, volume, connection_info):
         pass
 
 
 class Configurator_Ubuntu16(VolumeConfiguratorAPI):
 
-    def config_attach(self):
+    def config_attach(self, instance, volume, connection_info):
         pass
 
-    def config_detach(self):
+    def config_detach(self, instance, volume, connection_info):
         pass
 
 
@@ -95,9 +90,9 @@ class VolumeOperator(VolumeOperatorAPI):
 
     __singleton = None
 
-    __PATTERN_RHEL7 = '^rhel7(\.[0-9])?$'
-    __PATTERN_SLES12 = '^sles12(sp[1-9])?$'
-    __PATTERN_UBUNTU16 = '^ubuntu16(\.[0-9][0-9])?$'
+    _PATTERN_RHEL7 = '^rhel7(\.[0-9])?$'
+    _PATTERN_SLES12 = '^sles12(sp[1-9])?$'
+    _PATTERN_UBUNTU16 = '^ubuntu16(\.[0-9][0-9])?$'
 
     def __new__(cls, *args, **kwargs):
         if not cls.__singleton:
@@ -115,9 +110,8 @@ class VolumeOperator(VolumeOperatorAPI):
         self._validate_volume(volume)
         self._validate_connection_info(connection_info)
 
-        configurator = self._get_configurator(instance, volume,
-                                              connection_info)
-        configurator.config_attach()
+        configurator = self._get_configurator(instance)
+        configurator.config_attach(instance, volume, connection_info)
 
         LOG.debug("Exit VolumeOperator.attach_volume_to_instance.")
 
@@ -144,9 +138,9 @@ class VolumeOperator(VolumeOperatorAPI):
         # rhel7: rhel7, rhel7.2
         # sles12: sles12, sles12sp2
         # ubuntu16: ubuntu16, ubuntu16.04
-        os_type_pattern = (self.__PATTERN_RHEL7 +
-                           '|' + self.__PATTERN_SLES12 +
-                           '|' + self.__PATTERN_UBUNTU16)
+        os_type_pattern = (self._PATTERN_RHEL7 +
+                           '|' + self._PATTERN_SLES12 +
+                           '|' + self._PATTERN_UBUNTU16)
         if not re.match(os_type_pattern, instance['os_type']):
             msg = ("unknown instance os_type: %s . It must be one of set "
                    "'rhel7, sles12, or ubuntu16'." % instance['os_type'])
@@ -252,5 +246,15 @@ class VolumeOperator(VolumeOperatorAPI):
                    "however the object passed in is: %s !" % fcp)
             raise ZVMVolumeError(msg)
 
-    def _get_configurator(self, instance, volume, connection_info):
-        pass
+    def _get_configurator(self, instance):
+        # all input object should have been validated by _validate_xxx method
+        # before being passed in
+        if re.match(self._PATTERN_RHEL7, instance['os_type']):
+            return Configurator_RHEL7()
+        elif re.match(self._PATTERN_SLES12, instance['os_type']):
+            return Configurator_SLES12()
+        elif re.match(self._PATTERN_UBUNTU16, instance['os_type']):
+            return Configurator_Ubuntu16()
+        else:
+            raise ZVMVolumeError("unknown instance os: %s!"
+                                 % instance['os_type'])
