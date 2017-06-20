@@ -393,6 +393,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_create_nic(self, xrequest, _delete_mac,
                          _add_mac, _add_switch):
+        xrequest.return_value = {"errorcode": [['0']]}
         self._zvmclient._create_nic("fakenode", "fake_nic",
                                     "00:00:00:12:34:56", "fake_vdev",
                                     "fakehcp")
@@ -736,6 +737,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_grant_user_to_vswitch(self, xrequest):
+        xrequest.return_value = {"errorcode": [['0']]}
         url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
@@ -753,6 +755,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_revoke_user_from_vswitch(self, xrequest):
+        xrequest.return_value = {"errorcode": [['0']]}
         url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
@@ -770,6 +773,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_couple_nic(self, xrequest):
+        xrequest.return_value = {"errorcode": [['0']]}
         url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
               "/dsh?userName=" + CONF.xcat.username +\
                "&password=" + CONF.xcat.password +\
@@ -795,6 +799,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_uncouple_nic(self, xrequest):
+        xrequest.return_value = {"errorcode": [['0']]}
         url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
               "/dsh?userName=" + CONF.xcat.username +\
                "&password=" + CONF.xcat.password +\
@@ -1229,6 +1234,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_set_vswitch_port_vlan_id(self, xrequest):
+        xrequest.return_value = {"errorcode": [['0']]}
         url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
@@ -1249,6 +1255,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_update_nic_definition(self, xrequest):
+        xrequest.return_value = {"errorcode": [['0']]}
         url = "/xcatws/vms/node?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"

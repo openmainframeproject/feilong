@@ -453,7 +453,11 @@ class XCATClient(ZVMClient):
         body = ['--smcli', commands]
 
         with zvmutils.expect_invalid_xcat_resp_data():
-            zvmutils.xcat_request("PUT", url, body)
+            result = zvmutils.xcat_request("PUT", url, body)
+            if (result['errorcode'][0][0] != '0'):
+                raise exception.ZVMException(
+                    msg=("Failed to create nic, %s") %
+                        result['data'][0][0])
 
     def _add_mac_table_record(self, userid, interface, mac, zhcp=None):
         """Add node name, interface, mac address into xcat mac table."""
@@ -648,7 +652,14 @@ class XCATClient(ZVMClient):
             "-k persist=YES"))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        zvmutils.xcat_request("PUT", url, body)
+
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            result = zvmutils.xcat_request("PUT", url, body)
+            if (result['errorcode'][0][0] != '0'):
+                raise exception.ZVMException(
+                    msg=("Failed to grant user %s to vswitch %s, %s") %
+                        (userid, vswitch_name, result['data'][0][0]))
 
     def revoke_user_from_vswitch(self, vswitch_name, userid):
         """Revoke user for vswitch."""
@@ -662,7 +673,14 @@ class XCATClient(ZVMClient):
             "-k persist=YES"))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        zvmutils.xcat_request("PUT", url, body)
+
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            result = zvmutils.xcat_request("PUT", url, body)
+            if (result['errorcode'][0][0] != '0'):
+                raise exception.ZVMException(
+                    msg=("Failed to revoke user %s from vswitch %s, %s") %
+                        (userid, vswitch_name, result['data'][0][0]))
 
     def _couple_nic(self, vswitch_name, userid, vdev, persist=True):
         """Couple NIC to vswitch by adding vswitch into user direct."""
@@ -676,7 +694,13 @@ class XCATClient(ZVMClient):
                                  "-n %s" % vswitch_name))
             xdsh_commands = 'command=%s' % commands
             body = [xdsh_commands]
-            zvmutils.xcat_request("PUT", url, body)
+            with zvmutils.expect_xcat_call_failed_and_reraise(
+                    exception.ZVMNetworkError):
+                result = zvmutils.xcat_request("PUT", url, body)
+                if (result['errorcode'][0][0] != '0'):
+                    raise exception.ZVMException(
+                        msg=("Failed to couple nic %s to vswitch %s, %s") %
+                            (vdev, vswitch_name, result['data'][0][0]))
 
         # the inst must be active, or this call will failed
         commands = ' '.join(('/opt/zhcp/bin/smcli',
@@ -686,7 +710,13 @@ class XCATClient(ZVMClient):
                              "-n %s" % vswitch_name))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        zvmutils.xcat_request("PUT", url, body)
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            result = zvmutils.xcat_request("PUT", url, body)
+            if (result['errorcode'][0][0] != '0'):
+                raise exception.ZVMException(
+                    msg=("Failed to couple nic %s to vswitch %s, %s") %
+                        (vdev, vswitch_name, result['data'][0][0]))
 
     def couple_nic_to_vswitch(self, vswitch_name, nic_vdev,
                               userid, persist=True):
@@ -705,7 +735,13 @@ class XCATClient(ZVMClient):
                                  "-v %s" % vdev))
             xdsh_commands = 'command=%s' % commands
             body = [xdsh_commands]
-            zvmutils.xcat_request("PUT", url, body)
+            with zvmutils.expect_xcat_call_failed_and_reraise(
+                    exception.ZVMNetworkError):
+                result = zvmutils.xcat_request("PUT", url, body)
+                if (result['errorcode'][0][0] != '0'):
+                    raise exception.ZVMException(
+                        msg=("Failed to uncouple nic %s, %s") %
+                            (vdev, result['data'][0][0]))
 
         # the inst must be active, or this call will failed
         commands = ' '.join(('/opt/zhcp/bin/smcli',
@@ -714,7 +750,13 @@ class XCATClient(ZVMClient):
                              "-v %s" % vdev))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        zvmutils.xcat_request("PUT", url, body)
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            result = zvmutils.xcat_request("PUT", url, body)
+            if (result['errorcode'][0][0] != '0'):
+                raise exception.ZVMException(
+                    msg=("Failed to uncouple nic %s, %s") %
+                        (vdev, result['data'][0][0]))
 
     def uncouple_nic_from_vswitch(self, vswitch_name, nic_vdev,
                                   userid, persist=True):
@@ -751,15 +793,17 @@ class XCATClient(ZVMClient):
             "-s \'*\'"))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        result = zvmutils.xcat_request("PUT", url, body)
-        if (result['errorcode'][0][0] != '0' or not
-                result['data'] or not result['data'][0]):
-            return None
-        else:
-            data = '\n'.join([s for s in result['data'][0]
-                              if isinstance(s, unicode)])
-            output = re.findall('VSWITCH:  Name: (.*)', data)
-            return output
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            result = zvmutils.xcat_request("PUT", url, body)
+            if (result['errorcode'][0][0] != '0' or not
+                    result['data'] or not result['data'][0]):
+                return None
+            else:
+                data = '\n'.join([s for s in result['data'][0]
+                                if isinstance(s, unicode)])
+                output = re.findall('VSWITCH:  Name: (.*)', data)
+                return output
 
     def _get_zhcp_userid(self):
         if not self._zhcp_userid:
@@ -817,12 +861,14 @@ class XCATClient(ZVMClient):
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
 
-        result = zvmutils.xcat_request("PUT", url, body)
-        if ((result['errorcode'][0][0] != '0') or
-            (self._check_vswitch_status(name) is None)):
-            raise exception.ZVMException(
-                msg=("switch: %s add failed, %s") %
-                    (name, result['data']))
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            result = zvmutils.xcat_request("PUT", url, body)
+            if ((result['errorcode'][0][0] != '0') or
+                (self._check_vswitch_status(name) is None)):
+                raise exception.ZVMException(
+                    msg=("switch: %s add failed, %s") %
+                        (name, result['data']))
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def _check_vswitch_status(self, vsw):
@@ -842,13 +888,17 @@ class XCATClient(ZVMClient):
             "-s %s" % vsw))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        result = zvmutils.xcat_request("PUT", url, body)
-        if (result['errorcode'][0][0] != '0' or not
-                result['data'] or not result['data'][0]):
-            return None
-        else:
-            output = re.findall('Real device: (.*)\n', result['data'][0][0])
-            return output
+
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            result = zvmutils.xcat_request("PUT", url, body)
+            if (result['errorcode'][0][0] != '0' or not
+                    result['data'] or not result['data'][0]):
+                return None
+            else:
+                output = re.findall('Real device: (.*)\n',
+                                    result['data'][0][0])
+                return output
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def _set_vswitch_rdev(self, vsw, rdev):
@@ -864,12 +914,15 @@ class XCATClient(ZVMClient):
             commands += ' -k real_device_address=%s' % rdev.replace(',', ' ')
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        result = zvmutils.xcat_request("PUT", url, body)
-        if (result['errorcode'][0][0] != '0'):
-            raise exception.ZVMException(
-                msg=("switch: %s changes failed, %s") %
-                    (vsw, result['data']))
-        LOG.info('change vswitch %s done.' % vsw)
+
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            result = zvmutils.xcat_request("PUT", url, body)
+            if (result['errorcode'][0][0] != '0'):
+                raise exception.ZVMException(
+                    msg=("switch: %s changes failed, %s") %
+                        (vsw, result['data']))
+            LOG.info('change vswitch %s done.' % vsw)
 
     def image_query(self, imagekeyword=None):
         """List the images"""
@@ -1192,7 +1245,13 @@ class XCATClient(ZVMClient):
             "-k persist=YES"))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        zvmutils.xcat_request("PUT", url, body)
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            result = zvmutils.xcat_request("PUT", url, body)
+            if (result['errorcode'][0][0] != '0'):
+                raise exception.ZVMException(
+                    msg=("Failed to set vlan id for user %s, %s") %
+                        (userid, result['data'][0][0]))
 
     def update_nic_definition(self, userid, nic_vdev, mac, switch_name):
         """add one NIC's info to user direct."""
@@ -1206,4 +1265,8 @@ class XCATClient(ZVMClient):
         body = ['--smcli', commands]
 
         with zvmutils.expect_invalid_xcat_resp_data():
-            zvmutils.xcat_request("PUT", url, body)
+            result = zvmutils.xcat_request("PUT", url, body)
+            if (result['errorcode'][0][0] != '0'):
+                raise exception.ZVMException(
+                    msg=("Failed to update nic definition, %s") %
+                        result['data'][0][0])
