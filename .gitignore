@@ -6,7 +6,6 @@
 *.pyc
 *.egg-info
 *.log
-*.conf
 *.py.*.py
 *.py.orig
 build/*

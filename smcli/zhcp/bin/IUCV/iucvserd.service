@@ -1,0 +1,15 @@
+[Unit]
+Description=IUCV agent service which is used to communicate with xCAT for z/VM.
+Wants=local-fs.target
+After=local-fs.target
+Before=
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/iucvserv start
+ExecReload=/var/lib/iucvupgrade.sh
+StandardOutput=journal+console
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,258 @@
+#!/bin/bash
+###############################################################################
+# IBM (C) Copyright 2014 Eclipse Public License                               # 
+# http://www.eclipse.org/org/documents/epl-v10.html                           #
+###############################################################################
+# COMPONENT: showECKD                                                         #
+#                                                                             #
+# Shows the raw hex image of an ECKD disk.                                    #
+###############################################################################
+
+source /opt/zhcp/lib/zhcpshellutils
+version="1.0"
+scriptName="showECKD"
+
+###############################################################################
+### FUNCTIONS #################################################################
+###############################################################################
+
+function printCMDDescription {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Prints a short description of this command.
+  # @Overrides:
+  #   printCMDDescription{} in "zhcpshellutils".
+  # @Code:
+  echo -n "Shows the raw hex image of an ECKD disk."
+} #printCMDDescription{}
+
+###############################################################################
+
+function parseArgs {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Parses and checks command-line arguments.
+  # @Code:
+  # Apply any defaults before handling operands
+  
+  getPositionalArg 1 userID 'Userid'
+  getPositionalArg 2 channelID 'address'
+  
+  # Non-local variables in this function are intentionally non-local.
+  isOption -h --help '     Print this help message.'   && printHelp='true'
+  isOption -V --version '  Print the version number of this script.'   && printVersion='true'
+  isOption -v --verbose '  Print verbose output.'      && verbose='-v'
+  isOption -x --debug '    Print debugging output.'    && debug='-x'
+  
+  getNamedArg --scyl startCyl 'Starting cylinder number of range to handle'
+  getNamedArg --ecyl endCyl 'Ending cylinder number of range to handle'
+  getNamedArg --strack startTrack 'Starting track number of range to handle, 0-15'
+  getNamedArg --etrack endTrack 'Ending track number of range to handle, 0-15'
+  
+  # Handle options that provide info but don't deal with locks or disks
+  if [[ $printVersion ]]; then
+    echo $version
+  fi
+  
+  if [[ $printHelp ]]; then
+    printHelp
+  fi
+  
+  if [[ $printHelp || $printVersion  ]]; then
+    exit 0
+  fi
+    
+  if [[ ! $userID ]]; then
+    printError "Userid was not specified as positional operand 1"
+    printHelp
+    exit 1
+  fi
+  
+  if [[ ! $channelID ]]; then
+    printError "Channel ID (rdev address) was not specified as positional operand 2"
+    printHelp
+    exit 1
+  fi
+  
+  # Handle rest of operands
+  if [[ $startTrack && $endTrack && $startCyl && $endCyl ]]; then
+    # When at least one of the track related operands is specified then we have to 
+    # process them all into a resulting start track and end track value.  Otherwise,
+    # we let the start and end track value remain null so that the default of the 
+    # whole disk is handled.
+    # Validate the starting track operand
+    if [[ $startTrack ]]; then
+      if [[ ! $startTrack =~ "[0-9]" || $startTrack -gt 14 ]]; then
+         printError "Starting track operand is not between 0 and 14, inclusive: $startTrack"
+        exit 1
+      fi
+    else
+      startTrack=0
+    fi
+    
+    # Validate the ending track operand
+    if [[ $endTrack ]]; then
+      if [[ ! $endTrack =~ "[0-9]" || $endTrack -gt 4 ]]; then
+       printError "Ending track operand is not between 0 and 14, inclusive: $startTrack"
+       exit 1
+     fi
+    else
+      endTrack=0
+    fi
+    
+    # Validate the starting cylinder operand (if specified) and use it to adjust the 
+    # starting track.
+    if [[ $startCyl ]]; then
+      if [[ ! $startCyl =~ "[0-9]" ]]; then
+        printError "Starting cylinder operand is not a number: $startCyl"
+        exit 1
+      fi
+      startTrack=$(( $startCyl * 15 + $startTrack ))
+    fi
+    
+    # Validate the ending cylinder operand (if specified) and use it to adjust the 
+    # ending track.
+    if [[ $endCyl ]]; then
+      if [[ ! $endCyl =~ "[0-9]" ]]; then
+        printError "Ending cylinder operand is not a number: $endCyl"
+        exit 1
+      fi
+      
+      if [[ $startCyl -gt $endCyl ]]; then
+        printError "Starting cylinder $startCyl is greater than the specified ending cylinder $endCyl"
+        exit 1
+      fi
+      endTrack=$(( $endCyl * 15 + $endTrack ))
+    fi
+  fi
+  
+  local badOptions=$(getBadOptions)
+  if [[ $badOptions ]]; then
+    echo "ERROR: ${badOptions}"
+    printCMDUsage
+    exit 1
+  fi
+  
+} #parseArgs{}
+
+###############################################################################
+
+function checkSanity {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Performs basic checks to ensure that a successful capture can reasonably
+  #   be expected.
+  # @Code:
+  # Make sure the specified image file name is not already taken.
+  
+  if [[ $userID && $(isSystemActive $userID) ]]; then
+    printError 'The specified source system is currently running.'
+    exit 3
+  fi
+  
+  # Intentionally non-local variable.
+  passedSanity='true'
+} #checkSanity{}
+
+###############################################################################
+
+function showDiskImage {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Shows tracks of the specified disk.
+  # @Code:
+  
+  function showCKD {
+    : SOURCE: ${BASH_SOURCE}
+    : STACK:  ${FUNCNAME[@]}
+    # @Description:
+    #   Show the specified CKD disk with `ckdhex`.
+    # @Code:
+    local reason=""
+    local rc
+    
+    # Now read the data on this count-key-data disk.
+    ckdhex /dev/disk/by-path/ccw-0.0.${alias} $startTrack $endTrack 2>&1
+    rc=$?
+    
+    if [[ $rc -gt 0 ]]; then
+      if [[ $rc -eq 1 ]]; then 
+        reason=", reason: Invocation error"
+      elif [[ $rc -eq 2 ]]; then 
+        reason=", reason: Unable to open the disk for reading"
+      elif [[ $rc -eq 3 ]]; then
+        reason=", reason: Unable to allocate 64k of memory on a page buffer for use as a work buffer"
+      elif [[ $rc -eq 4 ]]; then
+        reason=", reason: An error encountered reading the track from disk"
+      elif [[ $rc -eq 5 ]]; then
+        reason=", reason: Error enclosed closing the disk"
+      else
+        reason=""
+      fi
+      printError "An error was encountered while processing the disk, rc: $rc$reason"
+      exit 3
+    fi
+  } #showCKD{}
+
+  connectDisk $userID $channelID 'rr' 0
+
+  local alias=$(getDiskAlias $userID $channelID)
+  if [[ $(vmcp q v $alias | grep 'CYL ON DASD') ]]; then
+    if [[ -e /sys/bus/ccw/devices/0.0.${alias}/raw_track_access ]]; then
+      # Device is an ECKD disk with raw_track_access as an available option.
+      # Reconnect in raw_track_access mode.
+      disconnectDisk $userID $channelID 0
+      connectDisk $userID $channelID 'rr' 1
+      showCKD
+    else
+      printError "Attempting to show ECKD disk failed; the raw_track_access\
+                  DASD driver option is unavailable on this system." 
+      exit 3
+    fi
+  else
+    printError "Specified disk does not exist or is not an ECKD DASD." 
+    exit 3
+  fi
+} #showDiskImage{}
+
+
+###############################################################################
+### SET TRAP FOR CLEANUP ON EXIT ##############################################
+###############################################################################
+
+function cleanup {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Clean up lock files, disk links, and (if we're exiting with an error)
+  #   the unfinished package.
+  # @Code:
+  # Nothing to do for help or version options.
+  if [[ $printHelp || $printVersion ]]; then
+    return
+  fi
+  
+  # Also, let's make sure we've released our connection to the source disk.
+  disconnectDisk $userID $channelID 0
+  
+} #cleanupProperties{}
+
+trap 'cleanup' EXIT
+
+trap "echo -e '\nExecution interrupted. Exiting...\n'; exit" SIGINT
+
+###############################################################################
+### START EXECUTION ###########################################################
+###############################################################################
+parseArgs
+checkSanity
+showDiskImage
+successful='true'
+
+###############################################################################
+### END OF SCRIPT #############################################################
+###############################################################################
