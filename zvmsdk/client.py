@@ -208,7 +208,9 @@ class XCATClient(ZVMClient):
             'samples_cpu_in_use': "Samples CPU in use:",
             'samples_cpu_delay': ",Samples CPU delay:",
             'used_memory': "Used memory:",
-            'max_memory': " Max memory:",
+            'max_memory': "Max memory:",
+            'min_memory': "Minimum memory:",
+            'shared_memory': "Shared memory:",
         }
 
         pi_dict = {}

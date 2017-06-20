@@ -87,6 +87,18 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.guest_inspect_cpus(userid_list)
         inspect_cpus.assert_called_once_with(["userid1"])
 
+    @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_mem")
+    def test_guest_inspect_mem_list(self, inspect_mem):
+        userid_list = ["userid1", "userid2"]
+        self.api.guest_inspect_mem(userid_list)
+        inspect_mem.assert_called_once_with(userid_list)
+
+    @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_mem")
+    def test_guest_inspect_mem_single(self, inspect_mem):
+        userid_list = "userid1"
+        self.api.guest_inspect_mem(userid_list)
+        inspect_mem.assert_called_once_with(["userid1"])
+
     @mock.patch("zvmsdk.vmops.VMOps.guest_stop")
     def test_guest_stop(self, gs):
         userid = 'fakeuser'
