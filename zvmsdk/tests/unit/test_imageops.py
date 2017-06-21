@@ -99,3 +99,9 @@ class SDKImageOpsTestCase(base.SDKTestCase):
         imagekeyword = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'
         self._image_ops.image_query(imagekeyword)
         image_query.assert_called_once_with(imagekeyword)
+
+    @mock.patch.object(zvmclient.XCATClient, 'image_delete')
+    def test_image_delete(self, image_delete):
+        image_name = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'
+        self._image_ops.image_delete(image_name)
+        image_delete.assert_called_once_with(image_name)

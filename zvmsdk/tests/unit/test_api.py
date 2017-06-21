@@ -110,3 +110,9 @@ class SDKAPITestCase(base.SDKTestCase):
 
     def test_api_input_check_failed(self):
         self.assertRaises(exception.ZVMInvalidInput, self.api.guest_start, 1)
+
+    @mock.patch("zvmsdk.imageops.ImageOps.image_delete")
+    def test_image_delete(self, image_delete):
+        image_name = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'
+        self.api.image_delete(image_name)
+        image_delete.assert_called_once_with(image_name)
