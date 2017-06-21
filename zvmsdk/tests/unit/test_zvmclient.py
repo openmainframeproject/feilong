@@ -1269,3 +1269,10 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self._zvmclient.update_nic_definition("node", "vdev",
                                               "mac", "vswitch")
         xrequest.assert_called_with("PUT", url, body)
+
+    def test_get_image_path_by_name(self):
+        fake_name = 'rhel7.2-s390x-netboot-fake_image_uuid'
+        expected_path = '/install/netboot/rhel7.2/s390x/fake_image_uuid/' +\
+                CONF.zvm.user_root_vdev + '.img'
+        ret = self._zvmclient.get_image_path_by_name(fake_name)
+        self.assertEqual(ret, expected_path)

@@ -32,13 +32,6 @@ class SDKImageOpsTestCase(base.SDKTestCase):
         self._image_ops = imageops.get_imageops()
         self._pathutil = zvmutils.PathUtils()
 
-    def test_get_image_path_by_name(self):
-        fake_name = 'rhel7.2-s390x-netboot-fake_image_uuid'
-        expected_path = '/install/netboot/rhel7.2/s390x/fake_image_uuid/' +\
-                CONF.zvm.user_root_vdev + '.img'
-        ret = self._image_ops.get_image_path_by_name(fake_name)
-        self.assertEqual(ret, expected_path)
-
     @mock.patch.object(zvmutils, 'execute')
     def test_image_get_root_disk_size(self, execute_cmd):
         fake_name = 'rhel7.2-s390x-netboot-fake_image_uuid'

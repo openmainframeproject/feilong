@@ -37,28 +37,10 @@ class ImageOps(object):
         self.zvmclient = zvmclient.get_zvmclient()
         self._pathutils = zvmutils.PathUtils()
 
-    def get_image_path_by_name(self, spawn_image_name):
-        # eg. rhel7.2-s390x-netboot-<image_uuid>
-        # eg. /install/netboot/rhel7.2/s390x/<image_uuid>/image_name.img
-        name_split = spawn_image_name.split('-')
-        # tmpdir can extract from 'tabdump site' but consume time
-        tmpdir = '/install'
-        """
-        cmd = 'tabdump site'
-        output = zvmtuils.execute(cmd)
-        for i in output:
-            if 'tmpdir' in i:
-                tmpdir = i.split(',')[1]
-        """
-        image_uuid = name_split[-1]
-        image_file_path = tmpdir + '/' + name_split[2] + '/' +\
-                name_split[0] + '/' + name_split[1] + '/' + image_uuid +\
-                '/' + CONF.zvm.user_root_vdev + '.img'
-        return image_file_path
-
     def image_get_root_disk_size(self, spawn_image_name):
         """use 'hexdump' to get the root_disk_size."""
-        image_file_path = self.get_image_path_by_name(spawn_image_name)
+        image_file_path = self.zvmclient.get_image_path_by_name(
+                                                    spawn_image_name)
         try:
             cmd = 'hexdump -C -n 64 %s' % image_file_path
             output = zvmutils.execute(cmd)
