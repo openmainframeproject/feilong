@@ -1,0 +1,929 @@
+#!/bin/bash
+###############################################################################
+# IBM (C) Copyright 2013,2016 Eclipse Public License                          #
+# http://www.eclipse.org/org/documents/epl-v10.html                           #
+###############################################################################
+# COMPONENT: unpackdiskimage                                                  #
+#                                                                             #
+# Deploys a disk iamge to the disk at the specified channel ID on the         #
+# specified z/VM guest system.                                                #
+###############################################################################
+
+source /opt/zhcp/lib/zhcpshellutils
+
+###############################################################################
+### FUNCTIONS #################################################################
+###############################################################################
+
+function printCMDDescription {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Prints a short description of this command.
+  # @Overrides:
+  #   printCMDDescription{} in "zhcpshellutils".
+  # @Code:
+  echo -n "Deploys a disk image to the disk at the specified channel ID on "
+  echo    "the specified z/VM guest system."
+} #printCMDDescription{}
+
+###############################################################################
+
+function parseArgs {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Parses and checks command-line arguments.
+  # @Code:
+  # Non-local variables in this function are intentionally non-local.
+  isOption -h --help "     Print this help message."   && printHelp='true'
+  isOption -v --verbose "  Print verbose output."      && verbose='-v'
+  isOption -x --debug "    Print debugging output."    && debug='-x'
+
+  if [[ ${#args[@]} == 4 ]]; then
+    getPositionalArg 1 fcpChannel
+    getPositionalArg 2 wwpn
+    getPositionalArg 3 lun
+    getPositionalArg 4 imageFile
+
+    # Make channel, WWPN, and LUN lower case
+    fcpChannel=$(echo ${fcpChannel} | tr '[:upper:]' '[:lower:]')
+    wwpn=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
+    lun=$(echo ${lun} | tr '[:upper:]' '[:lower:]')
+  else
+    getPositionalArg 1 userID
+    getPositionalArg 2 channelID
+    getPositionalArg 3 imageFile
+  fi
+
+  if [[ $printHelp ]]; then
+    printHelp
+    exit 0
+  fi
+  local badOptions=$(getBadOptions)
+  if [[ $badOptions ]]; then
+    echo "ERROR: ${badOptions}"
+    printCMDUsage
+    exit 1
+  fi
+
+  if [[ ${#args[@]} == 4 && (! $fcpChannel || ! $wwpn || ! lun || ! $imageFile) ]]; then
+    echo 'ERROR: Missing required parameter.'
+    printCMDUsage
+    exit 1
+  elif [[ ${#args[@]} == 3 && (! $userID || ! $channelID || ! $imageFile) ]]; then
+    echo 'ERROR: Missing required parameter.'
+    printCMDUsage
+    exit 1
+  fi
+
+  # Remove old traces beyond the number specified in /var/opt/zhcp/settings.conf. If the
+  # specified number is 0, less than 0, or not actually a number, then we skip
+  # this cleanup.
+  if [[ $keepOldTraces -gt 0 ]]; then
+    local removeTraces=$(($(ls -1 /var/log/zhcp/unpackdiskimage_trace_* | wc -l) -
+                          ${keepOldTraces}))
+    if [[ $removeTraces -gt 0 ]]; then
+      for trace in $(ls -1 /var/log/zhcp/unpackdiskimage_trace_* |
+                     head -${removeTraces}); do
+        rm -f $trace
+      done
+    fi
+  fi
+
+  timestamp=$(date -u --rfc-3339=ns | sed 's/ /-/;s/\.\(...\).*/.\1/')
+  logFile=/var/log/zhcp/unpackdiskimage_trace_${timestamp}.txt
+  if [[ $debug ]]; then
+    exec 2> >(tee -a $logFile)
+    set -x
+  else
+    exec 2> $logFile
+    set -x
+  fi
+  inform "unpackdiskimage ${args} start time: ${timestamp}"
+
+  if [[ ${#args[@]} == 4 && (${#wwpn} < 18 || ${#lun} < 18) ]]; then
+    echo 'ERROR: WWPN and LUN must be a 16 byte number.'
+    exit 1
+  fi
+
+  if [[ ${#args[@]} == 4 ]]; then
+    echo "FCP CHANNEL:    \"$fcpChannel\""
+    echo "WWPN:           \"$wwpn\""
+    echo "LUN:            \"$lun\""
+    echo "IMAGE FILE:     \"$imageFile\""
+    echo ""
+  else
+    echo "SOURCE USER ID: \"$userID\""
+    echo "DISK CHANNEL:   \"$channelID\""
+    echo "IMAGE FILE:     \"$imageFile\""
+    echo ""
+  fi
+} #parseArgs{}
+
+###############################################################################
+
+function checkSanity {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Performs basic checks to ensure that a successful deploy can reasonably
+  #   be expected.
+  # @Code:
+  # Make sure the specified image file exists.
+  if [[ ! -f $imageFile ]]; then
+    printError 'The specified image file was not found.'
+    exit 3
+  fi
+
+  # Determine type of source disk from image header.
+  local diskTag="$(dd if=$imageFile bs=1 count=20 2>/dev/null)"
+  if [[ $diskTag = 'xCAT FCP Disk Image:' ]]; then
+    # Intentionally non-local variable.
+    format='FCP'
+  elif [[ $diskTag = 'xCAT FBA Disk Image:' ]]; then
+    # Intentionally non-local variable.
+    format='FBA'
+  elif [[ $diskTag = 'xCAT FBA Part Image:' ]]; then
+    # Intentionally non-local variable.
+    format='FBApt'
+  elif [[ $diskTag = 'xCAT CKD Disk Image:' ]]; then
+    # Intentionally non-local variable.
+    format='CKD'
+  else
+    printError "Disk image type not recognized"
+    exit 3
+  fi
+
+  # Determine header length and header and save in non-local variables.
+  header="$(dd if=$imageFile bs=1 count=10 skip=37 2>/dev/null)"
+  if [[ $header == HLen:* ]]; then
+    # Get length value and remove leading zeroes
+    headerLen="$(dd if=$imageFile bs=1 count=4 skip=43 2>/dev/null | sed 's/0*//')"
+    imageBlockSize=$blockSize
+    headerBlocks=$(( $headerLen / $blockSize + 1))
+  else
+    headerLen=36
+    imageBlockSize=$headerLen
+    headerBlocks=1
+  fi
+  header="$(dd if=$imageFile bs=1 count=$headerLen 2>/dev/null)"
+
+  # Determine gzip compression level and save in non-local variable.
+  if (( headerLen >= 55 )); then
+    gzipCompression=${header:54:1}
+  else
+    inform "Version 1 image file detected."
+    gzipCompression=6
+  fi
+  inform "Image file compression level: $gzipCompression"
+
+  if [[ $userID && $(isSystemActive $userID) ]]; then
+    printError 'The specified target system is currently running.'
+    exit 3
+  fi
+
+  # Intentionally non-local variable.
+  passedSanityChecks='true'
+} #checkSanity{}
+
+###############################################################################
+
+function resizePartition {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Resize a Linux ECKD/FBA disk by increasing the last partition of this disk
+  #   to use the additional space and resize the filesystem to use the new
+  #   partition size.
+  # @Returns:
+  #   0 if the partition resize was successful.
+  #   1 if error
+  # @Parameters:
+  local devNode=$1
+  # @Code:
+
+  # Identify the last partition on the specific disk
+  partitionNum=`blkid | grep ${devNode} | wc -l`
+  lastPartition=${devNode}${partitionNum}
+
+  # Find the filesystem of the last partition on the disk
+  fs=`blkid | grep ${lastPartition} | awk '{print $NF}' | sed -e 's/^TYPE=//' | sed 's/\"//g'`
+  rc=$?
+  if (( rc != 0 )); then
+    printError "Unable to obtain the file system type on disk: ${userID}:${channelID} returns rc: $rc, out: $out"
+    return 1
+  fi
+
+  if [[ $fs == "xfs" ]]; then
+    #Before we can increase a xfs file system, it needs to be mounted first
+    mountdir=`mktemp -d /tmp/XXXXXXXXXX`
+    mount -o nouuid ${lastPartition} $mountdir
+    if (( $? )); then
+      printError "Unable to mount the last partition ${lastPartition} of ${userID}:${channelID} returns rc: $rc, out: $out"
+      rm -rf $mountdir
+      return 1
+    fi
+
+    #Grow the xfs file system
+    out=`xfs_growfs $mountdir 2>&1`
+    rc=$?
+    if (( rc != 0 )); then
+      printError "Unable to increase the xfs file system on last parition ${lastPartition} of ${userID}:${channelID} returns rc: $rc, out: $out"
+      umount $mountdir
+      rm -rf $mountdir
+      return 1
+    fi
+
+    #Unmount the xfs file system
+    umount $mountdir
+    rm -rf $mountdir
+
+  # Resize the ext filesystem
+  elif [[ $fs =~ "ext" ]]; then
+    #Resize the ext filesystem.
+    out=`e2fsck -yf ${lastPartition} 2>&1`
+    rc=$?
+    if (( rc != 0 && rc != 1 && rc != 2 )); then
+      printError "'e2fsck -f ${lastPartition}' returns rc: $rc, out: $out"
+      return 1
+    fi
+
+    out=`resize2fs ${lastPartition} 2>&1`
+    rc=$?
+    if (( rc != 0 )); then
+      printError "'resize2fs $lastPartition' returns rc: $rc, out: $out"
+      return 1
+    fi
+  else
+    inform "(Warning) The file system type $fs is not support to be increased"
+  fi
+
+  return 0
+} #resizePartition{}
+
+###############################################################################
+
+function resizeECKD {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description: 
+  #   Resize a Linux ECKD disk by increasing the partition to use the 
+  #   additional space and resize the filesystem to use the new 
+  #   partition size.
+  # @Returns:
+  #   0 if the resize was successful.
+  #   1 if there was an error with setting the disk offline.
+  # @Parameters:
+  #   None
+  # @Code:
+  local alias
+  local devNode
+  local out
+
+  # Increase the partition to use the rest of the disk.
+  inform "Increasing partition space and file system to use the larger target disk."
+  
+  # reconnect in normal mode (non-raw track access mode)
+  disconnectDisk $userID $channelID 0
+  connectDisk $userID $channelID 'w' 0
+  if (( $? )); then
+    printError "Failed to connect disk: ${userID}:${channelID}"
+    return 1
+  fi
+  alias=$(getDiskAlias $userID $channelID)
+  devNode=$(findLinuxDeviceNode $alias)
+
+  local partitionsCount=`blkid | grep ${devNode} | wc -l`
+  if [[ $partitionsCount -gt 1 ]]; then
+    inform "(Warning) Multiple partitions are detected on root disk, extend is not supported. Only single partition can be extended."
+    return 0
+  fi
+
+  # Resize the partition to take the whole disk.
+  # Note: We will see a message indicating that "device is not fully formatted".
+  #       We will ignore that because we are redoing the parition to take 
+  #       advantage of the increased size.
+  out=`fdasd -a ${devNode}`
+  rc=$?
+  if (( rc != 0 )); then
+    printError "When resizing the dasd, 'fsdasd -a' to  ${devNode} returns rc: $rc, out: $out"
+    return 1
+  fi
+
+  # Reset the device by disconnecting and then reconnecting
+  disconnectDisk $userID $channelID 0
+  connectDisk $userID $channelID 'w' 0
+  if (( $? )); then
+    printError "Failed to connect disk: ${userID}:${channelID}"
+    return 1
+  fi
+  alias=$(getDiskAlias $userID $channelID)
+  devNode=$(findLinuxDeviceNode $alias)
+
+  # Get the current geometry of the partition
+  out=`fdasd -sp ${devNode}`
+  rc=$?
+  if (( rc != 0 )); then
+    printError "unable to obtain partition geometry, 'fsdasd -sp' to  ${devNode} returns rc: $rc, out: $out"
+    return 1
+  fi
+
+  #Resize the file system of last partition on specific disk to use the additional disk space
+  resizePartition ${devNode}
+  if (( $? )); then
+    printError "Failed to resize the last partition on disk: ${userID}:${channelID}"
+    return 1
+  fi
+  return 0
+
+} #resizeECKD{}
+
+###############################################################################
+
+function resizeFBA {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Resize a Linux FBA disk by increasing the last partition to use the
+  #   additional space and resize the filesystem to use the new
+  #   partition size.
+  # @Returns:
+  #   0 if the resize was successful.
+  #   1 if there was an error with setting the disk offline.
+  # @Parameters:
+  #   None
+  # @Code:
+  local alias
+  local devNode
+
+  # Since FBA disk only have single partition, increase the file system on it to use the entire disk space
+  inform "Increasing partition space and file system to use the larger target disk."
+
+  # Reconnect disk
+  disconnectDisk $userID $channelID 0
+  connectDisk $userID $channelID 'w' -1
+  if (( $? )); then
+    printError "Failed to connect disk: ${userID}:${channelID}"
+    return 1
+  fi
+
+  alias=$(getDiskAlias $userID $channelID)
+  devNode=$(findLinuxDeviceNode $alias)
+
+  local partitionsCount=`blkid | grep ${devNode} | wc -l`
+  if [[ $partitionsCount -gt 1 ]]; then
+    printError "Multiple partitions are detected on root disk, extend is not supported. Only single partition can be extended."
+    return 1
+  fi
+  # Resize the file system of last partition on specific disk to use the additional disk space
+  resizePartition ${devNode}
+  if (( $? )); then
+    printError "Failed to resize the last partition on disk: ${userID}:${channelID}"
+    return 1
+  fi
+  return 0
+} #resizeFBA{}
+
+### DEPLOY FUNCTIONS ##########################################################
+###############################################################################
+
+function deployDiskImage {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Deploy the disk image.
+  # @Code:
+
+  function deployCKDImage {
+    : SOURCE: ${BASH_SOURCE}
+    : STACK:  ${FUNCNAME[@]}
+    # @Description:
+    #   Deploy the specified count-key-data disk image.
+    # @Code:
+    local out
+    local rc
+    local errorFile
+
+    connectDisk $userID $channelID 'w' 1
+    if (( $? )); then
+      printError "Failed to connect disk: ${userID}:${channelID}"
+      exit 3
+    fi
+
+    local alias=$(getDiskAlias $userID $channelID)
+    if [[ $(vmcp q v $alias | grep 'CYL ON DASD') ]]; then
+      local diskSize="$(dd if=$imageFile bs=1 count=16 skip=20 2>/dev/null |
+                        awk '{print $1}')"
+      local targetDiskSize=`vmcp q v $alias | awk '{print $6}'`
+      if [[ $diskSize -eq 0 ]]; then
+          printError "$imageFile does not contain cylinder/record information.  This appears to be a dummy image file."
+          exit 3
+      fi
+      if [[ $diskSize -le $targetDiskSize ]]; then
+        # Deploy the image into the target disk
+        errorFile=`mktemp -p /var/log/zhcp -t unpackStderr.XXXXXXXXXX`
+        if (( $? )); then
+          printError "Failed to create a temporary file in the /var/log/zhcp directory"
+          exit 3
+        fi
+        if (( gzipCompression == 0 )); then
+          declare -a stages=('overall_placeholder' 'dd' 'ckddecode')
+          dd if=$imageFile bs=$imageBlockSize skip=$headerBlocks 2>>$errorFile |
+            ckddecode /dev/disk/by-path/ccw-0.0.${alias} $targetDiskSize 2>>$errorFile
+        else
+          declare -a stages=('overall_placeholder' 'dd' 'zcat' 'ckddecode')
+          dd if=$imageFile bs=$imageBlockSize skip=$headerBlocks 2>>$errorFile |
+            zcat  2>>$errorFile|
+              ckddecode /dev/disk/by-path/ccw-0.0.${alias} $targetDiskSize 2>>$errorFile
+        fi
+        declare -a pipeRC=($PIPESTATUS ${PIPESTATUS[@]})
+        out=`cat $errorFile | tr '\n' ' '`
+        rm $errorFile
+
+        if (( ${pipeRC[0]} != 0 )); then
+          getStageFailures stages[@] pipeRC[@]
+          printError "Failed deploying disk image $(basename $imageFile) at stage(rc): $getStageFailuresOut $out"
+          exit 3
+        fi
+      else
+        printError "Target disk is too small for specified image."
+        exit 3
+      fi
+
+      if (( diskSize < targetDiskSize )); then
+        resizeECKD
+        rc=$?
+        if (( rc != 0 )); then
+          exit 3
+        fi
+      fi
+    else
+      printError "Specified image is of a Count-Key-Data volume, but specified\
+                  disk is not a Count-Key-Data volume."
+      exit 3
+    fi
+  } #deployCKDImage{}
+
+  function deployFBAImage {
+    : SOURCE: ${BASH_SOURCE}
+    : STACK:  ${FUNCNAME[@]}
+    # @Description:
+    #   Deploy the specified fixed-block disk image.
+    # @Code:
+    local out
+    local rc
+    local errorFile
+
+    connectDisk $userID $channelID 'w' -1
+    if (( $? )); then
+      printError "Failed to connect disk: ${userID}:${channelID}"
+      exit 3
+    fi
+    local alias=$(getDiskAlias $userID $channelID)
+    if [[ $(vmcp q v $alias | grep 'BLK ON DASD') ]]; then
+      local diskSize="$(dd if=$imageFile bs=1 count=16 skip=20 2>/dev/null |
+                        awk '{print $1}')"
+      if [[ $diskSize -eq 0 ]]; then
+          printError "$imageFile does not contain block information.  This appears to be a dummy image file."
+          exit 3
+      fi
+      if [[ ${diskSize} -le $(vmcp q v $alias | awk '{print $6}') ]]; then
+        errorFile=`mktemp -p /var/log/zhcp -t unpackStderr.XXXXXXXXXX`
+        if (( $? )); then
+          printError "Failed to create a temporary file in the /var/log/zhcp directory"
+          exit 3
+        fi
+        if (( gzipCompression == 0 )); then
+          dd if=$imageFile bs=$imageBlockSize skip=$headerBlocks 2>>$errorFile \
+            > /dev/disk/by-path/ccw-0.0.${alias}
+          rc=$?
+          if (( rc != 0 )); then
+            out=`cat $errorFile | tr '\n' ' '`
+          fi
+        else
+          declare -a stages=('overall_placeholder' 'dd' 'zcat')
+          dd if=$imageFile bs=$imageBlockSize skip=$headerBlocks 2>>$errorFile |
+            zcat 2>>$errorFile > /dev/disk/by-path/ccw-0.0.${alias}
+          declare -a pipeRC=($PIPESTATUS ${PIPESTATUS[@]})
+          rc=${pipeRC[0]}
+          if (( pipeRC[0] != 0 )); then
+            out=`cat $errorFile | tr '\n' ' '`
+            getStageFailures stages[@] pipeRC[@]
+            out="at stage(rc):$getStageFailuresOut $out"
+          fi
+        fi
+
+        rm $errorFile
+
+        syncfileutil /dev/disk/by-path/ccw-0.0.${alias}
+
+        if (( rc != 0 )); then
+          printError "Failed deploying disk image $(basename $imageFile) $out"
+          exit 3
+        fi
+      else
+        printError "Target disk is too small for specified image."
+        exit 3
+      fi
+    else
+      printError "Specified image is of a fixed-block volume, but specified\
+                  disk is not a fixed-block volume."
+      exit 3
+    fi
+  } #deployFBAImage{}
+
+  function execZIPL {
+    : SOURCE: ${BASH_SOURCE}
+    : STACK:  ${FUNCNAME[@]}
+    # @Description:
+    #   Retrieves initial information for the IPL from disk
+    # @Parameters:
+    # None
+    # @Returns:
+    #   0 - If the zipl is executed successfully on target disk
+    #   1 - If the zipl failed to be executed on target disk
+    # @Code:
+
+    local out
+    local rc
+    local os
+
+    # Reconnect disk
+    disconnectDisk $userID $channelID 0
+    connectDisk $userID $channelID 'w' -1
+    if (( $? )); then
+      printError "Failed to connect disk: ${userID}:${channelID}"
+      return 1
+    fi
+    local alias=$(getDiskAlias $userID $channelID)
+    local devNode=$(findLinuxDeviceNode $alias)
+    local deviceMountPoint=/mnt/${alias}
+
+    # Identify the last partition on the specific disk
+    local partitionNum=`blkid | grep ${devNode} | wc -l`
+    local lastPartition=${devNode}${partitionNum}
+
+    # Find the filesystem of the last partition on the disk
+    local fs=`blkid | grep ${lastPartition} | awk '{print $NF}' | sed -e 's/^TYPE=//' | sed 's/\"//g'`
+    rc=$?
+    if (( rc != 0 )); then
+      printError "Unable to obtain the file system type on disk: ${userID}:${channelID}"
+      return 1
+    fi
+
+    mkdir -p $deviceMountPoint
+    if [[ $fs == "xfs" ]]; then
+      # Mount with nouuid option
+      mount -o nouuid /dev/disk/by-path/ccw-0.0.${alias}-part1 $deviceMountPoint
+      rc=$?
+    else
+      mount /dev/disk/by-path/ccw-0.0.${alias}-part1 $deviceMountPoint
+      rc=$?
+    fi
+    if (( rc != 0 )); then
+      printError "Unable to mount the FBA disk partition of ${userID}:${channelID}"
+      rm -rf $deviceMountPoint
+      return 1
+    fi
+
+    #Get target os version
+    local osRelease="$deviceMountPoint/etc/os-release"
+    local slesRelease="$deviceMountPoint/etc/SuSE-release"
+    local rhelRelease="$deviceMountPoint/etc/redhat-release"
+
+    if [[ -e $osRelease ]]; then
+      os=`cat $osRelease | grep "^ID=" | sed \
+        -e 's/ID=//' \
+        -e 's/"//g'`
+      version=`cat $osRelease | grep "^VERSION_ID=" | sed \
+        -e 's/VERSION_ID=//' \
+        -e 's/"//g' \
+        -e 's/\.//'`
+      os=$os$version
+
+    #The /etc/SuSE-release file will be deprecated in sles11.4 and later release
+    elif [[ -e $slesRelease ]]; then
+      os='sles'
+      version=`cat $slesRelease | grep "VERSION =" | sed \
+        -e 's/^.*VERSION =//' \
+        -e 's/\s*$//' \
+        -e 's/.//' \
+        -e 's/[^0-9]*([0-9]+).*/$1/'`
+      os=$os$version
+
+      # Append service level
+      level=`echo $slesRelease | grep "LEVEL =" | sed \
+        -e 's/^.*LEVEL =//' \
+        -e 's/\s*$//' \
+        -e 's/.//' \
+        -e 's/[^0-9]*([0-9]+).*/$1/'`
+      os=$os'sp'$level
+
+    #The /etc/redhat-release file will be deprecated in rhel7 and later release
+    elif [[ -e $rhelRelease ]]; then
+      os='rhel'
+      version=`cat $rhelRelease | grep -i "Red Hat Enterprise Linux Server" | sed \
+        -e 's/[A-Za-z\/\.\(\)]//g' \
+        -e 's/^ *//g' \
+        -e 's/ *$//g' \
+        -e 's/\s.*$//'`
+      os=$os$version
+    fi
+
+    # Exec zipl command to prepare device for initial problem load
+    if [[ $os == sles12* ]]; then
+      out=`chroot $deviceMountPoint /sbin/zipl -c /boot/zipl/config 2>&1`
+      rc=$?
+      if (( rc != 0 )); then
+        printError "Failed to execute zipl on $os due to $out"
+        umount $deviceMountPoint
+        rm -rf $deviceMountPoint
+        return 1
+      fi
+    elif [[ $os == sles11* || $os == rhel* || $os == ubuntu* ]]; then
+      out=`chroot $deviceMountPoint /sbin/zipl 2>&1`
+      rc=$?
+      if (( rc != 0 )); then
+        printError "Failed to execute zipl on $os due to $out"
+        umount $deviceMountPoint
+        rm -rf $deviceMountPoint
+        return 1
+      fi
+    elif [[ $os == "" ]]; then
+      inform "This is not the root disk, zipl will not be executed on it"
+    else
+      inform "The os version is: $os, this is not a supported linux distro"
+    fi
+
+
+    #Unmount the target disk
+    umount $deviceMountPoint
+    rm -rf $deviceMountPoint
+    return 0
+  } #execZIPL
+
+
+  function deployFBAptImage {
+    : SOURCE: ${BASH_SOURCE}
+    : STACK:  ${FUNCNAME[@]}
+    # @Description:
+    #   Deploy the specified fixed-block disk image.
+    # @Code:
+    local out
+    local rc
+    local errorFile
+
+    connectDisk $userID $channelID 'w' -1
+    if (( $? )); then
+      printError "Failed to connect disk: ${userID}:${channelID}"
+      exit 3
+    fi
+    local alias=$(getDiskAlias $userID $channelID)
+    if [[ $(vmcp q v $alias | grep 'BLK ON DASD') ]]; then
+      local diskSize="$(dd if=$imageFile bs=1 count=16 skip=20 2>/dev/null |
+                        awk '{print $1}')"
+      local targetDiskSize=`vmcp q v $alias | awk '{print $6}'`
+
+      if [[ $diskSize -eq 0 ]]; then
+          printError "$imageFile does not contain block information.  This appears to be a dummy image file."
+          exit 3
+      fi
+
+      if [[ ${diskSize} -le ${targetDiskSize} ]]; then
+        errorFile=`mktemp -p /var/log/zhcp -t unpackStderr.XXXXXXXXXX`
+        if (( $? )); then
+          printError "Failed to create a temporary file in the /var/log/zhcp directory"
+          exit 3
+        fi
+
+        # Zero out the disk header
+        out=`dd if=/dev/zero bs=512 count=2 2>&1 of=/dev/disk/by-path/ccw-0.0.${alias}`
+        rc=$?
+        if (( rc )); then
+          out=`echo $out | tr '\n' ' '`
+          printError "An error was encountered while zero out the disk header. $out"
+          exit 1
+        fi
+        syncfileutil /dev/disk/by-path/ccw-0.0.${alias}
+        disconnectDisk $userID $channelID 0
+
+        # Reconnect to dd the partition
+        connectDisk $userID $channelID 'w' -1
+        if (( $? )); then
+          printError "Failed to connect disk: ${userID}:${channelID}"
+          exit 3
+        fi
+        alias=$(getDiskAlias $userID $channelID)
+
+        if [[ ! -L /dev/disk/by-path/ccw-0.0.${alias}-part1 ]]; then
+          printError "Failed to detect the partition on FBA disk: ${userID}:${channelID}"
+          exit 3
+        fi
+
+        if (( gzipCompression == 0 )); then
+          dd if=$imageFile bs=$imageBlockSize skip=$headerBlocks 2>>$errorFile \
+            > /dev/disk/by-path/ccw-0.0.${alias}-part1
+          rc=$?
+          if (( rc != 0 )); then
+            out=`cat $errorFile | tr '\n' ' '`
+          fi
+        else
+          declare -a stages=('overall_placeholder' 'dd' 'zcat')
+          dd if=$imageFile bs=$imageBlockSize skip=$headerBlocks 2>>$errorFile |
+            zcat 2>>$errorFile > /dev/disk/by-path/ccw-0.0.${alias}-part1
+          declare -a pipeRC=($PIPESTATUS ${PIPESTATUS[@]})
+          rc=${pipeRC[0]}
+          if (( pipeRC[0] != 0 )); then
+            out=`cat $errorFile | tr '\n' ' '`
+            getStageFailures stages[@] pipeRC[@]
+            out="at stage(rc):$getStageFailuresOut $out"
+          fi
+        fi
+
+        rm $errorFile
+
+        syncfileutil /dev/disk/by-path/ccw-0.0.${alias}-part1
+
+        if (( rc != 0 )); then
+          printError "Failed deploying disk image $(basename $imageFile) $out"
+          exit 3
+        fi
+      else
+        printError "Target disk is too small for specified image."
+        exit 3
+      fi
+
+      # Resize filesystem on target disk's last partition
+      if (( diskSize < targetDiskSize )); then
+        resizeFBA
+        rc=$?
+        if (( rc != 0 )); then
+          exit 3
+        fi
+      fi
+    else
+      printError "Specified image is of a fixed-block volume, but specified\
+                  disk is not a fixed-block volume."
+      exit 3
+    fi
+
+    execZIPL
+    rc=$?
+    if (( rc != 0 )); then
+      exit 3
+    fi
+  } #deployFBAptImage{}
+
+  function deployFCPImage {
+    : SOURCE: ${BASH_SOURCE}
+    : STACK:  ${FUNCNAME[@]}
+    # @Description:
+    #   Deploy the specified fixed-block disk image.
+    # @Code:
+    local out
+    local rc
+    local errorFile
+
+    connectFcp ${fcpChannel} ${wwpn} ${lun}
+    if (( $? )); then
+      printError "Failed to connect disk: ccw-0.0.${fcpChannel}-${wwpn}:${lun}."
+      exit 3
+    fi
+
+    local targetDiskSize="$(/usr/bin/sg_readcap /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} | 
+    egrep -i "Device size:" |
+      awk '{printf("%0.0f", $3/512)}')"
+
+    local diskSize="$(dd if=$imageFile bs=1 count=16 skip=20 2>/dev/null |
+                      awk '{print $1}')"
+    if [[ $diskSize -eq 0 ]]; then
+      printError "$imageFile does not contain block information.  This appears to be a dummy image file."
+      exit 3
+    fi
+    if [[ $diskSize -le $targetDiskSize ]]; then
+      errorFile=`mktemp -p /var/log/zhcp -t unpackStderr.XXXXXXXXXX`
+      if (( $? )); then
+        printError "Failed to create a temporary file in the /var/log/zhcp directory"
+        exit 3
+      fi
+      if (( gzipCompression == 0 )); then
+        dd if=$imageFile bs=$imageBlockSize skip=$headerBlocks 2>>$errorFile \
+          > /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun}
+        rc=$?
+        if (( rc != 0 )); then
+          out=`cat $errorFile | tr '\n' ' '`
+        fi
+      else
+        declare -a stages=('overall_placeholder' 'dd' 'zcat')
+        dd if=$imageFile bs=$imageBlockSize skip=$headerBlocks 2>>$errorFile |
+          zcat 2>>$errorFile > /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun}
+        declare -a pipeRC=($PIPESTATUS ${PIPESTATUS[@]})
+        rc=${pipeRC[0]}
+        if (( rc != 0 )); then
+          out=`cat $errorFile | tr '\n' ' '`
+          getStageFailures stages[@] pipeRC[@]
+          out="at stage(rc): $getStageFailuresOut $out"
+        fi
+      fi
+
+      rm $errorFile
+
+      syncfileutil /dev/disk/by-path/ccw-0.0.${alias}
+
+      if (( rc != 0 )); then
+        printError "Failed deploying disk image $(basename $imageFile) $out"
+        exit 3
+      fi
+    else
+      printError "Target disk is too small for specified image."
+      exit 3
+    fi
+  } #deployFCPImage{}
+
+  if [[ $userID ]]; then
+    inform "Deploying image to ${userID}'s disk at channel ${channelID}."
+  else
+    inform "Deploying image to ${wwpn}/${lun} disk at channel ${fcpChannel}."
+  fi
+
+  if [[ $format = 'FCP' ]]; then
+    deployFCPImage
+  elif [[ $format = 'FBA' ]]; then
+    deployFBAImage
+  elif [[ $format = 'FBApt' ]]; then
+    deployFBAptImage
+  elif [[ $format = 'CKD' ]]; then
+    deployCKDImage
+  else
+    # It should not be possible to get here after our sanity checks, but in
+    # any case...
+    printError "Disk image type not recognized."
+    exit 3
+  fi
+} #deployDiskImage{}
+
+
+###############################################################################
+### SET TRAP FOR CLEANUP ON EXIT ##############################################
+###############################################################################
+
+function cleanup {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Clean up lock files, disk links, and (if we passed the sanity check but
+  #   failed after creating one or more z/VM user IDs, those newly-created
+  #   user IDs).
+  # @Code:
+  # Nothing to do for help or version options.
+  if [[ $printHelp ]]; then
+    return
+  fi
+
+  if [[ $successful ]]; then
+    inform "Image deployment successful."
+    # Only keep traces of failed disk-image creation attempt unless overriden
+    # by a configuration property.
+    if [[ -e $logFile ]]; then
+      if [[ $saveAllLogs ]]; then
+        inform "A detailed trace can be found at: ${logFile}"
+      else
+        rm -f $logFile
+      fi
+    fi
+  else
+    if [[ ! $printHelp ]]; then
+      echo -e '\nIMAGE DEPLOYMENT FAILED.'
+      [[ $logFile ]] && inform "A detailed trace can be found at: ${logFile}"
+    fi
+  fi
+
+  # Make sure we've released our connection to the target disk.
+  if [[ $userID ]]; then
+    disconnectDisk $userID $channelID 0
+  else
+    disconnectFcp ${fcpChannel} ${wwpn} ${lun}
+  fi
+
+  timestamp=$(date -u --rfc-3339=ns | sed 's/ /-/;s/\.\(...\).*/.\1/')
+  inform "unpackdiskimage end time: ${timestamp}"
+} #cleanup{}
+
+trap 'cleanup' EXIT
+
+trap "echo -e '\nExecution interrupted. Exiting...\n'; exit" SIGINT
+
+###############################################################################
+### START EXECUTION ###########################################################
+###############################################################################
+
+parseArgs
+checkSanity
+deployDiskImage
+successful='true'
+
+###############################################################################
+### END OF SCRIPT #############################################################
+###############################################################################
+

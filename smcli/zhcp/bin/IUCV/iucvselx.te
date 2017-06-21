@@ -1,0 +1,13 @@
+
+module test 1.0;
+
+require {
+	type unlabeled_t;
+	type init_t;
+	class socket { read write };
+}
+
+#============= init_t ==============
+
+#!!!! This avc is allowed in the current policy
+allow init_t unlabeled_t:socket { read write };

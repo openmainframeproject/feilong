@@ -1,0 +1,13 @@
+
+module iucvselx 1.0;
+
+require {
+	type unlabeled_t;
+	type unconfined_service_t;
+	class socket { read write };
+}
+
+#============= unconfined_service_t ==============
+
+#!!!! This avc is allowed in the current policy
+allow unconfined_service_t unlabeled_t:socket { read write };

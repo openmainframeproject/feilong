@@ -1,0 +1,71 @@
+#!/bin/bash
+#
+# IBM (C) Copyright 2016, 2016 Eclipse Public License
+#http://www.eclipse.org/org/documents/epl-v10.html
+#
+# Sophie Song created on Jun. 7th, 2016
+#
+### BEGIN INIT INFO
+# Provides:          iucvserver
+# Required-Start:    
+# Should-Start:      
+# Required-Stop:
+# Should-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Description:       This shell script takes care of starting and stopping IUCV agent
+### END INIT INFO
+
+# Source function library
+if [ -f "/etc/init.d/functions" ]; then
+    . /etc/init.d/functions
+fi
+
+#the service name  for example: iucvserv
+SNAME=iucvserv
+
+#the full path and name of the daemon program
+#Warning: The name of executable file must be identical with service name
+PROG=/usr/bin/$SNAME
+
+
+# start function
+start() {
+    #check the daemon status first
+    if [ -f /var/lock/subsys/$SNAME ]
+    then
+        echo "$SNAME is already started!"
+        exit 0;
+    else
+        echo "Starting $SNAME ..."
+        $PROG start-as-daemon
+        [ $? -eq 0 ] && touch /var/lock/subsys/$SNAME
+        exit 0;
+    fi
+}
+
+#stop function
+stop() {
+    echo "Stopping $SNAME ..."
+    killproc $SNAME
+    rm -rf /var/lock/subsys/$SNAME
+}
+
+case "$1" in
+start)
+  start
+  ;;
+stop)
+  stop
+  ;;
+reload|restart)
+  stop
+  start
+  ;;
+status)
+  status $SNAME
+  ;;
+*)
+  echo $"Usage: $0 {start|stop|restart|status}"
+  exit 1
+esac

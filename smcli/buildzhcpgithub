@@ -1,0 +1,77 @@
+#!/bin/sh
+# IBM(c) 2017 EPL license http://www.eclipse.org/legal/epl-v10.html
+#------------------------------------------------------------------------------
+# Checkout, compile, and build RPM for zHCP RPM
+#
+# This bash script will:
+#    -create a local git repo of the zhcp source code.
+#    -compile, link, and make an RPM of the c files using rpmbuild
+#
+# Example: buildzhcpgithub ZHCP_DEV
+#
+# The code is stored on https://github.com/zVMopenstack/zhcp
+# Code reviews are done using gerrithub:
+#   https://review.gerrithub.io/#/q/project:zVMopenstack/zhcp
+#
+# -----------------------------------------------------------------------------
+if [[ -z "$1" ]]; then
+   {
+   echo "A branch must be specified"
+   exit 1
+   }
+fi
+
+BRANCH=$1
+BUILD=/root/zhcp-build
+REPO=https://github.com/zVMopenstack/zhcp.git
+
+EXISTS=$(git ls-remote -h $REPO | grep "$BRANCH"$ | wc -l )
+if [ "$EXISTS" == 0 ] ; then
+   {
+   echo "Branch $BRANCH does not exist on /zVMopenstack/zhcp"
+   echo "Try choosing one of the following branches:  "
+   git ls-remote --heads $REPO | awk -F "heads/" '{print $2}'
+   exit 1
+   }
+fi
+
+# Prepare environment
+rm -rf $BUILD/variable 2>/dev/null
+mkdir -p $BUILD/variable 2>/dev/null
+echo "%_topdir $BUILD" > $BUILD/variable/.rpmmacros
+cp $BUILD/variable/.rpmmacros $HOME 2>/dev/null
+
+# Create build directories
+cd $BUILD/ 2>/dev/null
+rm -rf $BUILD/BUILD 2>/dev/null
+rm -rf $BUILD/RPMS 2>/dev/null
+rm -rf $BUILD/SRPMS 2>/dev/null
+mkdir -p $BUILD 2>/dev/null
+mkdir -p $BUILD/BUILD 2>/dev/null
+mkdir -p $BUILD/RPMS 2>/dev/null
+mkdir -p $BUILD/SOURCES 2>/dev/null
+mkdir -p $BUILD/SPECS 2>/dev/null
+mkdir -p $BUILD/SRPMS 2>/dev/null
+mkdir -p $BUILD/OUTPUT 2>/dev/null
+
+# Checkout the branch
+rm -rf ./zhcp
+git clone https://github.com/zVMopenstack/zhcp.git -b $BRANCH
+
+# Compress zHCP source
+tar czf $BUILD/SOURCES/zhcp-build.tar.gz zhcp
+cp ./zhcp/zhcp.spec $BUILD/SPECS
+
+rpmbuild -ba -v $BUILD/SPECS/zhcp.spec
+
+# Copy over RPMs into /srv/ftp
+rm -rf /srv/ftp/zhcp/$BRANCH/
+mkdir -p /srv/ftp/zhcp/$BRANCH/
+cp -R $BUILD/RPMS/* /srv/ftp/zhcp/$BRANCH/
+mkdir -p $BUILD/OUTPUT/$BRANCH 2>/dev/null
+cp -R $BUILD/RPMS/s390x/* $BUILD/OUTPUT/$BRANCH
+cp -R $BUILD/SRPMS/* $BUILD/OUTPUT/$BRANCH
+
+
+# Erase build directories under /var/tmp
+rm -rf /var/tmp/zhcp-*
