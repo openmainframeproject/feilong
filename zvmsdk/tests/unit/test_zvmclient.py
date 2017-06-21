@@ -576,31 +576,6 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         xrequest.assert_called_once_with('DELETE', fake_url)
 
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_change_vm_ipl_state(self, xrequest):
-        fake_userid = 'fake_userid'
-        fake_state = 0100
-        fake_body = ['--setipl %s' % fake_state]
-        fake_url = self._xcat_url.chvm('/' + fake_userid)
-
-        self._zvmclient.change_vm_ipl_state(fake_userid, fake_state)
-        xrequest.assert_called_once_with('PUT', fake_url, fake_body)
-
-    @mock.patch.object(zvmutils, 'xcat_request')
-    def test_change_vm_fmt(self, xrequest):
-        fake_userid = 'fake_userid'
-        fmt = False
-        action = ''
-        diskpool = ''
-        vdev = ''
-        size = '1000M'
-        fake_url = self._xcat_url.chvm('/' + fake_userid)
-        fake_body = [" ".join([action, diskpool, vdev, size])]
-
-        self._zvmclient.change_vm_fmt(fake_userid, fmt, action,
-                                      diskpool, vdev, size)
-        xrequest.assert_called_once_with('PUT', fake_url, fake_body)
-
-    @mock.patch.object(zvmutils, 'xcat_request')
     def test_get_tabdum_info(self, xrequest):
         fake_url = self._xcat_url.tabdump('/zvm')
 
@@ -1269,3 +1244,11 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self._zvmclient.update_nic_definition("node", "vdev",
                                               "mac", "vswitch")
         xrequest.assert_called_with("PUT", url, body)
+
+    @mock.patch.object(zvmclient.XCATClient, 'remove_image_file')
+    @mock.patch.object(zvmclient.XCATClient, 'remove_image_definition')
+    def test_image_delete(self, remove_image_def, remove_image_file):
+        image_name = 'image-unique-name'
+        self._zvmclient.image_delete(image_name)
+        remove_image_file.assert_called_once_with(image_name)
+        remove_image_def.assert_called_once_with(image_name)

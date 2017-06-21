@@ -1209,3 +1209,7 @@ class XCATClient(ZVMClient):
 
         with zvmutils.expect_invalid_xcat_resp_data():
             zvmutils.xcat_request("PUT", url, body)
+
+    def image_delete(self, image_name):
+        self.remove_image_file(image_name)
+        self.remove_image_definition(image_name)

@@ -131,3 +131,6 @@ class ImageOps(object):
 
     def image_query(self, imagekeyword=None):
         return self.zvmclient.image_query(imagekeyword)
+
+    def image_delete(self, image_name):
+        return self.zvmclient.image_delete(image_name)

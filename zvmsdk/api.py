@@ -501,3 +501,11 @@ class SDKAPI(object):
 
         """
         self._vmops.guest_config_minidisks(userid, disk_info)
+
+    def image_delete(self, image_name):
+        """Delete image from image repository
+
+        :param image_name: the name of the image to be deleted
+
+        """
+        self._imageops.image_delete(image_name)
