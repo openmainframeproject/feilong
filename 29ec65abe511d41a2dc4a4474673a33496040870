@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d6064ac9_6914b0ae",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-21T05:45:10Z",
+      "side": 1,
+      "message": "remove this",
+      "revId": "29ec65abe511d41a2dc4a4474673a33496040870",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
