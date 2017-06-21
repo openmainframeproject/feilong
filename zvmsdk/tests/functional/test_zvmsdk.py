@@ -73,3 +73,43 @@ class SDKAPITestCase(unittest.TestCase):
         self.assertRaises(exception.SDKBaseException,
                           self.sdkapi.host_diskpool_get_info,
                           'ECKD:invalidpoolname')
+
+    def test_guest_inspect_cpus(self):
+        guest_list = self.sdkapi.host_list_guests()
+        n = 0
+        for uid in guest_list:
+            if self.sdkapi.guest_get_power_state(uid) == 'on':
+                n = n + 1
+                test_id = uid
+        if n > 0:
+            result = self.sdkapi.guest_inspect_cpus(guest_list)
+            self.assertTrue(isinstance(result, dict))
+            self.assertEqual(len(result), n)
+            self.assertTrue(isinstance(
+                result[test_id].get('guest_cpus'), int))
+            self.assertTrue(isinstance(
+                result[test_id].get('used_cpu_time_us'), int))
+            self.assertTrue(isinstance(
+                result[test_id].get('elapsed_cpu_time_us'), int))
+            self.assertTrue(isinstance(
+                result[test_id].get('min_cpu_count'), int))
+            self.assertTrue(isinstance(
+                result[test_id].get('max_cpu_limit'), int))
+            self.assertTrue(isinstance(
+                result[test_id].get('samples_cpu_in_use'), int))
+            self.assertTrue(isinstance(
+                result[test_id].get('samples_cpu_delay'), int))
+        else:
+            result = self.sdkapi.guest_inspect_cpus(guest_list)
+            empty_dict = {}
+            self.assertEqual(result, empty_dict)
+
+    def test_guest_inspect_cpus_with_nonexist_guest(self):
+        result = self.sdkapi.guest_inspect_cpus('fake_id')
+        empty_dict = {}
+        self.assertEqual(result, empty_dict)
+
+    def test_guest_inspect_cpus_with_emptr_list(self):
+        result = self.sdkapi.guest_inspect_cpus([])
+        empty_dict = {}
+        self.assertEqual(result, empty_dict)
