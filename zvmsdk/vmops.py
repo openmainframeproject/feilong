@@ -42,7 +42,7 @@ class VMOps(object):
 
     def __init__(self):
         self._zvmclient = zvmclient.get_zvmclient()
-        self._dist_manager = dist.ListDistManager()
+        self._dist_manager = dist.LinuxDistManager()
         self._imageops = imageops.get_imageops()
         self._pathutils = zvmutils.PathUtils()
 

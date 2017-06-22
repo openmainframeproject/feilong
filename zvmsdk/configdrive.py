@@ -49,7 +49,7 @@ def generate_net_file(ip_addr, net_file_path):
 
 
 def get_znetconfig_str(os_version):
-    linuxdist = dist.ListDistManager().get_linux_dist(os_version)()
+    linuxdist = dist.LinuxDistManager().get_linux_dist(os_version)()
     udev_settle = linuxdist.get_znetconfig_contents()
     znetconfig = '\n'.join(('# !/bin/sh', udev_settle))
     znetconfig += '\nrm -rf /tmp/znetconfig.sh\n'

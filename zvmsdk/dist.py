@@ -549,7 +549,7 @@ class ubuntu16(ubuntu):
         return "echo 'root:%s' | chpasswd" % admin_password
 
 
-class ListDistManager(object):
+class LinuxDistManager(object):
     def get_linux_dist(self, os_version):
         distro, release = self.parse_dist(os_version)
         return globals()[distro + release]

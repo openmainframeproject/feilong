@@ -121,7 +121,7 @@ class _xCATProxy(object):
 
     def __init__(self):
         self._xcat_url = zvmutils.get_xcat_url()
-        self._dist_manager = dist.ListDistManager()
+        self._dist_manager = dist.LinuxDistManager()
         self._host = CONF.zvm.host
 
     def dedicate_device(self, instance, device):

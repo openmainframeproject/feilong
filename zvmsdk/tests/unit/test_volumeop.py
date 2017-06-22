@@ -179,7 +179,7 @@ class _xCATProxyTestCase(unittest.TestCase):
         chvm.assert_called_once_with('/node')
         xcat_request.assert_called_once_with('PUT', url, body)
 
-    @mock.patch.object(dist.ListDistManager, 'get_linux_dist')
+    @mock.patch.object(dist.LinuxDistManager, 'get_linux_dist')
     def test_get_mountpoint_parms(self, get_linux_dist):
         distro = dist.rhel7
         get_linux_dist.return_value = distro
