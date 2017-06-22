@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "28f0dfec_c62c0ed3",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-22T01:20:15Z",
+      "side": 1,
+      "message": "please update API doc accordingly due to this change",
+      "revId": "62fde3c47a469b87989d4311bd4d96cd349d7c52",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
