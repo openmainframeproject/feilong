@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a66c240_43b65a51",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-22T03:07:40Z",
+      "side": 1,
+      "message": "Please add more information to describe why/how you did this change",
+      "revId": "db5e33da1498e883f603c5d6a3f4e55632ba03b7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4558661b_88619742",
+        "filename": "zvmsdk/monitor.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-22T03:07:40Z",
+      "side": 1,
+      "message": "update method doc accordingly",
+      "range": {
+        "startLine": 150,
+        "startChar": 0,
+        "endLine": 153,
+        "endChar": 29
+      },
+      "revId": "db5e33da1498e883f603c5d6a3f4e55632ba03b7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cb538156_c8e15235",
+        "filename": "zvmsdk/monitor.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-06-22T03:07:40Z",
+      "side": 1,
+      "message": "in fact, it\u0027s \"key\", not \"index\", correct?",
+      "range": {
+        "startLine": 156,
+        "startChar": 29,
+        "endLine": 156,
+        "endChar": 34
+      },
+      "revId": "db5e33da1498e883f603c5d6a3f4e55632ba03b7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
