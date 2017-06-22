@@ -1,6 +1,6 @@
 /**
- * IBM (C) Copyright 2013 Eclipse Public License
- * http://www.eclipse.org/org/documents/epl-v10.html
+ * IBM (C) Copyright 2017 Apache License Version 2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  */
 #ifndef _SMSOCKET_H
 #define _SMSOCKET_H

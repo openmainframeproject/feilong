@@ -1,5 +1,6 @@
 #!/bin/sh
-# IBM(c) 2017 EPL license http://www.eclipse.org/legal/epl-v10.html
+# IBM(c) 2017 Apache License Version 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
 #------------------------------------------------------------------------------
 # compile, and build RPM for zHCP RPM
 #
@@ -12,9 +13,9 @@
 #
 # Example: compilezhcponly
 #
-# The code is stored on https://github.com/zVMopenstack/zhcp
+# The code is stored on https://github.com/mfcloud/python-zvm-sdk.git
 # Code reviews are done using gerrithub:
-#   https://review.gerrithub.io/#/q/project:zVMopenstack/zhcp
+#    https://review.gerrithub.io/#/q/project:mfcloud/python-zvm-sdk
 #
 # -----------------------------------------------------------------------------
 BUILD=/root/zhcp-build

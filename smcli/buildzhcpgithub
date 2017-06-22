@@ -1,5 +1,6 @@
 #!/bin/sh
-# IBM(c) 2017 EPL license http://www.eclipse.org/legal/epl-v10.html
+# IBM(c) 2017 Apache License Version 2.0
+#  http://www.apache.org/licenses/LICENSE-2.0
 #------------------------------------------------------------------------------
 # Checkout, compile, and build RPM for zHCP RPM
 #
@@ -9,9 +10,9 @@
 #
 # Example: buildzhcpgithub ZHCP_DEV
 #
-# The code is stored on https://github.com/zVMopenstack/zhcp
+# The code is stored on https://github.com/mfcloud/python-zvm-sdk.git
 # Code reviews are done using gerrithub:
-#   https://review.gerrithub.io/#/q/project:zVMopenstack/zhcp
+#    https://review.gerrithub.io/#/q/project:mfcloud/python-zvm-sdk
 #
 # -----------------------------------------------------------------------------
 if [[ -z "$1" ]]; then
@@ -23,7 +24,7 @@ fi
 
 BRANCH=$1
 BUILD=/root/zhcp-build
-REPO=https://github.com/zVMopenstack/zhcp.git
+REPO=https://github.com/mfcloud/python-zvm-sdk.git
 
 EXISTS=$(git ls-remote -h $REPO | grep "$BRANCH"$ | wc -l )
 if [ "$EXISTS" == 0 ] ; then
@@ -56,7 +57,10 @@ mkdir -p $BUILD/OUTPUT 2>/dev/null
 
 # Checkout the branch
 rm -rf ./zhcp
-git clone https://github.com/zVMopenstack/zhcp.git -b $BRANCH
+git clone $REPO -b $BRANCH
+
+# Move to the smcli directory
+cd smcli 2>/dev/null
 
 # Compress zHCP source
 tar czf $BUILD/SOURCES/zhcp-build.tar.gz zhcp

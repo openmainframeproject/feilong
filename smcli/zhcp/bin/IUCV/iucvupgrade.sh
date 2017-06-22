@@ -1,6 +1,7 @@
 #!/bin/bash
 #
-# IBM(c) 2013-2016 EPL license http://www.eclipse.org/legal/epl-v10.html
+# IBM(c) 2013-2016 Apache License Version 2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
 # Change Activity:
 #
