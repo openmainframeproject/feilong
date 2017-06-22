@@ -1252,3 +1252,10 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self._zvmclient.image_delete(image_name)
         remove_image_file.assert_called_once_with(image_name)
         remove_image_def.assert_called_once_with(image_name)
+
+    def test_get_image_path_by_name(self):
+        fake_name = 'rhel7.2-s390x-netboot-fake_image_uuid'
+        expected_path = '/install/netboot/rhel7.2/s390x/fake_image_uuid/' +\
+                CONF.zvm.user_root_vdev + '.img'
+        ret = self._zvmclient.get_image_path_by_name(fake_name)
+        self.assertEqual(ret, expected_path)

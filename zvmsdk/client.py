@@ -1213,3 +1213,22 @@ class XCATClient(ZVMClient):
     def image_delete(self, image_name):
         self.remove_image_file(image_name)
         self.remove_image_definition(image_name)
+
+    def get_image_path_by_name(self, spawn_image_name):
+        # eg. rhel7.2-s390x-netboot-<image_uuid>
+        # eg. /install/netboot/rhel7.2/s390x/<image_uuid>/image_name.img
+        name_split = spawn_image_name.split('-')
+        # tmpdir can extract from 'tabdump site' but consume time
+        tmpdir = '/install'
+        """
+        cmd = 'tabdump site'
+        output = zvmtuils.execute(cmd)
+        for i in output:
+            if 'tmpdir' in i:
+                tmpdir = i.split(',')[1]
+        """
+        image_uuid = name_split[-1]
+        image_file_path = tmpdir + '/' + name_split[2] + '/' +\
+                name_split[0] + '/' + name_split[1] + '/' + image_uuid +\
+                '/' + CONF.zvm.user_root_vdev + '.img'
+        return image_file_path
