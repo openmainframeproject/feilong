@@ -23,13 +23,7 @@ from zvmsdk.tests.unit import base
 class SDKMonitorTestCase(base.SDKTestCase):
     def setUp(self):
         self._monitor = monitor.get_monitor()
-
-    @mock.patch.object(monitor.MeteringCache, 'get')
-    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
-    @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
-    def test_private_get_inspect_data_cache_hit_single(self, cache_enabled,
-                                                       get_ps, cache_get):
-        cache_get.return_value = {
+        self._cpumem_data_sample1 = {
             'userid': 'USERID1',
             'guest_cpus': '1',
             'used_cpu_time': '6185838 uS',
@@ -43,43 +37,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
             'min_memory': '0 KB',
             'shared_memory': '5222192 KB',
             }
-        rdata = self._monitor._get_inspect_data('cpumem', ['userid1'])
-        self.assertEqual(rdata.keys(), ['USERID1'])
-        self.assertEqual(sorted(rdata['USERID1'].keys()),
-                         sorted(['userid', 'guest_cpus',
-                                 'used_cpu_time', 'elapsed_cpu_time',
-                                 'min_cpu_count', 'max_cpu_limit',
-                                 'samples_cpu_in_use',
-                                 'samples_cpu_delay',
-                                 'used_memory', 'max_memory',
-                                 'min_memory', 'shared_memory']))
-        self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
-        self.assertEqual(rdata['USERID1']['used_cpu_time'], '6185838 uS')
-        self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
-        self.assertEqual(rdata['USERID1']['shared_memory'], '5222192 KB')
-        get_ps.assert_not_called()
-        cache_enabled.assert_not_called()
-
-    @mock.patch.object(monitor.MeteringCache, 'get')
-    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
-    @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
-    def test_private_get_inspect_data_cache_hit_multi(self, cache_enabled,
-                                                       get_ps, cache_get):
-        cache_get.side_effect = [{
-            'userid': 'USERID1',
-            'guest_cpus': '1',
-            'used_cpu_time': '6185838 uS',
-            'elapsed_cpu_time': '35232895 uS',
-            'min_cpu_count': '2',
-            'max_cpu_limit': '10000',
-            'samples_cpu_in_use': '0',
-            'samples_cpu_delay': '0',
-            'used_memory': '290232 KB',
-            'max_memory': '2097152 KB',
-            'min_memory': '0 KB',
-            'shared_memory': '5222192 KB',
-            },
-            {
+        self._cpumem_data_sample2 = {
             'userid': 'USERID2',
             'guest_cpus': '3',
             'used_cpu_time': '14293629 uS',
@@ -92,18 +50,37 @@ class SDKMonitorTestCase(base.SDKTestCase):
             'max_memory': '2097152 KB',
             'min_memory': '0 KB',
             'shared_memory': '5222190 KB',
-            }]
+            }
+
+    @mock.patch.object(monitor.MeteringCache, 'get')
+    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
+    @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
+    def test_private_get_inspect_data_cache_hit_single(self, cache_enabled,
+                                                       get_ps, cache_get):
+        cache_get.return_value = self._cpumem_data_sample1
+        rdata = self._monitor._get_inspect_data('cpumem', ['userid1'])
+        self.assertEqual(rdata.keys(), ['USERID1'])
+        self.assertEqual(sorted(rdata['USERID1'].keys()),
+                         sorted(self._cpumem_data_sample1.keys()))
+        self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
+        self.assertEqual(rdata['USERID1']['used_cpu_time'], '6185838 uS')
+        self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
+        self.assertEqual(rdata['USERID1']['shared_memory'], '5222192 KB')
+        get_ps.assert_not_called()
+        cache_enabled.assert_not_called()
+
+    @mock.patch.object(monitor.MeteringCache, 'get')
+    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
+    @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
+    def test_private_get_inspect_data_cache_hit_multi(self, cache_enabled,
+                                                       get_ps, cache_get):
+        cache_get.side_effect = [self._cpumem_data_sample1,
+            self._cpumem_data_sample2]
         rdata = self._monitor._get_inspect_data('cpumem',
                                                 ['userid1', 'userid2'])
         self.assertEqual(sorted(rdata.keys()), ['USERID1', 'USERID2'])
         self.assertEqual(sorted(rdata['USERID1'].keys()),
-                         sorted(['userid', 'guest_cpus',
-                                 'used_cpu_time', 'elapsed_cpu_time',
-                                 'min_cpu_count', 'max_cpu_limit',
-                                 'samples_cpu_in_use',
-                                 'samples_cpu_delay',
-                                 'used_memory', 'max_memory',
-                                 'min_memory', 'shared_memory']))
+                         sorted(self._cpumem_data_sample1.keys()))
         self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
         self.assertEqual(rdata['USERID1']['used_cpu_time'], '6185838 uS')
         self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
@@ -128,34 +105,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
         get_ps.return_value = 'on'
         cache_enabled.return_value = True
         image_perform_query.return_value = {
-            'USERID1': {
-                'userid': 'USERID1',
-                'guest_cpus': '1',
-                'used_cpu_time': '6185838 uS',
-                'elapsed_cpu_time': '35232895 uS',
-                'min_cpu_count': '2',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '290232 KB',
-                'max_memory': '2097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222192 KB',
-                },
-            'USERID2': {
-                'userid': 'USERID2',
-                'guest_cpus': '3',
-                'used_cpu_time': '14293629 uS',
-                'elapsed_cpu_time': '4868976371 uS',
-                'min_cpu_count': '3',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '305020 KB',
-                'max_memory': '2097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222190 KB',
-                }
+            'USERID1': self._cpumem_data_sample1,
+            'USERID2': self._cpumem_data_sample2
             }
         get_vm_list.return_value = ['userid1', 'userid2']
         rdata = self._monitor._get_inspect_data('cpumem', ['userid1'])
@@ -164,13 +115,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
         image_perform_query.assert_called_once_with(['userid1', 'userid2'])
         self.assertEqual(sorted(rdata.keys()), sorted(['USERID1', 'USERID2']))
         self.assertEqual(sorted(rdata['USERID1'].keys()),
-                         sorted(['userid', 'guest_cpus',
-                                 'used_cpu_time', 'elapsed_cpu_time',
-                                 'min_cpu_count', 'max_cpu_limit',
-                                 'samples_cpu_in_use',
-                                 'samples_cpu_delay',
-                                 'used_memory', 'max_memory',
-                                 'min_memory', 'shared_memory']))
+                         sorted(self._cpumem_data_sample1.keys()))
         self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
         self.assertEqual(rdata['USERID1']['used_cpu_time'], '6185838 uS')
         self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
@@ -190,13 +135,13 @@ class SDKMonitorTestCase(base.SDKTestCase):
         cache_get.side_effect = [{
             'userid': 'USERID1',
             'guest_cpus': '1',
-            'used_cpu_time': '6185838 uS',
+            'used_cpu_time': '7185838 uS',
             'elapsed_cpu_time': '35232895 uS',
             'min_cpu_count': '2',
             'max_cpu_limit': '10000',
             'samples_cpu_in_use': '0',
             'samples_cpu_delay': '0',
-            'used_memory': '290232 KB',
+            'used_memory': '390232 KB',
             'max_memory': '2097152 KB',
             'min_memory': '0 KB',
             'shared_memory': '4222192 KB',
@@ -204,34 +149,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
         get_ps.return_value = 'on'
         cache_enabled.return_value = True
         image_perform_query.return_value = {
-            'USERID1': {
-                'userid': 'USERID1',
-                'guest_cpus': '1',
-                'used_cpu_time': '7185838 uS',
-                'elapsed_cpu_time': '35232895 uS',
-                'min_cpu_count': '2',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '390232 KB',
-                'max_memory': '3097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222192 KB',
-                },
-            'USERID2': {
-                'userid': 'USERID2',
-                'guest_cpus': '4',
-                'used_cpu_time': '14293629 uS',
-                'elapsed_cpu_time': '4868976371 uS',
-                'min_cpu_count': '4',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '305020 KB',
-                'max_memory': '2097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222190 KB',
-                }
+            'USERID1': self._cpumem_data_sample1,
+            'USERID2': self._cpumem_data_sample2
             }
         get_vm_list.return_value = ['userid1', 'userid2']
         rdata = self._monitor._get_inspect_data('cpumem',
@@ -241,20 +160,14 @@ class SDKMonitorTestCase(base.SDKTestCase):
         image_perform_query.assert_called_once_with(['userid1', 'userid2'])
         self.assertEqual(sorted(rdata.keys()), sorted(['USERID1', 'USERID2']))
         self.assertEqual(sorted(rdata['USERID1'].keys()),
-                         sorted(['userid', 'guest_cpus',
-                                 'used_cpu_time', 'elapsed_cpu_time',
-                                 'min_cpu_count', 'max_cpu_limit',
-                                 'samples_cpu_in_use',
-                                 'samples_cpu_delay',
-                                 'used_memory', 'max_memory',
-                                 'min_memory', 'shared_memory']))
+                         sorted(self._cpumem_data_sample1.keys()))
         self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
-        self.assertEqual(rdata['USERID1']['used_cpu_time'], '7185838 uS')
-        self.assertEqual(rdata['USERID1']['used_memory'], '390232 KB')
+        self.assertEqual(rdata['USERID1']['used_cpu_time'], '6185838 uS')
+        self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
         self.assertEqual(rdata['USERID1']['shared_memory'], '5222192 KB')
         self.assertEqual(
         self._monitor._cache._cache['cpumem']['data']['USERID2']['guest_cpus'],
-        '4')
+        '3')
 
     @mock.patch.object(monitor.MeteringCache, 'get')
     @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
@@ -269,20 +182,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
         get_ps.return_value = 'on'
         cache_enabled.return_value = False
         image_perform_query.return_value = {
-            'USERID1': {
-                'userid': 'USERID1',
-                'guest_cpus': '1',
-                'used_cpu_time': '7185838 uS',
-                'elapsed_cpu_time': '35232895 uS',
-                'min_cpu_count': '2',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '390232 KB',
-                'max_memory': '3097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222192 KB',
-                }
+            'USERID1': self._cpumem_data_sample1
             }
         rdata = self._monitor._get_inspect_data('cpumem',
                                                 ['userid1'])
@@ -291,16 +191,10 @@ class SDKMonitorTestCase(base.SDKTestCase):
         image_perform_query.assert_called_once_with(['userid1'])
         self.assertEqual(rdata.keys(), ['USERID1'])
         self.assertEqual(sorted(rdata['USERID1'].keys()),
-                         sorted(['userid', 'guest_cpus',
-                                 'used_cpu_time', 'elapsed_cpu_time',
-                                 'min_cpu_count', 'max_cpu_limit',
-                                 'samples_cpu_in_use',
-                                 'samples_cpu_delay',
-                                 'used_memory', 'max_memory',
-                                 'min_memory', 'shared_memory']))
+                         sorted(self._cpumem_data_sample1.keys()))
         self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
-        self.assertEqual(rdata['USERID1']['used_cpu_time'], '7185838 uS')
-        self.assertEqual(rdata['USERID1']['used_memory'], '390232 KB')
+        self.assertEqual(rdata['USERID1']['used_cpu_time'], '6185838 uS')
+        self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
         self.assertEqual(
         self._monitor._cache._cache['cpumem']['data'].keys(), [])
 
@@ -347,34 +241,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
     @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
     def test_inspect_cpus_single(self, _get_inspect_data):
         _get_inspect_data.return_value = {
-            'USERID1': {
-                'userid': 'USERID1',
-                'guest_cpus': '1',
-                'used_cpu_time': '7185838 uS',
-                'elapsed_cpu_time': '35232895 uS',
-                'min_cpu_count': '2',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '390232 KB',
-                'max_memory': '3097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222192 KB',
-                },
-            'USERID2': {
-                'userid': 'USERID2',
-                'guest_cpus': '4',
-                'used_cpu_time': '14293629 uS',
-                'elapsed_cpu_time': '4868976371 uS',
-                'min_cpu_count': '4',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '305020 KB',
-                'max_memory': '2097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222190 KB',
-                }
+            'USERID1': self._cpumem_data_sample1,
+            'USERID2': self._cpumem_data_sample2
             }
         rdata = self._monitor.inspect_cpus(['userid1'])
         _get_inspect_data.assert_called_once_with('cpumem', ['userid1'])
@@ -387,7 +255,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
                                  ])
                          )
         self.assertEqual(rdata['USERID1']['guest_cpus'], 1)
-        self.assertEqual(rdata['USERID1']['used_cpu_time_us'], 7185838)
+        self.assertEqual(rdata['USERID1']['used_cpu_time_us'], 6185838)
         self.assertEqual(rdata['USERID1']['elapsed_cpu_time_us'], 35232895)
         self.assertEqual(rdata['USERID1']['min_cpu_count'], 2)
         self.assertEqual(rdata['USERID1']['max_cpu_limit'], 10000)
@@ -395,34 +263,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
     @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
     def test_inspect_cpus_multi(self, _get_inspect_data):
         _get_inspect_data.return_value = {
-            'USERID1': {
-                'userid': 'USERID1',
-                'guest_cpus': '1',
-                'used_cpu_time': '7185838 uS',
-                'elapsed_cpu_time': '35232895 uS',
-                'min_cpu_count': '2',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '390232 KB',
-                'max_memory': '3097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222192 KB',
-                },
-            'USERID2': {
-                'userid': 'USERID2',
-                'guest_cpus': '4',
-                'used_cpu_time': '14293629 uS',
-                'elapsed_cpu_time': '4868976371 uS',
-                'min_cpu_count': '4',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '305020 KB',
-                'max_memory': '2097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222190 KB',
-                }
+            'USERID1': self._cpumem_data_sample1,
+            'USERID2': self._cpumem_data_sample2
             }
         rdata = self._monitor.inspect_cpus(['userid1', 'userid2'])
         _get_inspect_data.assert_called_once_with('cpumem',
@@ -436,33 +278,20 @@ class SDKMonitorTestCase(base.SDKTestCase):
                                  ])
                          )
         self.assertEqual(rdata['USERID1']['guest_cpus'], 1)
-        self.assertEqual(rdata['USERID1']['used_cpu_time_us'], 7185838)
+        self.assertEqual(rdata['USERID1']['used_cpu_time_us'], 6185838)
         self.assertEqual(rdata['USERID1']['elapsed_cpu_time_us'], 35232895)
         self.assertEqual(rdata['USERID1']['min_cpu_count'], 2)
         self.assertEqual(rdata['USERID1']['max_cpu_limit'], 10000)
-        self.assertEqual(rdata['USERID2']['guest_cpus'], 4)
+        self.assertEqual(rdata['USERID2']['guest_cpus'], 3)
         self.assertEqual(rdata['USERID2']['used_cpu_time_us'], 14293629)
         self.assertEqual(rdata['USERID2']['elapsed_cpu_time_us'], 4868976371)
-        self.assertEqual(rdata['USERID2']['min_cpu_count'], 4)
+        self.assertEqual(rdata['USERID2']['min_cpu_count'], 3)
         self.assertEqual(rdata['USERID2']['max_cpu_limit'], 10000)
 
     @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
     def test_inspect_cpus_single_off_or_not_exist(self, _get_inspect_data):
         _get_inspect_data.return_value = {
-            'USERID2': {
-                'userid': 'USERID2',
-                'guest_cpus': '1',
-                'used_cpu_time': '7185838 uS',
-                'elapsed_cpu_time': '35232895 uS',
-                'min_cpu_count': '2',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '390232 KB',
-                'max_memory': '3097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222192 KB',
-                }
+            'USERID2': self._cpumem_data_sample2
             }
         rdata = self._monitor.inspect_cpus(['userid1'])
         _get_inspect_data.assert_called_once_with('cpumem', ['userid1'])
@@ -471,20 +300,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
     @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
     def test_inspect_cpus_multi_off_or_not_exist(self, _get_inspect_data):
         _get_inspect_data.return_value = {
-            'USERID1': {
-                'userid': 'USERID1',
-                'guest_cpus': '1',
-                'used_cpu_time': '7185838 uS',
-                'elapsed_cpu_time': '35232895 uS',
-                'min_cpu_count': '2',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '390232 KB',
-                'max_memory': '3097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222192 KB',
-                }
+            'USERID1': self._cpumem_data_sample1
             }
         rdata = self._monitor.inspect_cpus(['userid1', 'userid2'])
         _get_inspect_data.assert_called_once_with('cpumem',
@@ -498,7 +314,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
                                  ])
                          )
         self.assertEqual(rdata['USERID1']['guest_cpus'], 1)
-        self.assertEqual(rdata['USERID1']['used_cpu_time_us'], 7185838)
+        self.assertEqual(rdata['USERID1']['used_cpu_time_us'], 6185838)
         self.assertEqual(rdata['USERID1']['elapsed_cpu_time_us'], 35232895)
         self.assertEqual(rdata['USERID1']['min_cpu_count'], 2)
         self.assertEqual(rdata['USERID1']['max_cpu_limit'], 10000)
@@ -506,34 +322,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
     @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
     def test_inspect_mem_single(self, _get_inspect_data):
         _get_inspect_data.return_value = {
-            'USERID1': {
-                'userid': 'USERID1',
-                'guest_cpus': '1',
-                'used_cpu_time': '7185838 uS',
-                'elapsed_cpu_time': '35232895 uS',
-                'min_cpu_count': '2',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '390232 KB',
-                'max_memory': '3097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222192 KB',
-                },
-            'USERID2': {
-                'userid': 'USERID2',
-                'guest_cpus': '4',
-                'used_cpu_time': '14293629 uS',
-                'elapsed_cpu_time': '4868976371 uS',
-                'min_cpu_count': '4',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '305020 KB',
-                'max_memory': '2097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222190 KB',
-                }
+            'USERID1': self._cpumem_data_sample1,
+            'USERID2': self._cpumem_data_sample2
             }
         rdata = self._monitor.inspect_mem(['userid1'])
         _get_inspect_data.assert_called_once_with('cpumem', ['userid1'])
@@ -543,42 +333,16 @@ class SDKMonitorTestCase(base.SDKTestCase):
                                  'min_mem_kb', 'shared_mem_kb'
                                  ])
                          )
-        self.assertEqual(rdata['USERID1']['used_mem_kb'], 390232)
-        self.assertEqual(rdata['USERID1']['max_mem_kb'], 3097152)
+        self.assertEqual(rdata['USERID1']['used_mem_kb'], 290232)
+        self.assertEqual(rdata['USERID1']['max_mem_kb'], 2097152)
         self.assertEqual(rdata['USERID1']['min_mem_kb'], 0)
         self.assertEqual(rdata['USERID1']['shared_mem_kb'], 5222192)
 
     @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
     def test_inspect_mem_multi(self, _get_inspect_data):
         _get_inspect_data.return_value = {
-            'USERID1': {
-                'userid': 'USERID1',
-                'guest_cpus': '1',
-                'used_cpu_time': '7185838 uS',
-                'elapsed_cpu_time': '35232895 uS',
-                'min_cpu_count': '2',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '390232 KB',
-                'max_memory': '3097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222192 KB',
-                },
-            'USERID2': {
-                'userid': 'USERID2',
-                'guest_cpus': '4',
-                'used_cpu_time': '14293629 uS',
-                'elapsed_cpu_time': '4868976371 uS',
-                'min_cpu_count': '4',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '305020 KB',
-                'max_memory': '2097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222190 KB',
-                }
+            'USERID1': self._cpumem_data_sample1,
+            'USERID2': self._cpumem_data_sample2
             }
         rdata = self._monitor.inspect_mem(['userid1', 'userid2'])
         _get_inspect_data.assert_called_once_with('cpumem',
@@ -589,8 +353,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                                  'min_mem_kb', 'shared_mem_kb'
                                  ])
                          )
-        self.assertEqual(rdata['USERID1']['used_mem_kb'], 390232)
-        self.assertEqual(rdata['USERID1']['max_mem_kb'], 3097152)
+        self.assertEqual(rdata['USERID1']['used_mem_kb'], 290232)
+        self.assertEqual(rdata['USERID1']['max_mem_kb'], 2097152)
         self.assertEqual(rdata['USERID1']['min_mem_kb'], 0)
         self.assertEqual(rdata['USERID1']['shared_mem_kb'], 5222192)
         self.assertEqual(rdata['USERID2']['used_mem_kb'], 305020)
@@ -601,20 +365,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
     @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
     def test_inspect_mem_single_off_or_not_exist(self, _get_inspect_data):
         _get_inspect_data.return_value = {
-            'USERID2': {
-                'userid': 'USERID2',
-                'guest_cpus': '1',
-                'used_cpu_time': '7185838 uS',
-                'elapsed_cpu_time': '35232895 uS',
-                'min_cpu_count': '2',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '390232 KB',
-                'max_memory': '3097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222192 KB',
-                }
+            'USERID2': self._cpumem_data_sample2
             }
         rdata = self._monitor.inspect_mem(['userid1'])
         _get_inspect_data.assert_called_once_with('cpumem', ['userid1'])
@@ -623,20 +374,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
     @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
     def test_inspect_mem_multi_off_or_not_exist(self, _get_inspect_data):
         _get_inspect_data.return_value = {
-            'USERID1': {
-                'userid': 'USERID1',
-                'guest_cpus': '1',
-                'used_cpu_time': '7185838 uS',
-                'elapsed_cpu_time': '35232895 uS',
-                'min_cpu_count': '2',
-                'max_cpu_limit': '10000',
-                'samples_cpu_in_use': '0',
-                'samples_cpu_delay': '0',
-                'used_memory': '390232 KB',
-                'max_memory': '3097152 KB',
-                'min_memory': '0 KB',
-                'shared_memory': '5222192 KB',
-                }
+            'USERID1': self._cpumem_data_sample1
             }
         rdata = self._monitor.inspect_mem(['userid1', 'userid2'])
         _get_inspect_data.assert_called_once_with('cpumem',
@@ -647,7 +385,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
                                  'min_mem_kb', 'shared_mem_kb'
                                  ])
                          )
-        self.assertEqual(rdata['USERID1']['used_mem_kb'], 390232)
-        self.assertEqual(rdata['USERID1']['max_mem_kb'], 3097152)
+        self.assertEqual(rdata['USERID1']['used_mem_kb'], 290232)
+        self.assertEqual(rdata['USERID1']['max_mem_kb'], 2097152)
         self.assertEqual(rdata['USERID1']['min_mem_kb'], 0)
         self.assertEqual(rdata['USERID1']['shared_mem_kb'], 5222192)
