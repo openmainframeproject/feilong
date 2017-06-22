@@ -22,7 +22,7 @@ from zvmsdk.tests.unit import base
 
 class SDKMonitorTestCase(base.SDKTestCase):
     def setUp(self):
-        self._monitor = monitor.get_monitor()
+        self._monitor = monitor.ZVMMonitor()
         self._cpumem_data_sample1 = {
             'userid': 'USERID1',
             'guest_cpus': '1',
@@ -94,43 +94,31 @@ class SDKMonitorTestCase(base.SDKTestCase):
 
     @mock.patch.object(monitor.MeteringCache, 'get')
     @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
-    @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
-    @mock.patch.object(zvmclient.XCATClient, 'image_performance_query')
-    @mock.patch.object(zvmclient.XCATClient, 'get_vm_list')
-    def test_private_get_inspect_data_cache_miss_single(self, get_vm_list,
-                                                        image_perform_query,
-                                                        cache_enabled,
+    @mock.patch.object(monitor.ZVMMonitor, '_update_cpumem_data')
+    def test_private_get_inspect_data_cache_miss_single(self,
+                                                        update_cpumem_data,
                                                         get_ps, cache_get):
         cache_get.return_value = None
         get_ps.return_value = 'on'
-        cache_enabled.return_value = True
-        image_perform_query.return_value = {
+        update_cpumem_data.return_value = {
             'USERID1': self._cpumem_data_sample1,
             'USERID2': self._cpumem_data_sample2
             }
-        get_vm_list.return_value = ['userid1', 'userid2']
         rdata = self._monitor._get_inspect_data('cpumem', ['userid1'])
         get_ps.assert_called_once_with('userid1')
-        get_vm_list.assert_called_once_with()
-        image_perform_query.assert_called_once_with(['userid1', 'userid2'])
+        update_cpumem_data.assert_called_once_with(['userid1'])
         self.assertEqual(sorted(rdata.keys()), sorted(['USERID1', 'USERID2']))
         self.assertEqual(sorted(rdata['USERID1'].keys()),
                          sorted(self._cpumem_data_sample1.keys()))
         self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
         self.assertEqual(rdata['USERID1']['used_cpu_time'], '6185838 uS')
         self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
-        self.assertEqual(
-        self._monitor._cache._cache['cpumem']['data']['USERID2']['guest_cpus'],
-        '3')
 
     @mock.patch.object(monitor.MeteringCache, 'get')
     @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
-    @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
-    @mock.patch.object(zvmclient.XCATClient, 'image_performance_query')
-    @mock.patch.object(zvmclient.XCATClient, 'get_vm_list')
-    def test_private_get_inspect_data_cache_miss_multi(self, get_vm_list,
-                                                        image_perform_query,
-                                                        cache_enabled,
+    @mock.patch.object(monitor.ZVMMonitor, '_update_cpumem_data')
+    def test_private_get_inspect_data_cache_miss_multi(self,
+                                                        update_cpumem_data,
                                                         get_ps, cache_get):
         cache_get.side_effect = [{
             'userid': 'USERID1',
@@ -147,17 +135,14 @@ class SDKMonitorTestCase(base.SDKTestCase):
             'shared_memory': '4222192 KB',
             }, None]
         get_ps.return_value = 'on'
-        cache_enabled.return_value = True
-        image_perform_query.return_value = {
+        update_cpumem_data.return_value = {
             'USERID1': self._cpumem_data_sample1,
             'USERID2': self._cpumem_data_sample2
             }
-        get_vm_list.return_value = ['userid1', 'userid2']
         rdata = self._monitor._get_inspect_data('cpumem',
                                                 ['userid1', 'userid2'])
         get_ps.assert_called_once_with('userid2')
-        get_vm_list.assert_called_once_with()
-        image_perform_query.assert_called_once_with(['userid1', 'userid2'])
+        update_cpumem_data.assert_called_once_with(['userid1', 'userid2'])
         self.assertEqual(sorted(rdata.keys()), sorted(['USERID1', 'USERID2']))
         self.assertEqual(sorted(rdata['USERID1'].keys()),
                          sorted(self._cpumem_data_sample1.keys()))
@@ -165,28 +150,69 @@ class SDKMonitorTestCase(base.SDKTestCase):
         self.assertEqual(rdata['USERID1']['used_cpu_time'], '6185838 uS')
         self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
         self.assertEqual(rdata['USERID1']['shared_memory'], '5222192 KB')
+
+    @mock.patch.object(monitor.MeteringCache, 'get')
+    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
+    @mock.patch.object(monitor.ZVMMonitor, '_update_cpumem_data')
+    def test_private_get_inspect_data_guest_off(self,
+                                                update_cpumem_data,
+                                                get_ps, cache_get):
+        cache_get.return_value = None
+        get_ps.return_value = 'off'
+        rdata = self._monitor._get_inspect_data('cpumem',
+                                                ['userid1'])
+        get_ps.assert_called_once_with('userid1')
+        update_cpumem_data.assert_not_called()
+        self.assertEqual(rdata, {})
+
+    @mock.patch.object(monitor.MeteringCache, 'get')
+    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
+    @mock.patch.object(monitor.ZVMMonitor, '_update_cpumem_data')
+    def test_private_get_inspect_data_guest_not_exist(self,
+                                                      update_cpumem_data,
+                                                      get_ps, cache_get):
+        cache_get.return_value = None
+        get_ps.side_effect = exception.ZVMVirtualMachineNotExist(msg='msg')
+        rdata = self._monitor._get_inspect_data('cpumem',
+                                                ['userid1'])
+        get_ps.assert_called_once_with('userid1')
+        update_cpumem_data.assert_not_called()
+        self.assertEqual(rdata, {})
+
+    @mock.patch.object(zvmclient.XCATClient, 'image_performance_query')
+    @mock.patch.object(zvmclient.XCATClient, 'get_vm_list')
+    @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
+    def test_private_update_cpumem_data_cache_enabled(self, cache_enabled,
+                                               get_vm_list,
+                                               image_performance_query):
+        cache_enabled.return_value = True
+        get_vm_list.return_value = ['userid1', 'userid2']
+        image_performance_query.return_value = {
+            'USERID1': self._cpumem_data_sample1,
+            'USERID2': self._cpumem_data_sample2
+            }
+        rdata = self._monitor._update_cpumem_data(['userid1'])
+        image_performance_query.assert_called_once_with(['userid1', 'userid2'])
+        get_vm_list.assert_called_once_with()
+        self.assertEqual(sorted(rdata.keys()), sorted(['USERID1', 'USERID2']))
+        self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
+        self.assertEqual(rdata['USERID1']['used_cpu_time'], '6185838 uS')
+        self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
         self.assertEqual(
         self._monitor._cache._cache['cpumem']['data']['USERID2']['guest_cpus'],
         '3')
 
-    @mock.patch.object(monitor.MeteringCache, 'get')
-    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
     @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
     @mock.patch.object(zvmclient.XCATClient, 'image_performance_query')
     @mock.patch.object(zvmclient.XCATClient, 'get_vm_list')
-    def test_private_get_inspect_data_cache_disabled(self, get_vm_list,
-                                                        image_perform_query,
-                                                        cache_enabled,
-                                                        get_ps, cache_get):
-        cache_get.return_value = None
-        get_ps.return_value = 'on'
+    def test_private_update_cpumem_data_cache_disabled(self, get_vm_list,
+                                                image_perform_query,
+                                                cache_enabled):
         cache_enabled.return_value = False
         image_perform_query.return_value = {
             'USERID1': self._cpumem_data_sample1
             }
-        rdata = self._monitor._get_inspect_data('cpumem',
-                                                ['userid1'])
-        get_ps.assert_called_once_with('userid1')
+        rdata = self._monitor._update_cpumem_data(['userid1'])
         get_vm_list.assert_not_called()
         image_perform_query.assert_called_once_with(['userid1'])
         self.assertEqual(rdata.keys(), ['USERID1'])
@@ -197,46 +223,6 @@ class SDKMonitorTestCase(base.SDKTestCase):
         self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
         self.assertEqual(
         self._monitor._cache._cache['cpumem']['data'].keys(), [])
-
-    @mock.patch.object(monitor.MeteringCache, 'get')
-    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
-    @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
-    @mock.patch.object(zvmclient.XCATClient, 'image_performance_query')
-    @mock.patch.object(zvmclient.XCATClient, 'get_vm_list')
-    def test_private_get_inspect_data_guest_off(self, get_vm_list,
-                                                        image_perform_query,
-                                                        cache_enabled,
-                                                        get_ps, cache_get):
-        cache_get.return_value = None
-        get_ps.return_value = 'off'
-        cache_enabled.return_value = True
-        rdata = self._monitor._get_inspect_data('cpumem',
-                                                ['userid1'])
-        get_ps.assert_called_once_with('userid1')
-        cache_enabled.assert_not_called()
-        get_vm_list.assert_not_called()
-        image_perform_query.assert_not_called()
-        self.assertEqual(rdata, {})
-
-    @mock.patch.object(monitor.MeteringCache, 'get')
-    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
-    @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
-    @mock.patch.object(zvmclient.XCATClient, 'image_performance_query')
-    @mock.patch.object(zvmclient.XCATClient, 'get_vm_list')
-    def test_private_get_inspect_data_guest_not_exist(self, get_vm_list,
-                                                        image_perform_query,
-                                                        cache_enabled,
-                                                        get_ps, cache_get):
-        cache_get.return_value = None
-        get_ps.side_effect = exception.ZVMVirtualMachineNotExist(msg='msg')
-        cache_enabled.return_value = True
-        rdata = self._monitor._get_inspect_data('cpumem',
-                                                ['userid1'])
-        get_ps.assert_called_once_with('userid1')
-        cache_enabled.assert_not_called()
-        get_vm_list.assert_not_called()
-        image_perform_query.assert_not_called()
-        self.assertEqual(rdata, {})
 
     @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
     def test_inspect_cpus_single(self, _get_inspect_data):
