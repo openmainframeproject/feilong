@@ -2,11 +2,11 @@
 
 Summary: System z hardware control point (zHCP)
 Name: %{name}
-Version: %(cat zhcp/Version)
+Version: %(cat Version)
 Release: snap%(date +"%Y%m%d%H%M")
 Source: zhcp-build.tar.gz
 Vendor: IBM
-License: IBM Copyright 2012, 2016 Eclipse Public License
+License: IBM Copyright 2017 Apache License Version 2.0
 Group: System/tools
 BuildRoot: %{_tmppath}/zhcp
 Prefix: /opt/zhcp
