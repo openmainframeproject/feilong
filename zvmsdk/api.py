@@ -419,7 +419,6 @@ class SDKAPI(object):
         """
         if not isinstance(userid_list, list):
             userid_list = [userid_list]
-        # parsed_uid_list = [uid.upper() for uid in userid_list]
         return self._monitor.inspect_cpus(userid_list)
 
     def guest_inspect_mem(self, userid_list):
@@ -447,7 +446,6 @@ class SDKAPI(object):
         """
         if not isinstance(userid_list, list):
             userid_list = [userid_list]
-        # parsed_uid_list = [uid.upper() for uid in userid_list]
         return self._monitor.inspect_mem(userid_list)
 
     def vswitch_grant_user(self, vswitch_name, userid):

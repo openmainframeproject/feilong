@@ -119,10 +119,16 @@ class ZVMMonitor(object):
             return inspect_data
 
         # Call client to query latest data
+        if type == 'cpumem':
+            rdata = self._update_cpumem_data(uid_list)
+
+        return rdata
+
+    def _update_cpumem_data(self, uid_list):
         if self._cache_enabled():
             rdata = self._zvmclient.image_performance_query(
                 self._zvmclient.get_vm_list())
-            self._cache.refresh(type, rdata)
+            self._cache.refresh('cpumem', rdata)
         else:
             rdata = self._zvmclient.image_performance_query(uid_list)
 
