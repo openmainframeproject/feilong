@@ -6,7 +6,7 @@ Version: %(cat Version)
 Release: snap%(date +"%Y%m%d%H%M")
 Source: zhcp-build.tar.gz
 Vendor: IBM
-License: IBM Copyright 2017 Apache License Version 2.0
+License: IBM Copyright 2017
 Group: System/tools
 BuildRoot: %{_tmppath}/zhcp
 Prefix: /opt/zhcp
