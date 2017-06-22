@@ -97,7 +97,7 @@ class ZVMMonitor(object):
         inspect_data = {}
         update_needed = False
         for uid in uid_list:
-            cache_data = self._cache.get(type, uid)
+            cache_data = self._cache.get(type, uid.upper())
             if cache_data is not None:
                 inspect_data[uid.upper()] = cache_data
             else:
@@ -146,27 +146,26 @@ class MeteringCache(object):
     def _get_ctype_cache(self, ctype):
         return self._cache[ctype]
 
-    def set(self, ctype, data):
+    def set(self, ctype, index, data):
         """Set or update cache content.
 
         @ctype:    cache type.
         @data:    cache data.
         """
         target_cache = self._get_ctype_cache(ctype)
-        target_cache['data'][data['userid']] = data
+        target_cache['data'][index] = data
 
-    def get(self, ctype, userid):
+    def get(self, ctype, index):
         target_cache = self._get_ctype_cache(ctype)
         if(time.time() > target_cache['expiration']):
             return None
         else:
-            return target_cache['data'].get(userid.upper(), None)
+            return target_cache['data'].get(index, None)
 
-    def delete(self, ctype, userid):
-        uid = userid.upper()
+    def delete(self, ctype, index):
         target_cache = self._get_ctype_cache(ctype)
-        if uid in target_cache['data']:
-            del target_cache['data'][uid]
+        if index in target_cache['data']:
+            del target_cache['data'][index]
 
     def clear(self, ctype='all'):
         if ctype == 'all':
@@ -180,5 +179,5 @@ class MeteringCache(object):
         target_cache = self._get_ctype_cache(ctype)
         target_cache['expiration'] = (time.time() +
                                         float(CONF.monitor.cache_interval))
-        for d in data.values():
-            self.set(ctype, d)
+        for (k, v) in data.items():
+            self.set(ctype, k, v)
