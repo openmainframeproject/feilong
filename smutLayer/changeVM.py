@@ -20,7 +20,7 @@ import shutil
 import tarfile
 import tempfile
 from vmUtils import disableEnableDisk, execCmdThruIUCV, installFS
-from vmUtils import invokeSMCLI, isLoggedOn
+from vmUtils import invokeSMCLI, isLoggedOn, purgeReader
 version = "1.0.0"
 
 """
@@ -621,13 +621,12 @@ def purgeRDR(rh):
        Request Handle updated with the results.
        Return code - 0: ok, non-zero: error
     """
-    rc = 0
     rh.printSysLog("Enter changeVM.purgeRDR")
-
-    rh.printLn("N", "This subfunction is not implemented yet.")
-
+    results = purgeReader(rh)
+    rh.updateResults(results)
+    rc = results['overallRC']
     rh.printSysLog("Exit changeVM.purgeRDR, rc: " + str(rc))
-    return 0
+    return rc
 
 
 def removeDisk(rh):
