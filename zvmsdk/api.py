@@ -14,6 +14,7 @@
 
 
 import functools
+from types import NoneType
 
 from zvmsdk import config
 from zvmsdk import exception
@@ -50,12 +51,26 @@ def check_input_types(*types, **validkeys):
             # drop class object self
             inputs = args[1:]
             argtypes = tuple(map(type, inputs))
-            if argtypes != types[0:len(argtypes)]:
+            match_types = types[0:len(argtypes)]
+
+            invalid_type = False
+            for idx in range(len(argtypes)):
+                if isinstance(match_types[idx], tuple):
+                    if argtypes[idx] not in match_types[idx]:
+                        invalid_type = True
+                        break
+                else:
+                    if argtypes[idx] != match_types[idx]:
+                        invalid_type = True
+                        break
+
+            if invalid_type:
                 msg = ("Invalid input types: %(argtypes)s; "
                        "Expected types: %(types)s" %
                        {'argtypes': str(argtypes), 'types': str(types)})
                 LOG.info(msg)
                 raise exception.ZVMInvalidInput(msg=msg)
+
             valid_keys = validkeys.get('valid_keys')
             if valid_keys:
                 for k in kwargs.keys():
@@ -109,10 +124,12 @@ class SDKAPI(object):
 
         self._vmops.guest_stop(userid, timeout, retry_interval)
 
-    def guest_get_power_state(self, guest_id):
+    @check_input_types(str)
+    def guest_get_power_state(self, userid):
         """Returns power state."""
-        return self._vmops.get_power_state(guest_id)
+        return self._vmops.get_power_state(userid)
 
+    @check_input_types(str)
     def guest_get_info(self, userid):
         """Get the status of a virtual machine.
 
@@ -134,6 +151,7 @@ class SDKAPI(object):
         """
         return self._hostops.get_info()
 
+    @check_input_types(str)
     def host_diskpool_get_info(self, disk_pool=CONF.zvm.disk_pool):
         """ Retrieve diskpool information.
         :param str disk_pool: the disk pool info. It use ':' to separate
@@ -160,20 +178,22 @@ class SDKAPI(object):
         """
         return self._hostops.list_guests()
 
-    def guest_deploy(self, user_id, image_name, transportfiles=None,
+    @check_input_types(str, str, (str, NoneType), (str, NoneType))
+    def guest_deploy(self, userid, image_name, transportfiles=None,
                      vdev=None):
         """ Deploy the image to vm.
 
-        :param user_id: the user id of the vm
+        :param userid: the user id of the vm
         :param image_name: the name of image that used to deploy the vm
         :param transportfiles: the files that used to customize the vm
         :param vdev: the device that image will be deploy to
 
         """
-        return self._vmops.guest_deploy(user_id, image_name,
+        return self._vmops.guest_deploy(userid, image_name,
                                         transportfiles, vdev)
 
-    def guest_create_nic(self, vm_id, nic_info, ip_addr=None):
+    @check_input_types(str, list, (str, NoneType))
+    def guest_create_nic(self, userid, nic_info, ip_addr=None):
         """ Create the nic for the vm, add NICDEF record into the user direct.
 
         :param vm_id: the user id of the vm
@@ -187,16 +207,17 @@ class SDKAPI(object):
             msg = ("no nic info is provided to create nic")
             raise exception.ZVMInvalidInput(msg)
 
-        self._networkops.create_nic(vm_id, nic_info, ip_addr=ip_addr)
+        self._networkops.create_nic(userid, nic_info, ip_addr=ip_addr)
 
-    def guest_get_nic_switch_info(self, user_id):
+    @check_input_types(str)
+    def guest_get_nic_switch_info(self, userid):
         """ Return the nic and switch pair for the specified vm.
 
-        :param user_id: the user id of the vm
+        :param userid: the user id of the vm
 
         :returns: Dictionary describing nic and switch info
         """
-        return self._networkops.get_vm_nic_switch_info(user_id)
+        return self._networkops.get_vm_nic_switch_info(userid)
 
     @check_input_types(str, valid_keys=['nic_coupled'])
     def guest_get_definition_info(self, userid, **kwargs):
@@ -214,6 +235,7 @@ class SDKAPI(object):
         """
         return self._vmops.get_definition_info(userid, **kwargs)
 
+    @check_input_types(str, str)
     def image_import(self, image_file_path, os_version):
         """import image to z/VM according to the file path and os_version
 
@@ -223,6 +245,7 @@ class SDKAPI(object):
         """
         self._imageops.image_import(image_file_path, os_version)
 
+    @check_input_types(str, int, int, list, str)
     def guest_create(self, userid, vcpus, memory, disk_list=[],
                      user_profile=CONF.zvm.user_profile):
         """create a vm in z/VM
@@ -254,6 +277,7 @@ class SDKAPI(object):
         """
         self._vmops.create_vm(userid, vcpus, memory, disk_list, user_profile)
 
+    @check_input_types(str)
     def image_get_root_disk_size(self, image_file_name):
         """Get the root disk size of the image
 
@@ -262,6 +286,7 @@ class SDKAPI(object):
         """
         return self._imageops.image_get_root_disk_size(image_file_name)
 
+    @check_input_types(str, str, str, bool)
     def guest_nic_couple_to_vswitch(self, vswitch_name, nic_vdev,
                                     userid, persist=True):
         """ Couple nic device to specified vswitch.
@@ -276,6 +301,7 @@ class SDKAPI(object):
         self._networkops.couple_nic_to_vswitch(vswitch_name, nic_vdev,
                                                userid, persist)
 
+    @check_input_types(str, str, str, bool)
     def guest_nic_uncouple_from_vswitch(self, vswitch_name, nic_vdev,
                                         userid, persist=True):
         """ Couple nic device to specified vswitch.
@@ -298,6 +324,8 @@ class SDKAPI(object):
         """
         return self._networkops.get_vswitch_list()
 
+    @check_input_types(str, str, str, int, int, int, int, int, int, int, int,
+                       int)
     def vswitch_create(self, name, rdev,
                        controller='*', connection=1,
                        queue_mem=8, router=0, network_type=2, vid=0,
@@ -369,6 +397,7 @@ class SDKAPI(object):
                                      router, network_type, vid,
                                      port_type, update, gvrp, native_vid)
 
+    @check_input_types((str, NoneType))
     def image_query(self, imagekeyword=None):
         """Get the list of image names in image repository
 
@@ -380,6 +409,7 @@ class SDKAPI(object):
         """
         return self._imageops.image_query(imagekeyword)
 
+    @check_input_types(str)
     def guest_get_console_output(self, userid):
         """Get the console output of the guest virtual machine.
 
@@ -389,6 +419,7 @@ class SDKAPI(object):
         """
         return self._vmops.get_console_output(userid)
 
+    @check_input_types(str)
     def guest_delete(self, userid):
         """Delete guest
         :param userid: the user id of the vm
@@ -396,6 +427,7 @@ class SDKAPI(object):
         """
         return self._vmops.delete_vm(userid)
 
+    @check_input_types((str, list))
     def guest_inspect_cpus(self, userid_list):
         """Get the cpu statistics of the guest virtual machines
 
@@ -429,6 +461,7 @@ class SDKAPI(object):
             userid_list = [userid_list]
         return self._monitor.inspect_cpus(userid_list)
 
+    @check_input_types((str, list))
     def guest_inspect_mem(self, userid_list):
         """Get the mem usage statistics of the guest virtual machines
 
@@ -456,6 +489,7 @@ class SDKAPI(object):
             userid_list = [userid_list]
         return self._monitor.inspect_mem(userid_list)
 
+    @check_input_types(str, str)
     def vswitch_grant_user(self, vswitch_name, userid):
         """Set vswitch to grant user
 
@@ -465,6 +499,7 @@ class SDKAPI(object):
 
         self._networkops.grant_user_to_vswitch(vswitch_name, userid)
 
+    @check_input_types(str, str)
     def vswitch_revoke_user(self, vswitch_name, userid):
         """Revoke user for vswitch
 
@@ -473,6 +508,7 @@ class SDKAPI(object):
         """
         self._networkops.revoke_user_from_vswitch(vswitch_name, userid)
 
+    @check_input_types(str, str, str)
     def vswitch_set_vlan_id_for_user(self, vswitch_name, userid, vlan_id):
         """Set vlan id for user when connecting to the vswitch
 
@@ -483,17 +519,19 @@ class SDKAPI(object):
         self._networkops.set_vswitch_port_vlan_id(vswitch_name,
                                                   userid, vlan_id)
 
-    def guest_update_nic_definition(self, user_id, nic_vdev, mac,
+    @check_input_types(str, str, str, str)
+    def guest_update_nic_definition(self, userid, nic_vdev, mac,
                                     switch_name):
         """ add nic and coupled network info into the user direct.
-        :param str user_id: the user id of the vm
+        :param str userid: the user id of the vm
         :param str nic_vdev: nic device number
         :param str mac: mac address
         :param str switch_name: the network name
         """
-        self._networkops.update_nic_definition(user_id, nic_vdev, mac,
+        self._networkops.update_nic_definition(userid, nic_vdev, mac,
                                                switch_name)
 
+    @check_input_types(str, list)
     def guest_config_minidisks(self, userid, disk_info):
         """Punch the script that used to process additional disks to vm
 
@@ -508,6 +546,7 @@ class SDKAPI(object):
         """
         self._vmops.guest_config_minidisks(userid, disk_info)
 
+    @check_input_types(str)
     def image_delete(self, image_name):
         """Delete image from image repository
 
