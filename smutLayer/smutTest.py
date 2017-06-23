@@ -141,6 +141,15 @@ deployTests = [
         'overallRC': [0],
     },
     {
+        'description': "Add modifications to the activation engine",
+        'request': 'ChangeVM <<<unsafeID1>>> aemod <<<setupDisk>>> ' +
+            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
+            'mntdir=/mnt/ephemeral/0.0.0101"',
+
+        'out': "",
+        'overallRC': [0],
+    },
+    {
         'description': "Purge the reader",
         'request': "ChangeVM <<<unsafeID1>>> purgerdr",
         'out': "",
