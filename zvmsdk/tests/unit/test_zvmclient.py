@@ -393,6 +393,116 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         pi_info = self._zvmclient.image_performance_query('fakevm')
         self.assertEqual(pi_info, {})
 
+    @mock.patch('zvmsdk.client.XCATClient._get_hcp_info')
+    @mock.patch('zvmsdk.utils.xdsh')
+    def test_virtual_network_vswitch_query_iuo_stats(self, xdsh, get_hcp_info):
+        get_hcp_info.return_value = {'hostname': 'fakehcp.ibm.com',
+                                     'nodename': 'fakehcp',
+                                     'userid': 'FAKEHCP'}
+        vsw_data = ['zhcp11: vswitch count: 2\n'
+                    'zhcp11: \n'
+                    'zhcp11: vswitch number: 1\n'
+                    'zhcp11: vswitch name: XCATVSW1\n'
+                    'zhcp11: uplink count: 1\n'
+                    'zhcp11: uplink_conn: 6240\n'
+                    'zhcp11: uplink_fr_rx:     3658251\n'
+                    'zhcp11: uplink_fr_rx_dsc: 0\n'
+                    'zhcp11: uplink_fr_rx_err: 0\n'
+                    'zhcp11: uplink_fr_tx:     4209828\n'
+                    'zhcp11: uplink_fr_tx_dsc: 0\n'
+                    'zhcp11: uplink_fr_tx_err: 0\n'
+                    'zhcp11: uplink_rx:        498914052\n'
+                    'zhcp11: uplink_tx:        2615220898\n'
+                    'zhcp11: bridge_fr_rx:     0\n'
+                    'zhcp11: bridge_fr_rx_dsc: 0\n'
+                    'zhcp11: bridge_fr_rx_err: 0\n'
+                    'zhcp11: bridge_fr_tx:     0\n'
+                    'zhcp11: bridge_fr_tx_dsc: 0\n'
+                    'zhcp11: bridge_fr_tx_err: 0\n'
+                    'zhcp11: bridge_rx:        0\n'
+                    'zhcp11: bridge_tx:        0\n'
+                    'zhcp11: nic count: 2\n'
+                    'zhcp11: nic_id: INST1 0600\n'
+                    'zhcp11: nic_fr_rx:        573952\n'
+                    'zhcp11: nic_fr_rx_dsc:    0\n'
+                    'zhcp11: nic_fr_rx_err:    0\n'
+                    'zhcp11: nic_fr_tx:        548780\n'
+                    'zhcp11: nic_fr_tx_dsc:    0\n'
+                    'zhcp11: nic_fr_tx_err:    4\n'
+                    'zhcp11: nic_rx:           103024058\n'
+                    'zhcp11: nic_tx:           102030890\n'
+                    'zhcp11: nic_id: INST2 0600\n'
+                    'zhcp11: nic_fr_rx:        17493\n'
+                    'zhcp11: nic_fr_rx_dsc:    0\n'
+                    'zhcp11: nic_fr_rx_err:    0\n'
+                    'zhcp11: nic_fr_tx:        16886\n'
+                    'zhcp11: nic_fr_tx_dsc:    0\n'
+                    'zhcp11: nic_fr_tx_err:    4\n'
+                    'zhcp11: nic_rx:           3111714\n'
+                    'zhcp11: nic_tx:           3172646\n'
+                    'zhcp11: vlan count: 0\n'
+                    'zhcp11: \n'
+                    'zhcp11: vswitch number: 2\n'
+                    'zhcp11: vswitch name: XCATVSW2\n'
+                    'zhcp11: uplink count: 1\n'
+                    'zhcp11: uplink_conn: 6200\n'
+                    'zhcp11: uplink_fr_rx:     1608681\n'
+                    'zhcp11: uplink_fr_rx_dsc: 0\n'
+                    'zhcp11: uplink_fr_rx_err: 0\n'
+                    'zhcp11: uplink_fr_tx:     2120075\n'
+                    'zhcp11: uplink_fr_tx_dsc: 0\n'
+                    'zhcp11: uplink_fr_tx_err: 0\n'
+                    'zhcp11: uplink_rx:        314326223',
+                    'zhcp11: uplink_tx:        1503721533\n'
+                    'zhcp11: bridge_fr_rx:     0\n'
+                    'zhcp11: bridge_fr_rx_dsc: 0\n'
+                    'zhcp11: bridge_fr_rx_err: 0\n'
+                    'zhcp11: bridge_fr_tx:     0\n'
+                    'zhcp11: bridge_fr_tx_dsc: 0\n'
+                    'zhcp11: bridge_fr_tx_err: 0\n'
+                    'zhcp11: bridge_rx:        0\n'
+                    'zhcp11: bridge_tx:        0\n'
+                    'zhcp11: nic count: 2\n'
+                    'zhcp11: nic_id: INST1 1000\n'
+                    'zhcp11: nic_fr_rx:        34958\n'
+                    'zhcp11: nic_fr_rx_dsc:    0\n'
+                    'zhcp11: nic_fr_rx_err:    0\n'
+                    'zhcp11: nic_fr_tx:        16211\n'
+                    'zhcp11: nic_fr_tx_dsc:    0\n'
+                    'zhcp11: nic_fr_tx_err:    0\n'
+                    'zhcp11: nic_rx:           4684435\n'
+                    'zhcp11: nic_tx:           3316601\n'
+                    'zhcp11: nic_id: INST2 1000\n'
+                    'zhcp11: nic_fr_rx:        27211\n'
+                    'zhcp11: nic_fr_rx_dsc:    0\n'
+                    'zhcp11: nic_fr_rx_err:    0\n'
+                    'zhcp11: nic_fr_tx:        12344\n'
+                    'zhcp11: nic_fr_tx_dsc:    0\n'
+                    'zhcp11: nic_fr_tx_err:    0\n'
+                    'zhcp11: nic_rx:           3577163\n'
+                    'zhcp11: nic_tx:           2515045\n'
+                    'zhcp11: vlan count: 0',
+                     None]
+        xdsh.return_value = {'data': [vsw_data]}
+        vsw_dict = self._zvmclient.virutal_network_vswitch_query_iuo_stats()
+        self.assertEqual(2, len(vsw_dict['vswitches']))
+        self.assertEqual(2, len(vsw_dict['vswitches'][1]['nics']))
+        self.assertEqual('INST1',
+                         vsw_dict['vswitches'][0]['nics'][0]['userid'])
+        self.assertEqual('3577163',
+                         vsw_dict['vswitches'][1]['nics'][1]['nic_rx'])
+
+    @mock.patch('zvmsdk.client.XCATClient._get_hcp_info')
+    @mock.patch.object(zvmutils, 'xdsh')
+    def test_virutal_network_vswitch_query_iuo_stats_invalid_data(self, xdsh,
+                                                                get_hcp_info):
+        get_hcp_info.return_value = {'hostname': 'fakehcp.ibm.com',
+                                     'nodename': 'fakehcp',
+                                     'userid': 'FAKEHCP'}
+        xdsh.return_value = ['invalid', 'data']
+        self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
+                    self._zvmclient.virutal_network_vswitch_query_iuo_stats)
+
     @mock.patch.object(zvmclient.XCATClient, '_add_switch_table_record')
     @mock.patch.object(zvmclient.XCATClient, '_add_mac_table_record')
     @mock.patch.object(zvmclient.XCATClient, '_delete_mac')
@@ -1266,3 +1376,41 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
                 CONF.zvm.user_root_vdev + '.img'
         ret = self._zvmclient.get_image_path_by_name(fake_name)
         self.assertEqual(ret, expected_path)
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    def test_set_vswitch_with_invalid_key(self, get_userid):
+        get_userid.return_value = "fakenode"
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self._zvmclient.set_vswitch,
+                          "vswitch_name", unknown='fake_id')
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_set_vswitch(self, xrequest, get_userid):
+        xrequest.return_value = {"errorcode": [['0']]}
+        get_userid.return_value = "fakenode"
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = ' '.join((
+            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
+            "-T fakenode",
+            "-k switch_name=fake_vs",
+            "-k grant_userid=fake_id"))
+
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        self._zvmclient.set_vswitch("fake_vs", grant_userid='fake_id')
+        xrequest.assert_called_with("PUT", url, body)
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_set_vswitch_with_errorcode(self, xrequest, get_userid):
+        xrequest.return_value = {"data": "Returned data",
+                                 "errorcode": [['1']]}
+        get_userid.return_value = "fakenode"
+
+        self.assertRaises(exception.ZVMException,
+                          self._zvmclient.set_vswitch,
+                          "vswitch_name", grant_userid='fake_id')

@@ -239,6 +239,94 @@ class XCATClient(ZVMClient):
         pi_dict = self.image_performance_query([userid])
         return pi_dict.get(userid.upper(), None)
 
+    def virutal_network_vswitch_query_iuo_stats(self):
+        hcp_info = self._get_hcp_info()
+        zhcp_userid = hcp_info['userid']
+        zhcp_node = hcp_info['nodename']
+        cmd = ('smcli Virtual_Network_Vswitch_Query_IUO_Stats -T "%s" '
+               '-k "switch_name=*"' % zhcp_userid)
+
+        with zvmutils.expect_invalid_xcat_resp_data():
+            resp = zvmutils.xdsh(zhcp_node, cmd)
+            raw_data_list = resp["data"][0]
+
+        while raw_data_list.__contains__(None):
+            raw_data_list.remove(None)
+
+        raw_data = '\n'.join(raw_data_list)
+        rd_list = raw_data.split('\n')
+
+        def _parse_value(data_list, idx, keyword, offset):
+            return idx + offset, data_list[idx].rpartition(keyword)[2].strip()
+
+        vsw_dict = {}
+        with zvmutils.expect_invalid_xcat_resp_data():
+            # vswitch count
+            idx = 0
+            idx, vsw_count = _parse_value(rd_list, idx, 'vswitch count:', 2)
+            vsw_dict['vswitch_count'] = int(vsw_count)
+
+            # deal with each vswitch data
+            vsw_dict['vswitches'] = []
+            for i in range(vsw_dict['vswitch_count']):
+                vsw_data = {}
+                # skip vswitch number
+                idx += 1
+                # vswitch name
+                idx, vsw_name = _parse_value(rd_list, idx, 'vswitch name:', 1)
+                vsw_data['vswitch_name'] = vsw_name
+                # uplink count
+                idx, up_count = _parse_value(rd_list, idx, 'uplink count:', 1)
+                # skip uplink data
+                idx += int(up_count) * 9
+                # skip bridge data
+                idx += 8
+                # nic count
+                vsw_data['nics'] = []
+                idx, nic_count = _parse_value(rd_list, idx, 'nic count:', 1)
+                nic_count = int(nic_count)
+                for j in range(nic_count):
+                    nic_data = {}
+                    idx, nic_id = _parse_value(rd_list, idx, 'nic_id:', 1)
+                    userid, toss, vdev = nic_id.partition(' ')
+                    nic_data['userid'] = userid
+                    nic_data['vdev'] = vdev
+                    idx, nic_data['nic_fr_rx'] = _parse_value(rd_list, idx,
+                                                              'nic_fr_rx:', 1
+                                                              )
+                    idx, nic_data['nic_fr_rx_dsc'] = _parse_value(rd_list, idx,
+                                                            'nic_fr_rx_dsc:', 1
+                                                            )
+                    idx, nic_data['nic_fr_rx_err'] = _parse_value(rd_list, idx,
+                                                            'nic_fr_rx_err:', 1
+                                                            )
+                    idx, nic_data['nic_fr_tx'] = _parse_value(rd_list, idx,
+                                                              'nic_fr_tx:', 1
+                                                              )
+                    idx, nic_data['nic_fr_tx_dsc'] = _parse_value(rd_list, idx,
+                                                            'nic_fr_tx_dsc:', 1
+                                                            )
+                    idx, nic_data['nic_fr_tx_err'] = _parse_value(rd_list, idx,
+                                                            'nic_fr_tx_err:', 1
+                                                            )
+                    idx, nic_data['nic_rx'] = _parse_value(rd_list, idx,
+                                                           'nic_rx:', 1
+                                                           )
+                    idx, nic_data['nic_tx'] = _parse_value(rd_list, idx,
+                                                           'nic_tx:', 1
+                                                           )
+                    vsw_data['nics'].append(nic_data)
+                # vlan count
+                idx, vlan_count = _parse_value(rd_list, idx, 'vlan count:', 1)
+                # skip vlan data
+                idx += int(vlan_count) * 3
+                # skip the blank line
+                idx += 1
+
+                vsw_dict['vswitches'].append(vsw_data)
+
+        return vsw_dict
+
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def _lsvm(self, userid):
         url = self._xcat_url.lsvm('/' + userid)
@@ -1287,3 +1375,44 @@ class XCATClient(ZVMClient):
                 name_split[0] + '/' + name_split[1] + '/' + image_uuid +\
                 '/' + CONF.zvm.user_root_vdev + '.img'
         return image_file_path
+
+    def set_vswitch(self, switch_name, **kwargs):
+        """Set vswitch"""
+        set_vswitch_command = ["grant_userid", "user_vlan_id",
+                               "revoke_userid", "real_device_address",
+                               "port_name", "controller_name",
+                               "connection_value", "queue_memory_limit",
+                               "routing_value", "port_type", "persist",
+                               "gvrp_value", "mac_id", "uplink",
+                               "nic_userid", "nic_vdev",
+                               "lacp", "interval", "group_rdev",
+                               "iptimeout", "port_isolation", "promiscuous",
+                               "MAC_protect", "VLAN_counters"]
+        zhcp = CONF.xcat.zhcp_node
+        userid = self._get_zhcp_userid()
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        commands = ' '.join((
+            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
+            "-T %s" % userid,
+            "-k switch_name=%s" % switch_name))
+
+        for k, v in kwargs.items():
+            if k in set_vswitch_command:
+                commands = ' '.join((commands,
+                                     '-k %(key)s=%(value)s' %
+                                     {'key': k, 'value': v}))
+            else:
+                raise exception.ZVMInvalidInput(
+                    msg=("switch %s changes failed, invalid keyword %s") %
+                    (switch_name, k))
+
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            result = zvmutils.xcat_request("PUT", url, body)
+            if (result['errorcode'][0][0] != '0'):
+                    raise exception.ZVMException(
+                    msg=("switch %s changes failed, %s") %
+                        (switch_name, result['data']))
+        LOG.info('change vswitch %s done.' % switch_name)

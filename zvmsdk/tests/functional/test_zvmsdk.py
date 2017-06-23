@@ -113,3 +113,37 @@ class SDKAPITestCase(unittest.TestCase):
         result = self.sdkapi.guest_inspect_cpus([])
         empty_dict = {}
         self.assertEqual(result, empty_dict)
+
+    def test_guest_inspect_mem(self):
+        guest_list = self.sdkapi.host_list_guests()
+        n = 0
+        for uid in guest_list:
+            if self.sdkapi.guest_get_power_state(uid) == 'on':
+                n = n + 1
+                test_id = uid
+        if n > 0:
+            result = self.sdkapi.guest_inspect_mem(guest_list)
+            self.assertTrue(isinstance(result, dict))
+            self.assertEqual(len(result), n)
+            self.assertTrue(isinstance(
+                result[test_id].get('used_mem_kb'), int))
+            self.assertTrue(isinstance(
+                result[test_id].get('max_mem_kb'), int))
+            self.assertTrue(isinstance(
+                result[test_id].get('min_mem_kb'), int))
+            self.assertTrue(isinstance(
+                result[test_id].get('shared_mem_kb'), int))
+        else:
+            result = self.sdkapi.guest_inspect_mem(guest_list)
+            empty_dict = {}
+            self.assertEqual(result, empty_dict)
+
+    def test_guest_inspect_mem_with_nonexist_guest(self):
+        result = self.sdkapi.guest_inspect_mem('fake_id')
+        empty_dict = {}
+        self.assertEqual(result, empty_dict)
+
+    def test_guest_inspect_mem_with_empty_list(self):
+        result = self.sdkapi.guest_inspect_mem([])
+        empty_dict = {}
+        self.assertEqual(result, empty_dict)

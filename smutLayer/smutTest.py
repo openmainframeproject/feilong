@@ -141,6 +141,15 @@ deployTests = [
         'overallRC': [0],
     },
     {
+        'description': "Add modifications to the activation engine",
+        'request': 'ChangeVM <<<unsafeID1>>> aemod <<<setupDisk>>> ' +
+            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
+            'mntdir=/mnt/ephemeral/0.0.0101"',
+
+        'out': "",
+        'overallRC': [0],
+    },
+    {
         'description': "Purge the reader",
         'request': "ChangeVM <<<unsafeID1>>> purgerdr",
         'out': "",
@@ -329,6 +338,8 @@ powerTests = [
         'request': "PowerVM <<<safeID>>> status",
         'out': "\'^<<<safeID>>>: off\'",
         'overallRC': [0],
+        'rc': [0],
+        'rs': [1]
     },
     {
         'description': "Check isreachable of powered off system.",
@@ -354,6 +365,8 @@ powerTests = [
         'request': "PowerVM <<<safeID>>> status",
         'out': "\'^<<<safeID>>>: on\'",
         'overallRC': [0],
+        'rc': [0],
+        'rs': [0]
     },
     {
         'description': "Check isreachable of powered on system.",
@@ -512,7 +525,120 @@ vmLCTests = [
    ]
 
 vmModifyTests = [
-               ]
+    # >>>>>>>>> Create a simple system for logged off tests.
+    {
+        'description': "Create a simple system.",
+        'request': "makevm <<<unsafeID1>>> directory smapi 2g g",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add a 3390 disk to the system with ext4.",
+        'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
+            "101 100m --mode w --filesystem ext4",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Remove the 3390 disk with ext4.",
+        'request': "changevm <<<unsafeID1>>> removedisk 101",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add a 3390 disk to the system with xfs.",
+        'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
+            "101 100m --mode w --filesystem xfs",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Remove the 3390 disk with xfs.",
+        'request': "changevm <<<unsafeID1>>> removedisk 101",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add a 3390 disk to the system with swap.",
+        'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
+            "101 100m --mode w --filesystem swap",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Remove the 3390 disk with swap.",
+        'request': "changevm <<<unsafeID1>>> removedisk 101",
+        'out': "",
+        'overallRC': [0],
+    },
+    # >>>>>>>>> Tests that are related to active systems.
+    {
+        'description': "Add a 3390 disk for the root disk.",
+        'request': "ChangeVM <<<unsafeID1>>> add3390 <<<pool3390>>> 100 " +
+            "<<<size3390>>>",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Unpack the image into the disk.",
+        'request': "SHELL_TEST <<<unpackScript>>> <<<unsafeID1>>> 100 " +
+            "<<<simpleImage>>>",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Power on the system and wait for to OS to come up.",
+        'request': "PowerVM <<<safeID>>> on --wait --state up",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add a 3390 disk to the system with ext4.",
+        'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
+            "101 100m --mode w --filesystem ext4",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Remove the 3390 disk with ext4.",
+        'request': "changevm <<<unsafeID1>>> removedisk 101",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add a 3390 disk to the system with xfs.",
+        'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
+            "101 100m --mode w --filesystem xfs",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Remove the 3390 disk with xfs.",
+        'request': "changevm <<<unsafeID1>>> removedisk 101",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add a 3390 disk to the system with swap.",
+        'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
+            "101 100m --mode w --filesystem swap",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Remove the 3390 disk with swap.",
+        'request': "changevm <<<unsafeID1>>> removedisk 101",
+        'out': "",
+        'overallRC': [0],
+    },
+    # >>>>>>>>> Clean up by destroying the system.
+    {
+        'description': "Delete the system.",
+        'request': "deletevm <<<unsafeID1>>> directory",
+        'out': "",
+        'overallRC': [0],
+    },
+   ]
 
 
 testSets = {
