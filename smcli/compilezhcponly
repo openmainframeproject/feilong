@@ -33,6 +33,7 @@
 BUILD=/root/zhcp-build
 REPOTOP=python-zvm-sdk
 ZHCPTOP=smcli
+BRANCH=nobranch
 # Reset build directories
 cd $BUILD/ 2>/dev/null
 rm -rf $BUILD/BUILD 2>/dev/null
@@ -59,8 +60,7 @@ cd $BUILD/$REPOTOP/$ZHCPTOP 2>/dev/null
 pwd
 rpmbuild -ba -v $BUILD/SPECS/zhcp.spec
 
-echo "===> Copy over RPMs into /srv/ftp"
-ls $BUILD/RPMS/
+echo "===> Copy over RPMs into /srv/ftp/zhcp/$BRANCH/"
 rm -rf /srv/ftp/zhcp/$BRANCH/
 mkdir -p /srv/ftp/zhcp/$BRANCH/
 cp -R $BUILD/RPMS/* /srv/ftp/zhcp/$BRANCH/

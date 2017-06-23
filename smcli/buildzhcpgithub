@@ -75,7 +75,7 @@ rm -rf ./$REPOTOP
 git clone $REPO -b $BRANCH
 
 # Move to the sdk directory
-cd python-zvm-sdk 2>/dev/null
+cd $REPOTOP 2>/dev/null
 
 echo "===>compress zhp sourcefiles to $BUILD/SOURCES/zhcp-build.tar.gz"
 pwd
@@ -88,8 +88,7 @@ cd $BUILD/$REPOTOP/$ZHCPTOP 2>/dev/null
 pwd
 rpmbuild -ba -v $BUILD/SPECS/zhcp.spec
 
-echo "===> Copy over RPMs into /srv/ftp"
-ls $BUILD/RPMS/
+echo "===> Copy over RPMs into /srv/ftp/zhcp/$BRANCH/"
 rm -rf /srv/ftp/zhcp/$BRANCH/
 mkdir -p /srv/ftp/zhcp/$BRANCH/
 cp -R $BUILD/RPMS/* /srv/ftp/zhcp/$BRANCH/
