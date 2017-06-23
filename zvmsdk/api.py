@@ -29,7 +29,7 @@ CONF = config.CONF
 LOG = log.LOG
 
 
-def check_input_types(*types):
+def check_input_types(*types, **validkeys):
     """This is a function decorator to check all input parameters given to
     decorated function are in expected types.
 
@@ -38,6 +38,8 @@ def check_input_types(*types):
 
     :param tuple types: expected types of input parameters to the decorated
                         function
+    :param validkeys: valid keywords(str) in a list.
+                      e.g. validkeys=['key1', 'key2']
     """
     def decorator(function):
         @functools.wraps(function)
@@ -47,14 +49,22 @@ def check_input_types(*types):
                 return function(*args, **kwargs)
             # drop class object self
             inputs = args[1:]
-            assert len(inputs) == len(types)
             argtypes = tuple(map(type, inputs))
-            if argtypes != types:
+            if argtypes != types[0:len(argtypes)]:
                 msg = ("Invalid input types: %(argtypes)s; "
                        "Expected types: %(types)s" %
                        {'argtypes': str(argtypes), 'types': str(types)})
                 LOG.info(msg)
                 raise exception.ZVMInvalidInput(msg=msg)
+            valid_keys = validkeys.get('valid_keys')
+            if valid_keys:
+                for k in kwargs.keys():
+                    if k not in valid_keys:
+                        msg = ("Invalid keyword: %(key)s; "
+                               "Expected keywords are: %(keys)s" %
+                               {'key': k, 'keys': str(valid_keys)})
+                        LOG.info(msg)
+                        raise exception.ZVMInvalidInput(msg=msg)
             return function(*args, **kwargs)
         return wrap_func
     return decorator
@@ -81,6 +91,7 @@ class SDKAPI(object):
         """
         self._vmops.guest_start(userid)
 
+    @check_input_types(str, int, int)
     def guest_stop(self, userid, timeout=0, retry_interval=10):
         """Power off a virtual machine.
 
@@ -91,11 +102,7 @@ class SDKAPI(object):
 
         :returns: None
         """
-        if not isinstance(timeout, int):
-            LOG.error('Invalid input parameter - timeout, expect an integer')
-            raise exception.ZVMInvalidInput('timeout')
-
-        if not (isinstance(retry_interval, int) and retry_interval > 0):
+        if retry_interval < 0:
             LOG.error('Invalid input parameter - retry_interval, '
                       'expect an integer > 0')
             raise exception.ZVMInvalidInput('retry_interval')
@@ -191,6 +198,7 @@ class SDKAPI(object):
         """
         return self._networkops.get_vm_nic_switch_info(user_id)
 
+    @check_input_types(str, valid_keys=['nic_coupled'])
     def guest_get_definition_info(self, userid, **kwargs):
         """Get definition info for the specified guest vm, also could be used
         to check specific info.
