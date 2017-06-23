@@ -2,7 +2,7 @@
 
 Summary: System z hardware control point (zHCP)
 Name: %{name}
-Version: %(cat Version)
+Version: %(cat python-zvm-sdk/smcli/Version)
 Release: snap%(date +"%Y%m%d%H%M")
 Source: zhcp-build.tar.gz
 Vendor: IBM
