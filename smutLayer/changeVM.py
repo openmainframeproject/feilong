@@ -22,7 +22,7 @@ import tempfile
 import generalUtils
 import msgs
 from vmUtils import disableEnableDisk, execCmdThruIUCV, installFS
-from vmUtils import invokeSMCLI, isLoggedOn
+from vmUtils import invokeSMCLI, isLoggedOn, purgeReader
 
 modId = "CVM"
 version = "1.0.0"
@@ -639,9 +639,8 @@ def purgeRDR(rh):
     """
 
     rh.printSysLog("Enter changeVM.purgeRDR")
-
-    rh.printLn("N", "This subfunction is not implemented yet.")
-
+    results = purgeReader(rh)
+    rh.updateResults(results)
     rh.printSysLog("Exit changeVM.purgeRDR, rc: " +
         str(rh.results['overallRC']))
     return rh.results['overallRC']

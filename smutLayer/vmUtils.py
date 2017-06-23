@@ -608,3 +608,52 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
     rh.printSysLog("Exit vmUtils.waitForVMState, rc: " +
         str(results['overallRC']))
     return results
+
+
+def purgeReader(rh):
+    """
+    Purge reader of the specified userid.
+
+    Input:
+       Request Handle
+       userid whose reader is to be purged
+
+       Dictionary containing the following:
+          overallRC - overall return code, 0: success, non-zero: failure
+          rc        - RC returned from SMCLI if overallRC = 0.
+          rs        - RS returned from SMCLI if overallRC = 0.
+          errno     - Errno returned from SMCLI if overallRC = 0.
+          response  - Updated with an error message if wait times out.
+
+    Note:
+
+    """
+    rh.printSysLog("Enter vmUtils.purgeRDR, userid: " + rh.userid)
+    results = {'overallRC': 0,
+               'rc': 0,
+               'rs': 0,
+               'errno': 0,
+               'response': [],
+               'strError': '', }
+    # Temporarily use this SMAPI to purge the reader
+    # We've asked for a new one to do this
+    cmd = ['smcli',
+           'xCAT_Commands_IUO',
+           '-T', rh.userid,
+           '-c', 'cmd=PURGE %s RDR ALL' % rh.userid]
+
+    results = invokeSMCLI(rh, cmd)
+
+    if results['overallRC'] == 0:
+        rh.printLn("N", "Purged reader for " +
+                   rh.userid + ".")
+    else:
+        strCmd = ' '.join(cmd)
+        msg = (msgs.msg['0300'][1] % (modId, strCmd,
+              results['overallRC'], results['response']))
+        rh.printLn("ES", msg)
+        rh.updateResults(results)
+
+    rh.printSysLog("Exit vmUtils.purgeReader, rc: " +
+                   str(results['overallRC']))
+    return results
