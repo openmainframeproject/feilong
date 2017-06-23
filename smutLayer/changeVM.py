@@ -15,7 +15,7 @@
 #    under the License.
 
 import generalUtils
-from vmUtils import invokeSMCLI
+from vmUtils import invokeSMCLI,purgeReader
 version = "1.0.0"
 
 """
@@ -493,11 +493,11 @@ def purgeRDR(rh):
     """
     rc = 0
     rh.printSysLog("Enter changeVM.purgeRDR")
-
-    rh.printLn("N", "This subfunction is not implemented yet.")
-
+    results = purgeReader(rh,rh.userid)
+    rh.updateResults(results)
+    rc = results['overallRC']
     rh.printSysLog("Exit changeVM.purgeRDR, rc: " + str(rc))
-    return 0
+    return rc
 
 
 def showInvLines(rh):

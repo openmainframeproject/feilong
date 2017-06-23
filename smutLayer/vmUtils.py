@@ -18,6 +18,7 @@ import re
 import subprocess
 from subprocess import CalledProcessError
 import time
+from _ldap import RESULTS_TOO_LARGE
 
 version = '1.0.0'         # Version of this script
 
@@ -265,7 +266,6 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
        Maximum attempts to wait for desired state before giving up
        Sleep duration between waits
 
-    Output:
        Dictionary containing the following:
           overallRC - overall return code, 0: success, non-zero: failure
           rc        - RC returned from SMCLI if overallRC = 0.
@@ -341,3 +341,52 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
     rh.printSysLog("Exit vmUtils.waitForVMState, rc: " +
         str(results['overallRC']))
     return results
+
+def purgeReader(rh,userid):
+    """
+    Purge reader of the specified userid.
+
+    Input:
+       Request Handle
+       userid whose state is to be monitored
+       
+       Dictionary containing the following:
+          overallRC - overall return code, 0: success, non-zero: failure
+          rc        - RC returned from SMCLI if overallRC = 0.
+          rs        - RS returned from SMCLI if overallRC = 0.
+          errno     - Errno returned from SMCLI if overallRC = 0.
+          response  - Updated with an error message if wait times out.
+
+    Note:
+
+    """
+    rc = 0
+    rh.printSysLog("Enter vmUtils.purgeRDR, userid:"+userid)
+    results = {
+          'overallRC': 0,
+          'rc': 0,
+          'rs': 0,
+          'errno': 0,
+          'response': [],
+          'strError': '',
+         }
+    #vmcp command to purge reader of the specified userid
+    purgeOutput =""
+    purgeCmd = ("/sbin/vmcp purge " + userid +" rdr all")
+    try:
+        purgeOutput = subprocess.check_output(
+                            purgeCmd,
+                            stderr=subprocess.STDOUT,
+                            close_fds=True,
+                            shell=True)
+
+    except CalledProcessError as e:
+            currState = e.output
+            results['rc'] = e.returncode
+            rc=e.returncode
+            rh.printLn("ES", "Command failed: '" + purgeCmd + "', rc: " + str(rc))
+            results['overallRC'] = 3
+        
+    purgeOutput=purgeOutput.rstrip() #remove white spaces
+    print(results)
+    return results 
