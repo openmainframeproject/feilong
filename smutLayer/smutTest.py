@@ -140,6 +140,35 @@ deployTests = [
         'out': "",
         'overallRC': [0],
     },
+     {
+        'description': "Add modifications to the activation engine",
+        'request': 'ChangeVM <<<unsafeID1>>> aemod <<<setupDisk>>> ' +
+            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
+            'mntdir=/mnt/ephemeral/0.0.0101"',
+
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add unknown script mods to the activation engine",
+        'request': 'ChangeVM <<<unsafeID1>>> aemod BAD ' +
+            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
+            'mntdir=/mnt/ephemeral/0.0.0101"',
+
+        'out': "",
+        'overallRC': [4],
+        'rc': [4],
+        'rs': [11],
+    },
+    {
+        'description': "Add modifications to activation engine for bad id",
+        'request': 'ChangeVM BADID aemod <<<setupDisk>>> ' +
+            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
+            'mntdir=/mnt/ephemeral/0.0.0101"',
+
+        'out': "",
+        'overallRC': [4],
+    },
     {
         'description': "Purge the reader",
         'request': "ChangeVM <<<unsafeID1>>> purgerdr",
