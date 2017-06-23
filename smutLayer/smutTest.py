@@ -52,6 +52,8 @@ subs = {
                                         #   started and stopped
     '<<<unsafeID1>>>': 'TSTUSER1',      # A userid that gets created and
                                         #   destroyed
+    '<<<horribleID1>>>': 'g[][325$$$',  # A userid that makes SMAPI cry
+                                        #   and beg for a swift death
     '<<<migrID>>>': 'someid',           # An existing userid that can be
                                         #   migrated
     '<<<unmigrID>>>': 'unmgr',          # An existing userid that cannot be
@@ -686,6 +688,19 @@ vmModifyTests = [
         'request': "changevm <<<unsafeID1>>> removeipl",
         'out': "",
         'overallRC': [0],
+    },
+     {
+        'description': "Successfully purge the reader.",
+        'request': "changeVM <<<unsafeID1>>> purgeRDR ",
+        'overallRC': [0],
+    },
+     {
+        'description': "Try to purge read of a bad id.",
+        'request': "changeVM <<<horribleID1>>> purgeRDR ",
+        'out': "\'Syntax error in function parameter 8\'",
+        'overallRC': [1],
+        'rc': [24],
+        'rs': [813]
     },
     # >>>>>>>>> Clean up by destroying the system.
     {
