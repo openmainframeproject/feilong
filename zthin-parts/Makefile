@@ -1,11 +1,11 @@
 DEBUG = -g
 CFLAGS = -fPIC
-LIB_DIR = $(RPM_BUILD_ROOT)/opt/zhcp/lib
-BIN_DIR = $(RPM_BUILD_ROOT)/opt/zhcp/bin
+LIB_DIR = $(RPM_BUILD_ROOT)/opt/zthin/lib
+BIN_DIR = $(RPM_BUILD_ROOT)/opt/zthin/bin
 LD_DIR = $(RPM_BUILD_ROOT)/etc/ld.so.conf.d
-SRC_DIR = zhcp/src/
-INCLUDE_DIR = zhcp/include/
-ZHCPLIB = "libzhcp.so"
+SRC_DIR = zthin/src/
+INCLUDE_DIR = zthin/include/
+ZTHINLIB = "libzthin.so"
 
 #-----------------------------------------------------------------------
 # Objects for utils
@@ -259,7 +259,7 @@ CIKADA_OBJECTS += ckdhex.o
 #-----------------------------------------------------------------------
 # All
 #-----------------------------------------------------------------------
-all: $(ZHCPLIB) \
+all: $(ZTHINLIB) \
     $(CIKADA_OBJECTS) \
     $(SMCLI_OBJECTS) \
     $(UTILS_OBJECTS)  \
@@ -955,8 +955,8 @@ iucvclient.o : $(SRC_DIR)/IUCV/iucvclient.c
 #-----------------------------------------------------------------------
 # Libraries
 #-----------------------------------------------------------------------
-$(ZHCPLIB) : $(SM_OBJECTS) $(UTILS_OBJECTS) $(VMAPI_OBJECTS)
-	gcc -Wl,-d -shared -pthread -ldl -o $(ZHCPLIB) $(SM_OBJECTS) $(UTILS_OBJECTS) $(VMAPI_OBJECTS)
+$(ZTHINLIB) : $(SM_OBJECTS) $(UTILS_OBJECTS) $(VMAPI_OBJECTS)
+	gcc -Wl,-d -shared -pthread -ldl -o $(ZTHINLIB) $(SM_OBJECTS) $(UTILS_OBJECTS) $(VMAPI_OBJECTS)
 
 #-----------------------------------------------------------------------
 # Executables
@@ -976,7 +976,7 @@ syncfileutil : syncfileutil.o
 syncfileutil.o : $(SRC_DIR)syncfileutil.c
 	gcc -c $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)syncfileutil.c
 
-smcli :smcli.o $(SMCLI_OBJECTS) $(UTILS_OBJECTS) $(ZHCPLIB)
+smcli :smcli.o $(SMCLI_OBJECTS) $(UTILS_OBJECTS) $(ZTHINLIB)
 	gcc -o smcli  -L./ -lzhcp  $(UTILS_OBJECTS) $(SMCLI_OBJECTS)
 
 #-----------------------------------------------------------------------
@@ -984,7 +984,7 @@ smcli :smcli.o $(SMCLI_OBJECTS) $(UTILS_OBJECTS) $(ZHCPLIB)
 #-----------------------------------------------------------------------
 install:
 	mkdir -p $(LIB_DIR)
-	install $(ZHCPLIB) $(LIB_DIR)
+	install $(ZTHINLIB) $(LIB_DIR)
 	mkdir -p $(BIN_DIR)
 	install ckddecode $(BIN_DIR)
 	install ckdencode $(BIN_DIR)
@@ -1000,14 +1000,14 @@ install:
 # Post
 #-----------------------------------------------------------------------
 post:
-	echo "/opt/zhcp/lib" > /etc/ld.so.conf.d/zhcp.conf
+	echo "/opt/zthin/lib" > /etc/ld.so.conf.d/zthin.conf
 	ldconfig
 
 #-----------------------------------------------------------------------
 # Clean
 #-----------------------------------------------------------------------
 clean:
-	-rm -f *.o *.so $(ZHCPLIB)
+	-rm -f *.o *.so $(ZTHINLIB)
 	-rm ckddecode
 	-rm ckdencode
 	-rm ckdhex
