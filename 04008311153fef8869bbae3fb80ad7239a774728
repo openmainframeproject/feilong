@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1da27d1d_655958d4",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-26T14:17:54Z",
+      "side": 1,
+      "message": "What happened to the Output: line.  Please put it back.",
+      "range": {
+        "startLine": 268,
+        "startChar": 0,
+        "endLine": 268,
+        "endChar": 0
+      },
+      "revId": "04008311153fef8869bbae3fb80ad7239a774728",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9f54f7e2_3b9a21a3",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-26T14:17:54Z",
+      "side": 1,
+      "message": "Change to \"reader is to be purged.\"",
+      "range": {
+        "startLine": 351,
+        "startChar": 20,
+        "endLine": 351,
+        "endChar": 44
+      },
+      "revId": "04008311153fef8869bbae3fb80ad7239a774728",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "adc1522f_97cbd934",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 352,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-26T14:17:54Z",
+      "side": 1,
+      "message": "Blanks are not allowed at the end of a line.",
+      "range": {
+        "startLine": 352,
+        "startChar": 0,
+        "endLine": 352,
+        "endChar": 7
+      },
+      "revId": "04008311153fef8869bbae3fb80ad7239a774728",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e00b1400_fd5dfa63",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-26T14:17:54Z",
+      "side": 1,
+      "message": "Why did you remove the Output: line.  It should be there.",
+      "range": {
+        "startLine": 353,
+        "startChar": 0,
+        "endLine": 353,
+        "endChar": 7
+      },
+      "revId": "04008311153fef8869bbae3fb80ad7239a774728",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "82e841d8_d99bf16c",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-26T14:17:54Z",
+      "side": 1,
+      "message": "You don\u0027t need response in your result dictionary because you never set it and it is unlikely that someone would expect you to set it.",
+      "range": {
+        "startLine": 370,
+        "startChar": 0,
+        "endLine": 370,
+        "endChar": 25
+      },
+      "revId": "04008311153fef8869bbae3fb80ad7239a774728",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "57fce2d8_288b3b24",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-26T14:17:54Z",
+      "side": 1,
+      "message": "Please switch to the non-Shell form of this invocation.  Here is an example:\n    cmd \u003d [\"/sbin/vmcp\", \"query\", \"user\", userid]\n    try:\n        out \u003d subprocess.check_output(cmd, close_fds\u003dTrue, stderr\u003dsubprocess.STDOUT)\n    except CalledProcessError as e:\n        match \u003d re.search(\u0027(^HCP\\w\\w\\w045E|^HCP\\w\\w\\w361E)\u0027, e.output)\n        if match:\n            # Not logged on\n            results[\u0027rs\u0027] \u003d 1\n        else:\n            # Abnormal failure\n            strCmd \u003d \u0027 \u0027.join(cmd)\n            rh.printLn(\"ES\", \"Command failed: \u0027\" + strCmd + \"\u0027, rc: \" +\n                str(e.returncode) + \" out: \" + e.output)\n            results[\u0027overallRC\u0027] \u003d 3\n            results[\u0027rc\u0027] \u003d e.returncode",
+      "range": {
+        "startLine": 375,
+        "startChar": 4,
+        "endLine": 375,
+        "endChar": 57
+      },
+      "revId": "04008311153fef8869bbae3fb80ad7239a774728",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
