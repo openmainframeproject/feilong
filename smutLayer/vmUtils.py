@@ -40,24 +40,24 @@ def execCmdThruIUCV(rh, userid, strCmd):
           response  - Output of the iucvclnt command or this routine.
     """
 
-    rh.printSysLog("Enter vmUtils.execCmdThruIUCV, userid: " + 
-                           userid + " cmd: " + strCmd)
+    rh.printSysLog("Enter vmUtils.execCmdThruIUCV, userid: " +
+                   userid + " cmd: " + strCmd)
     iucvpath = '/opt/zhcp/bin/IUCV/'
     results = {
-              'overallRC': 0,
-              'rc': 0,
-              'rs': 0,
-              'errno': 0,
-              'response': [],
-             }
+        'overallRC': 0,
+        'rc': 0,
+        'rs': 0,
+        'errno': 0,
+        'response': [],
+    }
 
     strCmd = (iucvpath + "iucvclnt " + userid + " '" + strCmd + "' 2>&1")
     try:
         results['response'] = subprocess.check_output(
-                strCmd,
-                stderr=subprocess.STDOUT,
-                close_fds=True,
-                shell=True)
+            strCmd,
+            stderr=subprocess.STDOUT,
+            close_fds=True,
+            shell=True)
 
     except CalledProcessError as e:
         results['overallRC'] = 2
@@ -69,41 +69,42 @@ def execCmdThruIUCV(rh, userid, strCmd):
             try:
                 results['rc'] = int(match.group(1))
             except ValueError:
-                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" + 
-                    results['response'] + ",  return code is not an " + 
-                    "integer: " + match.group(1))
+                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
+                           results['response'] + ",  return code is not an " +
+                           "integer: " + match.group(1))
 
         match = re.search('Reason code (.+?)\.', results['response'])
         if match:
             try:
                 results['rs'] = int(match.group(1))
             except ValueError:
-                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" + 
-                    results['response'] + ",  reason code is not an " + 
-                    "integer: " + match.group(1))
+                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
+                           results['response'] + ",  reason code is not an " +
+                           "integer: " + match.group(1))
 
         if results['rc'] == 1:
-            results['response'] = ("Issued command was not authorized or a " + 
-                "generic Linux error occurred, error details: " + 
-                results['response'])
+            results['response'] = ("Issued command was not authorized or a " +
+                                   "generic Linux error occurred, " +
+                                   "error details: " +
+                                   results['response'])
         elif results['rc'] == 2:
-            results['response'] = ("Parameter to iucvclient error, error " + 
-                "details: " + results['response'])
+            results['response'] = ("Parameter to iucvclient error, error " +
+                                   "details: " + results['response'])
         elif results['rc'] == 4:
-            results['response'] = ("IUCV socket error, error details: " + 
-                results['response'])
+            results['response'] = ("IUCV socket error, error details: " +
+                                   results['response'])
         elif results['rc'] == 8:
-            results['response'] = ("Command executed failed, error details: " + 
-                results['response'])
+            results['response'] = ("Command executed failed, error details: " +
+                                   results['response'])
         elif results['rc'] == 16:
-            results['response'] = ("File Transport failed, error details: " + 
-                results['response'])
+            results['response'] = ("File Transport failed, error details: " +
+                                   results['response'])
         elif results['rc'] == 32:
-            results['response'] = ("File Transport failed, error details: " + 
-                results['response'])
+            results['response'] = ("File Transport failed, error details: " +
+                                   results['response'])
         else:
-            results['response'] = ("Unrecognized error, error details: " + 
-                results['response'])
+            results['response'] = ("Unrecognized error, error details: " +
+                                   results['response'])
 
     rh.printSysLog("Exit vmUtils.execCmdThruIUCV, rc: " + str(results['rc']))
     return results
@@ -131,17 +132,17 @@ def invokeSMCLI(rh, cmd):
          in the dictionary for the incorrect values remain as 0.
     """
 
-    rh.printSysLog("Enter vmUtils.invokeSMCLI, userid: " + rh.userid + 
-        " function: " + cmd[1])
+    rh.printSysLog("Enter vmUtils.invokeSMCLI, userid: " + rh.userid +
+                   " function: " + cmd[1])
 
     results = {
-              'overallRC': 0,
-              'rc': 0,
-              'rs': 0,
-              'errno': 0,
-              'response': [],
-              'strError': '',
-             }
+        'overallRC': 0,
+        'rc': 0,
+        'rs': 0,
+        'errno': 0,
+        'response': [],
+        'strError': '',
+    }
 
     smcliPath = '/opt/zhcp/bin/'
     cmd[0] = smcliPath + cmd[0]
@@ -160,9 +161,9 @@ def invokeSMCLI(rh, cmd):
                 results['rc'] = int(match.group(1))
             except ValueError:
                 strCmd = " ".join(cmd)
-                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" + 
-                    results['response'] + ",  return code is not an " + 
-                    "integer: " + match.group(1))
+                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
+                           results['response'] + ",  return code is not an " +
+                           "integer: " + match.group(1))
 
         match = re.search('Reason Code: (.+?)\n', results['response'])
         if match:
@@ -170,12 +171,12 @@ def invokeSMCLI(rh, cmd):
                 results['rs'] = int(match.group(1))
             except ValueError:
                 strCmd = " ".join(cmd)
-                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" + 
-                    results['response'] + ",  reason code is not an " + 
-                    "integer: " + match.group(1))
+                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
+                           results['response'] + ",  reason code is not an " +
+                           "integer: " + match.group(1))
 
-    rh.printSysLog("Exit vmUtils.invokeSMCLI, rc: " + 
-        str(results['overallRC']))
+    rh.printSysLog("Exit vmUtils.invokeSMCLI, rc: " +
+                   str(results['overallRC']))
     return results
 
 
@@ -202,19 +203,19 @@ def waitForOSState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
 
     """
 
-    rh.printSysLog("Enter vmUtils.waitForOSState, userid: " + userid + 
-                           " state: " + desiredState + 
-                           " maxWait: " + str(maxQueries) + 
-                           " sleepSecs: " + str(sleepSecs))
+    rh.printSysLog("Enter vmUtils.waitForOSState, userid: " + userid +
+                   " state: " + desiredState +
+                   " maxWait: " + str(maxQueries) +
+                   " sleepSecs: " + str(sleepSecs))
 
     results = {
-          'overallRC': 0,
-          'rc': 0,
-          'rs': 0,
-          'errno': 0,
-          'response': [],
-          'strError': '',
-         }
+        'overallRC': 0,
+        'rc': 0,
+        'rs': 0,
+        'errno': 0,
+        'response': [],
+        'strError': '',
+    }
 
     strCmd = "echo 'ping'"
     stateFnd = False
@@ -235,22 +236,23 @@ def waitForOSState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
 
     if stateFnd is True:
         results = {
-                'overallRC': 0,
-                'rc': 0,
-                'rs': 0,
-                'errno': 0,
-                'response': [],
-                'strError': '',
-            }
+            'overallRC': 0,
+            'rc': 0,
+            'rs': 0,
+            'errno': 0,
+            'response': [],
+            'strError': '',
+        }
     else:
         maxWait = maxQueries * sleepSecs
-        rh.printLn("ES", "Userid '" + userid + "' did not enter the " + 
-            "expected operating system state of '" + desiredState + "' in " + 
-            str(maxWait) + " seconds.")
+        rh.printLn("ES", "Userid '" + userid + "' did not enter the " +
+                   "expected operating system state of '" +
+                   desiredState + "' in " +
+                   str(maxWait) + " seconds.")
         results['overallRC'] = 99
 
-    rh.printSysLog("Exit vmUtils.waitForOSState, rc: " + 
-        str(results['overallRC']))
+    rh.printSysLog("Exit vmUtils.waitForOSState, rc: " +
+                   str(results['overallRC']))
     return results
 
 
@@ -277,33 +279,33 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
     """
 
     rc = 0
-    rh.printSysLog("Enter vmUtils.waitForVMState, userid: " + userid + 
-                           " state: " + desiredState + 
-                           " maxWait: " + str(maxQueries) + 
-                           " sleepSecs: " + str(sleepSecs))
+    rh.printSysLog("Enter vmUtils.waitForVMState, userid: " + userid +
+                   " state: " + desiredState +
+                   " maxWait: " + str(maxQueries) +
+                   " sleepSecs: " + str(sleepSecs))
 
     results = {
-          'overallRC': 0,
-          'rc': 0,
-          'rs': 0,
-          'errno': 0,
-          'response': [],
-          'strError': '',
-         }
+        'overallRC': 0,
+        'rc': 0,
+        'rs': 0,
+        'errno': 0,
+        'response': [],
+        'strError': '',
+    }
 
-    cmd = ("/sbin/vmcp q user " + userid + " 2>/dev/null | " + 
-            "sed 's/HCP\w\w\w045E.*/off/' | " + 
-            "sed 's/HCP\w\w\w361E.*/off/' | " + 
-            "sed 's/" + userid + ".*/on/'")
+    cmd = ("/sbin/vmcp q user " + userid + " 2>/dev/null | " +
+           "sed 's/HCP\w\w\w045E.*/off/' | " +
+           "sed 's/HCP\w\w\w361E.*/off/' | " +
+           "sed 's/" + userid + ".*/on/'")
     stateFnd = False
 
     for i in range(1, maxQueries + 1):
         try:
             currState = subprocess.check_output(
-                            cmd,
-                            stderr=subprocess.STDOUT,
-                            close_fds=True,
-                            shell=True)
+                cmd,
+                stderr=subprocess.STDOUT,
+                close_fds=True,
+                shell=True)
 
         except CalledProcessError as e:
             # The last SED would have to fail for the exception to be thrown.
@@ -323,22 +325,22 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
 
     if stateFnd is True:
         results = {
-                'overallRC': 0,
-                'rc': 0,
-                'rs': 0,
-                'errno': 0,
-                'response': [],
-                'strError': '',
-            }
+            'overallRC': 0,
+            'rc': 0,
+            'rs': 0,
+            'errno': 0,
+            'response': [],
+            'strError': '',
+        }
     else:
         maxWait = maxQueries * sleepSecs
-        rh.printLn("ES", "Userid '" + userid + "' did not enter the " + 
-            "expected virtual machine state of '" + desiredState + "' in " + 
-            str(maxWait) + " seconds.")
+        rh.printLn("ES", "Userid '" + userid + "' did not enter the " +
+                   "expected virtual machine state of '" + desiredState +
+                   "' in " + str(maxWait) + " seconds.")
         results['overallRC'] = 99
 
-    rh.printSysLog("Exit vmUtils.waitForVMState, rc: " + 
-        str(results['overallRC']))
+    rh.printSysLog("Exit vmUtils.waitForVMState, rc: " +
+                   str(results['overallRC']))
     return results
 
 
@@ -349,7 +351,7 @@ def purgeReader(rh, userid):
     Input:
        Request Handle
        userid whose state is to be monitored
-       
+
        Dictionary containing the following:
           overallRC - overall return code, 0: success, non-zero: failure
           rc        - RC returned from SMCLI if overallRC = 0.
@@ -363,31 +365,31 @@ def purgeReader(rh, userid):
     rc = 0
     rh.printSysLog("Enter vmUtils.purgeRDR, userid:" + userid)
     results = {
-          'overallRC': 0,
-          'rc': 0,
-          'rs': 0,
-          'errno': 0,
-          'response': [],
-          'strError': '',
-         }
+        'overallRC': 0,
+        'rc': 0,
+        'rs': 0,
+        'errno': 0,
+        'response': [],
+        'strError': '',
+    }
     # vmcp command to purge reader of the specified userid
     purgeOutput = ""
     purgeCmd = ("/sbin/vmcp purge " + userid + " rdr all")
     try:
         purgeOutput = subprocess.check_output(
-                            purgeCmd,
-                            stderr=subprocess.STDOUT,
-                            close_fds=True,
-                            shell=True)
+            purgeCmd,
+            stderr=subprocess.STDOUT,
+            close_fds=True,
+            shell=True)
 
     except CalledProcessError as e:
-            purgeOutput = e.output
-            results['rc'] = e.returncode
-            rc = e.returncode
-            rh.printLn("ES", "Command failed: '" + purgeCmd + 
-                       "', rc: " + str(rc))
-            results['overallRC'] = 3
-        
+        purgeOutput = e.output
+        results['rc'] = e.returncode
+        rc = e.returncode
+        rh.printLn("ES", "Command failed: '" + purgeCmd +
+                   "', rc: " + str(rc))
+        results['overallRC'] = 3
+
     purgeOutput = purgeOutput.rstrip()
     print(results)
-    return results 
+    return results
