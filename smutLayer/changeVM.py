@@ -15,7 +15,7 @@
 #    under the License.
 
 import generalUtils
-from vmUtils import invokeSMCLI,purgeReader
+from vmUtils import invokeSMCLI, purgeReader
 version = "1.0.0"
 
 """
@@ -493,7 +493,7 @@ def purgeRDR(rh):
     """
     rc = 0
     rh.printSysLog("Enter changeVM.purgeRDR")
-    results = purgeReader(rh,rh.userid)
+    results = purgeReader(rh, rh.userid)
     rh.updateResults(results)
     rc = results['overallRC']
     rh.printSysLog("Exit changeVM.purgeRDR, rc: " + str(rc))
