@@ -381,7 +381,7 @@ def purgeReader(rh, userid):
                             shell=True)
 
     except CalledProcessError as e:
-            currState = e.output
+            purgeOutput = e.output
             results['rc'] = e.returncode
             rc = e.returncode
             rh.printLn("ES", "Command failed: '" + purgeCmd + 
