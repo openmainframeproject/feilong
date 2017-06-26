@@ -90,6 +90,18 @@ class ZVMMonitor(object):
 
         return mem_data
 
+    def inspect_vnics(self, uid_list):
+        vnics = self._get_inspect_data('vnics', uid_list)
+        # construct and return final result
+        target_vnics = {}
+        for uid in uid_list:
+            uid = uid.upper()
+            if uid in vnics:
+                with zvmutils.expect_invalid_xcat_resp_data():
+                    target_vnics[uid] = vnics[uid]
+
+        return target_vnics
+
     def _cache_enabled(self):
         return CONF.monitor.cache_interval > 0
 
@@ -119,14 +131,52 @@ class ZVMMonitor(object):
             return inspect_data
 
         # Call client to query latest data
+        rdata = {}
+        if type == 'cpumem':
+            rdata = self._update_cpumem_data(uid_list)
+        elif type == 'vnics':
+            rdata = self._update_nic_data()
+
+        return rdata
+
+    def _update_cpumem_data(self, uid_list):
+        rdata = {}
         if self._cache_enabled():
             rdata = self._zvmclient.image_performance_query(
                 self._zvmclient.get_vm_list())
-            self._cache.refresh(type, rdata)
+            self._cache.refresh('cpumem', rdata)
         else:
             rdata = self._zvmclient.image_performance_query(uid_list)
 
         return rdata
+
+    def _update_nic_data(self):
+        nics = {}
+        vsw_dict = self._zvmclient.virutal_network_vswitch_query_iuo_stats()
+        with zvmutils.expect_invalid_xcat_resp_data():
+            for vsw in vsw_dict['vswitches']:
+                for nic in vsw['nics']:
+                    userid = nic['userid'].upper()
+                    nic_entry = {
+                        'vswitch_name': vsw['vswitch_name'],
+                        'nic_vdev': nic['vdev'],
+                        'nic_fr_rx': int(nic['nic_fr_rx']),
+                        'nic_fr_tx': int(nic['nic_fr_tx']),
+                        'nic_fr_rx_dsc': int(nic['nic_fr_rx_dsc']),
+                        'nic_fr_tx_dsc': int(nic['nic_fr_tx_dsc']),
+                        'nic_fr_rx_err': int(nic['nic_fr_rx_err']),
+                        'nic_fr_tx_err': int(nic['nic_fr_tx_err']),
+                        'nic_rx': int(nic['nic_rx']),
+                        'nic_tx': int(nic['nic_tx'])}
+                    if nics.get(userid, None) is None:
+                        nics[userid] = [nic_entry]
+                    else:
+                        nics[userid].append(nic_entry)
+        # Update cache if enabled
+        if self._cache_enabled():
+            self._cache.refresh('vnics', nics)
+
+        return nics
 
 
 class MeteringCache(object):

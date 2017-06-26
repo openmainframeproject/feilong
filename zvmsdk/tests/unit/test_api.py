@@ -99,6 +99,18 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.guest_inspect_mem(userid_list)
         inspect_mem.assert_called_once_with(["userid1"])
 
+    @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_vnics")
+    def test_guest_inspect_vnics_list(self, inspect_vnics):
+        userid_list = ["userid1", "userid2"]
+        self.api.guest_inspect_vnics(userid_list)
+        inspect_vnics.assert_called_once_with(userid_list)
+
+    @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_vnics")
+    def test_guest_inspect_vnics_single(self, inspect_vnics):
+        userid_list = "userid1"
+        self.api.guest_inspect_vnics(userid_list)
+        inspect_vnics.assert_called_once_with(["userid1"])
+
     @mock.patch("zvmsdk.vmops.VMOps.guest_stop")
     def test_guest_stop(self, gs):
         userid = 'fakeuser'
@@ -114,14 +126,30 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.guest_config_minidisks(userid, disk_list)
         config_disks.assert_called_once_with(userid, disk_list)
 
-    @mock.patch("zvmsdk.api.SDKAPI.guest_start")
+    @mock.patch("zvmsdk.vmops.VMOps.guest_start")
     def test_skip_api_input_check(self, gs):
         zapi = api.SDKAPI(skip_input_check=True)
         zapi.guest_start(1)
-        gs.assert_called_once()
+        gs.assert_called_once_with(1)
+
+    @mock.patch("zvmsdk.vmops.VMOps.guest_stop")
+    def test_api_input_check_with_default_value(self, gs):
+        self.api.guest_stop('fakeuser', 60)
+        gs.assert_called_once_with('fakeuser', 60, 10)
 
     def test_api_input_check_failed(self):
         self.assertRaises(exception.ZVMInvalidInput, self.api.guest_start, 1)
+
+    @mock.patch("zvmsdk.vmops.VMOps.get_definition_info")
+    def test_api_input_check_with_keyword(self, gdi):
+        self.api.guest_get_definition_info('uid', nic_coupled='1000')
+        gdi.assert_called_once_with('uid', nic_coupled='1000')
+
+    @mock.patch("zvmsdk.vmops.VMOps.get_definition_info")
+    def test_api_input_check_with_invalid_keyword(self, gdi):
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self.api.guest_get_definition_info, 'uid',
+                          invalid='1000')
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_delete")
     def test_image_delete(self, image_delete):

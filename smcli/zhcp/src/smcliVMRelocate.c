@@ -24,6 +24,7 @@ int vmRelocate(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
     int entryCount = 0;
     int option;
     int destSpecified = 0;
+    int cancelSpecified = 0;
     char * targetIdentifier = NULL;
     char * entryArray[6];
     vmApiVMRelocateOutput * output;
@@ -48,6 +49,9 @@ int vmRelocate(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
                     entryArray[entryCount] = optarg;
                     if (( strlen(optarg) > 12) && (strncmp( "destination=", optarg, 12 ) == 0 )) {
                     	destSpecified = 1;
+                    } else
+                    if (( strlen(optarg) > 13) && (strncmp( "action=cancel", optarg, 13 ) == 0 )) {
+                        cancelSpecified = 1;
                     }
                     entryCount++;
                 } else {
@@ -152,7 +156,7 @@ int vmRelocate(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
                 break;
         }
 
-    if ( !targetIdentifier || !destSpecified )  {
+    if ( !targetIdentifier || (!destSpecified && !cancelSpecified) )  {
         DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
         printf("\nERROR: Missing required options\n");
         return 1;
