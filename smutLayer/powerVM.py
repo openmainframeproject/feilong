@@ -19,6 +19,7 @@ import subprocess
 from subprocess import CalledProcessError
 import time
 from vmUtils import execCmdThruIUCV, invokeSMCLI
+from vmUtils import isLoggedOn
 from vmUtils import waitForOSState, waitForVMState
 
 version = "1.0.0"
@@ -320,32 +321,26 @@ def getStatus(rh):
 
     Output:
        Request Handle updated with the results.
-       Return code - 0: ok, non-zero: error
+       results['overallRC'] - 0: ok, non-zero: error
+       if ok:
+          results['rc'] - 0: for both on and off cases
+          results['rs'] - 0: powered on
+          results['rs'] - 1: powered off
     """
 
     rh.printSysLog("Enter powerVM.getStatus, userid: " +
         rh.userid)
 
-    cmd = ("/sbin/vmcp q user " + rh.userid + " 2>/dev/null | " +
-            "sed 's/HCP\w\w\w045E.*/off/' | sed 's/HCP\w\w\w361E.*/off/' | " +
-            "sed 's/" + rh.userid + ".*/on/'")
-    try:
-        out = subprocess.check_output(
-            cmd,
-            stderr=subprocess.STDOUT,
-            close_fds=True,
-            shell=True)
+    results = isLoggedOn(rh, rh.userid)
+    if results['overallRC'] != 0:
+        # Unexpected error
+        pass
+    elif results['rs'] == 0:
+        rh.printLn("N", rh.userid + ": on")
+    else:
+        rh.printLn("N", rh.userid + ": off")
 
-    except CalledProcessError as e:
-        # The last SED would have to fail for the exception to be thrown.
-        out = e.output
-        cmdRC = e.returncode
-        rh.printLn("ES", "Command failed: '" + cmd + "', rc: " +
-            str(cmdRC) + " out: " + out)
-        rh.updateResults({'overallRC': 3, 'rc': cmdRC})
-
-    if rh.results['overallRC'] == 0:
-        rh.printLn("N", rh.userid + ": " + out)
+    rh.updateResults(results)
 
     rh.printSysLog("Exit powerVM.getStatus, rc: " +
         str(rh.results['overallRC']))
