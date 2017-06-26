@@ -78,3 +78,6 @@ class NetworkOPS(object):
     def update_nic_definition(self, user_id, nic_vdev, mac, switch_name):
         self.zvmclient.update_nic_definition(user_id, nic_vdev, mac,
                                              switch_name)
+
+    def set_vswitch(self, vswitch_name, **kwargs):
+        self.zvmclient.set_vswitch(vswitch_name, **kwargs)
