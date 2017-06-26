@@ -456,6 +456,48 @@ class SDKAPI(object):
             userid_list = [userid_list]
         return self._monitor.inspect_mem(userid_list)
 
+    def guest_inspect_vnics(self, userid_list):
+        """Get the vnics statistics of the guest virtual machines
+
+        :param userid_list: a single userid string or a list of guest userids
+        :returns: dictionary describing the vnics statistics of the vm
+                  in the form
+                  {'UID1':
+                  [{
+                  'vswitch_name': xx,
+                  'nic_vdev': xx,
+                  'nic_fr_rx': xx,
+                  'nic_fr_tx': xx,
+                  'nic_fr_rx_dsc': xx,
+                  'nic_fr_tx_dsc': xx,
+                  'nic_fr_rx_err': xx,
+                  'nic_fr_tx_err': xx,
+                  'nic_rx': xx,
+                  'nic_tx': xx
+                  },
+                  ],
+                  'UID2':
+                  [{
+                  'vswitch_name': xx,
+                  'nic_vdev': xx,
+                  'nic_fr_rx': xx,
+                  'nic_fr_tx': xx,
+                  'nic_fr_rx_dsc': xx,
+                  'nic_fr_tx_dsc': xx,
+                  'nic_fr_rx_err': xx,
+                  'nic_fr_tx_err': xx,
+                  'nic_rx': xx,
+                  'nic_tx': xx
+                  },
+                  ]
+                  }
+                  for the guests that are shutdown or not exist, no data
+                  returned in the dictionary
+        """
+        if not isinstance(userid_list, list):
+            userid_list = [userid_list]
+        return self._monitor.inspect_vnics(userid_list)
+
     def vswitch_grant_user(self, vswitch_name, userid):
         """Set vswitch to grant user
 
