@@ -977,7 +977,7 @@ syncfileutil.o : $(SRC_DIR)syncfileutil.c
 	gcc -c $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)syncfileutil.c
 
 smcli :smcli.o $(SMCLI_OBJECTS) $(UTILS_OBJECTS) $(ZTHINLIB)
-	gcc -o smcli  -L./ -lzhcp  $(UTILS_OBJECTS) $(SMCLI_OBJECTS)
+	gcc -o smcli  -L./ -lzthin  $(UTILS_OBJECTS) $(SMCLI_OBJECTS)
 
 #-----------------------------------------------------------------------
 # Install
