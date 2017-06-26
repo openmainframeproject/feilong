@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "51b8e8e2_b10373b6",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-26T20:36:57Z",
+      "side": 1,
+      "message": "I suggest you do this as....\nrh.updateResults({\u0027overallRC\u0027: 4, \u0027rc\u0027: 4, \u0027rs\u0027: 11\u0027})\n\nupdateResults will loop thru all of the values in the dictionary that you pass.  Thus you only need one call.",
+      "range": {
+        "startLine": 372,
+        "startChar": 8,
+        "endLine": 372,
+        "endChar": 42
+      },
+      "revId": "18906b709f8d6217edb4e650c5d17a44cd6a366e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
