@@ -15,9 +15,7 @@
 #    under the License.
 
 import generalUtils
-import subprocess
-from subprocess import CalledProcessError
-from vmUtils import invokeSMCLI
+from vmUtils import invokeSMCLI, isLoggedOn
 
 version = "1.0.0"
 
@@ -74,27 +72,18 @@ def deleteMachine(rh):
 
     rh.printSysLog("Enter deleteVM.deleteMachine")
 
-    results = {'overallRC': 0}
+    results = {'overallRC': 0, 'rc': 0, 'rs': 0}
 
     # Is image logged on
-    state = 'off'
-    cmd = ("/sbin/vmcp q user " + rh.userid + " 2>/dev/null | " +
-              "sed 's/HCP\w\w\w045E.*/off/' | sed 's/HCP\w\w\w361E.*/off/' " +
-              "| sed 's/" + rh.userid + ".*/on/'")
-    try:
-        state = subprocess.check_output(
-                cmd,
-                stderr=subprocess.STDOUT,
-                close_fds=True,
-                shell=True)
-
-    except CalledProcessError as e:
-        # The last SED would have to fail for the exception to be thrown.
-        out = e.output
-        cmdRC = e.returncode
-        rh.printLn("ES", "Command failed: '" + cmd + "', rc: " +
-            str(cmdRC) + " out: " + out)
-        state = 'off'       # Treat state as off for this weird case
+    results = isLoggedOn(rh, rh.userid)
+    state = 'off'       # Assume 'off' unless definitely 'on'
+    if (results['overallRC'] == 0 and results['rs'] == 0):
+        state = 'on'
+    else:
+        # Reset values for rest of subfunction
+        results['overallRC'] = 0
+        results['rc'] = 0
+        results['rs'] = 0
 
     if state == 'on':
         cmd = ["smcli",
