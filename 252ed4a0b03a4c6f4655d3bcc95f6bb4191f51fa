@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "199f7fc0_9edfa2a5",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-26T19:17:33Z",
+      "side": 1,
+      "message": "Shouldn\u0027t this blank line be above the comment ?",
+      "revId": "252ed4a0b03a4c6f4655d3bcc95f6bb4191f51fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2278f49c_a8013abb",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-26T19:17:33Z",
+      "side": 1,
+      "message": "Do you need to update the results so an overall RC is returned to the invoker ?",
+      "revId": "252ed4a0b03a4c6f4655d3bcc95f6bb4191f51fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
