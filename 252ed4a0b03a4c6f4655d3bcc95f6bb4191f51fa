@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "148a6e42_2cc9d530",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-06-26T20:29:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "199f7fc0_9edfa2a5",
+      "revId": "252ed4a0b03a4c6f4655d3bcc95f6bb4191f51fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2278f49c_a8013abb",
         "filename": "smutLayer/changeVM.py",
         "patchSetId": 8
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "86e5b32c_fa967e71",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-06-26T20:29:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2278f49c_a8013abb",
+      "revId": "252ed4a0b03a4c6f4655d3bcc95f6bb4191f51fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0b9b8066_85576b02",
         "filename": "smutLayer/smutTest.py",
         "patchSetId": 8
@@ -47,6 +83,24 @@
       "writtenOn": "2017-06-26T19:21:14Z",
       "side": 1,
       "message": "I would throw in at least one fail test possibly two.  This will allow you to verify that you are returning the failing result to the user.  You can do one of them by messing up the name of the aeScript so that it won\u0027t find it.  Another one would be to send it to a userid that does not exist.",
+      "revId": "252ed4a0b03a4c6f4655d3bcc95f6bb4191f51fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4c5effdd_bac7d70f",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-06-26T20:29:10Z",
+      "side": 1,
+      "message": "Added in two new tests, one of them will fail for now, until the punchfile function is actually available.",
+      "parentUuid": "0b9b8066_85576b02",
       "revId": "252ed4a0b03a4c6f4655d3bcc95f6bb4191f51fa",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
