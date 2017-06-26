@@ -15,7 +15,8 @@
 #    under the License.
 
 import generalUtils
-from vmUtils import invokeSMCLI
+from vmUtils import disableEnableDisk, execCmdThruIUCV, installFS,
+from vmUtils import invokeSMCLI, isLoggedOn
 version = "1.0.0"
 
 """
@@ -33,6 +34,7 @@ subfuncHandler = {
     'HELP': ['help', lambda rh: help(rh)],
     'PUNCHFILE': ['punchFile', lambda rh: punchFile(rh)],
     'PURGERDR': ['purgeRDR', lambda rh: purgeRDR(rh)],
+    'REMOVEDISK': ['removeDisk', lambda rh: removeDisk(rh)],
     'VERSION': ['getVersion', lambda rh: getVersion(rh)],
 }
 
@@ -60,8 +62,10 @@ posOpsList = {
     'IPL': [
         ['Virtual Address or NSS name', 'addrOrNSS', True, 2]],
     'PUNCHFILE': [
-        ['File to punch', 'file', True, 2]]
- }
+        ['File to punch', 'file', True, 2]],
+    'REMOVEDISK': [
+        ['Virtual address', 'vaddr', True, 2]],
+    }
 
 """
 List of additional operands/options supported by the various subfunctions.
@@ -89,6 +93,7 @@ keyOpsList = {
     'AEMOD': {
         '--invparms': ['invParms', 1, 2],
         '--showparms': ['showParms', 0, 0]},
+    'HELP': {},
     'IPL': {
         '--loadparms': ['loadParms', 1, 2],
         '--parms': ['parms', 1, 2],
@@ -99,11 +104,11 @@ keyOpsList = {
         '--scphexdata': ['scpDataHex', 1, 2],
         '--showparms': ['showParms', 0, 0],
         '--wwpn': ['wwpn', 1, 2]},
-    'HELP': {},
     'PUNCHFILE': {
         '--class': ['class', 1, 2],
         '--showparms': ['showParms', 0, 0], },
     'PURGERDR': {'--showparms': ['showParms', 0, 0]},
+    'REMOVEDISK': {'--showparms': ['showParms', 0, 0]},
     'VERSION': {},
   }
 
@@ -132,11 +137,6 @@ def add3390(rh):
     """
 
     rh.printSysLog("Enter changeVM.add3390")
-
-    rh.printLn("N", "This subfunction is partially implemented.")
-
-    rh.printLn("N", "China team: Do we need to support" +
-                      "'autog' as the virtual address?")
 
     results, cyl = generalUtils.cvtToCyl(rh, rh.parms['diskSize'])
     if results['overallRC'] != 0:
@@ -175,7 +175,33 @@ def add3390(rh):
                 "', rc: " + str(results['overallRC']))
             rh.updateResults(results)
 
-    rh.printLn("N", "Setting up the file system is not supported yet!")
+    if (results['overallRC'] == 0 and 'filesystem' in rh.parms):
+        results = installFS(
+            rh,
+            rh.parms['vaddr'],
+            rh.parms['mode'],
+            rh.parms['fileSystem'])
+
+    if results['overallRC'] == 0:
+        results = isLoggedOn(rh, rh.userid)
+        if (results['overallRC'] == 0 and results['rs'] == 0):
+            # Add the disk to the active configuration.
+            cmd = ["smcli",
+                "Image_Disk_Create",
+                "-T", rh.userid,
+                "-v", rh.parms['vaddr'],
+                "-m", rh.parms['mode']]
+
+            results = invokeSMCLI(rh, cmd)
+            if results['overallRC'] == 0:
+                rh.printLn("N", "Added dasd " + rh.parms['vaddr'] +
+                    " to the active configuration.")
+            else:
+                strCmd = ' '.join(cmd)
+                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
+                    results['response'] + "', rc: " +
+                    str(results['overallRC']))
+                rh.updateResults(results)
 
     rh.printSysLog("Exit changeVM.add3390, rc: " +
         str(results['overallRC']))
@@ -208,10 +234,7 @@ def add9336(rh):
 
     rh.printSysLog("Enter changeVM.add9336")
 
-    rh.printLn("N", "This subfunction is partially implemented.")
-
-    results, blocks = generalUtils.cvtToBlocks(rh,
-        rh.parms['diskSize'])
+    results, blocks = generalUtils.cvtToBlocks(rh, rh.parms['diskSize'])
     if results['overallRC'] != 0:
         # message already sent.  Only need to update the final results.
         rh.updateResults(results)
@@ -248,7 +271,34 @@ def add9336(rh):
                 "', rc: " + str(results['overallRC']))
             rh.updateResults(results)
 
-    rh.printLn("N", "Setting up the file system is not supported yet")
+    if (results['overallRC'] == 0 and 'filesystem' in rh.parms):
+        # Install the file system
+        results = installFS(
+            rh,
+            rh.parms['vaddr'],
+            rh.parms['mode'],
+            rh.parms['fileSystem'])
+
+    if results['overallRC'] == 0:
+        results = isLoggedOn(rh, rh.userid)
+        if (results['overallRC'] == 0 and results['rs'] == 0):
+            # Add the disk to the active configuration.
+            cmd = ["smcli",
+                "Image_Disk_Create",
+                "-T", rh.userid,
+                "-v", rh.parms['vaddr'],
+                "-m", rh.parms['mode']]
+
+            results = invokeSMCLI(rh, cmd)
+            if results['overallRC'] == 0:
+                rh.printLn("N", "Added dasd " + rh.parms['vaddr'] +
+                    " to the active configuration.")
+            else:
+                strCmd = ' '.join(cmd)
+                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
+                    results['response'] + "', rc: " +
+                    str(results['overallRC']))
+                rh.updateResults(results)
 
     rh.printSysLog("Exit changeVM.add9336, rc: " +
         str(results['overallRC']))
@@ -417,16 +467,16 @@ def parseCmdline(rh):
        Return code - 0: ok, non-zero: error
     """
 
-    rc = 0
     rh.printSysLog("Enter changeVM.parseCmdline")
 
     if rh.totalParms >= 2:
         rh.userid = rh.request[1].upper()
     else:
         rh.printLn("ES", "Userid is missing")
-        rh.updateResults({'overallRC': 1})
-        rh.printSysLog("Exit changeVM.parseCmdLine, rc: " + rc)
-        return 1
+        rh.updateResults({'overallRC': 4})
+        rh.printSysLog("Exit changeVM.parseCmdLine, rc: " +
+            str(rh.results['overallRC']))
+        return rh.results['overallRC']
 
     if rh.totalParms == 2:
         rh.subfunction = rh.userid
@@ -439,17 +489,26 @@ def parseCmdline(rh):
     if rh.subfunction not in subfuncHandler:
         list = ', '.join(sorted(subfuncHandler.keys()))
         rh.printLn("ES", "Subfunction is missing.  " +
-                "It should be one of the following: " + list + ".")
+            "It should be one of the following: " + list + ".")
         rh.updateResults({'overallRC': 4})
-        rc = 4
 
     # Parse the rest of the command line.
-    if rc == 0:
+    if rh.results['overallRC'] == 0:
         rh.argPos = 3               # Begin Parsing at 4th operand
-        rc = generalUtils.parseCmdline(rh, posOpsList, keyOpsList)
+        generalUtils.parseCmdline(rh, posOpsList, keyOpsList)
 
-    rh.printSysLog("Exit changeVM.parseCmdLine, rc: " + str(rc))
-    return rc
+    if rh.results['overallRC'] == 0:
+        if rh.subfunction in ['ADD3390', 'ADD9336']:
+            if ('fileSystem' in rh.parms and rh.parms['fileSystem'] not in
+                ['ext2', 'ext3', 'ext4', 'xfs', 'swap']):
+                rh.printLn("ES", "The file system was not 'ext2', " +
+                    "'ext3', 'ext4', 'xfs' or 'swap': " +
+                    rh.parms['fileSystem'] + ".")
+                rh.updateResults({'overallRC': 4})
+
+    rh.printSysLog("Exit changeVM.parseCmdLine, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def punchFile(rh):
@@ -500,6 +559,78 @@ def purgeRDR(rh):
     return 0
 
 
+def removeDisk(rh):
+    """
+    Remove a disk from a virtual machine.
+
+    Input:
+       Request Handle with the following properties:
+          function         - 'CHANGEVM'
+          subfunction      - 'REMOVEDISK'
+          userid           - userid of the virtual machine
+          parms['vaddr']   - Virtual address
+
+    Output:
+       Request Handle updated with the results.
+       Return code - 0: ok, non-zero: error
+    """
+    rc = 0
+    rh.printSysLog("Enter changeVM.removeDisk")
+
+    results = {'overallRC': 0, 'rc': 0, 'rs': 0}
+
+    # Is image logged on
+    loggedOn = False
+    results = isLoggedOn(rh, rh.userid)
+    if results['overallRC'] == 0:
+        if results['rs'] == 0:
+            loggedOn = True
+
+            results = disableEnableDisk(
+                rh,
+                rh.userid,
+                rh.parms['vaddr'],
+                '-d')
+            if results['overallRC'] != 0:
+                # Error message already produced
+                pass
+            else:
+                # Pass along the failure information.
+                rh.updateResults(results)
+
+    if results['overallRC'] == 0 and loggedOn:
+        strCmd = ["/sbin/vmcp detach " + rh.parms['vaddr']]
+        results = execCmdThruIUCV(rh, rh.userid, strCmd)
+        if results['overallRC'] != 0:
+            rh.updateResults(results)
+
+    if results['overallRC'] == 0:
+        # Remove the disk from the user entry.
+        cmd = ["smcli",
+            "Image_Disk_Delete_DM",
+            "-T", rh.userid,
+            "-v", rh.parms['vaddr'],
+            "-e", "0"]
+
+        results = invokeSMCLI(rh, cmd)
+        if results['overallRC'] == 0:
+            rh.printLn("N", "Removed dasd " + rh.parms['vaddr'] +
+                " from the user directory.")
+        else:
+            strCmd = ' '.join(cmd)
+            rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
+                results['response'] + "', rc: " +
+                str(results['overallRC']))
+            rh.updateResults(results)
+
+    else:
+        # Unexpected error.  Message already sent.
+        rh.updateResults(results)
+
+    rh.printSysLog("Exit changeVM.removeDisk, rc: " + str(rc))
+    return 0
+
+
 def showInvLines(rh):
     """
     Produce help output related to command synopsis
@@ -535,6 +666,8 @@ def showInvLines(rh):
         " ChangeVM <userid> punchFile <file> class <class>")
     rh.printLn("N", "  python " + rh.cmdName +
         " ChangeVM <userid> purgeRDR")
+    rh.printLn("N", "  python " + rh.cmdName +
+        " ChangeVM <userid> removedisk <vAddr>")
     rh.printLn("N", "  python " + rh.cmdName + " ChangeVM help")
     rh.printLn("N", "  python " + rh.cmdName +
         " ChangeVM version")
@@ -575,6 +708,8 @@ def showOperandLines(rh):
     rh.printLn("N", "                      virtual machine.")
     rh.printLn("N", "      purgerdr      - Purges the reader " +
         "belonging to the virtual machine.")
+    rh.printLn("N", "      removedisk    - " +
+        "Remove an mdisk from a virtual machine.")
     rh.printLn("N", "      version       - " +
         "show the version of the power function")
     if rh.subfunction != '':
