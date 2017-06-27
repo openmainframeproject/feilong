@@ -14,7 +14,6 @@
 
 
 import mock
-import os
 
 # from zvmsdk.config import CONF
 from zvmsdk import client as zvmclient
@@ -49,44 +48,6 @@ class SDKImageOpsTestCase(base.SDKTestCase):
         ret = self._image_ops.image_get_root_disk_size(fake_name)
         self.assertEqual(ret, '3338')
 
-    @mock.patch.object(os.path, 'exists')
-    @mock.patch.object(zvmclient.XCATClient, 'image_import')
-    @mock.patch.object(zvmclient.XCATClient, 'check_space_imgimport_xcat')
-    @mock.patch.object(zvmclient.XCATClient, 'generate_image_bundle')
-    @mock.patch.object(zvmclient.XCATClient, 'generate_manifest_file')
-    def test_image_import(self, generate_manifest_file,
-                                generate_bundle_file,
-                                check_space,
-                                import_image,
-                                file_exists):
-        generate_manifest_file.return_value = './tmp_date_dir/manifest.xml'
-        generate_bundle_file.return_value =\
-                                './tmp_date_dir/tmp_date_dir_test.tar'
-        check_space.return_value = None
-        file_exists.return_value = True
-        import_image.return_value = {'data': [['1.output line one'],
-                                             ['2.output line2'],
-                                             ['3.output line 3'],
-                                             ['4.output line 3'],
-                                             ['5.output line 5']]}
-        image_file_path = './test/image-uuid'
-        time_stamp_dir = self._pathutil.make_time_stamp()
-        bundle_file_path = self._pathutil.get_bundle_tmp_path(time_stamp_dir)
-        os_version = '7.2'
-        image_meta = {
-                u'id': 'image-uuid',
-                u'properties': {u'image_type_xcat': u'linux',
-                               u'os_version': os_version,
-                               u'os_name': u'Linux',
-                               u'architecture': u's390x',
-                               u'provision_method': u'netboot'}
-                }
-        self._image_ops.image_import(image_file_path, os_version)
-        generate_manifest_file.assert_called_with(image_meta,
-                                                  '0100.img',
-                                                  '0100.img',
-                                                  bundle_file_path)
-
     @mock.patch.object(zvmclient.XCATClient, 'image_query')
     def test_image_query(self, image_query):
         imagekeyword = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'
@@ -98,3 +59,15 @@ class SDKImageOpsTestCase(base.SDKTestCase):
         image_name = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'
         self._image_ops.image_delete(image_name)
         image_delete.assert_called_once_with(image_name)
+
+    @mock.patch.object(zvmclient.XCATClient, 'image_import')
+    def test_image_import_xcat(self, image_import):
+        url = 'file:///path/to/image/file'
+        image_meta = {'os_version': 'rhel7.2',
+                      'md5sum': 'e34166f61130fc9221415d76298d7987'}
+        remote_host = 'image@192.168.99.1'
+        self._image_ops.image_import(url, image_meta=image_meta,
+                                     remote_host=remote_host)
+        image_import.assert_called_once_with('/path/to/image/file',
+                                             'rhel7.2',
+                                             remote_host=remote_host)

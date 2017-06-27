@@ -616,19 +616,50 @@ class XCATClient(ZVMClient):
     def export_image(self, image_file_path):
         pass
 
-    def image_import(self, image_bundle_package, image_profile):
-        """
-        Import the image bundle from computenode to xCAT's image repository.
-        :param image_bundle_package: image bundle file path
-                eg,'/root/images/xxxx.img.tar'
-        :param image_profile: mostly use image_uuid
-                eg,'9c95464_2a53_11e7_87fd_020000012'
-        """
-        remote_host_info = zvmutils.get_host()
+    def image_import(self, image_file_path, os_version, remote_host=None):
+        """import a spawn image to XCAT"""
+        LOG.debug("Getting a spawn image...")
+        image_uuid = image_file_path.split('/')[-1]
+        disk_file_name = CONF.zvm.user_root_vdev + '.img'
+        spawn_path = self._pathutils.get_spawn_folder()
+
+        time_stamp_dir = self._pathutils.make_time_stamp()
+        bundle_file_path = self._pathutils.get_bundle_tmp_path(time_stamp_dir)
+
+        image_meta = {
+                u'id': image_uuid,
+                u'properties': {u'image_type_xcat': u'linux',
+                               u'os_version': os_version,
+                               u'os_name': u'Linux',
+                               u'architecture': u's390x',
+                               u'provision_method': u'netboot'}
+                }
+
+        # Generate manifest.xml
+        LOG.debug("Generating the manifest.xml as a part of bundle file for "
+                    "image %s", image_meta['id'])
+        self.generate_manifest_file(image_meta, disk_file_name,
+                                    bundle_file_path)
+        # Generate the image bundle
+        LOG.debug("Generating bundle file for image %s", image_meta['id'])
+        image_bundle_package = self.generate_image_bundle(
+                                    spawn_path, time_stamp_dir,
+                                    disk_file_name, image_file_path)
+
+        # Import image bundle to xCAT MN's image repository
+        LOG.debug("Importing the image %s to xCAT", image_meta['id'])
+        profile_str = image_uuid.replace('-', '_')
+        image_profile = profile_str
+        self.check_space_imgimport_xcat(image_bundle_package,
+                        CONF.xcat.free_space_threshold,
+                        CONF.xcat.master_node)
+
+        # Begin to import
         body = ['osimage=%s' % image_bundle_package,
                 'profile=%s' % image_profile,
-                'remotehost=%s' % remote_host_info,
                 'nozip']
+        if remote_host:
+            body.append('remotehost=%s' % remote_host)
         url = self._xcat_url.imgimport()
 
         try:
@@ -1207,7 +1238,7 @@ class XCATClient(ZVMClient):
         f.write(lines)
         f.close()
 
-    def generate_manifest_file(self, image_meta, image_name, disk_file_name,
+    def generate_manifest_file(self, image_meta, disk_file_name,
                                manifest_path):
         """
         Generate the manifest.xml file from glance's image metadata
@@ -1289,18 +1320,18 @@ class XCATClient(ZVMClient):
         return manifest_path + '/manifest.xml'
 
     def generate_image_bundle(self, spawn_path, time_stamp_dir,
-                              image_name, image_file_path):
+                              disk_file_name, image_file_path):
         """
         Generate the image bundle which is used to import to xCAT MN's
         image repository.
         """
-        image_bundle_name = image_name + '.tar'
+        image_bundle_name = disk_file_name + '.tar'
         tar_file = spawn_path + '/' + time_stamp_dir + '_' + image_bundle_name
         LOG.debug("The generate the image bundle file is %s", tar_file)
 
         # copy tmp image file to bundle path
         bundle_file_path = self._pathutils.get_bundle_tmp_path(time_stamp_dir)
-        image_file_copy = os.path.join(bundle_file_path, image_name)
+        image_file_copy = os.path.join(bundle_file_path, disk_file_name)
         shutil.copyfile(image_file_path, image_file_copy)
 
         os.chdir(spawn_path)

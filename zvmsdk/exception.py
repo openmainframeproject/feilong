@@ -148,3 +148,11 @@ class ValidationError(SDKBaseException):
 
 class zVMConfigException(SDKBaseException):
     msg_fmt = 'zVMConfig Error: %(msg)s'
+
+
+class SDKUnsupportedImageBackend(SDKBaseException):
+    msg_fmt = 'Unsupported SDK image backend %(msg)s'
+
+
+class SDKImageImportException(SDKBaseException):
+    msg_fmt = 'Error detected during image import: %s(msg)s'

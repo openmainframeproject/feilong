@@ -35,17 +35,18 @@ class SDKZVMClientTestCase(base.SDKTestCase):
         super(SDKZVMClientTestCase, self).setUp()
         self._zvmclient = zvmclient.get_zvmclient()
         self._xcat_url = zvmutils.get_xcat_url()
+        self._pathutils = zvmutils.PathUtils()
 
     def test_get_zvmclient(self):
         if CONF.zvm.client_type == 'xcat':
             self.assertTrue(isinstance(self._zvmclient, zvmclient.XCATClient))
 
 
-class SDKXCATCientTestCases(SDKZVMClientTestCase):
+class SDKXCATClientTestCases(SDKZVMClientTestCase):
     """Test cases for xcat zvm client."""
 
     def setUp(self):
-        super(SDKXCATCientTestCases, self).setUp()
+        super(SDKXCATClientTestCases, self).setUp()
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_power_state(self, xrequest):
@@ -709,24 +710,6 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
     def test_export_image(self):
         pass
-
-    @mock.patch.object(zvmutils, 'xcat_request')
-    @mock.patch.object(zvmutils, 'get_host')
-    @mock.patch.object(os, 'remove')
-    def test_image_import(self, remove_file, get_host, xrequest):
-        image_bundle_package = 'asdfe'
-        image_profile = 'imagep_prooooffffille'
-        remote_host_info = {}
-        get_host.return_value = remote_host_info
-        fake_url = self._xcat_url.imgimport()
-        fake_body = ['osimage=%s' % image_bundle_package,
-                     'profile=%s' % image_profile,
-                     'remotehost=%s' % remote_host_info,
-                     'nozip']
-        remove_file.return_value = None
-
-        self._zvmclient.image_import(image_bundle_package, image_profile)
-        xrequest.assert_called_once_with('POST', fake_url, fake_body)
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_get_vm_nic_switch_info(self, xrequest):
@@ -1414,3 +1397,50 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
         self.assertRaises(exception.ZVMException,
                           self._zvmclient.set_vswitch,
                           "vswitch_name", grant_userid='fake_id')
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    @mock.patch.object(os, 'remove')
+    @mock.patch.object(os.path, 'exists')
+    @mock.patch.object(zvmclient.XCATClient, 'check_space_imgimport_xcat')
+    @mock.patch.object(zvmclient.XCATClient, 'generate_image_bundle')
+    @mock.patch.object(zvmclient.XCATClient, 'generate_manifest_file')
+    def test_image_import(self, generate_manifest_file,
+                                generate_image_bundle,
+                                check_space,
+                                file_exists,
+                                remove_file,
+                                xrequest):
+
+        image_file_path = '/test/62599661-3D7A-40C1-8210-B6A4BC66DDB7'
+        time_stamp_dir = self._pathutils.make_time_stamp()
+        bundle_file_path = self._pathutils.get_bundle_tmp_path(time_stamp_dir)
+        os_version = 'rhel7.2'
+        remote_host_info = 'nova@9.60.18.20'
+        image_profile = '62599661_3D7A_40C1_8210_B6A4BC66DDB7'
+        image_meta = {
+                u'id': '62599661-3D7A-40C1-8210-B6A4BC66DDB7',
+                u'properties': {u'image_type_xcat': u'linux',
+                               u'os_version': os_version,
+                               u'os_name': u'Linux',
+                               u'architecture': u's390x',
+                               u'provision_method': u'netboot'}
+                }
+        generate_manifest_file.return_value = \
+        '/tmp/image/spawn_tmp/201706231109/manifest.xml'
+        generate_image_bundle.return_value =\
+                                '/tmp/image/spawn_tmp/201706231109.tar'
+        check_space.return_value = None
+        file_exists.return_value = True
+        fake_url = self._xcat_url.imgimport()
+        fake_body = ['osimage=/tmp/image/spawn_tmp/201706231109.tar',
+                     'profile=%s' % image_profile,
+                     'nozip',
+                     'remotehost=%s' % remote_host_info]
+
+        remove_file.return_value = None
+        self._zvmclient.image_import(image_file_path, os_version,
+                          remote_host=remote_host_info)
+        generate_manifest_file.assert_called_with(image_meta,
+            '0100.img', bundle_file_path)
+
+        xrequest.assert_called_once_with('POST', fake_url, fake_body)
