@@ -651,6 +651,42 @@ vmModifyTests = [
         'out': "",
         'overallRC': [0],
     },
+    {
+        'description': "Add/change an IPL statement",
+        'request': "changevm <<<unsafeID1>>> ipl 100",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add/change an IPL statement with loadparms",
+        'request': "changevm <<<unsafeID1>>> ipl 100 --loadparms cl",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add/change an IPL statement with loadparms",
+        'request': "changevm <<<unsafeID1>>> ipl 100 --loadparms lots",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add/change an IPL statement with parms",
+        'request': "changevm <<<unsafeID1>>> ipl cms --parms autocr",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Verify IPL statement exists.",
+        'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
+        'out': "\'IPL CMS PARM AUTOCR\'",
+        'overallRC': [0],
+    },
+    {
+        'description': "Remove an IPL statement",
+        'request': "changevm <<<unsafeID1>>> removeipl",
+        'out': "",
+        'overallRC': [0],
+    },
     # >>>>>>>>> Clean up by destroying the system.
     {
         'description': "Delete the system.",

@@ -39,6 +39,7 @@ subfuncHandler = {
     'PUNCHFILE': ['punchFile', lambda rh: punchFile(rh)],
     'PURGERDR': ['purgeRDR', lambda rh: purgeRDR(rh)],
     'REMOVEDISK': ['removeDisk', lambda rh: removeDisk(rh)],
+    'REMOVEIPL': ['removeIPL', lambda rh: removeIPL(rh)],
     'VERSION': ['getVersion', lambda rh: getVersion(rh)],
 }
 
@@ -69,6 +70,7 @@ posOpsList = {
         ['File to punch', 'file', True, 2]],
     'REMOVEDISK': [
         ['Virtual address', 'vaddr', True, 2]],
+    'REMOVEIPL': [],
     }
 
 """
@@ -113,6 +115,7 @@ keyOpsList = {
         '--showparms': ['showParms', 0, 0], },
     'PURGERDR': {'--showparms': ['showParms', 0, 0]},
     'REMOVEDISK': {'--showparms': ['showParms', 0, 0]},
+    'REMOVEIPL': {'--showparms': ['showParms', 0, 0]},
     'VERSION': {},
 }
 
@@ -396,10 +399,32 @@ def addIPL(rh):
     rc = 0
     rh.printSysLog("Enter changeVM.addIPL")
 
-    rh.printLn("N", "This subfunction is not implemented yet.")
+    cmd = ["smcli",
+           "Image_IPL_Set_DM",
+            "-T", rh.userid,
+            "-s", rh.parms['addrOrNSS']]
+
+    if 'loadparms' in rh.parms:
+        cmd.extend(["-l", rh.parms['loadparms']])
+    if 'parms' in rh.parms:
+        cmd.extend(["-p", rh.parms['parms']])
+
+    results = invokeSMCLI(rh, cmd)
+
+    if results['overallRC'] == 0:
+        rh.printLn("N", "Added IPL statement for " +
+                   rh.parms['addrOrNSS'] +
+                    " to the directory for guest " +
+                    rh.userid)
+    else:
+        strCmd = ' '.join(cmd)
+        rh.printLn("ES", "Command failed: '" + strCmd +
+            "', out: '" + results['response'] +
+            "', rc: " + str(results['overallRC']))
+        rh.updateResults(results)
 
     rh.printSysLog("Exit changeVM.addIPL, rc: " + str(rc))
-    return 0
+    return rc
 
 
 def addLOADDEV(rh):
@@ -677,6 +702,43 @@ def removeDisk(rh):
     return 0
 
 
+def removeIPL(rh):
+    """
+    Sets the IPL statement in the virtual machine's directory entry.
+
+    Input:
+       Request Handle with the following properties:
+          function    - 'CHANGEVM'
+          subfunction - 'REMOVEIPL'
+          userid      - userid of the virtual machine
+
+    Output:
+       Request Handle updated with the results.
+       Return code - 0: ok, non-zero: error
+    """
+    rc = 0
+    rh.printSysLog("Enter changeVM.removeIPL")
+
+    cmd = ["smcli",
+           "Image_IPL_Delete_DM",
+            "-T", rh.userid]
+
+    results = invokeSMCLI(rh, cmd)
+
+    if results['overallRC'] == 0:
+        rh.printLn("N", "Removed IPL statement from the "
+                   "directory for guest " + rh.userid)
+    else:
+        strCmd = ' '.join(cmd)
+        rh.printLn("ES", "Command failed: '" + strCmd +
+            "', out: '" + results['response'] +
+            "', rc: " + str(results['overallRC']))
+        rh.updateResults(results)
+
+    rh.printSysLog("Exit changeVM.removeIPL, rc: " + str(rc))
+    return rc
+
+
 def showInvLines(rh):
     """
     Produce help output related to command synopsis
@@ -714,6 +776,8 @@ def showInvLines(rh):
         " ChangeVM <userid> purgeRDR")
     rh.printLn("N", "  python " + rh.cmdName +
         " ChangeVM <userid> removedisk <vAddr>")
+    rh.printLn("N", "  python " + rh.cmdName +
+        " ChangeVM <userid> removeIPL <vAddr>")
     rh.printLn("N", "  python " + rh.cmdName + " ChangeVM help")
     rh.printLn("N", "  python " + rh.cmdName +
                " ChangeVM version")
@@ -756,6 +820,8 @@ def showOperandLines(rh):
         "belonging to the virtual machine.")
     rh.printLn("N", "      removedisk    - " +
         "Remove an mdisk from a virtual machine.")
+    rh.printLn("N", "      removeIPL    - " +
+        "Remove an IPL from a virtual machine's directory entry.")
     rh.printLn("N", "      version       - " +
                "show the version of the power function")
     if rh.subfunction != '':
