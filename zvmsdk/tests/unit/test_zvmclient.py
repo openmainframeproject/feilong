@@ -484,7 +484,7 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
                     'zhcp11: vlan count: 0',
                      None]
         xdsh.return_value = {'data': [vsw_data]}
-        vsw_dict = self._zvmclient.virutal_network_vswitch_query_iuo_stats()
+        vsw_dict = self._zvmclient.virtual_network_vswitch_query_iuo_stats()
         self.assertEqual(2, len(vsw_dict['vswitches']))
         self.assertEqual(2, len(vsw_dict['vswitches'][1]['nics']))
         self.assertEqual('INST1',
@@ -494,14 +494,14 @@ class SDKXCATCientTestCases(SDKZVMClientTestCase):
 
     @mock.patch('zvmsdk.client.XCATClient._get_hcp_info')
     @mock.patch.object(zvmutils, 'xdsh')
-    def test_virutal_network_vswitch_query_iuo_stats_invalid_data(self, xdsh,
+    def test_virtual_network_vswitch_query_iuo_stats_invalid_data(self, xdsh,
                                                                 get_hcp_info):
         get_hcp_info.return_value = {'hostname': 'fakehcp.ibm.com',
                                      'nodename': 'fakehcp',
                                      'userid': 'FAKEHCP'}
         xdsh.return_value = ['invalid', 'data']
         self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
-                    self._zvmclient.virutal_network_vswitch_query_iuo_stats)
+                    self._zvmclient.virtual_network_vswitch_query_iuo_stats)
 
     @mock.patch.object(zvmclient.XCATClient, '_add_switch_table_record')
     @mock.patch.object(zvmclient.XCATClient, '_add_mac_table_record')

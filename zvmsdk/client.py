@@ -239,7 +239,7 @@ class XCATClient(ZVMClient):
         pi_dict = self.image_performance_query([userid])
         return pi_dict.get(userid.upper(), None)
 
-    def virutal_network_vswitch_query_iuo_stats(self):
+    def virtual_network_vswitch_query_iuo_stats(self):
         hcp_info = self._get_hcp_info()
         zhcp_userid = hcp_info['userid']
         zhcp_node = hcp_info['nodename']

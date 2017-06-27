@@ -475,7 +475,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
         self.assertEqual(rdata['USERID1']['shared_mem_kb'], 5222192)
 
     @mock.patch.object(zvmclient.XCATClient,
-                       'virutal_network_vswitch_query_iuo_stats')
+                       'virtual_network_vswitch_query_iuo_stats')
     @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
     def test_private_update_nic_data(self, cache_enabled, smcli_iuo_query):
         smcli_iuo_query.return_value = SMCLI_VSW_NIC_DATA
@@ -491,7 +491,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
                          INST_NICS_SAMPLE2)
 
     @mock.patch.object(zvmclient.XCATClient,
-                       'virutal_network_vswitch_query_iuo_stats')
+                       'virtual_network_vswitch_query_iuo_stats')
     @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
     def test_private_update_nic_data_cache_disabled(self, cache_enabled,
                                                     smcli_iuo_query):
