@@ -62,6 +62,30 @@
       "revId": "2b16bc4f23c94f753f828fa2ae5ed256dd73cc8b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b28af008_d5eefe4b",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-27T14:39:07Z",
+      "side": 1,
+      "message": "In correct comment.  The routine is in vmUtils and should not update RequestHandle yet.  It will be up to the caller of this routine to update it.  \n\nThe only change that is needed is to remove the \"print(results)\" statement.",
+      "parentUuid": "2299fd8d_7ad261e3",
+      "range": {
+        "startLine": 394,
+        "startChar": 4,
+        "endLine": 394,
+        "endChar": 9
+      },
+      "revId": "2b16bc4f23c94f753f828fa2ae5ed256dd73cc8b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
