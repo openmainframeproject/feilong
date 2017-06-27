@@ -267,6 +267,7 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
        Maximum attempts to wait for desired state before giving up
        Sleep duration between waits
 
+    Output:
        Dictionary containing the following:
           overallRC - overall return code, 0: success, non-zero: failure
           rc        - RC returned from SMCLI if overallRC = 0.
@@ -304,8 +305,7 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
             currState = subprocess.check_output(
                 cmd,
                 stderr=subprocess.STDOUT,
-                close_fds=True,
-                shell=True)
+                close_fds=True)
 
         except CalledProcessError as e:
             # The last SED would have to fail for the exception to be thrown.
@@ -346,12 +346,13 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
 
 def purgeReader(rh, userid):
     """
-    Purge reader of the specified userid.
+    The Reader is to be purged.
 
     Input:
        Request Handle
        userid whose state is to be monitored
 
+    Output:
        Dictionary containing the following:
           overallRC - overall return code, 0: success, non-zero: failure
           rc        - RC returned from SMCLI if overallRC = 0.
@@ -369,7 +370,6 @@ def purgeReader(rh, userid):
         'rc': 0,
         'rs': 0,
         'errno': 0,
-        'response': [],
         'strError': '',
     }
     # vmcp command to purge reader of the specified userid

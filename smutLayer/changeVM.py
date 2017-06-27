@@ -136,7 +136,7 @@ def add3390(rh):
     rh.printLn("N", "This subfunction is partially implemented.")
 
     rh.printLn("N", "China team: Do we need to support" +
-                      "'autog' as the virtual address?")
+              "'autog' as the virtual address?")
 
     results, cyl = generalUtils.cvtToCyl(rh, rh.parms['diskSize'])
     if results['overallRC'] != 0:
@@ -445,7 +445,7 @@ def parseCmdline(rh):
 
     # Parse the rest of the command line.
     if rc == 0:
-        rh.argPos = 3               # Begin Parsing at 4th operand
+        rh.argPos = 3  # Begin Parsing at 4th operand
         rc = generalUtils.parseCmdline(rh, posOpsList, keyOpsList)
 
     rh.printSysLog("Exit changeVM.parseCmdLine, rc: " + str(rc))

@@ -512,6 +512,11 @@ vmLCTests = [
    ]
 
 vmModifyTests = [
+     {
+        'description': "The Reader is to be purged.",
+        'request': "changeVM <<<safeID>>> purgeRDR ",
+        'overallRC': [0],
+    },
                ]
 
 
