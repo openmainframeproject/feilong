@@ -14,14 +14,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 ###############################################################################
-# COMPONENT: zhcpshellutils                                                   #
+# COMPONENT: zthinshellutils                                                   #
 #                                                                             #
 # Sourceable functions for Bash scripts in xCAT.                              #
 ###############################################################################
 # Pick up our configuration settings:
-source /var/opt/zhcp/settings.conf
+source /var/opt/zthin/settings.conf
 
-export PATH=/opt/zhcp/bin:$PATH
+export PATH=/opt/zthin/bin:$PATH
 
 ###############################################################################
 ### CAPTURE COMMAND-LINE ARGUMENTS AS AN ARRAY ################################
@@ -75,9 +75,9 @@ CMDNAME=$(basename $0)
 ###############################################################################
 
 blockSize=512
-diskConnectionLock=/var/run/zhcp_disk_connection_lock
-diskLinkingAliases=/var/run/zhcp_disk_linking_aliases
-currentDiskAliases=/var/run/zhcp_current_disk_aliases
+diskConnectionLock=/var/run/zthin_disk_connection_lock
+diskLinkingAliases=/var/run/zthin_disk_linking_aliases
+currentDiskAliases=/var/run/zthin_current_disk_aliases
 # Avoid warnings when trying to read the alias files if they haven't yet been
 # created (such as when checking for an available alias when none has yet
 # been assigned).
@@ -484,10 +484,10 @@ function connectFcp {
   local lun=$3              # Logical unit number.
   local out
 
-  # Dedicate FCP channel to zHCP
+  # Dedicate FCP channel to zthin
   local rc=0
-  local zhcpUserID=$(vmcp q userid | awk '{printf $1}')
-  out=`/opt/zhcp/bin/smcli Image_Device_Dedicate -T $zhcpUserID -v ${fcpChannel} -r ${fcpChannel} 0 &`
+  local zthinUserID=$(vmcp q userid | awk '{printf $1}')
+  out=`/opt/zthin/bin/smcli Image_Device_Dedicate -T $zthinUserID -v ${fcpChannel} -r ${fcpChannel} 0 &`
   if (( $? )); then
     printError "An error was encountered while connecting to the dedicate device. Response:\n$out"
     exit 3
@@ -500,7 +500,7 @@ function connectFcp {
     rc=4
   fi
 
-  # Attach the disk to the zHCP
+  # Attach the disk to the zthin
   if [[ ! -d /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn} ]]; then
     echo "${wwpn}" > /sys/bus/ccw/devices/0.0.${fcpChannel}/port_add
   fi
@@ -750,9 +750,9 @@ function disconnectFcp {
     fi
   fi
 
-  # Undedicate FCP channel to zHCP
-  local zhcpUserID=$(vmcp q userid | awk '{printf $1}')
-  /opt/zhcp/bin/smcli Image_Device_Undedicate -T $zhcpUserID -v ${fcpChannel} &> /dev/null
+  # Undedicate FCP channel to zthin
+  local zthinUserID=$(vmcp q userid | awk '{printf $1}')
+  /opt/zthin/bin/smcli Image_Device_Undedicate -T $zthinUserID -v ${fcpChannel} &> /dev/null
   if (( $? )); then
     printError "An error was encountered while disconnecting dedicated device."
     rc=2
@@ -842,7 +842,7 @@ function disconnectDisk {
     rm -f /dev/disk/by-path/ccw-0.0.${alias}-part1
   fi
 
-  # If the disk is no longer attached to the zHCP virtual machine then remove it 
+  # If the disk is no longer attached to the zthin virtual machine then remove it
   # from the current disk aliases.
   if [[ $(vmcp 'query virtual dasd' |
           grep -i "^DASD $alias" | wc -l) -eq 0 ]]; then

@@ -85,7 +85,7 @@ int smSystem_SCSI_Disk_Delete(struct _vmApiInternalContext* vmapiContextP, char 
     }
 
     // Trace the important SMAPI parameters for parser detail tracing
-    TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_PARAMETERS);
+    TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_PARAMETERS);
         sprintf(line, "System_SCSI_Disk_Delete SMAPI parms, userid: %s, %s, %ss\n", targetStart[0], targetStart[1], targetStart[2]);
     TRACE_END_DEBUG(vmapiContextP, line);
 

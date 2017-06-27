@@ -53,7 +53,7 @@ int checkAuthentication(int argC, char* argV[], struct _vmApiInternalContext* vm
                     "  Use Check_Authentication to validate a userid/password pair.\n"
                     "  The following options are required:\n"
                     "    -u    User ID to validate. If the UserId is the same as the UserId of the \n"
-                    "          zhcp then the password is ignored\n"
+                    "          zThin then the password is ignored\n"
                     "    -p    Password to validate\n");
                 printRCheaderHelp();
                 return 1;

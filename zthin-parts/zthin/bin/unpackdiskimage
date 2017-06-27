@@ -21,7 +21,7 @@
 # specified z/VM guest system.                                                #
 ###############################################################################
 
-source /opt/zhcp/lib/zhcpshellutils
+source /opt/zthin/lib/zthinshellutils
 
 ###############################################################################
 ### FUNCTIONS #################################################################
@@ -33,7 +33,7 @@ function printCMDDescription {
   # @Description:
   #   Prints a short description of this command.
   # @Overrides:
-  #   printCMDDescription{} in "zhcpshellutils".
+  #   printCMDDescription{} in "zthinshellutils".
   # @Code:
   echo -n "Deploys a disk image to the disk at the specified channel ID on "
   echo    "the specified z/VM guest system."
@@ -89,14 +89,14 @@ function parseArgs {
     exit 1
   fi
 
-  # Remove old traces beyond the number specified in /var/opt/zhcp/settings.conf. If the
+  # Remove old traces beyond the number specified in /var/opt/zthin/settings.conf. If the
   # specified number is 0, less than 0, or not actually a number, then we skip
   # this cleanup.
   if [[ $keepOldTraces -gt 0 ]]; then
-    local removeTraces=$(($(ls -1 /var/log/zhcp/unpackdiskimage_trace_* | wc -l) -
+    local removeTraces=$(($(ls -1 /var/log/zthin/unpackdiskimage_trace_* | wc -l) -
                           ${keepOldTraces}))
     if [[ $removeTraces -gt 0 ]]; then
-      for trace in $(ls -1 /var/log/zhcp/unpackdiskimage_trace_* |
+      for trace in $(ls -1 /var/log/zthin/unpackdiskimage_trace_* |
                      head -${removeTraces}); do
         rm -f $trace
       done
@@ -104,7 +104,7 @@ function parseArgs {
   fi
 
   timestamp=$(date -u --rfc-3339=ns | sed 's/ /-/;s/\.\(...\).*/.\1/')
-  logFile=/var/log/zhcp/unpackdiskimage_trace_${timestamp}.txt
+  logFile=/var/log/zthin/unpackdiskimage_trace_${timestamp}.txt
   if [[ $debug ]]; then
     exec 2> >(tee -a $logFile)
     set -x
@@ -434,9 +434,9 @@ function deployDiskImage {
       fi
       if [[ $diskSize -le $targetDiskSize ]]; then
         # Deploy the image into the target disk
-        errorFile=`mktemp -p /var/log/zhcp -t unpackStderr.XXXXXXXXXX`
+        errorFile=`mktemp -p /var/log/zthin -t unpackStderr.XXXXXXXXXX`
         if (( $? )); then
-          printError "Failed to create a temporary file in the /var/log/zhcp directory"
+          printError "Failed to create a temporary file in the /var/log/zthin directory"
           exit 3
         fi
         if (( gzipCompression == 0 )); then
@@ -501,9 +501,9 @@ function deployDiskImage {
           exit 3
       fi
       if [[ ${diskSize} -le $(vmcp q v $alias | awk '{print $6}') ]]; then
-        errorFile=`mktemp -p /var/log/zhcp -t unpackStderr.XXXXXXXXXX`
+        errorFile=`mktemp -p /var/log/zthin -t unpackStderr.XXXXXXXXXX`
         if (( $? )); then
-          printError "Failed to create a temporary file in the /var/log/zhcp directory"
+          printError "Failed to create a temporary file in the /var/log/zthin directory"
           exit 3
         fi
         if (( gzipCompression == 0 )); then
@@ -703,9 +703,9 @@ function deployDiskImage {
       fi
 
       if [[ ${diskSize} -le ${targetDiskSize} ]]; then
-        errorFile=`mktemp -p /var/log/zhcp -t unpackStderr.XXXXXXXXXX`
+        errorFile=`mktemp -p /var/log/zthin -t unpackStderr.XXXXXXXXXX`
         if (( $? )); then
-          printError "Failed to create a temporary file in the /var/log/zhcp directory"
+          printError "Failed to create a temporary file in the /var/log/zthin directory"
           exit 3
         fi
 
@@ -814,9 +814,9 @@ function deployDiskImage {
       exit 3
     fi
     if [[ $diskSize -le $targetDiskSize ]]; then
-      errorFile=`mktemp -p /var/log/zhcp -t unpackStderr.XXXXXXXXXX`
+      errorFile=`mktemp -p /var/log/zthin -t unpackStderr.XXXXXXXXXX`
       if (( $? )); then
-        printError "Failed to create a temporary file in the /var/log/zhcp directory"
+        printError "Failed to create a temporary file in the /var/log/zthin directory"
         exit 3
       fi
       if (( gzipCompression == 0 )); then

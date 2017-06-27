@@ -22,7 +22,7 @@
 
 // Trace levels are to be powers of 2 to allow combinations of tracing
 #define TRACE_LEVELS_FILE "tracing.conf"
-#define TRACE_LEVELS_FILE_DIRECTORY "/var/opt/zhcp/"
+#define TRACE_LEVELS_FILE_DIRECTORY "/var/opt/zthin/"
 
 // Make sure the level information matches the index in the TRACE_LEVELS and
 // TRACE_FLAG_VALUES array below. These values must be powers of 2 in order
@@ -47,7 +47,7 @@ static const unsigned int TRACE_FLAG_VALUES[TRACE_LEVELS_COUNT] = {0, TRACELEVEL
 
 // Trace areas index into trace array, must match the indexes of trace_keywords[]
 #define TRACEAREA_BACKGROUND_DIRECTORY_NOTIFICATION_THREAD 0
-#define TRACEAREA_ZHCP_GENERAL  1
+#define TRACEAREA_ZTHIN_GENERAL  1
 #define TRACEAREA_SOCKET 2
 #define TRACEAREA_PARSER 3
 #define TRACEAREA_BACKGROUND_VMEVENT_NOTIFICATION_THREAD 4

@@ -84,7 +84,7 @@ int smPage_or_Spool_Volume_Add(struct _vmApiInternalContext* vmapiContextP, char
     }
 
     // Trace the important SMAPI parameters for parser detail tracing
-    TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_PARAMETERS);
+    TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_PARAMETERS);
         sprintf(line, "Page_or_Spool_Volume_Add SMAPI parms,%s, %s, %s, %s, %s, %s, %s, %s\n",
                 targetStart[0], targetStart[1], targetStart[2], targetStart[3],
                 targetStart[4], targetStart[5], targetStart[6], targetStart[7]);

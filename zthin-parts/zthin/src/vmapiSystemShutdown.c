@@ -81,7 +81,7 @@ int smSystem_Shutdown(struct _vmApiInternalContext* vmapiContextP, char * userid
     }
 
     // Trace the important SMAPI parameters for parser detail tracing
-    TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_PARAMETERS);
+    TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_PARAMETERS);
         sprintf(line, "System_Shutdown SMAPI parms, userid: %s,", targetIdentifier);
         for ( i = 0; i < keyValueCount; i++ ) {
             sprintf(line+strlen(line), " %s,", keyValueArray[i]);

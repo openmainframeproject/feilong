@@ -1488,7 +1488,7 @@ int getAndParseSmapiBuffer(struct _vmApiInternalContext* vmapiContextP, char * *
     const int SLEEP_TIMES[SEND_RETRY_LIMIT] = { 0, 8, 16, 16, 15, 15, 15, 15 };
 
     readTraceFile(vmapiContextP);
-    TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZHCP_GENERAL);
+    TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZTHIN_GENERAL);
 
     TRACE_1SUB(vmapiContextP, TRACEAREA_PARSER, TRACELEVEL_DETAILS, "Table being parsed: <%s>\n", parserTableName);
 

@@ -114,7 +114,7 @@ int prepare_commands(char* buffer, int argc, char *argv[])
         fp = NULL;
         return UNAUTHORIZED_ERROR;
     }
-    /* 2. Get the IUCV server's version which exists on zhcp
+    /* 2. Get the IUCV server's version which exists on zThin
        This is used for IUCV server's upgrade, when the server's version which installed on VM is lower,
        upgrade is needed.
     */

@@ -45,7 +45,7 @@
 #include "wrapperutils.h"
 
 #define TARGET_ALL "ALL"
-#define VMAPILIB "libzhcp.so"
+#define VMAPILIB "libzthin.so"
 #define USERS_LIST_FILE "users.list"
 #define MIN_IDENTITY_NLEN         2  // Minimum length of IDENTITY statement name
 #define MIN_MDISK_NLEN            1  // Minimum length of MDISK statement name
@@ -276,8 +276,8 @@ int initializeThreadSemaphores(struct _vmApiInternalContext* vmapiContextP, cons
     }
 
     // Obtain VMAPI environment variable
-    pathPtr = getenv("ZHCP_VAR");
-    if (pathPtr) {  // ZHCP_VAR is defined
+    pathPtr = getenv("ZTHIN_VAR");
+    if (pathPtr) {  // ZTHIN_VAR is defined
         pathLength = strlen(pathPtr);
         len = pathLength + strlen(CACHE_SEMAPHORE_DIRECTORY);
         if (len > sizeof(pathAndFile)) {
@@ -295,7 +295,7 @@ int initializeThreadSemaphores(struct _vmApiInternalContext* vmapiContextP, cons
             strcat(vmapiContextP->path, CACHE_SEMAPHORE_DIRECTORY);
         }
     } else {
-        // ZHCP_VAR is undefined, set default
+        // ZTHIN_VAR is undefined, set default
         strcpy(vmapiContextP->path, CACHE_PATH_DEFAULT);
     }
 
@@ -1212,7 +1212,7 @@ void vmbkendGetCachePath(struct _vmApiInternalContext* vmapiContextP, char *path
     char line[LINESIZE];
     int retValue;
 
-    TRACE_ENTRY_FLOW(vmapiContextP , TRACEAREA_ZHCP_GENERAL);
+    TRACE_ENTRY_FLOW(vmapiContextP , TRACEAREA_ZTHIN_GENERAL);
     // Obtain path to $VMAPI/.vmapi/cache
     // If no (context) path string call to initialize things
     if (1 != vmapiContextP->contextCreatedFlag) {
@@ -1227,11 +1227,11 @@ void vmbkendGetCachePath(struct _vmApiInternalContext* vmapiContextP, char *path
     strcpy(pathP, vmapiContextP->path);
     strcat(pathP, CACHE_DIRECTORY);
 
-    TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_DETAILS);
+    TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
         sprintf(line, "vmbkendGetCachePath:  The cache path is (%s)\n", pathP);
         TRACE_END_DEBUG(vmapiContextP, line);
 
-    TRACE_EXIT_FLOW(vmapiContextP , TRACEAREA_ZHCP_GENERAL, 0);
+    TRACE_EXIT_FLOW(vmapiContextP , TRACEAREA_ZTHIN_GENERAL, 0);
     return;
 }
 
@@ -1376,7 +1376,7 @@ void *vmbkendMain(void *data) {
     get_myaddress(&notificationSocketInfo);
 
     notificationSocketInfo.sin_addr.s_addr = tdata->Addrs.s_addr;
-    TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_DETAILS);
+    TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
 
     // Show what port number we are listening on
     sprintf(line, "vmbkendMain: Listening on %s:%u", inet_ntoa(notificationSocketInfo.sin_addr),
@@ -1675,23 +1675,23 @@ int vmbkendRemoveCachedScanFiles(struct _vmApiInternalContext* vmapiContextP, ch
     char command[300];
     char line[LINESIZE];
 
-    TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZHCP_GENERAL);
+    TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZTHIN_GENERAL);
 
     // Build the remove command
     sprintf(command, "rm -f %s%s", pathP, ALL_SCAN_FILES);
 
-    TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_DETAILS);
+    TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
     sprintf(line, "vmbkendRemoveCachedScanFiles:  About to issue: system(%s)\n", command);
     TRACE_END_DEBUG(vmapiContextP, line);
 
     if (system(command)) {
-        TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_DETAILS);
+        TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
         sprintf(line, "vmbkendRemoveCachedScanFiles:  Error removing scan files, errno 0x%X: reason(%s)\n",
                 errno, strerror(errno));
         TRACE_END_DEBUG(vmapiContextP, line);
     }
 
-    TRACE_EXIT_FLOW(vmapiContextP, TRACEAREA_ZHCP_GENERAL, 0);
+    TRACE_EXIT_FLOW(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, 0);
 
     return 0;
 }
@@ -1713,22 +1713,22 @@ void vmbkendRemoveEntireCache(struct _vmApiInternalContext* vmapiContextP, char 
     char command[300];
     char line[LINESIZE];
 
-    TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZHCP_GENERAL);
+    TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZTHIN_GENERAL);
 
     /* Build the remove command */
     sprintf(command, "rm -rf %s*", cachePathP);
 
-    TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_DETAILS);
+    TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
     sprintf(line, "vmbkendRemoveEntireCache:  About to issue: system(%s)\n", command);
     TRACE_END_DEBUG(vmapiContextP, line);
 
     if (system(command)) {
-        TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_DETAILS);
+        TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
         sprintf(line, "vmbkendRemoveEntireCache:  Error removing file, errno 0x%X: reason(%s)\n", errno, strerror(errno));
         TRACE_END_DEBUG(vmapiContextP, line);
     }
 
-    TRACE_EXIT_FLOW(vmapiContextP, TRACEAREA_ZHCP_GENERAL, 0);
+    TRACE_EXIT_FLOW(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, 0);
 }
 
 /**
@@ -1760,12 +1760,12 @@ int vmbkendSockaddrFileInfo(struct _vmApiInternalContext* vmapiContextP, int rea
     char fName[BUFLEN + 1];
     char line[LINESIZE];
 
-    TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZHCP_GENERAL);
+    TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZTHIN_GENERAL);
 
     strcpy(fName, vmapiContextP->path);
     strcat(fName, PORT_FILENAME);
 
-    TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_DETAILS);
+    TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
     sprintf(line, "vmbkendSockaddrFileInfo:  PORT_FILENAME %s \n", fName);
     TRACE_END_DEBUG(vmapiContextP, line);
 
@@ -1780,7 +1780,7 @@ int vmbkendSockaddrFileInfo(struct _vmApiInternalContext* vmapiContextP, int rea
 
     if (fileP == (FILE *) NULL) {
         vmapiContextP->errnoSaved = errno;
-        TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_DETAILS);
+        TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
         sprintf(line, "vmbkendSockaddrFileInfo:  Errno %d opening %s for %s() text: %s\n",
                 errno, fName, (readOrWrite == 0 ? "read" : "write"), strerror(errno));
         TRACE_END_DEBUG(vmapiContextP, line);
@@ -1795,7 +1795,7 @@ int vmbkendSockaddrFileInfo(struct _vmApiInternalContext* vmapiContextP, int rea
             /* If error reading record, return saddr value of zeroes */
             vmapiContextP->errnoSaved = errno;
             memset(saddr, 0, sizeof(struct sockaddr_in));
-            TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_DETAILS);
+            TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
             sprintf(line, "vmbkendSockaddrFileInfo:  Errno %d reading file %s text: %s\n", errno, fName, strerror(errno));
             TRACE_END_DEBUG(vmapiContextP, line);
 
@@ -1803,13 +1803,13 @@ int vmbkendSockaddrFileInfo(struct _vmApiInternalContext* vmapiContextP, int rea
             goto exit_error1;
         }
 
-        TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_DETAILS);
+        TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
         sprintf(line, "vmbkendSockaddrFileInfo:  Read %x:%hu\n", saddr->sin_addr.s_addr, saddr->sin_port);
         TRACE_END_DEBUG(vmapiContextP, line);
     } else {  // Write
         if (-1 == fprintf(fileP, "%x:%hu", saddr->sin_addr.s_addr, saddr->sin_port)) {
             vmapiContextP->errnoSaved = errno;
-            TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_DETAILS);
+            TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
             sprintf(line, "vmbkendSockaddrFileInfo:  Errno %d writing %x:%hu to %s text: %s\n", errno, saddr->sin_addr.s_addr, saddr->sin_port, fName, strerror(errno));
             TRACE_END_DEBUG(vmapiContextP, line);
 
@@ -1817,19 +1817,19 @@ int vmbkendSockaddrFileInfo(struct _vmApiInternalContext* vmapiContextP, int rea
             goto exit_error1;
         }
 
-        TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_DETAILS);
+        TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
         sprintf(line, "vmbkendSockaddrFileInfo:  Wrote %x:%hu\n",
                 saddr->sin_addr.s_addr, saddr->sin_port);
         TRACE_END_DEBUG(vmapiContextP, line);
     }
 
     exit_error1: if (EOF == fclose(fileP)) {
-        TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_DETAILS);
+        TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_DETAILS);
         sprintf(line, "vmbkendSockaddrFileInfo:  Errno %d closing file %s() text: %s\n", errno, fName, strerror(errno));
         TRACE_END_DEBUG(vmapiContextP, line);
     }
 
-    exit_error2: TRACE_EXIT_FLOW(vmapiContextP, TRACEAREA_ZHCP_GENERAL, rc);
+    exit_error2: TRACE_EXIT_FLOW(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, rc);
 
     return (rc);
 }
@@ -2186,7 +2186,7 @@ int vmbkendMain_Event_UnSubscribe(struct _vmApiInternalContext* vmapiContextP) {
             strlen(TARGET_ALL);            // Target identifier
 
 
-    TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZHCP_GENERAL);
+    TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZTHIN_GENERAL);
 
     // Build SMAPI input parameter buffer
     if (0 == (inputP = malloc(inputSize)))
@@ -2295,7 +2295,7 @@ int vmbkendMain_Event_Subscribe(struct _vmApiInternalContext* vmapiContextP) {
             4 +                            // Matchkey length
             0;                             // Matchkey - not specified
 
-    TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZHCP_GENERAL);
+    TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZTHIN_GENERAL);
 
     // Build path to the cache directory.
     vmbkendGetCachePath(vmapiContextP, cachePath);
@@ -2380,7 +2380,7 @@ int vmbkendMain_Event_Subscribe(struct _vmApiInternalContext* vmapiContextP) {
     // Loop reading and processing notifications on the established socket.
     // Each notification begins with a length of the output.
     // We hope to stay in this loop and lower level subroutines for the life of the
-    // zHCP agent run.
+    // zThin agent run.
     for (;;) {
         if (0 != (rc = smSocketReadLoop(vmapiContextP, sockDesc, (char *) &tempSize, 4, 0))) {
             if (rc != CUSTOM_DEFINED_SOCKET_RETRY) {
@@ -2473,7 +2473,7 @@ int vmbkendMain_setSmapiSubscribeEventData(struct _vmApiInternalContext* vmapiCo
     rel_message_buf msgRelocateSysBuf;
     size_t buf_length;
 
-    TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZHCP_GENERAL);
+    TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZTHIN_GENERAL);
 
     // Obtain storage to receive the data passed from SMAPI
     tempSize = ntohl(outputBufferSize);

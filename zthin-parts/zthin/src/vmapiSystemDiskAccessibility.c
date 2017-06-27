@@ -84,7 +84,7 @@ int smSystem_Disk_Accessibility(struct _vmApiInternalContext* vmapiContextP, cha
     }
 
     // Trace the important SMAPI parameters for parser detail tracing
-    TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_PARAMETERS);
+    TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_PARAMETERS);
         sprintf(line, "System_Disk_Accessibility parms, userid: %s, %s\n", targetStart[0], targetStart[1]);
     TRACE_END_DEBUG(vmapiContextP, line);
 

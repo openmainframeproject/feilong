@@ -64,7 +64,7 @@ int smImage_Name_Query_DM(struct _vmApiInternalContext* vmapiContextP,
 
     // Read from the cache file, if exists
     memset(cachePath, 0, sizeof(cachePath));
-    strcpy(cachePath, "/var/opt/zhcp/.vmapi/.cache/");
+    strcpy(cachePath, "/var/opt/zthin/.vmapi/.cache/");
     strcat(cachePath, "users.list");
 
     if (cachePath) {

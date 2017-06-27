@@ -469,7 +469,7 @@ int smSocketReadLoop(struct _vmApiInternalContext* vmapiContextP, int sockId, ch
     ulTimeoutSeconds = Socket_Indication_Timeout;
 
     /* Obtain read timeout environment variable */
-    ptrTimeOutValue = getenv("ZHCP_READ_INDICATION_TIMEOUT_SECONDS");
+    ptrTimeOutValue = getenv("ZTHIN_READ_INDICATION_TIMEOUT_SECONDS");
     if (ptrTimeOutValue) {
         ulTimeoutSecondsRequested = atol(ptrTimeOutValue);
         if (ulTimeoutSecondsRequested > 0) {

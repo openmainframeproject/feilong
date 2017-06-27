@@ -20,7 +20,7 @@
 # Shows the raw hex image of an ECKD disk.                                    #
 ###############################################################################
 
-source /opt/zhcp/lib/zhcpshellutils
+source /opt/zthin/lib/zthinshellutils
 version="1.0"
 scriptName="showECKD"
 
@@ -34,7 +34,7 @@ function printCMDDescription {
   # @Description:
   #   Prints a short description of this command.
   # @Overrides:
-  #   printCMDDescription{} in "zhcpshellutils".
+  #   printCMDDescription{} in "zthinshellutils".
   # @Code:
   echo -n "Shows the raw hex image of an ECKD disk."
 } #printCMDDescription{}

@@ -87,7 +87,7 @@ int smVMRELOCATE(struct _vmApiInternalContext* vmapiContextP, char * userid, int
     vmapiContextP->smapiErrorBufferPossible = ERROR_OUTPUT_BUFFER_POSSIBLE_NO_LENGTH_FIELD;
 
     // Trace the important SMAPI parameters for parser detail tracing
-    TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_PARAMETERS);
+    TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_PARAMETERS);
         sprintf(line, "VMRelocate SMAPI parms, userid: %s, %s, %s, %s, %s, %s, %s\n",
         		targetIdentifier, targetStart[0], targetStart[1], targetStart[2], targetStart[3],
                 targetStart[4], targetStart[5]);

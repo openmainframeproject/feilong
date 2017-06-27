@@ -85,7 +85,7 @@ int smVMRELOCATE_Status(struct _vmApiInternalContext* vmapiContextP, char * user
     }
 
     // Trace the important SMAPI parameters for parser detail tracing
-    TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_PARAMETERS);
+    TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_PARAMETERS);
         sprintf(line, "VMRelocate_Status SMAPI parameters, userid: %s, %s\n", targetStart[0], targetStart[1]);
     TRACE_END_DEBUG(vmapiContextP, line);
 

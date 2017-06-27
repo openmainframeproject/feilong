@@ -341,7 +341,7 @@ int ipAddrGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiContext
                     "  smcli IPaddr_Get\n\n"
                     "DESCRIPTION\n"
                     "  Use IPaddr_Get to obtain the TCP/IP address of the z/VM system that\n"
-                    "  the zHCP is running on.\n\n"
+                    "  the zThin is running on.\n\n"
                     "  There are no options required.\n");
                 printRCheaderHelp();
                 return 1;
@@ -370,7 +370,7 @@ int ipAddrGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiContext
 
     // If they want special output header as first output, then we need to pass this
     // string on RC call so it is handled correctly for both cases.
-    snprintf(strMsg, sizeof(strMsg), "Obtaining the TCP/IP address of the zVM system that the zHCP is running on... ");
+    snprintf(strMsg, sizeof(strMsg), "Obtaining the TCP/IP address of the zVM system that the zThin is running on... ");
 
     rc = smIPaddr_Get(vmapiContextP, &output);
 
@@ -407,7 +407,7 @@ int systemInfoQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "  smcli System_Info_Query\n\n"
                     "DESCRIPTION\n"
                     "  Use System_Info_Query to obtain the z/VM info of the z/VM that the "
-                    "  zHCP is running on.\n\n"
+                    "  zThin is running on.\n\n"
                     "  There are no options required.\n");
                 printRCheaderHelp();
                 return 1;

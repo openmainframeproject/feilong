@@ -406,7 +406,7 @@ int main(int argC, char* argV[]) {
         return rc;
     }
     readTraceFile(&vmapiContext);
-    TRACE_ENTRY_FLOW(&vmapiContext, TRACEAREA_ZHCP_GENERAL);
+    TRACE_ENTRY_FLOW(&vmapiContext, TRACEAREA_ZTHIN_GENERAL);
 
     rc = getSmapiLevel(&vmapiContext, " ", &smapiLevel);
     if (rc != 0){
@@ -417,7 +417,7 @@ int main(int argC, char* argV[]) {
     if (argC < 2 || !strcmp(argV[1], "--help") || !strcmp(argV[1], "-h")) {
         displayHelpInfo(smapiLevel);
         rc =1;
-        TRACE_EXIT_FLOW(&vmapiContext, TRACEAREA_ZHCP_GENERAL, rc);
+        TRACE_EXIT_FLOW(&vmapiContext, TRACEAREA_ZTHIN_GENERAL, rc);
         /* Clean up for memory context */
         FREE_CONTEXT_MEMORY(&vmapiContext);
         return rc;
@@ -538,7 +538,7 @@ static const char * APIS_640[APIS_640_COUNT] = {
         if (foundit == 1){
             printf("ERROR: Unsupported API function name\n");
             rc = 1;
-            TRACE_EXIT_FLOW(&vmapiContext, TRACEAREA_ZHCP_GENERAL, rc);
+            TRACE_EXIT_FLOW(&vmapiContext, TRACEAREA_ZTHIN_GENERAL, rc);
             /* Clean up for memory context */
             FREE_CONTEXT_MEMORY(&vmapiContext);
             return rc;
@@ -562,7 +562,7 @@ static const char * APIS_640[APIS_640_COUNT] = {
             if (argC < 2) {
                 displayHelpInfo(smapiLevel);
                 rc =1;
-                TRACE_EXIT_FLOW(&vmapiContext, TRACEAREA_ZHCP_GENERAL, rc);
+                TRACE_EXIT_FLOW(&vmapiContext, TRACEAREA_ZTHIN_GENERAL, rc);
                 /* Clean up for memory context */
                 FREE_CONTEXT_MEMORY(&vmapiContext);
                 return rc;
@@ -957,7 +957,7 @@ static const char * APIS_640[APIS_640_COUNT] = {
         rc = 1;
     }
 
-    TRACE_EXIT_FLOW(&vmapiContext, TRACEAREA_ZHCP_GENERAL, rc);
+    TRACE_EXIT_FLOW(&vmapiContext, TRACEAREA_ZTHIN_GENERAL, rc);
     /* Clean up for memory context */
     FREE_CONTEXT_MEMORY(&vmapiContext);
     return rc;

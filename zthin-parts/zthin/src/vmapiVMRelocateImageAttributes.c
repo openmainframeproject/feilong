@@ -85,7 +85,7 @@ int smVMRELOCATE_Image_Attributes(struct _vmApiInternalContext* vmapiContextP, c
     }
 
     // Trace the important SMAPI parameters for parser detail tracing
-    TRACE_START(vmapiContextP, TRACEAREA_ZHCP_GENERAL, TRACELEVEL_PARAMETERS);
+    TRACE_START(vmapiContextP, TRACEAREA_ZTHIN_GENERAL, TRACELEVEL_PARAMETERS);
         sprintf(line, "VMRelocateImageAttributes SMAPI parms, userid: %s, %s, %s, %s\n",
                 targetStart[0], targetStart[1], targetStart[2], targetStart[3]);
     TRACE_END_DEBUG(vmapiContextP, line);

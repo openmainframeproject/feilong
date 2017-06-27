@@ -216,14 +216,14 @@ typedef struct _smMessageCollector {
 
 #define JUST_HEADER 1
 
-#define CACHE_PATH_DEFAULT "/var/opt/zhcp/.vmapi/"
+#define CACHE_PATH_DEFAULT "/var/opt/zthin/.vmapi/"
 #define CACHE_SEMAPHORE_DIRECTORY ".vmapi/"
 #define CACHE_SEMAPHORE_FILENAME "vmapi.sem"
 #define CACHE_DIRECTORY  ".cache/"
 #define CACHE_DIRECTORY_FOR_USER "cache/"
 #define CACHE_FILE_EXTENSION_FOR_USER ".cache"
 #define CACHE_INSTANCEID_FILE_EXTENSION_FOR_USER ".id"
-#define CACHE_SMAPI_LEVEL_FILE "/var/opt/zhcp/smapi.level"
+#define CACHE_SMAPI_LEVEL_FILE "/var/opt/zthin/smapi.level"
 
 #define RETURN_CODE_HEADER_KEYWORD "--addRCheader"
 
