@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3f227753_5e46d9a0",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-27T14:31:36Z",
+      "side": 1,
+      "message": "This module has been regressed.  These lines were not here in the latest good version.",
+      "range": {
+        "startLine": 139,
+        "startChar": 14,
+        "endLine": 139,
+        "endChar": 48
+      },
+      "revId": "2b16bc4f23c94f753f828fa2ae5ed256dd73cc8b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e804a985_be7510da",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 519,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-27T14:31:36Z",
+      "side": 1,
+      "message": "I suggest you add a failing test case in order to prove that you return bad values on failures.",
+      "revId": "2b16bc4f23c94f753f828fa2ae5ed256dd73cc8b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2299fd8d_7ad261e3",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-27T14:31:36Z",
+      "side": 1,
+      "message": "print line for your test should be removed.  Please run some tests with smutCmd.py.  You will see that your are not changing RequestHandle\u0027s results structure.  You need to call updateResults and pass it the contents of your local results dictionary.",
+      "range": {
+        "startLine": 394,
+        "startChar": 4,
+        "endLine": 394,
+        "endChar": 9
+      },
+      "revId": "2b16bc4f23c94f753f828fa2ae5ed256dd73cc8b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
