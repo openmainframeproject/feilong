@@ -39,6 +39,7 @@ BUILD=/root/zthin-build
 REPO=https://github.com/mfcloud/python-zvm-sdk.git
 REPOTOP=python-zvm-sdk
 ZTHINTOP=zthin-parts
+SMCLIOPTDIR=/opt/zthin/bin/smcli
 
 EXISTS=$(git ls-remote -h $REPO | grep "$BRANCH"$ | wc -l )
 if [ "$EXISTS" == 0 ] ; then
@@ -68,6 +69,7 @@ mkdir -p $BUILD/SOURCES 2>/dev/null
 mkdir -p $BUILD/SPECS 2>/dev/null
 mkdir -p $BUILD/SRPMS 2>/dev/null
 mkdir -p $BUILD/OUTPUT 2>/dev/null
+mkdir -p $SMCLIOPTDIR 2>/dev/null
 
 # Checkout the branch
 echo "===>Erasing old $REPOTOP, then cloning: $REPO -b $BRANCH"
@@ -83,7 +85,7 @@ pwd
 tar czf $BUILD/SOURCES/zthin-build.tar.gz $ZTHINTOP
 cp ./$ZTHINTOP/zthin.spec $BUILD/SPECS
 
-echo "===>Switch back to smcli, do: rpmbuild -ba -v $BUILD/SPECS/zthin.spec"
+echo "===>Switch back to zthin-parts, do: rpmbuild -ba -v $BUILD/SPECS/zthin.spec"
 cd $BUILD/$REPOTOP/$ZTHINTOP 2>/dev/null
 pwd
 rpmbuild -ba -v $BUILD/SPECS/zthin.spec

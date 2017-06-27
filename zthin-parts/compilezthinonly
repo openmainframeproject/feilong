@@ -34,6 +34,7 @@ BUILD=/root/zthin-build
 REPOTOP=python-zvm-sdk
 ZTHINTOP=zthin-parts
 BRANCH=nobranch
+SMCLIOPTDIR=/opt/zthin/bin/smcli
 # Reset build directories
 cd $BUILD/ 2>/dev/null
 rm -rf $BUILD/BUILD 2>/dev/null
@@ -47,6 +48,7 @@ mkdir -p $BUILD/SOURCES 2>/dev/null
 mkdir -p $BUILD/SPECS 2>/dev/null
 mkdir -p $BUILD/SRPMS 2>/dev/null
 mkdir -p $BUILD/OUTPUT 2>/dev/null
+mkdir -p $SMCLIOPTDIR 2>/dev/null
 
 # Move to the sdk directory
 cd $REPOTOP 2>/dev/null
