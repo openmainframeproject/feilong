@@ -29,8 +29,8 @@ make post
 make clean
 
 mkdir -p $RPM_BUILD_ROOT/usr/bin
-ln -sfd %{prefix}/bin/zthin $RPM_BUILD_ROOT/usr/bin
-chmod 644 $RPM_BUILD_ROOT/usr/bin/zthin
+ln -sfd %{prefix}/bin/smcli $RPM_BUILD_ROOT/usr/bin
+chmod 644 $RPM_BUILD_ROOT/usr/bin/smcli
 mkdir -p $RPM_BUILD_ROOT/usr/share/man/man1/
 cp smcli.1.gz $RPM_BUILD_ROOT/usr/share/man/man1/
 mkdir -p $RPM_BUILD_ROOT/var/opt/zthin
