@@ -93,8 +93,8 @@ zvm_opts = [
     Opt('client_type',
         section='zvm',
         default='xcat'),
-    Opt('image_tmp_path',
-        section='zvm',
+    Opt('temp_path',
+        section='image',
         default='/tmp/zvmsdk/images/'),
     # network options
     Opt('my_ip',

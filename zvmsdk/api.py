@@ -248,15 +248,29 @@ class SDKAPI(object):
         """
         return self._vmops.get_definition_info(userid, **kwargs)
 
-    @check_input_types(_TSTR, _TSTR)
-    def image_import(self, image_file_path, os_version):
-        """import image to z/VM according to the file path and os_version
+    @check_input_types(_TSTR, dict, (_TSTR, _TNONE))
+    def image_import(self, url, image_meta={}, remote_host=None):
+        """Import image to zvmsdk image repository
 
-        :param image_file_path:the absolute path for image file
-        :param os_version:the os version of the image
-
+        :param str url: image url to specify the location of image such as
+               http://netloc/path/to/file.tar.gz.0
+               https://netloc/path/to/file.tar.gz.0
+               file:///path/to/file.tar.gz.0
+        :param dict image_meta:
+               a dictionary to describe the image info. such as md5sum,
+               os_version. For example:
+               {'os_version': 'rhel6.2',
+               'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5'}
+        :param: remote_host:
+                if the image url schema is file, the remote_host is used to
+                indicate where the image comes from, the format is username@IP
+                eg. nova@192.168.99.1, the default value is None, it indicate
+                the image is from a local file system. If the image url schema
+                is http/https, this value will be useless
         """
-        self._imageops.image_import(image_file_path, os_version)
+
+        self._imageops.image_import(url, image_meta=image_meta,
+                                    remote_host=remote_host)
 
     @check_input_types(_TSTR, int, int, list, _TSTR)
     def guest_create(self, userid, vcpus, memory, disk_list=[],
