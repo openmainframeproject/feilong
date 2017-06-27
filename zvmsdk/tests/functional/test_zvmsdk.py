@@ -147,3 +147,49 @@ class SDKAPITestCase(unittest.TestCase):
         result = self.sdkapi.guest_inspect_mem([])
         empty_dict = {}
         self.assertEqual(result, empty_dict)
+
+    def test_guest_inspect_vnics(self):
+        guest_list = self.sdkapi.host_list_guests()
+        n = 0
+        for uid in guest_list:
+            if self.sdkapi.guest_get_power_state(uid) == 'on':
+                n = n + 1
+                test_id = uid
+        if n > 0:
+            result = self.sdkapi.guest_inspect_vnics(guest_list)
+            self.assertTrue(isinstance(result, dict))
+            self.assertEqual(len(result), n)
+            self.assertTrue(isinstance(
+                result[test_id][0].get('vswitch_name'), unicode))
+            self.assertTrue(isinstance(
+                result[test_id][0].get('nic_vdev'), unicode))
+            self.assertTrue(isinstance(
+                result[test_id][0].get('nic_fr_rx'), int))
+            self.assertTrue(isinstance(
+                result[test_id][0].get('nic_fr_tx'), int))
+            self.assertTrue(isinstance(
+                result[test_id][0].get('nic_fr_rx_dsc'), int))
+            self.assertTrue(isinstance(
+                result[test_id][0].get('nic_fr_tx_dsc'), int))
+            self.assertTrue(isinstance(
+                result[test_id][0].get('nic_fr_rx_err'), int))
+            self.assertTrue(isinstance(
+                result[test_id][0].get('nic_fr_tx_err'), int))
+            self.assertTrue(isinstance(
+                result[test_id][0].get('nic_rx'), int))
+            self.assertTrue(isinstance(
+                result[test_id][0].get('nic_tx'), int))
+        else:
+            result = self.sdkapi.guest_inspect_vnics(guest_list)
+            empty_dict = {}
+            self.assertEqual(result, empty_dict)
+
+    def test_guest_inspect_vnics_with_nonexist_guest(self):
+        result = self.sdkapi.guest_inspect_vnics('fake_id')
+        empty_dict = {}
+        self.assertEqual(result, empty_dict)
+
+    def test_guest_inspect_vnics_with_empty_list(self):
+        result = self.sdkapi.guest_inspect_vnics([])
+        empty_dict = {}
+        self.assertEqual(result, empty_dict)
