@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "95b39ed7_6cd49aab",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 654,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-27T14:36:10Z",
+      "side": 1,
+      "message": "I suggest you have one test in which you look at the directory to verify that the statement did  get in the user entry.",
+      "revId": "e161f16e87b2a434353aea287601a15edb390a79",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
