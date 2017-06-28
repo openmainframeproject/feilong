@@ -1,0 +1,140 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "40e796b3_69a66470",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 575,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-06-28T19:47:35Z",
+      "side": 1,
+      "message": "Don\u0027t use list as a variable name, it shows up in blue which must mean it\u0027s reserved somehow",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5fb5491a_9209da02",
+        "filename": "smutLayer/cmdVM.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-06-28T19:47:35Z",
+      "side": 1,
+      "message": "Just in general, I like these updates, but I would\u0027ve done them in a separate commit, if we ever have a problem with them and have to go back, it would be hard to understand why we updated the return rc for a patch that said it was about adding messages.  Not a huge deal though, I\u0027m not -1ing this patch for this comment.",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "035bfac3_e8b3d2c6",
+        "filename": "smutLayer/generalUtils.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-06-28T19:47:35Z",
+      "side": 1,
+      "message": "Does this message really only take the M or G of the disk and not like byteSize too?",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "29ab505a_8a592b7d",
+        "filename": "smutLayer/generalUtils.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-06-28T19:47:35Z",
+      "side": 1,
+      "message": "General comment here while I\u0027m thinking of it, better way to check is the isinstance function isinstance( \u003cvar\u003e, int )",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e732a7e9_63caa807",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-06-28T19:47:35Z",
+      "side": 1,
+      "message": "I\u0027m not sure I understand what this comment means?",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "740aad9f_aaf62512",
+        "filename": "smutLayer/powerVM.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 438,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-06-28T19:47:35Z",
+      "side": 1,
+      "message": "Why not put the list of states in a variable and use them for the compare and for the message?\nThat way when we get to quantum states we won\u0027t have to update powerVM.py AND msgs.py",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bb4460b9_62a403ce",
+        "filename": "smutLayer/powerVM.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-06-28T19:47:35Z",
+      "side": 1,
+      "message": "Same comment as above",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e15606a9_2b078af0",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-06-28T19:47:35Z",
+      "side": 1,
+      "message": "Why not use subprocess.CalledProcessError?",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
