@@ -80,6 +80,7 @@ class SDKAPITestCase(unittest.TestCase):
                           'ECKD:invalidpoolname')
 
     def test_guest_inspect_cpus(self):
+        """ Positive test case of guest_inspect_cpus"""
         guest_list = self.sdkapi.host_list_guests()
         n = 0
         for uid in guest_list:
@@ -110,16 +111,19 @@ class SDKAPITestCase(unittest.TestCase):
             self.assertEqual(result, empty_dict)
 
     def test_guest_inspect_cpus_with_nonexist_guest(self):
+        """ To test guest_inspect_cpus for a nonexistent guest"""
         result = self.sdkapi.guest_inspect_cpus('fake_id')
         empty_dict = {}
         self.assertEqual(result, empty_dict)
 
     def test_guest_inspect_cpus_with_empty_list(self):
+        """ To test guest_inspect_cpus with an empty user list"""
         result = self.sdkapi.guest_inspect_cpus([])
         empty_dict = {}
         self.assertEqual(result, empty_dict)
 
     def test_guest_inspect_mem(self):
+        """ Positive test case of guest_inspect_mem"""
         guest_list = self.sdkapi.host_list_guests()
         n = 0
         for uid in guest_list:
@@ -144,11 +148,13 @@ class SDKAPITestCase(unittest.TestCase):
             self.assertEqual(result, empty_dict)
 
     def test_guest_inspect_mem_with_nonexist_guest(self):
+        """ To test guest_inspect_mem for a nonexistent guest"""
         result = self.sdkapi.guest_inspect_mem('fake_id')
         empty_dict = {}
         self.assertEqual(result, empty_dict)
 
     def test_guest_inspect_mem_with_empty_list(self):
+        """ To test guest_inspect_mem with an empty user list"""
         result = self.sdkapi.guest_inspect_mem([])
         empty_dict = {}
         self.assertEqual(result, empty_dict)
