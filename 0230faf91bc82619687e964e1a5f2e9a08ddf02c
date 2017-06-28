@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c76cda1f_43e60030",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 575,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-28T21:11:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "40e796b3_69a66470",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5fb5491a_9209da02",
         "filename": "smutLayer/cmdVM.py",
         "patchSetId": 3
@@ -30,6 +48,24 @@
       "writtenOn": "2017-06-28T19:47:35Z",
       "side": 1,
       "message": "Just in general, I like these updates, but I would\u0027ve done them in a separate commit, if we ever have a problem with them and have to go back, it would be hard to understand why we updated the return rc for a patch that said it was about adding messages.  Not a huge deal though, I\u0027m not -1ing this patch for this comment.",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bba7ec16_67253338",
+        "filename": "smutLayer/cmdVM.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-28T21:11:56Z",
+      "side": 1,
+      "message": "I will remember this for the future.",
+      "parentUuid": "5fb5491a_9209da02",
       "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "91e4dc02_1f67a201",
+        "filename": "smutLayer/generalUtils.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-28T21:11:56Z",
+      "side": 1,
+      "message": "Done - Corrected to use \"blocks\" in the message.",
+      "parentUuid": "035bfac3_e8b3d2c6",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "29ab505a_8a592b7d",
         "filename": "smutLayer/generalUtils.py",
         "patchSetId": 3
@@ -64,6 +118,24 @@
       "writtenOn": "2017-06-28T19:47:35Z",
       "side": 1,
       "message": "General comment here while I\u0027m thinking of it, better way to check is the isinstance function isinstance( \u003cvar\u003e, int )",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a04d3529_bf0aef18",
+        "filename": "smutLayer/generalUtils.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-28T21:11:56Z",
+      "side": 1,
+      "message": "I use isInstance in the past.  Google searches related to this use led me to use this form of the check for a reason that I don\u0027t remember. I will consider changing this in a future fix.",
+      "parentUuid": "29ab505a_8a592b7d",
       "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -87,6 +159,24 @@
     },
     {
       "key": {
+        "uuid": "a8c1da7f_84c614d1",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-28T21:11:56Z",
+      "side": 1,
+      "message": "{\u0027overallRC\u0027: 1, \u0027rc\u0027: 99, \u0027rs\u0027: 99} is generally not used from the msg dictionary.  The code that used this message generally uses a results that it got from somewhere else.  I have this here to protect from a python failure if for some reason someone uses the msg dictionary.  The dictionary is valid for this message.",
+      "parentUuid": "e732a7e9_63caa807",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "740aad9f_aaf62512",
         "filename": "smutLayer/powerVM.py",
         "patchSetId": 3
@@ -98,6 +188,24 @@
       "writtenOn": "2017-06-28T19:47:35Z",
       "side": 1,
       "message": "Why not put the list of states in a variable and use them for the compare and for the message?\nThat way when we get to quantum states we won\u0027t have to update powerVM.py AND msgs.py",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "60a0f189_30b36491",
+        "filename": "smutLayer/powerVM.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 438,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-28T21:11:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "740aad9f_aaf62512",
       "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -121,6 +229,24 @@
     },
     {
       "key": {
+        "uuid": "b5e87c38_0f0c455c",
+        "filename": "smutLayer/powerVM.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-28T21:11:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bb4460b9_62a403ce",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e15606a9_2b078af0",
         "filename": "smutLayer/smutTest.py",
         "patchSetId": 3
@@ -132,6 +258,24 @@
       "writtenOn": "2017-06-28T19:47:35Z",
       "side": 1,
       "message": "Why not use subprocess.CalledProcessError?",
+      "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0664b4f6_adb28348",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-28T21:11:56Z",
+      "side": 1,
+      "message": "shorter when used in the later code and this name is not likely to collide with other uses of the name.",
+      "parentUuid": "e15606a9_2b078af0",
       "revId": "0230faf91bc82619687e964e1a5f2e9a08ddf02c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
