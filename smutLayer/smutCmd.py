@@ -15,6 +15,7 @@
 #    under the License.
 
 import sys
+
 from smut import SMUT
 from ReqHandle import ReqHandle
 

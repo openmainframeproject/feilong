@@ -19,6 +19,9 @@ import subprocess
 from subprocess import CalledProcessError
 import time
 
+import msgs
+
+modId = 'VMU'
 version = '1.0.0'         # Version of this script
 
 
@@ -68,8 +71,10 @@ def disableEnableDisk(rh, userid, vaddr, option):
 
     if not cmdDone:
         # Pass along the results from the last failed command.
-        rh.printLn("ES", "Command failed with rc: " + str(results['rc']) +
-            ", cmd: '" + strCmd + "', out: '" + results['response'])
+        msg = (msgs.msg['0310'][1] % (modId, userid, strCmd,
+            results['overallRC'], results['response']))
+        rh.printLn("ES", msg)
+        rh.updateResults(results)
 
     rh.printSysLog("Exit vmUtils.disableEnableDisk, rc: " +
         str(results['overallRC']))
@@ -123,41 +128,50 @@ def execCmdThruIUCV(rh, userid, strCmd):
             try:
                 results['rc'] = int(match.group(1))
             except ValueError:
-                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-                    results['response'] + ",  return code is not an " +
-                    "integer: " + match.group(1))
+                # Return code in response from IUCVCLNT is not an int.
+                msg = (msgs.msg['0311'][1] % (modId, userid, strCmd,
+                    results['rc'], match.group(1), results['response']))
+                rh.printLn("ES", msg)
 
         match = re.search('Reason code (.+?)\.', results['response'])
         if match:
             try:
                 results['rs'] = int(match.group(1))
             except ValueError:
-                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-                    results['response'] + ",  reason code is not an " +
-                    "integer: " + match.group(1))
+                # Reason code in response from IUCVCLNT is not an int.
+                msg = (msgs.msg['0312'][1] % (modId, userid, strCmd,
+                    results['rc'], match.group(1), results['response']))
+                rh.printLn("ES", msg)
 
         if results['rc'] == 1:
-            results['response'] = ("Issued command was not authorized or a " +
-                "generic Linux error occurred, error details: " +
-                results['response'])
+            # Command was not authorized or a generic Linux error.
+            results['response'] = (msgs.msg['0313'][1] % (modId,
+                results['response']))
+            rh.printLn("ES", msg)
         elif results['rc'] == 2:
-            results['response'] = ("Parameter to iucvclient error, error " +
-                "details: " + results['response'])
+            # IUCV client parameter error.
+            results['response'] = (msgs.msg['0314'][1] % (modId,
+                results['response']))
         elif results['rc'] == 4:
-            results['response'] = ("IUCV socket error, error details: " +
-                results['response'])
+            # IUCV socket error
+            results['response'] = (msgs.msg['0315'][1] % (modId,
+                results['response']))
         elif results['rc'] == 8:
-            results['response'] = ("Command executed failed, error details: " +
-                results['response'])
+            # Executed command failed
+            results['response'] = (msgs.msg['0316'][1] % (modId,
+                results['response']))
         elif results['rc'] == 16:
-            results['response'] = ("File Transport failed, error details: " +
-                results['response'])
+            # File Transport failed
+            results['response'] = (msgs.msg['0317'][1] % (modId,
+                results['response']))
         elif results['rc'] == 32:
-            results['response'] = ("File Transport failed, error details: " +
-                results['response'])
+            # IUCV server file was not found on this system.
+            results['response'] = (msgs.msg['0318'][1] % (modId,
+                results['response']))
         else:
-            results['response'] = ("Unrecognized error, error details: " +
-                results['response'])
+            # Unrecognized IUCV client error
+            results['response'] = (msgs.msg['0319'][1] % (modId,
+                results['response']))
 
     rh.printSysLog("Exit vmUtils.execCmdThruIUCV, rc: " + str(results['rc']))
     return results

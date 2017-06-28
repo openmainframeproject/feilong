@@ -14,20 +14,24 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
+import logging.handlers
+import smapi
+import shlex
+import types
+
 import changeVM
 import cmdVM
 import deleteVM
 import getHost
 import getVM
-import logging
-import logging.handlers
 import makeVM
 import migrateVM
+import msgs
 import powerVM
-import smapi
-import shlex
-import types
 
+
+modId = "RQH"
 version = '1.0.0'         # Version of this script
 
 
@@ -110,6 +114,7 @@ class ReqHandle(object):
                                   #   2  - Something in the IUCVCLNT failed
                                   #   3  - Something in a local vmcp failed
                                   #   4  - Input validation error
+                                  #   5  - Miscellaneous processing error
                                   #   99 - Unexpected failure
             'rc': 0,              # Return code causing the return
             'rs': 0,              # Reason code causing the return
@@ -193,8 +198,10 @@ class ReqHandle(object):
                 # appropriate subfunction.
                 self.funcHandler[self.function][3](self)
             else:
-                self.printLn("ES", "Unrecognized function: " + self.function)
-                self.updateResults({'overallRC': 4, 'rc': 200})
+                # Unrecognized function
+                msg = (msgs.msg['0007'][1] % modId, self.function)
+                self.printLn("ES", msg)
+                self.updateResults(msgs.msg['0007'][0])
 
         return self.results
 
@@ -221,23 +228,28 @@ class ReqHandle(object):
             self.requestString = requestData            # Request as a string
             self.request = shlex.split(requestData)     # Request as a list
         else:
-            self.printLn("ES", "The request data is not in the supported " +
-                               "type of either: list or string.")
-            self.updateResults({'overallRC': 4, 'rc': '90'})
+            # Request data type is not supported.
+            msg = (msgs.msg['0012'][1] % (modId, type(requestData)))
+            self.printLn("ES", msg)
+            self.updateResults(msgs.msg['0012'][0])
             return self.results
         self.totalParms = len(self.request)   # Number of parms in the cmd
 
         # Handle the request, parse it or return an error.
         if self.totalParms == 0:
-            self.printLn("E", "Too few command line arguments.")
-            self.updateResults({'overallRC': 4, 'rc': 100})
+            # Too few arguments.
+            msg = (msgs.msg['0009'][1] % modId)
+            self.printLn("ES", msg)
+            self.updateResults(msgs.msg['0009'][0])
         elif self.totalParms == 1:
             self.function = self.request[0].upper()
             if self.function == 'HELP' or self.function == 'VERSION':
                 pass
             else:
-                self.printLn("E", "Function is not 'HELP' or 'Version'.")
-                self.updateResults({'overallRC': 4, 'rc': 104})
+                # Function is not HELP or VERSION.
+                msg = (msgs.msg['0008'][1] % (modId, self.function))
+                self.printLn("ES", msg)
+                self.updateResults(msgs.msg['0008'][0])
         else:
             # Process based on the function operand.
             self.function = self.request[0].upper()
@@ -249,9 +261,10 @@ class ReqHandle(object):
                 if self.function in ReqHandle.funcHandler:
                     self.funcHandler[self.function][2](self)
                 else:
-                    self.printLn("ES", "Unrecognized function: " +
-                        self.function)
-                    self.updateResults({'overallRC': 4, 'rc': 200})
+                    # Unrecognized function
+                    msg = (msgs.msg['0007'][1] % (modId, self.function))
+                    self.printLn("ES", msg)
+                    self.updateResults(msgs.msg['0007'][0])
 
         self.printSysLog("Exit ReqHandle.parseCmdline, rc: " +
                          str(self.results['overallRC']))

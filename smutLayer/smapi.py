@@ -15,8 +15,10 @@
 #    under the License.
 
 import generalUtils
+import msgs
 from vmUtils import invokeSMCLI
 
+modId = 'SMP'
 version = "1.0.0"
 
 """
@@ -72,7 +74,6 @@ def doIt(rh):
        Return code - 0: ok, non-zero: error
     """
 
-    rc = 0
     rh.printSysLog("Enter smapi.doIt")
 
     # Show the invocation parameters, if requested.
@@ -92,8 +93,8 @@ def doIt(rh):
     # Call the subfunction handler
     subfuncHandler[rh.subfunction][1](rh)
 
-    rh.printSysLog("Exit smapi.doIt, rc: " + str(rc))
-    return rc
+    rh.printSysLog("Exit smapi.doIt, rc: " + str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def getVersion(rh):
@@ -163,13 +164,15 @@ def invokeSmapiApi(rh):
     if results['overallRC'] == 0:
         rh.printLn("N", results['response'])
     else:
+        # SMAPI API failed.
         strCmd = ' '.join(cmd)
-        rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-            results['response'] + "', rc: " + str(results['overallRC']))
-        rh.updateResults(results)
+        msg = (msgs.msg['0300'][1] % (modId, strCmd,
+            results['overallRC'], results['response']))
+        rh.printLn("ES", msg)
+        rh.updateResults(results) # Use results from invokeSMCLI
 
-    rh.printSysLog("Exit smapi.invokeCmd, rc: " + str(results['overallRC']))
-    return results['overallRC']
+    rh.printSysLog("Exit smapi.invokeCmd, rc: " + str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def parseCmdline(rh):
@@ -184,16 +187,18 @@ def parseCmdline(rh):
        Return code - 0: ok, non-zero: error
     """
 
-    rc = 0
     rh.printSysLog("Enter smapi.parseCmdline")
 
     if rh.totalParms >= 2:
         rh.userid = rh.request[1].upper()
     else:
-        rh.printLn("ES", "Userid is missing")
-        rh.updateResults({'overallRC': 1})
-        rh.printSysLog("Exit smapi.parseCmdLine, rc: " + rc)
-        return 1
+        # Userid is missing.
+        msg = (msgs.msg['0010'][1] % modId)
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0010'][0])
+        rh.printSysLog("Exit smapi.parseCmdLine, rc: " +
+            rh.results['overallRC'])
+        return rh.results['overallRC']
 
     if rh.totalParms == 2:
         rh.subfunction = rh.userid
@@ -204,19 +209,20 @@ def parseCmdline(rh):
 
     # Verify the subfunction is valid.
     if rh.subfunction not in subfuncHandler:
+        # Subfunction is missing.
         list = ', '.join(sorted(subfuncHandler.keys()))
-        rh.printLn("ES", "Subfunction is missing.  " +
-                "It should be one of the following: " + list + ".")
-        rh.updateResults({'overallRC': 4})
-        rc = 4
+        msg = (msgs.msg['0011'][1] % (modId, list))
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0011'][0])
 
     # Parse the rest of the command line.
-    if rc == 0:
+    if rh.results['overallRC'] == 0:
         rh.argPos = 3               # Begin Parsing at 4th operand
         rc = generalUtils.parseCmdline(rh, posOpsList, keyOpsList)
 
-    rh.printSysLog("Exit smapi.parseCmdLine, rc: " + str(rc))
-    return rc
+    rh.printSysLog("Exit smapi.parseCmdLine, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def showInvLines(rh):
