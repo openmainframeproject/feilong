@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "91110b5b_e7c65c5d",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 627,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-06-28T22:10:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6f66b6f3_e18d8235",
+      "range": {
+        "startLine": 627,
+        "startChar": 9,
+        "endLine": 627,
+        "endChar": 16
+      },
+      "revId": "c20f9c07bcbd0f15d2fba609105722222678648a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e768deca_0fc26457",
         "filename": "smutLayer/vmUtils.py",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "90e935c1_cc41ea73",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 623,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-06-28T22:10:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e768deca_0fc26457",
+      "range": {
+        "startLine": 623,
+        "startChar": 1,
+        "endLine": 623,
+        "endChar": 31
+      },
+      "revId": "c20f9c07bcbd0f15d2fba609105722222678648a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b16bbe15_b8ef0fd6",
         "filename": "smutLayer/vmUtils.py",
         "patchSetId": 2
@@ -59,6 +107,30 @@
       "writtenOn": "2017-06-28T22:01:14Z",
       "side": 1,
       "message": "Please use the new messaging code; add a message to msgs.py if one does not already exist and use the message number to get to the dictionary element.",
+      "range": {
+        "startLine": 638,
+        "startChar": 0,
+        "endLine": 641,
+        "endChar": 33
+      },
+      "revId": "c20f9c07bcbd0f15d2fba609105722222678648a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c1cc91d6_6c3e9d6e",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 641,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-06-28T22:10:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b16bbe15_b8ef0fd6",
       "range": {
         "startLine": 638,
         "startChar": 0,
