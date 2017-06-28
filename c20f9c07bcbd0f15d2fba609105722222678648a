@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6f66b6f3_e18d8235",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 627,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-28T22:01:14Z",
+      "side": 1,
+      "message": "You only set rc to use it in the 2 exit statements.  Is there a reason that you are not using rh.results[\u0027overallRC\u0027] ?  It would be consistent with other subroutine handlers.  Then you would not need to bring \"rc\" into existence.",
+      "range": {
+        "startLine": 627,
+        "startChar": 9,
+        "endLine": 627,
+        "endChar": 16
+      },
+      "revId": "c20f9c07bcbd0f15d2fba609105722222678648a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e768deca_0fc26457",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 623,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-28T22:01:14Z",
+      "side": 1,
+      "message": "You can probably get away without creating an element for strError or errno.  You do not appear to use them.  You may possibly get away without changing results[\u0027rs\u0027].  I have less of a concern about it existence.",
+      "range": {
+        "startLine": 623,
+        "startChar": 1,
+        "endLine": 623,
+        "endChar": 31
+      },
+      "revId": "c20f9c07bcbd0f15d2fba609105722222678648a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b16bbe15_b8ef0fd6",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 641,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-28T22:01:14Z",
+      "side": 1,
+      "message": "Please use the new messaging code; add a message to msgs.py if one does not already exist and use the message number to get to the dictionary element.",
+      "range": {
+        "startLine": 638,
+        "startChar": 0,
+        "endLine": 641,
+        "endChar": 33
+      },
+      "revId": "c20f9c07bcbd0f15d2fba609105722222678648a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
