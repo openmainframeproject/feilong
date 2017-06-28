@@ -14,13 +14,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import generalUtils
 import os.path
 import shutil
 import tarfile
 import tempfile
+
+import generalUtils
+import msgs
 from vmUtils import disableEnableDisk, execCmdThruIUCV, installFS
 from vmUtils import invokeSMCLI, isLoggedOn
+
+modId = "CVM"
 version = "1.0.0"
 
 """
@@ -176,11 +180,12 @@ def add3390(rh):
         results = invokeSMCLI(rh, cmd)
 
         if results['overallRC'] != 0:
+            # SMAPI API failed.
             strCmd = ' '.join(cmd)
-            rh.printLn("ES", "Command failed: '" + strCmd +
-                       "', out: '" + results['response'] +
-                       "', rc: " + str(results['overallRC']))
-            rh.updateResults(results)
+            msg = (msgs.msg['0300'][1] % (modId, strCmd,
+                results['overallRC'], results['response']))
+            rh.printLn("ES", msg)
+            rh.updateResults(results)  # Use results returned by invokeSMCLI
 
     if (results['overallRC'] == 0 and 'filesystem' in rh.parms):
         results = installFS(
@@ -204,16 +209,17 @@ def add3390(rh):
                 rh.printLn("N", "Added dasd " + rh.parms['vaddr'] +
                     " to the active configuration.")
             else:
+                # SMAPI API failed.
                 strCmd = ' '.join(cmd)
-                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-                    results['response'] + "', rc: " +
-                    str(results['overallRC']))
-                rh.updateResults(results)
+                msg = msgs.msg['0300'][1] % (modId, strCmd,
+                    results['overallRC'], results['response'])
+                rh.printLn("ES", msg)
+                rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit changeVM.add3390, rc: " +
-                   str(results['overallRC']))
+                   str(rh.results['overallRC']))
 
-    return results['overallRC']
+    return rh.results['overallRC']
 
 
 def add9336(rh):
@@ -272,11 +278,12 @@ def add9336(rh):
         results = invokeSMCLI(rh, cmd)
 
         if results['overallRC'] != 0:
+            # SMAPI API failed.
             strCmd = ' '.join(cmd)
-            rh.printLn("ES", "Command failed: '" + strCmd +
-                       "', out: '" + results['response'] +
-                       "', rc: " + str(results['overallRC']))
-            rh.updateResults(results)
+            msg = msgs.msg['0300'][1] % (modId, strCmd,
+                results['overallRC'], results['response'])
+            rh.printLn("ES", msg)
+            rh.updateResults(results)    # Use results from invokeSMCLI
 
     if (results['overallRC'] == 0 and 'filesystem' in rh.parms):
         # Install the file system
@@ -301,15 +308,16 @@ def add9336(rh):
                 rh.printLn("N", "Added dasd " + rh.parms['vaddr'] +
                     " to the active configuration.")
             else:
+                # SMAPI API failed.
                 strCmd = ' '.join(cmd)
-                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-                    results['response'] + "', rc: " +
-                    str(results['overallRC']))
-                rh.updateResults(results)
+                msg = msgs.msg['0300'][1] % (modId, strCmd,
+                    results['overallRC'], results['response'])
+                rh.printLn("ES", msg)
+                rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit changeVM.add9336, rc: " +
-                   str(results['overallRC']))
-    return results['overallRC']
+                   str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def addAEMOD(rh):
@@ -329,7 +337,7 @@ def addAEMOD(rh):
        Return code - 0: ok
        Return code - 4: input error, rs - 11 AE script not found
     """
-    rc = 0
+
     rh.printSysLog("Enter changeVM.addAEMOD")
     invokeScript = "invokeScript.sh"
     trunkFile = "aemod.doscript"
@@ -363,20 +371,22 @@ def addAEMOD(rh):
         rh.parms['file'] = trunkFile
         results = punchFile(rh)
         if results != 0:
-            rh.printLn("ES", "Failed to punch file to guest: '" +
-                       "Guest " + rh.userid + "out " + results)
+            # Failed to punch file to the guest.
             shutil.rmtree(tempDir)
-            rh.updateResults(results)
-            return
+            msg = msgs.msg['0401'][1] % (modId, rh.parms['file'],
+                rh.userid, results['response'])
+            rh.printLn("ES", msg)
+            rh.updateResults(results)    # Pass back results from punchFile
     else:
-        rh.printLn("ES", "The worker script " +
-                   rh.parms['aeScript'] + " does not exist.")
+        # Worker script does not exist.
         shutil.rmtree(tempDir)
-        rh.updateResults({'overallRC': 4, 'rc': 4, 'rs': 11})
-        return
+        msg = msgs.msg['0400'][1] % (modId, rh.parms['aeScript'])
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0400'][0])
 
-    rh.printSysLog("Exit changeVM.addAEMOD, rc: " + str(rc))
-    return 0
+    rh.printSysLog("Exit changeVM.addAEMOD, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def addIPL(rh):
@@ -396,7 +406,7 @@ def addIPL(rh):
        Request Handle updated with the results.
        Return code - 0: ok, non-zero: error
     """
-    rc = 0
+
     rh.printSysLog("Enter changeVM.addIPL")
 
     cmd = ["smcli",
@@ -417,14 +427,16 @@ def addIPL(rh):
                     " to the directory for guest " +
                     rh.userid)
     else:
+        # SMAPI API failed.
         strCmd = ' '.join(cmd)
-        rh.printLn("ES", "Command failed: '" + strCmd +
-            "', out: '" + results['response'] +
-            "', rc: " + str(results['overallRC']))
-        rh.updateResults(results)
+        msg = msgs.msg['0300'][1] % (modId, strCmd,
+            results['overallRC'], results['response'])
+        rh.printLn("ES", msg)
+        rh.updateResults(results)    # Use results from invokeSMCLI
 
-    rh.printSysLog("Exit changeVM.addIPL, rc: " + str(rc))
-    return rc
+    rh.printSysLog("Exit changeVM.addIPL, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def addLOADDEV(rh):
@@ -468,7 +480,6 @@ def doIt(rh):
        Return code - 0: ok, non-zero: error
     """
 
-    rc = 0
     rh.printSysLog("Enter changeVM.doIt")
 
     # Show the invocation parameters, if requested.
@@ -489,8 +500,9 @@ def doIt(rh):
     # Call the subfunction handler
     subfuncHandler[rh.subfunction][1](rh)
 
-    rh.printSysLog("Exit changeVM.doIt, rc: " + str(rc))
-    return rc
+    rh.printSysLog("Exit changeVM.doIt, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def getVersion(rh):
@@ -543,8 +555,10 @@ def parseCmdline(rh):
     if rh.totalParms >= 2:
         rh.userid = rh.request[1].upper()
     else:
-        rh.printLn("ES", "Userid is missing")
-        rh.updateResults({'overallRC': 4})
+        # Userid is missing.
+        msg = msgs.msg['0010'][1] % modId
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0010'][0])
         rh.printSysLog("Exit changeVM.parseCmdLine, rc: " +
             str(rh.results['overallRC']))
         return rh.results['overallRC']
@@ -558,10 +572,11 @@ def parseCmdline(rh):
 
     # Verify the subfunction is valid.
     if rh.subfunction not in subfuncHandler:
+        # Subfunction is missing.
         list = ', '.join(sorted(subfuncHandler.keys()))
-        rh.printLn("ES", "Subfunction is missing.  " +
-            "It should be one of the following: " + list + ".")
-        rh.updateResults({'overallRC': 4})
+        msg = msgs.msg['0011'][1] % (modId, list)
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0011'][0])
 
     # Parse the rest of the command line.
     if rh.results['overallRC'] == 0:
@@ -572,10 +587,10 @@ def parseCmdline(rh):
         if rh.subfunction in ['ADD3390', 'ADD9336']:
             if ('fileSystem' in rh.parms and rh.parms['fileSystem'] not in
                 ['ext2', 'ext3', 'ext4', 'xfs', 'swap']):
-                rh.printLn("ES", "The file system was not 'ext2', " +
-                    "'ext3', 'ext4', 'xfs' or 'swap': " +
-                    rh.parms['fileSystem'] + ".")
-                rh.updateResults({'overallRC': 4})
+                # Invalid file system specified.
+                msg = msgs.msg['0011'][1] % (modId, rh.parms['fileSystem'])
+                rh.printLn("ES", msg)
+                rh.updateResults(msgs.msg['0011'][0])
 
     rh.printSysLog("Exit changeVM.parseCmdLine, rc: " +
         str(rh.results['overallRC']))
@@ -598,13 +613,14 @@ def punchFile(rh):
        Request Handle updated with the results.
        Return code - 0: ok, non-zero: error
     """
-    rc = 0
+
     rh.printSysLog("Enter changeVM.punchFile")
 
     rh.printLn("N", "This subfunction is not implemented yet.")
 
-    rh.printSysLog("Exit changeVM.punchFile, rc: " + str(rc))
-    return 0
+    rh.printSysLog("Exit changeVM.punchFile, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def purgeRDR(rh):
@@ -621,13 +637,14 @@ def purgeRDR(rh):
        Request Handle updated with the results.
        Return code - 0: ok, non-zero: error
     """
-    rc = 0
+
     rh.printSysLog("Enter changeVM.purgeRDR")
 
     rh.printLn("N", "This subfunction is not implemented yet.")
 
-    rh.printSysLog("Exit changeVM.purgeRDR, rc: " + str(rc))
-    return 0
+    rh.printSysLog("Exit changeVM.purgeRDR, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def removeDisk(rh):
@@ -645,7 +662,7 @@ def removeDisk(rh):
        Request Handle updated with the results.
        Return code - 0: ok, non-zero: error
     """
-    rc = 0
+
     rh.printSysLog("Enter changeVM.removeDisk")
 
     results = {'overallRC': 0, 'rc': 0, 'rs': 0}
@@ -688,18 +705,20 @@ def removeDisk(rh):
             rh.printLn("N", "Removed dasd " + rh.parms['vaddr'] +
                 " from the user directory.")
         else:
+            # SMAPI API failed.
             strCmd = ' '.join(cmd)
-            rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-                results['response'] + "', rc: " +
-                str(results['overallRC']))
-            rh.updateResults(results)
+            msg = msgs.msg['0300'][1] % (modId, strCmd,
+                results['overallRC'], results['response'])
+            rh.printLn("ES", msg)
+            rh.updateResults(results)    # Use results from invokeSMCLI
 
     else:
         # Unexpected error.  Message already sent.
         rh.updateResults(results)
 
-    rh.printSysLog("Exit changeVM.removeDisk, rc: " + str(rc))
-    return 0
+    rh.printSysLog("Exit changeVM.removeDisk, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def removeIPL(rh):
@@ -716,7 +735,7 @@ def removeIPL(rh):
        Request Handle updated with the results.
        Return code - 0: ok, non-zero: error
     """
-    rc = 0
+
     rh.printSysLog("Enter changeVM.removeIPL")
 
     cmd = ["smcli",
@@ -729,14 +748,16 @@ def removeIPL(rh):
         rh.printLn("N", "Removed IPL statement from the "
                    "directory for guest " + rh.userid)
     else:
+        # SMAPI API failed.
         strCmd = ' '.join(cmd)
-        rh.printLn("ES", "Command failed: '" + strCmd +
-            "', out: '" + results['response'] +
-            "', rc: " + str(results['overallRC']))
-        rh.updateResults(results)
+        msg = msgs.msg['0300'][1] % (modId, strCmd,
+            results['overallRC'], results['response'])
+        rh.printLn("ES", msg)
+        rh.updateResults(results)    # Use results from invokeSMCLI
 
-    rh.printSysLog("Exit changeVM.removeIPL, rc: " + str(rc))
-    return rc
+    rh.printSysLog("Exit changeVM.removeIPL, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def showInvLines(rh):

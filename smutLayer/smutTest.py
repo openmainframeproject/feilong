@@ -17,9 +17,10 @@
 import re
 import sys
 import subprocess
+from subprocess import CalledProcessError
+
 from smut import SMUT
 from ReqHandle import ReqHandle
-from subprocess import CalledProcessError
 
 version = '1.0.0'         # Version of this script
 
@@ -158,7 +159,7 @@ deployTests = [
         'out': "",
         'overallRC': [4],
         'rc': [4],
-        'rs': [11],
+        'rs': [400],
     },
     {
         'description': "Add modifications to activation engine for bad id",
@@ -211,7 +212,8 @@ generalTests = [
         'description': "Test no operands => error",
         'request': "",               # Request with no parms
         'overallRC': [4],
-        'rc': [100],
+        'rc': [4],
+        'rs': [9],
     },
     {
         'description': "Test Version",
@@ -223,7 +225,8 @@ generalTests = [
         'description': "Test unrecognized operands",
         'request': "Steve is great",
         'overallRC': [4],
-        'rc': [200],
+        'rc': [4],
+        'rs': [7],
     },
     ]
 
