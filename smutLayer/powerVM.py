@@ -14,12 +14,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import generalUtils
 import time
+
+import generalUtils
+import msgs
 from vmUtils import execCmdThruIUCV, invokeSMCLI
 from vmUtils import isLoggedOn
 from vmUtils import waitForOSState, waitForVMState
 
+modId = 'PVM'
 version = "1.0.0"
 
 """
@@ -145,12 +148,14 @@ def activate(rh):
     if results['overallRC'] == 0:
         pass
     elif results['rc'] == 200 and results['rs'] == 8:
-        rh.updateResults({}, reset=1)
+        pass    # All good.  No need to change the ReqHandle results.
     else:
+        # SMAPI API failed.
         strCmd = ' '.join(cmd)
-        rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-            results['response'] + "', rc: " + str(results['overallRC']))
-        rh.updateResults(results)
+        msg = msgs.msg['0300'][1] % (modId, strCmd,
+            results['overallRC'], results['response'])
+        rh.printLn("ES", msg)
+        rh.updateResults(results)   # Use results from invokeSMCLI
 
     if results['overallRC'] == 0 and 'maxQueries' in rh.parms:
         if rh.parms['desiredState'] == 'up':
@@ -172,8 +177,8 @@ def activate(rh):
                 " is in the desired state: " + rh.parms['desiredState'])
 
     rh.printSysLog("Exit powerVM.activate, rc: " +
-        str(results['overallRC']))
-    return results['overallRC']
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def checkIsReachable(rh):
@@ -247,10 +252,12 @@ def deactivate(rh):
         rh.printLn("N", rh.userid + " is already logged off.")
         rh.updateResults({}, reset=1)
     else:
+        # SMAPI API failed.
         strCmd = ' '.join(cmd)
-        rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-            results['response'] + "', rc: " + str(results['overallRC']))
-        rh.updateResults(results)
+        msg = msgs.msg['0300'][1] % (modId, strCmd,
+            results['overallRC'], results['response'])
+        rh.printLn("ES", msg)
+        rh.updateResults(results)    # Use results from invokeSMCLI
 
     if results['overallRC'] == 0 and 'maxQueries' in rh.parms:
         results = waitForVMState(
@@ -266,8 +273,8 @@ def deactivate(rh):
             rh.updateResults(results)
 
     rh.printSysLog("Exit powerVM.deactivate, rc: " +
-        str(results['overallRC']))
-    return results['overallRC']
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def doIt(rh):
@@ -282,7 +289,6 @@ def doIt(rh):
        Return code - 0: ok, non-zero: error
     """
 
-    rc = 0
     rh.printSysLog("Enter powerVM.doIt")
 
     # Show the invocation parameters, if requested.
@@ -303,8 +309,9 @@ def doIt(rh):
     # Call the subfunction handler
     subfuncHandler[rh.subfunction][1](rh)
 
-    rh.printSysLog("Exit powerVM.doIt, rc: " + str(rc))
-    return rc
+    rh.printSysLog("Exit powerVM.doIt, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def getStatus(rh):
@@ -395,8 +402,10 @@ def parseCmdline(rh):
     if rh.totalParms >= 2:
         rh.userid = rh.request[1].upper()
     else:
-        rh.printLn("ES", "Userid is missing")
-        rh.updateResults({'overallRC': 4})
+        # Userid is missing.
+        msg = msgs.msg['0010'][1] % modId
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0010'][0])
         rh.printSysLog("Exit powerVM.parseCmdLine, rc: " +
             rh.results['overallRC'])
         return rh.results['overallRC']
@@ -410,10 +419,11 @@ def parseCmdline(rh):
 
     # Verify the subfunction is valid.
     if rh.subfunction not in subfuncHandler:
+        # Subfunction is missing.
         list = ', '.join(sorted(subfuncHandler.keys()))
-        rh.printLn("ES", "Subfunction is missing.  " +
-                "It should be one of the following: " + list + ".")
-        rh.updateResults({'overallRC': 4})
+        msg = msgs.msg['0011'][1] % (modId, list)
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0011'][0])
 
     # Parse the rest of the command line.
     if rh.results['overallRC'] == 0:
@@ -425,10 +435,11 @@ def parseCmdline(rh):
         if rh.subfunction == 'WAIT':
             waiting = 1
             if rh.parms['desiredState'] not in ['down', 'off', 'on', 'up']:
-                rh.printLn("ES", "The desired state was not 'down'," +
-                    "'off', 'on' or 'up': " + rh.parms['desiredState'] +
-                    ".")
-                rh.updateResults({'overallRC': 4})
+                # Desired state is not: down, off, on or up.
+                msg = msgs.msg['0013'][1] % (modId,
+                    rh.parms['desiredState'])
+                rh.printLn("ES", msg)
+                rh.updateResults(msgs.msg['0013'][0])
 
     if (rh.results['overallRC'] == 0 and 'wait' in rh.parms):
         waiting = 1
@@ -443,9 +454,11 @@ def parseCmdline(rh):
         if rh.subfunction == 'ON' or rh.subfunction == 'RESET':
             if ('desiredState' not in rh.parms or
                   rh.parms['desiredState'] not in ['on', 'up']):
-                rh.printLn("ES", "The desired state was not 'on' or 'up': " +
-                    rh.parms['desiredState'] + ".")
-                rh.updateResults({'overallRC': 4})
+                # Desired state is not: on or up.
+                msg = msgs.msg['0014'][1] % (modId,
+                    rh.parms['desiredState'])
+                rh.printLn("ES", msg)
+                rh.updateResults(msgs.msg['0014'][0])
 
         if rh.results['overallRC'] == 0:
             if 'maxWait' not in rh.parms:
@@ -475,7 +488,6 @@ def pause(rh):
        Return code - 0: ok, non-zero: error
     """
 
-    rc = 0
     rh.printSysLog("Enter powerVM.pause, userid: " + rh.userid)
 
     cmd = ["smcli",
@@ -485,14 +497,15 @@ def pause(rh):
 
     results = invokeSMCLI(rh, cmd)
     if results['overallRC'] != 0:
+        # SMAPI API failed.
         strCmd = ' '.join(cmd)
-        rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-            results['response'] + "', rc: " + str(results['overallRC']))
-        rh.updateResults(results)
-        rc = results['overallRC']
+        msg = msgs.msg['0300'][1] % (modId, strCmd,
+            results['overallRC'], results['response'])
+        rh.printLn("ES", msg)
+        rh.updateResults(results)    # Use results from invokeSMCLI
 
-    rh.printSysLog("Exit powerVM.pause, rc: " + str(rc))
-    return rc
+    rh.printSysLog("Exit powerVM.pause, rc: " + str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def reboot(rh):
@@ -523,10 +536,13 @@ def reboot(rh):
     strCmd = "shutdown -r now"
     results = execCmdThruIUCV(rh, rh.userid, strCmd)
     if results['overallRC'] != 0:
-        rh.printLn("ES", "Command: '" + strCmd + "' failed. ', out: '" +
-            results['response'] + "', rc: " + str(results['overallRC']))
+        # Command failed to execute using IUCV.
+        msg = msgs.msg['0310'][1] % (modId, rh.userid, strCmd,
+            results['overallRC'], results['response'])
+        rh.printLn("ES", msg)
+        rh.updateResults(results)
 
-    if results['overallRC'] == 0:
+    if rh.results['overallRC'] == 0:
         # Wait for the OS to go down
         results = waitForOSState(rh, rh.userid, "down",
             maxQueries=30, sleepSecs=10)
@@ -534,7 +550,7 @@ def reboot(rh):
             rh.printLn("N", "Userid '" + rh.userid +
                 " is in the interim state: down")
 
-    if results['overallRC'] == 0 and 'maxQueries' in rh.parms:
+    if rh.results['overallRC'] == 0 and 'maxQueries' in rh.parms:
         results = waitForOSState(rh,
                                   rh.userid,
                                   'up',
@@ -547,8 +563,8 @@ def reboot(rh):
             rh.updateResults(results)
 
     rh.printSysLog("Exit powerVM.reboot, rc: " +
-        str(results['overallRC']))
-    return results['overallRC']
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def reset(rh):
@@ -587,11 +603,12 @@ def reset(rh):
             results['rc'] = 0
             results['rs'] = 0
         else:
+            # SMAPI API failed.
             strCmd = ' '.join(cmd)
-            rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-                rh.results['response'] + "', rc: " +
-                str(rh.results['overallRC']))
-            rh.updateResults(results)
+            msg = msgs.msg['0300'][1] % (modId, strCmd,
+                results['overallRC'], results['response'])
+            rh.printLn("ES", msg)
+            rh.updateResults(results)    # Use results from invokeSMCLI
 
     # Wait for the logoff to complete
     if results['overallRC'] == 0:
@@ -606,10 +623,12 @@ def reset(rh):
 
         results = invokeSMCLI(rh, cmd)
         if results['overallRC'] != 0:
+            # SMAPI API failed.
             strCmd = ' '.join(cmd)
-            rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-                results['response'] + "', rc: " + str(results['overallRC']))
-            rh.updateResults(results)
+            msg = msgs.msg['0300'][1] % (modId, strCmd,
+                results['overallRC'], results['response'])
+            rh.printLn("ES", msg)
+            rh.updateResults(results)    # Use results from invokeSMCLI
 
     if results['overallRC'] == 0 and 'maxQueries' in rh.parms:
         if rh.parms['desiredState'] == 'up':
@@ -633,8 +652,8 @@ def reset(rh):
             rh.updateResults(results)
 
     rh.printSysLog("Exit powerVM.reset, rc: " +
-        str(results['overallRC']))
-    return results['overallRC']
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def showInvLines(rh):
@@ -776,10 +795,12 @@ def softDeactivate(rh):
 
         results = invokeSMCLI(rh, cmd)
         if results['overallRC'] != 0:
+            # SMAPI API failed.
             strCmd = ' '.join(cmd)
-            rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-                results['response'] + "', rc: " + str(results['overallRC']))
-            rh.updateResults(results)
+            msg = msgs.msg['0300'][1] % (modId, strCmd,
+                results['overallRC'], results['response'])
+            rh.printLn("ES", msg)
+            rh.updateResults(results)    # Use results from invokeSMCLI
 
     if results['overallRC'] == 0 and 'maxQueries' in rh.parms:
         # Wait for the system to log off.
@@ -796,8 +817,8 @@ def softDeactivate(rh):
             rh.updateResults(results)
 
     rh.printSysLog("Exit powerVM.softDeactivate, rc: " +
-        str(results['overallRC']))
-    return results['overallRC']
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def unpause(rh):
@@ -824,14 +845,16 @@ def unpause(rh):
 
     results = invokeSMCLI(rh, cmd)
     if results['overallRC'] != 0:
+        # SMAPI API failed.
         strCmd = ' '.join(cmd)
-        rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-            results['response'] + "', rc: " + str(results['overallRC']))
-        rh.updateResults(results)
+        msg = msgs.msg['0300'][1] % (modId, strCmd,
+            results['overallRC'], results['response'])
+        rh.printLn("ES", msg)
+        rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit powerVM.unpause, rc: " +
-        str(results['overallRC']))
-    return results['overallRC']
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def wait(rh):
@@ -878,5 +901,5 @@ def wait(rh):
     else:
         rh.updateResults(results)
 
-    rh.printSysLog("Exit powerVM.wait, rc: " + str(results['overallRC']))
-    return results['overallRC']
+    rh.printSysLog("Exit powerVM.wait, rc: " + str(rh.results['overallRC']))
+    return rh.results['overallRC']

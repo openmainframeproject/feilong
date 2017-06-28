@@ -16,8 +16,9 @@
 
 import logging
 import logging.handlers
-from ReqHandle import ReqHandle
 from time import time
+
+from ReqHandle import ReqHandle
 
 version = '1.0.0'         # Version of this function.
 
