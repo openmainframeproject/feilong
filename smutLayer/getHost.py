@@ -14,10 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import generalUtils
 import types
+
+import generalUtils
+import msgs
 from vmUtils import invokeSMCLI
 
+modId = 'GHO'
 version = "1.0.0"
 
 """
@@ -131,10 +134,12 @@ def getDiskPoolNames(rh):
             poolName = line.partition(' ')[0]
             rh.printLn("N", poolName)
     else:
+        # SMAPI API failed.
         strCmd = ' '.join(cmd)
-        rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-            results['response'] + "', rc: " + str(results['overallRC']))
-        rh.updateResults(results)
+        msg = msgs.msg['0300'][1] % (modId, strCmd,
+            results['overallRC'], results['response'])
+        rh.printLn("ES", msg)
+        rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit getHost.getDiskPoolNames, rc: " +
         str(rh.results['overallRC']))
@@ -197,18 +202,20 @@ def getDiskPoolSpace(rh):
                     elif parts[1][:4] == "9336":
                         totals[poolName][qType] += int(parts[3]) * 512
             else:
+                # SMAPI API failed.
                 strCmd = ' '.join(cmd)
-                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-                    results['response'] + "', rc: " +
-                    str(results['overallRC']))
-                rh.updateResults(results)
+                msg = msgs.msg['0300'][1] % (modId, strCmd,
+                    results['overallRC'], results['response'])
+                rh.printLn("ES", msg)
+                rh.updateResults(results)    # Use results from invokeSMCLI
                 break
 
         if results['overallRC'] == 0:
             if len(totals) == 0:
-                rh.printLn("ES", "No information was found for the " +
-                    "specified pool(s): " + " ".join(poolNames))
-                rh.updateResults({'overallRC': 99, 'rc': 8})
+                # No pool information found.
+                msg = msgs.msg['0402'][1] % (modId, " ".join(poolNames))
+                rh.printLn("ES", msg)
+                rh.updateResults(msgs.msg['0402'][0])
             else:
                 # Produce a summary for each pool
                 for poolName in sorted(totals):
@@ -249,10 +256,12 @@ def getFcpDevices(rh):
     if results['overallRC'] == 0:
         rh.printLn("N", results['response'])
     else:
+        # SMAPI API failed.
         strCmd = ' '.join(cmd)
-        rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-            results['response'] + "', rc: " + str(results['overallRC']))
-        rh.updateResults(results)
+        msg = msgs.msg['0300'][1] % (modId, strCmd,
+            results['overallRC'], results['response'])
+        rh.printLn("ES", msg)
+        rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit getHost.getFcpDevices, rc: " +
         str(rh.results['overallRC']))
@@ -326,7 +335,6 @@ def parseCmdline(rh):
        Return code - 0: ok, non-zero: error
     """
 
-    rc = 0
     rh.printSysLog("Enter getHost.parseCmdline")
 
     rh.userid = ''
@@ -336,19 +344,20 @@ def parseCmdline(rh):
 
     # Verify the subfunction is valid.
     if rh.subfunction not in subfuncHandler:
-        list = ', '.join(sorted(subfuncHandler.keys()))
-        rh.printLn("ES", "Subfunction is missing.  " +
-                "It should be one of the following: " + list + ".")
-        rh.updateResults({'overallRC': 4})
-        rc = 4
+        # Subfunction is missing.
+        subList = ', '.join(sorted(subfuncHandler.keys()))
+        msg = msgs.msg['0011'][1] % (modId, subList)
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0011'][0])
 
     # Parse the rest of the command line.
-    if rc == 0:
+    if rh.results['overallRC'] == 0:
         rh.argPos = 2               # Begin Parsing at 3rd operand
-        rc = generalUtils.parseCmdline(rh, posOpsList, keyOpsList)
+        generalUtils.parseCmdline(rh, posOpsList, keyOpsList)
 
-    rh.printSysLog("Exit getHost.parseCmdLine, rc: " + str(rc))
-    return rc
+    rh.printSysLog("Exit getHost.parseCmdLine, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def showInvLines(rh):

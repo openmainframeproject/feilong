@@ -16,7 +16,10 @@
 
 import math
 
+import msgs
+
 fiveGigSize = (1024 * 5)
+modId = 'GUT'
 
 
 def cvtToBlocks(rh, diskSize):
@@ -48,10 +51,10 @@ def cvtToBlocks(rh, diskSize):
         # Convert the bytes to blocks
         byteSize = blocks[:-1]
         if byteSize == '':
-            rh.printLn("ES", "The size of the disk is not valid: " + lastChar)
-            results['overallRC'] = 4
-            results['rc'] = 4
-            results['rs'] = 4
+            # The size of the disk is not valid.
+            msg = msgs.msg['0200'][1] % (modId, blocks)
+            rh.printLn("ES", msg)
+            results = msgs.msg['0200'][0]
         else:
             try:
                 if lastChar == 'M':
@@ -60,17 +63,15 @@ def cvtToBlocks(rh, diskSize):
                     blocks = (float(byteSize) * 1024 * 1024 * 1024) / 512
                 blocks = str(int(math.ceil(blocks)))
             except:
-                rh.printLn("ES", "Failed to convert " + diskSize +
-                    " to a number of blocks")
-                results['overallRC'] = 4
-                results['rc'] = 4
-                results['rs'] = 8
+                # Failed to convert to a number of blocks.
+                msg = msgs.msg['0201'][1] % (modId, byteSize)
+                rh.printLn("ES", msg)
+                results = msgs.msg['0201'][0]
     elif blocks.strip('1234567890'):
-        rh.printLn("ES", rh.parms['diskSize'] + " is not an integer size " +
-            "of blocks.")
-        results['overallRC'] = 4
-        results['rc'] = 4
-        results['rs'] = 12
+        # Size is not an integer size of blocks.
+        msg = msgs.msg['0202'][1] % (modId, blocks)
+        rh.printLn("ES", msg)
+        results = msgs.msg['0202'][0]
 
     rh.printSysLog("Exit generalUtils.cvtToBlocks, rc: " +
         str(results['overallRC']))
@@ -106,10 +107,10 @@ def cvtToCyl(rh, diskSize):
         # Convert the bytes to cylinders
         byteSize = cyl[:-1]
         if byteSize == '':
-            rh.printLn("ES", "The size of the disk is not valid: " + lastChar)
-            results['overallRC'] = 4
-            results['rc'] = 4
-            results['rs'] = 4
+            # The size of the disk is not valid.
+            msg = msgs.msg['0200'][1] % (modId, lastChar)
+            rh.printLn("ES", msg)
+            results = msgs.msg['0200'][0]
         else:
             try:
                 if lastChar == 'M':
@@ -118,17 +119,15 @@ def cvtToCyl(rh, diskSize):
                     cyl = (float(byteSize) * 1024 * 1024 * 1024) / 737280
                 cyl = str(int(math.ceil(cyl)))
             except:
-                rh.printLn("ES", "Failed to convert " + diskSize +
-                    " to a number of cylinders")
-                results['overallRC'] = 4
-                results['rc'] = 4
-                results['rs'] = 8
+                # Failed to convert to a number of cylinders.
+                msg = msgs.msg['0203'][1] % (modId, byteSize)
+                rh.printLn("ES", msg)
+                results = msgs.msg['0203'][0]
     elif cyl.strip('1234567890'):
-        rh.printLn("ES", rh.parms['diskSize'] + " is not an integer size " +
-            "of cylinders.")
-        results['overallRC'] = 4
-        results['rc'] = 4
-        results['rs'] = 12
+        # Size is not an integer value.
+        msg = msgs.msg['0202'][1] % (modId, cyl)
+        rh.printLn("ES", msg)
+        results = msgs.msg['0202'][0]
 
     rh.printSysLog("Exit generalUtils.cvtToCyl, rc: " +
         str(results['overallRC']))
@@ -177,33 +176,50 @@ def parseCmdline(rh, posOpsList, keyOpsList):
 
     Input:
        Request Handle
+       Positional Operands List.  This is a dictionary that contains
+       an array for each subfunction.  The array contains a entry
+       (itself an array) for each positional operand.
+       That array contains:
+          - Human readable name of the operand,
+          - Property in the parms dictionary to hold the value,
+          - Is it required (True) or optional (False),
+          - Type of data (1: int, 2: string).
+       Keyword Operands List.  This is a dictionary that contains
+       an item for each subfunction.  The value for the subfunction is a
+       dictionary that contains a key for each recognized operand.
+       The value associated with the key is an array that contains
+       the following:
+          - the related ReqHandle.parms item that stores the value,
+          - how many values follow the keyword, and
+          - the type of data for those values (1: int, 2: string)
 
     Output:
        Request Handle updated with parsed input.
        Return code - 0: ok, non-zero: error
     """
 
-    rc = 0
     rh.printSysLog("Enter generalUtils.parseCmdline")
 
     # Handle any positional operands on the line.
-    if rc == 0 and rh.subfunction in posOpsList:
+    if rh.results['overallRC'] == 0 and rh.subfunction in posOpsList:
         ops = posOpsList[rh.subfunction]
         currOp = 0
+        # While we have operands on the command line AND
+        # we have more operands in the positional operand list.
         while rh.argPos < rh.totalParms and currOp < len(ops):
-            key = ops[currOp][1]
-            opType = ops[currOp][3]
+            key = ops[currOp][1]       # key for rh.parms[]
+            opType = ops[currOp][3]    # data type
             if opType == 1:
+                # Handle an integer data type
                 try:
                     rh.parms[key] = int(rh.request[rh.argPos])
                 except ValueError:
                     # keyword is not an integer
-                    rh.printLn("ES", rh.function + " " + rh.subfunction +
-                        " subfunction's operand at position " +
-                        str(currOp + 1) + " (" + ops[currOp][0] +
-                        ") is not an integer: " + rh.request[rh.argPos])
-                    rh.updateResults({'overallRC': 4})
-                    rc = 4
+                    msg = msgs.msg['0001'][1] % (modId, rh.function,
+                        rh.subfunction, (currOp + 1),
+                        ops[currOp][0], rh.request[rh.argPos])
+                    rh.printLn("ES", msg)
+                    rh.updateResults(msgs.msg['0001'][0])
                     break
             else:
                 rh.parms[key] = rh.request[rh.argPos]
@@ -213,14 +229,13 @@ def parseCmdline(rh, posOpsList, keyOpsList):
         if (rh.argPos >= rh.totalParms and currOp < len(ops) and
             ops[currOp][2] is True):
             # Check for missing required operands.
-            rh.printLn("ES", rh.function + "'s " + rh.subfunction +
-               " subfunction is missing positional operand number " +
-               " (" + ops[currOp][0] + " operand).")
-            rh.updateResults({'overallRC': 4})
-            rc = 4
+            msg = msgs.msg['0002'][1] % (modId, rh.function,
+                rh.subfunction, ops[currOp][0], (currOp + 1))
+            rh.printLn("ES", msg)
+            rh.updateResults(msgs.msg['0002'][0])
 
     # Handle any keyword operands on the line.
-    if rc == 0 and rh.subfunction in keyOpsList:
+    if rh.results['overallRC'] == 0 and rh.subfunction in keyOpsList:
         while rh.argPos < rh.totalParms:
             if rh.request[rh.argPos] in keyOpsList[rh.subfunction]:
                 keyword = rh.request[rh.argPos]
@@ -243,11 +258,10 @@ def parseCmdline(rh, posOpsList, keyOpsList):
                                 opCnt = 1
                         if opCnt + rh.argPos > rh.totalParms:
                             # keyword is missing its related value operand
-                            rh.printLn("ES", rh.function + " " +
-                                rh.subfunction + " subfunction's " +
-                                keyword + " operand is missing a value")
-                            rh.updateResults({'overallRC': 4})
-                            rc = 4
+                            msg = msgs.msg['0003'][1] % (modId, rh.function,
+                                rh.subfunction, keyword)
+                            rh.printLn("ES", msg)
+                            rh.updateResults(msgs.msg['0003'][0])
                             break
 
                         """
@@ -269,12 +283,11 @@ def parseCmdline(rh, posOpsList, keyOpsList):
                                             rh.request[rh.argPos]))
                                 except ValueError:
                                     # keyword is not an integer
-                                    rh.printLn("ES", rh.function + " " +
-                                        rh.subfunction + " subfunction's " +
-                                        keyword + " operand value is not an " +
-                                        "integer: " + rh.request[rh.argPos])
-                                    rh.updateResults({'overallRC': 4})
-                                    rc = 4
+                                    msg = (msgs.msg['0004'][1] %
+                                        (modId, rh.function, rh.subfunction,
+                                        keyword, rh.request[rh.argPos]))
+                                    rh.printLn("ES", msg)
+                                    rh.updateResults(msgs.msg['0004'][0])
                                     break
                             else:
                                 # Value is a string, save it.
@@ -283,25 +296,24 @@ def parseCmdline(rh, posOpsList, keyOpsList):
                                 else:
                                     rh.parms[key].append(rh.request[rh.argPos])
                             rh.argPos += 1
-                        if rc != 0:
+                        if rh.results['overallRC'] != 0:
                             # Upper loop had an error break from loops.
                             break
                 else:
                     # keyword is not in the subfunction's keyword list
-                    rh.printLn("ES", rh.function + "'s subfunction " +
-                        rh.subfunction + " does not recognize: " +
-                        rh.request[rh.argPos])
-                    rh.updateResults({'overallRC': 4})
-                    rc = 4
+                    msg = msgs.msg['0005'][1] % (modId, rh.function,
+                        rh.subfunction, keyword)
+                    rh.printLn("ES", msg)
+                    rh.updateResults(msgs.msg['0005'][0])
                     break
             else:
                 # Subfunction does not support keywords
-                rh.printLn("ES", rh.function + "'s subfunction " +
-                    rh.subfunction + " does not recognize: " +
-                    rh.request[rh.argPos])
-                rh.updateResults({'overallRC': 4})
-                rc = 4
+                msg = (msgs.msg['0006'][1] % (modId, rh.function,
+                    rh.subfunction, rh.request[rh.argPos]))
+                rh.printLn("ES", msg)
+                rh.updateResults(msgs.msg['0006'][0])
                 break
 
-    rh.printSysLog("Exit generalUtils.parseCmdLine, rc: " + str(rc))
-    return rc
+    rh.printSysLog("Exit generalUtils.parseCmdLine, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']

@@ -14,10 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import generalUtils
 import re
+
+import generalUtils
+import msgs
 from vmUtils import execCmdThruIUCV, invokeSMCLI
 
+modId = 'GVM'
 version = "1.0.0"
 
 """
@@ -110,7 +113,6 @@ def doIt(rh):
        Return code - 0: ok, non-zero: error
     """
 
-    rc = 0
     rh.printSysLog("Enter getVM.doIt")
 
     # Show the invocation parameters, if requested.
@@ -130,8 +132,8 @@ def doIt(rh):
     # Call the subfunction handler
     subfuncHandler[rh.subfunction][1](rh)
 
-    rh.printSysLog("Exit getVM.doIt, rc: " + str(rc))
-    return rc
+    rh.printSysLog("Exit getVM.doIt, rc: " + str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def getConsole(rh):
@@ -162,10 +164,12 @@ def getConsole(rh):
     if results['overallRC'] == 0:
         rh.printLn("N", results['response'])
     else:
+        # SMAPI API failed.
         strCmd = ' '.join(cmd)
-        rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-            results['response'] + "', rc: " + str(results['overallRC']))
-        rh.updateResults(results)
+        msg = msgs.msg['0300'][1] % (modId, strCmd,
+            results['overallRC'], results['response'])
+        rh.printLn("ES", msg)
+        rh.updateResults(results)    # Use results from invokeSMCLI
 
     if results['overallRC'] == 0:
         rh.printSysLog("May need to add onlining of the reader")
@@ -174,8 +178,8 @@ def getConsole(rh):
         rh.printSysLog("Read each file and write it out with printLn")
 
     rh.printSysLog("Exit getVM.getConsole, rc: " +
-        str(results['overallRC']))
-    return 0
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def getDirectory(rh):
@@ -192,6 +196,7 @@ def getDirectory(rh):
        Request Handle updated with the results.
        Return code - 0: ok, non-zero: error
     """
+    rh.printSysLog("Enter getVM.getDirectory")
 
     cmd = ["smcli",
             "Image_Query_DM",
@@ -202,12 +207,16 @@ def getDirectory(rh):
         results['response'] = re.sub('\*DVHOPT.*', '', results['response'])
         rh.printLn("N", results['response'])
     else:
+        # SMAPI API failed.
         strCmd = ' '.join(cmd)
-        rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-            results['response'] + "', rc: " + str(results['overallRC']))
-        rh.updateResults(results)
+        msg = msgs.msg['0300'][1] % (modId, strCmd,
+            results['overallRC'], results['response'])
+        rh.printLn("ES", msg)
+        rh.updateResults(results)    # Use results from invokeSMCLI
 
-    return results['overallRC']
+    rh.printSysLog("Exit getVM.getDirectory, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def getStatus(rh):
@@ -279,16 +288,18 @@ def parseCmdline(rh):
        Return code - 0: ok, non-zero: error
     """
 
-    rc = 0
     rh.printSysLog("Enter getVM.parseCmdline")
 
     if rh.totalParms >= 2:
         rh.userid = rh.request[1].upper()
     else:
-        rh.printLn("ES", "Userid is missing")
-        rh.updateResults({'overallRC': 1})
-        rh.printSysLog("Exit getVM.parseCmdLine, rc: " + rc)
-        return 1
+        # Userid is missing.
+        msg = msgs.msg['0010'][1] % modId
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0010'][0])
+        rh.printSysLog("Exit getVM.parseCmdLine, rc: " +
+            rh.results['overallRC'])
+        return rh.results['overallRC']
 
     if rh.totalParms == 2:
         rh.subfunction = rh.userid
@@ -299,19 +310,20 @@ def parseCmdline(rh):
 
     # Verify the subfunction is valid.
     if rh.subfunction not in subfuncHandler:
-        list = ', '.join(sorted(subfuncHandler.keys()))
-        rh.printLn("ES", "Subfunction is missing.  " +
-                "It should be one of the following: " + list + ".")
-        rh.updateResults({'overallRC': 4})
-        rc = 4
+        # Subfunction is missing.
+        subList = ', '.join(sorted(subfuncHandler.keys()))
+        msg = msgs.msg['0011'][1] % (modId, subList)
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0011'][0])
 
     # Parse the rest of the command line.
-    if rc == 0:
+    if rh.results['overallRC'] == 0:
         rh.argPos = 3               # Begin Parsing at 4th operand
-        rc = generalUtils.parseCmdline(rh, posOpsList, keyOpsList)
+        generalUtils.parseCmdline(rh, posOpsList, keyOpsList)
 
-    rh.printSysLog("Exit getVM.parseCmdLine, rc: " + str(rc))
-    return rc
+    rh.printSysLog("Exit getVM.parseCmdLine, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def showInvLines(rh):
