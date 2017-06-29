@@ -29,6 +29,7 @@ MVM    makeVM.py
 MIG    migrateVM.py
 PVM    powerVM.py
 RQH    ReqHandle.py
+SMC    Reserved for smcli
 SMP    smapi.py
 VMU    vmUtils.py
 
@@ -133,4 +134,5 @@ msg = {
             "pool(s): %s"],
     '0403': [{'overallRC': 4, 'rc': 99, 'rs': 403},
             "ULT%s0403E  %s"],
+    # 5000-5999: Reserved for SMCLI
     }
