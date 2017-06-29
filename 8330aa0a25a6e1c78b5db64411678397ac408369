@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "66442402_183b550c",
+        "filename": "zvmsdk/tests/functional/test_zvmsdk.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-06-29T01:49:25Z",
+      "side": 1,
+      "message": "This is not always true. When a vm does not have a nic defined or active, there will be no data returned for the vm. we need to take this into consideration.",
+      "range": {
+        "startLine": 161,
+        "startChar": 0,
+        "endLine": 161,
+        "endChar": 44
+      },
+      "revId": "8330aa0a25a6e1c78b5db64411678397ac408369",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "93514008_8e686b38",
+        "filename": "zvmsdk/tests/functional/test_zvmsdk.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-06-29T01:49:25Z",
+      "side": 1,
+      "message": "Same reason to above. You need to ensure this \u0027test_id\u0027 does have an active nic coupled to a vswitch.",
+      "range": {
+        "startLine": 163,
+        "startChar": 16,
+        "endLine": 163,
+        "endChar": 22
+      },
+      "revId": "8330aa0a25a6e1c78b5db64411678397ac408369",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "93f22c5c_a4d069e3",
+        "filename": "zvmsdk/tests/functional/test_zvmsdk.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-06-29T01:49:25Z",
+      "side": 1,
+      "message": "Won\u0027t this cause a ZVMVirtualMachineNotExist exception?",
+      "range": {
+        "startLine": 188,
+        "startChar": 0,
+        "endLine": 188,
+        "endChar": 59
+      },
+      "revId": "8330aa0a25a6e1c78b5db64411678397ac408369",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
