@@ -381,6 +381,11 @@ class sles(LinuxDist):
                 % {'image': image, 'ramdisk': ramdisk, 'root': root,
                    'fcp': fcp, 'wwpn': wwpn, 'lun': lun}]
 
+    def assemble_zfcp_srcdev(self, fcp, wwpn, lun):
+        path = '/dev/disk/by-path/ccw-0.0.%(fcp)s-zfcp-0x%(wwpn)s:0x%(lun)s'
+        srcdev = path % {'fcp': fcp, 'wwpn': wwpn, 'lun': lun}
+        return srcdev
+
 
 class sles11(sles):
     def get_znetconfig_contents(self):
