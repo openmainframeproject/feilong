@@ -107,7 +107,7 @@ int queryABENDDump(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
     rc = smQuery_ABEND_Dump(vmapiContextP, "", 0, "",  targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Query_ABEND_Dump", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Query_ABEND_Dump", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Query_ABEND_Dump", output->common.returnCode,
@@ -233,7 +233,7 @@ int queryAllDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
         rc = smQuery_All_DM_YES(vmapiContextP, "", 0, "",  targetIdentifier, entryCount, entryArray, &output);
 
         if (rc) {
-            printAndLogSmapiCallReturnCode("Query_All_DM", rc, vmapiContextP, "", 0);
+            printAndLogProcessingErrors("Query_All_DM", rc, vmapiContextP, "", 0);
         } else if (output->common.returnCode || output->common.reasonCode) {
             // Handle SMAPI return code and reason code
             rc = printAndLogSmapiReturnCodeReasonCodeDescription("Query_All_DM", output->common.returnCode,
@@ -261,7 +261,7 @@ int queryAllDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
         rc = smQuery_All_DM_NO(vmapiContextP, "", 0, "",  targetIdentifier, entryCount, entryArray, &output);
 
         if (rc) {
-            printAndLogSmapiCallReturnCode("Query_All_DM", rc, vmapiContextP, "", 0);
+            printAndLogProcessingErrors("Query_All_DM", rc, vmapiContextP, "", 0);
         } else if (output->common.returnCode || output->common.reasonCode) {
             // Handle SMAPI return code and reason code
             rc = printAndLogSmapiReturnCodeReasonCodeDescription("Query_All_DM", output->common.returnCode,
@@ -358,7 +358,7 @@ int queryAPIFunctionalLevel(int argC, char* argV[], struct _vmApiInternalContext
     rc = smQuery_API_Functional_Level(vmapiContextP, "", 0, "", image, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Query_API_Functional_Level", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Query_API_Functional_Level", rc, vmapiContextP, "", 0);
     } else if ((output->common.returnCode == 0) && (output->common.reasonCode == 0)) {
         DOES_CALLER_WANT_RC_HEADER_SMAPI_RC0_RS(vmapiContextP, output->common.returnCode, output->common.reasonCode) \
         printf("The API functional level is z/VM V5.3\n");
@@ -457,7 +457,7 @@ int queryAsynchronousOperationDM(int argC, char* argV[], struct _vmApiInternalCo
     rc = smQuery_Asychronous_Operation_DM(vmapiContextP, "", 0, "", image, operationId, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_SCSI_Disk_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_SCSI_Disk_Query", rc, vmapiContextP, "", 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Query_Asychronous_Operation_DM", output->common.returnCode,
@@ -530,7 +530,7 @@ int queryDirectoryManagerLevelDM(int argC, char* argV[], struct _vmApiInternalCo
             image, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Query_Directory_Manager_Level_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Query_Directory_Manager_Level_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Query_Directory_Manager_Level_DM", output->common.returnCode,

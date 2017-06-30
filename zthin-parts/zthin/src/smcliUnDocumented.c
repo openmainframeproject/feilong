@@ -81,7 +81,7 @@ int imageIPLDeviceQuery(int argC, char* argV[], struct _vmApiInternalContext* vm
     rc = smImage_IPL_Device_Query(vmapiContextP, userid, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_IPL_Device_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_IPL_Device_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_IPL_Device_Query", output->common.returnCode,
@@ -197,7 +197,7 @@ int imagePerformanceQuery(int argC, char* argV[], struct _vmApiInternalContext* 
                         "*", &output);
 
                 if (rc) {
-                    printAndLogSmapiCallReturnCode("Image_Status_Query", rc, vmapiContextP, "", 0);
+                    printAndLogProcessingErrors("Image_Status_Query", rc, vmapiContextP, "", 0);
                 } else if (output->common.returnCode || output->common.reasonCode) {
                     // Handle SMAPI return code and reason code
                     rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Status_Query", output->common.returnCode,
@@ -270,7 +270,7 @@ int imagePerformanceQuery(int argC, char* argV[], struct _vmApiInternalContext* 
 
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Performance_Query", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Performance_Query", rc, vmapiContextP, strMsg, 0);
     }
     returnCode = output2->common.returnCode;
     reasonCode = output2->common.reasonCode;
@@ -279,7 +279,7 @@ int imagePerformanceQuery(int argC, char* argV[], struct _vmApiInternalContext* 
     ret900reas12 = (returnCode == 900) && (reasonCode == 12);
 
     if (ret900reas12) {
-        printAndLogSmapiCallReturnCode("Profile_Create_DM", PROCESSING_ERROR, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Profile_Create_DM", PROCESSING_ERROR, vmapiContextP, strMsg, 0);
         printf("Image_Performance_Query() is not supported for this level of zVM\n");
     } else if (!(ret0reas0 || ret4reas4)) {
         // Handle SMAPI return code and reason code
@@ -375,7 +375,7 @@ int ipAddrGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiContext
     rc = smIPaddr_Get(vmapiContextP, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("IPaddr_Get", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("IPaddr_Get", rc, vmapiContextP, strMsg, 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("IPaddr_Get", output->common.returnCode, output->common.reasonCode,
@@ -437,7 +437,7 @@ int systemInfoQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
     rc = smSystem_Info_Query(vmapiContextP, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_Info_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_Info_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_Info_Query", output->common.returnCode,
@@ -517,7 +517,7 @@ int systemIOQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
     rc = smSystem_IO_Query(vmapiContextP, rDev, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_IO_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_IO_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_IO_Query", output->common.returnCode,
@@ -585,7 +585,7 @@ int systemPerformanceInfoQuery(int argC, char* argV[], struct _vmApiInternalCont
     rc = smSystem_Performance_Info_Query(vmapiContextP, "", 0, "", target, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_Performance_Info_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_Performance_Info_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_Performance_Info_Query", output->common.returnCode,
@@ -654,7 +654,7 @@ int virtualNetworkQueryLAN(int argC, char* argV[], struct _vmApiInternalContext*
     rc = smVirtual_Network_Query_LAN(vmapiContextP, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Query_LAN", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Virtual_Network_Query_LAN", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Query_LAN", output->common.returnCode,
@@ -719,7 +719,7 @@ int virtualNetworkQueryOSA(int argC, char* argV[], struct _vmApiInternalContext*
     rc = smVirtual_Network_Query_OSA(vmapiContextP, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Query_OSA", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Virtual_Network_Query_OSA", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Query_OSA", output->common.returnCode,
@@ -829,7 +829,7 @@ int virtualNetworkVswitchQueryIUOStats(int argC, char* argV[],
     rc = smVirtual_Network_Vswitch_Query_IUO_Stats(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Vswitch_Query_IUO_Stats", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Virtual_Network_Vswitch_Query_IUO_Stats", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Vswitch_Query_IUO_Stats",
@@ -975,7 +975,7 @@ int xCATCommandsIUO(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             image, command, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("XCAT_Commands_IUO", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("XCAT_Commands_IUO", rc, vmapiContextP, strMsg, 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescriptionAndErrorBuffer("XCAT_Commands_IUO", rc,

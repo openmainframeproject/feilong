@@ -33,7 +33,7 @@ int queryAsyncOperation(char* image, int operationId, char * apiName, struct _vm
         if (rc || output->common.returnCode || output->common.reasonCode) {
             // if rc is bad, then this is an internal error. Log and return
             if (rc) {
-                printAndLogSmapiCallReturnCode("Query_Asychronous_Operation_DM", rc, vmapiContextP, statusString, 0);
+                printAndLogProcessingErrors("Query_Asychronous_Operation_DM", rc, vmapiContextP, statusString, 0);
                 return rc;
             }    
                 

@@ -111,7 +111,7 @@ int processABENDDump(int argC, char* argV[], struct _vmApiInternalContext* vmapi
     rc = smProcess_ABEND_Dump(vmapiContextP, "", 0, "",  targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Process_ABEND_Dump", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Process_ABEND_Dump", rc, vmapiContextP, "", 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Process_ABEND_Dump", output->common.returnCode,

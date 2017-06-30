@@ -211,7 +211,7 @@ int networkIpInterfaceCreate(int argC, char* argV[], struct _vmApiInternalContex
 
     rc = smNetwork_IP_Interface_Create(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
     if (rc) {
-        printAndLogSmapiCallReturnCode("Network_IP_Interface_Create", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Network_IP_Interface_Create", rc, vmapiContextP, strMsg, 0);
 	} else {
 	    // Handle SMAPI return code and reason code
 	    rc = printAndLogSmapiReturnCodeReasonCodeDescriptionAndErrorBuffer("Network_IP_Interface_Create", rc,
@@ -331,7 +331,7 @@ int networkIpInterfaceModify(int argC, char* argV[], struct _vmApiInternalContex
 
     rc = smNetwork_IP_Interface_Modify(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
     if (rc) {
-        printAndLogSmapiCallReturnCode("Network_IP_Interface_Modify", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Network_IP_Interface_Modify", rc, vmapiContextP, strMsg, 0);
 	} else {
 	    // Handle SMAPI return code and reason code
 	    rc = printAndLogSmapiReturnCodeReasonCodeDescriptionAndErrorBuffer("Network_IP_Interface_Modify", rc,
@@ -440,7 +440,7 @@ int networkIpInterfaceQuery(int argC, char* argV[], struct _vmApiInternalContext
 
     rc = smNetwork_IP_Interface_Query(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
     if (rc) {
-        printAndLogSmapiCallReturnCode("Network_IP_Interface_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Network_IP_Interface_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Network_IP_Interface_Query", output->common.returnCode,
@@ -560,7 +560,7 @@ int networkIpInterfaceRemove(int argC, char* argV[], struct _vmApiInternalContex
 
     rc = smNetwork_IP_Interface_Remove(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
     if (rc) {
-        printAndLogSmapiCallReturnCode("Network_IP_Interface_Remove", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Network_IP_Interface_Remove", rc, vmapiContextP, strMsg, 0);
 	} else {
 	    // Handle SMAPI return code and reason code
 	    rc = printAndLogSmapiReturnCodeReasonCodeDescriptionAndErrorBuffer("Network_IP_Interface_Remove", rc,

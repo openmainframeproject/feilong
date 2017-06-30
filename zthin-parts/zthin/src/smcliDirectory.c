@@ -109,7 +109,7 @@ int directoryManagerLocalTagDefineDM(int argC, char* argV[], struct _vmApiIntern
              image, tagName, tagOrdinal, action, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Directory_Manager_Local_Tag_Define_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Directory_Manager_Local_Tag_Define_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Directory_Manager_Local_Tag_Define_DM",
@@ -195,7 +195,7 @@ int directoryManagerLocalTagDeleteDM(int argC, char* argV[], struct _vmApiIntern
              image, tagName, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Directory_Manager_Local_Tag_Delete_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Directory_Manager_Local_Tag_Delete_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Directory_Manager_Local_Tag_Delete_DM",
@@ -274,7 +274,7 @@ int directoryManagerLocalTagQueryDM(int argC, char* argV[], struct _vmApiInterna
              image, tagName, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Directory_Manager_Local_Tag_Query_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Directory_Manager_Local_Tag_Query_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Directory_Manager_Local_Tag_Query_DM",
@@ -371,7 +371,7 @@ int directoryManagerLocalTagSetDM(int argC, char* argV[], struct _vmApiInternalC
              image, tagName, strlen(tagValue), tagValue, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Directory_Manager_Local_Tag_Set_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Directory_Manager_Local_Tag_Set_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Directory_Manager_Local_Tag_Set_DM",
@@ -456,7 +456,7 @@ int directoryManagerSearchDM(int argC, char* argV[], struct _vmApiInternalContex
              image, strlen(searchPattern), searchPattern, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Directory_Manager_Search_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Directory_Manager_Search_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Directory_Manager_Search_DM", output->common.returnCode,
@@ -557,7 +557,7 @@ int directoryManagerTaskCancelDM(int argC, char* argV[], struct _vmApiInternalCo
             image, opId, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Directory_Manager_Task_Cancel_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Directory_Manager_Task_Cancel_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Directory_Manager_Task_Cancel_DM",

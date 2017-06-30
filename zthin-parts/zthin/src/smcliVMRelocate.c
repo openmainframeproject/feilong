@@ -173,7 +173,7 @@ int vmRelocate(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
     rc = smVMRELOCATE(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("VMRELOCATE", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("VMRELOCATE", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescriptionAndErrorBuffer("VMRELOCATE", rc,
@@ -285,7 +285,7 @@ int vmRelocateImageAttributes(int argC, char* argV[], struct _vmApiInternalConte
     rc = smVMRELOCATE_Image_Attributes(vmapiContextP, "", 0, "",  targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("VMRELOCATE_Image_Attributes", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("VMRELOCATE_Image_Attributes", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("VMRELOCATE_Image_Attributes", output->common.returnCode,
@@ -399,7 +399,7 @@ int vmRelocateModify(int argC, char* argV[], struct _vmApiInternalContext* vmapi
     rc = smVMRELOCATE_Modify(vmapiContextP, "", 0, "",  targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("VMRELOCATE_Modify", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("VMRELOCATE_Modify", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code and Error Buffer if it was sent
         rc = printAndLogSmapiReturnCodeReasonCodeDescriptionAndErrorBuffer("VMRELOCATE_Modify", rc,
@@ -518,7 +518,7 @@ int vmRelocateStatus(int argC, char* argV[], struct _vmApiInternalContext* vmapi
     rc = smVMRELOCATE_Status(vmapiContextP, "", 0, "",  targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("VMRELOCATE_Status", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("VMRELOCATE_Status", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("VMRELOCATE_Status", output->common.returnCode,
@@ -623,7 +623,7 @@ int vmRelocateStatus(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);

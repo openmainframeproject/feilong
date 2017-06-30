@@ -115,7 +115,7 @@ int authorizationListAdd(int argC, char* argV[], struct _vmApiInternalContext* v
     		target_identifier, forId, functionId, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Authorization_List_Add", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Authorization_List_Add", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Authorization_List_Add", output->common.returnCode,
@@ -216,7 +216,7 @@ int authorizationListQuery(int argC, char* argV[], struct _vmApiInternalContext*
     		target_identifier, forId, functionId, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Authorization_List_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Authorization_List_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Authorization_List_Query", output->common.returnCode,
@@ -339,7 +339,7 @@ int authorizationListRemove(int argC, char* argV[], struct _vmApiInternalContext
     		target_identifier, forId, functionId, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Authorization_List_Remove", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Authorization_List_Remove", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Authorization_List_Remove", output->common.returnCode,

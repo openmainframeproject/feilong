@@ -117,7 +117,7 @@ int imageDefinitionAsyncUpdates(int argC, char* argV[], struct _vmApiInternalCon
             image, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Definition_Async_Updates", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Definition_Async_Updates", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Definition_Async_Updates",
@@ -230,7 +230,7 @@ int imageDefinitionCreateDM(int argC, char* argV[], struct _vmApiInternalContext
             image, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Definition_Create_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Definition_Create_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescriptionAndErrorBuffer("Image_Definition_Create_DM", rc,
@@ -345,7 +345,7 @@ int imageDefinitionDeleteDM(int argC, char* argV[], struct _vmApiInternalContext
             image, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Definition_Delete_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Definition_Delete_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescriptionAndErrorBuffer("Image_Definition_Delete_DM", rc,
@@ -471,7 +471,7 @@ int imageDefinitionQueryDM(int argC, char* argV[], struct _vmApiInternalContext*
             image, keywords, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Definition_Query_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_Definition_Query_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescriptionAndErrorBuffer("Image_Definition_Query_DM", rc,
@@ -593,7 +593,7 @@ int imageDefinitionUpdateDM(int argC, char* argV[], struct _vmApiInternalContext
             image, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Definition_Update_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Definition_Update_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescriptionAndErrorBuffer("Image_Definition_Update_DM", rc,

@@ -95,7 +95,7 @@ int imageActivate(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                 image, &output);
 
         if (rc) {
-            printAndLogSmapiCallReturnCode("Image_Activate", rc, vmapiContextP, strMsg, 0);
+            printAndLogProcessingErrors("Image_Activate", rc, vmapiContextP, strMsg, 0);
             break; // Stop loop if severe error
         } else {
             // Handle SMAPI return code and reason code
@@ -186,7 +186,7 @@ int imageActiveConfigurationQuery(int argC, char* argV[], struct _vmApiInternalC
             image, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Active_Configuration_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_Active_Configuration_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Active_Configuration_Query",
@@ -346,7 +346,7 @@ int imageCPUDefine(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
             image, cpuAddress, cpuType, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_CPU_Define", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_CPU_Define", rc, vmapiContextP, "", 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_CPU_Define", output->common.returnCode,
@@ -375,7 +375,7 @@ int imageCPUDefineDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
 
     rc = getSmapiLevel(vmapiContextP, " ", &smapiLevel);
     if (rc != 0){
-        printAndLogSmapiCallReturnCode("Image_CPU_Define_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_CPU_Define_DM", rc, vmapiContextP, "", 0);
         printf("\nERROR: Unable to determine SMAPI level.\n");
         return 1;
     }
@@ -492,7 +492,7 @@ int imageCPUDefineDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             image, cpuAddress, baseCpu, cpuId, dedicateCpu, cryto, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_CPU_Define", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_CPU_Define", rc, vmapiContextP, "", 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_CPU_Define", output->common.returnCode,
@@ -577,7 +577,7 @@ int imageCPUDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
             image, cpuAddress, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_CPU_Delete", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_CPU_Delete", rc, vmapiContextP, "", 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_CPU_Delete", output->common.returnCode,
@@ -669,7 +669,7 @@ int imageCPUDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             image, virtualAddress, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_CPU_Delete_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_CPU_Delete_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_CPU_Delete_DM", output->common.returnCode,
@@ -747,7 +747,7 @@ int imageCPUQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             image, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_CPU_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_CPU_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_CPU_Query", output->common.returnCode,
@@ -868,7 +868,7 @@ int imageCPUQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             image, cpuAddress, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_CPU_Query_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_CPU_Query_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_CPU_Query_DM", output->common.returnCode,
@@ -989,7 +989,7 @@ int imageCPUSetMaximumDM(int argC, char* argV[], struct _vmApiInternalContext* v
             image, maxCpu, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_CPU_Set_Maximum_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_CPU_Set_Maximum_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_CPU_Set_Maximum_DM", output->common.returnCode,
@@ -1099,7 +1099,7 @@ int imageCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
         // Open the user entry file
         fp = fopen(userEntryFile, "r");
         if (NULL == fp) {
-            printAndLogSmapiCallReturnCode(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
+            printAndLogProcessingErrors(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
             printf("\nERROR: Failed to open file %s\n", userEntryFile);
             return 2;
         }
@@ -1114,7 +1114,7 @@ int imageCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     recordCount++;
                     j = 0;
                 } else {
-                    printAndLogSmapiCallReturnCode(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
+                    printAndLogProcessingErrors(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
                     printf("\nERROR: Input file %s line %d contains %d chars of input and the max is 72\n",
                            userEntryFile, recordCount + 1, j);
                     return 3;
@@ -1139,7 +1139,7 @@ int imageCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             }
             i++;
             if ((i == 100) && (stdin != NULL)) {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
                 printf("\nERROR: stdin contains more then 100 lines of input\n");
                 return 4;
             }
@@ -1160,7 +1160,7 @@ int imageCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             }
             if (i == recordCount) {
             	// This should never happen but checking anyway
-                printAndLogSmapiCallReturnCode(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
                 printf("\nERROR: file contains more then %d lines of input\n", i);
                 return 5;
             } else {
@@ -1191,7 +1191,7 @@ int imageCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Create_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Create_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Create_DM", output->common.returnCode,
@@ -1287,7 +1287,7 @@ int imageDeactivate(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             image, forceTime, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Deactivate", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Deactivate", rc, vmapiContextP, strMsg, 0);
     } else {
     	if (output->common.returnCode == 0) {
     		// Request successful; Image Deactivated Within output->common.reasonCode Seconds
@@ -1381,7 +1381,7 @@ int imageDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             image, erase, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Delete_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Delete_DM", rc, vmapiContextP, strMsg, 0);
     }  else if (output->common.returnCode == 592 && output->operationId) {
         // Asynchronous operation started. Messages/header handled in this routine
         rc = queryAsyncOperation(image, output->operationId, "Image_Delete_DM", vmapiContextP, strMsg);
@@ -1486,7 +1486,7 @@ int imageDeviceDedicate(int argC, char* argV[], struct _vmApiInternalContext* vm
             image, virtualAddress, realDevice, readOnly, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Device_Dedicate", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Device_Dedicate", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Device_Dedicate", output->common.returnCode,
@@ -1588,7 +1588,7 @@ int imageDeviceDedicateDM(int argC, char* argV[], struct _vmApiInternalContext* 
             image, virtualDevice, realDevice, readOnly, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Device_Dedicate_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Device_Dedicate_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Device_Dedicate_DM", output->common.returnCode,
@@ -1675,7 +1675,7 @@ int imageDeviceReset(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             image, virtualDevice, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Device_Reset", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Device_Reset", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Device_Reset", output->common.returnCode,
@@ -1763,7 +1763,7 @@ int imageDeviceUndedicate(int argC, char* argV[], struct _vmApiInternalContext* 
             image, virtualDevice, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Device_Undedicate", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Device_Undedicate", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Device_Undedicate", output->common.returnCode,
@@ -1850,7 +1850,7 @@ int imageDeviceUndedicateDM(int argC, char* argV[], struct _vmApiInternalContext
             image, virtualDevice, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Device_Undedicate_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Device_Undedicate_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Device_Undedicate_DM", output->common.returnCode,
@@ -1937,7 +1937,7 @@ int imageDiskCopy(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             image, virtualDevice, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Disk_Copy", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Disk_Copy", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Disk_Copy", output->common.returnCode,
@@ -2091,7 +2091,7 @@ int imageDiskCopyDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             readPass, writePass, multiPass, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Disk_Copy_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Disk_Copy_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Disk_Copy_DM", output->common.returnCode,
@@ -2192,7 +2192,7 @@ int imageDiskCreate(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             image, deviceAddr, accessMode, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Disk_Create", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Disk_Create", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Disk_Create", output->common.returnCode,
@@ -2378,7 +2378,7 @@ int imageDiskCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
             &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Disk_Create_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Disk_Create_DM", rc, vmapiContextP, strMsg, 0);
     } else if (output->common.returnCode == 592 && output->operationId) {
         rc = queryAsyncOperation(image, output->operationId, "Image_Disk_Create_DM", vmapiContextP, strMsg);
     } else {
@@ -2467,7 +2467,7 @@ int imageDiskDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             image, address, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Disk_Delete", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Disk_Delete", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Disk_Delete", output->common.returnCode,
@@ -2565,7 +2565,7 @@ int imageDiskDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
             image, virtualAddress, securityErase, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Disk_Delete_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Disk_Delete_DM", rc, vmapiContextP, strMsg, 0);
     } else if (output->common.returnCode == 592 && output->operationId) {
         rc = queryAsyncOperation(image, output->operationId, "Image_Disk_Delete_DM", vmapiContextP, strMsg);
     } else {
@@ -2677,7 +2677,7 @@ int imageDiskQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
     FREE_MEMORY_CLEAR_POINTER(entryArray);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Disk_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_Disk_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Disk_Query", output->common.returnCode,
@@ -2825,7 +2825,7 @@ int imageDiskShare(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
             image, address, tgtImage, tgtAddress, accessMode, password, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Disk_Share", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Disk_Share", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Disk_Share", output->common.returnCode,
@@ -2946,7 +2946,7 @@ int imageDiskShareDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             image, tgtAddress, tgtImage, address, accessMode, password, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Disk_Share_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Disk_Share_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Disk_Share_DM", output->common.returnCode,
@@ -3035,7 +3035,7 @@ int imageDiskUnshare(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             image, address, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Disk_Unshare", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Disk_Unshare", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Disk_Unshare", output->common.returnCode,
@@ -3139,7 +3139,7 @@ int imageDiskUnshareDM(int argC, char* argV[], struct _vmApiInternalContext* vma
             image, address, tgtImage, tgtAddress, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Disk_Unshare_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Disk_Unshare_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Disk_Unshare_DM", output->common.returnCode,
@@ -3221,7 +3221,7 @@ int imageIPLDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             image, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_IPL_Delete_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_IPL_Delete_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_IPL_Delete_DM", output->common.returnCode,
@@ -3301,7 +3301,7 @@ int imageIPLQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             image, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_IPL_Query_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_IPL_Query_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_IPL_Query_DM", output->common.returnCode,
@@ -3418,7 +3418,7 @@ int imageIPLSetDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             image, savedSystem, loadParameter, parameter, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_IPL_Set_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_IPL_Set_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_IPL_Set_DM", output->common.returnCode,
@@ -3510,7 +3510,7 @@ int imageLockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiConte
             &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Lock_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Lock_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Lock_DM", output->common.returnCode,
@@ -3604,7 +3604,7 @@ int imageLockQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Lock_Query_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_Lock_Query_DM", rc, vmapiContextP, "", 0);
     } else if ((output->common.returnCode == 0) && (output->common.reasonCode == 12)) {
 
         // Obtain lockedType
@@ -3683,7 +3683,7 @@ int imageLockQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
@@ -3792,7 +3792,7 @@ int imageMDISKLinkQuery(int argC, char* argV[], struct _vmApiInternalContext* vm
             image, vdev, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_MDISK_Link_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_MDISK_Link_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_MDISK_Link_Query", output->common.returnCode,
@@ -3864,7 +3864,7 @@ int imageMDISKLinkQuery(int argC, char* argV[], struct _vmApiInternalContext* vm
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
@@ -3928,7 +3928,7 @@ int imageNameQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Name_Query_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_Name_Query_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Name_Query_DM", output->common.returnCode,
@@ -4022,7 +4022,7 @@ int imagePasswordSetDM(int argC, char* argV[], struct _vmApiInternalContext* vma
             image, strlen(password), password, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Password_Set_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Password_Set_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Password_Set_DM", output->common.returnCode,
@@ -4108,7 +4108,7 @@ int imagePause(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
     // Check that the image being paused is not this Linux image
     fp = popen("/sbin/vmcp q userid", "r");
     if (fp == NULL) {
-        printAndLogSmapiCallReturnCode(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
+        printAndLogProcessingErrors(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
         printf("ERROR: Failed to identify the user");
         return 1;
     }
@@ -4117,7 +4117,7 @@ int imagePause(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
 
     myUserid = strtok_r(queryData, " ", &saveptr);
     if (strcasecmp(myUserid, image) == 0) {
-        printAndLogSmapiCallReturnCode(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
+        printAndLogProcessingErrors(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
         printf("ERROR: Cannot specify image %s for this command\n", image);
         return 1;
     }
@@ -4130,7 +4130,7 @@ int imagePause(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
         printf("Resuming processing on %s... ", image);
         snprintf(strMsg, sizeof(strMsg), "Resuming processing on %s... ", image);
     } else {
-        printAndLogSmapiCallReturnCode(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
+        printAndLogProcessingErrors(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
         printf("Invalid Image_Pause action\n");
         return 1;
     }
@@ -4138,7 +4138,7 @@ int imagePause(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
             image, pauseOrBegin, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Pause", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Pause", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Pause", output->common.returnCode,
@@ -4228,7 +4228,7 @@ int imageQueryActivateTime(int argC, char* argV[], struct _vmApiInternalContext*
             image, format, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Query_Activate_Time", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_Query_Activate_Time", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Query_Activate_Time", output->common.returnCode,
@@ -4312,7 +4312,7 @@ int imageQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCont
     rc = smImage_Query_DM(vmapiContextP, "", 0, "", image, &output, false);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Query_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_Query_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Query_DM", output->common.returnCode,
@@ -4407,7 +4407,7 @@ int imageRecycle(int argC, char* argV[], struct _vmApiInternalContext* vmapiCont
             image, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Recycle", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Recycle", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Recycle", output->common.returnCode,
@@ -4502,7 +4502,7 @@ int imageReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
         // Open the user entry file
         fp = fopen(userEntryFile, "r");
         if (NULL == fp) {
-            printAndLogSmapiCallReturnCode(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
+            printAndLogProcessingErrors(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
             printf("\nERROR: Failed to open file %s\n", userEntryFile);
             return 2;
         }
@@ -4565,7 +4565,7 @@ int imageReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
             &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Replace_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Replace_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Replace_DM", output->common.returnCode,
@@ -4717,7 +4717,7 @@ int imageSCSICharacteristicsDefineDM(int argC, char* argV[], struct _vmApiIntern
             image, bootProgram, logicalBlock, lun, portName, scpType, strlen(scpData), scpData, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_SCSI_Characteristics_Define_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_SCSI_Characteristics_Define_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_SCSI_Characteristics_Define_DM",
@@ -4794,7 +4794,7 @@ int imageSCSICharacteristicsQueryDM(int argC, char* argV[], struct _vmApiInterna
             image, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_SCSI_Characteristics_Query_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_SCSI_Characteristics_Query_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_SCSI_Characteristics_Query_DM",
@@ -4904,7 +4904,7 @@ int imageStatusQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             image, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Status_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_Status_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Status_Query", output->common.returnCode,
@@ -5007,7 +5007,7 @@ int imageUnlockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Unlock_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Unlock_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Unlock_DM", output->common.returnCode,
@@ -5171,7 +5171,7 @@ int imageVolumeAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
             altSysConfName, altSysConfType, altParmDiskOwner, altParmDiskNumber, altParmDiskPass, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Volume_Add", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Volume_Add", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Volume_Add", output->common.returnCode,
@@ -5336,7 +5336,7 @@ int imageVolumeDelete(int argC, char* argV[], struct _vmApiInternalContext* vmap
             altSysConfName, altSysConfType, altParmDiskOwner, altParmDiskNumber, altParmDiskPass, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Volume_Delete", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Volume_Delete", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Volume_Delete", output->common.returnCode,
@@ -5461,7 +5461,7 @@ int imageVolumeShare(int argC, char* argV[], struct _vmApiInternalContext* vmapi
     FREE_MEMORY_CLEAR_POINTER(entryArray);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Volume_Share", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Volume_Share", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Volume_Share", output->common.returnCode,
@@ -5659,7 +5659,7 @@ int imageVolumeSpaceDefineDM(int argC, char* argV[], struct _vmApiInternalContex
             groupName, deviceType, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Volume_Space_Define_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Volume_Space_Define_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Volume_Space_Define_DM", output->common.returnCode,
@@ -5823,7 +5823,7 @@ int imageVolumeSpaceDefineExtendedDM(int argC, char* argV[], struct _vmApiIntern
             image, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Volume_Space_Define_Extended_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Image_Volume_Space_Define_Extended_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Volume_Space_Define_Extended_DM", output->common.returnCode,
@@ -5928,7 +5928,7 @@ int imageVolumeSpaceQueryDM(int argC, char* argV[], struct _vmApiInternalContext
             image, query, entry, entryName, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Volume_Space_Query_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_Volume_Space_Query_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Volume_Space_Query_DM", output->common.returnCode,
@@ -6067,7 +6067,7 @@ int imageVolumeSpaceQueryExtendedDM(int argC, char* argV[], struct _vmApiInterna
             image, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Volume_Space_Query_Extended_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_Volume_Space_Query_Extended_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Volume_Space_Query_Extended_DM", output->common.returnCode,
@@ -6189,7 +6189,7 @@ int imageVolumeSpaceRemoveDM(int argC, char* argV[], struct _vmApiInternalContex
             image, functionType, regionName, volId, groupName, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Volume_Space_Remove_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_Volume_Space_Remove_DM", rc, vmapiContextP, "", 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Volume_Space_Remove_DM", output->common.returnCode,
@@ -6267,7 +6267,7 @@ int imageConsoleGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Image_Console_Get", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_Console_Get", rc, vmapiContextP, "", 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Console_Get", output->common.returnCode,

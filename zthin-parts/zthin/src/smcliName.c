@@ -92,7 +92,7 @@ int nameListAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiConte
             nameList, name, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Name_List_Add", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Name_List_Add", rc, vmapiContextP, strMsg, 0);
     } else if ( (output->common.returnCode == 0) && (output->common.reasonCode == 12) ) {
         DOES_CALLER_WANT_RC_HEADER_SMAPI_RC0_RS(vmapiContextP, output->common.returnCode, output->common.reasonCode);
         printf("%s", strMsg);
@@ -174,7 +174,7 @@ int nameListDestroy(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             nameList, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Name_List_Destroy", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Name_List_Destroy", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Name_List_Destroy", output->common.returnCode,
@@ -248,7 +248,7 @@ int nameListQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             nameList, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Name_List_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Name_List_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Name_List_Query", output->common.returnCode,
@@ -339,7 +339,7 @@ int nameListRemove(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
              nameList, name, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Name_List_Remove", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Name_List_Remove", rc, vmapiContextP, strMsg, 0);
     } else if ( (output->common.returnCode == 0) && (output->common.reasonCode == 16) ) {  
         DOES_CALLER_WANT_RC_HEADER_SMAPI_RC0_RS(vmapiContextP, output->common.returnCode, output->common.reasonCode);
         printf("%s", strMsg);

@@ -94,7 +94,7 @@ int sharedMemoryAccessAddDM(int argC, char* argV[], struct _vmApiInternalContext
             image, segmentName, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Shared_Memory_Access_Add_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Shared_Memory_Access_Add_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Shared_Memory_Access_Add_DM", output->common.returnCode,
@@ -174,7 +174,7 @@ int sharedMemoryAccessQueryDM(int argC, char* argV[], struct _vmApiInternalConte
             image, segmentName, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Shared_Memory_Access_Query_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Shared_Memory_Access_Query_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Shared_Memory_Access_Query_DM", output->common.returnCode,
@@ -265,7 +265,7 @@ int sharedMemoryAccessRemoveDM(int argC, char* argV[], struct _vmApiInternalCont
 
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Shared_Memory_Access_Remove_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Shared_Memory_Access_Remove_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Shared_Memory_Access_Remove_DM", output->common.returnCode,
@@ -394,7 +394,7 @@ int sharedMemoryCreate(int argC, char* argV[], struct _vmApiInternalContext* vma
             image, segmentName, beginPage, endPage, pageAccessType, memoryAttributes, memoryAccessId, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Shared_Memory_Create", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Shared_Memory_Create", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Shared_Memory_Create", output->common.returnCode,
@@ -477,7 +477,7 @@ int sharedMemoryDelete(int argC, char* argV[], struct _vmApiInternalContext* vma
             image, segmentName, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Shared_Memory_Delete", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Shared_Memory_Delete", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Shared_Memory_Delete", output->common.returnCode,
@@ -563,7 +563,7 @@ int sharedMemoryQuery(int argC, char* argV[], struct _vmApiInternalContext* vmap
             image, segmentName, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Shared_Memory_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Shared_Memory_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Shared_Memory_Query", output->common.returnCode,
@@ -628,7 +628,7 @@ int sharedMemoryQuery(int argC, char* argV[], struct _vmApiInternalContext* vmap
              if (rc == OUTPUT_ERRORS_FOUND) {
                  DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
              } else {
-                 printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                 printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
              }
          } else {
              DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
@@ -721,7 +721,7 @@ int sharedMemoryReplace(int argC, char* argV[], struct _vmApiInternalContext* vm
             image, segmentName, memoryAccessId, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Shared_Memory_Replace", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Shared_Memory_Replace", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Shared_Memory_Replace_Delete", output->common.returnCode,
