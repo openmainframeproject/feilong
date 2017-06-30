@@ -254,6 +254,8 @@ class XCATClient(ZVMClient):
             raw_data_list.remove(None)
 
         raw_data = '\n'.join(raw_data_list)
+        # TODO(ydy): Remove this log info after catching the error case
+        LOG.info("Vswitch query output is: %s" % raw_data)
         rd_list = raw_data.split('\n')
 
         def _parse_value(data_list, idx, keyword, offset):
