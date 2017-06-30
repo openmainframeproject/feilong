@@ -1,0 +1,211 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e6b308d7_cb393b35",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-30T16:29:29Z",
+      "side": 1,
+      "message": "Is there a reason for the question mark ?",
+      "range": {
+        "startLine": 457,
+        "startChar": 46,
+        "endLine": 457,
+        "endChar": 47
+      },
+      "revId": "dc0c74ee94ac94f0104b9c3631e296b60660e34f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c677c1dc_aae5b99f",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 484,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-30T16:29:29Z",
+      "side": 1,
+      "message": "Please use the value in the msgs dictionary.  This will prevent mismatch and make it easier to find what values relate to a message.",
+      "range": {
+        "startLine": 484,
+        "startChar": 40,
+        "endLine": 484,
+        "endChar": 42
+      },
+      "revId": "dc0c74ee94ac94f0104b9c3631e296b60660e34f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "77a1d951_cb4e8825",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 487,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-30T16:29:29Z",
+      "side": 1,
+      "message": "Why don\u0027t we just remove the spaces ?  Doesn\u0027t smapi allow this.  By removing the spaces you avoid any quotation issues in the future.",
+      "range": {
+        "startLine": 487,
+        "startChar": 41,
+        "endLine": 487,
+        "endChar": 68
+      },
+      "revId": "dc0c74ee94ac94f0104b9c3631e296b60660e34f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c9eca0c5_684400a6",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 499,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-30T16:29:29Z",
+      "side": 1,
+      "message": "Please put a one line comment before each assignment to msg \u003d which states what is the message.  This way the person does not have to guess.",
+      "range": {
+        "startLine": 499,
+        "startChar": 28,
+        "endLine": 499,
+        "endChar": 32
+      },
+      "revId": "dc0c74ee94ac94f0104b9c3631e296b60660e34f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "11b1a6f9_ffe6547a",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 501,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-30T16:29:29Z",
+      "side": 1,
+      "message": "Please use the value from the dictionary.",
+      "range": {
+        "startLine": 501,
+        "startChar": 44,
+        "endLine": 501,
+        "endChar": 45
+      },
+      "revId": "dc0c74ee94ac94f0104b9c3631e296b60660e34f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "159fe665_704a2d1c",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 541,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-30T16:29:29Z",
+      "side": 1,
+      "message": "What is the reason for this printLn ?",
+      "range": {
+        "startLine": 541,
+        "startChar": 7,
+        "endLine": 541,
+        "endChar": 14
+      },
+      "revId": "dc0c74ee94ac94f0104b9c3631e296b60660e34f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c812a1d8_0c48e1d4",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 545,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-30T16:29:29Z",
+      "side": 1,
+      "message": "Please add a one line comment indicating what is the message.",
+      "range": {
+        "startLine": 545,
+        "startChar": 21,
+        "endLine": 545,
+        "endChar": 25
+      },
+      "revId": "dc0c74ee94ac94f0104b9c3631e296b60660e34f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "47e3e944_3ada7f09",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 556,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-30T16:29:29Z",
+      "side": 1,
+      "message": "I suggest you use rh. for each overallRC that way you make certain to show what you are passing back to the client.  I had a case where I forgot to do an updateResults and this convention helped debug it.",
+      "range": {
+        "startLine": 556,
+        "startChar": 23,
+        "endLine": 556,
+        "endChar": 30
+      },
+      "revId": "dc0c74ee94ac94f0104b9c3631e296b60660e34f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "55634fc7_7e1ac7f2",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 998,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-06-30T16:29:29Z",
+      "side": 1,
+      "message": "should this be HEX instead of the work hexadecimal ?",
+      "range": {
+        "startLine": 998,
+        "startChar": 57,
+        "endLine": 998,
+        "endChar": 68
+      },
+      "revId": "dc0c74ee94ac94f0104b9c3631e296b60660e34f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
