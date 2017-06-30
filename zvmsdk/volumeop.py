@@ -13,6 +13,8 @@
 #    under the License.
 
 
+import abc
+import six
 import re
 
 from config import CONF
@@ -38,6 +40,7 @@ WWPNS = 'wwpns'
 DEDICATE = 'dedicate'
 
 
+@six.add_metaclass(abc.ABCMeta)
 class VolumeOperatorAPI(object):
     """Volume operation APIs oriented towards SDK driver.
 
@@ -54,15 +57,18 @@ class VolumeOperatorAPI(object):
     still make things much easier.
     """
 
+    @abc.abstractmethod
     def attach_volume_to_instance(self, instance, volume, connection_info,
                                   is_rollback_on_failure=False):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def detach_volume_from_instance(self, instance, volume, connection_info,
                                     is_rollback_on_failure=False):
         raise NotImplementedError
 
 
+@six.add_metaclass(abc.ABCMeta)
 class VolumeConfiguratorAPI(object):
     """Volume configure APIs to implement volume config jobs on the
     target instance, like: attach, detach, and so on.
@@ -71,16 +77,20 @@ class VolumeConfiguratorAPI(object):
     different Linux distributions and releases.
     """
 
+    @abc.abstractmethod
     def config_attach(self, instance, volume, connection_info):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def config_force_attach(self, instance, volume, connection_info):
         # roll back when detaching fails
         raise NotImplementedError
 
+    @abc.abstractmethod
     def config_detach(self, instance, volume, connection_info):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def config_force_detach(self, instance, volume, connection_info):
         # roll back when attaching fails
         raise NotImplementedError
@@ -99,14 +109,20 @@ class _BaseConfigurator(VolumeConfiguratorAPI):
         else:
             self.config_attach_inactive(instance, volume, connection_info)
 
+    def config_force_attach(self, instance, volume, connection_info):
+        pass
+
     def config_detach(self, instance, volume, connection_info):
         pass
 
+    def config_force_detach(self, instance, volume, connection_info):
+        pass
+
     def config_attach_active(self, instance, volume, connection_info):
-        raise NotImplementedError
+        pass
 
     def config_attach_inactive(self, instance, volume, connection_info):
-        raise NotImplementedError
+        pass
 
 
 class _xCATProxy(object):
