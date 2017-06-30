@@ -71,6 +71,30 @@
     },
     {
       "key": {
+        "uuid": "98602be3_e3b0f9ec",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 487,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2017-06-30T20:32:50Z",
+      "side": 1,
+      "message": "I think the smcli only supports scpdata in hex, SMAPI can support binary buffer data. For a command line like smcli, that was not supported\n\nFrom the C code:\n \"    -s    The type of data specified in the SCP_data parameter, as\\n\"\n                    \"          follows:\\n\"\n                    \"            0: Unspecified ~ No data\\n\"\n                    \"            1: DELETE ~ Delete the SCP_data for the image\\n\"\n                    \"            2: EBCDIC ~ EBCDIC (codepage 924) data\\n\"\n                    \"            3: HEX ~ UTF-8 encoded hex data\\n\"\n                    \"    -d    The SCP data\\n\"\n                    \"            If the -s parameter is 0 or 1 then do not use this parameter\\n\"\n                    \"            If the -s parameter is 2 or 3 then you must use this parameter\\n\");",
+      "parentUuid": "77a1d951_cb4e8825",
+      "range": {
+        "startLine": 487,
+        "startChar": 41,
+        "endLine": 487,
+        "endChar": 68
+      },
+      "revId": "dc0c74ee94ac94f0104b9c3631e296b60660e34f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c9eca0c5_684400a6",
         "filename": "smutLayer/changeVM.py",
         "patchSetId": 5
