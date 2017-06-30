@@ -658,9 +658,8 @@ class XCATClient(ZVMClient):
         body = ['osimage=%s' % image_bundle_package,
                 'profile=%s' % image_profile,
                 'nozip']
-        sdk_host_ip = self.get_host_info().split('@')[-1]
-        remote_host_ip = remote_host.split('@')[-1]
-        if remote_host and remote_host_ip != sdk_host_ip:
+        sdk_host_ip = zvmutils.get_host().split('@')[-1]
+        if remote_host and remote_host.split('@')[-1] != sdk_host_ip:
             body.append('remotehost=%s' % remote_host)
         url = self._xcat_url.imgimport()
 
@@ -1055,7 +1054,7 @@ class XCATClient(ZVMClient):
                 exception.ZVMImageError):
             res = zvmutils.xcat_request("GET", url)
         image_list = []
-        if res['info']:
+        if res['info'] and 'Could not find' not in res['info'][0][0]:
             if imagekeyword:
                 image_name = res['info'][0][0].strip().split(" ")[0]
                 image_list.append(image_name)
