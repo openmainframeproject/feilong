@@ -714,7 +714,7 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
     @mock.patch.object(zvmutils, 'xcat_request')
     @mock.patch.object(os, 'remove')
     @mock.patch.object(os.path, 'exists')
-    @mock.patch.object(zvmclient.XCATClient, 'get_host_info')
+    @mock.patch.object(zvmutils, 'get_host')
     @mock.patch.object(zvmclient.XCATClient, 'check_space_imgimport_xcat')
     @mock.patch.object(zvmclient.XCATClient, 'generate_image_bundle')
     @mock.patch.object(zvmclient.XCATClient, 'generate_manifest_file')
