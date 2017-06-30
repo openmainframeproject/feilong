@@ -795,6 +795,8 @@ def valid_userid(userid):
     if ((userid == '') or
         (userid.find(' ') != -1)):
         return False
+    if len(userid) > 8:
+        return False
     return True
 
 
