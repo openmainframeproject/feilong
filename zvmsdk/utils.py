@@ -27,6 +27,7 @@ import six
 import socket
 import stat
 import time
+import types
 
 from six.moves import http_client as httplib
 
@@ -702,7 +703,7 @@ class PathUtils(object):
         return six.moves.builtins.open(path, mode)
 
     def _get_image_tmp_path(self):
-        image_tmp_path = os.path.normpath(CONF.zvm.image_tmp_path)
+        image_tmp_path = os.path.normpath(CONF.image.temp_path)
         if not os.path.exists(image_tmp_path):
             LOG.debug('Creating folder %s for image temp files',
                      image_tmp_path)
@@ -786,6 +787,17 @@ def to_utf8(text):
     else:
         raise TypeError("bytes or Unicode expected, got %s"
                         % type(text).__name__)
+
+
+def valid_userid(userid):
+    if type(userid) not in types.StringTypes:
+        return False
+    if ((userid == '') or
+        (userid.find(' ') != -1)):
+        return False
+    if len(userid) > 8:
+        return False
+    return True
 
 
 def last_bytes(file_like_object, num):

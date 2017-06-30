@@ -250,12 +250,16 @@ def parseCmdline(rh, posOpsList, keyOpsList):
                         rh.parms[key] = True
                     else:
                         # Keyword has values following it.
+                        storeIntoArray = False    # Assume single word
                         if opCnt < 0:
+                            storeIntoArray = True
                             # Property is a list all of the rest of the parms.
                             opCnt = rh.totalParms - rh.argPos
                             if opCnt == 0:
                                 # Need at least 1 operand value
                                 opCnt = 1
+                        elif opCnt > 1:
+                            storeIntoArray = True
                         if opCnt + rh.argPos > rh.totalParms:
                             # keyword is missing its related value operand
                             msg = msgs.msg['0003'][1] % (modId, rh.function,
@@ -268,14 +272,14 @@ def parseCmdline(rh, posOpsList, keyOpsList):
                         Add the expected value to the property.
                         Take into account if there are more than 1.
                         """
-                        if opCnt > 1:
+                        if storeIntoArray:
                             # Initialize the list.
                             rh.parms[key] = []
                         for i in range(0, opCnt):
                             if opType == 1:
                                 # convert from string to int and save it.
                                 try:
-                                    if opCnt == 1:
+                                    if not storeIntoArray:
                                         rh.parms[key] = (
                                             int(rh.request[rh.argPos]))
                                     else:
@@ -291,7 +295,7 @@ def parseCmdline(rh, posOpsList, keyOpsList):
                                     break
                             else:
                                 # Value is a string, save it.
-                                if opCnt == 1:
+                                if not storeIntoArray:
                                     rh.parms[key] = rh.request[rh.argPos]
                                 else:
                                     rh.parms[key].append(rh.request[rh.argPos])

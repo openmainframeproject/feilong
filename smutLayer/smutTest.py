@@ -42,6 +42,8 @@ except:
     localSubs = {}
     localTestSets = {}
 
+longstring = '1' * 4096
+
 """
 The following dictionary contains keys and values used as substitution
 in the requests that are processed. Replaceable values are identified
@@ -53,6 +55,8 @@ subs = {
                                         #   started and stopped
     '<<<unsafeID1>>>': 'TSTUSER1',      # A userid that gets created and
                                         #   destroyed
+    '<<<horribleID1>>>': 'g[][325$$$',  # A userid that makes SMAPI cry
+                                        #   and beg for a swift death
     '<<<migrID>>>': 'someid',           # An existing userid that can be
                                         #   migrated
     '<<<unmigrID>>>': 'unmgr',          # An existing userid that cannot be
@@ -72,6 +76,7 @@ subs = {
         'rhel67eckd_small_225M.img',    # Small image file
     '<<<unpackScript>>>': '/opt/zhcp/bin/unpackdiskimage',
                                         # Location of unpackdiskimage
+    '<<<longString>>>': longstring,
 }
 
 # Apply local overrides to the subs dictionary.
@@ -689,6 +694,149 @@ vmModifyTests = [
         'request': "changevm <<<unsafeID1>>> removeipl",
         'out': "",
         'overallRC': [0],
+    },
+    {
+        'description': "Add some loaddev statements",
+        'request': "changevm <<<unsafeID1>>> loaddev --boot 0 " +
+                   "--addr 123411 --lun 12345678 --wwpn " +
+                   "5005076800aa0001 --scpDataType hex "
+                   "--scpData 1212",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "No datatype loaddev statements",
+        'request': "changevm <<<unsafeID1>>> loaddev --boot 0 " +
+                   "--addr 123411 --lun 12345678 --wwpn " +
+                   "5005076800aa0001 --scpData 1212",
+        'out': "",
+        'overallRC': [4],
+        'rc': [4],
+        'rs': [14],
+    },
+    {
+        'description': "No data loaddev statements",
+        'request': "changevm <<<unsafeID1>>> loaddev --boot 0 " +
+                   "--addr 123411 --lun 12345678 --wwpn " +
+                   "5005076800aa0001 --scpDataType hex",
+        'out': "",
+        'overallRC': [4],
+        'rc': [4],
+        'rs': [14],
+    },
+    {
+        'description': "Bad datatype loaddev statements",
+        'request': "changevm <<<unsafeID1>>> loaddev --boot 0 " +
+                   "--addr 123411 --lun 12345678 --wwpn " +
+                   "5005076800aa0001 --scpDataType BAD --scpData 1212",
+        'out': "",
+        'overallRC': [4],
+        'rc': [4],
+        'rs': [16],
+    },
+    {
+        'description': "Really long scp data",
+        'request': "changevm <<<unsafeID1>>> loaddev --boot 0 " +
+                   "--addr 123411 --lun 12345678 --wwpn " +
+                   "5005076800aa0001 --scpDataType hex " +
+                   "--scpData <<<longString>>>",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "No boot parm (keep old boot)",
+        'request': "changevm <<<unsafeID1>>> loaddev --addr 123411 " +
+                   "--lun 12345678 --wwpn 5005076800aa0001 " +
+                   "--scpDataType hex --scpData 1212",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "No addr parm (keep old block address)",
+        'request': "changevm <<<unsafeID1>>> loaddev --lun " +
+                   "12345678 --wwpn 5005076800aa0001 " +
+                   "--scpDataType hex --scpData 1212",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "No lun parm (keep old lun)",
+        'request': "changevm <<<unsafeID1>>> loaddev --wwpn " +
+                   "5005076800aa0001 --scpDataType hex --scpData 1212",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "No wwpn parm (keep old wwpn)",
+        'request': "changevm <<<unsafeID1>>> loaddev --scpDataType " +
+                   "hex --scpData 1212",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "No parms (keep old parms)",
+        'request': "changevm <<<unsafeID1>>> loaddev",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Verify loaddev boot statements exist",
+        'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
+        'out': "\'LOADDEV BOOTPROG 0\'",
+        'overallRC': [0],
+    },
+    {
+        'description': "Verify loaddev addr statements exist",
+        'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
+        'out': "\'LOADDEV BR_LBA 0000000000123411\'",
+        'overallRC': [0],
+    },
+    {
+        'description': "Verify loaddev lun statements exist",
+        'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
+        'out': "\'LOADDEV LUN 0000000012345678\'",
+        'overallRC': [0],
+    },
+    {
+        'description': "Verify loaddev wwpn statements exist",
+        'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
+        'out': "\'LOADDEV PORTNAME 5005076800AA0001\'",
+        'overallRC': [0],
+    },
+    {
+        'description': "Verify loaddev wwpn statements exist",
+        'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
+        'out': "\'LOADDEV SCPDATA HEX\'",
+        'overallRC': [0],
+    },
+    {
+        'description': "Delete statements",
+        'request': "changevm <<<unsafeID1>>> loaddev --boot DELETE " +
+                   "--addr DELETE --lun DELETE --wwpn DELETE " +
+                   "--scpDataType DELETE",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Verify loaddev statements are gone",
+        'request': "SMAPI <<<unsafeID1>>> API " +
+                   "Image_SCSI_Characteristics_Query_DM",
+        'out': "",
+        'overallRC': [1],
+        'rc': [0],
+        'rs': [28],
+     {
+        'description': "Successfully purge the reader.",
+        'request': "changeVM <<<unsafeID1>>> purgeRDR ",
+        'overallRC': [0],
+    },
+     {
+        'description': "Try to purge read of a bad id.",
+        'request': "changeVM <<<horribleID1>>> purgeRDR ",
+        'out': "\'Syntax error in function parameter 8\'",
+        'overallRC': [1],
+        'rc': [24],
+        'rs': [813]
     },
     # >>>>>>>>> Clean up by destroying the system.
     {

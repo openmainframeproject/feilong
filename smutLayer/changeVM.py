@@ -22,7 +22,7 @@ import tempfile
 import generalUtils
 import msgs
 from vmUtils import disableEnableDisk, execCmdThruIUCV, installFS
-from vmUtils import invokeSMCLI, isLoggedOn
+from vmUtils import invokeSMCLI, isLoggedOn, purgeReader
 
 modId = "CVM"
 version = "1.0.0"
@@ -109,11 +109,13 @@ keyOpsList = {
         '--parms': ['parms', 1, 2],
         '--showparms': ['showParms', 0, 0]},
     'LOADDEV': {
+        '--boot': ['boot', 1, 2],
+        '--addr': ['addr', 1, 2],
         '--lun': ['lun', 1, 2],
-        '--scpdata': ['scpData', 1, 2],
-        '--scphexdata': ['scpDataHex', 1, 2],
-        '--showparms': ['showParms', 0, 0],
-        '--wwpn': ['wwpn', 1, 2]},
+        '--wwpn': ['wwpn', 1, 2],
+        '--scpDataType': ['scpDataType', 1, 2],
+        '--scpData': ['scpData', 1, 2],
+        '--showparms': ['showParms', 0, 0]},
     'PUNCHFILE': {
         '--class': ['class', 1, 2],
         '--showparms': ['showParms', 0, 0], },
@@ -337,7 +339,6 @@ def addAEMOD(rh):
        Return code - 0: ok
        Return code - 4: input error, rs - 11 AE script not found
     """
-
     rh.printSysLog("Enter changeVM.addAEMOD")
     invokeScript = "invokeScript.sh"
     trunkFile = "aemod.doscript"
@@ -448,24 +449,112 @@ def addLOADDEV(rh):
           function    - 'CHANGEVM'
           subfunction - 'ADDLOADDEV'
           userid      - userid of the virtual machine
-          parms['scpDataHex'] - SCP data in hex
+          parms['boot']       - Boot program number
+          parms['addr']       - Logical block address of the boot record
           parms['lun']        - One to eight-byte logical unit number
                                 of the FCP-I/O device.
+          parms['wwpn']       - World-Wide Port Number
+          parms['scpDataType'] - SCP data type?
           parms['scpData']    - Designates information to be passed to the
                                 program is loaded during guest IPL.
-          parms['wwpn']       - World-Wide Port Number
+
+          Note that any of the parms may be left blank, in which case
+          we will not update them.
+
 
     Output:
        Request Handle updated with the results.
        Return code - 0: ok, non-zero: error
     """
-    rc = 0
     rh.printSysLog("Enter changeVM.addLOADDEV")
 
-    rh.printLn("N", "This subfunction is not implemented yet.")
+    # scpDataType and scpData must appear or disappear concurrently
+    # unless we're deleting data
+    if ('scpData' in rh.parms and 'scpDataType' not in rh.parms):
+        msg = msgs.msg['0014'][1] % (modId, "scpData", "scpDataType")
+        rh.printLn("ES", msg)
+        rh.updateResults({'overallRC': 4, 'rc': 4, 'rs': 14})
+        return
+    if ('scpDataType' in rh.parms and 'scpData' not in rh.parms):
+        if rh.parms['scpDataType'].lower() == "delete":
+            scpDataType = 1
+        else:
+            msg = msgs.msg['0014'][1] % (modId, "scpDataType", "scpData")
+            rh.printLn("ES", msg)
+            rh.updateResults({'overallRC': 4, 'rc': 4, 'rs': 14})
+            return
 
-    rh.printSysLog("Exit changeVM.addLOADDEV, rc: " + str(rc))
-    return 0
+    # If the scpdata is not in HEX form, it may contain white space.
+    # So wrap the parameter with quote marks.
+    # Then test for our other valid options
+    scpData = ""
+    if 'scpDataType' in rh.parms:
+        if rh.parms['scpDataType'].lower() == "hex":
+            scpData = rh.parms['scpData']
+            scpDataType = 3
+        elif rh.parms['scpDataType'].lower() == "ebcdic":
+            scpData = rh.parms['scpData']
+            scpDataType = 2
+        elif rh.parms['scpDataType'].lower() != "delete":
+            msg = msgs.msg['0016'][1] % (modId, rh.parms['scpDataType'])
+            rh.printLn("ES", msg)
+            rh.updateResults({'overallRC': 4, 'rc': 4, 'rs': 16})
+            return
+    else:
+        # Not specified, 0 for do nothing
+        scpDataType = 0
+        scpData = ""
+
+    if 'boot' not in rh.parms:
+        boot = ""
+    else:
+        boot = rh.parms['boot']
+    if 'addr' not in rh.parms:
+        block = ""
+    else:
+        block = rh.parms['addr']
+    if 'lun' not in rh.parms:
+        lun = ""
+    else:
+        lun = rh.parms['lun']
+        # Make sure it doesn't have the 0x prefix
+        lun.replace("0x", "")
+    if 'wwpn' not in rh.parms:
+        wwpn = ""
+    else:
+        wwpn = rh.parms['wwpn']
+        # Make sure it doesn't have the 0x prefix
+        wwpn.replace("0x", "")
+
+    cmd = ["smcli",
+           "Image_SCSI_Characteristics_Define_DM",
+           "-T", rh.userid,
+           "-b", boot,
+           "-k", block,
+           "-l", lun,
+           "-p", wwpn,
+           "-s", str(scpDataType)]
+
+    if scpData != "":
+        cmd.extend(["-d", scpData])
+
+    rh.printLn("N", '[%s]' % ', '.join(map(str, cmd)))
+    results = invokeSMCLI(rh, cmd)
+
+    if results['overallRC'] != 0:
+        strCmd = ' '.join(cmd)
+        msg = msgs.msg['0300'][1] % (modId, strCmd,
+                                     results['overallRC'],
+                                     results['response'])
+        rh.printLn("ES", msg)
+        rh.updateResults(results)
+    else:
+        rh.printLn("N", "Set LOADDEV directory statements for guest %s"
+                   % rh.userid)
+
+    rh.printSysLog("Exit changeVM.addLOADDEV, rc: " +
+                   str(results['overallRC']))
+    return results['overallRC']
 
 
 def doIt(rh):
@@ -639,9 +728,8 @@ def purgeRDR(rh):
     """
 
     rh.printSysLog("Enter changeVM.purgeRDR")
-
-    rh.printLn("N", "This subfunction is not implemented yet.")
-
+    results = purgeReader(rh)
+    rh.updateResults(results)
     rh.printSysLog("Exit changeVM.purgeRDR, rc: " +
         str(rh.results['overallRC']))
     return rh.results['overallRC']
@@ -788,9 +876,9 @@ def showInvLines(rh):
                " ChangeVM <userid> IPL <addrOrNSS> loadparms <loadParms>")
     rh.printLn("N", "                    parms <parmString>")
     rh.printLn("N", "  python " + rh.cmdName +
-               " ChangeVM <userid> LOADDEV wwpn <wwpn> lun <lun>")
-    rh.printLn("N", "                    scphexdata <scp_hex> " +
-               "scpdata <scp_data>")
+               " ChangeVM <userid> LOADDEV boot <boot> addr <addr>")
+    rh.printLn("N", "                     wwpn <wwpn> lun <lun> " +
+               "scpdatatype <scpDatatype> scpdata <scp_data>")
     rh.printLn("N", "  python " + rh.cmdName +
                " ChangeVM <userid> punchFile <file> class <class>")
     rh.printLn("N", "  python " + rh.cmdName +
@@ -841,12 +929,16 @@ def showOperandLines(rh):
         "belonging to the virtual machine.")
     rh.printLn("N", "      removedisk    - " +
         "Remove an mdisk from a virtual machine.")
-    rh.printLn("N", "      removeIPL    - " +
+    rh.printLn("N", "      removeIPL     - " +
         "Remove an IPL from a virtual machine's directory entry.")
     rh.printLn("N", "      version       - " +
                "show the version of the power function")
     if rh.subfunction != '':
         rh.printLn("N", "Operand(s):")
+        rh.printLn("N", "      -addr <addr>          - " +
+                   "Specifies the logical block address of the")
+        rh.printLn("N", "                              " +
+                   "boot record.")
         rh.printLn("N", "      <addrOrNSS>           - " +
                    "Specifies the virtual address or NSS name")
         rh.printLn("N", "                              to IPL.")
@@ -854,6 +946,8 @@ def showOperandLines(rh):
                    "aeScript is the fully qualified file")
         rh.printLn("N", "                              " +
                    "specification of the script to be sent")
+        rh.printLn("N", "      --boot <boot>         - " +
+                   "Boot program number")
         rh.printLn("N", "      --class <class>       - " +
                    "The class is optional and specifies the spool")
         rh.printLn("N", "                              " +
@@ -898,12 +992,12 @@ def showOperandLines(rh):
                    "Specifies the password that allows sharing the")
         rh.printLn("N", "                              " +
                    "minidisk in read mode.")
-        rh.printLn("N", "      --scpdata <scp_data>  - " +
+        rh.printLn("N", "      --scpdata <scpdata>   - " +
                    "Provides the SCP data information.")
-        rh.printLn("N", "      --scphexdata <scp_hex> - " +
-                   "Provides the SCP data information as hexadecimal")
+        rh.printLn("N", "      --scpdatatype <scpdatatype> - " +
+                   "Specifies whether the scp data is in hexadecimal,")
         rh.printLn("N", "                              " +
-                   "representation of UTF-8 data.")
+                   "EBCDIC, or should be deleted.")
         rh.printLn("N", "      <userid>              - " +
                    "Userid of the target virtual machine.")
         rh.printLn("N", "      <vAddr>               - " +

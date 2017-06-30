@@ -109,6 +109,8 @@ class ZVMMonitor(object):
         inspect_data = {}
         update_needed = False
         for uid in uid_list:
+            if not zvmutils.valid_userid(uid):
+                continue
             cache_data = self._cache.get(type, uid.upper())
             if cache_data is not None:
                 inspect_data[uid.upper()] = cache_data

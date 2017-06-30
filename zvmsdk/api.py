@@ -24,13 +24,18 @@ from zvmsdk import log
 from zvmsdk import monitor
 from zvmsdk import networkops
 from zvmsdk import vmops
+from zvmsdk import utils
 
 
 CONF = config.CONF
 LOG = log.LOG
 
+
 _TSTR = types.StringTypes
 _TNONE = types.NoneType
+_TSTR_OR_NONE = (types.StringType, types.UnicodeType, types.NoneType)
+_TUSERID = 'TYPE_USERID'
+_TUSERID_OR_LIST = (_TUSERID, list)
 
 
 def check_input_types(*types, **validkeys):
@@ -57,25 +62,32 @@ def check_input_types(*types, **validkeys):
             match_types = types[0:len(argtypes)]
 
             invalid_type = False
+            invalid_userid_idx = -1
             for idx in range(len(argtypes)):
                 _mtypes = match_types[idx]
-                if isinstance(_mtypes, tuple):
-                    if tuple in map(type, _mtypes):
-                        _tmtypes = ()
-                        for typ in _mtypes:
-                            if isinstance(typ, tuple):
-                                _tmtypes += typ
-                            else:
-                                _tmtypes += (typ,)
-                    else:
-                        _tmtypes = _mtypes
-                    if argtypes[idx] not in _tmtypes:
-                        invalid_type = True
+                if not isinstance(_mtypes, tuple):
+                    _mtypes = (_mtypes,)
+
+                argtype = argtypes[idx]
+                if _TUSERID in _mtypes:
+                    userid_type = True
+                    for _tmtype in _mtypes:
+                        if ((argtype == _tmtype) and
+                            (_tmtype != _TUSERID)):
+                            userid_type = False
+                    if (userid_type and
+                        (not utils.valid_userid(inputs[idx]))):
+                        invalid_userid_idx = idx
                         break
-                else:
-                    if argtypes[idx] != _mtypes:
-                        invalid_type = True
-                        break
+                elif argtype not in _mtypes:
+                    invalid_type = True
+                    break
+
+            if invalid_userid_idx != -1:
+                msg = ("Invalid userid found, userid should be string type and"
+                       " should not be null or contain spaces.")
+                LOG.info(msg)
+                raise exception.ZVMInvalidInput(msg=msg)
 
             if invalid_type:
                 msg = ("Invalid input types: %(argtypes)s; "
@@ -109,7 +121,7 @@ class SDKAPI(object):
         self._monitor = monitor.get_monitor()
         self._skip_input_check = kwargs.get('skip_input_check')
 
-    @check_input_types(_TSTR)
+    @check_input_types(_TUSERID)
     def guest_start(self, userid):
         """Power on a virtual machine.
 
@@ -119,7 +131,7 @@ class SDKAPI(object):
         """
         self._vmops.guest_start(userid)
 
-    @check_input_types(_TSTR, int, int)
+    @check_input_types(_TUSERID, int, int)
     def guest_stop(self, userid, timeout=0, retry_interval=10):
         """Power off a virtual machine.
 
@@ -137,12 +149,12 @@ class SDKAPI(object):
 
         self._vmops.guest_stop(userid, timeout, retry_interval)
 
-    @check_input_types(_TSTR)
+    @check_input_types(_TUSERID)
     def guest_get_power_state(self, userid):
         """Returns power state."""
         return self._vmops.get_power_state(userid)
 
-    @check_input_types(_TSTR)
+    @check_input_types(_TUSERID)
     def guest_get_info(self, userid):
         """Get the status of a virtual machine.
 
@@ -191,7 +203,7 @@ class SDKAPI(object):
         """
         return self._hostops.list_guests()
 
-    @check_input_types(_TSTR, _TSTR, (_TSTR, _TNONE), (_TSTR, _TNONE))
+    @check_input_types(_TUSERID, _TSTR, _TSTR_OR_NONE, _TSTR_OR_NONE)
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      vdev=None):
         """ Deploy the image to vm.
@@ -205,7 +217,7 @@ class SDKAPI(object):
         return self._vmops.guest_deploy(userid, image_name,
                                         transportfiles, vdev)
 
-    @check_input_types(_TSTR, list, (_TSTR, _TNONE))
+    @check_input_types(_TUSERID, list, _TSTR_OR_NONE)
     def guest_create_nic(self, userid, nic_info, ip_addr=None):
         """ Create the nic for the vm, add NICDEF record into the user direct.
 
@@ -222,7 +234,7 @@ class SDKAPI(object):
 
         self._networkops.create_nic(userid, nic_info, ip_addr=ip_addr)
 
-    @check_input_types(_TSTR)
+    @check_input_types(_TUSERID)
     def guest_get_nic_switch_info(self, userid):
         """ Return the nic and switch pair for the specified vm.
 
@@ -232,7 +244,7 @@ class SDKAPI(object):
         """
         return self._networkops.get_vm_nic_switch_info(userid)
 
-    @check_input_types(_TSTR, valid_keys=['nic_coupled'])
+    @check_input_types(_TUSERID, valid_keys=['nic_coupled'])
     def guest_get_definition_info(self, userid, **kwargs):
         """Get definition info for the specified guest vm, also could be used
         to check specific info.
@@ -248,17 +260,31 @@ class SDKAPI(object):
         """
         return self._vmops.get_definition_info(userid, **kwargs)
 
-    @check_input_types(_TSTR, _TSTR)
-    def image_import(self, image_file_path, os_version):
-        """import image to z/VM according to the file path and os_version
+    @check_input_types(_TSTR, dict, _TSTR_OR_NONE)
+    def image_import(self, url, image_meta={}, remote_host=None):
+        """Import image to zvmsdk image repository
 
-        :param image_file_path:the absolute path for image file
-        :param os_version:the os version of the image
-
+        :param str url: image url to specify the location of image such as
+               http://netloc/path/to/file.tar.gz.0
+               https://netloc/path/to/file.tar.gz.0
+               file:///path/to/file.tar.gz.0
+        :param dict image_meta:
+               a dictionary to describe the image info. such as md5sum,
+               os_version. For example:
+               {'os_version': 'rhel6.2',
+               'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5'}
+        :param: remote_host:
+                if the image url schema is file, the remote_host is used to
+                indicate where the image comes from, the format is username@IP
+                eg. nova@192.168.99.1, the default value is None, it indicate
+                the image is from a local file system. If the image url schema
+                is http/https, this value will be useless
         """
-        self._imageops.image_import(image_file_path, os_version)
 
-    @check_input_types(_TSTR, int, int, list, _TSTR)
+        self._imageops.image_import(url, image_meta=image_meta,
+                                    remote_host=remote_host)
+
+    @check_input_types(_TUSERID, int, int, list, _TSTR)
     def guest_create(self, userid, vcpus, memory, disk_list=[],
                      user_profile=CONF.zvm.user_profile):
         """create a vm in z/VM
@@ -299,7 +325,7 @@ class SDKAPI(object):
         """
         return self._imageops.image_get_root_disk_size(image_file_name)
 
-    @check_input_types(_TSTR, _TSTR, _TSTR, bool)
+    @check_input_types(_TSTR, _TSTR, _TUSERID, bool)
     def guest_nic_couple_to_vswitch(self, vswitch_name, nic_vdev,
                                     userid, persist=True):
         """ Couple nic device to specified vswitch.
@@ -314,7 +340,7 @@ class SDKAPI(object):
         self._networkops.couple_nic_to_vswitch(vswitch_name, nic_vdev,
                                                userid, persist)
 
-    @check_input_types(_TSTR, _TSTR, _TSTR, bool)
+    @check_input_types(_TSTR, _TSTR, _TUSERID, bool)
     def guest_nic_uncouple_from_vswitch(self, vswitch_name, nic_vdev,
                                         userid, persist=True):
         """ Couple nic device to specified vswitch.
@@ -410,7 +436,7 @@ class SDKAPI(object):
                                      router, network_type, vid,
                                      port_type, update, gvrp, native_vid)
 
-    @check_input_types((_TSTR, _TNONE))
+    @check_input_types(_TSTR_OR_NONE)
     def image_query(self, imagekeyword=None):
         """Get the list of image names in image repository
 
@@ -422,7 +448,7 @@ class SDKAPI(object):
         """
         return self._imageops.image_query(imagekeyword)
 
-    @check_input_types(_TSTR)
+    @check_input_types(_TUSERID)
     def guest_get_console_output(self, userid):
         """Get the console output of the guest virtual machine.
 
@@ -432,7 +458,7 @@ class SDKAPI(object):
         """
         return self._vmops.get_console_output(userid)
 
-    @check_input_types(_TSTR)
+    @check_input_types(_TUSERID)
     def guest_delete(self, userid):
         """Delete guest
         :param userid: the user id of the vm
@@ -440,7 +466,7 @@ class SDKAPI(object):
         """
         return self._vmops.delete_vm(userid)
 
-    @check_input_types((_TSTR, list))
+    @check_input_types(_TUSERID_OR_LIST)
     def guest_inspect_cpus(self, userid_list):
         """Get the cpu statistics of the guest virtual machines
 
@@ -474,7 +500,7 @@ class SDKAPI(object):
             userid_list = [userid_list]
         return self._monitor.inspect_cpus(userid_list)
 
-    @check_input_types((_TSTR, list))
+    @check_input_types(_TUSERID_OR_LIST)
     def guest_inspect_mem(self, userid_list):
         """Get the mem usage statistics of the guest virtual machines
 
@@ -502,7 +528,7 @@ class SDKAPI(object):
             userid_list = [userid_list]
         return self._monitor.inspect_mem(userid_list)
 
-    @check_input_types((_TSTR, list))
+    @check_input_types(_TUSERID_OR_LIST)
     def guest_inspect_vnics(self, userid_list):
         """Get the vnics statistics of the guest virtual machines
 
@@ -545,7 +571,7 @@ class SDKAPI(object):
             userid_list = [userid_list]
         return self._monitor.inspect_vnics(userid_list)
 
-    @check_input_types(_TSTR, _TSTR)
+    @check_input_types(_TSTR, _TUSERID)
     def vswitch_grant_user(self, vswitch_name, userid):
         """Set vswitch to grant user
 
@@ -555,7 +581,7 @@ class SDKAPI(object):
 
         self._networkops.grant_user_to_vswitch(vswitch_name, userid)
 
-    @check_input_types(_TSTR, _TSTR)
+    @check_input_types(_TSTR, _TUSERID)
     def vswitch_revoke_user(self, vswitch_name, userid):
         """Revoke user for vswitch
 
@@ -564,7 +590,7 @@ class SDKAPI(object):
         """
         self._networkops.revoke_user_from_vswitch(vswitch_name, userid)
 
-    @check_input_types(_TSTR, _TSTR, _TSTR)
+    @check_input_types(_TSTR, _TUSERID, _TSTR)
     def vswitch_set_vlan_id_for_user(self, vswitch_name, userid, vlan_id):
         """Set vlan id for user when connecting to the vswitch
 
@@ -575,7 +601,7 @@ class SDKAPI(object):
         self._networkops.set_vswitch_port_vlan_id(vswitch_name,
                                                   userid, vlan_id)
 
-    @check_input_types(_TSTR, _TSTR, _TSTR, _TSTR)
+    @check_input_types(_TUSERID, _TSTR, _TSTR, _TSTR)
     def guest_update_nic_definition(self, userid, nic_vdev, mac,
                                     switch_name):
         """ add nic and coupled network info into the user direct.
@@ -587,7 +613,7 @@ class SDKAPI(object):
         self._networkops.update_nic_definition(userid, nic_vdev, mac,
                                                switch_name)
 
-    @check_input_types(_TSTR, list)
+    @check_input_types(_TUSERID, list)
     def guest_config_minidisks(self, userid, disk_info):
         """Punch the script that used to process additional disks to vm
 

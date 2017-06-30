@@ -45,10 +45,11 @@ class SDKAPITestCase(base.SDKTestCase):
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_import")
     def test_image_import(self, image_import):
-        image_file_path = "/install/temp/test.img"
-        os_version = "1.0"
-        self.api.image_import(image_file_path, os_version)
-        image_import.assert_called_once_with(image_file_path, os_version)
+        url = "file:////install/temp/test.img"
+        image_meta = {'os_version': "rhel6.7"}
+        self.api.image_import(url, image_meta=image_meta)
+        image_import.assert_called_once_with(url, image_meta=image_meta,
+                                             remote_host=None)
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create(self, create_vm):
@@ -150,6 +151,11 @@ class SDKAPITestCase(base.SDKTestCase):
         self.assertRaises(exception.ZVMInvalidInput,
                           self.api.guest_get_definition_info, 'uid',
                           invalid='1000')
+
+    @mock.patch("zvmsdk.vmops.VMOps.guest_start")
+    def test_check_input_userid_length(self, gs):
+        self.assertRaises(exception.ZVMInvalidInput, self.api.guest_start,
+                          '123456789')
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_delete")
     def test_image_delete(self, image_delete):
