@@ -77,10 +77,15 @@ msg = {
         "of list or string: %s"],
     '0013': [{'overallRC': 4, 'rc': 4, 'rs': 13},
         "ULT%s0010E The desired state was: %s. Valid states are: %s"],
-    # 0014: Available
+    '0014': [{'overallRC': 4, 'rc': 4, 'rs': 14},
+        "ULT%s0014E The option %s was specified but the option %s " +
+        "was not specified.  These options must both be specified."],
     '0015': [{'overallRC': 4, 'rc': 4, 'rs': 15},
             "ULT%s0015E The file system was not 'ext2', 'ext3', " +
             "'ext4', 'xfs' or 'swap': %s"],
+    '0016': [{'overallRC': 4, 'rc': 4, 'rs': 16},
+            "ULT%s0016E The scp Data Type was not 'hex', 'ebcdic', " +
+            "or 'delete': %s"],
 
     # 0200-0299: Utility Messages
     '0200': [{'overallRC': 4, 'rc': 4, 'rs': 200},
