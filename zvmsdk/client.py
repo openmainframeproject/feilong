@@ -1055,13 +1055,9 @@ class XCATClient(ZVMClient):
             res = zvmutils.xcat_request("GET", url)
         image_list = []
         if res['info'] and 'Could not find' not in res['info'][0][0]:
-            if imagekeyword:
-                image_name = res['info'][0][0].strip().split(" ")[0]
+            for img in res['info'][0]:
+                image_name = img.strip().split(" ")[0]
                 image_list.append(image_name)
-            elif len(res['info'][0]) >= 2:
-                for img in res['info'][0]:
-                    image_name = img.strip().split(" ")[0]
-                    image_list.append(image_name)
 
         return image_list
 
