@@ -98,7 +98,8 @@ zvm_opts = [
         default='/tmp/zvmsdk/images/'),
     # network options
     Opt('my_ip',
-        section='network'),
+        section='network',
+        required=True),
     Opt('device',
         section='network'),
     Opt('broadcast_v4',
