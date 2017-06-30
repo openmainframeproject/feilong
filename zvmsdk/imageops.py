@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import urlparse
 
 from zvmsdk import client as zvmclient
 from zvmsdk import config
@@ -66,50 +67,12 @@ class ImageOps(object):
         LOG.debug("The image's root_disk_size is %s", root_disk_size)
         return root_disk_size
 
-    def image_import(self, image_file_path, os_version):
-        """import a spawn image to XCAT"""
-        LOG.debug("Getting a spawn image...")
-        image_uuid = image_file_path.split('/')[-1]
-        disk_file_name = CONF.zvm.user_root_vdev + '.img'
-        image_name = disk_file_name
-        image_name = zvmutils.remove_prefix_of_unicode(image_name)
-        spawn_path = self._pathutils.get_spawn_folder()
-
-        time_stamp_dir = self._pathutils.make_time_stamp()
-        bundle_file_path = self._pathutils.get_bundle_tmp_path(time_stamp_dir)
-
-        image_meta = {
-                u'id': image_uuid,
-                u'properties': {u'image_type_xcat': u'linux',
-                               u'os_version': os_version,
-                               u'os_name': u'Linux',
-                               u'architecture': u's390x',
-                               u'provision_method': u'netboot'}
-                }
-
-        # Generate manifest.xml
-        LOG.debug("Generating the manifest.xml as a part of bundle file for "
-                    "image %s", image_meta['id'])
-        self.zvmclient.generate_manifest_file(image_meta, image_name,
-                                    disk_file_name, bundle_file_path)
-        # Generate the image bundle
-        LOG.debug("Generating bundle file for image %s", image_meta['id'])
-        image_bundle_package = self.zvmclient.generate_image_bundle(
-                                    spawn_path, time_stamp_dir,
-                                    image_name, image_file_path)
-
-        # Import image bundle to xCAT MN's image repository
-        LOG.debug("Importing the image %s to xCAT", image_meta['id'])
-        profile_str = image_uuid.replace('-', '_')
-        image_profile = profile_str
-        self.zvmclient.check_space_imgimport_xcat(image_bundle_package,
-                        CONF.xcat.free_space_threshold,
-                        CONF.xcat.master_node)
-        self.zvmclient.image_import(image_bundle_package,
-                                    image_profile)
-
-        # TODO(Cao Biao): Add log info
-        pass
+    def image_import(self, url, image_meta={}, remote_host=None):
+        parsed_url = urlparse.urlparse(url)
+        if CONF.zvm.client_type == 'xcat':
+            self.zvmclient.image_import(parsed_url.path,
+                                        image_meta['os_version'],
+                                        remote_host=remote_host)
 
     def image_query(self, imagekeyword=None):
         return self.zvmclient.image_query(imagekeyword)

@@ -703,7 +703,7 @@ class PathUtils(object):
         return six.moves.builtins.open(path, mode)
 
     def _get_image_tmp_path(self):
-        image_tmp_path = os.path.normpath(CONF.zvm.image_tmp_path)
+        image_tmp_path = os.path.normpath(CONF.image.temp_path)
         if not os.path.exists(image_tmp_path):
             LOG.debug('Creating folder %s for image temp files',
                      image_tmp_path)
