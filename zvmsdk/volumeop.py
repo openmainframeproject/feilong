@@ -113,16 +113,25 @@ class _BaseConfigurator(VolumeConfiguratorAPI):
         pass
 
     def config_detach(self, instance, volume, connection_info):
-        pass
+        if self._vmop.is_reachable(instance[NAME]):
+            self.config_detach_active(instance, volume, connection_info)
+        else:
+            self.config_detach_inactive(instance, volume, connection_info)
 
     def config_force_detach(self, instance, volume, connection_info):
         pass
 
     def config_attach_active(self, instance, volume, connection_info):
-        pass
+        raise NotImplementedError
 
     def config_attach_inactive(self, instance, volume, connection_info):
-        pass
+        raise NotImplementedError
+
+    def config_detach_active(self, instance, volume, connection_info):
+        raise NotImplementedError
+
+    def config_detach_inactive(self, instance, volume, connection_info):
+        raise NotImplementedError
 
 
 class _xCATProxy(object):
@@ -144,9 +153,17 @@ class _xCATProxy(object):
         body = [' '.join(['--dedicatedevice', device, device, '0'])]
         self._xcat_chvm(instance[NAME], body)
 
+    def undedicate_device(self, instance, device):
+        body = [' '.join(['--undedicatedevice', device])]
+        self._xcat_chvm(instance[NAME], body)
+
     def add_zfcp_to_pool(self, fcp, wwpn, lun, size):
         body = [' '.join(['--addzfcp2pool', self._ZFCP_POOL, 'free', wwpn,
                           lun, size, fcp])]
+        self._xcat_chhy(body)
+
+    def remove_zfcp_from_pool(self, wwpn, lun):
+        body = [' '.join(['--removezfcpfrompool', self._ZFCP_POOL, lun, wwpn])]
         self._xcat_chhy(body)
 
     def _xcat_chhy(self, body):
@@ -158,6 +175,10 @@ class _xCATProxy(object):
                           instance[NAME], fcp, size, wwpn, lun])]
         self._xcat_chhy(body)
 
+    def remove_zfcp(self, instance, fcp, wwpn, lun):
+        body = [' '.join(['--removezfcp', fcp, wwpn, lun, '1'])]
+        self._xcat_chvm(instance[NAME], body)
+
     def notice_attach(self, instance, fcp, wwpn, lun, mountpoint, os_version):
         # Create and send volume file
         action = self._ACTIONS['attach_volume']
@@ -166,6 +187,18 @@ class _xCATProxy(object):
 
         # Create and send mount point file
         action = self._ACTIONS['create_mountpoint']
+        parms = self._get_mountpoint_parms(action, fcp, wwpn, lun, mountpoint,
+                                           os_version)
+        self._send_notice(instance, parms)
+
+    def notice_detach(self, instance, fcp, wwpn, lun, mountpoint, os_version):
+        # Create and send volume file
+        action = self._ACTIONS['detach_volume']
+        parms = self._get_volume_parms(action, fcp, wwpn, lun)
+        self._send_notice(instance, parms)
+
+        # Create and send mount point file
+        action = self._ACTIONS['remove_mountpoint']
         parms = self._get_mountpoint_parms(action, fcp, wwpn, lun, mountpoint,
                                            os_version)
         self._send_notice(instance, parms)
@@ -228,7 +261,9 @@ class _Configurator_SLES12(_BaseConfigurator):
                                                volume,
                                                connection_info)
 
-    def _config_attach_inactive_with_xCAT(self, instance, volume,
+    def _config_attach_inactive_with_xCAT(self,
+                                          instance,
+                                          volume,
                                           connection_info):
         # 'size' is a mandatory parameter of xCAT API addzfcp2pool, however,
         # it's totally absent in the process of volume_attach in OpenStack.
@@ -245,7 +280,9 @@ class _Configurator_SLES12(_BaseConfigurator):
             # iSCSI protocol
             raise NotImplementedError
 
-    def _config_fc_attach_inactive_with_xCAT(self, instance, volume,
+    def _config_fc_attach_inactive_with_xCAT(self,
+                                             instance,
+                                             volume,
                                              connection_info):
         fcp = ';'.join(connection_info[FCPS])
         wwpn = ';'.join(connection_info[WWPNS])
@@ -263,6 +300,46 @@ class _Configurator_SLES12(_BaseConfigurator):
                                        lun,
                                        connection_info[ALIAS],
                                        instance[OS_TYPE])
+
+    def config_detach_active(self, instance, volume, connection_info):
+        pass
+
+    def config_detach_inactive(self, instance, volume, connection_info):
+        self._config_detach_inactive_with_xCAT(instance,
+                                               volume,
+                                               connection_info)
+
+    def _config_detach_inactive_with_xCAT(self,
+                                          instance,
+                                          volume,
+                                          connection_info):
+        if connection_info[PROTOCOL] == 'fc':
+            self._config_fc_detach_inactive_with_xCAT(instance,
+                                                      volume,
+                                                      connection_info)
+        else:
+            # iSCSI protocol
+            raise NotImplementedError
+
+    def _config_fc_detach_inactive_with_xCAT(self,
+                                             instance,
+                                             volume,
+                                             connection_info):
+        fcp = ';'.join(connection_info[FCPS])
+        wwpn = ';'.join(connection_info[WWPNS])
+        lun = volume[LUN]
+
+        self._xCAT_proxy.remove_zfcp(instance, fcp, wwpn, lun)
+        self._xCAT_proxy.remove_zfcp_from_pool(wwpn, lun)
+        self._xCAT_proxy.notice_detach(instance,
+                                       fcp,
+                                       wwpn,
+                                       lun,
+                                       connection_info[ALIAS],
+                                       instance[OS_TYPE])
+        if DEDICATE in connection_info.keys():
+            for dev in connection_info[DEDICATE]:
+                self._xCAT_proxy.undedicate_device(instance, dev)
 
 
 class _Configurator_Ubuntu16(_BaseConfigurator):
@@ -288,7 +365,10 @@ class VolumeOperator(VolumeOperatorAPI):
                                     ).__new__(cls, *args, **kwargs)
         return cls.__singleton
 
-    def attach_volume_to_instance(self, instance, volume, connection_info,
+    def attach_volume_to_instance(self,
+                                  instance,
+                                  volume,
+                                  connection_info,
                                   is_rollback_on_failure=False):
         LOG.debug("Enter VolumeOperator.attach_volume_to_instance, attach "
                   "volume %(vol)s to instance %(inst)s by connection_info "
@@ -303,9 +383,23 @@ class VolumeOperator(VolumeOperatorAPI):
 
         LOG.debug("Exit VolumeOperator.attach_volume_to_instance.")
 
-    def detach_volume_from_instance(self, instance, volume, connection_info,
+    def detach_volume_from_instance(self,
+                                    instance,
+                                    volume,
+                                    connection_info,
                                     is_rollback_on_failure=False):
-        pass
+        LOG.debug("Enter VolumeOperator.detach_volume_from_instance, detach "
+                  "volume %(vol)s from instance %(inst)s by connection_info "
+                  "%(conn_info)s.")
+
+        self._validate_instance(instance)
+        self._validate_volume(volume)
+        self._validate_connection_info(connection_info)
+
+        configurator = self._get_configurator(instance)
+        configurator.config_detach(instance, volume, connection_info)
+
+        LOG.debug("Exit VolumeOperator.detach_volume_from_instance.")
 
     def _validate_instance(self, instance):
         if not instance:
