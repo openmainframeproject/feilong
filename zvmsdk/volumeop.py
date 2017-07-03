@@ -214,6 +214,13 @@ class _Configurator_SLES12(_BaseConfigurator):
 
     def _config_attach_inactive_with_xCAT(self, instance, volume,
                                           connection_info):
+        # 'size' is a mandatory parameter of xCAT API addzfcp2pool, however,
+        # it's totally absent in the process of volume_attach in OpenStack.
+        # So it's left here because we still need xCAT in this moment, please
+        # remove it when xCAT is gone.
+        if SIZE not in volume.keys():
+            raise ZVMVolumeError("volume size is not passed in!")
+
         if connection_info[PROTOCOL] == 'fc':
             self._config_fc_attach_inactive_with_xCAT(instance,
                                                       volume,
@@ -326,13 +333,6 @@ class VolumeOperator(VolumeOperatorAPI):
             msg = ("volume object must be of type dict, however the object "
                    "passed in is: %s !" % volume)
             raise ZVMVolumeError(msg)
-
-        # 'size' is a mandatory parameter of xCAT API addzfcp2pool, however,
-        # it's totally absent in the process of volume_attach in OpenStack.
-        # So it's left here because we still need xCAT in this moment, please
-        # remove it when xCAT is gone.
-        if SIZE not in volume.keys():
-            raise ZVMVolumeError("volume size is not passed in!")
 
         if TYPE not in volume.keys():
             raise ZVMVolumeError("volume type is not passed in!")
