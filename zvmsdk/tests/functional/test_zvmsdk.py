@@ -13,7 +13,9 @@
 #    under the License.
 
 
+import os
 import unittest
+import uuid
 
 from zvmsdk import api
 from zvmsdk import config
@@ -216,3 +218,23 @@ class SDKAPITestCase(unittest.TestCase):
         result = self.sdkapi.guest_inspect_vnics([])
         empty_dict = {}
         self.assertEqual(result, empty_dict)
+
+    def test_image_operations(self):
+        """ Import a image , query the existence and then delete it"""
+        image_fname = str(uuid.uuid1())
+        image_fpath = ''.join([CONF.image.temp_path, image_fname])
+        os.system('touch %s' % image_fpath)
+        url = "file://" + image_fpath
+        image_meta = {'os_version': 'rhel7.2'}
+        self.sdkapi.image_import(url, image_meta)
+
+        query_result = self.sdkapi.image_query(image_fname)
+        expect_result = ['rhel7.2-s390x-netboot-%s'
+                         % image_fname.replace('-', '_')]
+        self.assertEqual(query_result, expect_result)
+
+        self.sdkapi.image_delete(query_result[0])
+        query_result_after_delete = self.sdkapi.image_query(image_fname)
+        expect_result_after_delete = []
+        self.assertEqual(query_result_after_delete,
+                         expect_result_after_delete)
