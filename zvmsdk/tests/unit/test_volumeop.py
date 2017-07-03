@@ -36,6 +36,7 @@ from zvmsdk.volumeop import PROTOCOL as PROTOCOL
 from zvmsdk.volumeop import FCPS as FCPS
 from zvmsdk.volumeop import WWPNS as WWPNS
 from zvmsdk.volumeop import DEDICATE as DEDICATE
+from zvmsdk.exception import ZVMVolumeError
 
 
 class _BaseConfiguratorTestCase(unittest.TestCase):
@@ -224,15 +225,23 @@ class _Configurator_SLES12TestCases(unittest.TestCase):
                        '_config_fc_attach_inactive_with_xCAT')
     def test_config_attach_inactive_with_xCAT(self, _config_fc):
         _config_fc.return_value = None
+        volume = {LUN: 'abcdef0987654321', TYPE: 'fc'}
         conn_info = {PROTOCOL: 'fc'}
-        self._conf._config_attach_inactive_with_xCAT(None, None, conn_info)
-        _config_fc.assert_called_once_with(None, None, conn_info)
+        self.assertRaises(ZVMVolumeError,
+                          self._conf._config_attach_inactive_with_xCAT,
+                          None,
+                          volume,
+                          conn_info)
+
+        volume = {LUN: 'abcdef0987654321', TYPE: 'fc', SIZE: '1G'}
+        self._conf._config_attach_inactive_with_xCAT(None, volume, conn_info)
+        _config_fc.assert_called_once_with(None, volume, conn_info)
 
         conn_info = {PROTOCOL: 'iSCSI'}
         self.assertRaises(NotImplementedError,
                           self._conf._config_attach_inactive_with_xCAT,
                           None,
-                          None,
+                          volume,
                           conn_info)
 
     @mock.patch.object(volumeop._xCATProxy, 'notice_attach')
@@ -373,9 +382,6 @@ class VolumeOpTestCase(unittest.TestCase):
         volume = ['fc', 'abCDEF0987654321']
         self.assertRaises(err, self._vol_op._validate_volume, volume)
 
-        volume = {LUN: 'abCDEF0987654321', TYPE: 'fc'}
-        self.assertRaises(err, self._vol_op._validate_volume, volume)
-
         volume = {LUN: 'abCDEF0987654321', SIZE: '1G'}
         self.assertRaises(err, self._vol_op._validate_volume, volume)
 
@@ -383,6 +389,11 @@ class VolumeOpTestCase(unittest.TestCase):
                   LUN: 'abCDEF0987654321',
                   SIZE: '1G'}
         self.assertRaises(err, self._vol_op._validate_volume, volume)
+
+        volume = {LUN: 'abCDEF0987654321', TYPE: 'fc'}
+        self._vol_op._validate_volume(volume)
+        _validate_fc_volume.assert_called_once_with(volume)
+        _validate_fc_volume.reset_mock()
 
         volume = {TYPE: 'fc',
                   LUN: 'abCDEF0987654321',
