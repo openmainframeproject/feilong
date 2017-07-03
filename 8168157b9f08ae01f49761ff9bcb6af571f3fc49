@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "546fe44e_f4d3dfb3",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-07-03T07:58:49Z",
+      "side": 1,
+      "message": "we need to be clear what\u0027s required and what\u0027s optional here\nfor an api ,it\u0027s fairly important",
+      "range": {
+        "startLine": 272,
+        "startChar": 15,
+        "endLine": 275,
+        "endChar": 61
+      },
+      "revId": "8168157b9f08ae01f49761ff9bcb6af571f3fc49",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9a0a1c69_11b442e8",
+        "filename": "zvmsdk/imageops.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-07-03T07:58:49Z",
+      "side": 1,
+      "message": "we can add a \u0027else\u0027 to raise exception later",
+      "range": {
+        "startLine": 71,
+        "startChar": 8,
+        "endLine": 75,
+        "endChar": 64
+      },
+      "revId": "8168157b9f08ae01f49761ff9bcb6af571f3fc49",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
