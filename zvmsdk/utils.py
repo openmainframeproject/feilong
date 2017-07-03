@@ -93,6 +93,9 @@ class XCATUrl(object):
         else:
             return rurl
 
+    def _hv(self, arg=''):
+        return self.PREFIX + self.HV + arg + self.SUFFIX
+
     def rpower(self, arg=''):
         return self.PREFIX + self.NODES + arg + self.POWER + self.SUFFIX
 
