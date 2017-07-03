@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "82f6395d_9fda0c8f",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-07-03T08:04:56Z",
+      "side": 1,
+      "message": "just a suggestion ,I suggest to move this to utils.py\n\napi.py we keep most functions for api itself\n\n\nand do you have additional test for this logic as well?",
+      "range": {
+        "startLine": 41,
+        "startChar": 0,
+        "endLine": 110,
+        "endChar": 20
+      },
+      "revId": "9471267a1ee7026240d54f67fb52d19e32dafe78",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
