@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "004afdd7_b18785ec",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-07-04T06:15:19Z",
+      "side": 1,
+      "message": "I still think this is not reasonable to pass the vlanid when calling couple, since user has already called the set_vlanid before this.\nMaybe we can use smcli to query the vlan?",
+      "range": {
+        "startLine": 330,
+        "startChar": 8,
+        "endLine": 330,
+        "endChar": 35
+      },
+      "revId": "03dd65f3f3c61e665d5c56bff05fb02a4cce156f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
