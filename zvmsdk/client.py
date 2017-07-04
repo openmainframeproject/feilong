@@ -166,14 +166,15 @@ class XCATClient(ZVMClient):
             data_entries = res_dict['data'][0][1:]
             for data in data_entries:
                 l = data.split(",")
-                node, hcp = l[0].strip("\""), l[1].strip("\"")
+                (node, hcp, userid) = (l[0].strip("\""), l[1].strip("\""),
+                                       l[2].strip("\""))
                 hcp_short = hcp_base.partition('.')[0]
 
                 # exclude zvm host and zhcp node from the list
                 if (hcp.upper() == hcp_base.upper() and
                         node.upper() not in (zvm_host.upper(),
                         hcp_short.upper(), CONF.xcat.master_node.upper())):
-                    vms.append(node)
+                    vms.append(userid)
 
         return vms
 

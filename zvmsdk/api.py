@@ -197,9 +197,9 @@ class SDKAPI(object):
         return self._hostops.diskpool_get_info(diskpool_name)
 
     def host_list_guests(self):
-        """list names of all the VMs on this host.
+        """list userid of all the VMs on this host.
 
-        :returns: names of the vm on this host, in a list.
+        :returns: Userid of the vm on this host, in a list.
         """
         return self._hostops.list_guests()
 

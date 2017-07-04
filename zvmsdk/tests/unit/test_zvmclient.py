@@ -166,12 +166,12 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
                                      'nodename': "fakehcp",
                                      'userid': "fakeuserid"}
         fake_vm_list = self._fake_vm_list()
-        fake_vm_list.append('"xcat","fakexcat.fake.com",,,,,')
+        fake_vm_list.append('"xcat","fakexcat.fake.com","XCAT",,,,')
         xrequest.return_value = {'data': [fake_vm_list, ]}
         vm_list = self._zvmclient.get_vm_list()
-        self.assertIn("os000001", vm_list)
-        self.assertNotIn("xcat", vm_list)
-        self.assertNotIn("fakehcp", vm_list)
+        self.assertIn("OS000001", vm_list)
+        self.assertNotIn("XCAT", vm_list)
+        self.assertNotIn("HCP", vm_list)
         url = "/xcatws/tables/zvm?userName=" +\
                 CONF.xcat.username + "&password=" +\
                 CONF.xcat.password + "&format=json"
