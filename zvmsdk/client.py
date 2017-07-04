@@ -800,7 +800,9 @@ class XCATClient(ZVMClient):
                     msg=("Failed to revoke user %s from vswitch %s, %s") %
                         (userid, vswitch_name, result['data'][0][0]))
 
-    def _couple_nic(self, vswitch_name, userid, vdev, persist=True):
+    def _couple_nic(self, vswitch_name, userid, vdev, persist=True, vlan=None):
+        """Update information in xCAT switch table."""
+        self._update_xcat_switch(userid, vdev, vswitch_name, vlan)
         """Couple NIC to vswitch by adding vswitch into user direct."""
         zhcp = CONF.xcat.zhcp_node
         url = self._xcat_url.xdsh("/%s" % zhcp)
@@ -837,10 +839,10 @@ class XCATClient(ZVMClient):
                         (vdev, vswitch_name, result['data'][0][0]))
 
     def couple_nic_to_vswitch(self, vswitch_name, nic_vdev,
-                              userid, persist=True):
+                              userid, persist=True, vlan=None):
         """Couple nic to vswitch."""
         LOG.debug("Connect nic to switch: %s", vswitch_name)
-        self._couple_nic(vswitch_name, userid, nic_vdev, persist)
+        self._couple_nic(vswitch_name, userid, nic_vdev, persist, vlan)
 
     def _uncouple_nic(self, userid, vdev, persist=True):
         """Uncouple NIC from vswitch"""
@@ -1367,7 +1369,10 @@ class XCATClient(ZVMClient):
                     msg=("Failed to set vlan id for user %s, %s") %
                         (userid, result['data'][0][0]))
 
-    def update_nic_definition(self, userid, nic_vdev, mac, switch_name):
+    def update_nic_definition(self, userid, nic_vdev, mac,
+                              switch_name, vlan=None):
+        """Update information in xCAT switch table."""
+        self._update_xcat_switch(userid, nic_vdev, switch_name, vlan)
         """add one NIC's info to user direct."""
         url = self._xcat_url.chvm('/' + userid)
         commands = ' '.join((
@@ -1444,3 +1449,12 @@ class XCATClient(ZVMClient):
                     msg=("switch %s changes failed, %s") %
                         (switch_name, result['data']))
         LOG.info('change vswitch %s done.' % switch_name)
+
+    def _update_xcat_switch(self, userid, nic_vdev, vswitch, vlan):
+        """Update information in xCAT switch table."""
+        commands = ' '.join(("node=%s,interface=%s" % (userid, nic_vdev),
+                             "switch.switch=%s" % vswitch,
+                             "switch.vlan=%s" % (vlan and vlan or -1)))
+        url = self._xcat_url.tabch("/switch")
+        body = [commands]
+        zvmutils.xcat_request("PUT", url, body)

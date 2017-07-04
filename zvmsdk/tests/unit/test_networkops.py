@@ -43,11 +43,11 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
     def test_couple_nic_to_vswitch(self, couple_nic_to_vswitch):
         self.networkops.couple_nic_to_vswitch("fake_VS_name", "nic_vdev",
                                               "fake_userid",
-                                              True)
+                                              True, vlan=None)
         couple_nic_to_vswitch.assert_called_with("fake_VS_name",
                                                  "nic_vdev",
                                                  "fake_userid",
-                                                 True)
+                                                 True, None)
 
     @mock.patch.object(zvmclient.XCATClient, 'uncouple_nic_from_vswitch')
     def test_uncouple_nic_from_vswitch(self, uncouple_nic_from_vswitch):
@@ -90,7 +90,7 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         self.networkops.update_nic_definition("user_id", "nic_vdev",
                                               "mac", "switch_name")
         add_nic.assert_called_with("user_id", "nic_vdev",
-                                   "mac", "switch_name")
+                                   "mac", "switch_name", None)
 
     @mock.patch.object(zvmclient.XCATClient, 'set_vswitch')
     def test_set_vswitch(self, set_vswitch):

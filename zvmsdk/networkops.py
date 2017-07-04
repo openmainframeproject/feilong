@@ -47,9 +47,9 @@ class NetworkOPS(object):
         return self.zvmclient.get_vswitch_list()
 
     def couple_nic_to_vswitch(self, vswitch_name, nic_vdev,
-                              userid, persist=True):
+                              userid, persist=True, vlan=None):
         self.zvmclient.couple_nic_to_vswitch(vswitch_name, nic_vdev,
-                                             userid, persist)
+                                             userid, persist, vlan)
 
     def uncouple_nic_from_vswitch(self, vswitch_name, nic_vdev,
                                   userid, persist=True):
@@ -75,9 +75,10 @@ class NetworkOPS(object):
     def set_vswitch_port_vlan_id(self, vswitch_name, userid, vlan_id):
         self.zvmclient.set_vswitch_port_vlan_id(vswitch_name, userid, vlan_id)
 
-    def update_nic_definition(self, user_id, nic_vdev, mac, switch_name):
+    def update_nic_definition(self, user_id, nic_vdev, mac,
+                              switch_name, vlan=None):
         self.zvmclient.update_nic_definition(user_id, nic_vdev, mac,
-                                             switch_name)
+                                             switch_name, vlan)
 
     def set_vswitch(self, vswitch_name, **kwargs):
         self.zvmclient.set_vswitch(vswitch_name, **kwargs)
