@@ -515,7 +515,21 @@ class XCATClient(ZVMClient):
                 msg=("IP address is required"))
 
         self._preset_vm_network(userid, ip_addr)
-        nic_vdev = CONF.zvm.default_nic_vdev
+
+        ports_info = self._get_nic_ids()
+        vdev_info = []
+        for p in ports_info:
+            target_user = p.split(',')[0].strip('"')
+            vdev = p.split(',')[4].strip('"')
+            if target_user == userid:
+                vdev_info.append(vdev)
+
+        if len(vdev_info) == 0:
+            nic_vdev = CONF.zvm.default_nic_vdev
+        else:
+            used_vdev = max(vdev_info)
+            nic_vdev = str(hex(int(used_vdev, 16) + 3))[2:]
+
         zhcpnode = self._get_hcp_info()['nodename']
         for nic_item in nic_info:
             nic_id = nic_item['nic_id']

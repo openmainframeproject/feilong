@@ -508,7 +508,7 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
     @mock.patch.object(zvmclient.XCATClient, '_add_mac_table_record')
     @mock.patch.object(zvmclient.XCATClient, '_delete_mac')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_create_nic(self, xrequest, _delete_mac,
+    def test_private_create_nic(self, xrequest, _delete_mac,
                          _add_mac, _add_switch):
         xrequest.return_value = {"errorcode": [['0']]}
         self._zvmclient._create_nic("fakenode", "fake_nic",
@@ -1446,3 +1446,18 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         self.assertRaises(exception.ZVMException,
                           self._zvmclient.set_vswitch,
                           "vswitch_name", grant_userid='fake_id')
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_nic_ids')
+    @mock.patch.object(zvmclient.XCATClient, '_preset_vm_network')
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
+    @mock.patch.object(zvmclient.XCATClient, '_create_nic')
+    def test_create_nic(self, create_nic, get_hcp, preset_vm, get_nic):
+        get_nic.return_value = [u'"fake_id",,,,"1003",,',
+                                u'"fake_id",,,,"1006",,']
+        get_hcp.return_value = {'nodename': 'zhcp2'}
+        self._zvmclient.create_nic('fake_id',
+                                   [{'nic_id': 'XXX', 'mac_addr': 'MAC_XXX'}],
+                                   ip_addr='fake_ip')
+        preset_vm.assert_called_with('fake_id', 'fake_ip')
+        create_nic.assert_called_with('fake_id', "XXX", 'MAC_XXX',
+                                      '1009', 'zhcp2')
