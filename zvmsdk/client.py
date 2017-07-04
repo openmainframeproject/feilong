@@ -1458,3 +1458,26 @@ class XCATClient(ZVMClient):
                     msg=("switch %s changes failed, %s") %
                         (switch_name, result['data']))
         LOG.info('change vswitch %s done.' % switch_name)
+
+    @zvmutils.wrap_invalid_xcat_resp_data_error
+    def get_vswitch_info(self, switch_name):
+        zhcp = CONF.xcat.zhcp_node
+        userid = self._get_zhcp_userid()
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        commands = ' '.join((
+            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Query',
+            "-T %s" % userid,
+            "-s %s" % switch_name))
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            result = zvmutils.xcat_request("PUT", url, body)
+            if (result['errorcode'][0][0] != '0' or not
+                    result['data'] or not result['data'][0]):
+                return None
+            else:
+                data = '\n'.join([s for s in result['data'][0]
+                                if isinstance(s, unicode)])
+                info_list = data.split('\n')
+                return info_list

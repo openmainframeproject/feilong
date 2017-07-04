@@ -19,6 +19,7 @@ import uuid
 
 from zvmsdk import api
 from zvmsdk import config
+from zvmsdk import client as zvmclient
 from zvmsdk import exception
 
 
@@ -34,6 +35,8 @@ class SDKAPITestCase(unittest.TestCase):
     def __init__(self, methodName='runTest'):
         super(SDKAPITestCase, self).__init__(methodName)
         self.sdkapi = api.SDKAPI()
+        self.basevm = "nydy0001"
+        self.client = zvmclient.get_zvmclient()
 
     def test_host_get_info(self):
         """Positive test case of host_get_info."""
@@ -239,3 +242,61 @@ class SDKAPITestCase(unittest.TestCase):
         self.assertEqual(query_result_after_delete,
                          expect_result_after_delete)
         os.system('rm -f %s' % image_fpath)
+
+    def test_vswitch_get_list(self):
+        """ Positive test case of vswitch_get_list """
+        self.sdkapi.vswitch_create("SDKTEST", "1111")
+        vswitch_list = self.sdkapi.vswitch_get_list()
+        self.assertIsInstance(vswitch_list, list)
+        self.assertTrue("SDKTEST" in vswitch_list)
+        #clear test environment
+        self.sdkapi.vswitch_delete("SDKTEST")
+
+    def _get_vswitch_grant_info(self, vswitch_name):
+        vswitch_info = self.client.get_vswitch_info(vswitch_name)
+        grant_users = []
+        match_key = "     User: "
+        for ls in vswitch_info:
+            if ls.__contains__(match_key):
+                user = ls[ls.find(match_key) + len(match_key):].strip()
+                grant_users.append(user)
+        return grant_users
+
+    def test_vswitch_grant_revoke(self):
+        """ Positive test case of vswitch_grant_user and 
+        vswitch_revoke_user """
+        # Setup test env
+        vswitch_name = "SDKTEST"
+        self.sdkapi.vswitch_create(vswitch_name, "1111")
+        # grant and check
+        self.sdkapi.vswitch_grant_user(vswitch_name, self.basevm)
+        authorized_users = self._get_vswitch_grant_info(vswitch_name)
+        self.assertIn(self.basevm.upper(), authorized_users)
+        # revoke and check
+        self.sdkapi.vswitch_revoke_user(vswitch_name, self.basevm)
+        authorized_users = self._get_vswitch_grant_info(vswitch_name)
+        self.assertNotIn(self.basevm.upper(), authorized_users)
+        # Clear test env
+        self.sdkapi.vswitch_delete(vswitch_name)
+
+    def test_vswitch_grant_not_exist(self):
+        """ Error case of vswitch_grant_user: vswitch not exist """
+        # Setup test env
+        vswitch_name = "SDKTEST"
+        if vswitch_name in self.sdkapi.vswitch_get_list():
+            self.sdkapi.vswitch_delete(vswitch_name)
+        # Test
+        self.assertRaises(exception.ZVMException,
+                          self.sdkapi.vswitch_grant_user,
+                          vswitch_name, self.basevm)
+
+    def test_vswitch_revoke_not_exist(self):
+        """ Error case of vswitch_revoke_user: vswitch not exist """
+        # Setup test env
+        vswitch_name = "SDKTEST"
+        if vswitch_name in self.sdkapi.vswitch_get_list():
+            self.sdkapi.vswitch_delete(vswitch_name)
+        # Test
+        self.assertRaises(exception.ZVMException,
+                          self.sdkapi.vswitch_revoke_user,
+                          vswitch_name, self.basevm)
