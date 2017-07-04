@@ -86,7 +86,7 @@ class SDKAPITestCase(unittest.TestCase):
         for uid in guest_list:
             if self.sdkapi.guest_get_power_state(uid) == 'on':
                 n = n + 1
-                test_id = uid
+                test_id = uid.upper()
         if n > 0:
             result = self.sdkapi.guest_inspect_cpus(guest_list)
             self.assertTrue(isinstance(result, dict))
@@ -112,7 +112,7 @@ class SDKAPITestCase(unittest.TestCase):
 
     def test_guest_inspect_cpus_with_nonexist_guest(self):
         """ To test guest_inspect_cpus for a nonexistent guest"""
-        result = self.sdkapi.guest_inspect_cpus('fake_id')
+        result = self.sdkapi.guest_inspect_cpus('FAKE_ID')
         empty_dict = {}
         self.assertEqual(result, empty_dict)
 
@@ -129,7 +129,7 @@ class SDKAPITestCase(unittest.TestCase):
         for uid in guest_list:
             if self.sdkapi.guest_get_power_state(uid) == 'on':
                 n = n + 1
-                test_id = uid
+                test_id = uid.upper()
         if n > 0:
             result = self.sdkapi.guest_inspect_mem(guest_list)
             self.assertTrue(isinstance(result, dict))
@@ -149,7 +149,7 @@ class SDKAPITestCase(unittest.TestCase):
 
     def test_guest_inspect_mem_with_nonexist_guest(self):
         """ To test guest_inspect_mem for a nonexistent guest"""
-        result = self.sdkapi.guest_inspect_mem('fake_id')
+        result = self.sdkapi.guest_inspect_mem('FAKE_ID')
         empty_dict = {}
         self.assertEqual(result, empty_dict)
 
@@ -173,7 +173,7 @@ class SDKAPITestCase(unittest.TestCase):
                                                 uid, nic_coupled=key)
                         if result['nic_coupled']:
                             n = n + 1
-                            test_id = uid
+                            test_id = uid.upper()
                             break
 
         if n > 0:
@@ -207,7 +207,7 @@ class SDKAPITestCase(unittest.TestCase):
 
     def test_guest_inspect_vnics_with_nonexist_guest(self):
         """ To test guest_inspect_vnics for a nonexistent guest"""
-        result = self.sdkapi.guest_inspect_vnics('fake_id')
+        result = self.sdkapi.guest_inspect_vnics('FAKE_ID')
         empty_dict = {}
         self.assertEqual(result, empty_dict)
 
