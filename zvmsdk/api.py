@@ -203,6 +203,59 @@ class SDKAPI(object):
         """
         return self._hostops.list_guests()
 
+    @check_input_types(_TSTR)
+    def image_delete(self, image_name):
+        """Delete image from image repository
+
+        :param image_name: the name of the image to be deleted
+
+        """
+        self._imageops.image_delete(image_name)
+
+    @check_input_types(_TSTR)
+    def image_get_root_disk_size(self, image_file_name):
+        """Get the root disk size of the image
+
+        :param image_file_name: the image file name in image Repository
+        :returns: the disk size in units CYL or BLK
+        """
+        return self._imageops.image_get_root_disk_size(image_file_name)
+
+    @check_input_types(_TSTR, dict, _TSTR_OR_NONE)
+    def image_import(self, url, image_meta={}, remote_host=None):
+        """Import image to zvmsdk image repository
+
+        :param str url: image url to specify the location of image such as
+               http://netloc/path/to/file.tar.gz.0
+               https://netloc/path/to/file.tar.gz.0
+               file:///path/to/file.tar.gz.0
+        :param dict image_meta:
+               a dictionary to describe the image info. such as md5sum,
+               os_version. For example:
+               {'os_version': 'rhel6.2',
+               'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5'}
+        :param: remote_host:
+                if the image url schema is file, the remote_host is used to
+                indicate where the image comes from, the format is username@IP
+                eg. nova@192.168.99.1, the default value is None, it indicate
+                the image is from a local file system. If the image url schema
+                is http/https, this value will be useless
+        """
+
+        self._imageops.image_import(url, image_meta=image_meta,
+                                    remote_host=remote_host)
+
+    @check_input_types(_TSTR_OR_NONE)
+    def image_query(self, imagekeyword=None):
+        """Get the list of image names in image repository
+
+        :param imagekeyword: The key strings that can be used to retrieve
+               images, if not specified, all image names will be listed
+
+        :returns: A list that contains image names
+        """
+        return self._imageops.image_query(imagekeyword)
+
     @check_input_types(_TUSERID, _TSTR, _TSTR_OR_NONE, _TSTR_OR_NONE)
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      vdev=None):
@@ -260,30 +313,6 @@ class SDKAPI(object):
         """
         return self._vmops.get_definition_info(userid, **kwargs)
 
-    @check_input_types(_TSTR, dict, _TSTR_OR_NONE)
-    def image_import(self, url, image_meta={}, remote_host=None):
-        """Import image to zvmsdk image repository
-
-        :param str url: image url to specify the location of image such as
-               http://netloc/path/to/file.tar.gz.0
-               https://netloc/path/to/file.tar.gz.0
-               file:///path/to/file.tar.gz.0
-        :param dict image_meta:
-               a dictionary to describe the image info. such as md5sum,
-               os_version. For example:
-               {'os_version': 'rhel6.2',
-               'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5'}
-        :param: remote_host:
-                if the image url schema is file, the remote_host is used to
-                indicate where the image comes from, the format is username@IP
-                eg. nova@192.168.99.1, the default value is None, it indicate
-                the image is from a local file system. If the image url schema
-                is http/https, this value will be useless
-        """
-
-        self._imageops.image_import(url, image_meta=image_meta,
-                                    remote_host=remote_host)
-
     @check_input_types(_TUSERID, int, int, list, _TSTR)
     def guest_create(self, userid, vcpus, memory, disk_list=[],
                      user_profile=CONF.zvm.user_profile):
@@ -315,15 +344,6 @@ class SDKAPI(object):
         :param user_profile: the profile for the guest
         """
         self._vmops.create_vm(userid, vcpus, memory, disk_list, user_profile)
-
-    @check_input_types(_TSTR)
-    def image_get_root_disk_size(self, image_file_name):
-        """Get the root disk size of the image
-
-        :param image_file_name: the image file name in image Repository
-        :returns: the disk size in units CYL or BLK
-        """
-        return self._imageops.image_get_root_disk_size(image_file_name)
 
     @check_input_types(_TSTR, _TSTR, _TUSERID, bool)
     def guest_nic_couple_to_vswitch(self, vswitch_name, nic_vdev,
@@ -435,18 +455,6 @@ class SDKAPI(object):
                                      controller, connection, queue_mem,
                                      router, network_type, vid,
                                      port_type, update, gvrp, native_vid)
-
-    @check_input_types(_TSTR_OR_NONE)
-    def image_query(self, imagekeyword=None):
-        """Get the list of image names in image repository
-
-        :param imagekeyword: The key strings that can be used to uniquely
-               retrieve an image, if not specified, all image names will be
-               listed
-
-        :returns: A list that contains image names
-        """
-        return self._imageops.image_query(imagekeyword)
 
     @check_input_types(_TUSERID)
     def guest_get_console_output(self, userid):
@@ -627,15 +635,6 @@ class SDKAPI(object):
 
         """
         self._vmops.guest_config_minidisks(userid, disk_info)
-
-    @check_input_types(_TSTR)
-    def image_delete(self, image_name):
-        """Delete image from image repository
-
-        :param image_name: the name of the image to be deleted
-
-        """
-        self._imageops.image_delete(image_name)
 
     @check_input_types(_TSTR, valid_keys=['grant_userid', 'user_vlan_id',
         'revoke_userid', 'real_device_address', 'port_name', 'controller_name',
