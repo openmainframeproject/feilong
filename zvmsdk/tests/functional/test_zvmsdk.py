@@ -19,7 +19,9 @@ import uuid
 
 from zvmsdk import api
 from zvmsdk import config
+from zvmsdk import client as zvmclient
 from zvmsdk import exception
+from __builtin__ import True
 
 
 CONF = config.CONF
@@ -34,6 +36,8 @@ class SDKAPITestCase(unittest.TestCase):
     def __init__(self, methodName='runTest'):
         super(SDKAPITestCase, self).__init__(methodName)
         self.sdkapi = api.SDKAPI()
+        self.basevm = "nydy0001"
+        self.client = zvmclient.get_zvmclient()
 
     def test_host_get_info(self):
         """Positive test case of host_get_info."""
@@ -239,3 +243,145 @@ class SDKAPITestCase(unittest.TestCase):
         self.assertEqual(query_result_after_delete,
                          expect_result_after_delete)
         os.system('rm -f %s' % image_fpath)
+
+    def _get_vswitch_acc_info(self, vswitch_name):
+        # This can only applies to Vlan aware vswitch
+        command = "vmcp q vswitch %s acc" % vswitch_name
+        rd = self.client.run_commands_on_node(CONF.xcat.zhcp_node, command)
+        info = {}
+        userid_match = False
+        authorized_userids = []
+        ports = {}
+        info['aware'] = False
+        for i in range(len(rd)):
+            ls = rd[i]
+            sec = ls.split(':')
+            if ls.__contains__("Default VLAN:"):
+                info['aware'] = True
+                info['default_porttype'] = sec[-1].strip()
+                info['default_vlan'] = sec[-2].split()[0].strip()
+                continue
+            if ls.__contains__("MAC address:"):
+                info['mac'] = sec[2].split()[0]
+                continue
+            if ls.__contains__("Uplink Port:"):
+                userid_match = False
+                continue
+            if userid_match:
+                if 'aware' not in info.keys():
+                    continue
+                if info['aware']:
+                    vlan_id = sec[-1].strip()
+                    port_type = sec[-2].split()[0].strip()
+                    userid = sec[-3].split()[0].strip()
+                    ports[userid] = {'type': port_type,
+                                         'vlanid': vlan_id}
+                    authorized_userids.append(userid)
+                else:
+                    authorized_userids.extend(sec[1].strip().split())
+                continue
+            if ls.__contains__("Authorized userids:"):
+                userid_match = True
+                continue
+            if ls.__contains__("RDEV:"):
+                rdev = sec[2].strip().split()[0]
+                vdev = sec[3].strip().split()[0]
+                controller = sec[4].strip().split()[0]
+                info['uplink_port'] = {'rdev': rdev,
+                          'vdev': vdev,
+                          'controller': controller}
+        info['authorized_users'] = authorized_userids
+        info['ports'] = ports
+        return info
+
+    def test_vswitch_get_list(self):
+        """ Positive test case of vswitch_get_list """
+        # Setup test env
+        self.sdkapi.vswitch_create("SDKTEST", 1111)
+        # Test
+        vswitch_list = self.sdkapi.vswitch_get_list()
+        self.assertIsInstance(vswitch_list, list)
+        self.assertTrue("SDKTEST" in vswitch_list)
+        # Clear test env
+        self.sdkapi.vswitch_delete("SDKTEST")
+
+    def test_vswitch_grant_revoke(self):
+        """ Positive test case of vswitch_grant_user and
+        vswitch_revoke_user """
+        # Setup test env
+        vswitch_name = "SDKTEST"
+        self.sdkapi.vswitch_create(vswitch_name, 1111)
+        # grant and check
+        self.sdkapi.vswitch_grant_user(vswitch_name, self.basevm)
+        vsw_info = self._get_vswitch_acc_info(vswitch_name)
+        self.assertTrue(('authorized_users' in vsw_info.keys()) and
+                        (self.basevm.upper() in vsw_info['authorized_users']))
+        # revoke and check
+        self.sdkapi.vswitch_revoke_user(vswitch_name, self.basevm)
+        vsw_info = self._get_vswitch_acc_info(vswitch_name)
+        self.assertTrue(('authorized_users' in vsw_info.keys()) and
+                        (self.basevm.upper() not in
+                         vsw_info['authorized_users']))
+        # Clear test env
+        self.sdkapi.vswitch_delete(vswitch_name)
+
+    def test_vswitch_grant_not_exist(self):
+        """ Error case of vswitch_grant_user: vswitch not exist """
+        # Setup test env
+        vswitch_name = "SDKTEST"
+        if vswitch_name in self.sdkapi.vswitch_get_list():
+            self.sdkapi.vswitch_delete(vswitch_name)
+        # Test
+        self.assertRaises(exception.ZVMException,
+                          self.sdkapi.vswitch_grant_user,
+                          vswitch_name, self.basevm)
+
+    def test_vswitch_revoke_not_exist(self):
+        """ Error case of vswitch_revoke_user: vswitch not exist """
+        # Setup test env
+        vswitch_name = "SDKTEST"
+        if vswitch_name in self.sdkapi.vswitch_get_list():
+            self.sdkapi.vswitch_delete(vswitch_name)
+        # Test
+        self.assertRaises(exception.ZVMException,
+                          self.sdkapi.vswitch_revoke_user,
+                          vswitch_name, self.basevm)
+
+    def test_vswitch_set_port_vlanid(self):
+        """ Positive case of vswitch_set_port_vlanid """
+        # Setup test env
+        vswitch_name = "SDKTEST"
+        self.sdkapi.vswitch_create(vswitch_name, 1111, vid=1)
+        # Test
+        self.sdkapi.vswitch_set_vlan_id_for_user(vswitch_name,
+                                                 self.basevm, 1000)
+        # Check authorized user and vlanid
+        vsw = self._get_vswitch_acc_info(vswitch_name)
+        self.assertTrue(('ports' in vsw.keys()) and
+                        (self.basevm.upper() in vsw['ports'].keys()))
+        self.assertEqual(vsw['ports'][self.basevm.upper()]['vlanid'], 1000)
+        # Clear test env
+        self.sdkapi.vswitch_delete(vswitch_name)
+
+    def test_vswitch_set_port_vlanid_vswitch_unaware(self):
+        """ Error case of vswitch_set_port_vlanid: vswitch vlan unaware """
+        # Setup test env
+        vswitch_name = "SDKTEST"
+        self.sdkapi.vswitch_create(vswitch_name, 1111)
+        # Test
+        self.assertRaises(exception.ZVMException,
+                          self.sdkapi.vswitch_set_vlan_id_for_user,
+                          vswitch_name, self.basevm, 1000)
+        # Clear test env
+        self.sdkapi.vswitch_delete(vswitch_name)
+
+    def test_vswitch_set_port_vlanid_vswitch_not_exist(self):
+        """ Error case of vswitch_set_port_vlanid: vswitch not exist """
+        # Setup test env
+        vswitch_name = "SDKTEST"
+        if vswitch_name in self.sdkapi.vswitch_get_list():
+            self.sdkapi.vswitch_delete(vswitch_name)
+        # Test
+        self.assertRaises(exception.ZVMException,
+                          self.sdkapi.vswitch_set_vlan_id_for_user,
+                          vswitch_name, self.basevm, 1000)
