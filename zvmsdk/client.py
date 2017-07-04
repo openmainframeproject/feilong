@@ -815,6 +815,8 @@ class XCATClient(ZVMClient):
                         (userid, vswitch_name, result['data'][0][0]))
 
     def _couple_nic(self, vswitch_name, userid, vdev, persist=True):
+        """Update information in xCAT switch table."""
+        self._update_xcat_switch(userid, vdev, vswitch_name)
         """Couple NIC to vswitch by adding vswitch into user direct."""
         zhcp = CONF.xcat.zhcp_node
         url = self._xcat_url.xdsh("/%s" % zhcp)
@@ -1381,7 +1383,10 @@ class XCATClient(ZVMClient):
                     msg=("Failed to set vlan id for user %s, %s") %
                         (userid, result['data'][0][0]))
 
-    def update_nic_definition(self, userid, nic_vdev, mac, switch_name):
+    def update_nic_definition(self, userid, nic_vdev, mac,
+                              switch_name):
+        """Update information in xCAT switch table."""
+        self._update_xcat_switch(userid, nic_vdev, switch_name)
         """add one NIC's info to user direct."""
         url = self._xcat_url.chvm('/' + userid)
         commands = ' '.join((
@@ -1486,3 +1491,11 @@ class XCATClient(ZVMClient):
                     raise exception.ZVMException(
                     msg=("Failed to delete vswitch %s: %s") %
                         (switch_name, result['data']))
+
+    def _update_xcat_switch(self, userid, nic_vdev, vswitch):
+        """Update information in xCAT switch table."""
+        commands = ' '.join(("node=%s,interface=%s" % (userid, nic_vdev),
+                             "switch.switch=%s" % vswitch))
+        url = self._xcat_url.tabch("/switch")
+        body = [commands]
+        zvmutils.xcat_request("PUT", url, body)
