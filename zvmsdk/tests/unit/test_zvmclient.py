@@ -894,8 +894,9 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         self._zvmclient.revoke_user_from_vswitch("fakevs", "fakeuserid")
         xrequest.assert_called_once_with("PUT", url, body)
 
+    @mock.patch.object(zvmclient.XCATClient, '_update_xcat_switch')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_couple_nic(self, xrequest):
+    def test_couple_nic(self, xrequest, update_switch):
         xrequest.return_value = {"errorcode": [['0']]}
         url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
               "/dsh?userName=" + CONF.xcat.username +\
@@ -917,6 +918,8 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
 
         self._zvmclient._couple_nic("fakevs",
                                     "fakeuserid", "fakecdev", True)
+        update_switch.assert_called_with("fakeuserid", "fakecdev",
+                                         "fakevs")
         xrequest.assert_any_call("PUT", url, body1)
         xrequest.assert_any_call("PUT", url, body2)
 
@@ -1376,8 +1379,9 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
                                                  "vlan_id")
         xrequest.assert_called_once_with("PUT", url, body)
 
+    @mock.patch.object(zvmclient.XCATClient, '_update_xcat_switch')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_update_nic_definition(self, xrequest):
+    def test_update_nic_definition(self, xrequest, update_switch):
         xrequest.return_value = {"errorcode": [['0']]}
         url = "/xcatws/vms/node?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
@@ -1392,6 +1396,7 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
 
         self._zvmclient.update_nic_definition("node", "vdev",
                                               "mac", "vswitch")
+        update_switch.assert_called_with("node", "vdev", "vswitch")
         xrequest.assert_called_with("PUT", url, body)
 
     @mock.patch.object(zvmclient.XCATClient, 'remove_image_file')
@@ -1461,3 +1466,13 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         preset_vm.assert_called_with('fake_id', 'fake_ip')
         create_nic.assert_called_with('fake_id', "XXX", 'MAC_XXX',
                                       '1009', 'zhcp2')
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_private_update_xcat_switch(self, xrequest):
+        commands = "node=fake_id"
+        commands += ",interface=fake_vdev"
+        commands += " switch.switch=fake_vs"
+        url = self._xcat_url.tabch("/switch")
+        body = [commands]
+        self._zvmclient._update_xcat_switch("fake_id", "fake_vdev", "fake_vs")
+        xrequest.assert_called_with("PUT", url, body)
