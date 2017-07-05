@@ -232,6 +232,17 @@ class ImageHandlerTest(unittest.TestCase):
 
             delete.assert_called_once_with('image1')
 
+    @mock.patch.object(tokens, 'validate')
+    def test_image_query(self, mock_validate):
+        self.env['PATH_INFO'] = '/image'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.image.ImageAction.query'
+        with mock.patch(function) as query:
+            h(self.env, dummy)
+
+            query.assert_called_once_with(None)
+
 
 class HostHandlerNegativeTest(unittest.TestCase):
 

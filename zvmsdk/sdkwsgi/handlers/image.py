@@ -35,8 +35,8 @@ class ImageAction(object):
     def delete(self, name):
         LOG.info('image delete')
 
-    def query(self, key):
-        LOG.info('image query')
+    def query(self, imagename):
+        LOG.info('image query %s', imagename)
 
 
 def get_action():
@@ -80,3 +80,17 @@ def image_delete(req):
 
     name = util.wsgi_path_item(req.environ, 'name')
     _image_delete(name)
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def image_query(req):
+
+    def _image_query(imagename):
+        action = get_action()
+        action.query(imagename)
+
+    imagename = None
+    if 'imagename' in req.GET:
+        imagename = req.GET['imagename']
+    _image_query(imagename)
