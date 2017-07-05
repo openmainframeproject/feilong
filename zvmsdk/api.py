@@ -278,11 +278,11 @@ class SDKAPI(object):
     def guest_create_nic(self, userid, nic_info, ip_addr=None):
         """ Create the nic for the vm, add NICDEF record into the user direct.
 
-        :param vm_id: the user id of the vm
-        :param nic_info: the list used to contain nic info,
+        :param str vm_id: the user id of the vm
+        :param list nic_info: the list used to contain nic info,
                including nic id and mac address
                format sample: [{'nic_id': XXX, 'mac_addr': YYY}]
-        :param ip_addr: IP address of the vm
+        :param str ip_addr: IP address of the vm
 
         """
         if len(nic_info) == 0:
@@ -292,12 +292,13 @@ class SDKAPI(object):
         self._networkops.create_nic(userid, nic_info, ip_addr=ip_addr)
 
     @check_input_types(_TUSERID)
-    def guest_get_nic_switch_info(self, userid):
+    def guest_get_nic_vswitch_info(self, userid):
         """ Return the nic and switch pair for the specified vm.
 
-        :param userid: the user id of the vm
+        :param str userid: the user id of the vm
 
         :returns: Dictionary describing nic and switch info
+        :rtype: dict
         """
         return self._networkops.get_vm_nic_switch_info(userid)
 
@@ -354,10 +355,10 @@ class SDKAPI(object):
                                     userid, persist=True):
         """ Couple nic device to specified vswitch.
 
-        :param vswitch_name: the name of the vswitch
-        :param nic_vdev: nic device number
-        :param userid: the user's name who owns the port
-        :param persist: whether keep the change in the permanent
+        :param str vswitch_name: the name of the vswitch
+        :param str nic_vdev: nic device number
+        :param str userid: the user's name who owns the port
+        :param bool persist: whether keep the change in the permanent
                configuration for the system
 
         """
@@ -369,10 +370,10 @@ class SDKAPI(object):
                                         userid, persist=True):
         """ Couple nic device to specified vswitch.
 
-        :param vswitch_name: the name of the vswitch
-        :param nic_vdev: nic device number
-        :param userid: the user's name who owns the port
-        :param persist: whether keep the change in the permanent
+        :param str vswitch_name: the name of the vswitch
+        :param str nic_vdev: nic device number
+        :param str userid: the user's name who owns the port
+        :param bool persist: whether keep the change in the permanent
                configuration for the system
 
         """
@@ -384,6 +385,7 @@ class SDKAPI(object):
         """ Get the vswitch list.
 
         :returns: vswitch name list
+        :rtype: list
         """
         return self._networkops.get_vswitch_list()
 
@@ -602,13 +604,13 @@ class SDKAPI(object):
         """
         self._networkops.revoke_user_from_vswitch(vswitch_name, userid)
 
-    @check_input_types(_TSTR, _TUSERID, _TSTR)
+    @check_input_types(_TSTR, _TUSERID, int)
     def vswitch_set_vlan_id_for_user(self, vswitch_name, userid, vlan_id):
         """Set vlan id for user when connecting to the vswitch
 
         :param str vswitch_name: the name of the vswitch
         :param str userid: the user id of the vm
-        :param str vlan_id: the VLAN id
+        :param int vlan_id: the VLAN id
         """
         self._networkops.set_vswitch_port_vlan_id(vswitch_name,
                                                   userid, vlan_id)
