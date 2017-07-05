@@ -81,3 +81,14 @@ class HandlersGuestTest(unittest.TestCase):
 
         vswitch.vswitch_delete(self.req)
         mock_delete.assert_called_once_with('vsw1')
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(vswitch.VswitchAction, 'update')
+    def test_vswitch_update(self, mock_update, mock_name):
+        mock_name.return_value = 'vsw1'
+        body_str = '{"vswitch": {"grant_userid": "user1"}}'
+        self.req.body = body_str
+
+        vswitch.vswitch_update(self.req)
+        body = util.extract_json(body_str)
+        mock_update.assert_called_once_with('vsw1', body=body)

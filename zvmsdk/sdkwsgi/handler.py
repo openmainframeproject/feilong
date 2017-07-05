@@ -87,6 +87,7 @@ ROUTE_LIST = (
     }),
     ('/vswitchs/{name}', {
         'DELETE': vswitch.vswitch_delete,
+        'PUT': vswitch.vswitch_update,
     }),
 )
 

@@ -31,7 +31,7 @@ LOG = log.LOG
 
 class VswitchAction(object):
     def __init__(self):
-        self.api = api.SDKAPI()
+        self.api = api.SDKAPI(skip_input_check=True)
 
     def list(self):
         info = self.api.vswitch_get_list()
@@ -48,6 +48,22 @@ class VswitchAction(object):
 
     def delete(self, name):
         self.api.vswitch_delete(name)
+
+    @validation.schema(vswitch.update)
+    def update(self, name, body):
+        vsw = body['vswitch']
+        if 'grant_userid' in vsw:
+            userid = vsw['grant_userid']
+            self.api.vswitch_grant_user(name, userid)
+
+        if 'revoke_userid' in vsw:
+            userid = vsw['revoke_userid']
+            self.api.vswitch_revoke_user(name, userid)
+
+        if 'user_vlan_id' in vsw:
+            userid = vsw['user_vlan_id']['userid']
+            vlanid = vsw['user_vlan_id']['vlanid']
+            self.api.vswitch_set_vlan_id_for_user(name, userid, vlanid)
 
 
 def get_action():
@@ -101,5 +117,24 @@ def vswitch_delete(req):
     _vswitch_delete(name)
 
     req.response.status = 204
+    req.response.content_type = None
+    return req.response
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def vswitch_update(req):
+
+    def _vswitch_update(name, req):
+        body = util.extract_json(req.body)
+        action = get_action()
+
+        action.update(name, body=body)
+
+    name = util.wsgi_path_item(req.environ, 'name')
+
+    _vswitch_update(name, req)
+
+    req.response.status = 200
     req.response.content_type = None
     return req.response
