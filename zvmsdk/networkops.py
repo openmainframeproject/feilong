@@ -81,3 +81,6 @@ class NetworkOPS(object):
 
     def set_vswitch(self, vswitch_name, **kwargs):
         self.zvmclient.set_vswitch(vswitch_name, **kwargs)
+
+    def delete_vswitch(self, vswitch_name, update=1):
+        self.zvmclient.delete_vswitch(vswitch_name, update)

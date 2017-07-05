@@ -1461,3 +1461,14 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         preset_vm.assert_called_with('fake_id', 'fake_ip')
         create_nic.assert_called_with('fake_id', "XXX", 'MAC_XXX',
                                       '1009', 'zhcp2')
+
+    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_delete_vswitch_with_errorcode(self, xrequest, get_userid):
+        xrequest.return_value = {"data": [["Returned data"]],
+                                 "errorcode": [['1']]}
+        get_userid.return_value = "fakenode"
+
+        self.assertRaises(exception.ZVMException,
+                          self._zvmclient.delete_vswitch,
+                          "vswitch_name", 2)

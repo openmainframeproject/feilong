@@ -753,3 +753,15 @@ class SDKAPI(object):
 
         """
         self._networkops.set_vswitch(vswitch_name, **kwargs)
+
+    @check_input_types(_TSTR, int)
+    def vswitch_delete(self, vswitch_name, update=1):
+        """ Delete vswitch.
+
+        :param str name: the vswitch name
+        :param int update: 0-unspecified, 1-delete from the active system,
+               2-delete from the active system and the system configuration
+               file, 3-delete from the system configuration
+
+        """
+        self._networkops.delete_vswitch(vswitch_name, update)
