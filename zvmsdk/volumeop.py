@@ -248,7 +248,89 @@ class _Configurator_RHEL7(_BaseConfigurator):
         pass
 
     def config_attach_inactive(self, instance, volume, connection_info):
+        self._config_attach_inactive_with_xCAT(instance,
+                                               volume,
+                                               connection_info)
+
+    def _config_attach_inactive_with_xCAT(self,
+                                          instance,
+                                          volume,
+                                          connection_info):
+        # 'size' is a mandatory parameter of xCAT API addzfcp2pool, however,
+        # it's totally absent in the process of volume_attach in OpenStack.
+        # So it's left here because we still need xCAT in this moment, please
+        # remove it when xCAT is gone.
+        if SIZE not in volume.keys():
+            raise ZVMVolumeError("volume size is not passed in!")
+
+        if connection_info[PROTOCOL] == 'fc':
+            self._config_fc_attach_inactive_with_xCAT(instance,
+                                                      volume,
+                                                      connection_info)
+        else:
+            # iSCSI protocol
+            raise NotImplementedError
+
+    def _config_fc_attach_inactive_with_xCAT(self,
+                                             instance,
+                                             volume,
+                                             connection_info):
+        fcp = ';'.join(connection_info[FCPS])
+        wwpn = ';'.join(connection_info[WWPNS])
+        lun = volume[LUN]
+        size = volume[SIZE]
+
+        if DEDICATE in connection_info.keys():
+            for dev in connection_info[DEDICATE]:
+                self._xCAT_proxy.dedicate_device(instance, dev)
+        self._xCAT_proxy.add_zfcp_to_pool(fcp, wwpn, lun, size)
+        self._xCAT_proxy.allocate_zfcp(instance, fcp, size, wwpn, lun)
+        self._xCAT_proxy.notice_attach(instance,
+                                       fcp,
+                                       wwpn,
+                                       lun,
+                                       connection_info[ALIAS],
+                                       instance[OS_TYPE])
+
+    def config_detach_active(self, instance, volume, connection_info):
         pass
+
+    def config_detach_inactive(self, instance, volume, connection_info):
+        self._config_detach_inactive_with_xCAT(instance,
+                                               volume,
+                                               connection_info)
+
+    def _config_detach_inactive_with_xCAT(self,
+                                          instance,
+                                          volume,
+                                          connection_info):
+        if connection_info[PROTOCOL] == 'fc':
+            self._config_fc_detach_inactive_with_xCAT(instance,
+                                                      volume,
+                                                      connection_info)
+        else:
+            # iSCSI protocol
+            raise NotImplementedError
+
+    def _config_fc_detach_inactive_with_xCAT(self,
+                                             instance,
+                                             volume,
+                                             connection_info):
+        fcp = ';'.join(connection_info[FCPS])
+        wwpn = ';'.join(connection_info[WWPNS])
+        lun = volume[LUN]
+
+        self._xCAT_proxy.remove_zfcp(instance, fcp, wwpn, lun)
+        self._xCAT_proxy.remove_zfcp_from_pool(wwpn, lun)
+        self._xCAT_proxy.notice_detach(instance,
+                                       fcp,
+                                       wwpn,
+                                       lun,
+                                       connection_info[ALIAS],
+                                       instance[OS_TYPE])
+        if DEDICATE in connection_info.keys():
+            for dev in connection_info[DEDICATE]:
+                self._xCAT_proxy.undedicate_device(instance, dev)
 
 
 class _Configurator_SLES12(_BaseConfigurator):
