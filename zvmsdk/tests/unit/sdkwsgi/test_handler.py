@@ -169,6 +169,68 @@ class GuestHandlerTest(unittest.TestCase):
             self.assertTrue(update_nic.called)
 
 
+class GuestsHandlerNegativeTest(unittest.TestCase):
+
+    def setUp(self):
+        self.env = env
+
+    def test_guest_invalid_resource(self):
+        self.env['PATH_INFO'] = '/guests/abc'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        self.assertRaises(webob.exc.HTTPNotFound,
+                          h, self.env, dummy)
+
+    def test_guest_invalid_handler(self):
+        self.env['PATH_INFO'] = '/guests/meminfo'
+        self.env['REQUEST_METHOD'] = 'PUT'
+        h = handler.SdkHandler()
+        self.assertRaises(webob.exc.HTTPMethodNotAllowed,
+                          h, self.env, dummy)
+
+
+class GuestsHandlerTest(unittest.TestCase):
+
+    def setUp(self):
+        self.env = env
+
+    @mock.patch.object(tokens, 'validate')
+    def test_guest_get_mem_info_empty_userid_list(self, mock_validate):
+        self.env['wsgiorg.routing_args'] = ()
+        self.env['PATH_INFO'] = '/guests/meminfo'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_memory_info'
+        with mock.patch(func) as get_info:
+            h(self.env, dummy)
+
+            get_info.assert_called_once_with([])
+
+    @mock.patch.object(tokens, 'validate')
+    def test_guest_get_vnics_info_empty_userid_list(self, mock_validate):
+        self.env['wsgiorg.routing_args'] = ()
+        self.env['PATH_INFO'] = '/guests/vnicsinfo'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_vnics_info'
+        with mock.patch(func) as get_info:
+            h(self.env, dummy)
+
+            get_info.assert_called_once_with([])
+
+    @mock.patch.object(tokens, 'validate')
+    def test_guest_get_cpu_info_empty_userid_list(self, mock_validate):
+        self.env['wsgiorg.routing_args'] = ()
+        self.env['PATH_INFO'] = '/guests/cpuinfo'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_cpu_info'
+        with mock.patch(func) as get_info:
+            h(self.env, dummy)
+
+            get_info.assert_called_once_with([])
+
+
 class ImageHandlerNegativeTest(unittest.TestCase):
 
     def setUp(self):

@@ -50,6 +50,15 @@ ROUTE_DECLARATIONS = {
     '/guest/{uuid}/action': {
         'POST': guest.guest_action,
     },
+    '/guests/cpuinfo': {
+        'GET': guest.guest_get_cpu_info
+    },
+    '/guests/meminfo': {
+        'GET': guest.guest_get_memory_info
+    },
+    '/guests/vnicsinfo': {
+        'GET': guest.guest_get_vnics_info
+    },
     '/host/guests': {
         'GET': host.host_list_guests,
     },
@@ -86,6 +95,7 @@ def dispatch(environ, start_response, mapper):
     If there is a matching route, but no matching handler
     for the given method, raise a 405.
     """
+    LOG.error('-------%s', environ)
     result = mapper.match(environ=environ)
     if result is None:
         raise webob.exc.HTTPNotFound(
