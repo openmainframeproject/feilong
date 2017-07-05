@@ -58,6 +58,8 @@ ROUTE_LIST = (
     ('/guests/{uuid}/nic', {
         'GET': guest.guest_get_nic_info,
         'POST': guest.guest_create_nic,
+    }),
+    ('/guests/{uuid}/nic/couple', {
         'PUT': guest.guest_couple_uncouple_nic,
     }),
     ('/guests/{uuid}/power_state', {

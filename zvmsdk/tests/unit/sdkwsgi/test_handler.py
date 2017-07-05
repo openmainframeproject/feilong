@@ -189,7 +189,7 @@ class GuestHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_guest_update_nic(self, mock_validate, mock_json):
         mock_json.return_value = {}
-        self.env['PATH_INFO'] = '/guests/1/nic'
+        self.env['PATH_INFO'] = '/guests/1/nic/couple'
         self.env['REQUEST_METHOD'] = 'PUT'
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.couple_uncouple_nic'
