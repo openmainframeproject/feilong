@@ -76,3 +76,10 @@ class HandlersImageTest(unittest.TestCase):
 
         image.image_delete(self.req)
         mock_get.assert_called_once_with('dummy')
+
+    @mock.patch.object(image.ImageAction, 'query')
+    def test_image_query(self, mock_query):
+        self.req.GET = {}
+        self.req.GET['imagename'] = 'image1'
+        image.image_query(self.req)
+        mock_query.assert_called_once_with('image1')
