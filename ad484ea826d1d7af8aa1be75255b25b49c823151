@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9d7e7f3f_6e2e9511",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-07-05T09:57:32Z",
+      "side": 1,
+      "message": "Just one small suggestion:\nTo keep consistent with other APIs, we\u0027d better use \u0027vswitch\u0027 than \u0027switch\u0027",
+      "range": {
+        "startLine": 295,
+        "startChar": 8,
+        "endLine": 295,
+        "endChar": 33
+      },
+      "revId": "ad484ea826d1d7af8aa1be75255b25b49c823151",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
