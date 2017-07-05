@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f714fa7e_605006c9",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-07-05T09:36:02Z",
+      "side": 1,
+      "message": "userid",
+      "range": {
+        "startLine": 281,
+        "startChar": 19,
+        "endLine": 281,
+        "endChar": 24
+      },
+      "revId": "c622f8d32c4c7ee3d5de7e8011ffc633a1641d6f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "018f385c_8267f457",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-07-05T09:36:02Z",
+      "side": 1,
+      "message": "better be string",
+      "range": {
+        "startLine": 353,
+        "startChar": 30,
+        "endLine": 353,
+        "endChar": 33
+      },
+      "revId": "c622f8d32c4c7ee3d5de7e8011ffc633a1641d6f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
