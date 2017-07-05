@@ -714,14 +714,12 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
     @mock.patch.object(zvmutils, 'xcat_request')
     @mock.patch.object(os, 'remove')
     @mock.patch.object(os.path, 'exists')
-    @mock.patch.object(zvmutils, 'get_host')
     @mock.patch.object(zvmclient.XCATClient, 'check_space_imgimport_xcat')
     @mock.patch.object(zvmclient.XCATClient, 'generate_image_bundle')
     @mock.patch.object(zvmclient.XCATClient, 'generate_manifest_file')
     def test_image_import(self, generate_manifest_file,
                                 generate_image_bundle,
                                 check_space,
-                                get_host,
                                 file_exists,
                                 remove_file,
                                 xrequest):
@@ -746,11 +744,11 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
                                 '/tmp/image/spawn_tmp/201706231109.tar'
         check_space.return_value = None
         file_exists.return_value = True
-        get_host.return_value = 'root@192.168.99.99'
         fake_url = self._xcat_url.imgimport()
         fake_body = ['osimage=/tmp/image/spawn_tmp/201706231109.tar',
                      'profile=%s' % image_profile,
-                     'nozip']
+                     'nozip',
+                     'remotehost=%s' % remote_host_info]
 
         remove_file.return_value = None
         self._zvmclient.image_import(image_file_path, os_version,

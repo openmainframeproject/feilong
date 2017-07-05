@@ -672,13 +672,13 @@ class XCATClient(ZVMClient):
         body = ['osimage=%s' % image_bundle_package,
                 'profile=%s' % image_profile,
                 'nozip']
-        sdk_host_ip = zvmutils.get_host().split('@')[-1]
-        if remote_host and remote_host.split('@')[-1] != sdk_host_ip:
+        xcat_server_ip = CONF.xcat.server
+        if remote_host and remote_host.split('@')[-1] != xcat_server_ip:
             body.append('remotehost=%s' % remote_host)
         url = self._xcat_url.imgimport()
 
         try:
-            resp = zvmutils.xcat_request("POST", url, body)
+            zvmutils.xcat_request("POST", url, body)
         except (exception.ZVMXCATRequestFailed,
                 exception.ZVMInvalidXCATResponseDataError,
                 exception.ZVMXCATInternalError) as err:
@@ -687,7 +687,6 @@ class XCATClient(ZVMClient):
             raise exception.ZVMImageError(msg=msg)
         finally:
             os.remove(image_bundle_package)
-            return resp
 
     def get_vm_nic_switch_info(self, vm_id):
         """
