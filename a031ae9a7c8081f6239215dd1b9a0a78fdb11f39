@@ -10,6 +10,16 @@ Branch: refs/heads/master
 
 Code-Review+2: Chuck Brazie <brazie@us.ibm.com>
 Verified+1: Chuck Brazie <brazie@us.ibm.com>
+Code-Review+1: <openstak@us.ibm.com>
+Verified+1: <openstak@us.ibm.com>
+Submitted-by: Chuck Brazie <brazie@us.ibm.com>
+Submitted-at: Fri, 23 Jun 2017 10:15:37 -0400
+Reviewed-on: https://review.gerrithub.io/366873
+Project: mfcloud/python-zvm-sdk
+Branch: refs/heads/master
+
+Code-Review+2: Chuck Brazie <brazie@us.ibm.com>
+Verified+1: Chuck Brazie <brazie@us.ibm.com>
 Submitted-by: Chuck Brazie <brazie@us.ibm.com>
 Submitted-at: Fri, 23 Jun 2017 10:15:37 -0400
 Reviewed-on: https://review.gerrithub.io/366873
