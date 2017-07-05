@@ -432,3 +432,16 @@ class VswitchHandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             delete.assert_called_once_with('vsw1')
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_vswitch_update(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/vswitchs/vsw1'
+        self.env['REQUEST_METHOD'] = 'PUT'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.update'
+        with mock.patch(function) as update:
+            h(self.env, dummy)
+
+            update.assert_called_once_with('vsw1', body={})
