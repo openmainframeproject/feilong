@@ -153,3 +153,8 @@ boolean = {
 rdev = {
     'type': ['integer', 'string'],
 }
+
+
+userid = {
+    'type': ['string'],
+}

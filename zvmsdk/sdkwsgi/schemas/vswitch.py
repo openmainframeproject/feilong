@@ -30,3 +30,21 @@ create = {
     'required': ['vswitch'],
     'additionalProperties': False,
 }
+
+
+update = {
+    'type': 'object',
+    'properties': {
+        'vswitch': {
+            'type': 'object',
+            'properties': {
+                 'grant_userid': parameter_types.userid,
+                 'real_device_address': parameter_types.rdev,
+            },
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
+    },
+    'required': ['vswitch'],
+    'additionalProperties': False,
+}
