@@ -1389,13 +1389,13 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
 
         command = 'Image_Definition_Update_DM -T %userid%'
         command += ' -k \'NICDEF=VDEV=vdev TYPE=QDIO '
-        command += 'MACID=mac '
+        command += 'MACID=445566 '
         command += 'LAN=SYSTEM '
         command += 'SWITCHNAME=vswitch\''
         body = ['--smcli', command]
 
         self._zvmclient.update_nic_definition("node", "vdev",
-                                              "mac", "vswitch")
+                                              "11:22:33:44:55:66", "vswitch")
         update_switch.assert_called_with("node", "vdev", "vswitch")
         xrequest.assert_called_with("PUT", url, body)
 
