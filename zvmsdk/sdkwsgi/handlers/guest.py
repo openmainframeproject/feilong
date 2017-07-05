@@ -48,6 +48,15 @@ class VMHandler(object):
     def get_nic_info(self, id):
         LOG.info('guest get nic info %s', id)
 
+    def get_cpu_info(self, userid_list):
+        LOG.info('guest get cpu info %s', userid_list)
+
+    def get_memory_info(self, userid_list):
+        LOG.info('guest get memory info %s', userid_list)
+
+    def get_vnics_info(self, userid_list):
+        LOG.info('guest get vnics info %s', userid_list)
+
     @validation.schema(guest.create_nic)
     def create_nic(self, id, body=None):
         LOG.info('create nic for %s', id)
@@ -212,3 +221,50 @@ def guest_couple_uncouple_nic(req):
 
     uuid = util.wsgi_path_item(req.environ, 'uuid')
     _guest_couple_uncouple_nic(uuid, req)
+
+
+def _get_userid_list(req):
+    userids = []
+    if 'userid' in req.GET.keys():
+        userids = req.GET.getall('userid')
+
+    return userids
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def guest_get_cpu_info(req):
+
+    userid_list = _get_userid_list(req)
+
+    def _guest_get_cpu_info(userid_list):
+        action = get_handler()
+        action.get_cpu_info(userid_list)
+
+    _guest_get_cpu_info(userid_list)
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def guest_get_memory_info(req):
+
+    userid_list = _get_userid_list(req)
+
+    def _guest_get_memory_info(userid_list):
+        action = get_handler()
+        action.get_memory_info(userid_list)
+
+    _guest_get_memory_info(userid_list)
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def guest_get_vnics_info(req):
+
+    userid_list = _get_userid_list(req)
+
+    def _guest_get_vnics_info(userid_list):
+        action = get_handler()
+        action.get_vnics_info(userid_list)
+
+    _guest_get_vnics_info(userid_list)

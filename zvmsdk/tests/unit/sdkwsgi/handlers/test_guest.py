@@ -25,6 +25,15 @@ from zvmsdk.sdkwsgi import util
 
 
 FAKE_UUID = '00000000-0000-0000-0000-000000000000'
+FAKE_USERID_LIST = ['abc', '123', 'defdf']
+
+
+class FakeReqGet(object):
+    def getall(self, userid):
+        return FAKE_USERID_LIST
+
+    def keys(self):
+        return ['userid']
 
 
 class FakeReq(object):
@@ -199,6 +208,27 @@ class HandlersGuestTest(SDKWSGITest):
 
         guest.guest_get_nic_info(self.req)
         mock_get.assert_called_once_with(FAKE_UUID)
+
+    @mock.patch.object(guest.VMHandler, 'get_cpu_info')
+    def test_guest_get_cpu_info(self, mock_get):
+        self.req.GET = FakeReqGet()
+
+        guest.guest_get_cpu_info(self.req)
+        mock_get.assert_called_once_with(FAKE_USERID_LIST)
+
+    @mock.patch.object(guest.VMHandler, 'get_memory_info')
+    def test_guest_get_mem_info(self, mock_get):
+        self.req.GET = FakeReqGet()
+
+        guest.guest_get_memory_info(self.req)
+        mock_get.assert_called_once_with(FAKE_USERID_LIST)
+
+    @mock.patch.object(guest.VMHandler, 'get_vnics_info')
+    def test_guest_get_vnics_info(self, mock_get):
+        self.req.GET = FakeReqGet()
+
+        guest.guest_get_vnics_info(self.req)
+        mock_get.assert_called_once_with(FAKE_USERID_LIST)
 
     @mock.patch.object(api.SDKAPI, 'guest_nic_couple_to_vswitch')
     @mock.patch.object(util, 'wsgi_path_item')
