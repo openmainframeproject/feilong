@@ -239,3 +239,18 @@ class SDKAPITestCase(unittest.TestCase):
         self.assertEqual(query_result_after_delete,
                          expect_result_after_delete)
         os.system('rm -f %s' % image_fpath)
+        
+    def test_image_import_error_path(self):
+        """Import a image with xcat internal error"""
+        username = CONF.xcat.username
+        self.addCleanup(set_conf, 'xcat', 'username', username)
+        CONF.xcat.username = 'fakeuser'
+        image_fname = str(uuid.uuid1())
+        image_fpath = ''.join([CONF.image.temp_path, image_fname])
+        os.system('touch %s' % image_fpath)
+        url = "file://" + image_fpath
+        image_meta = {'os_version': 'rhel7.2'}
+        self.assertRaises(exception.ZVMImageError,
+                          self.sdkapi.image_import(url, image_meta))
+        os.system('rm -f %s' % image_fpath)
+
