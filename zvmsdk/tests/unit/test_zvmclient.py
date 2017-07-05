@@ -522,7 +522,7 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
 
         url = self._xcat_url.chvm('/fakenode')
         commands = ' '.join((
-            'Image_Definition_Update_DM -T %userid%',
+            'Image_Definition_Update_DM -T fakenode',
             '-k \'NICDEF=VDEV=fake_vdev TYPE=QDIO',
             'MACID=123456\''))
         body = ['--smcli', commands]
@@ -858,15 +858,17 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         self._zvmclient._get_node_from_port("fakeport")
         get_nic_settings.assert_called_with("fakeport", get_node=True)
 
+    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_grant_user_to_vswitch(self, xrequest):
+    def test_grant_user_to_vswitch(self, xrequest, get_userid):
         xrequest.return_value = {"errorcode": [['0']]}
+        get_userid.return_value = "zhcpuserid"
         url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"
         commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
-        commands += " -T fakeuserid"
+        commands += " -T zhcpuserid"
         commands += " -k switch_name=fakevs"
         commands += " -k grant_userid=fakeuserid"
         commands += " -k persist=YES"
@@ -876,15 +878,17 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         self._zvmclient.grant_user_to_vswitch("fakevs", "fakeuserid")
         xrequest.assert_called_once_with("PUT", url, body)
 
+    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_revoke_user_from_vswitch(self, xrequest):
+    def test_revoke_user_from_vswitch(self, xrequest, get_userid):
         xrequest.return_value = {"errorcode": [['0']]}
+        get_userid.return_value = "zhcpuserid"
         url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"
         commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
-        commands += " -T fakeuserid"
+        commands += " -T zhcpuserid"
         commands += " -k switch_name=fakevs"
         commands += " -k revoke_userid=fakeuserid"
         commands += " -k persist=YES"
@@ -1358,15 +1362,17 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         self._zvmclient._add_mdisk(userid, disk, vdev),
         xrequest.assert_called_once_with('PUT', url, body)
 
+    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_set_vswitch_port_vlan_id(self, xrequest):
+    def test_set_vswitch_port_vlan_id(self, xrequest, get_userid):
         xrequest.return_value = {"errorcode": [['0']]}
+        get_userid.return_value = "zhcpuserid"
         url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"
         commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
-        commands += " -T userid"
+        commands += " -T zhcpuserid"
         commands += ' -k grant_userid=userid'
         commands += " -k switch_name=vswitch_name"
         commands += " -k user_vlan_id=vlan_id"
@@ -1387,7 +1393,7 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
               "&password=" + CONF.xcat.password +\
               "&format=json"
 
-        command = 'Image_Definition_Update_DM -T %userid%'
+        command = 'Image_Definition_Update_DM -T node'
         command += ' -k \'NICDEF=VDEV=vdev TYPE=QDIO '
         command += 'MACID=mac '
         command += 'LAN=SYSTEM '
