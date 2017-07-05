@@ -551,7 +551,7 @@ class XCATClient(ZVMClient):
         mac = ''.join(mac_address.split(':'))[6:]
         url = self._xcat_url.chvm('/' + userid)
         commands = ' '.join((
-            'Image_Definition_Update_DM -T %userid%',
+            'Image_Definition_Update_DM -T %s' % userid,
             '-k \'NICDEF=VDEV=%s TYPE=QDIO' % vdev,
             'MACID=%s\'' % mac))
         body = ['--smcli', commands]
@@ -776,9 +776,10 @@ class XCATClient(ZVMClient):
         """Set vswitch to grant user."""
         zhcp = CONF.xcat.zhcp_node
         url = self._xcat_url.xdsh("/%s" % zhcp)
+        zhcp_userid = self._get_zhcp_userid()
         commands = ' '.join((
             '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
-            "-T %s" % userid,
+            "-T %s" % zhcp_userid,
             "-k switch_name=%s" % vswitch_name,
             "-k grant_userid=%s" % userid,
             "-k persist=YES"))
@@ -797,9 +798,10 @@ class XCATClient(ZVMClient):
         """Revoke user for vswitch."""
         zhcp = CONF.xcat.zhcp_node
         url = self._xcat_url.xdsh("/%s" % zhcp)
+        zhcp_userid = self._get_zhcp_userid()
         commands = ' '.join((
             '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
-            "-T %s" % userid,
+            "-T %s" % zhcp_userid,
             "-k switch_name=%s" % vswitch_name,
             "-k revoke_userid=%s" % userid,
             "-k persist=YES"))
@@ -1363,10 +1365,11 @@ class XCATClient(ZVMClient):
 
     def set_vswitch_port_vlan_id(self, vswitch_name, userid, vlan_id):
         zhcp = CONF.xcat.zhcp_node
+        zhcp_userid = self._get_zhcp_userid()
         url = self._xcat_url.xdsh("/%s" % zhcp)
         commands = ' '.join((
             '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
-            "-T %s" % userid,
+            "-T %s" % zhcp_userid,
             "-k grant_userid=%s" % userid,
             "-k switch_name=%s" % vswitch_name,
             "-k user_vlan_id=%s" % vlan_id,
@@ -1385,7 +1388,7 @@ class XCATClient(ZVMClient):
         """add one NIC's info to user direct."""
         url = self._xcat_url.chvm('/' + userid)
         commands = ' '.join((
-            'Image_Definition_Update_DM -T %userid%',
+            'Image_Definition_Update_DM -T %s' % userid,
             '-k \'NICDEF=VDEV=%s TYPE=QDIO' % nic_vdev,
             'MACID=%s' % mac,
             'LAN=SYSTEM',
