@@ -96,3 +96,8 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
     def test_set_vswitch(self, set_vswitch):
         self.networkops.set_vswitch("vswitch_name", grant_userid='fake_id')
         set_vswitch.assert_called_with("vswitch_name", grant_userid='fake_id')
+
+    @mock.patch.object(zvmclient.XCATClient, 'delete_vswitch')
+    def test_delete_vswitch(self, delete_vswitch):
+        self.networkops.delete_vswitch("vswitch_name", 2)
+        delete_vswitch.assert_called_with("vswitch_name", 2)

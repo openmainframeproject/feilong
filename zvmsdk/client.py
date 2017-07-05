@@ -1458,3 +1458,31 @@ class XCATClient(ZVMClient):
                     msg=("switch %s changes failed, %s") %
                         (switch_name, result['data']))
         LOG.info('change vswitch %s done.' % switch_name)
+
+    @zvmutils.wrap_invalid_xcat_resp_data_error
+    def delete_vswitch(self, switch_name, update=1):
+        zhcp = CONF.xcat.zhcp_node
+        userid = self._get_zhcp_userid()
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        commands = ' '.join((
+            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Delete',
+            "-T %s" % userid,
+            "-n %s" % switch_name,
+            "-u %s" % update))
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            result = zvmutils.xcat_request("PUT", url, body)
+
+            if (result['errorcode'][0][0] != '0'):
+                emsg = result['data'][0][0]
+                if (emsg.__contains__("Return Code: 212") and
+                    emsg.__contains__("Reason Code: 40")):
+                    LOG.warning("Vswitch %s does not exist", switch_name)
+                    return
+                else:
+                    raise exception.ZVMException(
+                    msg=("Failed to delete vswitch %s: %s") %
+                        (switch_name, result['data']))
