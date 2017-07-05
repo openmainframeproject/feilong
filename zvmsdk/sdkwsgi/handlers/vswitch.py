@@ -31,7 +31,7 @@ LOG = log.LOG
 
 class VswitchAction(object):
     def __init__(self):
-        self.api = api.SDKAPI()
+        self.api = api.SDKAPI(skip_input_check=True)
 
     def list(self):
         info = self.api.vswitch_get_list()
@@ -48,6 +48,11 @@ class VswitchAction(object):
 
     def delete(self, name):
         self.api.vswitch_delete(name)
+
+    @validation.schema(vswitch.update)
+    def update(self, name, body):
+        vsw = body['vswitch']
+        self.api.vswitch_set(name, **vsw)
 
 
 def get_action():
@@ -101,5 +106,24 @@ def vswitch_delete(req):
     _vswitch_delete(name)
 
     req.response.status = 204
+    req.response.content_type = None
+    return req.response
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def vswitch_update(req):
+
+    def _vswitch_update(name, req):
+        body = util.extract_json(req.body)
+        action = get_action()
+
+        action.update(name, body=body)
+
+    name = util.wsgi_path_item(req.environ, 'name')
+
+    _vswitch_update(name, req)
+
+    req.response.status = 200
     req.response.content_type = None
     return req.response

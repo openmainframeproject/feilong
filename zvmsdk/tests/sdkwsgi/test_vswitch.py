@@ -34,7 +34,7 @@ class VSwitchTestCase(unittest.TestCase):
 
         return resp
 
-    def _test_vswitch_list(self):
+    def test_vswitch_list(self):
         resp = self._vswitch_list()
         self.apibase.verify_result('test_vswitch_get', resp.content)
 
@@ -57,6 +57,21 @@ class VSwitchTestCase(unittest.TestCase):
         vswlist = json.loads(resp.content)['vswlist']
         inlist = 'FVTVSW01' in vswlist
         self.assertFalse(inlist)
+
+    def test_vswitch_update(self):
+        body = '{"vswitch": {"name": "FVTVSW01", "rdev": "FF00"}}'
+        resp = self.client.api_request(url='/vswitchs', method='POST',
+                                       body=body)
+        self.assertEqual(204, resp.status_code)
+
+        body = '{"vswitch": {"real_device_address": "FF03"}}'
+        resp = self.client.api_request(url='/vswitchs/FVTVSW01',
+                                       method='PUT', body=body)
+        self.assertEqual(200, resp.status_code)
+
+        resp = self.client.api_request(url='/vswitchs/fvtvsw01',
+                                       method='DELETE')
+        self.assertEqual(204, resp.status_code)
 
     def test_vswitch_create_invalid_body(self):
         body = '{"vswitch": {"v1": "v1"}}'
