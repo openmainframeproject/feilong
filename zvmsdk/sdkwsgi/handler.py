@@ -46,19 +46,22 @@ ROUTE_LIST = (
     ('/guests/{uuid}', {
         'DELETE': guest.guest_delete,
     }),
+    ('/guests/{uuid}/action', {
+        'POST': guest.guest_action,
+    }),
+    ('/guests/{uuid}/definition', {
+        'GET': guest.guest_get_definition,
+    }),
+    ('/guests/{uuid}/info', {
+        'GET': guest.guest_get_info,
+    }),
     ('/guests/{uuid}/nic', {
         'GET': guest.guest_get_nic_info,
         'POST': guest.guest_create_nic,
         'PUT': guest.guest_couple_uncouple_nic,
     }),
-    ('/guests/{uuid}/info', {
-        'GET': guest.guest_get_info,
-    }),
     ('/guests/{uuid}/power_state', {
         'GET': guest.guest_get_power_state,
-    }),
-    ('/guests/{uuid}/action', {
-        'POST': guest.guest_action,
     }),
     ('/host/info', {
         'GET': host.host_get_info,

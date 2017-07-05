@@ -48,6 +48,9 @@ class VMHandler(object):
     def get_info(self, id):
         LOG.info('guest get info %s', id)
 
+    def get_definition(self, id):
+        LOG.info('get definition %s', id)
+
     def get_power_state(self, id):
         LOG.info('guest get power %s', id)
 
@@ -129,6 +132,18 @@ def guest_get_info(req):
 
     uuid = util.wsgi_path_item(req.environ, 'uuid')
     _guest_get_info(uuid)
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def guest_get_definition(req):
+
+    def _guest_get_definition(uuid):
+        action = get_handler()
+        action.get_definition(uuid)
+
+    uuid = util.wsgi_path_item(req.environ, 'uuid')
+    _guest_get_definition(uuid)
 
 
 @wsgi_wrapper.SdkWsgify

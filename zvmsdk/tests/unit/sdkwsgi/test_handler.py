@@ -114,6 +114,17 @@ class GuestHandlerTest(unittest.TestCase):
             get_info.assert_called_once_with('1')
 
     @mock.patch.object(tokens, 'validate')
+    def test_guest_get_definition(self, mock_validate):
+        self.env['PATH_INFO'] = '/guests/1/definition'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_definition'
+        with mock.patch(func) as get_definition:
+            h(self.env, dummy)
+
+            get_definition.assert_called_once_with('1')
+
+    @mock.patch.object(tokens, 'validate')
     def test_guest_get_nic_info(self, mock_validate):
         self.env['PATH_INFO'] = '/guests/1/nic'
         self.env['REQUEST_METHOD'] = 'GET'

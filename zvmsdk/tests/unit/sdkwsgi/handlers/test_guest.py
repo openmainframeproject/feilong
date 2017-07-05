@@ -209,6 +209,14 @@ class HandlersGuestTest(SDKWSGITest):
         guest.guest_get_nic_info(self.req)
         mock_get.assert_called_once_with(FAKE_UUID)
 
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(guest.VMHandler, 'get_definition')
+    def test_guest_get_definition(self, mock_get, mock_uuid):
+        mock_uuid.return_value = FAKE_UUID
+
+        guest.guest_get_definition(self.req)
+        mock_get.assert_called_once_with(FAKE_UUID)
+
     @mock.patch.object(guest.VMHandler, 'get_cpu_info')
     def test_guest_get_cpu_info(self, mock_get):
         self.req.GET = FakeReqGet()
