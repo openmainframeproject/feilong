@@ -73,3 +73,11 @@ class HandlersGuestTest(unittest.TestCase):
 
         self.assertRaises(exception.ValidationError, vswitch.vswitch_create,
                           self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(vswitch.VswitchAction, 'delete')
+    def test_vswitch_delete(self, mock_delete, mock_name):
+        mock_name.return_value = 'vsw1'
+
+        vswitch.vswitch_delete(self.req)
+        mock_delete.assert_called_once_with('vsw1')

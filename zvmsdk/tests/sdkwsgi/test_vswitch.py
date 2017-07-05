@@ -28,22 +28,22 @@ class VSwitchTestCase(unittest.TestCase):
         self.client = test_sdkwsgi.TestSDKClient()
 
     def test_vswitch_list(self):
-        resp = self.client.api_request(url='/vswitch')
+        resp = self.client.api_request(url='/vswitchs')
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_vswitch_get', resp.content)
 
     def test_vswitch_create(self):
         body = '{"vswitch": {"name": "v1"}}'
-        resp = self.client.api_request(url='/vswitch', method='POST',
+        resp = self.client.api_request(url='/vswitchs', method='POST',
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
     def test_vswitch_create_invalid_body(self):
         body = '{"vswitch": {"v1": "v1"}}'
-        resp = self.client.api_request(url='/vswitch', method='POST',
+        resp = self.client.api_request(url='/vswitchs', method='POST',
                                        body=body)
         self.assertEqual(400, resp.status_code)
 
     def test_vswitch_create_nobody(self):
-        resp = self.client.api_request(url='/vswitch', method='POST')
+        resp = self.client.api_request(url='/vswitchs', method='POST')
         self.assertEqual(400, resp.status_code)

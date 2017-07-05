@@ -11,6 +11,7 @@
 #    under the License.
 """Handler for the image of the sdk API."""
 
+from zvmsdk import api
 from zvmsdk import config
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
@@ -25,9 +26,13 @@ LOG = log.LOG
 
 
 class ImageAction(object):
+
+    def __init__(self):
+        self.api = api.SDKAPI()
+
     @validation.schema(image.create)
     def create(self, body):
-        LOG.info('import image')
+        pass
 
     def get_root_disk_size(self, name):
         LOG.info('get root disk size')

@@ -42,6 +42,9 @@ class VswitchAction(object):
     def create(self, body):
         LOG.info('create vswitch')
 
+    def delete(self, name):
+        pass
+
 
 def get_action():
     global _VSWITCHACTION
@@ -75,3 +78,16 @@ def vswitch_create(req):
         action.create(body=body)
 
     _vswitch_create(req)
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def vswitch_delete(req):
+
+    def _vswitch_delete(name):
+        action = get_action()
+
+        action.delete(name)
+
+    name = util.wsgi_path_item(req.environ, 'name')
+    _vswitch_delete(name)
