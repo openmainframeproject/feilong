@@ -30,33 +30,33 @@ ROUTE_LIST = (
     ('/', {
         'GET': root.home,
     }),
-    ('/guest', {
+    ('/guests', {
         'POST': guest.guest_create,
     }),
-    ('/guest/cpuinfo', {
+    ('/guests/cpuinfo', {
         'GET': guest.guest_get_cpu_info
     }),
-    ('/guest/meminfo', {
+    ('/guests/meminfo', {
         'GET': guest.guest_get_memory_info
     }),
-    ('/guest/vnicsinfo', {
+    ('/guests/vnicsinfo', {
         'GET': guest.guest_get_vnics_info
     }),
-    ('/guest/{uuid}', {
+    ('/guests/{uuid}', {
         'DELETE': guest.guest_delete,
     }),
-    ('/guest/{uuid}/nic', {
+    ('/guests/{uuid}/nic', {
         'GET': guest.guest_get_nic_info,
         'POST': guest.guest_create_nic,
         'PUT': guest.guest_couple_uncouple_nic,
     }),
-    ('/guest/{uuid}/info', {
+    ('/guests/{uuid}/info', {
         'GET': guest.guest_get_info,
     }),
-    ('/guest/{uuid}/power_state', {
+    ('/guests/{uuid}/power_state', {
         'GET': guest.guest_get_power_state,
     }),
-    ('/guest/{uuid}/action', {
+    ('/guests/{uuid}/action', {
         'POST': guest.guest_action,
     }),
     ('/host/guests', {
@@ -68,14 +68,14 @@ ROUTE_LIST = (
     ('/host/disk_info/{disk}', {
         'GET': host.host_get_disk_info,
     }),
-    ('/image', {
+    ('/images', {
         'POST': image.image_create,
         'GET': image.image_query
     }),
-    ('/image/{name}', {
+    ('/images/{name}', {
         'DELETE': image.image_delete,
     }),
-    ('/image/{name}/root_disk_size', {
+    ('/images/{name}/root_disk_size', {
         'GET': image.image_get_root_disk_size,
     }),
     ('/token', {

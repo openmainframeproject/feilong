@@ -57,28 +57,28 @@ class GuestHandlerNegativeTest(unittest.TestCase):
                           h, self.env, dummy)
 
     def test_guest_list_invalid(self):
-        self.env['PATH_INFO'] = '/guest'
+        self.env['PATH_INFO'] = '/guests'
         self.env['REQUEST_METHOD'] = 'PUT'
         h = handler.SdkHandler()
         self.assertRaises(webob.exc.HTTPMethodNotAllowed,
                           h, self.env, dummy)
 
     def test_guest_meminfo_method_invalid(self):
-        self.env['PATH_INFO'] = '/guest/meminfo'
+        self.env['PATH_INFO'] = '/guests/meminfo'
         self.env['REQUEST_METHOD'] = 'PUT'
         h = handler.SdkHandler()
         self.assertRaises(webob.exc.HTTPMethodNotAllowed,
                           h, self.env, dummy)
 
     def test_guest_get_info_method_invalid(self):
-        self.env['PATH_INFO'] = '/guest/1/info'
+        self.env['PATH_INFO'] = '/guests/1/info'
         self.env['REQUEST_METHOD'] = 'PUT'
         h = handler.SdkHandler()
         self.assertRaises(webob.exc.HTTPMethodNotAllowed,
                           h, self.env, dummy)
 
     def test_guest_get_info_resource_invalid(self):
-        self.env['PATH_INFO'] = '/guest/1/info1'
+        self.env['PATH_INFO'] = '/guests/1/info1'
         self.env['REQUEST_METHOD'] = 'PUT'
         h = handler.SdkHandler()
         self.assertRaises(webob.exc.HTTPNotFound,
@@ -92,7 +92,7 @@ class GuestHandlerTest(unittest.TestCase):
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_info(self, mock_validate):
-        self.env['PATH_INFO'] = '/guest/1/info'
+        self.env['PATH_INFO'] = '/guests/1/info'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_info') \
@@ -103,7 +103,7 @@ class GuestHandlerTest(unittest.TestCase):
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_nic_info(self, mock_validate):
-        self.env['PATH_INFO'] = '/guest/1/nic'
+        self.env['PATH_INFO'] = '/guests/1/nic'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_nic_info'
@@ -114,7 +114,7 @@ class GuestHandlerTest(unittest.TestCase):
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_power_state(self, mock_validate):
-        self.env['PATH_INFO'] = '/guest/1/power_state'
+        self.env['PATH_INFO'] = '/guests/1/power_state'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler'\
@@ -128,7 +128,7 @@ class GuestHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_guest_create(self, mock_validate, mock_json):
         mock_json.return_value = {}
-        self.env['PATH_INFO'] = '/guest'
+        self.env['PATH_INFO'] = '/guests'
         self.env['REQUEST_METHOD'] = 'POST'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.create'
@@ -141,7 +141,7 @@ class GuestHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_guest_delete(self, mock_validate, mock_json):
         mock_json.return_value = {}
-        self.env['PATH_INFO'] = '/guest/1'
+        self.env['PATH_INFO'] = '/guests/1'
         self.env['REQUEST_METHOD'] = 'DELETE'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.delete'
@@ -153,7 +153,7 @@ class GuestHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_guest_create_nic(self, mock_validate, mock_json):
         mock_json.return_value = {}
-        self.env['PATH_INFO'] = '/guest/1/nic'
+        self.env['PATH_INFO'] = '/guests/1/nic'
         self.env['REQUEST_METHOD'] = 'POST'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.create_nic'
@@ -166,7 +166,7 @@ class GuestHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_guest_update_nic(self, mock_validate, mock_json):
         mock_json.return_value = {}
-        self.env['PATH_INFO'] = '/guest/1/nic'
+        self.env['PATH_INFO'] = '/guests/1/nic'
         self.env['REQUEST_METHOD'] = 'PUT'
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.couple_uncouple_nic'
@@ -178,7 +178,7 @@ class GuestHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_mem_info_empty_userid_list(self, mock_validate):
         self.env['wsgiorg.routing_args'] = ()
-        self.env['PATH_INFO'] = '/guest/meminfo'
+        self.env['PATH_INFO'] = '/guests/meminfo'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_memory_info'
@@ -190,7 +190,7 @@ class GuestHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_vnics_info_empty_userid_list(self, mock_validate):
         self.env['wsgiorg.routing_args'] = ()
-        self.env['PATH_INFO'] = '/guest/vnicsinfo'
+        self.env['PATH_INFO'] = '/guests/vnicsinfo'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_vnics_info'
@@ -202,7 +202,7 @@ class GuestHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_cpu_info_empty_userid_list(self, mock_validate):
         self.env['wsgiorg.routing_args'] = ()
-        self.env['PATH_INFO'] = '/guest/cpuinfo'
+        self.env['PATH_INFO'] = '/guests/cpuinfo'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_cpu_info'
@@ -218,14 +218,14 @@ class ImageHandlerNegativeTest(unittest.TestCase):
         self.env = env
 
     def test_image_create_invalid_method(self):
-        self.env['PATH_INFO'] = '/image'
+        self.env['PATH_INFO'] = '/images'
         self.env['REQUEST_METHOD'] = 'PUT'
         h = handler.SdkHandler()
         self.assertRaises(webob.exc.HTTPMethodNotAllowed,
                           h, self.env, dummy)
 
     def test_image_get_root_disk_size_invalid(self):
-        self.env['PATH_INFO'] = '/image/image1/root_size'
+        self.env['PATH_INFO'] = '/images/image1/root_size'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         self.assertRaises(webob.exc.HTTPNotFound,
@@ -239,7 +239,7 @@ class ImageHandlerTest(unittest.TestCase):
 
     @mock.patch.object(tokens, 'validate')
     def test_image_root_disk_size(self, mock_validate):
-        self.env['PATH_INFO'] = '/image/image1/root_disk_size'
+        self.env['PATH_INFO'] = '/images/image1/root_disk_size'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.image.ImageAction'\
@@ -253,7 +253,7 @@ class ImageHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_image_create(self, mock_validate, mock_json):
         mock_json.return_value = {}
-        self.env['PATH_INFO'] = '/image'
+        self.env['PATH_INFO'] = '/images'
         self.env['REQUEST_METHOD'] = 'POST'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.image.ImageAction.create'
@@ -266,7 +266,7 @@ class ImageHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_image_delete(self, mock_validate, mock_json):
         mock_json.return_value = {}
-        self.env['PATH_INFO'] = '/image/image1'
+        self.env['PATH_INFO'] = '/images/image1'
         self.env['REQUEST_METHOD'] = 'DELETE'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.image.ImageAction.delete'
@@ -277,7 +277,7 @@ class ImageHandlerTest(unittest.TestCase):
 
     @mock.patch.object(tokens, 'validate')
     def test_image_query(self, mock_validate):
-        self.env['PATH_INFO'] = '/image'
+        self.env['PATH_INFO'] = '/images'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.image.ImageAction.query'
