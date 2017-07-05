@@ -187,6 +187,11 @@ class rhel(LinuxDist):
     def get_change_passwd_command(self, admin_password):
         return 'echo %s|passwd --stdin root' % admin_password
 
+    def assemble_zfcp_srcdev(self, fcp, wwpn, lun):
+        path = '/dev/disk/by-path/ccw-0.0.%(fcp)s-zfcp-0x%(wwpn)s:0x%(lun)s'
+        srcdev = path % {'fcp': fcp, 'wwpn': wwpn, 'lun': lun}
+        return srcdev
+
     def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
                      netmask_v4, address_read, subchannels):
         cfg_str = 'DEVICE=\"' + device + '\"\n'

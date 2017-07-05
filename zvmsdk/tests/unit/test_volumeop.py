@@ -445,6 +445,172 @@ class _Configurator_SLES12TestCases(unittest.TestCase):
                                               inst[OS_TYPE])
 
 
+class _Configurator_RHEL7TestCases(unittest.TestCase):
+
+    def setUp(self):
+        self._conf = volumeop._Configurator_RHEL7()
+
+    @mock.patch.object(volumeop._Configurator_RHEL7,
+                       '_config_fc_attach_inactive_with_xCAT')
+    def test_config_attach_inactive_with_xCAT(self, _config_fc):
+        _config_fc.return_value = None
+        volume = {LUN: 'abcdef0987654321', TYPE: 'fc'}
+        conn_info = {PROTOCOL: 'fc'}
+        self.assertRaises(ZVMVolumeError,
+                          self._conf._config_attach_inactive_with_xCAT,
+                          None,
+                          volume,
+                          conn_info)
+
+        volume = {LUN: 'abcdef0987654321', TYPE: 'fc', SIZE: '1G'}
+        self._conf._config_attach_inactive_with_xCAT(None, volume, conn_info)
+        _config_fc.assert_called_once_with(None, volume, conn_info)
+
+        conn_info = {PROTOCOL: 'iSCSI'}
+        self.assertRaises(NotImplementedError,
+                          self._conf._config_attach_inactive_with_xCAT,
+                          None,
+                          volume,
+                          conn_info)
+
+    @mock.patch.object(volumeop._xCATProxy, 'notice_attach')
+    @mock.patch.object(volumeop._xCATProxy, 'allocate_zfcp')
+    @mock.patch.object(volumeop._xCATProxy, 'add_zfcp_to_pool')
+    @mock.patch.object(volumeop._xCATProxy, 'dedicate_device')
+    def test_config_fc_attach_inactive_with_xCAT(self, dedicate_device,
+                                                 add_zfcp_to_pool,
+                                                 allocate_zfcp,
+                                                 notice_attach):
+        dedicate_device.return_value = None
+        add_zfcp_to_pool.return_value = None
+        allocate_zfcp.return_value = None
+        notice_attach.return_value = None
+        inst = {NAME: 'inst1', OS_TYPE: 'rhel7'}
+        conn_info = {DEDICATE: ['1faa', '1fbb'],
+                     FCPS: ['1faa', '1fbb'],
+                     WWPNS: ['1234567890abcdea', '1234567890abcdeb'],
+                     ALIAS: '/dev/vda'}
+        volume = {SIZE: '1G', LUN: 'abcdef0987654321'}
+        formated_wwpns = '1234567890abcdea;1234567890abcdeb'
+
+        calls = [mock.call(inst, '1faa'), mock.call(inst, '1fbb')]
+        self._conf._config_fc_attach_inactive_with_xCAT(inst,
+                                                        volume,
+                                                        conn_info)
+        dedicate_device.assert_has_calls(calls)
+        add_zfcp_to_pool.assert_called_once_with('1faa;1fbb',
+                                                 formated_wwpns,
+                                                 'abcdef0987654321',
+                                                 '1G')
+        allocate_zfcp.assert_called_once_with(inst,
+                                              '1faa;1fbb',
+                                              '1G',
+                                              formated_wwpns,
+                                              'abcdef0987654321')
+        notice_attach.assert_called_once_with(inst,
+                                              '1faa;1fbb',
+                                              formated_wwpns,
+                                              'abcdef0987654321',
+                                              conn_info[ALIAS],
+                                              inst[OS_TYPE])
+
+        add_zfcp_to_pool.reset_mock()
+        allocate_zfcp.reset_mock()
+        notice_attach.reset_mock()
+        conn_info.pop(DEDICATE)
+        self._conf._config_fc_attach_inactive_with_xCAT(inst,
+                                                        volume,
+                                                        conn_info)
+        add_zfcp_to_pool.assert_called_once_with('1faa;1fbb',
+                                                 formated_wwpns,
+                                                 'abcdef0987654321',
+                                                 '1G')
+        allocate_zfcp.assert_called_once_with(inst,
+                                              '1faa;1fbb',
+                                              '1G',
+                                              formated_wwpns,
+                                              'abcdef0987654321')
+        notice_attach.assert_called_once_with(inst,
+                                              '1faa;1fbb',
+                                              formated_wwpns,
+                                              'abcdef0987654321',
+                                              conn_info[ALIAS],
+                                              inst[OS_TYPE])
+
+    @mock.patch.object(volumeop._Configurator_RHEL7,
+                       '_config_fc_detach_inactive_with_xCAT')
+    def test_config_detach_inactive_with_xCAT(self, _config_fc):
+        _config_fc.return_value = None
+        conn_info = {PROTOCOL: 'fc'}
+        self._conf._config_detach_inactive_with_xCAT(None, None, conn_info)
+        _config_fc.assert_called_once_with(None, None, conn_info)
+
+        conn_info = {PROTOCOL: 'iSCSI'}
+        self.assertRaises(NotImplementedError,
+                          self._conf._config_detach_inactive_with_xCAT,
+                          None,
+                          None,
+                          conn_info)
+
+    @mock.patch.object(volumeop._xCATProxy, 'undedicate_device')
+    @mock.patch.object(volumeop._xCATProxy, 'notice_detach')
+    @mock.patch.object(volumeop._xCATProxy, 'remove_zfcp_from_pool')
+    @mock.patch.object(volumeop._xCATProxy, 'remove_zfcp')
+    def test_config_fc_detach_inactive_with_xCAT(self, remove_zfcp,
+                                                 remove_zfcp_from_pool,
+                                                 notice_detach,
+                                                 undedicate_device):
+        remove_zfcp.return_value = None
+        remove_zfcp_from_pool.return_value = None
+        notice_detach.return_value = None
+        undedicate_device.return_value = None
+        inst = {NAME: 'inst1', OS_TYPE: 'rhel7'}
+        conn_info = {DEDICATE: ['1faa', '1fbb'],
+                     FCPS: ['1faa', '1fbb'],
+                     WWPNS: ['1234567890abcdea', '1234567890abcdeb'],
+                     ALIAS: '/dev/vda'}
+        volume = {LUN: 'abcdef0987654321'}
+        formated_wwpns = '1234567890abcdea;1234567890abcdeb'
+
+        calls = [mock.call(inst, '1faa'), mock.call(inst, '1fbb')]
+        self._conf._config_fc_detach_inactive_with_xCAT(inst,
+                                                        volume,
+                                                        conn_info)
+        remove_zfcp.assert_called_once_with(inst,
+                                            '1faa;1fbb',
+                                            formated_wwpns,
+                                            volume[LUN])
+        remove_zfcp_from_pool.assert_called_once_with(formated_wwpns,
+                                                      volume[LUN])
+        notice_detach.assert_called_once_with(inst,
+                                              '1faa;1fbb',
+                                              formated_wwpns,
+                                              volume[LUN],
+                                              conn_info[ALIAS],
+                                              inst[OS_TYPE])
+        undedicate_device.assert_has_calls(calls)
+
+        remove_zfcp.reset_mock()
+        remove_zfcp_from_pool.reset_mock()
+        notice_detach.reset_mock()
+        conn_info.pop(DEDICATE)
+        self._conf._config_fc_detach_inactive_with_xCAT(inst,
+                                                        volume,
+                                                        conn_info)
+        remove_zfcp.assert_called_once_with(inst,
+                                            '1faa;1fbb',
+                                            formated_wwpns,
+                                            volume[LUN])
+        remove_zfcp_from_pool.assert_called_once_with(formated_wwpns,
+                                                      volume[LUN])
+        notice_detach.assert_called_once_with(inst,
+                                              '1faa;1fbb',
+                                              formated_wwpns,
+                                              volume[LUN],
+                                              conn_info[ALIAS],
+                                              inst[OS_TYPE])
+
+
 class VolumeOpTestCase(unittest.TestCase):
 
     def setUp(self):
