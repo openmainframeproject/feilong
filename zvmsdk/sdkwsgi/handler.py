@@ -32,6 +32,7 @@ ROUTE_LIST = (
     }),
     ('/guests', {
         'POST': guest.guest_create,
+        'GET': guest.guest_list,
     }),
     ('/guests/cpuinfo', {
         'GET': guest.guest_get_cpu_info
@@ -58,9 +59,6 @@ ROUTE_LIST = (
     }),
     ('/guests/{uuid}/action', {
         'POST': guest.guest_action,
-    }),
-    ('/host/guests', {
-        'GET': host.host_list_guests,
     }),
     ('/host/info', {
         'GET': host.host_get_info,

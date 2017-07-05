@@ -36,7 +36,7 @@ class FakeReq(object):
         return self.headers
 
 
-class HandlersGuestTest(unittest.TestCase):
+class HandlersHostTest(unittest.TestCase):
 
     def setUp(self):
         expired_elapse = datetime.timedelta(seconds=100)
@@ -45,13 +45,6 @@ class HandlersGuestTest(unittest.TestCase):
 
         self.req = FakeReq()
         self.req.headers['X-Auth-Token'] = payload
-
-    @mock.patch.object(host.HostAction, 'list')
-    def test_host_list(self, mock_list):
-
-        mock_list.return_value = ''
-        host.host_list_guests(self.req)
-        self.assertTrue(mock_list.called)
 
     @mock.patch.object(host.HostAction, 'get_info')
     def test_host_get_info(self, mock_get_info):

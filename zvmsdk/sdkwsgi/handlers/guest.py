@@ -11,9 +11,10 @@
 #    under the License.
 """Handler for the root of the sdk API."""
 
+import json
 import webob.exc
 
-from zvmsdk import api as sdkapi
+from zvmsdk import api
 from zvmsdk import config
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
@@ -21,6 +22,8 @@ from zvmsdk.sdkwsgi.schemas import guest
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi import validation
 from zvmsdk.sdkwsgi import wsgi_wrapper
+from zvmsdk import utils
+
 
 _VMACTION = None
 _VMHANDLER = None
@@ -30,11 +33,17 @@ LOG = log.LOG
 
 class VMHandler(object):
     def __init__(self):
+        self.api = api.SDKAPI()
         pass
 
     @validation.schema(guest.create)
     def create(self, body):
         LOG.info('create guest')
+
+    def list(self):
+        # list all guest on the given host
+        guests = self.api.host_list_guests()
+        return guests
 
     def get_info(self, id):
         LOG.info('guest get info %s', id)
@@ -65,7 +74,6 @@ class VMHandler(object):
     def couple_uncouple_nic(self, id, body=None):
         LOG.info('couple uncouple nic %s', id)
         info = body['info']
-        api = sdkapi.SDKAPI()
 
         persist = info.get('persist', True)
         persist = util.bool_from_string(persist, strict=True)
@@ -73,10 +81,10 @@ class VMHandler(object):
         couple = util.bool_from_string(info['couple'], strict=True)
 
         if couple:
-            api.guest_nic_couple_to_vswitch(info['vswitch'],
+            self.api.guest_nic_couple_to_vswitch(info['vswitch'],
                 info['port'], id, persist=persist)
         else:
-            api.guest_nic_uncouple_from_vswitch(info['vswitch'],
+            self.api.guest_nic_uncouple_from_vswitch(info['vswitch'],
                 info['port'], id, persist=persist)
 
 
@@ -146,6 +154,20 @@ def guest_create(req):
         action.create(body=body)
 
     _guest_create(req)
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def guest_list(req):
+    def _guest_list():
+        action = get_handler()
+        return action.list()
+
+    info = _guest_list()
+    info_json = json.dumps({'guests': info})
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify

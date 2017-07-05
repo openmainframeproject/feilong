@@ -22,11 +22,6 @@ class HostTestCase(unittest.TestCase):
     def setUp(self):
         self.client = test_sdkwsgi.TestSDKClient()
 
-    def test_host_list_guests(self):
-        resp = self.client.api_request(url='/host/guests')
-        self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_host_list_guests', resp.content)
-
     def test_host_info(self):
         resp = self.client.api_request(url='/host/info')
         self.assertEqual(200, resp.status_code)

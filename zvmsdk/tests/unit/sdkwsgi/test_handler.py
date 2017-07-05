@@ -91,6 +91,18 @@ class GuestHandlerTest(unittest.TestCase):
         self.env = env
 
     @mock.patch.object(tokens, 'validate')
+    def test_guest_list(self, mock_validate):
+        self.env['PATH_INFO'] = '/guests'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMHandler.list') \
+            as list:
+            list.return_value = ''
+            h(self.env, dummy)
+
+            self.assertTrue(list.called)
+
+    @mock.patch.object(tokens, 'validate')
     def test_guest_get_info(self, mock_validate):
         self.env['PATH_INFO'] = '/guests/1/info'
         self.env['REQUEST_METHOD'] = 'GET'
@@ -299,13 +311,6 @@ class HostHandlerNegativeTest(unittest.TestCase):
         self.assertRaises(webob.exc.HTTPNotFound,
                           h, self.env, dummy)
 
-    def test_host_put_method_invalid(self):
-        self.env['PATH_INFO'] = '/host/guests'
-        self.env['REQUEST_METHOD'] = 'PUT'
-        h = handler.SdkHandler()
-        self.assertRaises(webob.exc.HTTPMethodNotAllowed,
-                          h, self.env, dummy)
-
     def test_host_get_info_invalid(self):
         self.env['PATH_INFO'] = '/host/inf'
         self.env['REQUEST_METHOD'] = 'GET'
@@ -325,18 +330,6 @@ class HostHandlerTest(unittest.TestCase):
 
     def setUp(self):
         self.env = env
-
-    @mock.patch.object(tokens, 'validate')
-    def test_host_list(self, mock_validate):
-        self.env['PATH_INFO'] = '/host/guests'
-        self.env['REQUEST_METHOD'] = 'GET'
-        h = handler.SdkHandler()
-        function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.list'
-        with mock.patch(function) as list:
-            list.return_value = ''
-            h(self.env, dummy)
-
-            self.assertTrue(list.called)
 
     @mock.patch.object(tokens, 'validate')
     def test_host_get_info(self, mock_validate):

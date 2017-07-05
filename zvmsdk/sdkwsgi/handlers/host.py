@@ -32,10 +32,6 @@ class HostAction(object):
     def __init__(self):
         self.api = api.SDKAPI()
 
-    def list(self):
-        guests = self.api.host_list_guests()
-        return guests
-
     def get_info(self):
         info = self.api.host_get_info()
         return info
@@ -50,20 +46,6 @@ def get_action():
     if _HOSTACTION is None:
         _HOSTACTION = HostAction()
     return _HOSTACTION
-
-
-@wsgi_wrapper.SdkWsgify
-@tokens.validate
-def host_list_guests(req):
-    def _host_list_guests():
-        action = get_action()
-        return action.list()
-
-    info = _host_list_guests()
-    info_json = json.dumps({'guests': info})
-    req.response.body = utils.to_utf8(info_json)
-    req.response.content_type = 'application/json'
-    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
