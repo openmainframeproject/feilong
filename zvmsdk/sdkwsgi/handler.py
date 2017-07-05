@@ -26,57 +26,66 @@ from zvmsdk import log
 LOG = log.LOG
 
 
-ROUTE_DECLARATIONS = {
-    '/': {
+ROUTE_LIST = (
+    ('/', {
         'GET': root.home,
-    },
-    '/guest': {
+    }),
+    ('/guest', {
         'POST': guest.guest_create,
-    },
-    '/guest/{uuid}': {
+    }),
+    ('/guest/cpuinfo', {
+        'GET': guest.guest_get_cpu_info
+    }),
+    ('/guest/meminfo', {
+        'GET': guest.guest_get_memory_info
+    }),
+    ('/guest/vnicsinfo', {
+        'GET': guest.guest_get_vnics_info
+    }),
+    ('/guest/{uuid}', {
         'DELETE': guest.guest_delete,
-    },
-    '/guest/{uuid}/nic': {
+    }),
+    ('/guest/{uuid}/nic', {
         'GET': guest.guest_get_nic_info,
         'POST': guest.guest_create_nic,
         'PUT': guest.guest_couple_uncouple_nic,
-    },
-    '/guest/{uuid}/info': {
+    }),
+    ('/guest/{uuid}/info', {
         'GET': guest.guest_get_info,
-    },
-    '/guest/{uuid}/power_state': {
+    }),
+    ('/guest/{uuid}/power_state', {
         'GET': guest.guest_get_power_state,
-    },
-    '/guest/{uuid}/action': {
+    }),
+    ('/guest/{uuid}/action', {
         'POST': guest.guest_action,
-    },
-    '/host/guests': {
+    }),
+    ('/host/guests', {
         'GET': host.host_list_guests,
-    },
-    '/host/info': {
+    }),
+    ('/host/info', {
         'GET': host.host_get_info,
-    },
-    '/host/disk_info/{disk}': {
+    }),
+    ('/host/disk_info/{disk}', {
         'GET': host.host_get_disk_info,
-    },
-    '/image': {
+    }),
+    ('/image', {
         'POST': image.image_create,
         'GET': image.image_query
-    },
-    '/image/{name}': {
+    }),
+    ('/image/{name}', {
         'DELETE': image.image_delete,
-    },
-    '/image/{name}/root_disk_size': {
+    }),
+    ('/image/{name}/root_disk_size', {
         'GET': image.image_get_root_disk_size,
-    },
-    '/token': {
+    }),
+    ('/token', {
         'POST': tokens.create,
-    },
-    '/vswitch': {
+    }),
+    ('/vswitch', {
         'GET': vswitch.vswitch_list,
         'POST': vswitch.vswitch_create,
-    },
-}
+    }),
+)
 
 
 def dispatch(environ, start_response, mapper):
@@ -123,10 +132,10 @@ def handle_405(environ, start_response):
 def make_map(declarations):
     """Process route declarations to create a Route Mapper."""
     mapper = routes.Mapper()
-    for route, targets in declarations.items():
+    for route, methods in ROUTE_LIST:
         allowed_methods = []
-        for method in targets:
-            mapper.connect(route, action=targets[method],
+        for method, func in methods.items():
+            mapper.connect(route, action=func,
                            conditions=dict(method=[method]))
             allowed_methods.append(method)
         allowed_methods = ', '.join(allowed_methods)
@@ -141,7 +150,7 @@ class SdkHandler(object):
     """
 
     def __init__(self, **local_config):
-        self._map = make_map(ROUTE_DECLARATIONS)
+        self._map = make_map(ROUTE_LIST)
 
     def __call__(self, environ, start_response):
         clen = environ.get('CONTENT_LENGTH')
