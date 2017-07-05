@@ -114,15 +114,15 @@ class GuestHandlerTest(unittest.TestCase):
             get_info.assert_called_once_with('1')
 
     @mock.patch.object(tokens, 'validate')
-    def test_guest_get_definition(self, mock_validate):
-        self.env['PATH_INFO'] = '/guests/1/definition'
+    def test_guest_get(self, mock_validate):
+        self.env['PATH_INFO'] = '/guests/1'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
-        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_definition'
-        with mock.patch(func) as get_definition:
+        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get'
+        with mock.patch(func) as get:
             h(self.env, dummy)
 
-            get_definition.assert_called_once_with('1')
+            get.assert_called_once_with('1')
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_nic_info(self, mock_validate):
@@ -159,6 +159,19 @@ class GuestHandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             self.assertTrue(create.called)
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_guest_update(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/guests/1'
+        self.env['REQUEST_METHOD'] = 'PUT'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.update'
+        with mock.patch(function) as update:
+            h(self.env, dummy)
+
+            update.assert_called_once_with('1', {})
 
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
     @mock.patch.object(tokens, 'validate')

@@ -45,12 +45,11 @@ ROUTE_LIST = (
     }),
     ('/guests/{uuid}', {
         'DELETE': guest.guest_delete,
+        'GET': guest.guest_get,
+        'PUT': guest.guest_update,
     }),
     ('/guests/{uuid}/action', {
         'POST': guest.guest_action,
-    }),
-    ('/guests/{uuid}/definition', {
-        'GET': guest.guest_get_definition,
     }),
     ('/guests/{uuid}/info', {
         'GET': guest.guest_get_info,
