@@ -1391,6 +1391,7 @@ class XCATClient(ZVMClient):
         self._update_xcat_switch(userid, nic_vdev, switch_name)
         """add one NIC's info to user direct."""
         url = self._xcat_url.chvm('/' + userid)
+        mac = ''.join(mac.split(':'))[6:]
         commands = ' '.join((
             'Image_Definition_Update_DM -T %s' % userid,
             '-k \'NICDEF=VDEV=%s TYPE=QDIO' % nic_vdev,
