@@ -11,13 +11,17 @@
 #    under the License.
 """Deployment handling for sdk API."""
 
+import sys
+import traceback
 import webob
 
+from zvmsdk import log
 from zvmsdk.sdkwsgi import handler
 from zvmsdk.sdkwsgi import microversion
 from zvmsdk.sdkwsgi import requestlog
 
 
+LOG = log.LOG
 NAME = "sdk"
 
 
@@ -51,6 +55,8 @@ class FaultWrapper(object):
         self.application = application
 
     def _error(self, inner, req):
+        exc_info = traceback.extract_tb(sys.exc_info()[2])[-1]
+        LOG.info('Got unhandled exception: %s', exc_info)
 
         safe = getattr(inner, 'safe', False)
         headers = getattr(inner, 'headers', None)

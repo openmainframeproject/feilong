@@ -22,9 +22,6 @@ from zvmsdk.sdkwsgi.handlers import root
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.handlers import vswitch
 
-from zvmsdk import log
-LOG = log.LOG
-
 
 ROUTE_LIST = (
     ('/', {
