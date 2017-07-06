@@ -23,7 +23,7 @@ create = {
                 'remote_host': parameter_types.remote_host,
             },
             'required': ['url'],
-            # FIXME: image_meta will be added later
+            # FIXME: image_meta will be added later to properties
             'additionalProperties': True,
         },
         'additionalProperties': False,
