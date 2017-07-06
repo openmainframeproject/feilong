@@ -8,9 +8,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+
 import unittest
 
+from zvmsdk import config
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
+
+
+CONF = config.CONF
 
 
 class ImageTestCase(unittest.TestCase):
@@ -21,15 +27,23 @@ class ImageTestCase(unittest.TestCase):
         self.client = test_sdkwsgi.TestSDKClient()
 
     def _image_create(self):
-        body = '{"image": {"uuid": "1"}}'
+        image_fname = "image1"
+        image_fpath = ''.join([CONF.image.temp_path, image_fname])
+        os.system('touch %s' % image_fpath)
+        url = "file://" + image_fpath
+        image_meta = '{"os_version": "rhel7.2"}'
+
+        body = '{"image": {"url": "%s", "image_meta": %s}}' % (url,
+                                                               image_meta)
+
         resp = self.client.api_request(url='/images', method='POST',
                                        body=body)
         self.assertEqual(200, resp.status_code)
         return resp
 
     def _image_delete(self):
-        resp = self.client.api_request(url='/images/1', method='DELETE')
-        self.assertEqual(200, resp.status_code)
+        resp = self.client.api_request(url='/images/image1', method='DELETE')
+        self.assertEqual(204, resp.status_code)
         return resp
 
     def test_image_create_empty_body(self):
@@ -52,7 +66,7 @@ class ImageTestCase(unittest.TestCase):
         resp = self.client.api_request(url='/images/image1/root')
         self.assertEqual(404, resp.status_code)
 
-    def _test_image_create_delete(self):
+    def test_image_create_delete(self):
         self._image_create()
 
         # if delete failed, anyway we can't re-delete it because of failure
