@@ -20,11 +20,17 @@ class ImageTestCase(unittest.TestCase):
     def setUp(self):
         self.client = test_sdkwsgi.TestSDKClient()
 
-    def test_image_create(self):
+    def _image_create(self):
         body = '{"image": {"uuid": "1"}}'
         resp = self.client.api_request(url='/images', method='POST',
                                        body=body)
         self.assertEqual(200, resp.status_code)
+        return resp
+
+    def _image_delete(self):
+        resp = self.client.api_request(url='/images/1', method='DELETE')
+        self.assertEqual(200, resp.status_code)
+        return resp
 
     def test_image_create_empty_body(self):
         body = {}
@@ -45,3 +51,15 @@ class ImageTestCase(unittest.TestCase):
     def test_image_get_not_valid_resource(self):
         resp = self.client.api_request(url='/images/image1/root')
         self.assertEqual(404, resp.status_code)
+
+    def test_image_create_delete(self):
+        self._image_create()
+
+        # if delete failed, anyway we can't re-delete it because of failure
+        self._image_delete()
+
+    def _test_image_query(self):
+        self._image_create()
+
+        resp = self.client.api_request(url='/images/1', method='GET')
+        self.assertEqual(200, resp.status_code)
