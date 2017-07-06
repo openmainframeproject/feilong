@@ -602,7 +602,8 @@ class XCATClient(ZVMClient):
                 exception.ZVMXCATUpdateNodeFailed):
             zvmutils.xcat_request("PUT", url, body)
 
-    def guest_deploy(self, node, image_name, transportfiles=None, vdev=None):
+    def guest_deploy(self, node, image_name, transportfiles=None,
+                     remotehost=None, vdev=None):
         """image_name format looks like:
         sles12-s390x-netboot-0a0c576a_157f_42c8_bde5_2a254d8b77fc"""
         # Update node info before deploy
@@ -618,6 +619,8 @@ class XCATClient(ZVMClient):
 
         if transportfiles:
             body.append('transport=%s' % transportfiles)
+        if remotehost:
+            body.append('remotehost=%s' % remotehost)
 
         with zvmutils.expect_xcat_call_failed_and_reraise(
                 exception.ZVMXCATDeployNodeFailed):
