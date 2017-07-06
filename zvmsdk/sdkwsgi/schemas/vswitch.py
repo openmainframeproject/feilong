@@ -21,6 +21,53 @@ create = {
             'properties': {
                 'name': parameter_types.name,
                 'rdev': parameter_types.rdev,
+                # FIXME: controller has its own conventions
+                'controller': parameter_types.userid,
+                'connection': {
+                    'type': ['integer'],
+                    'minimum': 0,
+                    'maximum': 2,
+                },
+                'queue_mem': {
+                    'type': ['integer'],
+                    'minimum': 1,
+                    'maximum': 8,
+                },
+                'router': {
+                    'type': ['integer'],
+                    'minimum': 0,
+                    'maximum': 2,
+                },
+                'network_type': {
+                    'type': ['integer'],
+                    'minimum': 0,
+                    'maximum': 2,
+                },
+                'vid': {
+                    'type': ['integer'],
+                    'minimum': 0,
+                    'maximum': 4094,
+                },
+                'port_type': {
+                    'type': ['integer'],
+                    'minimum': 0,
+                    'maximum': 2,
+                },
+                'update': {
+                    'type': ['integer'],
+                    'minimum': 0,
+                    'maximum': 3,
+                },
+                'gvrp': {
+                    'type': ['integer'],
+                    'minimum': 0,
+                    'maximum': 2,
+                },
+                'native_vid': {
+                    'type': ['integer'],
+                    'minimum': 0,
+                    'maximum': 4094,
+                },
             },
             'required': ['name', 'rdev'],
             'additionalProperties': False,
@@ -40,6 +87,7 @@ update = {
             'properties': {
                  'grant_userid': parameter_types.userid,
                  'real_device_address': parameter_types.rdev,
+                 'revoke_userid': parameter_types.userid,
             },
             'additionalProperties': False,
         },
