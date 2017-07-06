@@ -33,7 +33,7 @@ LOG = log.LOG
 
 class VMHandler(object):
     def __init__(self):
-        self.api = api.SDKAPI()
+        self.api = api.SDKAPI(skip_input_check=True)
         pass
 
     @validation.schema(guest.create)

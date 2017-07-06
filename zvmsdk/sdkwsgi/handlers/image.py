@@ -28,7 +28,7 @@ LOG = log.LOG
 class ImageAction(object):
 
     def __init__(self):
-        self.api = api.SDKAPI()
+        self.api = api.SDKAPI(skip_input_check=True)
 
     @validation.schema(image.create)
     def create(self, body):

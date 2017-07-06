@@ -30,7 +30,7 @@ LOG = log.LOG
 class HostAction(object):
 
     def __init__(self):
-        self.api = api.SDKAPI()
+        self.api = api.SDKAPI(skip_input_check=True)
 
     def get_info(self):
         info = self.api.host_get_info()
