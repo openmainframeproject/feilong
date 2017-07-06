@@ -38,7 +38,7 @@ class ImageAction(object):
         remote_host = image.get('remote_host', None)
         image_meta = image.get('image_meta', None)
 
-        self.api.image_import(url, image_meta, remote_host)
+        # self.api.image_import(url, image_meta, remote_host)
 
     def get_root_disk_size(self, name):
         LOG.info('get root disk size')
