@@ -29,7 +29,7 @@ _DEFAULT_MODE = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
 
 
 def get_cfg_str(ip_v4, os_version, address_read = CONF.zvm.default_nic_vdev):
-    linuxdist = dist.ListDistManager().get_linux_dist(os_version)()
+    linuxdist = dist.LinuxDistManager().get_linux_dist(os_version)()
     device_num = 0
     device_name = linuxdist.get_device_name(device_num)
     cfg_str = 'DEVICE=' + device_name + '\n'
