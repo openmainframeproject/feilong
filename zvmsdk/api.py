@@ -648,7 +648,7 @@ class SDKAPI(object):
         'persist', 'gvrp_value', 'mac_id', 'uplink', 'nic_userid', 'nic_vdev',
         'lacp', 'Interval', 'group_rdev', 'iptimeout', 'port_isolation',
         'promiscuous', 'MAC_protect', 'VLAN_counters'])
-    def set_vswitch(self, vswitch_name, **kwargs):
+    def vswitch_set(self, vswitch_name, **kwargs):
         """Change the configuration of an existing virtual switch
 
         :param str vswitch_name: the name of the virtual switch
