@@ -79,6 +79,16 @@ class _xCATProxyTestCase(unittest.TestCase):
         self._proxy.dedicate_device(inst, device)
         _xcat_chvm.assert_called_once_with(inst[NAME], body)
 
+    @mock.patch.object(volumeop._xCATProxy, '_xcat_chvm')
+    def test_undedicate_device(self, _xcat_chvm):
+        inst = {NAME: 'inst1'}
+        device = '1faa'
+        _xcat_chvm.return_value = None
+        body = ['--undedicatedevice 1faa']
+
+        self._proxy.undedicate_device(inst, device)
+        _xcat_chvm.assert_called_once_with(inst[NAME], body)
+
     @mock.patch.object(volumeop._xCATProxy, '_xcat_chhy')
     def test_add_zfcp_to_pool(self, _xcat_chhy):
         _xcat_chhy.return_value = None
@@ -89,6 +99,16 @@ class _xCATProxyTestCase(unittest.TestCase):
                                      '5005600670078008',
                                      '0110022003300440',
                                      '1G')
+        _xcat_chhy.assert_called_once_with(body)
+
+    @mock.patch.object(volumeop._xCATProxy, '_xcat_chhy')
+    def test_remove_zfcp_from_pool(self, _xcat_chhy):
+        _xcat_chhy.return_value = None
+        body = ['--removezfcpfrompool zvmsdk '
+                '0110022003300440 5005600670078008']
+
+        self._proxy.remove_zfcp_from_pool('5005600670078008',
+                                          '0110022003300440')
         _xcat_chhy.assert_called_once_with(body)
 
     @mock.patch.object(utils, 'xcat_request')
@@ -117,6 +137,18 @@ class _xCATProxyTestCase(unittest.TestCase):
                                   '0110022003300440')
         _xcat_chhy.assert_called_once_with(body)
 
+    @mock.patch.object(volumeop._xCATProxy, '_xcat_chvm')
+    def test_remove_zfcp(self, _xcat_chvm):
+        inst = {NAME: 'inst1'}
+        body = ['--removezfcp 1faa 5005600670078008 0110022003300440 1']
+        _xcat_chvm.return_value = None
+
+        self._proxy.remove_zfcp(inst,
+                                '1faa',
+                                '5005600670078008',
+                                '0110022003300440')
+        _xcat_chvm.assert_called_once_with(inst[NAME], body)
+
     @mock.patch.object(volumeop._xCATProxy, '_get_mountpoint_parms')
     @mock.patch.object(volumeop._xCATProxy, '_send_notice')
     @mock.patch.object(volumeop._xCATProxy, '_get_volume_parms')
@@ -139,6 +171,37 @@ class _xCATProxyTestCase(unittest.TestCase):
                                                   '5005600670078008',
                                                   '0110022003300440')
         _get_mountpoint_parms.assert_called_once_with('createfilesysnode',
+                                                      '1faa',
+                                                      '5005600670078008',
+                                                      '0110022003300440',
+                                                      'vda',
+                                                      'rhel7')
+        calls = [mock.call(inst, 'fake_volume_parms'),
+                 mock.call(inst, 'fake_mp_parms')]
+        _send_notice.assert_has_calls(calls)
+
+    @mock.patch.object(volumeop._xCATProxy, '_get_mountpoint_parms')
+    @mock.patch.object(volumeop._xCATProxy, '_send_notice')
+    @mock.patch.object(volumeop._xCATProxy, '_get_volume_parms')
+    def test_notice_detach(self, _get_volume_parms,
+                           _send_notice,
+                           _get_mountpoint_parms):
+        inst = {NAME: 'inst1'}
+        _get_volume_parms.return_value = 'fake_volume_parms'
+        _send_notice.return_value = None
+        _get_mountpoint_parms.return_value = 'fake_mp_parms'
+
+        self._proxy.notice_detach(inst,
+                                  '1faa',
+                                  '5005600670078008',
+                                  '0110022003300440',
+                                  'vda',
+                                  'rhel7')
+        _get_volume_parms.assert_called_once_with('removeScsiVolume',
+                                                  '1faa',
+                                                  '5005600670078008',
+                                                  '0110022003300440')
+        _get_mountpoint_parms.assert_called_once_with('removefilesysnode',
                                                       '1faa',
                                                       '5005600670078008',
                                                       '0110022003300440',
@@ -308,6 +371,79 @@ class _Configurator_SLES12TestCases(unittest.TestCase):
                                               conn_info[ALIAS],
                                               inst[OS_TYPE])
 
+    @mock.patch.object(volumeop._Configurator_SLES12,
+                       '_config_fc_detach_inactive_with_xCAT')
+    def test_config_detach_inactive_with_xCAT(self, _config_fc):
+        _config_fc.return_value = None
+        conn_info = {PROTOCOL: 'fc'}
+        self._conf._config_detach_inactive_with_xCAT(None, None, conn_info)
+        _config_fc.assert_called_once_with(None, None, conn_info)
+
+        conn_info = {PROTOCOL: 'iSCSI'}
+        self.assertRaises(NotImplementedError,
+                          self._conf._config_detach_inactive_with_xCAT,
+                          None,
+                          None,
+                          conn_info)
+
+    @mock.patch.object(volumeop._xCATProxy, 'undedicate_device')
+    @mock.patch.object(volumeop._xCATProxy, 'notice_detach')
+    @mock.patch.object(volumeop._xCATProxy, 'remove_zfcp_from_pool')
+    @mock.patch.object(volumeop._xCATProxy, 'remove_zfcp')
+    def test_config_fc_detach_inactive_with_xCAT(self, remove_zfcp,
+                                                 remove_zfcp_from_pool,
+                                                 notice_detach,
+                                                 undedicate_device):
+        remove_zfcp.return_value = None
+        remove_zfcp_from_pool.return_value = None
+        notice_detach.return_value = None
+        undedicate_device.return_value = None
+        inst = {NAME: 'inst1', OS_TYPE: 'sles12'}
+        conn_info = {DEDICATE: ['1faa', '1fbb'],
+                     FCPS: ['1faa', '1fbb'],
+                     WWPNS: ['1234567890abcdea', '1234567890abcdeb'],
+                     ALIAS: 'sles12'}
+        volume = {LUN: 'abcdef0987654321'}
+        formated_wwpns = '1234567890abcdea;1234567890abcdeb'
+
+        calls = [mock.call(inst, '1faa'), mock.call(inst, '1fbb')]
+        self._conf._config_fc_detach_inactive_with_xCAT(inst,
+                                                        volume,
+                                                        conn_info)
+        remove_zfcp.assert_called_once_with(inst,
+                                            '1faa;1fbb',
+                                            formated_wwpns,
+                                            volume[LUN])
+        remove_zfcp_from_pool.assert_called_once_with(formated_wwpns,
+                                                      volume[LUN])
+        notice_detach.assert_called_once_with(inst,
+                                              '1faa;1fbb',
+                                              formated_wwpns,
+                                              volume[LUN],
+                                              conn_info[ALIAS],
+                                              inst[OS_TYPE])
+        undedicate_device.assert_has_calls(calls)
+
+        remove_zfcp.reset_mock()
+        remove_zfcp_from_pool.reset_mock()
+        notice_detach.reset_mock()
+        conn_info.pop(DEDICATE)
+        self._conf._config_fc_detach_inactive_with_xCAT(inst,
+                                                        volume,
+                                                        conn_info)
+        remove_zfcp.assert_called_once_with(inst,
+                                            '1faa;1fbb',
+                                            formated_wwpns,
+                                            volume[LUN])
+        remove_zfcp_from_pool.assert_called_once_with(formated_wwpns,
+                                                      volume[LUN])
+        notice_detach.assert_called_once_with(inst,
+                                              '1faa;1fbb',
+                                              formated_wwpns,
+                                              volume[LUN],
+                                              conn_info[ALIAS],
+                                              inst[OS_TYPE])
+
 
 class VolumeOpTestCase(unittest.TestCase):
 
@@ -348,8 +484,39 @@ class VolumeOpTestCase(unittest.TestCase):
                                                            volume,
                                                            conn_info)
 
-    def test_detach_volume_from_instance(self):
-        pass
+    @mock.patch.object(volumeop.VolumeOperator, '_get_configurator')
+    @mock.patch.object(volumeop.VolumeOperator, '_validate_connection_info')
+    @mock.patch.object(volumeop.VolumeOperator, '_validate_volume')
+    @mock.patch.object(volumeop.VolumeOperator, '_validate_instance')
+    def test_detach_volume_from_instance(self,
+                                         _validate_instance,
+                                         _validate_volume,
+                                         _validate_connection_info,
+                                         _get_configurator):
+        inst = {NAME: 'inst1', OS_TYPE: 'sles12sp2'}
+        volume = {TYPE: 'fc',
+                  LUN: 'abCDEF0987654321'}
+        fcps = ['1faa', '1fBB']
+        wwpns = ['1234567890abcdea', '1234567890abCDEB',
+                 '1234567890abcdec', '1234567890abCDED',
+                 '1234567890abcdee', '1234567890abCDEF']
+        conn_info = {PROTOCOL: 'fc',
+                     FCPS: fcps,
+                     WWPNS: wwpns,
+                     ALIAS: 'vda'}
+
+        configurator = volumeop._Configurator_SLES12()
+        _get_configurator.return_value = configurator
+        configurator.config_detach = mock.MagicMock()
+
+        self._vol_op.detach_volume_from_instance(inst, volume, conn_info)
+        _validate_instance.assert_called_once_with(inst)
+        _validate_volume.assert_called_once_with(volume)
+        _validate_connection_info.assert_called_once_with(conn_info)
+        _get_configurator.assert_called_once_with(inst)
+        configurator.config_detach.assert_called_once_with(inst,
+                                                           volume,
+                                                           conn_info)
 
     def test_validate_instance(self):
         self.assertRaises(err, self._vol_op._validate_instance, None)
