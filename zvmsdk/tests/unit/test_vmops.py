@@ -171,7 +171,8 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.guest_deploy('fakevm', 'fakeimg',
                                 '/test/transport.tgz')
         deploy_image_to_vm.assert_called_with('fakevm', 'fakeimg',
-                                              '/test/transport.tgz', None)
+                                              '/test/transport.tgz', None,
+                                              None)
 
     @mock.patch.object(zvmclient.XCATClient, 'get_user_direct')
     def test_get_definition_info(self, get_user_direct):

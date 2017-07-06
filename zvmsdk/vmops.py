@@ -196,12 +196,12 @@ class VMOps(object):
         LOG.info('Image %s successfully deleted' % image_name)
 
     def guest_deploy(self, user_id, image_name, transportfiles=None,
-                     vdev=None):
+                     remotehost=None, vdev=None):
         try:
             LOG.debug("Begin to deploy image on vm %s", user_id)
 
             self._zvmclient.guest_deploy(user_id, image_name,
-                                         transportfiles, vdev)
+                                         transportfiles, remotehost, vdev)
 
         except exception as err:
             LOG.error(('Failed to deploy image %(img)s to vm %(vm)s') %
