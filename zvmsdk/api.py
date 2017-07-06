@@ -262,17 +262,19 @@ class SDKAPI(object):
 
     @check_input_types(_TUSERID, _TSTR, _TSTR_OR_NONE, _TSTR_OR_NONE)
     def guest_deploy(self, userid, image_name, transportfiles=None,
-                     vdev=None):
+                     remotehost=None, vdev=None):
         """ Deploy the image to vm.
 
         :param userid: the user id of the vm
         :param image_name: the name of image that used to deploy the vm
         :param transportfiles: the files that used to customize the vm
+        :param remotehost: the server where the transportfiles located, the
+               format is username@IP, eg nova@192.168.99.1
         :param vdev: the device that image will be deploy to
 
         """
         return self._vmops.guest_deploy(userid, image_name,
-                                        transportfiles, vdev)
+                                        transportfiles, remotehost, vdev)
 
     @check_input_types(_TUSERID, list, _TSTR_OR_NONE)
     def guest_create_nic(self, userid, nic_info, ip_addr=None):
