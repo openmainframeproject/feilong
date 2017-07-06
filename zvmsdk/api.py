@@ -35,6 +35,8 @@ _TSTR = types.StringTypes
 _TNONE = types.NoneType
 _TSTR_OR_NONE = (types.StringType, types.UnicodeType, types.NoneType)
 _TUSERID = 'TYPE_USERID'
+# Vswitch name has same rule with userid
+_TVSWNAME = _TUSERID
 _TUSERID_OR_LIST = (_TUSERID, list)
 
 
@@ -84,8 +86,9 @@ def check_input_types(*types, **validkeys):
                     break
 
             if invalid_userid_idx != -1:
-                msg = ("Invalid userid found, userid should be string type and"
-                       " should not be null or contain spaces.")
+                msg = ("Invalid string value found at the #%d parameter, "
+                       "length should be less or equal to 8 and should not be "
+                       "null or contain spaces." % (invalid_userid_idx + 1))
                 LOG.info(msg)
                 raise exception.ZVMInvalidInput(msg=msg)
 
@@ -389,8 +392,8 @@ class SDKAPI(object):
         """
         return self._networkops.get_vswitch_list()
 
-    @check_input_types(_TSTR, _TSTR, _TSTR, int, int, int, int, int, int, int,
-                       int, int)
+    @check_input_types(_TSTR, _TVSWNAME, _TSTR, int, int, int, int, int, int,
+                        int, int, int)
     def vswitch_create(self, name, rdev,
                        controller='*', connection=1,
                        queue_mem=8, router=0, network_type=2, vid=0,
@@ -585,7 +588,7 @@ class SDKAPI(object):
             userid_list = [userid_list]
         return self._monitor.inspect_vnics(userid_list)
 
-    @check_input_types(_TSTR, _TUSERID)
+    @check_input_types(_TVSWNAME, _TUSERID)
     def vswitch_grant_user(self, vswitch_name, userid):
         """Set vswitch to grant user
 
@@ -595,7 +598,7 @@ class SDKAPI(object):
 
         self._networkops.grant_user_to_vswitch(vswitch_name, userid)
 
-    @check_input_types(_TSTR, _TUSERID)
+    @check_input_types(_TVSWNAME, _TUSERID)
     def vswitch_revoke_user(self, vswitch_name, userid):
         """Revoke user for vswitch
 
@@ -604,7 +607,7 @@ class SDKAPI(object):
         """
         self._networkops.revoke_user_from_vswitch(vswitch_name, userid)
 
-    @check_input_types(_TSTR, _TUSERID, int)
+    @check_input_types(_TVSWNAME, _TUSERID, int)
     def vswitch_set_vlan_id_for_user(self, vswitch_name, userid, vlan_id):
         """Set vlan id for user when connecting to the vswitch
 
@@ -615,7 +618,7 @@ class SDKAPI(object):
         self._networkops.set_vswitch_port_vlan_id(vswitch_name,
                                                   userid, vlan_id)
 
-    @check_input_types(_TUSERID, _TSTR, _TSTR, _TSTR)
+    @check_input_types(_TUSERID, _TSTR, _TSTR, _TVSWNAME)
     def guest_update_nic_definition(self, userid, nic_vdev, mac,
                                     switch_name):
         """ add nic and coupled network info into the user direct.
@@ -642,7 +645,7 @@ class SDKAPI(object):
         """
         self._vmops.guest_config_minidisks(userid, disk_info)
 
-    @check_input_types(_TSTR, valid_keys=['grant_userid', 'user_vlan_id',
+    @check_input_types(_TVSWNAME, valid_keys=['grant_userid', 'user_vlan_id',
         'revoke_userid', 'real_device_address', 'port_name', 'controller_name',
         'connection_value', 'queue_memory_limit', 'routing_value', 'port_type',
         'persist', 'gvrp_value', 'mac_id', 'uplink', 'nic_userid', 'nic_vdev',
@@ -756,7 +759,7 @@ class SDKAPI(object):
         """
         self._networkops.set_vswitch(vswitch_name, **kwargs)
 
-    @check_input_types(_TSTR, int)
+    @check_input_types(_TVSWNAME, int)
     def vswitch_delete(self, vswitch_name, update=1):
         """ Delete vswitch.
 
