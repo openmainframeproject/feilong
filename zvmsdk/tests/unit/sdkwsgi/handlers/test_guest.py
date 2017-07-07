@@ -109,8 +109,7 @@ class HandlersGuestTest(SDKWSGITest):
         self.req.body = body_str
 
         guest.guest_create(self.req)
-        mock_create.assert_called_once_with('name1', 1, 1, disk_list=None,
-                                            user_profile=None)
+        mock_create.assert_called_once_with('name1', 1, 1, disk_list=None)
 
     def test_guest_create_invalidname(self):
         body_str = '{"guest": {"userid": ""}}'
@@ -127,8 +126,7 @@ class HandlersGuestTest(SDKWSGITest):
 
         guest.guest_create(self.req)
         mock_create.assert_called_once_with('name1', 1, 1,
-                                            disk_list=[{u'size': u'1g'}],
-                                            user_profile=None)
+                                            disk_list=[{u'size': u'1g'}])
 
     def test_guest_create_invalid_disk_list(self):
         body_str = """{"guest": {"userid": "name1", "vcpus": 1, "memory": 1,
@@ -246,7 +244,7 @@ class HandlersGuestTest(SDKWSGITest):
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'create_nic')
     def test_guest_create_nic(self, mock_create, mock_uuid):
-        body_str = '{"nic": {"nic_info": [], "ip": "dummy"}}'
+        body_str = '{"nic": {"vdev": "1234"}}'
         self.req.body = body_str
 
         mock_uuid.return_value = FAKE_UUID
@@ -255,24 +253,18 @@ class HandlersGuestTest(SDKWSGITest):
         body = util.extract_json(body_str)
         mock_create.assert_called_once_with(FAKE_UUID, body=body)
 
-    def test_guest_create_invalid_ip(self):
-        body_str = '{"nic": {"nic_info": [], "ip": 12345}}'
+    def test_guest_create_nic_invalid_vdev(self):
+        body_str = '{"nic": {"vdev": 123}}'
         self.req.body = body_str
 
-        self.assertRaises(exception.ValidationError, guest.guest_create,
+        self.assertRaises(exception.ValidationError, guest.guest_create_nic,
                           self.req)
 
-    def test_guest_create_invalid_nic_info(self):
-        body_str = '{"nic": {"nic_info": "abc", "ip": "dummy"}}'
+    def test_guest_create_nic_invalid_nic_ip(self):
+        body_str = '{"nic": {"ip_addr": "dummy"}}'
         self.req.body = body_str
 
-        self.assertRaises(exception.ValidationError, guest.guest_create,
-                          self.req)
-
-    def test_guest_create_nic_missing_required(self):
-        body_str = '{"nic": {"ip": "dummy"}}'
-        self.req.body = body_str
-        self.assertRaises(exception.ValidationError, guest.guest_create,
+        self.assertRaises(exception.ValidationError, guest.guest_create_nic,
                           self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')

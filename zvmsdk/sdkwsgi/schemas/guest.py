@@ -67,10 +67,14 @@ create_nic = {
         'nic': {
             'type': 'object',
             'properties': {
-                'nic_info': parameter_types.nic_info,
-                'ip': parameter_types.ipv4,
+                'vdev': parameter_types.vdev,
+                # FIXME
+                'nic_id': parameter_types.name,
+                'mac_addr': parameter_types.name,
+                'ip_addr': parameter_types.ipv4,
+                'active': parameter_types.boolean,
+                'persist': parameter_types.boolean,
             },
-            'required': ['nic_info'],
             'additionalProperties': False,
         },
         'additionalProperties': False,
