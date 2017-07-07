@@ -38,7 +38,31 @@ class VMHandler(object):
 
     @validation.schema(guest.create)
     def create(self, body):
-        LOG.info('create guest')
+        guest = body['guest']
+
+        userid = guest['userid']
+        vcpus = guest['vcpus']
+        memory = guest['memory']
+
+        disk_list = guest.get('disk_list', None)
+        user_profile = guest.get('user_profile', None)
+
+        self.api.guest_create(userid, vcpus, memory, disk_list=disk_list,
+                              user_profile=user_profile)
+
+    @validation.schema(guest.deploy)
+    def deploy(self, body):
+        guest = body['guest']
+        userid = guest['userid']
+        image_name = guest['image_name']
+
+        transportfiles = guest.get('transportfiles', None)
+        remotehost = guest.get('remotehost', None)
+        vdev = guest.get('vdev', None)
+
+        self.api.guest_deploy(userid, image_name,
+            transportfiles=transportfiles, remotehost=remotehost,
+            vdev=vdev)
 
     def list(self):
         # list all guest on the given host
@@ -173,6 +197,18 @@ def guest_create(req):
 
     _guest_create(req)
 
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def guest_deploy(req):
+
+    def _guest_deploy(req):
+        action = get_handler()
+        body = util.extract_json(req.body)
+
+        action.deploy(body=body)
+
+    _guest_deploy(req)
 
 @wsgi_wrapper.SdkWsgify
 @tokens.validate
