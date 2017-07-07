@@ -159,6 +159,11 @@ class SDKAPITestCase(base.SDKTestCase):
         self.assertRaises(exception.ZVMInvalidInput, self.api.guest_start,
                           '123456789')
 
+    @mock.patch("zvmsdk.vmops.VMOps.guest_start")
+    def test_check_input_too_many_parameters(self, gs):
+        self.assertRaises(exception.ZVMInvalidInput, self.api.guest_start,
+                          'fakeuser', '12345678')
+
     @mock.patch("zvmsdk.imageops.ImageOps.image_delete")
     def test_image_delete(self, image_delete):
         image_name = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'

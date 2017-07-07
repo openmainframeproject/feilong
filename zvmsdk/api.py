@@ -60,6 +60,13 @@ def check_input_types(*types, **validkeys):
                 return function(*args, **kwargs)
             # drop class object self
             inputs = args[1:]
+            if (len(inputs) > len(types)):
+                msg = ("Too many parameters provided: %(specified)d specified,"
+                       "%(expected)d expected." %
+                       {'specified': len(inputs), 'expected': len(types)})
+                LOG.error(msg)
+                raise exception.ZVMInvalidInput(msg=msg)
+
             argtypes = tuple(map(type, inputs))
             match_types = types[0:len(argtypes)]
 
@@ -89,14 +96,14 @@ def check_input_types(*types, **validkeys):
                 msg = ("Invalid string value found at the #%d parameter, "
                        "length should be less or equal to 8 and should not be "
                        "null or contain spaces." % (invalid_userid_idx + 1))
-                LOG.info(msg)
+                LOG.error(msg)
                 raise exception.ZVMInvalidInput(msg=msg)
 
             if invalid_type:
                 msg = ("Invalid input types: %(argtypes)s; "
                        "Expected types: %(types)s" %
                        {'argtypes': str(argtypes), 'types': str(types)})
-                LOG.info(msg)
+                LOG.error(msg)
                 raise exception.ZVMInvalidInput(msg=msg)
 
             valid_keys = validkeys.get('valid_keys')
@@ -106,7 +113,7 @@ def check_input_types(*types, **validkeys):
                         msg = ("Invalid keyword: %(key)s; "
                                "Expected keywords are: %(keys)s" %
                                {'key': k, 'keys': str(valid_keys)})
-                        LOG.info(msg)
+                        LOG.error(msg)
                         raise exception.ZVMInvalidInput(msg=msg)
             return function(*args, **kwargs)
         return wrap_func
