@@ -510,51 +510,81 @@ class XCATClient(ZVMClient):
                 exception.ZVMNetworkError):
             return zvmutils.xcat_request("PUT", url, body)['data']
 
-    def create_nic(self, userid, nic_info, ip_addr=None):
-        if ip_addr is None:
-            raise exception.ZVMInvalidInput(
-                msg=("IP address is required"))
+    def _get_host_ip(self, userid):
+        addp = '&col=node&value=%s&attribute=ip' % userid
+        url = self._xcat_url.gettab("/hosts", addp)
+        with zvmutils.expect_invalid_xcat_resp_data():
+            result = zvmutils.xcat_request("GET", url)
+            if (not result['data'] or
+                not result['data'][0]):
+                return None
+            else:
+                return result['data'][0][0]
 
-        self._preset_vm_network(userid, ip_addr)
+    def create_nic(self, userid, vdev=None, nic_id=None, ip_addr=None):
+        if nic_id is None:
+            raise exception.ZVMInvalidInput(
+                msg=("Nic identifier is required for xcat"))
+
+        exist_ip = self._get_host_ip(userid)
+        if exist_ip is None:
+            if ip_addr is None:
+                raise exception.ZVMInvalidInput(
+                    msg=("IP address is required for xcat"))
+            else:
+                self._preset_vm_network(userid, ip_addr)
 
         ports_info = self._get_nic_ids()
         vdev_info = []
         for p in ports_info:
             target_user = p.split(',')[0].strip('"')
-            vdev = p.split(',')[4].strip('"')
+            used_vdev = p.split(',')[4].strip('"')
             if target_user == userid:
-                vdev_info.append(vdev)
+                vdev_info.append(used_vdev)
 
         if len(vdev_info) == 0:
-            nic_vdev = CONF.zvm.default_nic_vdev
+            # no nic defined for the guest
+            if vdev is None:
+                nic_vdev = CONF.zvm.default_nic_vdev
+            else:
+                nic_vdev = vdev
         else:
-            used_vdev = max(vdev_info)
-            nic_vdev = str(hex(int(used_vdev, 16) + 3))[2:]
+            if vdev is None:
+                used_vdev = max(vdev_info)
+                nic_vdev = str(hex(int(used_vdev, 16) + 3))[2:]
+            else:
+                if (self._is_vdev_valid(vdev, vdev_info) is True):
+                    nic_vdev = vdev
+                else:
+                    raise exception.ZVMInvalidInput(
+                        msg=("The specified virtual device number "
+                             "has already been used"))
+        if len(nic_vdev) > 4:
+            raise exception.ZVMException(
+                        msg=("virtual device number is not valid "))
 
         zhcpnode = self._get_hcp_info()['nodename']
-        for nic_item in nic_info:
-            nic_id = nic_item['nic_id']
-            mac_addr = nic_item['mac_addr']
-            LOG.debug('Nic attributes: '
-                      'ID is %(id)s, address is %(address)s, '
-                      'vdev is %(vdev)s',
-                      {'id': nic_id, 'address': mac_addr,
-                      'vdev': nic_vdev})
-            self._create_nic(userid, nic_id, mac_addr,
-                             nic_vdev, zhcpnode)
-            nic_vdev = str(hex(int(nic_vdev, 16) + 3))[2:]
+        LOG.debug('Nic attributes: '
+                  'ID is %(id)s, vdev is %(vdev)s',
+                  {'id': nic_id, 'vdev': nic_vdev})
+        self._create_nic(userid, nic_id, nic_vdev, zhcpnode)
 
-    def _create_nic(self, userid, nic_id, mac_address, vdev, zhcpnode):
-        self._delete_mac(userid)
-        self._add_mac_table_record(userid, vdev, mac_address, zhcpnode)
+    def _is_vdev_valid(self, vdev, vdev_info):
+        for used_vdev in vdev_info:
+            max_used_vdev = str(hex(int(used_vdev, 16) + 2))[2:]
+            if ((int(vdev, 16) >= int(used_vdev, 16)) and
+                (int(vdev, 16) <= int(max_used_vdev, 16))):
+                return False
+
+        return True
+
+    def _create_nic(self, userid, nic_id, vdev, zhcpnode):
         self._add_switch_table_record(userid, nic_id, vdev, zhcpnode)
 
-        mac = ''.join(mac_address.split(':'))[6:]
         url = self._xcat_url.chvm('/' + userid)
         commands = ' '.join((
             'Image_Definition_Update_DM -T %s' % userid,
-            '-k \'NICDEF=VDEV=%s TYPE=QDIO' % vdev,
-            'MACID=%s\'' % mac))
+            '-k \'NICDEF=VDEV=%s TYPE=QDIO\'' % vdev))
         body = ['--smcli', commands]
 
         with zvmutils.expect_invalid_xcat_resp_data():
@@ -711,15 +741,9 @@ class XCATClient(ZVMClient):
                       {"vm_id": vm_id, "switch_dict": switch_dict})
             return switch_dict
 
-    def _config_xcat_mac(self, vm_id):
-        """Hook xCat to prevent assign MAC for instance."""
-        fake_mac_addr = "00:00:00:00:00:00"
-        nic_name = "fake"
-        self._add_mac_table_record(vm_id, nic_name, fake_mac_addr)
-
     def _add_host_table_record(self, vm_id, ip, host_name):
         """Add/Update hostname/ip bundle in xCAT MN nodes table."""
-        commands = ' '.join(("node=%s" % vm_id,
+        commands = ' '.join(("hosts.node=%s" % vm_id,
                              "hosts.ip=%s" % ip,
                              "hosts.hostnames=%s" % host_name))
         body = [commands]
@@ -737,7 +761,6 @@ class XCATClient(ZVMClient):
             zvmutils.xcat_request("PUT", url)['data']
 
     def _preset_vm_network(self, vm_id, ip_addr):
-        self._config_xcat_mac(vm_id)
         LOG.debug("Add ip/host name on xCAT MN for instance %s",
                   vm_id)
 
