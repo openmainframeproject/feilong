@@ -151,7 +151,17 @@ boolean = {
 
 
 rdev = {
-    'type': ['integer', 'string'],
+    'type': ['string'],
+}
+
+
+url = {
+    'type': ['string'],
+}
+
+
+remote_host = {
+    'type': ['string'],
 }
 
 

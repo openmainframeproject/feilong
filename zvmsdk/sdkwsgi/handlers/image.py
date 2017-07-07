@@ -32,13 +32,19 @@ class ImageAction(object):
 
     @validation.schema(image.create)
     def create(self, body):
-        pass
+        image = body['image']
+        url = image['url']
+
+        remote_host = image.get('remote_host', None)
+        image_meta = image.get('image_meta', None)
+
+        self.api.image_import(url, image_meta, remote_host)
 
     def get_root_disk_size(self, name):
         LOG.info('get root disk size')
 
     def delete(self, name):
-        LOG.info('image delete')
+        self.api.image_delete(name)
 
     def query(self, imagename):
         LOG.info('image query %s', imagename)
@@ -61,6 +67,10 @@ def image_create(req):
         action.create(body=body)
 
     _image_create(req)
+
+    req.response.status = 204
+    req.response.content_type = None
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
@@ -85,6 +95,10 @@ def image_delete(req):
 
     name = util.wsgi_path_item(req.environ, 'name')
     _image_delete(name)
+
+    req.response.status = 204
+    req.response.content_type = None
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify

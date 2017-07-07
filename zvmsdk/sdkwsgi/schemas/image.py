@@ -19,10 +19,12 @@ create = {
         'image': {
             'type': 'object',
             'properties': {
-                'uuid': parameter_types.name,
-                'version': parameter_types.name,
+                'url': parameter_types.url,
+                'remote_host': parameter_types.remote_host,
             },
-            'additionalProperties': False,
+            'required': ['url'],
+            # FIXME: image_meta will be added later
+            'additionalProperties': True,
         },
         'additionalProperties': False,
     },

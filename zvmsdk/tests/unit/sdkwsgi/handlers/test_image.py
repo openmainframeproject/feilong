@@ -25,10 +25,16 @@ from zvmsdk.sdkwsgi import util
 FAKE_UUID = '00000000-0000-0000-0000-000000000000'
 
 
+class FakeResp(object):
+    def __init__(self):
+        self.body = {}
+
+
 class FakeReq(object):
     def __init__(self):
         self.headers = {}
         self.environ = {}
+        self.response = FakeResp()
         self.__name__ = ''
 
     def __getitem__(self, name):
