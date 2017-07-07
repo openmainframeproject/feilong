@@ -1506,3 +1506,21 @@ class XCATClient(ZVMClient):
         url = self._xcat_url.tabch("/switch")
         body = [commands]
         zvmutils.xcat_request("PUT", url, body)
+
+    def run_commands_on_node(self, node, commands):
+        url = self._xcat_url.xdsh("/%s" % node)
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        data = []
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMException):
+            result = zvmutils.xcat_request("PUT", url, body)
+            if (result['errorcode'][0][0] != '0'):
+                raise exception.ZVMException(
+                    msg=("Failed to run command: %s on node %s, %s") %
+                        (commands, node, result['errorcode'][0][0]))
+            if (result['data'] and result['data'][0]):
+                data = '\n'.join([s for s in result['data'][0]
+                                if isinstance(s, unicode)])
+                data = data.split('\n')
+        return data
