@@ -395,7 +395,7 @@ class SDKAPI(object):
         """
         return self._networkops.get_vswitch_list()
 
-    @check_input_types(_TSTR, _TVSWNAME, _TSTR, int, int, int, int, int, int,
+    @check_input_types(_TVSWNAME, _TSTR, _TSTR, int, int, int, int, int, int,
                         int, int, int)
     def vswitch_create(self, name, rdev,
                        controller='*', connection=1,
