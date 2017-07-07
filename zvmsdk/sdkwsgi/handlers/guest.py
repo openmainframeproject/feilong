@@ -75,14 +75,14 @@ class VMHandler(object):
     def get(self, id):
         LOG.info('get definition %s', id)
 
-    def update(self, id, body):
+    def update(self, userid, body):
         pass
 
     def get_power_state(self, id):
         LOG.info('guest get power %s', id)
 
-    def delete(self, id):
-        LOG.info('guest delete %s', id)
+    def delete(self, userid):
+        self.api.guest_delete(userid)
 
     def get_nic_info(self, id):
         LOG.info('guest get nic info %s', id)
@@ -97,8 +97,19 @@ class VMHandler(object):
         LOG.info('guest get vnics info %s', userid_list)
 
     @validation.schema(guest.create_nic)
-    def create_nic(self, id, body=None):
-        LOG.info('create nic for %s', id)
+    def create_nic(self, userid, body=None):
+        nic = body['nic']
+
+        vdev = nic.get('vdev', None)
+        nic_id = nic.get('nic_id', None)
+        mac_addr = nic.get('mac_addr', None)
+        ip_addr = nic.get('ip_addr', None)
+        active = nic.get('active', False)
+        persist = nic.get('persist', True)
+
+        self.api.guest_create_nic(userid, vdev=vdev, nic_id=nic_id,
+            mac_addr=mac_addr, ip_addr=ip_addr, active=active,
+            persist=persist)
 
     @validation.schema(guest.couple_uncouple_nic)
     def couple_uncouple_nic(self, id, body=None):

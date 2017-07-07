@@ -22,14 +22,27 @@ class GuestHandlerTestCase(unittest.TestCase):
     def setUp(self):
         self.client = test_sdkwsgi.TestSDKClient()
 
-    def _test_guest_create(self):
-        body = '{"guest": {"name": "name1"}}'
+    def _guest_create(self):
+        body = """{"guest": {"userid": "RESTT100", "vcpus": 1,
+                             "memory": 1024}}"""
         resp = self.client.api_request(url='/guests', method='POST',
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
+        return resp
+
+    def _guest_delete(self):
+        resp = self.client.api_request(url='/guests/RESTT100',
+                                       method='DELETE')
+        self.assertEqual(200, resp.status_code)
+
+        return resp
+
+    def test_guest_create_delete(self):
+        self._guest_create()
+
     def test_guest_create_invalid_param(self):
-        body = '{"guest1": {"name": "name1"}}'
+        body = '{"guest1": {"userid": "name1"}}'
         resp = self.client.api_request(url='/guests', method='POST',
                                        body=body)
         self.assertEqual(400, resp.status_code)
