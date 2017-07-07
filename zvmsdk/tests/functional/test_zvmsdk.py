@@ -89,7 +89,6 @@ class SDKAPITestUtils(object):
         user_profile = CONF.zvm.user_profile
         nic_id = str(uuid.uuid1())
         mac_addr = self.generate_mac_addr()
-        nic_info = {'nic_id': nic_id, 'mac_addr': mac_addr}
         vdev = CONF.zvm.default_nic_vdev
         vswitch_name = CONF.tests.vswitch
         remote_host = zvmutils.get_host()
@@ -103,7 +102,7 @@ class SDKAPITestUtils(object):
         self.api.guest_create(userid, cpu, memory, disks_list, user_profile)
 
         # Setup network for vm
-        self.api.guest_create_nic(userid, [nic_info], ip_addr)
+        self.api.guest_create_nic(userid, nic_id=nic_id, ip_addr=ip_addr)
         self.api.guest_update_nic_definition(userid, vdev, mac_addr,
                                              vswitch_name)
         self.api.vswitch_grant_user(vswitch_name, userid)
