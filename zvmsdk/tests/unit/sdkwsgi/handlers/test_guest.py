@@ -103,47 +103,124 @@ class GuestActionsTest(SDKWSGITest):
 
 class HandlersGuestTest(SDKWSGITest):
 
-    @mock.patch.object(guest.VMHandler, 'create')
+    @mock.patch.object(api.SDKAPI, 'guest_create')
     def test_guest_create(self, mock_create):
-        body_str = '{"guest": {"name": "name1"}}'
+        body_str = '{"guest": {"userid": "name1", "vcpus": 1, "memory": 1}}'
         self.req.body = body_str
 
         guest.guest_create(self.req)
         body = util.extract_json(body_str)
-        mock_create.assert_called_once_with(body=body)
+        mock_create.assert_called_once_with('name1', 1, 1, disk_list=None,
+                                            user_profile=None)
 
     def test_guest_create_invalidname(self):
-        body_str = '{"guest": {"name": ""}}'
+        body_str = '{"guest": {"userid": ""}}'
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, guest.guest_create,
+                          self.req)
+
+    @mock.patch.object(api.SDKAPI, 'guest_create')
+    def test_guest_create_with_disk_list(self, mock_create):
+        body_str = """{"guest": {"userid": "name1", "vcpus": 1, "memory": 1,
+                                 "disk_list": [{"size": "1g"}]}}"""
+        self.req.body = body_str
+
+        guest.guest_create(self.req)
+        body = util.extract_json(body_str)
+        mock_create.assert_called_once_with('name1', 1, 1,
+                                            disk_list=[{u'size': u'1g'}],
+                                            user_profile=None)
+
+    def test_guest_create_invalid_disk_list(self):
+        body_str = """{"guest": {"userid": "name1", "vcpus": 1, "memory": 1,
+                                 "disk_list": [{"size": 1}]}}"""
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, guest.guest_create,
+                          self.req)
+
+    def test_guest_create_invalid_disk_list_param(self):
+        body_str = """{"guest": {"userid": "name1", "vcpus": 1, "memory": 1,
+                                 "disk_list": [{"size": "1g", "dummy": 1}]}}"""
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, guest.guest_create,
                           self.req)
 
     def test_guest_create_invalid_cpu(self):
-        body_str = '{"guest": {"name": "name1", "cpu": "dummy"}}'
+        body_str = '{"guest": {"userid": "name1", "vcpus": "dummy"}}'
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, guest.guest_create,
                           self.req)
 
     def test_guest_create_invalid_mem(self):
-        body_str = '{"guest": {"name": "name1", "memory": "dummy"}}'
+        body_str = '{"guest": {"userid": "name1", "memory": "dummy"}}'
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, guest.guest_create,
                           self.req)
 
     def test_guest_create_false_input(self):
-        body_str = '{"guest": {"name": "name1", "dummy": "dummy"}}'
+        body_str = '{"guest": {"userid": "name1", "dummy": "dummy"}}'
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, guest.guest_create,
                           self.req)
 
-        body_str = '{"guest": {"name": "name1"}, "dummy": "dummy"}'
+        body_str = '{"guest": {"userid": "name1"}, "dummy": "dummy"}'
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, guest.guest_create,
+                          self.req)
+
+    @mock.patch.object(api.SDKAPI, 'guest_deploy')
+    def test_guest_deploy(self, mock_deploy):
+        body_str = '{"guest": {"userid": "name1", "image_name": "i1"}}'
+        self.req.body = body_str
+
+        guest.guest_deploy(self.req)
+        body = util.extract_json(body_str)
+        mock_deploy.assert_called_once_with('name1', 'i1', remotehost=None,
+                                            transportfiles=None, vdev=None)
+
+    @mock.patch.object(api.SDKAPI, 'guest_deploy')
+    def test_guest_deploy_with_param(self, mock_deploy):
+        body_str = """{"guest": {"userid": "name1", "image_name": "i1",
+                               "remotehost": "r1", "vdev": "v1"}}"""
+        self.req.body = body_str
+
+        guest.guest_deploy(self.req)
+        body = util.extract_json(body_str)
+        mock_deploy.assert_called_once_with('name1', 'i1', remotehost='r1',
+                                            transportfiles=None, vdev='v1')
+
+    @mock.patch.object(api.SDKAPI, 'guest_deploy')
+    def test_guest_deploy_invalid_vdev(self, mock_deploy):
+        body_str = """{"guest": {"userid": "name1", "image_name": "i1",
+                               "remotehost": "r1", "vdev": 1}}"""
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, guest.guest_deploy,
+                          self.req)
+
+    @mock.patch.object(api.SDKAPI, 'guest_deploy')
+    def test_guest_deploy_no_userid(self, mock_deploy):
+        body_str = """{"guest": {"image_name": "i1",
+                                 "remotehost": "r1", "vdev": "v1"}}"""
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, guest.guest_deploy,
+                          self.req)
+
+    @mock.patch.object(api.SDKAPI, 'guest_deploy')
+    def test_guest_deploy_invalid_image_name(self, mock_deploy):
+        body_str = """{"guest": {"userid": "name1", "image_name": 1,
+                                 "remotehost": "r1", "vdev": "1"}}"""
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, guest.guest_deploy,
                           self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')

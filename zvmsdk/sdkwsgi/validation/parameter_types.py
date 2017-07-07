@@ -155,6 +155,11 @@ rdev = {
 }
 
 
+vdev = {
+    'type': ['string'],
+}
+
+
 url = {
     'type': ['string'],
 }
@@ -167,4 +172,20 @@ remote_host = {
 
 userid = {
     'type': ['string'],
+}
+
+
+disk_list = {
+    'type': 'array',
+    'items': {
+        'type': 'object',
+        'properties': {
+            'size': {'type': 'string'},
+            'format': {'type': 'string'},
+            'is_boot_disk': boolean,
+            'disk_pool': {'type': 'string'},
+        },
+        'required': ['size'],
+        'additionalProperties': False,
+    }
 }

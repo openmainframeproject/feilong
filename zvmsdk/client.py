@@ -362,6 +362,9 @@ class XCATClient(ZVMClient):
 #             body.append('password=LBYONLY')
 #             body.append('logonby=%s' % CONF.zvm.zvm_default_admin_userid)
 
+        if disk_list is None:
+            disk_list = []
+
         ipl_disk = None
         if disk_list and 'is_boot_disk' in disk_list[0]:
             ipl_disk = CONF.zvm.user_root_vdev
