@@ -44,6 +44,19 @@ def dummy(status, headerlist):
     pass
 
 
+class GuestActionNegativeTest(unittest.TestCase):
+
+    def setUp(self):
+        self.env = env
+
+    def test_guest_invalid_resource(self):
+        self.env['PATH_INFO'] = '/guests/1/action'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        self.assertRaises(webob.exc.HTTPMethodNotAllowed,
+                          h, self.env, dummy)
+
+
 class GuestHandlerNegativeTest(unittest.TestCase):
 
     def setUp(self):
