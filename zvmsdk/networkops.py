@@ -37,8 +37,12 @@ class NetworkOPS(object):
     def __init__(self):
         self.zvmclient = zvmclient.get_zvmclient()
 
-    def create_nic(self, vm_id, nic_info, ip_addr=None):
-        self.zvmclient.create_nic(vm_id, nic_info, ip_addr=ip_addr)
+    def create_nic(self, vm_id, vdev=None, nic_id=None,
+                   mac_addr=None, ip_addr=None, active=False,
+                   persist=True):
+        self.zvmclient.create_nic(vm_id, vdev=vdev, nic_id=nic_id,
+                                  mac_addr=mac_addr, ip_addr=ip_addr,
+                                  active=active, persist=persist)
 
     def get_vm_nic_switch_info(self, vm_id):
         return self.zvmclient.get_vm_nic_switch_info(vm_id)
