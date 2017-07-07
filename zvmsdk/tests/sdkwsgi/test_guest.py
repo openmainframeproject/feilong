@@ -45,9 +45,37 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
+    def _guest_get(self):
+        resp = self.client.api_request(url='/guests/RESTT100',
+                                       method='GET')
+        self.assertEqual(200, resp.status_code)
+        return resp
+
+    def _guest_get_info(self):
+        resp = self.client.api_request(url='/guests/RESTT100/info',
+                                       method='GET')
+        self.assertEqual(200, resp.status_code)
+        return resp
+
+    def _guest_get_power_state(self):
+        resp = self.client.api_request(url='/guests/RESTT100/power_state',
+                                       method='GET')
+        self.assertEqual(200, resp.status_code)
+        return resp
+
     def test_guest_create_delete(self):
         self._guest_create()
         self._guest_nic_create()
+
+        resp = self._guest_get()
+        print resp
+
+        resp = self._guest_get_info()
+        print resp
+
+        resp = self._guest_get_power_state()
+        print resp
+
         self._guest_delete()
 
     def test_guest_create_invalid_param(self):

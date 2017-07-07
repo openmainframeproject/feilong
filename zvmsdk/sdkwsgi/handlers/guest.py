@@ -72,17 +72,20 @@ class VMHandler(object):
         guests = self.api.host_list_guests()
         return guests
 
-    def get_info(self, id):
-        LOG.info('guest get info %s', id)
+    def get_info(self, userid):
+        info = self.api.guest_get_info()
+        return info
 
     def get(self, id):
-        LOG.info('get definition %s', id)
+        definition = self.api.guest_get_definition_info()
+        return definition
 
     def update(self, userid, body):
         pass
 
     def get_power_state(self, id):
-        LOG.info('guest get power %s', id)
+        state = self.api.guest_get_power_state()
+        return state
 
     def delete(self, userid):
         self.api.guest_delete(userid)
@@ -169,10 +172,15 @@ def guest_get_info(req):
 
     def _guest_get_info(uuid):
         action = get_handler()
-        action.get_info(uuid)
+        return action.get_info(uuid)
 
     uuid = util.wsgi_path_item(req.environ, 'uuid')
-    _guest_get_info(uuid)
+    info = _guest_get_info(uuid)
+
+    info_json = json.dumps({'info': info})
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
@@ -181,10 +189,15 @@ def guest_get(req):
 
     def _guest_get(uuid):
         action = get_handler()
-        action.get(uuid)
+        return action.get(uuid)
 
     uuid = util.wsgi_path_item(req.environ, 'uuid')
-    _guest_get(uuid)
+    info = _guest_get(uuid)
+
+    info_json = json.dumps({'definition': info})
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
@@ -193,10 +206,15 @@ def guest_get_power_state(req):
 
     def _guest_get_power_state(uuid):
         action = get_handler()
-        action.get_power_state(uuid)
+        return action.get_power_state(uuid)
 
     uuid = util.wsgi_path_item(req.environ, 'uuid')
-    _guest_get_power_state(uuid)
+    info = _guest_get_power_state(uuid)
+
+    info_json = json.dumps({'power_state': info})
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
