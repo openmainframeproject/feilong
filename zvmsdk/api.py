@@ -60,6 +60,13 @@ def check_input_types(*types, **validkeys):
                 return function(*args, **kwargs)
             # drop class object self
             inputs = args[1:]
+            if (len(inputs) > len(types)):
+                msg = ("Too many parameters provided: %(specified)d specified,"
+                       "%(expected)d expected." %
+                       {'specified': len(inputs), 'expected': len(types)})
+                LOG.info(msg)
+                raise exception.ZVMInvalidInput(msg=msg)
+
             argtypes = tuple(map(type, inputs))
             match_types = types[0:len(argtypes)]
 
