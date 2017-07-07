@@ -287,22 +287,30 @@ class SDKAPI(object):
         return self._vmops.guest_deploy(userid, image_name,
                                         transportfiles, remotehost, vdev)
 
-    @check_input_types(_TUSERID, list, _TSTR_OR_NONE)
-    def guest_create_nic(self, userid, nic_info, ip_addr=None):
+    @check_input_types(_TUSERID, _TSTR_OR_NONE, _TSTR_OR_NONE,
+                       _TSTR_OR_NONE, _TSTR_OR_NONE, bool, bool)
+    def guest_create_nic(self, userid, vdev=None, nic_id=None,
+                         mac_addr=None, ip_addr=None, active=False,
+                         persist=True):
         """ Create the nic for the vm, add NICDEF record into the user direct.
 
         :param str vm_id: the user id of the vm
-        :param list nic_info: the list used to contain nic info,
-               including nic id and mac address
-               format sample: [{'nic_id': XXX, 'mac_addr': YYY}]
-        :param str ip_addr: IP address of the vm
+        :param str vdev: nic device number, 1- to 4- hexadecimal digits
+        :param str nic_id: nic identifier
+        :param str mac_addr: mac address, it is only be used when changing
+               the guest's user direct
+        :param str ip_addr: the management IP address of the guest
+        :param bool active: whether add a nic on an active guest
+        :param bool persist: whether keep the change in the permanent
+               configuration for the guest
 
         """
-        if len(nic_info) == 0:
-            msg = ("no nic info is provided to create nic")
-            raise exception.ZVMInvalidInput(msg)
-
-        self._networkops.create_nic(userid, nic_info, ip_addr=ip_addr)
+        if (not active) and (not persist):
+            raise exception.ZVMInvalidInput(
+                msg=("Need to specify how to add a nic to the guest"))
+        self._networkops.create_nic(userid, vdev=vdev, nic_id=nic_id,
+                                    mac_addr=mac_addr, ip_addr=ip_addr,
+                                    active=active, persist=persist)
 
     @check_input_types(_TUSERID)
     def guest_get_nic_vswitch_info(self, userid):
@@ -369,7 +377,7 @@ class SDKAPI(object):
         """ Couple nic device to specified vswitch.
 
         :param str vswitch_name: the name of the vswitch
-        :param str nic_vdev: nic device number
+        :param str nic_vdev: nic device number, 1- to 4- hexadecimal digits
         :param str userid: the user's name who owns the port
         :param bool persist: whether keep the change in the permanent
                configuration for the system
@@ -384,7 +392,7 @@ class SDKAPI(object):
         """ Couple nic device to specified vswitch.
 
         :param str vswitch_name: the name of the vswitch
-        :param str nic_vdev: nic device number
+        :param str nic_vdev: nic device number, 1- to 4- hexadecimal digits
         :param str userid: the user's name who owns the port
         :param bool persist: whether keep the change in the permanent
                configuration for the system
@@ -633,7 +641,7 @@ class SDKAPI(object):
                                     switch_name):
         """ add nic and coupled network info into the user direct.
         :param str userid: the user id of the vm
-        :param str nic_vdev: nic device number
+        :param str nic_vdev: nic device number, 1- to 4- hexadecimal digits
         :param str mac: mac address
         :param str switch_name: the network name
         """
