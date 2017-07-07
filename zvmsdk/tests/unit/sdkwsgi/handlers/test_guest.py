@@ -36,11 +36,17 @@ class FakeReqGet(object):
         return ['userid']
 
 
+class FakeResp(object):
+    def __init__(self):
+        self.body = {}
+
+
 class FakeReq(object):
     def __init__(self):
         self.headers = {}
         self.environ = {}
         self.body = {}
+        self.response = FakeResp()
         self.__name__ = ''
 
     def __getitem__(self, name):
@@ -220,6 +226,7 @@ class HandlersGuestTest(SDKWSGITest):
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get_info')
     def test_guest_get_info(self, mock_get, mock_uuid):
+        mock_get.return_value = ''
         mock_uuid.return_value = FAKE_UUID
 
         guest.guest_get_info(self.req)
@@ -228,6 +235,7 @@ class HandlersGuestTest(SDKWSGITest):
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get_power_state')
     def test_guest_power_state(self, mock_get, mock_uuid):
+        mock_get.return_value = ''
         mock_uuid.return_value = FAKE_UUID
 
         guest.guest_get_power_state(self.req)
@@ -278,6 +286,7 @@ class HandlersGuestTest(SDKWSGITest):
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get')
     def test_guest_get(self, mock_get, mock_uuid):
+        mock_get.return_value = ''
         mock_uuid.return_value = FAKE_UUID
 
         guest.guest_get(self.req)

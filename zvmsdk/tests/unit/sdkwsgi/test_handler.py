@@ -109,6 +109,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_info') \
             as get_info:
+            get_info.return_value = ''
             h(self.env, dummy)
 
             get_info.assert_called_once_with('1')
@@ -120,6 +121,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get'
         with mock.patch(func) as get:
+            get.return_value = ''
             h(self.env, dummy)
 
             get.assert_called_once_with('1')
@@ -143,6 +145,7 @@ class GuestHandlerTest(unittest.TestCase):
         function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler'\
                    '.get_power_state'
         with mock.patch(function) as get_power:
+            get_power.return_value = ''
             h(self.env, dummy)
 
             get_power.assert_called_once_with('1')

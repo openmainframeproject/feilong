@@ -45,9 +45,34 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
+    def _guest_get(self):
+        resp = self.client.api_request(url='/guests/RESTT100',
+                                       method='GET')
+        self.assertEqual(200, resp.status_code)
+        return resp
+
+    def _guest_get_info(self):
+        resp = self.client.api_request(url='/guests/RESTT100/info',
+                                       method='GET')
+        self.assertEqual(200, resp.status_code)
+        return resp
+
+    def _guest_get_power_state(self):
+        resp = self.client.api_request(url='/guests/RESTT100/power_state',
+                                       method='GET')
+        self.assertEqual(200, resp.status_code)
+        return resp
+
     def test_guest_create_delete(self):
         self._guest_create()
         self._guest_nic_create()
+
+        self._guest_get()
+
+        self._guest_get_info()
+
+        self._guest_get_power_state()
+
         self._guest_delete()
 
     def test_guest_create_invalid_param(self):
@@ -55,16 +80,6 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self.client.api_request(url='/guests', method='POST',
                                        body=body)
         self.assertEqual(400, resp.status_code)
-
-    def test_guest_create_nic_invalid_param(self):
-        body = '{"nic1": {"nic_info": [{"nic_id": "c"}]}}'
-        resp = self.client.api_request(url='/guests/1/nic', method='POST',
-                                       body=body)
-        self.assertEqual(400, resp.status_code)
-
-    def test_guest_get_nic(self):
-        resp = self.client.api_request(url='/guests/1/nic', method='GET')
-        self.assertEqual(200, resp.status_code)
 
     def test_guest_list(self):
         resp = self.client.api_request(url='/guests')
@@ -93,15 +108,6 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self.client.api_request(url='/guests/1/nic', method='PUT',
                                        body=body)
         self.assertEqual(400, resp.status_code)
-
-    def test_guest_get_info(self):
-        resp = self.client.api_request(url='/guests/1/info', method='GET')
-        self.assertEqual(200, resp.status_code)
-
-    def test_guest_get_power_state(self):
-        resp = self.client.api_request(url='/guests/1/power_state',
-                                       method='GET')
-        self.assertEqual(200, resp.status_code)
 
 
 class GuestActionTestCase(unittest.TestCase):
