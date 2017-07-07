@@ -20,8 +20,9 @@ create = {
             'type': 'object',
             'properties': {
                 'name': parameter_types.name,
-                'rdev': parameter_types.positive_integer,
+                'rdev': parameter_types.rdev,
             },
+            'required': ['name', 'rdev'],
             'additionalProperties': False,
         },
         'additionalProperties': False,

@@ -40,10 +40,14 @@ class VswitchAction(object):
 
     @validation.schema(vswitch.create)
     def create(self, body):
-        LOG.info('create vswitch')
+        vsw = body['vswitch']
+        name = vsw['name']
+        rdev = vsw['rdev']
+
+        self.api.vswitch_create(name, rdev)
 
     def delete(self, name):
-        pass
+        self.api.vswitch_delete(name)
 
 
 def get_action():
@@ -79,6 +83,10 @@ def vswitch_create(req):
 
     _vswitch_create(req)
 
+    req.response.status = 204
+    req.response.content_type = None
+    return req.response
+
 
 @wsgi_wrapper.SdkWsgify
 @tokens.validate
@@ -91,3 +99,7 @@ def vswitch_delete(req):
 
     name = util.wsgi_path_item(req.environ, 'name')
     _vswitch_delete(name)
+
+    req.response.status = 204
+    req.response.content_type = None
+    return req.response

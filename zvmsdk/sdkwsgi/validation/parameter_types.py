@@ -148,3 +148,8 @@ boolean = {
              False, 'False', 'FALSE', 'false', '0', 'OFF', 'Off', 'off',
              'NO', 'No', 'no'],
 }
+
+
+rdev = {
+    'type': ['integer', 'string'],
+}

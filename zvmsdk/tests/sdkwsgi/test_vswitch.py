@@ -8,6 +8,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import unittest
 
 from zvmsdk.tests.sdkwsgi import api_sample
@@ -27,16 +28,35 @@ class VSwitchTestCase(unittest.TestCase):
     def setUp(self):
         self.client = test_sdkwsgi.TestSDKClient()
 
-    def test_vswitch_list(self):
-        resp = self.client.api_request(url='/vswitchs')
+    def _vswitch_list(self):
+        resp = self.client.api_request(url='/vswitchs', method='GET')
         self.assertEqual(200, resp.status_code)
+
+        return resp
+
+    def _test_vswitch_list(self):
+        resp = self._vswitch_list()
         self.apibase.verify_result('test_vswitch_get', resp.content)
 
-    def test_vswitch_create(self):
-        body = '{"vswitch": {"name": "v1"}}'
+    def test_vswitch_create_delete(self):
+        body = '{"vswitch": {"name": "FVTVSW01", "rdev": "FF00"}}'
         resp = self.client.api_request(url='/vswitchs', method='POST',
                                        body=body)
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(204, resp.status_code)
+
+        resp = self._vswitch_list()
+        vswlist = json.loads(resp.content)['vswlist']
+        inlist = 'FVTVSW01' in vswlist
+        self.assertTrue(inlist)
+
+        resp = self.client.api_request(url='/vswitchs/fvtvsw01',
+                                       method='DELETE')
+        self.assertEqual(204, resp.status_code)
+
+        resp = self._vswitch_list()
+        vswlist = json.loads(resp.content)['vswlist']
+        inlist = 'FVTVSW01' in vswlist
+        self.assertFalse(inlist)
 
     def test_vswitch_create_invalid_body(self):
         body = '{"vswitch": {"v1": "v1"}}'
