@@ -656,14 +656,16 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         # TODO:moving to vmops and change name to ''
         pass
 
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_create_xcat_node(self, xrequest):
+    def test_create_xcat_node(self, xrequest, ghi):
         fake_userid = 'userid'
         fake_url = self._xcat_url.mkdef('/' + fake_userid)
         fake_body = ['userid=%s' % fake_userid,
-                'hcp=%s' % CONF.xcat.zhcp,
+                'hcp=%s' % 'fakehcp',
                 'mgt=zvm',
                 'groups=%s' % const.ZVM_XCAT_GROUP]
+        ghi.return_value = {'hostname': 'fakehcp'}
 
         self._zvmclient.create_xcat_node(fake_userid)
         xrequest.assert_called_once_with("POST", fake_url, fake_body)

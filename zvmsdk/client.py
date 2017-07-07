@@ -428,8 +428,9 @@ class XCATClient(ZVMClient):
     def create_xcat_node(self, userid):
         """Create xCAT node for z/VM instance."""
         LOG.debug("Creating xCAT node for %s" % userid)
+        hcp_hostname = self._get_hcp_info()['hostname']
         body = ['userid=%s' % userid,
-                'hcp=%s' % CONF.xcat.zhcp,
+                'hcp=%s' % hcp_hostname,
                 'mgt=zvm',
                 'groups=%s' % const.ZVM_XCAT_GROUP]
         url = self._xcat_url.mkdef('/' + userid)
