@@ -34,7 +34,6 @@ LOG = log.LOG
 class VMHandler(object):
     def __init__(self):
         self.api = api.SDKAPI(skip_input_check=True)
-        pass
 
     @validation.schema(guest.create)
     def create(self, body):
@@ -136,20 +135,23 @@ class VMHandler(object):
 
 
 class VMAction(object):
-    def start(self, id):
-        LOG.info('start guest %s', id)
+    def __init__(self):
+        self.api = api.SDKAPI(skip_input_check=True)
 
-    def stop(self, id):
-        LOG.info('stop guest %s', id)
+    def start(self, userid):
+        self.api.guest_start(userid)
 
-    def pause(self, id):
-        LOG.info('pause guest %s', id)
+    def stop(self, userid):
+        self.api.guest_stop(userid)
 
-    def unpause(self, id):
-        LOG.info('unpause guest %s', id)
+    def pause(self, userid):
+        self.api.guest_pause(userid)
 
-    def get_conole_output(self, id):
-        LOG.info('get console %s', id)
+    def unpause(self, userid):
+        self.api.guest_pause(userid)
+
+    def get_conole_output(self, userid):
+        self.api.guest_get_console_output(userid)
 
 
 def get_action():
@@ -288,8 +290,8 @@ def guest_action(req):
             if func:
                 func(uuid)
             else:
-                LOG.info('action %s is invalid', method)
-                raise webob.exc.HTTPBadRequest()
+                msg = 'action %s is invalid' % method
+                raise webob.exc.HTTPBadRequest(msg)
 
     uuid = util.wsgi_path_item(req.environ, 'uuid')
     _guest_action(uuid, req)
