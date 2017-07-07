@@ -63,17 +63,49 @@ class GuestHandlerTestCase(unittest.TestCase):
         self.assertEqual(200, resp.status_code)
         return resp
 
+    def _guest_action(self, body):
+        resp = self.client.api_request(url='/guests/RESTT1000/action',
+                                       method='POST', body=body)
+        self.assertEqual(200, resp.status_code)
+        return resp
+
+    def _guest_start(self):
+        body = {'start': ''}
+        return self._guest_action(body)
+
+    def _guest_stop(self):
+        body = {'stop': ''}
+        return self._guest_action(body)
+
+    def _guest_pause(self):
+        body = {'pause': ''}
+        return self._guest_action(body)
+
+    def _guest_unpause(self):
+        body = {'unpause': ''}
+        return self._guest_action(body)
+
     def test_guest_create_delete(self):
         self._guest_create()
-        self._guest_nic_create()
 
-        self._guest_get()
+        try:
+            self._guest_nic_create()
 
-        self._guest_get_info()
+            self._guest_get()
 
-        self._guest_get_power_state()
+            self._guest_get_info()
 
-        self._guest_delete()
+            self._guest_get_power_state()
+
+            self._guest_pause()
+            self._guest_unpause()
+
+            self._guest_stop()
+            self._guest_start()
+        except Exception as e:
+            raise e
+        finally:
+            self._guest_delete()
 
     def test_guest_create_invalid_param(self):
         body = '{"guest1": {"userid": "name1"}}'
@@ -116,36 +148,6 @@ class GuestActionTestCase(unittest.TestCase):
 
     def setUp(self):
         self.client = test_sdkwsgi.TestSDKClient()
-
-    def test_guest_start(self):
-        body = '{"start": "none"}'
-        resp = self.client.api_request(url='/guests/1/action', method='POST',
-                                       body=body)
-        self.assertEqual(200, resp.status_code)
-
-    def test_guest_stop(self):
-        body = '{"stop": "none"}'
-        resp = self.client.api_request(url='/guests/1/action', method='POST',
-                                       body=body)
-        self.assertEqual(200, resp.status_code)
-
-    def test_guest_pause(self):
-        body = '{"pause": "none"}'
-        resp = self.client.api_request(url='/guests/1/action', method='POST',
-                                       body=body)
-        self.assertEqual(200, resp.status_code)
-
-    def test_guest_unpause(self):
-        body = '{"unpause": "none"}'
-        resp = self.client.api_request(url='/guests/1/action', method='POST',
-                                       body=body)
-        self.assertEqual(200, resp.status_code)
-
-    def test_guest_get_console_output(self):
-        body = '{"get_conole_output": "none"}'
-        resp = self.client.api_request(url='/guests/1/action', method='POST',
-                                       body=body)
-        self.assertEqual(200, resp.status_code)
 
     def test_guest_action_invalid_body(self):
         body = '{"dummy": "none"}'
