@@ -176,12 +176,12 @@ def get_handler():
 @tokens.validate
 def guest_get_info(req):
 
-    def _guest_get_info(uuid):
+    def _guest_get_info(userid):
         action = get_handler()
-        return action.get_info(uuid)
+        return action.get_info(userid)
 
-    uuid = util.wsgi_path_item(req.environ, 'uuid')
-    info = _guest_get_info(uuid)
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _guest_get_info(userid)
 
     info_json = json.dumps({'info': info})
     req.response.body = utils.to_utf8(info_json)
@@ -193,12 +193,12 @@ def guest_get_info(req):
 @tokens.validate
 def guest_get(req):
 
-    def _guest_get(uuid):
+    def _guest_get(userid):
         action = get_handler()
-        return action.get(uuid)
+        return action.get(userid)
 
-    uuid = util.wsgi_path_item(req.environ, 'uuid')
-    info = _guest_get(uuid)
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _guest_get(userid)
 
     info_json = json.dumps({'definition': info})
     req.response.body = utils.to_utf8(info_json)
@@ -210,12 +210,12 @@ def guest_get(req):
 @tokens.validate
 def guest_get_power_state(req):
 
-    def _guest_get_power_state(uuid):
+    def _guest_get_power_state(userid):
         action = get_handler()
-        return action.get_power_state(uuid)
+        return action.get_power_state(userid)
 
-    uuid = util.wsgi_path_item(req.environ, 'uuid')
-    info = _guest_get_power_state(uuid)
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _guest_get_power_state(userid)
 
     info_json = json.dumps({'power_state': info})
     req.response.body = utils.to_utf8(info_json)
@@ -253,15 +253,15 @@ def guest_deploy(req):
 @tokens.validate
 def guest_update(req):
 
-    def _guest_update(uuid, body):
+    def _guest_update(userid, body):
         action = get_handler()
 
-        action.update(uuid, body)
+        action.update(userid, body)
 
-    uuid = util.wsgi_path_item(req.environ, 'uuid')
+    userid = util.wsgi_path_item(req.environ, 'userid')
     body = util.extract_json(req.body)
 
-    _guest_update(uuid, body)
+    _guest_update(userid, body)
 
 
 @wsgi_wrapper.SdkWsgify
@@ -282,7 +282,7 @@ def guest_list(req):
 @tokens.validate
 def guest_action(req):
 
-    def _guest_action(uuid, req):
+    def _guest_action(userid, req):
         action = get_action()
         data = util.extract_json(req.body)
         if len(data) == 0:
@@ -292,65 +292,65 @@ def guest_action(req):
         for method, parm in data.items():
             func = getattr(action, method, None)
             if func:
-                func(uuid)
+                func(userid)
             else:
                 msg = 'action %s is invalid' % method
                 raise webob.exc.HTTPBadRequest(msg)
 
-    uuid = util.wsgi_path_item(req.environ, 'uuid')
-    _guest_action(uuid, req)
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    _guest_action(userid, req)
 
 
 @wsgi_wrapper.SdkWsgify
 @tokens.validate
 def guest_delete(req):
 
-    def _guest_delete(uuid):
+    def _guest_delete(userid):
         action = get_handler()
-        action.delete(uuid)
+        action.delete(userid)
 
-    uuid = util.wsgi_path_item(req.environ, 'uuid')
-    _guest_delete(uuid)
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    _guest_delete(userid)
 
 
 @wsgi_wrapper.SdkWsgify
 @tokens.validate
 def guest_get_nic_info(req):
 
-    def _guest_get_nic_info(uuid):
+    def _guest_get_nic_info(userid):
         action = get_handler()
-        action.get_nic_info(uuid)
+        action.get_nic_info(userid)
 
-    uuid = util.wsgi_path_item(req.environ, 'uuid')
-    _guest_get_nic_info(uuid)
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    _guest_get_nic_info(userid)
 
 
 @wsgi_wrapper.SdkWsgify
 @tokens.validate
 def guest_create_nic(req):
 
-    def _guest_create_nic(uuid, req):
+    def _guest_create_nic(userid, req):
         action = get_handler()
         body = util.extract_json(req.body)
 
-        action.create_nic(uuid, body=body)
+        action.create_nic(userid, body=body)
 
-    uuid = util.wsgi_path_item(req.environ, 'uuid')
-    _guest_create_nic(uuid, req)
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    _guest_create_nic(userid, req)
 
 
 @wsgi_wrapper.SdkWsgify
 @tokens.validate
 def guest_couple_uncouple_nic(req):
 
-    def _guest_couple_uncouple_nic(uuid, req):
+    def _guest_couple_uncouple_nic(userid, req):
         action = get_handler()
         body = util.extract_json(req.body)
 
-        action.couple_uncouple_nic(uuid, body=body)
+        action.couple_uncouple_nic(userid, body=body)
 
-    uuid = util.wsgi_path_item(req.environ, 'uuid')
-    _guest_couple_uncouple_nic(uuid, req)
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    _guest_couple_uncouple_nic(userid, req)
 
 
 def _get_userid_list(req):
