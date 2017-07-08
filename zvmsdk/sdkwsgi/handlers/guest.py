@@ -93,13 +93,13 @@ class VMHandler(object):
         LOG.info('guest get nic info %s', id)
 
     def get_cpu_info(self, userid_list):
-        LOG.info('guest get cpu info %s', userid_list)
+        return self.api.guest_inspect_cpus(userid_list)
 
     def get_memory_info(self, userid_list):
-        LOG.info('guest get memory info %s', userid_list)
+        return self.api.guest_inspect_mem(userid_list)
 
     def get_vnics_info(self, userid_list):
-        LOG.info('guest get vnics info %s', userid_list)
+        return self.api.guest_inspect_vnics(userid_list)
 
     @validation.schema(guest.create_nic)
     def create_nic(self, userid, body=None):
@@ -117,8 +117,7 @@ class VMHandler(object):
             persist=persist)
 
     @validation.schema(guest.couple_uncouple_nic)
-    def couple_uncouple_nic(self, id, body=None):
-        LOG.info('couple uncouple nic %s', id)
+    def couple_uncouple_nic(self, userid, body=None):
         info = body['info']
 
         persist = info.get('persist', True)
@@ -128,10 +127,10 @@ class VMHandler(object):
 
         if couple:
             self.api.guest_nic_couple_to_vswitch(info['vswitch'],
-                info['port'], id, persist=persist)
+                info['port'], userid, persist=persist)
         else:
             self.api.guest_nic_uncouple_from_vswitch(info['vswitch'],
-                info['port'], id, persist=persist)
+                info['port'], userid, persist=persist)
 
 
 class VMAction(object):
