@@ -19,6 +19,15 @@ class GuestHandlerTestCase(unittest.TestCase):
         super(GuestHandlerTestCase, self).__init__(methodName)
         self.apibase = api_sample.APITestBase()
 
+        self._cleanup()
+
+    def _cleanup(self):
+        self.client.api_request(url='/guests/RESTT100',
+                                method='DELETE')
+
+        self.client.api_request(url='/vswitchs/restvsw1',
+                                method='DELETE')
+
     def setUp(self):
         self.client = test_sdkwsgi.TestSDKClient()
 

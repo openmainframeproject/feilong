@@ -25,6 +25,12 @@ class VSwitchTestCase(unittest.TestCase):
         super(VSwitchTestCase, self).__init__(methodName)
         self.apibase = api_sample.APITestBase()
 
+        self._cleanup()
+
+    def _cleanup(self):
+        self.client.api_request(url='/vswitchs/fvtvsw01',
+                                method='DELETE')
+
     def setUp(self):
         self.client = test_sdkwsgi.TestSDKClient()
 
@@ -39,17 +45,17 @@ class VSwitchTestCase(unittest.TestCase):
         self.apibase.verify_result('test_vswitch_get', resp.content)
 
     def test_vswitch_create_delete(self):
-        body = '{"vswitch": {"name": "FVTVSW01", "rdev": "FF00"}}'
+        body = '{"vswitch": {"name": "RESTVSW1", "rdev": "FF00"}}'
         resp = self.client.api_request(url='/vswitchs', method='POST',
                                        body=body)
         self.assertEqual(204, resp.status_code)
 
         resp = self._vswitch_list()
         vswlist = json.loads(resp.content)['vswlist']
-        inlist = 'FVTVSW01' in vswlist
+        inlist = 'RESTVSW1' in vswlist
         self.assertTrue(inlist)
 
-        resp = self.client.api_request(url='/vswitchs/fvtvsw01',
+        resp = self.client.api_request(url='/vswitchs/restvsw1',
                                        method='DELETE')
         self.assertEqual(204, resp.status_code)
 
@@ -65,11 +71,11 @@ class VSwitchTestCase(unittest.TestCase):
         self.assertEqual(204, resp.status_code)
 
         body = '{"vswitch": {"grant_userid": "FVTUSER1"}}'
-        resp = self.client.api_request(url='/vswitchs/FVTVSW01',
+        resp = self.client.api_request(url='/vswitchs/RESTVSW1',
                                        method='PUT', body=body)
         self.assertEqual(200, resp.status_code)
 
-        resp = self.client.api_request(url='/vswitchs/fvtvsw01',
+        resp = self.client.api_request(url='/vswitchs/RESTVSW1',
                                        method='DELETE')
         self.assertEqual(204, resp.status_code)
 
