@@ -117,8 +117,7 @@ class VMHandler(object):
             persist=persist)
 
     @validation.schema(guest.couple_uncouple_nic)
-    def couple_uncouple_nic(self, id, body=None):
-        LOG.info('couple uncouple nic %s', id)
+    def couple_uncouple_nic(self, userid, body=None):
         info = body['info']
 
         persist = info.get('persist', True)
@@ -128,10 +127,10 @@ class VMHandler(object):
 
         if couple:
             self.api.guest_nic_couple_to_vswitch(info['vswitch'],
-                info['port'], id, persist=persist)
+                info['port'], userid, persist=persist)
         else:
             self.api.guest_nic_uncouple_from_vswitch(info['vswitch'],
-                info['port'], id, persist=persist)
+                info['port'], userid, persist=persist)
 
 
 class VMAction(object):
