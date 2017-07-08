@@ -38,8 +38,9 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         return resp
 
-    def _guest_nic_create(self):
-        body = '{"nic": {}}'
+    def _guest_nic_create(self, vdev="1000"):
+        body = '{"nic": {"vdev": "%s"}}' % vdev
+
         resp = self.client.api_request(url='/guests/RESTT100/nic',
                                        method='POST',
                                        body=body)
@@ -116,24 +117,58 @@ class GuestHandlerTestCase(unittest.TestCase):
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_guests_list', resp.content)
 
-    # FIXME after function test ready
-    def _test_guest_couple_uncouple(self):
-        body = '{"info": {"couple": "True", "vswitch": "v1", "port": "p1"}'
-        resp = self.client.api_request(url='/guests/1/nic', method='PUT',
+    def _vswitch_create(self):
+        body = '{"vswitch": {"name": "RESTVSW1", "rdev": "FF00"}}'
+        resp = self.client.api_request(url='/vswitchs', method='POST',
+                                       body=body)
+        self.assertEqual(204, resp.status_code)
+
+    def _vswitch_delete(self):
+        resp = self.client.api_request(url='/vswitchs/restvsw1',
+                                       method='DELETE')
+        self.assertEqual(204, resp.status_code)
+
+    def _vswitch_couple(self):
+        body = """{"info": {"couple": "True", "vswitch": "RESTVSW1",
+                   "vdev": "2000"}}"""
+        resp = self.client.api_request(url='/guests/RESTT100/nic',
+                                       method='PUT',
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
-        body = '{"info": {"couple": "False", "vswitch": "v1", "port": "p1"}'
-        resp = self.client.api_request(url='/guests/1/nic', method='PUT',
+    def _vswitch_uncouple(self):
+        body = """{"info": {"couple": "False", "vswitch": "RESTVSW1",
+                   "vdev": "2000"}}"""
+        resp = self.client.api_request(url='/guests/RESTT100/nic',
+                                       method='PUT',
                                        body=body)
         self.assertEqual(200, resp.status_code)
+
+    def test_guest_vswitch_couple_uncouple(self):
+        self._guest_create()
+
+        try:
+            self._guest_nic_create("2000")
+
+            self._vswitch_create()
+
+            self._vswitch_couple()
+
+            self._vswitch_uncouple()
+
+        except Exception as e:
+            raise e
+        finally:
+            self._guest_delete()
+            self._vswitch_delete()
 
     def test_guest_couple_uncouple_invalid(self):
-        body = '{"info1": {"couple": "True", "vswitch": "v1", "port": "p1"}'
+        body = '{"info1": {"couple": "True", "vswitch": "v1", "vdev": "p1"}'
         resp = self.client.api_request(url='/guests/1/nic', method='PUT',
                                        body=body)
         self.assertEqual(400, resp.status_code)
 
+        # missing vdev
         body = '{"info": {"couple": "False", "vswitch": "v1"}'
         resp = self.client.api_request(url='/guests/1/nic', method='PUT',
                                        body=body)

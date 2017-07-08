@@ -92,10 +92,10 @@ couple_uncouple_nic = {
             'properties': {
                 'couple': parameter_types.boolean,
                 'vswitch': parameter_types.name,
-                'port': parameter_types.name,
+                'vdev': parameter_types.vdev,
                 'persist': parameter_types.boolean,
             },
-            'required': ['couple', 'vswitch', 'port'],
+            'required': ['couple', 'vswitch', 'vdev'],
             'additionalProperties': False,
         },
         'additionalProperties': False,
