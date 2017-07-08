@@ -108,6 +108,10 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             self._guest_get_power_state()
 
+            resp = self.client.api_request(url='/guests/cpuinfo?userid=RESTT100',
+                                           method='GET')
+            self.assertEqual(200, resp.status_code)
+
             self._guest_stop()
             self._guest_start()
 
