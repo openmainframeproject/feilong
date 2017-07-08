@@ -96,6 +96,21 @@ class GuestHandlerTestCase(unittest.TestCase):
         body = '{"unpause": "none"}'
         return self._guest_action(body)
 
+    def _guest_cpuinfo(self):
+        resp = self.client.api_request(url='/guests/cpuinfo?userid=RESTT100',
+                                       method='GET')
+        self.assertEqual(200, resp.status_code)
+
+    def _guest_meminfo(self):
+        resp = self.client.api_request(url='/guests/meminfo?userid=RESTT100',
+                                       method='GET')
+        self.assertEqual(200, resp.status_code)
+
+    def _guest_vnicsinfo(self):
+        resp = self.client.api_request(url='/guests/vnicsinfo?userid=RESTT100',
+                                       method='GET')
+        self.assertEqual(200, resp.status_code)
+
     def test_guest_create_delete(self):
         self._guest_create()
 
@@ -107,6 +122,10 @@ class GuestHandlerTestCase(unittest.TestCase):
             self._guest_get_info()
 
             self._guest_get_power_state()
+
+            self._guest_cpuinfo()
+            self._guest_meminfo()
+            self._guest_vnicsinfo()
 
             self._guest_stop()
             self._guest_start()
