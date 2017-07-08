@@ -29,8 +29,7 @@ class VSwitchTestCase(unittest.TestCase):
         self._cleanup()
 
     def _cleanup(self):
-        self.client.api_request(url='/vswitchs/RESTVSW1',
-                                method='DELETE')
+        self._vswitch_delete()
 
     def setUp(self):
         pass
@@ -45,40 +44,51 @@ class VSwitchTestCase(unittest.TestCase):
         resp = self._vswitch_list()
         self.apibase.verify_result('test_vswitch_get', resp.content)
 
-    def test_vswitch_create_delete(self):
+    def _vswitch_create(self):
         body = '{"vswitch": {"name": "RESTVSW1", "rdev": "FF00"}}'
         resp = self.client.api_request(url='/vswitchs', method='POST',
                                        body=body)
-        self.assertEqual(204, resp.status_code)
+        return resp
 
-        resp = self._vswitch_list()
-        vswlist = json.loads(resp.content)['vswlist']
-        inlist = 'RESTVSW1' in vswlist
-        self.assertTrue(inlist)
-
+    def _vswitch_delete(self):
         resp = self.client.api_request(url='/vswitchs/restvsw1',
                                        method='DELETE')
+        return resp
+
+    def test_vswitch_create_delete(self):
+        resp = self._vswitch_create()
         self.assertEqual(204, resp.status_code)
 
-        resp = self._vswitch_list()
-        vswlist = json.loads(resp.content)['vswlist']
-        inlist = 'RESTVSW1' in vswlist
-        self.assertFalse(inlist)
+        try:
+            resp = self._vswitch_list()
+            vswlist = json.loads(resp.content)['vswlist']
+            inlist = 'RESTVSW1' in vswlist
+            self.assertTrue(inlist)
+        except Exception:
+            raise
+        finally:
+            resp = self._vswitch_delete()
+            self.assertEqual(204, resp.status_code)
+
+            resp = self._vswitch_list()
+            vswlist = json.loads(resp.content)['vswlist']
+            inlist = 'RESTVSW1' in vswlist
+            self.assertFalse(inlist)
 
     def test_vswitch_update(self):
-        body = '{"vswitch": {"name": "RESTVSW1", "rdev": "FF00"}}'
-        resp = self.client.api_request(url='/vswitchs', method='POST',
-                                       body=body)
+        resp = self._vswitch_create()
         self.assertEqual(204, resp.status_code)
 
-        body = '{"vswitch": {"grant_userid": "FVTUSER1"}}'
-        resp = self.client.api_request(url='/vswitchs/RESTVSW1',
-                                       method='PUT', body=body)
-        self.assertEqual(200, resp.status_code)
-
-        resp = self.client.api_request(url='/vswitchs/RESTVSW1',
-                                       method='DELETE')
-        self.assertEqual(204, resp.status_code)
+        try:
+            body = '{"vswitch": {"grant_userid": "FVTUSER1"}}'
+            resp = self.client.api_request(url='/vswitchs/RESTVSW1',
+                                           method='PUT', body=body)
+            self.assertEqual(200, resp.status_code)
+        except Exception:
+            raise
+        finally:
+            resp = self._vswitch_delete()
+            self.assertEqual(204, resp.status_code)
 
     def test_vswitch_create_invalid_body(self):
         body = '{"vswitch": {"v1": "v1"}}'
