@@ -40,13 +40,15 @@ class ImageAction(object):
         self.api.image_import(url, image_meta, remote_host)
 
     def get_root_disk_size(self, name):
-        LOG.info('get root disk size')
+        # FIXME: this param need combined image nameg, e.g the profile
+        # name, not the given image name from customer side
+        return self.api.image_get_root_disk_size(name)
 
     def delete(self, name):
         self.api.image_delete(name)
 
     def query(self, imagename):
-        LOG.info('image query %s', imagename)
+        return self.api.image_query(imagename)
 
 
 def get_action():
