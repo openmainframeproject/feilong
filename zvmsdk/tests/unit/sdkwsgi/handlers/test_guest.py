@@ -24,7 +24,7 @@ from zvmsdk.sdkwsgi.handlers import guest
 from zvmsdk.sdkwsgi import util
 
 
-FAKE_UUID = '00000000-0000-0000-0000-000000000000'
+FAKE_USERID = '00000000-0000-0000-0000-000000000000'
 FAKE_USERID_LIST = ['abc', '123', 'defdf']
 
 
@@ -67,41 +67,41 @@ class GuestActionsTest(SDKWSGITest):
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMAction, 'start')
     def test_guest_start(self, mock_action,
-                        mock_uuid):
+                        mock_userid):
         self.req.body = '{"start": "None"}'
 
-        mock_uuid.return_value = FAKE_UUID
+        mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
-        mock_action.assert_called_once_with(FAKE_UUID)
+        mock_action.assert_called_once_with(FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMAction, 'stop')
     def test_guest_stop(self, mock_action,
-                        mock_uuid):
+                        mock_userid):
         self.req.body = '{"stop": "None"}'
 
-        mock_uuid.return_value = FAKE_UUID
+        mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
-        mock_action.assert_called_once_with(FAKE_UUID)
+        mock_action.assert_called_once_with(FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMAction, 'get_conole_output')
     def test_guest_get_conole_output(self, mock_action,
-                        mock_uuid):
+                        mock_userid):
         self.req.body = '{"get_conole_output": "None"}'
 
-        mock_uuid.return_value = FAKE_UUID
+        mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
-        mock_action.assert_called_once_with(FAKE_UUID)
+        mock_action.assert_called_once_with(FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    def test_guest_invalid_action(self, mock_uuid):
+    def test_guest_invalid_action(self, mock_userid):
         self.req.body = '{"fake": "None"}'
 
-        mock_uuid.return_value = FAKE_UUID
+        mock_userid.return_value = FAKE_USERID
 
         self.assertRaises(webob.exc.HTTPBadRequest, guest.guest_action,
                           self.req)
@@ -225,41 +225,41 @@ class HandlersGuestTest(SDKWSGITest):
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get_info')
-    def test_guest_get_info(self, mock_get, mock_uuid):
+    def test_guest_get_info(self, mock_get, mock_userid):
         mock_get.return_value = ''
-        mock_uuid.return_value = FAKE_UUID
+        mock_userid.return_value = FAKE_USERID
 
         guest.guest_get_info(self.req)
-        mock_get.assert_called_once_with(FAKE_UUID)
+        mock_get.assert_called_once_with(FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get_power_state')
-    def test_guest_power_state(self, mock_get, mock_uuid):
+    def test_guest_power_state(self, mock_get, mock_userid):
         mock_get.return_value = ''
-        mock_uuid.return_value = FAKE_UUID
+        mock_userid.return_value = FAKE_USERID
 
         guest.guest_get_power_state(self.req)
-        mock_get.assert_called_once_with(FAKE_UUID)
+        mock_get.assert_called_once_with(FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'delete')
-    def test_guest_delete(self, mock_delete, mock_uuid):
-        mock_uuid.return_value = FAKE_UUID
+    def test_guest_delete(self, mock_delete, mock_userid):
+        mock_userid.return_value = FAKE_USERID
 
         guest.guest_delete(self.req)
-        mock_delete.assert_called_once_with(FAKE_UUID)
+        mock_delete.assert_called_once_with(FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'create_nic')
-    def test_guest_create_nic(self, mock_create, mock_uuid):
+    def test_guest_create_nic(self, mock_create, mock_userid):
         body_str = '{"nic": {"vdev": "1234"}}'
         self.req.body = body_str
 
-        mock_uuid.return_value = FAKE_UUID
+        mock_userid.return_value = FAKE_USERID
 
         guest.guest_create_nic(self.req)
         body = util.extract_json(body_str)
-        mock_create.assert_called_once_with(FAKE_UUID, body=body)
+        mock_create.assert_called_once_with(FAKE_USERID, body=body)
 
     def test_guest_create_nic_invalid_vdev(self):
         body_str = '{"nic": {"vdev": 123}}'
@@ -277,29 +277,29 @@ class HandlersGuestTest(SDKWSGITest):
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get_nic_info')
-    def test_guest_get_nic_info(self, mock_get, mock_uuid):
-        mock_uuid.return_value = FAKE_UUID
+    def test_guest_get_nic_info(self, mock_get, mock_userid):
+        mock_userid.return_value = FAKE_USERID
 
         guest.guest_get_nic_info(self.req)
-        mock_get.assert_called_once_with(FAKE_UUID)
+        mock_get.assert_called_once_with(FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get')
-    def test_guest_get(self, mock_get, mock_uuid):
+    def test_guest_get(self, mock_get, mock_userid):
         mock_get.return_value = ''
-        mock_uuid.return_value = FAKE_UUID
+        mock_userid.return_value = FAKE_USERID
 
         guest.guest_get(self.req)
-        mock_get.assert_called_once_with(FAKE_UUID)
+        mock_get.assert_called_once_with(FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'update')
-    def test_guest_update(self, mock_update, mock_uuid):
-        mock_uuid.return_value = FAKE_UUID
+    def test_guest_update(self, mock_update, mock_userid):
+        mock_userid.return_value = FAKE_USERID
         self.req.body = '{}'
 
         guest.guest_update(self.req)
-        mock_update.assert_called_once_with(FAKE_UUID, {})
+        mock_update.assert_called_once_with(FAKE_USERID, {})
 
     @mock.patch.object(guest.VMHandler, 'get_cpu_info')
     def test_guest_get_cpu_info(self, mock_get):
@@ -324,78 +324,78 @@ class HandlersGuestTest(SDKWSGITest):
 
     @mock.patch.object(api.SDKAPI, 'guest_nic_couple_to_vswitch')
     @mock.patch.object(util, 'wsgi_path_item')
-    def test_guest_couple_nic(self, mock_uuid, mock_couple):
+    def test_guest_couple_nic(self, mock_userid, mock_couple):
         body_str = """{"info": {"couple": "true",
                        "vswitch": "v1", "port": "p1"}}"""
         self.req.body = body_str
 
-        mock_uuid.return_value = FAKE_UUID
+        mock_userid.return_value = FAKE_USERID
 
         guest.guest_couple_uncouple_nic(self.req)
         mock_couple.assert_called_once_with("v1", "p1",
-            FAKE_UUID, persist=True)
+            FAKE_USERID, persist=True)
 
     @mock.patch.object(api.SDKAPI, 'guest_nic_uncouple_from_vswitch')
     @mock.patch.object(util, 'wsgi_path_item')
-    def test_guest_uncouple_nic(self, mock_uuid, mock_uncouple):
+    def test_guest_uncouple_nic(self, mock_userid, mock_uncouple):
 
         body_str = """{"info": {"couple": "false",
                        "vswitch": "v1", "port": "p1",
                        "persist": "false"}}"""
         self.req.body = body_str
 
-        mock_uuid.return_value = FAKE_UUID
+        mock_userid.return_value = FAKE_USERID
 
         guest.guest_couple_uncouple_nic(self.req)
         mock_uncouple.assert_called_once_with("v1", "p1",
-            FAKE_UUID, persist=False)
+            FAKE_USERID, persist=False)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    def test_guest_couple_nic_missing_required_1(self, mock_uuid):
+    def test_guest_couple_nic_missing_required_1(self, mock_userid):
 
         body_str = """{"info": {"couple": "true",
                        "vswitch": "v1"}}"""
         self.req.body = body_str
 
-        mock_uuid.return_value = FAKE_UUID
+        mock_userid.return_value = FAKE_USERID
 
         self.assertRaises(exception.ValidationError,
                           guest.guest_couple_uncouple_nic,
                           self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    def test_guest_couple_nic_missing_required_2(self, mock_uuid):
+    def test_guest_couple_nic_missing_required_2(self, mock_userid):
 
         body_str = '{"info1": {}}'
         self.req.body = body_str
 
-        mock_uuid.return_value = FAKE_UUID
+        mock_userid.return_value = FAKE_USERID
 
         self.assertRaises(exception.ValidationError,
                           guest.guest_couple_uncouple_nic,
                           self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    def test_guest_uncouple_nic_bad_vswitch(self, mock_uuid):
+    def test_guest_uncouple_nic_bad_vswitch(self, mock_userid):
 
         body_str = """{"info": {"couple": "false",
                        "vswitch": 1233, "port": "p1"}}"""
         self.req.body = body_str
 
-        mock_uuid.return_value = FAKE_UUID
+        mock_userid.return_value = FAKE_USERID
 
         self.assertRaises(exception.ValidationError,
                           guest.guest_couple_uncouple_nic,
                           self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    def test_guest_uncouple_nic_bad_couple(self, mock_uuid):
+    def test_guest_uncouple_nic_bad_couple(self, mock_userid):
 
         body_str = """{"info": {"couple": "couple",
                        "vswitch": "v1", "port": "p1"}}"""
         self.req.body = body_str
 
-        mock_uuid.return_value = FAKE_UUID
+        mock_userid.return_value = FAKE_USERID
 
         self.assertRaises(exception.ValidationError,
                           guest.guest_couple_uncouple_nic,

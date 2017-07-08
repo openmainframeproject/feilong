@@ -40,23 +40,23 @@ ROUTE_LIST = (
     ('/guests/vnicsinfo', {
         'GET': guest.guest_get_vnics_info
     }),
-    ('/guests/{uuid}', {
+    ('/guests/{userid}', {
         'DELETE': guest.guest_delete,
         'GET': guest.guest_get,
         'PUT': guest.guest_update,
     }),
-    ('/guests/{uuid}/action', {
+    ('/guests/{userid}/action', {
         'POST': guest.guest_action,
     }),
-    ('/guests/{uuid}/info', {
+    ('/guests/{userid}/info', {
         'GET': guest.guest_get_info,
     }),
-    ('/guests/{uuid}/nic', {
+    ('/guests/{userid}/nic', {
         'GET': guest.guest_get_nic_info,
         'POST': guest.guest_create_nic,
         'PUT': guest.guest_couple_uncouple_nic,
     }),
-    ('/guests/{uuid}/power_state', {
+    ('/guests/{userid}/power_state', {
         'GET': guest.guest_get_power_state,
     }),
     ('/host/info', {
