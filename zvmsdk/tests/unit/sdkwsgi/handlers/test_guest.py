@@ -326,13 +326,13 @@ class HandlersGuestTest(SDKWSGITest):
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_couple_nic(self, mock_userid, mock_couple):
         body_str = """{"info": {"couple": "true",
-                       "vswitch": "v1", "port": "p1"}}"""
+                       "vswitch": "v1", "vdev": "1111"}}"""
         self.req.body = body_str
 
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_couple_uncouple_nic(self.req)
-        mock_couple.assert_called_once_with("v1", "p1",
+        mock_couple.assert_called_once_with("v1", "1111",
             FAKE_USERID, persist=True)
 
     @mock.patch.object(api.SDKAPI, 'guest_nic_uncouple_from_vswitch')
@@ -340,14 +340,14 @@ class HandlersGuestTest(SDKWSGITest):
     def test_guest_uncouple_nic(self, mock_userid, mock_uncouple):
 
         body_str = """{"info": {"couple": "false",
-                       "vswitch": "v1", "port": "p1",
+                       "vswitch": "v1", "vdev": "1111",
                        "persist": "false"}}"""
         self.req.body = body_str
 
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_couple_uncouple_nic(self.req)
-        mock_uncouple.assert_called_once_with("v1", "p1",
+        mock_uncouple.assert_called_once_with("v1", "1111",
             FAKE_USERID, persist=False)
 
     @mock.patch.object(util, 'wsgi_path_item')
