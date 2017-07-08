@@ -14,6 +14,7 @@ import routes
 import webob
 
 from zvmsdk import exception
+from zvmsdk import log
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi.handlers import guest
 from zvmsdk.sdkwsgi.handlers import host
@@ -21,6 +22,9 @@ from zvmsdk.sdkwsgi.handlers import image
 from zvmsdk.sdkwsgi.handlers import root
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.handlers import vswitch
+
+
+LOG = log.LOG
 
 
 ROUTE_LIST = (
@@ -107,6 +111,7 @@ def dispatch(environ, start_response, mapper):
     try:
         return handler(environ, start_response)
     except exception.ValidationError as exc:
+        LOG.debug('validation error: %(error)s' % {'error': exc})
         raise webob.exc.HTTPBadRequest(
             ('JSON does not validate: %(error)s') % {'error': exc})
 
@@ -157,12 +162,14 @@ class SdkHandler(object):
         clen = environ.get('CONTENT_LENGTH')
         try:
             if clen and (int(clen) > 0) and not environ.get('CONTENT_TYPE'):
-                raise webob.exc.HTTPBadRequest(
-                   ('content-type header required when content-length > 0'),
+                msg = 'content-type header required when content-length > 0'
+                LOG.debug(msg)
+                raise webob.exc.HTTPBadRequest(msg,
                    json_formatter=util.json_error_formatter)
         except ValueError as exc:
-            raise webob.exc.HTTPBadRequest(
-                ('content-length header must be an integer'),
+            msg = 'content-length header must be an integer'
+            LOG.debug(msg)
+            raise webob.exc.HTTPBadRequest(msg,
                 json_formatter=util.json_error_formatter)
         try:
             return dispatch(environ, start_response, self._map)

@@ -15,7 +15,11 @@ import webob
 
 from webob.dec import wsgify
 
+from zvmsdk import log
 from zvmsdk.sdkwsgi import util
+
+
+LOG = log.LOG
 
 
 class SdkWsgify(wsgify):
@@ -25,5 +29,7 @@ class SdkWsgify(wsgify):
         try:
             super(SdkWsgify, self).call_func(req, *args, **kwargs)
         except webob.exc.HTTPException as exc:
+            msg = ('encounter %(error)s error') % {'error': exc}
+            LOG.debug(msg)
             exc.json_formatter = util.json_error_formatter
             raise

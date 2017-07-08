@@ -17,6 +17,11 @@ import six
 
 import webob
 
+from zvmsdk import log
+
+
+LOG = log.LOG
+
 
 def loads(s, **kwargs):
     return json.loads(s, **kwargs)
@@ -50,8 +55,9 @@ def extract_json(body):
     try:
         data = loads(body)
     except ValueError as exc:
-        raise webob.exc.HTTPBadRequest(
-            ('Malformed JSON: %(error)s') % {'error': exc},
+        msg = ('Malformed JSON: %(error)s') % {'error': exc}
+        LOG.debug(msg)
+        raise webob.exc.HTTPBadRequest(msg,
             json_formatter=json_error_formatter)
     return data
 
