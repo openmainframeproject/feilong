@@ -90,11 +90,11 @@ couple_uncouple_nic = {
             'type': 'object',
             'properties': {
                 'couple': parameter_types.boolean,
-                'vswitch': parameter_types.name,
-                'vdev': parameter_types.vdev,
                 'active': parameter_types.boolean,
+                'vswitch': parameter_types.name,
             },
-            'required': ['couple', 'vswitch', 'vdev'],
+            # FIXME: vswitch should be required when it's couple
+            'required': ['couple'],
             'additionalProperties': False,
         },
         'additionalProperties': False,
