@@ -34,7 +34,8 @@ class GuestHandlerTestCase(unittest.TestCase):
 
     def _guest_create(self):
         body = """{"guest": {"userid": "RESTT100", "vcpus": 1,
-                             "memory": 1024}}"""
+                             "memory": 1024,
+                             "disk_list": [{"size": "3g"}]}}"""
         resp = self.client.api_request(url='/guests', method='POST',
                                        body=body)
         self.assertEqual(200, resp.status_code)
@@ -88,11 +89,21 @@ class GuestHandlerTestCase(unittest.TestCase):
         return resp
 
     def _guest_start(self):
-        body = '{"start": "none"}'
+        body = '{"action": "start"}'
         return self._guest_action(body)
 
     def _guest_stop(self):
-        body = '{"stop": "none"}'
+        body = '{"action": "stop"}'
+        return self._guest_action(body)
+
+    def _guest_deploy(self):
+        image = 'rhel7.2-s390x-netboot-e19708cf_a55b_4f97_b9d5_bab54fa6f94f'
+        # "transportfiles" is None here
+        # "remotehost" is None here because transportfiles is None
+        body = """{"action": "deploy",
+                   "image": "%s",
+                   "vdev": "100"}""" % image
+
         return self._guest_action(body)
 
     def _guest_pause(self):
@@ -122,6 +133,8 @@ class GuestHandlerTestCase(unittest.TestCase):
         self._guest_create()
 
         try:
+            self._guest_deploy()
+
             self._guest_nic_create()
 
             self._guest_get()
@@ -135,18 +148,15 @@ class GuestHandlerTestCase(unittest.TestCase):
             self._guest_vnicsinfo()
 
             self._guest_stop()
-            self._guest_start()
+
+            # FIXME need further enhancement to test start
+            # the action is supported, but need add IPL param etc
+            # self._guest_start()
 
         except Exception as e:
             raise e
         finally:
             self._guest_delete()
-
-    def test_guest_create_invalid_param(self):
-        body = '{"guest1": {"userid": "name1"}}'
-        resp = self.client.api_request(url='/guests', method='POST',
-                                       body=body)
-        self.assertEqual(400, resp.status_code)
 
     def test_guest_list(self):
         resp = self.client.api_request(url='/guests')

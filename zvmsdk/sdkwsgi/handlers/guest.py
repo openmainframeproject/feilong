@@ -52,20 +52,6 @@ class VMHandler(object):
         else:
             self.api.guest_create(userid, vcpus, memory, disk_list=disk_list)
 
-    @validation.schema(guest.deploy)
-    def deploy(self, body):
-        guest = body['guest']
-        userid = guest['userid']
-        image_name = guest['image_name']
-
-        transportfiles = guest.get('transportfiles', None)
-        remotehost = guest.get('remotehost', None)
-        vdev = guest.get('vdev', None)
-
-        self.api.guest_deploy(userid, image_name,
-            transportfiles=transportfiles, remotehost=remotehost,
-            vdev=vdev)
-
     def list(self):
         # list all guest on the given host
         guests = self.api.guest_list()
@@ -140,18 +126,33 @@ class VMAction(object):
     def __init__(self):
         self.api = api.SDKAPI(skip_input_check=True)
 
-    def start(self, userid):
+    def start(self, userid, data):
         try:
             self.api.guest_start(userid)
         except Exception:
             # FIXME: need to be specific on the exception handling
             LOG.info('failed to start %s', userid)
 
-    def stop(self, userid):
+    def stop(self, userid, data):
         self.api.guest_stop(userid)
 
-    def get_conole_output(self, userid):
+    def get_console_output(self, userid, data):
         self.api.guest_get_console_output(userid)
+
+    # FIXME: add validation to the request
+    # @validation.schema(guest.deploy)
+    def deploy(self, userid, data):
+        LOG.debug('start to deploy on %s', userid)
+
+        image_name = data['image']
+
+        transportfiles = data.get('transportfiles', None)
+        remotehost = data.get('remotehost', None)
+        vdev = data.get('vdev', None)
+
+        self.api.guest_deploy(userid, image_name,
+            transportfiles=transportfiles, remotehost=remotehost,
+            vdev=vdev)
 
 
 def get_action():
@@ -234,19 +235,6 @@ def guest_create(req):
 
 @wsgi_wrapper.SdkWsgify
 @tokens.validate
-def guest_deploy(req):
-
-    def _guest_deploy(req):
-        action = get_handler()
-        body = util.extract_json(req.body)
-
-        action.deploy(body=body)
-
-    _guest_deploy(req)
-
-
-@wsgi_wrapper.SdkWsgify
-@tokens.validate
 def guest_update(req):
 
     def _guest_update(userid, body):
@@ -281,17 +269,18 @@ def guest_action(req):
     def _guest_action(userid, req):
         action = get_action()
         data = util.extract_json(req.body)
-        if len(data) == 0:
-            LOG.info('action is empty')
-            raise webob.exc.HTTPBadRequest()
+        if len(data) == 0 or 'action' not in data:
+            msg = 'action not exist or is empty'
+            LOG.info(msg)
+            raise webob.exc.HTTPBadRequest(explanation=msg)
 
-        for method, parm in data.items():
-            func = getattr(action, method, None)
-            if func:
-                func(userid)
-            else:
-                msg = 'action %s is invalid' % method
-                raise webob.exc.HTTPBadRequest(msg)
+        method = data['action']
+        func = getattr(action, method, None)
+        if func:
+            func(userid, data)
+        else:
+            msg = 'action %s is invalid' % method
+            raise webob.exc.HTTPBadRequest(msg)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     _guest_action(userid, req)
