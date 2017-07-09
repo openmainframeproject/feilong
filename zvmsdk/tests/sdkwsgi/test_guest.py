@@ -88,11 +88,21 @@ class GuestHandlerTestCase(unittest.TestCase):
         return resp
 
     def _guest_start(self):
-        body = '{"start": "none"}'
+        body = '{"action": "start"}'
         return self._guest_action(body)
 
     def _guest_stop(self):
-        body = '{"stop": "none"}'
+        body = '{"action": "stop"}'
+        return self._guest_action(body)
+
+    def _guest_deploy(self):
+        image = 'rhel7.2-s390x-netboot-e19708cf_a55b_4f97_b9d5_bab54fa6f94f'
+        # "transportfiles" is None here
+        # "remotehost" is None here because transportfiles is None
+        body = """{"action": "deploy",
+                   "image": %s
+                   "vdev": "100"}""" % image
+
         return self._guest_action(body)
 
     def _guest_pause(self):
@@ -122,6 +132,8 @@ class GuestHandlerTestCase(unittest.TestCase):
         self._guest_create()
 
         try:
+            self._guest_deploy()
+
             self._guest_nic_create()
 
             self._guest_get()
