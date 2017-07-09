@@ -89,8 +89,13 @@ class VMHandler(object):
     def delete(self, userid):
         self.api.guest_delete(userid)
 
-    def get_nic_info(self, id):
-        LOG.info('guest get nic info %s', id)
+    def get_nic(self, userid):
+        return self.api.guest_get_nic_vswitch_info(userid)
+
+    def delete_nic(self, userid, vdev, body):
+        active = body.get('vdev', False)
+
+        self.api.guest_delete_nic(userid, vdev, active=active)
 
     def get_cpu_info(self, userid_list):
         return self.api.guest_inspect_cpus(userid_list)
@@ -115,7 +120,7 @@ class VMHandler(object):
             mac_addr=mac_addr, ip_addr=ip_addr, active=active)
 
     @validation.schema(guest.couple_uncouple_nic)
-    def couple_uncouple_nic(self, userid, body=None):
+    def couple_uncouple_nic(self, userid, vdev, body):
         info = body['info']
 
         active = info.get('active', False)
@@ -125,9 +130,9 @@ class VMHandler(object):
 
         if couple:
             self.api.guest_nic_couple_to_vswitch(userid,
-                info['vdev'], info['vswitch'], active=active)
+                info['vswitch'], vdev, active=active)
         else:
-            self.api.guest_nic_uncouple_from_vswitch(userid, info['vdev'],
+            self.api.guest_nic_uncouple_from_vswitch(userid, vdev,
                                                      active=active)
 
 
@@ -316,10 +321,25 @@ def guest_get_nic_info(req):
 
     def _guest_get_nic_info(userid):
         action = get_handler()
-        action.get_nic_info(userid)
+        action.get_nic(userid)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     _guest_get_nic_info(userid)
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def guest_delete_nic(req):
+    def _guest_delete_nic(userid, vdev, req):
+        action = get_handler()
+        body = util.extract_json(req.body)
+
+        action.delete_nic(userid, vdev, body)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    vdev = util.wsgi_path_item(req.environ, 'vdev')
+
+    _guest_delete_nic(userid, vdev, req)
 
 
 @wsgi_wrapper.SdkWsgify
@@ -340,14 +360,16 @@ def guest_create_nic(req):
 @tokens.validate
 def guest_couple_uncouple_nic(req):
 
-    def _guest_couple_uncouple_nic(userid, req):
+    def _guest_couple_uncouple_nic(userid, vdev, req):
         action = get_handler()
         body = util.extract_json(req.body)
 
-        action.couple_uncouple_nic(userid, body=body)
+        action.couple_uncouple_nic(userid, vdev, body=body)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
-    _guest_couple_uncouple_nic(userid, req)
+    vdev = util.wsgi_path_item(req.environ, 'vdev')
+
+    _guest_couple_uncouple_nic(userid, vdev, req)
 
 
 def _get_userid_list(req):

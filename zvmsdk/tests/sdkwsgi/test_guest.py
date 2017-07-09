@@ -56,6 +56,13 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
+    def _guest_nic_delete(self, vdev="1000"):
+        body = '{"nic": {}}'
+        resp = self.client.api_request(url='/guests/RESTT100/nic/2000',
+                                       method='DELETE',
+                                       body=body)
+        self.assertEqual(200, resp.status_code)
+
     def _guest_get(self):
         resp = self.client.api_request(url='/guests/RESTT100',
                                        method='GET')
@@ -184,6 +191,8 @@ class GuestHandlerTestCase(unittest.TestCase):
             self._vswitch_couple()
 
             self._vswitch_uncouple()
+
+            self._guest_nic_delete()
 
         except Exception as e:
             raise e
