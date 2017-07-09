@@ -68,34 +68,55 @@ class GuestActionsTest(SDKWSGITest):
     @mock.patch.object(guest.VMAction, 'start')
     def test_guest_start(self, mock_action,
                         mock_userid):
-        self.req.body = '{"start": "None"}'
+        self.req.body = '{"action": "start"}'
 
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
-        mock_action.assert_called_once_with(FAKE_USERID)
+        mock_action.assert_called_once_with(FAKE_USERID, {"action": "start"})
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMAction, 'stop')
     def test_guest_stop(self, mock_action,
                         mock_userid):
-        self.req.body = '{"stop": "None"}'
+        self.req.body = '{"action": "stop"}'
 
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
-        mock_action.assert_called_once_with(FAKE_USERID)
+        mock_action.assert_called_once_with(FAKE_USERID, {"action": "stop"})
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch.object(guest.VMAction, 'get_conole_output')
-    def test_guest_get_conole_output(self, mock_action,
+    @mock.patch.object(guest.VMAction, 'get_console_output')
+    def test_guest_get_console_output(self, mock_action,
                         mock_userid):
-        self.req.body = '{"get_conole_output": "None"}'
+        self.req.body = '{"action": "get_console_output"}'
 
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
-        mock_action.assert_called_once_with(FAKE_USERID)
+        mock_action.assert_called_once_with(FAKE_USERID,
+                                            {"action": "get_console_output"})
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(guest.VMAction, 'deploy')
+    def test_guest_get_deploy(self, mock_action,
+                              mock_userid):
+        self.req.body = """{"action": "deploy",
+                            "image": "image1",
+                            "transportfiles": "file1",
+                            "remotehost": "host1",
+                            "vdev": "1000"}"""
+
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with(FAKE_USERID,
+                                            {"action": "deploy",
+                                             "image": "image1",
+                                             "transportfiles": "file1",
+                                             "remotehost": "host1",
+                                             "vdev": "1000"})
 
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_invalid_action(self, mock_userid):
@@ -175,52 +196,6 @@ class HandlersGuestTest(SDKWSGITest):
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, guest.guest_create,
-                          self.req)
-
-    @mock.patch.object(api.SDKAPI, 'guest_deploy')
-    def test_guest_deploy(self, mock_deploy):
-        body_str = '{"guest": {"userid": "name1", "image_name": "i1"}}'
-        self.req.body = body_str
-
-        guest.guest_deploy(self.req)
-        mock_deploy.assert_called_once_with('name1', 'i1', remotehost=None,
-                                            transportfiles=None, vdev=None)
-
-    @mock.patch.object(api.SDKAPI, 'guest_deploy')
-    def test_guest_deploy_with_param(self, mock_deploy):
-        body_str = """{"guest": {"userid": "name1", "image_name": "i1",
-                               "remotehost": "r1", "vdev": "v1"}}"""
-        self.req.body = body_str
-
-        guest.guest_deploy(self.req)
-        mock_deploy.assert_called_once_with('name1', 'i1', remotehost='r1',
-                                            transportfiles=None, vdev='v1')
-
-    @mock.patch.object(api.SDKAPI, 'guest_deploy')
-    def test_guest_deploy_invalid_vdev(self, mock_deploy):
-        body_str = """{"guest": {"userid": "name1", "image_name": "i1",
-                               "remotehost": "r1", "vdev": 1}}"""
-        self.req.body = body_str
-
-        self.assertRaises(exception.ValidationError, guest.guest_deploy,
-                          self.req)
-
-    @mock.patch.object(api.SDKAPI, 'guest_deploy')
-    def test_guest_deploy_no_userid(self, mock_deploy):
-        body_str = """{"guest": {"image_name": "i1",
-                                 "remotehost": "r1", "vdev": "v1"}}"""
-        self.req.body = body_str
-
-        self.assertRaises(exception.ValidationError, guest.guest_deploy,
-                          self.req)
-
-    @mock.patch.object(api.SDKAPI, 'guest_deploy')
-    def test_guest_deploy_invalid_image_name(self, mock_deploy):
-        body_str = """{"guest": {"userid": "name1", "image_name": 1,
-                                 "remotehost": "r1", "vdev": "1"}}"""
-        self.req.body = body_str
-
-        self.assertRaises(exception.ValidationError, guest.guest_deploy,
                           self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')
