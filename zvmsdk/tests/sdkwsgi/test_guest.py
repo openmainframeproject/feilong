@@ -88,11 +88,11 @@ class GuestHandlerTestCase(unittest.TestCase):
         return resp
 
     def _guest_start(self):
-        body = '{"start": "none"}'
+        body = '{"action": "start"}'
         return self._guest_action(body)
 
     def _guest_stop(self):
-        body = '{"stop": "none"}'
+        body = '{"action": "stop"}'
         return self._guest_action(body)
 
     def _guest_pause(self):

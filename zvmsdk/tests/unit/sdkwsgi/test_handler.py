@@ -57,6 +57,49 @@ class GuestActionNegativeTest(unittest.TestCase):
                           h, self.env, dummy)
 
 
+class GuestActionTest(unittest.TestCase):
+
+    def setUp(self):
+        self.env = env
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    def test_guest_start(self, mock_json):
+        mock_json.return_value = {"action": "start"}
+        self.env['PATH_INFO'] = '/guests/1/action'
+        self.env['REQUEST_METHOD'] = 'POST'
+        h = handler.SdkHandler()
+        with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMAction.start') \
+            as start:
+            h(self.env, dummy)
+
+            start.assert_called_once_with('1', {'action': 'start'})
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    def test_guest_stop(self, mock_json):
+        mock_json.return_value = {"action": "stop"}
+        self.env['PATH_INFO'] = '/guests/1/action'
+        self.env['REQUEST_METHOD'] = 'POST'
+        h = handler.SdkHandler()
+        with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMAction.stop') \
+            as stop:
+            h(self.env, dummy)
+
+            stop.assert_called_once_with('1', {'action': 'stop'})
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    def test_guest_get_console_output(self, mock_json):
+        mock_json.return_value = {"action": "get_console_output"}
+        self.env['PATH_INFO'] = '/guests/1/action'
+        self.env['REQUEST_METHOD'] = 'POST'
+        h = handler.SdkHandler()
+        url = 'zvmsdk.sdkwsgi.handlers.guest.VMAction.get_console_output'
+        with mock.patch(url) as get_console_output:
+            h(self.env, dummy)
+
+            get_console_output.assert_called_once_with('1',
+                {'action': 'get_console_output'})
+
+
 class GuestHandlerNegativeTest(unittest.TestCase):
 
     def setUp(self):
