@@ -25,12 +25,13 @@ from zvmsdk.sdkwsgi import util
 
 
 FAKE_USERID = '00000000-0000-0000-0000-000000000000'
-FAKE_USERID_LIST = ['abc', '123', 'defdf']
+FAKE_USERID_LIST_STR = 'ab,c,userid1'
+FAKE_USERID_LIST = ['ab', 'c', 'userid1']
 
 
 class FakeReqGet(object):
-    def getall(self, userid):
-        return FAKE_USERID_LIST
+    def get(self, userid):
+        return FAKE_USERID_LIST_STR
 
     def keys(self):
         return ['userid']
