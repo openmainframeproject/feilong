@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa8ef41c_c9cd789a",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-07-10T10:06:54Z",
+      "side": 1,
+      "message": "same comments here to create_nic.",
+      "range": {
+        "startLine": 381,
+        "startChar": 30,
+        "endLine": 381,
+        "endChar": 37
+      },
+      "revId": "17ed7715318736aaaa483d8ae5e4b4e8a76616fb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "338c3192_72da2762",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 386,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-07-10T10:06:54Z",
+      "side": 1,
+      "message": "add another bool",
+      "range": {
+        "startLine": 386,
+        "startChar": 51,
+        "endLine": 386,
+        "endChar": 52
+      },
+      "revId": "17ed7715318736aaaa483d8ae5e4b4e8a76616fb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ddc4db84_3b0b20a0",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 401,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-07-10T10:06:54Z",
+      "side": 1,
+      "message": "same msg enhancement.",
+      "range": {
+        "startLine": 401,
+        "startChar": 16,
+        "endLine": 401,
+        "endChar": 19
+      },
+      "revId": "17ed7715318736aaaa483d8ae5e4b4e8a76616fb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
