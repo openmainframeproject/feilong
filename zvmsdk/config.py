@@ -17,6 +17,13 @@ import ConfigParser
 import os
 
 
+class ZVMSDKConfigFileNotFound(Exception):
+    """Config file not found exception."""
+    def __init__(self, message):
+        self.message = message
+        super(ZVMSDKConfigFileNotFound, self).__init__(message)
+
+
 class Opt(object):
     def __init__(self, opt_name, descritpion='', section='default',
                  opt_type='str', default=None, required=False):
@@ -353,6 +360,9 @@ class ConfigOpts(object):
             if os.path.exists(path):
                 return path
 
+        msg = "zvmsdk config file not found in %s" % str(dirs)
+        raise ZVMSDKConfigFileNotFound(msg)
+
     def find_config_file(self, project=None, extension='.conf'):
         """Return the config file.
 
@@ -360,7 +370,6 @@ class ConfigOpts(object):
         :param extension: the type of the config file
 
         """
-
         cfg_dirs = self._get_config_dirs()
         config_files = self._search_dirs(cfg_dirs, project, extension)
 
