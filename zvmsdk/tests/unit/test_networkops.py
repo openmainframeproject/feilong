@@ -29,10 +29,10 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         self.networkops.create_nic("fakeid", "nic_info", "ipaddr")
         create_nic.assert_called_with("fakeid", "nic_info", ip_addr="ipaddr")
 
-    @mock.patch.object(zvmclient.XCATClient, 'get_vm_nic_switch_info')
-    def test_get_vm_nic_switch_info(self, get_nic_switch_info):
-        self.networkops.get_vm_nic_switch_info("fakenode")
-        get_nic_switch_info.assert_called_with("fakenode")
+    @mock.patch.object(zvmclient.XCATClient, 'get_vm_nic_vswitch_info')
+    def test_get_vm_nic_vswitch_info(self, get_nic_vswitch_info):
+        self.networkops.get_vm_nic_vswitch_info("fakenode")
+        get_nic_vswitch_info.assert_called_with("fakenode")
 
     @mock.patch.object(zvmclient.XCATClient, 'get_vswitch_list')
     def test_get_vswitch_list(self, get_vswitch_list):

@@ -761,12 +761,12 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         xrequest.assert_called_once_with('POST', fake_url, fake_body)
 
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_get_vm_nic_switch_info(self, xrequest):
+    def test_get_vm_nic_vswitch_info(self, xrequest):
         url = "/xcatws/tables/switch?userName=" +\
                 CONF.xcat.username +\
                "&password=" + CONF.xcat.password +\
                "&format=json"
-        self._zvmclient.get_vm_nic_switch_info("fakenode")
+        self._zvmclient.get_vm_nic_vswitch_info("fakenode")
         xrequest.assert_called_with('GET', url)
 
     @mock.patch.object(zvmutils, 'xcat_request')
@@ -1066,7 +1066,7 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
         commands += ' -T fakeuserid'
         commands += ' -k switch_name=fakevsw'
-        commands += ' -k real_device_address=fakerdev'
+        commands += " -k real_device_address='fakerdev'"
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
 
@@ -1093,7 +1093,7 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Create'
         commands += " -T fakeuserid"
         commands += ' -n fakename'
-        commands += " -r fakerdev"
+        commands += " -r 'fakerdev'"
         commands += " -c 1"
         commands += " -q 8"
         commands += " -e 0"
@@ -1440,11 +1440,14 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
             '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
             "-T fakenode",
             "-k switch_name=fake_vs",
+            "-k real_device_address='1000 1003'",
             "-k grant_userid=fake_id"))
 
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        self._zvmclient.set_vswitch("fake_vs", grant_userid='fake_id')
+        self._zvmclient.set_vswitch("fake_vs",
+                                    real_device_address='1000 1003',
+                                    grant_userid='fake_id',)
         xrequest.assert_called_with("PUT", url, body)
 
     @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
