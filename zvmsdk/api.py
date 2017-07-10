@@ -313,7 +313,7 @@ class SDKAPI(object):
         :returns: Dictionary describing nic and switch info
         :rtype: dict
         """
-        return self._networkops.get_vm_nic_switch_info(userid)
+        return self._networkops.get_vm_nic_vswitch_info(userid)
 
     @check_input_types(_TUSERID, valid_keys=['nic_coupled'])
     def guest_get_definition_info(self, userid, **kwargs):
@@ -363,7 +363,7 @@ class SDKAPI(object):
         """
         self._vmops.create_vm(userid, vcpus, memory, disk_list, user_profile)
 
-    @check_input_types(_TSTR, _TSTR, _TUSERID, bool)
+    @check_input_types(_TVSWNAME, _TSTR, _TUSERID, bool)
     def guest_nic_couple_to_vswitch(self, vswitch_name, nic_vdev,
                                     userid, persist=True):
         """ Couple nic device to specified vswitch.
@@ -378,7 +378,7 @@ class SDKAPI(object):
         self._networkops.couple_nic_to_vswitch(vswitch_name, nic_vdev,
                                                userid, persist)
 
-    @check_input_types(_TSTR, _TSTR, _TUSERID, bool)
+    @check_input_types(_TVSWNAME, _TSTR, _TUSERID, bool)
     def guest_nic_uncouple_from_vswitch(self, vswitch_name, nic_vdev,
                                         userid, persist=True):
         """ Couple nic device to specified vswitch.
@@ -402,8 +402,8 @@ class SDKAPI(object):
         """
         return self._networkops.get_vswitch_list()
 
-    @check_input_types(_TVSWNAME, _TSTR, _TSTR, int, int, int, int, int, int,
-                        int, int, int)
+    @check_input_types(_TVSWNAME, _TSTR, _TUSERID, int, int, int, int, int,
+                       int, int, int, int)
     def vswitch_create(self, name, rdev,
                        controller='*', connection=1,
                        queue_mem=8, router=0, network_type=2, vid=0,
@@ -411,18 +411,26 @@ class SDKAPI(object):
         """ Create vswitch.
 
         :param str name: the vswitch name
-        :param str rdev: the real device number
-        :param str controller: the vswitch's controller
-        :param int connection: 0-unspecified 1-Actice 2-non-Active
-        :param int queue_mem: the max number of megabytes on a single port
-        :param int router: 0-unspecified 1-nonrouter 2-prirouter
+        :param str rdev: the real device number, a maximum of three devices,
+               all 1-4 characters in length, delimited by blanks. 'NONE'
+               may also be specified
+        :param str controller: the vswitch's controller, it could be the userid
+               controlling the real device, or '*' to specifies that any
+               available controller may be used
+        :param int connection: 0-unspecified, 1-Active the real device
+               connection, 2-Do not active the real device connection
+        :param int queue_mem: the max number of megabytes on a single port,
+               any number between 1 and 8 may be used
+        :param int router: 0-unspecified, 1-nonrouter 2-prirouter
         :param int network_type: 0-unspecified 1-IP 2-ethernet
-        :param int vid: 1-4094 for access port defaut vlan
+        :param int vid: the VLAN ID. 1-unaware, (1-4094)-valid VLAN ID
         :param int port_type: 0-unspecified 1-access 2-trunk
-        :param int update: 0-unspecified 1-create 2-create and add to system
-               configuration file 3-add to system configuration
+        :param int update: 0-unspecified, 1-create vswitch on the active
+               system, 2-create vswitch on the active system and add to the
+               system configuration file, 3-add vswitch to the system
+               configuration file
         :param int gvrp: 0-unspecified 1-gvrp 2-nogvrp
-        :param int native_vid: the native vlan id
+        :param int native_vid: the native vlan id, -1 or 1-4094
 
         """
         if ((vid < 0) or (vid > 4094)):
@@ -436,7 +444,7 @@ class SDKAPI(object):
         if ((queue_mem < 1) or (queue_mem > 8)):
             raise exception.ZVMInvalidInput(
                 msg=("switch: %s add failed, %s") %
-                    (name, 'valid query memory value should be 0-8'))
+                    (name, 'valid query memory value should be 1-8'))
         if ((router < 0) or (router > 2)):
             raise exception.ZVMInvalidInput(
                 msg=("switch: %s add failed, %s") %
