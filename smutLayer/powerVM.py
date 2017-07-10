@@ -208,6 +208,9 @@ def checkIsReachable(rh):
         rh.printLn("N", rh.userid + ": reachable")
         reachable = 1
     else:
+        # A failure from execCmdThruIUCV is acceptable way of determining
+        # that the system is unreachable.  We won't pass along the
+        # error message.
         rh.printLn("N", rh.userid + ": unreachable")
         reachable = 0
 
@@ -539,9 +542,7 @@ def reboot(rh):
     results = execCmdThruIUCV(rh, rh.userid, strCmd)
     if results['overallRC'] != 0:
         # Command failed to execute using IUCV.
-        msg = msgs.msg['0310'][1] % (modId, rh.userid, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)
 
     if rh.results['overallRC'] == 0:
@@ -781,42 +782,58 @@ def softDeactivate(rh):
         rh.userid)
 
     strCmd = "echo 'ping'"
-    results = execCmdThruIUCV(rh, rh.userid, strCmd)
+    iucvResults = execCmdThruIUCV(rh, rh.userid, strCmd)
 
-    if results['overallRC'] != 0:
+    if iucvResults['overallRC'] == 0:
         # We could talk to the machine, tell it to shutdown nicely.
         strCmd = "shutdown -h now"
-        results = execCmdThruIUCV(rh, rh.userid, strCmd)
+        iucvResults = execCmdThruIUCV(rh, rh.userid, strCmd)
+        if iucvResults['overallRC'] == 0:
+            time.sleep(15)
+        else:
+            # Shutdown failed.  Let CP take down the system
+            # after we log the results.
+            rh.printSysLog("powerVM.softDeactivate " + rh.userid +
+                " is unreachable. Treating it as already shutdown.")
+    else:
+        # Could not ping the machine.  Treat it as a success
+        # after we log the results.
+        rh.printSysLog("powerVM.softDeactivate " + rh.userid +
+            " is unreachable. Treating it as already shutdown.")
 
-    if results['overallRC'] != 0:
-        # Tell z/VM to log off the system after we give it a 15 second lead.
-        time.sleep(15)
-        cmd = ["smcli",
-                "Image_Deactivate",
-                "-T", rh.userid]
+    # Tell z/VM to log off the system.
+    cmd = ["smcli",
+            "Image_Deactivate",
+            "-T", rh.userid]
+    smcliResults = invokeSMCLI(rh, cmd)
+    if smcliResults['overallRC'] == 0:
+        pass
+    elif smcliResults['rc'] == 200 and (smcliResults['rs'] == 12 or +
+        smcliResults['rs'] == 16):
+        # Tolerable error.
+        # Machine is already logged off or is logging off.
+        rh.printLn("N", rh.userid + " is already logged off.")
+    else:
+        # SMAPI API failed.
+        strCmd = ' '.join(cmd)
+        msg = msgs.msg['0300'][1] % (modId, strCmd,
+            smcliResults['overallRC'], smcliResults['response'])
+        rh.printLn("ES", msg)
+        rh.updateResults(smcliResults)    # Use results from invokeSMCLI
 
-        results = invokeSMCLI(rh, cmd)
-        if results['overallRC'] != 0:
-            # SMAPI API failed.
-            strCmd = ' '.join(cmd)
-            msg = msgs.msg['0300'][1] % (modId, strCmd,
-                results['overallRC'], results['response'])
-            rh.printLn("ES", msg)
-            rh.updateResults(results)    # Use results from invokeSMCLI
-
-    if results['overallRC'] == 0 and 'maxQueries' in rh.parms:
+    if rh.results['overallRC'] == 0 and 'maxQueries' in rh.parms:
         # Wait for the system to log off.
-        results = waitForVMState(
+        waitResults = waitForVMState(
             rh,
             rh.userid,
             'off',
             maxQueries=rh.parms['maxQueries'],
             sleepSecs=rh.parms['poll'])
-        if results['overallRC'] == 0:
+        if waitResults['overallRC'] == 0:
             rh.printLn("N", "Userid '" + rh.userid +
                 " is in the desired state: off")
         else:
-            rh.updateResults(results)
+            rh.updateResults(waitResults)
 
     rh.printSysLog("Exit powerVM.softDeactivate, rc: " +
         str(rh.results['overallRC']))
