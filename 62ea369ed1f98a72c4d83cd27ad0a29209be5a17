@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ec697b2_9cf93f76",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-07-10T02:43:15Z",
+      "side": 1,
+      "message": "Just a suggestion: Maybe we can tell user the default vdev value we will use when vdev is not specified.",
+      "range": {
+        "startLine": 288,
+        "startChar": 24,
+        "endLine": 288,
+        "endChar": 25
+      },
+      "revId": "62ea369ed1f98a72c4d83cd27ad0a29209be5a17",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a6c27ad9_bc785e90",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 290,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-07-10T02:43:15Z",
+      "side": 1,
+      "message": "Add introduction to the ip_addr, it is required and can only be specified when the to-be-created nic is used for the management network.",
+      "range": {
+        "startLine": 290,
+        "startChar": 19,
+        "endLine": 290,
+        "endChar": 26
+      },
+      "revId": "62ea369ed1f98a72c4d83cd27ad0a29209be5a17",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c6e8088a_c9cf7a9b",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 535,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-07-10T02:43:15Z",
+      "side": 1,
+      "message": "I think we\u0027d better do all the input checks before doing the actual changes. Check both IP and VDEV, then create_nic and change hosts table.",
+      "range": {
+        "startLine": 535,
+        "startChar": 21,
+        "endLine": 535,
+        "endChar": 39
+      },
+      "revId": "62ea369ed1f98a72c4d83cd27ad0a29209be5a17",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "397109a5_47a4b113",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 556,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-07-10T02:43:15Z",
+      "side": 1,
+      "message": "Cann\u0027t the smcli command do this check for us?",
+      "range": {
+        "startLine": 556,
+        "startChar": 25,
+        "endLine": 556,
+        "endChar": 39
+      },
+      "revId": "62ea369ed1f98a72c4d83cd27ad0a29209be5a17",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
