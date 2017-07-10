@@ -22,10 +22,13 @@ from zvmsdk import api
 from zvmsdk import client as zvmclient
 from zvmsdk import config
 from zvmsdk import configdrive
+from zvmsdk import exception
+from zvmsdk import log
 from zvmsdk import utils as zvmutils
 
 
 CONF = config.CONF
+LOG = log.LOG
 
 
 def set_conf(section, opt, value):
@@ -50,7 +53,11 @@ class SDKAPITestUtils(object):
         test_list = CONF.tests.userid_list.split(' ')
         for uid in test_list:
             if uid in exist_list:
-                self.api.guest_delete(uid)
+                try:
+                    self.api.guest_delete(uid)
+                except exception.SDKBaseException as e:
+                    print("WARNING: Delete guest failed: %s" %
+                          e.format_message())
                 continue
             else:
                 return uid
@@ -78,16 +85,26 @@ class SDKAPITestUtils(object):
         image_name_xcat = '-'.join((CONF.tests.image_os_version,
                                 's390x-netboot', image_name.replace('-', '_')))
         if not self.api.image_query(image_name.replace('-', '_')):
+            print("Importing image %s ...\n" % image_name)
             self.image_import()
+
+        print("Using image %s ...\n" % image_name)
+
+        if userid is None:
+            userid = self.get_available_test_userid()
+        print("Using userid %s ...\n" % userid)
+
+        user_profile = CONF.zvm.user_profile
+        nic_id = str(uuid.uuid1())
 
         if ip_addr is None:
             ip_addr = self.get_available_ip_addr()
 
-        if userid is None:
-            userid = self.get_available_test_userid()
-        user_profile = CONF.zvm.user_profile
-        nic_id = str(uuid.uuid1())
+        print("Using IP address of %s ...\n" % ip_addr)
+
         mac_addr = self.generate_mac_addr()
+        print("Using MAC address of %s ...\n" % mac_addr)
+
         nic_info = {'nic_id': nic_id, 'mac_addr': mac_addr}
         vdev = CONF.zvm.default_nic_vdev
         vswitch_name = CONF.tests.vswitch
@@ -99,19 +116,23 @@ class SDKAPITestUtils(object):
                        'disk_pool': CONF.zvm.disk_pool}]
 
         # Create vm in zVM
+        print("Creating userid %s ...\n" % userid)
         self.api.guest_create(userid, cpu, memory, disks_list, user_profile)
 
         # Setup network for vm
+        print("Creating nic %s ...\n" % str(nic_info))
         self.api.guest_create_nic(userid, [nic_info], ip_addr)
         self.api.guest_update_nic_definition(userid, vdev, mac_addr,
                                              vswitch_name)
         self.api.vswitch_grant_user(vswitch_name, userid)
 
         # Deploy image on vm
+        print("Deploying userid %s ...\n" % userid)
         self.api.guest_deploy(userid, image_name_xcat, transportfiles,
                               remote_host)
 
         # Power on the vm, then put MN's public key into vm
+        print("Power on userid %s ...\n" % userid)
         self.api.guest_start(userid)
 
         return userid, ip_addr
