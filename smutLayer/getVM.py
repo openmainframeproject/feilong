@@ -93,6 +93,9 @@ def checkIsReachable(rh):
         rh.printLn("N", rh.userid + ": reachable")
         reachable = 1
     else:
+        # A failure from execCmdThruIUCV is acceptable way of determining
+        # that the system is unreachable.  We won't pass along the
+        # error message.
         rh.printLn("N", rh.userid + ": unreachable")
         reachable = 0
 
