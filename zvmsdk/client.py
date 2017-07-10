@@ -692,7 +692,7 @@ class XCATClient(ZVMClient):
         finally:
             os.remove(image_bundle_package)
 
-    def get_vm_nic_switch_info(self, vm_id):
+    def get_vm_nic_vswitch_info(self, vm_id):
         """
         Get NIC and switch mapping for the specified virtual machine.
         """
@@ -982,8 +982,8 @@ class XCATClient(ZVMClient):
             '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Create',
             '-T %s' % userid,
             '-n %s' % name))
-        if rdev:
-            commands += " -r %s" % rdev.replace(',', ' ')
+        if rdev is not None:
+            commands += " -r \'%s\'" % rdev.replace(',', ' ')
         # commands += " -a %s" % osa_name
         if controller != '*':
             commands += " -i %s" % controller
@@ -1050,7 +1050,7 @@ class XCATClient(ZVMClient):
             "-T %s" % userid,
             "-k switch_name=%s" % vsw))
         if rdev:
-            commands += ' -k real_device_address=%s' % rdev.replace(',', ' ')
+            commands += " -k real_device_address='%s'" % rdev.replace(',', ' ')
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
 
@@ -1453,7 +1453,7 @@ class XCATClient(ZVMClient):
         for k, v in kwargs.items():
             if k in set_vswitch_command:
                 commands = ' '.join((commands,
-                                     '-k %(key)s=%(value)s' %
+                                     "-k %(key)s=\'%(value)s\'" %
                                      {'key': k, 'value': v}))
             else:
                 raise exception.ZVMInvalidInput(
@@ -1493,6 +1493,11 @@ class XCATClient(ZVMClient):
                 if (emsg.__contains__("Return Code: 212") and
                     emsg.__contains__("Reason Code: 40")):
                     LOG.warning("Vswitch %s does not exist", switch_name)
+                    return
+                elif (emsg.__contains__("Return Code: 620") and
+                    emsg.__contains__("Reason Code: 60")):
+                    LOG.warning("DEFINE VSWITCH statement does not "
+                                "exist in system config")
                     return
                 else:
                     raise exception.ZVMException(
