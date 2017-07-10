@@ -47,15 +47,17 @@ class NetworkOPS(object):
         return self.zvmclient.get_vswitch_list()
 
     def couple_nic_to_vswitch(self, vswitch_name, nic_vdev,
-                              userid, persist=True):
+                              userid, active=False, persist=True):
         self.zvmclient.couple_nic_to_vswitch(vswitch_name, nic_vdev,
-                                             userid, persist)
+                                             userid, active=active,
+                                             persist=persist)
 
     def uncouple_nic_from_vswitch(self, vswitch_name, nic_vdev,
-                                  userid, persist=True):
+                                  userid, active=False, persist=True):
         self.zvmclient.uncouple_nic_from_vswitch(vswitch_name,
                                                  nic_vdev,
-                                                 userid, persist)
+                                                 userid, active=active,
+                                                 persist=persist)
 
     def add_vswitch(self, name, rdev,
                     controller, connection,
