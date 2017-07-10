@@ -819,7 +819,8 @@ class XCATClient(ZVMClient):
                     msg=("Failed to revoke user %s from vswitch %s, %s") %
                         (userid, vswitch_name, result['data'][0][0]))
 
-    def _couple_nic(self, vswitch_name, userid, vdev, persist=True):
+    def _couple_nic(self, vswitch_name, userid, vdev,
+                    active=False, persist=True):
         """Update information in xCAT switch table."""
         self._update_xcat_switch(userid, vdev, vswitch_name)
         """Couple NIC to vswitch by adding vswitch into user direct."""
@@ -838,32 +839,36 @@ class XCATClient(ZVMClient):
                 result = zvmutils.xcat_request("PUT", url, body)
                 if (result['errorcode'][0][0] != '0'):
                     raise exception.ZVMException(
-                        msg=("Failed to couple nic %s to vswitch %s, %s") %
+                        msg=("Failed to couple nic %s to vswitch %s "
+                             "in the guest's user direct, %s") %
                             (vdev, vswitch_name, result['data'][0][0]))
 
         # the inst must be active, or this call will failed
-        commands = ' '.join(('/opt/zhcp/bin/smcli',
-                             'Virtual_Network_Adapter_Connect_Vswitch',
-                             "-T %s" % userid,
-                             "-v %s" % vdev,
-                             "-n %s" % vswitch_name))
-        xdsh_commands = 'command=%s' % commands
-        body = [xdsh_commands]
-        with zvmutils.expect_xcat_call_failed_and_reraise(
-                exception.ZVMNetworkError):
-            result = zvmutils.xcat_request("PUT", url, body)
-            if (result['errorcode'][0][0] != '0'):
-                raise exception.ZVMException(
-                    msg=("Failed to couple nic %s to vswitch %s, %s") %
-                        (vdev, vswitch_name, result['data'][0][0]))
+        if active:
+            commands = ' '.join(('/opt/zhcp/bin/smcli',
+                                 'Virtual_Network_Adapter_Connect_Vswitch',
+                                 "-T %s" % userid,
+                                 "-v %s" % vdev,
+                                 "-n %s" % vswitch_name))
+            xdsh_commands = 'command=%s' % commands
+            body = [xdsh_commands]
+            with zvmutils.expect_xcat_call_failed_and_reraise(
+                    exception.ZVMNetworkError):
+                result = zvmutils.xcat_request("PUT", url, body)
+                if (result['errorcode'][0][0] != '0'):
+                    raise exception.ZVMException(
+                        msg=("Failed to couple nic %s to vswitch %s "
+                             "on the active guest system, %s") %
+                            (vdev, vswitch_name, result['data'][0][0]))
 
     def couple_nic_to_vswitch(self, vswitch_name, nic_vdev,
-                              userid, persist=True):
+                              userid, active=False, persist=True):
         """Couple nic to vswitch."""
         LOG.debug("Connect nic to switch: %s", vswitch_name)
-        self._couple_nic(vswitch_name, userid, nic_vdev, persist)
+        self._couple_nic(vswitch_name, userid, nic_vdev, active=active,
+                         persist=persist)
 
-    def _uncouple_nic(self, userid, vdev, persist=True):
+    def _uncouple_nic(self, userid, vdev, active=False, persist=True):
         """Uncouple NIC from vswitch"""
         zhcp = CONF.xcat.zhcp_node
         url = self._xcat_url.xdsh("/%s" % zhcp)
@@ -879,29 +884,32 @@ class XCATClient(ZVMClient):
                 result = zvmutils.xcat_request("PUT", url, body)
                 if (result['errorcode'][0][0] != '0'):
                     raise exception.ZVMException(
-                        msg=("Failed to uncouple nic %s, %s") %
+                        msg=("Failed to uncouple nic %s "
+                             "in the guest's user direct,  %s") %
                             (vdev, result['data'][0][0]))
 
         # the inst must be active, or this call will failed
-        commands = ' '.join(('/opt/zhcp/bin/smcli',
-                             'Virtual_Network_Adapter_Disconnect',
-                             "-T %s" % userid,
-                             "-v %s" % vdev))
-        xdsh_commands = 'command=%s' % commands
-        body = [xdsh_commands]
-        with zvmutils.expect_xcat_call_failed_and_reraise(
-                exception.ZVMNetworkError):
-            result = zvmutils.xcat_request("PUT", url, body)
-            if (result['errorcode'][0][0] != '0'):
-                raise exception.ZVMException(
-                    msg=("Failed to uncouple nic %s, %s") %
-                        (vdev, result['data'][0][0]))
+        if active:
+            commands = ' '.join(('/opt/zhcp/bin/smcli',
+                                 'Virtual_Network_Adapter_Disconnect',
+                                 "-T %s" % userid,
+                                 "-v %s" % vdev))
+            xdsh_commands = 'command=%s' % commands
+            body = [xdsh_commands]
+            with zvmutils.expect_xcat_call_failed_and_reraise(
+                    exception.ZVMNetworkError):
+                result = zvmutils.xcat_request("PUT", url, body)
+                if (result['errorcode'][0][0] != '0'):
+                    raise exception.ZVMException(
+                        msg=("Failed to uncouple nic %s "
+                             "on the active guest system, %s") %
+                            (vdev, result['data'][0][0]))
 
     def uncouple_nic_from_vswitch(self, vswitch_name, nic_vdev,
-                                  userid, persist=True):
+                                  userid, active=False, persist=True):
         """Uncouple nic from vswitch."""
         LOG.debug("Disconnect nic from switch: %s", vswitch_name)
-        self._uncouple_nic(userid, nic_vdev, persist)
+        self._uncouple_nic(userid, nic_vdev, active=active, persist=persist)
 
     def _get_xcat_node_ip(self):
         addp = '&col=key&value=master&attribute=value'
