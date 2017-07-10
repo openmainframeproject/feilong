@@ -32,13 +32,12 @@ class ImageAction(object):
 
     @validation.schema(image.create)
     def create(self, body):
-        image = body['image']
-        url = image['url']
-
-        remote_host = image.get('remote_host', None)
-        image_meta = image.get('image_meta', None)
-
-        self.api.image_import(url, image_meta, remote_host)
+        pass
+        # image = body['image']
+        # url = image['url']
+        # remote_host = image.get('remote_host', None)
+        # image_meta = image.get('image_meta', None)
+        # self.api.image_import(url, image_meta, remote_host)
 
     def get_root_disk_size(self, name):
         LOG.info('get root disk size')

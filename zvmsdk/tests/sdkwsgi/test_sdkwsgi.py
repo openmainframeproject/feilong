@@ -14,7 +14,7 @@ import requests
 class TestSDKClient(object):
 
     def __init__(self):
-        self.base_url = "http://127.0.0.1:8000"
+        self.base_url = "http://127.0.0.1:8888"
 
     def request(self, url, method, body, headers=None):
         _headers = {'Content-Type': 'application/json'}

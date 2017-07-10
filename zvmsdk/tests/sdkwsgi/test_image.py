@@ -52,7 +52,7 @@ class ImageTestCase(unittest.TestCase):
         resp = self.client.api_request(url='/images/image1/root')
         self.assertEqual(404, resp.status_code)
 
-    def test_image_create_delete(self):
+    def _test_image_create_delete(self):
         self._image_create()
 
         # if delete failed, anyway we can't re-delete it because of failure
