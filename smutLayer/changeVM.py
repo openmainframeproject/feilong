@@ -777,6 +777,7 @@ def removeDisk(rh):
         strCmd = ["/sbin/vmcp detach " + rh.parms['vaddr']]
         results = execCmdThruIUCV(rh, rh.userid, strCmd)
         if results['overallRC'] != 0:
+            rh.printLn("ES", results['response'])
             rh.updateResults(results)
 
     if results['overallRC'] == 0:

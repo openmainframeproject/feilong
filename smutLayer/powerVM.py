@@ -208,6 +208,9 @@ def checkIsReachable(rh):
         rh.printLn("N", rh.userid + ": reachable")
         reachable = 1
     else:
+        # A failure from execCmdThruIUCV is acceptable way of determining
+        # that the system is unreachable.  We won't pass along the
+        # error message.
         rh.printLn("N", rh.userid + ": unreachable")
         reachable = 0
 
@@ -539,9 +542,7 @@ def reboot(rh):
     results = execCmdThruIUCV(rh, rh.userid, strCmd)
     if results['overallRC'] != 0:
         # Command failed to execute using IUCV.
-        msg = msgs.msg['0310'][1] % (modId, rh.userid, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)
 
     if rh.results['overallRC'] == 0:
@@ -783,10 +784,11 @@ def softDeactivate(rh):
     strCmd = "echo 'ping'"
     results = execCmdThruIUCV(rh, rh.userid, strCmd)
 
-    if results['overallRC'] != 0:
+    if results['overallRC'] == 0:
         # We could talk to the machine, tell it to shutdown nicely.
         strCmd = "shutdown -h now"
         results = execCmdThruIUCV(rh, rh.userid, strCmd)
+        # Don't worry about a failure.  We will let CP shut it down.
 
     if results['overallRC'] != 0:
         # Tell z/VM to log off the system after we give it a 15 second lead.

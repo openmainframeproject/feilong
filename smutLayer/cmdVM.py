@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import types
 
 import generalUtils
 import msgs
@@ -156,14 +155,7 @@ def invokeCmd(rh):
     if results['overallRC'] == 0:
         rh.printLn("N", results['response'])
     else:
-        if isinstance(rh.parms['cmd'], types.ListType):
-            cmdString = ' '.join(rh.parms['cmd'])
-        else:
-            cmdString = rh.parms['cmd']
-        # Command failed to execute using IUCV.
-        msg = msgs.msg['0310'][1] % (modId, rh.userid, cmdString,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)
 
     rh.printSysLog("Exit cmdVM.invokeCmd, rc: " + str(results['overallRC']))
