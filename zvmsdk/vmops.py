@@ -14,7 +14,6 @@
 
 
 import time
-import uuid
 
 from zvmsdk import client as zvmclient
 from zvmsdk import config
@@ -168,33 +167,6 @@ class VMOps(object):
         """
         self._zvmclient.delete_vm(userid)
 
-    def capture_instance(self, instance_name):
-        """Invoke xCAT REST API to capture a instance."""
-        LOG.info('Begin to capture instance %s' % instance_name)
-        nodename = instance_name
-        image_id = str(uuid.uuid1())
-        image_uuid = image_id.replace('-', '_')
-        profile = image_uuid
-        res = self._zvmclient.do_capture(nodename, profile)
-        LOG.info(res['info'][3][0])
-        image_name = res['info'][3][0].split('(')[1].split(')')[0]
-        return image_name
-
-    def delete_image(self, image_name):
-        """"Invoke xCAT REST API to delete a image."""
-        try:
-            self._zvmclient.remove_image_file(image_name)
-        except exception.ZVMException:
-            LOG.warn(("Failed to delete image file %s from xCAT") %
-                     image_name)
-
-        try:
-            self._zvmclient.remove_image_definition(image_name)
-        except exception.ZVMException:
-            LOG.warn(("Failed to delete image definition %s from xCAT") %
-                     image_name)
-        LOG.info('Image %s successfully deleted' % image_name)
-
     def guest_deploy(self, user_id, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
         try:
@@ -219,9 +191,9 @@ class VMOps(object):
             if k in check_command:
                 if (k == 'nic_coupled'):
                     info['nic_coupled'] = False
-                    str = "NICDEF %s TYPE QDIO LAN SYSTEM" % v
+                    nstr = "NICDEF %s TYPE QDIO LAN SYSTEM" % v
                     for inf in direct_info:
-                        if str in inf:
+                        if nstr in inf:
                             info['nic_coupled'] = True
                             break
             else:

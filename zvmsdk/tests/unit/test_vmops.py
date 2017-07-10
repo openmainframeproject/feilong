@@ -79,32 +79,6 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         ret = self.vmops.is_powered_off('cbi00063')
         self.assertEqual(True, ret)
 
-    @mock.patch.object(zvmutils, 'xcat_request')
-    def test_capture_instance(self, xrequest):
-        res = {
-            'info': [
-                [u'cbi00063: Capturing the image using zHCP node'],
-                [u'cbi00063: creatediskimage start time'],
-                [u'cbi00063: Moving the image files to the directory:xxxx'],
-                [u'cbi00063: Completed capturing the image(test-image-name)']],
-            'node': [],
-            'errorcode': [],
-            'data': [],
-            'error': []}
-
-        xrequest.return_value = res
-        image_name = self.vmops.capture_instance('cbi00063')
-        self.assertEqual(image_name, 'test-image-name')
-
-    @mock.patch.object(zvmutils, 'xcat_request')
-    def test_delete_image(self, xrequest):
-        url = "/xcatws/objects/osimage/test-image-name?userName=" +\
-                CONF.xcat.username + "&password=" +\
-                CONF.xcat.password + "&format=json"
-        self.vmops.delete_image('test-image-name')
-
-        xrequest.assert_called_with('DELETE', url)
-
     @mock.patch('zvmsdk.client.XCATClient.get_image_performance_info')
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
     def test_get_info(self, gps, gipi):
