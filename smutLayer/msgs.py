@@ -103,32 +103,39 @@ msg = {
 
     '0300': [{'overallRC': 1, 'rc': 99, 'rs': 99},    # dict is not used.
             "ULT%s0300E SMAPI API failed: %s, rc: %s, out: %s"],
-    # 0301-0309: Available
-    '0310': [{'overallRC': 2, 'rc': 99, 'rs': 99},    # dict is not used.
-            "ULT%s0310E On %s, command: %s, failed with rc: %s, out: %s"],
+    # 0301-0310: Available
     '0311': [{'overallRC': 2, 'rc': 2, 'rs': 99},    # dict is not used.
-            "ULT%s0311E On %s, command sent thru IUCV failed, rc: %s, " +
-            "rc in response string is not an integer: %s, cmd: %s, out: %s"],
+            "ULT%s0311E On %s, command sent through IUCV failed, " +
+            "rc in response string is not an integer. " +
+            "cmd: %s, rc: %s, out: %s"],
     '0312': [{'overallRC': 2, 'rc': 2, 'rs': 99},    # dict is not used.
-            "ULT%s0312E On %s, command sent thru IUCV failed, rc: %s, " +
-            "reason code in response string is not an integer: %s, " +
-            "cmd: %s, out: %s"],
+            "ULT%s0312E On %s, command sent through IUCV failed, " +
+            "reason code in response string is not an integer. " +
+            "cmd: %s, rc: %s, rs: %s, out: %s"],
     '0313': [{'overallRC': 2, 'rc': 1},      # dict is not used.
-            "ULT%s0313E Issued command was not authorized or a generic " +
-            "Linux error occurred, error details: %s"],
+            "ULT%s0313E On %s, command sent through IUCV was not " +
+            "authorized or a generic Linux error occurred. " +
+            "cmd: %s, rc: %s, rs: %s, out: %s"],
     '0314': [{'overallRC': 2, 'rc': 2},      # dict is not used.
-            "ULT%s0314E IUCV client parameter error, error details: %s"],
+            "ULT%s0314E IUCV client parameter error sending command to %s. " +
+            "cmd: %s, rc: %s, rs: %s, out: %s"],
     '0315': [{'overallRC': 2, 'rc': 4},      # dict is not used.
-            "ULT%s0315E IUCV socket error, error details: %s"],
+            "ULT%s0315E IUCV socket error sending command to %s. " +
+            "cmd: %s, rc: %s, rs: %s, out: %s"],
     '0316': [{'overallRC': 2, 'rc': 8},      # dict is not used.
-            "ULT%s0316E Executed command failed, error details: %s"],
+            "ULT%s0316E On %s, command sent through IUCV failed. " +
+            "cmd: %s, rc: %s, rs: %s, out: %s"],
     '0317': [{'overallRC': 2, 'rc': 16},     # dict is not used.
-            "ULT%s0317E File Transport failed, error details: %s"],
+            "ULT%s0317E File transport failure while sending " +
+            "command to %s. " +
+            "cmd: %s, rc: %s, rs: %s, out: %s"],
     '0318': [{'overallRC': 2, 'rc': 32},     # dict is not used.
-            "ULT%s0318E IUCV server file was not found on this system, "
-            "error details: %s"],
+            "ULT%s0318E On %s, IUCV server file was not found. " +
+            "cmd: %s, rc: %s, rs: %s, out: %s"],
     '0319': [{'overallRC': 2},               # dict is not used.
-            "ULT%s0319E Unrecognized IUCV client error, error details: "],
+            "ULT%s0319E Unrecognized IUCV client error encountered " +
+            "while sending a command through IUCV to $s. " +
+            "cmd: %s, rc: %s, rs: %s, out: %s"],
 
     '0400': [{'overallRC': 4, 'rc': 4, 'rs': 400},
             "ULT%s0400E The worker script %s does not exist."],
