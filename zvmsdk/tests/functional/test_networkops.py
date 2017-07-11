@@ -35,65 +35,6 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         super(SDKVswitchTestCase, self).setUp()
         self.addCleanup(self.sdkapi.vswitch_delete, self.vswitch)
 
-    def _get_vswitch_acc_info(self, vswitch_name):
-        # This can only applies to Vlan aware vswitch
-        command = "vmcp q vswitch %s acc" % vswitch_name
-        rd = self.client.run_commands_on_node(CONF.xcat.zhcp_node, command)
-        info = {}
-        userid_match = False
-        authorized_userids = []
-        ports = {}
-        info['aware'] = False
-        info['userbased'] = True
-        info['network_type'] = 'IP'
-        for i in range(len(rd)):
-            ls = rd[i]
-            sec = ls.split(':')
-            if ls.__contains__("Default VLAN:"):
-                info['aware'] = True
-                info['default_porttype'] = sec[-1].strip()
-                info['default_vlan'] = sec[-2].split()[0].strip()
-                continue
-            if ls.__contains__("MAC address:"):
-                info['mac'] = sec[2].split()[0]
-                continue
-            if ls.__contains__("Uplink Port:"):
-                userid_match = False
-                continue
-            if userid_match:
-                if 'aware' not in info.keys():
-                    continue
-                if info['aware']:
-                    vlan_id = sec[-1].strip()
-                    port_type = sec[-2].split()[0].strip()
-                    userid = sec[-3].split()[0].strip()
-                    ports[userid] = {'type': port_type,
-                                         'vlanid': vlan_id}
-                    authorized_userids.append(userid)
-                else:
-                    authorized_userids.extend(sec[1].strip().split())
-                continue
-            if ls.__contains__("Authorized userids:"):
-                userid_match = True
-                continue
-            if ls.__contains__("RDEV:"):
-                rdev = sec[2].strip().split()[0]
-                vdev = sec[3].strip().split()[0]
-                controller = sec[4].strip().split()[0]
-                info['uplink_port'] = {'rdev': rdev,
-                                       'vdev': vdev,
-                                       'controller': controller}
-                continue
-            if ls.__contains__("PORTBASED"):
-                info['userbased'] = False
-                continue
-            if ls.__contains__("ETHERNET"):
-                info['network_type'] = 'ETHERNET'
-                continue
-        info['authorized_users'] = authorized_userids
-        info['ports'] = ports
-        return info
-
     def test_vswitch_get_list(self):
         """ Positive test case of vswitch_get_list """
         # Setup test env
@@ -112,15 +53,12 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         self.sdkapi.vswitch_create(vswitch_name, '1111')
         # grant and check
         self.sdkapi.vswitch_grant_user(vswitch_name, self.basevm)
-        vsw_info = self._get_vswitch_acc_info(vswitch_name)
-        self.assertTrue(('authorized_users' in vsw_info.keys()) and
-                        (self.basevm.upper() in vsw_info['authorized_users']))
+        vsw_info = self.client.query_vswitch(vswitch_name)
+        self.assertIn(self.basevm.upper(), vsw_info['authorized_users'])
         # revoke and check
         self.sdkapi.vswitch_revoke_user(vswitch_name, self.basevm)
-        vsw_info = self._get_vswitch_acc_info(vswitch_name)
-        self.assertTrue(('authorized_users' in vsw_info.keys()) and
-                        (self.basevm.upper() not in
-                         vsw_info['authorized_users']))
+        vsw_info = self.client.query_vswitch(vswitch_name)
+        self.assertNotIn(self.basevm.upper(), vsw_info['authorized_users'])
 
     def test_vswitch_grant_not_exist(self):
         """ Error case of vswitch_grant_user: vswitch not exist """
@@ -153,10 +91,13 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         self.sdkapi.vswitch_set_vlan_id_for_user(vswitch_name,
                                                  self.basevm, 1000)
         # Check authorized user and vlanid
-        vsw = self._get_vswitch_acc_info(vswitch_name)
-        self.assertTrue(('ports' in vsw.keys()) and
-                        (self.basevm.upper() in vsw['ports'].keys()))
-        self.assertEqual(vsw['ports'][self.basevm.upper()]['vlanid'], '1000')
+        vsw = self.client.query_vswitch(vswitch_name)
+        self.assertIn(self.basevm.upper(), vsw['authorized_users'])
+        self.assertEqual(
+            vsw['authorized_users'][self.basevm.upper()]['vlan_count'], '1')
+        self.assertListEqual(
+            vsw['authorized_users'][self.basevm.upper()]['vlan_ids'],
+            ['1000'])
 
     def test_vswitch_set_port_invalid_vlanid(self):
         """ Error case of vswitch_set_port_vlanid: vlanid value invalid """
@@ -193,70 +134,94 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         """ Positive case of vswitch_create: Vlan unaware"""
         # Test
         vswitch_name = self.vswitch
-        self.sdkapi.vswitch_create(vswitch_name, '1111')
-        vsw = self._get_vswitch_acc_info(vswitch_name)
-        self.assertEqual(vsw['aware'], False)
-        zhcp_userid = self.client._get_zhcp_userid().upper()
-        self.assertListEqual([zhcp_userid], vsw['authorized_users'])
-        self.assertEqual(vsw['userbased'], True)
-        self.assertIn('uplink_port', vsw.keys())
-        self.assertEqual(vsw['uplink_port']['rdev'], '1111.P00')
+        self.sdkapi.vswitch_create(vswitch_name, rdev='1111',
+                                   controller='FAKEVMID', connection='CONNECT',
+                                   network_type='IP', router='NONrouter',
+                                   vid='UNAWARE', port_type='ACCESS',
+                                   gvrp='NOGVRP', queue_mem=3, native_vid=1,
+                                   persist=False)
+        vsw = self.client.query_vswitch(vswitch_name)
+        self.assertEqual(vsw['switch_name'], vswitch_name)
+        self.assertEqual(vsw['transport_type'], 'IP')
+        self.assertEqual(vsw['port_type'], 'NONE')
+        self.assertEqual(vsw['queue_memory_limit'], '3')
+        self.assertEqual(vsw['vlan_awareness'], 'UNAWARE')
+        self.assertEqual(vsw['gvrp_request_attribute'], 'NOGVRP')
+        self.assertEqual(vsw['user_port_based'], 'USERBASED')
+        self.assertDictEqual(vsw['authorized_users'], {})
+        self.assertIn('1111', vsw['real_devices'].keys())
 
     def test_vswitch_create_vlan_aware(self):
         """ Positive case of vswitch_create: Vlan aware"""
         # Test
         vswitch_name = self.vswitch
-        self.sdkapi.vswitch_create(vswitch_name, '1111', vid=1000)
-        vsw = self._get_vswitch_acc_info(vswitch_name)
-        self.assertEqual(vsw['aware'], True)
-        self.assertEqual(vsw['network_type'], 'ETHERNET')
-        self.assertEqual(vsw['userbased'], True)
-        self.assertIn('uplink_port', vsw.keys())
-        self.assertEqual(vsw['uplink_port']['rdev'], '1111.P00')
-        zhcp_userid = self.client._get_zhcp_userid().upper()
-        self.assertListEqual([zhcp_userid.upper()], vsw['authorized_users'])
-        self.assertTrue(('ports' in vsw.keys()) and
-                        (zhcp_userid in vsw['ports'].keys()))
-        self.assertEqual(vsw['ports'][zhcp_userid]['vlanid'], '1000')
+        self.sdkapi.vswitch_create(vswitch_name, rdev='1111,2222',
+                                   controller='FAKEVMID',
+                                   connection='DISCONnect',
+                                   network_type='ETHERNET', router='PRIrouter',
+                                   vid=1000, port_type='TRUNK',
+                                   gvrp='GVRP', queue_mem=5, native_vid=1,
+                                   persist=True)
+        vsw = self.client.query_vswitch(vswitch_name)
+        self.assertEqual(vsw['switch_name'], vswitch_name)
+        self.assertEqual(vsw['transport_type'], 'ETHERNET')
+        self.assertEqual(vsw['port_type'], 'TRUNK')
+        self.assertEqual(vsw['queue_memory_limit'], '5')
+        self.assertEqual(vsw['vlan_awareness'], 'AWARE')
+        self.assertEqual(vsw['vlan_id'], '1000')
+        self.assertEqual(vsw['native_vlan_id'], '0001')
+        self.assertEqual(vsw['routing_value'], 'NA')
+        self.assertEqual(vsw['gvrp_request_attribute'], 'GVRP')
+        self.assertEqual(vsw['user_port_based'], 'USERBASED')
+        self.assertDictEqual(vsw['authorized_users'], {})
+        self.assertListEqual(sorted(['1111', '2222']),
+                             sorted(vsw['real_devices'].keys()))
 
-    def test_vswitch_create_existed_change_vdev(self):
-        """ Positive case of vswitch_create: existed vswitch with
-        different vdev specified """
+    def test_vswitch_create_multiple_rdev(self):
+        """ Positive case of vswitch_create: multiple rdev"""
         # Setup test env
         vswitch_name = self.vswitch
-        self.sdkapi.vswitch_create(vswitch_name, '1111')
+        self.sdkapi.vswitch_create(vswitch_name, rdev='1111 22 33')
         # Test
-        self.sdkapi.vswitch_create(vswitch_name, '2222')
-        vsw = self._get_vswitch_acc_info(vswitch_name)
-        self.assertIn('uplink_port', vsw.keys())
-        self.assertEqual(vsw['uplink_port']['rdev'], '2222.P00')
+        vsw = self.client.query_vswitch(vswitch_name)
+        self.assertListEqual(sorted(['1111', '0022', '0033']),
+                             sorted(vsw['real_devices'].keys()))
+
+    def test_vswitch_create_existed(self):
+        """ Error case of vswitch_create: vswitch already existed """
+        # Setup test env
+        vswitch_name = self.vswitch
+        self.sdkapi.vswitch_create(vswitch_name, '11 0022 333')
+        # Test
+        self.assertRaises(exception.ZVMException,
+                          self.sdkapi.vswitch_create,
+                          vswitch_name, '1111')
 
     def test_vswitch_create_long_name(self):
         """ Error case of vswitch_create: name length > 8 """
         # Test
         vswitch_name = "TESTLONGVSWNAME"
-        # Default network type is Ethernet, it cann't specify router value
+        # vswitch name length should be <=8
         self.assertRaises(exception.ZVMInvalidInput,
                           self.sdkapi.vswitch_create,
                           vswitch_name, '1111')
         self.assertNotIn(vswitch_name, self.sdkapi.vswitch_get_list())
 
-    def test_vswitch_create_syntax_error(self):
-        """ Error case of vswitch_create: wrong argument combination """
+    def test_vswitch_create_invalid_rdev(self):
+        """ Error case of vswitch_create: invalid rdev """
         # Test
         vswitch_name = self.vswitch
-        # Default network type is Ethernet, it cann't specify router value
+        # only support at most three rdevs
         self.assertRaises(exception.ZVMException,
                           self.sdkapi.vswitch_create,
-                          vswitch_name, '1111',
-                          router=1)
+                          vswitch_name, '1111 2222 3333 4444')
         self.assertNotIn(vswitch_name, self.sdkapi.vswitch_get_list())
 
     def test_vswitch_create_input_error(self):
         """ Error case of vswitch_create: wrong input value """
         # Test
         vswitch_name = self.vswitch
-        # Default network type is Ethernet, it cann't specify router value
+        # Queue_mem should be in range 1-8
         self.assertRaises(exception.ZVMInvalidInput,
                           self.sdkapi.vswitch_create,
                           vswitch_name, '1111',

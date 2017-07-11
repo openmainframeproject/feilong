@@ -1473,3 +1473,104 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         body = [commands]
         self._zvmclient._update_xcat_switch("fake_id", "fake_vdev", "fake_vs")
         xrequest.assert_called_with("PUT", url, body)
+
+    @mock.patch.object(zvmutils, 'xdsh')
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
+    def test_query_vswitch(self, get_hcp_info, xdsh):
+        get_hcp_info.return_value = {'hostname': "fakehcp.fake.com",
+                                     'nodename': "fakehcp",
+                                     'userid': "fakeuserid"}
+        xdsh.return_value = {'info': [], 'node': [], 'errorcode': [[u'0']],
+                             'data': [[
+                               'zhcp2:  switch_name: UNITTEST\n'
+                               'zhcp2:  transport_type: IP\n'
+                               'zhcp2:  port_type: ACCESS\n'
+                               'zhcp2:  queue_memory_limit: 8\n'
+                               'zhcp2:  routing_value: NONROUTER\n'
+                               'zhcp2:  vlan_awareness: AWARE\n'
+                               'zhcp2:  vlan_id: 0011\n'
+                               'zhcp2:  native_vlan_id: 0001\n'
+                               'zhcp2:  mac_address: 02-00-02-00-02-23\n'
+                               'zhcp2:  gvrp_request_attribute: NOGVRP\n'
+                               'zhcp2:  gvrp_enabled_attribute: NOGVRP\n'
+                               'zhcp2:  switch_status: 1\n'
+                               'zhcp2:  link_ag: LAG:\n'
+                               'zhcp2:  lag_interval: 0\n'
+                               'zhcp2:  lag_group: (NOGRP)\n'
+                               'zhcp2:  IP_timeout: 5\n'
+                               'zhcp2:  switch_type: QDIO\n'
+                               'zhcp2:  isolation_status: NOISOLATION\n'
+                               'zhcp2:  MAC_protect: NOMACPROTECT\n'
+                               'zhcp2:  user_port_based: USERBASED\n'
+                               'zhcp2:  VLAN_counters: E)\n'
+                               'zhcp2:  vepa_status: (NONE)\n'
+                               'zhcp2: real_device_address: 1111\n'
+                               'zhcp2: virtual_device_address: 0000\n'
+                               'zhcp2: controller_name: (NONE)\n'
+                               'zhcp2: port_name: (NONE)\n'
+                               'zhcp2: device_status: 0\n'
+                               'zhcp2: device_error_status 3\n'
+                               'zhcp2: real_device_address: 0022\n'
+                               'zhcp2: virtual_device_address: 0000\n'
+                               'zhcp2: controller_name: (NONE)\n'
+                               'zhcp2: port_name: (NONE)\n'
+                               'zhcp2: device_status: 0\n'
+                               'zhcp2: device_error_status 5\n'
+                               'zhcp2: real_device_address: 0033\n'
+                               'zhcp2: virtual_device_address: 0000\n'
+                               'zhcp2: controller_name: (NONE)\n'
+                               'zhcp2: port_name: (NONE)\n'
+                               'zhcp2: device_status: 0\n'
+                               'zhcp2: device_error_status 11\n'
+                               'zhcp2: Error controller_name is NULL!!\n'
+                               'zhcp2: port_num: 0000\n'
+                               'zhcp2: grant_userid: TEST1\n'
+                               'zhcp2: promiscuous_mode: NOPROM\n'
+                               'zhcp2: osd_sim: NOOSDSIM\n'
+                               'zhcp2: vlan_count: 1\n'
+                               'zhcp2: user_vlan_id: 0001\n'
+                               'zhcp2: port_num: 0000\n'
+                               'zhcp2: grant_userid: TEST2\n'
+                               'zhcp2: promiscuous_mode: NOPROM\n'
+                               'zhcp2: osd_sim: NOOSDSIM\n'
+                               'zhcp2: vlan_count: 1\n'
+                               'zhcp2: user_vlan_id: 0001\n'
+                               'zhcp2: port_num: 0000\n'
+                               'zhcp2: grant_userid: TEST3\n'
+                               'zhcp2: promiscuous_mode: NOPROM\n'
+                               'zhcp2: osd_sim: NOOSDSIM\n'
+                               'zhcp2: vlan_count: 3\n'
+                               'zhcp2: user_vlan_id: 0001\n'
+                               'zhcp2: user_vlan_id: 0002\n'
+                               'zhcp2: user_vlan_id: 0003\n'
+                               'zhcp2: adapter_owner: USERID1\n'
+                               'zhcp2: adapter_vdev: 0800\n'
+                               'zhcp2: adapter_macaddr: 02-00-02-00-00-D3\n'
+                               'zhcp2: adapter_type: QDIO\n'
+                               'zhcp2: adapter_owner: USERID2\n'
+                               'zhcp2: adapter_vdev: 0700\n'
+                               'zhcp2: adapter_macaddr: 02-00-02-00-00-70\n'
+                               'zhcp2: adapter_type: QDIO']],
+                             'error': []}
+        vsw = self._zvmclient.query_vswitch('UNITTEST')
+        self.assertEqual(vsw['switch_name'], 'UNITTEST')
+        self.assertEqual(vsw['transport_type'], 'IP')
+        self.assertEqual(vsw['port_type'], 'ACCESS')
+        self.assertEqual(vsw['queue_memory_limit'], '8')
+        self.assertEqual(vsw['vlan_awareness'], 'AWARE')
+        self.assertEqual(vsw['vlan_id'], '0011')
+        self.assertEqual(vsw['native_vlan_id'], '0001')
+        self.assertEqual(vsw['gvrp_request_attribute'], 'NOGVRP')
+        self.assertEqual(vsw['user_port_based'], 'USERBASED')
+        self.assertListEqual(sorted(['TEST1', 'TEST2', 'TEST3']),
+                             sorted(vsw['authorized_users'].keys()))
+        self.assertEqual(vsw['authorized_users']['TEST3']['vlan_count'], '3')
+        self.assertListEqual(
+            sorted(vsw['authorized_users']['TEST3']['vlan_ids']),
+            sorted(['0001', '0002', '0003']))
+        self.assertListEqual(sorted(['USERID1_0800', 'USERID2_0700']),
+                             sorted(vsw['adapters'].keys()))
+        self.assertEqual(vsw['adapters']['USERID1_0800']['mac'],
+                         '02-00-02-00-00-D3')
+        self.assertEqual(vsw['adapters']['USERID1_0800']['type'],
+                         'QDIO')
