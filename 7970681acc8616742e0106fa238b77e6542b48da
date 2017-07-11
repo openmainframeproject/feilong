@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a64ad4da_86c9a28d",
+        "filename": "zvmsdk/tests/functional/test_networkops.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-07-11T09:37:06Z",
+      "side": 1,
+      "message": "I\u0027d prefer this kind of test move to \u0027unit\u0027 test\n\nfunctional test should focus on \u0027correct\u0027 case instead of \u0027error \u0027case",
+      "range": {
+        "startLine": 233,
+        "startChar": 2,
+        "endLine": 241,
+        "endChar": 47
+      },
+      "revId": "7970681acc8616742e0106fa238b77e6542b48da",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0bc49eec_32c8bd68",
+        "filename": "zvmsdk/tests/functional/test_networkops.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-07-11T09:37:06Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 272,
+        "startChar": 25,
+        "endLine": 272,
+        "endChar": 37
+      },
+      "revId": "7970681acc8616742e0106fa238b77e6542b48da",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d773c4e4_5e76b7cb",
+        "filename": "zvmsdk/tests/functional/test_networkops.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-07-11T09:37:06Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 282,
+        "startChar": 35,
+        "endLine": 282,
+        "endChar": 36
+      },
+      "revId": "7970681acc8616742e0106fa238b77e6542b48da",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
