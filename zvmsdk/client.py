@@ -1529,3 +1529,117 @@ class XCATClient(ZVMClient):
                                 if isinstance(s, unicode)])
                 data = data.split('\n')
         return data
+
+    def query_vswitch(self, switch_name):
+        hcp_info = self._get_hcp_info()
+        zhcp_userid = hcp_info['userid']
+        zhcp_node = hcp_info['nodename']
+        cmd = ('smcli Virtual_Network_Vswitch_Query_Extended -T "%s" '
+               '-k "switch_name=%s"' % (zhcp_userid, switch_name))
+
+        with zvmutils.expect_invalid_xcat_resp_data():
+            resp = zvmutils.xdsh(zhcp_node, cmd)
+            raw_data_list = resp["data"][0]
+
+        while raw_data_list.__contains__(None):
+            raw_data_list.remove(None)
+
+        raw_data = '\n'.join(raw_data_list)
+        rd_list = raw_data.split('\n')
+
+        vsw_info = {}
+        with zvmutils.expect_invalid_xcat_resp_data():
+            # The first 21 lines contains the vswitch basic info
+            # eg, name, type, port_type, vlan_awareness, etc
+            idx_end = len(rd_list)
+            for idx in range(21):
+                rd = rd_list[idx].split(':')
+                vsw_info[rd[1].strip()] = rd[2].strip()
+            # Skip the vepa_status in line 22
+            idx = 22
+            def _parse_value(data_list, idx, keyword, offset=1):
+                value = data_list[idx].rpartition(keyword)[2].strip()
+                if value == '(NONE)':
+                    value = 'NONE'
+                return idx + offset, value
+
+            # Start to analyse the real devices info
+            vsw_info['real_devices'] = {}
+            while((idx < idx_end) and
+                  rd_list[idx].__contains__('real_device_address')):
+                # each rdev has 6 lines' info
+                idx, rdev_addr = _parse_value(rd_list, idx,
+                                              'real_device_address: ')
+                idx, vdev_addr = _parse_value(rd_list, idx,
+                                              'virtual_device_address: ')
+                idx, controller = _parse_value(rd_list, idx,
+                                              'controller_name: ')
+                idx, port_name = _parse_value(rd_list, idx, 'port_name: ')
+                idx, dev_status = _parse_value(rd_list, idx,
+                                                  'device_status: ')
+                idx, dev_err = _parse_value(rd_list, idx,
+                                            'device_error_status ')
+                vsw_info['real_devices'][rdev_addr] = {'vdev': vdev_addr,
+                                                'controller': controller,
+                                                'port_name': port_name,
+                                                'dev_status': dev_status,
+                                                'dev_err': dev_err
+                                                }
+                # Under some case there would be an error line in the output
+                # "Error controller_name is NULL!!", skip this line
+                if rd_list[idx].__contains__(
+                    'Error controller_name is NULL!!'):
+                    idx += 1
+
+            # Start to get the authorized userids
+            vsw_info['authorized_users'] = {}
+            while((idx < idx_end) and rd_list[idx].__contains__('port_num')):
+                # each authorized userid has 6 lines' info at least
+                idx, port_num = _parse_value(rd_list, idx,
+                                              'port_num: ')
+                idx, userid = _parse_value(rd_list, idx,
+                                              'grant_userid: ')
+                idx, prom_mode = _parse_value(rd_list, idx,
+                                              'promiscuous_mode: ')
+                idx, osd_sim = _parse_value(rd_list, idx, 'osd_sim: ')
+                idx, vlan_count = _parse_value(rd_list, idx,
+                                                  'vlan_count: ')
+                vlan_ids = []
+                for i in range(int(vlan_count)):
+                    idx, id = _parse_value(rd_list, idx,
+                                                  'user_vlan_id: ')
+                    vlan_ids.append(id)
+                # For vlan unaware vswitch, the query smcli would
+                # return vlan_count as 1, here we just set the count to 0
+                if (vsw_info['vlan_awareness'] == 'UNAWARE'):
+                    vlan_count = 0
+                    vlan_ids = []
+                vsw_info['authorized_users'][userid] = {
+                    'port_num': port_num,
+                    'prom_mode': prom_mode,
+                    'osd_sim': osd_sim,
+                    'vlan_count': vlan_count,
+                    'vlan_ids': vlan_ids
+                    }
+
+            # Start to get the connected adapters info
+            # OWNER_VDEV would be used as the dict key for each adapter
+            vsw_info['adapters'] = {}
+            while((idx < idx_end) and
+                  rd_list[idx].__contains__('adapter_owner')):
+                # each adapter has four line info: owner, vdev, macaddr, type
+                idx, owner = _parse_value(rd_list, idx,
+                                              'adapter_owner: ')
+                idx, vdev = _parse_value(rd_list, idx,
+                                              'adapter_vdev: ')
+                idx, mac = _parse_value(rd_list, idx,
+                                              'adapter_macaddr: ')
+                idx, type = _parse_value(rd_list, idx, 'adapter_type: ')
+                key = owner + '_' + vdev
+                vsw_info['adapters'][key] = {
+                    'mac': mac,
+                    'type': type
+                    }
+            # Todo: analyze and add the uplink NIC info and global member info
+
+        return vsw_info
