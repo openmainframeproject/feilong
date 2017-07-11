@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "41ee47d8_da9393fc",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-11T14:30:25Z",
+      "side": 1,
+      "message": "I would use \"through\" or \"via\" just in case anyone gets ambitious and decides to translate this to another language.",
+      "revId": "f9ba7dc11450c18aa1f76590f09a76bde2c60915",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e37b9d1e_09312cc8",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-11T14:30:25Z",
+      "side": 1,
+      "message": "I would use \"through\" or \"via\" just in case anyone gets ambitious and decides to translate this to another language.",
+      "revId": "f9ba7dc11450c18aa1f76590f09a76bde2c60915",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "48a77831_28a3b7b6",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-11T14:30:25Z",
+      "side": 1,
+      "message": "I would use \"through\" or \"via\" just in case anyone gets ambitious and decides to translate this to another language.",
+      "revId": "f9ba7dc11450c18aa1f76590f09a76bde2c60915",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "262666ad_31d2ea55",
+        "filename": "smutLayer/powerVM.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 793,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-11T14:30:25Z",
+      "side": 1,
+      "message": "Doesn\u0027t this become an else: then?",
+      "revId": "f9ba7dc11450c18aa1f76590f09a76bde2c60915",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
