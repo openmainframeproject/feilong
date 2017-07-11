@@ -1408,8 +1408,14 @@ class XCATClient(ZVMClient):
             zvmutils.xcat_request("PUT", url, body)
 
     def image_delete(self, image_name):
-        self.remove_image_file(image_name)
-        self.remove_image_definition(image_name)
+        try:
+            self.remove_image_file(image_name)
+            self.remove_image_definition(image_name)
+        except exception.ZVMXCATInternalError as err:
+            emsg = err.format_message()
+            if (emsg.__contains__("Invalid image name")):
+                LOG.info('The image %s does not exist in xCAT image'
+                         ' repository' % image_name)
 
     def get_image_path_by_name(self, spawn_image_name):
         # eg. rhel7.2-s390x-netboot-<image_uuid>
