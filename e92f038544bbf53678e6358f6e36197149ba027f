@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "19a6c0ea_510658d2",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 553,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-07-11T07:50:26Z",
+      "side": 1,
+      "message": "remove \"and mac_addr\"?",
+      "range": {
+        "startLine": 553,
+        "startChar": 30,
+        "endLine": 553,
+        "endChar": 38
+      },
+      "revId": "e92f038544bbf53678e6358f6e36197149ba027f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
