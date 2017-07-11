@@ -105,7 +105,7 @@ def execCmdThruIUCV(rh, userid, strCmd):
 
     rh.printSysLog("Enter vmUtils.execCmdThruIUCV, userid: " +
                            userid + " cmd: " + strCmd)
-    iucvpath = '/opt/zhcp/bin/IUCV/'
+    iucvpath = '/opt/zthin/bin/IUCV/'
     results = {
               'overallRC': 0,
               'rc': 0,
@@ -365,7 +365,7 @@ def invokeSMCLI(rh, cmd):
               'strError': '',
              }
 
-    smcliPath = '/opt/zhcp/bin/'
+    smcliPath = '/opt/zthin/bin/'
     cmd[0] = smcliPath + cmd[0]
 
     try:

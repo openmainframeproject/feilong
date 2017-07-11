@@ -74,7 +74,7 @@ subs = {
                                         # Simple tar file for the config drive
     '<<<simpleImage>>>': '/install/zvm/POC/testImages/' +
         'rhel67eckd_small_225M.img',    # Small image file
-    '<<<unpackScript>>>': '/opt/zhcp/bin/unpackdiskimage',
+    '<<<unpackScript>>>': '/opt/zthin/bin/unpackdiskimage',
                                         # Location of unpackdiskimage
     '<<<longString>>>': longstring,
 }
