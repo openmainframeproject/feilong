@@ -402,12 +402,12 @@ class SDKAPI(object):
         """
         return self._networkops.get_vswitch_list()
 
-    @check_input_types(_TVSWNAME, _TSTR_OR_NONE, _TUSERID, int, int, int,
-                       int, int, int, int, int, int)
-    def vswitch_create(self, name, rdev=None,
-                       controller='*', connection=1,
-                       queue_mem=8, router=0, network_type=2, vid=0,
-                       port_type=1, update=1, gvrp=2, native_vid=1):
+    @check_input_types(_TVSWNAME, _TSTR_OR_NONE, _TUSERID, _TSTR, _TSTR,
+                       _TSTR, _TSTR, _TSTR, _TSTR, int, int, bool)
+    def vswitch_create(self, name, rdev=None, controller='*',
+                       connection='CONNECT', network_type='IP',
+                       router="NONROUTER", vid='UNAWARE', port_type='ACCESS',
+                       gvrp='GVRP', queue_mem=8, native_vid=1, persist=True):
         """ Create vswitch.
 
         :param str name: the vswitch name
@@ -417,71 +417,58 @@ class SDKAPI(object):
         :param str controller: the vswitch's controller, it could be the userid
                controlling the real device, or '*' to specifies that any
                available controller may be used
-        :param int connection: 0-unspecified, 1-Active the real device
-               connection, 2-Do not active the real device connection
+        :param str connection: One of the following values:
+               CONnect-Activate the real device connection.
+               DISCONnect-Do not activate the real device connection.
+               NOUPLINK-The vswitch will never have connectivity through the
+               UPLINK port
+        :param str network_type: Specifies the transport mechanism to be used
+               for the vswitch, as follows: IP, ETHERNET
+        :param str router: Specified whether the OSA-Express QDIO
+               device will act as a router to the virtual switch, as follows:
+               NONrouter: The OSA-Express device identified in
+               real_device_address= will not act as a router to the vswitch
+               PRIrouter: The OSA-Express device identified in
+               real_device_address= will act as a primary router to the vswitch
+               if the network_type is ETHERNET, this value must be unspecified,
+               otherwise, if this value is unspecified, default is NONROUTER
+        :param str vid: the VLAN ID. This can be any of the following values:
+               UNAWARE, AWARE or 1-4094
+        :param str port_type: ACCESS, TRUNK
+        :param str gvrp: GVRP, NOGVRP
         :param int queue_mem: the max number of megabytes on a single port,
                any number between 1 and 8 may be used
-        :param int router: 0-unspecified, 1-nonrouter 2-prirouter
-        :param int network_type: 0-unspecified 1-IP 2-ethernet
-        :param int vid: the VLAN ID. 0-unaware, (1-4094)-valid VLAN ID
-        :param int port_type: 0-unspecified 1-access 2-trunk
-        :param int update: 0-unspecified, 1-create vswitch on the active
-               system, 2-create vswitch on the active system and add to the
-               system configuration file, 3-add vswitch to the system
-               configuration file
-        :param int gvrp: 0-unspecified 1-gvrp 2-nogvrp
-        :param int native_vid: the native vlan id, -1 or 1-4094
+        :param int native_vid: the native vlan id, 1-4094
+        :param bool persist: whether create the vswitch in the permanent
+               configuration for the system
 
         """
-        if ((vid < 0) or (vid > 4094)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid vlan id should be 0-4094'))
-        if ((connection < 0) or (connection > 2)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid connection value should be 0, 1, 2'))
         if ((queue_mem < 1) or (queue_mem > 8)):
             raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
+                msg=("Failed to create vswitch %s: %s") %
                     (name, 'valid query memory value should be 1-8'))
-        if ((router < 0) or (router > 2)):
+        if ((native_vid < 1) or (native_vid > 4094)):
             raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid router value should be 0, 1, 2'))
-        if ((network_type < 0) or (network_type > 2)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid network type value should be 0, 1, 2'))
-        if ((port_type < 0) or (port_type > 2)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid port type value should be 0, 1, 2'))
-        if ((update < 0) or (update > 3)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid update indicator should be 0, 1, 2, 3'))
-        if ((gvrp < 0) or (gvrp > 2)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid GVRP value should be 0, 1, 2'))
-        if (((native_vid < 1) or (native_vid > 4094)) and
-            (native_vid != -1)):
-            raise exception.ZVMInvalidInput(
-                msg=("switch: %s add failed, %s") %
-                    (name, 'valid native VLAN id should be -1 or 1-4094'))
-        # if vid = 0, port_type, gvrp and native_vlanid are not
+                msg=("Failed to create vswitch %s: %s") %
+                    (name, 'valid native VLAN id should be 1-4094'))
+        # if vswitch is vlan unawared, port_type, gvrp and native_vid are not
         # allowed to specified
-        if int(vid) == 0:
-            vid = 0
-            port_type = 0
-            gvrp = 0
-            native_vid = -1
+        if vid.upper() == 'UNAWARE':
+            port_type = None
+            gvrp = None
+            native_vid = None
 
-        self._networkops.add_vswitch(name, rdev,
-                                     controller, connection, queue_mem,
-                                     router, network_type, vid,
-                                     port_type, update, gvrp, native_vid)
+        if network_type.upper() == 'ETHERNET':
+            router = None
+
+        self._networkops.add_vswitch(name, rdev=rdev, controller=controller,
+                                     connection=connection,
+                                     network_type=network_type,
+                                     router=router, vid=vid,
+                                     port_type=port_type, gvrp=gvrp,
+                                     queue_mem=queue_mem,
+                                     native_vid=native_vid,
+                                     persist=persist)
 
     @check_input_types(_TUSERID)
     def guest_get_console_output(self, userid):
@@ -777,14 +764,12 @@ class SDKAPI(object):
         """
         self._networkops.set_vswitch(vswitch_name, **kwargs)
 
-    @check_input_types(_TVSWNAME, int)
-    def vswitch_delete(self, vswitch_name, update=1):
+    @check_input_types(_TVSWNAME, bool)
+    def vswitch_delete(self, vswitch_name, persist=True):
         """ Delete vswitch.
 
         :param str name: the vswitch name
-        :param int update: 0-unspecified, 1-delete from the active system,
-               2-delete from the active system and the system configuration
-               file, 3-delete from the system configuration
-
+        :param bool persist: whether delete the vswitch from the permanent
+               configuration for the system
         """
-        self._networkops.delete_vswitch(vswitch_name, update)
+        self._networkops.delete_vswitch(vswitch_name, persist)

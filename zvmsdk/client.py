@@ -950,107 +950,39 @@ class XCATClient(ZVMClient):
         return self._zhcp_userid
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
-    def add_vswitch(self, name, rdev,
-                    controller, connection, queue_mem,
-                    router, network_type, vid,
-                    port_type, update, gvrp, native_vid):
+    def add_vswitch(self, name, rdev=None, controller='*',
+                    connection='CONNECT', network_type='IP',
+                    router="NONROUTER", vid='UNAWARE', port_type='ACCESS',
+                    gvrp='GVRP', queue_mem=8, native_vid=1, persist=True):
         zhcp = CONF.xcat.zhcp_node
-        vswitch_info = self._check_vswitch_status(name)
-        if vswitch_info is not None:
-            LOG.info('Vswitch %s already exists,check rdev info.' % name)
-            if rdev is None:
-                LOG.debug('vswitch %s is not changed', name)
-                return
-            else:
-                # as currently zvm-agent can only set one rdev for vswitch
-                # so as long one of rdev in vswitch env are same as rdevs
-                # list in config file, we think the vswitch does not change.
-                rdev_list = rdev.split(',')
-                for i in vswitch_info:
-                    for j in rdev_list:
-                        if i.strip() == j.strip():
-                            LOG.debug('vswitch %s is not changed', name)
-                            return
-
-                LOG.info('start changing vswitch %s ' % name)
-                self._set_vswitch_rdev(name, rdev)
-                return
-
         userid = self._get_zhcp_userid()
         url = self._xcat_url.xdsh("/%s" % zhcp)
         commands = ' '.join((
-            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Create',
+            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Create_Extended',
             '-T %s' % userid,
-            '-n %s' % name))
+            '-k switch_name=%s' % name))
         if rdev is not None:
-            commands += " -r \'%s\'" % rdev.replace(',', ' ')
-        # commands += " -a %s" % osa_name
+            commands += " -k real_device_address" +\
+                        "=\'%s\'" % rdev.replace(',', ' ')
+
+        if port_type is not None:
+            commands += " -k port_type=%s" % port_type
+        if gvrp is not None:
+            commands += " -k gvrp_value=%s" % gvrp
+        if native_vid is not None:
+            commands += " -k native_vlanid=%s" % native_vid
+        if router is not None:
+            commands += " -k routing_value=%s" % router
+
         if controller != '*':
-            commands += " -i %s" % controller
+            commands += " -k controller_name=%s" % controller
         commands = ' '.join((commands,
-                             "-c %s" % connection,
-                             "-q %s" % queue_mem,
-                             "-e %s" % router,
-                             "-t %s" % network_type,
-                             "-v %s" % vid,
-                             "-p %s" % port_type,
-                             "-u %s" % update,
-                             "-G %s" % gvrp,
-                             "-V %s" % native_vid))
-        xdsh_commands = 'command=%s' % commands
-        body = [xdsh_commands]
+                             "-k connection_value=%s" % connection,
+                             "-k queue_memory_limit=%s" % queue_mem,
+                             "-k transport_type=%s" % network_type,
+                             "-k vlan_id=%s" % vid,
+                             "-k persist=%s" % (persist and 'YES' or 'NO')))
 
-        with zvmutils.expect_xcat_call_failed_and_reraise(
-                exception.ZVMNetworkError):
-            result = zvmutils.xcat_request("PUT", url, body)
-            if ((result['errorcode'][0][0] != '0') or
-                (self._check_vswitch_status(name) is None)):
-                raise exception.ZVMException(
-                    msg=("switch: %s add failed, %s") %
-                        (name, result['data']))
-
-    @zvmutils.wrap_invalid_xcat_resp_data_error
-    def _check_vswitch_status(self, vsw):
-        '''
-        check the vswitch exists or not,return rdev info
-        return value:
-        None: vswitch does not exist
-        []: vswitch exists but does not connect to a rdev
-        ['xxxx','xxxx']:vswitch exists and 'xxxx' is rdev value
-        '''
-        zhcp = CONF.xcat.zhcp_node
-        userid = self._get_zhcp_userid()
-        url = self._xcat_url.xdsh("/%s" % zhcp)
-        commands = ' '.join((
-            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Query',
-            "-T %s" % userid,
-            "-s %s" % vsw))
-        xdsh_commands = 'command=%s' % commands
-        body = [xdsh_commands]
-
-        with zvmutils.expect_xcat_call_failed_and_reraise(
-                exception.ZVMNetworkError):
-            result = zvmutils.xcat_request("PUT", url, body)
-            if (result['errorcode'][0][0] != '0' or not
-                    result['data'] or not result['data'][0]):
-                return None
-            else:
-                output = re.findall('Real device: (.*)\n',
-                                    result['data'][0][0])
-                return output
-
-    @zvmutils.wrap_invalid_xcat_resp_data_error
-    def _set_vswitch_rdev(self, vsw, rdev):
-        """Set vswitch's rdev."""
-        zhcp = CONF.xcat.zhcp_node
-        userid = self._get_zhcp_userid()
-        url = self._xcat_url.xdsh("/%s" % zhcp)
-        commands = ' '.join((
-            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
-            "-T %s" % userid,
-            "-k switch_name=%s" % vsw))
-        if rdev:
-            commands += " -k real_device_address='%s'" % rdev.replace(',', ' ')
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
 
@@ -1059,9 +991,8 @@ class XCATClient(ZVMClient):
             result = zvmutils.xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
                 raise exception.ZVMException(
-                    msg=("switch: %s changes failed, %s") %
-                        (vsw, result['data']))
-            LOG.info('change vswitch %s done.' % vsw)
+                    msg=("Failed to create vswitch %s: %s") %
+                        (name, result['data']))
 
     def image_query(self, imagekeyword=None):
         """List the images"""
@@ -1472,15 +1403,15 @@ class XCATClient(ZVMClient):
         LOG.info('change vswitch %s done.' % switch_name)
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
-    def delete_vswitch(self, switch_name, update=1):
+    def delete_vswitch(self, switch_name, persist=True):
         zhcp = CONF.xcat.zhcp_node
         userid = self._get_zhcp_userid()
         url = self._xcat_url.xdsh("/%s" % zhcp)
         commands = ' '.join((
-            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Delete',
+            '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Delete_Extended',
             "-T %s" % userid,
-            "-n %s" % switch_name,
-            "-u %s" % update))
+            "-k switch_name=%s" % switch_name,
+            "-k persist=%s" % (persist and 'YES' or 'NO')))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
 
@@ -1493,11 +1424,6 @@ class XCATClient(ZVMClient):
                 if (emsg.__contains__("Return Code: 212") and
                     emsg.__contains__("Reason Code: 40")):
                     LOG.warning("Vswitch %s does not exist", switch_name)
-                    return
-                elif (emsg.__contains__("Return Code: 620") and
-                    emsg.__contains__("Reason Code: 60")):
-                    LOG.warning("DEFINE VSWITCH statement does not "
-                                "exist in system config")
                     return
                 else:
                     raise exception.ZVMException(
