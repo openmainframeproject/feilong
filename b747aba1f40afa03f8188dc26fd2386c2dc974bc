@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dd483118_0c56e67e",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-07-11T09:39:56Z",
+      "side": 1,
+      "message": "see below",
+      "range": {
+        "startLine": 374,
+        "startChar": 62,
+        "endLine": 374,
+        "endChar": 68
+      },
+      "revId": "b747aba1f40afa03f8188dc26fd2386c2dc974bc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f4ce58ef_248bb713",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-07-11T09:39:56Z",
+      "side": 1,
+      "message": "what\u0027s the meaning of \u0027active\u0027 system?\nI think you mean \u0027active\u0027 guest?",
+      "range": {
+        "startLine": 396,
+        "startChar": 45,
+        "endLine": 396,
+        "endChar": 68
+      },
+      "revId": "b747aba1f40afa03f8188dc26fd2386c2dc974bc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
