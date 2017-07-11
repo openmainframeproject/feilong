@@ -1030,7 +1030,7 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
 
     @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_check_vswitch_status(self, xrequest, get_zhcp_userid):
+    def test_add_vswitch(self, xrequest, get_zhcp_userid):
         get_zhcp_userid.return_value = "fakeuserid"
         xrequest.return_value = {
             "data": [["0"]],
@@ -1040,77 +1040,30 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"
-
-        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Query'
+        commands = '/opt/zhcp/bin/smcli ' +\
+                   'Virtual_Network_Vswitch_Create_Extended'
         commands += " -T fakeuserid"
-        commands += " -s fakevsw"
+        commands += ' -k switch_name=fakename'
+        commands += " -k real_device_address='111 222'"
+        commands = ' '.join((commands,
+                             "-k connection_value=CONNECT",
+                             "-k queue_memory_limit=5",
+                             "-k transport_type=ETHERNET",
+                             "-k vlan_id=10",
+                             "-k persist=NO",
+                             "-k port_type=ACCESS",
+                             "-k gvrp_value=GVRP",
+                             "-k native_vlanid=None",
+                             "-k routing_value=NONROUTER"))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-
-        self._zvmclient._check_vswitch_status("fakevsw")
-        get_zhcp_userid.assert_called_with()
-        xrequest.assert_called_with("PUT", url, body)
-
-    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
-    @mock.patch.object(zvmutils, 'xcat_request')
-    def test_set_vswitch_rdev(self, xrequest, get_zhcp_userid):
-        get_zhcp_userid.return_value = "fakeuserid"
-        xrequest.return_value = {
-            "data": [["0"]],
-            "errorcode": [['0']]
-                            }
-        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
-              "/dsh?userName=" + CONF.xcat.username +\
-              "&password=" + CONF.xcat.password +\
-              "&format=json"
-        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended'
-        commands += ' -T fakeuserid'
-        commands += ' -k switch_name=fakevsw'
-        commands += " -k real_device_address='fakerdev'"
-        xdsh_commands = 'command=%s' % commands
-        body = [xdsh_commands]
-
-        self._zvmclient._set_vswitch_rdev("fakevsw", "fakerdev")
-        get_zhcp_userid.assert_called_with()
-        xrequest.assert_called_with("PUT", url, body)
-
-    @mock.patch.object(zvmclient.XCATClient, '_set_vswitch_rdev')
-    @mock.patch.object(zvmclient.XCATClient, '_check_vswitch_status')
-    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
-    @mock.patch.object(zvmutils, 'xcat_request')
-    def test_add_vswitch(self, xrequest, get_zhcp_userid,
-                         check_vswitch_status, set_vswitch_rdev):
-        check_vswitch_status.return_value = None
-        get_zhcp_userid.return_value = "fakeuserid"
-        xrequest.return_value = {
-            "data": [["0"]],
-            "errorcode": [['0']]
-                            }
-        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
-              "/dsh?userName=" + CONF.xcat.username +\
-              "&password=" + CONF.xcat.password +\
-              "&format=json"
-        commands = '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Create'
-        commands += " -T fakeuserid"
-        commands += ' -n fakename'
-        commands += " -r 'fakerdev'"
-        commands += " -c 1"
-        commands += " -q 8"
-        commands += " -e 0"
-        commands += " -t 2"
-        commands += " -v 1"
-        commands += " -p 1"
-        commands += " -u 1"
-        commands += " -G 2"
-        commands += " -V 1"
-        xdsh_commands = 'command=%s' % commands
-        body = [xdsh_commands]
-
-        self.assertRaises(exception.ZVMException,
-                          self._zvmclient.add_vswitch,
-                          "fakename", "fakerdev",
-                          '*', 1, 8, 0, 2, 1, 1, 1, 2, 1)
-        check_vswitch_status.assert_called_with("fakename")
+        self._zvmclient.add_vswitch("fakename", rdev="111 222",
+                                    controller='*', connection='CONNECT',
+                                    network_type='ETHERNET',
+                                    router="NONROUTER", vid='10',
+                                    port_type='ACCESS', gvrp='GVRP',
+                                    queue_mem=5, native_vid=None,
+                                    persist=False)
         xrequest.assert_called_with("PUT", url, body)
 
     @mock.patch.object(zvmutils, 'xcat_request')
