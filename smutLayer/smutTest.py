@@ -1105,13 +1105,14 @@ def driveTestSet(smut, setId, setToTest):
         else:
             localCnt += 1
             print("")
-            print("Test " + str(cnt + localCnt) + ": " + test['description'])
+            cntInfo = "%i/%i" % (localCnt, (cnt + localCnt))
+            print("Test %s: %s" % (cntInfo, test['description']))
             testScore = runTest(smut, test)
             if testScore == 1:
                 localPassed += 1
             else:
                 localFailed += 1
-                failInfo.append(str(cnt + localCnt))
+                failInfo.append(cntInfo)
 
     cnt += localCnt
     passed += localPassed
