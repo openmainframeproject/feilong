@@ -1440,14 +1440,12 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
             '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
             "-T fakenode",
             "-k switch_name=fake_vs",
-            "-k real_device_address='1000 1003'",
-            "-k grant_userid='fake_id'"))
+            "-k real_device_address='1000 1003'"))
 
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
         self._zvmclient.set_vswitch("fake_vs",
-                                    real_device_address='1000 1003',
-                                    grant_userid='fake_id',)
+                                    real_device_address='1000 1003')
         xrequest.assert_called_with("PUT", url, body)
 
     @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
