@@ -294,11 +294,12 @@ class SDKAPI(object):
                          persist=True):
         """ Create the nic for the vm, add NICDEF record into the user direct.
 
-        :param str vm_id: the user id of the vm
+        :param str userid: the user id of the vm
         :param str vdev: nic device number, 1- to 4- hexadecimal digits
         :param str nic_id: nic identifier
         :param str mac_addr: mac address, it is only be used when changing
-               the guest's user direct
+               the guest's user direct. Format should be xx:xx:xx:xx:xx:xx,
+               and x is a hexadecimal digit
         :param str ip_addr: the management IP address of the guest
         :param bool active: whether add a nic on active guest system
         :param bool persist: whether keep the change in the permanent
@@ -310,6 +311,12 @@ class SDKAPI(object):
                 msg=("Need to specify how to add a nic to the guest, on "
                      "active guest system or in the guest's user direct, "
                      "one of them must be true"))
+        if mac_addr is not None:
+            if not utils.valid_mac_addr(mac_addr):
+                raise exception.ZVMInvalidInput(
+                    msg=("Invalid mac address, format should be "
+                         "xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit"))
+
         self._networkops.create_nic(userid, vdev=vdev, nic_id=nic_id,
                                     mac_addr=mac_addr, ip_addr=ip_addr,
                                     active=active, persist=persist)
@@ -666,9 +673,15 @@ class SDKAPI(object):
         """ add nic and coupled network info into the user direct.
         :param str userid: the user id of the vm
         :param str nic_vdev: nic device number, 1- to 4- hexadecimal digits
-        :param str mac: mac address
+        :param str mac: mac address, Format should be xx:xx:xx:xx:xx:xx,
+               and x is a hexadecimal digit
         :param str switch_name: the network name
         """
+        if mac is not None:
+            if not utils.valid_mac_addr(mac):
+                raise exception.ZVMInvalidInput(
+                    msg=("Invalid mac address, format should be "
+                         "xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit"))
         self._networkops.update_nic_definition(userid, nic_vdev, mac,
                                                switch_name)
 
@@ -745,7 +758,8 @@ class SDKAPI(object):
                the permanent configuration for the system.
                If not specified, the default is NO.
                - gvrp_value=<value>: GVRP or NOGVRP
-               - mac_id=<value>: The MAC identifier
+               - mac_id=<value>: A unique identifier (up to six hexadecimal
+               digits)used as part of the vswitch MAC address
                - uplink=<value>: One of the following:
                NO: The port being enabled is not the vswitch's UPLINK port.
                YES: The port being enabled is the vswitch's UPLINK port.
