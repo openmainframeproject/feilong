@@ -146,5 +146,8 @@ msg = {
             "pool(s): %s"],
     '0403': [{'overallRC': 4, 'rc': 99, 'rs': 403},
             "ULT%s0403E  %s"],
+    '0404': [{'overallRC': 4, 'rc': 99, 'rs': 404},    # dict is not used.
+            "ULT%s0404E Failed to spool the punch to the specified class %s " +
+            ", out:%s "],
     # 5000-5999: Reserved for SMCLI
     }
