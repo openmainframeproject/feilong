@@ -139,15 +139,21 @@ msg = {
 
     '0400': [{'overallRC': 4, 'rc': 4, 'rs': 400},
             "ULT%s0400E The worker script %s does not exist."],
-    '0401': [{'overallRC': 4, 'rc': 99, 'rs': 401},    # dict is not used.
+    '0401': [{'overallRC': 4, 'rc': 99, 'rs': 401},
             "ULT%s0401E Failed to punch %s file to guest: %s, out: %s"],
     '0402': [{'overallRC': 4, 'rc': 5, 'rs': 402},
             "ULT%s0402E No information was found for the specified " +
             "pool(s): %s"],
     '0403': [{'overallRC': 4, 'rc': 99, 'rs': 403},
             "ULT%s0403E  %s"],
+    '0404': [{'overallRC': 4, 'rc': 99, 'rs': 404},
+            "ULT%s0404E Failed to spool the punch to the specified class %s " +
+            ", out:%s "],
     '0405': [{'overallRC': 4, 'rc': 6, 'rs': 405},
             "ULT%s0405E Unable to obtain information related to: " +
             "%s. Command used was: %s. Output was: %s"],
+
+
+
     # 5000-5999: Reserved for SMCLI
     }
