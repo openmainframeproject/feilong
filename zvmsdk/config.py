@@ -100,6 +100,7 @@ zvm_opts = [
     Opt('client_type',
         section='zvm',
         default='xcat'),
+    # image options
     Opt('temp_path',
         section='image',
         default='/tmp/zvmsdk/images/'),
@@ -119,18 +120,16 @@ zvm_opts = [
         section='network'),
     Opt('nic_name',
         section='network'),
-    # instance options
-    Opt('instances_path',
-        section='instance',
-        default='/tmp/zvmsdk/'),
-    Opt('tempdir',
-        section='instance'),
+    # guest options
+    Opt('temp_path',
+        section='guest',
+        default='/tmp/zvmsdk/guests/'),
     Opt('reachable_timeout',
-        section='instance',
+        section='guest',
         default=300,
         opt_type='int'),
     Opt('console_log_size',
-        section='instance',
+        section='guest',
         default=100,
         opt_type='int'),
     # monitor options

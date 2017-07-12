@@ -566,11 +566,11 @@ def punch_file(node, fn, fclass):
         os.remove(fn)
 
 
-def punch_adminpass_file(instance_path, instance_name, admin_password,
+def punch_adminpass_file(temp_path, userid, admin_password,
                          linuxdist):
-    adminpass_fn = ''.join([instance_path, '/adminpwd.sh'])
+    adminpass_fn = ''.join([temp_path, '/adminpwd.sh'])
     _generate_adminpass_file(adminpass_fn, admin_password, linuxdist)
-    punch_file(instance_name, adminpass_fn, 'X')
+    punch_file(userid, adminpass_fn, 'X')
 
 
 def _generate_adminpass_file(fn, admin_password, linuxdist):
@@ -619,25 +619,12 @@ def looping_call(f, sleep=5, inc_sleep=0, max_sleep=60, timeout=600,
         retry = False
 
 
-def _get_instances_path():
-        return os.path.normpath(CONF.instance.instances_path)
-
-
-def get_instance_path(os_node, instance_name):
-    instance_folder = os.path.join(_get_instances_path(), os_node,
-                                   instance_name)
-    if not os.path.exists(instance_folder):
-        LOG.debug("Creating the instance path %s", instance_folder)
-        os.makedirs(instance_folder)
-    return instance_folder
-
-
-def punch_xcat_auth_file(instance_path, instance_name):
+def punch_xcat_auth_file(temp_path, userid):
     """Make xCAT MN authorized by virtual machines."""
     mn_pub_key = get_mn_pub_key()
-    auth_fn = ''.join([instance_path, '/xcatauth.sh'])
+    auth_fn = ''.join([temp_path, '/xcatauth.sh'])
     _generate_auth_file(auth_fn, mn_pub_key)
-    punch_file(instance_name, auth_fn, 'X')
+    punch_file(userid, auth_fn, 'X')
 
 
 def get_mn_pub_key():
@@ -767,7 +754,7 @@ class PathUtils(object):
             shutil.rmtree(tmp_file_fn)
 
     def _get_instances_path(self):
-        return os.path.normpath(CONF.instance.instances_path)
+        return os.path.normpath(CONF.guest.temp_path)
 
     def get_instance_path(self, os_node, instance_name):
         instance_folder = os.path.join(self._get_instances_path(), os_node,

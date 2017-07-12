@@ -211,7 +211,7 @@ class VMOps(object):
             fp.close()
             return log_path
 
-        log_size = CONF.instance.console_log_size * 1024
+        log_size = CONF.guest.console_log_size * 1024
         console_log = ""
 
         try:
