@@ -623,8 +623,8 @@ def purgeReader(rh):
 
     Input:
        Request Handle
-       userid whose reader is to be purged
 
+    Output:
        Dictionary containing the following:
           overallRC - overall return code, 0: success, non-zero: failure
           rc        - RC returned from SMCLI if overallRC = 0.
@@ -661,4 +661,44 @@ def purgeReader(rh):
 
     rh.printSysLog("Exit vmUtils.purgeReader, rc: " +
                    str(results['overallRC']))
+    return results
+
+
+def punch2Reader(rh, userid, file):
+    """
+    Punch a file to the Reader.
+
+    Input:
+       Request Handle
+       userid of the VM reader to be punched
+       file to be punched
+
+    Output:
+       Dictionary containing the following:
+          overallRC - overall return code, 0: success, non-zero: failure
+          rc        - RC returned from SMCLI if overallRC = 0.
+          rs        - RS returned from SMCLI if overallRC = 0.
+          errno     - Errno returned from SMCLI if overallRC = 0.
+          response  - Updated with an error message if wait times out.
+
+    Note:
+
+    """
+    rh.printSysLog("Enter vmUtils.punch2Reader, userid: " + rh.userid)
+    results = {'overallRC': 0,
+               'rc': 0,
+               'rs': 0,
+               'response': []}
+    # TODO: Initially assume vmur is loaded by default. Need to checked.
+    cmd = ["vmur", "punch", "-u", userid, "-r", file]
+    try:
+        results['response'] = subprocess.check_output(cmd, close_fds=True)
+        results['overallRC'] = 0
+
+    except CalledProcessError as e:
+        msg = msgs.msg['0401'][1] % (modId,
+                                     file,
+                                     userid, e.output)
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0401'][0])
     return results
