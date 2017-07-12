@@ -14,16 +14,19 @@
 
 
 import abc
-import six
 import re
+import six
 
-from config import CONF
-from log import LOG
-from exception import ZVMVolumeError
-import dist
-import utils as zvmutils
-import vmops
+from zvmsdk import config
+from zvmsdk import log
+from zvmsdk.exception import ZVMVolumeError
+from zvmsdk import dist
+from zvmsdk import utils as zvmutils
+from zvmsdk import vmops
 
+
+CONF = config.CONF
+LOG = log.LOG
 
 # instance parameters:
 NAME = 'name'

@@ -14,7 +14,11 @@
 
 
 import logging
-from config import CONF
+
+from zvmsdk import config
+
+
+CONF = config.CONF
 
 
 class Logger():

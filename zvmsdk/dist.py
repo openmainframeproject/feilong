@@ -14,13 +14,11 @@
 
 
 import abc
-
 import six
 
 from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import log
-# from zvmsdk import utils as zvmutils
 
 
 CONF = config.CONF
