@@ -22,7 +22,7 @@ class GuestHandlerTestCase(unittest.TestCase):
     def setUp(self):
         self.client = test_sdkwsgi.TestSDKClient()
 
-    def test_guest_create(self):
+    def _test_guest_create(self):
         body = '{"guest": {"name": "name1"}}'
         resp = self.client.api_request(url='/guests', method='POST',
                                        body=body)

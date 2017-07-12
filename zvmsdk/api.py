@@ -342,7 +342,7 @@ class SDKAPI(object):
         return self._vmops.get_definition_info(userid, **kwargs)
 
     @check_input_types(_TUSERID, int, int, list, _TSTR)
-    def guest_create(self, userid, vcpus, memory, disk_list=[],
+    def guest_create(self, userid, vcpus, memory, disk_list=None,
                      user_profile=CONF.zvm.user_profile):
         """create a vm in z/VM
 

@@ -19,10 +19,39 @@ create = {
         'guest': {
             'type': 'object',
             'properties': {
-                'name': parameter_types.name,
-                'cpu': parameter_types.positive_integer,
+                'userid': parameter_types.userid,
+                'vcpus': parameter_types.positive_integer,
                 'memory': parameter_types.positive_integer,
+                # profile is similar to userid
+                'user_profile': parameter_types.userid,
+                'disk_list': parameter_types.disk_list,
             },
+            'required': ['userid', 'vcpus', 'memory'],
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
+    },
+    'required': ['guest'],
+    'additionalProperties': False,
+}
+
+
+deploy = {
+    'type': 'object',
+    'properties': {
+        'guest': {
+            'type': 'object',
+            'properties': {
+                'userid': parameter_types.userid,
+                'image_name': parameter_types.name,
+
+                # FIXME
+                'transportfiles': parameter_types.name,
+                'remotehost': parameter_types.name,
+                'vdev': parameter_types.vdev,
+
+            },
+            'required': ['userid', 'image_name'],
             'additionalProperties': False,
         },
         'additionalProperties': False,
