@@ -623,8 +623,8 @@ def purgeReader(rh):
 
     Input:
        Request Handle
-       userid whose reader is to be purged
 
+    Output:
        Dictionary containing the following:
           overallRC - overall return code, 0: success, non-zero: failure
           rc        - RC returned from SMCLI if overallRC = 0.
@@ -662,3 +662,95 @@ def purgeReader(rh):
     rh.printSysLog("Exit vmUtils.purgeReader, rc: " +
                    str(results['overallRC']))
     return results
+
+
+def punch2Reader(rh, userid, file, spoolClass):
+    """
+    Punch a file to the Reader.
+
+    Input:
+       Request Handle
+       userid of the VM reader to be punched
+       file to be punched
+
+    Output:
+       Dictionary containing the following:
+          overallRC - overall return code, 0: success, non-zero: failure
+          rc        - RC returned from commands issued if overallRC = 0.
+          rs        - RS returned from commands issued if overallRC = 0.
+          errno     - Errno returned from commands issued if overallRC = 0.
+          response  - Updated with an error message if wait times out.
+
+    Note:
+
+    """
+    rh.printSysLog("Enter vmUtils.punch2Reader, userid: " + rh.userid)
+    results = {'overallRC': 0,
+               'rc': 0,
+               'rs': 0,
+               'response': []}
+    spoolId = 0
+    vmurDone = False
+    # Punch to the current user intially.
+    # If VMUR failed retry atleast 5 times
+    for secs in [1, 2, 3, 5, 0]:
+        cmd = ["vmur", "punch", "-r", file]
+        try:
+            results['response'] = subprocess.check_output(cmd,
+                                        close_fds=True)
+            rh.updateResults(results)
+            vmurDone = True
+            break
+        except CalledProcessError as e:
+            if secs != 0:
+                time.sleep(secs)
+            else:
+                break
+    if not vmurDone:
+        msg = msgs.msg['0401'][1] % (modId,
+                                        file,
+                                        userid, e.output)
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0401'][0])
+
+    if rh.results['overallRC'] == 0:
+        spoolId = re.findall(r'\d+', str(results['response']))
+        cmd = ["vmcp", "change", "rdr", str(spoolId[0]), "class", spoolClass]
+        try:
+            results['response'] = subprocess.check_output(cmd, close_fds=True)
+            rh.updateResults(results)
+        except CalledProcessError as e:
+            msg = msgs.msg['0404'][1] % (modId,
+                                         spoolClass,
+                                         e.output)
+            rh.printLn("ES", msg)
+            rh.updateResults(msgs.msg['0404'][0])
+    if rh.results['overallRC'] == 0:
+        cmd = ["vmcp", "transfer", "*", "rdr", str(spoolId[0]), "to",
+                userid, "rdr"]
+        try:
+            results['response'] = subprocess.check_output(cmd, close_fds=True)
+            rh.updateResults(results)
+        except CalledProcessError as e:
+            msg = msgs.msg['0401'][1] % (modId,
+                                         file,
+                                         userid, e.output)
+            rh.printLn("ES", msg)
+            rh.updateResults(msgs.msg['0401'][0])
+            # Transfer failed so delete the puched file from current userid
+            cmd = ["vmcp", "purge", "rdr", spoolId[0]]
+            try:
+                results['response'] = subprocess.check_output(cmd,
+                                        close_fds=True)
+                # Do not update the results here,its already error handling
+            except CalledProcessError as e:
+                msg = msgs.msg['0401'][1] % (modId,
+                                             file,
+                                             userid, e.output)
+                rh.printLn("ES", msg)
+                # Temporarily having this msg update.
+                rh.updateResults(msgs.msg['0401'][0])
+
+    rh.printSysLog("Exit vmUtils.punch2Reader, rc: " +
+                   str(rh.results['overallRC']))
+    return rh.results
