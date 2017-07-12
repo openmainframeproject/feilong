@@ -841,6 +841,68 @@ vmModifyTests = [
         'rc': [24],
         'rs': [813]
     },
+    {
+        'description': "Punch the config drive tar file to the system.",
+        'request': "ChangeVM <<<unsafeID1>>> punchfile <<<SimpleCfgFile>>>",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Punch the config drive tar file to the system" +
+            " with valid spool class.",
+        'request': "ChangeVM <<<unsafeID1>>> punchfile <<<SimpleCfgFile>>>" +
+            " --class b",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Punch the config drive tar file to the system" +
+            " with an invalid userid and file.",
+        'request': "ChangeVM <<<horribleID1>>> punchfile invalid.config",
+        'out': "",
+        'overallRC': [4],
+        'rc': [7],
+        'rs': [401],
+    },
+    {
+        'description': "Punch the config drive tar file to the system" +
+            " with an invalid userid and spool class.",
+        'request': "ChangeVM <<<unsafeID1>>> punchfile invalid.config" +
+            " --class b*",
+        'out': "",
+        'overallRC': [4],
+        'rc': [7],
+        'rs': [401],
+    },
+    {
+        'description': "Punch the config drive tar file to the system" +
+            " with an invalid userid.",
+        'request': "ChangeVM <<<horribleID1>>> punchfile <<<SimpleCfgFile>>>" +
+            " --class b",
+        'out': "",
+        'overallRC': [4],
+        'rc': [7],
+        'rs': [401],
+    },
+    {
+        'description': "Punch the config drive tar file to the system" +
+            " with an invalid class.",
+        'request': "ChangeVM <<<unsafeID1>>> punchfile <<<SimpleCfgFile>>>" +
+            " --class b*",
+        'out': "",
+        'overallRC': [4],
+        'rc': [8],
+        'rs': [404],
+    },
+    {
+        'description': "Punch the config drive tar file to the system" +
+            " with an invalid file.",
+        'request': "ChangeVM <<<unsafeID1>>> punchfile invalid.config",
+        'out': "",
+        'overallRC': [4],
+        'rc': [7],
+        'rs': [401],
+    },
     # >>>>>>>>> Clean up by destroying the system.
     {
         'description': "Delete the system.",
@@ -1146,6 +1208,11 @@ failedTests = []
 cnt = 0
 listParms = False
 
+# Temporary Preparation for punchFile Test. Create a sample config file.
+f = open("sample.config", "w+")
+f.write("This is sample config file for punchFile Test")
+f.close()
+
 if len(sys.argv) > 1 and sys.argv[1].upper() == '--LISTAREAS':
     for key in sorted(testSets):
         print key + ": " + testSets[key][0]
@@ -1174,6 +1241,10 @@ else:
     else:
         for key in sorted(testSets):
             driveTestSet(smut, key, testSets[key])
+
+    # Cleanup the sample config file (if exists) used for punchFile test.
+    if(os.path.exists("sample.config")):
+        os.remove("sample.config")
 
     print("")
     print("******************************************************************")
