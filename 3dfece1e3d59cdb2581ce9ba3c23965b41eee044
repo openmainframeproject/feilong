@@ -1,0 +1,106 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "300a5ea8_f7790452",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 719,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-12T20:40:14Z",
+      "side": 1,
+      "message": "I\u0027m not sure I like message 401 here, that\u0027s \"failed to punch file to guest\".  But what happened here was really we failed to spool the punch to the specified class",
+      "revId": "3dfece1e3d59cdb2581ce9ba3c23965b41eee044",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8caa0761_ecb85bae",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 726,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-12T20:40:14Z",
+      "side": 1,
+      "message": "I would get rid of this else: pass, because I think it\u0027s confusing.  It\u0027s actually the failure case, which was handled above.  Maybe just put a comment above your if that says this is the success case",
+      "revId": "3dfece1e3d59cdb2581ce9ba3c23965b41eee044",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a80d8812_5f8036ed",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-12T20:40:14Z",
+      "side": 1,
+      "message": "You should make the descriptions different, but I think you have:\ngood request\ngood request with a class\nbad request with bad id and bad file\nbad request with good id and bad file and bad class\nso I think there should also be a case for:\n bad id and good file \n good id and bad file",
+      "revId": "3dfece1e3d59cdb2581ce9ba3c23965b41eee044",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "58e01240_9cf0e0a9",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 873,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-12T20:40:14Z",
+      "side": 1,
+      "message": "I think this is where the punch tests should go",
+      "revId": "3dfece1e3d59cdb2581ce9ba3c23965b41eee044",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "02fdc01f_536f847e",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 681,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-12T20:40:14Z",
+      "side": 1,
+      "message": "We don\u0027t call smcli here.",
+      "revId": "3dfece1e3d59cdb2581ce9ba3c23965b41eee044",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "55144fd9_4e5545c8",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 696,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-12T20:40:14Z",
+      "side": 1,
+      "message": "Why put the results[\u0027overallRC\u0027]\u003d0 inside the try?  It was already set to 0 outside.",
+      "revId": "3dfece1e3d59cdb2581ce9ba3c23965b41eee044",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
