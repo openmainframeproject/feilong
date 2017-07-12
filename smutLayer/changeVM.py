@@ -18,12 +18,12 @@ import os.path
 import shutil
 import tarfile
 import tempfile
-
+import subprocess
 import generalUtils
 import msgs
 from vmUtils import disableEnableDisk, execCmdThruIUCV, installFS
-from vmUtils import invokeSMCLI, isLoggedOn, purgeReader
-
+from vmUtils import invokeSMCLI, isLoggedOn, purgeReader, punch2Reader
+from subprocess import CalledProcessError
 modId = "CVM"
 version = "1.0.0"
 
@@ -703,8 +703,27 @@ def punchFile(rh):
     """
 
     rh.printSysLog("Enter changeVM.punchFile")
+    results = {'overallRC': 0, 'rc': 0, 'rs': 0}
+    if 'class' in rh.parms:
+        strCmd = ["/sbin/vmcp spool punch class " + rh.parms['class']]
+        try:
+            results['response'] = subprocess.check_output(
+                    strCmd,
+                    stderr=subprocess.STDOUT,
+                    close_fds=True,
+                    shell=True)
 
-    rh.printLn("N", "This subfunction is not implemented yet.")
+        except CalledProcessError as e:
+            results['overallRC'] = 2
+            results['response'] = e.output
+            results['rc'] = e.returncode
+
+    if results['overallRC'] == 0:
+        results = punch2Reader(rh, rh.userid, rh.parms['file'])
+        rh.updateResults(results)
+    else:
+        # Spool class change would have failed with an error
+        rh.updateResults(results)
 
     rh.printSysLog("Exit changeVM.punchFile, rc: " +
         str(rh.results['overallRC']))
