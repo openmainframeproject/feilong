@@ -899,21 +899,22 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
                "&format=json"
         commands = '/opt/zhcp/bin/smcli'
         commands += ' Virtual_Network_Adapter_Connect_Vswitch_DM'
-        commands += " -T fakeuserid " + "-v fakecdev"
+        commands += " -T fakeuserid " + "-v fakevdev"
         commands += " -n fakevs"
         xdsh_commands = 'command=%s' % commands
         body1 = [xdsh_commands]
 
         commands = '/opt/zhcp/bin/smcli'
         commands += ' Virtual_Network_Adapter_Connect_Vswitch'
-        commands += " -T fakeuserid " + "-v fakecdev"
+        commands += " -T fakeuserid " + "-v fakevdev"
         commands += " -n fakevs"
         xdsh_commands = 'command=%s' % commands
         body2 = [xdsh_commands]
 
         self._zvmclient._couple_nic("fakevs",
-                                    "fakeuserid", "fakecdev", True)
-        update_switch.assert_called_with("fakeuserid", "fakecdev",
+                                    "fakeuserid", "fakevdev", active=True,
+                                    persist=True)
+        update_switch.assert_called_with("fakeuserid", "fakevdev",
                                          "fakevs")
         xrequest.assert_any_call("PUT", url, body1)
         xrequest.assert_any_call("PUT", url, body2)
@@ -927,18 +928,19 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
                "&format=json"
         commands = '/opt/zhcp/bin/smcli'
         commands += ' Virtual_Network_Adapter_Disconnect_DM'
-        commands += " -T fakeuserid " + "-v fakecdev"
+        commands += " -T fakeuserid " + "-v fakevdev"
         xdsh_commands = 'command=%s' % commands
         body1 = [xdsh_commands]
 
         commands = '/opt/zhcp/bin/smcli'
         commands += ' Virtual_Network_Adapter_Disconnect'
-        commands += " -T fakeuserid " + "-v fakecdev"
+        commands += " -T fakeuserid " + "-v fakevdev"
         xdsh_commands = 'command=%s' % commands
         body2 = [xdsh_commands]
 
         self._zvmclient._uncouple_nic("fakeuserid",
-                                      "fakecdev", True)
+                                      "fakevdev", active=True,
+                                      persist=True)
         xrequest.assert_any_call("PUT", url, body1)
         xrequest.assert_any_call("PUT", url, body2)
 
@@ -1000,19 +1002,20 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         self._zvmclient.couple_nic_to_vswitch("fake_VS_name",
                                               "fakevdev",
                                               "fake_userid",
-                                              True)
+                                              True, True)
         couple_nic.assert_called_with("fake_VS_name",
                                       "fake_userid",
-                                      "fakevdev", True)
+                                      "fakevdev", active=True, persist=True)
 
     @mock.patch.object(zvmclient.XCATClient, '_uncouple_nic')
     def test_uncouple_nic_from_vswitch(self, uncouple_nic):
         self._zvmclient.uncouple_nic_from_vswitch("fake_VS_name",
                                                   "fakevdev",
                                                   "fake_userid",
-                                                  True)
+                                                  False, False)
         uncouple_nic.assert_called_with("fake_userid",
-                                        "fakevdev", True)
+                                        "fakevdev", active=False,
+                                        persist=False)
 
     @mock.patch.object(zvmclient.XCATClient, '_get_userid_from_node')
     def test_get_zhcp_userid(self, get_userid_from_node):
