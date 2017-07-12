@@ -63,14 +63,18 @@ class NetworkOPS(object):
                                                  userid, active=active,
                                                  persist=persist)
 
-    def add_vswitch(self, name, rdev,
-                    controller, connection,
-                    queue_mem, router, network_type, vid,
-                    port_type, update, gvrp, native_vid):
-        self.zvmclient.add_vswitch(name, rdev,
-                                   controller, connection, queue_mem,
-                                   router, network_type, vid,
-                                   port_type, update, gvrp, native_vid)
+    def add_vswitch(self, name, rdev=None, controller='*',
+                    connection='CONNECT', network_type='IP',
+                    router="NONROUTER", vid='UNAWARE', port_type='ACCESS',
+                    gvrp='GVRP', queue_mem=8, native_vid=1, persist=True):
+        self.zvmclient.add_vswitch(name, rdev=rdev, controller=controller,
+                                   connection=connection,
+                                   network_type=network_type,
+                                   router=router, vid=vid,
+                                   port_type=port_type, gvrp=gvrp,
+                                   queue_mem=queue_mem,
+                                   native_vid=native_vid,
+                                   persist=persist)
 
     def grant_user_to_vswitch(self, vswitch_name, userid):
         self.zvmclient.grant_user_to_vswitch(vswitch_name, userid)
@@ -88,5 +92,5 @@ class NetworkOPS(object):
     def set_vswitch(self, vswitch_name, **kwargs):
         self.zvmclient.set_vswitch(vswitch_name, **kwargs)
 
-    def delete_vswitch(self, vswitch_name, update=1):
-        self.zvmclient.delete_vswitch(vswitch_name, update)
+    def delete_vswitch(self, vswitch_name, persist=True):
+        self.zvmclient.delete_vswitch(vswitch_name, persist)

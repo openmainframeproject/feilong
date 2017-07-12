@@ -68,12 +68,18 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
 
     @mock.patch.object(zvmclient.XCATClient, 'add_vswitch')
     def test_add_vswitch(self, add_vswitch):
-        self.networkops.add_vswitch("fakename",
-                                    "fakerdev",
-                                    '*', 1, 8, 0, 2, 0, 1, 1, 2, 1)
-        add_vswitch.assert_called_with("fakename",
-                                       "fakerdev",
-                                       '*', 1, 8, 0, 2, 0, 1, 1, 2, 1)
+        self.networkops.add_vswitch("fakename", "fakerdev",
+                                    controller='*',
+                                    connection='CONNECT', network_type='IP',
+                                    router="NONROUTER", vid='UNAWARE',
+                                    port_type='ACCESS', gvrp='GVRP',
+                                    queue_mem=8, native_vid=2, persist=False)
+        add_vswitch.assert_called_with("fakename", rdev="fakerdev",
+                                       controller='*', connection='CONNECT',
+                                       network_type='IP', router="NONROUTER",
+                                       vid='UNAWARE', port_type='ACCESS',
+                                       gvrp='GVRP', queue_mem=8,
+                                       native_vid=2, persist=False)
 
     @mock.patch.object(zvmclient.XCATClient, 'grant_user_to_vswitch')
     def test_grant_user_to_vswitch(self, grant_user):
@@ -105,5 +111,5 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
 
     @mock.patch.object(zvmclient.XCATClient, 'delete_vswitch')
     def test_delete_vswitch(self, delete_vswitch):
-        self.networkops.delete_vswitch("vswitch_name", 2)
-        delete_vswitch.assert_called_with("vswitch_name", 2)
+        self.networkops.delete_vswitch("vswitch_name", True)
+        delete_vswitch.assert_called_with("vswitch_name", True)
