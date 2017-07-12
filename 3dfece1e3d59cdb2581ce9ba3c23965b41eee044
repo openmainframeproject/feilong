@@ -70,6 +70,46 @@
     },
     {
       "key": {
+        "uuid": "7d04b9ef_addd2fd9",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1179,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-12T21:20:58Z",
+      "side": 1,
+      "message": "Please add a blank line after the close so that we know that the if test is not part of setting up the config file.",
+      "revId": "3dfece1e3d59cdb2581ce9ba3c23965b41eee044",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ffb81ec3_a2f9ffaa",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1210,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-12T21:20:58Z",
+      "side": 1,
+      "message": "Please add a blank line.",
+      "range": {
+        "startLine": 1210,
+        "startChar": 8,
+        "endLine": 1210,
+        "endChar": 9
+      },
+      "revId": "3dfece1e3d59cdb2581ce9ba3c23965b41eee044",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "02fdc01f_536f847e",
         "filename": "smutLayer/vmUtils.py",
         "patchSetId": 2
