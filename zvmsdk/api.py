@@ -24,6 +24,7 @@ from zvmsdk import log
 from zvmsdk import monitor
 from zvmsdk import networkops
 from zvmsdk import vmops
+from zvmsdk import volumeop
 from zvmsdk import utils
 
 
@@ -131,6 +132,7 @@ class SDKAPI(object):
         self._networkops = networkops.get_networkops()
         self._imageops = imageops.get_imageops()
         self._monitor = monitor.get_monitor()
+        self._volumeop = volumeop.get_volumeop()
         self._skip_input_check = kwargs.get('skip_input_check')
 
     @check_input_types(_TUSERID)
@@ -807,3 +809,94 @@ class SDKAPI(object):
                configuration for the system
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
+
+    def volume_attach(self, guest, volume, connection_info,
+                      is_rollback_in_failure=False):
+        """ Attach a volume to a guest.
+
+        :param dict guest: A dict comprised of a list of properties of a guest,
+               including:
+               - name: of type string. The node name of the guest instance in
+               xCAT database.
+               - os_type: of type string. The OS running on the guest.
+               Currently supported are RHEL7, SLES12 and their sub-versions,
+               i.e. 'rhel7', 'rhel7.2', 'sles12', 'sles12sp1'.
+        :param dict volume: A dict comprised of a list of properties of a
+               volume, including:
+               - size: of type string. The capacity size of the volume, in unit
+               of Megabytes or Gigabytes.
+               - type: of type string. The device type of the volume. The only
+               one supported now is 'fc' which implies FibreChannel.
+               - lun: of type string. The LUN value of the volume, excluding
+               prefixing '0x'. It's required if the type is 'fc' which implies
+               FibreChannel.
+        :param dict connection_info: A dict comprised of a list of information
+               used to establish host-volume connection, including:
+               - alias: of type string. A constant valid alias of the volume
+               after it being attached onto the guest, i.e. '/dev/vda'. Because
+               the system generating device name could change after each
+               rebooting, it's necessary to have a constant name to represent
+               the volume in its life time.
+               - protocol: of type string. The protocol by which the volume is
+               connected to the guest. The only one supported now is 'fc' which
+               implies FibreChannel.
+               - fcps: of type list. The address of the FCP devices used by the
+               guest to connect to the volume. They should belong to different
+               channel path IDs in order to work properly.
+               - wwpns: of type list. The WWPN values through which the volume
+               can be accessed, excluding prefixing '0x'.
+               - dedicate: of type list. The address of the FCP devices which
+               will be dedicated to the guest before accessing the volume. They
+               should belong to different channel path IDs in order to work
+               properly.
+        :param bool is_rollback_in_failure: Whether to roll back in failure.
+               It's not guaranteed that the roll back operation must be
+               successful.
+        """
+        self._volumeop.attach_volume_to_instance(guest,
+                                                 volume,
+                                                 connection_info,
+                                                 is_rollback_in_failure)
+
+    def volume_detach(self, guest, volume, connection_info,
+                      is_rollback_in_failure=False):
+        """ Detach a volume from a guest.
+
+        :param dict guest: A dict comprised of a list of properties of a guest,
+               including:
+               - name: of type string. The node name of the guest instance in
+               xCAT database.
+               - os_type: of type string. The OS running on the guest.
+               Currently supported are RHEL7, SLES12 and their sub-versions,
+               i.e. 'rhel7', 'rhel7.2', 'sles12', 'sles12sp1'.
+        :param dict volume: A dict comprised of a list of properties of a
+               volume, including:
+               - type: of type string. The device type of the volume. The only
+               one supported now is 'fc' which implies FibreChannel.
+               - lun: of type string. The LUN value of the volume, excluding
+               prefixing '0x'. It's required if the type is 'fc' which implies
+               FibreChannel.
+        :param dict connection_info: A dict comprised of a list of information
+               used to establish host-volume connection, including:
+               - alias: of type string. A constant valid alias of the volume
+               after it being attached onto the guest, i.e. '/dev/vda'. Because
+               the system generating device name could change after each
+               rebooting, it's necessary to have a constant name to represent
+               the volume in its life time.
+               - protocol: of type string. The protocol by which the volume is
+               connected to the guest. The only one supported now is 'fc' which
+               implies FibreChannel.
+               - fcps: of type list. The address of the FCP devices used by the
+               guest to connect to the volume.
+               - wwpns: of type list. The WWPN values through which the volume
+               can be accessed, excluding prefixing '0x'.
+               - dedicate: of type list. The address of the FCP devices which
+               will be undedicated from the guest after removing the volume.
+        :param bool is_rollback_in_failure: Whether to roll back in failure.
+               It's not guaranteed that the roll back operation must be
+               successful.
+        """
+        self._volumeop.detach_volume_from_instance(guest,
+                                                   volume,
+                                                   connection_info,
+                                                   is_rollback_in_failure)

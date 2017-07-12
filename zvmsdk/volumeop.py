@@ -25,6 +25,7 @@ from zvmsdk import utils as zvmutils
 from zvmsdk import vmops
 
 
+_VolumeOP = None
 CONF = config.CONF
 LOG = log.LOG
 
@@ -41,6 +42,13 @@ PROTOCOL = 'protocol'
 FCPS = 'fcps'
 WWPNS = 'wwpns'
 DEDICATE = 'dedicate'
+
+
+def get_volumeop():
+    global _VolumeOP
+    if not _VolumeOP:
+        _VolumeOP = VolumeOperator()
+    return _VolumeOP
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -62,12 +70,12 @@ class VolumeOperatorAPI(object):
 
     @abc.abstractmethod
     def attach_volume_to_instance(self, instance, volume, connection_info,
-                                  is_rollback_on_failure=False):
+                                  is_rollback_in_failure=False):
         raise NotImplementedError
 
     @abc.abstractmethod
     def detach_volume_from_instance(self, instance, volume, connection_info,
-                                    is_rollback_on_failure=False):
+                                    is_rollback_in_failure=False):
         raise NotImplementedError
 
 
@@ -454,7 +462,7 @@ class VolumeOperator(VolumeOperatorAPI):
                                   instance,
                                   volume,
                                   connection_info,
-                                  is_rollback_on_failure=False):
+                                  is_rollback_in_failure=False):
         LOG.debug("Enter VolumeOperator.attach_volume_to_instance, attach "
                   "volume %(vol)s to instance %(inst)s by connection_info "
                   "%(conn_info)s.")
@@ -472,7 +480,7 @@ class VolumeOperator(VolumeOperatorAPI):
                                     instance,
                                     volume,
                                     connection_info,
-                                    is_rollback_on_failure=False):
+                                    is_rollback_in_failure=False):
         LOG.debug("Enter VolumeOperator.detach_volume_from_instance, detach "
                   "volume %(vol)s from instance %(inst)s by connection_info "
                   "%(conn_info)s.")
