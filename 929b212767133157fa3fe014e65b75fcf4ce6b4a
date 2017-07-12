@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "916bec16_77e8800b",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 719,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-12T13:44:20Z",
+      "side": 1,
+      "message": "Should put out an error message here.",
+      "revId": "929b212767133157fa3fe014e65b75fcf4ce6b4a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "92b564ee_da749ac8",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 700,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-12T13:44:20Z",
+      "side": 1,
+      "message": "Need an error message here",
+      "revId": "929b212767133157fa3fe014e65b75fcf4ce6b4a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
