@@ -84,15 +84,17 @@ class SDKAPITestUtils(object):
         image_name = os.path.basename(image_path)
         image_name_xcat = '-'.join((CONF.tests.image_os_version,
                                 's390x-netboot', image_name.replace('-', '_')))
+        print('\n')
+
         if not self.api.image_query(image_name.replace('-', '_')):
             print("Importing image %s ...\n" % image_name)
             self.image_import()
 
-        print("Using image %s ...\n" % image_name)
+        print("Using image %s ..." % image_name)
 
         if userid is None:
             userid = self.get_available_test_userid()
-        print("Using userid %s ...\n" % userid)
+        print("Using userid %s ..." % userid)
 
         user_profile = CONF.zvm.user_profile
         nic_id = str(uuid.uuid1())
@@ -100,10 +102,10 @@ class SDKAPITestUtils(object):
         if ip_addr is None:
             ip_addr = self.get_available_ip_addr()
 
-        print("Using IP address of %s ...\n" % ip_addr)
+        print("Using IP address of %s ..." % ip_addr)
 
         mac_addr = self.generate_mac_addr()
-        print("Using MAC address of %s ...\n" % mac_addr)
+        print("Using MAC address of %s ..." % mac_addr)
 
         vdev = CONF.zvm.default_nic_vdev
         vswitch_name = CONF.tests.vswitch
@@ -115,12 +117,12 @@ class SDKAPITestUtils(object):
                        'disk_pool': CONF.zvm.disk_pool}]
 
         # Create vm in zVM
-        print("Creating userid %s ...\n" % userid)
+        print("Creating userid %s ..." % userid)
         self.api.guest_create(userid, cpu, memory, disks_list, user_profile)
 
         # Setup network for vm
         print("Creating nic with nic_id=%s, "
-              "mac_address=%s ...\n" % (nic_id, mac_addr))
+              "mac_address=%s ..." % (nic_id, mac_addr))
         self.api.guest_create_nic(userid, nic_id=nic_id, mac_addr=mac_addr,
                                   ip_addr=ip_addr)
         self.api.guest_update_nic_definition(userid, vdev, mac_addr,
@@ -139,6 +141,7 @@ class SDKAPITestUtils(object):
         return userid, ip_addr
 
     def guest_destroy(self, userid):
+        print("Deleting userid %s ...\n" % userid)
         self.api.guest_delete(userid)
 
 

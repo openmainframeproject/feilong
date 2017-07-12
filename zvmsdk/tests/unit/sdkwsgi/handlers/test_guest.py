@@ -109,7 +109,6 @@ class HandlersGuestTest(SDKWSGITest):
         self.req.body = body_str
 
         guest.guest_create(self.req)
-        body = util.extract_json(body_str)
         mock_create.assert_called_once_with('name1', 1, 1, disk_list=None,
                                             user_profile=None)
 
@@ -127,7 +126,6 @@ class HandlersGuestTest(SDKWSGITest):
         self.req.body = body_str
 
         guest.guest_create(self.req)
-        body = util.extract_json(body_str)
         mock_create.assert_called_once_with('name1', 1, 1,
                                             disk_list=[{u'size': u'1g'}],
                                             user_profile=None)
@@ -181,7 +179,6 @@ class HandlersGuestTest(SDKWSGITest):
         self.req.body = body_str
 
         guest.guest_deploy(self.req)
-        body = util.extract_json(body_str)
         mock_deploy.assert_called_once_with('name1', 'i1', remotehost=None,
                                             transportfiles=None, vdev=None)
 
@@ -192,7 +189,6 @@ class HandlersGuestTest(SDKWSGITest):
         self.req.body = body_str
 
         guest.guest_deploy(self.req)
-        body = util.extract_json(body_str)
         mock_deploy.assert_called_once_with('name1', 'i1', remotehost='r1',
                                             transportfiles=None, vdev='v1')
 
