@@ -18,12 +18,12 @@ import os.path
 import shutil
 import tarfile
 import tempfile
-
+import subprocess
 import generalUtils
 import msgs
 from vmUtils import disableEnableDisk, execCmdThruIUCV, installFS
-from vmUtils import invokeSMCLI, isLoggedOn, purgeReader
-
+from vmUtils import invokeSMCLI, isLoggedOn, purgeReader, punch2Reader
+from subprocess import CalledProcessError
 modId = "CVM"
 version = "1.0.0"
 
@@ -703,9 +703,12 @@ def punchFile(rh):
     """
 
     rh.printSysLog("Enter changeVM.punchFile")
+    results = {'overallRC': 0, 'rc': 0, 'rs': 0}
+    spoolClass = "A"
+    if 'class' in rh.parms:
+        spoolClass = str(rh.parms['class'])
 
-    rh.printLn("N", "This subfunction is not implemented yet.")
-
+    results = punch2Reader(rh, rh.userid, rh.parms['file'], spoolClass)
     rh.printSysLog("Exit changeVM.punchFile, rc: " +
         str(rh.results['overallRC']))
     return rh.results['overallRC']
