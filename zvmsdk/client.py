@@ -1003,7 +1003,7 @@ class XCATClient(ZVMClient):
                              "-k persist=%s" % (persist and 'YES' or 'NO')))
         # Only if vswitch is vlan awared, port_type, gvrp and native_vid are
         # allowed to specified
-        if vid.upper() != 'UNAWARE':
+        if isinstance(vid, int) or vid.upper() != 'UNAWARE':
             if ((native_vid is not None) and
                 ((native_vid < 1) or (native_vid > 4094))):
                 raise exception.ZVMInvalidInput(
