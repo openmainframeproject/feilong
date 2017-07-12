@@ -139,5 +139,8 @@ msg = {
             "pool(s): %s"],
     '0403': [{'overallRC': 4, 'rc': 99, 'rs': 403},
             "ULT%s0403E  %s"],
+    '0404': [{'overallRC': 4, 'rc': 6, 'rs': 404},
+            "ULT%s0404E No information was found for the host information " +
+            "parameter: %s. Command used was %s. Output was %s."],
     # 5000-5999: Reserved for SMCLI
     }
