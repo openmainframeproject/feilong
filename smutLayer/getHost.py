@@ -14,7 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import types
+import subprocess
 
 import generalUtils
 import msgs
@@ -279,15 +281,132 @@ def getGeneralInfo(rh):
 
     Output:
        Request Handle updated with the results.
-       Return code - 0: ok, non-zero: error
+       Return code - 0: ok
+       Return code - 4: problem getting some info
     """
 
     rh.printSysLog("Enter getHost.getGeneralInfo")
 
-    rh.printLn("N", "This subfunction is not implemented yet.")
+    # Get host using VMCP
+    rh.results['overallRC'] = 0
+    cmd = ["/sbin/vmcp", "query userid"]
+    try:
+        host = subprocess.check_output(
+            cmd,
+            close_fds=True,
+            stderr=subprocess.STDOUT).split()[2]
+    except subprocess.CalledProcessError as e:
+        strCmd = ' '.join(cmd)
+        msg = msgs.msg['0404'][1] % (modId, "Hypervisor Name", strCmd)
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0404'][0])
+        host = "no info"
 
-    rh.printSysLog("Exit getHost.getGeneralInfo, rc: " + str(1111))
-    return 1111
+    # Get a bunch of info from /proc/sysinfo
+    lparCpuTotal = "no info"
+    lparCpuUsed = "no info"
+    cecModel = "no info"
+    cecVendor = "no info"
+    hvInfo = "no info"
+    with open('/proc/sysinfo', 'r') as myFile:
+        for num, line in enumerate(myFile, 1):
+            # Get total physical CPU in this LPAR
+            if "LPAR CPUs Total" in line:
+                lparCpuTotal = line.split()[3]
+            # Get used physical CPU in this LPAR
+            if "LPAR CPUs Configured" in line:
+                lparCpuUsed = line.split()[3]
+            # Get CEC model
+            if "Type:" in line:
+                cecModel = line.split()[1]
+            # Get vendor of CEC
+            if "Manufacturer:" in line:
+                cecVendor = line.split()[1]
+            # Get hypervisor type and version
+            if "VM00 Control Program" in line:
+                hvInfo = line.split()[3] + " " + line.split()[4]
+    if lparCpuTotal == "no info":
+        msg = msgs.msg['0404'][1] % (modId, "LPAR CPUs Total",
+                                     "cat /proc/sysinfo")
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0404'][0])
+    if lparCpuUsed == "no info":
+        msg = msgs.msg['0404'][1] % (modId, "LPAR CPUs Configured",
+                                     "cat /proc/sysinfo")
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0404'][0])
+    if cecModel == "no info":
+        msg = msgs.msg['0404'][1] % (modId, "Type:",
+                                     "cat /proc/sysinfo")
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0404'][0])
+    if cecVendor == "no info":
+        msg = msgs.msg['0404'][1] % (modId, "Manufacturer:",
+                                     "cat /proc/sysinfo")
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0404'][0])
+    if hvInfo == "no info":
+        msg = msgs.msg['0404'][1] % (modId, "VM00 Control Program",
+                                     "cat /proc/sysinfo")
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0404'][0])
+
+    # Get processor architecture
+    arch = str(os.uname()[4])
+
+    # Get LPAR memory total & offline
+    cmd = ["smcli",
+           "System_Information_Query",
+           "-T", "bob",
+           "-k", "STORAGE="]
+
+    lparMemTotal = "no info"
+    lparMemStandby = "no info"
+    results = invokeSMCLI(rh, cmd)
+    if results['overallRC'] == 0:
+        for line in results['response'].splitlines():
+            if "STORAGE=" in line:
+                lparMemOnline = line.split()[0]
+                lparMemStandby = line.split()[4]
+                lparMemTotal = lparMemOnline.split("=")[2]
+                lparMemStandby = lparMemStandby.split("=")[1]
+    else:
+        # SMAPI API failed, but we still put out 404 for consistency
+        strCmd = ' '.join(cmd)
+        msg = msgs.msg['0404'][1] % (modId, "LPAR memory", strCmd)
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0404'][0])
+
+    # Get IPL Time
+    cmd = ["/sbin/vmcp", "query cplevel"]
+    try:
+        ipl = subprocess.check_output(
+            cmd,
+            close_fds=True,
+            stderr=subprocess.STDOUT).split("\n")[2]
+    except subprocess.CalledProcessError as e:
+        strCmd = ' '.join(cmd)
+        msg = msgs.msg['0404'][1] % (modId, "IPL Time", strCmd)
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0404'][0])
+
+    # Create output string
+    outstr = "z/VM Host: " + host
+    outstr += "\nArchitecture: " + arch
+    outstr += "\nCEC Vendor: " + cecVendor
+    outstr += "\nCEC Model: " + cecModel
+    outstr += "\nHypervisor OS: " + hvInfo
+    outstr += "\nHypervisor Name: " + host
+    outstr += "\nLPAR CPU Total: " + lparCpuTotal
+    outstr += "\nLPAR CPU Used: " + lparCpuUsed
+    outstr += "\nLPAR Memory Total: " + lparMemTotal
+    outstr += "\nLPAR Memory Offline: " + lparMemStandby
+    outstr += "\nIPL Time: " + ipl
+
+    rh.printLn("N", outstr)
+    rh.printSysLog("Exit getHost.getGeneralInfo, rc: " +
+                   str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def getVersion(rh):
