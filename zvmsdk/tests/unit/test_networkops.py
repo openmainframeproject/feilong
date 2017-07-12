@@ -26,8 +26,13 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
 
     @mock.patch.object(zvmclient.XCATClient, 'create_nic')
     def test_create_nic(self, create_nic):
-        self.networkops.create_nic("fakeid", "nic_info", "ipaddr")
-        create_nic.assert_called_with("fakeid", "nic_info", ip_addr="ipaddr")
+        self.networkops.create_nic("fakeid", '1000', 'Fake_nic_id',
+                                   ip_addr="ipaddr",
+                                   active=True, persist=False)
+        create_nic.assert_called_with("fakeid", vdev='1000',
+                                      nic_id='Fake_nic_id',
+                                      mac_addr=None, ip_addr="ipaddr",
+                                      active=True, persist=False)
 
     @mock.patch.object(zvmclient.XCATClient, 'get_vm_nic_vswitch_info')
     def test_get_vm_nic_vswitch_info(self, get_nic_vswitch_info):
