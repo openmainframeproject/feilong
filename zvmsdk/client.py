@@ -1355,24 +1355,6 @@ class XCATClient(ZVMClient):
                     msg=("Failed to set vlan id for user %s, %s") %
                         (userid, result['data'][0][0]))
 
-    def update_nic_definition(self, userid, nic_vdev, mac,
-                              switch_name):
-        """Update information in xCAT switch table."""
-        self._update_xcat_switch(userid, nic_vdev, switch_name)
-        """add one NIC's info to user direct."""
-        url = self._xcat_url.chvm('/' + userid)
-        mac = ''.join(mac.split(':'))[6:]
-        commands = ' '.join((
-            'Image_Definition_Update_DM -T %s' % userid,
-            '-k \'NICDEF=VDEV=%s TYPE=QDIO' % nic_vdev,
-            'MACID=%s' % mac,
-            'LAN=SYSTEM',
-            'SWITCHNAME=%s\'' % switch_name))
-        body = ['--smcli', commands]
-
-        with zvmutils.expect_invalid_xcat_resp_data():
-            zvmutils.xcat_request("PUT", url, body)
-
     def image_delete(self, image_name):
         try:
             self.remove_image_file(image_name)
