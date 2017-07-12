@@ -146,5 +146,8 @@ msg = {
             "pool(s): %s"],
     '0403': [{'overallRC': 4, 'rc': 99, 'rs': 403},
             "ULT%s0403E  %s"],
+    '0405': [{'overallRC': 4, 'rc': 6, 'rs': 405},
+            "ULT%s0405E Unable to obtain information related to: " +
+            "%s. Command used was: %s. Output was: %s"],
     # 5000-5999: Reserved for SMCLI
     }
