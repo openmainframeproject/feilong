@@ -667,14 +667,14 @@ def purgeReader(rh):
 
     Input:
        Request Handle
-       userid whose reader is to be purged
 
+    Output:
        Dictionary containing the following:
           overallRC - overall return code, 0: success, non-zero: failure
           rc        - RC returned from SMCLI if overallRC = 0.
           rs        - RS returned from SMCLI if overallRC = 0.
           errno     - Errno returned from SMCLI if overallRC = 0.
-          response  - Updated with an error message if wait times out.
+          response  - Updated with an error message.
 
     Note:
 
