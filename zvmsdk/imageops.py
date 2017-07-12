@@ -20,6 +20,7 @@ from zvmsdk import exception
 from zvmsdk import utils as zvmutils
 from zvmsdk import log
 
+
 LOG = log.LOG
 CONF = config.CONF
 

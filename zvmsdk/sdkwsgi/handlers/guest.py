@@ -210,6 +210,7 @@ def guest_deploy(req):
 
     _guest_deploy(req)
 
+
 @wsgi_wrapper.SdkWsgify
 @tokens.validate
 def guest_update(req):
