@@ -515,10 +515,6 @@ class XCATClient(ZVMClient):
 
     def create_nic(self, userid, vdev=None, nic_id=None,
                    mac_addr=None, ip_addr=None, active=False, persist=True):
-        if nic_id is None:
-            raise exception.ZVMInvalidInput(
-                msg=("Nic identifier is required for xcat"))
-
         ports_info = self._get_nic_ids()
         vdev_info = []
         for p in ports_info:
@@ -549,13 +545,12 @@ class XCATClient(ZVMClient):
                         msg=("Virtual device number is not valid "))
 
         zhcpnode = self._get_hcp_info()['nodename']
-        LOG.debug('Nic attributes: '
-                  'ID is %(id)s, address is %(address)s, '
-                  'vdev is %(vdev)s',
-                  {'id': nic_id,
-                   'address': mac_addr and mac_addr or 'not specified',
-                   'vdev': nic_vdev})
-        self._create_nic(userid, nic_id, nic_vdev, zhcpnode,
+        LOG.debug('Nic attributes: vdev is %(vdev)s, '
+                  'ID is %(id)s, address is %(address)s',
+                  {'vdev': nic_vdev,
+                   'id': nic_id and nic_id or 'not specified',
+                   'address': mac_addr and mac_addr or 'not specified'})
+        self._create_nic(userid, nic_vdev, zhcpnode, nic_id=nic_id, 
                          mac_addr=mac_addr, active=active, persist=persist)
 
         if ip_addr is not None:
@@ -570,9 +565,10 @@ class XCATClient(ZVMClient):
 
         return True
 
-    def _create_nic(self, userid, nic_id, vdev, zhcpnode, mac_addr=None,
+    def _create_nic(self, userid, vdev, zhcpnode, nic_id=None, mac_addr=None,
                     active=False, persist=True):
-        self._add_switch_table_record(userid, nic_id, vdev, zhcpnode)
+        self._add_switch_table_record(userid, vdev, nic_id=nic_id,
+                                      zhcpnode=zhcpnode)
 
         url = self._xcat_url.chvm('/' + userid)
         if persist:
@@ -601,11 +597,13 @@ class XCATClient(ZVMClient):
             with zvmutils.expect_invalid_xcat_resp_data():
                 zvmutils.xcat_request("PUT", url, body)
 
-    def _add_switch_table_record(self, userid, nic_id, interface, zhcp=None):
+    def _add_switch_table_record(self, userid, interface, nic_id=None,
+                                 zhcp=None):
         """Add node name and nic name address into xcat switch table."""
         commands = ' '.join(("switch.node=%s" % userid,
-                             "switch.port=%s" % nic_id,
                              "switch.interface=%s" % interface))
+        if nic_id is not None:
+            commands += " switch.port=%s" % nic_id
         if zhcp is not None:
             commands += " switch.comments=%s" % zhcp
         url = self._xcat_url.tabch("/switch")
