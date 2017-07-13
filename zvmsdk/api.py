@@ -359,7 +359,7 @@ class SDKAPI(object):
 
         :param userid: (str) the userid of the vm to be created
         :param vcpus: (int) amount of vcpus
-        :param memory: (int) size of memory
+        :param memory: (int) size of memory in MB
         :param disk_list: (dict) a list of disks info for the guest, it has
                one dictionary that contain some of the below keys for each
                disk, the root disk should be the first element in the list.
