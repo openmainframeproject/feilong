@@ -294,7 +294,7 @@ class SDKAPI(object):
     def guest_create_nic(self, userid, vdev=None, nic_id=None,
                          mac_addr=None, ip_addr=None, active=False,
                          persist=True):
-        """ Create the nic for the vm, add NICDEF record into the user direct.
+        """ Create the nic for the vm
 
         :param str vm_id: the user id of the vm
         :param str vdev: nic device number, 1- to 4- hexadecimal digits
@@ -315,6 +315,18 @@ class SDKAPI(object):
         self._networkops.create_nic(userid, vdev=vdev, nic_id=nic_id,
                                     mac_addr=mac_addr, ip_addr=ip_addr,
                                     active=active, persist=persist)
+
+    @check_input_types(_TUSERID, _TSTR, bool)
+    def guest_delete_nic(self, userid, vdev, active=False):
+        """ delete the nic for the vm
+
+        :param str userid: the user id of the vm
+        :param str vdev: nic device number, 1- to 4- hexadecimal digits
+        :param bool active: whether delete a nic on active guest system
+
+        """
+        self.zvmclient.delete_nic(self, userid, vdev,
+                                  active=active)
 
     @check_input_types(_TUSERID)
     def guest_get_nic_vswitch_info(self, userid):
