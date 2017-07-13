@@ -1592,3 +1592,9 @@ class XCATClient(ZVMClient):
             # Todo: analyze and add the uplink NIC info and global member info
 
         return vsw_info
+
+    def _get_vm_mgt_ip(self, vm_id):
+        addp = '&col=node&value=%s&attribute=ip' % vm_id
+        url = self._xcat_url.gettab("/hosts", addp)
+        with zvmutils.expect_invalid_xcat_resp_data():
+            return zvmutils.xcat_request("GET", url)['data'][0][0]

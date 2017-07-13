@@ -29,7 +29,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         super(SDKVswitchTestCase, self).__init__(methodName)
         self.basevm = "TESTVMID"
         self.client = zvmclient.get_zvmclient()
-        self.vswitch = "SDKTEST"
+        self.vswitch = "VSWTEST"
         # Delete test vswitch to make test env more stable
         self.sdkapi.vswitch_delete(self.vswitch)
 
@@ -246,3 +246,157 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         self.assertNotIn(vswitch_name, self.sdkapi.vswitch_get_list())
         # Test
         self.sdkapi.vswitch_delete(vswitch_name)
+
+
+class SDKNICTestCase(base.SDKAPIBaseTestCase):
+
+    def __init__(self, methodName='runTest'):
+        super(SDKNICTestCase, self).__init__(methodName)
+        self.basevm = "NICTEST"
+        self.client = zvmclient.get_zvmclient()
+        self.vswitch = "VSWTEST"
+        # Delete test vm/vsw before run cases to make test env more stable
+        self.sdkapi.guest_delete(self.basevm)
+        self.sdkapi.vswitch_delete(self.vswitch)
+
+    def setUp(self):
+        super(SDKNICTestCase, self).setUp()
+        self.sdkapi.guest_create(self.basevm, 1, 1024)
+        self.addCleanup(self.sdkapi.guest_delete, self.basevm)
+
+    def test_guest_create_nic(self):
+        """ Test each parameter of guest_create_nic. """
+        zhcp_node = self.client._get_hcp_info()['nodename']
+        default_vdev = CONF.zvm.default_nic_vdev
+
+        print("Creating NIC with default vdev, not active.")
+        self.sdkapi.guest_create_nic(self.basevm, persist=True)
+        nic_info = self.sdkapi.guest_get_nic_vswitch_info(self.basevm)
+        # Assert default nic vdev is added into both switch tab and user direct
+        self.assertIn(default_vdev, nic_info.keys())
+        cmd = ("/opt/zhcp/bin/smcli Image_Query_DM -T %s" % self.basevm)
+        vm_definition = self.client.run_commands_on_node(zhcp_node, cmd)
+        self.assertIn(('%s: NICDEF %s TYPE QDIO DEVICES 3') %
+                      (zhcp_node, default_vdev), vm_definition)
+
+        print("Creating NIC with fixed vdev.")
+        self.sdkapi.guest_create_nic(self.basevm, vdev='3000')
+        nic_info = self.sdkapi.guest_get_nic_vswitch_info(self.basevm)
+        # Assert default nic vdev is added into both switch tab and user direct
+        self.assertIn('3000', nic_info.keys())
+        cmd = ("/opt/zhcp/bin/smcli Image_Query_DM -T %s" % self.basevm)
+        vm_definition = self.client.run_commands_on_node(zhcp_node, cmd)
+        self.assertIn(('%s: NICDEF 3000 TYPE QDIO DEVICES 3') % zhcp_node,
+                      vm_definition)
+
+        print("Creating NIC without vdev, should use max_vdev+3 as default.")
+        self.sdkapi.guest_create_nic(self.basevm)
+        nic_info = self.sdkapi.guest_get_nic_vswitch_info(self.basevm)
+        # Assert default nic vdev is added into both switch tab and user direct
+        self.assertIn('3003', nic_info.keys())
+        cmd = ("/opt/zhcp/bin/smcli Image_Query_DM -T %s" % self.basevm)
+        vm_definition = self.client.run_commands_on_node(zhcp_node, cmd)
+        self.assertIn(('%s: NICDEF 3003 TYPE QDIO DEVICES 3') % zhcp_node,
+                      vm_definition)
+
+        print("Creating NIC with vdev conflict with defined NIC.")
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self.sdkapi.guest_create_nic,
+                          self.basevm, vdev='3002')
+
+        # Start test parameter nic_id
+        print("Creating NIC with nic_id.")
+        self.sdkapi.guest_create_nic(self.basevm, vdev='4000', nic_id='123456')
+        # Check the nic_id added in the switch table
+        switch_tab = self.client._get_nic_ids()
+        nic_id_in_tab = ''
+        for e in switch_tab:
+            sec = e.split(',')
+            userid = sec[0].strip('"')
+            interface = sec[4].strip('"')
+            if (userid == self.basevm) and (interface == '4000'):
+                nic_id_in_tab = sec[2].strip('"')
+        self.assertEqual(nic_id_in_tab, '123456')
+
+        # Start test parameter mac_addr
+        print("Creating NIC with mac_addr.")
+        self.sdkapi.guest_create_nic(self.basevm, vdev='5000',
+                                     mac_addr='02:00:00:12:34:56')
+        nic_info = self.sdkapi.guest_get_nic_vswitch_info(self.basevm)
+        # Check nic is added to switch table, mac_addr defined in user direct
+        self.assertIn('5000', nic_info.keys())
+        cmd = ("/opt/zhcp/bin/smcli Image_Query_DM -T %s" % self.basevm)
+        vm_definition = self.client.run_commands_on_node(zhcp_node, cmd)
+        self.assertIn(('%s: NICDEF 5000 TYPE QDIO DEVICES 3 MACID 123456') %
+                      zhcp_node, vm_definition)
+
+        print("Creating NIC with invalid mac_addr.")
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self.sdkapi.guest_create_nic,
+                          self.basevm, vdev='5003',
+                          mac_addr='123456789012')
+
+        # Start test parameter ip_addr
+        print("Creating NIC with management IP.")
+        self.sdkapi.guest_create_nic(self.basevm, vdev='6000',
+                                     ip_addr='9.60.56.78')
+        # Check nic defined in user direct and vswitch table
+        nic_info = self.sdkapi.guest_get_nic_vswitch_info(self.basevm)
+        self.assertIn('6000', nic_info.keys())
+        cmd = ("/opt/zhcp/bin/smcli Image_Query_DM -T %s" % self.basevm)
+        vm_definition = self.client.run_commands_on_node(zhcp_node, cmd)
+        self.assertIn(('%s: NICDEF 6000 TYPE QDIO DEVICES 3') % zhcp_node,
+                      vm_definition)
+        # Check the management IP is written into hosts table
+        ip_in_hosts_table = self.client._get_vm_mgt_ip(self.basevm)
+        self.assertEqual(ip_in_hosts_table, '9.60.56.78')
+
+        print("Creating NIC with IP, overwrite the current value in hosts.")
+        self.sdkapi.guest_create_nic(self.basevm, vdev='7000',
+                                     ip_addr='12.34.56.78')
+        # Check the management IP is overwritten to new value
+        ip_in_hosts_table = self.client._get_vm_mgt_ip(self.basevm)
+        self.assertEqual(ip_in_hosts_table, '12.34.56.78')
+
+        print("Creating NIC with invalid ip_addr.")
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self.sdkapi.guest_create_nic,
+                          self.basevm, vdev='7003',
+                          ip_addr='110.120.255.256')
+
+        # Start test parameter active
+        print("Creating NIC to active guest when guest is in off status.")
+        self.assertRaises(exception.ZVMException,
+                          self.sdkapi.guest_create_nic,
+                          self.basevm, vdev='7006',
+                          active=True)
+
+        print("Updating guest definition so that it can be started.")
+        cmd = ' '.join((
+            '/opt/zhcp/bin/smcli Image_Definition_Update_DM',
+            "-T %s" % self.basevm,
+            "-k 'IPL=VDEV=190'",
+            "-k 'LINK=USERID=MAINT VDEV1=0190 MODE=RR'"))
+        self.client.run_commands_on_node(zhcp_node, cmd)
+        print("Powering on the guest.")
+        # Try 5 times to power on the vm.
+        for i in range(5):
+            try:
+                self.sdkapi.guest_start(self.basevm)
+            except exception.ZVMXCATInternalError as err:
+                err_str = err.format_message()
+                if ("Return Code: 396" in err_str and
+                        "Reason Code: 59" in err_str):
+                    continue
+                else:
+                    raise
+        print("Creating nic to the active guest.")
+        self.sdkapi.guest_create_nic(self.basevm, vdev='8000',
+                                     active=True, persist=True)
+        # Check nic defined in user direct and vswitch table
+        nic_info = self.sdkapi.guest_get_nic_vswitch_info(self.basevm)
+        self.assertIn('8000', nic_info.keys())
+        cmd = ("/opt/zhcp/bin/smcli Image_Query_DM -T %s" % self.basevm)
+        vm_definition = self.client.run_commands_on_node(zhcp_node, cmd)
+        self.assertIn(('%s: NICDEF 8000 TYPE QDIO DEVICES 3') % zhcp_node,
+                      vm_definition)
