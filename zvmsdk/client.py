@@ -523,7 +523,7 @@ class XCATClient(ZVMClient):
             return zvmutils.xcat_request("PUT", url, body)['data']
 
     def create_nic(self, userid, vdev=None, nic_id=None,
-                   mac_addr=None, ip_addr=None, active=False, persist=True):
+                   mac_addr=None, ip_addr=None, active=False):
         ports_info = self._get_nic_ids()
         vdev_info = []
         for p in ports_info:
@@ -560,7 +560,7 @@ class XCATClient(ZVMClient):
                    'id': nic_id and nic_id or 'not specified',
                    'address': mac_addr and mac_addr or 'not specified'})
         self._create_nic(userid, nic_vdev, zhcpnode, nic_id=nic_id,
-                         mac_addr=mac_addr, active=active, persist=persist)
+                         mac_addr=mac_addr, active=active)
 
         if ip_addr is not None:
             self._preset_vm_network(userid, ip_addr)
@@ -575,33 +575,75 @@ class XCATClient(ZVMClient):
         return True
 
     def _create_nic(self, userid, vdev, zhcpnode, nic_id=None, mac_addr=None,
-                    active=False, persist=True):
-        url = self._xcat_url.chvm('/' + userid)
-        if persist:
-            commands = ' '.join((
-                'Virtual_Network_Adapter_Create_DM -T %s' % userid,
-                '-v %s' % vdev,
-                '-a 2 -n 3'))
-            if mac_addr is not None:
-                mac = ''.join(mac_addr.split(':'))[6:]
-                commands += ' -m %s' % mac
-            body = ['--smcli', commands]
-
-            with zvmutils.expect_invalid_xcat_resp_data():
-                zvmutils.xcat_request("PUT", url, body)
+                    active=False):
+        zhcp = CONF.xcat.zhcp_node
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        commands = ' '.join(('/opt/zhcp/bin/smcli',
+                             'Virtual_Network_Adapter_Create_Extended_DM',
+                             "-T %s" % userid,
+                             "-k image_device_number=%s" % vdev,
+                             "-k adapter_type=QDIO"))
+        if mac_addr is not None:
+            mac = ''.join(mac_addr.split(':'))[6:]
+            commands += ' -k mac_id=%s' % mac
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            result = zvmutils.xcat_request("PUT", url, body)
+            if (result['errorcode'][0][0] != '0'):
+                raise exception.ZVMException(
+                    msg=("Failed to create nic %s for %s in "
+                         "the guest's user direct, %s") %
+                         (vdev, userid, result['data'][0]))
 
         if active:
             if mac_addr is not None:
                 LOG.warning("Ignore the mac address %s when "
                             "adding nic on an active system" % mac_addr)
-            commands = ' '.join((
-                'Virtual_Network_Adapter_Create -T %s' % userid,
-                '-v %s' % vdev,
-                '-t 2 -d 3'))
-            body = ['--smcli', commands]
+            commands = ' '.join(('/opt/zhcp/bin/smcli',
+                                 'Virtual_Network_Adapter_Create_Extended',
+                                 "-T %s" % userid,
+                                 "-k image_device_number=%s" % vdev,
+                                 "-k adapter_type=QDIO"))
+            xdsh_commands = 'command=%s' % commands
+            body = [xdsh_commands]
+            with zvmutils.expect_xcat_call_failed_and_reraise(
+                    exception.ZVMNetworkError):
+                result = zvmutils.xcat_request("PUT", url, body)
+                if (result['errorcode'][0][0] != '0'):
+                    persist_OK = False
+                    commands = ' '.join((
+                        '/opt/zhcp/bin/smcli',
+                        'Virtual_Network_Adapter_Delete_DM',
+                        '-T %s' % userid,
+                        '-v %s' % vdev))
+                    xdsh_commands = 'command=%s' % commands
+                    body = [xdsh_commands]
+                    with zvmutils.expect_xcat_call_failed_and_reraise(
+                            exception.ZVMNetworkError):
+                        del_rc = zvmutils.xcat_request("PUT", url, body)
+                        if (del_rc['errorcode'][0][0] != '0'):
+                            emsg = del_rc['data'][0][0]
+                            if (emsg.__contains__("Return Code: 404") and
+                                emsg.__contains__("Reason Code: 8")):
+                                persist_OK = True
+                            else:
+                                persist_OK = False
+                        else:
+                            persist_OK = True
+                    if persist_OK:
+                        msg = ("Failed to create nic %s for %s on the active "
+                               "guest system, %s") % (vdev, userid,
+                                                      result['data'][0])
+                    else:
+                        msg = ("Failed to create nic %s for %s on the active "
+                               "guest system, %s, and failed to revoke user "
+                               "direct's changes, %s") % (vdev, userid,
+                                                          result['data'][0],
+                                                          del_rc['data'][0])
 
-            with zvmutils.expect_invalid_xcat_resp_data():
-                zvmutils.xcat_request("PUT", url, body)
+                    raise exception.ZVMException(msg)
 
         self._add_switch_table_record(userid, vdev, nic_id=nic_id,
                                       zhcp=zhcpnode)

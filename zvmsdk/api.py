@@ -292,10 +292,9 @@ class SDKAPI(object):
                                         transportfiles, remotehost, vdev)
 
     @check_input_types(_TUSERID, _TSTR_OR_NONE, _TSTR_OR_NONE,
-                       _TSTR_OR_NONE, _TSTR_OR_NONE, bool, bool)
+                       _TSTR_OR_NONE, _TSTR_OR_NONE, bool)
     def guest_create_nic(self, userid, vdev=None, nic_id=None,
-                         mac_addr=None, ip_addr=None, active=False,
-                         persist=True):
+                         mac_addr=None, ip_addr=None, active=False):
         """ Create the nic for the vm, add NICDEF record into the user direct.
 
         :param str userid: the user id of the vm
@@ -306,15 +305,8 @@ class SDKAPI(object):
                and x is a hexadecimal digit
         :param str ip_addr: the management IP address of the guest
         :param bool active: whether add a nic on active guest system
-        :param bool persist: whether keep the change in the permanent
-               configuration for the guest
 
         """
-        if (not active) and (not persist):
-            raise exception.ZVMInvalidInput(
-                msg=("Need to specify how to add a nic to the guest, on "
-                     "active guest system or in the guest's user direct, "
-                     "one of them must be true"))
         if mac_addr is not None:
             if not utils.valid_mac_addr(mac_addr):
                 raise exception.ZVMInvalidInput(
@@ -323,7 +315,7 @@ class SDKAPI(object):
 
         self._networkops.create_nic(userid, vdev=vdev, nic_id=nic_id,
                                     mac_addr=mac_addr, ip_addr=ip_addr,
-                                    active=active, persist=persist)
+                                    active=active)
 
     @check_input_types(_TUSERID)
     def guest_get_nic_vswitch_info(self, userid):
