@@ -94,3 +94,7 @@ class NetworkOPS(object):
 
     def delete_vswitch(self, vswitch_name, persist=True):
         self.zvmclient.delete_vswitch(vswitch_name, persist)
+
+    def delete_nic(self, userid, vdev, active=False, persist=True):
+        self.zvmclient.delete_nic(userid, vdev,
+                                  active=active, persist=persist)

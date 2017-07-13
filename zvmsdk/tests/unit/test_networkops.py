@@ -113,3 +113,9 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
     def test_delete_vswitch(self, delete_vswitch):
         self.networkops.delete_vswitch("vswitch_name", True)
         delete_vswitch.assert_called_with("vswitch_name", True)
+
+    @mock.patch.object(zvmclient.XCATClient, 'delete_nic')
+    def test_delete_nic(self, delete_nic):
+        self.networkops.delete_nic("userid", "vdev", True, True)
+        delete_nic.assert_called_with("userid", "vdev",
+                                      active=True, persist=True)

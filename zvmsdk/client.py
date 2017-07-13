@@ -615,6 +615,66 @@ class XCATClient(ZVMClient):
                 exception.ZVMNetworkError):
             return zvmutils.xcat_request("PUT", url, body)['data']
 
+    def delete_nic(self, userid, vdev, active=False, persist=True):
+        zhcp = CONF.xcat.zhcp_node
+        url = self._xcat_url.xdsh("/%s" % zhcp)
+        if persist:
+            commands = ' '.join((
+                '/opt/zhcp/bin/smcli '
+                'Virtual_Network_Adapter_Delete_DM -T %s' % userid,
+                '-v %s' % vdev))
+            xdsh_commands = 'command=%s' % commands
+            body = [xdsh_commands]
+
+            with zvmutils.expect_xcat_call_failed_and_reraise(
+                    exception.ZVMNetworkError):
+                result = zvmutils.xcat_request("PUT", url, body)
+
+                if (result['errorcode'][0][0] != '0'):
+                    emsg = result['data'][0][0]
+                    if (emsg.__contains__("Return Code: 404") and
+                        emsg.__contains__("Reason Code: 8")):
+                        LOG.warning("Virtual device %s does not exist", vdev)
+                        return
+                    else:
+                        raise exception.ZVMException(
+                            msg=("Failed to delete nic %s for %s in "
+                                 "the guest's user direct, %s") %
+                                (vdev, userid, result['data'][0]))
+        if active:
+            commands = ' '.join((
+                '/opt/zhcp/bin/smcli '
+                'Virtual_Network_Adapter_Delete -T %s' % userid,
+                '-v %s' % vdev))
+            xdsh_commands = 'command=%s' % commands
+            body = [xdsh_commands]
+
+            with zvmutils.expect_xcat_call_failed_and_reraise(
+                    exception.ZVMNetworkError):
+                result = zvmutils.xcat_request("PUT", url, body)
+                if (result['errorcode'][0][0] != '0'):
+                    emsg = result['data'][0][0]
+                    if (emsg.__contains__("Return Code: 204") and
+                        emsg.__contains__("Reason Code: 8")):
+                        LOG.warning("Virtual device %s does not exist", vdev)
+                        return
+                    else:
+                        raise exception.ZVMException(
+                            msg=("Failed to delete nic %s for %s on "
+                                 "the active guest system, %s") %
+                                (vdev, userid, result['data'][0]))
+        self._delete_nic_from_switch(userid, vdev)
+
+    def _delete_nic_from_switch(self, userid, vdev):
+        """Remove node switch record from xcat switch table."""
+        commands = "-d node=%s,interface=%s switch" % (userid, vdev)
+        url = self._xcat_url.tabch("/switch")
+        body = [commands]
+
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+                exception.ZVMNetworkError):
+            return zvmutils.xcat_request("PUT", url, body)['data']
+
     def _update_vm_info(self, node, node_info):
         """node_info looks like : ['sles12', 's390x', 'netboot',
         '0a0c576a_157f_42c8_bde5_2a254d8b77f']

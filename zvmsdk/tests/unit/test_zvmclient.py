@@ -1473,3 +1473,47 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         body = [commands]
         self._zvmclient._update_xcat_switch("fake_id", "fake_vdev", "fake_vs")
         xrequest.assert_called_with("PUT", url, body)
+
+    @mock.patch.object(zvmclient.XCATClient, '_delete_nic_from_switch')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_delete_nic_persist(self, xrequest, delete_nic):
+        xrequest.return_value = {"errorcode": [['0']]}
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = ' '.join((
+            '/opt/zhcp/bin/smcli '
+            'Virtual_Network_Adapter_Delete_DM -T fake_id',
+            '-v fake_vdev'))
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        self._zvmclient.delete_nic("fake_id", "fake_vdev", False, True)
+        xrequest.assert_called_with("PUT", url, body)
+        delete_nic.assert_called_with("fake_id", "fake_vdev")
+
+    @mock.patch.object(zvmclient.XCATClient, '_delete_nic_from_switch')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_delete_nic_active(self, xrequest, delete_nic):
+        xrequest.return_value = {"errorcode": [['0']]}
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = ' '.join((
+            '/opt/zhcp/bin/smcli '
+            'Virtual_Network_Adapter_Delete -T fake_id',
+            '-v fake_vdev'))
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
+        self._zvmclient.delete_nic("fake_id", "fake_vdev", True, False)
+        xrequest.assert_called_with("PUT", url, body)
+        delete_nic.assert_called_with("fake_id", "fake_vdev")
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_delete_nic_from_switch(self, xrequest):
+        commands = "-d node=fake_id,interface=fake_vdev switch"
+        url = self._xcat_url.tabch("/switch")
+        body = [commands]
+        self._zvmclient._delete_nic_from_switch("fake_id", "fake_vdev")
+        xrequest.assert_called_with("PUT", url, body)
