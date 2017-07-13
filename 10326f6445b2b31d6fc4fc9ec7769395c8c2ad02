@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "17893ca0_7717ab15",
+        "filename": "smutLayer/getHost.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-13T17:11:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "362a8877_966e96e5",
+      "revId": "10326f6445b2b31d6fc4fc9ec7769395c8c2ad02",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4ef89150_cfc4912a",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 2
@@ -30,6 +48,24 @@
       "writtenOn": "2017-07-13T16:08:40Z",
       "side": 1,
       "message": "I suggest that you reword the beginning of the message to something similar to...\nULTGHO0404E Unable to obtain information related to z/VM host name. Command used was /sbin/vmcp query uds. Output was HCPCQV003E Invalid option - UDS\n\nULT%s0404E Unable to obtain information related to %s. Command used was %s. Output was %s",
+      "revId": "10326f6445b2b31d6fc4fc9ec7769395c8c2ad02",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8d8874b5_6d8052cc",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-13T17:11:49Z",
+      "side": 1,
+      "message": "Done and updated to use #405 since Pradeep is using #404",
+      "parentUuid": "4ef89150_cfc4912a",
       "revId": "10326f6445b2b31d6fc4fc9ec7769395c8c2ad02",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
