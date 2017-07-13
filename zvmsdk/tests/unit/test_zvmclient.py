@@ -516,11 +516,18 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
                                             nic_id="fake_nic",
                                             zhcp="fakehcp")
 
-        url = self._xcat_url.chvm('/fakenode')
-        commands = ' '.join((
-            'Virtual_Network_Adapter_Create_DM -T fakenode',
-            '-v fake_vdev -a 2 -n 3 -m 445566'))
-        body = ['--smcli', commands]
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = ' '.join(('/opt/zhcp/bin/smcli',
+                             'Virtual_Network_Adapter_Create_Extended_DM',
+                             "-T fakenode",
+                             "-k image_device_number=fake_vdev",
+                             "-k adapter_type=QDIO",
+                             "-k mac_id=445566"))
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
         xrequest.assert_called_once_with("PUT", url, body)
 
     @mock.patch.object(zvmclient.XCATClient, '_add_switch_table_record')
@@ -534,11 +541,18 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         _add_switch.assert_called_once_with("fakenode", "fake_vdev",
                                             nic_id="fake_nic",
                                             zhcp="fakehcp")
-        url = self._xcat_url.chvm('/fakenode')
-        commands = ' '.join((
-            'Virtual_Network_Adapter_Create -T fakenode',
-            '-v fake_vdev -t 2 -d 3'))
-        body = ['--smcli', commands]
+
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = ' '.join(('/opt/zhcp/bin/smcli',
+                             'Virtual_Network_Adapter_Create_Extended',
+                             "-T fakenode",
+                             "-k image_device_number=fake_vdev",
+                             "-k adapter_type=QDIO"))
+        xdsh_commands = 'command=%s' % commands
+        body = [xdsh_commands]
         xrequest.assert_called_once_with("PUT", url, body)
 
     def test_is_vdev_valid_true(self):
