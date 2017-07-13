@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4e420037_1c82981c",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 707,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-13T14:07:44Z",
+      "side": 1,
+      "message": "Looking back at the old xCAT function, it used to set a default class of A if no class was specified.  Have we made a conscious decision not to have a default class?",
+      "revId": "877e0950f9463eb279119e4608da9fa6caa51749",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "85c7792d_ceb67b89",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 705,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-13T14:07:44Z",
+      "side": 1,
+      "message": "In the original xCAT function, there was a retry loop if a concurrent instance of vmur was already active.  Do we need that logic here as well?",
+      "revId": "877e0950f9463eb279119e4608da9fa6caa51749",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
