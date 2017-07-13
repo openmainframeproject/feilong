@@ -73,7 +73,6 @@ create_nic = {
                 'mac_addr': parameter_types.name,
                 'ip_addr': parameter_types.ipv4,
                 'active': parameter_types.boolean,
-                'persist': parameter_types.boolean,
             },
             'additionalProperties': False,
         },
