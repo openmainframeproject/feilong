@@ -110,11 +110,9 @@ class VMHandler(object):
         mac_addr = nic.get('mac_addr', None)
         ip_addr = nic.get('ip_addr', None)
         active = nic.get('active', False)
-        persist = nic.get('persist', True)
 
         self.api.guest_create_nic(userid, vdev=vdev, nic_id=nic_id,
-            mac_addr=mac_addr, ip_addr=ip_addr, active=active,
-            persist=persist)
+            mac_addr=mac_addr, ip_addr=ip_addr, active=active)
 
     @validation.schema(guest.couple_uncouple_nic)
     def couple_uncouple_nic(self, userid, body=None):
