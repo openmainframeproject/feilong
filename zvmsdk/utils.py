@@ -790,6 +790,14 @@ def valid_userid(userid):
     return True
 
 
+def valid_IP(IPaddr):
+    if type(IPaddr) not in types.StringTypes:
+        return False
+    q = IPaddr.split('.')
+    return len(q) == 4 and len(filter(lambda x: x >= 0 and x <= 255,
+                        map(int, filter(lambda x: x.isdigit(), q)))) == 4
+
+
 def last_bytes(file_like_object, num):
     try:
         file_like_object.seek(-num, os.SEEK_END)

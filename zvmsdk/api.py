@@ -301,7 +301,8 @@ class SDKAPI(object):
         :param str nic_id: nic identifier
         :param str mac_addr: mac address, it is only be used when changing
                the guest's user direct
-        :param str ip_addr: the management IP address of the guest
+        :param str ip_addr: the management IP address of the guest,
+                              0.0.0.0-255.255.255.255
         :param bool active: whether add a nic on active guest system
         :param bool persist: whether keep the change in the permanent
                configuration for the guest
@@ -312,6 +313,11 @@ class SDKAPI(object):
                 msg=("Need to specify how to add a nic to the guest, on "
                      "active guest system or in the guest's user direct, "
                      "one of them must be true"))
+        if ip_addr is not None:
+            if not utils.valid_IP(ip_addr):
+                raise exception.ZVMInvalidInput(
+                    msg=("Invalid management IP address, it should be the "
+                         "value between 0.0.0.0 and 255.255.255.255"))
         self._networkops.create_nic(userid, vdev=vdev, nic_id=nic_id,
                                     mac_addr=mac_addr, ip_addr=ip_addr,
                                     active=active, persist=persist)
