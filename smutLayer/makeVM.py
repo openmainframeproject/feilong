@@ -113,18 +113,11 @@ def createVM(rh):
     os.write(fd, '\n'.join(dirLines) + '\n')
     os.close(fd)
 
-    cmd = ["smcli",
-        "Image_Create_DM",
-        "-T", rh.userid,
-        "-f", tempFile]
-
-    results = invokeSMCLI(rh, cmd)
+    parms = ["-T", rh.userid, "-f", tempFile]
+    results = invokeSMCLI(rh, "Image_Create_DM", parms)
     if results['overallRC'] != 0:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     os.remove(tempFile)
