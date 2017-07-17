@@ -331,13 +331,14 @@ def installFS(rh, vaddr, mode, fileSystem):
     return results
 
 
-def invokeSMCLI(rh, cmd):
+def invokeSMCLI(rh, api, parms):
     """
     Invoke SMCLI and parse the results.
 
     Input:
        Request Handle
-       SMCLI command to issue, specified as a list.
+       API name,
+       SMCLI parms as an array
 
     Output:
        Dictionary containing the following:
@@ -345,16 +346,17 @@ def invokeSMCLI(rh, cmd):
           rc        - RC returned from SMCLI if overallRC = 0.
           rs        - RS returned from SMCLI if overallRC = 0.
           errno     - Errno returned from SMCLI if overallRC = 0.
-          response  - Output of the SMCLI command.
+          response  - String output of the SMCLI command.
 
     Note:
-       - If the 'Return Code:' and 'Reason Code:' strings do not contain
-         an integer value then an error message is generated.  The values
-         in the dictionary for the incorrect values remain as 0.
+       - If the first three words of the header returned from smcli
+         do not do not contain words that represent valid integer
+         values or contain too few words then one or more error
+         messages are generated. THIS SHOULD NEVER OCCUR !!!!
     """
 
     rh.printSysLog("Enter vmUtils.invokeSMCLI, userid: " + rh.userid +
-        " function: " + cmd[1])
+        " function: " + api)
 
     results = {
               'overallRC': 0,
@@ -365,36 +367,79 @@ def invokeSMCLI(rh, cmd):
               'strError': '',
              }
 
-    smcliPath = '/opt/zthin/bin/'
-    cmd[0] = smcliPath + cmd[0]
+    cmd = []
+    cmd.append('/opt/zthin/bin/smcli')
+    cmd.append(api)
+    cmd.append('--addRCheader')
 
     try:
-        results['response'] = subprocess.check_output(cmd, close_fds=True)
+        smcliResp = subprocess.check_output(cmd + parms,
+            close_fds=True).split('\n', 1)
+        results['response'] = smcliResp[1]
         results['overallRC'] = 0
+        results['rc'] = 0
 
     except CalledProcessError as e:
-        results['response'] = e.output
-        results['overallRC'] = 1
+        strCmd = " ".join(cmd + parms)
 
-        match = re.search('Return Code: (.+?)\n', results['response'])
-        if match:
-            try:
-                results['rc'] = int(match.group(1))
-            except ValueError:
-                strCmd = " ".join(cmd)
-                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-                    results['response'] + ",  return code is not an " +
-                    "integer: " + match.group(1))
+        # Break up the RC header into its component parts.
+        smcliResp = e.output.split('\n', 1)
+        if len(smcliResp) != 2:
+            # Only a header line, no data.
+            smcliResp[1] = ''
 
-        match = re.search('Reason Code: (.+?)\n', results['response'])
-        if match:
+        # Split the header into its component pieces.
+        rcHeader = smcliResp[0].split('(details)', 1)
+        if len(rcHeader) < 2:
+            # No data after the details tag.
+            rcHeader[1] = ''
+        codes = rcHeader[0].split(' ')
+        rh.printLn("N", str(codes))
+
+        # Validate the rc, rs, and errno.
+        if len(codes) < 3:
+            # Unexpected number of codes.  Need at least 3.
+            results = msgs.msg['0301'][0]
+            results['response'] = msgs.msg['0301'][1] % (modId, api,
+                strCmd, rcHeader[0], rcHeader[1])
+        else:
+            goodHeader = True
+            # Convert the overall rc from SMAPI to an int and pass
+            # it along in the errno field.
             try:
-                results['rs'] = int(match.group(1))
+                results['errno'] = int(codes[0])
             except ValueError:
-                strCmd = " ".join(cmd)
-                rh.printLn("ES", "Command failed: '" + strCmd + "', out: '" +
-                    results['response'] + ",  reason code is not an " +
-                    "integer: " + match.group(1))
+                goodHeader = False
+                results = msgs.msg['0304'][0]
+                results['response'] = msgs.msg['0304'][1] % (modId,
+                    api, codes[2], strCmd, rcHeader[0], rcHeader[1])
+
+            # Convert the return code to an int.
+            try:
+                results['rc'] = int(codes[1])
+            except ValueError:
+                goodHeader = False
+                results = msgs.msg['0302'][0]
+                results['response'] = msgs.msg['0302'][1] % (modId,
+                    api, codes[0], strCmd, rcHeader[0], rcHeader[1])
+
+            # Convert the reason code to an int.
+            try:
+                results['rs'] = int(codes[2])
+            except ValueError:
+                goodHeader = False
+                results = msgs.msg['0303'][0]
+                results['response'] = msgs.msg['0303'][1] % (modId,
+                    api, codes[1], strCmd, rcHeader[0], rcHeader[1])
+
+        results['strError'] = rcHeader[1].lstrip()
+
+        if goodHeader:
+            results['overallRC'] = 1    # Set the overall RC
+            # Produce a message that provides the error info.
+            results['response'] = msgs.msg['0300'][1] % (modId,
+                    api, results['rc'], results['rs'],
+                    results['errno'], strCmd, smcliResp[1])
 
     rh.printSysLog("Exit vmUtils.invokeSMCLI, rc: " +
         str(results['overallRC']))
@@ -642,21 +687,15 @@ def purgeReader(rh):
                'response': []}
     # Temporarily use this SMAPI to purge the reader
     # We've asked for a new one to do this
-    cmd = ['smcli',
-           'xCAT_Commands_IUO',
-           '-T', rh.userid,
-           '-c', 'cmd=PURGE %s RDR ALL' % rh.userid]
+    parms = ['-T', rh.userid, '-c', 'cmd=PURGE %s RDR ALL' % rh.userid]
 
-    results = invokeSMCLI(rh, cmd)
+    results = invokeSMCLI(rh, "xCAT_Commands_IUO", parms)
 
     if results['overallRC'] == 0:
         rh.printLn("N", "Purged reader for " +
                    rh.userid + ".")
     else:
-        strCmd = ' '.join(cmd)
-        msg = (msgs.msg['0300'][1] % (modId, strCmd,
-              results['overallRC'], results['response']))
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)
 
     rh.printSysLog("Exit vmUtils.purgeReader, rc: " +

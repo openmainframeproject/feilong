@@ -142,21 +142,15 @@ def activate(rh):
     """
     rh.printSysLog("Enter powerVM.activate, userid: " + rh.userid)
 
-    cmd = ["smcli",
-            "Image_Activate",
-            "-T", rh.userid]
-
-    results = invokeSMCLI(rh, cmd)
+    parms = ["-T", rh.userid]
+    results = invokeSMCLI(rh, "Image_Activate", parms)
     if results['overallRC'] == 0:
         pass
     elif results['rc'] == 200 and results['rs'] == 8:
         pass    # All good.  No need to change the ReqHandle results.
     else:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)   # Use results from invokeSMCLI
 
     if results['overallRC'] == 0 and 'maxQueries' in rh.parms:
@@ -243,12 +237,8 @@ def deactivate(rh):
     rh.printSysLog("Enter powerVM.deactivate, userid: " +
         rh.userid)
 
-    cmd = ["smcli",
-            "Image_Deactivate",
-            "-T", rh.userid,
-            "-f", "IMMED"]
-
-    results = invokeSMCLI(rh, cmd)
+    parms = ["-T", rh.userid, "-f", "IMMED"]
+    results = invokeSMCLI(rh, "Image_Deactivate", parms)
     if results['overallRC'] == 0:
         pass
     elif results['rc'] == 200 and (results['rs'] == 12 or results['rs'] == 16):
@@ -258,10 +248,7 @@ def deactivate(rh):
         rh.updateResults({}, reset=1)
     else:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     if results['overallRC'] == 0 and 'maxQueries' in rh.parms:
@@ -495,18 +482,11 @@ def pause(rh):
 
     rh.printSysLog("Enter powerVM.pause, userid: " + rh.userid)
 
-    cmd = ["smcli",
-            "Image_Pause",
-            "-T", rh.userid,
-            "-k", "PAUSE=YES"]
-
-    results = invokeSMCLI(rh, cmd)
+    parms = ["-T", rh.userid, "-k", "PAUSE=YES"]
+    results = invokeSMCLI(rh, "Image_Pause", parms)
     if results['overallRC'] != 0:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit powerVM.pause, rc: " + str(rh.results['overallRC']))
@@ -594,11 +574,8 @@ def reset(rh):
     rh.printSysLog("Enter powerVM.reset, userid: " + rh.userid)
 
     # Log off the user
-    cmd = ["smcli",
-            "Image_Deactivate",
-            "-T", rh.userid]
-
-    results = invokeSMCLI(rh, cmd)
+    parms = ["-T", rh.userid]
+    results = invokeSMCLI(rh, "Image_Deactivate", parms)
     if results['overallRC'] != 0:
         if results['rc'] == 200 and results['rs'] == 12:
             # Tolerated error.  Machine is already in the desired state.
@@ -607,10 +584,7 @@ def reset(rh):
             results['rs'] = 0
         else:
             # SMAPI API failed.
-            strCmd = ' '.join(cmd)
-            msg = msgs.msg['0300'][1] % (modId, strCmd,
-                results['overallRC'], results['response'])
-            rh.printLn("ES", msg)
+            rh.printLn("ES", results['response'])
             rh.updateResults(results)    # Use results from invokeSMCLI
 
     # Wait for the logoff to complete
@@ -620,17 +594,11 @@ def reset(rh):
 
     # Log the user back on
     if results['overallRC'] == 0:
-        cmd = ["smcli",
-            "Image_Activate",
-            "-T", rh.userid]
-
-        results = invokeSMCLI(rh, cmd)
+        parms = ["-T", rh.userid]
+        results = invokeSMCLI(rh, "Image_Activate", parms)
         if results['overallRC'] != 0:
             # SMAPI API failed.
-            strCmd = ' '.join(cmd)
-            msg = msgs.msg['0300'][1] % (modId, strCmd,
-                results['overallRC'], results['response'])
-            rh.printLn("ES", msg)
+            rh.printLn("ES", results['response'])
             rh.updateResults(results)    # Use results from invokeSMCLI
 
     if results['overallRC'] == 0 and 'maxQueries' in rh.parms:
@@ -802,10 +770,8 @@ def softDeactivate(rh):
             " is unreachable. Treating it as already shutdown.")
 
     # Tell z/VM to log off the system.
-    cmd = ["smcli",
-            "Image_Deactivate",
-            "-T", rh.userid]
-    smcliResults = invokeSMCLI(rh, cmd)
+    parms = ["-T", rh.userid]
+    smcliResults = invokeSMCLI(rh, "Image_Deactivate", parms)
     if smcliResults['overallRC'] == 0:
         pass
     elif smcliResults['rc'] == 200 and (smcliResults['rs'] == 12 or +
@@ -815,10 +781,7 @@ def softDeactivate(rh):
         rh.printLn("N", rh.userid + " is already logged off.")
     else:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            smcliResults['overallRC'], smcliResults['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(smcliResults)    # Use results from invokeSMCLI
 
     if rh.results['overallRC'] == 0 and 'maxQueries' in rh.parms:
@@ -857,18 +820,12 @@ def unpause(rh):
 
     rh.printSysLog("Enter powerVM.unpause, userid: " + rh.userid)
 
-    cmd = ["smcli",
-            "Image_Pause",
-            "-T", rh.userid,
-            "-k", "PAUSE=NO"]
+    parms = ["-T", rh.userid, "-k", "PAUSE=NO"]
 
-    results = invokeSMCLI(rh, cmd)
+    results = invokeSMCLI(rh, "Image_Pause", parms)
     if results['overallRC'] != 0:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit powerVM.unpause, rc: " +

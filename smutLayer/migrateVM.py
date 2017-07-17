@@ -104,18 +104,11 @@ def cancelMigrate(rh):
 
     rh.printSysLog("Enter migrateVM.cancelMigrate")
 
-    cmd = ["smcli",
-            "VMRELOCATE",
-            "-T", rh.userid,
-            "-k", "action=CANCEL"]
-
-    results = invokeSMCLI(rh, cmd)
+    parms = ["-T", rh.userid, "-k", "action=CANCEL"]
+    results = invokeSMCLI(rh, "VMRELOCATE", parms)
     if results['overallRC'] != 0:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit migrateVM.cancelMigrate, rc: " +
@@ -180,26 +173,21 @@ def getStatus(rh):
 
     rh.printSysLog("Enter migrateVM.getStatus")
 
-    cmd = ["smcli",
-            "VMRELOCATE_Status",
-            "-T", rh.userid]
+    parms = ["-T", rh.userid]
 
     if 'all' in rh.parms:
-        cmd.extend(["-k", "status_target=ALL"])
+        parms.extend(["-k", "status_target=ALL"])
     elif 'incoming' in rh.parms:
-        cmd.extend(["-k", "status_target=INCOMING"])
+        parms.extend(["-k", "status_target=INCOMING"])
     elif 'outgoing' in rh.parms:
-        cmd.extend(["-k", "status_target=OUTGOING"])
+        parms.extend(["-k", "status_target=OUTGOING"])
     else:
-        cmd.extend(["-k", "status_target=USER " + rh.userid + ""])
+        parms.extend(["-k", "status_target=USER " + rh.userid + ""])
 
-    results = invokeSMCLI(rh, cmd)
+    results = invokeSMCLI(rh, "VMRELOCATE_Status", parms)
     if results['overallRC'] != 0:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit migrateVM.getStatus, rc: " +
@@ -261,28 +249,23 @@ def modifyMigrate(rh):
 
     rh.printSysLog("Enter migrateVM.modifyMigrate")
 
-    cmd = ["smcli",
-            "VMRELOCATE_Modify",
-            "-T", rh.userid]
+    parms = ["-T", rh.userid]
 
     if 'maxQuiesce' in rh.parms:
         if rh.parms['maxQuiesce'] == -1:
-            cmd.extend(["-k", "max_quiesce=NOLIMIT"])
+            parms.extend(["-k", "max_quiesce=NOLIMIT"])
         else:
-            cmd.extend(["-k", "max_quiesce=" + str(rh.parms['maxQuiesce'])])
+            parms.extend(["-k", "max_quiesce=" + str(rh.parms['maxQuiesce'])])
     if 'maxTotal' in rh.parms:
         if rh.parms['maxTotal'] == -1:
-            cmd.extend(["-k", "max_total=NOLIMIT"])
+            parms.extend(["-k", "max_total=NOLIMIT"])
         else:
-            cmd.extend(["-k", "max_total=" + str(rh.parms['maxTotal'])])
+            parms.extend(["-k", "max_total=" + str(rh.parms['maxTotal'])])
 
-    results = invokeSMCLI(rh, cmd)
+    results = invokeSMCLI(rh, "VMRELOCATE_Modify", parms)
     if results['overallRC'] != 0:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit migrateVM.modifyMigrate, rc: " +
@@ -316,13 +299,10 @@ def moveVM(rh):
 
     rh.printSysLog("Enter migrateVM.moveVM")
 
-    cmd = ["smcli",
-            "VMRELOCATE",
-            "-T", rh.userid,
-            "-k", "action=MOVE"]
+    parms = ["-T", rh.userid, "-k", "action=MOVE"]
 
     if 'dest' in rh.parms:
-        cmd.extend(["-k", "destination=" + rh.parms['dest']])
+        parms.extend(["-k", "destination=" + rh.parms['dest']])
 
     forceOption = ''
     if 'forcearch' in rh.parms:
@@ -332,29 +312,26 @@ def moveVM(rh):
     if 'forcestorage' in rh.parms:
         forceOption = forceOption + "STORAGE "
     if forceOption != '':
-        cmd.extend(["-k", "\'force=" + forceOption + "\'"])
+        parms.extend(["-k", "\'force=" + forceOption + "\'"])
 
     if 'immediate' in rh.parms:
-        cmd.extend(["-k", "\'immediate=YES"])
+        parms.extend(["-k", "\'immediate=YES"])
 
     if 'maxQuiesce' in rh.parms:
         if rh.parms['maxQuiesce'] == -1:
-            cmd.extend(["-k", "max_quiesce=NOLIMIT"])
+            parms.extend(["-k", "max_quiesce=NOLIMIT"])
         else:
-            cmd.extend(["-k", "max_quiesce=" + str(rh.parms['maxQuiesce'])])
+            parms.extend(["-k", "max_quiesce=" + str(rh.parms['maxQuiesce'])])
     if 'maxTotal' in rh.parms:
         if rh.parms['maxTotal'] == -1:
-            cmd.extend(["-k", "max_total=NOLIMIT"])
+            parms.extend(["-k", "max_total=NOLIMIT"])
         else:
-            cmd.extend(["-k", "max_total=" + str(rh.parms['maxTotal'])])
+            parms.extend(["-k", "max_total=" + str(rh.parms['maxTotal'])])
 
-    results = invokeSMCLI(rh, cmd)
+    results = invokeSMCLI(rh, "VMRELOCATE", parms)
     if results['overallRC'] != 0:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit migrateVM.moveVM, rc: " +
@@ -524,21 +501,15 @@ def testMigrate(rh):
 
     rh.printSysLog("Enter migrateVM.testMigrate")
 
-    cmd = ["smcli",
-            "VMRELOCATE",
-            "-T", rh.userid,
-            "-k", "action=TEST"]
+    parms = ["-T", rh.userid, "-k", "action=TEST"]
 
     if 'dest' in rh.parms:
-        cmd.extend(["-k", "destination=" + rh.parms['dest']])
+        parms.extend(["-k", "destination=" + rh.parms['dest']])
 
-    results = invokeSMCLI(rh, cmd)
+    results = invokeSMCLI(rh, "VMRELOCATE", parms)
     if results['overallRC'] != 0:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit migrateVM.testMigrate, rc: " +
