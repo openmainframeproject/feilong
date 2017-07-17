@@ -125,8 +125,7 @@ class SDKAPITestUtils(object):
               "mac_address=%s ..." % (nic_id, mac_addr))
         self.api.guest_create_nic(userid, nic_id=nic_id, mac_addr=mac_addr,
                                   ip_addr=ip_addr)
-        self.api.guest_update_nic_definition(userid, vdev, mac_addr,
-                                             vswitch_name)
+        self.api.guest_nic_couple_to_vswitch(vswitch_name, vdev, userid)
         self.api.vswitch_grant_user(vswitch_name, userid)
 
         # Deploy image on vm

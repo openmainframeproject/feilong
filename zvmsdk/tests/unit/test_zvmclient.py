@@ -1332,26 +1332,6 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
                                                  "vlan_id")
         xrequest.assert_called_once_with("PUT", url, body)
 
-    @mock.patch.object(zvmclient.XCATClient, '_update_xcat_switch')
-    @mock.patch.object(zvmutils, 'xcat_request')
-    def test_update_nic_definition(self, xrequest, update_switch):
-        xrequest.return_value = {"errorcode": [['0']]}
-        url = "/xcatws/vms/node?userName=" + CONF.xcat.username +\
-              "&password=" + CONF.xcat.password +\
-              "&format=json"
-
-        command = 'Image_Definition_Update_DM -T node'
-        command += ' -k \'NICDEF=VDEV=vdev TYPE=QDIO '
-        command += 'MACID=445566 '
-        command += 'LAN=SYSTEM '
-        command += 'SWITCHNAME=vswitch\''
-        body = ['--smcli', command]
-
-        self._zvmclient.update_nic_definition("node", "vdev",
-                                              "11:22:33:44:55:66", "vswitch")
-        update_switch.assert_called_with("node", "vdev", "vswitch")
-        xrequest.assert_called_with("PUT", url, body)
-
     @mock.patch.object(zvmclient.XCATClient, 'remove_image_file')
     @mock.patch.object(zvmclient.XCATClient, 'remove_image_definition')
     def test_image_delete(self, remove_image_def, remove_image_file):

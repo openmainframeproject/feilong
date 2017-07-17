@@ -657,18 +657,6 @@ class SDKAPI(object):
         self._networkops.set_vswitch_port_vlan_id(vswitch_name,
                                                   userid, vlan_id)
 
-    @check_input_types(_TUSERID, _TSTR, _TSTR, _TVSWNAME)
-    def guest_update_nic_definition(self, userid, nic_vdev, mac,
-                                    switch_name):
-        """ add nic and coupled network info into the user direct.
-        :param str userid: the user id of the vm
-        :param str nic_vdev: nic device number, 1- to 4- hexadecimal digits
-        :param str mac: mac address
-        :param str switch_name: the network name
-        """
-        self._networkops.update_nic_definition(userid, nic_vdev, mac,
-                                               switch_name)
-
     @check_input_types(_TUSERID, list)
     def guest_config_minidisks(self, userid, disk_info):
         """Punch the script that used to process additional disks to vm
