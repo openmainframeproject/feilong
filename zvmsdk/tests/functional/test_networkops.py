@@ -30,6 +30,8 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         self.basevm = "TESTVMID"
         self.client = zvmclient.get_zvmclient()
         self.vswitch = "SDKTEST"
+        # Delete test vswitch to make test env more stable
+        self.sdkapi.vswitch_delete(self.vswitch)
 
     def setUp(self):
         super(SDKVswitchTestCase, self).setUp()
