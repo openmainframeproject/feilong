@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "02295392_f0e22290",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 704,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-17T20:42:39Z",
+      "side": 1,
+      "message": "Don\u0027t you want to break out of the loop here?",
+      "revId": "ec0de4538b4f1e08536a9e1d3712a7e8d973522c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "656d5134_cc10cc94",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 710,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-17T20:42:39Z",
+      "side": 1,
+      "message": "My inclination is that if we fail because the loop expires, we want a different error message than if we fail because we got an actual error on vmur.  I think you could use the rc from results actually instead of creating a new flag.",
+      "revId": "ec0de4538b4f1e08536a9e1d3712a7e8d973522c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2db2caca_495de9b0",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 714,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-17T20:42:39Z",
+      "side": 1,
+      "message": "Do you want to break out of the loop here, unconditionally?",
+      "revId": "ec0de4538b4f1e08536a9e1d3712a7e8d973522c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
