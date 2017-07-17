@@ -110,8 +110,13 @@ class SDKAPITestUtils(object):
         vdev = CONF.zvm.default_nic_vdev
         vswitch_name = CONF.tests.vswitch
         remote_host = zvmutils.get_host()
-        transportfiles = configdrive.create_config_drive(ip_addr,
-                                                CONF.tests.image_os_version)
+        network_interface_info = {'ip_addr': ip_addr,
+                                  'nic_vdev': CONF.zvm.default_nic_vdev,
+                                  'gateway_v4': CONF.tests.gateway_v4,
+                                  'broadcast_v4': CONF.tests.broadcast_v4,
+                                  'netmask_v4': CONF.tests.netmask_v4}
+        transportfiles = configdrive.create_config_drive(
+            network_interface_info, CONF.tests.image_os_version)
         disks_list = [{'size': root_disk_size,
                        'is_boot_disk': True,
                        'disk_pool': CONF.zvm.disk_pool}]

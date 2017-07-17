@@ -108,18 +108,6 @@ zvm_opts = [
     Opt('my_ip',
         section='network',
         required=True),
-    Opt('device',
-        section='network'),
-    Opt('broadcast_v4',
-        section='network'),
-    Opt('gateway_v4',
-        section='network'),
-    Opt('netmask_v4',
-        section='network'),
-    Opt('subchannels',
-        section='network'),
-    Opt('nic_name',
-        section='network'),
     # guest options
     Opt('temp_path',
         section='guest',
@@ -163,6 +151,12 @@ zvm_opts = [
         section='tests',
         opt_type='str',
         ),
+    Opt('broadcast_v4',
+        section='tests'),
+    Opt('gateway_v4',
+        section='tests'),
+    Opt('netmask_v4',
+        section='tests'),
     ]
 
 

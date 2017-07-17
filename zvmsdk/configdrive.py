@@ -28,26 +28,46 @@ CONF = config.CONF
 _DEFAULT_MODE = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
 
 
-def get_cfg_str(ip_v4, os_version, address_read = CONF.zvm.default_nic_vdev):
+def _generate_vdev(base, offset):
+    """Generate virtual device number based on base vdev
+    :param base: base virtual device number, string of 4 bit hex.
+    :param offset: offset to base, integer.
+    """
+    vdev = hex(int(base, 16) + offset)[2:]
+    return vdev.rjust(4, '0')
+
+
+def get_cfg_str(network_interface_info, os_version):
+    ip_v4 = network_interface_info['ip_addr']
+    address_read = network_interface_info['nic_vdev']
+    broadcast_v4 = network_interface_info['broadcast_v4']
+    gateway_v4 = network_interface_info['gateway_v4']
+    netmask_v4 = network_interface_info['netmask_v4']
+
+    nic_vdev = network_interface_info['nic_vdev']
+    subchannels = ','.join(('0.0.' + nic_vdev,
+                            '0.0.' + _generate_vdev(nic_vdev, 1),
+                            '0.0.' + _generate_vdev(nic_vdev, 2)))
+
     linuxdist = dist.LinuxDistManager().get_linux_dist(os_version)()
     device_num = 0
     device_name = linuxdist.get_device_name(device_num)
     cfg_str = 'DEVICE=' + device_name + '\n'
     cfg_str += 'BOOTPROTO=static\n'
-    cfg_str += 'BROADCAST=' + CONF.network.broadcast_v4 + '\n'
-    cfg_str += 'GATEWAY=' + CONF.network.gateway_v4 + '\n'
+    cfg_str += 'BROADCAST=' + broadcast_v4 + '\n'
+    cfg_str += 'GATEWAY=' + gateway_v4 + '\n'
     cfg_str += 'IPADDR=' + ip_v4 + '\n'
-    cfg_str += 'NETMASK=' + CONF.network.netmask_v4 + '\n'
+    cfg_str += 'NETMASK=' + netmask_v4 + '\n'
     cfg_str += 'NETTYPE=qeth\n'
     cfg_str += 'ONBOOT=yes\n'
     cfg_str += 'PORTNAME=PORT' + address_read + '\n'
     cfg_str += 'OPTIONS=\"layer2=1\"\n'
-    cfg_str += 'SUBCHANNELS=' + CONF.network.subchannels + '\n'
+    cfg_str += 'SUBCHANNELS=' + subchannels + '\n'
     return cfg_str
 
 
-def generate_net_file(ip_addr, net_file_path, os_version):
-    cfg_str = get_cfg_str(ip_addr, os_version)
+def generate_net_file(network_interface_info, net_file_path, os_version):
+    cfg_str = get_cfg_str(network_interface_info, os_version)
     generate_file(cfg_str, net_file_path)
 
 
@@ -90,7 +110,17 @@ def generate_file(file_content, path):
     f.close()
 
 
-def create_config_drive(ip_addr, os_version):
+def create_config_drive(network_interface_info, os_version):
+    """Generate config driver for zVM guest vm.
+
+    :param dict network_interface_info: Required keys:
+        ip_addr - (str) IP address
+        nic_vdev - (str) VDEV of the nic
+        gateway_v4 - IPV4 gateway
+        broadcast_v4 - IPV4 broadcast address
+        netmask_v4 - IPV4 netmask
+    :param str os_version: operating system version of the guest
+    """
     if not os.path.exists(CONF.guest.temp_path):
         os.mkdir(CONF.guest.temp_path)
     cfg_dir = os.path.join(CONF.guest.temp_path, 'openstack')
@@ -103,7 +133,7 @@ def create_config_drive(ip_addr, os_version):
     os.mkdir(latest_dir)
 
     net_file = os.path.join(content_dir, '0000')
-    generate_net_file(ip_addr, net_file, os_version)
+    generate_net_file(network_interface_info, net_file, os_version)
     znetconfig_file = os.path.join(content_dir, '0001')
     generate_znetconfig_file(znetconfig_file, os_version)
     meta_data_path = os.path.join(latest_dir, 'meta_data.json')
