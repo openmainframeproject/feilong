@@ -911,16 +911,16 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         xdsh_commands = 'command=%s' % commands
         body2 = [xdsh_commands]
 
-        self._zvmclient._couple_nic("fakevs",
-                                    "fakeuserid", "fakevdev", active=True,
-                                    persist=True)
+        self._zvmclient._couple_nic("fakeuserid", "fakevdev", "fakevs",
+                                    active=True)
         update_switch.assert_called_with("fakeuserid", "fakevdev",
                                          "fakevs")
         xrequest.assert_any_call("PUT", url, body1)
         xrequest.assert_any_call("PUT", url, body2)
 
+    @mock.patch.object(zvmclient.XCATClient, '_update_xcat_switch')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_uncouple_nic(self, xrequest):
+    def test_uncouple_nic(self, xrequest, update_switch):
         xrequest.return_value = {"errorcode": [['0']]}
         url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
               "/dsh?userName=" + CONF.xcat.username +\
@@ -939,8 +939,8 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         body2 = [xdsh_commands]
 
         self._zvmclient._uncouple_nic("fakeuserid",
-                                      "fakevdev", active=True,
-                                      persist=True)
+                                      "fakevdev", active=True)
+        update_switch.assert_called_with("fakeuserid", "fakevdev", None)
         xrequest.assert_any_call("PUT", url, body1)
         xrequest.assert_any_call("PUT", url, body2)
 
@@ -999,23 +999,22 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
 
     @mock.patch.object(zvmclient.XCATClient, '_couple_nic')
     def test_couple_nic_to_vswitch(self, couple_nic):
-        self._zvmclient.couple_nic_to_vswitch("fake_VS_name",
+        self._zvmclient.couple_nic_to_vswitch("fake_userid",
                                               "fakevdev",
-                                              "fake_userid",
-                                              True, True)
-        couple_nic.assert_called_with("fake_VS_name",
-                                      "fake_userid",
-                                      "fakevdev", active=True, persist=True)
+                                              "fake_VS_name",
+                                              True)
+        couple_nic.assert_called_with("fake_userid",
+                                      "fakevdev",
+                                      "fake_VS_name",
+                                      active=True)
 
     @mock.patch.object(zvmclient.XCATClient, '_uncouple_nic')
     def test_uncouple_nic_from_vswitch(self, uncouple_nic):
-        self._zvmclient.uncouple_nic_from_vswitch("fake_VS_name",
+        self._zvmclient.uncouple_nic_from_vswitch("fake_userid",
                                                   "fakevdev",
-                                                  "fake_userid",
-                                                  False, False)
+                                                  False)
         uncouple_nic.assert_called_with("fake_userid",
-                                        "fakevdev", active=False,
-                                        persist=False)
+                                        "fakevdev", active=False)
 
     @mock.patch.object(zvmclient.XCATClient, '_get_userid_from_node')
     def test_get_zhcp_userid(self, get_userid_from_node):
