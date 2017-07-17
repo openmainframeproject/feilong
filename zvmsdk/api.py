@@ -340,7 +340,9 @@ class SDKAPI(object):
 
         :param str userid: the user id of the vm
 
-        :returns: Dictionary describing nic and switch info
+        :returns: Dictionary describing nic and switch info, format is
+                  {'vdev': 'vswitch'}, such as
+                  {'1000': 'VSWITCH1', '1003': 'VSWITCH2'}
         :rtype: dict
         """
         return self._networkops.get_vm_nic_vswitch_info(userid)
