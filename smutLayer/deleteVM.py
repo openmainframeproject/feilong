@@ -88,33 +88,19 @@ def deleteMachine(rh):
         results['rs'] = 0
 
     if state == 'on':
-        cmd = ["smcli",
-            "Image_Deactivate",
-            "-T", rh.userid,
-            "-f IMMED"]
-
-        results = invokeSMCLI(rh, cmd)
+        parms = ["-T", rh.userid, "-f IMMED"]
+        results = invokeSMCLI(rh, "Image_Deactivate", parms)
         if results['overallRC'] != 0:
             # SMAPI API failed.
-            strCmd = ' '.join(cmd)
-            msg = msgs.msg['0300'][1] % (modId, strCmd,
-                results['overallRC'], results['response'])
-            rh.printLn("ES", msg)
+            rh.printLn("ES", results['response'])
             rh.updateResults(results)  # Use results returned by invokeSMCLI
 
     if results['overallRC'] == 0:
-        cmd = ["smcli",
-            "Image_Delete_DM",
-            "-T", rh.userid,
-            "-e", "0"]
-
-        results = invokeSMCLI(rh, cmd)
+        parms = ["-T", rh.userid, "-e", "0"]
+        results = invokeSMCLI(rh, "Image_Delete_DM", parms)
         if results['overallRC'] != 0:
             # SMAPI API failed.
-            strCmd = ' '.join(cmd)
-            msg = msgs.msg['0300'][1] % (modId, strCmd,
-                results['overallRC'], results['response'])
-            rh.printLn("ES", msg)
+            rh.printLn("ES", results['response'])
             rh.updateResults(results)  # Use results returned by invokeSMCLI
 
     rh.printSysLog("Exit deleteVM.deleteMachine, rc: " +
