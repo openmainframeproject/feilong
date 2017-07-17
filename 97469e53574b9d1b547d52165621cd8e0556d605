@@ -1,0 +1,140 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a5f2c7a0_48d94a43",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-17T12:53:28Z",
+      "side": 1,
+      "message": "I think Steve had the blank line here to delineate between the outside libraries to import vs the the internal files to import, probably want to leave it",
+      "revId": "97469e53574b9d1b547d52165621cd8e0556d605",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "12cb6529_0e0fb4f3",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 710,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-17T12:53:28Z",
+      "side": 1,
+      "message": "So I don\u0027t think you\u0027ve set rh.results to results, and you use one in the exit log and another in the return, I think for consistency you want to set rh.results to results and just use rh.results",
+      "revId": "97469e53574b9d1b547d52165621cd8e0556d605",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e6777a03_218ff242",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-17T12:53:28Z",
+      "side": 1,
+      "message": "I think you do use this dict.",
+      "revId": "97469e53574b9d1b547d52165621cd8e0556d605",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "66393c8a_6b58f803",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 843,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-17T12:53:28Z",
+      "side": 1,
+      "message": "I think this is its permanent home?",
+      "revId": "97469e53574b9d1b547d52165621cd8e0556d605",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7a9310c1_432e322e",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 696,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-17T12:53:28Z",
+      "side": 1,
+      "message": "1, 2, 3, 5, 10?",
+      "revId": "97469e53574b9d1b547d52165621cd8e0556d605",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0e4661e0_c7b829fb",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 708,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-17T12:53:28Z",
+      "side": 1,
+      "message": "I don\u0027t think we want to retry on any error, just on the case where two vmur commands happened at the same time.  You might want to verify this, but I think the error message is \"A concurrent instance of vmur is already active\"",
+      "revId": "97469e53574b9d1b547d52165621cd8e0556d605",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dad706a4_6a74726c",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 740,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-17T12:53:28Z",
+      "side": 1,
+      "message": "typo in punched",
+      "revId": "97469e53574b9d1b547d52165621cd8e0556d605",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "560351ec_f4a06ce6",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 751,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-17T12:53:28Z",
+      "side": 1,
+      "message": "I\u0027m torn on whether we should update the results here.  I think we do want to put out a message, but if we fail to purge the file from our reader, I don\u0027t think we want to destroy the earlier return/reason code of the transfer failing.",
+      "revId": "97469e53574b9d1b547d52165621cd8e0556d605",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
