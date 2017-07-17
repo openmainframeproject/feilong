@@ -159,19 +159,13 @@ def getConsole(rh):
     rh.printLn("N", "This subfunction is not implemented yet.")
 
     # Transfer the console to this virtual machine.
-    cmd = ["smcli",
-        "Image_Console_Get",
-        "-T", rh.userid]
-
-    results = invokeSMCLI(rh, cmd)
+    parms = ["-T", rh.userid]
+    results = invokeSMCLI(rh, "Image_Console_Get", parms)
     if results['overallRC'] == 0:
         rh.printLn("N", results['response'])
     else:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     if results['overallRC'] == 0:
@@ -201,20 +195,14 @@ def getDirectory(rh):
     """
     rh.printSysLog("Enter getVM.getDirectory")
 
-    cmd = ["smcli",
-            "Image_Query_DM",
-            "-T", rh.userid]
-
-    results = invokeSMCLI(rh, cmd)
+    parms = ["-T", rh.userid]
+    results = invokeSMCLI(rh, "Image_Query_DM", parms)
     if results['overallRC'] == 0:
         results['response'] = re.sub('\*DVHOPT.*', '', results['response'])
         rh.printLn("N", results['response'])
     else:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit getVM.getDirectory, rc: " +
