@@ -93,7 +93,7 @@ couple_uncouple_nic = {
                 'couple': parameter_types.boolean,
                 'vswitch': parameter_types.name,
                 'vdev': parameter_types.vdev,
-                'persist': parameter_types.boolean,
+                'active': parameter_types.boolean,
             },
             'required': ['couple', 'vswitch', 'vdev'],
             'additionalProperties': False,
