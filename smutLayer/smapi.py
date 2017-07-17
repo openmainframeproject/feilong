@@ -154,21 +154,16 @@ def invokeSmapiApi(rh):
     else:
         userid = 'dummy'
 
-    cmd = ["smcli",
-            rh.parms['apiName'],
-            "-T", userid]
+    parms = ["-T", userid]
     if 'operands' in rh.parms:
-        cmd.extend(rh.parms['operands'])
+        parms.extend(rh.parms['operands'])
 
-    results = invokeSMCLI(rh, cmd)
+    results = invokeSMCLI(rh, rh.parms['apiName'], parms)
     if results['overallRC'] == 0:
         rh.printLn("N", results['response'])
     else:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit smapi.invokeCmd, rc: " + str(rh.results['overallRC']))
