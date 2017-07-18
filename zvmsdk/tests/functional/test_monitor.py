@@ -15,143 +15,172 @@
 
 from zvmsdk.tests.functional import base
 
+from zvmsdk import exception
+
 
 class SDKAPIMonitorTestCase(base.SDKAPIBaseTestCase):
 
-    def test_guest_inspect_cpus(self):
-        """ Positive test case of guest_inspect_cpus"""
-        guest_list = self.sdkapi.guest_list()
-        n = 0
-        for uid in guest_list:
-            if self.sdkapi.guest_get_power_state(uid) == 'on':
-                n = n + 1
-                test_id = uid.upper()
-        if n > 0:
-            result = self.sdkapi.guest_inspect_cpus(guest_list)
-            self.assertTrue(isinstance(result, dict))
-            self.assertEqual(len(result), n)
-            self.assertTrue(isinstance(
-                result[test_id].get('guest_cpus'), int))
-            self.assertTrue(isinstance(
-                result[test_id].get('used_cpu_time_us'), int))
-            self.assertTrue(isinstance(
-                result[test_id].get('elapsed_cpu_time_us'), int))
-            self.assertTrue(isinstance(
-                result[test_id].get('min_cpu_count'), int))
-            self.assertTrue(isinstance(
-                result[test_id].get('max_cpu_limit'), int))
-            self.assertTrue(isinstance(
-                result[test_id].get('samples_cpu_in_use'), int))
-            self.assertTrue(isinstance(
-                result[test_id].get('samples_cpu_delay'), int))
-        else:
-            result = self.sdkapi.guest_inspect_cpus(guest_list)
-            empty_dict = {}
-            self.assertEqual(result, empty_dict)
+    def __init__(self, methodName='runTest'):
+        super(SDKAPIMonitorTestCase, self).__init__(methodName)
+        self.monitor_id1 = "MNTFVT01"
+        self.monitor_id2 = "MNTFVT02"
 
-    def test_guest_inspect_cpus_with_nonexist_guest(self):
-        """ To test guest_inspect_cpus for a nonexistent guest"""
+        # Delete test vms before run cases to make test env more stable
+        self.sdkapi.guest_delete(self.monitor_id1)
+        self.sdkapi.guest_delete(self.monitor_id2)
+
+    def setUp(self):
+        super(SDKAPIMonitorTestCase, self).setUp()
+
+        # create test servers
+        try:
+            self.sdkutils.guest_deploy(self.monitor_id1)
+            self.sdkutils.guest_deploy(self.monitor_id2)
+        finally:
+            self.addCleanup(self.sdkutils.guest_destroy, self.monitor_id1)
+            self.addCleanup(self.sdkutils.guest_destroy, self.monitor_id2)
+
+    def test_monitor(self):
+        # Positive test case of guest_inspect_cpus
+        print("Positive test case of guest_inspect_cpus")
+        guest_list = [self.monitor_id1, self.monitor_id2]
+        test_id = self.monitor_id1.upper()
+
+        result = self.sdkapi.guest_inspect_cpus(guest_list)
+        self.assertTrue(isinstance(result, dict))
+        self.assertEqual(len(result), 2)
+        self.assertTrue(isinstance(
+                result[test_id].get('guest_cpus'), int))
+        self.assertTrue(isinstance(
+                result[test_id].get('used_cpu_time_us'), int))
+        self.assertTrue(isinstance(
+                result[test_id].get('elapsed_cpu_time_us'), int))
+        self.assertTrue(isinstance(
+                result[test_id].get('min_cpu_count'), int))
+        self.assertTrue(isinstance(
+                result[test_id].get('max_cpu_limit'), int))
+        self.assertTrue(isinstance(
+                result[test_id].get('samples_cpu_in_use'), int))
+        self.assertTrue(isinstance(
+                result[test_id].get('samples_cpu_delay'), int))
+
+        # To test guest_inspect_cpus for a nonexistent guest
+        print("To test guest_inspect_cpus for a nonexistent guest")
         result = self.sdkapi.guest_inspect_cpus('FAKE_ID')
         empty_dict = {}
         self.assertEqual(result, empty_dict)
 
-    def test_guest_inspect_cpus_with_empty_list(self):
-        """ To test guest_inspect_cpus with an empty user list"""
+        # To test guest_inspect_cpus with an empty user list
+        print("To test guest_inspect_cpus with an empty user list")
         result = self.sdkapi.guest_inspect_cpus([])
         empty_dict = {}
         self.assertEqual(result, empty_dict)
 
-    def test_guest_inspect_mem(self):
-        """ Positive test case of guest_inspect_mem"""
-        guest_list = self.sdkapi.guest_list()
-        n = 0
-        for uid in guest_list:
-            if self.sdkapi.guest_get_power_state(uid) == 'on':
-                n = n + 1
-                test_id = uid.upper()
-        if n > 0:
-            result = self.sdkapi.guest_inspect_mem(guest_list)
-            self.assertTrue(isinstance(result, dict))
-            self.assertEqual(len(result), n)
-            self.assertTrue(isinstance(
-                result[test_id].get('used_mem_kb'), int))
-            self.assertTrue(isinstance(
-                result[test_id].get('max_mem_kb'), int))
-            self.assertTrue(isinstance(
-                result[test_id].get('min_mem_kb'), int))
-            self.assertTrue(isinstance(
-                result[test_id].get('shared_mem_kb'), int))
-        else:
-            result = self.sdkapi.guest_inspect_mem(guest_list)
-            empty_dict = {}
-            self.assertEqual(result, empty_dict)
+        # Positive test case of guest_inspect_mem
+        print("Positive test case of guest_inspect_cpus")
+        guest_list = [self.monitor_id1, self.monitor_id2]
+        test_id = self.monitor_id1.upper()
 
-    def test_guest_inspect_mem_with_nonexist_guest(self):
-        """ To test guest_inspect_mem for a nonexistent guest"""
+        result = self.sdkapi.guest_inspect_mem(guest_list)
+        self.assertTrue(isinstance(result, dict))
+        self.assertEqual(len(result), 2)
+        self.assertTrue(isinstance(
+                result[test_id].get('used_mem_kb'), int))
+        self.assertTrue(isinstance(
+                result[test_id].get('max_mem_kb'), int))
+        self.assertTrue(isinstance(
+                result[test_id].get('min_mem_kb'), int))
+        self.assertTrue(isinstance(
+                result[test_id].get('shared_mem_kb'), int))
+
+        # To test guest_inspect_mem for a nonexistent guest
+        print("To test guest_inspect_mem for a nonexistent guest")
         result = self.sdkapi.guest_inspect_mem('FAKE_ID')
         empty_dict = {}
         self.assertEqual(result, empty_dict)
 
-    def test_guest_inspect_mem_with_empty_list(self):
-        """ To test guest_inspect_mem with an empty user list"""
+        # To test guest_inspect_mem with an empty user list
+        print("To test guest_inspect_mem with an empty user list")
         result = self.sdkapi.guest_inspect_mem([])
         empty_dict = {}
         self.assertEqual(result, empty_dict)
 
-    def test_guest_inspect_vnics(self):
         """ Positive test case of guest_inspect_vnics"""
-        guest_list = self.sdkapi.guest_list()
-        n = 0
-        for uid in guest_list:
-            if self.sdkapi.guest_get_power_state(uid) == 'on':
-                switch_dict = self.sdkapi.guest_get_nic_vswitch_info(
-                                                uid)
-                if switch_dict and '' not in switch_dict.values():
-                    for key in switch_dict:
-                        result = self.sdkapi.guest_get_definition_info(
-                                                uid, nic_coupled=key)
-                        if result['nic_coupled']:
-                            n = n + 1
-                            test_id = uid.upper()
-                            break
 
-        if n > 0:
-            result = self.sdkapi.guest_inspect_vnics(guest_list)
-            self.assertTrue(isinstance(result, dict))
-            self.assertEqual(len(result), n)
-            self.assertTrue(isinstance(
+        print("Positive test case of guest_inspect_vnics")
+        guest_list = [self.monitor_id1, self.monitor_id2]
+        test_id = self.monitor_id1.upper()
+
+        result = self.sdkapi.guest_inspect_vnics(guest_list)
+        self.assertTrue(isinstance(result, dict))
+        self.assertEqual(len(result), 2)
+        self.assertTrue(isinstance(
                 result[test_id][0].get('vswitch_name'), unicode))
-            self.assertTrue(isinstance(
+        self.assertTrue(isinstance(
                 result[test_id][0].get('nic_vdev'), unicode))
-            self.assertTrue(isinstance(
+        self.assertTrue(isinstance(
                 result[test_id][0].get('nic_fr_rx'), int))
-            self.assertTrue(isinstance(
+        self.assertTrue(isinstance(
                 result[test_id][0].get('nic_fr_tx'), int))
-            self.assertTrue(isinstance(
+        self.assertTrue(isinstance(
                 result[test_id][0].get('nic_fr_rx_dsc'), int))
-            self.assertTrue(isinstance(
+        self.assertTrue(isinstance(
                 result[test_id][0].get('nic_fr_tx_dsc'), int))
-            self.assertTrue(isinstance(
+        self.assertTrue(isinstance(
                 result[test_id][0].get('nic_fr_rx_err'), int))
-            self.assertTrue(isinstance(
+        self.assertTrue(isinstance(
                 result[test_id][0].get('nic_fr_tx_err'), int))
-            self.assertTrue(isinstance(
+        self.assertTrue(isinstance(
                 result[test_id][0].get('nic_rx'), int))
-            self.assertTrue(isinstance(
+        self.assertTrue(isinstance(
                 result[test_id][0].get('nic_tx'), int))
-        else:
-            result = self.sdkapi.guest_inspect_vnics(guest_list)
-            empty_dict = {}
-            self.assertEqual(result, empty_dict)
 
-    def test_guest_inspect_vnics_with_nonexist_guest(self):
-        """ To test guest_inspect_vnics for a nonexistent guest"""
+        # To test guest_inspect_vnics for a nonexistent guest
+        print("To test guest_inspect_vnics for a nonexistent guest")
         result = self.sdkapi.guest_inspect_vnics('FAKE_ID')
         empty_dict = {}
         self.assertEqual(result, empty_dict)
 
-    def test_guest_inspect_vnics_with_empty_list(self):
-        """ To test guest_inspect_vnics with an empty user list"""
+        # To test guest_inspect_vnics with an empty user list
+        print("To test guest_inspect_vnics with an empty user list")
         result = self.sdkapi.guest_inspect_vnics([])
         empty_dict = {}
         self.assertEqual(result, empty_dict)
+
+        print("Error case of monitor API: user id length > 8")
+        user_id = "TESTLONGNAME"
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self.sdkapi.guest_inspect_cpus,
+                          user_id)
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self.sdkapi.guest_inspect_mem,
+                          user_id)
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self.sdkapi.guest_inspect_vnics,
+                          user_id)
+
+        print("Error case of monitor API: user id is ' '")
+        user_id = ' '
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self.sdkapi.guest_inspect_cpus,
+                          user_id)
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self.sdkapi.guest_inspect_mem,
+                          user_id)
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self.sdkapi.guest_inspect_vnics,
+                          user_id)
+
+        print("Error case of monitor API: input is not list or userid")
+        user_input = {'key': 'value'}
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self.sdkapi.guest_inspect_cpus,
+                          user_input)
+        user_input = 1234
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self.sdkapi.guest_inspect_mem,
+                          user_input)
+        user_input = ('str1', 'str2')
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self.sdkapi.guest_inspect_vnics,
+                          user_input)
