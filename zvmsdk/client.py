@@ -1140,7 +1140,7 @@ class XCATClient(ZVMClient):
                 self.unlock_devices(userid)
             else:
                 LOG.debug("exception not able to handle in delete_userid "
-                          "%s", self._name)
+                          "%s" % userid)
                 raise err
             # delete the vm after unlock
             self.delete_userid(userid)
