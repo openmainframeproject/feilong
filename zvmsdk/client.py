@@ -253,6 +253,15 @@ class XCATClient(ZVMClient):
         while raw_data_list.__contains__(None):
             raw_data_list.remove(None)
 
+        # Insert a blank line between two vswitch section in response data
+        for rd in raw_data_list:
+            if ' vswitch number: ' in rd.split('\n')[0]:
+                # Which means a new vswitch section begin
+                idx = raw_data_list.index(rd)
+                if idx > 0:
+                    # Insert a blank line
+                    raw_data_list[idx - 1] += '\n '
+
         raw_data = '\n'.join(raw_data_list)
         rd_list = raw_data.split('\n')
 
