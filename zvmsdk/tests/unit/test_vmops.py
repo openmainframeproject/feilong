@@ -185,3 +185,8 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         gps.return_value = u'on'
         self.vmops.guest_stop(userid, 1, 1)
         gps.assert_called_once_with(userid)
+
+    @mock.patch.object(zvmclient.XCATClient, 'get_vm_list')
+    def test_list_guests(self, get_vm_list):
+        self.vmops.guests_list()
+        get_vm_list.assert_called_once_with()

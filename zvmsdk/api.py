@@ -183,6 +183,13 @@ class SDKAPI(object):
         """
         return self._vmops.get_info(userid)
 
+    def guests_list(self):
+        """list names of all the VMs on this host.
+
+        :returns: names of the vm on this host, in a list.
+        """
+        return self._vmops.guests_list()
+
     def host_get_info(self):
         """ Retrieve host information including host, memory, disk etc.
 
@@ -209,13 +216,6 @@ class SDKAPI(object):
             raise exception.ZVMInvalidInput('disk_pool')
 
         return self._hostops.diskpool_get_info(diskpool_name)
-
-    def host_list_guests(self):
-        """list names of all the VMs on this host.
-
-        :returns: names of the vm on this host, in a list.
-        """
-        return self._hostops.list_guests()
 
     @check_input_types(_TSTR)
     def image_delete(self, image_name):

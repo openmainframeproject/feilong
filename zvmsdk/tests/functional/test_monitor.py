@@ -20,7 +20,7 @@ class SDKAPIMonitorTestCase(base.SDKAPIBaseTestCase):
 
     def test_guest_inspect_cpus(self):
         """ Positive test case of guest_inspect_cpus"""
-        guest_list = self.sdkapi.host_list_guests()
+        guest_list = self.sdkapi.guests_list()
         n = 0
         for uid in guest_list:
             if self.sdkapi.guest_get_power_state(uid) == 'on':
@@ -63,7 +63,7 @@ class SDKAPIMonitorTestCase(base.SDKAPIBaseTestCase):
 
     def test_guest_inspect_mem(self):
         """ Positive test case of guest_inspect_mem"""
-        guest_list = self.sdkapi.host_list_guests()
+        guest_list = self.sdkapi.guests_list()
         n = 0
         for uid in guest_list:
             if self.sdkapi.guest_get_power_state(uid) == 'on':
@@ -100,7 +100,7 @@ class SDKAPIMonitorTestCase(base.SDKAPIBaseTestCase):
 
     def test_guest_inspect_vnics(self):
         """ Positive test case of guest_inspect_vnics"""
-        guest_list = self.sdkapi.host_list_guests()
+        guest_list = self.sdkapi.guests_list()
         n = 0
         for uid in guest_list:
             if self.sdkapi.guest_get_power_state(uid) == 'on':

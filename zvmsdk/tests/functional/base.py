@@ -49,7 +49,7 @@ class SDKAPITestUtils(object):
                               remote_host)
 
     def get_available_test_userid(self):
-        exist_list = self.api.host_list_guests()
+        exist_list = self.api.guests_list()
         print("Existing guest list: %s" % str(exist_list))
         test_list = CONF.tests.userid_list.split(' ')
         for uid in test_list:
