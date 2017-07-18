@@ -146,6 +146,8 @@ class SDKAPITestUtils(object):
                 # switch to new userid
                 userid = self._get_next_test_userid(userid)
                 print("turn to use new userid %s" % userid)
+                self.api.guest_create(userid, cpu, memory, disks_list,
+                                      user_profile)
 
         # Setup network for vm
         print("Creating nic with nic_id=%s, "
