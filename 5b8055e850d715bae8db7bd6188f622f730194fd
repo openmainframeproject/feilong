@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "80918153_c1fe7bfd",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 958,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-18T14:52:24Z",
+      "side": 1,
+      "message": "Do we need to set respScore here?  I don\u0027t see that there\u0027s a way that we could get past the try/except without setting it.",
+      "revId": "5b8055e850d715bae8db7bd6188f622f730194fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
