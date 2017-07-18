@@ -18,9 +18,8 @@ def do_test():
     network_info = {'ip_addr': '192.168.114.12',
                     'vswitch_name': 'xcatvsw2',
                     'vdev': '1000',
-                    'nic_list':
-                        {'nic_id': 'ce71a70c-bbf3-480e-b0f7-01a0fcbbb44c',
-                          'mac_addr': '02:00:00:0E:11:40'}
+                    'nic_id': 'ce71a70c-bbf3-480e-b0f7-01a0fcbbb44c',
+                    'mac_addr': '02:00:00:0E:11:40',
                     }
     disks_list = [{'size': '3g',
                    'is_boot_disk': True,
@@ -49,7 +48,8 @@ def create_guest(userid, image_path, os_version,
         :gateway:           gateway of net
         :vswitch_name:      switch name
         :vdev:              vdev
-        :nic_list:          list of NICs to add
+        :nic_id:            nic identifier
+        :mac_addr:          mac address
         refer to do_test() for example
     :disks_list:            list of dikks to add.eg:
         disks_list = [{'size': '3g',
@@ -83,8 +83,9 @@ def create_guest(userid, image_path, os_version,
                         disks_list, user_profile)
 
     # Setup network for vm
-    nic_list = [network_info['nic_list']]
-    sdkapi.guest_create_nic(userid, nic_list, ip_addr)
+    sdkapi.guest_create_nic(userid, nic_id=network_info['nic_id'],
+                            mac_addr=network_info['mac_addr'],
+                            ip_addr=ip_addr)
 
     # Deploy image on vm
     sdkapi.guest_deploy(userid, image_name, transportfiles)
@@ -93,11 +94,11 @@ def create_guest(userid, image_path, os_version,
     vdev = network_info['vdev']
     vswitch_name = network_info['vswitch_name']
     # TODO: loop to process multi NICs
-    mac_info = nic_list[0]['mac_addr'].split(':')
+    mac_info = network_info['mac_addr'].split(':')
     mac = mac_info[3] + mac_info[4] + mac_info[5]
     sdkapi.vswitch_grant_user(vswitch_name, userid)
-    sdkapi.guest_update_nic_definition(userid, vdev,
-                                       mac, vswitch_name)
+    sdkapi.guest_nic_couple_to_vswitch(userid, vdev,
+                                       vswitch_name)
     # Check network ready
     result = sdkapi.guest_get_definition_info(
                                             userid,

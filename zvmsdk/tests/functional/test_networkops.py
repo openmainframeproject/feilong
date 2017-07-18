@@ -297,7 +297,7 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
         zhcp_node = self.client._get_hcp_info()['nodename']
 
         print("Creating NIC with default vdev, not active.")
-        self.sdkapi.guest_create_nic(self.basevm, persist=True)
+        self.sdkapi.guest_create_nic(self.basevm)
         nic_defined, vsw = self._check_nic(CONF.zvm.default_nic_vdev)
         self.assertTrue(nic_defined)
         self.assertEqual(vsw, "")
@@ -400,7 +400,7 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
                     raise
         print("Creating nic to the active guest.")
         self.sdkapi.guest_create_nic(self.basevm, vdev='8000',
-                                     active=True, persist=True)
+                                     active=True)
         # Check nic defined in user direct and vswitch table
         nic_defined, vsw = self._check_nic('8000')
         self.assertTrue(nic_defined)
