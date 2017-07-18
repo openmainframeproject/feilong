@@ -146,7 +146,6 @@ class SDKAPITestUtils(object):
                 # switch to new userid
                 userid = self._get_next_test_userid(userid)
                 print("turn to use new userid %s" % userid)
-                self.addCleanup(self.sdkutils.guest_destroy, userid)
                 self.api.guest_create(userid, cpu, memory, disks_list,
                                       user_profile)
 
@@ -203,6 +202,7 @@ class SDKAPIGuestBaseTestCase(SDKAPIBaseTestCase):
         # create test server
         self.userid = self.sdkutils.get_available_test_userid()
         try:
-            self.sdkutils.guest_deploy(self.userid)
+            userid, ip_addr = self.sdkutils.guest_deploy(self.userid)
+            self.userid = userid
         finally:
             self.addCleanup(self.sdkutils.guest_destroy, self.userid)
