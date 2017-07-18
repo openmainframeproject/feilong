@@ -14,10 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import re
 import sys
 import subprocess
 from subprocess import CalledProcessError
+from tempfile import NamedTemporaryFile
 
 from smut import SMUT
 from ReqHandle import ReqHandle
@@ -364,7 +366,7 @@ powerTests = [
     {
         'description': "Check status of powered off system.",
         'request': "PowerVM <<<safeID>>> status",
-        'out': "\'^<<<safeID>>>: off\'",
+        'out': "^<<<safeID>>>: off",
         'overallRC': [0],
         'rc': [0],
         'rs': [1]
@@ -372,7 +374,7 @@ powerTests = [
     {
         'description': "Check isreachable of powered off system.",
         'request': "PowerVM <<<safeID>>> isreachable",
-        'out': "'<<<safeID>>>: unreachable'",
+        'out': "<<<safeID>>>: unreachable",
         'overallRC': [0],
         'rs': [0]
     },
@@ -391,7 +393,7 @@ powerTests = [
     {
         'description': "Check status of powered on system.",
         'request': "PowerVM <<<safeID>>> status",
-        'out': "\'^<<<safeID>>>: on\'",
+        'out': "^<<<safeID>>>: on",
         'overallRC': [0],
         'rc': [0],
         'rs': [0]
@@ -399,7 +401,7 @@ powerTests = [
     {
         'description': "Check isreachable of powered on system.",
         'request': "PowerVM <<<safeID>>> isreachable",
-        'out': "'<<<safeID>>>: reachable'",
+        'out': "<<<safeID>>>: reachable",
         'overallRC': [0],
         'rs': [1]
     },
@@ -418,7 +420,7 @@ powerTests = [
     {
         'description': "Isreachable of a paused system is unreachable.",
         'request': "PowerVM <<<safeID>>> isreachable",
-        'out': "'<<<safeID>>>: unreachable'",
+        'out': "<<<safeID>>>: unreachable",
         'overallRC': [0],
         'rs': [0]
     },
@@ -431,7 +433,7 @@ powerTests = [
     {
         'description': "Isreachable of an unpaused system is reachable.",
         'request': "PowerVM <<<safeID>>> isreachable",
-        'out': "'<<<safeID>>>: reachable'",
+        'out': "<<<safeID>>>: reachable",
         'overallRC': [0],
         'rs': [1]
     },
@@ -444,7 +446,7 @@ powerTests = [
     {
         'description': "Isreachable of an unpaused system is reachable.",
         'request': "PowerVM <<<safeID>>> isreachable",
-        'out': "'<<<safeID>>>: reachable'",
+        'out': "<<<safeID>>>: reachable",
         'overallRC': [0],
         'rs': [1]
     },
@@ -956,19 +958,26 @@ def runTest(smut, test):
             # Test the response to see it matches an expected response
             respScore = 0        # Assume response doesn't match
 
+            # Put the response into a file.  This avoids problems with
+            # having special characters in the response that would
+            # cause the shell to complain or get confused.
+            tempFile = NamedTemporaryFile(delete=False)
+            file = open(tempFile.name, 'w')
+            for line in results['response']:
+                file.write(line + '\n')
+            file.close()
+
+            cmd = ['grep', ''.join(test['out']), tempFile.name]
+
             try:
-                junk = subprocess.check_output('/bin/echo ' +
-                    ''.join(results['response']) + '|grep ' +
-                    ''.join(test['out']),
-                    stderr=subprocess.STDOUT,
-                    shell=True)
+                junk = subprocess.check_output(cmd, close_fds=True)
                 if junk != '':
                     respScore = 1
                 else:
                     respScore = 0
             except CalledProcessError as e:
-                junk = e.output
                 respScore = 0
+            os.remove(tempFile.name)
     else:
         respScore = 1       # No responses listed, treat as a match
 
