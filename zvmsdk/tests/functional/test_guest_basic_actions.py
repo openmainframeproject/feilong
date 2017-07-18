@@ -19,5 +19,5 @@ from zvmsdk.tests.functional import base
 class SDKGuestBasicActions(base.SDKAPIGuestBaseTestCase):
 
     def test_guest_basic_actions(self):
-        userid_list = self.sdkapi.host_list_guests()
+        userid_list = self.sdkapi.guest_list()
         self.assertTrue(self.userid in userid_list)

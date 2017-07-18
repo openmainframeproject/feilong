@@ -68,7 +68,7 @@ class VMHandler(object):
 
     def list(self):
         # list all guest on the given host
-        guests = self.api.host_list_guests()
+        guests = self.api.guest_list()
         return guests
 
     def get_info(self, userid):
