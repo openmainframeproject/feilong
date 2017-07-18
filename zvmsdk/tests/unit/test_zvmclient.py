@@ -1647,3 +1647,38 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
                          '02-00-02-00-00-D3')
         self.assertEqual(vsw['adapters']['USERID1_0800']['type'],
                          'QDIO')
+
+    @mock.patch.object(zvmclient.XCATClient, '_delete_nic_from_switch')
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_delete_nic(self, xrequest, delete_nic):
+        xrequest.return_value = {"errorcode": [['0']]}
+        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+              "/dsh?userName=" + CONF.xcat.username +\
+              "&password=" + CONF.xcat.password +\
+              "&format=json"
+        commands = ' '.join((
+            '/opt/zhcp/bin/smcli '
+            'Virtual_Network_Adapter_Delete_DM -T fake_id',
+            '-v fake_vdev'))
+        xdsh_commands = 'command=%s' % commands
+        body1 = [xdsh_commands]
+
+        commands = ' '.join((
+            '/opt/zhcp/bin/smcli '
+            'Virtual_Network_Adapter_Delete -T fake_id',
+            '-v fake_vdev'))
+        xdsh_commands = 'command=%s' % commands
+        body2 = [xdsh_commands]
+
+        self._zvmclient.delete_nic("fake_id", "fake_vdev", True)
+        xrequest.assert_any_call("PUT", url, body1)
+        xrequest.assert_any_call("PUT", url, body2)
+        delete_nic.assert_called_with("fake_id", "fake_vdev")
+
+    @mock.patch.object(zvmutils, 'xcat_request')
+    def test_delete_nic_from_switch(self, xrequest):
+        commands = "-d node=fake_id,interface=fake_vdev switch"
+        url = self._xcat_url.tabch("/switch")
+        body = [commands]
+        self._zvmclient._delete_nic_from_switch("fake_id", "fake_vdev")
+        xrequest.assert_called_with("PUT", url, body)
