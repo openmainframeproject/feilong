@@ -157,36 +157,32 @@ def add3390(rh):
         rh.updateResults(results)
 
     if results['overallRC'] == 0:
-        cmd = ["smcli",
-               "Image_Disk_Create_DM",
-               "-T", rh.userid,
-               "-v", rh.parms['vaddr'],
-               "-t", "3390",
-               "-a", "AUTOG",
-               "-r", rh.parms['diskPool'],
-               "-u", "1",
-               "-z", cyl,
-               "-f", "1"]
+        parms = [
+            "-T", rh.userid,
+            "-v", rh.parms['vaddr'],
+            "-t", "3390",
+            "-a", "AUTOG",
+            "-r", rh.parms['diskPool'],
+            "-u", "1",
+            "-z", cyl,
+            "-f", "1"]
 
         if 'mode' in rh.parms:
-            cmd.extend(["-m", rh.parms['mode']])
+            parms.extend(["-m", rh.parms['mode']])
         else:
-            cmd.extend(["-m", 'W'])
+            parms.extend(["-m", 'W'])
         if 'readPW' in rh.parms:
-            cmd.extend(["-R", rh.parms['readPW']])
+            parms.extend(["-R", rh.parms['readPW']])
         if 'writePW' in rh.parms:
-            cmd.extend(["-W", rh.parms['writePW']])
+            parms.extend(["-W", rh.parms['writePW']])
         if 'multiPW' in rh.parms:
-            cmd.extend(["-M", rh.parms['multiPW']])
+            parms.extend(["-M", rh.parms['multiPW']])
 
-        results = invokeSMCLI(rh, cmd)
+        results = invokeSMCLI(rh, "Image_Disk_Create_DM", parms)
 
         if results['overallRC'] != 0:
             # SMAPI API failed.
-            strCmd = ' '.join(cmd)
-            msg = (msgs.msg['0300'][1] % (modId, strCmd,
-                results['overallRC'], results['response']))
-            rh.printLn("ES", msg)
+            rh.printLn("ES", results['response'])
             rh.updateResults(results)  # Use results returned by invokeSMCLI
 
     if (results['overallRC'] == 0 and 'filesystem' in rh.parms):
@@ -200,22 +196,18 @@ def add3390(rh):
         results = isLoggedOn(rh, rh.userid)
         if (results['overallRC'] == 0 and results['rs'] == 0):
             # Add the disk to the active configuration.
-            cmd = ["smcli",
-                "Image_Disk_Create",
+            parms = [
                 "-T", rh.userid,
                 "-v", rh.parms['vaddr'],
                 "-m", rh.parms['mode']]
 
-            results = invokeSMCLI(rh, cmd)
+            results = invokeSMCLI(rh, "Image_Disk_Create", parms)
             if results['overallRC'] == 0:
                 rh.printLn("N", "Added dasd " + rh.parms['vaddr'] +
                     " to the active configuration.")
             else:
                 # SMAPI API failed.
-                strCmd = ' '.join(cmd)
-                msg = msgs.msg['0300'][1] % (modId, strCmd,
-                    results['overallRC'], results['response'])
-                rh.printLn("ES", msg)
+                rh.printLn("ES", results['response'])
                 rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit changeVM.add3390, rc: " +
@@ -255,36 +247,32 @@ def add9336(rh):
         rh.updateResults(results)
 
     if results['overallRC'] == 0:
-        cmd = ["smcli",
-               "Image_Disk_Create_DM",
-               "-T", rh.userid,
-               "-v", rh.parms['vaddr'],
-               "-t", "9336",
-               "-a", "AUTOG",
-               "-r", rh.parms['diskPool'],
-               "-u", "1",
-               "-z", blocks,
-               "-f", "1"]
+        parms = [
+            "-T", rh.userid,
+            "-v", rh.parms['vaddr'],
+            "-t", "9336",
+            "-a", "AUTOG",
+            "-r", rh.parms['diskPool'],
+            "-u", "1",
+            "-z", blocks,
+            "-f", "1"]
 
         if 'mode' in rh.parms:
-            cmd.extend(["-m", rh.parms['mode']])
+            parms.extend(["-m", rh.parms['mode']])
         else:
-            cmd.extend(["-m", 'W'])
+            parms.extend(["-m", 'W'])
         if 'readPW' in rh.parms:
-            cmd.extend(["-R", rh.parms['readPW']])
+            parms.extend(["-R", rh.parms['readPW']])
         if 'writePW' in rh.parms:
-            cmd.extend(["-W", rh.parms['writePW']])
+            parms.extend(["-W", rh.parms['writePW']])
         if 'multiPW' in rh.parms:
-            cmd.extend(["-M", rh.parms['multiPW']])
+            parms.extend(["-M", rh.parms['multiPW']])
 
-        results = invokeSMCLI(rh, cmd)
+        results = invokeSMCLI(rh, "Image_Disk_Create_DM", parms)
 
         if results['overallRC'] != 0:
             # SMAPI API failed.
-            strCmd = ' '.join(cmd)
-            msg = msgs.msg['0300'][1] % (modId, strCmd,
-                results['overallRC'], results['response'])
-            rh.printLn("ES", msg)
+            rh.printLn("ES", results['response'])
             rh.updateResults(results)    # Use results from invokeSMCLI
 
     if (results['overallRC'] == 0 and 'filesystem' in rh.parms):
@@ -299,22 +287,18 @@ def add9336(rh):
         results = isLoggedOn(rh, rh.userid)
         if (results['overallRC'] == 0 and results['rs'] == 0):
             # Add the disk to the active configuration.
-            cmd = ["smcli",
-                "Image_Disk_Create",
+            parms = [
                 "-T", rh.userid,
                 "-v", rh.parms['vaddr'],
                 "-m", rh.parms['mode']]
 
-            results = invokeSMCLI(rh, cmd)
+            results = invokeSMCLI(rh, "Image_Disk_Create", parms)
             if results['overallRC'] == 0:
                 rh.printLn("N", "Added dasd " + rh.parms['vaddr'] +
                     " to the active configuration.")
             else:
                 # SMAPI API failed.
-                strCmd = ' '.join(cmd)
-                msg = msgs.msg['0300'][1] % (modId, strCmd,
-                    results['overallRC'], results['response'])
-                rh.printLn("ES", msg)
+                rh.printLn("ES", results['response'])
                 rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit changeVM.add9336, rc: " +
@@ -410,17 +394,14 @@ def addIPL(rh):
 
     rh.printSysLog("Enter changeVM.addIPL")
 
-    cmd = ["smcli",
-           "Image_IPL_Set_DM",
-            "-T", rh.userid,
-            "-s", rh.parms['addrOrNSS']]
+    parms = ["-T", rh.userid, "-s", rh.parms['addrOrNSS']]
 
     if 'loadparms' in rh.parms:
-        cmd.extend(["-l", rh.parms['loadparms']])
+        parms.extend(["-l", rh.parms['loadparms']])
     if 'parms' in rh.parms:
-        cmd.extend(["-p", rh.parms['parms']])
+        parms.extend(["-p", rh.parms['parms']])
 
-    results = invokeSMCLI(rh, cmd)
+    results = invokeSMCLI(rh, "Image_IPL_Set_DM", parms)
 
     if results['overallRC'] == 0:
         rh.printLn("N", "Added IPL statement for " +
@@ -429,10 +410,7 @@ def addIPL(rh):
                     rh.userid)
     else:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit changeVM.addIPL, rc: " +
@@ -525,27 +503,22 @@ def addLOADDEV(rh):
         # Make sure it doesn't have the 0x prefix
         wwpn.replace("0x", "")
 
-    cmd = ["smcli",
-           "Image_SCSI_Characteristics_Define_DM",
-           "-T", rh.userid,
-           "-b", boot,
-           "-k", block,
-           "-l", lun,
-           "-p", wwpn,
-           "-s", str(scpDataType)]
+    parms = [
+        "-T", rh.userid,
+        "-b", boot,
+        "-k", block,
+        "-l", lun,
+        "-p", wwpn,
+        "-s", str(scpDataType)]
 
     if scpData != "":
-        cmd.extend(["-d", scpData])
+        parms.extend(["-d", scpData])
 
-    results = invokeSMCLI(rh, cmd)
+    results = invokeSMCLI(rh, "Image_SCSI_Characteristics_Define_DM", parms)
 
     # SMAPI API failed.
     if results['overallRC'] != 0:
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-                                     results['overallRC'],
-                                     results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)
     else:
         rh.printLn("N", "Set LOADDEV directory statements for guest %s"
@@ -782,22 +755,18 @@ def removeDisk(rh):
 
     if results['overallRC'] == 0:
         # Remove the disk from the user entry.
-        cmd = ["smcli",
-            "Image_Disk_Delete_DM",
+        parms = [
             "-T", rh.userid,
             "-v", rh.parms['vaddr'],
             "-e", "0"]
 
-        results = invokeSMCLI(rh, cmd)
+        results = invokeSMCLI(rh, "Image_Disk_Delete_DM", parms)
         if results['overallRC'] == 0:
             rh.printLn("N", "Removed dasd " + rh.parms['vaddr'] +
                 " from the user directory.")
         else:
             # SMAPI API failed.
-            strCmd = ' '.join(cmd)
-            msg = msgs.msg['0300'][1] % (modId, strCmd,
-                results['overallRC'], results['response'])
-            rh.printLn("ES", msg)
+            rh.printLn("ES", results['response'])
             rh.updateResults(results)    # Use results from invokeSMCLI
 
     else:
@@ -826,21 +795,15 @@ def removeIPL(rh):
 
     rh.printSysLog("Enter changeVM.removeIPL")
 
-    cmd = ["smcli",
-           "Image_IPL_Delete_DM",
-            "-T", rh.userid]
-
-    results = invokeSMCLI(rh, cmd)
+    parms = ["-T", rh.userid]
+    results = invokeSMCLI(rh, "Image_IPL_Delete_DM", parms)
 
     if results['overallRC'] == 0:
         rh.printLn("N", "Removed IPL statement from the "
                    "directory for guest " + rh.userid)
     else:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit changeVM.removeIPL, rc: " +

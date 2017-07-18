@@ -124,23 +124,15 @@ def getDiskPoolNames(rh):
 
     rh.printSysLog("Enter getHost.getDiskPoolNames")
 
-    cmd = ["smcli",
-        "Image_Volume_Space_Query_DM",
-        "-q", "1",
-        "-e", "3",
-        "-T", "dummy"]
-
-    results = invokeSMCLI(rh, cmd)
+    parms = ["-q", "1", "-e", "3", "-T", "dummy"]
+    results = invokeSMCLI(rh, "Image_Volume_Space_Query_DM", parms)
     if results['overallRC'] == 0:
         for line in results['response'].splitlines():
             poolName = line.partition(' ')[0]
             rh.printLn("N", poolName)
     else:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit getHost.getDiskPoolNames, rc: " +
@@ -181,14 +173,13 @@ def getDiskPoolSpace(rh):
         # Loop thru each pool getting total.  Do it for query 2 & 3
         totals = {}
         for qType in ["2", "3"]:
-            cmd = ["smcli",
-                "Image_Volume_Space_Query_DM",
+            parms = [
                 "-q", qType,
                 "-e", "3",
                 "-T", "DUMMY",
                 "-n", " ".join(poolNames)]
 
-            results = invokeSMCLI(rh, cmd)
+            results = invokeSMCLI(rh, "Image_Volume_Space_Query_DM", parms)
             if results['overallRC'] == 0:
                 for line in results['response'].splitlines():
                     parts = line.split()
@@ -205,10 +196,7 @@ def getDiskPoolSpace(rh):
                         totals[poolName][qType] += int(parts[3]) * 512
             else:
                 # SMAPI API failed.
-                strCmd = ' '.join(cmd)
-                msg = msgs.msg['0300'][1] % (modId, strCmd,
-                    results['overallRC'], results['response'])
-                rh.printLn("ES", msg)
+                rh.printLn("ES", results['response'])
                 rh.updateResults(results)    # Use results from invokeSMCLI
                 break
 
@@ -250,19 +238,13 @@ def getFcpDevices(rh):
 
     rh.printSysLog("Enter getHost.getFcpDevices")
 
-    cmd = ["smcli",
-        "System_WWPN_Query",
-        "-T", "bob"]
-
-    results = invokeSMCLI(rh, cmd)
+    parms = ["-T", "dummy"]
+    results = invokeSMCLI(rh, "System_WWPN_Query", parms)
     if results['overallRC'] == 0:
         rh.printLn("N", results['response'])
     else:
         # SMAPI API failed.
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-            results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit getHost.getFcpDevices, rc: " +
@@ -356,14 +338,11 @@ def getGeneralInfo(rh):
     arch = str(os.uname()[4])
 
     # Get LPAR memory total & offline
-    cmd = ["smcli",
-           "System_Information_Query",
-           "-T", "bob",
-           "-k", "STORAGE="]
+    parm = ["-T", "dummy", "-k", "STORAGE="]
 
     lparMemTotal = "no info"
     lparMemStandby = "no info"
-    results = invokeSMCLI(rh, cmd)
+    results = invokeSMCLI(rh, "System_Information_Query", parm)
     if results['overallRC'] == 0:
         for line in results['response'].splitlines():
             if "STORAGE=" in line:
@@ -374,13 +353,10 @@ def getGeneralInfo(rh):
     else:
         # SMAPI API failed, so we put out messages
         # 300 and 405 for consistency
-        strCmd = ' '.join(cmd)
-        msg = msgs.msg['0300'][1] % (modId, strCmd,
-                    results['overallRC'], results['response'])
-        rh.printLn("ES", msg)
+        rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
         msg = msgs.msg['0405'][1] % (modId, "LPAR memory",
-                                     strCmd, results['response'])
+            "(see message 300)", results['response'])
         rh.printLn("ES", msg)
 
     # Get IPL Time

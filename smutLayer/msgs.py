@@ -99,11 +99,28 @@ msg = {
             "ULT%s0203E Failed to convert %s to a number of cylinders."],
     '0204': [{'overallRC': 4, 'rc': 4, 'rs': 204},
             "ULT%s0204E %s is not an integer size of cylinders."],
-    # 0205-0209: Available
+    # 0205-0299: Available
 
-    '0300': [{'overallRC': 1, 'rc': 99, 'rs': 99},    # dict is not used.
-            "ULT%s0300E SMAPI API failed: %s, rc: %s, out: %s"],
-    # 0301-0310: Available
+    '0300': [{'overallRC': 1},    # dict is not used.
+            "ULT%s0300E SMAPI API failed: %s, rc: %s, rs: %s, " +
+            "errno: %s, cmd: %s, out: %s"],
+    '0301': [{'overallRC': 1, 'rc': 301, 'rs': 0},
+            "ULT%s0301E SMAPI API failed: %s, response header does not " +
+            "have the expected rc, rs, and errno values before the " +
+            "(details) string. cmd: %s, response header: %s, out: %s"],
+    '0302': [{'overallRC': 1, 'rc': 302, 'rs': 0},
+            "ULT%s0302E SMAPI API failed: %s, return code in the response "
+            "header is not an integer. rc: %s, cmd: %s, response " +
+            "header: %s, out: %s"],
+    '0303': [{'overallRC': 1, 'rc': 303, 'rs': 0},
+            "ULT%s0302E SMAPI API failed: %s, reason code in the response "
+            "header is not an integer. rs: %s, cmd: %s, response " +
+            "header: %s, out: %s"],
+    '0304': [{'overallRC': 1, 'rc': 304, 'rs': 0},
+            "ULT%s0302E SMAPI API failed: %s, errno in the response "
+            "header is not an integer. errno: %s, cmd: %s, response " +
+            "header: %s, out: %s"],
+    # 0305-0310: Available
     '0311': [{'overallRC': 2, 'rc': 2, 'rs': 99},    # dict is not used.
             "ULT%s0311E On %s, command sent through IUCV failed, " +
             "rc in response string is not an integer. " +
