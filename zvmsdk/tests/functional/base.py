@@ -50,6 +50,7 @@ class SDKAPITestUtils(object):
 
     def get_available_test_userid(self):
         exist_list = self.api.host_list_guests()
+        print("Existing guest list: %s" % str(exist_list))
         test_list = CONF.tests.userid_list.split(' ')
         for uid in test_list:
             if uid in exist_list:
@@ -77,6 +78,15 @@ class SDKAPITestUtils(object):
         mac_suffix = ':'.join(tmp_list)
         mac_addr = ':'.join((CONF.tests.mac_user_prefix, mac_suffix))
         return mac_addr
+
+    def _get_next_test_userid(self, userid):
+        userids = CONF.tests.userid_list.split(' ')
+        idx = userids.index(userid)
+        if (idx + 1) == len(userids):
+            # the userid is the last one in userids, return the first one
+            return userids[0]
+        else:
+            return userids[idx + 1]
 
     def guest_deploy(self, userid=None, cpu=1, memory=1024,
                      image_path=CONF.tests.image_path, ip_addr=None,
@@ -123,7 +133,19 @@ class SDKAPITestUtils(object):
 
         # Create vm in zVM
         print("Creating userid %s ..." % userid)
-        self.api.guest_create(userid, cpu, memory, disks_list, user_profile)
+        try:
+            self.api.guest_create(userid, cpu, memory, disks_list,
+                                  user_profile)
+        except exception.ZVMException as err:
+            errmsg = err.format_message()
+            print("WARNING: create userid failed: %s" % errmsg)
+            if (errmsg.__contains__("Return Code: 400") and
+                    errmsg.__contains__("Reason Code: 8")):
+                # delete userid not completed
+                print("userid %s still exist" % userid)
+                # switch to new userid
+                userid = self._get_next_test_userid(userid)
+                print("turn to use new userid %s" % userid)
 
         # Setup network for vm
         print("Creating nic with nic_id=%s, "
