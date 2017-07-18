@@ -69,8 +69,3 @@ class SDKHostOpsTestCase(base.SDKTestCase):
         self.assertEqual(dp_info['disk_total'], 406105)
         self.assertEqual(dp_info['disk_used'], 367263)
         self.assertEqual(dp_info['disk_available'], 38843)
-
-    @mock.patch.object(zvmclient.XCATClient, 'get_vm_list')
-    def test_list_guests(self, get_vm_list):
-        self._hostops.list_guests()
-        get_vm_list.assert_called_once_with()

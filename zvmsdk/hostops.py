@@ -90,6 +90,3 @@ class HOSTOps(object):
                     raise exception.ZVMSDKInternalError(msg=errmsg)
 
         return dp_info
-
-    def list_guests(self):
-        return self._zvmclient.get_vm_list()
