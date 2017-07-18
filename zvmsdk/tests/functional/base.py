@@ -146,6 +146,9 @@ class SDKAPITestUtils(object):
                 # switch to new userid
                 userid = self._get_next_test_userid(userid)
                 print("turn to use new userid %s" % userid)
+                self.addCleanup(self.sdkutils.guest_destroy, userid)
+                self.api.guest_create(userid, cpu, memory, disks_list,
+                                      user_profile)
 
         # Setup network for vm
         print("Creating nic with nic_id=%s, "
@@ -168,7 +171,10 @@ class SDKAPITestUtils(object):
 
     def guest_destroy(self, userid):
         print("Deleting userid %s ..." % userid)
-        self.api.guest_delete(userid)
+        try:
+            self.api.guest_delete(userid)
+        except exception.SDKBaseException as err:
+            print("WARNING: deleting userid failed: %s" % err.format_message())
 
 
 class SDKAPIBaseTestCase(unittest.TestCase):
