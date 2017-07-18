@@ -332,8 +332,8 @@ class HandlersGuestTest(SDKWSGITest):
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_couple_uncouple_nic(self.req)
-        mock_couple.assert_called_once_with("v1", "1111",
-            FAKE_USERID, persist=True)
+        mock_couple.assert_called_once_with(FAKE_USERID, "1111",
+            "v1", active=False)
 
     @mock.patch.object(api.SDKAPI, 'guest_nic_uncouple_from_vswitch')
     @mock.patch.object(util, 'wsgi_path_item')
@@ -341,14 +341,14 @@ class HandlersGuestTest(SDKWSGITest):
 
         body_str = """{"info": {"couple": "false",
                        "vswitch": "v1", "vdev": "1111",
-                       "persist": "false"}}"""
+                       "active": "false"}}"""
         self.req.body = body_str
 
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_couple_uncouple_nic(self.req)
-        mock_uncouple.assert_called_once_with("v1", "1111",
-            FAKE_USERID, persist=False)
+        mock_uncouple.assert_called_once_with(FAKE_USERID, "1111",
+                                              active=False)
 
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_couple_nic_missing_required_1(self, mock_userid):

@@ -118,17 +118,17 @@ class VMHandler(object):
     def couple_uncouple_nic(self, userid, body=None):
         info = body['info']
 
-        persist = info.get('persist', True)
-        persist = util.bool_from_string(persist, strict=True)
+        active = info.get('active', False)
+        active = util.bool_from_string(active, strict=True)
 
         couple = util.bool_from_string(info['couple'], strict=True)
 
         if couple:
-            self.api.guest_nic_couple_to_vswitch(info['vswitch'],
-                info['vdev'], userid, persist=persist)
+            self.api.guest_nic_couple_to_vswitch(userid,
+                info['vdev'], info['vswitch'], active=active)
         else:
-            self.api.guest_nic_uncouple_from_vswitch(info['vswitch'],
-                info['vdev'], userid, persist=persist)
+            self.api.guest_nic_uncouple_from_vswitch(userid, info['vdev'],
+                                                     active=active)
 
 
 class VMAction(object):

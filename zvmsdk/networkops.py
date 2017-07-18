@@ -49,18 +49,16 @@ class NetworkOPS(object):
     def get_vswitch_list(self):
         return self.zvmclient.get_vswitch_list()
 
-    def couple_nic_to_vswitch(self, vswitch_name, nic_vdev,
-                              userid, active=False, persist=True):
-        self.zvmclient.couple_nic_to_vswitch(vswitch_name, nic_vdev,
-                                             userid, active=active,
-                                             persist=persist)
+    def couple_nic_to_vswitch(self, userid, nic_vdev,
+                              vswitch_name, active=False):
+        self.zvmclient.couple_nic_to_vswitch(userid, nic_vdev,
+                                             vswitch_name, active=active)
 
-    def uncouple_nic_from_vswitch(self, vswitch_name, nic_vdev,
-                                  userid, active=False, persist=True):
-        self.zvmclient.uncouple_nic_from_vswitch(vswitch_name,
+    def uncouple_nic_from_vswitch(self, userid, nic_vdev,
+                                  active=False):
+        self.zvmclient.uncouple_nic_from_vswitch(userid,
                                                  nic_vdev,
-                                                 userid, active=active,
-                                                 persist=persist)
+                                                 active=active)
 
     def add_vswitch(self, name, rdev=None, controller='*',
                     connection='CONNECT', network_type='IP',

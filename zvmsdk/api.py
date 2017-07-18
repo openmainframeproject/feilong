@@ -388,50 +388,32 @@ class SDKAPI(object):
         """
         self._vmops.create_vm(userid, vcpus, memory, disk_list, user_profile)
 
-    @check_input_types(_TVSWNAME, _TSTR, _TUSERID, bool, bool)
-    def guest_nic_couple_to_vswitch(self, vswitch_name, nic_vdev,
-                                    userid, active=False, persist=True):
+    @check_input_types(_TUSERID, _TSTR, _TVSWNAME, bool)
+    def guest_nic_couple_to_vswitch(self, userid, nic_vdev,
+                                    vswitch_name, active=False):
         """ Couple nic device to specified vswitch.
 
-        :param str vswitch_name: the name of the vswitch
+        :param str userid: the user's name who owns the nic
         :param str nic_vdev: nic device number, 1- to 4- hexadecimal digits
-        :param str userid: the user's name who owns the port
+        :param str vswitch_name: the name of the vswitch
         :param bool active: whether make the change on active guest system
-        :param bool persist: whether keep the change in the permanent
-               configuration for the system
 
         """
-        if (not active) and (not persist):
-            raise exception.ZVMInvalidInput(
-                msg=("Need to specify how to couple nic to vswitch, on "
-                     "active guest system and/or in the guest's user direct, "
-                     "one of them must be true"))
-        self._networkops.couple_nic_to_vswitch(vswitch_name, nic_vdev,
-                                               userid, active=active,
-                                               persist=persist)
+        self._networkops.couple_nic_to_vswitch(userid, nic_vdev,
+                                               vswitch_name, active=active)
 
-    @check_input_types(_TVSWNAME, _TSTR, _TUSERID, bool, bool)
-    def guest_nic_uncouple_from_vswitch(self, vswitch_name, nic_vdev,
-                                        userid, active=False, persist=True):
+    @check_input_types(_TUSERID, _TSTR, bool)
+    def guest_nic_uncouple_from_vswitch(self, userid, nic_vdev,
+                                        active=False):
         """ Couple nic device to specified vswitch.
 
-        :param str vswitch_name: the name of the vswitch
+        :param str userid: the user's name who owns the nic
         :param str nic_vdev: nic device number, 1- to 4- hexadecimal digits
-        :param str userid: the user's name who owns the port
         :param bool active: whether make the change on active guest system
-        :param bool persist: whether keep the change in the permanent
-               configuration for the system
 
         """
-        if (not active) and (not persist):
-            raise exception.ZVMInvalidInput(
-                msg=("Need to specify how to uncouple nic from vswitch, on "
-                     "active guest system and/or in the guest's user direct, "
-                     "one of them must be true"))
-        self._networkops.uncouple_nic_from_vswitch(vswitch_name,
-                                                   nic_vdev,
-                                                   userid, active=active,
-                                                   persist=persist)
+        self._networkops.uncouple_nic_from_vswitch(userid, nic_vdev,
+                                                   active=active)
 
     def vswitch_get_list(self):
         """ Get the vswitch list.
