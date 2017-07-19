@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2d2a97ab_07d17cb8",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 966,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-19T13:08:00Z",
+      "side": 1,
+      "message": "So a question, if we already have to have a for loop to write out line by line, why don\u0027t we just do a \"if test[\u0027out\u0027] in line\" to check for the output?",
+      "revId": "fec01f49785592fb9f2e67153ce7176d8536cb2f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
