@@ -96,7 +96,7 @@ int prototypeCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
             }
         }
     } else {
-        printAndLogSmapiCallReturnCode("Prototype_Create_DM", PROCESSING_ERROR, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Prototype_Create_DM", PROCESSING_ERROR, vmapiContextP, "", 0);
         printf("\nERROR: Failed to open file %s\n", file);
         return 1;
     }
@@ -130,7 +130,7 @@ int prototypeCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
             prototype, recordCount, (vmApiPrototypeRecordList *) record, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Prototype_Create_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Prototype_Create_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Prototype_Create_DM", output->common.returnCode,
@@ -207,7 +207,7 @@ int prototypeDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
             prototype, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Prototype_Delete_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Prototype_Delete_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Prototype_Delete_DM", output->common.returnCode,
@@ -280,7 +280,7 @@ int prototypeNameQueryDM(int argC, char* argV[], struct _vmApiInternalContext* v
             &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Prototype_Name_Query_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Prototype_Name_Query_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Prototype_Name_Query_DM", output->common.returnCode,
@@ -363,7 +363,7 @@ int prototypeQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
     rc = smPrototype_Query_DM(vmapiContextP, "", 0, "", prototype, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Prototype_Query_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Prototype_Query_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Prototype_Query_DM", output->common.returnCode,
@@ -464,7 +464,7 @@ int prototypeReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vma
             }
         }
     } else {
-        printAndLogSmapiCallReturnCode("Prototype_Replace_DM", PROCESSING_ERROR, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Prototype_Replace_DM", PROCESSING_ERROR, vmapiContextP, "", 0);
         printf("\nERROR: Failed to open file %s\n", file);
         return 1;
     }
@@ -498,7 +498,7 @@ int prototypeReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vma
             prototype, recordCount, (vmApiPrototypeRecordList *) record, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Prototype_Replace_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Prototype_Replace_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Prototype_Replace_DM", output->common.returnCode,

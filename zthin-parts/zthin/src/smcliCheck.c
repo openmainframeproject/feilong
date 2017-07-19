@@ -96,7 +96,7 @@ int checkAuthentication(int argC, char* argV[], struct _vmApiInternalContext* vm
              &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Check_Authentication", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Check_Authentication", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Check_Authentication", output->common.returnCode,

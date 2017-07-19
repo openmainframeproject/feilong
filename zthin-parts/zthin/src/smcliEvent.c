@@ -144,7 +144,7 @@ int eventStreamAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
          image, (int) eventId, stringCount, stringArray, hexstringCount, hexstringArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Event_Stream_Add", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Event_Stream_Add", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Event_Stream_Add", output->common.returnCode,

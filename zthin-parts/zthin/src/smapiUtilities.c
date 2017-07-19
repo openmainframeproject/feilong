@@ -3153,7 +3153,7 @@ int getSmapiLevel(struct _vmApiInternalContext* vmapiContextP, char * image, int
         rc = smQuery_API_Functional_Level(vmapiContextP, "", 0, "", image, &output);
         // Handle the RC that comes back from making the SMAPI API call. If RC then the call to SMAPI failed
         if (rc) {
-            printAndLogSmapiCallReturnCode("Query_API_Functional_Level", rc, vmapiContextP, "", 0);
+            printAndLogProcessingErrors("Query_API_Functional_Level", rc, vmapiContextP, "", 0);
             return 1;
         } else {
             if (output->common.returnCode != 0) {

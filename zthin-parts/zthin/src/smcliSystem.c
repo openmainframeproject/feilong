@@ -127,7 +127,7 @@ int systemConfigSyntaxCheck(int argC, char* argV[], struct _vmApiInternalContext
     rc = smSystem_Config_Syntax_Check(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_Config_Syntax_Check", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("System_Config_Syntax_Check", rc, vmapiContextP, strMsg, 0);
     } else if ((output->common.returnCode == 8)  && (output->common.reasonCode == 34)) {
         // Handle SMAPI return code and reason code and Error Buffer if it was sent
         rc = printAndLogSmapiReturnCodeReasonCodeDescriptionAndErrorBuffer("System_Config_Syntax_Check", rc,
@@ -234,7 +234,7 @@ int systemDiskAccessibility(int argC, char* argV[], struct _vmApiInternalContext
     rc = smSystem_Disk_Accessibility(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_Disk_Accessibility", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("System_Disk_Accessibility", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_Disk_Accessibility", output->common.returnCode,
@@ -335,7 +335,7 @@ int systemDiskAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
     rc = smSystem_Disk_Add(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_Disk_Add", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("System_Disk_Add", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_Disk_Add", output->common.returnCode,
@@ -458,7 +458,7 @@ int systemDiskQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
     rc = smSystem_Disk_Query(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_Disk_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_Disk_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_Disk_Query", output->common.returnCode,
@@ -532,7 +532,7 @@ int systemDiskQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
@@ -640,7 +640,7 @@ int systemDiskIOQuery(int argC, char* argV[], struct _vmApiInternalContext* vmap
             image, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_Disk_IO_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_Disk_IO_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_Disk_IO_Query", output->common.returnCode,
@@ -778,7 +778,7 @@ int systemEQIDQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
     rc = smSystem_EQID_Query(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_EQID_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_EQID_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_EQID_Query", output->common.returnCode,
@@ -860,7 +860,7 @@ int systemEQIDQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
@@ -980,7 +980,7 @@ int systemFCPFreeQuery(int argC, char* argV[], struct _vmApiInternalContext* vma
     rc = smSystem_FCP_Free_Query(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_FCP_Free_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_FCP_Free_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_FCP_Free_Query", output->common.returnCode,
@@ -1140,7 +1140,7 @@ int systemFCPFreeQuery(int argC, char* argV[], struct _vmApiInternalContext* vma
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
@@ -1258,7 +1258,7 @@ int systemInformationQuery(int argC, char* argV[], struct _vmApiInternalContext*
             image, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_Information_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_Information_Query", rc, vmapiContextP, "", 0);
     } else if (rc || output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_Information_Query", output->common.returnCode,
@@ -1387,7 +1387,7 @@ int systemPageUtilizationQuery(int argC, char* argV[], struct _vmApiInternalCont
     rc = smSystem_Page_Utilization_Query(vmapiContextP, "", 0, "", // Authorizing user, password length, password
             image, &output);
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_Page_Utilization_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_Page_Utilization_Query", rc, vmapiContextP, "", 0);
     } else if (rc || output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_Page_Utilization_Query", output->common.returnCode,
@@ -1538,7 +1538,7 @@ int systemPageUtilizationQuery(int argC, char* argV[], struct _vmApiInternalCont
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
@@ -1637,7 +1637,7 @@ int systemPerformanceInformationQuery(int argC, char* argV[], struct _vmApiInter
     rc = smSystem_Performance_Information_Query(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_Performance_Information_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_Performance_Information_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_Performance_Information_Query", output->common.returnCode,
@@ -1738,7 +1738,7 @@ int systemPerformanceThresholdDisable(int argC, char* argV[], struct _vmApiInter
             targetIdentifier, eventType, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_Performance_Threshold_Disable", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("System_Performance_Threshold_Disable", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_Performance_Threshold_Disable", output->common.returnCode,
@@ -1830,7 +1830,7 @@ int systemPerformanceThresholdEnable(int argC, char* argV[], struct _vmApiIntern
             targetIdentifier, eventType, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_Performance_Threshold_Enable", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("System_Performance_Threshold_Enable", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_Performance_Threshold_Enable",
@@ -1947,7 +1947,7 @@ int systemSCSIDiskAdd(int argC, char* argV[], struct _vmApiInternalContext* vmap
     rc = smSystem_SCSI_Disk_Add(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_SCSI_Disk_Add", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("System_SCSI_Disk_Add", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_SCSI_Disk_Add", output->common.returnCode,
@@ -2054,7 +2054,7 @@ int systemSCSIDiskDelete(int argC, char* argV[], struct _vmApiInternalContext* v
 
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_SCSI_Disk_Delete", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("System_SCSI_Disk_Delete", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_SCSI_Disk_Delete", output->common.returnCode,
@@ -2176,7 +2176,7 @@ int systemSCSIDiskQuery(int argC, char* argV[], struct _vmApiInternalContext* vm
     rc = smSystem_SCSI_Disk_Query(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_SCSI_Disk_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_SCSI_Disk_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_SCSI_Disk_Query", output->common.returnCode,
@@ -2277,7 +2277,7 @@ int systemSCSIDiskQuery(int argC, char* argV[], struct _vmApiInternalContext* vm
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
@@ -2401,7 +2401,7 @@ int systemServiceQuery(int argC, char* argV[], struct _vmApiInternalContext* vma
             image, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_Service_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_Service_Query", rc, vmapiContextP, "", 0);
     } else if (rc || output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_Service_Query", output->common.returnCode,
@@ -2537,7 +2537,7 @@ int systemShutdown(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
 
     // Handle the rc that comes back from making the SMAPI API call. If rc then the call to SMAPI failed.
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_Shutdown", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_Shutdown", rc, vmapiContextP, "", 0);
     } else {
         // Handle SMAPI return code and reason code and Error Buffer if it was sent
         rc = printAndLogSmapiReturnCodeReasonCodeDescriptionAndErrorBuffer("System_Config_SySystem_Shutdownntax_Check", rc,
@@ -2638,7 +2638,7 @@ int systemSpoolUtilizationQuery(int argC, char* argV[], struct _vmApiInternalCon
     rc = smSystem_Spool_Utilization_Query(vmapiContextP, "", 0, "", // Authorizing user, password length, password
             image, &output);
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_Spool_Utilization_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_Spool_Utilization_Query", rc, vmapiContextP, "", 0);
     } else if (rc || output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_Spool_Utilization_Query", output->common.returnCode,
@@ -2794,7 +2794,7 @@ int systemSpoolUtilizationQuery(int argC, char* argV[], struct _vmApiInternalCon
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
@@ -2928,7 +2928,7 @@ int systemWWPNQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
     rc = smSystem_WWPN_Query(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("System_WWPN_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("System_WWPN_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_WWPN_Query", output->common.returnCode,
@@ -3036,7 +3036,7 @@ int systemWWPNQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);

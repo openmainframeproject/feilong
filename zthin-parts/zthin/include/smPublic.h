@@ -315,7 +315,7 @@ typedef struct _vmApiInternalContext {
 #define DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(_globalcontextptr_, _apiString_) \
   if (_globalcontextptr_->addRcHeader) \
     {                  \
-      printAndLogSmapiCallReturnCode(_apiString_, OUTPUT_ERRORS_FOUND, _globalcontextptr_, "", JUST_HEADER); \
+      printAndLogProcessingErrors(_apiString_, OUTPUT_ERRORS_FOUND, _globalcontextptr_, "", JUST_HEADER); \
     }
 
 typedef struct _Abbreviation {

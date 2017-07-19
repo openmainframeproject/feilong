@@ -104,7 +104,7 @@ int vmrmConfigurationQuery(int argC, char* argV[], struct _vmApiInternalContext*
             image, configFileName, configFileType, configDirName, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("VMRM_Configuration_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("VMRM_Configuration_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("VMRM_Configuration_Query", output->common.returnCode,
@@ -236,7 +236,7 @@ int vmrmConfigurationUpdate(int argC, char* argV[], struct _vmApiInternalContext
     // Open the user entry file
     fp = fopen(updateFile, "r");
     if (NULL == fp) {
-        printAndLogSmapiCallReturnCode("VMRM_Configuration_Update", PROCESSING_ERROR, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("VMRM_Configuration_Update", PROCESSING_ERROR, vmapiContextP, "", 0);
        printf("\nERROR: Failed to open file %s\n", updateFile);
        return 2;
     }
@@ -261,7 +261,7 @@ int vmrmConfigurationUpdate(int argC, char* argV[], struct _vmApiInternalContext
     vmApiUpdateRecord *record;
     if (recordCount > 0) {
         if (0 == (record = malloc(recordCount * sizeof(vmApiUpdateRecord)))){
-            printAndLogSmapiCallReturnCode("VMRM_Configuration_Update", PROCESSING_ERROR, vmapiContextP, "", 0);
+            printAndLogProcessingErrors("VMRM_Configuration_Update", PROCESSING_ERROR, vmapiContextP, "", 0);
             return MEMORY_ERROR;
         }
     }
@@ -275,7 +275,7 @@ int vmrmConfigurationUpdate(int argC, char* argV[], struct _vmApiInternalContext
               for (i = 0; i < c; c++) 
                  free(line[i]);
               free(record);
-              printAndLogSmapiCallReturnCode("VMRM_Configuration_Update", PROCESSING_ERROR, vmapiContextP, "", 0);
+              printAndLogProcessingErrors("VMRM_Configuration_Update", PROCESSING_ERROR, vmapiContextP, "", 0);
               return MEMORY_ERROR;
            }
         }
@@ -307,7 +307,7 @@ int vmrmConfigurationUpdate(int argC, char* argV[], struct _vmApiInternalContext
             syncheck, recordCount, (vmApiUpdateRecord *) record, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("VMRM_Configuration_Update", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("VMRM_Configuration_Update", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("VMRM_Configuration_Update", output->common.returnCode,
@@ -390,7 +390,7 @@ int vmrmMeasurementQuery(int argC, char* argV[], struct _vmApiInternalContext* v
     rc = smVMRM_Measurement_Query(vmapiContextP, "", 0, "", image, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("VMRM_Measurement_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("VMRM_Measurement_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("VMRM_Measurement_Query", output->common.returnCode,

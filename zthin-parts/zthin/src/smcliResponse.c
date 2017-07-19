@@ -87,7 +87,7 @@ int responseRecovery(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             image, failedRequestID, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Response_Recovery", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Response_Recovery", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Response_Recovery", output->common.returnCode,

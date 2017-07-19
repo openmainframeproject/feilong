@@ -99,7 +99,7 @@ int profileCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             }
         }
     } else {
-        printAndLogSmapiCallReturnCode("Profile_Create_DM", PROCESSING_ERROR, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Profile_Create_DM", PROCESSING_ERROR, vmapiContextP, "", 0);
         printf("\nERROR: Failed to open file %s\n", profileFile);
         return 1;
     }
@@ -134,7 +134,7 @@ int profileCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Profile_Create_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Profile_Create_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Profile_Create_DM", output->common.returnCode,
@@ -215,7 +215,7 @@ int profileDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             profile, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Profile_Delete_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Profile_Delete_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Profile_Delete_DM", output->common.returnCode,
@@ -295,7 +295,7 @@ int profileLockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             profile, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Profile_Lock_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Profile_Lock_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Profile_Lock_DM", output->common.returnCode,
@@ -389,7 +389,7 @@ int profileLockQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vma
             &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Profile_Lock_Query_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Profile_Lock_Query_DM", rc, vmapiContextP, "", 0);
     } else if ((output->common.returnCode == 0) && (output->common.reasonCode == 12 )) {
         // Obtain lockedType
         token = strtok_r(output->lockedTypeProfileLockedBy, blank, &buffer);
@@ -471,7 +471,7 @@ int profileLockQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vma
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
@@ -558,7 +558,7 @@ int profileQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
             &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Profile_Query_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Profile_Query_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Profile_Query_DM", output->common.returnCode,
@@ -664,7 +664,7 @@ int profileReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             }
         }
     } else {
-        printAndLogSmapiCallReturnCode("Profile_Replace_DM", PROCESSING_ERROR, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Profile_Replace_DM", PROCESSING_ERROR, vmapiContextP, "", 0);
         printf("\nERROR: Failed to open file %s\n", profileFile);
         return 1;
     }
@@ -700,7 +700,7 @@ int profileReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
 
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Profile_Replace_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Profile_Replace_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Profile_Replace_DM", output->common.returnCode,
@@ -781,7 +781,7 @@ int profileUnlockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
 
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Profile_Unlock_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Profile_Unlock_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Profile_Unlock_DM", output->common.returnCode,

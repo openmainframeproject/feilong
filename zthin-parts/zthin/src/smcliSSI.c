@@ -82,7 +82,7 @@ int ssiQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP
 
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("SSI_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("SSI_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
     	rc = printAndLogSmapiReturnCodeReasonCodeDescription("SSI_Query", output->common.returnCode,
@@ -198,7 +198,7 @@ int ssiQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);

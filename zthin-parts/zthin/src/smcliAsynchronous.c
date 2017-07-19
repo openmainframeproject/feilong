@@ -141,7 +141,7 @@ int asynchronousNotificationDisableDM(int argC, char* argV[], struct _vmApiInter
     		targetIdentifier, entity, communication, portNumber, ip, encoding, strlen(subscriberData), subscriberData, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Asynchronous_Notification_Disable_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Asynchronous_Notification_Disable_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Asynchronous_Notification_Disable_DM",
@@ -276,7 +276,7 @@ int asynchronousNotificationEnableDM(int argC, char* argV[], struct _vmApiIntern
     		targetIdentifier, entity, subscription, communication, portNumber, ip, encoding, strlen(subscriberData), subscriberData, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Asynchronous_Notification_Enable_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Asynchronous_Notification_Enable_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Asynchronous_Notification_Enable_DM",
@@ -402,7 +402,7 @@ int asynchronousNotificationQueryDM(int argC, char* argV[], struct _vmApiInterna
     		targetIdentifier, entity, communication, portNumber, ip, encoding, strlen(subscriberData), subscriberData, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Asynchronous_Notification_Query_DM", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Asynchronous_Notification_Query_DM", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Asynchronous_Notification_Query_DM",

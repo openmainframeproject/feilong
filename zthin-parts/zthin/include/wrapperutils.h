@@ -62,7 +62,7 @@ int printMessageBuffersAndRelease(struct _smMessageCollector *firstMsgCollectorP
 
 // The new error handling methods, status string is used only for functions that printed a "starting ..." status message
 // Pass in "" for functions that do not have such a message.
-void printAndLogSmapiCallReturnCode(const char * class, int rc, struct _vmApiInternalContext *vmapiContextP, char * statusString, int justHeader);
+void printAndLogProcessingErrors(const char * class, int rc, struct _vmApiInternalContext *vmapiContextP, char * statusString, int justHeader);
 int printAndLogSmapiReturnCodeReasonCodeDescription(const char * class, int returnCode, int reasonCode,
          struct _vmApiInternalContext *vmapiContextP, char * statusString);
 int printAndLogSmapiReturnCodeReasonCodeDescriptionAndErrorBuffer(const char * class, int rc, int returnCode, int reasonCode,

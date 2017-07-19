@@ -99,7 +99,7 @@ int metadataDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
             image, keywords, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("MetadataDelete", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("MetadataDelete", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("MetadataDelete", output->common.returnCode,
@@ -186,7 +186,7 @@ int metadataGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiConte
             image, keywords, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("MetadataGet", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("MetadataGet", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("MetadataGet", output->common.returnCode,
@@ -343,7 +343,7 @@ int metadataSet(int argC, char* argV[],
     FREE_MEMORY_CLEAR_POINTER(entryArray);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("MetadataSet", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("MetadataSet", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("MetadataSet", output->common.returnCode,
@@ -430,7 +430,7 @@ int metadataSpaceQuery(int argC, char* argV[], struct _vmApiInternalContext* vma
             image, keywords, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("MetadataSpaceQuery", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("MetadataSpaceQuery", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("MetadataSpaceQuery", output->common.returnCode,

@@ -110,7 +110,7 @@ int virtualChannelConnectionCreate(int argC, char* argV[], struct _vmApiInternal
             image, virtualAddress, coupledImage, coupledVirtualAddress, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Channel_Connection_Create", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Channel_Connection_Create", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Channel_Connection_Create", output->common.returnCode,
@@ -205,7 +205,7 @@ int virtualChannelConnectionCreateDM(int argC, char* argV[], struct _vmApiIntern
             image, virtualAddress, coupledImage, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Channel_Connection_Create_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Channel_Connection_Create_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Channel_Connection_Create_DM", output->common.returnCode,
@@ -290,7 +290,7 @@ int virtualChannelConnectionDelete(int argC, char* argV[], struct _vmApiInternal
             image, virtualAddress, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Channel_Connection_Delete", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Channel_Connection_Delete", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Channel_Connection_Delete", output->common.returnCode,
@@ -376,7 +376,7 @@ int virtualChannelConnectionDeleteDM(int argC, char* argV[], struct _vmApiIntern
             image, virtualAddress, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Channel_Connection_Delete_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Channel_Connection_Delete_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Channel_Connection_Delete_DM", output->common.returnCode,
@@ -474,7 +474,7 @@ int virtualNetworkAdapterConnectLAN(int argC, char* argV[], struct _vmApiInterna
             image, virtualAddress, lanName, lanOwner, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Adapter_Connect_LAN", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Adapter_Connect_LAN", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Adapter_Connect_LAN", output->common.returnCode,
@@ -572,7 +572,7 @@ int virtualNetworkAdapterConnectLANDM(int argC, char* argV[], struct _vmApiInter
             image, deviceAddress, lanName, lanOwner, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Adapter_Connect_LAN_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Adapter_Connect_LAN_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Adapter_Connect_LAN_DM", output->common.returnCode,
@@ -665,7 +665,7 @@ int virtualNetworkAdapterConnectVswitch(int argC, char* argV[], struct _vmApiInt
             image, deviceAddress, vswitchName, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Adapter_Connect_Vswitch", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Adapter_Connect_Vswitch", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Adapter_Connect_Vswitch", output->common.returnCode,
@@ -759,7 +759,7 @@ int virtualNetworkAdapterConnectVswitchDM(int argC, char* argV[], struct _vmApiI
             image, virtualAddress, switchName, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Adapter_Connect_Vswitch_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Adapter_Connect_Vswitch_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Adapter_Connect_Vswitch_DM", output->common.returnCode,
@@ -871,7 +871,7 @@ int virtualNetworkAdapterConnectVswitchExtended(int argC, char* argV[], struct _
             entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Adapter_Connect_Vswitch_Extended", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Adapter_Connect_Vswitch_Extended", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Adapter_Connect_Vswitch_Extended",
@@ -971,7 +971,7 @@ int virtualNetworkAdapterCreate(int argC, char* argV[], struct _vmApiInternalCon
             image, virtualAddress, adapterType, virtualDevices, "", &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Adapter_Create", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Adapter_Create", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Adapter_Create", output->common.returnCode,
@@ -1083,7 +1083,7 @@ int virtualNetworkAdapterCreateDM(int argC, char* argV[], struct _vmApiInternalC
         image, deviceAddress, adapterType, adapterDevices, chpId, macId, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Adapter_Create_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Adapter_Create_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Adapter_Create_DM", output->common.returnCode,
@@ -1220,7 +1220,7 @@ int virtualNetworkAdapterCreateExtended(int argC, char* argV[], struct _vmApiInt
     rc = smVirtual_Network_Adapter_Create_Extended(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Adapter_Create_Extended", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Adapter_Create_Extended", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Adapter_Create_Extended", output->common.returnCode,
@@ -1366,7 +1366,7 @@ int virtualNetworkAdapterCreateExtendedDM(int argC, char* argV[], struct _vmApiI
     rc = smVirtual_Network_Adapter_Create_Extended_DM(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Adapter_Create_Extended_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Adapter_Create_Extended_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Adapter_Create_Extended_DM", output->common.returnCode,
@@ -1453,7 +1453,7 @@ int virtualNetworkAdapterDelete(int argC, char* argV[], struct _vmApiInternalCon
             image, virtualAddress, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Adapter_Delete", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Adapter_Delete", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Adapter_Delete", output->common.returnCode,
@@ -1538,7 +1538,7 @@ int virtualNetworkAdapterDeleteDM(int argC, char* argV[], struct _vmApiInternalC
             image, virtualAddress, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Adapter_Delete_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Adapter_Delete_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Adapter_Delete_DM", output->common.returnCode,
@@ -1624,7 +1624,7 @@ int virtualNetworkAdapterDisconnect(int argC, char* argV[], struct _vmApiInterna
             image, virtualAddress, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Adapter_Disconnect", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Adapter_Disconnect", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Adapter_Disconnect", output->common.returnCode,
@@ -1710,7 +1710,7 @@ int virtualNetworkAdapterDisconnectDM(int argC, char* argV[], struct _vmApiInter
     rc = smVirtual_Network_Adapter_Disconnect_DM(vmapiContextP, "", 0, "", image, virtualAddress, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Adapter_Disconnect_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Adapter_Disconnect_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Adapter_Disconnect_DM", output->common.returnCode,
@@ -1791,7 +1791,7 @@ int virtualNetworkAdapterQuery(int argC, char* argV[], struct _vmApiInternalCont
         image, virtualAddress, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Adapter_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Virtual_Network_Adapter_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Adapter_Query", output->common.returnCode,
@@ -1931,7 +1931,7 @@ int virtualNetworkAdapterQueryExtended( int argC, char* argV[], struct _vmApiInt
     rc = smVirtual_Network_Adapter_Query_Extended( vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output );
 
     if ( rc ) {
-        printAndLogSmapiCallReturnCode( "Virtual_Network_Adapter_Query_Extended", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors( "Virtual_Network_Adapter_Query_Extended", rc, vmapiContextP, "", 0);
     } else if ( output->common.returnCode || output->common.reasonCode ) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription( "Virtual_Network_Adapter_Query_Extended",
@@ -2055,7 +2055,7 @@ int virtualNetworkLANAccess(int argC, char* argV[], struct _vmApiInternalContext
             lanOwner, accessOpt, accessGrantUser, promiscuity, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_LAN_Access", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_LAN_Access", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_LAN_Access", output->common.returnCode,
@@ -2140,7 +2140,7 @@ int virtualNetworkLANAccessQuery(int argC, char* argV[], struct _vmApiInternalCo
     rc = smVirtual_Network_LAN_Access_Query(vmapiContextP, "", 0, "", image, lanName, lanOwner, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_LAN_Access_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Virtual_Network_LAN_Access_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_LAN_Access_Query", output->common.returnCode,
@@ -2262,7 +2262,7 @@ int virtualNetworkLANCreate(int argC, char* argV[], struct _vmApiInternalContext
     rc = smVirtual_Network_LAN_Create(vmapiContextP, "", 0, "", image, lanName, lanOwner, lanType, transportType, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_LAN_Create", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_LAN_Create", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_LAN_Create", output->common.returnCode,
@@ -2351,7 +2351,7 @@ int virtualNetworkLANDelete(int argC, char* argV[], struct _vmApiInternalContext
     rc = smVirtual_Network_LAN_Delete(vmapiContextP, "", 0, "", image, lanName, lanOwner, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_LAN_Delete", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_LAN_Delete", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_LAN_Delete", output->common.returnCode,
@@ -2437,7 +2437,7 @@ int virtualNetworkLANQuery(int argC, char* argV[], struct _vmApiInternalContext*
     rc = smVirtual_Network_LAN_Query(vmapiContextP, "", 0, "", image, lanName, lanOwner, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_LAN_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Virtual_Network_LAN_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_LAN_Query", output->common.returnCode,
@@ -2549,7 +2549,7 @@ int virtualNetworkOSAQuery(int argC, char* argV[], struct _vmApiInternalContext*
     rc = smVirtual_Network_OSA_Query(vmapiContextP, "", 0, "", image, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_OSA_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Virtual_Network_OSA_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_OSA_Query", output->common.returnCode,
@@ -2628,7 +2628,7 @@ int virtualNetworkOSAQuery(int argC, char* argV[], struct _vmApiInternalContext*
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
@@ -2762,7 +2762,7 @@ int virtualNetworkVLANQueryStats(int argC, char* argV[], struct _vmApiInternalCo
 
     rc = smVirtual_Network_VLAN_Query_Stats(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_VLAN_Query_Stats", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Virtual_Network_VLAN_Query_Stats", rc, vmapiContextP, "", 0);
     } else  if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_VLAN_Query_Stats", output->common.returnCode,
@@ -2944,7 +2944,7 @@ int virtualNetworkVLANQueryStats(int argC, char* argV[], struct _vmApiInternalCo
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
@@ -3210,7 +3210,7 @@ int virtualNetworkVswitchCreate(int argC, char* argV[], struct _vmApiInternalCon
             altParmDiskPassword, gvrpValue, nativeVlanId, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Vswitch_Create", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Vswitch_Create", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Vswitch_Create", output->common.returnCode,
@@ -3399,7 +3399,7 @@ int virtualNetworkVswitchCreateExtended(int argC, char* argV[], struct _vmApiInt
     rc = smVirtual_Network_Vswitch_Create_Extended(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Vswitch_Create_Extended", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Vswitch_Create_Extended", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Vswitch_Create_Extended", output->common.returnCode,
@@ -3566,7 +3566,7 @@ int virtualNetworkVswitchDelete(int argC, char* argV[], struct _vmApiInternalCon
             altParmDiskPassword, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Vswitch_Delete", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Vswitch_Delete", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Vswitch_Delete", output->common.returnCode,
@@ -3672,7 +3672,7 @@ int virtualNetworkVswitchDeleteExtended(int argC, char* argV[], struct _vmApiInt
     rc = smVirtual_Network_Vswitch_Delete_Extended(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Vswitch_Delete_Extended", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Vswitch_Delete_Extended", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Vswitch_Delete_Extended",
@@ -3751,7 +3751,7 @@ int virtualNetworkVswitchQuery(int argC, char* argV[], struct _vmApiInternalCont
     rc = smVirtual_Network_Vswitch_Query(vmapiContextP, "", 0, "", image, switchName, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Vswitch_Query", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Virtual_Network_Vswitch_Query", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Vswitch_Query", output->common.returnCode,
@@ -4098,7 +4098,7 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
     rc = smVirtual_Network_Vswitch_Query_Extended(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Vswitch_Query_Extended", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Virtual_Network_Vswitch_Query_Extended", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Vswitch_Query_Extended",
@@ -4696,7 +4696,7 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
@@ -4822,7 +4822,7 @@ int virtualNetworkVswitchQueryStats(int argC, char* argV[], struct _vmApiInterna
     rc = smVirtual_Network_Vswitch_Query_Stats(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Vswitch_Query_Stats", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Virtual_Network_Vswitch_Query_Stats", rc, vmapiContextP, "", 0);
     } else if (output->common.returnCode || output->common.reasonCode) {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Vswitch_Query_Stats",
@@ -4991,7 +4991,7 @@ int virtualNetworkVswitchQueryStats(int argC, char* argV[], struct _vmApiInterna
             if (rc == OUTPUT_ERRORS_FOUND) {
                 DOES_CALLER_WANT_RC_HEADER_FOR_OUTPUT_ERRORS(vmapiContextP, MY_API_NAME);
             } else {
-                printAndLogSmapiCallReturnCode(MY_API_NAME, rc, vmapiContextP, "", 0);
+                printAndLogProcessingErrors(MY_API_NAME, rc, vmapiContextP, "", 0);
             }
         } else {
             DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
@@ -5283,7 +5283,7 @@ int virtualNetworkVswitchSet(int argC, char* argV[], struct _vmApiInternalContex
             altParmDiskNumber, altParmDiskPassword, gvrpValue, macId, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Vswitch_Set", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Vswitch_Set", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Vswitch_Set",
@@ -5527,7 +5527,7 @@ int virtualNetworkVswitchSetExtended(int argC, char* argV[], struct _vmApiIntern
     rc = smVirtual_Network_Vswitch_Set_Extended(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Virtual_Network_Vswitch_Set_Extended", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Virtual_Network_Vswitch_Set_Extended", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Vswitch_Set_Extended",

@@ -122,7 +122,7 @@ int deleteABENDDump(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
          image, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Delete_ABEND_Dump", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Delete_ABEND_Dump", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Delete_ABEND_Dump", output->common.returnCode,

@@ -84,7 +84,7 @@ int staticImageChangesActivateDM(int argC, char* argV[], struct _vmApiInternalCo
             image, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Static_Image_Changes_Activate_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Static_Image_Changes_Activate_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Static_Image_Changes_Activate_DM", output->common.returnCode,
@@ -161,7 +161,7 @@ int staticImageChangesDeactivateDM(int argC, char* argV[], struct _vmApiInternal
             image, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Static_Image_Changes_Deactivate_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Static_Image_Changes_Deactivate_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Static_Image_Changes_Deactivate_DM", output->common.returnCode,
@@ -239,7 +239,7 @@ int staticImageChangesImmediateDM(int argC, char* argV[], struct _vmApiInternalC
             image, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Static_Image_Changes_Immediate_DM", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Static_Image_Changes_Immediate_DM", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Static_Image_Changes_Immediate_DM", output->common.returnCode,

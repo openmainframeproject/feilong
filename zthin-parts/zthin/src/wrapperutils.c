@@ -191,46 +191,50 @@ void convertASCIItoEBCDIC(struct _vmApiInternalContext *vmapiContextP, char *asc
 }
 
 /**
- * Print and log return code from call to SMAPI error.
+ * Print and log return code from call from zthin to SMAPI
+ * error. It did not make a complete call to SMAPI.
+ * Use error codes from 5000 to 5099 for these errors
+ * rcdescriptions.c will use values from 5100 and up.
+ * Use SMC for zthin smcli errors as the module abbreviation.
  */
-void printAndLogSmapiCallReturnCode(const char * class, int rc, struct _vmApiInternalContext *vmapiContextP, char * statusString, int justHeader) {
+void printAndLogProcessingErrors(const char * class, int rc, struct _vmApiInternalContext *vmapiContextP, char * statusString, int justHeader) {
     char line[256];
     char errMsg[128];
 
     if (rc == INVALID_DATA) {
-        sprintf(errMsg, "Invalid data\n");
+        sprintf(errMsg, "ULGSMC5000E Invalid data\n");
     } else if(rc == PROCESSING_ERROR) {
-        sprintf(errMsg, "Processing error\n");
+        sprintf(errMsg, "ULGSMC5001E Processing error\n");
     } else if(rc == OUTPUT_ERRORS_FOUND) {
-        sprintf(errMsg, "Errors detected in output data\n");
+        sprintf(errMsg, "ULGSMC5002E Errors detected in output data\n");
     } else if(rc == SOCKET_OBTAIN_ERROR) {
-        sprintf(errMsg, "Socket obtain error\n");
+        sprintf(errMsg, "ULGSMC5003E Socket obtain error\n");
     } else if(rc == SOCKET_CONNECT_REFUSED_ERROR) {
-        sprintf(errMsg, "Socket connect refused error\n");
+        sprintf(errMsg, "ULGSMC5004E Socket connect refused error\n");
     } else if(rc == SOCKET_CONNECT_TRYAGAIN_ERROR) {
-        sprintf(errMsg, "Socket connect try again error\n");
+        sprintf(errMsg, "ULGSMC5005E Socket connect try again error\n");
     } else if(rc == SOCKET_TIMEOUT_ERROR) {
-        sprintf(errMsg, "Socket timeout error\n");
+        sprintf(errMsg, "ULGSMC5006E Socket timeout error\n");
     } else if(rc == SOCKET_READ_ERROR) {
-        sprintf(errMsg, "Socket read error\n");
+        sprintf(errMsg, "ULGSMC5007E Socket read error\n");
     } else if(rc == SOCKET_WRITE_ERROR) {
-        sprintf(errMsg, "Socket write error\n");
+        sprintf(errMsg, "ULGSMC5008E Socket write error\n");
     } else if(rc == SOCKET_PROCESSING_ERROR) {
-        sprintf(errMsg, "Socket processing error\n");
+        sprintf(errMsg, "ULGSMC5009E Socket processing error\n");
     } else if(rc == SOCKET_NOT_CONNECTED_ERROR) {
-        sprintf(errMsg, "Socket not connected error\n");
+        sprintf(errMsg, "ULGSMC5010E Socket not connected error\n");
     } else if(rc == SOCKET_RETRY_NO_DATA) {
-        sprintf(errMsg, "SMAPI response_recovery retry has no data error\n");
+        sprintf(errMsg, "ULGSMC5011E SMAPI response_recovery retry has no data error\n");
     } else if(rc == MEMORY_ERROR) {
-        sprintf(errMsg, "Memory error\n");
+        sprintf(errMsg, "ULGSMC5012E Memory error\n");
     } else if(rc == PARSER_ERROR_INVALID_TABLE) {
-        sprintf(errMsg, "Parser error invalid table\n");
+        sprintf(errMsg, "ULGSMC5013E Parser error invalid table\n");
     } else if(rc == PARSER_ERROR_INVALID_STRING_SIZE) {
-        sprintf(errMsg, "Parser error invalid string size\n");
+        sprintf(errMsg, "ULGSMC5014E Parser error invalid string size\n");
     } else if(rc == SOCKET_RETRY_SMAPI_POSSIBLE) {
-        sprintf(errMsg, "Socket retry is possible, but failed after %d tries.\n", SEND_RETRY_LIMIT);
+        sprintf(errMsg, "ULGSMC5015E Socket retry is possible, but failed after %d tries.\n", SEND_RETRY_LIMIT);
     } else {
-        sprintf(errMsg, "Unknown\n");
+        sprintf(errMsg, "ULGSMC5016E Unknown internal error code $%d\n",rc);
     }
 
     /* Does the caller want a return code header line?*/

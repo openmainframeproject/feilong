@@ -89,7 +89,7 @@ int smapiStatusCapture(int argC, char* argV[], struct _vmApiInternalContext* vma
             profile, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("SMAPI_Status_Capture", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("SMAPI_Status_Capture", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
     	rc = printAndLogSmapiReturnCodeReasonCodeDescription("SMAPI_Status_Capture", output->common.returnCode,

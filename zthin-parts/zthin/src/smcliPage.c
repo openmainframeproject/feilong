@@ -127,7 +127,7 @@ int pageorSpoolVolumeAdd(int argC, char* argV[], struct _vmApiInternalContext* v
     rc = smPage_or_Spool_Volume_Add(vmapiContextP, "", 0, "",  targetIdentifier, entryCount, entryArray, &output);
 
     if (rc) {
-        printAndLogSmapiCallReturnCode("Page_or_Spool_Volume_Add", rc, vmapiContextP, strMsg, 0);
+        printAndLogProcessingErrors("Page_or_Spool_Volume_Add", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Page_or_Spool_Volume_Add", output->common.returnCode,

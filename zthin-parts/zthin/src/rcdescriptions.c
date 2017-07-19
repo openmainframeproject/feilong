@@ -18,6 +18,9 @@
 #include "wrapperutils.h"
 #include "smPublic.h"
 
+/* Internal routine to fill SMAPI syntax error details*/
+void fillSMAPIsyntaxReason(int rs, char * outreasonMsg);
+
 /**
  * print SMAPI returnCode reasonCode Description and log the SMAPI error
  */
@@ -25,6 +28,7 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
                                       int newHeader) {
     char errMsg[512];
     char line[1024];
+    char syntaxErrorMessage[150];
     bool logMSG = true;
     // If the trace file has not been read yet, do it.
     if (!(vmapiContextP->smTraceDetails->traceFileRead)) {
@@ -235,7 +239,8 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
     } else if (rc == 24 && rs == 13) {
         sprintf(errMsg, "Metadata entry name value length exceeds allowable length (1024)\n");
     } else if (rc == 24) {
-        sprintf(errMsg, "Syntax error in function parameter %d\n", (rs/100));
+        fillSMAPIsyntaxReason(rs, syntaxErrorMessage);
+        sprintf(errMsg, "Syntax error in function parameter %d; %s\n", (rs/100), syntaxErrorMessage);
     } else if (rc == 28 && rs == 0) {
         sprintf(errMsg, "Namelist file not found\n");
     } else if (rc == 36 && rs == 0) {
@@ -682,5 +687,84 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
             TRACE_END_DEBUG(vmapiContextP, line);
         }
     }
+}
+
+/* SMAPI syntax errors (rc=24) have part of the reason code used to describe the problem found.
+   This routine will display the text from the manual so the caller does not need to go to the manual.
+*/
+void fillSMAPIsyntaxReason(int rs, char * outreasonMsg){
+
+    int synReason = rs%100;
+
+    switch (synReason) {
+        case 01:
+            sprintf(outreasonMsg, "First character of listname is a colon \":\"");
+            break;
+        case 10:
+            sprintf(outreasonMsg, "Characters not \"0123456789\"");
+            break;
+        case 11:
+            sprintf(outreasonMsg, "Unsupported function");
+            break;
+        case 13:
+            sprintf(outreasonMsg, "Length is greater than maximum or exceeds total length");
+            break;
+        case 14:
+            sprintf(outreasonMsg, "Length is less than minimum");
+            break;
+        case 15:
+            sprintf(outreasonMsg, "Numeric value less than minimum or null value encountered");
+            break;
+        case 16:
+            sprintf(outreasonMsg, "Characters not \"0123456789ABCDEF\"");
+            break;
+        case 17:
+            sprintf(outreasonMsg, "Characters not \"0123456789ABCDEF-\"");
+            break;
+        case 18:
+            sprintf(outreasonMsg, "Numeric value greater than maximum");
+            break;
+        case 19:
+            sprintf(outreasonMsg, "Unrecognized value");
+            break;
+        case 23:
+            sprintf(outreasonMsg, "Conflicting parameter specified");
+            break;
+        case 24:
+            sprintf(outreasonMsg, "Unspecified required parameter");
+            break;
+        case 25:
+            sprintf(outreasonMsg, "Extraneous parameter specified");
+            break;
+        case 26:
+            sprintf(outreasonMsg, "Characters not \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\"");
+            break;
+        case 36:
+            sprintf(outreasonMsg, "Characters not \"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\"");
+            break;
+        case 37:
+            sprintf(outreasonMsg, "Characters not \"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-\"");
+            break;
+        case 42:
+            sprintf(outreasonMsg, "Characters not \"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$+-:\"");
+            break;
+        case 43:
+            sprintf(outreasonMsg, "Characters not \"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$+-:_\"");
+            break;
+        case 44:
+            sprintf(outreasonMsg, "Characters not \"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$+-:_=\"");
+            break;
+        case 45:
+            sprintf(outreasonMsg, "Invalid SFS syntax");
+            break;
+        case 88:
+            sprintf(outreasonMsg, "Unexpected end of data");
+            break;
+        case 99:
+            sprintf(outreasonMsg, "Non-breaking characters: non-blank, non-null, non-delete, non-line-end, non-carriage return, non-line-feed");
+            break;
+        default:
+            sprintf(outreasonMsg, "Unexpected new SMAPI syntax error number %d.", synReason);
+        }
 }
 
