@@ -1617,7 +1617,7 @@ class XCATClient(ZVMClient):
                                  "switch.switch=%s" % vswitch))
         else:
             commands = ' '.join(("node=%s,interface=%s" % (userid, nic_vdev),
-                                 "switch.switch=\'\'"))
+                                 "switch.switch="))
 
         url = self._xcat_url.tabch("/switch")
         body = [commands]
