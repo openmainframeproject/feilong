@@ -241,9 +241,9 @@ void printAndLogProcessingErrors(const char * class, int rc, struct _vmApiIntern
     if (vmapiContextP->addRcHeader)
     {
       if (vmapiContextP->errnoSaved) {
-        printf("9999 %d %d (details) %s %s", rc, vmapiContextP->errnoSaved, strerror(vmapiContextP->errnoSaved), errMsg);
+        printf("25 %d %d (details) %s %s", rc, vmapiContextP->errnoSaved, strerror(vmapiContextP->errnoSaved), errMsg);
       } else {
-        printf("9999 %d 0 (details) %s", rc, errMsg);
+        printf("25 %d 0 (details) %s", rc, errMsg);
       }
     }
 
@@ -369,7 +369,7 @@ void printRCheaderHelp() {
     printf("    8 rc rs (details) explanation   -> SMAPI error/async detected. SMAPI return code reason code provided\n");
     printf("                                       and brief explanation.\n");
     printf("    24 0 0 (details) Input error    -> input syntax error, keyword missing or incorrect.\n");
-    printf("    9999 rc errno (details) message -> smcli processing error code. errno(or 0 if none) and error message.\n\n");
+    printf("    25 rc errno (details) message   -> smcli processing error code, errno(or 0 if none) and error message.\n\n");
 }
 
 
