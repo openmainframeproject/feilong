@@ -464,12 +464,28 @@ def load_xcat_resp(message):
             if _is_warning_or_recoverable_issue(str(e)):
                 # ignore known warnings or errors:
                 continue
+            elif verify_xcat_resp(str(e)):
+                # ignore error when creating xcat mgt network
+                continue
             else:
                 raise exception.ZVMXCATInternalError(msg=message)
 
     _log_warnings(resp)
 
     return resp
+
+
+def verify_xcat_resp(err_str):
+    """Check whether xCAT REST API response contains an error."""
+    ignore_list = (
+        'Q V NIC'
+    )
+
+    for im in ignore_list:
+        if im in err_str:
+            return True
+
+    return False
 
 
 def _log_warnings(resp):
