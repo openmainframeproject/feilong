@@ -69,7 +69,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         if vswitch_name in self.sdkapi.vswitch_get_list():
             self.sdkapi.vswitch_delete(vswitch_name)
         # Test
-        self.assertRaises(exception.ZVMException,
+        self.assertRaises(exception.ZVMNetworkError,
                           self.sdkapi.vswitch_grant_user,
                           vswitch_name, self.basevm)
 
@@ -80,7 +80,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         if vswitch_name in self.sdkapi.vswitch_get_list():
             self.sdkapi.vswitch_delete(vswitch_name)
         # Test
-        self.assertRaises(exception.ZVMException,
+        self.assertRaises(exception.ZVMNetworkError,
                           self.sdkapi.vswitch_revoke_user,
                           vswitch_name, self.basevm)
 
@@ -107,7 +107,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         vswitch_name = self.vswitch
         self.sdkapi.vswitch_create(vswitch_name, '1111', vid=1)
         # Test
-        self.assertRaises(exception.ZVMException,
+        self.assertRaises(exception.ZVMNetworkError,
                           self.sdkapi.vswitch_set_vlan_id_for_user,
                           vswitch_name, self.basevm, 0)
 
@@ -117,7 +117,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         vswitch_name = self.vswitch
         self.sdkapi.vswitch_create(vswitch_name, '1111')
         # Test
-        self.assertRaises(exception.ZVMException,
+        self.assertRaises(exception.ZVMNetworkError,
                           self.sdkapi.vswitch_set_vlan_id_for_user,
                           vswitch_name, self.basevm, 1000)
 
@@ -128,7 +128,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         if vswitch_name in self.sdkapi.vswitch_get_list():
             self.sdkapi.vswitch_delete(vswitch_name)
         # Test
-        self.assertRaises(exception.ZVMException,
+        self.assertRaises(exception.ZVMNetworkError,
                           self.sdkapi.vswitch_set_vlan_id_for_user,
                           vswitch_name, self.basevm, 1000)
 
@@ -195,7 +195,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         vswitch_name = self.vswitch
         self.sdkapi.vswitch_create(vswitch_name, '11 0022 333')
         # Test
-        self.assertRaises(exception.ZVMException,
+        self.assertRaises(exception.ZVMNetworkError,
                           self.sdkapi.vswitch_create,
                           vswitch_name, '1111')
 
@@ -214,7 +214,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         # Test
         vswitch_name = self.vswitch
         # only support at most three rdevs
-        self.assertRaises(exception.ZVMException,
+        self.assertRaises(exception.ZVMNetworkError,
                           self.sdkapi.vswitch_create,
                           vswitch_name, '1111 2222 3333 4444')
         self.assertNotIn(vswitch_name, self.sdkapi.vswitch_get_list())
@@ -397,7 +397,7 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
 
         # Start test parameter active
         print("Creating NIC to active guest when guest is in off status.")
-        self.assertRaises(exception.ZVMException,
+        self.assertRaises(exception.ZVMNetworkError,
                           self.sdkapi.guest_create_nic,
                           self.basevm, vdev='7006',
                           active=True)
