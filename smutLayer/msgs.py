@@ -166,5 +166,27 @@ msg = {
     '0405': [{'overallRC': 4, 'rc': 6, 'rs': 405},
             "ULT%s0405E Unable to obtain information related to: " +
             "%s. Command used was: %s. Output was: %s"],
+    '0407': [{'overallRC': 4, 'rc': 4, 'rs': 407},     # dict is not used.
+            "ULT%s0407E Unable to spool reader to all classes, " +
+            "it is possible that there may be additional console " +
+            "files available that are not listed in the response. " +
+            "Response from %s is %s"],
+    '0408': [{'overallRC': 4, 'rc': 4, 'rs': 408},
+            "ULT%s0408E Error getting list of files in the reader " +
+            "to search for logs from user %s. Response from %s is %s"],
+    '0409': [{'overallRC': 4, 'rc': 4, 'rs': 409},
+            "ULT%s0409E Unable to get console log for user %s " +
+            "the userid is either not logged on or is not spooling " +
+            "its console.  Error rc=rs=8 returned from " +
+            "Image_Console_Get."],
+    '0410': [{'overallRC': 4, 'rc': 4, 'rs': 410},
+            "ULT%s0410E Unable to get console log for user %s " +
+            "no spool files were found in our reader from this " +
+            "user, it is possible another process has already " +
+            "received them."],
+    '0411': [{'overallRC': 4, 'rc': 4, 'rs': 411},
+            "ULT%s0411E Unable to receive console output file. " +
+            "Reader not online.  /sys/bus/ccw/drivers/vmur/0.0.000c" +
+            "/online = 0"],
     # 5000-5999: Reserved for SMCLI
     }

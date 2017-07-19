@@ -279,10 +279,13 @@ class ReqHandle(object):
               E - Error message
               N - Normal message
               S - Output should be logged
+              W - Warning message
         """
 
         if 'E' in respType:
             respString = '(Error) ' + respString
+        if 'W' in respType:
+            respString = '(Warning) ' + respString
         if 'S' in respType:
             self.printSysLog(respString)
         self.results['response'] = (self.results['response'] +
