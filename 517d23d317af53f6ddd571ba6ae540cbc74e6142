@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2cce9102_c23c983f",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 686,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-19T18:30:43Z",
+      "side": 1,
+      "message": "punch2Reader already updated ReqHandle.  You should not call rh.updateResults at this point.",
+      "revId": "517d23d317af53f6ddd571ba6ae540cbc74e6142",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a63e9f69_647020c7",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 716,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-19T18:30:43Z",
+      "side": 1,
+      "message": "You need to indicate that you are talking about ReqHandle.results.  I was confused by the comment and I needed Emily to explain it to me.",
+      "range": {
+        "startLine": 716,
+        "startChar": 7,
+        "endLine": 716,
+        "endChar": 17
+      },
+      "revId": "517d23d317af53f6ddd571ba6ae540cbc74e6142",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
