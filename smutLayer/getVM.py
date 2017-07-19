@@ -15,6 +15,7 @@
 #    under the License.
 
 import re
+import subprocess
 
 import generalUtils
 import msgs
@@ -156,26 +157,101 @@ def getConsole(rh):
 
     rh.printSysLog("Enter getVM.getConsole")
 
-    rh.printLn("N", "This subfunction is not implemented yet.")
-
     # Transfer the console to this virtual machine.
     parms = ["-T", rh.userid]
     results = invokeSMCLI(rh, "Image_Console_Get", parms)
-    if results['overallRC'] == 0:
-        rh.printLn("N", results['response'])
-    else:
-        # SMAPI API failed.
-        rh.printLn("ES", results['response'])
+    # SMAPI API failed.  We want to distinguish the two
+    # cases here, one if the rc=rs=8, we want to give
+    # a more helpful message than the generic 300 one
+    if results['overallRC'] != 0:
+        strCmd = "Image_Console_Get " + " ".join(parms)
+        if results['rc'] == 8 and results['rs'] == 8:
+            msg = msgs.msg['0409'][1] % (modId, rh.userid)
+        else:
+            msg = results['response']
         rh.updateResults(results)    # Use results from invokeSMCLI
+        rh.printLn("ES", msg)
+        rh.printSysLog("Exit getVM.parseCmdLine, rc: " +
+                       str(rh.results['overallRC']))
+        return rh.results['overallRC']
 
-    if results['overallRC'] == 0:
-        rh.printSysLog("May need to add onlining of the reader")
-        rh.printSysLog("Need to add set the reader class")
-        rh.printSysLog("Find the files for the target user")
-        rh.printSysLog("Read each file and write it out with printLn")
+    # Check whether the reader is online
+    with open('/sys/bus/ccw/drivers/vmur/0.0.000c/online', 'r') as myfile:
+        out = myfile.read().replace('\n', '')
+        myfile.close()
 
+    # Nope, offline, error out and exit
+    if int(out) != 1:
+        msg = msgs.msg['0411'][1]
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0411'][0])
+        rh.printSysLog("Exit getVM.parseCmdLine, rc: " +
+                       str(rh.results['overallRC']))
+        return rh.results['overallRC']
+
+    # We should set class to *, otherwise we will get errors like:
+    # vmur: Reader device class does not match spool file class
+    cmd = ["/sbin/vmcp", "spool reader class *"]
+    try:
+        subprocess.check_output(
+            cmd,
+            close_fds=True,
+            stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        # If we couldn't change the class, that's not fatal
+        # But we want to warn about possibly incomplete
+        # results
+        strCmd = ' '.join(cmd)
+        msg = msgs.msg['0407'][1] % (modId, strCmd, e.output)
+        rh.printLn("WS", msg)
+
+    # List the spool files in the reader
+    cmd = ["/usr/sbin/vmur", "list"]
+    try:
+        files = subprocess.check_output(
+            cmd,
+            close_fds=True,
+            stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        # Uhoh, vmur list command failed for some reason
+        strCmd = ' '.join(cmd)
+        msg = msgs.msg['0408'][1] % (modId, rh.userid,
+                                     strCmd, e.output)
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0408'][0])
+        rh.printSysLog("Exit getVM.parseCmdLine, rc: " +
+                       str(rh.results['overallRC']))
+        return rh.results['overallRC']
+
+    # Now for each line that contains our user and is a
+    # class T console file, add the spool id to our list
+    spoolFiles = files.split('\n')
+    outstr = ""
+    for myfile in spoolFiles:
+        if (myfile != "" and
+                myfile.split()[0] == rh.userid and
+                myfile.split()[2] == "T" and
+                myfile.split()[3] == "CON"):
+
+            fileId = myfile.split()[1]
+            outstr += fileId + " "
+
+    # No files in our list
+    if outstr == "":
+        msg = msgs.msg['0410'][1] % (modId, rh.userid)
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0410'][0])
+        rh.printSysLog("Exit getVM.parseCmdLine, rc: " +
+                       str(rh.results['overallRC']))
+        return rh.results['overallRC']
+
+    # Output the list
+    rh.printLn("N", "List of spool files containing "
+               "console logs from %s: %s" % (rh.userid, outstr))
+
+    rh.results['overallRC'] = 0
     rh.printSysLog("Exit getVM.getConsole, rc: " +
-        str(rh.results['overallRC']))
+                   str(rh.results['overallRC']))
     return rh.results['overallRC']
 
 

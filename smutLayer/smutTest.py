@@ -79,6 +79,9 @@ subs = {
     '<<<unpackScript>>>': '/opt/zthin/bin/unpackdiskimage',
                                         # Location of unpackdiskimage
     '<<<longString>>>': longstring,
+    '<<<consoleID>>>': 'cons',          # An existing userid who has
+                                        #   SP CONS * START in its profile or
+                                        #   directory
 }
 
 # Apply local overrides to the subs dictionary.
@@ -849,6 +852,34 @@ vmModifyTests = [
         'overallRC': [0],
     },
    ]
+guestTests = [
+    {
+        'description': "Power on the system.",
+        'request': "PowerVM <<<consoleID>>> on",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the console log of the system.",
+        'request': "getvm <<<consoleID>>> consoleoutput",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Power off the system.",
+        'request': "PowerVM <<<consoleID>>> off",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Verify no console log is available",
+        'request': "getvm <<<consoleID>>> consoleoutput",
+        'out': "",
+        'overallRC': [1],
+        'rc': [8],
+        'rs': [8]
+    },
+   ]
 
 
 testSets = {
@@ -858,6 +889,9 @@ testSets = {
     'GENERAL': [
         'Tests that are not specific to a particular function.',
         generalTests],
+    'GUEST': [
+        'Guest tests that are not covered under other functions.',
+        guestTests],
     'HOST': [
         'Host related tests',
         hostTests],
