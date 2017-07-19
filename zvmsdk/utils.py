@@ -845,7 +845,13 @@ def create_xcat_mgt_network(mgt_vswitch):
     url = get_xcat_url().xdsh("/%s" % xcat_node_name)
     xdsh_commands = ('command=vmcp q v nic 800')
     body = [xdsh_commands]
-    result = xcat_request("PUT", url, body)['data'][0][0]
+    try:
+        result = xcat_request("PUT", url, body)['data'][0][0]
+    except exception.ZVMXCATInternalError as err:
+        msg = err.format_message()
+        output = re.findall('Error returned from xCAT: (.*)', msg)
+        output_dict = json.loads(output[0])
+        result = output_dict['data'][0]['data'][0]
     cmd = ''
     # nic does not exist
     if 'does not exist' in result:
