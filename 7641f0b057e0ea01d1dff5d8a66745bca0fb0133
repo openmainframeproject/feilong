@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a12d782_f5072d20",
+        "filename": "smutLayer/getVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-19T16:56:40Z",
+      "side": 1,
+      "message": "FYI... I will change this line in my next update for the improved RC header.  I will change it to test for return code 8 which indicates that SMAPI failed as opposed to rc 24 and 25 which are for other issues from smcli.",
+      "range": {
+        "startLine": 166,
+        "startChar": 16,
+        "endLine": 166,
+        "endChar": 25
+      },
+      "revId": "7641f0b057e0ea01d1dff5d8a66745bca0fb0133",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "25dd64a2_b5dddd8d",
+        "filename": "smutLayer/getVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-19T16:56:40Z",
+      "side": 1,
+      "message": "You just want to copy results[\u0027response\u0027] dictionary item to msg.  The response item has the formatted message 300.",
+      "range": {
+        "startLine": 171,
+        "startChar": 0,
+        "endLine": 172,
+        "endChar": 62
+      },
+      "revId": "7641f0b057e0ea01d1dff5d8a66745bca0fb0133",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ce4f8ed3_b0604d36",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-19T16:56:40Z",
+      "side": 1,
+      "message": "This should be a warning message, \u0027W\u0027.",
+      "range": {
+        "startLine": 170,
+        "startChar": 22,
+        "endLine": 170,
+        "endChar": 23
+      },
+      "revId": "7641f0b057e0ea01d1dff5d8a66745bca0fb0133",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7c44d284_79f999c4",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 867,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-19T16:56:40Z",
+      "side": 1,
+      "message": "Will this work if nothing has been spooled since the last time?  If not, I suggest you use the \"shell\" smutTest function to drive a \"vmcp m \u003c\u003c\u003cconsoleID\u003e\u003e\u003e hi\".  That will ensure something is in the reader.",
+      "range": {
+        "startLine": 862,
+        "startChar": 0,
+        "endLine": 867,
+        "endChar": 6
+      },
+      "revId": "7641f0b057e0ea01d1dff5d8a66745bca0fb0133",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9feb5795_27eede65",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 875,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-19T16:56:40Z",
+      "side": 1,
+      "message": "\"had\" ?",
+      "range": {
+        "startLine": 875,
+        "startChar": 54,
+        "endLine": 875,
+        "endChar": 57
+      },
+      "revId": "7641f0b057e0ea01d1dff5d8a66745bca0fb0133",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
