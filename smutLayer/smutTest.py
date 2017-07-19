@@ -14,10 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import re
 import sys
 import subprocess
 from subprocess import CalledProcessError
+from tempfile import NamedTemporaryFile
 
 from smut import SMUT
 from ReqHandle import ReqHandle
@@ -244,19 +246,19 @@ hostTests = [
     {
         'description': "Get the space for all disk pools.",
         'request': "GetHost diskpoolspace",
-        'out': "\'Total\'",
+        'out': "Total",
         'overallRC': [0],
     },
     {
         'description': "Get the space for a specific disk pools.",
         'request': "GetHost diskpoolspace <<<pool3390>>>",
-        'out': "\'^<<<pool3390>>> Total\'",
+        'out': "^<<<pool3390>>> Total",
         'overallRC': [0],
     },
     {
         'description': "Get the FCP Device information.",
         'request': "GetHost fcpdevices",
-        'out': "\'^FCP device number\'",
+        'out': "^FCP device number",
         'overallRC': [0],
     },
     {
@@ -364,7 +366,7 @@ powerTests = [
     {
         'description': "Check status of powered off system.",
         'request': "PowerVM <<<safeID>>> status",
-        'out': "\'^<<<safeID>>>: off\'",
+        'out': "^<<<safeID>>>: off",
         'overallRC': [0],
         'rc': [0],
         'rs': [1]
@@ -372,7 +374,7 @@ powerTests = [
     {
         'description': "Check isreachable of powered off system.",
         'request': "PowerVM <<<safeID>>> isreachable",
-        'out': "'<<<safeID>>>: unreachable'",
+        'out': "<<<safeID>>>: unreachable",
         'overallRC': [0],
         'rs': [0]
     },
@@ -391,7 +393,7 @@ powerTests = [
     {
         'description': "Check status of powered on system.",
         'request': "PowerVM <<<safeID>>> status",
-        'out': "\'^<<<safeID>>>: on\'",
+        'out': "^<<<safeID>>>: on",
         'overallRC': [0],
         'rc': [0],
         'rs': [0]
@@ -399,7 +401,7 @@ powerTests = [
     {
         'description': "Check isreachable of powered on system.",
         'request': "PowerVM <<<safeID>>> isreachable",
-        'out': "'<<<safeID>>>: reachable'",
+        'out': "<<<safeID>>>: reachable",
         'overallRC': [0],
         'rs': [1]
     },
@@ -418,7 +420,7 @@ powerTests = [
     {
         'description': "Isreachable of a paused system is unreachable.",
         'request': "PowerVM <<<safeID>>> isreachable",
-        'out': "'<<<safeID>>>: unreachable'",
+        'out': "<<<safeID>>>: unreachable",
         'overallRC': [0],
         'rs': [0]
     },
@@ -431,7 +433,7 @@ powerTests = [
     {
         'description': "Isreachable of an unpaused system is reachable.",
         'request': "PowerVM <<<safeID>>> isreachable",
-        'out': "'<<<safeID>>>: reachable'",
+        'out': "<<<safeID>>>: reachable",
         'overallRC': [0],
         'rs': [1]
     },
@@ -444,7 +446,7 @@ powerTests = [
     {
         'description': "Isreachable of an unpaused system is reachable.",
         'request': "PowerVM <<<safeID>>> isreachable",
-        'out': "'<<<safeID>>>: reachable'",
+        'out': "<<<safeID>>>: reachable",
         'overallRC': [0],
         'rs': [1]
     },
@@ -686,7 +688,7 @@ vmModifyTests = [
     {
         'description': "Verify IPL statement exists.",
         'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
-        'out': "\'IPL CMS PARM AUTOCR\'",
+        'out': "IPL CMS PARM AUTOCR",
         'overallRC': [0],
     },
     {
@@ -782,31 +784,31 @@ vmModifyTests = [
     {
         'description': "Verify loaddev boot statements exist",
         'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
-        'out': "\'LOADDEV BOOTPROG 0\'",
+        'out': "LOADDEV BOOTPROG 0",
         'overallRC': [0],
     },
     {
         'description': "Verify loaddev addr statements exist",
         'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
-        'out': "\'LOADDEV BR_LBA 0000000000123411\'",
+        'out': "LOADDEV BR_LBA 0000000000123411",
         'overallRC': [0],
     },
     {
         'description': "Verify loaddev lun statements exist",
         'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
-        'out': "\'LOADDEV LUN 0000000012345678\'",
+        'out': "LOADDEV LUN 0000000012345678",
         'overallRC': [0],
     },
     {
         'description': "Verify loaddev wwpn statements exist",
         'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
-        'out': "\'LOADDEV PORTNAME 5005076800AA0001\'",
+        'out': "LOADDEV PORTNAME 5005076800AA0001",
         'overallRC': [0],
     },
     {
         'description': "Verify loaddev wwpn statements exist",
         'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
-        'out': "\'LOADDEV SCPDATA HEX\'",
+        'out': "LOADDEV SCPDATA HEX",
         'overallRC': [0],
     },
     {
@@ -834,7 +836,7 @@ vmModifyTests = [
     {
         'description': "Try to purge read of a bad id.",
         'request': "changeVM <<<horribleID1>>> purgeRDR ",
-        'out': "\'Syntax error in function parameter 8\'",
+        'out': "Syntax error in function parameter 8",
         'overallRC': [1],
         'rc': [24],
         'rs': [813]
@@ -945,32 +947,35 @@ def runTest(smut, test):
         print("    Response: None returned")
 
     # Validate the response strings
-    if 'out' not in test.keys():
-        respScore = 1      # No special value, assume it passed
-    elif len(test['out']) > 0:
+    respScore = 1    # Assume the response tests passed.
+    if 'out' in test.keys() and len(test['out']) > 0:
         # Expect a response let's test it.
         if len(results['response']) == 0:
             # No response returned when one was expected -> failed
             respScore = 0
         else:
             # Test the response to see it matches an expected response
-            respScore = 0        # Assume response doesn't match
+
+            # Put the response into a file.  This avoids problems with
+            # having special characters in the response that would
+            # cause the shell to complain or get confused.
+            tempFile = NamedTemporaryFile(delete=False)
+            file = open(tempFile.name, 'w')
+            for line in results['response']:
+                file.write(line + '\n')
+            file.close()
+
+            cmd = ['grep', ''.join(test['out']), tempFile.name]
 
             try:
-                junk = subprocess.check_output('/bin/echo ' +
-                    ''.join(results['response']) + '|grep ' +
-                    ''.join(test['out']),
-                    stderr=subprocess.STDOUT,
-                    shell=True)
-                if junk != '':
-                    respScore = 1
-                else:
+                junk = subprocess.check_output(cmd, close_fds=True)
+                if junk == '':
                     respScore = 0
             except CalledProcessError as e:
-                junk = e.output
                 respScore = 0
+            os.remove(tempFile.name)
     else:
-        respScore = 1       # No responses listed, treat as a match
+        pass    # No responses listed, treat as a match
 
     # Validate the Overall return code
     orcScore = 0          # Assume RC is not a desired one
