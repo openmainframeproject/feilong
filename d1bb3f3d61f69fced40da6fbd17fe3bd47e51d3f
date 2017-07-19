@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ec84253b_da22ef01",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 13
+      },
+      "lineNbr": 907,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-19T12:58:36Z",
+      "side": 1,
+      "message": "I don\u0027t know if you need the concurrent punch case in smutTest, that was just a separate test I suggested to figure out if we really got that error message from vmur",
+      "revId": "d1bb3f3d61f69fced40da6fbd17fe3bd47e51d3f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "747a883d_328ac656",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 13
+      },
+      "lineNbr": 732,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-19T12:58:36Z",
+      "side": 1,
+      "message": "This looks good, you could save a bit of code if you want by eliminating the 0 in secs and setting results[\u0027rc\u0027]\u003d9 before the for loop.   If it\u0027s successful, line 738 will re-set results[\u0027rc\u0027] and if it has another failure, line 746 will set results[\u0027rc\u0027]\u003d7",
+      "revId": "d1bb3f3d61f69fced40da6fbd17fe3bd47e51d3f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
