@@ -276,7 +276,7 @@ class HandlersGuestTest(SDKWSGITest):
                           self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch.object(guest.VMHandler, 'get_nic_info')
+    @mock.patch.object(guest.VMHandler, 'get_nic')
     def test_guest_get_nic_info(self, mock_get, mock_userid):
         mock_userid.return_value = FAKE_USERID
 
@@ -322,51 +322,53 @@ class HandlersGuestTest(SDKWSGITest):
         guest.guest_get_vnics_info(self.req)
         mock_get.assert_called_once_with(FAKE_USERID_LIST)
 
+    def mock_get_userid_vdev(self, env, param):
+        if param == 'userid':
+            return FAKE_USERID
+        else:
+            return '1000'
+
+    @mock.patch.object(api.SDKAPI, 'guest_delete_nic')
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_delete_nic(self, mock_userid, mock_delete):
+        body_str = '{"info": {}}'
+        self.req.body = body_str
+
+        mock_userid.side_effect = self.mock_get_userid_vdev
+
+        guest.guest_delete_nic(self.req)
+        mock_delete.assert_called_once_with(FAKE_USERID, "1000",
+                                            active=False)
+
     @mock.patch.object(api.SDKAPI, 'guest_nic_couple_to_vswitch')
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_couple_nic(self, mock_userid, mock_couple):
-        body_str = """{"info": {"couple": "true",
-                       "vswitch": "v1", "vdev": "1111"}}"""
+        body_str = '{"info": {"couple": "true", "vswitch": "vsw1"}}'
         self.req.body = body_str
 
-        mock_userid.return_value = FAKE_USERID
+        mock_userid.side_effect = self.mock_get_userid_vdev
 
         guest.guest_couple_uncouple_nic(self.req)
-        mock_couple.assert_called_once_with(FAKE_USERID, "1111",
-            "v1", active=False)
+        mock_couple.assert_called_once_with(FAKE_USERID, "1000", "vsw1",
+                                            active=False)
 
     @mock.patch.object(api.SDKAPI, 'guest_nic_uncouple_from_vswitch')
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_uncouple_nic(self, mock_userid, mock_uncouple):
 
-        body_str = """{"info": {"couple": "false",
-                       "vswitch": "v1", "vdev": "1111",
-                       "active": "false"}}"""
+        body_str = '{"info": {"couple": "false"}}'
         self.req.body = body_str
 
-        mock_userid.return_value = FAKE_USERID
+        mock_userid.side_effect = self.mock_get_userid_vdev
 
         guest.guest_couple_uncouple_nic(self.req)
-        mock_uncouple.assert_called_once_with(FAKE_USERID, "1111",
+        mock_uncouple.assert_called_once_with(FAKE_USERID, "1000",
                                               active=False)
 
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_couple_nic_missing_required_1(self, mock_userid):
 
-        body_str = """{"info": {"couple": "true",
-                       "vswitch": "v1"}}"""
-        self.req.body = body_str
-
-        mock_userid.return_value = FAKE_USERID
-
-        self.assertRaises(exception.ValidationError,
-                          guest.guest_couple_uncouple_nic,
-                          self.req)
-
-    @mock.patch.object(util, 'wsgi_path_item')
-    def test_guest_couple_nic_missing_required_2(self, mock_userid):
-
-        body_str = '{"info1": {}}'
+        body_str = '{"info": {}}'
         self.req.body = body_str
 
         mock_userid.return_value = FAKE_USERID
@@ -378,8 +380,7 @@ class HandlersGuestTest(SDKWSGITest):
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_uncouple_nic_bad_vswitch(self, mock_userid):
 
-        body_str = """{"info": {"couple": "false",
-                       "vswitch": 1233, "port": "p1"}}"""
+        body_str = '{"info": {"couple": "false", "active": "dummy"}}'
         self.req.body = body_str
 
         mock_userid.return_value = FAKE_USERID
@@ -391,8 +392,7 @@ class HandlersGuestTest(SDKWSGITest):
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_uncouple_nic_bad_couple(self, mock_userid):
 
-        body_str = """{"info": {"couple": "couple",
-                       "vswitch": "v1", "port": "p1"}}"""
+        body_str = '{"info": {"couple": "couple"}}'
         self.req.body = body_str
 
         mock_userid.return_value = FAKE_USERID

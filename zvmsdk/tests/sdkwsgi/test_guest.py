@@ -56,6 +56,13 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
+    def _guest_nic_delete(self, vdev="1000"):
+        body = '{"nic": {}}'
+        resp = self.client.api_request(url='/guests/RESTT100/nic/2000',
+                                       method='DELETE',
+                                       body=body)
+        self.assertEqual(200, resp.status_code)
+
     def _guest_get(self):
         resp = self.client.api_request(url='/guests/RESTT100',
                                        method='GET')
@@ -158,17 +165,15 @@ class GuestHandlerTestCase(unittest.TestCase):
         self.assertEqual(204, resp.status_code)
 
     def _vswitch_couple(self):
-        body = """{"info": {"couple": "True", "vswitch": "RESTVSW1",
-                   "vdev": "2000"}}"""
-        resp = self.client.api_request(url='/guests/RESTT100/nic',
+        body = '{"info": {"couple": "True", "vswitch": "RESTVSW1"}}'
+        resp = self.client.api_request(url='/guests/RESTT100/nic/2000',
                                        method='PUT',
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
     def _vswitch_uncouple(self):
-        body = """{"info": {"couple": "False", "vswitch": "RESTVSW1",
-                   "vdev": "2000"}}"""
-        resp = self.client.api_request(url='/guests/RESTT100/nic',
+        body = '{"info": {"couple": "False"}}'
+        resp = self.client.api_request(url='/guests/RESTT100/nic/2000',
                                        method='PUT',
                                        body=body)
         self.assertEqual(200, resp.status_code)
@@ -185,23 +190,13 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             self._vswitch_uncouple()
 
+            self._guest_nic_delete()
+
         except Exception as e:
             raise e
         finally:
             self._guest_delete()
             self._vswitch_delete()
-
-    def test_guest_couple_uncouple_invalid(self):
-        body = '{"info1": {"couple": "True", "vswitch": "v1", "vdev": "p1"}'
-        resp = self.client.api_request(url='/guests/1/nic', method='PUT',
-                                       body=body)
-        self.assertEqual(400, resp.status_code)
-
-        # missing vdev
-        body = '{"info": {"couple": "False", "vswitch": "v1"}'
-        resp = self.client.api_request(url='/guests/1/nic', method='PUT',
-                                       body=body)
-        self.assertEqual(400, resp.status_code)
 
 
 class GuestActionTestCase(unittest.TestCase):
