@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "404c08b8_86d4f60f",
+        "filename": "smutLayer/getVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2017-07-19T17:45:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9a12d782_f5072d20",
+      "range": {
+        "startLine": 166,
+        "startChar": 16,
+        "endLine": 166,
+        "endChar": 25
+      },
+      "revId": "7641f0b057e0ea01d1dff5d8a66745bca0fb0133",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "25dd64a2_b5dddd8d",
         "filename": "smutLayer/getVM.py",
         "patchSetId": 2
@@ -177,6 +201,54 @@
       "writtenOn": "2017-07-19T17:31:46Z",
       "side": 1,
       "message": "Any time you do a sp cons close there\u0027s always something for it to write.  Minimally it would have the Ready; message and the \"sp cons close\" command.  So as long as the id is logged on and spooling its console, we\u0027ll have something to process.",
+      "parentUuid": "7c44d284_79f999c4",
+      "range": {
+        "startLine": 862,
+        "startChar": 0,
+        "endLine": 867,
+        "endChar": 6
+      },
+      "revId": "7641f0b057e0ea01d1dff5d8a66745bca0fb0133",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e88b9894_92515b62",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 867,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2017-07-19T17:45:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7611af91_c5f23741",
+      "range": {
+        "startLine": 862,
+        "startChar": 0,
+        "endLine": 867,
+        "endChar": 6
+      },
+      "revId": "7641f0b057e0ea01d1dff5d8a66745bca0fb0133",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8eaec69d_0a0c5705",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 867,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2017-07-19T17:45:06Z",
+      "side": 1,
+      "message": "Done",
       "parentUuid": "7c44d284_79f999c4",
       "range": {
         "startLine": 862,
