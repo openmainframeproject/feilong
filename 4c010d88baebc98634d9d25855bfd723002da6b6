@@ -1,0 +1,153 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a22f750c_3575f456",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 15
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-19T16:06:08Z",
+      "side": 1,
+      "message": "Why is there a space before the comma in the message?  I suggest you remove the extra space.",
+      "range": {
+        "startLine": 167,
+        "startChar": 75,
+        "endLine": 167,
+        "endChar": 76
+      },
+      "revId": "4c010d88baebc98634d9d25855bfd723002da6b6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2632ce1d_91a4d213",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 15
+      },
+      "lineNbr": 712,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-19T16:06:08Z",
+      "side": 1,
+      "message": "You forgot to mention the \"spool class\"",
+      "revId": "4c010d88baebc98634d9d25855bfd723002da6b6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8f4c9ff1_c6eb5240",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 15
+      },
+      "lineNbr": 714,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-19T16:06:08Z",
+      "side": 1,
+      "message": "If you create an error message then you print it to the ReqHandle response list.  You should indicate this.",
+      "revId": "4c010d88baebc98634d9d25855bfd723002da6b6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7fd46048_fb1d9ce0",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 15
+      },
+      "lineNbr": 717,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-19T16:06:08Z",
+      "side": 1,
+      "message": "Next 3 lines should be !\u003d",
+      "range": {
+        "startLine": 717,
+        "startChar": 68,
+        "endLine": 717,
+        "endChar": 69
+      },
+      "revId": "4c010d88baebc98634d9d25855bfd723002da6b6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3defcefc_7a7adab5",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 15
+      },
+      "lineNbr": 794,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-19T16:06:08Z",
+      "side": 1,
+      "message": "Please indicate that you are not updating the return/reason code values.  I read this line and said, \"Huh, the line above updates results.",
+      "range": {
+        "startLine": 794,
+        "startChar": 43,
+        "endLine": 794,
+        "endChar": 44
+      },
+      "revId": "4c010d88baebc98634d9d25855bfd723002da6b6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b11c6288_9fec3f10",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 15
+      },
+      "lineNbr": 794,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-19T16:06:08Z",
+      "side": 1,
+      "message": "The line about updates results.  I suggest you clarify that you are not updating the results return code and reason code values.",
+      "range": {
+        "startLine": 794,
+        "startChar": 36,
+        "endLine": 794,
+        "endChar": 48
+      },
+      "revId": "4c010d88baebc98634d9d25855bfd723002da6b6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2513b368_24d71eb1",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 15
+      },
+      "lineNbr": 822,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-19T16:06:08Z",
+      "side": 1,
+      "message": "You are not updating the results return code/reason code values.  You are updating the results response.  Please clarify.",
+      "range": {
+        "startLine": 822,
+        "startChar": 36,
+        "endLine": 822,
+        "endChar": 43
+      },
+      "revId": "4c010d88baebc98634d9d25855bfd723002da6b6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
