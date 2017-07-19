@@ -550,8 +550,8 @@ class XCATClient(ZVMClient):
                         msg=("The specified virtual device number "
                              "has already been used"))
         if len(nic_vdev) > 4:
-            raise exception.ZVMException(
-                        msg=("Virtual device number is not valid "))
+            raise exception.ZVMNetworkError(
+                        msg=("Virtual device number is not valid"))
 
         zhcpnode = self._get_hcp_info()['nodename']
         LOG.debug('Nic attributes: vdev is %(vdev)s, '
@@ -592,7 +592,7 @@ class XCATClient(ZVMClient):
                 exception.ZVMNetworkError):
             result = zvmutils.xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
-                raise exception.ZVMException(
+                raise exception.ZVMNetworkError(
                     msg=("Failed to create nic %s for %s in "
                          "the guest's user direct, %s") %
                          (vdev, userid, result['data'][0]))
@@ -643,7 +643,7 @@ class XCATClient(ZVMClient):
                                                           result['data'][0],
                                                           del_rc['data'][0])
 
-                    raise exception.ZVMException(msg)
+                    raise exception.ZVMNetworkError(msg)
 
         self._add_switch_table_record(userid, vdev, nic_id=nic_id,
                                       zhcp=zhcpnode)
@@ -684,7 +684,7 @@ class XCATClient(ZVMClient):
                     LOG.warning("Virtual device %s does not exist in "
                                 "the guest's user direct", vdev)
                 else:
-                    raise exception.ZVMException(
+                    raise exception.ZVMNetworkError(
                         msg=("Failed to delete nic %s for %s in "
                              "the guest's user direct, %s") %
                              (vdev, userid, result['data'][0]))
@@ -708,7 +708,7 @@ class XCATClient(ZVMClient):
                         LOG.warning("Virtual device %s does not exist on "
                                     "the active guest system", vdev)
                     else:
-                        raise exception.ZVMException(
+                        raise exception.ZVMNetworkError(
                             msg=("Failed to delete nic %s for %s on "
                                  "the active guest system, %s") %
                                  (vdev, userid, result['data'][0]))
@@ -921,7 +921,7 @@ class XCATClient(ZVMClient):
                 exception.ZVMNetworkError):
             result = zvmutils.xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
-                raise exception.ZVMException(
+                raise exception.ZVMNetworkError(
                     msg=("Failed to grant user %s to vswitch %s, %s") %
                         (userid, vswitch_name, result['data'][0][0]))
 
@@ -943,7 +943,7 @@ class XCATClient(ZVMClient):
                 exception.ZVMNetworkError):
             result = zvmutils.xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
-                raise exception.ZVMException(
+                raise exception.ZVMNetworkError(
                     msg=("Failed to revoke user %s from vswitch %s, %s") %
                         (userid, vswitch_name, result['data'][0][0]))
 
@@ -964,7 +964,7 @@ class XCATClient(ZVMClient):
                 exception.ZVMNetworkError):
             result = zvmutils.xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
-                raise exception.ZVMException(
+                raise exception.ZVMNetworkError(
                     msg=("Failed to couple nic %s to vswitch %s "
                          "in the guest's user direct, %s") %
                          (vdev, vswitch_name, result['data'][0]))
@@ -1020,7 +1020,7 @@ class XCATClient(ZVMClient):
                                             result['data'][0],
                                             dis_rc['data'][0])
 
-                        raise exception.ZVMException(msg)
+                        raise exception.ZVMNetworkError(msg)
 
         """Update information in xCAT switch table."""
         self._update_xcat_switch(userid, vdev, vswitch_name)
@@ -1052,7 +1052,7 @@ class XCATClient(ZVMClient):
                     LOG.warning("Virtual device %s is already disconnected "
                                 "in the guest's user direct", vdev)
                 else:
-                    raise exception.ZVMException(
+                    raise exception.ZVMNetworkError(
                         msg=("Failed to uncouple nic %s "
                              "in the guest's user direct,  %s") %
                              (vdev, result['data'][0]))
@@ -1079,7 +1079,7 @@ class XCATClient(ZVMClient):
                                     "disconnected on the active "
                                     "guest system", vdev)
                     else:
-                        raise exception.ZVMException(
+                        raise exception.ZVMNetworkError(
                             msg=("Failed to uncouple nic %s "
                                  "on the active guest system, %s") %
                                  (vdev, result['data'][0]))
@@ -1182,7 +1182,7 @@ class XCATClient(ZVMClient):
                 exception.ZVMNetworkError):
             result = zvmutils.xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
-                raise exception.ZVMException(
+                raise exception.ZVMNetworkError(
                     msg=("Failed to create vswitch %s: %s") %
                         (name, result['data']))
 
@@ -1508,7 +1508,7 @@ class XCATClient(ZVMClient):
                 exception.ZVMNetworkError):
             result = zvmutils.xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
-                raise exception.ZVMException(
+                raise exception.ZVMNetworkError(
                     msg=("Failed to set vlan id for user %s, %s") %
                         (userid, result['data'][0][0]))
 
@@ -1577,7 +1577,7 @@ class XCATClient(ZVMClient):
                 exception.ZVMNetworkError):
             result = zvmutils.xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
-                    raise exception.ZVMException(
+                    raise exception.ZVMNetworkError(
                     msg=("switch %s changes failed, %s") %
                         (switch_name, result['data']))
         LOG.info('change vswitch %s done.' % switch_name)
@@ -1606,7 +1606,7 @@ class XCATClient(ZVMClient):
                     LOG.warning("Vswitch %s does not exist", switch_name)
                     return
                 else:
-                    raise exception.ZVMException(
+                    raise exception.ZVMNetworkError(
                     msg=("Failed to delete vswitch %s: %s") %
                         (switch_name, result['data']))
 

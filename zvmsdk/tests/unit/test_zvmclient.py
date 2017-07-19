@@ -1478,7 +1478,7 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
                                  "errorcode": [['1']]}
         get_userid.return_value = "fakenode"
 
-        self.assertRaises(exception.ZVMException,
+        self.assertRaises(exception.ZVMNetworkError,
                           self._zvmclient.set_vswitch,
                           "vswitch_name", grant_userid='fake_id')
 
@@ -1528,7 +1528,7 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
                                  "errorcode": [['1']]}
         get_userid.return_value = "fakenode"
 
-        self.assertRaises(exception.ZVMException,
+        self.assertRaises(exception.ZVMNetworkError,
                           self._zvmclient.delete_vswitch,
                           "vswitch_name", 2)
 

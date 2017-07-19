@@ -885,7 +885,7 @@ def create_xcat_mgt_network(mgt_vswitch):
         message = ("Command 'query v nic' return %s,"
                    " it is unkown information for zvm-agent") % result
         LOG.error(("Error: %s") % message)
-        raise exception.ZVMException(msg=message)
+        raise exception.ZVMNetworkError(msg=message)
     url = get_xcat_url().xdsh("/%s") % xcat_node_name
     cmd += ('/usr/bin/perl /usr/sbin/sspqeth2.pl ' +
             '-a %s -d 0800 0801 0802 -e enccw0.0.0800 -m %s -g %s'
