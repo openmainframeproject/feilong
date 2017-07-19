@@ -331,8 +331,7 @@ class SDKAPI(object):
         :param bool active: whether delete a nic on active guest system
 
         """
-        self._networkops.delete_nic(self, userid, vdev,
-                                  active=active)
+        self._networkops.delete_nic(userid, vdev, active=active)
 
     @check_input_types(_TUSERID)
     def guest_get_nic_vswitch_info(self, userid):
