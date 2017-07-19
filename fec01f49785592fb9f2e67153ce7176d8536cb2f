@@ -16,6 +16,24 @@
       "revId": "fec01f49785592fb9f2e67153ce7176d8536cb2f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ec3de9e3_fea6f5ac",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 966,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-19T13:54:58Z",
+      "side": 1,
+      "message": "Using grep is much more flexible than using python\u0027s regular expression support.",
+      "parentUuid": "2d2a97ab_07d17cb8",
+      "revId": "fec01f49785592fb9f2e67153ce7176d8536cb2f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
