@@ -403,42 +403,54 @@ def invokeSMCLI(rh, api, parms):
                 strCmd, rcHeader[0], rcHeader[1])
         else:
             goodHeader = True
-            # Convert the overall rc from SMAPI to an int and pass
-            # it along in the errno field.
+            # Convert the first word (overall rc from SMAPI) to an int
+            # and set the SMUT overall rc based on this value.
+            orcError = False
             try:
-                results['errno'] = int(codes[0])
+                results['overallRC'] = int(codes[0])
+                if results['overallRC'] not in [8, 24, 25]:
+                    orcError = True
             except ValueError:
                 goodHeader = False
-                results = msgs.msg['0304'][0]
-                results['response'] = msgs.msg['0304'][1] % (modId,
-                    api, codes[2], strCmd, rcHeader[0], rcHeader[1])
-
-            # Convert the return code to an int.
-            try:
-                results['rc'] = int(codes[1])
-            except ValueError:
-                goodHeader = False
+                orcError = True
+            if orcError:
+                results['overallRC'] = 25    # SMCLI Internal Error
                 results = msgs.msg['0302'][0]
                 results['response'] = msgs.msg['0302'][1] % (modId,
                     api, codes[0], strCmd, rcHeader[0], rcHeader[1])
 
-            # Convert the reason code to an int.
+            # Convert the second word to an int and save as rc.
             try:
-                results['rs'] = int(codes[2])
+                results['rc'] = int(codes[1])
             except ValueError:
                 goodHeader = False
                 results = msgs.msg['0303'][0]
                 results['response'] = msgs.msg['0303'][1] % (modId,
                     api, codes[1], strCmd, rcHeader[0], rcHeader[1])
 
+            # Convert the second word to an int and save it as either
+            # the rs or errno.
+            try:
+                word3 = int(codes[2])
+                if results['overallRC'] == 8:
+                    results['rs'] = word3    # Must be an rs
+                elif results['overallRC'] == 25:
+                    results['errno'] = word3    # Must be the errno
+                # We ignore word 3 for everyone else and default to 0.
+            except ValueError:
+                goodHeader = False
+                results = msgs.msg['0304'][0]
+                results['response'] = msgs.msg['0304'][1] % (modId,
+                    api, codes[1], strCmd, rcHeader[0], rcHeader[1])
+
         results['strError'] = rcHeader[1].lstrip()
 
         if goodHeader:
-            results['overallRC'] = 1    # Set the overall RC
             # Produce a message that provides the error info.
             results['response'] = msgs.msg['0300'][1] % (modId,
-                    api, results['rc'], results['rs'],
-                    results['errno'], strCmd, smcliResp[1])
+                    api, results['overallRC'], results['rc'],
+                    results['rs'], results['errno'],
+                    strCmd, smcliResp[1])
 
     rh.printSysLog("Exit vmUtils.invokeSMCLI, rc: " +
         str(results['overallRC']))
