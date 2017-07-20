@@ -759,7 +759,7 @@ class XCATClient(ZVMClient):
             body.append('remotehost=%s' % remotehost)
 
         with zvmutils.expect_xcat_call_failed_and_reraise(
-                exception.ZVMXCATDeployNodeFailed):
+                exception.ZVMXCATDeployNodeFailed, node=node):
             zvmutils.xcat_request("PUT", url, body)
 
     def check_space_imgimport_xcat(self, tar_file, xcat_free_space_threshold,
