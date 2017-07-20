@@ -19,7 +19,8 @@ import subprocess
 
 import generalUtils
 import msgs
-from vmUtils import execCmdThruIUCV, invokeSMCLI
+from vmUtils import execCmdThruIUCV, getPerfInfo, invokeSMCLI
+from vmUtils import isLoggedOn
 
 modId = 'GVM'
 version = "1.0.0"
@@ -282,7 +283,7 @@ def getDirectory(rh):
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit getVM.getDirectory, rc: " +
-        str(rh.results['overallRC']))
+                   str(rh.results['overallRC']))
     return rh.results['overallRC']
 
 
@@ -301,13 +302,65 @@ def getStatus(rh):
        Return code - 0: ok, non-zero: error
     """
 
-    rc = 0
     rh.printSysLog("Enter getVM.getStatus, userid: " + rh.userid)
 
-    rh.printLn("N", "This subfunction is not implemented yet.")
+    results = isLoggedOn(rh, rh.userid)
+    if results['rc'] != 0:
+        # Uhoh, can't determine if guest is logged on or not
+        rh.updateResults(results)
+        rh.printSysLog("Exit getVM.getStatus, rc: " +
+                       str(rh.results['overallRC']))
+        return rh.results['overallRC']
 
-    rh.printSysLog("Exit getVM.getStatus, rc: " + str(rc))
-    return rc
+    if results['rs'] == 1:
+        # Guest is logged off, everything is 0
+        powerStr = "Power state: off"
+        memStr = "Total Memory: 0M"
+        procStr = "Processors: 0"
+        timeStr = "CPU Used Time: 0 sec"
+
+    else:
+        powerStr = "Power state: on"
+
+    if 'power' in rh.parms:
+        # Test here to see if we only need power state
+        # Then we can return early
+        rh.printLn("N", powerStr)
+        rh.updateResults(results)
+        rh.printSysLog("Exit getVM.getStatus, rc: " +
+                       str(rh.results['overallRC']))
+        return rh.results['overallRC']
+
+    if results['rs'] != 1:
+        # Guest is logged on, go get more info
+        results = getPerfInfo(rh, rh.userid)
+
+        if results['overallRC'] != 0:
+            # Something went wrong in subroutine, exit
+            rh.updateResults(results)
+            rh.printSysLog("Exit getVM.getStatus, rc: " +
+                           str(rh.results['overallRC']))
+            return rh.results['overallRC']
+        else:
+            # Everything went well, response should be good
+            memStr = results['response'].split("\n")[0]
+            procStr = results['response'].split("\n")[1]
+            timeStr = results['response'].split("\n")[2]
+
+    # Build our output string according
+    # to what information was asked for
+    if 'memory' in rh.parms:
+        outStr = memStr
+    elif 'cpu' in rh.parms:
+        outStr = procStr + "\n" + timeStr
+    else:
+        # Default to all
+        outStr = powerStr + "\n" + memStr
+        outStr += "\n" + procStr + "\n" + timeStr
+    rh.printLn("N", outStr)
+    rh.printSysLog("Exit getVM.getStatus, rc: " +
+                   str(rh.results['overallRC']))
+    return rh.results['overallRC']
 
 
 def getVersion(rh):

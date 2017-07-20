@@ -194,6 +194,8 @@ msg = {
             "ULT%s0411E Unable to receive console output file. " +
             "Reader not online.  /sys/bus/ccw/drivers/vmur/0.0.000c" +
             "/online = 0"],
-
+    '0412': [{'overallRC': 4, 'rc': 4, 'rs': 412},     # dict is not used.
+            "ULT%s0412E Malformed reply from SMAPI, unable to fill " +
+            "in performance information.  Response is %s"],
     # 5000-6100: Reserved for SMCLI
     }
