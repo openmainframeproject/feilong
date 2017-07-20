@@ -801,7 +801,8 @@ class SDKAPI(object):
     @check_input_types(dict, dict, dict, bool)
     def volume_attach(self, guest, volume, connection_info,
                       is_rollback_in_failure=False):
-        """ Attach a volume to a guest.
+        """ Attach a volume to a guest. It's prerequisite to active multipath
+            feature on the guest before utilizing persistent volumes.
 
         :param dict guest: A dict comprised of a list of properties of a guest,
                including:
@@ -850,7 +851,8 @@ class SDKAPI(object):
     @check_input_types(dict, dict, dict, bool)
     def volume_detach(self, guest, volume, connection_info,
                       is_rollback_in_failure=False):
-        """ Detach a volume from a guest.
+        """ Detach a volume from a guest. It's prerequisite to active multipath
+            feature on the guest before utilizing persistent volumes.
 
         :param dict guest: A dict comprised of a list of properties of a guest,
                including:
