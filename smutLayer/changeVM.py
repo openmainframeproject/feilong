@@ -26,7 +26,7 @@ from subprocess import CalledProcessError
 import generalUtils
 import msgs
 from vmUtils import disableEnableDisk, execCmdThruIUCV, installFS
-from vmUtils import invokeSMCLI, isLoggedOn, purgeReader
+from vmUtils import invokeSMCLI, isLoggedOn, punch2reader, purgeReader
 
 
 modId = "CVM"
@@ -357,16 +357,9 @@ def addAEMOD(rh):
             tar.add(tempDir, arcname=os.path.basename(tempDir))
 
         # Punch file to reader
-        rh.parms['class'] = fileClass
-        rh.parms['file'] = trunkFile
-        results = punchFile(rh)
-        if results != 0:
-            # Failed to punch file to the guest.
-            shutil.rmtree(tempDir)
-            msg = msgs.msg['0401'][1] % (modId, rh.parms['file'],
-                rh.userid, results['response'])
-            rh.printLn("ES", msg)
-            rh.updateResults(results)    # Pass back results from punchFile
+        punch2reader(rh, rh.userid, tempDir + "/" + trunkFile, fileClass)
+        shutil.rmtree(tempDir)
+
     else:
         # Worker script does not exist.
         shutil.rmtree(tempDir)
@@ -682,109 +675,13 @@ def punchFile(rh):
 
     rh.printSysLog("Enter changeVM.punchFile")
     results = {'overallRC': 0, 'rc': 0, 'rs': 0}
+
     # Default spool class in "A" , if specified change to specified class
     spoolClass = "A"
     if 'class' in rh.parms:
         spoolClass = str(rh.parms['class'])
-    # Setting rc to time out rc code as default and its changed during runtime
-    results['rc'] = 9
-    # Punch to the current user intially and then change the spool class.
-    for secs in [1, 2, 3, 5, 10]:
-        cmd = ["vmur", "punch", "-r", rh.parms['file']]
-        try:
-            results['response'] = subprocess.check_output(cmd,
-                                        close_fds=True,
-                                        stderr=subprocess.STDOUT)
-            results['rc'] = 0
-            rh.updateResults(results)
-            break
-        except CalledProcessError as e:
-            results['response'] = e.output
-            # Check if we have concurrent instance of vmur active
-            if results['response'].find("A concurrent instance of vmur" +
-                " is already active") == -1:
-                # Failure in VMUR punch update the rc
-                results['rc'] = 7
-                break
-            else:
-                # if concurrent vmur is active try after sometime
-                    rh.printSysLog("Punch in use. Retrying after " +
-                                        str(secs) + " seconds")
-                    time.sleep(secs)
 
-    if results['rc'] == 7:
-        # Failure while issuing vmur command (For eg: invalid file given)
-        msg = msgs.msg['0401'][1] % (modId,
-                                        rh.parms['file'],
-                                        rh.userid, results['response'])
-        rh.printLn("ES", msg)
-        rh.updateResults(msgs.msg['0401'][0])
-
-    elif results['rc'] == 9:
-        # Failure due to vmur timeout
-        msg = msgs.msg['0406'][1] % (modId,
-                                        rh.parms['file'])
-        rh.printLn("ES", msg)
-        rh.updateResults(msgs.msg['0406'][0])
-
-    if rh.results['overallRC'] == 0:
-        # On VMUR success change the class of the spool file
-        spoolId = re.findall(r'\d+', str(results['response']))
-        cmd = ["vmcp", "change", "rdr", str(spoolId[0]), "class", spoolClass]
-        try:
-            results['response'] = subprocess.check_output(cmd,
-                                        close_fds=True,
-                                        stderr=subprocess.STDOUT)
-            rh.updateResults(results)
-        except CalledProcessError as e:
-            msg = msgs.msg['0404'][1] % (modId,
-                                         spoolClass,
-                                         e.output)
-            rh.printLn("ES", msg)
-            rh.updateResults(msgs.msg['0404'][0])
-            # Class change failed
-            # Delete the punched file from current userid
-            cmd = ["vmcp", "purge", "rdr", spoolId[0]]
-            try:
-                results['response'] = subprocess.check_output(cmd,
-                                            close_fds=True,
-                                            stderr=subprocess.STDOUT)
-            # We only need to issue the printLn.
-            # Don't need to change return/reason code values
-            except CalledProcessError as e:
-                msg = msgs.msg['0401'][1] % (modId,
-                                             rh.parms['file'],
-                                             rh.userid, e.output)
-                rh.printLn("ES", msg)
-
-    if rh.results['overallRC'] == 0:
-        # Transfer the file from current user to specified user
-        cmd = ["vmcp", "transfer", "*", "rdr", str(spoolId[0]), "to",
-                rh.userid, "rdr"]
-        try:
-            results['response'] = subprocess.check_output(cmd,
-                                        close_fds=True,
-                                        stderr=subprocess.STDOUT)
-            rh.updateResults(results)
-        except CalledProcessError as e:
-            msg = msgs.msg['0401'][1] % (modId,
-                                         rh.parms['file'],
-                                         rh.userid, e.output)
-            rh.printLn("ES", msg)
-            rh.updateResults(msgs.msg['0401'][0])
-            # Transfer failed so delete the punched file from current userid
-            cmd = ["vmcp", "purge", "rdr", spoolId[0]]
-            try:
-                results['response'] = subprocess.check_output(cmd,
-                                            close_fds=True,
-                                            stderr=subprocess.STDOUT)
-                # We only need to issue the printLn.
-                # Don't need to change return/reason code values
-            except CalledProcessError as e:
-                msg = msgs.msg['0401'][1] % (modId,
-                                             rh.parms['file'],
-                                             rh.userid, e.output)
-                rh.printLn("ES", msg)
+    punch2reader(rh, rh.userid, rh.parms['file'], spoolClass)
 
     rh.printSysLog("Exit changeVM.punchFile, rc: " +
         str(rh.results['overallRC']))
