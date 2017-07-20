@@ -23,16 +23,31 @@ void fillSMAPIsyntaxReason(int rs, char * outreasonMsg);
 
 /**
  * print SMAPI returnCode reasonCode Description and log the SMAPI error
+ *
+ * Use error codes from 5000 to 5999 for these errors.
+ * wrapperults.c will use values from 6000 to 6100.
+ * Use SMC for zthin smcli errors as the module abbreviation.
+ * example: ULGSMC5000E
  */
 void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct _vmApiInternalContext* vmapiContextP,
                                       int newHeader) {
     char errMsg[512];
+    char errMsgPlusNum[540];
     char line[1024];
+    char msgNum[20];
+    char * severity;
     char syntaxErrorMessage[150];
     bool logMSG = true;
     // If the trace file has not been read yet, do it.
     if (!(vmapiContextP->smTraceDetails->traceFileRead)) {
         readTraceFile(vmapiContextP);
+    }
+    if (rc == 0) {
+        severity = "I";
+    } else if (rc == 4) {
+        severity = "W";
+    } else {
+        severity = "E";
     }
     // Handle return code (rc) and reason code (rs) as defined
     if (rc == 0 && rs == 0) {
@@ -103,6 +118,7 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
         logMSG = false;
     } else if (rc == 0 && rs == 108) {
         sprintf(errMsg, "Asynchronous operation failed\n");
+    /* use the same message number for all the functional level output */
     } else if (rc == 0 && rs == 540) {
         sprintf(errMsg, "The API functional level is z/VM V5.4\n");
         logMSG = false;
@@ -117,6 +133,9 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
         logMSG = false;
     } else if (rc == 0 && rs == 630) {
         sprintf(errMsg, "The API functional level is z/VM V6.3\n");
+        logMSG = false;
+    } else if (rc == 0 && rs == 640) {
+        sprintf(errMsg, "The API functional level is z/VM V6.4\n");
         logMSG = false;
     } else if (rc == 4 && rs == 4) {
         sprintf(errMsg, "Request does not exist\n");
@@ -155,7 +174,7 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
     } else if (rc == 8 && rs == 12 && strcmp(class, "Page_or_Spool_Volume_Add") == 0) {
         sprintf(errMsg, "Device not a volume\n");
     } else if (rc == 8 && rs == 12 && strcmp(class, "VMRELOCATE_Image_Attributes") == 0) {
-    	sprintf(errMsg, "target_identifier not logged on\n");
+        sprintf(errMsg, "target_identifier not logged on\n");
     } else if (rc == 8 && rs == 12 && strcmp(class, "Network_IP_Interface_Remove") == 0) {
         sprintf(errMsg, "An error was encountered on IFCONFIG command\n");
     } else if (rc == 8 && rs == 13) {
@@ -236,8 +255,6 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
         sprintf(errMsg, "Volume does not support sharing\n");
     } else if (rc == 8) {
         sprintf(errMsg, "The RS %d represents the HCP/DMS %d message number\n", rs, rs);
-    } else if (rc == 24 && rs == 13) {
-        sprintf(errMsg, "Metadata entry name value length exceeds allowable length (1024)\n");
     } else if (rc == 24) {
         fillSMAPIsyntaxReason(rs, syntaxErrorMessage);
         sprintf(errMsg, "Syntax error in function parameter %d; %s\n", (rs/100), syntaxErrorMessage);
@@ -509,9 +526,9 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
     } else if (rc == 424 && rs == 4) {
         sprintf(errMsg, "Namesave statement already exists\n");
     } else if (rc == 424 && rs == 8) {
-        sprintf(errMsg, "Segment name not found\n");
+        sprintf(errMsg, "ULGSMC4248E Segment name not found\n");
     } else if (rc == 428 && rs == 4) {
-        sprintf(errMsg, "Duplicate subscription\n");
+        sprintf(errMsg, "ULGSMC4279E Duplicate subscription\n");
     } else if (rc == 428 && rs == 8) {
         sprintf(errMsg, "No matching entries\n");
     } else if (rc == 432 && rs == 4) {
@@ -673,17 +690,19 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
     } else if (rc == 900 && rs == 99) {
         sprintf(errMsg, "A system change occurred during the API call - reissue the API call to obtain the data\n");
     } else {
-        sprintf(errMsg, "Unknown\n");
+        sprintf(errMsg, "Unknown\n", rc);
     }
+
+    sprintf(errMsgPlusNum, "ULGSMC5%03d%s %s", rc, severity, errMsg);
 
     // If this call is only for the new header, just print that header out
     if (newHeader) {
-        printf("8 %d %d (details) %s", rc, rs, errMsg);
+        printf("8 %d %d (details) %s", rc, rs, errMsgPlusNum);
     } else {
-        printf("  Description: %s", errMsg);
+        printf("  Description: %s", errMsgPlusNum);
         if (logMSG == true) {
             TRACE_START(vmapiContextP, TRACEAREA_SMCLI, TRACELEVEL_ERROR);
-                sprintf(line, "SMAPI error. SMAPi API: %s RC = %d RS = %d Description: %s\n", class, rc, rs, errMsg);
+                sprintf(line, "SMAPI error. SMAPi API: %s RC = %d RS = %d Description: %s\n", class, rc, rs, errMsgPlusNum);
             TRACE_END_DEBUG(vmapiContextP, line);
         }
     }

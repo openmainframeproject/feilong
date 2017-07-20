@@ -47,10 +47,10 @@ int vmRelocate(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
                 }
                 if (entryCount < 6) {
                     entryArray[entryCount] = optarg;
-                    if (( strlen(optarg) > 12) && (strncmp( "destination=", optarg, 12 ) == 0 )) {
+                    if (( strlen(optarg) > 12) && (strncasecmp( "destination=", optarg, 12 ) == 0 )) {
                     	destSpecified = 1;
                     } else
-                    if (( strlen(optarg) >= 13) && (strncmp( "action=cancel", optarg, 13 ) == 0 )) {
+                    if (( strlen(optarg) >= 13) && (strncasecmp( "action=cancel", optarg, 13 ) == 0 )) {
                         cancelSpecified = 1;
                     }
                     entryCount++;

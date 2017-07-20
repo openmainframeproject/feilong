@@ -1514,6 +1514,11 @@ int getAndParseSmapiBuffer(struct _vmApiInternalContext* vmapiContextP, char * *
         if (SLEEP_TIMES[k] > 0) {
             sleep(SLEEP_TIMES[k]);
         }
+        if (k > 0) {
+            // Display the api buffer table name in message
+            sprintf(line, "Retry %n of sending SMAPI API for table %s\n", k, parserTableName);
+            errorLog(vmapiContextP, __func__, TO_STRING(__LINE__), RcIucv, RsUnexpected, line);
+        }
 
         // Initialize our socket, no need to retry this, usually not a problem
         if (0 != (rc = smSocketInitialize(vmapiContextP, &sockDesc))) {
