@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e055a13d_aad69262",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 19
+      },
+      "lineNbr": 723,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-20T14:05:48Z",
+      "side": 1,
+      "message": "Shouldn\u0027t this be an elif ?",
+      "revId": "35354b5cb975b84a9fcbc93794a2875b246fc1f3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
