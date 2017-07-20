@@ -59,6 +59,9 @@ subs = {
                                         #   destroyed
     '<<<horribleID1>>>': 'g[][325$$$',  # A userid that makes SMAPI cry
                                         #   and beg for a swift death
+    '<<<consoleID>>>': 'cons',          # An existing userid who has
+                                        #   SP CONS * START in its profile or
+                                        #   directory
     '<<<migrID>>>': 'someid',           # An existing userid that can be
                                         #   migrated
     '<<<unmigrID>>>': 'unmgr',          # An existing userid that cannot be
@@ -79,9 +82,6 @@ subs = {
     '<<<unpackScript>>>': '/opt/zthin/bin/unpackdiskimage',
                                         # Location of unpackdiskimage
     '<<<longString>>>': longstring,
-    '<<<consoleID>>>': 'cons',          # An existing userid who has
-                                        #   SP CONS * START in its profile or
-                                        #   directory
 }
 
 # Apply local overrides to the subs dictionary.
@@ -150,6 +150,35 @@ deployTests = [
             "<<<simpleImage>>>",
         'out': "",
         'overallRC': [0],
+    },
+     {
+        'description': "Add modifications to the activation engine",
+        'request': 'ChangeVM <<<unsafeID1>>> aemod <<<setupDisk>>> ' +
+            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
+            'mntdir=/mnt/ephemeral/0.0.0101"',
+
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add unknown script mods to the activation engine",
+        'request': 'ChangeVM <<<unsafeID1>>> aemod BAD ' +
+            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
+            'mntdir=/mnt/ephemeral/0.0.0101"',
+
+        'out': "",
+        'overallRC': [4],
+        'rc': [4],
+        'rs': [400],
+    },
+    {
+        'description': "Add modifications to activation engine for bad id",
+        'request': 'ChangeVM BADID aemod <<<setupDisk>>> ' +
+            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
+            'mntdir=/mnt/ephemeral/0.0.0101"',
+
+        'out': "",
+        'overallRC': [4],
     },
     {
         'description': "Purge the reader",
