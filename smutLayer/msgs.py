@@ -194,5 +194,6 @@ msg = {
             "ULT%s0411E Unable to receive console output file. " +
             "Reader not online.  /sys/bus/ccw/drivers/vmur/0.0.000c" +
             "/online = 0"],
-    # 5000-5999: Reserved for SMCLI
+
+    # 5000-6100: Reserved for SMCLI
     }
