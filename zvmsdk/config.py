@@ -149,11 +149,9 @@ zvm_opts = [
         section='tests',
         opt_type='str',
         ),
-    Opt('broadcast_v4',
+    Opt('cidr',
         section='tests'),
     Opt('gateway_v4',
-        section='tests'),
-    Opt('netmask_v4',
         section='tests'),
     ]
 

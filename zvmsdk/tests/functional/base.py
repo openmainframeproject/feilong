@@ -16,7 +16,6 @@
 import os
 import random
 import unittest
-import uuid
 
 from zvmsdk import api
 from zvmsdk import client as zvmclient
@@ -107,7 +106,6 @@ class SDKAPITestUtils(object):
         print("Using userid %s ..." % userid)
 
         user_profile = CONF.zvm.user_profile
-        nic_id = str(uuid.uuid1())
 
         if ip_addr is None:
             ip_addr = self.get_available_ip_addr()
@@ -122,10 +120,9 @@ class SDKAPITestUtils(object):
         remote_host = zvmutils.get_host()
         network_interface_info = {'ip_addr': ip_addr,
                                   'nic_vdev': CONF.zvm.default_nic_vdev,
-                                  'gateway_v4': CONF.tests.gateway_v4,
-                                  'broadcast_v4': CONF.tests.broadcast_v4,
-                                  'netmask_v4': CONF.tests.netmask_v4}
-        transportfiles = configdrive.create_config_drive(
+                                  'cidr': CONF.tests.cidr,
+                                  'gateway_v4': CONF.tests.gateway_v4}
+        transportfiles = configdrive.create_config_drive(userid,
             network_interface_info, CONF.tests.image_os_version)
         disks_list = [{'size': root_disk_size,
                        'is_boot_disk': True,
@@ -150,9 +147,8 @@ class SDKAPITestUtils(object):
                                       user_profile)
 
         # Setup network for vm
-        print("Creating nic with nic_id=%s, "
-              "mac_address=%s ..." % (nic_id, mac_addr))
-        self.api.guest_create_nic(userid, nic_id=nic_id, mac_addr=mac_addr,
+        print("Creating nic with mac_address=%s ..." % mac_addr)
+        self.api.guest_create_nic(userid, mac_addr=mac_addr,
                                   ip_addr=ip_addr)
         self.api.guest_nic_couple_to_vswitch(userid, vdev, vswitch_name)
         self.api.vswitch_grant_user(vswitch_name, userid)
