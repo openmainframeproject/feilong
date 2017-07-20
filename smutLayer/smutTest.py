@@ -895,13 +895,62 @@ guestTests = [
     {
         'description': "Get the console log of the system.",
         'request': "getvm <<<consoleID>>> consoleoutput",
-        'out': "",
+        'out': "List of spool files containing console logs " +
+               "from <<<consoleID>>>:",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the status of the system.",
+        'request': "getvm <<<consoleID>>> status --all",
+        'out': "CPU Used Time:",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the power status of the system.",
+        'request': "getvm <<<consoleID>>> status --power",
+        'out': "Power state: on",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the memory status of the system.",
+        'request': "getvm <<<consoleID>>> status --memory",
+        'out': "Total Memory:",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the cpu status of the system.",
+        'request': "getvm <<<consoleID>>> status --cpu",
+        'out': "Processors:",
         'overallRC': [0],
     },
     {
         'description': "Power off the system.",
         'request': "PowerVM <<<consoleID>>> off",
         'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the status of the system.",
+        'request': "getvm <<<consoleID>>> status",
+        'out': "CPU Used Time: 0 sec",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the power status of the system.",
+        'request': "getvm <<<consoleID>>> status --power",
+        'out': "Power state: off",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the memory status of the system.",
+        'request': "getvm <<<consoleID>>> status --memory",
+        'out': "Total Memory: 0M",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the cpu status of the system.",
+        'request': "getvm <<<consoleID>>> status --cpu",
+        'out': "Processors: 0",
         'overallRC': [0],
     },
     {
