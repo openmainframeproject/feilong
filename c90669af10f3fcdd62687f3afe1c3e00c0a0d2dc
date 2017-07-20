@@ -1,0 +1,164 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2ac32aa0_7500b1e9",
+        "filename": "smutLayer/getVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-20T21:57:55Z",
+      "side": 1,
+      "message": "Can you add the routines to the import list in alpha order please?  It will make it easier to maintain.",
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "92747104_14a3d73a",
+        "filename": "smutLayer/getVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-20T21:57:55Z",
+      "side": 1,
+      "message": "You need an error message here.  the isLoggedOn routine only provides an on/off return code to you.  It will provide an error message only if it gets something abnormal.",
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "595af790_1017735c",
+        "filename": "smutLayer/getVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-20T21:57:55Z",
+      "side": 1,
+      "message": "Can the variables such as powerstr be camel-cased, e.g. powerStr ?  It would make it more readable.",
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a5ea5bde_d7c952f8",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-20T21:57:55Z",
+      "side": 1,
+      "message": "userid ?",
+      "range": {
+        "startLine": 189,
+        "startChar": 43,
+        "endLine": 189,
+        "endChar": 45
+      },
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6466969f_62103c5d",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-20T21:57:55Z",
+      "side": 1,
+      "message": "later.",
+      "range": {
+        "startLine": 193,
+        "startChar": 59,
+        "endLine": 193,
+        "endChar": 60
+      },
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f91796bc_ca21d5bf",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-20T21:57:55Z",
+      "side": 1,
+      "message": "fyi.  It is really \"SMCLI failed\".  There are some rare cases where SMCLI will fail.  That is why we changed rc 1 to 8 and added 24 and 25.",
+      "range": {
+        "startLine": 208,
+        "startChar": 10,
+        "endLine": 208,
+        "endChar": 26
+      },
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "56e5891f_a81a8dff",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-20T21:57:55Z",
+      "side": 1,
+      "message": "If you think there is ever a chance that you would get junk then I suggest you wrap those int()s in try/except.",
+      "range": {
+        "startLine": 219,
+        "startChar": 23,
+        "endLine": 219,
+        "endChar": 26
+      },
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b5a3951a_aa5835de",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-20T21:57:55Z",
+      "side": 1,
+      "message": "It might be useful to use generalUtils.cvtToMag() to give you G when appropriate.",
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
