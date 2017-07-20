@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "cc68a672_e87b482a",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-20T19:32:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fb417e17_70e49f97",
+      "revId": "81736e28e45e28fbdf25087b9ae27863e9e6171e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da599715_da4aa48e",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 3
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "2c665878_01ca482d",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-20T19:32:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da599715_da4aa48e",
+      "revId": "81736e28e45e28fbdf25087b9ae27863e9e6171e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "25418c72_9afa7159",
         "filename": "smutLayer/smutTest.py",
         "patchSetId": 3
@@ -47,6 +83,24 @@
       "writtenOn": "2017-07-20T18:57:33Z",
       "side": 1,
       "message": "Taking out Aemod tests temporarily until the function is fixed up?",
+      "revId": "81736e28e45e28fbdf25087b9ae27863e9e6171e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "56d6cdba_ff5efe8a",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-20T19:32:52Z",
+      "side": 1,
+      "message": "Correct.  They broke things serverly.  I will be putting them back when the code works.",
+      "parentUuid": "25418c72_9afa7159",
       "revId": "81736e28e45e28fbdf25087b9ae27863e9e6171e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
