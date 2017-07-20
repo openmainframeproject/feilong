@@ -110,11 +110,13 @@ class ReqHandle(object):
         self.results = {
             'overallRC': 0,       # Overall return code for the function, e.g.
                                   #   0  - Everything went ok
-                                  #   1  - Something in the SMCLI failed
                                   #   2  - Something in the IUCVCLNT failed
                                   #   3  - Something in a local vmcp failed
                                   #   4  - Input validation error
                                   #   5  - Miscellaneous processing error
+                                  #   8  - SMCLI - SMAPI failure
+                                  #   24 - SMCLI - Parsing failure
+                                  #   25 - SMCLI - Internal Processing Error
                                   #   99 - Unexpected failure
             'rc': 0,              # Return code causing the return
             'rs': 0,              # Reason code causing the return
