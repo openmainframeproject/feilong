@@ -377,6 +377,14 @@ class SDKAPI(object):
                'format': str,
                'is_boot_disk': bool,
                'disk_pool': str}
+               In which,
+               'size': case insensitive, the unit can be in Megabytes (M),
+               Gigabytes (G), or number of cylinders/blocks, eg  512M, 1g or
+               just 2000
+               'format': can be ext2, ext3, ext4, xfs
+               'is_boot_disk': only root disk need to set this key
+               'disk_pool': optional, if not specified, the disk will be
+               created by using the value from configure file
 
                For example:
                [{'size': '1g',
