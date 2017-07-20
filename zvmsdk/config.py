@@ -49,8 +49,6 @@ zvm_opts = [
     Opt('master_node',
         section='xcat',
         required=True),
-    Opt('zhcp_node',
-        section='xcat'),
     Opt('zhcp',
         section='xcat',
         required=True),
