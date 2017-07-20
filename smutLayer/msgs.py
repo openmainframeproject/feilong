@@ -102,23 +102,24 @@ msg = {
     # 0205-0299: Available
 
     '0300': [{'overallRC': 1},    # dict is not used.
-            "ULT%s0300E SMAPI API failed: %s, rc: %s, rs: %s, " +
-            "errno: %s, cmd: %s, out: %s"],
+            "ULT%s0300E SMAPI API failed: %s, overall rc: %s, rc: %s, " +
+            "rs: %s, errno: %s, cmd: %s, out: %s"],
     '0301': [{'overallRC': 1, 'rc': 301, 'rs': 0},
             "ULT%s0301E SMAPI API failed: %s, response header does not " +
-            "have the expected rc, rs, and errno values before the " +
-            "(details) string. cmd: %s, response header: %s, out: %s"],
-    '0302': [{'overallRC': 1, 'rc': 302, 'rs': 0},
-            "ULT%s0302E SMAPI API failed: %s, return code in the response "
-            "header is not an integer. rc: %s, cmd: %s, response " +
+            "have the expected 3 values before the (details) string. " +
+            "cmd: %s, response header: %s, out: %s"],
+    '0302': [{'overallRC': 25, 'rc': 302, 'rs': 0},
+            "ULT%s0302E SMAPI API failed: %s, word 1 in " +
+            "the response header is not an integer or in the range of " +
+            "expected values. word 1: %s, cmd: %s, response " +
             "header: %s, out: %s"],
     '0303': [{'overallRC': 1, 'rc': 303, 'rs': 0},
-            "ULT%s0302E SMAPI API failed: %s, reason code in the response "
-            "header is not an integer. rs: %s, cmd: %s, response " +
+            "ULT%s0303E SMAPI API failed: %s, word 2 in the response " +
+            "header is not an integer. word 2: %s, cmd: %s, response " +
             "header: %s, out: %s"],
     '0304': [{'overallRC': 1, 'rc': 304, 'rs': 0},
-            "ULT%s0302E SMAPI API failed: %s, errno in the response "
-            "header is not an integer. errno: %s, cmd: %s, response " +
+            "ULT%s0304E SMAPI API failed: %s, word 3 in the response " +
+            "header is not an integer. word 3: %s, cmd: %s, response " +
             "header: %s, out: %s"],
     # 0305-0310: Available
     '0311': [{'overallRC': 2, 'rc': 2, 'rs': 99},    # dict is not used.

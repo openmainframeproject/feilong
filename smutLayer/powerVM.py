@@ -146,7 +146,8 @@ def activate(rh):
     results = invokeSMCLI(rh, "Image_Activate", parms)
     if results['overallRC'] == 0:
         pass
-    elif results['rc'] == 200 and results['rs'] == 8:
+    elif (results['overallRC'] == 8 and
+        results['rc'] == 200 and results['rs'] == 8):
         pass    # All good.  No need to change the ReqHandle results.
     else:
         # SMAPI API failed.
@@ -241,7 +242,8 @@ def deactivate(rh):
     results = invokeSMCLI(rh, "Image_Deactivate", parms)
     if results['overallRC'] == 0:
         pass
-    elif results['rc'] == 200 and (results['rs'] == 12 or results['rs'] == 16):
+    elif (results['overallRC'] == 8 and results['rc'] == 200 and
+        (results['rs'] == 12 or results['rs'] == 16)):
         # Tolerable error.  Machine is already in or going into the state
         # we want it to enter.
         rh.printLn("N", rh.userid + " is already logged off.")
@@ -774,8 +776,8 @@ def softDeactivate(rh):
     smcliResults = invokeSMCLI(rh, "Image_Deactivate", parms)
     if smcliResults['overallRC'] == 0:
         pass
-    elif smcliResults['rc'] == 200 and (smcliResults['rs'] == 12 or +
-        smcliResults['rs'] == 16):
+    elif (smcliResults['overallRC'] == 8 and smcliResults['rc'] == 200 and
+        (smcliResults['rs'] == 12 or + smcliResults['rs'] == 16)):
         # Tolerable error.
         # Machine is already logged off or is logging off.
         rh.printLn("N", rh.userid + " is already logged off.")

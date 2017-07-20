@@ -160,12 +160,12 @@ def getConsole(rh):
     # Transfer the console to this virtual machine.
     parms = ["-T", rh.userid]
     results = invokeSMCLI(rh, "Image_Console_Get", parms)
-    # SMAPI API failed.  We want to distinguish the two
-    # cases here, one if the rc=rs=8, we want to give
-    # a more helpful message than the generic 300 one
+
     if results['overallRC'] != 0:
-        strCmd = "Image_Console_Get " + " ".join(parms)
-        if results['rc'] == 8 and results['rs'] == 8:
+        if (results['overallRC'] == 8 and results['rc'] == 8 and
+            results['rs'] == 8):
+            # Give a more specific message.  Userid is either
+            # not logged on or not spooling their console.
             msg = msgs.msg['0409'][1] % (modId, rh.userid)
         else:
             msg = results['response']

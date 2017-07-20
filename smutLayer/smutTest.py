@@ -72,7 +72,7 @@ subs = {
     '<<<pool9336>>>': 'POOL4',          # 9336 disk pool (keep this in
                                         # uppercase for smutTest ease of use)
     '<<<setupDisk>>>': '/opt/xcat/share/xcat/scripts/setupDisk',  # SetupDisk
-    '<<<SimpleCfgFile>>>': '/install/zvm/POC/testImages/cfgdrive.tar',
+    '<<<SimpleCfgFile>>>': '/install/zvm/POC/testImages/cfgdrive.tgz',
                                         # Simple tar file for the config drive
     '<<<simpleImage>>>': '/install/zvm/POC/testImages/' +
         'rhel67eckd_small_225M.img',    # Small image file
@@ -151,35 +151,6 @@ deployTests = [
         'out': "",
         'overallRC': [0],
     },
-     {
-        'description': "Add modifications to the activation engine",
-        'request': 'ChangeVM <<<unsafeID1>>> aemod <<<setupDisk>>> ' +
-            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
-            'mntdir=/mnt/ephemeral/0.0.0101"',
-
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Add unknown script mods to the activation engine",
-        'request': 'ChangeVM <<<unsafeID1>>> aemod BAD ' +
-            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
-            'mntdir=/mnt/ephemeral/0.0.0101"',
-
-        'out': "",
-        'overallRC': [4],
-        'rc': [4],
-        'rs': [400],
-    },
-    {
-        'description': "Add modifications to activation engine for bad id",
-        'request': 'ChangeVM BADID aemod <<<setupDisk>>> ' +
-            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
-            'mntdir=/mnt/ephemeral/0.0.0101"',
-
-        'out': "",
-        'overallRC': [4],
-    },
     {
         'description': "Purge the reader",
         'request': "ChangeVM <<<unsafeID1>>> purgerdr",
@@ -194,13 +165,13 @@ deployTests = [
     },
     {
         'description': "Power on the system and wait for to OS to come up.",
-        'request': "PowerVM <<<safeID>>> on --wait --state up",
+        'request': "PowerVM <<<unsafeID1>>> on --wait --state up",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Send a commmand to a system.",
-        'request': "CmdVM <<<safeID>>> cmd pwd",
+        'request': "CmdVM <<<unsafeID1>>> cmd pwd",
         'out': "",
         'overallRC': [0],
     },
@@ -302,7 +273,7 @@ migrateTests = [
         'description': "Get status for a specific userid that " +
             "cannot be migrated.",
         'request': "migrateVM <<<unmigrID>>> status",
-        'overallRC': [1],
+        'overallRC': [8],
         'rc': [4],
         'rs': [3001],
     },
@@ -310,7 +281,7 @@ migrateTests = [
         'description': "Get all migration status for a host with " +
             "no active migrations.",
         'request': "migrateVM <<<unmigrID>>> status --all",
-        'overallRC': [1],
+        'overallRC': [8],
         'rc': [4],
         'rs': [3001],
     },
@@ -318,7 +289,7 @@ migrateTests = [
         'description': ("Get incoming migration status for a host with no " +
             "active migrations."),
         'request': "migrateVM <<<unmigrID>>> status --incoming",
-        'overallRC': [1],
+        'overallRC': [8],
         'rc': [4],
         'rs': [3001],
     },
@@ -326,7 +297,7 @@ migrateTests = [
         'description': "Get outgoing migration status for a host with no " +
             "active migrations.",
         'request': "migrateVM <<<unmigrID>>> status --outgoing",
-        'overallRC': [1],
+        'overallRC': [8],
         'rc': [4],
         'rs': [3001],
     },
@@ -334,16 +305,16 @@ migrateTests = [
         'description': "Test a system for migration",
         'request': "migrateVM <<<unmigrID>>> test --destination " +
             "<<<migrDest>>>",
-        'overallRC': [1],
+        'overallRC': [8],
         'rc': [4],
         'rs': [3000],
     },
     {
         'description': "Cancel a migration",
         'request': "migrateVM <<<migrID>>> cancel",
-        'overallRC': [1],
-        'rc': [4],
-        'rs': [3001],
+        'overallRC': [8],
+        'rc': [8],
+        'rs': [3000, 3001],
     },
     ]
 
@@ -389,7 +360,7 @@ powerTests = [
     },
     {
         'description': "Power on the system.",
-        'request': "PowerVM <<<safeID>>> on --wait",
+        'request': "PowerVM <<<safeID>>> on --wait --state up",
         'out': "",
         'overallRC': [0],
     },
@@ -551,7 +522,7 @@ vmLCTests = [
         'description': "Verify system no longer exists.",
         'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
         'out': "",
-        'overallRC': [1],
+        'overallRC': [8],
         'rc': [400],
         'rs': [4],
     },
@@ -803,7 +774,7 @@ vmModifyTests = [
         'overallRC': [0],
     },
     {
-        'description': "Verify loaddev wwpn statements exist",
+        'description': "Verify loaddev wwpn statements exist.",
         'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
         'out': "LOADDEV PORTNAME 5005076800AA0001",
         'overallRC': [0],
@@ -827,7 +798,7 @@ vmModifyTests = [
         'request': "SMAPI <<<unsafeID1>>> API " +
                    "Image_SCSI_Characteristics_Query_DM",
         'out': "",
-        'overallRC': [1],
+        'overallRC': [8],
         'rc': [0],
         'rs': [28],
     },
@@ -840,7 +811,7 @@ vmModifyTests = [
         'description': "Try to purge read of a bad id.",
         'request': "changeVM <<<horribleID1>>> purgeRDR ",
         'out': "Syntax error in function parameter 8",
-        'overallRC': [1],
+        'overallRC': [8],
         'rc': [24],
         'rs': [813]
     },
@@ -937,7 +908,7 @@ guestTests = [
         'description': "Verify no console log is available",
         'request': "getvm <<<consoleID>>> consoleoutput",
         'out': "",
-        'overallRC': [1],
+        'overallRC': [8],
         'rc': [8],
         'rs': [8]
     },
