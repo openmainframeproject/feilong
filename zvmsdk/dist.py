@@ -16,6 +16,8 @@
 import abc
 import six
 
+import netaddr
+
 from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import log
@@ -83,9 +85,12 @@ class LinuxDist(object):
         if len(subnets_v4[0]['dns']) > 0:
             for dns in subnets_v4[0]['dns']:
                 dns_str += 'nameserver ' + dns['address'] + '\n'
-        netmask_v4 = str(subnets_v4[0].as_netaddr().netmask)
+
+        _ipnet = netaddr.IPNetwork(subnets_v4[0]['cidr'])
+        netmask_v4 = str(_ipnet.netmask)
+        broadcast_v4 = str(_ipnet.broadcast)
+
         gateway_v4 = subnets_v4[0]['gateway']['address'] or ''
-        broadcast_v4 = str(subnets_v4[0].as_netaddr().broadcast)
         device = self._get_device_name(device_num)
         address_read = str(vdev).zfill(4)
         address_write = str(hex(int(vdev, 16) + 1))[2:].zfill(4)
@@ -494,9 +499,12 @@ class ubuntu(LinuxDist):
         if len(subnets_v4[0]['dns']) > 0:
             for dns in subnets_v4[0]['dns']:
                 dns_str += 'dns-nameservers ' + dns['address'] + '\n'
-        netmask_v4 = str(subnets_v4[0].as_netaddr().netmask)
+
+        _ipnet = netaddr.IPNetwork(subnets_v4[0]['cidr'])
+        netmask_v4 = str(_ipnet.netmask)
+        broadcast_v4 = str(_ipnet.broadcast)
+
         gateway_v4 = subnets_v4[0]['gateway']['address'] or ''
-        broadcast_v4 = str(subnets_v4[0].as_netaddr().broadcast)
         device = self._get_device_name(vdev)
         cfg_str = self._get_cfg_str(device, broadcast_v4, gateway_v4,
                                     ip_v4, netmask_v4)

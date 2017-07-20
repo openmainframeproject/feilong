@@ -6,3 +6,4 @@ jsonschema
 microversion_parse
 pyjwt
 jsonschema
+netaddr
