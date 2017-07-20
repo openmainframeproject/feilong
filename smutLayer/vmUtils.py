@@ -184,6 +184,53 @@ def execCmdThruIUCV(rh, userid, strCmd):
     return results
 
 
+def getPerfInfo(rh, useridlist):
+    """
+    Get the performance information for an id
+
+    Input:
+       Request Handle
+       Userid to query <- might change this to a list laters
+
+    Output:
+       Dictionary containing the following:
+          overallRC - overall return code, 0: success, non-zero: failure
+          rc        - RC returned from SMCLI if overallRC = 0.
+          rs        - RS returned from SMCLI if overallRC = 0.
+          errno     - Errno returned from SMCLI if overallRC = 0.
+          response  - Stripped and reformatted output of the SMCLI command.
+    """
+    rh.printSysLog("Enter vmUtils.getStatus, userid: " + useridlist)
+    parms = ["-T", rh.userid,
+             "-c", "1"]
+    results = invokeSMCLI(rh, "Image_Performance_Query", parms)
+    if results['overallRC'] != 0:
+        # SMAPI API failed.
+        rh.printLn("ES", results['response'])
+        rh.printSysLog("Exit getVM.getStatus, rc: " +
+                       str(results['overallRC']))
+        return results
+
+    lines = results['response'].split("\n")
+    for line in lines:
+        if "Used CPU time:" in line:
+            usedTime = line.split()[3].strip('"')
+            # Value is in us, need make it seconds
+            usedTime = int(usedTime)/1000000
+        if "Guest CPUs:" in line:
+            totalCpu = line.split()[2].strip('"')
+        if "Max memory:" in line:
+            totalMem = line.split()[2].strip('"')
+            # Value is in Kb, need to make it Mb
+            totalMem = int(totalMem)/1024
+
+    memstr = "Total Memory: %iM\n" % totalMem
+    procstr = "Processors: %s\n" % totalCpu
+    timestr = "CPU Used Time: %i sec\n" % usedTime
+    results['response'] = memstr + procstr + timestr
+    return results
+
+
 def installFS(rh, vaddr, mode, fileSystem):
     """
     Install a filesystem on a virtual machine's dasd.
