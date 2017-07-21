@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "df6f6cf0_e130dfe4",
+        "filename": "smutLayer/getVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-21T14:22:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ac32aa0_7500b1e9",
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "92747104_14a3d73a",
         "filename": "smutLayer/getVM.py",
         "patchSetId": 2
@@ -30,6 +48,24 @@
       "writtenOn": "2017-07-20T21:57:55Z",
       "side": 1,
       "message": "You need an error message here.  the isLoggedOn routine only provides an on/off return code to you.  It will provide an error message only if it gets something abnormal.",
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2def9683_fe990384",
+        "filename": "smutLayer/getVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-21T14:22:46Z",
+      "side": 1,
+      "message": "But isLoggedOn already puts out an error message if it gets something abnormal, so I thought that covered it, but added a new error message.\nThe on/off indicator from isLoggedOn is the reason code",
+      "parentUuid": "92747104_14a3d73a",
       "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "f2520687_2b4ab496",
+        "filename": "smutLayer/getVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-21T14:22:46Z",
+      "side": 1,
+      "message": "They had originally told me their preference was to be all lower case, but I discussed it with them and they agreed to change.",
+      "parentUuid": "595af790_1017735c",
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a5ea5bde_d7c952f8",
         "filename": "smutLayer/vmUtils.py",
         "patchSetId": 2
@@ -64,6 +118,30 @@
       "writtenOn": "2017-07-20T21:57:55Z",
       "side": 1,
       "message": "userid ?",
+      "range": {
+        "startLine": 189,
+        "startChar": 43,
+        "endLine": 189,
+        "endChar": 45
+      },
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d413ed09_b141a59c",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-21T14:22:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5ea5bde_d7c952f8",
       "range": {
         "startLine": 189,
         "startChar": 43,
@@ -99,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "0ff3ebac_1fdee36a",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-21T14:22:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6466969f_62103c5d",
+      "range": {
+        "startLine": 193,
+        "startChar": 59,
+        "endLine": 193,
+        "endChar": 60
+      },
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f91796bc_ca21d5bf",
         "filename": "smutLayer/vmUtils.py",
         "patchSetId": 2
@@ -110,6 +212,30 @@
       "writtenOn": "2017-07-20T21:57:55Z",
       "side": 1,
       "message": "fyi.  It is really \"SMCLI failed\".  There are some rare cases where SMCLI will fail.  That is why we changed rc 1 to 8 and added 24 and 25.",
+      "range": {
+        "startLine": 208,
+        "startChar": 10,
+        "endLine": 208,
+        "endChar": 26
+      },
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f8cdfbd8_1fd5035e",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-21T14:22:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f91796bc_ca21d5bf",
       "range": {
         "startLine": 208,
         "startChar": 10,
@@ -145,6 +271,30 @@
     },
     {
       "key": {
+        "uuid": "87134087_c9904463",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-21T14:22:46Z",
+      "side": 1,
+      "message": "I didn\u0027t think so, if we got a good SMAPI return code, but doesn\u0027t hurt to be extra careful",
+      "parentUuid": "56e5891f_a81a8dff",
+      "range": {
+        "startLine": 219,
+        "startChar": 23,
+        "endLine": 219,
+        "endChar": 26
+      },
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b5a3951a_aa5835de",
         "filename": "smutLayer/vmUtils.py",
         "patchSetId": 2
@@ -162,6 +312,24 @@
     },
     {
       "key": {
+        "uuid": "ef2400a3_aee6f69b",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-21T14:22:46Z",
+      "side": 1,
+      "message": "well, what I have is in Kb and that routine takes in bytes, but I think more importantly, our callers probably always wanted M from this call.",
+      "parentUuid": "b5a3951a_aa5835de",
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c6aabe62_91a4703a",
         "filename": "smutLayer/vmUtils.py",
         "patchSetId": 2
@@ -173,6 +341,30 @@
       "writtenOn": "2017-07-21T11:33:59Z",
       "side": 1,
       "message": "Is it better to have one more exit prinstSysLog here with overallRC ?",
+      "range": {
+        "startLine": 231,
+        "startChar": 4,
+        "endLine": 231,
+        "endChar": 10
+      },
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ea189411_6b123f88",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-21T14:22:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6aabe62_91a4703a",
       "range": {
         "startLine": 231,
         "startChar": 4,
