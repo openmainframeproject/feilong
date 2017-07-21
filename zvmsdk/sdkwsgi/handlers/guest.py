@@ -358,7 +358,9 @@ def guest_couple_uncouple_nic(req):
 def _get_userid_list(req):
     userids = []
     if 'userid' in req.GET.keys():
-        userids = req.GET.getall('userid')
+        userid = req.GET.get('userid')
+
+        userids = userid.split(',')
 
     return userids
 
