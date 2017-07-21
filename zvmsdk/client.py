@@ -194,8 +194,9 @@ class XCATClient(ZVMClient):
         cmd = ('smcli Image_Performance_Query -T "%(uid_list)s" -c %(num)s' %
                {'uid_list': " ".join(uid_list), 'num': len(uid_list)})
 
+        zhcp = self._get_hcp_info()['nodename']
         with zvmutils.expect_invalid_xcat_resp_data():
-            resp = zvmutils.xdsh(CONF.xcat.zhcp_node, cmd)
+            resp = zvmutils.xdsh(zhcp, cmd)
             raw_data = resp["data"][0][0]
 
         ipq_kws = {
@@ -576,7 +577,7 @@ class XCATClient(ZVMClient):
 
     def _create_nic(self, userid, vdev, zhcpnode, nic_id=None, mac_addr=None,
                     active=False):
-        zhcp = CONF.xcat.zhcp_node
+        zhcp = self._get_hcp_info()['nodename']
         url = self._xcat_url.xdsh("/%s" % zhcp)
         commands = ' '.join(('/opt/zhcp/bin/smcli',
                              'Virtual_Network_Adapter_Create_Extended_DM',
@@ -665,7 +666,7 @@ class XCATClient(ZVMClient):
             return zvmutils.xcat_request("PUT", url, body)['data']
 
     def delete_nic(self, userid, vdev, active=False):
-        zhcp = CONF.xcat.zhcp_node
+        zhcp = self._get_hcp_info()['nodename']
         url = self._xcat_url.xdsh("/%s" % zhcp)
 
         commands = ' '.join((
@@ -905,9 +906,10 @@ class XCATClient(ZVMClient):
 
     def grant_user_to_vswitch(self, vswitch_name, userid):
         """Set vswitch to grant user."""
-        zhcp = CONF.xcat.zhcp_node
+        hcp_info = self._get_hcp_info()
+        zhcp_userid = hcp_info['userid']
+        zhcp = hcp_info['nodename']
         url = self._xcat_url.xdsh("/%s" % zhcp)
-        zhcp_userid = self._get_zhcp_userid()
         commands = ' '.join((
             '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
             "-T %s" % zhcp_userid,
@@ -927,9 +929,11 @@ class XCATClient(ZVMClient):
 
     def revoke_user_from_vswitch(self, vswitch_name, userid):
         """Revoke user for vswitch."""
-        zhcp = CONF.xcat.zhcp_node
+        hcp_info = self._get_hcp_info()
+        zhcp_userid = hcp_info['userid']
+        zhcp = hcp_info['nodename']
         url = self._xcat_url.xdsh("/%s" % zhcp)
-        zhcp_userid = self._get_zhcp_userid()
+
         commands = ' '.join((
             '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
             "-T %s" % zhcp_userid,
@@ -950,7 +954,7 @@ class XCATClient(ZVMClient):
     def _couple_nic(self, userid, vdev, vswitch_name,
                     active=False):
         """Couple NIC to vswitch by adding vswitch into user direct."""
-        zhcp = CONF.xcat.zhcp_node
+        zhcp = self._get_hcp_info()['nodename']
         url = self._xcat_url.xdsh("/%s" % zhcp)
 
         commands = ' '.join(('/opt/zhcp/bin/smcli',
@@ -1033,7 +1037,7 @@ class XCATClient(ZVMClient):
 
     def _uncouple_nic(self, userid, vdev, active=False):
         """Uncouple NIC from vswitch"""
-        zhcp = CONF.xcat.zhcp_node
+        zhcp = self._get_hcp_info()['nodename']
         url = self._xcat_url.xdsh("/%s" % zhcp)
 
         commands = ' '.join(('/opt/zhcp/bin/smcli',
@@ -1108,8 +1112,9 @@ class XCATClient(ZVMClient):
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def get_vswitch_list(self):
-        zhcp = CONF.xcat.zhcp_node
-        userid = self._get_zhcp_userid()
+        hcp_info = self._get_hcp_info()
+        userid = hcp_info['userid']
+        zhcp = hcp_info['nodename']
         url = self._xcat_url.xdsh("/%s" % zhcp)
         commands = ' '.join((
             '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Query',
@@ -1129,18 +1134,15 @@ class XCATClient(ZVMClient):
                 output = re.findall('VSWITCH:  Name: (.*)', data)
                 return output
 
-    def _get_zhcp_userid(self):
-        if not self._zhcp_userid:
-            self._zhcp_userid = self._get_userid_from_node(CONF.xcat.zhcp_node)
-        return self._zhcp_userid
-
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def add_vswitch(self, name, rdev=None, controller='*',
                     connection='CONNECT', network_type='IP',
                     router="NONROUTER", vid='UNAWARE', port_type='ACCESS',
                     gvrp='GVRP', queue_mem=8, native_vid=1, persist=True):
-        zhcp = CONF.xcat.zhcp_node
-        userid = self._get_zhcp_userid()
+        hcp_info = self._get_hcp_info()
+        userid = hcp_info['userid']
+        zhcp = hcp_info['nodename']
+
         url = self._xcat_url.xdsh("/%s" % zhcp)
         commands = ' '.join((
             '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Create_Extended',
@@ -1327,12 +1329,12 @@ class XCATClient(ZVMClient):
     def unlock_userid(self, userid):
         """Unlock the specified userid"""
         cmd = "/opt/zhcp/bin/smcli Image_Unlock_DM -T %s" % userid
-        zhcp_node = CONF.xcat.zhcp_node
+        zhcp_node = self._get_hcp_info()['nodename']
         zvmutils.xdsh(zhcp_node, cmd)
 
     def unlock_devices(self, userid):
         cmd = "/opt/zhcp/bin/smcli Image_Lock_Query_DM -T %s" % userid
-        zhcp_node = CONF.xcat.zhcp_node
+        zhcp_node = self._get_hcp_info()['nodename']
         resp = zvmutils.xdsh(zhcp_node, cmd)
         with zvmutils.expect_invalid_xcat_resp_data(resp):
             resp_str = resp['data'][0][0]
@@ -1492,8 +1494,9 @@ class XCATClient(ZVMClient):
         return tar_file
 
     def set_vswitch_port_vlan_id(self, vswitch_name, userid, vlan_id):
-        zhcp = CONF.xcat.zhcp_node
-        zhcp_userid = self._get_zhcp_userid()
+        hcp_info = self._get_hcp_info()
+        zhcp_userid = hcp_info['userid']
+        zhcp = hcp_info['nodename']
         url = self._xcat_url.xdsh("/%s" % zhcp)
         commands = ' '.join((
             '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
@@ -1553,8 +1556,9 @@ class XCATClient(ZVMClient):
                                "lacp", "interval", "group_rdev",
                                "iptimeout", "port_isolation", "promiscuous",
                                "MAC_protect", "VLAN_counters"]
-        zhcp = CONF.xcat.zhcp_node
-        userid = self._get_zhcp_userid()
+        hcp_info = self._get_hcp_info()
+        userid = hcp_info['userid']
+        zhcp = hcp_info['nodename']
         url = self._xcat_url.xdsh("/%s" % zhcp)
         commands = ' '.join((
             '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Set_Extended',
@@ -1584,8 +1588,10 @@ class XCATClient(ZVMClient):
 
     @zvmutils.wrap_invalid_xcat_resp_data_error
     def delete_vswitch(self, switch_name, persist=True):
-        zhcp = CONF.xcat.zhcp_node
-        userid = self._get_zhcp_userid()
+        hcp_info = self._get_hcp_info()
+        userid = hcp_info['userid']
+        zhcp = hcp_info['nodename']
+
         url = self._xcat_url.xdsh("/%s" % zhcp)
         commands = ' '.join((
             '/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Delete_Extended',

@@ -603,9 +603,11 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
                     self._zvmclient.virtual_network_vswitch_query_iuo_stats)
 
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(zvmclient.XCATClient, '_add_switch_table_record')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_private_create_nic_active(self, xrequest, _add_switch):
+    def test_private_create_nic_active(self, xrequest, _add_switch, get_hcp):
+        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'cmabvt'}
         xrequest.return_value = {"errorcode": [['0']]}
         self._zvmclient._create_nic("fakenode", "fake_vdev", "fakehcp",
                                     nic_id="fake_nic",
@@ -615,7 +617,7 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
                                             nic_id="fake_nic",
                                             zhcp="fakehcp")
 
-        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+        url = "/xcatws/nodes/zhcp2" +\
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"
@@ -946,12 +948,12 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         self._zvmclient._get_node_from_port("fakeport")
         get_nic_settings.assert_called_with("fakeport", get_node=True)
 
-    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_grant_user_to_vswitch(self, xrequest, get_userid):
+    def test_grant_user_to_vswitch(self, xrequest, get_hcp):
+        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'zhcpuserid'}
         xrequest.return_value = {"errorcode": [['0']]}
-        get_userid.return_value = "zhcpuserid"
-        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+        url = "/xcatws/nodes/zhcp2" +\
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"
@@ -966,12 +968,12 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         self._zvmclient.grant_user_to_vswitch("fakevs", "fakeuserid")
         xrequest.assert_called_once_with("PUT", url, body)
 
-    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_revoke_user_from_vswitch(self, xrequest, get_userid):
+    def test_revoke_user_from_vswitch(self, xrequest, get_hcp):
         xrequest.return_value = {"errorcode": [['0']]}
-        get_userid.return_value = "zhcpuserid"
-        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'zhcpuserid'}
+        url = "/xcatws/nodes/zhcp2" +\
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"
@@ -986,11 +988,13 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         self._zvmclient.revoke_user_from_vswitch("fakevs", "fakeuserid")
         xrequest.assert_called_once_with("PUT", url, body)
 
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(zvmclient.XCATClient, '_update_xcat_switch')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_couple_nic(self, xrequest, update_switch):
+    def test_couple_nic(self, xrequest, update_switch, get_hcp):
         xrequest.return_value = {"errorcode": [['0']]}
-        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'zhcpuserid'}
+        url = "/xcatws/nodes/zhcp2" +\
               "/dsh?userName=" + CONF.xcat.username +\
                "&password=" + CONF.xcat.password +\
                "&format=json"
@@ -1015,11 +1019,13 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         xrequest.assert_any_call("PUT", url, body1)
         xrequest.assert_any_call("PUT", url, body2)
 
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(zvmclient.XCATClient, '_update_xcat_switch')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_uncouple_nic(self, xrequest, update_switch):
+    def test_uncouple_nic(self, xrequest, update_switch, get_hcp):
         xrequest.return_value = {"errorcode": [['0']]}
-        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'zhcpuserid'}
+        url = "/xcatws/nodes/zhcp2" +\
               "/dsh?userName=" + CONF.xcat.username +\
                "&password=" + CONF.xcat.password +\
                "&format=json"
@@ -1070,15 +1076,15 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         xrequest.assert_called_with("GET", url)
         self.assertEqual(info, "fakename")
 
-    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_get_vswitch_list(self, xrequest, get_userid):
-        get_userid.return_value = "fakenode"
+    def test_get_vswitch_list(self, xrequest, get_hcp):
+        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'fakenode'}
         xrequest.return_value = {
             "data": [[u"VSWITCH:  Name: TEST", u"VSWITCH:  Name: TEST2"]],
             "errorcode": [['0']]
                             }
-        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+        url = "/xcatws/nodes/zhcp2" +\
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"
@@ -1089,7 +1095,7 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
         info = self._zvmclient.get_vswitch_list()
-        get_userid.assert_called_with()
+        get_hcp.assert_called_with()
         xrequest.assert_called_with("PUT", url, body)
         self.assertEqual(info[0], "TEST")
         self.assertEqual(info[1], "TEST2")
@@ -1113,20 +1119,15 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         uncouple_nic.assert_called_with("fake_userid",
                                         "fakevdev", active=False)
 
-    @mock.patch.object(zvmclient.XCATClient, '_get_userid_from_node')
-    def test_get_zhcp_userid(self, get_userid_from_node):
-        self._zvmclient._get_zhcp_userid()
-        get_userid_from_node.assert_called_with(CONF.xcat.zhcp_node)
-
-    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_add_vswitch(self, xrequest, get_zhcp_userid):
-        get_zhcp_userid.return_value = "fakeuserid"
+    def test_add_vswitch(self, xrequest, get_hcp):
+        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'fakeuserid'}
         xrequest.return_value = {
             "data": [["0"]],
             "errorcode": [['0']]
                             }
-        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+        url = "/xcatws/nodes/zhcp2" +\
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"
@@ -1232,15 +1233,19 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         self._zvmclient.process_additional_minidisks(userid, disk_list)
         aemod_handler.assert_called_with(userid, func_name, parmline)
 
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(zvmutils, 'xdsh')
-    def test_unlock_userid(self, xdsh):
+    def test_unlock_userid(self, xdsh, get_hcp):
         userid = 'fakeuser'
+        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'cmabvt'}
         cmd = "/opt/zhcp/bin/smcli Image_Unlock_DM -T %s" % userid
         self._zvmclient.unlock_userid(userid)
-        xdsh.assert_called_once_with(CONF.xcat.zhcp_node, cmd)
+        xdsh.assert_called_once_with('zhcp2', cmd)
 
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(zvmutils, 'xdsh')
-    def test_unlock_device(self, xdsh):
+    def test_unlock_device(self, xdsh, get_hcp):
+        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'cmabvt'}
         userid = 'fakeuser'
         resp = {'data': [['Locked type: DEVICE\nDevice address: 0100\n'
                 'Device locked by: fake\nDevice address: 0101\n'
@@ -1248,11 +1253,11 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         xdsh.side_effect = [resp, None, None]
         self._zvmclient.unlock_devices(userid)
 
-        xdsh.assert_any_call(CONF.xcat.zhcp_node,
+        xdsh.assert_any_call('zhcp2',
             '/opt/zhcp/bin/smcli Image_Lock_Query_DM -T fakeuser')
-        xdsh.assert_any_call(CONF.xcat.zhcp_node,
+        xdsh.assert_any_call('zhcp2',
             '/opt/zhcp/bin/smcli Image_Unlock_DM -T fakeuser -v 0100')
-        xdsh.assert_any_call(CONF.xcat.zhcp_node,
+        xdsh.assert_any_call('zhcp2',
             '/opt/zhcp/bin/smcli Image_Unlock_DM -T fakeuser -v 0101')
 
     @mock.patch.object(zvmutils, 'xcat_request')
@@ -1405,12 +1410,12 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         self._zvmclient._add_mdisk(userid, disk, vdev),
         xrequest.assert_called_once_with('PUT', url, body)
 
-    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_set_vswitch_port_vlan_id(self, xrequest, get_userid):
+    def test_set_vswitch_port_vlan_id(self, xrequest, get_hcp):
+        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'zhcpuserid'}
         xrequest.return_value = {"errorcode": [['0']]}
-        get_userid.return_value = "zhcpuserid"
-        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+        url = "/xcatws/nodes/zhcp2" +\
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"
@@ -1443,19 +1448,19 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         ret = self._zvmclient.get_image_path_by_name(fake_name)
         self.assertEqual(ret, expected_path)
 
-    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
-    def test_set_vswitch_with_invalid_key(self, get_userid):
-        get_userid.return_value = "fakenode"
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
+    def test_set_vswitch_with_invalid_key(self, get_hcp):
+        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'cmabvt'}
         self.assertRaises(exception.ZVMInvalidInput,
                           self._zvmclient.set_vswitch,
                           "vswitch_name", unknown='fake_id')
 
-    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_set_vswitch(self, xrequest, get_userid):
+    def test_set_vswitch(self, xrequest, get_hcp):
+        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'fakenode'}
         xrequest.return_value = {"errorcode": [['0']]}
-        get_userid.return_value = "fakenode"
-        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+        url = "/xcatws/nodes/zhcp2" +\
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"
@@ -1471,12 +1476,12 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
                                     real_device_address='1000 1003')
         xrequest.assert_called_with("PUT", url, body)
 
-    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_set_vswitch_with_errorcode(self, xrequest, get_userid):
+    def test_set_vswitch_with_errorcode(self, xrequest, get_hcp):
+        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'fakenode'}
         xrequest.return_value = {"data": "Returned data",
                                  "errorcode": [['1']]}
-        get_userid.return_value = "fakenode"
 
         self.assertRaises(exception.ZVMNetworkError,
                           self._zvmclient.set_vswitch,
@@ -1521,12 +1526,12 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
                           self._zvmclient.create_nic,
                           'fake_id', nic_id="nic_id", vdev='1004')
 
-    @mock.patch.object(zvmclient.XCATClient, '_get_zhcp_userid')
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_delete_vswitch_with_errorcode(self, xrequest, get_userid):
+    def test_delete_vswitch_with_errorcode(self, xrequest, get_hcp):
         xrequest.return_value = {"data": [["Returned data"]],
                                  "errorcode": [['1']]}
-        get_userid.return_value = "fakenode"
+        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'cmabvt'}
 
         self.assertRaises(exception.ZVMNetworkError,
                           self._zvmclient.delete_vswitch,
@@ -1643,11 +1648,13 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         self.assertEqual(vsw['adapters']['USERID1_0800']['type'],
                          'QDIO')
 
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(zvmclient.XCATClient, '_delete_nic_from_switch')
     @mock.patch.object(zvmutils, 'xcat_request')
-    def test_delete_nic(self, xrequest, delete_nic):
+    def test_delete_nic(self, xrequest, delete_nic, get_hcp):
+        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'cmabvt'}
         xrequest.return_value = {"errorcode": [['0']]}
-        url = "/xcatws/nodes/" + CONF.xcat.zhcp_node +\
+        url = "/xcatws/nodes/zhcp2" +\
               "/dsh?userName=" + CONF.xcat.username +\
               "&password=" + CONF.xcat.password +\
               "&format=json"
