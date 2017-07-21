@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3214afb4_d8b065dd",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 527,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-21T12:21:51Z",
+      "side": 1,
+      "message": "I\u0027m not sure we need to set results here, I think any uses of it will get set throughout the function",
+      "revId": "2c91aad601bde43271d2b44193f0be410a6e01be",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
