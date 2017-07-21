@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "58481efe_11cba143",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-21T15:30:49Z",
+      "side": 1,
+      "message": "I think this should be 412.",
+      "range": {
+        "startLine": 228,
+        "startChar": 27,
+        "endLine": 228,
+        "endChar": 28
+      },
+      "revId": "92a188686bda5bca775193e7baee4b0218d6a50a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
