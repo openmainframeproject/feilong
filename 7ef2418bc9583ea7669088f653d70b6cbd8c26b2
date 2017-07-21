@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5ed1dc7d_d9df2249",
+        "filename": "zthin-parts/zthin/src/rcdescriptions.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-21T16:31:21Z",
+      "side": 0,
+      "message": "Did you drop this by accident ?",
+      "range": {
+        "startLine": 239,
+        "startChar": 33,
+        "endLine": 239,
+        "endChar": 35
+      },
+      "revId": "7ef2418bc9583ea7669088f653d70b6cbd8c26b2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}

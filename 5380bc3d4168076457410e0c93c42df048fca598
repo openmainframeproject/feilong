@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e9f06b43_aa9af31c",
+        "filename": "zthin-parts/zthin/src/rcdescriptions.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 529,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-21T16:31:21Z",
+      "side": 1,
+      "message": "Why is there a message id here and not elsewhere ?",
+      "range": {
+        "startLine": 529,
+        "startChar": 25,
+        "endLine": 529,
+        "endChar": 36
+      },
+      "revId": "5380bc3d4168076457410e0c93c42df048fca598",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d6c9d799_07b75d78",
+        "filename": "zthin-parts/zthin/src/rcdescriptions.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 531,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-21T16:31:21Z",
+      "side": 1,
+      "message": "Should the message id be here ?",
+      "range": {
+        "startLine": 531,
+        "startChar": 25,
+        "endLine": 531,
+        "endChar": 36
+      },
+      "revId": "5380bc3d4168076457410e0c93c42df048fca598",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5803bfee_f6a01f31",
+        "filename": "zthin-parts/zthin/src/rcdescriptions.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 693,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-21T16:31:21Z",
+      "side": 1,
+      "message": "What is the purpose of rc?",
+      "range": {
+        "startLine": 693,
+        "startChar": 37,
+        "endLine": 693,
+        "endChar": 39
+      },
+      "revId": "5380bc3d4168076457410e0c93c42df048fca598",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
