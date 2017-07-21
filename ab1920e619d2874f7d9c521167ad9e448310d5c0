@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a86e44e_faa23925",
+        "filename": "zvmsdk/tests/functional/test_vmops.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-07-21T02:08:48Z",
+      "side": 1,
+      "message": "use self.addcleanup to make sure these userid to be deleted finally.",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 50
+      },
+      "revId": "ab1920e619d2874f7d9c521167ad9e448310d5c0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
