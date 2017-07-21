@@ -159,6 +159,29 @@
       "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c6aabe62_91a4703a",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1011375
+      },
+      "writtenOn": "2017-07-21T11:33:59Z",
+      "side": 1,
+      "message": "Is it better to have one more exit prinstSysLog here with overallRC ?",
+      "range": {
+        "startLine": 231,
+        "startChar": 4,
+        "endLine": 231,
+        "endChar": 10
+      },
+      "revId": "c90669af10f3fcdd62687f3afe1c3e00c0a0d2dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
