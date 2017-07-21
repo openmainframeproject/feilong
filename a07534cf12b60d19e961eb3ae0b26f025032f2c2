@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "47e10611_7705f3d4",
+        "filename": "zthin-parts/zthin/src/rcdescriptions.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-21T18:06:45Z",
+      "side": 1,
+      "message": "Did we delete the \nelse if (rc \u003d\u003d 24 \u0026\u0026 rs \u003d\u003d 13) {\n        sprintf(errMsg, \"ULGSMC5183E Metadata entry name value length exceeds allowable length (1024)\\n\");\none?",
+      "revId": "a07534cf12b60d19e961eb3ae0b26f025032f2c2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
