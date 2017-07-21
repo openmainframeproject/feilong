@@ -16,6 +16,24 @@
       "revId": "a07534cf12b60d19e961eb3ae0b26f025032f2c2",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "06aa3079_9f77d658",
+        "filename": "zthin-parts/zthin/src/rcdescriptions.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2017-07-21T18:24:29Z",
+      "side": 1,
+      "message": "Steve asked the same question. The old code took liberties with the SMAPI rc 24 and just handled the reason code 13 case and also assumed it was from a certain API.\nI changed the rc 24 handling to use a subroutine to insert the syntax error message. This routine only uses what the SMAPI book documents. See the routine at the bottom of the file.",
+      "parentUuid": "47e10611_7705f3d4",
+      "revId": "a07534cf12b60d19e961eb3ae0b26f025032f2c2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
