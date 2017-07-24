@@ -156,3 +156,16 @@ class ValidationError(SDKBaseException):
 
 class zVMConfigException(SDKBaseException):
     msg_fmt = 'zVMConfig Error: %(msg)s'
+
+
+class ZVMSMUTRequestFailed(SDKBaseException):
+
+    def __init__(self, results):
+        results.pop('logEntries')
+        message = ('Request to SMUT failed: %s' % results)
+        super(ZVMSMUTRequestFailed, self).__init__(message)
+        self.results = results
+
+
+class ZVMInvalidSMUTResponseDataError(SDKBaseException):
+    msg_fmt = 'Invalid data returned from SMUT: %(msg)s'
