@@ -101,6 +101,7 @@ msg = {
             "ULT%s0204E %s is not an integer size of cylinders."],
     # 0205-0299: Available
 
+    # SMCLI and SMAPI related messages.
     '0300': [{'overallRC': 1},    # dict is not used.
             "ULT%s0300E SMAPI API failed: %s, overall rc: %s, rc: %s, " +
             "rs: %s, errno: %s, cmd: %s, out: %s"],
@@ -122,6 +123,8 @@ msg = {
             "header is not an integer. word 3: %s, cmd: %s, response " +
             "header: %s, out: %s"],
     # 0305-0310: Available
+
+    # IUCV related messages
     '0311': [{'overallRC': 2, 'rc': 2, 'rs': 99},    # dict is not used.
             "ULT%s0311E On %s, command sent through IUCV failed, " +
             "rc in response string is not an integer. " +
@@ -197,5 +200,18 @@ msg = {
     '0412': [{'overallRC': 4, 'rc': 4, 'rs': 412},     # dict is not used.
             "ULT%s0412E Malformed reply from SMAPI, unable to fill " +
             "in performance information.  Response is %s"],
+
+    '0413': [{'overallRC': 99, 'rc': 99, 'rs': 413},
+            "ULT%s0413E Userid '%s' did not enter the expected operating " +
+            "system state of '%s' in %i seconds."],
+    '0414': [{'overallRC': 99, 'rc': 99, 'rs': 414},
+            "Userid '%s' did not enter the expected virtual machine " +
+            "state of '%s' in %i seconds."],
+    '0415': [{'overallRC': 3, 'rc': 415},    # rs comes from failing rc
+            "Command failed: '%s', rc: %i out: %s"],
+    '0416': [{'overallRC': 99, 'rc': 99, 'rc': 416},
+            "Command did not return the expected response containing: " +
+            "'%s', cmd: '%s', out: '%s'"],
+
     # 5000-6100: Reserved for SMCLI
     }
