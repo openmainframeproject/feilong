@@ -20,6 +20,8 @@ import shutil
 import tarfile
 import xml.dom.minidom as Dom
 
+from smutLayer import smut
+
 from zvmsdk import config
 from zvmsdk import constants as const
 from zvmsdk import exception
@@ -31,6 +33,7 @@ CONF = config.CONF
 LOG = log.LOG
 
 _XCAT_CLIENT = None
+_SMUT_CLIENT = None
 
 
 def get_zvmclient():
@@ -40,6 +43,11 @@ def get_zvmclient():
             return XCATClient()
         else:
             return _XCAT_CLIENT
+    elif CONF.zvm.client_type == 'smut':
+        global _SMUT_CLIENT
+        if _SMUT_CLIENT is None:
+            _SMUT_CLIENT = SMUTClient()
+        return _SMUT_CLIENT
     else:
         # TODO: raise Exception
         pass
@@ -1770,3 +1778,34 @@ class XCATClient(ZVMClient):
         url = self._xcat_url.gettab("/hosts", addp)
         with zvmutils.expect_invalid_xcat_resp_data():
             return zvmutils.xcat_request("GET", url)['data'][0][0]
+
+
+class SMUTClient(ZVMClient):
+
+    def __init__(self):
+        self._smut = smut.SMUT()
+
+    @zvmutils.wrap_invalid_smut_resp_data_error
+    def get_power_state(self, userid):
+        """Get power status of a z/VM instance."""
+        LOG.debug('Query power stat of %s' % userid)
+        requestData = "PowerVM " + userid + " status"
+        results = zvmutils.smut_request(self._smut, requestData)
+        status = results['response'][0].partition(': ')[2]
+        if (status != 'on' and
+            status != 'off'):
+            raise exception.ZVMInvalidSMUTResponseDataError(
+                msg=results)
+        return status
+
+    @zvmutils.wrap_invalid_smut_resp_data_error
+    def guest_start(self, userid):
+        """"Power on VM."""
+        requestData = "PowerVM " + userid + " on"
+        zvmutils.smut_request(self._smut, requestData)
+
+    @zvmutils.wrap_invalid_smut_resp_data_error
+    def guest_stop(self, userid):
+        """"Power off VM."""
+        requestData = "PowerVM " + userid + " off"
+        zvmutils.smut_request(self._smut, requestData)

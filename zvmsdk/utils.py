@@ -396,6 +396,20 @@ def wrap_invalid_xcat_resp_data_error(function):
     return decorated_function
 
 
+def wrap_invalid_smut_resp_data_error(function):
+    """Catch exceptions when using xCAT response data."""
+
+    @functools.wraps(function)
+    def decorated_function(*arg, **kwargs):
+        try:
+            return function(*arg, **kwargs)
+        except (ValueError, TypeError, IndexError, AttributeError,
+                KeyError) as err:
+            raise exception.ZVMInvalidSMUTResponseDataError(msg=err)
+
+    return decorated_function
+
+
 @wrap_invalid_xcat_resp_data_error
 def translate_xcat_resp(rawdata, dirt):
     """Translate xCAT response JSON stream to a python dictionary.
@@ -980,3 +994,15 @@ def check_input_types(*types, **validkeys):
             return function(*args, **kwargs)
         return wrap_func
     return decorator
+
+
+def smut_request(smut, requestData):
+    results = smut.request(requestData)
+
+    if results['overallRC'] != 0:
+        raise exception.ZVMSMUTRequestFailed(msg=(
+            '{overallRC: %s, rc: %s, rs: %s, errno: %s, strError: %s, '
+            'response: %s' % (results['overallRC'], results['rc'],
+                              results['rs'], results['errno'],
+                              results['strError'], results['response'])))
+    return results
