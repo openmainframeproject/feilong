@@ -396,6 +396,20 @@ def wrap_invalid_xcat_resp_data_error(function):
     return decorated_function
 
 
+def wrap_invalid_smut_resp_data_error(function):
+    """Catch exceptions when using xCAT response data."""
+
+    @functools.wraps(function)
+    def decorated_function(*arg, **kwargs):
+        try:
+            return function(*arg, **kwargs)
+        except (ValueError, TypeError, IndexError, AttributeError,
+                KeyError) as err:
+            raise exception.ZVMInvalidSMUTResponseDataError(msg=err)
+
+    return decorated_function
+
+
 @wrap_invalid_xcat_resp_data_error
 def translate_xcat_resp(rawdata, dirt):
     """Translate xCAT response JSON stream to a python dictionary.

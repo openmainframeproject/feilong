@@ -155,6 +155,11 @@ zvm_opts = [
         section='tests'),
     Opt('netmask_v4',
         section='tests'),
+    # SMUT options
+    Opt('captureLogs',
+        section='smut',
+        default=False,
+        opt_type='bool'),
     ]
 
 

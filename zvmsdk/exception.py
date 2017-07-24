@@ -156,3 +156,11 @@ class ValidationError(SDKBaseException):
 
 class zVMConfigException(SDKBaseException):
     msg_fmt = 'zVMConfig Error: %(msg)s'
+
+
+class ZVMSMUTRequestFailed(SDKBaseException):
+    msg_fmt = 'Request to SMUT failed: %(msg)s'
+
+
+class ZVMInvalidSMUTResponseDataError(SDKBaseException):
+    msg_fmt = 'Invalid data returned from SMUT: %(msg)s'
