@@ -71,14 +71,14 @@ log { source(src); filter(f_zthin); destination(zthinlog); };" >> /etc/syslog-ng
 fi
 
 # Red Hat Enterprise Linux
-if [ -e "/etc/rc.d/init.d/rsyslog" ]; then
+if [[ -e "/etc/rc.d/init.d/rsyslog" ]] || [[ -e "/etc/sysconfig/rsyslog" ]]; then
     grep ${ZTHIN_LOG} /etc/rsyslog.conf > /dev/null || (echo -e "\n${ZTHIN_LOG_HEADER}\nlocal5.*        ${ZTHIN_LOG}" >> /etc/rsyslog.conf)
 fi
 
 # Restart syslog
 if [ -e "/etc/rc.d/init.d/rsyslog" ]; then
     /etc/rc.d/init.d/rsyslog restart
-elif [ -e "/opt/ibm/cmo/version" ]; then
+elif [[ -e "/opt/ibm/cmo/version" ]] || [[ -e "/etc/sysconfig/rsyslog" ]]; then
     service rsyslog restart
 else
     /etc/init.d/syslog restart
