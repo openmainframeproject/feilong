@@ -200,14 +200,14 @@ def getPerfInfo(rh, useridlist):
           errno     - Errno returned from SMCLI if overallRC = 0.
           response  - Stripped and reformatted output of the SMCLI command.
     """
-    rh.printSysLog("Enter vmUtils.getStatus, userid: " + useridlist)
+    rh.printSysLog("Enter vmUtils.getPerfInfo, userid: " + useridlist)
     parms = ["-T", rh.userid,
              "-c", "1"]
     results = invokeSMCLI(rh, "Image_Performance_Query", parms)
     if results['overallRC'] != 0:
         # SMCLI failed.
         rh.printLn("ES", results['response'])
-        rh.printSysLog("Exit getVM.getStatus, rc: " +
+        rh.printSysLog("Exit vmUtils.getPerfInfo, rc: " +
                        str(results['overallRC']))
         return results
 
