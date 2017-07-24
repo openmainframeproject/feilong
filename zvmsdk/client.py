@@ -20,6 +20,8 @@ import shutil
 import tarfile
 import xml.dom.minidom as Dom
 
+from smutLayer import smut
+
 from zvmsdk import config
 from zvmsdk import constants as const
 from zvmsdk import exception
@@ -31,6 +33,7 @@ CONF = config.CONF
 LOG = log.LOG
 
 _XCAT_CLIENT = None
+_SMUT_CLIENT = None
 
 
 def get_zvmclient():
@@ -40,6 +43,12 @@ def get_zvmclient():
             return XCATClient()
         else:
             return _XCAT_CLIENT
+    elif CONF.zvm.client_type == 'smut':
+        global _SMUT_CLIENT
+        if _SMUT_CLIENT is None:
+            return SMUTClient()
+        else:
+            return _SMUT_CLIENT
     else:
         # TODO: raise Exception
         pass
@@ -1770,3 +1779,72 @@ class XCATClient(ZVMClient):
         url = self._xcat_url.gettab("/hosts", addp)
         with zvmutils.expect_invalid_xcat_resp_data():
             return zvmutils.xcat_request("GET", url)['data'][0][0]
+
+
+class SMUTClient(ZVMClient):
+
+    def __init__(self):
+        self._smut = smut.SMUT(cmdName=CONF.smut.cmdName,
+                               captureLogs=CONF.smut.captureLogs)
+
+    def _parse_smut_return(self, results):
+        # On error, show the result codes (overall rc, rc, rs, ...)
+        if results['overallRC'] != 0:
+            LOG.error("overall rc: " + str(results['overallRC']))
+            LOG.error("        rc: " + str(results['rc']))
+            LOG.error("        rs: " + str(results['rs']))
+            LOG.error("     errno: " + str(results['errno']))
+            LOG.error("  strError: " + str(results['strError']))
+            LOG.error("")
+            LOG.error("Response:")
+
+        # Show the response lines
+        if len(results['response']) != 0:
+            for line in results['response']:
+                LOG.info(line)
+        else:
+            LOG.info("No responses lines.")
+
+        # On error, show the trace log.
+        if results['overallRC'] != 0:
+            LOG.error("")
+            LOG.error("Trace Log:")
+            for line in results['logEntries']:
+                LOG.error(line)
+
+    def get_power_state(self, userid):
+        """Get power status of a z/VM instance."""
+        LOG.debug('Query power stat of %s' % userid)
+        requestData = "PowerVM " + userid + " status"
+        results = self._smut.request(requestData)
+
+        if results['overallRC'] == 0:
+            status = results['response'][0].partition(': ')[2]
+            if (status != 'on' and
+                status != 'off'):
+                raise exception.ZVMInvalidSMUTResponseDataError(
+                    msg=results['response'])
+
+            return status
+
+        else:
+            self._parse_smut_return(results)
+            raise exception.ZVMSMUTRequestFailed(msg=results['response'])
+
+    def guest_start(self, userid):
+        """"Power on VM."""
+        requestData = "PowerVM " + userid + " on"
+        results = self._smut.request(requestData)
+
+        if results['overallRC'] != 0:
+            self._parse_smut_return(results)
+            raise exception.ZVMSMUTRequestFailed(msg=results['response'])
+
+    def guest_stop(self, userid):
+        """"Power off VM."""
+        requestData = "PowerVM " + userid + " off"
+        results = self._smut.request(requestData)
+
+        if results['overallRC'] != 0:
+            self._parse_smut_return(results)
+            raise exception.ZVMSMUTRequestFailed(msg=results['response'])
