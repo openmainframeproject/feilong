@@ -296,7 +296,6 @@ class SDKAPI(object):
     def guest_create_nic(self, userid, vdev=None, nic_id=None,
                          mac_addr=None, ip_addr=None, active=False):
         """ Create the nic for the vm, add NICDEF record into the user direct.
-
         :param str userid: the user id of the vm
         :param str vdev: nic device number, 1- to 4- hexadecimal digits
         :param str nic_id: nic identifier
@@ -306,7 +305,13 @@ class SDKAPI(object):
         :param str ip_addr: the management IP address of the guest, it should
                be the value between 0.0.0.0-255.255.255.255
         :param bool active: whether add a nic on active guest system
-
+        :raises ZVMInvalidInput
+                - Invalid mac address or IP address is provided.
+                - The specified virtual device number has already been used.
+        :raises ZVMNetworkError
+                - The virtual device number is out of the range.
+                - All kinds of xCAT call failure and reraise.
+                - Smcli call failure, refer to the error message for detail.
         """
         if mac_addr is not None:
             if not utils.valid_mac_addr(mac_addr):
