@@ -307,6 +307,14 @@ class SDKAPI(object):
                be the value between 0.0.0.0-255.255.255.255
         :param bool active: whether add a nic on active guest system
 
+        :raises ZVMInvalidInput if
+                - Invalid mas address or IP address is provided
+                - The specified virtual device number has already been used
+                ZVMNetworkError if
+                - The virtual device number is out of the range
+                - All kinds of xCAT call failure and reraise
+                - Smcli call failure, refer to the error message for detail
+
         """
         if mac_addr is not None:
             if not utils.valid_mac_addr(mac_addr):
