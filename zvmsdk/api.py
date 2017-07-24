@@ -850,6 +850,13 @@ class SDKAPI(object):
         :param bool is_rollback_in_failure: Whether to roll back in failure.
                It's not guaranteed that the roll back operation must be
                successful.
+        :raises ZVMVolumeError if:
+                - Multipath feature is not active on the guest.
+                - The volume is unaccessible.
+                - The FCP devices can not be dedicated when protocol 'fc' is
+                  specified.
+                - The FCP devices belong to a same CHPID when protocol 'fc' is
+                  specified.
         """
         self._volumeop.attach_volume_to_instance(guest,
                                                  volume,
@@ -895,6 +902,9 @@ class SDKAPI(object):
         :param bool is_rollback_in_failure: Whether to roll back in failure.
                It's not guaranteed that the roll back operation must be
                successful.
+        :raises ZVMVolumeError if:
+                - Multipath feature is not active on the guest.
+                - The volume is not found on the guest.
         """
         self._volumeop.detach_volume_from_instance(guest,
                                                    volume,
