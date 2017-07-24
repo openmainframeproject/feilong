@@ -22,6 +22,30 @@
       "revId": "ab1920e619d2874f7d9c521167ad9e448310d5c0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bd5381da_430f98fb",
+        "filename": "zvmsdk/tests/functional/test_vmops.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1010896
+      },
+      "writtenOn": "2017-07-24T07:25:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7a86e44e_faa23925",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 50
+      },
+      "revId": "ab1920e619d2874f7d9c521167ad9e448310d5c0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
