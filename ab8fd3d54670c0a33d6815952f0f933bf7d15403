@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "241d56e8_f6a17b85",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-24T17:25:48Z",
+      "side": 1,
+      "message": "why the blank line?",
+      "revId": "ab8fd3d54670c0a33d6815952f0f933bf7d15403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e5e3feb7_24750201",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-24T17:25:48Z",
+      "side": 1,
+      "message": "414-416 are missing the ULT%s... at the beginning of the message, intentional?",
+      "revId": "ab8fd3d54670c0a33d6815952f0f933bf7d15403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0fa9b458_4d18f504",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-24T17:25:48Z",
+      "side": 1,
+      "message": "I\u0027m curious about the use of deepcopy here (and below), why is it important to create a copy of the Overall/rc/rs?  I would\u0027ve thought, since those are not going to change, that it would be okay to use a shallow copy and just reference?",
+      "revId": "ab8fd3d54670c0a33d6815952f0f933bf7d15403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8866ed29_1bda69e6",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-24T17:25:48Z",
+      "side": 1,
+      "message": "if you get here, isn\u0027t it because the message had \"Success:\" but not 11 words in it?",
+      "revId": "ab8fd3d54670c0a33d6815952f0f933bf7d15403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
