@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8db5c795_79f0e281",
+        "filename": "smutLayer/powerVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-25T19:20:51Z",
+      "side": 1,
+      "message": "In the if and elif cases, rh.results never gets updated.  So I think it could have old data in it right?",
+      "revId": "91fe2e808116776d1892e9fa3090ba37682ce677",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
