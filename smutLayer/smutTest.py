@@ -388,9 +388,15 @@ powerTests = [
         'overallRC': [0],
     },
     {
-        'description': "Power on the system.",
-        'request': "PowerVM <<<safeID>>> on --wait --state up",
+        'description': "Power on system a system.",
+        'request': "PowerVM <<<safeID>>> on",
         'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Power on a system that is on but not up.",
+        'request': "PowerVM <<<safeID>>> on --wait --state up",
+        'out': "Userid <<<safeID>>> is in the desired state: up",
         'overallRC': [0],
     },
     {
@@ -407,12 +413,6 @@ powerTests = [
         'out': "<<<safeID>>>: reachable",
         'overallRC': [0],
         'rs': [1]
-    },
-    {
-        'description': "Power on the an already powered on system.",
-        'request': "PowerVM <<<safeID>>> on",
-        'out': "",
-        'overallRC': [0],
     },
     {
         'description': "Pause a system.",

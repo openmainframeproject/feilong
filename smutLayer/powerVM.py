@@ -143,18 +143,20 @@ def activate(rh):
     rh.printSysLog("Enter powerVM.activate, userid: " + rh.userid)
 
     parms = ["-T", rh.userid]
-    results = invokeSMCLI(rh, "Image_Activate", parms)
-    if results['overallRC'] == 0:
+    smcliResults = invokeSMCLI(rh, "Image_Activate", parms)
+    if smcliResults['overallRC'] == 0:
         pass
-    elif (results['overallRC'] == 8 and
-        results['rc'] == 200 and results['rs'] == 8):
+    elif (smcliResults['overallRC'] == 8 and
+        smcliResults['rc'] == 200 and smcliResults['rs'] == 8):
         pass    # All good.  No need to change the ReqHandle results.
     else:
         # SMAPI API failed.
-        rh.printLn("ES", results['response'])
-        rh.updateResults(results)   # Use results from invokeSMCLI
+        rh.printLn("ES", smcliResults['response'])
+        rh.updateResults(smcliResults)    # Use results from invokeSMCLI
 
-    if results['overallRC'] == 0 and 'maxQueries' in rh.parms:
+    if rh.results['overallRC'] == 0 and 'maxQueries' in rh.parms:
+        # Wait for the system to be in the desired state of:
+        # OS is 'up' and reachable or VM is 'on'.
         if rh.parms['desiredState'] == 'up':
             results = waitForOSState(
                 rh,
@@ -169,9 +171,12 @@ def activate(rh):
                 rh.parms['desiredState'],
                 maxQueries=rh.parms['maxQueries'],
                 sleepSecs=rh.parms['poll'])
+
         if results['overallRC'] == 0:
-            rh.printLn("N", "Userid '" + rh.userid +
-                " is in the desired state: " + rh.parms['desiredState'])
+            rh.printLn("N", "Userid %s is in the desired state: %s" %
+                (rh.userid, rh.parms['desiredState']))
+        else:
+            rh.updateResults(results)
 
     rh.printSysLog("Exit powerVM.activate, rc: " +
         str(rh.results['overallRC']))
