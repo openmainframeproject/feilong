@@ -34,6 +34,24 @@
       "revId": "822470d40e5c73f25d75348436d6e126ddb83f46",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "66662ffd_8f09e325",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-25T17:25:34Z",
+      "side": 1,
+      "message": "The code is correct, I think the message is off, it would say: \nCommand returned a response containing \u0027Success\u0027 but did not have at least 10 words following it.\n\nBut in reality it\u0027s looking for the 9th word following \"Success:\".  I think it\u0027s easier just to reword the message:\nCommand returned a response containing \u0027Success\u0027 but did not have at least 10 words in the response.",
+      "parentUuid": "2ba09013_a434a8d6",
+      "revId": "822470d40e5c73f25d75348436d6e126ddb83f46",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
