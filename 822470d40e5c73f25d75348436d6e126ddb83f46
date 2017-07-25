@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8dd909eb_ff3da15d",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-25T16:19:52Z",
+      "side": 1,
+      "message": "I think you mean words in total, because in the use of it, I think it looks for Success: and then for the 10th word on that line (so 9 words after \"Success\")?",
+      "revId": "822470d40e5c73f25d75348436d6e126ddb83f46",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
