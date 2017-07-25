@@ -16,6 +16,24 @@
       "revId": "822470d40e5c73f25d75348436d6e126ddb83f46",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2ba09013_a434a8d6",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-25T16:31:52Z",
+      "side": 1,
+      "message": "No, I think I have it correct.  Here is the information....\nCommand returned multiple lines in the string:\n        linkdiskandbringonline maint start time: 2017-03-03-16:20:48.011\n        Success: Userid maint vdev 193 linked at ad35 device name dasdh\n        linkdiskandbringonline exit time: 2017-03-03-16:20:52.150\n\nThe re.search found \"Success:\" and returned the following:\nUserid maint vdev 193 linked at ad35 device name dasdh\n\ndasdh is the 10th word on the line.  It is indexed in python by the index value of 9.",
+      "parentUuid": "8dd909eb_ff3da15d",
+      "revId": "822470d40e5c73f25d75348436d6e126ddb83f46",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
