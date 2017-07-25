@@ -22,6 +22,30 @@
       "revId": "40bbf1d7e73d1a43790d811faecdce742ecf340a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "45986a88_8e61f0b7",
+        "filename": "smutLayer/makeVM.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-25T21:36:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9bb27da_22ad1a77",
+      "range": {
+        "startLine": 306,
+        "startChar": 20,
+        "endLine": 306,
+        "endChar": 21
+      },
+      "revId": "40bbf1d7e73d1a43790d811faecdce742ecf340a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
