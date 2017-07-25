@@ -276,17 +276,18 @@ def installFS(rh, vaddr, mode, fileSystem):
 
     # Get access to the disk.
     try:
-        cmd = ["./linkdiskandbringonline", rh.userid, vaddr, mode]
+        cmd = ["/opt/zthin/bin/linkdiskandbringonline",
+               rh.userid,
+               vaddr,
+               mode]
         out = subprocess.check_output(cmd, close_fds=True)
         diskAccessed = True
     except CalledProcessError as e:
-        out = e.output
-        results['overallRC'] = 99
-        results['rc'] = e.returncode
         strCmd = ' '.join(cmd)
-        rh.printLn("ES", "Command failed with rc: " +
-            str(e.returncode) + " response, cmd: '" + strCmd +
-            "', out: '" + out)
+        rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
+            e.returncode, e.output))
+        results = msgs.msg['0415'][0]
+        results['rs'] = e.returncode
         rh.updateResults(results)
 
     if results['overallRC'] == 0:
@@ -296,19 +297,23 @@ def installFS(rh, vaddr, mode, fileSystem):
         Success: Userid maint vdev 193 linked at ad35 device name dasdh
         linkdiskandbringonline exit time: 2017-03-03-16:20:52.150
         """
-        match = re.search('Success:(.+?)', out)
+        match = re.search('Success:(.+?)\n', out)
         if match:
-            try:
-                parts = out.split()
-                device = "/dev/" + parts[10]
-            except ValueError:
+            parts = match.group(1).split()
+            if len(parts) > 9:
+                device = "/dev/" + parts[9]
+            else:
                 strCmd = ' '.join(cmd)
-                results['overallRC'] = 99
-                results['rc'] = e.returncode
-                rh.printLn("ES", "Command did not return the expected " +
-                    "response, cmd: '" + strCmd + "', out: '" +
-                    results['response'])
+                rh.printLn("ES", msgs.msg['0416'][1] % (modId,
+                    'Success:', 10, strCmd, out))
+                results = msgs.msg['0416'][0]
                 rh.updateResults(results)
+        else:
+            strCmd = ' '.join(cmd)
+            rh.printLn("ES", msgs.msg['0417'][1] % (modId,
+                'Success:', strCmd, out))
+            results = msgs.msg['0417'][0]
+            rh.updateResults(results)
 
     if results['overallRC'] == 0:
         # dasdfmt the disk
@@ -320,28 +325,42 @@ def installFS(rh, vaddr, mode, fileSystem):
                 "-f", device]
             out = subprocess.check_output(cmd, close_fds=True)
         except CalledProcessError as e:
-            out = e.output
-            results['overallRC'] = 99
-            results['rc'] = e.returncode
             strCmd = ' '.join(cmd)
-            rh.printLn("ES", "Command failed with rc: " +
-                str(e.returncode) + " response, cmd: '" + strCmd +
-                "', out: '" + out)
+            rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
+                e.returncode, e.output))
+            results = msgs.msg['0415'][0]
+            results['rs'] = e.returncode
+            rh.updateResults(results)
+
+    if results['overallRC'] == 0:
+        # Settle the devices so we can do the partition.
+        strCmd = ("which udevadm &> /dev/null && " +
+            "udevadm settle || udevsettle")
+        try:
+            subprocess.check_output(
+                strCmd,
+                stderr=subprocess.STDOUT,
+                close_fds=True,
+                shell=True)
+        except CalledProcessError as e:
+            rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
+                e.returncode, e.output))
+            results = msgs.msg['0415'][0]
+            results['rs'] = e.returncode
             rh.updateResults(results)
 
     if results['overallRC'] == 0:
         # Prepare the partition with fdasd
         try:
             cmd = ["/sbin/fdasd", "-a", device]
-            out = subprocess.check_output(cmd, close_fds=True)
+            out = subprocess.check_output(cmd,
+                stderr=subprocess.STDOUT, close_fds=True)
         except CalledProcessError as e:
-            out = e.output
-            results['overallRC'] = 99
-            results['rc'] = e.returncode
             strCmd = ' '.join(cmd)
-            rh.printLn("ES", "Command failed with rc: " +
-                str(e.returncode) + " response, cmd: '" + strCmd +
-                "', out: '" + out)
+            rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
+                e.returncode, e.output))
+            results = msgs.msg['0415'][0]
+            results['rs'] = e.returncode
             rh.updateResults(results)
 
     if results['overallRC'] == 0:
@@ -353,17 +372,16 @@ def installFS(rh, vaddr, mode, fileSystem):
             else:
                 cmd = ["mkfs", "-F", "-t", fileSystem, device]
             try:
-                out = subprocess.check_output(cmd, close_fds=True)
+                out = subprocess.check_output(cmd,
+                    stderr=subprocess.STDOUT, close_fds=True)
                 rh.printLn("N", "File system: " + fileSystem +
                     " is installed.")
             except CalledProcessError as e:
-                out = e.output
-                results['overallRC'] = 99
-                results['rc'] = e.returncode
                 strCmd = ' '.join(cmd)
-                rh.printLn("ES", "Command failed with rc: " +
-                    str(e.returncode) + " response, cmd: '" + strCmd +
-                    "', out: '" + out)
+                rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
+                    e.returncode, e.output))
+                results = msgs.msg['0415'][0]
+                results['rs'] = e.returncode
                 rh.updateResults(results)
         else:
             rh.printLn("N", "File system type is swap. No need to install " +
@@ -372,16 +390,16 @@ def installFS(rh, vaddr, mode, fileSystem):
     if diskAccessed:
         # Give up the disk.
         try:
-            cmd = ["./offlinediskanddetach", rh.userid, vaddr]
+            cmd = ["/opt/zthin/bin/offlinediskanddetach",
+                   rh.userid,
+                   vaddr]
             out = subprocess.check_output(cmd, close_fds=True)
         except CalledProcessError as e:
-            out = e.output
-            results['overallRC'] = 99
-            results['rc'] = e.returncode
             strCmd = ' '.join(cmd)
-            rh.printLn("ES", "Command failed with rc: " +
-                str(e.returncode) + " response, cmd: '" + strCmd +
-                "', out: '" + out)
+            rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
+                e.returncode, e.output))
+            results = msgs.msg['0415'][0]
+            results['rs'] = e.returncode
             rh.updateResults(results)
 
     rh.printSysLog("Exit vmUtils.installFS, rc: " + str(results['rc']))
@@ -554,10 +572,10 @@ def isLoggedOn(rh, userid):
         else:
             # Abnormal failure
             strCmd = ' '.join(cmd)
-            rh.printLn("ES", "Command failed: '" + strCmd + "', rc: " +
-                str(e.returncode) + " out: " + e.output)
-            results['overallRC'] = 3
-            results['rc'] = e.returncode
+            rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
+                e.returncode, e.output))
+            results = msgs.msg['0415'][0]
+            results['rs'] = e.returncode
 
     rh.printSysLog("Exit vmUtils.isLoggedOn, overallRC: " +
         str(results['overallRC']) + " rc: " + str(results['rc']) +
@@ -715,14 +733,7 @@ def waitForOSState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
                            " maxWait: " + str(maxQueries) +
                            " sleepSecs: " + str(sleepSecs))
 
-    results = {
-          'overallRC': 0,
-          'rc': 0,
-          'rs': 0,
-          'errno': 0,
-          'response': [],
-          'strError': '',
-         }
+    results = {}
 
     strCmd = "echo 'ping'"
     stateFnd = False
@@ -746,16 +757,12 @@ def waitForOSState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
                 'overallRC': 0,
                 'rc': 0,
                 'rs': 0,
-                'errno': 0,
-                'response': [],
-                'strError': '',
             }
     else:
         maxWait = maxQueries * sleepSecs
-        rh.printLn("ES", "Userid '" + userid + "' did not enter the " +
-            "expected operating system state of '" + desiredState + "' in " +
-            str(maxWait) + " seconds.")
-        results['overallRC'] = 99
+        rh.printLn("ES", msgs.msg['0413'][1] % (modId, userid,
+            desiredState, maxWait))
+        results = msgs.msg['0413'][0]
 
     rh.printSysLog("Exit vmUtils.waitForOSState, rc: " +
         str(results['overallRC']))
@@ -778,8 +785,6 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
           overallRC - overall return code, 0: success, non-zero: failure
           rc        - RC returned from SMCLI if overallRC = 0.
           rs        - RS returned from SMCLI if overallRC = 0.
-          errno     - Errno returned from SMCLI if overallRC = 0.
-          response  - Updated with an error message if wait times out.
 
     Note:
 
@@ -790,14 +795,7 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
                            " maxWait: " + str(maxQueries) +
                            " sleepSecs: " + str(sleepSecs))
 
-    results = {
-          'overallRC': 0,
-          'rc': 0,
-          'rs': 0,
-          'errno': 0,
-          'response': [],
-          'strError': '',
-         }
+    results = {}
 
     cmd = ["/sbin/vmcp", "query", "user", userid]
     stateFnd = False
@@ -822,10 +820,10 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
                 # Abnormal failure
                 out = e.output
                 strCmd = ' '.join(cmd)
-                rh.printLn("ES", "Command failed: '" + strCmd + "', rc: " +
-                    str(e.returncode) + " out: " + out)
-                results['overallRC'] = 3
-                results['rc'] = e.returncode
+                rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
+                    e.returncode, out))
+                results = msgs.msg['0415'][0]
+                results['rs'] = e.returncode
                 break
         if i < maxQueries:
             # Sleep a bit before looping.
@@ -836,16 +834,12 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
                 'overallRC': 0,
                 'rc': 0,
                 'rs': 0,
-                'errno': 0,
-                'response': [],
-                'strError': '',
             }
     else:
         maxWait = maxQueries * sleepSecs
-        rh.printLn("ES", "Userid '" + userid + "' did not enter the " +
-            "expected virtual machine state of '" + desiredState + "' in " +
-            str(maxWait) + " seconds.")
-        results['overallRC'] = 99
+        rh.printLn("ES", msgs.msg['0414'][1] % (modId, userid,
+            desiredState, maxWait))
+        results = msgs.msg['0414'][0]
 
     rh.printSysLog("Exit vmUtils.waitForVMState, rc: " +
         str(results['overallRC']))

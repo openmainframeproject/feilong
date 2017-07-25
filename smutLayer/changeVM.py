@@ -186,7 +186,7 @@ def add3390(rh):
             rh.printLn("ES", results['response'])
             rh.updateResults(results)  # Use results returned by invokeSMCLI
 
-    if (results['overallRC'] == 0 and 'filesystem' in rh.parms):
+    if (results['overallRC'] == 0 and 'fileSystem' in rh.parms):
         results = installFS(
             rh,
             rh.parms['vaddr'],
@@ -276,7 +276,7 @@ def add9336(rh):
             rh.printLn("ES", results['response'])
             rh.updateResults(results)    # Use results from invokeSMCLI
 
-    if (results['overallRC'] == 0 and 'filesystem' in rh.parms):
+    if (results['overallRC'] == 0 and 'fileSystem' in rh.parms):
         # Install the file system
         results = installFS(
             rh,
