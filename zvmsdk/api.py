@@ -330,6 +330,13 @@ class SDKAPI(object):
         :param str vdev: nic device number, 1- to 4- hexadecimal digits
         :param bool active: whether delete a nic on active guest system
 
+        :raises ZVMInvalidInput if:
+                - Input parameter is invalid, refer to the error message for
+                  detail
+        :raises ZVMNetworkError if:
+                - All kinds of xCAT call failure
+                - Smcli call failure, refer to the error message for detail
+
         """
         self._networkops.delete_nic(userid, vdev, active=active)
 
