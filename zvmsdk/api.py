@@ -560,6 +560,7 @@ class SDKAPI(object):
                   }
                   for the guests that are shutdown or not exist, no data
                   returned in the dictionary
+        :raises: None
         """
         if not isinstance(userid_list, list):
             userid_list = [userid_list]
@@ -588,6 +589,7 @@ class SDKAPI(object):
                   }
                   for the guests that are shutdown or not exist, no data
                   returned in the dictionary
+        :raises: None
         """
         if not isinstance(userid_list, list):
             userid_list = [userid_list]
@@ -631,6 +633,7 @@ class SDKAPI(object):
                   }
                   for the guests that are shutdown or not exist, no data
                   returned in the dictionary
+        :raises: None
         """
         if not isinstance(userid_list, list):
             userid_list = [userid_list]
