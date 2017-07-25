@@ -359,6 +359,10 @@ class SDKAPI(object):
                   {'vdev': 'vswitch'}, such as
                   {'1000': 'VSWITCH1', '1003': 'VSWITCH2'}
         :rtype: dict
+
+        :raises ZVMInvalidInput if:
+                - Input parameter is invalid, refer to the error message for
+                  detail
         """
         return self._networkops.get_vm_nic_vswitch_info(userid)
 
@@ -450,6 +454,9 @@ class SDKAPI(object):
 
         :returns: vswitch name list
         :rtype: list
+
+        :raises ZVMNetworkError if:
+                - All kinds of xCAT call failure
         """
         return self._networkops.get_vswitch_list()
 
@@ -510,6 +517,14 @@ class SDKAPI(object):
         :param int native_vid: the native vlan id, 1-4094 or None
         :param bool persist: whether create the vswitch in the permanent
                configuration for the system
+
+        :raises ZVMInvalidInput if:
+                - Input parameter is invalid, refer to the error message for
+                  detail
+                - The value of queue_mem or native_vid is out of the range
+        :raises ZVMNetworkError if:
+                - All kinds of xCAT call failure
+                - Smcli call failure, refer to the error message for detail
 
         """
         if ((queue_mem < 1) or (queue_mem > 8)):
@@ -658,6 +673,14 @@ class SDKAPI(object):
 
         :param str vswitch_name: the name of the vswitch
         :param str userid: the user id of the vm
+
+        :raises ZVMInvalidInput if:
+                - Input parameter is invalid, refer to the error message for
+                  detail
+        :raises ZVMNetworkError if:
+                - All kinds of xCAT call failure
+                - Smcli call failure, refer to the error message for detail
+
         """
 
         self._networkops.grant_user_to_vswitch(vswitch_name, userid)
@@ -668,6 +691,13 @@ class SDKAPI(object):
 
         :param str vswitch_name: the name of the vswitch
         :param str userid: the user id of the vm
+
+        :raises ZVMInvalidInput if:
+                - Input parameter is invalid, refer to the error message for
+                  detail
+        :raises ZVMNetworkError if:
+                - All kinds of xCAT call failure
+                - Smcli call failure, refer to the error message for detail
         """
         self._networkops.revoke_user_from_vswitch(vswitch_name, userid)
 
@@ -678,6 +708,13 @@ class SDKAPI(object):
         :param str vswitch_name: the name of the vswitch
         :param str userid: the user id of the vm
         :param int vlan_id: the VLAN id
+
+        :raises ZVMInvalidInput if:
+                - Input parameter is invalid, refer to the error message for
+                  detail
+        :raises ZVMNetworkError if:
+                - All kinds of xCAT call failure
+                - Smcli call failure, refer to the error message for detail
         """
         self._networkops.set_vswitch_port_vlan_id(vswitch_name,
                                                   userid, vlan_id)
@@ -809,6 +846,14 @@ class SDKAPI(object):
                - MAC_protect=<value>: ON, OFF or UNSPECified
                - VLAN_counters=<value>: ON or OFF
 
+        :raises ZVMInvalidInput if:
+                - Input parameter is invalid, refer to the error message for
+                  detail
+                - Invalid keyword in the input dictionary
+        :raises ZVMNetworkError if:
+                - All kinds of xCAT call failure
+                - Smcli call failure, refer to the error message for detail
+
         """
         self._networkops.set_vswitch(vswitch_name, **kwargs)
 
@@ -819,6 +864,13 @@ class SDKAPI(object):
         :param str name: the vswitch name
         :param bool persist: whether delete the vswitch from the permanent
                configuration for the system
+
+        :raises ZVMInvalidInput if:
+                - Input parameter is invalid, refer to the error message for
+                  detail
+        :raises ZVMNetworkError if:
+                - All kinds of xCAT call failure
+                - Smcli call failure, refer to the error message for detail
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
 
