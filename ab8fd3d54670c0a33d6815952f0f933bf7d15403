@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "2e64d24e_36007e39",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-25T15:28:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "241d56e8_f6a17b85",
+      "revId": "ab8fd3d54670c0a33d6815952f0f933bf7d15403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e5e3feb7_24750201",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 2
@@ -30,6 +48,24 @@
       "writtenOn": "2017-07-24T17:25:48Z",
       "side": 1,
       "message": "414-416 are missing the ULT%s... at the beginning of the message, intentional?",
+      "revId": "ab8fd3d54670c0a33d6815952f0f933bf7d15403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "11e085a7_2fb8075d",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-25T15:28:12Z",
+      "side": 1,
+      "message": "Nope.  Fixed.",
+      "parentUuid": "e5e3feb7_24750201",
       "revId": "ab8fd3d54670c0a33d6815952f0f933bf7d15403",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "39070f9a_1c1f8d06",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-25T15:28:12Z",
+      "side": 1,
+      "message": "I had some reason but I agree a reference will suffice.  I am changing the code.",
+      "parentUuid": "0fa9b458_4d18f504",
+      "revId": "ab8fd3d54670c0a33d6815952f0f933bf7d15403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8866ed29_1bda69e6",
         "filename": "smutLayer/vmUtils.py",
         "patchSetId": 2
@@ -64,6 +118,24 @@
       "writtenOn": "2017-07-24T17:25:48Z",
       "side": 1,
       "message": "if you get here, isn\u0027t it because the message had \"Success:\" but not 11 words in it?",
+      "revId": "ab8fd3d54670c0a33d6815952f0f933bf7d15403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dcd978b9_d216d073",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-25T15:28:12Z",
+      "side": 1,
+      "message": "Yes, I will fix this.",
+      "parentUuid": "8866ed29_1bda69e6",
       "revId": "ab8fd3d54670c0a33d6815952f0f933bf7d15403",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
