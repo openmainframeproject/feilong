@@ -52,6 +52,24 @@
       "revId": "822470d40e5c73f25d75348436d6e126ddb83f46",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7f557afe_0dc9118b",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-25T17:57:59Z",
+      "side": 1,
+      "message": "Okay, I had misunderstood the code, which takes the string from the target on to the end of the line, not the whole line containing the target.  Sorry.",
+      "parentUuid": "66662ffd_8f09e325",
+      "revId": "822470d40e5c73f25d75348436d6e126ddb83f46",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
