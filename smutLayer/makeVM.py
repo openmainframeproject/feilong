@@ -289,10 +289,29 @@ def showOperandLines(rh):
         "Create a virtual machine in the z/VM user directory.")
     rh.printLn("N", "      help          - Displays this help information.")
     rh.printLn("N", "      version       - " +
-        "show the version of the power function")
+        "show the version of the makeVM function")
     if rh.subfunction != '':
         rh.printLn("N", "Operand(s):")
-    rh.printLn("N", "      <userid>      - " +
-        "Userid of the target virtual machine")
-
+        rh.printLn("N", "      --cpus <cpuCnt>       - " +
+                   "Specifies the desired number of virtual CPUs the")
+        rh.printLn("N", "                              " +
+                   "guest will have.")
+        rh.printLn("N", "      --ipl <ipl>           - " +
+                   "Specifies an IPL disk or NSS for the virtual")
+        rh.printLn("N", "                              " +
+                   "vmachine's directory entry.")
+        rh.printLn("N", "      --logonby <byUsers>   - " +
+                   "Specifies a list of up to 8 z/VM userids who can log")
+        rh.printLn("N", "                              " +
+                   "on to the virtual machine using their id and password.")
+        rh.printLn("N", "      --maxMemSize <maxMemSize> - " +
+                   "Specifies the maximum memory the virtual machine")
+        rh.printLn("N", "                              " +
+                   "is allowed to define.")
+        rh.printLn("N", "      --profile <profName>  - " +
+                   "Specifies the z/VM PROFILE to include in the")
+        rh.printLn("N", "                              " +
+                   "virtual machine's directory entry.")
+        rh.printLn("N", "      <userid>              - " +
+                   "Userid of the virtual machine to create.")
     return
