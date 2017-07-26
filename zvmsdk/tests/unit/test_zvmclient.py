@@ -252,8 +252,12 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         info = self._zvmclient.get_image_performance_info('fakevm')
         self.assertEqual(info, None)
 
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch('zvmsdk.utils.xdsh')
-    def test_image_performance_query_single(self, dsh):
+    def test_image_performance_query_single(self, dsh, _get_hcp_info):
+        _get_hcp_info.return_value = {'hostname': "fakehcp.fake.com",
+                                     'nodename': "fakehcp",
+                                     'userid': "fakeuserid"}
         dsh.return_value = {
             'info': [], 'node': [], 'errorcode': [[u'0']],
             'data': [['zhcp2: Number of virtual server IDs: 1 \n'
@@ -294,8 +298,12 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         self.assertEqual(pi_info['FAKEVM']['min_memory'], "0 KB")
         self.assertEqual(pi_info['FAKEVM']['shared_memory'], "5222192 KB")
 
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch('zvmsdk.utils.xdsh')
-    def test_image_performance_query_multiple(self, dsh):
+    def test_image_performance_query_multiple(self, dsh, _get_hcp_info):
+        _get_hcp_info.return_value = {'hostname': "fakehcp.fake.com",
+                                     'nodename': "fakehcp",
+                                     'userid': "fakeuserid"}
         dsh.return_value = {
             'info': [], 'node': [], 'errorcode': [[u'0']],
             'data': [['zhcp2: Number of virtual server IDs: 2 \n'
@@ -373,20 +381,32 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         self.assertEqual(pi_info['FAKEVM2']['min_memory'], "0 KB")
         self.assertEqual(pi_info['FAKEVM2']['shared_memory'], "5222190 KB")
 
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch('zvmsdk.utils.xdsh')
-    def test_image_performance_query_err1(self, dsh):
+    def test_image_performance_query_err1(self, dsh, _get_hcp_info):
+        _get_hcp_info.return_value = {'hostname': "fakehcp.fake.com",
+                                     'nodename': "fakehcp",
+                                     'userid': "fakeuserid"}
         dsh.return_value = {}
         self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
                           self._zvmclient.image_performance_query, 'fakevm')
 
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch('zvmsdk.utils.xdsh')
-    def test_image_performance_query_err2(self, dsh):
+    def test_image_performance_query_err2(self, dsh, _get_hcp_info):
+        _get_hcp_info.return_value = {'hostname': "fakehcp.fake.com",
+                                     'nodename': "fakehcp",
+                                     'userid': "fakeuserid"}
         dsh.return_value = {'data': [[]]}
         self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
                           self._zvmclient.image_performance_query, 'fakevm')
 
+    @mock.patch.object(zvmclient.XCATClient, '_get_hcp_info')
     @mock.patch('zvmsdk.utils.xdsh')
-    def test_image_performance_query_err3(self, dsh):
+    def test_image_performance_query_err3(self, dsh, _get_hcp_info):
+        _get_hcp_info.return_value = {'hostname': "fakehcp.fake.com",
+                                     'nodename': "fakehcp",
+                                     'userid': "fakeuserid"}
         dsh.return_value = {
             'info': [], 'node': [], 'errorcode': [[u'0']],
             'data': [['zhcp2: Number of virtual server IDs: 1 ', None]],
