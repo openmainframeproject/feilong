@@ -533,7 +533,8 @@ vmModifyTests = [
     # >>>>>>>>> Create a simple system for logged off tests.
     {
         'description': "Create a simple system.",
-        'request': "makevm <<<unsafeID1>>> directory smapi 2g g",
+        'request': "MakeVM <<<unsafeID1>>> directory <<<pw>>> " +
+                   "<<<vmSize>>> g --ipl 100 --profile OSDFLT",
         'out': "",
         'overallRC': [0],
     },
