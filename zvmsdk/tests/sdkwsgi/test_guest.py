@@ -8,6 +8,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import time
 import unittest
 
 from zvmsdk.tests.sdkwsgi import api_sample
@@ -20,11 +21,14 @@ class GuestHandlerTestCase(unittest.TestCase):
         self.apibase = api_sample.APITestBase()
 
         self.client = test_sdkwsgi.TestSDKClient()
+
+        # every time, we need to random generate userid
+        self.userid = 'RESTT%03d' % (time.time() % 1000)
         self._cleanup()
 
     def _cleanup(self):
-        self.client.api_request(url='/guests/RESTT100',
-                                method='DELETE')
+        url = '/guests/%s' % self.userid
+        self.client.api_request(url=url, method='DELETE')
 
         self.client.api_request(url='/vswitchs/restvsw1',
                                 method='DELETE')
@@ -33,9 +37,10 @@ class GuestHandlerTestCase(unittest.TestCase):
         pass
 
     def _guest_create(self):
-        body = """{"guest": {"userid": "RESTT100", "vcpus": 1,
+        body = """{"guest": {"userid": "%s", "vcpus": 1,
                              "memory": 1024,
                              "disk_list": [{"size": "3g"}]}}"""
+        body = body % self.userid
         resp = self.client.api_request(url='/guests', method='POST',
                                        body=body)
         self.assertEqual(200, resp.status_code)
@@ -43,8 +48,8 @@ class GuestHandlerTestCase(unittest.TestCase):
         return resp
 
     def _guest_delete(self):
-        resp = self.client.api_request(url='/guests/RESTT100',
-                                       method='DELETE')
+        url = '/guests/%s' % self.userid
+        resp = self.client.api_request(url=url, method='DELETE')
         self.assertEqual(200, resp.status_code)
 
         return resp
@@ -52,38 +57,44 @@ class GuestHandlerTestCase(unittest.TestCase):
     def _guest_nic_create(self, vdev="1000"):
         body = '{"nic": {"vdev": "%s"}}' % vdev
 
-        resp = self.client.api_request(url='/guests/RESTT100/nic',
+        url = '/guests/%s/nic' % self.userid
+        resp = self.client.api_request(url=url,
                                        method='POST',
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
     def _guest_nic_delete(self, vdev="1000"):
         body = '{"nic": {}}'
-        resp = self.client.api_request(url='/guests/RESTT100/nic/2000',
+        url = '/guests/%s/nic/2000' % self.userid
+        resp = self.client.api_request(url=url,
                                        method='DELETE',
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
     def _guest_get(self):
-        resp = self.client.api_request(url='/guests/RESTT100',
+        url = '/guests/%s' % self.userid
+        resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
         return resp
 
     def _guest_get_info(self):
-        resp = self.client.api_request(url='/guests/RESTT100/info',
+        url = '/guests/%s/info' % self.userid
+        resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
         return resp
 
     def _guest_get_power_state(self):
-        resp = self.client.api_request(url='/guests/RESTT100/power_state',
+        url = '/guests/%s/power_state' % self.userid
+        resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
         return resp
 
     def _guest_action(self, body):
-        resp = self.client.api_request(url='/guests/RESTT100/action',
+        url = '/guests/%s/action' % self.userid
+        resp = self.client.api_request(url=url,
                                        method='POST', body=body)
         self.assertEqual(200, resp.status_code)
         return resp
@@ -115,17 +126,20 @@ class GuestHandlerTestCase(unittest.TestCase):
         return self._guest_action(body)
 
     def _guest_cpuinfo(self):
-        resp = self.client.api_request(url='/guests/cpuinfo?userid=RESTT100',
+        url = '/guests/cpuinfo?userid=%s' % self.userid
+        resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
 
     def _guest_meminfo(self):
-        resp = self.client.api_request(url='/guests/meminfo?userid=RESTT100',
+        url = '/guests/meminfo?userid=%s' % self.userid
+        resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
 
     def _guest_vnicsinfo(self):
-        resp = self.client.api_request(url='/guests/vnicsinfo?userid=RESTT100',
+        url = '/guests/vnicsinfo?userid=%s' % self.userid
+        resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
 
@@ -187,14 +201,16 @@ class GuestHandlerTestCase(unittest.TestCase):
 
     def _vswitch_couple(self):
         body = '{"info": {"couple": "True", "vswitch": "RESTVSW1"}}'
-        resp = self.client.api_request(url='/guests/RESTT100/nic/2000',
+        url = '/guests/%s/nic/2000' % self.userid
+        resp = self.client.api_request(url=url,
                                        method='PUT',
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
     def _vswitch_uncouple(self):
         body = '{"info": {"couple": "False"}}'
-        resp = self.client.api_request(url='/guests/RESTT100/nic/2000',
+        url = '/guests/%s/nic/2000' % self.userid
+        resp = self.client.api_request(url=url,
                                        method='PUT',
                                        body=body)
         self.assertEqual(200, resp.status_code)
