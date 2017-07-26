@@ -165,7 +165,7 @@ url = {
 }
 
 
-remote_host = {
+remotehost = {
     'type': ['string'],
 }
 

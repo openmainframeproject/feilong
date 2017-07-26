@@ -20,7 +20,7 @@ create = {
             'type': 'object',
             'properties': {
                 'url': parameter_types.url,
-                'remote_host': parameter_types.remote_host,
+                'remotehost': parameter_types.remotehost,
             },
             'required': ['url'],
             # FIXME: image_meta will be added later to properties
