@@ -258,7 +258,7 @@ class HandlersGuestTest(SDKWSGITest):
         mock_delete.assert_called_once_with(FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch.object(guest.VMHandler, 'create_nic')
+    @mock.patch.object(api.SDKAPI, 'guest_create_nic')
     def test_guest_create_nic(self, mock_create, mock_userid):
         body_str = '{"nic": {"vdev": "1234"}}'
         self.req.body = body_str
@@ -266,8 +266,20 @@ class HandlersGuestTest(SDKWSGITest):
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_create_nic(self.req)
-        body = util.extract_json(body_str)
-        mock_create.assert_called_once_with(FAKE_USERID, body=body)
+        mock_create.assert_called_once_with(FAKE_USERID, active=False,
+            ip_addr=None, mac_addr=None, nic_id=None, vdev='1234')
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(api.SDKAPI, 'guest_create_nic')
+    def test_guest_create_nic_raise(self, mock_create, mock_userid):
+        body_str = '{"nic": {"vdev": "1234"}}'
+        self.req.body = body_str
+        mock_userid.return_value = FAKE_USERID
+        mock_create.side_effect = exception.ZVMInvalidInput(msg='dummy')
+
+        self.assertRaises(webob.exc.HTTPBadRequest,
+                          guest.guest_create_nic,
+                          self.req)
 
     def test_guest_create_nic_invalid_vdev(self):
         body_str = '{"nic": {"vdev": 123}}'

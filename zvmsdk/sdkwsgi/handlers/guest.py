@@ -16,6 +16,7 @@ import webob.exc
 
 from zvmsdk import api
 from zvmsdk import config
+from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import guest
@@ -102,8 +103,12 @@ class VMHandler(object):
         ip_addr = nic.get('ip_addr', None)
         active = nic.get('active', False)
 
-        self.api.guest_create_nic(userid, vdev=vdev, nic_id=nic_id,
-            mac_addr=mac_addr, ip_addr=ip_addr, active=active)
+        try:
+            self.api.guest_create_nic(userid, vdev=vdev, nic_id=nic_id,
+                                      mac_addr=mac_addr, ip_addr=ip_addr,
+                                      active=active)
+        except exception.ZVMInvalidInput as e:
+            raise webob.exc.HTTPBadRequest(str(e))
 
     @validation.schema(guest.couple_uncouple_nic)
     def couple_uncouple_nic(self, userid, vdev, body):
