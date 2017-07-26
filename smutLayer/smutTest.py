@@ -132,6 +132,12 @@ deployTests = [
         'overallRC': [0],
     },
     {
+        'description': "Purge the reader",
+        'request': "ChangeVM <<<unsafeID1>>> purgerdr",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
         'description': "Add a 3390 disk.",
         'request': "ChangeVM <<<unsafeID1>>> add3390 <<<pool3390>>> 100 " +
             "<<<size3390>>>",
@@ -151,44 +157,10 @@ deployTests = [
         'out': "",
         'overallRC': [0],
     },
-     {
-        'description': "Add modifications to the activation engine",
-        'request': 'ChangeVM <<<unsafeID1>>> aemod <<<setupDisk>>> ' +
-            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
-            'mntdir=/mnt/ephemeral/0.0.0101"',
-
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Add unknown script mods to the activation engine",
-        'request': 'ChangeVM <<<unsafeID1>>> aemod BAD ' +
-            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
-            'mntdir=/mnt/ephemeral/0.0.0101"',
-
-        'out': "",
-        'overallRC': [4],
-        'rc': [4],
-        'rs': [400],
-    },
-    {
-        'description': "Add modifications to activation engine for bad id",
-        'request': 'ChangeVM BADID aemod <<<setupDisk>>> ' +
-            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
-            'mntdir=/mnt/ephemeral/0.0.0101"',
-
-        'out': "",
-        'overallRC': [4],
-    },
-    {
-        'description': "Purge the reader",
-        'request': "ChangeVM <<<unsafeID1>>> purgerdr",
-        'out': "",
-        'overallRC': [0],
-    },
     {
         'description': "Punch the config drive tar file to the system.",
-        'request': "ChangeVM <<<unsafeID1>>> punchfile <<<SimpleCfgFile>>>",
+        'request': "ChangeVM <<<unsafeID1>>> punchfile " +
+        "<<<SimpleCfgFile>>> --class x",
         'out': "",
         'overallRC': [0],
     },
@@ -565,6 +537,41 @@ vmModifyTests = [
         'out': "",
         'overallRC': [0],
     },
+     {
+        'description': "Add modifications to the activation engine",
+        'request': 'ChangeVM <<<unsafeID1>>> aemod <<<setupDisk>>> ' +
+            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
+            'mntdir=/mnt/ephemeral/0.0.0101"',
+
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add unknown script mods to the activation engine",
+        'request': 'ChangeVM <<<unsafeID1>>> aemod BAD ' +
+            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
+            'mntdir=/mnt/ephemeral/0.0.0101"',
+
+        'out': "",
+        'overallRC': [4],
+        'rc': [4],
+        'rs': [400],
+    },
+    {
+        'description': "Add modifications to activation engine for bad id",
+        'request': 'ChangeVM BADID aemod <<<setupDisk>>> ' +
+            '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
+            'mntdir=/mnt/ephemeral/0.0.0101"',
+
+        'out': "",
+        'overallRC': [4],
+    },
+    {
+        'description': "Purge the reader",
+        'request': "ChangeVM <<<unsafeID1>>> purgerdr",
+        'out': "",
+        'overallRC': [0],
+    },
     {
         'description': "Add a 3390 disk to the system with ext4.",
         'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
@@ -621,7 +628,7 @@ vmModifyTests = [
     },
     {
         'description': "Power on the system and wait for to OS to come up.",
-        'request': "PowerVM <<<safeID>>> on --wait --state up",
+        'request': "PowerVM <<<unsafeID1>>> on --wait --state up",
         'out': "",
         'overallRC': [0],
     },
