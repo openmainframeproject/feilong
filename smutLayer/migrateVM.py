@@ -189,6 +189,8 @@ def getStatus(rh):
         # SMAPI API failed.
         rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
+    else:
+        rh.printLn("N", results['response'])
 
     rh.printSysLog("Exit migrateVM.getStatus, rc: " +
         str(rh.results['overallRC']))
