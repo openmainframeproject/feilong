@@ -66,7 +66,7 @@ class SDKWSGITest(unittest.TestCase):
 
 class GuestActionsTest(SDKWSGITest):
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch.object(guest.VMAction, 'start')
+    @mock.patch.object(api.SDKAPI, 'guest_start')
     def test_guest_start(self, mock_action,
                         mock_userid):
         self.req.body = '{"action": "start"}'
@@ -75,10 +75,10 @@ class GuestActionsTest(SDKWSGITest):
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
-        mock_action.assert_called_once_with(FAKE_USERID, {"action": "start"})
+        mock_action.assert_called_once_with(FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch.object(guest.VMAction, 'stop')
+    @mock.patch.object(api.SDKAPI, 'guest_stop')
     def test_guest_stop(self, mock_action,
                         mock_userid):
         self.req.body = '{"action": "stop"}'
@@ -86,10 +86,10 @@ class GuestActionsTest(SDKWSGITest):
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
-        mock_action.assert_called_once_with(FAKE_USERID, {"action": "stop"})
+        mock_action.assert_called_once_with(FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch.object(guest.VMAction, 'get_console_output')
+    @mock.patch.object(api.SDKAPI, 'guest_get_console_output')
     def test_guest_get_console_output(self, mock_action,
                         mock_userid):
         self.req.body = '{"action": "get_console_output"}'
@@ -97,13 +97,12 @@ class GuestActionsTest(SDKWSGITest):
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
-        mock_action.assert_called_once_with(FAKE_USERID,
-                                            {"action": "get_console_output"})
+        mock_action.assert_called_once_with(FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch.object(guest.VMAction, 'deploy')
-    def test_guest_get_deploy(self, mock_action,
-                              mock_userid):
+    @mock.patch.object(api.SDKAPI, 'guest_deploy')
+    def test_guest_deploy(self, mock_action,
+                          mock_userid):
         self.req.body = """{"action": "deploy",
                             "image": "image1",
                             "transportfiles": "file1",
@@ -114,11 +113,43 @@ class GuestActionsTest(SDKWSGITest):
 
         guest.guest_action(self.req)
         mock_action.assert_called_once_with(FAKE_USERID,
-                                            {"action": "deploy",
-                                             "image": "image1",
-                                             "transportfiles": "file1",
-                                             "remotehost": "host1",
-                                             "vdev": "1000"})
+            'image1', remotehost='host1', transportfiles='file1', vdev='1000')
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_deploy_missing_param(self, mock_userid):
+        self.req.body = """{"action": "deploy",
+                            "transportfiles": "file1",
+                            "remotehost": "host1",
+                            "vdev": "1000"}"""
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_deploy_invalid_param(self, mock_userid):
+        self.req.body = """{"action": "deploy",
+                            "image": "image1",
+                            "transportfiles": "file1",
+                            "remotehost": "host1",
+                            "vdev": 1000}"""
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_deploy_additional_param(self, mock_userid):
+        # A typo in the transportfiles
+        self.req.body = """{"action": "deploy",
+                            "image": "image1",
+                            "transportfiless": "file1",
+                            "remotehost": "host1",
+                            "vdev": "1000"}"""
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_invalid_action(self, mock_userid):

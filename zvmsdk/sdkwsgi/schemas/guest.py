@@ -36,31 +36,6 @@ create = {
 }
 
 
-deploy = {
-    'type': 'object',
-    'properties': {
-        'guest': {
-            'type': 'object',
-            'properties': {
-                'userid': parameter_types.userid,
-                'image_name': parameter_types.name,
-
-                # FIXME
-                'transportfiles': parameter_types.name,
-                'remotehost': parameter_types.name,
-                'vdev': parameter_types.vdev,
-
-            },
-            'required': ['userid', 'image_name'],
-            'additionalProperties': False,
-        },
-        'additionalProperties': False,
-    },
-    'required': ['guest'],
-    'additionalProperties': False,
-}
-
-
 create_nic = {
     'type': 'object',
     'properties': {
@@ -100,5 +75,18 @@ couple_uncouple_nic = {
         'additionalProperties': False,
     },
     'required': ['info'],
+    'additionalProperties': False,
+}
+
+
+deploy = {
+    'type': 'object',
+    'properties': {
+        'image': parameter_types.name,
+        'transportfiles': {'type': ['string']},
+        'remotehost': parameter_types.remotehost,
+        'vdev': parameter_types.vdev,
+    },
+    'required': ['image'],
     'additionalProperties': False,
 }

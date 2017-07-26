@@ -126,29 +126,26 @@ class VMAction(object):
     def __init__(self):
         self.api = api.SDKAPI(skip_input_check=True)
 
-    def start(self, userid, data):
+    def start(self, userid, body):
         try:
             self.api.guest_start(userid)
         except Exception:
             # FIXME: need to be specific on the exception handling
             LOG.info('failed to start %s', userid)
 
-    def stop(self, userid, data):
+    def stop(self, userid, body):
         self.api.guest_stop(userid)
 
-    def get_console_output(self, userid, data):
+    def get_console_output(self, userid, body):
         return self.api.guest_get_console_output(userid)
 
-    # FIXME: add validation to the request
-    # @validation.schema(guest.deploy)
-    def deploy(self, userid, data):
-        LOG.debug('start to deploy on %s', userid)
+    @validation.schema(guest.deploy)
+    def deploy(self, userid, body):
+        image_name = body['image']
 
-        image_name = data['image']
-
-        transportfiles = data.get('transportfiles', None)
-        remotehost = data.get('remotehost', None)
-        vdev = data.get('vdev', None)
+        transportfiles = body.get('transportfiles', None)
+        remotehost = body.get('remotehost', None)
+        vdev = body.get('vdev', None)
 
         self.api.guest_deploy(userid, image_name,
             transportfiles=transportfiles, remotehost=remotehost,
@@ -268,16 +265,17 @@ def guest_action(req):
 
     def _guest_action(userid, req):
         action = get_action()
-        data = util.extract_json(req.body)
-        if len(data) == 0 or 'action' not in data:
+        body = util.extract_json(req.body)
+        if len(body) == 0 or 'action' not in body:
             msg = 'action not exist or is empty'
             LOG.info(msg)
             raise webob.exc.HTTPBadRequest(explanation=msg)
 
-        method = data['action']
+        method = body['action']
         func = getattr(action, method, None)
         if func:
-            return func(userid, data)
+            body.pop('action')
+            return func(userid, body=body)
         else:
             msg = 'action %s is invalid' % method
             raise webob.exc.HTTPBadRequest(msg)
