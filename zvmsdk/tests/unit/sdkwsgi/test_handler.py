@@ -140,6 +140,13 @@ class GuestHandlerNegativeTest(unittest.TestCase):
         self.assertRaises(webob.exc.HTTPNotFound,
                           h, self.env, dummy)
 
+    def test_guest_volume_invalid_method(self):
+        self.env['PATH_INFO'] = '/guests/1/volumes'
+        self.env['REQUEST_METHOD'] = 'PUT'
+        h = handler.SdkHandler()
+        self.assertRaises(webob.exc.HTTPMethodNotAllowed,
+                          h, self.env, dummy)
+
 
 class GuestHandlerTest(unittest.TestCase):
 
@@ -318,6 +325,34 @@ class GuestHandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             get_info.assert_called_once_with([])
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_guest_attach_volume(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['wsgiorg.routing_args'] = ()
+        self.env['PATH_INFO'] = '/guests/1/volumes'
+        self.env['REQUEST_METHOD'] = 'POST'
+        h = handler.SdkHandler()
+        func = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.attach'
+        with mock.patch(func) as attach:
+            h(self.env, dummy)
+
+            attach.assert_called_once_with('1', {})
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_guest_detach_volume(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['wsgiorg.routing_args'] = ()
+        self.env['PATH_INFO'] = '/guests/1/volumes'
+        self.env['REQUEST_METHOD'] = 'DELETE'
+        h = handler.SdkHandler()
+        func = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.detach'
+        with mock.patch(func) as detach:
+            h(self.env, dummy)
+
+            detach.assert_called_once_with('1', {})
 
 
 class ImageHandlerNegativeTest(unittest.TestCase):

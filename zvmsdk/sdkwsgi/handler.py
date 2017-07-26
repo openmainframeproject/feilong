@@ -21,6 +21,7 @@ from zvmsdk.sdkwsgi.handlers import host
 from zvmsdk.sdkwsgi.handlers import image
 from zvmsdk.sdkwsgi.handlers import root
 from zvmsdk.sdkwsgi.handlers import tokens
+from zvmsdk.sdkwsgi.handlers import volume
 from zvmsdk.sdkwsgi.handlers import vswitch
 
 
@@ -65,6 +66,10 @@ ROUTE_LIST = (
     }),
     ('/guests/{userid}/power_state', {
         'GET': guest.guest_get_power_state,
+    }),
+    ('/guests/{userid}/volumes', {
+        'POST': volume.volume_attach,
+        'DELETE': volume.volume_detach,
     }),
     ('/host/info', {
         'GET': host.host_get_info,
