@@ -104,7 +104,9 @@ def cancelMigrate(rh):
 
     rh.printSysLog("Enter migrateVM.cancelMigrate")
 
-    parms = ["-T", rh.userid, "-k", "action=CANCEL"]
+    parms = ["-T", rh.userid,
+             "-k", "destination=*",
+             "-k", "action=CANCEL"]
     results = invokeSMCLI(rh, "VMRELOCATE", parms)
     if results['overallRC'] != 0:
         # SMAPI API failed.
@@ -189,6 +191,8 @@ def getStatus(rh):
         # SMAPI API failed.
         rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
+    else:
+        rh.printLn("N", results['response'])
 
     rh.printSysLog("Exit migrateVM.getStatus, rc: " +
         str(rh.results['overallRC']))
