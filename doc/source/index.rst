@@ -1,18 +1,17 @@
-:tocdepth: 2
+================================
+Welcome to Cloudlib4zvm document
+================================
 
-=========
- sdk api
-=========
+sdk api
+=======
 
-.. automodule:: zvmsdk.api
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. toctree::
+   :maxdepth: 1
 
+   sdkapi
 
-==============
- sdk rest api
-==============
+sdk rest api
+============
 
 .. toctree::
    :maxdepth: 1
