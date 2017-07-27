@@ -432,6 +432,13 @@ class SDKAPI(object):
         :param str vswitch_name: the name of the vswitch
         :param bool active: whether make the change on active guest system
 
+        :raises ZVMInvalidInput if:
+                - Input parameter is invalid, refer to the error message for
+                  detail
+        :raises ZVMNetworkError if:
+                - All kinds of xCAT call failure
+                - Smcli call failure, refer to the error message for detail
+
         """
         self._networkops.couple_nic_to_vswitch(userid, nic_vdev,
                                                vswitch_name, active=active)
@@ -445,6 +452,12 @@ class SDKAPI(object):
         :param str nic_vdev: nic device number, 1- to 4- hexadecimal digits
         :param bool active: whether make the change on active guest system
 
+        :raises ZVMInvalidInput if:
+                - Input parameter is invalid, refer to the error message for
+                  detail
+        :raises ZVMNetworkError if:
+                - All kinds of xCAT call failure
+                - Smcli call failure, refer to the error message for detail
         """
         self._networkops.uncouple_nic_from_vswitch(userid, nic_vdev,
                                                    active=active)
