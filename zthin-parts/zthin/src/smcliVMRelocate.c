@@ -604,11 +604,8 @@ int vmRelocateStatus(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             if (0 != (rc = addMessageToBuffer(&saveMsgs, strMsg))) {
                 goto end;
             }
-            snprintf(strMsg, sizeof(strMsg),"VMRELOCATE status: %s\n", vmRelocate_status);
-            if (0 != (rc = addMessageToBuffer(&saveMsgs, strMsg))) {
-                goto end;
-            }
-            addMessageToBuffer(&saveMsgs, "\n");
+            // Add extra newline after status for spacing.
+            snprintf(strMsg, sizeof(strMsg),"VMRELOCATE status: %s\n\n", vmRelocate_status);
             if (0 != (rc = addMessageToBuffer(&saveMsgs, strMsg))) {
                 goto end;
             }
