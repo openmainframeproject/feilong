@@ -143,13 +143,6 @@ def cvtToMag(rh, size):
        Size bytes
 
     Output:
-       Results structure:
-          overallRC - Overall return code for the function:
-                      0  - Everything went ok
-                      4  - Input validation error
-          rc        - Return code causing the return. Same as overallRC.
-          rs        - Reason code causing the return.
-          errno     - Errno value causing the return. Always zero.
        Converted value with a magnitude
     """
 
