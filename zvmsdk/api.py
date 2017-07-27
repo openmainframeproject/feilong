@@ -763,108 +763,129 @@ class SDKAPI(object):
         """Change the configuration of an existing virtual switch
 
         :param str vswitch_name: the name of the virtual switch
-        :param dict kwargs: Dictionary used to change specific configuration.
-               Valid keywords for kwargs:
-               - grant_userid=<value>: A userid to be added to the access list
-               - user_vlan_id=<value> : user VLAN ID. Support following ways:
-               1. As single values between 1 and 4094. A maximum of four
-               values may be specified, separated by blanks.
-               Example: 1010 2020 3030 4040
-               2. As a range of two numbers, separated by a dash (-).
-               A maximum of two ranges may be specified.
-               Example: 10-12 20-22
-               - revoke_userid=<value>: A userid to be removed from the
-               access list
-               - real_device_address=<value>: The real device address or the
-               real device address and OSA Express port number of a QDIO OSA
-               Express device to be used to create the switch to the virtual
-               adapter. If using a real device and an OSA Express port number,
-               specify the real device number followed by a period(.),
-               the letter 'P' (or 'p'), followed by the port number as a
-               hexadecimal number. A maximum of three device addresses,
-               all 1-7 characters in length, may be specified, delimited by
-               blanks. 'None' may also be specified
-               - port_name=<value>:  The name used to identify the OSA Expanded
-               adapter. A maximum of three port names, all 1-8 characters in
-               length, may be specified, delimited by blanks.
-               - controller_name=<value>: One of the following:
-               1. The userid controlling the real device. A maximum of eight
-               userids, all 1-8 characters in length, may be specified,
-               delimited by blanks.
-               2. '*': Specifies that any available controller may be used
-               - connection_value=<value>: One of the following values:
-               CONnect: Activate the real device connection.
-               DISCONnect: Do not activate the real device connection.
-               - queue_memory_limit=<value>: A number between 1 and 8
-               specifying the QDIO buffer size in megabytes.
-               - routing_value=<value>: Specifies whether the OSA-Express QDIO
-               device will act as a router to the virtual switch, as follows:
-               NONrouter: The OSA-Express device identified in
-               real_device_address= will not act as a router to the vswitch
-               PRIrouter: The OSA-Express device identified in
-               real_device_address= will act as a primary router to the vswitch
-               - port_type=<value>: Specifies the port type, ACCESS or TRUNK
-               - persist=<value>: one of the following values:
-               NO: The vswitch is updated on the active system, but is not
-               updated in the permanent configuration for the system.
-               YES: The vswitch is updated on the active system and also in
-               the permanent configuration for the system.
-               If not specified, the default is NO.
-               - gvrp_value=<value>: GVRP or NOGVRP
-               - mac_id=<value>: A unique identifier (up to six hexadecimal
-               digits) used as part of the vswitch MAC address
-               - uplink=<value>: One of the following:
-               NO: The port being enabled is not the vswitch's UPLINK port.
-               YES: The port being enabled is the vswitch's UPLINK port.
-               - nic_userid=<value>: One of the following:
-               1. The userid of the port to/from which the UPLINK port will
-               be connected or disconnected. If a userid is specified,
-               then nic_vdev= must also be specified
-               2. '*': Disconnect the currently connected guest port to/from
-               the special virtual switch UPLINK port. (This is equivalent
-               to specifying NIC NONE on CP SET VSWITCH).
-               - nic_vdev=<value>: The virtual device to/from which the the
-               UPLINK port will be connected/disconnected. If this value is
-               specified, nic_userid= must also be specified, with a userid.
-               - lacp=<value>: One of the following values:
-               ACTIVE: Indicates that the virtual switch will initiate
-               negotiations with the physical switch via the link aggregation
-               control protocol (LACP) and will respond to LACP packets sent
-               by the physical switch.
-               INACTIVE: Indicates that aggregation is to be performed,
-               but without LACP.
-               - Interval=<value>: The interval to be used by the control
-               program (CP) when doing load balancing of conversations across
-               multiple links in the group. This can be any of the following
-               values:
-               1 - 9990: Indicates the number of seconds between load balancing
-               operations across the link aggregation group.
-               OFF: Indicates that no load balancing is done.
-               - group_rdev=<value>: The real device address or the real device
-               address and OSA Express port number of a QDIO OSA Express device
-               to be affected within the link aggregation group associated with
-               this vswitch. If using a real device and an OSA Express port
-               number, specify the real device number followed by a period (.),
-               the letter 'P' (or 'p'), followed by the port number as a
-               hexadecimal number. A maximum of eight device addresses,
-               all 1-7 characters in length, may be specified, delimited by
-               blanks.
-               Note: If a real device address is specified, this device will be
-               added to the link aggregation group associated with this
-               vswitch. (The link aggregation group will be created if it does
-               not already exist.)
-               - iptimeout=<value>: A number between 1 and 240 specifying the
-               length of time in minutes that a remote IP address table entry
-               remains in the IP address table for the virtual switch.
-               - port_isolation=<value> ON or OFF
-               - promiscuous=<value>: One of the following:
-               NO: The userid or port on the grant is not authorized to use
-               the vswitch in promiscuous mode
-               YES: The userid or port on the grant is authorized to use the
-               vswitch in promiscuous mode.
-               - MAC_protect=<value>: ON, OFF or UNSPECified
-               - VLAN_counters=<value>: ON or OFF
-
+        :param dict kwargs:
+                - grant_userid=<value>:
+                    A userid to be added to the access list
+                - user_vlan_id=<value>:
+                    user VLAN ID. Support following ways:
+                    1. As single values between 1 and 4094. A maximum of four
+                    values may be specified, separated by blanks.
+                    Example: 1010 2020 3030 4040
+                    2. As a range of two numbers, separated by a dash (-).
+                    A maximum of two ranges may be specified.
+                    Example: 10-12 20-22
+                - revoke_userid=<value>:
+                    A userid to be removed from the access list
+                - real_device_address=<value>:
+                    The real device address or the real device address and
+                    OSA Express port number of a QDIO OSA
+                    Express device to be used to create the switch to the virtual
+                    adapter. If using a real device and an OSA Express port number,
+                    specify the real device number followed by a period(.),
+                    the letter 'P' (or 'p'), followed by the port number as a
+                    hexadecimal number. A maximum of three device addresses,
+                    all 1-7 characters in length, may be specified, delimited by
+                    blanks. 'None' may also be specified
+                - port_name=<value>:
+                    The name used to identify the OSA Expanded
+                    adapter. A maximum of three port names, all 1-8 characters in
+                    length, may be specified, delimited by blanks.
+                - controller_name=<value>:
+                    One of the following:
+                    1. The userid controlling the real device. A maximum of eight
+                    userids, all 1-8 characters in length, may be specified,
+                    delimited by blanks.
+                    2. '*': Specifies that any available controller may be used
+                - connection_value=<value>:
+                    One of the following values:
+                    CONnect: Activate the real device connection.
+                    DISCONnect: Do not activate the real device connection.
+                - queue_memory_limit=<value>:
+                    A number between 1 and 8
+                    specifying the QDIO buffer size in megabytes.
+                - routing_value=<value>:
+                    Specifies whether the OSA-Express QDIO
+                    device will act as a router to the virtual switch, as follows:
+                    NONrouter: The OSA-Express device identified in
+                    real_device_address= will not act as a router to the vswitch
+                    PRIrouter: The OSA-Express device identified in
+                    real_device_address= will act as a primary router to the vswitch
+                - port_type=<value>:
+                    Specifies the port type, ACCESS or TRUNK
+                - persist=<value>:
+                    one of the following values:
+                    NO: The vswitch is updated on the active system, but is not
+                    updated in the permanent configuration for the system.
+                    YES: The vswitch is updated on the active system and also in
+                    the permanent configuration for the system.
+                    If not specified, the default is NO.
+                - gvrp_value=<value>:
+                    GVRP or NOGVRP
+                - mac_id=<value>:
+                    A unique identifier (up to six hexadecimal
+                    digits) used as part of the vswitch MAC address
+                - uplink=<value>:
+                    One of the following:
+                    NO: The port being enabled is not the vswitch's UPLINK port.
+                    YES: The port being enabled is the vswitch's UPLINK port.
+                - nic_userid=<value>:
+                    One of the following:
+                    1. The userid of the port to/from which the UPLINK port will
+                    be connected or disconnected. If a userid is specified,
+                    then nic_vdev= must also be specified
+                    2. '*': Disconnect the currently connected guest port to/from
+                    the special virtual switch UPLINK port. (This is equivalent
+                    to specifying NIC NONE on CP SET VSWITCH).
+                - nic_vdev=<value>:
+                    The virtual device to/from which the the
+                    UPLINK port will be connected/disconnected. If this value is
+                    specified, nic_userid= must also be specified, with a userid.
+                - lacp=<value>:
+                    One of the following values:
+                    ACTIVE: Indicates that the virtual switch will initiate
+                    negotiations with the physical switch via the link aggregation
+                    control protocol (LACP) and will respond to LACP packets sent
+                    by the physical switch.
+                    INACTIVE: Indicates that aggregation is to be performed,
+                    but without LACP.
+                - Interval=<value>:
+                    The interval to be used by the control
+                    program (CP) when doing load balancing of conversations across
+                    multiple links in the group. This can be any of the following
+                    values:
+                    1 - 9990: Indicates the number of seconds between load balancing
+                    operations across the link aggregation group.
+                    OFF: Indicates that no load balancing is done.
+                - group_rdev=<value>:
+                    The real device address or the real device
+                    address and OSA Express port number of a QDIO OSA Express device
+                    to be affected within the link aggregation group associated with
+                    this vswitch. If using a real device and an OSA Express port
+                    number, specify the real device number followed by a period (.),
+                    the letter 'P' (or 'p'), followed by the port number as a
+                    hexadecimal number. A maximum of eight device addresses,
+                    all 1-7 characters in length, may be specified, delimited by
+                    blanks.
+                    Note: If a real device address is specified, this device will be
+                    added to the link aggregation group associated with this
+                    vswitch. (The link aggregation group will be created if it does
+                    not already exist.)
+                - iptimeout=<value>:
+                    A number between 1 and 240 specifying the
+                    length of time in minutes that a remote IP address table entry
+                    remains in the IP address table for the virtual switch.
+                - port_isolation=<value>:
+                    ON or OFF
+                - promiscuous=<value>:
+                    One of the following:
+                    NO: The userid or port on the grant is not authorized to use
+                    the vswitch in promiscuous mode
+                    YES: The userid or port on the grant is authorized to use the
+                    vswitch in promiscuous mode.
+                - MAC_protect=<value>:
+                    ON, OFF or UNSPECified
+                - VLAN_counters=<value>:
+                    ON or OFF
         :raises ZVMInvalidInput if:
                 - Input parameter is invalid, refer to the error message for
                   detail
