@@ -307,6 +307,9 @@ class SDKAPI(object):
                be the value between 0.0.0.0-255.255.255.255
         :param bool active: whether add a nic on active guest system
 
+        :returns: nic device number, 1- to 4- hexadecimal digits
+        :rtype: str
+
         :raises ZVMInvalidInput if:
                 - Input parameter is invalid, refer to the error message for
                   detail
@@ -327,9 +330,9 @@ class SDKAPI(object):
                 raise exception.ZVMInvalidInput(
                     msg=("Invalid management IP address, it should be the "
                          "value between 0.0.0.0 and 255.255.255.255"))
-        self._networkops.create_nic(userid, vdev=vdev, nic_id=nic_id,
-                                    mac_addr=mac_addr, ip_addr=ip_addr,
-                                    active=active)
+        return self._networkops.create_nic(userid, vdev=vdev, nic_id=nic_id,
+                                           mac_addr=mac_addr, ip_addr=ip_addr,
+                                           active=active)
 
     @check_input_types(_TUSERID, _TSTR, bool)
     def guest_delete_nic(self, userid, vdev, active=False):

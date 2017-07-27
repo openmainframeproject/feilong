@@ -566,6 +566,8 @@ class XCATClient(ZVMClient):
         if ip_addr is not None:
             self._preset_vm_network(userid, ip_addr)
 
+        return nic_vdev
+
     def _is_vdev_valid(self, vdev, vdev_info):
         for used_vdev in vdev_info:
             max_used_vdev = str(hex(int(used_vdev, 16) + 2))[2:]
