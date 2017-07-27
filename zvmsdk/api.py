@@ -13,10 +13,8 @@
 #    under the License.
 
 
-import functools
-import types
-
 from zvmsdk import config
+from zvmsdk import constants
 from zvmsdk import exception
 from zvmsdk import hostops
 from zvmsdk import imageops
@@ -32,95 +30,15 @@ CONF = config.CONF
 LOG = log.LOG
 
 
-_TSTR = types.StringTypes
-_TNONE = types.NoneType
-_TSTR_OR_NONE = (types.StringType, types.UnicodeType, types.NoneType)
-_INT_OR_NONE = (int, types.NoneType)
-_INT_OR_TSTR = (int, types.StringType, types.UnicodeType)
-_TUSERID = 'TYPE_USERID'
+_TSTR = constants._TSTR
+_TNONE = constants._TNONE
+_TSTR_OR_NONE = constants._TSTR_OR_NONE
+_INT_OR_NONE = constants._INT_OR_NONE
+_INT_OR_TSTR = constants._INT_OR_TSTR
+_TUSERID = constants._TUSERID
 # Vswitch name has same rule with userid
-_TVSWNAME = _TUSERID
-_TUSERID_OR_LIST = (_TUSERID, list)
-
-
-def check_input_types(*types, **validkeys):
-    """This is a function decorator to check all input parameters given to
-    decorated function are in expected types.
-
-    The checks can be skipped by specify skip_input_checks=True in decorated
-    function.
-
-    :param tuple types: expected types of input parameters to the decorated
-                        function
-    :param validkeys: valid keywords(str) in a list.
-                      e.g. validkeys=['key1', 'key2']
-    """
-    def decorator(function):
-        @functools.wraps(function)
-        def wrap_func(*args, **kwargs):
-            if args[0]._skip_input_check:
-                # skip input check
-                return function(*args, **kwargs)
-            # drop class object self
-            inputs = args[1:]
-            if (len(inputs) > len(types)):
-                msg = ("Too many parameters provided: %(specified)d specified,"
-                       "%(expected)d expected." %
-                       {'specified': len(inputs), 'expected': len(types)})
-                LOG.info(msg)
-                raise exception.ZVMInvalidInput(msg=msg)
-
-            argtypes = tuple(map(type, inputs))
-            match_types = types[0:len(argtypes)]
-
-            invalid_type = False
-            invalid_userid_idx = -1
-            for idx in range(len(argtypes)):
-                _mtypes = match_types[idx]
-                if not isinstance(_mtypes, tuple):
-                    _mtypes = (_mtypes,)
-
-                argtype = argtypes[idx]
-                if _TUSERID in _mtypes:
-                    userid_type = True
-                    for _tmtype in _mtypes:
-                        if ((argtype == _tmtype) and
-                            (_tmtype != _TUSERID)):
-                            userid_type = False
-                    if (userid_type and
-                        (not utils.valid_userid(inputs[idx]))):
-                        invalid_userid_idx = idx
-                        break
-                elif argtype not in _mtypes:
-                    invalid_type = True
-                    break
-
-            if invalid_userid_idx != -1:
-                msg = ("Invalid string value found at the #%d parameter, "
-                       "length should be less or equal to 8 and should not be "
-                       "null or contain spaces." % (invalid_userid_idx + 1))
-                LOG.info(msg)
-                raise exception.ZVMInvalidInput(msg=msg)
-
-            if invalid_type:
-                msg = ("Invalid input types: %(argtypes)s; "
-                       "Expected types: %(types)s" %
-                       {'argtypes': str(argtypes), 'types': str(types)})
-                LOG.info(msg)
-                raise exception.ZVMInvalidInput(msg=msg)
-
-            valid_keys = validkeys.get('valid_keys')
-            if valid_keys:
-                for k in kwargs.keys():
-                    if k not in valid_keys:
-                        msg = ("Invalid keyword: %(key)s; "
-                               "Expected keywords are: %(keys)s" %
-                               {'key': k, 'keys': str(valid_keys)})
-                        LOG.info(msg)
-                        raise exception.ZVMInvalidInput(msg=msg)
-            return function(*args, **kwargs)
-        return wrap_func
-    return decorator
+_TVSWNAME = constants._TVSWNAME
+_TUSERID_OR_LIST = constants._TUSERID_OR_LIST
 
 
 class SDKAPI(object):
@@ -135,7 +53,7 @@ class SDKAPI(object):
         self._volumeop = volumeop.get_volumeop()
         self._skip_input_check = kwargs.get('skip_input_check')
 
-    @check_input_types(_TUSERID)
+    @utils.check_input_types(_TUSERID)
     def guest_start(self, userid):
         """Power on a virtual machine.
 
@@ -145,7 +63,7 @@ class SDKAPI(object):
         """
         self._vmops.guest_start(userid)
 
-    @check_input_types(_TUSERID, int, int)
+    @utils.check_input_types(_TUSERID, int, int)
     def guest_stop(self, userid, timeout=0, retry_interval=10):
         """Power off a virtual machine.
 
@@ -163,12 +81,12 @@ class SDKAPI(object):
 
         self._vmops.guest_stop(userid, timeout, retry_interval)
 
-    @check_input_types(_TUSERID)
+    @utils.check_input_types(_TUSERID)
     def guest_get_power_state(self, userid):
         """Returns power state."""
         return self._vmops.get_power_state(userid)
 
-    @check_input_types(_TUSERID)
+    @utils.check_input_types(_TUSERID)
     def guest_get_info(self, userid):
         """Get the status of a virtual machine.
 
@@ -197,7 +115,7 @@ class SDKAPI(object):
         """
         return self._hostops.get_info()
 
-    @check_input_types(_TSTR)
+    @utils.check_input_types(_TSTR)
     def host_diskpool_get_info(self, disk_pool=CONF.zvm.disk_pool):
         """ Retrieve diskpool information.
         :param str disk_pool: the disk pool info. It use ':' to separate
@@ -217,7 +135,7 @@ class SDKAPI(object):
 
         return self._hostops.diskpool_get_info(diskpool_name)
 
-    @check_input_types(_TSTR)
+    @utils.check_input_types(_TSTR)
     def image_delete(self, image_name):
         """Delete image from image repository
 
@@ -226,7 +144,7 @@ class SDKAPI(object):
         """
         self._imageops.image_delete(image_name)
 
-    @check_input_types(_TSTR)
+    @utils.check_input_types(_TSTR)
     def image_get_root_disk_size(self, image_file_name):
         """Get the root disk size of the image
 
@@ -235,7 +153,7 @@ class SDKAPI(object):
         """
         return self._imageops.image_get_root_disk_size(image_file_name)
 
-    @check_input_types(_TSTR, dict, _TSTR_OR_NONE)
+    @utils.check_input_types(_TSTR, dict, _TSTR_OR_NONE)
     def image_import(self, url, image_meta={}, remote_host=None):
         """Import image to zvmsdk image repository
 
@@ -248,7 +166,7 @@ class SDKAPI(object):
                os_version. For example:
                {'os_version': 'rhel6.2',
                'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5'}
-        :param: remote_host:
+        :param string remote_host:
                 if the image url schema is file, the remote_host is used to
                 indicate where the image comes from, the format is username@IP
                 eg. nova@192.168.99.1, the default value is None, it indicate
@@ -259,7 +177,7 @@ class SDKAPI(object):
         self._imageops.image_import(url, image_meta=image_meta,
                                     remote_host=remote_host)
 
-    @check_input_types(_TSTR_OR_NONE)
+    @utils.check_input_types(_TSTR_OR_NONE)
     def image_query(self, imagekeyword=None):
         """Get the list of image names in image repository
 
@@ -274,7 +192,7 @@ class SDKAPI(object):
         """
         return self._imageops.image_query(imagekeyword)
 
-    @check_input_types(_TUSERID, _TSTR, _TSTR_OR_NONE, _TSTR_OR_NONE,
+    @utils.check_input_types(_TUSERID, _TSTR, _TSTR_OR_NONE, _TSTR_OR_NONE,
                        _TSTR_OR_NONE)
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
@@ -291,7 +209,7 @@ class SDKAPI(object):
         return self._vmops.guest_deploy(userid, image_name,
                                         transportfiles, remotehost, vdev)
 
-    @check_input_types(_TUSERID, _TSTR_OR_NONE, _TSTR_OR_NONE,
+    @utils.check_input_types(_TUSERID, _TSTR_OR_NONE, _TSTR_OR_NONE,
                        _TSTR_OR_NONE, _TSTR_OR_NONE, bool)
     def guest_create_nic(self, userid, vdev=None, nic_id=None,
                          mac_addr=None, ip_addr=None, active=False):
@@ -334,7 +252,7 @@ class SDKAPI(object):
                                            mac_addr=mac_addr, ip_addr=ip_addr,
                                            active=active)
 
-    @check_input_types(_TUSERID, _TSTR, bool)
+    @utils.check_input_types(_TUSERID, _TSTR, bool)
     def guest_delete_nic(self, userid, vdev, active=False):
         """ delete the nic for the vm
 
@@ -352,7 +270,7 @@ class SDKAPI(object):
         """
         self._networkops.delete_nic(userid, vdev, active=active)
 
-    @check_input_types(_TUSERID)
+    @utils.check_input_types(_TUSERID)
     def guest_get_nic_vswitch_info(self, userid):
         """ Return the nic and switch pair for the specified vm.
 
@@ -369,7 +287,7 @@ class SDKAPI(object):
         """
         return self._networkops.get_vm_nic_vswitch_info(userid)
 
-    @check_input_types(_TUSERID, valid_keys=['nic_coupled'])
+    @utils.check_input_types(_TUSERID, valid_keys=['nic_coupled'])
     def guest_get_definition_info(self, userid, **kwargs):
         """Get definition info for the specified guest vm, also could be used
         to check specific info.
@@ -385,7 +303,7 @@ class SDKAPI(object):
         """
         return self._vmops.get_definition_info(userid, **kwargs)
 
-    @check_input_types(_TUSERID, int, int, list, _TSTR)
+    @utils.check_input_types(_TUSERID, int, int, list, _TSTR)
     def guest_create(self, userid, vcpus, memory, disk_list=None,
                      user_profile=CONF.zvm.user_profile):
         """create a vm in z/VM
@@ -425,7 +343,7 @@ class SDKAPI(object):
         """
         self._vmops.create_vm(userid, vcpus, memory, disk_list, user_profile)
 
-    @check_input_types(_TUSERID, _TSTR, _TVSWNAME, bool)
+    @utils.check_input_types(_TUSERID, _TSTR, _TVSWNAME, bool)
     def guest_nic_couple_to_vswitch(self, userid, nic_vdev,
                                     vswitch_name, active=False):
         """ Couple nic device to specified vswitch.
@@ -446,7 +364,7 @@ class SDKAPI(object):
         self._networkops.couple_nic_to_vswitch(userid, nic_vdev,
                                                vswitch_name, active=active)
 
-    @check_input_types(_TUSERID, _TSTR, bool)
+    @utils.check_input_types(_TUSERID, _TSTR, bool)
     def guest_nic_uncouple_from_vswitch(self, userid, nic_vdev,
                                         active=False):
         """ Couple nic device to specified vswitch.
@@ -476,7 +394,7 @@ class SDKAPI(object):
         """
         return self._networkops.get_vswitch_list()
 
-    @check_input_types(_TVSWNAME, _TSTR_OR_NONE, _TUSERID, _TSTR, _TSTR,
+    @utils.check_input_types(_TVSWNAME, _TSTR_OR_NONE, _TUSERID, _TSTR, _TSTR,
                        _TSTR, _INT_OR_TSTR, _TSTR, _TSTR, int,
                        _INT_OR_NONE, bool)
     def vswitch_create(self, name, rdev=None, controller='*',
@@ -560,7 +478,7 @@ class SDKAPI(object):
                                      native_vid=native_vid,
                                      persist=persist)
 
-    @check_input_types(_TUSERID)
+    @utils.check_input_types(_TUSERID)
     def guest_get_console_output(self, userid):
         """Get the console output of the guest virtual machine.
 
@@ -570,7 +488,7 @@ class SDKAPI(object):
         """
         return self._vmops.get_console_output(userid)
 
-    @check_input_types(_TUSERID)
+    @utils.check_input_types(_TUSERID)
     def guest_delete(self, userid):
         """Delete guest
         :param userid: the user id of the vm
@@ -578,7 +496,7 @@ class SDKAPI(object):
         """
         return self._vmops.delete_vm(userid)
 
-    @check_input_types(_TUSERID_OR_LIST)
+    @utils.check_input_types(_TUSERID_OR_LIST)
     def guest_inspect_cpus(self, userid_list):
         """Get the cpu statistics of the guest virtual machines
 
@@ -607,13 +525,14 @@ class SDKAPI(object):
                   }
                   for the guests that are shutdown or not exist, no data
                   returned in the dictionary
+
         :raises: None
         """
         if not isinstance(userid_list, list):
             userid_list = [userid_list]
         return self._monitor.inspect_cpus(userid_list)
 
-    @check_input_types(_TUSERID_OR_LIST)
+    @utils.check_input_types(_TUSERID_OR_LIST)
     def guest_inspect_mem(self, userid_list):
         """Get the mem usage statistics of the guest virtual machines
 
@@ -642,7 +561,7 @@ class SDKAPI(object):
             userid_list = [userid_list]
         return self._monitor.inspect_mem(userid_list)
 
-    @check_input_types(_TUSERID_OR_LIST)
+    @utils.check_input_types(_TUSERID_OR_LIST)
     def guest_inspect_vnics(self, userid_list):
         """Get the vnics statistics of the guest virtual machines
 
@@ -680,13 +599,14 @@ class SDKAPI(object):
                   }
                   for the guests that are shutdown or not exist, no data
                   returned in the dictionary
+
         :raises: None
         """
         if not isinstance(userid_list, list):
             userid_list = [userid_list]
         return self._monitor.inspect_vnics(userid_list)
 
-    @check_input_types(_TVSWNAME, _TUSERID)
+    @utils.check_input_types(_TVSWNAME, _TUSERID)
     def vswitch_grant_user(self, vswitch_name, userid):
         """Set vswitch to grant user
 
@@ -704,23 +624,23 @@ class SDKAPI(object):
 
         self._networkops.grant_user_to_vswitch(vswitch_name, userid)
 
-    @check_input_types(_TVSWNAME, _TUSERID)
+    @utils.check_input_types(_TVSWNAME, _TUSERID)
     def vswitch_revoke_user(self, vswitch_name, userid):
         """Revoke user for vswitch
 
         :param str vswitch_name: the name of the vswitch
         :param str userid: the user id of the vm
 
-        :raises ZVMInvalidInput if:
+        :raises ZVMInvalidInput:
                 - Input parameter is invalid, refer to the error message for
                   detail
-        :raises ZVMNetworkError if:
+        :raises ZVMNetworkError:
                 - All kinds of xCAT call failure
                 - Smcli call failure, refer to the error message for detail
         """
         self._networkops.revoke_user_from_vswitch(vswitch_name, userid)
 
-    @check_input_types(_TVSWNAME, _TUSERID, int)
+    @utils.check_input_types(_TVSWNAME, _TUSERID, int)
     def vswitch_set_vlan_id_for_user(self, vswitch_name, userid, vlan_id):
         """Set vlan id for user when connecting to the vswitch
 
@@ -728,17 +648,17 @@ class SDKAPI(object):
         :param str userid: the user id of the vm
         :param int vlan_id: the VLAN id
 
-        :raises ZVMInvalidInput if:
+        :raises ZVMInvalidInput:
                 - Input parameter is invalid, refer to the error message for
                   detail
-        :raises ZVMNetworkError if:
+        :raises ZVMNetworkError:
                 - All kinds of xCAT call failure
                 - Smcli call failure, refer to the error message for detail
         """
         self._networkops.set_vswitch_port_vlan_id(vswitch_name,
                                                   userid, vlan_id)
 
-    @check_input_types(_TUSERID, list)
+    @utils.check_input_types(_TUSERID, list)
     def guest_config_minidisks(self, userid, disk_info):
         """Punch the script that used to process additional disks to vm
 
@@ -753,9 +673,10 @@ class SDKAPI(object):
         """
         self._vmops.guest_config_minidisks(userid, disk_info)
 
-    @check_input_types(_TVSWNAME, valid_keys=['grant_userid', 'user_vlan_id',
-        'revoke_userid', 'real_device_address', 'port_name', 'controller_name',
-        'connection_value', 'queue_memory_limit', 'routing_value', 'port_type',
+    @utils.check_input_types(_TVSWNAME, valid_keys=['grant_userid',
+        'user_vlan_id', 'revoke_userid', 'real_device_address',
+        'port_name', 'controller_name', 'connection_value',
+        'queue_memory_limit', 'routing_value', 'port_type',
         'persist', 'gvrp_value', 'mac_id', 'uplink', 'nic_userid', 'nic_vdev',
         'lacp', 'Interval', 'group_rdev', 'iptimeout', 'port_isolation',
         'promiscuous', 'MAC_protect', 'VLAN_counters'])
@@ -763,107 +684,130 @@ class SDKAPI(object):
         """Change the configuration of an existing virtual switch
 
         :param str vswitch_name: the name of the virtual switch
-        :param dict kwargs: Dictionary used to change specific configuration.
-               Valid keywords for kwargs:
-               - grant_userid=<value>: A userid to be added to the access list
-               - user_vlan_id=<value> : user VLAN ID. Support following ways:
-               1. As single values between 1 and 4094. A maximum of four
-               values may be specified, separated by blanks.
-               Example: 1010 2020 3030 4040
-               2. As a range of two numbers, separated by a dash (-).
-               A maximum of two ranges may be specified.
-               Example: 10-12 20-22
-               - revoke_userid=<value>: A userid to be removed from the
-               access list
-               - real_device_address=<value>: The real device address or the
-               real device address and OSA Express port number of a QDIO OSA
-               Express device to be used to create the switch to the virtual
-               adapter. If using a real device and an OSA Express port number,
-               specify the real device number followed by a period(.),
-               the letter 'P' (or 'p'), followed by the port number as a
-               hexadecimal number. A maximum of three device addresses,
-               all 1-7 characters in length, may be specified, delimited by
-               blanks. 'None' may also be specified
-               - port_name=<value>:  The name used to identify the OSA Expanded
-               adapter. A maximum of three port names, all 1-8 characters in
-               length, may be specified, delimited by blanks.
-               - controller_name=<value>: One of the following:
-               1. The userid controlling the real device. A maximum of eight
-               userids, all 1-8 characters in length, may be specified,
-               delimited by blanks.
-               2. '*': Specifies that any available controller may be used
-               - connection_value=<value>: One of the following values:
-               CONnect: Activate the real device connection.
-               DISCONnect: Do not activate the real device connection.
-               - queue_memory_limit=<value>: A number between 1 and 8
-               specifying the QDIO buffer size in megabytes.
-               - routing_value=<value>: Specifies whether the OSA-Express QDIO
-               device will act as a router to the virtual switch, as follows:
-               NONrouter: The OSA-Express device identified in
-               real_device_address= will not act as a router to the vswitch
-               PRIrouter: The OSA-Express device identified in
-               real_device_address= will act as a primary router to the vswitch
-               - port_type=<value>: Specifies the port type, ACCESS or TRUNK
-               - persist=<value>: one of the following values:
-               NO: The vswitch is updated on the active system, but is not
-               updated in the permanent configuration for the system.
-               YES: The vswitch is updated on the active system and also in
-               the permanent configuration for the system.
-               If not specified, the default is NO.
-               - gvrp_value=<value>: GVRP or NOGVRP
-               - mac_id=<value>: A unique identifier (up to six hexadecimal
-               digits) used as part of the vswitch MAC address
-               - uplink=<value>: One of the following:
-               NO: The port being enabled is not the vswitch's UPLINK port.
-               YES: The port being enabled is the vswitch's UPLINK port.
-               - nic_userid=<value>: One of the following:
-               1. The userid of the port to/from which the UPLINK port will
-               be connected or disconnected. If a userid is specified,
-               then nic_vdev= must also be specified
-               2. '*': Disconnect the currently connected guest port to/from
-               the special virtual switch UPLINK port. (This is equivalent
-               to specifying NIC NONE on CP SET VSWITCH).
-               - nic_vdev=<value>: The virtual device to/from which the the
-               UPLINK port will be connected/disconnected. If this value is
-               specified, nic_userid= must also be specified, with a userid.
-               - lacp=<value>: One of the following values:
-               ACTIVE: Indicates that the virtual switch will initiate
-               negotiations with the physical switch via the link aggregation
-               control protocol (LACP) and will respond to LACP packets sent
-               by the physical switch.
-               INACTIVE: Indicates that aggregation is to be performed,
-               but without LACP.
-               - Interval=<value>: The interval to be used by the control
-               program (CP) when doing load balancing of conversations across
-               multiple links in the group. This can be any of the following
-               values:
-               1 - 9990: Indicates the number of seconds between load balancing
-               operations across the link aggregation group.
-               OFF: Indicates that no load balancing is done.
-               - group_rdev=<value>: The real device address or the real device
-               address and OSA Express port number of a QDIO OSA Express device
-               to be affected within the link aggregation group associated with
-               this vswitch. If using a real device and an OSA Express port
-               number, specify the real device number followed by a period (.),
-               the letter 'P' (or 'p'), followed by the port number as a
-               hexadecimal number. A maximum of eight device addresses,
-               all 1-7 characters in length, may be specified, delimited by
-               blanks.
-               Note: If a real device address is specified, this device will be
-               added to the link aggregation group associated with this
-               vswitch. (The link aggregation group will be created if it does
-               not already exist.)
-               - iptimeout=<value>: A number between 1 and 240 specifying the
-               length of time in minutes that a remote IP address table entry
-               remains in the IP address table for the virtual switch.
-               - port_isolation=<value> ON or OFF
-               - promiscuous=<value>: One of the following:
-               NO: The userid or port on the grant is not authorized to use
-               the vswitch in promiscuous mode
-               YES: The userid or port on the grant is authorized to use the
-               vswitch in promiscuous mode.
-               - MAC_protect=<value>: ON, OFF or UNSPECified
-               - VLAN_counters=<value>: ON or OFF
+        :param dict kwargs:
+            - grant_userid=<value>:
+                A userid to be added to the access list
+            - user_vlan_id=<value>:
+                user VLAN ID. Support following ways:
+                1. As single values between 1 and 4094. A maximum of four
+                values may be specified, separated by blanks.
+                Example: 1010 2020 3030 4040
+                2. As a range of two numbers, separated by a dash (-).
+                A maximum of two ranges may be specified.
+                Example: 10-12 20-22
+            - revoke_userid=<value>:
+                A userid to be removed from the access list
+            - real_device_address=<value>:
+                The real device address or the real device address and
+                OSA Express port number of a QDIO OSA
+                Express device to be used to create the switch to the virtual
+                adapter. If using a real device and an OSA Express port number,
+                specify the real device number followed by a period(.),
+                the letter 'P' (or 'p'), followed by the port number as a
+                hexadecimal number. A maximum of three device addresses,
+                all 1-7 characters in length, may be specified, delimited by
+                blanks. 'None' may also be specified
+            - port_name=<value>:
+                The name used to identify the OSA Expanded
+                adapter. A maximum of three port names, all 1-8 characters in
+                length, may be specified, delimited by blanks.
+            - controller_name=<value>:
+                One of the following:
+                1. The userid controlling the real device. A maximum of eight
+                userids, all 1-8 characters in length, may be specified,
+                delimited by blanks.
+                2. '*': Specifies that any available controller may be used
+            - connection_value=<value>:
+                One of the following values:
+                CONnect: Activate the real device connection.
+                DISCONnect: Do not activate the real device connection.
+            - queue_memory_limit=<value>:
+                A number between 1 and 8
+                specifying the QDIO buffer size in megabytes.
+            - routing_value=<value>:
+                Specifies whether the OSA-Express QDIO
+                device will act as a router to the virtual switch, as follows:
+                NONrouter: The OSA-Express device identified in
+                real_device_address= will not act as a router to the vswitch
+                PRIrouter: The OSA-Express device identified in
+                real_device_address= will act as a primary router to the
+                vswitch
+            - port_type=<value>:
+                Specifies the port type, ACCESS or TRUNK
+            - persist=<value>:
+                one of the following values:
+                NO: The vswitch is updated on the active system, but is not
+                updated in the permanent configuration for the system.
+                YES: The vswitch is updated on the active system and also in
+                the permanent configuration for the system.
+                If not specified, the default is NO.
+            - gvrp_value=<value>:
+                GVRP or NOGVRP
+            - mac_id=<value>:
+                A unique identifier (up to six hexadecimal
+                digits) used as part of the vswitch MAC address
+            - uplink=<value>:
+                One of the following:
+                NO: The port being enabled is not the vswitch's UPLINK port.
+                YES: The port being enabled is the vswitch's UPLINK port.
+            - nic_userid=<value>:
+                One of the following:
+                1. The userid of the port to/from which the UPLINK port will
+                be connected or disconnected. If a userid is specified,
+                then nic_vdev= must also be specified
+                2. '*': Disconnect the currently connected guest port to/from
+                the special virtual switch UPLINK port. (This is equivalent
+                to specifying NIC NONE on CP SET VSWITCH).
+            - nic_vdev=<value>:
+                The virtual device to/from which the the
+                UPLINK port will be connected/disconnected. If this value is
+                specified, nic_userid= must also be specified, with a userid.
+            - lacp=<value>:
+                One of the following values:
+                ACTIVE: Indicates that the virtual switch will initiate
+                negotiations with the physical switch via the link aggregation
+                control protocol (LACP) and will respond to LACP packets sent
+                by the physical switch.
+                INACTIVE: Indicates that aggregation is to be performed,
+                but without LACP.
+            - Interval=<value>:
+                The interval to be used by the control
+                program (CP) when doing load balancing of conversations across
+                multiple links in the group. This can be any of the following
+                values:
+                1 - 9990: Indicates the number of seconds between load
+                balancing operations across the link aggregation group.
+                OFF: Indicates that no load balancing is done.
+            - group_rdev=<value>:
+                The real device address or the real device
+                address and OSA Express port number of a QDIO OSA Express
+                devcie to be affected within the link aggregation group
+                associated with this vswitch. If using a real device and an OSA
+                Express port number, specify the real device number followed
+                by a period (.), the letter 'P' (or 'p'), followed by the port
+                number as a hexadecimal number. A maximum of eight device
+                addresses all 1-7 characters in length, may be specified,
+                delimited by blanks.
+                Note: If a real device address is specified, this device will
+                be added to the link aggregation group associated with this
+                vswitch. (The link aggregation group will be created if it does
+                not already exist.)
+            - iptimeout=<value>:
+                A number between 1 and 240 specifying the
+                length of time in minutes that a remote IP address table entry
+                remains in the IP address table for the virtual switch.
+            - port_isolation=<value>:
+                ON or OFF
+            - promiscuous=<value>:
+                One of the following:
+                NO: The userid or port on the grant is not authorized to use
+                the vswitch in promiscuous mode
+                YES: The userid or port on the grant is authorized to use the
+                vswitch in promiscuous mode.
+            - MAC_protect=<value>:
+                ON, OFF or UNSPECified
+            - VLAN_counters=<value>:
+                ON or OFF
 
         :raises ZVMInvalidInput if:
                 - Input parameter is invalid, refer to the error message for
@@ -876,7 +820,7 @@ class SDKAPI(object):
         """
         self._networkops.set_vswitch(vswitch_name, **kwargs)
 
-    @check_input_types(_TVSWNAME, bool)
+    @utils.check_input_types(_TVSWNAME, bool)
     def vswitch_delete(self, vswitch_name, persist=True):
         """ Delete vswitch.
 
@@ -893,64 +837,66 @@ class SDKAPI(object):
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
 
-    @check_input_types(dict, dict, dict, bool)
+    @utils.check_input_types(dict, dict, dict, bool)
     def volume_attach(self, guest, volume, connection_info,
                       is_rollback_in_failure=False):
         """ Attach a volume to a guest. It's prerequisite to active multipath
             feature on the guest before utilizing persistent volumes.
 
-        :param dict guest: A dict comprised of a list of properties of a guest,
-               including:
-               - name: of type string. The node name of the guest instance in
-               xCAT database.
-               - os_type: of type string. The OS running on the guest.
-               Currently supported are RHEL7, SLES12 and their sub-versions,
-               i.e. 'rhel7', 'rhel7.2', 'sles12', 'sles12sp1'.
-        :param dict volume: A dict comprised of a list of properties of a
-               volume, including:
-               - size: of type string. The capacity size of the volume, in unit
-               of Megabytes or Gigabytes.
-               - type: of type string. The device type of the volume. The only
-               one supported now is 'fc' which implies FibreChannel.
-               - lun: of type string. The LUN value of the volume, excluding
-               prefixing '0x'. It's required if the type is 'fc' which implies
-               FibreChannel.
-        :param dict connection_info: A dict comprised of a list of information
-               used to establish host-volume connection, including:
-               - alias: of type string. A constant valid alias of the volume
-               after it being attached onto the guest, i.e. '/dev/vda'. Because
-               the system generating device name could change after each
-               rebooting, it's necessary to have a constant name to represent
-               the volume in its life time.
-               - protocol: of type string. The protocol by which the volume is
-               connected to the guest. The only one supported now is 'fc' which
-               implies FibreChannel.
-               - fcps: of type list. The address of the FCP devices used by the
-               guest to connect to the volume. They should belong to different
-               channel path IDs in order to work properly.
-               - wwpns: of type list. The WWPN values through which the volume
-               can be accessed, excluding prefixing '0x'.
-               - dedicate: of type list. The address of the FCP devices which
-               will be dedicated to the guest before accessing the volume. They
-               should belong to different channel path IDs in order to work
-               properly.
-        :param bool is_rollback_in_failure: Whether to roll back in failure.
-               It's not guaranteed that the roll back operation must be
-               successful.
+        :param dict guest:
+                - name:
+                    The type is string, it's the node name of the guest
+                    instance in xCAT database.
+                - os_type:
+                    The type is string, it's the OS running on the guest.
+                    Currently supported are RHEL7, SLES12 and their
+                    sub-versions, i.e. 'rhel7', 'rhel7.2', 'sles12',
+                    'sles12sp1'.
+        :param dict volume:
+                - size: of type string. The capacity size of the volume, in
+                    unit of Megabytes or Gigabytes.
+                - type: of type string. The device type of the volume. The only
+                    one supported now is 'fc' which implies FibreChannel.
+                - lun: of type string. The LUN value of the volume, excluding
+                    prefixing '0x'. It's required if the type is 'fc' which
+                    implies FibreChannel.
+        :param dict connection_info:
+                - alias: of type string. A constant valid alias of the volume
+                    after it being attached onto the guest, i.e. '/dev/vda'.
+                    Because the system generating device name could change
+                    after each rebooting, it's necessary to have a constant
+                    name to represent the volume in its life time.
+                - protocol: of type string. The protocol by which the volume is
+                    connected to the guest. The only one supported now is 'fc'
+                    which implies FibreChannel.
+                - fcps: of type list. The address of the FCP devices used by
+                    the guest to connect to the volume. They should belong to
+                    different channel path IDs in order to work properly.
+                - wwpns: of type list. The WWPN values through which the volume
+                    can be accessed, excluding prefixing '0x'.
+                - dedicate: of type list. The address of the FCP devices which
+                    will be dedicated to the guest before accessing the volume.
+                    They should belong to different channel path IDs in order
+                    to work properly.
+        :param bool is_rollback_in_failure:
+                Whether to roll back in failure.
+                It's not guaranteed that the roll back operation must be
+                successful.
+
         :raises ZVMVolumeError if:
-                - Multipath feature is not active on the guest.
-                - The volume is unaccessible.
-                - The FCP devices can not be dedicated when protocol 'fc' is
-                  specified.
-                - The FCP devices belong to a same CHPID when protocol 'fc' is
-                  specified.
+               - Multipath feature is not active on the guest.
+               - The volume is unaccessible.
+               - The FCP devices can not be dedicated when protocol 'fc' is
+                   specified.
+               - The FCP devices belong to a same CHPID when protocol 'fc' is
+                   specified.
         """
         self._volumeop.attach_volume_to_instance(guest,
                                                  volume,
                                                  connection_info,
                                                  is_rollback_in_failure)
 
-    @check_input_types(dict, dict, dict, bool)
+    @utils.check_input_types(dict, dict, dict, bool)
     def volume_detach(self, guest, volume, connection_info,
                       is_rollback_in_failure=False):
         """ Detach a volume from a guest. It's prerequisite to active multipath
@@ -989,6 +935,7 @@ class SDKAPI(object):
         :param bool is_rollback_in_failure: Whether to roll back in failure.
                It's not guaranteed that the roll back operation must be
                successful.
+
         :raises ZVMVolumeError if:
                 - Multipath feature is not active on the guest.
                 - The volume is not found on the guest.
