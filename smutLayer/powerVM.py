@@ -466,6 +466,15 @@ def parseCmdline(rh):
                 rh.parms['poll'] = 15
             rh.parms['maxQueries'] = (rh.parms['maxWait'] +
                 rh.parms['poll'] - 1) / rh.parms['poll']
+            # If we had to do some rounding, give a warning
+            # out to the command line user that the wait
+            # won't be what they expected.
+            if rh.parms['maxWait'] % rh.parms['poll'] != 0:
+                msg = msgs.msg['0017'][1] % (modId,
+                    rh.parms['maxWait'], rh.parms['poll'],
+                    rh.parms['maxQueries'] * rh.parms['poll'],
+                    rh.parms['maxQueries'])
+                rh.printLn("W", msg)
 
     rh.printSysLog("Exit powerVM.parseCmdLine, rc: " +
         str(rh.results['overallRC']))

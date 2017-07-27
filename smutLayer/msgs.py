@@ -87,6 +87,10 @@ msg = {
     '0016': [{'overallRC': 4, 'rc': 4, 'rs': 16},
             "ULT%s0016E The scp Data Type was not 'hex', 'ebcdic', " +
             "or 'delete': %s"],
+    '0017': [{'overallRC': 4, 'rc': 4, 'rs': 17},    # dict is not used
+            "ULT%s0017W The maxwait time %i sec is not evenly divisible " +
+            "by the poll interval %i sec.  Maximum wait time will be %i " +
+            "sec or %i poll intervals."],
 
     # 0200-0299: Utility Messages
     '0200': [{'overallRC': 4, 'rc': 4, 'rs': 200},
