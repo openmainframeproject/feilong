@@ -137,7 +137,7 @@ class VMAction(object):
         self.api.guest_stop(userid)
 
     def get_console_output(self, userid, data):
-        self.api.guest_get_console_output(userid)
+        return self.api.guest_get_console_output(userid)
 
     # FIXME: add validation to the request
     # @validation.schema(guest.deploy)
@@ -277,13 +277,22 @@ def guest_action(req):
         method = data['action']
         func = getattr(action, method, None)
         if func:
-            func(userid, data)
+            return func(userid, data)
         else:
             msg = 'action %s is invalid' % method
             raise webob.exc.HTTPBadRequest(msg)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
-    _guest_action(userid, req)
+    info = _guest_action(userid, req)
+
+    if info is not None:
+        info_json = json.dumps({'result': info})
+        req.response.body = utils.to_utf8(info_json)
+        req.response.content_type = 'application/json'
+    else:
+        req.response.content_type = None
+
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify

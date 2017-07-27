@@ -70,6 +70,7 @@ class GuestActionTest(unittest.TestCase):
         h = handler.SdkHandler()
         with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMAction.start') \
             as start:
+            start.return_value = ''
             h(self.env, dummy)
 
             start.assert_called_once_with('1', {'action': 'start'})
@@ -82,6 +83,7 @@ class GuestActionTest(unittest.TestCase):
         h = handler.SdkHandler()
         with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMAction.stop') \
             as stop:
+            stop.return_value = ''
             h(self.env, dummy)
 
             stop.assert_called_once_with('1', {'action': 'stop'})
@@ -94,6 +96,7 @@ class GuestActionTest(unittest.TestCase):
         h = handler.SdkHandler()
         url = 'zvmsdk.sdkwsgi.handlers.guest.VMAction.get_console_output'
         with mock.patch(url) as get_console_output:
+            get_console_output.return_value = ''
             h(self.env, dummy)
 
             get_console_output.assert_called_once_with('1',

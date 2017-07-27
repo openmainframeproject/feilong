@@ -71,6 +71,7 @@ class GuestActionsTest(SDKWSGITest):
                         mock_userid):
         self.req.body = '{"action": "start"}'
 
+        mock_action.return_value = ''
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
@@ -81,7 +82,7 @@ class GuestActionsTest(SDKWSGITest):
     def test_guest_stop(self, mock_action,
                         mock_userid):
         self.req.body = '{"action": "stop"}'
-
+        mock_action.return_value = ''
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
@@ -92,7 +93,7 @@ class GuestActionsTest(SDKWSGITest):
     def test_guest_get_console_output(self, mock_action,
                         mock_userid):
         self.req.body = '{"action": "get_console_output"}'
-
+        mock_action.return_value = ''
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
@@ -108,7 +109,7 @@ class GuestActionsTest(SDKWSGITest):
                             "transportfiles": "file1",
                             "remotehost": "host1",
                             "vdev": "1000"}"""
-
+        mock_action.return_value = ''
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
