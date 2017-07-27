@@ -40,7 +40,7 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         return "%(os)s-s390x-netboot-%(name)s" % {'os': image_os_version,
                                                   'name': image_file_name}
 
-    def test_guest_create_normal(self):
+    def test_guest_create_delete_normal(self):
         """ Normal cases of SDK API guest_create """
         userid_small = "ugcsmall"
         self.addCleanup(self.sdkapi.guest_delete, userid_small)
@@ -54,12 +54,16 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         memory = 512
         self.sdkapi.guest_create(userid, vcpu, memory)
         print("create guest %s ... ok!" % userid)
+        self.sdkapi.guest_delete(userid)
+        print("delete guest %s ... ok!" % userid)
 
         userid = userid_big
         vcpu = 8
         memory = 8192
         self.sdkapi.guest_create(userid, vcpu, memory)
         print("create guest %s ... ok!" % userid)
+        self.sdkapi.guest_delete(userid)
+        print("delete guest %s ... ok!" % userid)
 
         userid = userid_disk
         vcpu = 2
@@ -74,11 +78,13 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
                  'disk_pool': 'FBA:xcatfba1'}]
         self.sdkapi.guest_create(userid, vcpu, memory, disk_list=disk)
         print("create guest %s ... ok!" % userid)
+        self.sdkapi.guest_delete(userid)
+        print("delete guest %s ... ok!" % userid)
 
         # TODO: guest with customized profile
 
-    def test_guest_create_abnormal(self):
-        """ Error cases of SDK API guest_create """
+    def test_guest_create_delete_abnormal(self):
+        """ Abnormal cases of SDK API guest_create """
         userid_duplicate = "ugcdup"
         self.addCleanup(self.sdkapi.guest_delete, userid_duplicate)
 
@@ -90,6 +96,9 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         self.assertRaises(exception.ZVMException,
                           self.sdkapi.guest_create,
                           userid, vcpu, memory)
+        # Duplicate deletion. It's valid and there should be no error
+        self.sdkapi.guest_delete(userid)
+        self.sdkapi.guest_delete(userid)
 
     def test_guest_deploy_delete_normal(self):
         """ Normal cases of SDK API guest_deploy and guest_delete """
@@ -125,14 +134,16 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         self.sdkapi.guest_create(userid, vcpu, memory, disk_list=disk)
         self.sdkapi.guest_deploy(userid, self.image_name)
         print("deploy guest %s ... ok!") % userid
-        # TOOD test guest delete
+        self.sdkapi.guest_delete(userid)
+        print("delete guest %s ... ok!" % userid)
 
         # with transport file
         userid = userid_trspt
         self.sdkapi.guest_create(userid, vcpu, memory, disk_list=disk)
         self.sdkapi.guest_deploy(userid, self.image_name, transport_file)
         print("deploy guest %s ... ok!") % userid
-        # TOOD test guest delete
+        self.sdkapi.guest_delete(userid)
+        print("delete guest %s ... ok!" % userid)
 
         # with remote host
         userid = userid_rmthost
@@ -143,7 +154,8 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
                                  transportfiles=transport_file,
                                  remotehost=remote_host)
         print("deploy guest %s ... ok!") % userid
-        # TOOD test guest delete
+        self.sdkapi.guest_delete(userid)
+        print("delete guest %s ... ok!" % userid)
 
         # specified root device
         userid = userid_vdev
@@ -161,13 +173,15 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         _restore_conf(root_vdev_back)
         self.sdkapi.guest_deploy(userid, self.image_name, vdev=new_root)
         print("deploy guest %s ... ok!") % userid
-        # TOOD test guest delete
+        self.sdkapi.guest_delete(userid)
+        print("delete guest %s ... ok!" % userid)
 
     def test_guest_deploy_delete_abnormal(self):
-        """ Error cases of SDK API guest_deploy and guest_delete """
+        """ Abnormal cases of SDK API guest_deploy and guest_delete """
         userid_duplicate = "ugddup"
         self.addCleanup(self.sdkapi.guest_delete, userid_duplicate)
 
+        # Duplicate creation
         userid = userid_duplicate
         vcpu = 1
         memory = 1024
@@ -180,4 +194,6 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         # It's valid to deploy a same guest multiple times, each time it makes
         # the guest be reset by the image
         self.sdkapi.guest_deploy(userid, self.image_name)
-        # TODO test guest delete
+        # Duplicate deletion. It's valid and there should be no error
+        self.sdkapi.guest_delete(userid)
+        self.sdkapi.guest_delete(userid)
