@@ -763,8 +763,7 @@ class SDKAPI(object):
         """Change the configuration of an existing virtual switch
 
         :param str vswitch_name: the name of the virtual switch
-        :param dict kwargs: Dictionary used to change specific configuration.
-               Valid keywords for kwargs:
+        :param dict kwargs:
                - grant_userid=<value>: A userid to be added to the access list
                - user_vlan_id=<value> : user VLAN ID. Support following ways:
                1. As single values between 1 and 4094. A maximum of four
