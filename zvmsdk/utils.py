@@ -32,6 +32,7 @@ import types
 from six.moves import http_client as httplib
 
 from zvmsdk import config
+from zvmsdk import constants
 from zvmsdk import exception
 from zvmsdk import log
 
@@ -899,3 +900,83 @@ def create_xcat_mgt_network(mgt_vswitch):
     xdsh_commands = 'command=%s' % cmd
     body = [xdsh_commands]
     xcat_request("PUT", url, body)
+
+
+def check_input_types(*types, **validkeys):
+    """This is a function decorator to check all input parameters given to
+    decorated function are in expected types.
+
+    The checks can be skipped by specify skip_input_checks=True in decorated
+    function.
+
+    :param tuple types: expected types of input parameters to the decorated
+                        function
+    :param validkeys: valid keywords(str) in a list.
+                      e.g. validkeys=['key1', 'key2']
+    """
+    def decorator(function):
+        @functools.wraps(function)
+        def wrap_func(*args, **kwargs):
+            if args[0]._skip_input_check:
+                # skip input check
+                return function(*args, **kwargs)
+            # drop class object self
+            inputs = args[1:]
+            if (len(inputs) > len(types)):
+                msg = ("Too many parameters provided: %(specified)d specified,"
+                       "%(expected)d expected." %
+                       {'specified': len(inputs), 'expected': len(types)})
+                LOG.info(msg)
+                raise exception.ZVMInvalidInput(msg=msg)
+
+            argtypes = tuple(map(type, inputs))
+            match_types = types[0:len(argtypes)]
+
+            invalid_type = False
+            invalid_userid_idx = -1
+            for idx in range(len(argtypes)):
+                _mtypes = match_types[idx]
+                if not isinstance(_mtypes, tuple):
+                    _mtypes = (_mtypes,)
+
+                argtype = argtypes[idx]
+                if constants._TUSERID in _mtypes:
+                    userid_type = True
+                    for _tmtype in _mtypes:
+                        if ((argtype == _tmtype) and
+                            (_tmtype != constants._TUSERID)):
+                            userid_type = False
+                    if (userid_type and
+                        (not valid_userid(inputs[idx]))):
+                        invalid_userid_idx = idx
+                        break
+                elif argtype not in _mtypes:
+                    invalid_type = True
+                    break
+
+            if invalid_userid_idx != -1:
+                msg = ("Invalid string value found at the #%d parameter, "
+                       "length should be less or equal to 8 and should not be "
+                       "null or contain spaces." % (invalid_userid_idx + 1))
+                LOG.info(msg)
+                raise exception.ZVMInvalidInput(msg=msg)
+
+            if invalid_type:
+                msg = ("Invalid input types: %(argtypes)s; "
+                       "Expected types: %(types)s" %
+                       {'argtypes': str(argtypes), 'types': str(types)})
+                LOG.info(msg)
+                raise exception.ZVMInvalidInput(msg=msg)
+
+            valid_keys = validkeys.get('valid_keys')
+            if valid_keys:
+                for k in kwargs.keys():
+                    if k not in valid_keys:
+                        msg = ("Invalid keyword: %(key)s; "
+                               "Expected keywords are: %(keys)s" %
+                               {'key': k, 'keys': str(valid_keys)})
+                        LOG.info(msg)
+                        raise exception.ZVMInvalidInput(msg=msg)
+            return function(*args, **kwargs)
+        return wrap_func
+    return decorator
