@@ -11,6 +11,7 @@
 #    under the License.
 
 import functools
+import re
 
 import jsonschema
 from jsonschema import exceptions as jsonschema_exc
@@ -115,3 +116,44 @@ class _SchemaValidator(object):
             #       TypeError happens. Here is for catching the TypeError.
             detail = six.text_type(ex)
             raise exception.ValidationError(detail=detail)
+
+
+def _remove_unexpected_query_parameters(schema, req):
+    """Remove unexpected properties from the req.GET."""
+    additional_properties = schema.get('addtionalProperties', True)
+
+    if additional_properties:
+        pattern_regexes = []
+
+        patterns = schema.get('patternProperties', None)
+        if patterns:
+            for regex in patterns:
+                pattern_regexes.append(re.compile(regex))
+
+        for param in set(req.GET.keys()):
+            if param not in schema['properties'].keys():
+                if not (list(regex for regex in pattern_regexes if
+                             regex.match(param))):
+                    del req.GET[param]
+
+
+def query_schema(query_params_schema, min_version=None,
+                 max_version=None):
+    """Register a schema to validate request query parameters."""
+
+    def add_validator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if 'req' in kwargs:
+                req = kwargs['req']
+            else:
+                req = args[1]
+
+            if _schema_validation_helper(query_params_schema,
+                                         req.GET.dict_of_lists(),
+                                         args, kwargs, is_body=False):
+                _remove_unexpected_query_parameters(query_params_schema, req)
+            return func(*args, **kwargs)
+        return wrapper
+
+    return add_validator
