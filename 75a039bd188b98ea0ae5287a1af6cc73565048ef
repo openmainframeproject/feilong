@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fdefa848_80cbd341",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 426,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-07-27T08:29:37Z",
+      "side": 1,
+      "message": "is this something to be documented?",
+      "range": {
+        "startLine": 426,
+        "startChar": 28,
+        "endLine": 426,
+        "endChar": 43
+      },
+      "revId": "75a039bd188b98ea0ae5287a1af6cc73565048ef",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
