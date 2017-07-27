@@ -66,9 +66,6 @@ class VMHandler(object):
         definition = self.api.guest_get_definition_info(userid)
         return definition
 
-    def update(self, userid, body):
-        pass
-
     def get_power_state(self, userid):
         state = self.api.guest_get_power_state(userid)
         return state
