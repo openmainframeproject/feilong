@@ -419,6 +419,10 @@ class SDKAPI(object):
                directory, and it will create 0101 with 200000 blocks from
                FBA disk pool fbapool1, and formated with ext3.
         :param user_profile: the profile for the guest
+
+        :raises: ZVMCreateVMFailed if:
+                 - All kinds of xCAT call failure
+                 - Smcli call failure, refer to the error message for detail
         """
         self._vmops.create_vm(userid, vcpus, memory, disk_list, user_profile)
 
