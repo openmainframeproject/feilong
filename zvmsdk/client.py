@@ -383,7 +383,9 @@ class XCATClient(ZVMClient):
             body.append('ipl=%s' % ipl_disk)
 
         url = self._xcat_url.mkvm('/' + userid)
-        zvmutils.xcat_request("POST", url, body)
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+            exception.ZVMXCATCreateUserIdFailed, userid=userid):
+            zvmutils.xcat_request("POST", url, body)
 
         if disk_list:
             # Add disks for vm
@@ -413,20 +415,13 @@ class XCATClient(ZVMClient):
 
         size = disk['size']
         fmt = disk.get('format')
-
         disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
-
-        disk_type = disk_pool.split(':')[0].upper()
         diskpool_name = disk_pool.split(':')[1]
 
-        if (disk_type == 'ECKD'):
+        if (disk_pool.split(':')[0].upper() == 'ECKD'):
             action = '--add3390'
-        elif (disk_type == 'FBA'):
-            action = '--add9336'
         else:
-            errmsg = ("Disk type %s is not supported.") % disk_type
-            LOG.error(errmsg)
-            raise exception.ZVMException(msg=errmsg)
+            action = '--add9336'
 
         if fmt:
             body = [" ".join([action, diskpool_name, vdev, size, "MR", "''",
@@ -435,7 +430,9 @@ class XCATClient(ZVMClient):
             body = [" ".join([action, diskpool_name, vdev, size])]
 
         url = zvmutils.get_xcat_url().chvm('/' + userid)
-        zvmutils.xcat_request("PUT", url, body)
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+            exception.ZVMXCATCreateUserIdFailed, userid=userid):
+            zvmutils.xcat_request("PUT", url, body)
 
     # TODO:moving to vmops and change name to 'create_vm_node'
     def create_xcat_node(self, userid):
@@ -447,7 +444,9 @@ class XCATClient(ZVMClient):
                 'mgt=zvm',
                 'groups=%s' % const.ZVM_XCAT_GROUP]
         url = self._xcat_url.mkdef('/' + userid)
-        zvmutils.xcat_request("POST", url, body)
+        with zvmutils.expect_xcat_call_failed_and_reraise(
+            exception.ZVMXCATCreateNodeFailed, node=userid):
+            zvmutils.xcat_request("POST", url, body)
 
     # xCAT client can something special for xCAT here
     def prepare_for_spawn(self, userid):

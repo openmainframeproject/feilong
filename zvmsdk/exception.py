@@ -110,6 +110,10 @@ class ZVMXCATCreateUserIdFailed(SDKBaseException):
     msg_fmt = 'Create xCAT user id %(userid)s failed: %(msg)s'
 
 
+class ZVMCreateVMFailed(SDKBaseException):
+    msg_fmt = 'Create vm %(userid)s failed: %(msg)s'
+
+
 class ZVMXCATUpdateNodeFailed(SDKBaseException):
     msg_fmt = 'Update node %(node)s info failed: %(msg)s'
 
