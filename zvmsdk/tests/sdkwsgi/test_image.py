@@ -60,6 +60,8 @@ class ImageTestCase(unittest.TestCase):
 
         resp = self.client.api_request(url=url, method='GET')
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_image_get_root_disk_size',
+                                   resp.content)
         return resp
 
     def _image_query(self):
