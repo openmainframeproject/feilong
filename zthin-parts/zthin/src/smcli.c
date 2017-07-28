@@ -416,7 +416,7 @@ int main(int argC, char* argV[]) {
 
     if (argC < 2 || !strcmp(argV[1], "--help") || !strcmp(argV[1], "-h")) {
         displayHelpInfo(smapiLevel);
-        rc =1;
+        rc = 0;
         TRACE_EXIT_FLOW(&vmapiContext, TRACEAREA_ZTHIN_GENERAL, rc);
         /* Clean up for memory context */
         FREE_CONTEXT_MEMORY(&vmapiContext);

@@ -54,7 +54,7 @@ int ssiQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP
                     "DESCRIPTION\n"
                     "  Use SSI_Query to obtain the SSI and system status.\n\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':

@@ -48,7 +48,7 @@ int smapiStatusCapture(int argC, char* argV[], struct _vmApiInternalContext* vma
                     "  The following options are required:\n"
                     "    -T    The name of the target used for authorization.\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':

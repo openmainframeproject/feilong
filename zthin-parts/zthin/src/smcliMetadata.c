@@ -58,7 +58,7 @@ int metadataDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "    -k    A blank-delimited list of metadata names. \n"
                     "          Note that these metadata names are case sensitive.\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -149,7 +149,7 @@ int metadataGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiConte
                     "    -k    A quoted blank-delimited list of metadata names.\n"
                     "          Note that these metadata names are case sensitive.\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -273,7 +273,7 @@ int metadataSet(int argC, char* argV[],
                     "          Note that these metadata_names are case sensitive.\n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -393,7 +393,7 @@ int metadataSpaceQuery(int argC, char* argV[], struct _vmApiInternalContext* vma
                     "    -k    One quoted searchkey=<pattern> search term to select the metadata items to be displayed\n"
                     "          The search pattern may include a trailing ""*"" to broaden the scope of the search   \n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':

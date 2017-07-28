@@ -46,7 +46,7 @@ int staticImageChangesActivateDM(int argC, char* argV[], struct _vmApiInternalCo
                     "  The following options are required:\n"
                     "    -T    This must match an entry in the authorization file\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -123,7 +123,7 @@ int staticImageChangesDeactivateDM(int argC, char* argV[], struct _vmApiInternal
                     "  The following options are required:\n"
                     "    -T    This must match an entry in the authorization file\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -201,7 +201,7 @@ int staticImageChangesImmediateDM(int argC, char* argV[], struct _vmApiInternalC
                     "  The following options are required:\n"
                     "    -T    This must match an entry in the authorization file\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':

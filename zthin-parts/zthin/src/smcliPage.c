@@ -90,7 +90,7 @@ int pageorSpoolVolumeAdd(int argC, char* argV[], struct _vmApiInternalContext* v
                     "                Note: The character ',' is used to indicate no password. Therefore\n"
                     "                ',' cannot be the password.\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':

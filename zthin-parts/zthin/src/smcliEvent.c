@@ -89,7 +89,7 @@ int eventStreamAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "    -d    quoted string containing the event data\n");
                 FREE_MEMORY_CLEAR_POINTER(stringArray);
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':

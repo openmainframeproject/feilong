@@ -90,7 +90,7 @@ int systemConfigSyntaxCheck(int argC, char* argV[], struct _vmApiInternalContext
                     "                                default is set by the Parm_Disk_Password = \n"
                     "                                statement in the DMSSICNF COPY file.\n\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -197,7 +197,7 @@ int systemDiskAccessibility(int argC, char* argV[], struct _vmApiInternalContext
                     "            dev_num: The disk device number. This is a required input\n"
                     "                     parameter. They may be specified in any order.\n\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -298,7 +298,7 @@ int systemDiskAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "          They may be specified in any order. Possible keywords are:\n"
                     "              dev_num - The disk device number.\n\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -425,7 +425,7 @@ int systemDiskQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                 }
                 printf("\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -603,7 +603,7 @@ int systemDiskIOQuery(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     "             RDEV=* - Return information for all RDEVs. (This is the default.)\n "
                     "             RDEV=rdev1 rdev2 .. - Return information for rdev1..\n\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -745,7 +745,7 @@ int systemEQIDQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "                            system-generated or user-defined) are returned.\n"
                     "                            RDEVs that do not exist or have no EQID are ignored.\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -947,7 +947,7 @@ int systemFCPFreeQuery(int argC, char* argV[], struct _vmApiInternalContext* vma
                     "          They may be specified in any order. Possible keywords are:\n"
                     "            fcp_dev: The FCP device number. This is a required parameter.\n\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -1209,7 +1209,7 @@ int systemInformationQuery(int argC, char* argV[], struct _vmApiInternalContext*
                     "          Possible settings are:\n"
                     "            FORMAT=YES  PrintOutput data formatted.\n\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -1352,7 +1352,7 @@ int systemPageUtilizationQuery(int argC, char* argV[], struct _vmApiInternalCont
                     "          the authenticated_userid and the function_name\n"
                     "          (System_Page_Utilization_Query).\n\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -1604,7 +1604,7 @@ int systemPerformanceInformationQuery(int argC, char* argV[], struct _vmApiInter
                     "    -k    A keyword=value item to be created in the directory.\n"
                     "          They may be specified in any order. \n\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -1700,7 +1700,7 @@ int systemPerformanceThresholdDisable(int argC, char* argV[], struct _vmApiInter
                     "            User_CPU userid\n"
                     "            User_IO userid\n\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -1792,7 +1792,7 @@ int systemPerformanceThresholdEnable(int argC, char* argV[], struct _vmApiIntern
                     "            User_CPU = userid percentage \n"
                     "            User_IO = userid rate/sec\n\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -1910,7 +1910,7 @@ int systemSCSIDiskAdd(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     "                    in the permanent configuration for the system.\n"
                     "              If not specified, the default is NO.\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -2016,7 +2016,7 @@ int systemSCSIDiskDelete(int argC, char* argV[], struct _vmApiInternalContext* v
                     "                    configuration for the system.\n"
                     "          If not specified, the default is NO.\n\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -2142,7 +2142,7 @@ int systemSCSIDiskQuery(int argC, char* argV[], struct _vmApiInternalContext* vm
                     "          They may be specified in any order. Possible keywords are:\n"
                     "            dev_num: The device number or 'ALL'\n\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -2360,7 +2360,7 @@ int systemServiceQuery(int argC, char* argV[], struct _vmApiInternalContext* vma
                             "                Required for APAR or PTF, ignored for RSU.\n\n");
             FREE_MEMORY_CLEAR_POINTER(entryArray);
             printRCheaderHelp();
-            return 1;
+            return 0;
             break;
 
         case '?':
@@ -2503,7 +2503,7 @@ int systemShutdown(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "                  NOCANCEL - This does not cause a scheduled shutdown to be terminated.\n"
                     "                             This is the default.\n\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -2603,7 +2603,7 @@ int systemSpoolUtilizationQuery(int argC, char* argV[], struct _vmApiInternalCon
                     "  The following options are required:\n"
                     "    -T    This can be any value.\n\n");
             printRCheaderHelp();
-            return 1;
+            return 0;
             break;
 
         case '?':
@@ -2880,7 +2880,7 @@ int systemWWPNQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                 }
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':

@@ -75,7 +75,7 @@ int deleteABENDDump(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "          spool ID (reader) of a dump \n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':

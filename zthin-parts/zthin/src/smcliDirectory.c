@@ -70,7 +70,7 @@ int directoryManagerLocalTagDefineDM(int argC, char* argV[], struct _vmApiIntern
                     "            1: Create a new tag\n"
                     "            2: Change an existing tag's ordinal value\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -157,7 +157,7 @@ int directoryManagerLocalTagDeleteDM(int argC, char* argV[], struct _vmApiIntern
                     "          also contains the authenticated_userid and the function_name\n"
                     "    -n    Specifies the name of the tag to be deleted\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -240,7 +240,7 @@ int directoryManagerLocalTagQueryDM(int argC, char* argV[], struct _vmApiInterna
                     "    -T    The target userid whose tag is being queried\n"
                     "    -n    The name of the local tag or named comment to be queried\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -332,7 +332,7 @@ int directoryManagerLocalTagSetDM(int argC, char* argV[], struct _vmApiInternalC
                     "    -v    The value of a virtual image's local tag or named comment\n"
                     "          to be set\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -422,7 +422,7 @@ int directoryManagerSearchDM(int argC, char* argV[], struct _vmApiInternalContex
                     "    -T    This must match an entry in the authorization file\n"
                     "    -s    The records to be searched for. Tokens must be separated by blanks\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -517,7 +517,7 @@ int directoryManagerTaskCancelDM(int argC, char* argV[], struct _vmApiInternalCo
                     "    -T    This must match an entry in the authorization file\n"
                     "    -i    The identifier of the task\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
 

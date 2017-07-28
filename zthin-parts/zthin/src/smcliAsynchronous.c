@@ -94,7 +94,7 @@ int asynchronousNotificationDisableDM(int argC, char* argV[], struct _vmApiInter
                     "            2: EBCDIC\n"
                     "    -s    The matching subscriber data\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -238,7 +238,7 @@ int asynchronousNotificationEnableDM(int argC, char* argV[], struct _vmApiIntern
                     "            2: EBCDIC\n"
                     "    -s    Anything the subscriber wishes to receive along with the notifications\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -368,7 +368,7 @@ int asynchronousNotificationQueryDM(int argC, char* argV[], struct _vmApiInterna
                     "            notifications\n"
                     "            '*': Selects all that qualify\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':

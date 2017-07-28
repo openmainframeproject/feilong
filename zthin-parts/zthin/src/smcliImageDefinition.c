@@ -71,7 +71,7 @@ int imageDefinitionAsyncUpdates(int argC, char* argV[], struct _vmApiInternalCon
                     "    -k    A quoted keyword=value 'ENABLED=YES' or 'ENABLED=NO'\n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -184,7 +184,7 @@ int imageDefinitionCreateDM(int argC, char* argV[], struct _vmApiInternalContext
                     "    -k    A quoted keyword=value item to be created in the directory.\n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -299,7 +299,7 @@ int imageDefinitionDeleteDM(int argC, char* argV[], struct _vmApiInternalContext
                     "    -k    A quoted keyword=value item to be deleted in the directory.\n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -434,7 +434,7 @@ int imageDefinitionQueryDM(int argC, char* argV[], struct _vmApiInternalContext*
                 }
                 printf("              * asterisk, meaning all of the above\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -546,8 +546,7 @@ int imageDefinitionUpdateDM(int argC, char* argV[], struct _vmApiInternalContext
                     "    -k    A quoted keyword=value item to be updated in the directory.\n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
-                return 1;
+                return 0;
                 break;
 
             case '?':

@@ -74,7 +74,7 @@ int queryABENDDump(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "          SFS: Query ABEND dumps in the VMSYSU:OPERATNS. SFS directory (processed).\n"
                     "          ALL: Query ABEND dumps both in the reader and the SFS directory.\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -192,7 +192,7 @@ int queryAllDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
                     "            FORMAT=YES  Output data formatted.\n"
                     "            FORMAT=NO   Output data unformatted..\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -325,7 +325,7 @@ int queryAPIFunctionalLevel(int argC, char* argV[], struct _vmApiInternalContext
                     "  The following options are required:\n"
                     "    -T    This must match an entry in the authorization file\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -424,7 +424,7 @@ int queryAsynchronousOperationDM(int argC, char* argV[], struct _vmApiInternalCo
                     "    -T    This must match an entry in the authorization file\n"
                     "    -i    The identifier of the operation to be queried\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -496,7 +496,7 @@ int queryDirectoryManagerLevelDM(int argC, char* argV[], struct _vmApiInternalCo
                     "  The following options are required:\n"
                     "    -T    This must match an entry in the authorization file\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':

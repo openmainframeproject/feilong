@@ -56,7 +56,7 @@ int profileCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "    -T    The name of the profile to be created\n"
                     "    -f    The profile directory entry file\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -173,7 +173,7 @@ int profileDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "  The following options are required:\n"
                     "    -T    The name of the profile to be deleted\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -254,7 +254,7 @@ int profileLockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "  The following options are required:\n"
                     "    -T    The name of the profile to be locked.\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -351,7 +351,7 @@ int profileLockQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vma
                     "    -T   The name of the profile for which the directory lock status is being\n"
                     "         queried.\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -520,7 +520,7 @@ int profileQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "  The following options are required:\n"
                     "    -T    The name of the profile being queried\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -621,7 +621,7 @@ int profileReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "    -T    The name of the profile directory entry to be replaced\n"
                     "    -f    The profile directory entry file");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -739,7 +739,7 @@ int profileUnlockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "  The following options are required:\n"
                     "    -T    The name of the profile to be unlocked.\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':

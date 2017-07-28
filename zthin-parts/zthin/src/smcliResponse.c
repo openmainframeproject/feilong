@@ -53,7 +53,7 @@ int responseRecovery(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "    -f    Previously failed requestId for which you wish to recover\n"
                     "          response data\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':

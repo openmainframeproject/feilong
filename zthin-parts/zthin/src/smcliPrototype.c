@@ -56,7 +56,7 @@ int prototypeCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     "    -T    The name of the image being activated\n"
                     "    -f    The new virtual image prototype");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -169,7 +169,7 @@ int prototypeDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     "  The following options are required:\n"
                     "    -T    The name of the prototype to be deleted\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -245,7 +245,7 @@ int prototypeNameQueryDM(int argC, char* argV[], struct _vmApiInternalContext* v
                     "  The following options are required:\n"
                     "    -T    This must match an entry in the authorization file\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -330,7 +330,7 @@ int prototypeQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "  The following options are required:\n"
                     "    -T    The name of the prototype to be queried\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -424,7 +424,7 @@ int prototypeReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vma
                     "    -T    The name of the image being activated\n"
                     "    -f    The new virtual image prototype\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':

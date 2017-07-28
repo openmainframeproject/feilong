@@ -77,7 +77,7 @@ int authorizationListAdd(int argC, char* argV[], struct _vmApiInternalContext* v
                     "            ALL - Authorizes target_identifier to perform all functions for\n"
                     "                   the designated virtual image(s).\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -188,7 +188,7 @@ int authorizationListQuery(int argC, char* argV[], struct _vmApiInternalContext*
                     "       If unspecified, an asterisk (*) is assumed (authorization is queried for\n"
                     "       all functions.\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
@@ -301,7 +301,7 @@ int authorizationListRemove(int argC, char* argV[], struct _vmApiInternalContext
                     "            * - Authorization is removed for all functions currently listed\n"
                     "                for target_identifier in the authorization file.\n");
                 printRCheaderHelp();
-                return 1;
+                return 0;
                 break;
 
             case '?':
