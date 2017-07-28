@@ -78,7 +78,7 @@ subs = {
     '<<<SimpleCfgFile>>>': '/install/zvm/POC/testImages/cfgdrive.tgz',
                                         # Simple tar file for the config drive
     '<<<simpleImage>>>': '/install/zvm/POC/testImages/' +
-        'rhel67eckd_small_225M.img',    # Small image file
+        'rhel67eckd_small_1100cyl.img',    # Small image file
     '<<<unpackScript>>>': '/opt/zthin/bin/unpackdiskimage',
                                         # Location of unpackdiskimage
     '<<<longString>>>': longstring,
@@ -92,9 +92,31 @@ if len(localSubs) > 0:
 else:
     print("No local overrides exist for the subs dictionary.")
 
+# Add a substitution key for the userid of this system.
+cmd = ["/sbin/vmcp", "query userid"]
+try:
+    subs['<<<localUserid>>>'] = subprocess.check_output(
+        cmd,
+        close_fds=True,
+        stderr=subprocess.STDOUT).split()[0]
+except subprocess.CalledProcessError as e:
+    print("Could not find the userid of this system.")
+    subs['<<<localUserid>>>'] = 'unknownUserid'
+
+# Add a substitution key for the name of the aemod script that
+# set the /etc/iucv_authorized_userid file to use our userid
+# and create the script.
+modFile = NamedTemporaryFile(delete=False)
+subs['<<<aeModScript>>>'] = modFile.name
+
+file = open(modFile.name, 'w')
+file.write("#!/usr/bin/env bash\n")
+file.write("echo -n $1 > /etc/iucv_authorized_userid\n")
+file.close()
+
 # The next lines produce the code that allows the regular expressions to work.
-subs = dict((re.escape(k), v) for k, v in subs.iteritems())
-pattern = re.compile("|".join(subs.keys()))
+regSubs = dict((re.escape(k), v) for k, v in subs.iteritems())
+pattern = re.compile("|".join(regSubs.keys()))
 
 """
 A dictionary contains the elements needed to process a test.
@@ -161,6 +183,13 @@ deployTests = [
         'description': "Punch the config drive tar file to the system.",
         'request': "ChangeVM <<<unsafeID1>>> punchfile " +
         "<<<SimpleCfgFile>>> --class x",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Send an aemod to allow IUCV access by this system.",
+        'request': "ChangeVM <<<unsafeID1>>> aemod <<<aeModScript>>> " +
+            "--invparms <<<localUserid>>>",
         'out': "",
         'overallRC': [0],
     },
@@ -624,6 +653,20 @@ vmModifyTests = [
         'description': "Unpack the image into the disk.",
         'request': "SHELL_TEST <<<unpackScript>>> <<<unsafeID1>>> 100 " +
             "<<<simpleImage>>>",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Punch the config drive tar file to the system.",
+        'request': "ChangeVM <<<unsafeID1>>> punchfile " +
+        "<<<SimpleCfgFile>>> --class x",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Send an aemod to allow IUCV access by this system.",
+        'request': "ChangeVM <<<unsafeID1>>> aemod <<<aeModScript>>> " +
+            "--invparms <<<localUserid>>>",
         'out': "",
         'overallRC': [0],
     },
@@ -1312,10 +1355,10 @@ else:
     for key in testSets:
         for test in testSets[key][1]:
             test['request'] = pattern.sub(lambda m:
-                subs[re.escape(m.group(0))], test['request'])
+                regSubs[re.escape(m.group(0))], test['request'])
             if 'out' in test:
                 test['out'] = pattern.sub(lambda m:
-                    subs[re.escape(m.group(0))], test['out'])
+                    regSubs[re.escape(m.group(0))], test['out'])
 
     # Determine the tests to run based on the first argument.
     tests = []
@@ -1333,9 +1376,11 @@ else:
         for key in sorted(testSets):
             driveTestSet(smut, key, testSets[key])
 
-    # Cleanup the sample config file (if exists) used for punchFile test.
-    if(os.path.exists("sample.config")):
+    # Cleanup the work files.
+    if (os.path.exists("sample.config")):
         os.remove("sample.config")
+    if (os.path.exists(subs['<<<aeModScript>>>'])):
+        os.remove(subs['<<<aeModScript>>>'])
 
     print("")
     print("******************************************************************")
