@@ -212,6 +212,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_nic'
         with mock.patch(func) as get_nic_info:
+            get_nic_info.return_value = ''
             h(self.env, dummy)
 
             get_nic_info.assert_called_once_with('1')
