@@ -181,3 +181,52 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         # the guest be reset by the image
         self.sdkapi.guest_deploy(userid, self.image_name)
         # TODO test guest delete
+
+    def test_guest_start_stop_normal(self):
+        """ Normal cases of SDK API guest_start and guest_stop """
+        userid_normal = "ugsnml"
+        self.addCleanup(self.sdkapi.guest_delete, userid_normal)
+
+        userid = userid_normal
+        vcpu = 1
+        memory = 1024
+        disk = [{'size': '3G',
+                 'format': 'ext3',
+                 'is_boot_disk': True,
+                 'disk_pool': CONF.zvm.disk_pool}]
+        self.sdkapi.guest_create(userid, vcpu, memory, disk_list=disk)
+        self.sdkapi.guest_deploy(userid, self.image_name)
+        self.sdkapi.guest_stop(userid)
+        print("stop guest %s ... ok!" % userid)
+
+        self.sdkapi.guest_start(userid)
+        print("start guest %s ... ok!" % userid)
+
+        self.sdkapi.guest_stop(userid, timeout=60, retry_interval=10)
+        print("stop guest %s ... within 60 seconds and "
+              "retry every 10 seconds ok!" % userid)
+
+    def test_guest_start_stop_abnormal(self):
+        """ Abnormal cases of SDK API guest_start and guest_stop """
+        userid_abnormal = "ugsabnml"
+        self.addCleanup(self.sdkapi.guest_delete, userid_abnormal)
+
+        userid = userid_abnormal
+        vcpu = 1
+        memory = 1024
+        disk = [{'size': '3G',
+                 'format': 'ext3',
+                 'is_boot_disk': True,
+                 'disk_pool': CONF.zvm.disk_pool}]
+        self.sdkapi.guest_create(userid, vcpu, memory, disk_list=disk)
+        self.sdkapi.guest_deploy(userid, self.image_name)
+
+        self.sdkapi.guest_stop(userid)
+        # Stop again
+        self.sdkapi.guest_stop(userid)
+        print("stop guest %s ... ok!" % userid)
+
+        self.sdkapi.guest_start(userid)
+        # Start again
+        self.sdkapi.guest_start(userid)
+        print("start guest %s ... ok!" % userid)
