@@ -27,7 +27,7 @@ class HandlersRootTest(unittest.TestCase):
 
     def test_root(self):
         req = mock.Mock()
-        version = {"versions": [{"id": "v1.0",
+        version = {"versions": [{"version": "1.0",
                                  "max_version": "1.0",
                                  "min_version": "1.0"}]}
         res = root.home(req)
