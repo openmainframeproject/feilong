@@ -53,8 +53,7 @@ int responseRecovery(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "    -f    Previously failed requestId for which you wish to recover\n"
                     "          response data\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);

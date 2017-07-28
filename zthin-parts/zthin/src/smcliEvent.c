@@ -89,8 +89,7 @@ int eventStreamAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "    -d    quoted string containing the event data\n");
                 FREE_MEMORY_CLEAR_POINTER(stringArray);
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);

@@ -362,8 +362,7 @@ int vmRelocateModify(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "                      if unspecified is 10 seconds.The range for this value\n"
                     "                      is 1-99999999.\n\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -485,8 +484,7 @@ int vmRelocateStatus(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "                  OUTGOING - Display status of all outgoing relocations.\n"
                     "              If unspecified, ALL is the default.\n\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);

@@ -54,8 +54,7 @@ int nameListAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiConte
                     "    -T    The name of the list that is being updated\n"
                     "    -n    The name to be added to the list specified\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -136,8 +135,7 @@ int nameListDestroy(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "  The following options are required:\n"
                     "    -T    The name of the list being destroyed\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -214,8 +212,7 @@ int nameListQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "  The following options are required:\n"
                     "    -T    The name of the list being queried\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -301,8 +298,7 @@ int nameListRemove(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "    -T    The name of the list that is being updated\n"
                     "    -n    A userid or function name or list\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);

@@ -70,8 +70,7 @@ int vmrmConfigurationQuery(int argC, char* argV[], struct _vmApiInternalContext*
                     "    -d    The fully-qualified Shared File System (SFS) directory name\n"
                     "          where the configuration file is located\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -203,8 +202,7 @@ int vmrmConfigurationUpdate(int argC, char* argV[], struct _vmApiInternalContext
                     "    -u    A new, complete VMRM configuration file to syntax-check or to replace\n"
                     "          the old file.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -357,8 +355,7 @@ int vmrmMeasurementQuery(int argC, char* argV[], struct _vmApiInternalContext* v
                     "  The following options are required:\n"
                     "    -T    This must match an entry in the authorization file\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);

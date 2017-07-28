@@ -48,8 +48,7 @@ int imageIPLDeviceQuery(int argC, char* argV[], struct _vmApiInternalContext* vm
                     "  The following options are required:\n"
                     "    -T    The userid to query\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -147,8 +146,7 @@ int imagePerformanceQuery(int argC, char* argV[], struct _vmApiInternalContext* 
                     "          servers. This is a required input so if you enter '*' for the names\n"
                     "          you must enter in a number.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -344,8 +342,7 @@ int ipAddrGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiContext
                     "  the zThin is running on.\n\n"
                     "  There are no options required.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -410,8 +407,7 @@ int systemInfoQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "  zThin is running on.\n\n"
                     "  There are no options required.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -484,8 +480,7 @@ int systemIOQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "  The following options are required:\n"
                     "    -T    The real device address\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -558,8 +553,7 @@ int systemPerformanceInfoQuery(int argC, char* argV[], struct _vmApiInternalCont
                     "  of a zVM system.\n\n"
                     "  There are no options required.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -627,8 +621,7 @@ int virtualNetworkQueryLAN(int argC, char* argV[], struct _vmApiInternalContext*
                     "  lanList.\n\n"
                     "  There are no options required.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -692,8 +685,7 @@ int virtualNetworkQueryOSA(int argC, char* argV[], struct _vmApiInternalContext*
                     "  Use Virtual_Network_Query_OSA to query the OSA for the count and the list.\n\n"
                     "  There are no options required.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -797,8 +789,7 @@ int virtualNetworkVswitchQueryIUOStats(int argC, char* argV[],
                     "    -k    A keyword=value item to be created in the directory.\n\n"
                     "            switch_name: The name of the virtual switch segment\n\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -937,8 +928,7 @@ int xCATCommandsIUO(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "    -T    The name of the virtual image\n"
                     "    -c    The quoted string cmd=command with all parameters\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);

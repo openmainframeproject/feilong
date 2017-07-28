@@ -94,8 +94,7 @@ int asynchronousNotificationDisableDM(int argC, char* argV[], struct _vmApiInter
                     "            2: EBCDIC\n"
                     "    -s    The matching subscriber data\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -238,8 +237,7 @@ int asynchronousNotificationEnableDM(int argC, char* argV[], struct _vmApiIntern
                     "            2: EBCDIC\n"
                     "    -s    Anything the subscriber wishes to receive along with the notifications\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -368,8 +366,7 @@ int asynchronousNotificationQueryDM(int argC, char* argV[], struct _vmApiInterna
                     "            notifications\n"
                     "            '*': Selects all that qualify\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);

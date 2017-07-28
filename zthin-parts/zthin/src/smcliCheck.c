@@ -56,8 +56,7 @@ int checkAuthentication(int argC, char* argV[], struct _vmApiInternalContext* vm
                     "          zThin then the password is ignored\n"
                     "    -p    Password to validate\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);

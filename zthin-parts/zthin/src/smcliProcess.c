@@ -74,8 +74,7 @@ int processABENDDump(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "                        to process all remaining ABEND dumps. If not specified,\n"
                     "                        the next ABEND dump is processed.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);

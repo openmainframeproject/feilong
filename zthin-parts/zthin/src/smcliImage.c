@@ -51,8 +51,7 @@ int imageActivate(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "  The following options are required:\n"
                     "    -T    The name of the image being activated\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -148,8 +147,7 @@ int imageActiveConfigurationQuery(int argC, char* argV[], struct _vmApiInternalC
                     "  The following options are required:\n"
                     "    -T    The userid being queried\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -308,8 +306,7 @@ int imageCPUDefine(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "            3: ZAAP\n"
                     "            4: ZIIP\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -453,8 +450,7 @@ int imageCPUDefineDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "            1: CRYPTO\n" );
                 }
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -538,8 +534,7 @@ int imageCPUDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "          be deleted.\n"
                     "    -v    The virtual CPU address to delete from the virtual image\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -626,8 +621,7 @@ int imageCPUDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "          definition of the virtual image (in the hexadecimal\n"
                     "          range of 0-3F).\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -710,8 +704,7 @@ int imageCPUQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "    -T    The name of the virtual image whose virtual CPUs are\n"
                     "          being queried\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -831,8 +824,7 @@ int imageCPUQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "    -v    The virtual CPU address to query from the static definition\n"
                     "          of the virtual image\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -948,8 +940,7 @@ int imageCPUSetMaximumDM(int argC, char* argV[], struct _vmApiInternalContext* v
                     "           number of virtual processors\n"
                     "    -m     The maximum number of virtual processors the user can define\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1076,8 +1067,7 @@ int imageCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "         2. Neither the logon password nor the account number input parameters\n"
                     "            may be specified if directory entry is specified.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case 1:  // API name type data(other non option element key data)
             	break;
@@ -1246,8 +1236,7 @@ int imageDeactivate(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "      Note: If unspecified, deactivation takes place according to the default\n"
                     "            signal timeout value set for the system\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1340,8 +1329,7 @@ int imageDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "            1: Do not erase (override installation default)\n"
                     "            2: Erase (override installation default)\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1445,8 +1433,7 @@ int imageDeviceDedicate(int argC, char* argV[], struct _vmApiInternalContext* vm
                     "    -R    Specify a 1 if the virtual device is to be in read-only\n"
                     "          mode. Otherwise, specify a 0\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1547,8 +1534,7 @@ int imageDeviceDedicateDM(int argC, char* argV[], struct _vmApiInternalContext* 
                     "    -R    Specify a 1 if the virtual device is to be in read-only mode.\n"
                     "          Otherwise, specify a 0.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1634,8 +1620,7 @@ int imageDeviceReset(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "    -T    The userid or image name for which the device is being reset\n"
                     "    -v    The virtual device number of the device to reset\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1722,8 +1707,7 @@ int imageDeviceUndedicate(int argC, char* argV[], struct _vmApiInternalContext* 
                     "          removed\n"
                     "    -v    The virtual device number of the device to be deleted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1809,8 +1793,7 @@ int imageDeviceUndedicateDM(int argC, char* argV[], struct _vmApiInternalContext
                     "    -T    The name of the image from which a dedicated device is being removed\n"
                     "    -v    The virtual device number of the device to be deleted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1896,8 +1879,7 @@ int imageDiskCopy(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "          being copied\n"
                     "    -v    The virtual device address of the target disk for the copy\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2049,8 +2031,7 @@ int imageDiskCopyDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "    -w    Defines the write password that will be used for accessing the disk\n"
                     "    -x    Defines the multi password that will be used for accessing the disk\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2151,8 +2132,7 @@ int imageDiskCreate(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "            MR: Write or any exclusive access\n"
                     "            MW: Write access is allowed to the disk unconditionally\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2334,8 +2314,7 @@ int imageDiskCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     "    -W    Write password\n"
                     "    -M    Multi password\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2426,8 +2405,7 @@ int imageDiskDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "    -T    The name of the image for which the disk is being deleted\n"
                     "    -v    The virtual device address of the disk to be deleted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2523,8 +2501,7 @@ int imageDiskDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     "            1: Do not erase (override installation default)\n"
                     "            2: Erase (override installation default)\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2635,8 +2612,7 @@ int imageDiskQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "          The value is a virtual device number, or ALL \n");
                  FREE_MEMORY_CLEAR_POINTER(entryArray);
                  printRCheaderHelp();
-                 return 1;
-                 break;
+                 return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2784,8 +2760,7 @@ int imageDiskShare(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "  The following options are optional:\n"
                     "    -p    The password that MAY BE REQUIRED to share the disk\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2905,8 +2880,7 @@ int imageDiskShareDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "      The following options are optional:\n"
                     "    -p    The password that MAY BE REQUIRED to share the disk\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2994,8 +2968,7 @@ int imageDiskUnshare(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "    -v    The virtual device address of the previously-shared\n"
                     "          disk to be removed from the configuration\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3098,8 +3071,7 @@ int imageDiskUnshareDM(int argC, char* argV[], struct _vmApiInternalContext* vma
                     "    -r    The virtual device number previously assigned to the shared\n"
                     "          disk\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3180,8 +3152,7 @@ int imageIPLDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "    -T    Specifies the name of the user or profile for which the IPL\n"
                     "          statement is to be deleted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3264,8 +3235,7 @@ int imageIPLQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "    -T    Specifies the name of the user or profile for which the IPL\n"
                     "          statement is to be queried\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3377,8 +3347,7 @@ int imageIPLSetDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "          to the number of characters that can be specified in the first\n"
                     "          72 positions of the statement.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3465,8 +3434,7 @@ int imageLockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiConte
                     "  The following options are optional:\n"
                     "    -v    The virtual address of the device being locked.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3566,8 +3534,7 @@ int imageLockQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "    -T    The name of the image for which the directory lock status is being\n"
                     "          queried.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3755,8 +3722,7 @@ int imageMDISKLinkQuery(int argC, char* argV[], struct _vmApiInternalContext* vm
                     "          DASD which is being queried for links. This is a required parameter.\n");
 
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3896,8 +3862,7 @@ int imageNameQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "DESCRIPTION\n"
                     "  Use Image_Name_Query_DM to obtain a list of defined virtual images.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3981,8 +3946,7 @@ int imagePasswordSetDM(int argC, char* argV[], struct _vmApiInternalContext* vma
                     "    -T    The name of the image for which the password is being set\n"
                     "    -p    The password or passphrase to set for the image\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4072,8 +4036,7 @@ int imagePause(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
                     "    -T    The name of the image for which the password is being set\n"
                     "    -k    The quoted string PAUSE=YES to halt processing or PAUSE=NO to start.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4191,8 +4154,7 @@ int imageQueryActivateTime(int argC, char* argV[], struct _vmApiInternalContext*
                     "            5: dd/mm/yy\n"
                     "            6: dd/mm/yyyy\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4276,8 +4238,7 @@ int imageQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCont
                     "  The following options are required:\n"
                     "    -T    The name of the image being queried\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4366,8 +4327,7 @@ int imageRecycle(int argC, char* argV[], struct _vmApiInternalContext* vmapiCont
                     "  The following options are required:\n"
                     "    -T    The name of the image being recycled\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4467,8 +4427,7 @@ int imageReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "    -s    Read the updated directory entry from stdin. Not required if a\n"
                     "          directory entry file is provided.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 if (isprint (optopt)) {
@@ -4660,8 +4619,7 @@ int imageSCSICharacteristicsDefineDM(int argC, char* argV[], struct _vmApiIntern
                     "            If the -s parameter is 0 or 1 then do not use this parameter\n"
                     "            If the -s parameter is 2 or 3 then you must use this parameter\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4757,8 +4715,7 @@ int imageSCSICharacteristicsQueryDM(int argC, char* argV[], struct _vmApiInterna
                     "  The following options are required:\n"
                     "    -T    The target userid whose LOADDEV is being queried\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4867,8 +4824,7 @@ int imageStatusQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "    -T    The name of the image being queried\n"
                     "          You may enter '*' to get the list of all active servers\n ");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4962,8 +4918,7 @@ int imageUnlockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "  The following options are optional:\n"
                     "    -v    The virtual address of the device being unlocked\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -5127,8 +5082,7 @@ int imageVolumeAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "    -x    Multiwrite password for the alternate parm disk.\n"
                     "          The default is ','.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -5292,8 +5246,7 @@ int imageVolumeDelete(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     "    -x    Multiwrite password for the alternate parm disk.\n"
                     "          The default is ','.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -5413,8 +5366,7 @@ int imageVolumeShare(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "          If unspecified, the default is ON.\n");
                  FREE_MEMORY_CLEAR_POINTER(entryArray);
                  printRCheaderHelp();
-                 return 1;
-                 break;
+                 return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -5566,8 +5518,7 @@ int imageVolumeSpaceDefineDM(int argC, char* argV[], struct _vmApiInternalContex
                     "            3: 3380\n"
                     "            4: FB-512\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -5777,8 +5728,7 @@ int imageVolumeSpaceDefineExtendedDM(int argC, char* argV[], struct _vmApiIntern
                     "                  new allocation starting at the next region.\n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -5890,8 +5840,7 @@ int imageVolumeSpaceQueryDM(int argC, char* argV[], struct _vmApiInternalContext
                     "  The following options are optional:\n"
                     "    -n    Entry name\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -6025,8 +5974,7 @@ int imageVolumeSpaceQueryExtendedDM(int argC, char* argV[], struct _vmApiInterna
                     "  details.\n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -6152,8 +6100,7 @@ int imageVolumeSpaceRemoveDM(int argC, char* argV[], struct _vmApiInternalContex
                     "    -v    The DASD volume label\n"
                     "    -g    The name of the group to which the region is assigned\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -6229,8 +6176,7 @@ int imageConsoleGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "  The following options are required:\n"
                     "    -T    The name of the image to be get console from\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
