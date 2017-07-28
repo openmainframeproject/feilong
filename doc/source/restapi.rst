@@ -1,6 +1,6 @@
-==========
+**********
  REST API
-==========
+**********
 
 This is a reference for the cloudlib4zvm API.
 
@@ -27,36 +27,36 @@ Get info from host (hypervisor) running on.
 Get Host Info
 -------------
 
-GET /host/info
+* GET /host/info
 
-Request:
+  - Request:
 
-request
+  request
 
-Response:
+  - Response:
 
-response
+  response
 
-Sample output:
+  - Sample output:
 
-sample output
+  sample output
 
 Get Host disk pool info
 -----------------------
 
-GET /host/disk_info/{disk}
+* GET /host/disk_info/{disk}
 
-Request:
+  - Request:
 
-request
+  request
 
-Response:
+  - Response:
 
-response
+  response
 
-Sample output:
+  - Sample output:
 
-sample output
+  sample output
 
 Image(s)
 ========
