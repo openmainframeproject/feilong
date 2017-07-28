@@ -65,11 +65,19 @@ class GuestHandlerTestCase(unittest.TestCase):
 
     def _guest_nic_delete(self, vdev="1000"):
         body = '{"nic": {}}'
-        url = '/guests/%s/nic/2000' % self.userid
+        url = '/guests/%s/nic/%s' % (self.userid, vdev)
         resp = self.client.api_request(url=url,
                                        method='DELETE',
                                        body=body)
         self.assertEqual(200, resp.status_code)
+
+    def _guest_nic_query(self):
+        url = '/guests/%s/nic' % self.userid
+        resp = self.client.api_request(url=url,
+                                       method='GET')
+        self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_guest_get_nic', resp.content)
+        return resp
 
     def _guest_get(self):
         url = '/guests/%s' % self.userid
@@ -225,7 +233,7 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
-    def _test_guest_vswitch_couple_uncouple(self):
+    def test_guest_vswitch_couple_uncouple(self):
         self._guest_create()
 
         try:
@@ -236,6 +244,8 @@ class GuestHandlerTestCase(unittest.TestCase):
             self._vswitch_couple()
 
             self._vswitch_uncouple()
+
+            self._guest_nic_query()
 
             self._guest_nic_delete()
 

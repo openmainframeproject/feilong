@@ -319,10 +319,14 @@ def guest_get_nic_info(req):
 
     def _guest_get_nic_info(userid):
         action = get_handler()
-        action.get_nic(userid)
+        return action.get_nic(userid)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
-    _guest_get_nic_info(userid)
+    info = _guest_get_nic_info(userid)
+    info_json = json.dumps({'nic': info})
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
