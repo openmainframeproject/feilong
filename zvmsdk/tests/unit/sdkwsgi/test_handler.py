@@ -500,6 +500,7 @@ class ImageHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.image.ImageAction.query'
         with mock.patch(function) as query:
+            query.return_value = '[]'
             h(self.env, dummy)
 
             query.assert_called_once_with(None)
