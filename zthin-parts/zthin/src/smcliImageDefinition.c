@@ -71,8 +71,7 @@ int imageDefinitionAsyncUpdates(int argC, char* argV[], struct _vmApiInternalCon
                     "    -k    A quoted keyword=value 'ENABLED=YES' or 'ENABLED=NO'\n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -88,7 +87,6 @@ int imageDefinitionAsyncUpdates(int argC, char* argV[], struct _vmApiInternalCon
                 }
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -97,7 +95,6 @@ int imageDefinitionAsyncUpdates(int argC, char* argV[], struct _vmApiInternalCon
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
         }
 
     if (!image || !entryCount) {
@@ -184,8 +181,7 @@ int imageDefinitionCreateDM(int argC, char* argV[], struct _vmApiInternalContext
                     "    -k    A quoted keyword=value item to be created in the directory.\n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -201,7 +197,6 @@ int imageDefinitionCreateDM(int argC, char* argV[], struct _vmApiInternalContext
                 }
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -210,7 +205,6 @@ int imageDefinitionCreateDM(int argC, char* argV[], struct _vmApiInternalContext
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
         }
 
     if (!image || !entryCount) {
@@ -299,8 +293,7 @@ int imageDefinitionDeleteDM(int argC, char* argV[], struct _vmApiInternalContext
                     "    -k    A quoted keyword=value item to be deleted in the directory.\n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -316,7 +309,6 @@ int imageDefinitionDeleteDM(int argC, char* argV[], struct _vmApiInternalContext
                 }
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -325,7 +317,6 @@ int imageDefinitionDeleteDM(int argC, char* argV[], struct _vmApiInternalContext
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
         }
 
     if (!image || !entryCount) {
@@ -434,8 +425,7 @@ int imageDefinitionQueryDM(int argC, char* argV[], struct _vmApiInternalContext*
                 }
                 printf("              * asterisk, meaning all of the above\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -450,7 +440,6 @@ int imageDefinitionQueryDM(int argC, char* argV[], struct _vmApiInternalContext*
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -458,7 +447,6 @@ int imageDefinitionQueryDM(int argC, char* argV[], struct _vmApiInternalContext*
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !keywords) {
@@ -546,9 +534,7 @@ int imageDefinitionUpdateDM(int argC, char* argV[], struct _vmApiInternalContext
                     "    -k    A quoted keyword=value item to be updated in the directory.\n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -564,7 +550,6 @@ int imageDefinitionUpdateDM(int argC, char* argV[], struct _vmApiInternalContext
                 }
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -573,7 +558,6 @@ int imageDefinitionUpdateDM(int argC, char* argV[], struct _vmApiInternalContext
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
         }
 
     if (!image || !entryCount) {

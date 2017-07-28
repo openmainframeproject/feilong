@@ -70,8 +70,7 @@ int vmrmConfigurationQuery(int argC, char* argV[], struct _vmApiInternalContext*
                     "    -d    The fully-qualified Shared File System (SFS) directory name\n"
                     "          where the configuration file is located\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -86,12 +85,10 @@ int vmrmConfigurationQuery(int argC, char* argV[], struct _vmApiInternalContext*
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !configFileName || !configFileType || !configDirName) {
@@ -203,8 +200,7 @@ int vmrmConfigurationUpdate(int argC, char* argV[], struct _vmApiInternalContext
                     "    -u    A new, complete VMRM configuration file to syntax-check or to replace\n"
                     "          the old file.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -219,12 +215,10 @@ int vmrmConfigurationUpdate(int argC, char* argV[], struct _vmApiInternalContext
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !configFileName || !configFileType || !configDirName || (syncheck < 0) || !updateFile) {
@@ -357,8 +351,7 @@ int vmrmMeasurementQuery(int argC, char* argV[], struct _vmApiInternalContext* v
                     "  The following options are required:\n"
                     "    -T    This must match an entry in the authorization file\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -373,12 +366,10 @@ int vmrmMeasurementQuery(int argC, char* argV[], struct _vmApiInternalContext* v
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {

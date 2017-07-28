@@ -72,8 +72,7 @@ int virtualChannelConnectionCreate(int argC, char* argV[], struct _vmApiInternal
                     "    -d    The virtual device number of the network device in another\n"
                     "          virtual image\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -88,12 +87,10 @@ int virtualChannelConnectionCreate(int argC, char* argV[], struct _vmApiInternal
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualAddress || !coupledImage || !coupledVirtualAddress) {
@@ -167,8 +164,7 @@ int virtualChannelConnectionCreateDM(int argC, char* argV[], struct _vmApiIntern
                     "    -c    The virtual image name of the target virtual image that is to be\n"
                     "          connected.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -183,12 +179,10 @@ int virtualChannelConnectionCreateDM(int argC, char* argV[], struct _vmApiIntern
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualAddress || !coupledImage) {
@@ -252,8 +246,7 @@ int virtualChannelConnectionDelete(int argC, char* argV[], struct _vmApiInternal
                     "    -T    The name of the image for which the connection device is being removed\n"
                     "    -v    The virtual device number of the device to be deleted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -268,12 +261,10 @@ int virtualChannelConnectionDelete(int argC, char* argV[], struct _vmApiInternal
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualAddress) {
@@ -338,8 +329,7 @@ int virtualChannelConnectionDeleteDM(int argC, char* argV[], struct _vmApiIntern
                     "          being removed\n"
                     "    -v    The virtual device number of the device to be deleted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -354,12 +344,10 @@ int virtualChannelConnectionDeleteDM(int argC, char* argV[], struct _vmApiIntern
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualAddress) {
@@ -436,8 +424,7 @@ int virtualNetworkAdapterConnectLAN(int argC, char* argV[], struct _vmApiInterna
                     "    -l    The name of the guest LAN segment to connect the virtual image\n"
                     "    -o    The virtual image owning the guest LAN segment to be connected\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -452,12 +439,10 @@ int virtualNetworkAdapterConnectLAN(int argC, char* argV[], struct _vmApiInterna
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualAddress || !lanName || !lanOwner) {
@@ -534,8 +519,7 @@ int virtualNetworkAdapterConnectLANDM(int argC, char* argV[], struct _vmApiInter
                     "    -n    The name of the guest LAN segment to connect the virtual image\n"
                     "    -o    The virtual image owning the guest LAN segment to be connected\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -550,12 +534,10 @@ int virtualNetworkAdapterConnectLANDM(int argC, char* argV[], struct _vmApiInter
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !deviceAddress || !lanName || !lanOwner) {
@@ -627,8 +609,7 @@ int virtualNetworkAdapterConnectVswitch(int argC, char* argV[], struct _vmApiInt
                     "    -n    The name of the virtual switch segment to connect to the virtual\n"
                     "          image\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -643,12 +624,10 @@ int virtualNetworkAdapterConnectVswitch(int argC, char* argV[], struct _vmApiInt
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !deviceAddress || !vswitchName) {
@@ -721,8 +700,7 @@ int virtualNetworkAdapterConnectVswitchDM(int argC, char* argV[], struct _vmApiI
                     "    -n    The name of the virtual switch segment to connect to the virtual\n"
                     "          image\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -737,12 +715,10 @@ int virtualNetworkAdapterConnectVswitchDM(int argC, char* argV[], struct _vmApiI
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualAddress || !switchName) {
@@ -833,8 +809,7 @@ int virtualNetworkAdapterConnectVswitchExtended(int argC, char* argV[], struct _
                     "             Range 0-65535 - The port number to be used.\n"
                     "             If unspecified, AUTO is the default.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -849,12 +824,10 @@ int virtualNetworkAdapterConnectVswitchExtended(int argC, char* argV[], struct _
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!targetIdentifier ||  entryCount < 2)  {
@@ -933,8 +906,7 @@ int virtualNetworkAdapterCreate(int argC, char* argV[], struct _vmApiInternalCon
                     "            2: Defines this adapter as a simulated QDIO NIC\n"
                     "    -d    The number of virtual devices associated with this adapter\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -949,12 +921,10 @@ int virtualNetworkAdapterCreate(int argC, char* argV[], struct _vmApiInternalCon
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualAddress || !adapterType || (virtualDevices < 0)) {
@@ -1045,8 +1015,7 @@ int virtualNetworkAdapterCreateDM(int argC, char* argV[], struct _vmApiInternalC
                     "    -c    The hex CHPID numbers for the first- and second-level systems\n"
                     "    -m    The MAC identifier\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1061,12 +1030,10 @@ int virtualNetworkAdapterCreateDM(int argC, char* argV[], struct _vmApiInternalC
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !deviceAddress || !adapterType || !adapterDevices) {
@@ -1183,8 +1150,7 @@ int virtualNetworkAdapterCreateExtended(int argC, char* argV[], struct _vmApiInt
                     "                          parameter for z/VM, which allocates available CHPIDs\n"
                     "                          by default.\n\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1199,12 +1165,10 @@ int virtualNetworkAdapterCreateExtended(int argC, char* argV[], struct _vmApiInt
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!targetIdentifier ||  entryCount < 1)  {
@@ -1329,8 +1293,7 @@ int virtualNetworkAdapterCreateExtendedDM(int argC, char* argV[], struct _vmApiI
                     "             prevents the adapter from being added to the virtual I/O\n"
                     "             configuration of the guest.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1345,12 +1308,10 @@ int virtualNetworkAdapterCreateExtendedDM(int argC, char* argV[], struct _vmApiI
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!targetIdentifier ||  entryCount < 1)  {
@@ -1415,8 +1376,7 @@ int virtualNetworkAdapterDelete(int argC, char* argV[], struct _vmApiInternalCon
                     "    -v    The virtual device number of the base address for the adapter\n"
                     "          to be deleted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1431,12 +1391,10 @@ int virtualNetworkAdapterDelete(int argC, char* argV[], struct _vmApiInternalCon
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualAddress) {
@@ -1500,8 +1458,7 @@ int virtualNetworkAdapterDeleteDM(int argC, char* argV[], struct _vmApiInternalC
                     "    -v    The virtual device number of the base address for the adapter to be\n"
                     "          deleted.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1516,12 +1473,10 @@ int virtualNetworkAdapterDeleteDM(int argC, char* argV[], struct _vmApiInternalC
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualAddress) {
@@ -1586,8 +1541,7 @@ int virtualNetworkAdapterDisconnect(int argC, char* argV[], struct _vmApiInterna
                     "          guest LAN connection information will be removed\n"
                     "    -v    Specifies the virtual device address of the connected adapter\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1602,12 +1556,10 @@ int virtualNetworkAdapterDisconnect(int argC, char* argV[], struct _vmApiInterna
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualAddress) {
@@ -1673,8 +1625,7 @@ int virtualNetworkAdapterDisconnectDM(int argC, char* argV[], struct _vmApiInter
                     "          guest LAN connection information will be removed\n"
                     "    -v    Specifies the virtual device address of the connected adapter\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1689,12 +1640,10 @@ int virtualNetworkAdapterDisconnectDM(int argC, char* argV[], struct _vmApiInter
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -1757,8 +1706,7 @@ int virtualNetworkAdapterQuery(int argC, char* argV[], struct _vmApiInternalCont
                     "            '*': Request is made for information about all adapters owned\n"
                     "                 by the target userid\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1773,12 +1721,10 @@ int virtualNetworkAdapterQuery(int argC, char* argV[], struct _vmApiInternalCont
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualAddress) {
@@ -1898,8 +1844,7 @@ int virtualNetworkAdapterQueryExtended( int argC, char* argV[], struct _vmApiInt
                     "            image_device_number= The virtual device address of the adapter, or\n"
                     "                         '*'  All virtual adapters\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1914,12 +1859,10 @@ int virtualNetworkAdapterQueryExtended( int argC, char* argV[], struct _vmApiInt
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if ( !targetIdentifier ||  entryCount < 1 ) {
@@ -2017,8 +1960,7 @@ int virtualNetworkLANAccess(int argC, char* argV[], struct _vmApiInternalContext
                     "            NONPROMISCUOUS: Nonpromiscuous access\n"
                     "            PROMISCUOUS: Promiscuous access\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2033,12 +1975,10 @@ int virtualNetworkLANAccess(int argC, char* argV[], struct _vmApiInternalContext
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !lanName || !lanOwner || !accessOpt || !accessGrantUser || !promiscuity) {
@@ -2107,8 +2047,7 @@ int virtualNetworkLANAccessQuery(int argC, char* argV[], struct _vmApiInternalCo
                     "    -n    The name of the LAN being queried\n"
                     "    -o    The owner of the LAN being queried\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2123,12 +2062,10 @@ int virtualNetworkLANAccessQuery(int argC, char* argV[], struct _vmApiInternalCo
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !lanName || !lanOwner) {
@@ -2225,8 +2162,7 @@ int virtualNetworkLANCreate(int argC, char* argV[], struct _vmApiInternalContext
                     "            2: Ethernet ~ Reference all target nodes on LAN or switch using\n"
                     "               MAC addresses\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2241,12 +2177,10 @@ int virtualNetworkLANCreate(int argC, char* argV[], struct _vmApiInternalContext
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !lanName || !lanOwner || !lanType || (transportType < 0)) {
@@ -2314,8 +2248,7 @@ int virtualNetworkLANDelete(int argC, char* argV[], struct _vmApiInternalContext
                     "    -n    The name of the guest LAN segment to be deleted\n"
                     "    -o    The virtual image owning the guest LAN segment to be deleted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2330,12 +2263,10 @@ int virtualNetworkLANDelete(int argC, char* argV[], struct _vmApiInternalContext
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !lanName || !lanOwner) {
@@ -2404,8 +2335,7 @@ int virtualNetworkLANQuery(int argC, char* argV[], struct _vmApiInternalContext*
                     "    -o    The name of the virtual image owning the guest LAN segment\n"
                     "            '*': A request is made for all qualified guest LAN segments\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2420,12 +2350,10 @@ int virtualNetworkLANQuery(int argC, char* argV[], struct _vmApiInternalContext*
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !lanName || !lanOwner) {
@@ -2516,8 +2444,7 @@ int virtualNetworkOSAQuery(int argC, char* argV[], struct _vmApiInternalContext*
                     "  The following options are required:\n"
                     "    -T    This must match an entry in the authorization file\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2532,12 +2459,10 @@ int virtualNetworkOSAQuery(int argC, char* argV[], struct _vmApiInternalContext*
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -2730,8 +2655,7 @@ int virtualNetworkVLANQueryStats(int argC, char* argV[], struct _vmApiInternalCo
                     "                      BOTH\n"
                     "              If not specified, BOTH is the default.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2746,12 +2670,10 @@ int virtualNetworkVLANQueryStats(int argC, char* argV[], struct _vmApiInternalCo
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
     }
 
     if (!targetIdentifier ||  entryCount < 2)  {
@@ -3168,8 +3090,7 @@ int virtualNetworkVswitchCreate(int argC, char* argV[], struct _vmApiInternalCon
                     "            -1: The native VLAN ID is not specified\n"
                     "            1-4094: Any number in this range is a valid native VLAN ID\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3184,12 +3105,10 @@ int virtualNetworkVswitchCreate(int argC, char* argV[], struct _vmApiInternalCon
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !switchName) {
@@ -3362,8 +3281,7 @@ int virtualNetworkVswitchCreateExtended(int argC, char* argV[], struct _vmApiInt
                     "                        user ID basis. Port numbers for guests will be assigned by CP.\n"
                     "                        This is the default if not specified.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3378,12 +3296,10 @@ int virtualNetworkVswitchCreateExtended(int argC, char* argV[], struct _vmApiInt
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!targetIdentifier ||  entryCount < 1)  {
@@ -3525,8 +3441,7 @@ int virtualNetworkVswitchDelete(int argC, char* argV[], struct _vmApiInternalCon
                     "    -D  Multiwrite password for the second (alternative) parm disk.\n"
                     "        The default is ','.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3541,12 +3456,10 @@ int virtualNetworkVswitchDelete(int argC, char* argV[], struct _vmApiInternalCon
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -3635,8 +3548,7 @@ int virtualNetworkVswitchDeleteExtended(int argC, char* argV[], struct _vmApiInt
                     "                   permanent configuration for the system.\n"
                     "              If not specified, the default is NO.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3651,12 +3563,10 @@ int virtualNetworkVswitchDeleteExtended(int argC, char* argV[], struct _vmApiInt
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!targetIdentifier ||  entryCount < 1)  {
@@ -3718,8 +3628,7 @@ int virtualNetworkVswitchQuery(int argC, char* argV[], struct _vmApiInternalCont
                     "    -s    The name of the virtual switch\n"
                     "          '*': All virtual switches\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3734,12 +3643,10 @@ int virtualNetworkVswitchQuery(int argC, char* argV[], struct _vmApiInternalCont
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !switchName) {
@@ -4064,8 +3971,7 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
                           "                    This is the default.");
                 }
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4080,12 +3986,10 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
 
@@ -4790,8 +4694,7 @@ int virtualNetworkVswitchQueryStats(int argC, char* argV[], struct _vmApiInterna
                     "              For V6.2, the supported format version value is 4. This is an\n"
                     "              optional parameter.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4806,12 +4709,10 @@ int virtualNetworkVswitchQueryStats(int argC, char* argV[], struct _vmApiInterna
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!targetIdentifier ||  entryCount < 1)  {
@@ -5218,8 +5119,7 @@ int virtualNetworkVswitchSet(int argC, char* argV[], struct _vmApiInternalContex
                     "            2: NOGVRP\n"
                     "    -m    The MAC identifier\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
              case '?':
                  DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -5234,12 +5134,10 @@ int virtualNetworkVswitchSet(int argC, char* argV[], struct _vmApiInternalContex
                      printf("Unknown option character \\x%x\n", optopt);
                  }
                  return 1;
-                 break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !switchName) {
@@ -5490,8 +5388,7 @@ int virtualNetworkVswitchSetExtended(int argC, char* argV[], struct _vmApiIntern
                     "                    OFF Allows guests to communicate with each other and with\n"
                     "                        any hosts");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -5506,12 +5403,10 @@ int virtualNetworkVswitchSetExtended(int argC, char* argV[], struct _vmApiIntern
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!targetIdentifier ||  entryCount < 1)  {

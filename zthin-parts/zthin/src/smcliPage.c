@@ -90,8 +90,7 @@ int pageorSpoolVolumeAdd(int argC, char* argV[], struct _vmApiInternalContext* v
                     "                Note: The character ',' is used to indicate no password. Therefore\n"
                     "                ',' cannot be the password.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -106,12 +105,10 @@ int pageorSpoolVolumeAdd(int argC, char* argV[], struct _vmApiInternalContext* v
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!targetIdentifier ||  entryCount < 3)  {

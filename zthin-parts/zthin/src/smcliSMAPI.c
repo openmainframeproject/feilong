@@ -48,8 +48,7 @@ int smapiStatusCapture(int argC, char* argV[], struct _vmApiInternalContext* vma
                     "  The following options are required:\n"
                     "    -T    The name of the target used for authorization.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -64,7 +63,6 @@ int smapiStatusCapture(int argC, char* argV[], struct _vmApiInternalContext* vma
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -72,7 +70,6 @@ int smapiStatusCapture(int argC, char* argV[], struct _vmApiInternalContext* vma
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!profile) {

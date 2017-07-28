@@ -58,8 +58,7 @@ int metadataDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "    -k    A blank-delimited list of metadata names. \n"
                     "          Note that these metadata names are case sensitive.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -74,7 +73,6 @@ int metadataDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -82,7 +80,6 @@ int metadataDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !keywords) {
@@ -149,8 +146,7 @@ int metadataGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiConte
                     "    -k    A quoted blank-delimited list of metadata names.\n"
                     "          Note that these metadata names are case sensitive.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -165,7 +161,6 @@ int metadataGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiConte
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                break;
@@ -173,7 +168,6 @@ int metadataGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiConte
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !keywords) {
@@ -273,8 +267,7 @@ int metadataSet(int argC, char* argV[],
                     "          Note that these metadata_names are case sensitive.\n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -290,7 +283,6 @@ int metadataSet(int argC, char* argV[],
                 }
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -299,7 +291,6 @@ int metadataSet(int argC, char* argV[],
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
         }
 
     if (!targetIdentifier || !entryCount) {
@@ -393,8 +384,7 @@ int metadataSpaceQuery(int argC, char* argV[], struct _vmApiInternalContext* vma
                     "    -k    One quoted searchkey=<pattern> search term to select the metadata items to be displayed\n"
                     "          The search pattern may include a trailing ""*"" to broaden the scope of the search   \n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -409,7 +399,6 @@ int metadataSpaceQuery(int argC, char* argV[], struct _vmApiInternalContext* vma
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                break;
@@ -417,7 +406,6 @@ int metadataSpaceQuery(int argC, char* argV[], struct _vmApiInternalContext* vma
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !keywords) {

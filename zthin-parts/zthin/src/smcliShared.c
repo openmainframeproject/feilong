@@ -56,8 +56,7 @@ int sharedMemoryAccessAddDM(int argC, char* argV[], struct _vmApiInternalContext
                     "    -s    The name of the memory segment to which access is being\n"
                     "          granted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -72,12 +71,10 @@ int sharedMemoryAccessAddDM(int argC, char* argV[], struct _vmApiInternalContext
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !segmentName) {
@@ -140,8 +137,7 @@ int sharedMemoryAccessQueryDM(int argC, char* argV[], struct _vmApiInternalConte
                     "          access to the specified segment\n"
                     "    -s    The name of the memory segment being queried\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -156,12 +152,10 @@ int sharedMemoryAccessQueryDM(int argC, char* argV[], struct _vmApiInternalConte
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !segmentName) {
@@ -226,8 +220,7 @@ int sharedMemoryAccessRemoveDM(int argC, char* argV[], struct _vmApiInternalCont
                     "    -T    The userid or list of IDs for which access is being removed\n"
                     "    -s    The name of the memory segment to which access is being removed\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -242,12 +235,10 @@ int sharedMemoryAccessRemoveDM(int argC, char* argV[], struct _vmApiInternalCont
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !segmentName) {
@@ -356,8 +347,7 @@ int sharedMemoryCreate(int argC, char* argV[], struct _vmApiInternalContext* vma
                     "          RSTD segment.  If specified, it is used only when RSTD is specified\n"
                     "          in the memory_attributes parameter.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -372,12 +362,10 @@ int sharedMemoryCreate(int argC, char* argV[], struct _vmApiInternalContext* vma
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !segmentName || !beginPage || !endPage || !pageAccessType || (memoryAttributes < 0)) {
@@ -439,8 +427,7 @@ int sharedMemoryDelete(int argC, char* argV[], struct _vmApiInternalContext* vma
                     "    -T    This must match an entry in the authorization file\n"
                     "    -s    The name of the memory segment being deleted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -455,12 +442,10 @@ int sharedMemoryDelete(int argC, char* argV[], struct _vmApiInternalContext* vma
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !segmentName) {
@@ -529,8 +514,7 @@ int sharedMemoryQuery(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     "    -s    The name of the memory segment being queried\n"
                     "            '*': Specifies all defined memory segments for query\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -545,12 +529,10 @@ int sharedMemoryQuery(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !segmentName) {
@@ -683,8 +665,7 @@ int sharedMemoryReplace(int argC, char* argV[], struct _vmApiInternalContext* vm
                     "    -i    The image name or the name of a list of new users who\n"
                     "          have access to the RSTD memory segment\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -699,12 +680,10 @@ int sharedMemoryReplace(int argC, char* argV[], struct _vmApiInternalContext* vm
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !segmentName || !memoryAccessId) {

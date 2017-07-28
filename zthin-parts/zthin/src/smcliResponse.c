@@ -53,8 +53,7 @@ int responseRecovery(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "    -f    Previously failed requestId for which you wish to recover\n"
                     "          response data\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -69,12 +68,10 @@ int responseRecovery(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !failedRequestID) {

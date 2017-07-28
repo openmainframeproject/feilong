@@ -132,7 +132,8 @@ int vmRelocate(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
                     "                        may be stopped during a relocation attempt. The range\n"
                     "                        for this  value is 1-99999999. The default is NOLIMIT\n"
                     "                        if immediate=YES is specified, or 10 seconds if not.\n\n");
-                return 1;
+                printRCheaderHelp();
+                return 0;
                 break;
 
             case '?':
@@ -148,12 +149,10 @@ int vmRelocate(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if ( !targetIdentifier || (!destSpecified && !cancelSpecified) )  {
@@ -248,7 +247,8 @@ int vmRelocateImageAttributes(int argC, char* argV[], struct _vmApiInternalConte
                     "                       it means the guest's virtual architecture will be set to\n"
                     "                       a level with less capability than it had in its original\n"
                     "                       domain. If unspecified, the default is NO.\n\n");
-                return 1;
+                printRCheaderHelp();
+                return 0;
                 break;
 
             case '?':
@@ -264,12 +264,10 @@ int vmRelocateImageAttributes(int argC, char* argV[], struct _vmApiInternalConte
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!targetIdentifier ||  entryCount < 1)  {
@@ -362,8 +360,7 @@ int vmRelocateModify(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "                      if unspecified is 10 seconds.The range for this value\n"
                     "                      is 1-99999999.\n\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -378,12 +375,10 @@ int vmRelocateModify(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!targetIdentifier)  {
@@ -485,8 +480,7 @@ int vmRelocateStatus(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "                  OUTGOING - Display status of all outgoing relocations.\n"
                     "              If unspecified, ALL is the default.\n\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -501,12 +495,10 @@ int vmRelocateStatus(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!targetIdentifier)  {

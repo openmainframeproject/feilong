@@ -94,8 +94,7 @@ int asynchronousNotificationDisableDM(int argC, char* argV[], struct _vmApiInter
                     "            2: EBCDIC\n"
                     "    -s    The matching subscriber data\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -110,12 +109,10 @@ int asynchronousNotificationDisableDM(int argC, char* argV[], struct _vmApiInter
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
             	return 1;
-                break;
         }
 
     if (!targetIdentifier || (entity < 0) || (communication < 0) || (portNumber < 0) || !ip || (encoding < 0) ) {
@@ -238,8 +235,7 @@ int asynchronousNotificationEnableDM(int argC, char* argV[], struct _vmApiIntern
                     "            2: EBCDIC\n"
                     "    -s    Anything the subscriber wishes to receive along with the notifications\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -254,12 +250,10 @@ int asynchronousNotificationEnableDM(int argC, char* argV[], struct _vmApiIntern
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!targetIdentifier || (entity < 0) || (subscription < 0) || (communication < 0) || (portNumber < 0) || !ip || (encoding < 0)) {
@@ -368,8 +362,7 @@ int asynchronousNotificationQueryDM(int argC, char* argV[], struct _vmApiInterna
                     "            notifications\n"
                     "            '*': Selects all that qualify\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -384,12 +377,10 @@ int asynchronousNotificationQueryDM(int argC, char* argV[], struct _vmApiInterna
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!targetIdentifier || (entity < 0) || (communication < 0)|| (portNumber < 0) || (encoding < 0) ) {

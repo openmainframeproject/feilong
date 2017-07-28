@@ -89,8 +89,7 @@ int eventStreamAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "    -d    quoted string containing the event data\n");
                 FREE_MEMORY_CLEAR_POINTER(stringArray);
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -106,7 +105,6 @@ int eventStreamAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                 }
                 FREE_MEMORY_CLEAR_POINTER(stringArray);
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -115,7 +113,6 @@ int eventStreamAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 FREE_MEMORY_CLEAR_POINTER(stringArray);
                 return 1;
-                break;
      }
 
      if (!image || ( !eventIdSpecified ) || !stringCount) {

@@ -175,8 +175,7 @@ int networkIpInterfaceCreate(int argC, char* argV[], struct _vmApiInternalContex
                 	"                   (VLAN). The format of the value is either ipv4vlan or\n"
                     "                   ipv4vlan ipv6vlan (blank delimited).\n\n");
                 printRCheaderHelp();
-                return 1;
-	            break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -191,12 +190,10 @@ int networkIpInterfaceCreate(int argC, char* argV[], struct _vmApiInternalContex
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
 	    }
 
 	if (!targetIdentifier ||  entryCount < 6)  {
@@ -295,8 +292,7 @@ int networkIpInterfaceModify(int argC, char* argV[], struct _vmApiInternalContex
                 	"             change_p2p - Changes the peer IP address to the specified value.\n"
                 	"                          This value should be specified in dot-decimal notation.\n");
                 printRCheaderHelp();
-                return 1;
-	            break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -311,12 +307,10 @@ int networkIpInterfaceModify(int argC, char* argV[], struct _vmApiInternalContex
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
 	    }
 
 	if (!targetIdentifier ||  entryCount < 3)  {
@@ -408,8 +402,7 @@ int networkIpInterfaceQuery(int argC, char* argV[], struct _vmApiInternalContext
                     "                            returned.\n\n"
 	                "       Note: You cannot specify both interface_all=YES and interface_id=value.\n");
                 printRCheaderHelp();
-                return 1;
-	            break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -424,12 +417,10 @@ int networkIpInterfaceQuery(int argC, char* argV[], struct _vmApiInternalContext
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
 	    }
 
 	if (!targetIdentifier ||  entryCount < 1)  {
@@ -524,8 +515,7 @@ int networkIpInterfaceRemove(int argC, char* argV[], struct _vmApiInternalContex
                     "                      temporary(created only for the current session).\n"
                     "                      This is the default.\n");
                 printRCheaderHelp();
-                return 1;
-	            break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -540,12 +530,10 @@ int networkIpInterfaceRemove(int argC, char* argV[], struct _vmApiInternalContex
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
 	    }
 
 	if (!targetIdentifier ||  entryCount < 3)  {

@@ -56,8 +56,7 @@ int profileCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "    -T    The name of the profile to be created\n"
                     "    -f    The profile directory entry file\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -72,7 +71,6 @@ int profileCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -80,7 +78,6 @@ int profileCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!profile || !profileFile) {
@@ -173,8 +170,7 @@ int profileDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "  The following options are required:\n"
                     "    -T    The name of the profile to be deleted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -189,7 +185,6 @@ int profileDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
 
             case 1:  // API name type data(other non option element key data)
@@ -198,7 +193,6 @@ int profileDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!profile) {
@@ -254,8 +248,7 @@ int profileLockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "  The following options are required:\n"
                     "    -T    The name of the profile to be locked.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -270,7 +263,6 @@ int profileLockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -278,7 +270,6 @@ int profileLockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!profile) {
@@ -351,8 +342,7 @@ int profileLockQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vma
                     "    -T   The name of the profile for which the directory lock status is being\n"
                     "         queried.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -367,7 +357,6 @@ int profileLockQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vma
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -375,7 +364,6 @@ int profileLockQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vma
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!profile) {
@@ -520,8 +508,7 @@ int profileQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "  The following options are required:\n"
                     "    -T    The name of the profile being queried\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -536,7 +523,6 @@ int profileQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -544,7 +530,6 @@ int profileQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!profile) {
@@ -621,8 +606,7 @@ int profileReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "    -T    The name of the profile directory entry to be replaced\n"
                     "    -f    The profile directory entry file");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -637,7 +621,6 @@ int profileReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -645,7 +628,6 @@ int profileReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!profile || !profileFile) {
@@ -739,8 +721,7 @@ int profileUnlockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "  The following options are required:\n"
                     "    -T    The name of the profile to be unlocked.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -755,7 +736,6 @@ int profileUnlockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -763,7 +743,6 @@ int profileUnlockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!profile) {
