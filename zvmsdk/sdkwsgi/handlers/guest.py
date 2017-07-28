@@ -199,7 +199,10 @@ def guest_get(req):
     userid = util.wsgi_path_item(req.environ, 'userid')
     info = _guest_get(userid)
 
-    info_json = json.dumps({'definition': info})
+    # info we got looks like:
+    # {'user_direct': [u'USER RESTT305 PASSW0RD 1024m 1024m G',
+    #                  u'INCLUDE OSDFLT']}
+    info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
