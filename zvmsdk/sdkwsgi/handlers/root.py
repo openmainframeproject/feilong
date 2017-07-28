@@ -24,7 +24,7 @@ def home(req):
     max_version = microversion.max_version_string()
 
     version_data = {
-        'id': 'v%s' % min_version,
+        'version': '%s' % min_version,
         'max_version': max_version,
         'min_version': min_version,
     }
