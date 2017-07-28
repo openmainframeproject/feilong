@@ -13,6 +13,7 @@ import os
 import unittest
 
 from zvmsdk import config
+from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
 
 
@@ -22,6 +23,8 @@ CONF = config.CONF
 class ImageTestCase(unittest.TestCase):
     def __init__(self, methodName='runTest'):
         super(ImageTestCase, self).__init__(methodName)
+
+        self.apibase = api_sample.APITestBase()
 
     def setUp(self):
         self.client = test_sdkwsgi.TestSDKClient()
@@ -63,6 +66,7 @@ class ImageTestCase(unittest.TestCase):
         resp = self.client.api_request(url='/images?imagename=image1',
                                        method='GET')
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_image_query', resp.content)
         return resp
 
     def test_image_create_empty_body(self):
