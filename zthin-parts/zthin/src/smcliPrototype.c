@@ -56,8 +56,7 @@ int prototypeCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     "    -T    The name of the image being activated\n"
                     "    -f    The new virtual image prototype");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -72,12 +71,10 @@ int prototypeCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!prototype || !file) {
@@ -169,8 +166,7 @@ int prototypeDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     "  The following options are required:\n"
                     "    -T    The name of the prototype to be deleted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -185,12 +181,10 @@ int prototypeDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!prototype) {
@@ -245,8 +239,7 @@ int prototypeNameQueryDM(int argC, char* argV[], struct _vmApiInternalContext* v
                     "  The following options are required:\n"
                     "    -T    This must match an entry in the authorization file\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -261,12 +254,10 @@ int prototypeNameQueryDM(int argC, char* argV[], struct _vmApiInternalContext* v
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!prototype) {
@@ -330,8 +321,7 @@ int prototypeQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "  The following options are required:\n"
                     "    -T    The name of the prototype to be queried\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -346,12 +336,10 @@ int prototypeQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!prototype) {
@@ -424,8 +412,7 @@ int prototypeReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vma
                     "    -T    The name of the image being activated\n"
                     "    -f    The new virtual image prototype\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -440,12 +427,10 @@ int prototypeReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vma
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!prototype || !file) {

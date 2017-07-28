@@ -48,8 +48,7 @@ int imageIPLDeviceQuery(int argC, char* argV[], struct _vmApiInternalContext* vm
                     "  The following options are required:\n"
                     "    -T    The userid to query\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -64,12 +63,10 @@ int imageIPLDeviceQuery(int argC, char* argV[], struct _vmApiInternalContext* vm
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!userid) {
@@ -147,8 +144,7 @@ int imagePerformanceQuery(int argC, char* argV[], struct _vmApiInternalContext* 
                     "          servers. This is a required input so if you enter '*' for the names\n"
                     "          you must enter in a number.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -163,12 +159,10 @@ int imagePerformanceQuery(int argC, char* argV[], struct _vmApiInternalContext* 
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || count == 0) {
@@ -344,8 +338,7 @@ int ipAddrGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiContext
                     "  the zThin is running on.\n\n"
                     "  There are no options required.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -360,12 +353,10 @@ int ipAddrGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiContext
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     // If they want special output header as first output, then we need to pass this
@@ -410,8 +401,7 @@ int systemInfoQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "  zThin is running on.\n\n"
                     "  There are no options required.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -426,12 +416,10 @@ int systemInfoQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     rc = smSystem_Info_Query(vmapiContextP, &output);
@@ -484,8 +472,7 @@ int systemIOQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "  The following options are required:\n"
                     "    -T    The real device address\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -500,12 +487,10 @@ int systemIOQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!rDev) {
@@ -558,8 +543,7 @@ int systemPerformanceInfoQuery(int argC, char* argV[], struct _vmApiInternalCont
                     "  of a zVM system.\n\n"
                     "  There are no options required.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -574,12 +558,10 @@ int systemPerformanceInfoQuery(int argC, char* argV[], struct _vmApiInternalCont
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     rc = smSystem_Performance_Info_Query(vmapiContextP, "", 0, "", target, &output);
@@ -627,8 +609,7 @@ int virtualNetworkQueryLAN(int argC, char* argV[], struct _vmApiInternalContext*
                     "  lanList.\n\n"
                     "  There are no options required.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -643,12 +624,10 @@ int virtualNetworkQueryLAN(int argC, char* argV[], struct _vmApiInternalContext*
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     rc = smVirtual_Network_Query_LAN(vmapiContextP, &output);
@@ -692,8 +671,7 @@ int virtualNetworkQueryOSA(int argC, char* argV[], struct _vmApiInternalContext*
                     "  Use Virtual_Network_Query_OSA to query the OSA for the count and the list.\n\n"
                     "  There are no options required.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -708,12 +686,10 @@ int virtualNetworkQueryOSA(int argC, char* argV[], struct _vmApiInternalContext*
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     rc = smVirtual_Network_Query_OSA(vmapiContextP, &output);
@@ -797,8 +773,7 @@ int virtualNetworkVswitchQueryIUOStats(int argC, char* argV[],
                     "    -k    A keyword=value item to be created in the directory.\n\n"
                     "            switch_name: The name of the virtual switch segment\n\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -813,12 +788,10 @@ int virtualNetworkVswitchQueryIUOStats(int argC, char* argV[],
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!targetIdentifier ||  entryCount < 1)  {
@@ -937,8 +910,7 @@ int xCATCommandsIUO(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "    -T    The name of the virtual image\n"
                     "    -c    The quoted string cmd=command with all parameters\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -953,12 +925,10 @@ int xCATCommandsIUO(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !command) {

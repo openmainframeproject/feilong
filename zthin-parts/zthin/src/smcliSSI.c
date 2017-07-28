@@ -54,8 +54,7 @@ int ssiQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP
                     "DESCRIPTION\n"
                     "  Use SSI_Query to obtain the SSI and system status.\n\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -70,12 +69,10 @@ int ssiQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     rc = smSSI_Query(vmapiContextP, &output);

@@ -75,8 +75,7 @@ int deleteABENDDump(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "          spool ID (reader) of a dump \n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -92,7 +91,6 @@ int deleteABENDDump(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                 }
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -101,7 +99,6 @@ int deleteABENDDump(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
         }
      }
 

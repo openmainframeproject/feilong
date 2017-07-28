@@ -51,8 +51,7 @@ int imageActivate(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "  The following options are required:\n"
                     "    -T    The name of the image being activated\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -67,7 +66,6 @@ int imageActivate(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -75,7 +73,6 @@ int imageActivate(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
 
@@ -148,8 +145,7 @@ int imageActiveConfigurationQuery(int argC, char* argV[], struct _vmApiInternalC
                     "  The following options are required:\n"
                     "    -T    The userid being queried\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -164,7 +160,6 @@ int imageActiveConfigurationQuery(int argC, char* argV[], struct _vmApiInternalC
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -172,7 +167,6 @@ int imageActiveConfigurationQuery(int argC, char* argV[], struct _vmApiInternalC
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -272,6 +266,7 @@ int imageCPUDefine(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
     opterr = 0; // 0 =>Tell getopt to not display a mesage
     const char * argumentsRequired = "Tvt";
     char tempStr[1];
+    char strMsg[250];
 
     // Options that have arguments are followed by a : character
     while ((option = getopt(argC, argV, "-T:v:t:h?")) != -1)
@@ -308,8 +303,7 @@ int imageCPUDefine(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "            3: ZAAP\n"
                     "            4: ZIIP\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -324,7 +318,6 @@ int imageCPUDefine(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -332,7 +325,6 @@ int imageCPUDefine(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !cpuAddress || (cpuType < 0)) {
@@ -341,16 +333,19 @@ int imageCPUDefine(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
         return 1;
     }
 
-    printf("Adding a virtual processor to %s's configuration...", image);
+    // If they want special output header as first output, then we need to pass this
+    // string on RC call so it is handled correctly for both cases.
+    snprintf(strMsg, sizeof(strMsg), "Adding a virtual processor to %s's configuration...", image);
+
     rc = smImage_CPU_Define(vmapiContextP, "", 0, "",  // Authorizing user, password length, password.
             image, cpuAddress, cpuType, &output);
 
     if (rc) {
-        printAndLogProcessingErrors("Image_CPU_Define", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_CPU_Define", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_CPU_Define", output->common.returnCode,
-                output->common.reasonCode, vmapiContextP, "");
+                output->common.reasonCode, vmapiContextP, strMsg);
     }
     return rc;
 }
@@ -371,6 +366,7 @@ int imageCPUDefineDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
     opterr = 0; // 0 =>Tell getopt to not display a mesage
     const char * argumentsRequired = "Tvbcdy";
     char tempStr[1];
+    char strMsg[250];
 
 
     rc = getSmapiLevel(vmapiContextP, " ", &smapiLevel);
@@ -453,8 +449,7 @@ int imageCPUDefineDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "            1: CRYPTO\n" );
                 }
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -469,7 +464,6 @@ int imageCPUDefineDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -477,7 +471,6 @@ int imageCPUDefineDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
 
@@ -487,16 +480,19 @@ int imageCPUDefineDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
         return 1;
     }
 
-    printf("Adding a virtual processor to %s's directory entry...", image);
+    // If they want special output header as first output, then we need to pass this
+    // string on RC call so it is handled correctly for both cases.
+    snprintf(strMsg, sizeof(strMsg), "Adding a virtual processor to %s's directory entry...", image);
+
     rc = smImage_CPU_Define_DM(vmapiContextP, "", 0, "",  // Authorizing user, password length, password.
             image, cpuAddress, baseCpu, cpuId, dedicateCpu, cryto, &output);
 
     if (rc) {
-        printAndLogProcessingErrors("Image_CPU_Define", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_CPU_Define", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_CPU_Define", output->common.returnCode,
-                output->common.reasonCode, vmapiContextP, "");
+                output->common.reasonCode, vmapiContextP, strMsg);
     }
     return rc;
 }
@@ -512,6 +508,7 @@ int imageCPUDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
     opterr = 0; // 0 =>Tell getopt to not display a mesage
     const char * argumentsRequired = "Tv";
     char tempStr[1];
+    char strMsg[250];
 
     // Options that have arguments are followed by a : character
     while ((option = getopt(argC, argV, "-T:v:h?")) != -1)
@@ -538,8 +535,7 @@ int imageCPUDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "          be deleted.\n"
                     "    -v    The virtual CPU address to delete from the virtual image\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -554,7 +550,6 @@ int imageCPUDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -562,7 +557,6 @@ int imageCPUDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
 
@@ -572,16 +566,19 @@ int imageCPUDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
         return 1;
     }
 
-    printf("Deleting a virtual processor from %s's active configuration... ", image);
+    // If they want special output header as first output, then we need to pass this
+    // string on RC call so it is handled correctly for both cases.
+    snprintf(strMsg, sizeof(strMsg), "Deleting a virtual processor from %s's active configuration... ", image);
+
     rc = smImage_CPU_Delete(vmapiContextP, "", 0, "",  // Authorizing user, password length, password.
             image, cpuAddress, &output);
 
     if (rc) {
-        printAndLogProcessingErrors("Image_CPU_Delete", rc, vmapiContextP, "", 0);
+        printAndLogProcessingErrors("Image_CPU_Delete", rc, vmapiContextP, strMsg, 0);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_CPU_Delete", output->common.returnCode,
-                output->common.reasonCode, vmapiContextP, "");
+                output->common.reasonCode, vmapiContextP, strMsg);
     }
     return rc;
 }
@@ -626,8 +623,7 @@ int imageCPUDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "          definition of the virtual image (in the hexadecimal\n"
                     "          range of 0-3F).\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -642,7 +638,6 @@ int imageCPUDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -650,7 +645,6 @@ int imageCPUDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
 
@@ -660,7 +654,6 @@ int imageCPUDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
         return 1;
     }
 
-    printf("Deleting a virtual processor from %s's directory entry... ", image);
     // If they want special output header as first output, then we need to pass this
     // string on RC call so it is handled correctly for both cases.
     snprintf(strMsg, sizeof(strMsg), "Deleting a virtual processor from %s's directory entry... ", image);
@@ -710,8 +703,7 @@ int imageCPUQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "    -T    The name of the virtual image whose virtual CPUs are\n"
                     "          being queried\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -726,7 +718,6 @@ int imageCPUQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -734,7 +725,6 @@ int imageCPUQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -831,8 +821,7 @@ int imageCPUQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "    -v    The virtual CPU address to query from the static definition\n"
                     "          of the virtual image\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -847,7 +836,6 @@ int imageCPUQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -855,7 +843,6 @@ int imageCPUQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !cpuAddress) {
@@ -948,8 +935,7 @@ int imageCPUSetMaximumDM(int argC, char* argV[], struct _vmApiInternalContext* v
                     "           number of virtual processors\n"
                     "    -m     The maximum number of virtual processors the user can define\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -964,7 +950,6 @@ int imageCPUSetMaximumDM(int argC, char* argV[], struct _vmApiInternalContext* v
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -972,7 +957,6 @@ int imageCPUSetMaximumDM(int argC, char* argV[], struct _vmApiInternalContext* v
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !maxCpu) {
@@ -1076,8 +1060,7 @@ int imageCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "         2. Neither the logon password nor the account number input parameters\n"
                     "            may be specified if directory entry is specified.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case 1:  // API name type data(other non option element key data)
             	break;
@@ -1085,7 +1068,6 @@ int imageCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
 
@@ -1246,8 +1228,7 @@ int imageDeactivate(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "      Note: If unspecified, deactivation takes place according to the default\n"
                     "            signal timeout value set for the system\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1262,7 +1243,6 @@ int imageDeactivate(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -1270,7 +1250,6 @@ int imageDeactivate(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -1340,8 +1319,7 @@ int imageDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "            1: Do not erase (override installation default)\n"
                     "            2: Erase (override installation default)\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1356,7 +1334,6 @@ int imageDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -1364,7 +1341,6 @@ int imageDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || (erase < 0)) {
@@ -1445,8 +1421,7 @@ int imageDeviceDedicate(int argC, char* argV[], struct _vmApiInternalContext* vm
                     "    -R    Specify a 1 if the virtual device is to be in read-only\n"
                     "          mode. Otherwise, specify a 0\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1461,7 +1436,6 @@ int imageDeviceDedicate(int argC, char* argV[], struct _vmApiInternalContext* vm
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -1469,7 +1443,6 @@ int imageDeviceDedicate(int argC, char* argV[], struct _vmApiInternalContext* vm
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualAddress || !realDevice || (readOnly < 0) || (readOnly > 1)) {
@@ -1547,8 +1520,7 @@ int imageDeviceDedicateDM(int argC, char* argV[], struct _vmApiInternalContext* 
                     "    -R    Specify a 1 if the virtual device is to be in read-only mode.\n"
                     "          Otherwise, specify a 0.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1563,7 +1535,6 @@ int imageDeviceDedicateDM(int argC, char* argV[], struct _vmApiInternalContext* 
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -1571,7 +1542,6 @@ int imageDeviceDedicateDM(int argC, char* argV[], struct _vmApiInternalContext* 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualDevice || !realDevice || (readOnly < 0) || (readOnly > 1)) {
@@ -1634,8 +1604,7 @@ int imageDeviceReset(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "    -T    The userid or image name for which the device is being reset\n"
                     "    -v    The virtual device number of the device to reset\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1650,7 +1619,6 @@ int imageDeviceReset(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -1658,7 +1626,6 @@ int imageDeviceReset(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualDevice) {
@@ -1722,8 +1689,7 @@ int imageDeviceUndedicate(int argC, char* argV[], struct _vmApiInternalContext* 
                     "          removed\n"
                     "    -v    The virtual device number of the device to be deleted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1738,7 +1704,6 @@ int imageDeviceUndedicate(int argC, char* argV[], struct _vmApiInternalContext* 
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -1746,7 +1711,6 @@ int imageDeviceUndedicate(int argC, char* argV[], struct _vmApiInternalContext* 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualDevice) {
@@ -1809,8 +1773,7 @@ int imageDeviceUndedicateDM(int argC, char* argV[], struct _vmApiInternalContext
                     "    -T    The name of the image from which a dedicated device is being removed\n"
                     "    -v    The virtual device number of the device to be deleted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1825,7 +1788,6 @@ int imageDeviceUndedicateDM(int argC, char* argV[], struct _vmApiInternalContext
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -1833,7 +1795,6 @@ int imageDeviceUndedicateDM(int argC, char* argV[], struct _vmApiInternalContext
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualDevice) {
@@ -1896,8 +1857,7 @@ int imageDiskCopy(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "          being copied\n"
                     "    -v    The virtual device address of the target disk for the copy\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -1912,7 +1872,6 @@ int imageDiskCopy(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -1920,7 +1879,6 @@ int imageDiskCopy(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !virtualDevice) {
@@ -2049,8 +2007,7 @@ int imageDiskCopyDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "    -w    Defines the write password that will be used for accessing the disk\n"
                     "    -x    Defines the multi password that will be used for accessing the disk\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2065,7 +2022,6 @@ int imageDiskCopyDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -2073,7 +2029,6 @@ int imageDiskCopyDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!srcImage || !srcDiskAddress || !tgtDiskAddress || !tgtImage) {
@@ -2151,8 +2106,7 @@ int imageDiskCreate(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "            MR: Write or any exclusive access\n"
                     "            MW: Write access is allowed to the disk unconditionally\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2167,7 +2121,6 @@ int imageDiskCreate(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -2175,7 +2128,6 @@ int imageDiskCreate(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !deviceAddr || !accessMode) {
@@ -2334,8 +2286,7 @@ int imageDiskCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     "    -W    Write password\n"
                     "    -M    Multi password\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2350,7 +2301,6 @@ int imageDiskCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -2358,7 +2308,6 @@ int imageDiskCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !deviceAddr || !deviceType || !allocType || !allocName || !allocSize || !diskSize || !accessMode) {
@@ -2426,8 +2375,7 @@ int imageDiskDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "    -T    The name of the image for which the disk is being deleted\n"
                     "    -v    The virtual device address of the disk to be deleted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2442,7 +2390,6 @@ int imageDiskDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -2450,7 +2397,6 @@ int imageDiskDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !address) {
@@ -2523,8 +2469,7 @@ int imageDiskDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     "            1: Do not erase (override installation default)\n"
                     "            2: Erase (override installation default)\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2539,7 +2484,6 @@ int imageDiskDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -2547,7 +2491,6 @@ int imageDiskDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmap
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
 
@@ -2635,8 +2578,7 @@ int imageDiskQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "          The value is a virtual device number, or ALL \n");
                  FREE_MEMORY_CLEAR_POINTER(entryArray);
                  printRCheaderHelp();
-                 return 1;
-                 break;
+                 return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2652,7 +2594,6 @@ int imageDiskQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                 }
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -2661,7 +2602,6 @@ int imageDiskQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
      }
      if (!image || !entryCount) {
          DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2784,8 +2724,7 @@ int imageDiskShare(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "  The following options are optional:\n"
                     "    -p    The password that MAY BE REQUIRED to share the disk\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2800,7 +2739,6 @@ int imageDiskShare(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -2808,7 +2746,6 @@ int imageDiskShare(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !address || !tgtImage || !tgtAddress || !accessMode) {
@@ -2905,8 +2842,7 @@ int imageDiskShareDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "      The following options are optional:\n"
                     "    -p    The password that MAY BE REQUIRED to share the disk\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -2921,7 +2857,6 @@ int imageDiskShareDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -2929,7 +2864,6 @@ int imageDiskShareDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !address || !tgtImage || !tgtAddress || !accessMode) {
@@ -2994,8 +2928,7 @@ int imageDiskUnshare(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "    -v    The virtual device address of the previously-shared\n"
                     "          disk to be removed from the configuration\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3010,7 +2943,6 @@ int imageDiskUnshare(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -3018,7 +2950,6 @@ int imageDiskUnshare(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !address) {
@@ -3098,8 +3029,7 @@ int imageDiskUnshareDM(int argC, char* argV[], struct _vmApiInternalContext* vma
                     "    -r    The virtual device number previously assigned to the shared\n"
                     "          disk\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3114,7 +3044,6 @@ int imageDiskUnshareDM(int argC, char* argV[], struct _vmApiInternalContext* vma
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -3122,7 +3051,6 @@ int imageDiskUnshareDM(int argC, char* argV[], struct _vmApiInternalContext* vma
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !address || !tgtImage || !tgtAddress) {
@@ -3180,8 +3108,7 @@ int imageIPLDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "    -T    Specifies the name of the user or profile for which the IPL\n"
                     "          statement is to be deleted\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3196,7 +3123,6 @@ int imageIPLDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -3204,7 +3130,6 @@ int imageIPLDeleteDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -3264,8 +3189,7 @@ int imageIPLQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "    -T    Specifies the name of the user or profile for which the IPL\n"
                     "          statement is to be queried\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3280,7 +3204,6 @@ int imageIPLQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -3288,7 +3211,6 @@ int imageIPLQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -3377,8 +3299,7 @@ int imageIPLSetDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "          to the number of characters that can be specified in the first\n"
                     "          72 positions of the statement.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3393,7 +3314,6 @@ int imageIPLSetDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -3401,7 +3321,6 @@ int imageIPLSetDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -3465,8 +3384,7 @@ int imageLockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiConte
                     "  The following options are optional:\n"
                     "    -v    The virtual address of the device being locked.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3481,7 +3399,6 @@ int imageLockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiConte
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -3489,7 +3406,6 @@ int imageLockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiConte
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -3566,8 +3482,7 @@ int imageLockQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "    -T    The name of the image for which the directory lock status is being\n"
                     "          queried.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3582,7 +3497,6 @@ int imageLockQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -3590,7 +3504,6 @@ int imageLockQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -3755,8 +3668,7 @@ int imageMDISKLinkQuery(int argC, char* argV[], struct _vmApiInternalContext* vm
                     "          DASD which is being queried for links. This is a required parameter.\n");
 
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3771,7 +3683,6 @@ int imageMDISKLinkQuery(int argC, char* argV[], struct _vmApiInternalContext* vm
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -3779,7 +3690,6 @@ int imageMDISKLinkQuery(int argC, char* argV[], struct _vmApiInternalContext* vm
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !vdev) {
@@ -3896,8 +3806,7 @@ int imageNameQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "DESCRIPTION\n"
                     "  Use Image_Name_Query_DM to obtain a list of defined virtual images.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3912,7 +3821,6 @@ int imageNameQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -3920,7 +3828,6 @@ int imageNameQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     rc = smImage_Name_Query_DM(vmapiContextP, "", 0, "",  // Authorizing user, password length, password
@@ -3981,8 +3888,7 @@ int imagePasswordSetDM(int argC, char* argV[], struct _vmApiInternalContext* vma
                     "    -T    The name of the image for which the password is being set\n"
                     "    -p    The password or passphrase to set for the image\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -3997,7 +3903,6 @@ int imagePasswordSetDM(int argC, char* argV[], struct _vmApiInternalContext* vma
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -4005,7 +3910,6 @@ int imagePasswordSetDM(int argC, char* argV[], struct _vmApiInternalContext* vma
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !password) {
@@ -4072,8 +3976,7 @@ int imagePause(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
                     "    -T    The name of the image for which the password is being set\n"
                     "    -k    The quoted string PAUSE=YES to halt processing or PAUSE=NO to start.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4088,7 +3991,6 @@ int imagePause(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -4096,7 +3998,6 @@ int imagePause(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !pauseOrBegin) {
@@ -4127,10 +4028,9 @@ int imagePause(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
         // string on RC call so it is handled correctly for both cases.
         snprintf(strMsg, sizeof(strMsg), "Halting processing on %s... ", image);
     } else  if (strcmp(pauseOrBegin, "PAUSE=NO") == 0) {
-        printf("Resuming processing on %s... ", image);
         snprintf(strMsg, sizeof(strMsg), "Resuming processing on %s... ", image);
     } else {
-        printAndLogProcessingErrors(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
+        printAndLogProcessingErrors(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, strMsg, 0);
         printf("Invalid Image_Pause action\n");
         return 1;
     }
@@ -4191,8 +4091,7 @@ int imageQueryActivateTime(int argC, char* argV[], struct _vmApiInternalContext*
                     "            5: dd/mm/yy\n"
                     "            6: dd/mm/yyyy\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4207,7 +4106,6 @@ int imageQueryActivateTime(int argC, char* argV[], struct _vmApiInternalContext*
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -4215,7 +4113,6 @@ int imageQueryActivateTime(int argC, char* argV[], struct _vmApiInternalContext*
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !format) {
@@ -4276,8 +4173,7 @@ int imageQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCont
                     "  The following options are required:\n"
                     "    -T    The name of the image being queried\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4292,7 +4188,6 @@ int imageQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCont
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -4300,7 +4195,6 @@ int imageQueryDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCont
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -4366,8 +4260,7 @@ int imageRecycle(int argC, char* argV[], struct _vmApiInternalContext* vmapiCont
                     "  The following options are required:\n"
                     "    -T    The name of the image being recycled\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4382,7 +4275,6 @@ int imageRecycle(int argC, char* argV[], struct _vmApiInternalContext* vmapiCont
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -4390,7 +4282,6 @@ int imageRecycle(int argC, char* argV[], struct _vmApiInternalContext* vmapiCont
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -4467,8 +4358,7 @@ int imageReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "    -s    Read the updated directory entry from stdin. Not required if a\n"
                     "          directory entry file is provided.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 if (isprint (optopt)) {
@@ -4482,14 +4372,12 @@ int imageReplaceDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
             case 1:  // API name type data(other non option element key data)
                 break;
 
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || (!userEntryFile && !userEntryStdin)) {
@@ -4660,8 +4548,7 @@ int imageSCSICharacteristicsDefineDM(int argC, char* argV[], struct _vmApiIntern
                     "            If the -s parameter is 0 or 1 then do not use this parameter\n"
                     "            If the -s parameter is 2 or 3 then you must use this parameter\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4676,7 +4563,6 @@ int imageSCSICharacteristicsDefineDM(int argC, char* argV[], struct _vmApiIntern
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -4684,7 +4570,6 @@ int imageSCSICharacteristicsDefineDM(int argC, char* argV[], struct _vmApiIntern
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !bootProgram || !logicalBlock || !lun || !portName || (scpType < 0) ) {      
@@ -4757,8 +4642,7 @@ int imageSCSICharacteristicsQueryDM(int argC, char* argV[], struct _vmApiInterna
                     "  The following options are required:\n"
                     "    -T    The target userid whose LOADDEV is being queried\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4773,7 +4657,6 @@ int imageSCSICharacteristicsQueryDM(int argC, char* argV[], struct _vmApiInterna
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -4781,7 +4664,6 @@ int imageSCSICharacteristicsQueryDM(int argC, char* argV[], struct _vmApiInterna
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -4867,8 +4749,7 @@ int imageStatusQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "    -T    The name of the image being queried\n"
                     "          You may enter '*' to get the list of all active servers\n ");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4883,7 +4764,6 @@ int imageStatusQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -4891,7 +4771,6 @@ int imageStatusQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapi
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -4962,8 +4841,7 @@ int imageUnlockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     "  The following options are optional:\n"
                     "    -v    The virtual address of the device being unlocked\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -4978,7 +4856,6 @@ int imageUnlockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -4986,7 +4863,6 @@ int imageUnlockDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
@@ -5127,8 +5003,7 @@ int imageVolumeAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     "    -x    Multiwrite password for the alternate parm disk.\n"
                     "          The default is ','.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -5143,7 +5018,6 @@ int imageVolumeAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -5151,7 +5025,6 @@ int imageVolumeAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiCo
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !address || !volId || !sysConfName || !sysConfType || !parmDiskOwner || !parmDiskNumber
@@ -5292,8 +5165,7 @@ int imageVolumeDelete(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     "    -x    Multiwrite password for the alternate parm disk.\n"
                     "          The default is ','.\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -5308,7 +5180,6 @@ int imageVolumeDelete(int argC, char* argV[], struct _vmApiInternalContext* vmap
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -5316,7 +5187,6 @@ int imageVolumeDelete(int argC, char* argV[], struct _vmApiInternalContext* vmap
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !address || !volId || !sysConfName || !sysConfType || !parmDiskOwner || !parmDiskNumber
@@ -5413,8 +5283,7 @@ int imageVolumeShare(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                     "          If unspecified, the default is ON.\n");
                  FREE_MEMORY_CLEAR_POINTER(entryArray);
                  printRCheaderHelp();
-                 return 1;
-                 break;
+                 return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -5430,7 +5299,6 @@ int imageVolumeShare(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                 }
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -5439,7 +5307,6 @@ int imageVolumeShare(int argC, char* argV[], struct _vmApiInternalContext* vmapi
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
         }
 
     if (!image || !entryCount || !foundRequiredParm) {
@@ -5566,8 +5433,7 @@ int imageVolumeSpaceDefineDM(int argC, char* argV[], struct _vmApiInternalContex
                     "            3: 3380\n"
                     "            4: FB-512\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -5582,7 +5448,6 @@ int imageVolumeSpaceDefineDM(int argC, char* argV[], struct _vmApiInternalContex
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -5590,7 +5455,6 @@ int imageVolumeSpaceDefineDM(int argC, char* argV[], struct _vmApiInternalContex
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !function || !regionName) {
@@ -5777,8 +5641,7 @@ int imageVolumeSpaceDefineExtendedDM(int argC, char* argV[], struct _vmApiIntern
                     "                  new allocation starting at the next region.\n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -5794,7 +5657,6 @@ int imageVolumeSpaceDefineExtendedDM(int argC, char* argV[], struct _vmApiIntern
                 }
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -5803,7 +5665,6 @@ int imageVolumeSpaceDefineExtendedDM(int argC, char* argV[], struct _vmApiIntern
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
         }
 
     if (!image || entryCount < 3) {
@@ -5890,8 +5751,7 @@ int imageVolumeSpaceQueryDM(int argC, char* argV[], struct _vmApiInternalContext
                     "  The following options are optional:\n"
                     "    -n    Entry name\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -5906,7 +5766,6 @@ int imageVolumeSpaceQueryDM(int argC, char* argV[], struct _vmApiInternalContext
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -5914,7 +5773,6 @@ int imageVolumeSpaceQueryDM(int argC, char* argV[], struct _vmApiInternalContext
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !query || !entry) {
@@ -6025,8 +5883,7 @@ int imageVolumeSpaceQueryExtendedDM(int argC, char* argV[], struct _vmApiInterna
                     "  details.\n");
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -6042,7 +5899,6 @@ int imageVolumeSpaceQueryExtendedDM(int argC, char* argV[], struct _vmApiInterna
                 }
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -6051,7 +5907,6 @@ int imageVolumeSpaceQueryExtendedDM(int argC, char* argV[], struct _vmApiInterna
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 FREE_MEMORY_CLEAR_POINTER(entryArray);
                 return 1;
-                break;
         }
 
     if (!image || entryCount < 2) {
@@ -6152,8 +6007,7 @@ int imageVolumeSpaceRemoveDM(int argC, char* argV[], struct _vmApiInternalContex
                     "    -v    The DASD volume label\n"
                     "    -g    The name of the group to which the region is assigned\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -6168,7 +6022,6 @@ int imageVolumeSpaceRemoveDM(int argC, char* argV[], struct _vmApiInternalContex
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                  break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -6176,7 +6029,6 @@ int imageVolumeSpaceRemoveDM(int argC, char* argV[], struct _vmApiInternalContex
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image || !functionType) {
@@ -6229,8 +6081,7 @@ int imageConsoleGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     "  The following options are required:\n"
                     "    -T    The name of the image to be get console from\n");
                 printRCheaderHelp();
-                return 1;
-                break;
+                return 0;
 
             case '?':
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
@@ -6245,7 +6096,6 @@ int imageConsoleGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
                     printf("Unknown option character \\x%x\n", optopt);
                 }
                 return 1;
-                break;
 
             case 1:  // API name type data(other non option element key data)
                 break;
@@ -6253,7 +6103,6 @@ int imageConsoleGet(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
             default:
                 DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                 return 1;
-                break;
         }
 
     if (!image) {
