@@ -130,18 +130,24 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_guests_get_cpu_info',
+                                   resp.content)
 
     def _guest_meminfo(self):
         url = '/guests/meminfo?userid=%s' % self.userid
         resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_guests_get_memory_info',
+                                   resp.content)
 
     def _guest_vnicsinfo(self):
         url = '/guests/vnicsinfo?userid=%s' % self.userid
         resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_guests_get_vnics_info',
+                                   resp.content)
 
     def test_guest_create_delete(self):
         self._guest_create()

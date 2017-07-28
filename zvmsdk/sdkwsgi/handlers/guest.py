@@ -385,9 +385,13 @@ def guest_get_cpu_info(req):
 
     def _guest_get_cpu_info(req, userid_list):
         action = get_handler()
-        action.get_cpu_info(req, userid_list)
+        return action.get_cpu_info(req, userid_list)
 
-    _guest_get_cpu_info(req, userid_list)
+    info = _guest_get_cpu_info(req, userid_list)
+    info_json = json.dumps({'cpu': info})
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
@@ -398,9 +402,13 @@ def guest_get_memory_info(req):
 
     def _guest_get_memory_info(req, userid_list):
         action = get_handler()
-        action.get_memory_info(req, userid_list)
+        return action.get_memory_info(req, userid_list)
 
-    _guest_get_memory_info(req, userid_list)
+    info = _guest_get_memory_info(req, userid_list)
+    info_json = json.dumps({'memory': info})
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
@@ -411,6 +419,10 @@ def guest_get_vnics_info(req):
 
     def _guest_get_vnics_info(req, userid_list):
         action = get_handler()
-        action.get_vnics_info(req, userid_list)
+        return action.get_vnics_info(req, userid_list)
 
-    _guest_get_vnics_info(req, userid_list)
+    info = _guest_get_vnics_info(req, userid_list)
+    info_json = json.dumps({'vnics': info})
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
