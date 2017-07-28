@@ -83,10 +83,15 @@ def image_get_root_disk_size(req):
 
     def _image_get_root_disk_size(name):
         action = get_action()
-        action.get_root_disk_size(name)
+        return action.get_root_disk_size(name)
 
     name = util.wsgi_path_item(req.environ, 'name')
-    _image_get_root_disk_size(name)
+    info = _image_get_root_disk_size(name)
+
+    info_json = json.dumps({'size': info})
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify

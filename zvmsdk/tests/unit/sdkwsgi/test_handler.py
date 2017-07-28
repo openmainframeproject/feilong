@@ -463,6 +463,7 @@ class ImageHandlerTest(unittest.TestCase):
         function = 'zvmsdk.sdkwsgi.handlers.image.ImageAction'\
                    '.get_root_disk_size'
         with mock.patch(function) as get_size:
+            get_size.return_value = '100'
             h(self.env, dummy)
 
             get_size.assert_called_once_with('image1')

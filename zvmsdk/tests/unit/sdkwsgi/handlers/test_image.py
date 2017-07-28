@@ -71,7 +71,7 @@ class HandlersImageTest(unittest.TestCase):
     @mock.patch.object(image.ImageAction, 'get_root_disk_size')
     def test_image_get_root_disk_size(self, mock_get, mock_name):
         mock_name.return_value = 'dummy'
-
+        mock_get.return_value = '100'
         image.image_get_root_disk_size(self.req)
         mock_get.assert_called_once_with('dummy')
 
