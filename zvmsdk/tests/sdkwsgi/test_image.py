@@ -63,6 +63,7 @@ class ImageTestCase(unittest.TestCase):
         resp = self.client.api_request(url='/images?imagename=image1',
                                        method='GET')
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_image_query', resp.content)
         return resp
 
     def test_image_create_empty_body(self):
