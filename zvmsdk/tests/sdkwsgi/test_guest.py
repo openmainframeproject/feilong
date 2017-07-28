@@ -76,6 +76,7 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_guest_get', resp.content)
         return resp
 
     def _guest_get_info(self):
