@@ -302,6 +302,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.api.SDKAPI.guest_inspect_mem'
         with mock.patch(func) as get_info:
+            get_info.return_value = '{}'
             h(self.env, dummy)
 
             get_info.assert_called_once_with([])
@@ -315,6 +316,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.api.SDKAPI.guest_inspect_mem'
         with mock.patch(func) as get_info:
+            get_info.return_value = '{}'
             h(self.env, dummy)
 
             get_info.assert_called_once_with(['l1', 'l2'])
@@ -338,6 +340,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.api.SDKAPI.guest_inspect_vnics'
         with mock.patch(func) as get_info:
+            get_info.return_value = '{}'
             h(self.env, dummy)
 
             get_info.assert_called_once_with([])
@@ -351,6 +354,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.api.SDKAPI.guest_inspect_vnics'
         with mock.patch(func) as get_info:
+            get_info.return_value = '{}'
             h(self.env, dummy)
 
             get_info.assert_called_once_with(['l1', 'l2'])
@@ -374,6 +378,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.api.SDKAPI.guest_inspect_cpus'
         with mock.patch(func) as get_info:
+            get_info.return_value = '{}'
             h(self.env, dummy)
 
             get_info.assert_called_once_with([])
@@ -387,6 +392,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.api.SDKAPI.guest_inspect_cpus'
         with mock.patch(func) as get_info:
+            get_info.return_value = '{}'
             h(self.env, dummy)
 
             get_info.assert_called_once_with(['l1', 'l2'])
