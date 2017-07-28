@@ -191,7 +191,8 @@ class XCATClient(ZVMClient):
         if not isinstance(uid_list, list):
             uid_list = [uid_list]
 
-        cmd = ('smcli Image_Performance_Query -T "%(uid_list)s" -c %(num)s' %
+        cmd = ('/opt/zhcp/bin/smcli Image_Performance_Query -T "%(uid_list)s" '
+               '-c %(num)s' %
                {'uid_list': " ".join(uid_list), 'num': len(uid_list)})
 
         zhcp = self._get_hcp_info()['nodename']
@@ -244,8 +245,8 @@ class XCATClient(ZVMClient):
         hcp_info = self._get_hcp_info()
         zhcp_userid = hcp_info['userid']
         zhcp_node = hcp_info['nodename']
-        cmd = ('smcli Virtual_Network_Vswitch_Query_IUO_Stats -T "%s" '
-               '-k "switch_name=*"' % zhcp_userid)
+        cmd = ('/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Query_IUO_Stats '
+               '-T "%s" -k "switch_name=*"' % zhcp_userid)
 
         with zvmutils.expect_invalid_xcat_resp_data():
             resp = zvmutils.xdsh(zhcp_node, cmd)
@@ -1653,8 +1654,8 @@ class XCATClient(ZVMClient):
         hcp_info = self._get_hcp_info()
         zhcp_userid = hcp_info['userid']
         zhcp_node = hcp_info['nodename']
-        cmd = ('smcli Virtual_Network_Vswitch_Query_Extended -T "%s" '
-               '-k "switch_name=%s"' % (zhcp_userid, switch_name))
+        cmd = ('/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Query_Extended '
+               '-T "%s" -k "switch_name=%s"' % (zhcp_userid, switch_name))
 
         with zvmutils.expect_invalid_xcat_resp_data():
             resp = zvmutils.xdsh(zhcp_node, cmd)
