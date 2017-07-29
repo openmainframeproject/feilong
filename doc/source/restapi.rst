@@ -41,6 +41,9 @@ Get Host Info
 
   sample output
 
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_host_info.tpl
+   :language: javascript
+
 Get Host disk pool info
 -----------------------
 
@@ -57,6 +60,9 @@ Get Host disk pool info
   - Sample output:
 
   sample output
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_host_disk_info.tpl
+   :language: javascript
 
 Image(s)
 ========
