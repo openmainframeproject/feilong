@@ -70,5 +70,5 @@ def validate(function):
             LOG.debug('unknown exception occur during token validation')
             raise webob.exc.HTTPUnauthorized()
 
-        return function(*args, **kwargs)
+        return function(req, *args, **kwargs)
     return wrap_func
