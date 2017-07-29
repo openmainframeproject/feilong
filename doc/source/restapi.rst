@@ -39,8 +39,6 @@ Get Host Info
 
   - Sample output:
 
-  sample output
-
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_host_info.tpl
    :language: javascript
 
@@ -59,8 +57,6 @@ Get Host disk pool info
 
   - Sample output:
 
-  sample output
-
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_host_disk_info.tpl
    :language: javascript
 
@@ -78,3 +74,68 @@ VSwitch
 =======
 
 Lists, creates, shows details for, updates, and deletes vswitch.
+
+Create vswitch
+--------------
+
+* POST /vswitchs
+
+  - Request:
+
+  request
+
+  - Response:
+
+  response
+
+  - Sample output:
+
+  sample output
+
+List vswitchs
+-------------
+
+* GET /vswitchs
+
+  - Request:
+
+  request
+
+  - Response:
+
+  response
+
+  - Sample output:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_get.tpl
+   :language: javascript
+
+Update vswitch
+--------------
+
+* PUT /vswitchs/{name}
+
+  - Request:
+
+  request
+
+  - Response:
+
+  response
+
+  - Sample output:
+
+Delete vswitch
+--------------
+
+* DELETE /vswitchs/{name}
+
+  - Request:
+
+  request
+
+  - Response:
+
+  response
+
+  - Sample output:
