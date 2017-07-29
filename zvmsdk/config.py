@@ -124,6 +124,20 @@ zvm_opts = [
         default=600,
         opt_type='int',
         ),
+    # wsgi options
+    # this option is used when sending http request
+    # to sdk wsgi, default to none so no token validation
+    # will be used.
+    Opt('auth',
+        section='wsgi',
+        default='none',
+        opt_type='str',
+        ),
+    Opt('token_validation_period',
+        section='wsgi',
+        default=30,
+        opt_type='int',
+        ),
     # tests options
     Opt('image_path',
         section='tests',

@@ -25,12 +25,16 @@ from zvmsdk import log
 CONF = config.CONF
 LOG = log.LOG
 
-TOKEN_EXPIRE_TIME = 30
+DEFAULT_TOKEN_VALIDATION_PERIOD = 30
 
 
 @wsgi_wrapper.SdkWsgify
 def create(req):
-    expired_elapse = datetime.timedelta(seconds=TOKEN_EXPIRE_TIME)
+    expires = CONF.wsgi.token_validation_period
+    if expires < 0:
+        expires = DEFAULT_TOKEN_VALIDATION_PERIOD
+
+    expired_elapse = datetime.timedelta(seconds=expires)
     expired_time = datetime.datetime.utcnow() + expired_elapse
     payload = jwt.encode({'exp': expired_time}, 'username')
 
@@ -44,9 +48,12 @@ def create(req):
 def validate(function):
     @functools.wraps(function)
     def wrap_func(req, *args, **kwargs):
-        # FIXME
-        return function(req, *args, **kwargs)
 
+        # by default, no token validation used
+        if CONF.wsgi.auth == 'none':
+            return function(req, *args, **kwargs)
+
+        # so, this is for token validation
         if 'X-Auth-Token' not in req.headers:
             LOG.debug('no X-Auth-Token given in reqeust header')
             raise webob.exc.HTTPUnauthorized()

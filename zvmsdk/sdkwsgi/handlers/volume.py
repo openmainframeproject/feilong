@@ -12,7 +12,6 @@
 """Handler for the root of the sdk API."""
 
 from zvmsdk import api
-from zvmsdk import config
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import vswitch
@@ -22,7 +21,6 @@ from zvmsdk.sdkwsgi import wsgi_wrapper
 
 
 _VOLUMEACTION = None
-CONF = config.CONF
 LOG = log.LOG
 
 
