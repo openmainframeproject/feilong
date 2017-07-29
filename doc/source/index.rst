@@ -24,4 +24,5 @@ http solutions like nginx, apache etc.
 .. toctree::
    :maxdepth: 1
 
+   setuphttpd
    restapi
