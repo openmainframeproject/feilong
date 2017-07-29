@@ -65,6 +65,72 @@ Image(s)
 
 Lists, creates, shows details for, updates, and deletes images.
 
+List images
+-----------
+
+* GET /images
+
+  - Request:
+
+  request
+
+  - Response:
+
+  response
+
+  - Sample output:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_query.tpl
+   :language: javascript
+
+Create image
+------------
+
+* POST /images
+
+  - Request:
+
+  request
+
+  - Response:
+
+  response
+
+  - Sample output:
+
+Get root disk size of image
+---------------------------
+
+* GET /images/{name}/root_disk_size
+
+  - Request:
+
+  request
+
+  - Response:
+
+  response
+
+  - Sample output:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_get_root_disk_size.tpl
+   :language: javascript
+
+Delete image
+------------
+
+* DELETE /images/{name}
+
+  - Request:
+
+  request
+
+  - Response:
+
+  response
+
+  - Sample output:
+
 Volume(s)
 =========
 
