@@ -138,9 +138,11 @@ def handle_405(environ, start_response):
         # In the process done by Routes to save the allowed methods
         # to its routing table they become unicode in py2.
         headers['allow'] = str(_methods)
-    raise webob.exc.HTTPMethodNotAllowed(
+    response = webob.exc.HTTPMethodNotAllowed(
         ('The method specified is not allowed for this resource.'),
         headers=headers, json_formatter=util.json_error_formatter)
+
+    return response(environ, start_response)
 
 
 def make_map(declarations):
