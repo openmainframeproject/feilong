@@ -136,19 +136,17 @@ class VMOps(object):
             LOG.warning("Failed to shutdown guest vm %(userid)s in %(time)d "
                          "seconds" % {'userid': userid, 'time': timeout})
 
-    def create_vm(self, instance_name, cpu, memory, disk_list=[],
+    def create_vm(self, userid, cpu, memory, disk_list=[],
                   user_profile=CONF.zvm.user_profile):
         """Create z/VM userid into user directory for a z/VM instance."""
         LOG.debug("Creating the z/VM user entry for instance %s"
-                  % instance_name)
+                  % userid)
 
         try:
-            self._zvmclient.create_vm(instance_name, cpu, memory,
+            self._zvmclient.create_vm(userid, cpu, memory,
                                       disk_list, user_profile)
         except Exception as err:
-            msg = ("Failed to create z/VM userid: %s") % err
-            LOG.error(msg)
-            raise exception.ZVMException(msg=err)
+            raise exception.ZVMCreateVMFailed(userid=userid, msg=err)
 
     def guest_config_minidisks(self, userid, disk_info):
         if disk_info != []:

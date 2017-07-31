@@ -407,7 +407,8 @@ class SDKAPI(object):
                'format': can be ext2, ext3, ext4, xfs
                'is_boot_disk': only root disk need to set this key
                'disk_pool': optional, if not specified, the disk will be
-               created by using the value from configure file
+               created by using the value from configure file,the format is
+               ECKD:eckdpoolname or FBA:fbapoolname
 
                For example:
                [{'size': '1g',
@@ -422,7 +423,21 @@ class SDKAPI(object):
                directory, and it will create 0101 with 200000 blocks from
                FBA disk pool fbapool1, and formated with ext3.
         :param user_profile: the profile for the guest
+
+        :raises: ZVMInvalidInput if:
+                 - Input parameters are not proper
+        :raises: ZVMCreateVMFailed if:
+                 - All kinds of xCAT call failure
+                 - Smcli call failure, refer to the error message for detail
         """
+        for disk in disk_list:
+            disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+            if ':' not in disk_pool or (disk_pool.split(':')[0].upper() not in
+                ['ECKD', 'FBA']):
+                errmsg = ("Invalid disk_pool input, it should be in format"
+                          " ECKD:eckdpoolname or FBA:fbapoolname")
+                raise exception.ZVMInvalidInput(msg=errmsg)
+
         self._vmops.create_vm(userid, vcpus, memory, disk_list, user_profile)
 
     @check_input_types(_TUSERID, _TSTR, _TVSWNAME, bool)
