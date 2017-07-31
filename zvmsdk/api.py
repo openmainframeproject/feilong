@@ -140,6 +140,7 @@ class SDKAPI(object):
         """Delete image from image repository
 
         :param image_name: the name of the image to be deleted
+        :raises: none
 
         """
         self._imageops.image_delete(image_name)
@@ -172,6 +173,11 @@ class SDKAPI(object):
                 eg. nova@192.168.99.1, the default value is None, it indicate
                 the image is from a local file system. If the image url schema
                 is http/https, this value will be useless
+        :raises ZVMImageError if:
+                - All kinds of xCAT call failure
+                - xCAT MN's root user is not authorized by the user of
+                  the source image server
+                - Free space is not enough in image repository
         """
 
         self._imageops.image_import(url, image_meta=image_meta,
@@ -189,6 +195,8 @@ class SDKAPI(object):
                specified, all image names will be listed
 
         :returns: A list that contains image names
+        :raises: ZVMImageError if:
+                 - All kinds of xCAT call failure
         """
         return self._imageops.image_query(imagekeyword)
 
@@ -204,6 +212,10 @@ class SDKAPI(object):
         :param remotehost: the server where the transportfiles located, the
                format is username@IP, eg nova@192.168.99.1
         :param vdev: (str) the device that image will be deploy to
+
+        :raises ZVMXCATDeployNodeFailed if:
+                - Failed to deploy image to guest, refer to the error message
+                  for details
 
         """
         return self._vmops.guest_deploy(userid, image_name,
