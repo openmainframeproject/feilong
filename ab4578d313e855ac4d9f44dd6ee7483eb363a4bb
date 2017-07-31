@@ -16,6 +16,24 @@
       "revId": "ab4578d313e855ac4d9f44dd6ee7483eb363a4bb",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d3ecbf77_8a3772a4",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 357,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-31T13:55:47Z",
+      "side": 1,
+      "message": "It was constructing an incorrect tar file which caused xcatconf4z to fail to process the file.  The constructed tar file contained the temporary directory and then the files.   We want just the files.",
+      "parentUuid": "2b7d321c_8bfc38ed",
+      "revId": "ab4578d313e855ac4d9f44dd6ee7483eb363a4bb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
