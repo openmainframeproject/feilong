@@ -48,6 +48,8 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         self.addCleanup(self.sdkapi.guest_delete, userid_big)
         userid_disk = "ugcdisk"
         self.addCleanup(self.sdkapi.guest_delete, userid_disk)
+        userid_prof = "ugcprof"
+        self.addCleanup(self.sdkapi.guest_delete, userid_prof)
 
         userid = userid_small
         vcpu = 1
@@ -75,7 +77,11 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         self.sdkapi.guest_create(userid, vcpu, memory, disk_list=disk)
         print("create guest %s ... ok!" % userid)
 
-        # TODO: guest with customized profile
+        userid = userid_prof
+        # The profile should be created manually in advance
+        profile = 'testprof'
+        self.sdkapi.guest_create(userid, vcpu, memory, user_profile=profile)
+        print("create guest %s ... ok!" % userid)
 
     def test_guest_create_abnormal(self):
         """ Error cases of SDK API guest_create """
