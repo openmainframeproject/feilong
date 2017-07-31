@@ -33,16 +33,14 @@ def disableEnableDisk(rh, userid, vaddr, option):
        Request Handle:
           owning userid
           virtual address
-          option ('-e': enable, 'd': disable)
+          option ('-e': enable, '-d': disable)
 
     Output:
        Dictionary containing the following:
           overallRC - overall return code, 0: success, non-zero: failure
-          rc        - 0: if we got status.  Otherwise, it is the
-                        error return code from the commands issued.
-          rs        - Based on rc value.  For rc==0, rs is:
-                      0: if we determined it is logged on.
-                      1: if we determined it is logged off.
+          rc        - rc from the chccwdev command or IUCV transmission.
+          rs        - rs from the chccwdev command or IUCV transmission.
+          results   - possible error message from the IUCV transmission.
     """
 
     rh.printSysLog("Enter vmUtils.disableEnableDisk, userid: " + userid +
@@ -52,6 +50,7 @@ def disableEnableDisk(rh, userid, vaddr, option):
               'overallRC': 0,
               'rc': 0,
               'rs': 0,
+              'results': ''
              }
 
     """
@@ -59,20 +58,20 @@ def disableEnableDisk(rh, userid, vaddr, option):
     Until it's done because we may detach the disk after -d option
     or use the disk after the -e option
     """
-    cmdDone = False
-    for secs in [1, 2, 3, 5, 8, 15, 22, 34, 60, 60, 60, 60, 60, 90, 120, 0]:
-        strCmd = "/sbin/chccwdev " + option + " " + vaddr
+    for secs in [0.1, 0.4, 1, 1.5, 3, 7, 15, 32, 30, 30,
+                60, 60, 60, 60, 60]:
+        strCmd = "/sbin/chccwdev " + option + " " + vaddr + " 2>&1"
         results = execCmdThruIUCV(rh, userid, strCmd)
         if results['overallRC'] == 0:
-            cmdDone = True
+            break
+        elif (results['overallRC'] == 2 and results['rc'] == 8 and
+            results['rs'] == 1 and option == '-d'):
+            # Linux does not know about the disk being disabled.
+            # Ok, nothing to do.  Treat this as a success.
+            results = {'overallRC': 0, 'rc': 0, 'rs': 0, 'response': ''}
             break
         if secs != 0:
             time.sleep(secs)
-
-    if not cmdDone:
-        # Pass along the results from the last failed command.
-        rh.printLn("ES", results['response'])
-        rh.updateResults(results)
 
     rh.printSysLog("Exit vmUtils.disableEnableDisk, rc: " +
         str(results['overallRC']))

@@ -684,6 +684,13 @@ vmModifyTests = [
         'overallRC': [0],
     },
     {
+        'description': "Online the 101 ECKD disk with ext4.",
+        'request': "CmdVM <<<unsafeID1>>> cmd '/sbin/cio_ignore -r 101; " +
+            "/sbin/chccwdev -e 101'",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
         'description': "Remove the 3390 disk with ext4.",
         'request': "changevm <<<unsafeID1>>> removedisk 101",
         'out': "",
@@ -696,6 +703,8 @@ vmModifyTests = [
         'out': "",
         'overallRC': [0],
     },
+    # Don't online the disk.  This makes the chccwdev fail but the
+    # failure should be ignored.
     {
         'description': "Remove the 3390 disk with xfs.",
         'request': "changevm <<<unsafeID1>>> removedisk 101",
@@ -706,6 +715,13 @@ vmModifyTests = [
         'description': "Add a 3390 disk to the system with swap.",
         'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
             "101 100m --mode w --filesystem swap",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Online the 101 ECKD disk with swap.",
+        'request': "CmdVM <<<unsafeID1>>> cmd '/sbin/cio_ignore -r 101; " +
+            "/sbin/chccwdev -e 101'",
         'out': "",
         'overallRC': [0],
     },
