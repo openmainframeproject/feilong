@@ -330,14 +330,6 @@ def addAEMOD(rh):
     fileClass = "X"
     tempDir = tempfile.mkdtemp()
 
-    conf = "#!/bin/bash \n"
-    parm = "/bin/bash %s %s \n" % (rh.parms['aeScript'], rh.parms['invParms'])
-
-    fh = open(tempDir + "/" + invokeScript, "w")
-    fh.write(conf)
-    fh.write(parm)
-    fh.close()
-
     if os.path.isfile(rh.parms['aeScript']):
         # Get the short name of our activation engine modifier script
         if rh.parms['aeScript'].startswith("/"):
@@ -345,12 +337,25 @@ def addAEMOD(rh):
             tmpAEScript = s[s.rindex("/") + 1:]
         else:
             tmpAEScript = rh.parms['aeScript']
+
         # Copy the mod script to our temp directory
         shutil.copyfile(rh.parms['aeScript'], tempDir + "/" + tmpAEScript)
 
+        # Create the invocation script.
+        conf = "#!/bin/bash \n"
+        baseName = os.path.basename(rh.parms['aeScript'])
+        parm = "/bin/bash %s %s \n" % (baseName, rh.parms['invParms'])
+
+        fh = open(tempDir + "/" + invokeScript, "w")
+        fh.write(conf)
+        fh.write(parm)
+        fh.close()
+
         # Generate the tar package for punch
-        with tarfile.open(tempDir + "/" + trunkFile, "w") as tar:
-            tar.add(tempDir, arcname=os.path.basename(tempDir))
+        tar = tarfile.open(tempDir + "/" + trunkFile, "w")
+        for file in os.listdir(tempDir):
+            tar.add(tempDir + "/" + file, arcname=file)
+        tar.close()
 
         # Punch file to reader
         punch2reader(rh, rh.userid, tempDir + "/" + trunkFile, fileClass)
