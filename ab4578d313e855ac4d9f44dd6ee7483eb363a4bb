@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2b7d321c_8bfc38ed",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 357,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-31T01:43:43Z",
+      "side": 1,
+      "message": "I\u0027m curious, did you chance the \"with\" to the \"for\" loop because there was something wrong with it, or just because it was more readable?",
+      "revId": "ab4578d313e855ac4d9f44dd6ee7483eb363a4bb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
