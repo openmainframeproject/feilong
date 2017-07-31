@@ -79,6 +79,30 @@ class XCATClient(ZVMClient):
         with zvmutils.expect_invalid_xcat_node_and_reraise(userid):
             return zvmutils.xcat_request(method, url, body)
 
+    def guest_is_reachable(self, userid):
+        url = self._xcat_url.nodestat('/' + userid)
+        res_dict = zvmutils.xcat_request("GET", url)
+
+        with zvmutils.expect_invalid_xcat_resp_data():
+            status = res_dict['node'][0][0]['data'][0]
+        if status is not None:
+            if status.__contains__('sshd'):
+                return True
+        return False
+
+    def guest_wait_for_reachable(self, userid):
+        self._reachable = False
+
+        def _check_reachable():
+            if not self.guest_is_reachable(userid):
+                raise exception.ZVMRetryException()
+            else:
+                self._reachable = True
+
+        zvmutils.looping_call(_check_reachable, 5, 5, 30,
+                              CONF.guest.reachable_timeout,
+                              exception.ZVMRetryException)
+
     def guest_start(self, userid):
         """"Power on VM."""
         try:
@@ -95,6 +119,16 @@ class XCATClient(ZVMClient):
 
     def guest_stop(self, userid):
         self._power_state(userid, "PUT", "off")
+
+    def guest_restart(self, userid):
+        """Reboot instance"""
+        self._power_state(userid, "PUT", "reboot")
+        self.guest_wait_for_reachable(userid)
+
+    def guest_reset(self, userid):
+        """Reset instance"""
+        self._power_state(userid, "PUT", "reset")
+        self.guest_wait_for_reachable(userid)
 
     def get_power_state(self, userid):
         """Get power status of a z/VM instance."""

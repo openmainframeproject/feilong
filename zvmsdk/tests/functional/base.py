@@ -15,6 +15,7 @@
 
 import os
 import random
+import time
 import unittest
 import uuid
 
@@ -156,6 +157,12 @@ class SDKAPITestUtils(object):
                                   ip_addr=ip_addr)
         self.api.guest_nic_couple_to_vswitch(userid, vdev, vswitch_name)
         self.api.vswitch_grant_user(vswitch_name, userid)
+        result = self.api.guest_get_definition_info(
+                                            userid,
+                                            nic_coupled=vdev)
+        if not result['nic_coupled']:
+            print 'Network not ready in %s.' % userid
+            time.sleep(5)
 
         # Deploy image on vm
         print("Deploying userid %s ..." % userid)
