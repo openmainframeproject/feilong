@@ -744,14 +744,11 @@ def removeDisk(rh):
                 rh.parms['vaddr'],
                 '-d')
             if results['overallRC'] != 0:
-                # Error message already produced
-                pass
-            else:
-                # Pass along the failure information.
+                rh.printLn("ES", results['response'])
                 rh.updateResults(results)
 
     if results['overallRC'] == 0 and loggedOn:
-        strCmd = ["/sbin/vmcp detach " + rh.parms['vaddr']]
+        strCmd = "/sbin/vmcp detach " + rh.parms['vaddr']
         results = execCmdThruIUCV(rh, rh.userid, strCmd)
         if results['overallRC'] != 0:
             rh.printLn("ES", results['response'])
