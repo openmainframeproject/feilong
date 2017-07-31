@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fb667ef1_e26e5a66",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-31T19:40:04Z",
+      "side": 1,
+      "message": "oops, I meant remove the if secs !\u003d0, I think you still want the sleep",
+      "revId": "6e08b564ebcb2779546322f7ff2e2c5770853a39",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
