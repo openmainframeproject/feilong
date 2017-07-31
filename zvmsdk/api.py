@@ -198,12 +198,12 @@ class SDKAPI(object):
                      remotehost=None, vdev=None):
         """ Deploy the image to vm.
 
-        :param userid: the user id of the vm
-        :param image_name: the name of image that used to deploy the vm
-        :param transportfiles: the files that used to customize the vm
+        :param userid: (str) the user id of the vm
+        :param image_name: (str) the name of image that used to deploy the vm
+        :param transportfiles: (str) the files that used to customize the vm
         :param remotehost: the server where the transportfiles located, the
                format is username@IP, eg nova@192.168.99.1
-        :param vdev: the device that image will be deploy to
+        :param vdev: (str) the device that image will be deploy to
 
         """
         return self._vmops.guest_deploy(userid, image_name,
@@ -311,22 +311,23 @@ class SDKAPI(object):
         :param userid: (str) the userid of the vm to be created
         :param vcpus: (int) amount of vcpus
         :param memory: (int) size of memory in MB
-        :param disk_list: (dict) a list of disks info for the guest, it has
-               one dictionary that contain some of the below keys for each
-               disk, the root disk should be the first element in the list.
+        :param disk_list: (dict) a list of disks info for the guest.
+               It has one dictionary that contain some of the below keys for
+               each disk, the root disk should be the first element in the
+               list, the format is:
                {'size': str,
                'format': str,
                'is_boot_disk': bool,
                'disk_pool': str}
-               In which,
-               'size': case insensitive, the unit can be in Megabytes (M),
-               Gigabytes (G), or number of cylinders/blocks, eg  512M, 1g or
-               just 2000
-               'format': can be ext2, ext3, ext4, xfs
-               'is_boot_disk': only root disk need to set this key
+
+               In which, 'size': case insensitive, the unit can be in
+               Megabytes (M), Gigabytes (G), or number of cylinders/blocks, eg
+               512M, 1g or just 2000.
+               'format': can be ext2, ext3, ext4, xfs.
+               'is_boot_disk': only root disk need to set this key.
                'disk_pool': optional, if not specified, the disk will be
                created by using the value from configure file,the format is
-               ECKD:eckdpoolname or FBA:fbapoolname
+               ECKD:eckdpoolname or FBA:fbapoolname.
 
                For example:
                [{'size': '1g',
@@ -342,19 +343,20 @@ class SDKAPI(object):
                FBA disk pool fbapool1, and formated with ext3.
         :param user_profile: the profile for the guest
 
-        :raises: ZVMInvalidInput if:
-                 - Input parameters are not proper
-        :raises: ZVMCreateVMFailed if:
-                 - All kinds of xCAT call failure
-                 - Smcli call failure, refer to the error message for detail
+        :raises ZVMInvalidInput if:
+                - Input parameters are not proper
+        :raises ZVMCreateVMFailed if:
+                - All kinds of xCAT call failure
+                - Smcli call failure, refer to the error message for detail
         """
-        for disk in disk_list:
-            disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
-            if ':' not in disk_pool or (disk_pool.split(':')[0].upper() not in
-                ['ECKD', 'FBA']):
-                errmsg = ("Invalid disk_pool input, it should be in format"
-                          " ECKD:eckdpoolname or FBA:fbapoolname")
-                raise exception.ZVMInvalidInput(msg=errmsg)
+        if disk_list:
+            for disk in disk_list:
+                disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+                if ':' not in disk_pool or (disk_pool.split(':')[0].upper()
+                    not in ['ECKD', 'FBA']):
+                    errmsg = ("Invalid disk_pool input, it should be in format"
+                              " ECKD:eckdpoolname or FBA:fbapoolname")
+                    raise exception.ZVMInvalidInput(msg=errmsg)
 
         self._vmops.create_vm(userid, vcpus, memory, disk_list, user_profile)
 
@@ -505,8 +507,13 @@ class SDKAPI(object):
 
     @utils.check_input_types(_TUSERID)
     def guest_delete(self, userid):
-        """Delete guest
+        """Delete guest.
+
         :param userid: the user id of the vm
+
+        :raises ZVMDeleteVMFailed if:
+                - All kinds of xCAT call failure, refer to the message for
+                  details
 
         """
         return self._vmops.delete_vm(userid)

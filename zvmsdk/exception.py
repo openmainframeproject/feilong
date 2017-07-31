@@ -134,6 +134,10 @@ class ZVMVirtualMachineNotExist(SDKBaseException):
     msg_fmt = 'Virtual machine %(userid)s does not exist in %(zvm_host)s'
 
 
+class ZVMDeleteVMFailed(SDKBaseException):
+    msg_fmt = 'Delete vm %(userid)s failed: %(msg)s'
+
+
 class NotFound(SDKBaseException):
     msg_fmt = 'The resource can not be found'
 
