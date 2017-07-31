@@ -83,7 +83,11 @@ def checkIsReachable(rh):
 
     Output:
        Request Handle updated with the results.
-       Return code - 0: ok, non-zero: error
+       overallRC - 0: determined the status, non-zero: some weird failure
+                                             while trying to execute a command
+                                             on the guest via IUCV
+       rc - RC returned from execCmdThruIUCV
+       rs - 0: not reachable, 1: reachable
     """
 
     rh.printSysLog("Enter getVM.checkIsReachable, userid: " + rh.userid)
