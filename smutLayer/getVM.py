@@ -83,7 +83,9 @@ def checkIsReachable(rh):
 
     Output:
        Request Handle updated with the results.
-       Return code - 0: ok, non-zero: error
+       overallRC - 0: determined the status, non-zero: some weird failure
+       rc - same as overallRC
+       rs - 0: not reachable, 1: reachable
     """
 
     rh.printSysLog("Enter getVM.checkIsReachable, userid: " + rh.userid)
