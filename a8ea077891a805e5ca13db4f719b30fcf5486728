@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "71f44cc3_1f53265b",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-31T19:23:13Z",
+      "side": 1,
+      "message": "Can remove this if",
+      "revId": "a8ea077891a805e5ca13db4f719b30fcf5486728",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
