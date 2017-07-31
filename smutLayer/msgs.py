@@ -219,6 +219,15 @@ msg = {
     '0417': [{'overallRC': 99, 'rc': 99, 'rw': 417},
             "ULT%s0417E Command did not return the expected response " +
             "containing '%s', cmd: '%s', out: '%s'"],
-
+    '0418': [{'overallRC': 99, 'rc': 99, 'rw': 418},     # dict is not used.
+            "ULT%s0418E Userid %s is not logged on to this system.\n" +
+            "SMAPI Cmd: %s\nRC: %i RS %i"],
+    '0419': [{'overallRC': 99, 'rc': 99, 'rw': 419},     # dict is not used.
+            "ULT%s0419E A relocation is not in progress for userid %s.\n" +
+            "SMAPI Cmd: %s\nRC %i RS %i"],
+    '0420': [{'overallRC': 99, 'rc': 99, 'rw': 420},     # dict is not used.
+            "ULT%s0420E An error occurred issuing a %s for userid %s.\n" +
+            "Please look up message(s): %s in the CP Messages book for " +
+            "more information.\nSMAPI Cmd: %s\nRC %i RS %i"],
     # 5000-6100: Reserved for SMCLI
     }

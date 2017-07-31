@@ -389,7 +389,7 @@ powerTests = [
         'overallRC': [0],
     },
     {
-        'description': "Power on system a system.",
+        'description': "Power on a system.",
         'request': "PowerVM <<<safeID>>> on",
         'out': "",
         'overallRC': [0],
@@ -397,7 +397,7 @@ powerTests = [
     {
         'description': "Power on a system that is on but not up.",
         'request': "PowerVM <<<safeID>>> on --wait --state up",
-        'out': "Userid <<<safeID>>> is in the desired state: up",
+        'out': "<<<safeID>>>: up",
         'overallRC': [0],
     },
     {
