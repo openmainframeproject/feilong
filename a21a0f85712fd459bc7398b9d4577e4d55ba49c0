@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "91064d0e_aba5e3ef",
+        "filename": "smutLayer/getVM.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-31T12:52:30Z",
+      "side": 1,
+      "message": "I\u0027d probably clarify that it\u0027s a weird failure from trying to execute a command on the guest, and that in that case, rs would be 0.  Also I don\u0027t think that execCmdThruIUCV guarantees rc \u003d overallRC",
+      "revId": "a21a0f85712fd459bc7398b9d4577e4d55ba49c0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4dfba5f8_2c37afa0",
+        "filename": "smutLayer/powerVM.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-31T12:52:30Z",
+      "side": 1,
+      "message": "Similar comments as in the other file.",
+      "revId": "a21a0f85712fd459bc7398b9d4577e4d55ba49c0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
