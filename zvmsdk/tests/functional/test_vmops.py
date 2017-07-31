@@ -51,6 +51,12 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         userid_prof = "ugcprof"
         self.addCleanup(self.sdkapi.guest_delete, userid_prof)
 
+        # delete all guest before launch
+        self.sdkapi.guest_delete(userid_small)
+        self.sdkapi.guest_delete(userid_big)
+        self.sdkapi.guest_delete(userid_disk)
+        self.sdkapi.guest_delete(userid_prof)
+
         userid = userid_small
         vcpu = 1
         memory = 512
@@ -94,6 +100,9 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         userid_duplicate = "ugcdup"
         self.addCleanup(self.sdkapi.guest_delete, userid_duplicate)
 
+        # delete all guest before launch
+        self.sdkapi.guest_delete(userid_duplicate)
+
         # Duplicate creation
         userid = userid_duplicate
         vcpu = 1
@@ -116,6 +125,12 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         self.addCleanup(self.sdkapi.guest_delete, userid_rmthost)
         userid_vdev = 'ugdvdev'
         self.addCleanup(self.sdkapi.guest_delete, userid_vdev)
+
+        # delete all guest before launch
+        self.sdkapi.guest_delete(userid_normal)
+        self.sdkapi.guest_delete(userid_trspt)
+        self.sdkapi.guest_delete(userid_rmthost)
+        self.sdkapi.guest_delete(userid_vdev)
 
         # create temporary transport file for test
         transport_file = "/tmp/sdktest.txt"
@@ -187,6 +202,9 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         userid_duplicate = "ugddup"
         self.addCleanup(self.sdkapi.guest_delete, userid_duplicate)
 
+        # delete all guest before launch
+        self.sdkapi.guest_delete(userid_duplicate)
+
         # Duplicate creation
         userid = userid_duplicate
         vcpu = 1
@@ -208,6 +226,9 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         """ Normal cases of SDK API guest_start and guest_stop """
         userid_normal = "ugsnml"
         self.addCleanup(self.sdkapi.guest_delete, userid_normal)
+
+        # delete all guest before launch
+        self.sdkapi.guest_delete(userid_normal)
 
         userid = userid_normal
         vcpu = 1
@@ -232,6 +253,9 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         """ Abnormal cases of SDK API guest_start and guest_stop """
         userid_abnormal = "ugsabnml"
         self.addCleanup(self.sdkapi.guest_delete, userid_abnormal)
+
+        # delete all guest before launch
+        self.sdkapi.guest_delete(userid_abnormal)
 
         userid = userid_abnormal
         vcpu = 1
