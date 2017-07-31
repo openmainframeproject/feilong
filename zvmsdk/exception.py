@@ -123,7 +123,7 @@ class ZVMConfigDriveError(SDKBaseException):
 
 
 class ZVMRetryException(SDKBaseException):
-    pass
+    msg_fmt = 'retry connect to instance timeout: %(msg)s'
 
 
 class ZVMVirtualMachineNotExist(SDKBaseException):
