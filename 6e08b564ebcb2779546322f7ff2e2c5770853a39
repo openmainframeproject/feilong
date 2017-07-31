@@ -16,6 +16,24 @@
       "revId": "6e08b564ebcb2779546322f7ff2e2c5770853a39",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "45f463fe_da3842d8",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-07-31T19:43:37Z",
+      "side": 1,
+      "message": "back.",
+      "parentUuid": "fb667ef1_e26e5a66",
+      "revId": "6e08b564ebcb2779546322f7ff2e2c5770853a39",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
