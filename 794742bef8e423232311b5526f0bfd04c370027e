@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a16f575d_adde8181",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 747,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-31T17:49:55Z",
+      "side": 1,
+      "message": "So I\u0027m curious here why we just use the results[\u0027response\u0027] in our error message and not a custom error message?  I think this does not get set in disableEnableDisk, but rather by execCmdThruIUCV.  So while that\u0027s going to give a nice message about what IUCV command was being issued on the guest and what output it got, it might be nice to wrapper that in \"tried to execute a command to detach disk from guest, failure message....\"",
+      "revId": "794742bef8e423232311b5526f0bfd04c370027e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4d0630ac_e34c828d",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-31T17:49:55Z",
+      "side": 1,
+      "message": "Why is the last number 0 and then we test for not 0?  Why not let it just fall out of the loop in that case?  Seems an inefficent use of a for loop.",
+      "revId": "794742bef8e423232311b5526f0bfd04c370027e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8a6f9fd8_f909e838",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-07-31T17:49:55Z",
+      "side": 1,
+      "message": "I think you want to set \u0027response\u0027 not \u0027results\u0027.",
+      "revId": "794742bef8e423232311b5526f0bfd04c370027e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
