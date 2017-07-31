@@ -105,7 +105,7 @@ def create_guest(userid, image_path, os_version,
                                             nic_coupled=vdev)
     if not result['nic_coupled']:
         print 'Network not ready in %s.' % userid
-        return
+        time.sleep(5)
 
     # Power on the vm, then put MN's public key into vm
     sdkapi.guest_start(userid)

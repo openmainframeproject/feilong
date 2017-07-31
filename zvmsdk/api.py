@@ -82,6 +82,26 @@ class SDKAPI(object):
         self._vmops.guest_stop(userid, timeout, retry_interval)
 
     @utils.check_input_types(_TUSERID)
+    def guest_restart(self, userid):
+        """Soft restart estart a virtual machine
+        :param str userid: the id of the virtual machine to be reboot
+        :returns: None
+        :raise exception.ZVMRetryException,if:
+               - wait for guest reachable timeout
+        """
+        self._vmops.guest_restart(userid)
+
+    @utils.check_input_types(_TUSERID)
+    def guest_reset(self, userid):
+        """reset a virtual machine
+        :param str userid: the id of the virtual machine to be reset
+        :returns: None
+        :raise exception.ZVMRetryException,if:
+               - wait for guest reachable timeout
+        """
+        self._vmops.guest_reset(userid)
+
+    @utils.check_input_types(_TUSERID)
     def guest_get_power_state(self, userid):
         """Returns power state."""
         return self._vmops.get_power_state(userid)
