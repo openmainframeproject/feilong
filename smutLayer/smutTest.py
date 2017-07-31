@@ -303,48 +303,48 @@ migrateTests = [
         'description': "Get status for a specific userid that " +
             "cannot be migrated.",
         'request': "migrateVM <<<unmigrID>>> status",
-        'overallRC': [8],
-        'rc': [4],
-        'rs': [3001],
+        'overallRC': [99],
+        'rc': [99],
+        'rs': [419],
     },
     {
         'description': "Get all migration status for a host with " +
             "no active migrations.",
         'request': "migrateVM <<<unmigrID>>> status --all",
-        'overallRC': [8],
-        'rc': [4],
-        'rs': [3001],
+        'overallRC': [99],
+        'rc': [99],
+        'rs': [419],
     },
     {
         'description': ("Get incoming migration status for a host with no " +
             "active migrations."),
         'request': "migrateVM <<<unmigrID>>> status --incoming",
-        'overallRC': [8],
-        'rc': [4],
-        'rs': [3001],
+        'overallRC': [99],
+        'rc': [99],
+        'rs': [419],
     },
     {
         'description': "Get outgoing migration status for a host with no " +
             "active migrations.",
         'request': "migrateVM <<<unmigrID>>> status --outgoing",
-        'overallRC': [8],
-        'rc': [4],
-        'rs': [3001],
+        'overallRC': [99],
+        'rc': [99],
+        'rs': [419],
     },
     {
         'description': "Test a system for migration",
         'request': "migrateVM <<<unmigrID>>> test --destination " +
             "<<<migrDest>>>",
-        'overallRC': [8],
-        'rc': [4],
-        'rs': [3000],
+        'overallRC': [99],
+        'rc': [99],
+        'rs': [418],
     },
     {
         'description': "Cancel a migration",
         'request': "migrateVM <<<migrID>>> cancel",
-        'overallRC': [8],
-        'rc': [8],
-        'rs': [3000, 3001],
+        'overallRC': [99],
+        'rc': [99],
+        'rs': [419],
     },
     ]
 
@@ -370,7 +370,7 @@ powerTests = [
     {
         'description': "Check status of powered off system.",
         'request': "PowerVM <<<safeID>>> status",
-        'out': "^<<<safeID>>>: off",
+        'out': "<<<safeID>>>: off",
         'overallRC': [0],
         'rc': [0],
         'rs': [1]
@@ -389,7 +389,7 @@ powerTests = [
         'overallRC': [0],
     },
     {
-        'description': "Power on system a system.",
+        'description': "Power on a system.",
         'request': "PowerVM <<<safeID>>> on",
         'out': "",
         'overallRC': [0],
@@ -397,13 +397,13 @@ powerTests = [
     {
         'description': "Power on a system that is on but not up.",
         'request': "PowerVM <<<safeID>>> on --wait --state up",
-        'out': "Userid <<<safeID>>> is in the desired state: up",
+        'out': "<<<safeID>>>: up",
         'overallRC': [0],
     },
     {
         'description': "Check status of powered on system.",
         'request': "PowerVM <<<safeID>>> status",
-        'out': "^<<<safeID>>>: on",
+        'out': "<<<safeID>>>: on",
         'overallRC': [0],
         'rc': [0],
         'rs': [0]
@@ -469,7 +469,7 @@ powerTests = [
     {
         'description': "Wait for the OS to come up.",
         'request': "PowerVM <<<safeID>>> wait --state up",
-        'out': "",
+        'out': "<<<safeID>>>: up",
         'overallRC': [0],
         'rs': [0]
     },

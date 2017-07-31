@@ -212,13 +212,20 @@ msg = {
             "virtual machine state of '%s' in %i seconds."],
     '0415': [{'overallRC': 3, 'rc': 415},    # rs comes from failing rc
             "ULT%s0415E Command failed: '%s', rc: %i out: %s"],
-    '0416': [{'overallRC': 99, 'rc': 99, 'rw': 416},
+    '0416': [{'overallRC': 99, 'rc': 99, 'rs': 416},
             "ULT%s0416E Command returned a response " +
             "containing '%s' but did not have at least %i words " +
             "following it. cmd: '%s', out: '%s'"],
-    '0417': [{'overallRC': 99, 'rc': 99, 'rw': 417},
+    '0417': [{'overallRC': 99, 'rc': 99, 'rs': 417},
             "ULT%s0417E Command did not return the expected response " +
             "containing '%s', cmd: '%s', out: '%s'"],
-
+    '0418': [{'overallRC': 99, 'rc': 99, 'rs': 418},
+            "ULT%s0418E Userid %s is not logged on to this system."],
+    '0419': [{'overallRC': 99, 'rc': 99, 'rs': 419},
+            "ULT%s0419E A relocation is not in progress for userid %s."],
+    '0420': [{'overallRC': 99, 'rc': 99, 'rs': 420},     # dict is not used.
+            "ULT%s0420E An error occurred issuing a %s for userid %s.\n" +
+            "Please look up message(s): %s in the CP Messages book for " +
+            "more information."],
     # 5000-6100: Reserved for SMCLI
     }

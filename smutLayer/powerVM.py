@@ -173,7 +173,7 @@ def activate(rh):
                 sleepSecs=rh.parms['poll'])
 
         if results['overallRC'] == 0:
-            rh.printLn("N", "Userid %s is in the desired state: %s" %
+            rh.printLn("N", "%s: %s" %
                 (rh.userid, rh.parms['desiredState']))
         else:
             rh.updateResults(results)
@@ -251,7 +251,7 @@ def deactivate(rh):
         (results['rs'] == 12 or results['rs'] == 16)):
         # Tolerable error.  Machine is already in or going into the state
         # we want it to enter.
-        rh.printLn("N", rh.userid + " is already logged off.")
+        rh.printLn("N", rh.userid + ": off")
         rh.updateResults({}, reset=1)
     else:
         # SMAPI API failed.
@@ -266,8 +266,7 @@ def deactivate(rh):
             maxQueries=rh.parms['maxQueries'],
             sleepSecs=rh.parms['poll'])
         if results['overallRC'] == 0:
-            rh.printLn("N", "Userid '" + rh.userid +
-                " is in the desired state: off")
+            rh.printLn("N", rh.userid + ": off")
         else:
             rh.updateResults(results)
 
@@ -546,8 +545,7 @@ def reboot(rh):
         results = waitForOSState(rh, rh.userid, "down",
             maxQueries=30, sleepSecs=10)
         if results['overallRC'] == 0:
-            rh.printLn("N", "Userid '" + rh.userid +
-                " is in the interim state: down")
+            rh.printLn("N", rh.userid + ": down (interim state)")
 
     if rh.results['overallRC'] == 0 and 'maxQueries' in rh.parms:
         results = waitForOSState(rh,
@@ -556,8 +554,7 @@ def reboot(rh):
                                   maxQueries=rh.parms['maxQueries'],
                                   sleepSecs=rh.parms['poll'])
         if results['overallRC'] == 0:
-            rh.printLn("N", "Userid '" + rh.userid +
-                " is in the desired state: up")
+            rh.printLn("N", rh.userid + ": up")
         else:
             rh.updateResults(results)
 
@@ -633,8 +630,8 @@ def reset(rh):
                 maxQueries=rh.parms['maxQueries'],
                 sleepSecs=rh.parms['poll'])
         if results['overallRC'] == 0:
-            rh.printLn("N", "Userid '" + rh.userid +
-                " is in the desired state: " + rh.parms['desiredState'])
+            rh.printLn("N", rh.userid + ": " +
+                       rh.parms['desiredState'])
         else:
             rh.updateResults(results)
 
@@ -887,9 +884,7 @@ def wait(rh):
             sleepSecs=rh.parms['poll'])
 
     if results['overallRC'] == 0:
-        rh.printLn("N", "Userid '" + rh.userid +
-            "' is in the desired state: '" + rh.parms['desiredState'] +
-            "'.")
+        rh.printLn("N", rh.userid + ": " + rh.parms['desiredState'])
     else:
         rh.updateResults(results)
 

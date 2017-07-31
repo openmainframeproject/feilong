@@ -110,6 +110,21 @@ def cancelMigrate(rh):
         # SMAPI API failed.
         rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
+        if results['rc'] == 8 and results['rs'] == 3000:
+            if "1926" in results['response']:
+                # No relocation in progress
+                msg = msgs.msg['0419'][1] % (modId, rh.userid)
+                rh.printLn("ES", msg)
+                rh.updateResults(msgs.msg['0419'][0])
+            else:
+                # More details in message codes
+                lines = results['response'].split("\n")
+                for line in lines:
+                    if "Details:" in line:
+                        codes = line.split(' ', 1)[1]
+                msg = msgs.msg['420'][1] % (modId, "VMRELOCATE Cancel",
+                                            rh.userid, codes)
+                rh.printLn("ES", msg)
 
     rh.printSysLog("Exit migrateVM.cancelMigrate, rc: " +
         str(rh.results['overallRC']))
@@ -189,6 +204,11 @@ def getStatus(rh):
         # SMAPI API failed.
         rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
+        if results['rc'] == 4 and results['rs'] == 3001:
+            # No relocation in progress
+            msg = msgs.msg['0419'][1] % (modId, rh.userid)
+            rh.printLn("ES", msg)
+            rh.updateResults(msgs.msg['0419'][0])
     else:
         rh.printLn("N", results['response'])
 
@@ -269,6 +289,21 @@ def modifyMigrate(rh):
         # SMAPI API failed.
         rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
+        if results['rc'] == 8 and results['rs'] == 3010:
+            if "1926" in results['response']:
+                # No relocations in progress
+                msg = msgs.msg['0419'][1] % (modId, rh.userid)
+                rh.printLn("ES", msg)
+                rh.updateResults(msgs.msg['0419'][0])
+            else:
+                # More details in message codes
+                lines = results['response'].split("\n")
+                for line in lines:
+                    if "Details:" in line:
+                        codes = line.split(' ', 1)[1]
+                msg = msgs.msg['0420'][1] % (modId, "VMRELOCATE Modify",
+                                             rh.userid, codes)
+                rh.printLn("ES", msg)
 
     rh.printSysLog("Exit migrateVM.modifyMigrate, rc: " +
         str(rh.results['overallRC']))
@@ -335,6 +370,21 @@ def moveVM(rh):
         # SMAPI API failed.
         rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
+        if results['rc'] == 8 and results['rs'] == 3000:
+            if "0045" in results['response']:
+                # User not logged on
+                msg = msgs.msg['0418'][1] % (modId, rh.userid)
+                rh.printLn("ES", msg)
+                rh.updateResults(msgs.msg['0418'][0])
+            else:
+                # More details in message codes
+                lines = results['response'].split("\n")
+                for line in lines:
+                    if "Details:" in line:
+                        codes = line.split(' ', 1)[1]
+                msg = msgs.msg['0420'][1] % (modId, "VMRELOCATE Move",
+                                             rh.userid, codes)
+                rh.printLn("ES", msg)
 
     rh.printSysLog("Exit migrateVM.moveVM, rc: " +
         str(rh.results['overallRC']))
@@ -513,6 +563,20 @@ def testMigrate(rh):
         # SMAPI API failed.
         rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
+        if results['rc'] == 4 and results['rs'] == 3000:
+            if "0045" in results['response']:
+                # User not logged on
+                msg = msgs.msg['0418'][1] % (modId, rh.userid)
+                rh.printLn("ES", msg)
+                rh.updateResults(msgs.msg['0418'][0])
+            else:
+                # More details in message codes
+                lines = results['response'].split("\n")
+                for line in lines:
+                    if "Details:" in line:
+                        codes = line.split(' ', 1)[1]
+                msg = msgs.msg['0420'][1] % (modId, "VMRELOCATE Move",
+                                             rh.userid, codes)
 
     rh.printSysLog("Exit migrateVM.testMigrate, rc: " +
         str(rh.results['overallRC']))
