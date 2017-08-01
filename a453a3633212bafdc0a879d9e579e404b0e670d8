@@ -49,6 +49,99 @@
     },
     {
       "key": {
+        "uuid": "809051d9_6502243d",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1787,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-08-01T07:19:24Z",
+      "side": 1,
+      "message": "this cmdName is only used for log smut function usage, I think end user won\u0027t need this.",
+      "parentUuid": "1755ba44_9a139f49",
+      "range": {
+        "startLine": 1787,
+        "startChar": 31,
+        "endLine": 1787,
+        "endChar": 38
+      },
+      "revId": "a453a3633212bafdc0a879d9e579e404b0e670d8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b83a8234_ff071e97",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1793,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-08-01T07:19:24Z",
+      "side": 1,
+      "message": "I think these info is already controlled or printed by smut layer, we may don\u0027t need these log, just print the error that is generated in the SDK client side.",
+      "range": {
+        "startLine": 1793,
+        "startChar": 34,
+        "endLine": 1793,
+        "endChar": 35
+      },
+      "revId": "a453a3633212bafdc0a879d9e579e404b0e670d8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "060509f6_8249e70b",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1811,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-08-01T07:19:24Z",
+      "side": 1,
+      "message": "Trace log is only used for debugging smut, I think from SDK end user\u0027s point of view, they don\u0027t want or need to know these traces.",
+      "range": {
+        "startLine": 1811,
+        "startChar": 23,
+        "endLine": 1811,
+        "endChar": 28
+      },
+      "revId": "a453a3633212bafdc0a879d9e579e404b0e670d8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ceed1301_380886e5",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1822,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-08-01T07:19:24Z",
+      "side": 1,
+      "message": "For all such kinds of data conversion, maybe we also need to write a wrapper function to catch general python exceptions, eg: keyError, index out of range, etc.",
+      "range": {
+        "startLine": 1822,
+        "startChar": 38,
+        "endLine": 1822,
+        "endChar": 41
+      },
+      "revId": "a453a3633212bafdc0a879d9e579e404b0e670d8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "87e04eed_6586410d",
         "filename": "zvmsdk/client.py",
         "patchSetId": 2
@@ -60,6 +153,30 @@
       "writtenOn": "2017-08-01T05:26:00Z",
       "side": 1,
       "message": "response or strError?",
+      "range": {
+        "startLine": 1826,
+        "startChar": 33,
+        "endLine": 1826,
+        "endChar": 41
+      },
+      "revId": "a453a3633212bafdc0a879d9e579e404b0e670d8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ed54da31_e12eaa63",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1826,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-08-01T07:19:24Z",
+      "side": 1,
+      "message": "I think this this should use \"response\", response data is output from smut function including error message, while strError is only the formated output when errorno is set under some case.",
+      "parentUuid": "87e04eed_6586410d",
       "range": {
         "startLine": 1826,
         "startChar": 33,
