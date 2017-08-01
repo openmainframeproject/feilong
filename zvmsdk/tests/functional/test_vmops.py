@@ -36,7 +36,7 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         self.image_name = self._get_image_name(image_path, image_os_version)
 
     def _get_image_name(self, image_path, image_os_version):
-        image_file_name = os.path.basename(image_path)
+        image_file_name = os.path.basename(image_path).replace('-', '_')
         return "%(os)s-s390x-netboot-%(name)s" % {'os': image_os_version,
                                                   'name': image_file_name}
 
