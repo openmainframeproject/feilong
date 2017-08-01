@@ -146,7 +146,7 @@ class VMOps(object):
             self._zvmclient.create_vm(userid, cpu, memory,
                                       disk_list, user_profile)
         except Exception as err:
-            raise exception.ZVMCreateVMFailed(userid=userid, msg=err)
+            raise exception.ZVMCreateVMFailed(userid=userid, msg=str(err))
 
     def guest_config_minidisks(self, userid, disk_info):
         if disk_info != []:
@@ -163,7 +163,10 @@ class VMOps(object):
         """Delete z/VM userid for the instance.This will remove xCAT node
         at same time.
         """
-        self._zvmclient.delete_vm(userid)
+        try:
+            self._zvmclient.delete_vm(userid)
+        except exception as err:
+            raise exception.ZVMDeleteVMFailed(userid=userid, msg=str(err))
 
     def guest_deploy(self, user_id, image_name, transportfiles=None,
                      remotehost=None, vdev=None):

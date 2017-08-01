@@ -1368,7 +1368,7 @@ class XCATClient(ZVMClient):
                 # zVM user definition not found, delete xCAT node directly
                 self.delete_xcat_node(userid)
             else:
-                raise
+                raise err
 
     def _rewr(self, manifest_path):
         f = open(manifest_path + '/manifest.xml', 'r')
