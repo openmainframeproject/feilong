@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6270595f_9c96c55e",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1787,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2017-08-01T05:26:00Z",
+      "side": 1,
+      "message": "Need to be discussed: Whether cmdName is required",
+      "range": {
+        "startLine": 1787,
+        "startChar": 31,
+        "endLine": 1787,
+        "endChar": 38
+      },
+      "revId": "a453a3633212bafdc0a879d9e579e404b0e670d8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "87e04eed_6586410d",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1826,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2017-08-01T05:26:00Z",
+      "side": 1,
+      "message": "response or strError?",
+      "range": {
+        "startLine": 1826,
+        "startChar": 33,
+        "endLine": 1826,
+        "endChar": 41
+      },
+      "revId": "a453a3633212bafdc0a879d9e579e404b0e670d8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
