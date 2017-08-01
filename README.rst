@@ -28,4 +28,4 @@ The project's [maintainers](MAINTAINERS.txt): are responsible for reviewing and 
 If you are a user and you find a bug, please submit a [bug](https://bugs.launchpad.net/python-zvm-sdk). Please try to provide sufficient information for someone else to reproduce the issue. One of the project's maintainers should respond to your issue within 24 hours. If not, please bump the issue and request that it be reviewed.
 
 ## Contributing
-We welcome contributions to the python-zvm-sdk! Full details of how to contribute to this project are documented in the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+We welcome contributions to the python-zvm-sdk! Full details of how to contribute to this project are documented in the [CONTRIBUTING.rst](CONTRIBUTING.rst) file.
