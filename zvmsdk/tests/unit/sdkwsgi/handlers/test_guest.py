@@ -317,21 +317,21 @@ class HandlersGuestTest(SDKWSGITest):
         self.req.GET = FakeReqGet()
 
         guest.guest_get_cpu_info(self.req)
-        mock_get.assert_called_once_with(FAKE_USERID_LIST)
+        mock_get.assert_called_once_with(self.req, FAKE_USERID_LIST)
 
     @mock.patch.object(guest.VMHandler, 'get_memory_info')
     def test_guest_get_mem_info(self, mock_get):
         self.req.GET = FakeReqGet()
 
         guest.guest_get_memory_info(self.req)
-        mock_get.assert_called_once_with(FAKE_USERID_LIST)
+        mock_get.assert_called_once_with(self.req, FAKE_USERID_LIST)
 
     @mock.patch.object(guest.VMHandler, 'get_vnics_info')
     def test_guest_get_vnics_info(self, mock_get):
         self.req.GET = FakeReqGet()
 
         guest.guest_get_vnics_info(self.req)
-        mock_get.assert_called_once_with(FAKE_USERID_LIST)
+        mock_get.assert_called_once_with(self.req, FAKE_USERID_LIST)
 
     def mock_get_userid_vdev(self, env, param):
         if param == 'userid':

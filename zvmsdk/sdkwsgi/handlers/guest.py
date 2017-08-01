@@ -81,13 +81,16 @@ class VMHandler(object):
 
         self.api.guest_delete_nic(userid, vdev, active=active)
 
-    def get_cpu_info(self, userid_list):
+    @validation.query_schema(guest.userid_list_query)
+    def get_cpu_info(self, req, userid_list):
         return self.api.guest_inspect_cpus(userid_list)
 
-    def get_memory_info(self, userid_list):
+    @validation.query_schema(guest.userid_list_query)
+    def get_memory_info(self, req, userid_list):
         return self.api.guest_inspect_mem(userid_list)
 
-    def get_vnics_info(self, userid_list):
+    @validation.query_schema(guest.userid_list_query)
+    def get_vnics_info(self, req, userid_list):
         return self.api.guest_inspect_vnics(userid_list)
 
     @validation.schema(guest.create_nic)
@@ -380,11 +383,11 @@ def guest_get_cpu_info(req):
 
     userid_list = _get_userid_list(req)
 
-    def _guest_get_cpu_info(userid_list):
+    def _guest_get_cpu_info(req, userid_list):
         action = get_handler()
-        action.get_cpu_info(userid_list)
+        action.get_cpu_info(req, userid_list)
 
-    _guest_get_cpu_info(userid_list)
+    _guest_get_cpu_info(req, userid_list)
 
 
 @wsgi_wrapper.SdkWsgify
@@ -393,11 +396,11 @@ def guest_get_memory_info(req):
 
     userid_list = _get_userid_list(req)
 
-    def _guest_get_memory_info(userid_list):
+    def _guest_get_memory_info(req, userid_list):
         action = get_handler()
-        action.get_memory_info(userid_list)
+        action.get_memory_info(req, userid_list)
 
-    _guest_get_memory_info(userid_list)
+    _guest_get_memory_info(req, userid_list)
 
 
 @wsgi_wrapper.SdkWsgify
@@ -406,8 +409,8 @@ def guest_get_vnics_info(req):
 
     userid_list = _get_userid_list(req)
 
-    def _guest_get_vnics_info(userid_list):
+    def _guest_get_vnics_info(req, userid_list):
         action = get_handler()
-        action.get_vnics_info(userid_list)
+        action.get_vnics_info(req, userid_list)
 
-    _guest_get_vnics_info(userid_list)
+    _guest_get_vnics_info(req, userid_list)

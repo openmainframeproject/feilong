@@ -320,6 +320,16 @@ class GuestHandlerTest(unittest.TestCase):
             get_info.assert_called_once_with(['l1', 'l2'])
 
     @mock.patch.object(tokens, 'validate')
+    def test_guest_get_mem_info_invalid(self, mock_validate):
+        self.env['wsgiorg.routing_args'] = ()
+        self.env['PATH_INFO'] = '/guests/meminfo'
+        self.env['REQUEST_METHOD'] = 'GET'
+        self.env['QUERY_STRING'] = 'userid=l1,l2&userd=l3,l4'
+        h = handler.SdkHandler()
+        self.assertRaises(webob.exc.HTTPBadRequest, h, self.env,
+                          dummy)
+
+    @mock.patch.object(tokens, 'validate')
     def test_guest_get_vnics_info_empty_userid_list(self, mock_validate):
         self.env['wsgiorg.routing_args'] = ()
         self.env['PATH_INFO'] = '/guests/vnicsinfo'
@@ -346,6 +356,16 @@ class GuestHandlerTest(unittest.TestCase):
             get_info.assert_called_once_with(['l1', 'l2'])
 
     @mock.patch.object(tokens, 'validate')
+    def test_guest_get_vnics_info_invalid(self, mock_validate):
+        self.env['wsgiorg.routing_args'] = ()
+        self.env['PATH_INFO'] = '/guests/vnicsinfo'
+        self.env['REQUEST_METHOD'] = 'GET'
+        self.env['QUERY_STRING'] = 'use=l1,l2'
+        h = handler.SdkHandler()
+        self.assertRaises(webob.exc.HTTPBadRequest, h, self.env,
+                          dummy)
+
+    @mock.patch.object(tokens, 'validate')
     def test_guest_get_cpu_info_empty_userid_list(self, mock_validate):
         self.env['wsgiorg.routing_args'] = ()
         self.env['PATH_INFO'] = '/guests/cpuinfo'
@@ -370,6 +390,16 @@ class GuestHandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             get_info.assert_called_once_with(['l1', 'l2'])
+
+    @mock.patch.object(tokens, 'validate')
+    def test_guest_get_cpu_info_multiple(self, mock_validate):
+        self.env['wsgiorg.routing_args'] = ()
+        self.env['PATH_INFO'] = '/guests/cpuinfo'
+        self.env['REQUEST_METHOD'] = 'GET'
+        self.env['QUERY_STRING'] = 'userid=l1,l2&userid=l3,l4'
+        h = handler.SdkHandler()
+        self.assertRaises(webob.exc.HTTPBadRequest, h, self.env,
+                          dummy)
 
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
     @mock.patch.object(tokens, 'validate')

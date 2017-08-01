@@ -16,6 +16,16 @@ import unicodedata
 import six
 
 
+def single_param(schema):
+    ret = multi_params(schema)
+    ret['maxItems'] = 1
+    return ret
+
+
+def multi_params(schema):
+    return {'type': 'array', 'items': schema}
+
+
 class ValidationRegex(object):
     def __init__(self, regex, reason):
         self.regex = regex
@@ -171,6 +181,12 @@ remotehost = {
 
 
 userid = {
+    'type': ['string'],
+}
+
+
+# This should be a comma separated string
+userid_list = {
     'type': ['string'],
 }
 
