@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1755ba44_9a139f49",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1787,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-08-01T06:27:25Z",
+      "side": 1,
+      "message": "Seems it\u0027s always \u0027smutCmd.py\u0027, don\u0027t know why steve make this as an option.\nSo each request will create a smut instance to process now?",
+      "parentUuid": "6270595f_9c96c55e",
+      "range": {
+        "startLine": 1787,
+        "startChar": 31,
+        "endLine": 1787,
+        "endChar": 38
+      },
+      "revId": "a453a3633212bafdc0a879d9e579e404b0e670d8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "87e04eed_6586410d",
         "filename": "zvmsdk/client.py",
         "patchSetId": 2
