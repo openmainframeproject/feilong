@@ -618,26 +618,26 @@ vmModifyTests = [
     {
         'description': "Add a 3390 disk to the system with xfs.",
         'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
-            "101 100m --mode w --filesystem xfs",
+            "102 100m --mode w --filesystem xfs",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Remove the 3390 disk with xfs.",
-        'request': "changevm <<<unsafeID1>>> removedisk 101",
+        'request': "changevm <<<unsafeID1>>> removedisk 102",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Add a 3390 disk to the system with swap.",
         'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
-            "101 100m --mode w --filesystem swap",
+            "103 100m --mode w --filesystem swap",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Remove the 3390 disk with swap.",
-        'request': "changevm <<<unsafeID1>>> removedisk 101",
+        'request': "changevm <<<unsafeID1>>> removedisk 103",
         'out': "",
         'overallRC': [0],
     },
@@ -679,27 +679,27 @@ vmModifyTests = [
     {
         'description': "Add a 3390 disk to the system with ext4.",
         'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
-            "101 100m --mode w --filesystem ext4",
+            "110 100m --mode w --filesystem ext4",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Online the 101 ECKD disk with ext4.",
-        'request': "CmdVM <<<unsafeID1>>> cmd '/sbin/cio_ignore -r 101; " +
-            "/sbin/chccwdev -e 101'",
+        'request': "CmdVM <<<unsafeID1>>> cmd '/sbin/cio_ignore -r 110; " +
+            "/sbin/chccwdev -e 110'",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Remove the 3390 disk with ext4.",
-        'request': "changevm <<<unsafeID1>>> removedisk 101",
+        'request': "changevm <<<unsafeID1>>> removedisk 110",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Add a 3390 disk to the system with xfs.",
         'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
-            "101 100m --mode w --filesystem xfs",
+            "111 100m --mode w --filesystem xfs",
         'out': "",
         'overallRC': [0],
     },
@@ -707,27 +707,27 @@ vmModifyTests = [
     # failure should be ignored.
     {
         'description': "Remove the 3390 disk with xfs.",
-        'request': "changevm <<<unsafeID1>>> removedisk 101",
+        'request': "changevm <<<unsafeID1>>> removedisk 111",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Add a 3390 disk to the system with swap.",
         'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
-            "101 100m --mode w --filesystem swap",
+            "112 100m --mode w --filesystem swap",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Online the 101 ECKD disk with swap.",
-        'request': "CmdVM <<<unsafeID1>>> cmd '/sbin/cio_ignore -r 101; " +
-            "/sbin/chccwdev -e 101'",
+        'request': "CmdVM <<<unsafeID1>>> cmd '/sbin/cio_ignore -r 112; " +
+            "/sbin/chccwdev -e 112'",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Remove the 3390 disk with swap.",
-        'request': "changevm <<<unsafeID1>>> removedisk 101",
+        'request': "changevm <<<unsafeID1>>> removedisk 112",
         'out': "",
         'overallRC': [0],
     },
