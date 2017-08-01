@@ -30,6 +30,7 @@ env = {'SERVER_SOFTWARE': 'WSGIServer/0.1 Python/2.7.3',
        'HTTP_ACCEPT': '*/*',
        'LESSCLOSE': '/usr/bin/lesspipe %s %s',
        'wsgi.run_once': False,
+       'QUERY_STRING': '',
        'wsgi.multiprocess': False,
        'SERVER_NAME': 'localhost',
        'REMOTE_ADDR': '127.0.0.1',
@@ -256,19 +257,6 @@ class GuestHandlerTest(unittest.TestCase):
 
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
     @mock.patch.object(tokens, 'validate')
-    def test_guest_update(self, mock_validate, mock_json):
-        mock_json.return_value = {}
-        self.env['PATH_INFO'] = '/guests/1'
-        self.env['REQUEST_METHOD'] = 'PUT'
-        h = handler.SdkHandler()
-        function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.update'
-        with mock.patch(function) as update:
-            h(self.env, dummy)
-
-            update.assert_called_once_with('1', {})
-
-    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
-    @mock.patch.object(tokens, 'validate')
     def test_guest_delete(self, mock_validate, mock_json):
         mock_json.return_value = {}
         self.env['PATH_INFO'] = '/guests/1'
@@ -310,36 +298,78 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['wsgiorg.routing_args'] = ()
         self.env['PATH_INFO'] = '/guests/meminfo'
         self.env['REQUEST_METHOD'] = 'GET'
+        self.env['QUERY_STRING'] = ''
         h = handler.SdkHandler()
-        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_memory_info'
+        func = 'zvmsdk.api.SDKAPI.guest_inspect_mem'
         with mock.patch(func) as get_info:
             h(self.env, dummy)
 
             get_info.assert_called_once_with([])
+
+    @mock.patch.object(tokens, 'validate')
+    def test_guest_get_mem_info_userid_list(self, mock_validate):
+        self.env['wsgiorg.routing_args'] = ()
+        self.env['PATH_INFO'] = '/guests/meminfo'
+        self.env['REQUEST_METHOD'] = 'GET'
+        self.env['QUERY_STRING'] = 'userid=l1,l2'
+        h = handler.SdkHandler()
+        func = 'zvmsdk.api.SDKAPI.guest_inspect_mem'
+        with mock.patch(func) as get_info:
+            h(self.env, dummy)
+
+            get_info.assert_called_once_with(['l1', 'l2'])
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_vnics_info_empty_userid_list(self, mock_validate):
         self.env['wsgiorg.routing_args'] = ()
         self.env['PATH_INFO'] = '/guests/vnicsinfo'
         self.env['REQUEST_METHOD'] = 'GET'
+        self.env['QUERY_STRING'] = ''
         h = handler.SdkHandler()
-        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_vnics_info'
+        func = 'zvmsdk.api.SDKAPI.guest_inspect_vnics'
         with mock.patch(func) as get_info:
             h(self.env, dummy)
 
             get_info.assert_called_once_with([])
 
     @mock.patch.object(tokens, 'validate')
+    def test_guest_get_vnics_info_user_list(self, mock_validate):
+        self.env['wsgiorg.routing_args'] = ()
+        self.env['PATH_INFO'] = '/guests/vnicsinfo'
+        self.env['REQUEST_METHOD'] = 'GET'
+        self.env['QUERY_STRING'] = 'userid=l1,l2'
+        h = handler.SdkHandler()
+        func = 'zvmsdk.api.SDKAPI.guest_inspect_vnics'
+        with mock.patch(func) as get_info:
+            h(self.env, dummy)
+
+            get_info.assert_called_once_with(['l1', 'l2'])
+
+    @mock.patch.object(tokens, 'validate')
     def test_guest_get_cpu_info_empty_userid_list(self, mock_validate):
         self.env['wsgiorg.routing_args'] = ()
         self.env['PATH_INFO'] = '/guests/cpuinfo'
         self.env['REQUEST_METHOD'] = 'GET'
+        self.env['QUERY_STRING'] = ''
         h = handler.SdkHandler()
-        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_cpu_info'
+        func = 'zvmsdk.api.SDKAPI.guest_inspect_cpus'
         with mock.patch(func) as get_info:
             h(self.env, dummy)
 
             get_info.assert_called_once_with([])
+
+    @mock.patch.object(tokens, 'validate')
+    def test_guest_get_cpu_info_userid_list(self, mock_validate):
+        self.env['wsgiorg.routing_args'] = ()
+        self.env['PATH_INFO'] = '/guests/cpuinfo'
+        self.env['REQUEST_METHOD'] = 'GET'
+        self.env['QUERY_STRING'] = 'userid=l1,l2'
+        h = handler.SdkHandler()
+        func = 'zvmsdk.api.SDKAPI.guest_inspect_cpus'
+        with mock.patch(func) as get_info:
+            h(self.env, dummy)
+
+            get_info.assert_called_once_with(['l1', 'l2'])
 
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
     @mock.patch.object(tokens, 'validate')
