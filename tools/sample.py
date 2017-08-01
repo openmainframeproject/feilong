@@ -10,13 +10,18 @@ def do_test():
     """ A sample for quick_start_guest()
     """
     userid = 'cbi00004'
-    image_path = '/root/images/img/rhel72-eckd-tempest.img'
-    os_version = 'rhel7'
+    image_path = '/root/images/img/rhel72-s390x-netboot-rhel72eckd_for_test.img'
+    image_meta = {'os_version': 'rhel7.2',
+                  'md5sum': '51a79a3f513de59531ab92f362285628'}
+    remote_host = None
     cpu = 1
     memory = 1024
     login_password = ''
     network_info = {'ip_addr': '192.168.114.12',
                     'vswitch_name': 'xcatvsw2',
+                    'gateway_v4': '192.168.114.1',
+                    'netmask_v4': '255.255.255.0',
+                    'broadcast_v4': '192.168.0.255',
                     'vdev': '1000',
                     'nic_id': 'ce71a70c-bbf3-480e-b0f7-01a0fcbbb44c',
                     'mac_addr': '02:00:00:0E:11:40',
@@ -26,53 +31,64 @@ def do_test():
                    'disk_pool': 'ECKD:xcateckd'}]
 
 
-    create_guest(userid, image_path, os_version,
-                 cpu, memory, login_password,
-                 network_info, disks_list)
+    create_guest(userid, image_path, image_meta,
+                 remote_host, cpu, memory,
+                 login_password, network_info, disks_list)
 
 
-def create_guest(userid, image_path, os_version,
-                 cpu, memory, login_password,
-                 network_info, disks_list):
+def create_guest(userid, image_path, image_meta,
+                 remote_host, cpu, memory,
+                 login_password, network_info, disks_list):
     """Deploy and provision a virtual machine.
-
     Input parameters:
-    :userid:     USERID of the guest, no more than 8.
-    :image_name:        path of the image file
-    :os_version:        os version of the image file
-    :cpu:               vcpu
-    :memory:            memory
-    :login_password:    login password
-    :network_info:      dict of network info.members:
-        :ip_addr:           ip address of vm
-        :gateway:           gateway of net
-        :vswitch_name:      switch name
-        :vdev:              vdev
-        :nic_id:            nic identifier
-        :mac_addr:          mac address
-        refer to do_test() for example
-    :disks_list:            list of dikks to add.eg:
-        disks_list = [{'size': '3g',
+    :param str userid:          USERID of the guest, no more than 8.
+    :param str image_name:      path of the image file
+    :param str image_meta:      os version of the image file
+    :param str remote_host:     dedicate where the image comes from,
+            the format is userid@ip_address,eg.root@192.168.111.111
+            default value is None,which means local file system
+    :param int cpu:             vcpu
+    :param int memory:          memory
+    :param str login_password:  login password
+    :param dict network_info:   dict of network info.members:
+            :ip_addr:                   ip address of vm
+            :gateway:                   gateway of net
+            :vswitch_name:              switch name
+            :vdev:                      vdev
+            :nic_id:                    nic identifier
+            :mac_addr:                  mac address
+            refer to do_test() for example
+    :param list disks_list:     list of dikks to add.
+    for example:disks_list = [{'size': '3g',
                        'is_boot_disk': True,
                        'disk_pool': 'ECKD:xcateckd'}]
     """
+
     # Import image to zvmclient
-    sdkapi.image_import(image_path, os_version)
+    image_url = "file://" + image_path
+    sdkapi.image_import(image_url, image_meta, remote_host)
+    os_version = image_meta['os_version']
     image_file_name = image_path.split('/')[-1]
     keywords = image_file_name.split('-')[-1]
-    spawn_image_exist = self._sdk_api.image_query(keywords)
+    spawn_image_exist = sdkapi.image_query(keywords)
     if not spawn_image_exist:
         print "failed to import image or image not exist."
 
     image_name = sdkapi.image_query(keywords)[0]
 
     # Get OS distribution
-    dist_manager = dist.ListDistManager()
+    dist_manager = dist.LinuxDistManager()
     linuxdist = dist_manager.get_linux_dist(os_version)()
 
     # Prepare network configuration file to inject into vm
     ip_addr = network_info['ip_addr']
-    transportfiles = configdrive.create_config_drive(ip_addr, os_version)
+    network_interface_info = {'ip_addr': ip_addr,
+                              'nic_vdev': network_info['vdev'],
+                              'gateway_v4': network_info['gateway_v4'],
+                              'broadcast_v4': network_info['broadcast_v4'],
+                              'netmask_v4': network_info['netmask_v4']}
+    transportfiles = configdrive.create_config_drive(network_interface_info,
+                                                     os_version)
     user_profile = 'osdflt'
 
     # Start time
