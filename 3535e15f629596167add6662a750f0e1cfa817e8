@@ -1,0 +1,225 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bbca41eb_cb8a214b",
+        "filename": "tools/share/zvmguestconfigure",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-02T15:32:08Z",
+      "side": 1,
+      "message": "I think we want to change this to Apache2?",
+      "revId": "3535e15f629596167add6662a750f0e1cfa817e8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1153a7fe_90239bf7",
+        "filename": "tools/share/zvmguestconfigure",
+        "patchSetId": 1
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-02T15:32:08Z",
+      "side": 1,
+      "message": "Change name here?",
+      "revId": "3535e15f629596167add6662a750f0e1cfa817e8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "09f058c6_1db55881",
+        "filename": "tools/share/zvmguestconfigure",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-02T15:32:08Z",
+      "side": 1,
+      "message": "Why don\u0027t we change the example names here too?",
+      "revId": "3535e15f629596167add6662a750f0e1cfa817e8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b75ebab1_d50488c7",
+        "filename": "tools/share/zvmguestconfigure",
+        "patchSetId": 1
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-02T15:32:08Z",
+      "side": 1,
+      "message": "Change message?",
+      "revId": "3535e15f629596167add6662a750f0e1cfa817e8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f00df77f_9d048089",
+        "filename": "tools/share/zvmguestconfigure",
+        "patchSetId": 1
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-02T15:32:08Z",
+      "side": 1,
+      "message": "Will the iso still be in that directory?",
+      "revId": "3535e15f629596167add6662a750f0e1cfa817e8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "90bf5816_92f2c77f",
+        "filename": "tools/share/zvmguestconfigure",
+        "patchSetId": 1
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-02T15:32:08Z",
+      "side": 1,
+      "message": "Is this check still valid?",
+      "revId": "3535e15f629596167add6662a750f0e1cfa817e8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0d4928b3_14fdbdad",
+        "filename": "tools/share/zvmguestconfigure",
+        "patchSetId": 1
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-02T15:32:08Z",
+      "side": 1,
+      "message": "Change this and the next few comments",
+      "revId": "3535e15f629596167add6662a750f0e1cfa817e8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2f3f57a8_70498139",
+        "filename": "tools/share/zvmguestconfigure",
+        "patchSetId": 1
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-02T15:32:08Z",
+      "side": 1,
+      "message": "Change comments in this section",
+      "revId": "3535e15f629596167add6662a750f0e1cfa817e8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "58fe62fd_ffc0ccb7",
+        "filename": "tools/share/zvmguestconfigure",
+        "patchSetId": 1
+      },
+      "lineNbr": 438,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-02T15:32:08Z",
+      "side": 1,
+      "message": "Change comments in this section",
+      "revId": "3535e15f629596167add6662a750f0e1cfa817e8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "14065f65_2bfc1a7c",
+        "filename": "tools/share/zvmguestconfigure",
+        "patchSetId": 1
+      },
+      "lineNbr": 592,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-02T15:32:08Z",
+      "side": 1,
+      "message": "Change comments in this section, also is that transportdir name still valid?",
+      "revId": "3535e15f629596167add6662a750f0e1cfa817e8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "307ac2ba_8b55ff81",
+        "filename": "tools/share/zvmguestconfigure.service",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-02T15:32:08Z",
+      "side": 1,
+      "message": "Change to new name?",
+      "revId": "3535e15f629596167add6662a750f0e1cfa817e8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4d0ccff3_c3e57a89",
+        "filename": "zthin-parts/zthin/doc/README_for_iucvselx",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-02T15:32:08Z",
+      "side": 1,
+      "message": "Remove xCAT reference here and below",
+      "revId": "3535e15f629596167add6662a750f0e1cfa817e8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da884139_9163b605",
+        "filename": "zthin-parts/zthin/doc/README_for_iucvselx",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-02T15:32:08Z",
+      "side": 1,
+      "message": "How about changing it just to \"deployed by the SDK\"?",
+      "revId": "3535e15f629596167add6662a750f0e1cfa817e8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
