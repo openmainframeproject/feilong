@@ -108,7 +108,7 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         vcpu = 1
         memory = 512
         self.sdkapi.guest_create(userid, vcpu, memory)
-        self.assertRaises(exception.ZVMException,
+        self.assertRaises(exception.ZVMCreateVMFailed,
                           self.sdkapi.guest_create,
                           userid, vcpu, memory)
         # Duplicate deletion. It's valid and there should be no error
