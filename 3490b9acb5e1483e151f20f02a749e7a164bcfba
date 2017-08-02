@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "35782787_8b7780a9",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 1786,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-08-02T06:19:32Z",
+      "side": 1,
+      "message": "This is for capture the smut function backtrace, user does not need to know this. I think we can set the value based on the SDK log level.",
+      "range": {
+        "startLine": 1786,
+        "startChar": 53,
+        "endLine": 1786,
+        "endChar": 64
+      },
+      "revId": "3490b9acb5e1483e151f20f02a749e7a164bcfba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
