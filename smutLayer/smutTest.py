@@ -1367,6 +1367,20 @@ if len(sys.argv) > 1 and sys.argv[1].upper() == '--LISTAREAS':
     for key in sorted(testSets):
         print key + ": " + testSets[key][0]
 else:
+    # Initialize the environment.  Online the punch.
+    cmd = "/sbin/cio_ignore -r d; /sbin/chccwdev -e d"
+    try:
+        subprocess.check_output(
+            cmd,
+            stderr=subprocess.STDOUT,
+            close_fds=True,
+            shell=True)
+
+    except CalledProcessError as e:
+        print("Warning: Failed to enable the punch, " +
+            "cmd: %s, rc: %i, out%s" %
+            (cmd, e.returncode, e.output))
+
     # Perform the substitution change to all requests and responses
     for key in testSets:
         for test in testSets[key][1]:
