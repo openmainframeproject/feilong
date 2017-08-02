@@ -457,7 +457,7 @@ def showInvLines(rh):
     if rh.subfunction != '':
         rh.printLn("N", "Usage:")
     rh.printLn("N", "  python " + rh.cmdName +
-        " GetVM <userid> [ consoleoutput | directory ]")
+        " GetVM <userid> [ consoleoutput | directory | isreachable ]")
     rh.printLn("N", "  python " + rh.cmdName +
         " GetVM <userid>")
     rh.printLn("N", "                    " +

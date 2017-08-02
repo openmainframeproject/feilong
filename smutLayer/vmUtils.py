@@ -875,10 +875,7 @@ def purgeReader(rh):
 
     results = invokeSMCLI(rh, "xCAT_Commands_IUO", parms)
 
-    if results['overallRC'] == 0:
-        rh.printLn("N", "Purged reader for " +
-                   rh.userid + ".")
-    else:
+    if results['overallRC'] != 0:
         rh.printLn("ES", results['response'])
         rh.updateResults(results)
 
