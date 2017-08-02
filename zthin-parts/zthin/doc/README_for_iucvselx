@@ -5,7 +5,7 @@ default, this is not an issue.
 This file describes:
 1. How to generate the SELinux policy files to allow IUCV communication.
 2. How to install the proper SELinux policy in the correct directory on the IUCV target guest.
-3. Why there is a difference between the SELinux policy file for newly deployed OpenStack/xCAT
+3. Why there is a difference between the SELinux policy file for newly deployed sdk
    guests and the policy file for existing guests.
 
 
@@ -14,14 +14,14 @@ system with SELinux running in "Enforcing" mode.
    a. Install policycoreutils-devel.
 
    b. Generate the iucvselx(_running).te file, which is the source of the .pp file.
-      i. For a system newly deployed via OpenStack/xCAT:
+      i. For a system newly deployed via sdk:
              "grep iucvserv /var/log/audit/audit.log | audit2allow -m iucvselx > iucvselx.te"
       ii. For an existing system, deployed via another method:
              "grep iucvserv /var/log/audit/audit.log | audit2allow -m iucvselx_running >
               iucvselx_running.te"
 
    c. Generate the iucvselx(_running).pp file, which is the SElinux policy file for the IUCV daemon.
-      i. For a system newly deployed via OpenStack/xCAT:
+      i. For a system newly deployed via sdk:
              "grep iucvserv /var/log/audit/audit.log | audit2allow -M iucvselx.pp"
       ii. For an existing system, deployed via another method:
              "grep iucvserv /var/log/audit/audit.log | audit2allow -M iucvselx_running.pp"
@@ -30,9 +30,9 @@ system with SELinux running in "Enforcing" mode.
    On the target system:
       "semodule -i iucvselx.pp" or "semodule -i iucvselx_running.pp"
 
-3. The difference between the SELinux policy file for newly deployed OpenStack/xCAT guests vs the
+3. The difference between the SELinux policy file for newly deployed sdk guests vs the
    policy file for existing guests.
-   a. When the system is deployed by OpenStack or xCAT, IUCV related files are copied by xcatconf4z
+   a. When the system is deployed by sdk, IUCV related files are copied by zvmguestconfigure
       at the system init stage, and the IUCV daemon process runs in the init_t domain.
 
    b. For an existing running system, we use "scp" to copy file to the target guest,  and the IUCV
