@@ -1,0 +1,639 @@
+#!/bin/bash
+# Copyright 2017 IBM Corp.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+#
+### BEGIN INIT INFO
+# Provides: zvmguestconfigure
+# Default-Start: 2 3 5
+# Default-stop: 0 1 4 6
+# Required-Start: $syslog
+# Should-Start:
+# Required-Stop:
+# Short-Description: A basic active engine used to initialize and configure vm.
+# Description: Reads class x files from the reader and acts based on the type of file.
+#              Generate an ISO9660 disk for cloud-init to handle sdk configurations.
+#              Files of filetype "disk" cause disks be configured. (deprecated)
+#              Other files are used to configure vm when it start up.
+### END INIT INFO
+
+###############################################################################
+# Authorized senders of configuration files listed here.  Specify a list a
+# blank delimited list of userids with each userid in uppercase
+# (e.g. "AUTH" or "AUTH AUTH2"), or '*' to indicate all are authorized.
+# If nothing is specified then this function will not process any
+# configuration files in the reader.
+###############################################################################
+version=3.0
+authorizedSenders=''
+
+function getOsVersion {
+  # @Description:
+  #   Returns the Linux distro version in an easy to parse format.
+  # @Input:
+  #   None
+  # @Output:
+  #   os - Variable set with OS and version information.  For example:
+  #        "rhel62" or "sles11sp2"
+  # @Code:
+  release=`cat /etc/*release`
+
+  if echo $release | grep -i "SUSE Linux Enterprise Server" > /dev/null ; then
+    os='sles'
+    version=`echo "$release" | grep "VERSION =" | sed \
+      -e 's/^.*VERSION =//' \
+      -e 's/\s*$//' \
+      -e 's/.//' \
+      -e 's/[^0-9]*([0-9]+).*/$1/'`
+    os=$os$version;
+
+    # Append service level
+    level=`echo "$release" | grep "LEVEL =" | sed \
+      -e 's/^.*LEVEL =//' \
+      -e 's/\s*$//' \
+      -e 's/.//' \
+      -e 's/[^0-9]*([0-9]+).*/$1/'`
+    os=$os'sp'$level
+
+  elif version=`echo $release | grep -i "Red Hat Enterprise Linux Server"`; then
+    os='rhel'
+    version=`echo $version | sed \
+      -e 's/[A-Za-z\/\.\(\)]//g' \
+      -e 's/^ *//g' \
+      -e 's/ *$//g' \
+      -e 's/\s.*$//'`
+    os=$os$version
+  fi
+  return
+}
+
+function onlineDevice {
+  # @Description:
+  #   Brings a Linux device online.
+  # @Input:
+  #   Device number, e.g. "0.0.000c"
+  # @Output:
+  #   Return code indicates success or failure
+  # @Code:
+  device=$1
+  local funcName="onlineDevice"
+  rc=$(/sbin/chccwdev -e $device > /dev/null; echo $?)
+  if (( rc != 0 )); then
+    if [[ -e /sbin/cio_ignore ]]; then
+      rc=$(/sbin/cio_ignore -r 0.0.$device > /dev/null; echo $?)
+      which udevadm &> /dev/null && udevadm settle || udevsettle
+    fi
+    rc=$(/sbin/chccwdev -e $device > /dev/null; echo $?)
+    if (( rc != 0 )); then
+      echo "zvmguestconfigure $funcName (Error) Could not activate the virtual device $device"
+      return 1
+    fi
+  fi
+  which udevadm &> /dev/null && udevadm settle || udevsettle
+  return 0
+}
+
+function pullReader {
+  # @Description:
+  #   Reads class x spool files from the reader if sent by an authorized sender.
+  #   Drives special processing functions for files of a specific type.
+  #   Files with a filetype of:
+  #     tgz are unpacked into the transport directory
+  #     disk files are read and cause the setupDisk function to be driven (deprecated)
+  #     doscript that contains a invokeScript.sh which will call the other script in it to do the speicial work
+  #     all other files are unpacked into the transport directory
+  # @Input:
+  #   None
+  # @Output:
+  #   Return code indicates success if reader was brought online.
+  # @Code:
+  local funcName="pullReader"
+  /sbin/modprobe vmcp
+
+  # Online reader
+  rc= onlineDevice "000c"
+  if (( rc != 0 )); then
+      return $rc
+  fi
+
+  # Grab the spool Id, class file name, and file type
+  eval records=($(/usr/sbin/vmur li | tail -n +2 | cut -c 1-72 | awk '{print $1":"$2":"$3":"$10":"$11"\n"}' ))
+
+  # Process each spool file that is class "x"
+  for record in "${records[@]}"
+  do
+    record=$(echo $record | tr ":" " ")
+    set $record
+    originid=$1
+    spoolid=$2
+    class=$3
+    filename=$4
+    type=$5
+
+    if [[ $class != "X" ]]; then
+      # Spool file is not of the class required for processing by this script.
+      continue
+    fi
+
+    if [[ $authorizedSenders != "*" ]]; then
+      if [[ " $authorizedSenders " != *" $originid "* ]]; then
+        # Originator is not authorized to send configuration files.
+        continue
+      fi
+    fi
+
+    if [[ -n $type ]]; then
+      file="$filename.$type"
+    else
+      file=$filename
+    fi
+
+    # Receive the spool file
+    echo "Downloading record $spoolid: $file"
+
+    if [[ $type == "txt" ]]; then
+      # Receiving text
+      rc=$(/usr/sbin/vmur re -f $spoolid $file)
+    elif [[ $type == "sh" ]]; then
+      # Receiving shell
+      rc=$(/usr/sbin/vmur re -f $spoolid $file)
+      /bin/bash $file
+      rm $file
+    elif [[ $type == "tgz" ]]; then
+      rc=$(/usr/sbin/vmur re $spoolid $file)
+      /bin/tar xzf $file -C $transportdir
+      rm $file
+      injectFiles
+    elif [[ $type == "doscript" ]]; then
+      rc=$(/usr/sbin/vmur re $spoolid $file)
+      /bin/tar xf $file -C $transportdir
+      rm $file
+      /bin/bash invokeScript.sh
+    elif [[ $type == "disk" ]]; then
+      echo 'disk file encountered and will be handled by the deprecated setupDisk function'
+      rc=$(/usr/sbin/vmur re $spoolid $file)
+      if (( rc == 0 )); then
+        setupDisk $transportdir'/'$file
+        rc=0
+      fi
+    else
+      # Receive block
+      rc=$(/usr/sbin/vmur re $spoolid $file)
+    fi
+
+    if (( rc != 0 )); then
+      echo "zvmguestconfigure funcName (Error) Failed to download record $spoolid"
+    fi
+  done
+  return 0
+}
+
+function setupIso {
+  # @Description:
+  #   Makes an ISO filesystem using the contents of the transport directory and
+  #   creates a loop device pointing to the ISO image.  If an "init.sh" script
+  #   exists in the transport directory then it is driven.
+  # @Input:
+  #   None
+  # @Output:
+  #   None
+  # @Code:
+  local funcName="setupIso"
+  iso="/var/opt/transport/transport.iso"
+
+  # If there are files in the transport directory then create an ISO system.
+  if [ "$(ls -A .)" ]; then
+    /usr/bin/mkisofs -l -V 'config-2' -o $iso $transportdir
+    if [ -e /tmp/znetconfig.sh ]; then
+      /bin/bash /tmp/znetconfig.sh
+    fi
+  fi
+
+  # If the ISO filesystem exists then create loop back device pointing
+  # to the ISO9660 image
+  if [[ -e $iso ]]; then
+    nextLoopDev=`/sbin/losetup -f`
+    if [[ -n $nextLoopDev ]]; then
+      /sbin/losetup $nextLoopDev $iso
+    fi
+  fi
+
+  # Execute init script (if one exists)
+  if [[ -e ${transportdir}/init.sh ]]; then
+    chmod 755 ${transportdir}/init.sh
+    ${transportdir}/init.sh
+  fi
+}
+
+function setupDisk {
+  # @Description:
+  #   Processes a disk file for the following functions:
+  #     create a file system node
+  #     Setup a SCSI volume
+  #     Removes a SCSI volume
+  # @Input:
+  #   Location and name of the disk file.
+  # @Output:
+  #   None
+  # @Code:
+  diskFile=$1
+  local funcName="setupDisk"
+
+  # Read the file and verify we want to handle it
+  if ! grep -q "# zthin Init" "$diskFile"; then
+    # File is not one that we handle.  Leave it alone.
+    return
+  fi
+
+  # Read the file now that we know it is our file
+  oldIFS=$IFS
+  IFS=$'\n'
+  for line in $(cat "$diskFile"); do
+    if [[ $line == \#* ]]; then
+      # Ignore comment lines
+      continue
+    fi
+    keyName=${line%\=*}
+    value=${line#*\=}
+    value=$(echo ${value} | sed -e 's/^ *//g')
+    newKey='zthin_'$keyName
+    eval $newKey=$value
+  done
+  IFS=$oldIFS
+
+  # Remove the disk file after we have read it
+  rm $diskFile
+
+  ##########################################################################
+  # Handle creating a file system node
+  # Disk file input parameters:
+  #   action - "createfilesysnode"
+  #   srcFile - location/name of the source file for the mknod command
+  #   tgtFile - location/name of the target file for the mknod command
+  ##########################################################################
+  if [[ $zthin_action == "createfilesysnode" ]]; then
+    echo "Creating a file system node, source: $zthin_srcFile, target: $zthin_tgtFile"
+
+    if [[ ! -n $zthin_srcFile ]]; then
+      echo "zvmguestconfigure $funcName (Error) Source file for creating a file system node was not specified"
+      return
+    fi
+
+    if [[ ! -n $zthin_tgtFile ]]; then
+      echo "zvmguestconfigure $funcName (Error) Target file for creating a file system node was not specified"
+      return
+    fi
+    if [[ -e $zthin_tgtFile ]]; then
+      echo "zvmguestconfigure $funcName (Error) Target file for creating a file system node already exists"
+      return
+    fi
+
+    out=`/usr/bin/stat --printf=%n ${zthin_srcFile}`
+    if (( $? != 0 )); then
+      echo "zvmguestconfigure $funcName (Error) Unable to stat the source file: $zthin_srcFile"
+      return
+    fi
+
+    configFile='/etc/udev/rules.d/56-zfcp.rules'
+    tgtNode=$(echo ${zthin_tgtFile} | sed -e 's/^\/dev\///')
+    wwpn_lun=$(echo ${zthin_srcFile} | sed -e 's/^\/dev.*-zfcp-//')
+    wwpn=$(echo ${wwpn_lun} | sed -e 's/:0x.*//')
+    lun=$(echo ${wwpn_lun} | sed -e 's/^0x.*://')
+
+    echo "KERNEL==\"sd*\", SYSFS{wwpn}==\"${wwpn}\", SYSFS{fcp_lun}==\"${lun}\", SYMLINK+=\"${tgtNode}%n\"" >> ${configFile}
+    udevadm trigger --sysname-match=sd*
+
+  ##########################################################################
+  # Handle removing a file system node
+  # Disk file input parameters:
+  #   action - "removefilesysnode"
+  #   tgtFile - location/name of the target file for the mknod command
+  ##########################################################################
+  elif [[ $zthin_action == "removefilesysnode" ]]; then
+    echo "Removing a file system node, target: $zthin_tgtFile"
+    if [[ ! -n $zthin_tgtFile ]]; then
+      echo "zvmguestconfigure $funcName (Error) Target file for creating a file system node was not specified"
+      return
+    fi
+
+    configFile='/etc/udev/rules.d/56-zfcp.rules'
+    tgtNode=$(echo ${zthin_tgtFile} | sed -e 's/^\/dev\///')
+
+    sed -i -e /SYMLINK+=\"${tgtNode}%n\"/d ${configFile}
+    udevadm trigger --sysname-match=sd*
+
+  ##########################################################################
+  # Handle adding a SCSI volume
+  # Disk file input parameters:
+  #   action - "addScsiVolume"
+  #   fcpAddr - FCP device address
+  #   wwpn - WWPN number
+  #   lun - LUN number
+  ##########################################################################
+  elif [[ $zthin_action == "addScsiVolume" ]]; then
+    echo "Adding a SCSI Volume, FCP addr: $zthin_fcpAddr, WWPN: $zthin_wwpn, LUN: $zthin_lun"
+
+    # Validate the input
+    if [[ ! -n $zthin_fcpAddr ]]; then
+      echo "zvmguestconfigure $funcName (Error) FCP address was not specified"
+      return
+    fi
+    zthin_fcpAddr=`echo $zthin_fcpAddr | tr '[A-Z]' '[a-z]'`
+
+    if [[ ! -n $zthin_wwpn ]]; then
+      echo "zvmguestconfigure $funcName (Error) WWPN was not specified"
+      return
+    fi
+    zthin_wwpn=`echo $zthin_wwpn | tr '[A-Z]' '[a-z]'`
+
+    if [[ ! -n $zthin_lun ]]; then
+      echo "zvmguestconfigure $funcName (Error) LUN was not specified"
+      return
+    fi
+    zthin_lun=`echo $zthin_lun | tr '[A-Z]' '[a-z]'`
+
+    # Online the device
+    rc= onlineDevice $zthin_fcpAddr
+    if (( rc != 0 )); then
+      return
+    fi
+
+    # Set WWPN and LUN in sysfs
+    if [[ -e /sys/bus/ccw/drivers/zfcp/0.0.$zthin_fcpAddr/port_add ]]; then
+      echo 0x$zthin_wwpn > /sys/bus/ccw/drivers/zfcp/0.0.$zthin_fcpAddr/port_add
+    fi
+    echo 0x$zthin_lun > /sys/bus/ccw/drivers/zfcp/0.0.$zthin_fcpAddr/0x$zthin_wwpn/unit_add
+
+    # Set WWPN and LUN in configuration files
+    #   RHEL: /etc/zfcp.conf
+    #   SLES 10: /etc/sysconfig/hardware/hwcfg-zfcp-bus-ccw-*
+    #   SLES 11: /etc/udev/rules.d/51-zfcp*
+    if [[ $os == sles10* ]]; then
+      /sbin/zfcp_host_configure 0.0.$zthin_fcpAddr 1
+      /sbin/zfcp_disk_configure 0.0.$zthin_fcpAddr $zthin_wwpn $zthin_lun 1
+      echo "0x$zthin_wwpn:0x$zthin_lun" >> /etc/sysconfig/hardware/hwcfg-zfcp-bus-ccw-0.0.$zthin_fcpAddr
+    elif [[ $os == sles11* ]]; then
+      /sbin/zfcp_host_configure 0.0.$zthin_fcpAddr 1
+      /sbin/zfcp_disk_configure 0.0.$zthin_fcpAddr $zthin_wwpn $zthin_lun 1
+
+      # Configure zFCP device to be persistent
+      touch /etc/udev/rules.d/51-zfcp-0.0.$zthin_fcpAddr.rules
+
+      # Check if the file already contains the zFCP channel
+      out=`cat "/etc/udev/rules.d/51-zfcp-0.0.$zthin_fcpAddr.rules" | egrep -i "ccw/0.0.$zthin_fcpAddr]online"`
+      if [[ ! $out ]]; then
+        echo "ACTION==\"add\", SUBSYSTEM==\"ccw\", KERNEL==\"0.0.$zthin_fcpAddr\", IMPORT{program}=\"collect 0.0.$zthin_fcpAddr %k 0.0.$zthin_fcpAddr zfcp\"" \
+          | tee -a /etc/udev/rules.d/51-zfcp-0.0.$zthin_fcpAddr.rules
+        echo "ACTION==\"add\", SUBSYSTEM==\"drivers\", KERNEL==\"zfcp\", IMPORT{program}=\"collect 0.0.$zthin_fcpAddr %k 0.0.$zthin_fcpAddr zfcp\"" \
+          | tee -a /etc/udev/rules.d/51-zfcp-0.0.$zthin_fcpAddr.rules
+        echo "ACTION==\"add\", ENV{COLLECT_0.0.$zthin_fcpAddr}==\"0\", ATTR{[ccw/0.0.$zthin_fcpAddr]online}=\"1\"" \
+          | tee -a /etc/udev/rules.d/51-zfcp-0.0.$zthin_fcpAddr.rules
+      fi
+
+      echo "ACTION==\"add\", KERNEL==\"rport-*\", ATTR{port_name}==\"0x$zthin_wwpn\", SUBSYSTEMS==\"ccw\", KERNELS==\"0.0.$zthin_fcpAddr\", ATTR{[ccw/0.0.$zthin_fcpAddr]0x$zthin_wwpn/unit_add}=\"0x$zthin_lun\"" \
+        | tee -a /etc/udev/rules.d/51-zfcp-0.0.$device.rules
+    elif [[ $os == rhel* ]]; then
+      echo "0.0.$zthin_fcpAddr 0x$zthin_wwpn 0x$zthin_lun" >> /etc/zfcp.conf
+
+      if [[ $os == rhel6* ]]; then
+        echo "add" > /sys/bus/ccw/devices/0.0.$zthin_fcpAddr/uevent
+      fi
+    fi
+
+    # Settle the file system so when we are done the device is fully available
+    if [[ $(which udevadm 2> /dev/null) != '' ]]; then
+        udevadm settle
+    else
+        udevsettle
+    fi
+    if [[ ! -e "/dev/disk/by-path/ccw-0.0.${zthin_fcpAddr}-zfcp-0x${zthin_wwpn}:0x${zthin_lun}" ]]; then
+      # Sometimes the file takes longer to appear.  We will wait up to 3 minutes.
+      maxTime=0
+      for time in 1 2 2 5 10 10 30 60 60
+      do
+        if [[ -e "/dev/disk/by-path/ccw-0.0.${zthin_fcpAddr}-zfcp-0x${zthin_wwpn}:0x${zthin_lun}" ]]; then
+          # Leave the loop now that the file exists
+          break
+        fi
+        maxTime=$maxTime+$time
+        echo "Sleeping for $time seconds to allow /dev/disk/by-path/ccw-0.0.${zthin_fcpAddr}-zfcp-0x${zthin_wwpn}:0x${zthin_lun} to be created"
+        sleep $time
+      done
+    fi
+    if [[ ! -e "/dev/disk/by-path/ccw-0.0.${zthin_fcpAddr}-zfcp-0x${zthin_wwpn}:0x${zthin_lun}" ]]; then
+      echo "/dev/disk/by-path/ccw-0.0.${zthin_fcpAddr}-zfcp-0x${zthin_wwpn}:0x${zthin_lun} did not appear in $maxTime seconds, continuing."
+    fi
+
+  ##########################################################################
+  # Handle removing a SCSI volume
+  # Disk file input parameters:
+  #   action - "removeScsiVolume"
+  #   fcpAddr - FCP device address
+  #   wwpn - WWPN number
+  #   lun - LUN number
+  ##########################################################################
+  elif [[ $zthin_action == "removeScsiVolume" ]]; then
+    echo "Removing a SCSI Volume, FCP addr: $zthin_fcpAddr, WWPN: $zthin_wwpn, LUN: $zthin_lun"
+
+    # Validate the input
+    if [[ ! -n $zthin_fcpAddr ]]; then
+      echo "zvmguestconfigure $funcName (Error) FCP address was not specified"
+      return
+    fi
+    zthin_fcpAddr=`echo $zthin_fcpAddr | tr '[A-Z]' '[a-z]'`
+
+    if [[ ! -n $zthin_wwpn ]]; then
+      echo "zvmguestconfigure $funcName (Error) WWPN was not specified"
+      return
+    fi
+    zthin_wwpn=`echo $zthin_wwpn | tr '[A-Z]' '[a-z]'`
+
+    if [[ ! -n $zthin_lun ]]; then
+      echo "zvmguestconfigure $funcName (Error) LUN was not specified"
+      return
+    fi
+    zthin_lun=`echo $zthin_lun | tr '[A-Z]' '[a-z]'`
+
+    # Delete the SCSI device
+    scsiDevice=`lszfcp -l 0x$zthin_lun | grep 0x$zthin_lun | cut -d " " -f2`
+    if [[ -n $scsiDevice ]]; then
+      echo 1 > "/sys/bus/scsi/devices/$scsiDevice/delete"
+    fi
+
+    # Delete WWPN and LUN from sysfs
+    if [[ -e /sys/bus/ccw/drivers/zfcp/0.0.$zthin_fcpAddr/0x$zthin_wwpn/unit_remove ]]; then
+      if [[ $(which udevadm 2> /dev/null) != '' ]]; then
+        udevadm settle
+      else
+        udevsettle
+      fi
+      echo 0x$zthin_lun > /sys/bus/ccw/drivers/zfcp/0.0.$zthin_fcpAddr/0x$zthin_wwpn/unit_remove
+    fi
+
+    # Delete WWPN and LUN from configuration files
+    #   RHEL: /etc/zfcp.conf
+    #   SLES 10: /etc/sysconfig/hardware/hwcfg-zfcp-bus-ccw-*
+    #   SLES 11: /etc/udev/rules.d/51-zfcp*
+    if [[ $os == sles10* ]]; then
+      expression="/$zthin_lun/d"
+      sed --in-place -e $expression /etc/sysconfig/hardware/hwcfg-zfcp-bus-ccw-0.0.$zthin_fcpAddr
+    elif [[ $os == sles11* ]]; then
+      expression="/$zthin_lun/d"
+      sed --in-place -e $expression /etc/udev/rules.d/51-zfcp-0.0.$zthin_fcpAddr.rules
+    elif [[ $os == rhel* ]]; then
+      expression="/$zthin_lun/d"
+      sed --in-place -e $expression /etc/zfcp.conf
+    fi
+
+  ###########################################################################
+  # Handle adding a mdisk based ephemeral disk.
+  # Disk file input parameters:
+  #   action  - "addMdisk"
+  #   vaddr   - virtual address of the minidisk
+  #   filesys - Filesystem type
+  #   mntdir - The directory that mount the mdisk to
+  ##########################################################################
+  elif [[ $zthin_action == "addMdisk" ]]; then
+    echo "Adding a minidisk based ephemeral disk, Vaddr: $zthin_vaddr, Filesystem: $zthin_filesys mountpoint:$zthin_mntdir"
+
+    # Validate the input
+    if [[ ! -n $zthin_vaddr ]]; then
+      echo "zvmguestconfigure $funcName (Error) Virtual address was not specified"
+      return
+    fi
+    zthin_vaddr=`echo $zthin_vaddr | tr '[A-Z]' '[a-z]'`
+
+    # Online the device
+    rc= onlineDevice $zthin_vaddr
+    if (( rc != 0 )); then
+      echo "zvmguestconfigure $funcName (Error) fail to online the disk $zthin_vaddr"
+      return
+    fi
+
+    # Configure the added dasd to be persistent
+    echo "Permenently online the ephemeral disk"
+    if [[ $os == rhel* ]]; then
+      out=`cat "/etc/dasd.conf" | egrep -i $zthin_vaddr`
+      if [[ ! $out ]]; then
+        echo "0.0.$zthin_vaddr" >> /etc/dasd.conf
+      fi
+    else
+      /sbin/dasd_configure 0.0.$zthin_vaddr 1
+    fi
+
+    # Mount the mdisk to the specified mount point
+    echo "Mounting the ephemeral disk $zthin_vaddr to directory $zthin_mntdir"
+    if [[ -d $zthin_mntdir ]]; then
+      rm -rf $zthin_mntdir
+    fi
+    mkdir -p $zthin_mntdir
+
+    cp /etc/fstab /etc/fstab.bak
+    out=`cat "/etc/fstab" | egrep -i "ccw-0.0.$zthin_vaddr"`
+    if [[  $out ]]; then
+      sed -i '/ccw-0.0.'"$zthin_vaddr"'/d' /etc/fstab
+    fi
+    echo "/dev/disk/by-path/ccw-0.0.${zthin_vaddr}-part1 $zthin_mntdir $zthin_filesys defaults 0 0" >> /etc/fstab
+
+    out=`mount -a 2>&1`
+    if [[ "$out" ]]; then
+      echo "Fail to mount the disk $zthin_vaddr with reason $out"
+      mv /etc/fstab.bak /etc/fstab
+      mount -a
+    else
+      echo "The disk $zthin_vaddr has been mounted to $zthin_mntdir in format $zthin_filesys successfully"
+    fi
+
+  fi
+
+  return
+}
+
+function injectFiles {
+  # @Description:
+  #   Inject network files and scripts
+  # @Input:
+  #   None
+  # @Output:
+  #   None
+  # @Code:
+  local funcName="injectFiles"
+
+  if [[ ! -e $transportdir/sdk/latest/meta_data.json ]]; then
+    echo "Can not inject files, because no meta_data.json"
+    return
+  fi
+
+  echo "File injecting ...."
+  awk '{
+    #get inject files info
+    split($0 ,res1,/"files": \[/)
+    split(res1[2], res2, /\]/)
+    n=split(res2[1], res, /}, /)
+
+    for(m=1;m<=n;m++)
+    {
+      split(res[m], temp1, /{"path": "/)
+      k=split(temp1[2], temp2, /", "content_path": "/)
+      sub(/"}*$/, "", temp2[2])
+      #print temp2[1] " : " temp2[2]
+      des = dir "/sdk" temp2[2]
+      cmd = "cp " des " " temp2[1]
+      #print cmd
+      system(cmd)
+    }
+  }' dir=$transportdir <$transportdir/sdk/latest/meta_data.json
+  return
+}
+
+############################################################################
+# Main Code Section
+############################################################################
+case "$1" in
+  start)
+    echo "zvmguestconfigure is starting"
+    transportdir="/var/opt/zthin/transport"
+    rm -Rf $transportdir
+    /bin/mkdir -p $transportdir
+    cd $transportdir
+
+    # Get Linux version
+    getOsVersion
+
+    if [[ -n "$authorizedSenders" ]]; then
+      pullReader
+      echo "zvmguestconfigure has successfully processed the reader files."
+    else
+      echo "zvmguestconfigure is disabled from accepting configuration reader files."
+    fi
+
+    setupIso
+  ;;
+
+  status)
+    if [[ -n "$authorizedSenders" ]]; then
+      echo "zvmguestconfigure is enabled to accept configuration reader files from: $authorizedSenders"
+    else
+      echo "zvmguestconfigure is disabled from accepting configuration reader files."
+    fi
+  ;;
+
+  version)
+    echo "zvmguestconfigure version:" $version
+  ;;
+
+  stop|restart|reload|force-reload)
+    # Do nothing
+  ;;
+
+esac
