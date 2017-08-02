@@ -32,7 +32,7 @@ system with SELinux running in "Enforcing" mode.
 
 3. The difference between the SELinux policy file for newly deployed OpenStack/xCAT guests vs the
    policy file for existing guests.
-   a. When the system is deployed by OpenStack or xCAT, IUCV related files are copied by xcatconf4z
+   a. When the system is deployed by OpenStack, IUCV related files are copied by zvmguestconfigure
       at the system init stage, and the IUCV daemon process runs in the init_t domain.
 
    b. For an existing running system, we use "scp" to copy file to the target guest,  and the IUCV
