@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e796df65_b2a56a5c",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 1793,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-08-03T02:22:42Z",
+      "side": 1,
+      "message": "After another thought, this smut_request may be better be put into the SMUTClient class, not zvmutils, it is a little weird to pass \u0027self._smut\u0027 each time to call this function.",
+      "range": {
+        "startLine": 1793,
+        "startChar": 27,
+        "endLine": 1793,
+        "endChar": 39
+      },
+      "revId": "83a797c5cc95bfb17846e2301372fda0eea4d619",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2b287e94_a8f71455",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 1007,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-08-03T02:22:42Z",
+      "side": 1,
+      "message": "We\u0027d better not mix these info into the \u0027msg\u0027, otherwise the upper consumer would still need to convert the msg string to get the actual error code and other info. \nso, I would suggest to define new attributes to the requestfailed exception class to hold these info.",
+      "range": {
+        "startLine": 1004,
+        "startChar": 12,
+        "endLine": 1007,
+        "endChar": 73
+      },
+      "revId": "83a797c5cc95bfb17846e2301372fda0eea4d619",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
