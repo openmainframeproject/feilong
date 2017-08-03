@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "4c582b13_7463be92",
+        "filename": "tools/share/zvmguestconfigure",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-08-03T06:50:58Z",
+      "side": 1,
+      "message": "This function can be deleted from zvmguestconfig file ,since it\u0027s covered in setupDisk script file. \nhttps://review.gerrithub.io/#/c/372208/2/scripts/setupDisk",
+      "range": {
+        "startLine": 40,
+        "startChar": 9,
+        "endLine": 40,
+        "endChar": 21
+      },
+      "revId": "936972b63f794677369382b8d921a8367daa5b24",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ccd4032_00485c64",
+        "filename": "tools/share/zvmguestconfigure",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-08-03T06:50:58Z",
+      "side": 1,
+      "message": "This function can be deleted from zvmguestconfig file ,since it\u0027s covered in setupDisk script file. \nhttps://review.gerrithub.io/#/c/372208/2/scripts/setupDisk",
+      "range": {
+        "startLine": 80,
+        "startChar": 22,
+        "endLine": 80,
+        "endChar": 23
+      },
+      "revId": "936972b63f794677369382b8d921a8367daa5b24",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "20acbc89_794552c9",
+        "filename": "tools/share/zvmguestconfigure",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-08-03T06:50:58Z",
+      "side": 1,
+      "message": "This function can be deleted from zvmguestconfig file ,since it\u0027s covered in setupDisk script file. \nhttps://review.gerrithub.io/#/c/372208/2/scripts/setupDisk",
+      "range": {
+        "startLine": 238,
+        "startChar": 19,
+        "endLine": 238,
+        "endChar": 20
+      },
+      "revId": "936972b63f794677369382b8d921a8367daa5b24",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6308a4f1_42a6a927",
         "filename": "tools/share/zvmguestconfigure.service",
         "patchSetId": 2
@@ -13,6 +82,30 @@
       "writtenOn": "2017-08-02T20:01:13Z",
       "side": 1,
       "message": "\"vm\" is misleading. You are configuring the virtual OS not the virtual machine.  Configuration of the virtual machine container was performed by sdk/SMUT.",
+      "range": {
+        "startLine": 2,
+        "startChar": 46,
+        "endLine": 2,
+        "endChar": 48
+      },
+      "revId": "936972b63f794677369382b8d921a8367daa5b24",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "aa1dc359_1a602f09",
+        "filename": "tools/share/zvmguestconfigure.service",
+        "patchSetId": 2
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-08-03T06:50:58Z",
+      "side": 1,
+      "message": "Agree",
+      "parentUuid": "6308a4f1_42a6a927",
       "range": {
         "startLine": 2,
         "startChar": 46,
