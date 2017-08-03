@@ -441,40 +441,42 @@ class SDKAPI(object):
                controlling the real device, or '*' to specifies that any
                available controller may be used
         :param str connection: One of the following values:
-               CONnect-Activate the real device connection.
-               DISCONnect-Do not activate the real device connection.
-               NOUPLINK-The vswitch will never have connectivity through the
-               UPLINK port
+                - CONnect: Activate the real device connection.
+                - DISCONnect: Do not activate the real device connection.
+                - NOUPLINK: The vswitch will never have connectivity through
+                the UPLINK port
         :param str network_type: Specifies the transport mechanism to be used
                for the vswitch, as follows: IP, ETHERNET
         :param str router: Specified whether the OSA-Express QDIO
                device will act as a router to the virtual switch, as follows:
-               NONrouter-The OSA-Express device identified in
-               real_device_address= will not act as a router to the vswitch
-               PRIrouter-The OSA-Express device identified in
-               real_device_address= will act as a primary router to the vswitch
+                - NONrouter: The OSA-Express device identified in
+                real_device_address= will not act as a router to the vswitch
+                - PRIrouter: The OSA-Express device identified in
+                real_device_address= will act as a primary router to the
+                vswitch
                If the network_type is ETHERNET, this value must be unspecified,
                otherwise, if this value is unspecified, default is NONROUTER
         :param str/int vid: the VLAN ID. This can be any of the following
                values: UNAWARE, AWARE or 1-4094
-        :param str port_type: defines the default porttype attribute for guests
-               authorized for the virtual switch, as follows:
-               ACCESS-the guest is unaware of VLAN IDs and sends and receives
-               only untagged traffic
-               TRUNK-the guest is VLAN aware and sends and receives tagged
-               traffic for those VLANs to which the guest is authorized. If the
-               guest is also authorized to the natvid, untagged traffic sent
-               or received by the guest is associated with the native
-               VLAN ID (natvid) of the virtual switch.
+        :param str port_type: defines the default porttype attribute for
+               guests authorized for the virtual switch, as follows:
+                - ACCESS: the guest is unaware of VLAN IDs and sends and
+                receives only untagged traffic
+                - TRUNK: the guest is VLAN aware and sends and receives tagged
+                traffic for those VLANs to which the guest is authorized. If
+                the guest is also authorized to the natvid, untagged traffic
+                sent or received by the guest is associated with the native
+                VLAN ID (natvid) of the virtual switch.
         :param str gvrp: GVRP, NOGVRP
-               GVRP-indicates that the VLAN IDs in use on the virtual switch
-               should be registered with GVRP-aware switches on the LAN.
-               This provides dynamic VLAN registration and VLAN registration
-               removal for networking switches. This eliminates the need to
-               manually configure the individual port VLAN assignments.
-               NOGVRP-Do not register VLAN IDs with GVRP-aware switches on the
-               LAN. When NOGVRP is specified VLAN port assignments must be
-               configured manually
+                - GVRP: indicates that the VLAN IDs in use on the virtual
+                switch should be registered with GVRP-aware switches on the
+                LAN. This provides dynamic VLAN registration and VLAN
+                registration removal for networking switches. This eliminates
+                the need to manually configure the individual port VLAN
+                assignments.
+                - NOGVRP: Do not register VLAN IDs with GVRP-aware switches on
+                the LAN. When NOGVRP is specified VLAN port assignments must
+                be configured manually
         :param int queue_mem: A number between 1 and 8, specifying the QDIO
                buffer size in megabytes.
         :param int native_vid: the native vlan id, 1-4094 or None
