@@ -31,23 +31,6 @@ class SDKImageOpsTestCase(base.SDKTestCase):
         self._image_ops = imageops.get_imageops()
         self._pathutil = zvmutils.PathUtils()
 
-    @mock.patch.object(zvmutils, 'execute')
-    def test_image_get_root_disk_size(self, execute_cmd):
-        fake_name = 'rhel7.2-s390x-netboot-fake_image_uuid'
-        execute_cmd.return_value =\
-            '00000000  78 43 41 54 20 43 4b 44  20 44 69 73 6b 20 49 6d  ' +\
-            '|xCAT CKD Disk Im|\n' +\
-            '00000010  61 67 65 3a 20 20 20 20  20 20 20 20 33 33 33 38  ' +\
-            '|age:        3338|\n' +\
-            '00000020  20 43 59 4c 20 48 4c 65  6e 3a 20 30 30 35 35 20  ' +\
-            '| CYL HLen: 0055 |\n' +\
-            '00000030  47 5a 49 50 3a 20 36 20  20 20 20 20 20 20 20 20  ' +\
-            '|GZIP: 6         |\n' +\
-            '00000040'
-
-        ret = self._image_ops.image_get_root_disk_size(fake_name)
-        self.assertEqual(ret, '3338')
-
     @mock.patch.object(zvmclient.XCATClient, 'image_import')
     def test_image_import_xcat(self, image_import):
         url = 'file:///path/to/image/file'

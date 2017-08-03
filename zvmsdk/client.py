@@ -1770,3 +1770,29 @@ class XCATClient(ZVMClient):
         url = self._xcat_url.gettab("/hosts", addp)
         with zvmutils.expect_invalid_xcat_resp_data():
             return zvmutils.xcat_request("GET", url)['data'][0][0]
+
+    def image_get_root_disk_size(self, image_name):
+        """use 'hexdump' to get the root_disk_size."""
+        image_file_path = self.get_image_path_by_name(image_name)
+
+        cmd = 'hexdump -C -n 64 %s' % image_file_path
+        with zvmutils.expect_invalid_xcat_resp_data():
+            output = zvmutils.xdsh(CONF.xcat.master_node, cmd)['data'][0][0]
+            output = output.replace(CONF.xcat.master_node + ': ', '')
+
+        LOG.debug("hexdump result is %s", output)
+        try:
+            root_disk_size = output[144:156].strip()
+        except ValueError:
+            msg = ("Image file at %s is missing built-in disk size "
+                    "metadata, it was probably not captured with xCAT"
+                    % image_file_path)
+            raise exception.ZVMImageError(msg=msg)
+
+        if 'FBA' not in output and 'CKD' not in output:
+            msg = ("The image's disk type is not valid. Currently we only"
+                      " support FBA and CKD disk")
+            raise exception.ZVMImageError(msg=msg)
+
+        LOG.debug("The image's root_disk_size is %s", root_disk_size)
+        return root_disk_size
