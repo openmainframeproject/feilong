@@ -50,8 +50,8 @@ if results['overallRC'] != 0:
 if len(results['response']) != 0:
     for line in results['response']:
         print(line)
-else:
-    print("No responses lines.")
+elif results['overallRC'] == 0:
+    print("Command succeeded.")
 
 # On error, show the trace log.
 if results['overallRC'] != 0:

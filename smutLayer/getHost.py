@@ -472,12 +472,12 @@ def showInvLines(rh):
 
     if rh.subfunction != '':
         rh.printLn("N", "Usage:")
-    rh.printLn("N", "  python " + rh.cmdName + " GetHost <userid> " +
+    rh.printLn("N", "  python " + rh.cmdName + " GetHost " +
         "diskpoolnames")
-    rh.printLn("N", "  python " + rh.cmdName + " GetHost <userid> " +
+    rh.printLn("N", "  python " + rh.cmdName + " GetHost " +
         "diskpoolspace <poolName>")
-    rh.printLn("N", "  python " + rh.cmdName + " GetHost <userid> fcpdevices")
-    rh.printLn("N", "  python " + rh.cmdName + " GetHost <userid> general")
+    rh.printLn("N", "  python " + rh.cmdName + " GetHost fcpdevices")
+    rh.printLn("N", "  python " + rh.cmdName + " GetHost general")
     rh.printLn("N", "  python " + rh.cmdName + " GetHost help")
     rh.printLn("N", "  python " + rh.cmdName + " GetHost version")
     return
@@ -509,8 +509,6 @@ def showOperandLines(rh):
     rh.printLn("N", "      version       - Show the version of this function")
     if rh.subfunction != '':
         rh.printLn("N", "Operand(s):")
-    rh.printLn("N", "      <userid>      - " +
-        "Userid of the target virtual machine")
     rh.printLn("N", "      <poolName>    - Name of the disk pool.")
 
     return

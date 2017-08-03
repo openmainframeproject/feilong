@@ -402,12 +402,7 @@ def addIPL(rh):
 
     results = invokeSMCLI(rh, "Image_IPL_Set_DM", parms)
 
-    if results['overallRC'] == 0:
-        rh.printLn("N", "Added IPL statement for " +
-                   rh.parms['addrOrNSS'] +
-                    " to the directory for guest " +
-                    rh.userid)
-    else:
+    if results['overallRC'] != 0:
         # SMAPI API failed.
         rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
@@ -519,9 +514,6 @@ def addLOADDEV(rh):
     if results['overallRC'] != 0:
         rh.printLn("ES", results['response'])
         rh.updateResults(results)
-    else:
-        rh.printLn("N", "Set LOADDEV directory statements for guest %s"
-                   % rh.userid)
 
     rh.printSysLog("Exit changeVM.addLOADDEV, rc: " +
                    str(rh.results['overallRC']))
@@ -762,10 +754,7 @@ def removeDisk(rh):
             "-e", "0"]
 
         results = invokeSMCLI(rh, "Image_Disk_Delete_DM", parms)
-        if results['overallRC'] == 0:
-            rh.printLn("N", "Removed dasd " + rh.parms['vaddr'] +
-                " from the user directory.")
-        else:
+        if results['overallRC'] != 0:
             # SMAPI API failed.
             rh.printLn("ES", results['response'])
             rh.updateResults(results)    # Use results from invokeSMCLI
@@ -799,10 +788,7 @@ def removeIPL(rh):
     parms = ["-T", rh.userid]
     results = invokeSMCLI(rh, "Image_IPL_Delete_DM", parms)
 
-    if results['overallRC'] == 0:
-        rh.printLn("N", "Removed IPL statement from the "
-                   "directory for guest " + rh.userid)
-    else:
+    if results['overallRC'] != 0:
         # SMAPI API failed.
         rh.printLn("ES", results['response'])
         rh.updateResults(results)    # Use results from invokeSMCLI
@@ -824,27 +810,27 @@ def showInvLines(rh):
         rh.printLn("N", "Usage:")
     rh.printLn("N", "  python " + rh.cmdName +
                " ChangeVM <userid> add3390 <diskPool> <vAddr>")
-    rh.printLn("N", "                    <diskSize3390> mode <mode> " +
-               "readpw <read_pw>")
-    rh.printLn("N", "                    writepw <write_pw> multipw " +
-               "<multi_pw> filesystem <fsType>")
+    rh.printLn("N", "                    <diskSize3390> --mode " +
+               "<mode> --readpw <read_pw>")
+    rh.printLn("N", "                    --writepw <write_pw> " +
+               "--multipw <multi_pw> --filesystem <fsType>")
     rh.printLn("N", "  python " + rh.cmdName +
                " ChangeVM <userid> add9336 <diskPool> <vAddr>")
-    rh.printLn("N", "                    <diskSize9336> mode <mode> " +
-               "readpw <read_pw>")
-    rh.printLn("N", "                    writepw <write_pw> " +
-               "multipw <multi_pw> filesystem <fsType>")
+    rh.printLn("N", "                    <diskSize9336> --mode " +
+               "<mode> --readpw <read_pw>")
+    rh.printLn("N", "                    --writepw <write_pw> " +
+               "--multipw <multi_pw> --filesystem <fsType>")
     rh.printLn("N", "  python " + rh.cmdName +
-               " ChangeVM <userid> aemod <aeScript> invparms <invParms>")
+               " ChangeVM <userid> aemod <aeScript> --invparms <invParms>")
     rh.printLn("N", "  python " + rh.cmdName +
-               " ChangeVM <userid> IPL <addrOrNSS> loadparms <loadParms>")
-    rh.printLn("N", "                    parms <parmString>")
+               " ChangeVM <userid> IPL <addrOrNSS> --loadparms <loadParms>")
+    rh.printLn("N", "                    --parms <parmString>")
     rh.printLn("N", "  python " + rh.cmdName +
-               " ChangeVM <userid> LOADDEV boot <boot> addr <addr>")
-    rh.printLn("N", "                     wwpn <wwpn> lun <lun> " +
-               "scpdatatype <scpDatatype> scpdata <scp_data>")
+               " ChangeVM <userid> loaddev --boot <boot> --addr <addr>")
+    rh.printLn("N", "                     --wwpn <wwpn> --lun <lun> " +
+               "--scpdatatype <scpDatatype> --scpdata <scp_data>")
     rh.printLn("N", "  python " + rh.cmdName +
-               " ChangeVM <userid> punchFile <file> class <class>")
+               " ChangeVM <userid> punchFile <file> --class <class>")
     rh.printLn("N", "  python " + rh.cmdName +
         " ChangeVM <userid> purgeRDR")
     rh.printLn("N", "  python " + rh.cmdName +
