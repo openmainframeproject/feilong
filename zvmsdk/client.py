@@ -37,9 +37,8 @@ def get_zvmclient():
     if CONF.zvm.client_type == 'xcat':
         global _XCAT_CLIENT
         if _XCAT_CLIENT is None:
-            return XCATClient()
-        else:
-            return _XCAT_CLIENT
+            _XCAT_CLIENT = XCATClient()
+        return _XCAT_CLIENT
     else:
         # TODO: raise Exception
         pass
