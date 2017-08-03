@@ -1,0 +1,249 @@
+#!/bin/bash
+# Copyright 2017 IBM Corp.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+#
+### BEGIN INIT INFO
+# Provides: zvmguestconfigure
+# Default-Start: 2 3 5
+# Default-stop: 0 1 4 6
+# Required-Start: $syslog
+# Should-Start:
+# Required-Stop:
+# Short-Description: A basic active engine used to initialize and configure vm.
+# Description: Reads class x files from the reader and acts based on the type of file.
+#              Generate an ISO9660 disk for cloud-init to handle sdk configurations.
+#              Files of filetype "disk" cause disks be configured. (deprecated)
+#              Other files are used to configure vm when it start up.
+### END INIT INFO
+
+###############################################################################
+# Authorized senders of configuration files listed here.  Specify a list a
+# blank delimited list of userids with each userid in uppercase
+# (e.g. "AUTH" or "AUTH AUTH2"), or '*' to indicate all are authorized.
+# If nothing is specified then this function will not process any
+# configuration files in the reader.
+###############################################################################
+version=3.0
+authorizedSenders=''
+
+function pullReader {
+  # @Description:
+  #   Reads class x spool files from the reader if sent by an authorized sender.
+  #   Drives special processing functions for files of a specific type.
+  #   Files with a filetype of:
+  #     tgz are unpacked into the transport directory
+  #     disk files are read and cause the setupDisk function to be driven (deprecated)
+  #     doscript that contains a invokeScript.sh which will call the other script in it to do the speicial work
+  #     all other files are unpacked into the transport directory
+  # @Input:
+  #   None
+  # @Output:
+  #   Return code indicates success if reader was brought online.
+  # @Code:
+  local funcName="pullReader"
+  /sbin/modprobe vmcp
+
+  # Online reader
+  rc= onlineDevice "000c"
+  if (( rc != 0 )); then
+      return $rc
+  fi
+
+  # Grab the spool Id, class file name, and file type
+  eval records=($(/usr/sbin/vmur li | tail -n +2 | cut -c 1-72 | awk '{print $1":"$2":"$3":"$10":"$11"\n"}' ))
+
+  # Process each spool file that is class "x"
+  for record in "${records[@]}"
+  do
+    record=$(echo $record | tr ":" " ")
+    set $record
+    originid=$1
+    spoolid=$2
+    class=$3
+    filename=$4
+    type=$5
+
+    if [[ $class != "X" ]]; then
+      # Spool file is not of the class required for processing by this script.
+      continue
+    fi
+
+    if [[ $authorizedSenders != "*" ]]; then
+      if [[ " $authorizedSenders " != *" $originid "* ]]; then
+        # Originator is not authorized to send configuration files.
+        continue
+      fi
+    fi
+
+    if [[ -n $type ]]; then
+      file="$filename.$type"
+    else
+      file=$filename
+    fi
+
+    # Receive the spool file
+    echo "Downloading record $spoolid: $file"
+
+    if [[ $type == "txt" ]]; then
+      # Receiving text
+      rc=$(/usr/sbin/vmur re -f $spoolid $file)
+    elif [[ $type == "sh" ]]; then
+      # Receiving shell
+      rc=$(/usr/sbin/vmur re -f $spoolid $file)
+      /bin/bash $file
+      rm $file
+    elif [[ $type == "tgz" ]]; then
+      rc=$(/usr/sbin/vmur re $spoolid $file)
+      /bin/tar xzf $file -C $transportdir
+      rm $file
+      injectFiles
+    elif [[ $type == "doscript" ]]; then
+      rc=$(/usr/sbin/vmur re $spoolid $file)
+      /bin/tar xf $file -C $transportdir
+      rm $file
+      /bin/bash invokeScript.sh
+    elif [[ $type == "disk" ]]; then
+      echo 'disk file encountered and will be handled by the deprecated setupDisk function'
+      rc=$(/usr/sbin/vmur re $spoolid $file)
+      if (( rc == 0 )); then
+        setupDisk $transportdir'/'$file
+        rc=0
+      fi
+    else
+      # Receive block
+      rc=$(/usr/sbin/vmur re $spoolid $file)
+    fi
+
+    if (( rc != 0 )); then
+      echo "zvmguestconfigure funcName (Error) Failed to download record $spoolid"
+    fi
+  done
+  return 0
+}
+
+function setupIso {
+  # @Description:
+  #   Makes an ISO filesystem using the contents of the transport directory and
+  #   creates a loop device pointing to the ISO image.  If an "init.sh" script
+  #   exists in the transport directory then it is driven.
+  # @Input:
+  #   None
+  # @Output:
+  #   None
+  # @Code:
+  local funcName="setupIso"
+  iso="/var/opt/transport/transport.iso"
+
+  # If there are files in the transport directory then create an ISO system.
+  if [ "$(ls -A .)" ]; then
+    /usr/bin/mkisofs -l -V 'config-2' -o $iso $transportdir
+    if [ -e /tmp/znetconfig.sh ]; then
+      /bin/bash /tmp/znetconfig.sh
+    fi
+  fi
+
+  # If the ISO filesystem exists then create loop back device pointing
+  # to the ISO9660 image
+  if [[ -e $iso ]]; then
+    nextLoopDev=`/sbin/losetup -f`
+    if [[ -n $nextLoopDev ]]; then
+      /sbin/losetup $nextLoopDev $iso
+    fi
+  fi
+
+  # Execute init script (if one exists)
+  if [[ -e ${transportdir}/init.sh ]]; then
+    chmod 755 ${transportdir}/init.sh
+    ${transportdir}/init.sh
+  fi
+}
+
+function injectFiles {
+  # @Description:
+  #   Inject network files and scripts
+  # @Input:
+  #   None
+  # @Output:
+  #   None
+  # @Code:
+  local funcName="injectFiles"
+
+  if [[ ! -e $transportdir/sdk/latest/meta_data.json ]]; then
+    echo "Can not inject files, because no meta_data.json"
+    return
+  fi
+
+  echo "File injecting ...."
+  awk '{
+    #get inject files info
+    split($0 ,res1,/"files": \[/)
+    split(res1[2], res2, /\]/)
+    n=split(res2[1], res, /}, /)
+
+    for(m=1;m<=n;m++)
+    {
+      split(res[m], temp1, /{"path": "/)
+      k=split(temp1[2], temp2, /", "content_path": "/)
+      sub(/"}*$/, "", temp2[2])
+      #print temp2[1] " : " temp2[2]
+      des = dir "/sdk" temp2[2]
+      cmd = "cp " des " " temp2[1]
+      #print cmd
+      system(cmd)
+    }
+  }' dir=$transportdir <$transportdir/sdk/latest/meta_data.json
+  return
+}
+
+############################################################################
+# Main Code Section
+############################################################################
+case "$1" in
+  start)
+    echo "zvmguestconfigure is starting"
+    transportdir="/var/opt/zthin/transport"
+    rm -Rf $transportdir
+    /bin/mkdir -p $transportdir
+    cd $transportdir
+
+    # Get Linux version
+    getOsVersion
+
+    if [[ -n "$authorizedSenders" ]]; then
+      pullReader
+      echo "zvmguestconfigure has successfully processed the reader files."
+    else
+      echo "zvmguestconfigure is disabled from accepting configuration reader files."
+    fi
+
+    setupIso
+  ;;
+
+  status)
+    if [[ -n "$authorizedSenders" ]]; then
+      echo "zvmguestconfigure is enabled to accept configuration reader files from: $authorizedSenders"
+    else
+      echo "zvmguestconfigure is disabled from accepting configuration reader files."
+    fi
+  ;;
+
+  version)
+    echo "zvmguestconfigure version:" $version
+  ;;
+
+  stop|restart|reload|force-reload)
+    # Do nothing
+  ;;
+
+esac
