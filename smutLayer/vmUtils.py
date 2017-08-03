@@ -15,6 +15,7 @@
 #    under the License.
 
 import re
+import sys
 import subprocess
 from subprocess import CalledProcessError
 import time
@@ -524,6 +525,13 @@ def invokeSMCLI(rh, api, parms):
                     api, results['overallRC'], results['rc'],
                     results['rs'], results['errno'],
                     strCmd, smcliResp[1])
+
+    except Exception as e:
+        # All other exceptions.
+        strCmd = " ".join(cmd + parms)
+        results = msgs.msg['0305'][0]
+        results['response'] = msgs.msg['0305'][1] % (modId, strCmd, 
+            type(e).__name__, str(e))
 
     rh.printSysLog("Exit vmUtils.invokeSMCLI, rc: " +
         str(results['overallRC']))
