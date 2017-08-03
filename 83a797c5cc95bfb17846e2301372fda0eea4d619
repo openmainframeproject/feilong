@@ -45,6 +45,30 @@
       "revId": "83a797c5cc95bfb17846e2301372fda0eea4d619",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "07091a67_987180d8",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 1007,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-03T22:22:04Z",
+      "side": 1,
+      "message": "I agree with that suggestion.  We went to great lengths to give you the overallRC, rc, rs, etc so that the client does not have to parse the output.  If you can flow those back as attributes then you have no possiblity for parsing confusion on the clients part.  Most of the time they would just check that the overallRC \u003d 0 and know it worked.",
+      "parentUuid": "2b287e94_a8f71455",
+      "range": {
+        "startLine": 1004,
+        "startChar": 12,
+        "endLine": 1007,
+        "endChar": 73
+      },
+      "revId": "83a797c5cc95bfb17846e2301372fda0eea4d619",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
