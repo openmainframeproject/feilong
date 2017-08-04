@@ -77,14 +77,15 @@ class HandlersImageTest(unittest.TestCase):
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(image.ImageAction, 'delete')
-    def test_image_delete(self, mock_get, mock_name):
+    def test_image_delete(self, mock_delete, mock_name):
         mock_name.return_value = 'dummy'
 
         image.image_delete(self.req)
-        mock_get.assert_called_once_with('dummy')
+        mock_delete.assert_called_once_with('dummy')
 
     @mock.patch.object(image.ImageAction, 'query')
     def test_image_query(self, mock_query):
+        mock_query.return_value = '[]'
         self.req.GET = {}
         self.req.GET['imagename'] = 'image1'
         image.image_query(self.req)

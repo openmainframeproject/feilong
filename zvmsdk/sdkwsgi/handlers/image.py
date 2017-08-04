@@ -11,9 +11,12 @@
 #    under the License.
 """Handler for the image of the sdk API."""
 
+import json
+
 from zvmsdk import api
 from zvmsdk import config
 from zvmsdk import log
+from zvmsdk import utils
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import image
 from zvmsdk.sdkwsgi import util
@@ -108,9 +111,14 @@ def image_query(req):
 
     def _image_query(imagename):
         action = get_action()
-        action.query(imagename)
+        return action.query(imagename)
 
     imagename = None
     if 'imagename' in req.GET:
         imagename = req.GET['imagename']
-    _image_query(imagename)
+    info = _image_query(imagename)
+
+    info_json = json.dumps({'images': info})
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
