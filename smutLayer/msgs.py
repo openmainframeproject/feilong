@@ -106,10 +106,10 @@ msg = {
     # 0205-0299: Available
 
     # SMCLI and SMAPI related messages.
-    '0300': [{'overallRC': 1},    # dict is not used.
+    '0300': [{'overallRC': 8},    # dict is not used.
             "ULT%s0300E SMAPI API failed: %s, overall rc: %s, rc: %s, " +
             "rs: %s, errno: %s, cmd: %s, out: %s"],
-    '0301': [{'overallRC': 1, 'rc': 301, 'rs': 0},
+    '0301': [{'overallRC': 25, 'rc': 301, 'rs': 0},
             "ULT%s0301E SMAPI API failed: %s, response header does not " +
             "have the expected 3 values before the (details) string. " +
             "cmd: %s, response header: %s, out: %s"],
@@ -118,15 +118,19 @@ msg = {
             "the response header is not an integer or in the range of " +
             "expected values. word 1: %s, cmd: %s, response " +
             "header: %s, out: %s"],
-    '0303': [{'overallRC': 1, 'rc': 303, 'rs': 0},
+    '0303': [{'overallRC': 25, 'rc': 303, 'rs': 0},
             "ULT%s0303E SMAPI API failed: %s, word 2 in the response " +
             "header is not an integer. word 2: %s, cmd: %s, response " +
             "header: %s, out: %s"],
-    '0304': [{'overallRC': 1, 'rc': 304, 'rs': 0},
+    '0304': [{'overallRC': 25, 'rc': 304, 'rs': 0},
             "ULT%s0304E SMAPI API failed: %s, word 3 in the response " +
             "header is not an integer. word 3: %s, cmd: %s, response " +
             "header: %s, out: %s"],
-    # 0305-0310: Available
+    '0305': [{'overallRC': 99, 'rc': 305, 'rs': 0},
+            "ULT%s0305E Exception received on an attempt to " +
+            "communicate with SMAPI, cmd: %s, exception: %s, " +
+            "details: %s"],
+    # 0306-0310: Available
 
     # IUCV related messages
     '0311': [{'overallRC': 2, 'rc': 2, 'rs': 99},    # dict is not used.

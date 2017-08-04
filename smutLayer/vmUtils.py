@@ -525,6 +525,13 @@ def invokeSMCLI(rh, api, parms):
                     results['rs'], results['errno'],
                     strCmd, smcliResp[1])
 
+    except Exception as e:
+        # All other exceptions.
+        strCmd = " ".join(cmd + parms)
+        results = msgs.msg['0305'][0]
+        results['response'] = msgs.msg['0305'][1] % (modId, strCmd,
+            type(e).__name__, str(e))
+
     rh.printSysLog("Exit vmUtils.invokeSMCLI, rc: " +
         str(results['overallRC']))
     return results
