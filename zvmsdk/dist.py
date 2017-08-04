@@ -111,13 +111,12 @@ class LinuxDist(object):
         """Get network file configuration path."""
         pass
 
-    @abc.abstractmethod
     def get_change_passwd_command(self, admin_password):
         """construct change password command
 
         :admin_password: the password to be changed to
         """
-        pass
+        return "echo 'root:%s' | chpasswd" % admin_password
 
     @abc.abstractmethod
     def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
@@ -181,9 +180,6 @@ class LinuxDist(object):
 class rhel(LinuxDist):
     def _get_network_file_path(self):
         return '/etc/sysconfig/network-scripts/'
-
-    def get_change_passwd_command(self, admin_password):
-        return 'echo %s|passwd --stdin root' % admin_password
 
     def assemble_zfcp_srcdev(self, fcp, wwpn, lun):
         path = '/dev/disk/by-path/ccw-0.0.%(fcp)s-zfcp-0x%(wwpn)s:0x%(lun)s'
@@ -405,9 +401,6 @@ class sles11(sles):
                           'service network restart',
                           'cio_ignore -u'))
 
-    def get_change_passwd_command(self, admin_password):
-        return 'echo %s|passwd --stdin root' % admin_password
-
 
 class sles12(sles):
     def get_znetconfig_contents(self):
@@ -421,9 +414,6 @@ class sles12(sles):
                           'sleep 2',
                           'znetconf -A',
                           'cio_ignore -u'))
-
-    def get_change_passwd_command(self, admin_password):
-        return "echo 'root:%s' | chpasswd" % admin_password
 
     def get_scp_string(self, root, fcp, wwpn, lun):
         return ("=root=%(root)s zfcp.allow_lun_scan=0 "
@@ -554,9 +544,7 @@ class ubuntu(LinuxDist):
 
 
 class ubuntu16(ubuntu):
-
-    def get_change_passwd_command(self, admin_password):
-        return "echo 'root:%s' | chpasswd" % admin_password
+    pass
 
 
 class LinuxDistManager(object):
