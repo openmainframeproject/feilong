@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "98b6be1e_421e0881",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2017-08-04T12:31:43Z",
+      "side": 1,
+      "message": "The smcli uses 0, 8, 24, 25 where 25 is an unexpected error, so I think your code aligns with the same idea.",
+      "revId": "f2cae9d2c93840544a58c45780d7528d461d26ac",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
