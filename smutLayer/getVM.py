@@ -209,6 +209,14 @@ def getConsole(rh):
         strCmd = ' '.join(cmd)
         msg = msgs.msg['0407'][1] % (modId, strCmd, e.output)
         rh.printLn("WS", msg)
+    except Exception as e:
+        # All other exceptions.
+        # If we couldn't change the class, that's not fatal
+        # But we want to warn about possibly incomplete
+        # results
+        strCmd = " ".join(cmd)
+        rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+            type(e).__name__, str(e)))
 
     # List the spool files in the reader
     cmd = ["/usr/sbin/vmur", "list"]
@@ -218,12 +226,21 @@ def getConsole(rh):
             close_fds=True,
             stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-        # Uhoh, vmur list command failed for some reason
+        # Uh oh, vmur list command failed for some reason
         strCmd = ' '.join(cmd)
         msg = msgs.msg['0408'][1] % (modId, rh.userid,
                                      strCmd, e.output)
         rh.printLn("ES", msg)
         rh.updateResults(msgs.msg['0408'][0])
+        rh.printSysLog("Exit getVM.parseCmdLine, rc: " +
+                       str(rh.results['overallRC']))
+        return rh.results['overallRC']
+    except Exception as e:
+        # All other exceptions.
+        strCmd = " ".join(cmd)
+        rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+            type(e).__name__, str(e)))
+        rh.updateResults(msgs.msg['0421'][0])
         rh.printSysLog("Exit getVM.parseCmdLine, rc: " +
                        str(rh.results['overallRC']))
         return rh.results['overallRC']

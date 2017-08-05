@@ -284,6 +284,13 @@ def getGeneralInfo(rh):
         rh.printLn("ES", msg)
         rh.updateResults(msgs.msg['0405'][0])
         host = "no info"
+    except Exception as e:
+        # All other exceptions.
+        strCmd = " ".join(cmd)
+        rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+            type(e).__name__, str(e)))
+        rh.updateResults(msgs.msg['0421'][0])
+        host = "no info"
 
     # Get a bunch of info from /proc/sysinfo
     lparCpuTotal = "no info"
@@ -360,6 +367,7 @@ def getGeneralInfo(rh):
         rh.printLn("ES", msg)
 
     # Get IPL Time
+    ipl = ""
     cmd = ["/sbin/vmcp", "query cplevel"]
     try:
         ipl = subprocess.check_output(
@@ -372,6 +380,12 @@ def getGeneralInfo(rh):
                                      strCmd, e.output)
         rh.printLn("ES", msg)
         rh.updateResults(msgs.msg['0405'][0])
+    except Exception as e:
+        # All other exceptions.
+        strCmd = " ".join(cmd)
+        rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+            type(e).__name__, str(e)))
+        rh.updateResults(msgs.msg['0421'][0])
 
     # Create output string
     outstr = "z/VM Host: " + host
