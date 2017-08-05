@@ -99,7 +99,7 @@ try:
         cmd,
         close_fds=True,
         stderr=subprocess.STDOUT).split()[0]
-except subprocess.CalledProcessError as e:
+except:
     print("Could not find the userid of this system.")
     subs['<<<localUserid>>>'] = 'unknownUserid'
 
@@ -1140,9 +1140,19 @@ def runTest(smut, test):
                     close_fds=True,
                     shell=True)
         except CalledProcessError as e:
-            # Last SED would have to fail for the exception to be thrown.
             results['response'] = e.output
             results['overallRC'] = e.returncode
+        except Exception as e:
+            # All other exceptions.
+            if 'output' in e:
+                results['response'] = e.output
+            else:
+                results['response'] = ('Exception encountered: %s, ' +
+                    "details: %s" % (type(e).__name__, str(e)))
+            if 'returncode' in e:
+                results['overallRC'] = e.returncode
+            else:
+                results['overallRC'] = -9999999
 
         if isinstance(results['response'], basestring):
             results['response'] = [results['response']]
@@ -1183,7 +1193,7 @@ def runTest(smut, test):
                 junk = subprocess.check_output(cmd, close_fds=True)
                 if junk == '':
                     respScore = 0
-            except CalledProcessError as e:
+            except:
                 respScore = 0
             os.remove(tempFile.name)
     else:
@@ -1302,9 +1312,19 @@ def driveTestSet(smut, setId, setToTest):
                 out = "".join(out)
 
             except CalledProcessError as e:
-                # Last SED would have to fail for the exception to be thrown.
                 out = e.output
                 shellRC = e.returncode
+            except Exception as e:
+                # All other exceptions.
+                if 'output' in e:
+                    out = e.output
+                else:
+                    out = ('Exception encountered: %s, ' +
+                        "details: %s" % (type(e).__name__, str(e)))
+                if 'returncode' in e:
+                    shellRC = e.returncode
+                else:
+                    shellRC = -9999999
 
             if isinstance(out, basestring):
                 out = [out]
@@ -1378,8 +1398,23 @@ else:
 
     except CalledProcessError as e:
         print("Warning: Failed to enable the punch, " +
-            "cmd: %s, rc: %i, out%s" %
+            "cmd: %s, rc: %i, out: %s" %
             (cmd, e.returncode, e.output))
+
+    except Exception as e:
+        # All other exceptions.
+        if 'output' in e:
+            out = e.output
+        else:
+            out = ('Exception encountered: %s, ' +
+                "details: %s" % (type(e).__name__, str(e)))
+        if 'returncode' in e:
+            eRC = e.returncode
+        else:
+            eRC = -9999999
+        print("Warning: Failed to enable the punch, " +
+            "cmd: %s, rc: %i, %s" %
+            (cmd, eRC, out))
 
     # Perform the substitution change to all requests and responses
     for key in testSets:
