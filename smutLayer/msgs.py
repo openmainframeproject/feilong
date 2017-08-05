@@ -166,6 +166,7 @@ msg = {
             "while sending a command through IUCV to $s. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
 
+    # General subfunction processing messages
     '0400': [{'overallRC': 4, 'rc': 4, 'rs': 400},
             "ULT%s0400E The worker script %s does not exist."],
     '0401': [{'overallRC': 4, 'rc': 7, 'rs': 401},
@@ -231,5 +232,10 @@ msg = {
             "ULT%s0420E An error occurred issuing a %s for userid %s.\n" +
             "Please look up message(s): %s in the CP Messages book for " +
             "more information."],
+    '0421': [{'overallRC': 99, 'rc': 421, 'rs': 0},
+            "ULT%s0421E Exception received on an attempt to " +
+            "execute a cmd: %s, exception: %s, " +
+            "details: %s"],
+
     # 5000-6100: Reserved for SMCLI
     }
