@@ -83,8 +83,9 @@ def deleteMachine(rh):
         # Cannot determine the log on/off state.
         # Message already included.  Act as if it is 'on'.
         pass
-    if results['rs'] == 0:
-        state = 'on'
+    elif results['rs'] == 0:
+        # State is powered on.
+        pass
     else:
         state = 'off'
         # Reset values for rest of subfunction
@@ -100,7 +101,7 @@ def deleteMachine(rh):
         elif (results['overallRC'] == 8 and results['rc'] == 200 and
             (results['rs'] == 12 or results['rs'] == 16)):
             # Tolerable error.  Machine is already in or going into the state
-            # we want it to enter.
+            # that we want it to enter.
             rh.updateResults({}, reset=1)
         else:
             # SMAPI API failed.

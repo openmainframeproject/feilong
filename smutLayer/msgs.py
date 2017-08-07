@@ -236,6 +236,14 @@ msg = {
             "ULT%s0421E Exception received on an attempt to " +
             "execute a cmd: %s, exception: %s, " +
             "details: %s"],
+    '0422': [{'overallRC': 99, 'rc': 422, 'rs': 0},
+            "ULT%s0422W Exception received on an attempt to " +
+            "execute a cmd: %s, exception: %s, " +
+            "details: %s. Will attempt to continue processing."],
+    '0423': [{'overallRC': 4, 'rc': 4, 'rs': 423},    # dict is not used.
+            "ULT%s0423W Unable to spool reader to all classes, " +
+            "it is possible that there may be additional console " +
+            "files available that are not listed in the response."],
 
     # 5000-6100: Reserved for SMCLI
     }

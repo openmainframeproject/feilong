@@ -215,8 +215,9 @@ def getConsole(rh):
         # But we want to warn about possibly incomplete
         # results
         strCmd = " ".join(cmd)
-        rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+        rh.printLn("ES", msgs.msg['0422'][1] % (modId, strCmd,
             type(e).__name__, str(e)))
+        rh.printLn("ES", msgs.msg['0423'][1] % modId)
 
     # List the spool files in the reader
     cmd = ["/usr/sbin/vmur", "list"]
