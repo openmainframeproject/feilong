@@ -112,13 +112,14 @@ def execCmdThruIUCV(rh, userid, strCmd):
               'response': [],
              }
 
-    strCmd = (iucvpath + "iucvclnt " + userid + " '" + strCmd + "' 2>&1")
+    cmd = [iucvpath + "iucvclnt",
+           userid,
+           strCmd]
     try:
         results['response'] = subprocess.check_output(
-                strCmd,
+                cmd,
                 stderr=subprocess.STDOUT,
-                close_fds=True,
-                shell=True)
+                close_fds=True)
 
     except CalledProcessError as e:
         msg = []
