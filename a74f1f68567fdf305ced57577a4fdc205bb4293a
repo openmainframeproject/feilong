@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ca159399_d2c6f2fe",
+        "filename": "smutLayer/deleteVM.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-07T16:03:35Z",
+      "side": 1,
+      "message": "changed statement to \"pass\"",
+      "parentUuid": "765b0d0c_44274ecc",
+      "range": {
+        "startLine": 87,
+        "startChar": 19,
+        "endLine": 87,
+        "endChar": 20
+      },
+      "revId": "a74f1f68567fdf305ced57577a4fdc205bb4293a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "454dc7b6_6ed2f069",
         "filename": "smutLayer/deleteVM.py",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2017-08-07T15:34:03Z",
       "side": 1,
       "message": "Is possible to make it bit readable ? Like \" into the state which we want it enter\" ?",
+      "range": {
+        "startLine": 103,
+        "startChar": 33,
+        "endLine": 103,
+        "endChar": 34
+      },
+      "revId": "a74f1f68567fdf305ced57577a4fdc205bb4293a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "030a67e8_1900dd08",
+        "filename": "smutLayer/deleteVM.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-07T16:03:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "454dc7b6_6ed2f069",
       "range": {
         "startLine": 103,
         "startChar": 33,
