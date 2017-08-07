@@ -195,7 +195,11 @@ def add3390(rh):
 
     if results['overallRC'] == 0:
         results = isLoggedOn(rh, rh.userid)
-        if (results['overallRC'] == 0 and results['rs'] == 0):
+        if results['overallRC'] != 0:
+            # Cannot determine if VM is logged on or off.
+            # We have partially failed.  Pass back the results.
+            rh.updateResults(results)
+        elif results['rs'] == 0:
             # Add the disk to the active configuration.
             parms = [
                 "-T", rh.userid,

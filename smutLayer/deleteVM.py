@@ -76,12 +76,17 @@ def deleteMachine(rh):
 
     results = {'overallRC': 0, 'rc': 0, 'rs': 0}
 
-    # Is image logged on
+    # Is image logged on ?
+    state = 'on'    # Assume 'on'.
     results = isLoggedOn(rh, rh.userid)
-    state = 'off'       # Assume 'off' unless definitely 'on'
-    if (results['overallRC'] == 0 and results['rs'] == 0):
+    if results['overallRC'] != 0:
+        # Cannot determine the log on/off state.
+        # Message already included.  Act as if it is 'on'.
+        pass
+    if results['rs'] == 0:
         state = 'on'
     else:
+        state = 'off'
         # Reset values for rest of subfunction
         results['overallRC'] = 0
         results['rc'] = 0
@@ -90,7 +95,14 @@ def deleteMachine(rh):
     if state == 'on':
         parms = ["-T", rh.userid, "-f IMMED"]
         results = invokeSMCLI(rh, "Image_Deactivate", parms)
-        if results['overallRC'] != 0:
+        if results['overallRC'] == 0:
+            pass
+        elif (results['overallRC'] == 8 and results['rc'] == 200 and
+            (results['rs'] == 12 or results['rs'] == 16)):
+            # Tolerable error.  Machine is already in or going into the state
+            # we want it to enter.
+            rh.updateResults({}, reset=1)
+        else:
             # SMAPI API failed.
             rh.printLn("ES", results['response'])
             rh.updateResults(results)  # Use results returned by invokeSMCLI

@@ -178,7 +178,15 @@ def execCmdThruIUCV(rh, userid, strCmd):
                 results['rc'], results['rs'], e.output)
         results['response'] = msg
 
-    rh.printSysLog("Exit vmUtils.execCmdThruIUCV, rc: " + str(results['rc']))
+    except Exception as e:
+        # Other exceptions from this system (i.e. not the managed system).
+        results = msgs.msg['0421'][0]
+        msg = msgs.msg['0421'][1] % (modId, strCmd,
+            type(e).__name__, str(e))
+        results['response'] = msg
+
+    rh.printSysLog("Exit vmUtils.execCmdThruIUCV, rc: " +
+                   str(results['rc']))
     return results
 
 
@@ -210,6 +218,9 @@ def getPerfInfo(rh, useridlist):
         return results
 
     lines = results['response'].split("\n")
+    usedTime = 0
+    totalCpu = 0
+    totalMem = 0
     try:
         for line in lines:
             if "Used CPU time:" in line:
@@ -287,6 +298,12 @@ def installFS(rh, vaddr, mode, fileSystem):
         results = msgs.msg['0415'][0]
         results['rs'] = e.returncode
         rh.updateResults(results)
+    except Exception as e:
+        # All other exceptions.
+        strCmd = " ".join(cmd)
+        results = msgs.msg['0421'][0]
+        rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+            type(e).__name__, str(e)))
 
     if results['overallRC'] == 0:
         """
@@ -329,6 +346,13 @@ def installFS(rh, vaddr, mode, fileSystem):
             results = msgs.msg['0415'][0]
             results['rs'] = e.returncode
             rh.updateResults(results)
+        except Exception as e:
+            # All other exceptions.
+            strCmd = " ".join(cmd)
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                type(e).__name__, str(e)))
+            results = msgs.msg['0421'][0]
+            rh.updateResults(results)
 
     if results['overallRC'] == 0:
         # Settle the devices so we can do the partition.
@@ -346,6 +370,13 @@ def installFS(rh, vaddr, mode, fileSystem):
             results = msgs.msg['0415'][0]
             results['rs'] = e.returncode
             rh.updateResults(results)
+        except Exception as e:
+            # All other exceptions.
+            strCmd = " ".join(cmd)
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                type(e).__name__, str(e)))
+            results = msgs.msg['0421'][0]
+            rh.updateResults(results)
 
     if results['overallRC'] == 0:
         # Prepare the partition with fdasd
@@ -359,6 +390,13 @@ def installFS(rh, vaddr, mode, fileSystem):
                 e.returncode, e.output))
             results = msgs.msg['0415'][0]
             results['rs'] = e.returncode
+            rh.updateResults(results)
+        except Exception as e:
+            # All other exceptions.
+            strCmd = " ".join(cmd)
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                type(e).__name__, str(e)))
+            results = msgs.msg['0421'][0]
             rh.updateResults(results)
 
     if results['overallRC'] == 0:
@@ -381,6 +419,13 @@ def installFS(rh, vaddr, mode, fileSystem):
                 results = msgs.msg['0415'][0]
                 results['rs'] = e.returncode
                 rh.updateResults(results)
+            except Exception as e:
+                # All other exceptions.
+                strCmd = " ".join(cmd)
+                rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                    type(e).__name__, str(e)))
+                results = msgs.msg['0421'][0]
+                rh.updateResults(results)
         else:
             rh.printLn("N", "File system type is swap. No need to install " +
                 "a filesystem.")
@@ -398,6 +443,13 @@ def installFS(rh, vaddr, mode, fileSystem):
                 e.returncode, e.output))
             results = msgs.msg['0415'][0]
             results['rs'] = e.returncode
+            rh.updateResults(results)
+        except Exception as e:
+            # All other exceptions.
+            strCmd = " ".join(cmd)
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                type(e).__name__, str(e)))
+            results = msgs.msg['0421'][0]
             rh.updateResults(results)
 
     rh.printSysLog("Exit vmUtils.installFS, rc: " + str(results['rc']))
@@ -430,6 +482,7 @@ def invokeSMCLI(rh, api, parms):
 
     rh.printSysLog("Enter vmUtils.invokeSMCLI, userid: " + rh.userid +
         " function: " + api)
+    goodHeader = False
 
     results = {
               'overallRC': 0,
@@ -456,16 +509,18 @@ def invokeSMCLI(rh, api, parms):
         strCmd = " ".join(cmd + parms)
 
         # Break up the RC header into its component parts.
-        smcliResp = e.output.split('\n', 1)
-        if len(smcliResp) != 2:
-            # Only a header line, no data.
-            smcliResp[1] = ''
+        if e.output == '':
+            smcliResp = ['']
+        else:
+            smcliResp = e.output.split('\n', 1)
 
         # Split the header into its component pieces.
         rcHeader = smcliResp[0].split('(details)', 1)
-        if len(rcHeader) < 2:
-            # No data after the details tag.
-            rcHeader[1] = ''
+        if len(rcHeader) == 0:
+            rcHeader = ['', '']
+        elif len(rcHeader) == 1:
+            # No data after the details tag.  Add empty [1] value.
+            rcHeader.append('')
         codes = rcHeader[0].split(' ')
 
         # Validate the rc, rs, and errno.
@@ -581,6 +636,12 @@ def isLoggedOn(rh, userid):
                 e.returncode, e.output))
             results = msgs.msg['0415'][0]
             results['rs'] = e.returncode
+    except Exception as e:
+        # All other exceptions.
+        strCmd = " ".join(cmd)
+        results = msgs.msg['0421'][0]
+        rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+            type(e).__name__, str(e)))
 
     rh.printSysLog("Exit vmUtils.isLoggedOn, overallRC: " +
         str(results['overallRC']) + " rc: " + str(results['rc']) +
@@ -632,6 +693,13 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
                     rh.printSysLog("Punch in use. Retrying after " +
                                         str(secs) + " seconds")
                     time.sleep(secs)
+        except Exception as e:
+            # All other exceptions.
+            strCmd = " ".join(cmd)
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                type(e).__name__, str(e)))
+            results = msgs.msg['0421'][0]
+            rh.updateResults(results)
 
     if results['rc'] == 7:
         # Failure while issuing vmur command (For eg: invalid file given)
@@ -675,6 +743,20 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
                                              fileLoc,
                                              userid, e.output)
                 rh.printLn("ES", msg)
+            except Exception as e:
+                # All other exceptions related to purge.
+                # We only need to issue the printLn.
+                # Don't need to change return/reason code values
+                strCmd = " ".join(cmd)
+                rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                    type(e).__name__, str(e)))
+        except Exception as e:
+            # All other exceptions related to change rdr.
+            strCmd = " ".join(cmd)
+            results = msgs.msg['0421'][0]
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                type(e).__name__, str(e)))
+            rh.updateResults(msgs.msg['0421'][0])
 
     if rh.results['overallRC'] == 0:
         # Transfer the file from current user to specified user
@@ -704,6 +786,18 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
                                              fileLoc,
                                              userid, e.output)
                 rh.printLn("ES", msg)
+            except Exception as e:
+                # All other exceptions related to purge.
+                strCmd = " ".join(cmd)
+                rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                    type(e).__name__, str(e)))
+        except Exception as e:
+            # All other exceptions related to transfer.
+            strCmd = " ".join(cmd)
+            results = msgs.msg['0421'][0]
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                type(e).__name__, str(e)))
+            rh.updateResults(msgs.msg['0421'][0])
 
     rh.printSysLog("Exit vmUtils.punch2reader, rc: " +
         str(rh.results['overallRC']))
@@ -830,6 +924,13 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
                 results = msgs.msg['0415'][0]
                 results['rs'] = e.returncode
                 break
+        except Exception as e:
+            # All other exceptions.
+            strCmd = " ".join(cmd)
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                type(e).__name__, str(e)))
+            results = msgs.msg['0421'][0]
+
         if i < maxQueries:
             # Sleep a bit before looping.
             time.sleep(sleepSecs)
