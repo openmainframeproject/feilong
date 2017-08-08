@@ -285,15 +285,16 @@ def installFS(rh, vaddr, mode, fileSystem):
     diskAccessed = False
 
     # Get access to the disk.
+    cmd = ["/opt/zthin/bin/linkdiskandbringonline",
+           rh.userid,
+           vaddr,
+           mode]
+    strCmd = ' '.join(cmd)
+    rh.printSysLog("Invoking: " + strCmd)
     try:
-        cmd = ["/opt/zthin/bin/linkdiskandbringonline",
-               rh.userid,
-               vaddr,
-               mode]
         out = subprocess.check_output(cmd, close_fds=True)
         diskAccessed = True
     except CalledProcessError as e:
-        strCmd = ' '.join(cmd)
         rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
             e.returncode, e.output))
         results = msgs.msg['0415'][0]
@@ -301,7 +302,6 @@ def installFS(rh, vaddr, mode, fileSystem):
         rh.updateResults(results)
     except Exception as e:
         # All other exceptions.
-        strCmd = " ".join(cmd)
         results = msgs.msg['0421'][0]
         rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
             type(e).__name__, str(e)))
@@ -333,15 +333,16 @@ def installFS(rh, vaddr, mode, fileSystem):
 
     if results['overallRC'] == 0:
         # dasdfmt the disk
+        cmd = ["/sbin/dasdfmt",
+            "-y",
+            "-b", "4096",
+            "-d", "cdl",
+            "-f", device]
+        strCmd = ' '.join(cmd)
+        rh.printSysLog("Invoking: " + strCmd)
         try:
-            cmd = ["/sbin/dasdfmt",
-                "-y",
-                "-b", "4096",
-                "-d", "cdl",
-                "-f", device]
             out = subprocess.check_output(cmd, close_fds=True)
         except CalledProcessError as e:
-            strCmd = ' '.join(cmd)
             rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
                 e.returncode, e.output))
             results = msgs.msg['0415'][0]
@@ -359,6 +360,7 @@ def installFS(rh, vaddr, mode, fileSystem):
         # Settle the devices so we can do the partition.
         strCmd = ("which udevadm &> /dev/null && " +
             "udevadm settle || udevsettle")
+        rh.printSysLog("Invoking: " + strCmd)
         try:
             subprocess.check_output(
                 strCmd,
@@ -381,12 +383,13 @@ def installFS(rh, vaddr, mode, fileSystem):
 
     if results['overallRC'] == 0:
         # Prepare the partition with fdasd
+        cmd = ["/sbin/fdasd", "-a", device]
+        strCmd = ' '.join(cmd)
+        rh.printSysLog("Invoking: " + strCmd)
         try:
-            cmd = ["/sbin/fdasd", "-a", device]
             out = subprocess.check_output(cmd,
                 stderr=subprocess.STDOUT, close_fds=True)
         except CalledProcessError as e:
-            strCmd = ' '.join(cmd)
             rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
                 e.returncode, e.output))
             results = msgs.msg['0415'][0]
@@ -394,7 +397,6 @@ def installFS(rh, vaddr, mode, fileSystem):
             rh.updateResults(results)
         except Exception as e:
             # All other exceptions.
-            strCmd = " ".join(cmd)
             rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
                 type(e).__name__, str(e)))
             results = msgs.msg['0421'][0]
@@ -408,13 +410,14 @@ def installFS(rh, vaddr, mode, fileSystem):
                 cmd = ["mkfs.xfs", "-f", device]
             else:
                 cmd = ["mkfs", "-F", "-t", fileSystem, device]
+            strCmd = ' '.join(cmd)
+            rh.printSysLog("Invoking: " + strCmd)
             try:
                 out = subprocess.check_output(cmd,
                     stderr=subprocess.STDOUT, close_fds=True)
                 rh.printLn("N", "File system: " + fileSystem +
                     " is installed.")
             except CalledProcessError as e:
-                strCmd = ' '.join(cmd)
                 rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
                     e.returncode, e.output))
                 results = msgs.msg['0415'][0]
@@ -422,7 +425,6 @@ def installFS(rh, vaddr, mode, fileSystem):
                 rh.updateResults(results)
             except Exception as e:
                 # All other exceptions.
-                strCmd = " ".join(cmd)
                 rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
                     type(e).__name__, str(e)))
                 results = msgs.msg['0421'][0]
@@ -433,13 +435,14 @@ def installFS(rh, vaddr, mode, fileSystem):
 
     if diskAccessed:
         # Give up the disk.
+        cmd = ["/opt/zthin/bin/offlinediskanddetach",
+               rh.userid,
+               vaddr]
+        strCmd = ' '.join(cmd)
+        rh.printSysLog("Invoking: " + strCmd)
         try:
-            cmd = ["/opt/zthin/bin/offlinediskanddetach",
-                   rh.userid,
-                   vaddr]
             out = subprocess.check_output(cmd, close_fds=True)
         except CalledProcessError as e:
-            strCmd = ' '.join(cmd)
             rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
                 e.returncode, e.output))
             results = msgs.msg['0415'][0]
@@ -447,7 +450,6 @@ def installFS(rh, vaddr, mode, fileSystem):
             rh.updateResults(results)
         except Exception as e:
             # All other exceptions.
-            strCmd = " ".join(cmd)
             rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
                 type(e).__name__, str(e)))
             results = msgs.msg['0421'][0]
@@ -620,6 +622,8 @@ def isLoggedOn(rh, userid):
              }
 
     cmd = ["/sbin/vmcp", "query", "user", userid]
+    strCmd = ' '.join(cmd)
+    rh.printSysLog("Invoking: " + strCmd)
     try:
         subprocess.check_output(
             cmd,
@@ -632,14 +636,12 @@ def isLoggedOn(rh, userid):
             results['rs'] = 1
         else:
             # Abnormal failure
-            strCmd = ' '.join(cmd)
             rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
                 e.returncode, e.output))
             results = msgs.msg['0415'][0]
             results['rs'] = e.returncode
     except Exception as e:
         # All other exceptions.
-        strCmd = " ".join(cmd)
         results = msgs.msg['0421'][0]
         rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
             type(e).__name__, str(e)))
@@ -672,8 +674,10 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
     results['rc'] = 9
 
     # Punch to the current user intially and then change the spool class.
+    cmd = ["vmur", "punch", "-r", fileLoc]
+    strCmd = ' '.join(cmd)
     for secs in [1, 2, 3, 5, 10]:
-        cmd = ["vmur", "punch", "-r", fileLoc]
+        rh.printSysLog("Invoking: " + strCmd)
         try:
             results['response'] = subprocess.check_output(cmd,
                                         close_fds=True,
@@ -696,7 +700,6 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
                     time.sleep(secs)
         except Exception as e:
             # All other exceptions.
-            strCmd = " ".join(cmd)
             rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
                 type(e).__name__, str(e)))
             results = msgs.msg['0421'][0]
@@ -719,6 +722,8 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
         # On VMUR success change the class of the spool file
         spoolId = re.findall(r'\d+', str(results['response']))
         cmd = ["vmcp", "change", "rdr", str(spoolId[0]), "class", spoolClass]
+        strCmd = " ".join(cmd)
+        rh.printSysLog("Invoking: " + strCmd)
         try:
             results['response'] = subprocess.check_output(cmd,
                                         close_fds=True,
@@ -733,6 +738,8 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
             # Class change failed
             # Delete the punched file from current userid
             cmd = ["vmcp", "purge", "rdr", spoolId[0]]
+            strCmd = " ".join(cmd)
+            rh.printSysLog("Invoking: " + strCmd)
             try:
                 results['response'] = subprocess.check_output(cmd,
                                             close_fds=True,
@@ -748,12 +755,10 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
                 # All other exceptions related to purge.
                 # We only need to issue the printLn.
                 # Don't need to change return/reason code values
-                strCmd = " ".join(cmd)
                 rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
                     type(e).__name__, str(e)))
         except Exception as e:
             # All other exceptions related to change rdr.
-            strCmd = " ".join(cmd)
             results = msgs.msg['0421'][0]
             rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
                 type(e).__name__, str(e)))
@@ -763,6 +768,8 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
         # Transfer the file from current user to specified user
         cmd = ["vmcp", "transfer", "*", "rdr", str(spoolId[0]), "to",
                 userid, "rdr"]
+        strCmd = " ".join(cmd)
+        rh.printSysLog("Invoking: " + strCmd)
         try:
             results['response'] = subprocess.check_output(cmd,
                                         close_fds=True,
@@ -774,8 +781,11 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
                                          userid, e.output)
             rh.printLn("ES", msg)
             rh.updateResults(msgs.msg['0401'][0])
+
             # Transfer failed so delete the punched file from current userid
             cmd = ["vmcp", "purge", "rdr", spoolId[0]]
+            strCmd = " ".join(cmd)
+            rh.printSysLog("Invoking: " + strCmd)
             try:
                 results['response'] = subprocess.check_output(cmd,
                                             close_fds=True,
@@ -789,12 +799,10 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
                 rh.printLn("ES", msg)
             except Exception as e:
                 # All other exceptions related to purge.
-                strCmd = " ".join(cmd)
                 rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
                     type(e).__name__, str(e)))
         except Exception as e:
             # All other exceptions related to transfer.
-            strCmd = " ".join(cmd)
             results = msgs.msg['0421'][0]
             rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
                 type(e).__name__, str(e)))
@@ -898,9 +906,11 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
     results = {}
 
     cmd = ["/sbin/vmcp", "query", "user", userid]
+    strCmd = " ".join(cmd)
     stateFnd = False
 
     for i in range(1, maxQueries + 1):
+        rh.printSysLog("Invoking: " + strCmd)
         try:
             out = subprocess.check_output(
                 cmd,
@@ -919,7 +929,6 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
             else:
                 # Abnormal failure
                 out = e.output
-                strCmd = ' '.join(cmd)
                 rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
                     e.returncode, out))
                 results = msgs.msg['0415'][0]
@@ -927,7 +936,6 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
                 break
         except Exception as e:
             # All other exceptions.
-            strCmd = " ".join(cmd)
             rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
                 type(e).__name__, str(e)))
             results = msgs.msg['0421'][0]

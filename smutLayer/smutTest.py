@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import argparse
 import os
 import re
 import sys
@@ -1123,6 +1124,7 @@ def runTest(smut, test):
     Output:
        Final test score - 0: failed, 1: passed,
     """
+    global showLog
 
     if test['request'][0:10] != 'SHELL_TEST':
         reqHandle = ReqHandle(cmdName=sys.argv[0], captureLogs=True)
@@ -1252,8 +1254,8 @@ def runTest(smut, test):
         testScore = 0
         if len(results['logEntries']) != 0:
             print("    Log Entries:")
-        for line in results['logEntries']:
-            print("        " + line)
+            for line in results['logEntries']:
+                print("        " + line)
         print("    Test Status: FAILED")
         if respScore != 1:
             print("        Response Validation: FAILED")
@@ -1265,6 +1267,10 @@ def runTest(smut, test):
             print("        rs Validation: FAILED")
     else:
         testScore = 1
+        if showLog is True and len(results['logEntries']) != 0:
+            print("    Log Entries:")
+            for line in results['logEntries']:
+                print("        " + line)
         print("    Test Status: PASSED")
 
     return testScore
@@ -1287,6 +1293,7 @@ def driveTestSet(smut, setId, setToTest):
     Output:
        Global values changed
     """
+    global showLog
     global cnt
     global passed
     global failed
@@ -1378,6 +1385,32 @@ def driveTestSet(smut, setId, setToTest):
  main routine
 ******************************************************************************
 """
+
+# Parse the input and assign it to the variables.
+parser = argparse.ArgumentParser()
+parser.add_argument('--listareas',
+                    dest='listAreas',
+                    action='store_true',
+                    help='List names of the test set areas.')
+parser.add_argument('--showlog',
+                    dest='showLog',
+                    action='store_true',
+                    help='Show log entries for successful tests.')
+parser.add_argument('--listparms',
+                    dest='listParms',
+                    action='store_true',
+                    help='List the command being run.')
+parser.add_argument('setsToRun',
+                    metavar='N',
+                    nargs='+',
+                    help='Test sets to run')
+args = parser.parse_args()
+
+listAreas = args.listAreas
+listParms = args.listParms
+showLog = args.showLog
+setsToRun = args.setsToRun
+
 smut = SMUT()
 smut.enableLogCapture()              # Capture request related logs
 
@@ -1385,14 +1418,13 @@ passed = 0
 failed = 0
 failedTests = []
 cnt = 0
-listParms = False
 
 # Temporary Preparation for punchFile Test. Create a sample config file.
 f = open("sample.config", "w+")
 f.write("This is sample config file for punchFile Test")
 f.close()
 
-if len(sys.argv) > 1 and sys.argv[1].upper() == '--LISTAREAS':
+if listAreas is True:
     for key in sorted(testSets):
         print key + ": " + testSets[key][0]
 else:
@@ -1436,13 +1468,10 @@ else:
 
     # Determine the tests to run based on the first argument.
     tests = []
-    if len(sys.argv) > 1:
-        for i in range(1, len(sys.argv)):
-            key = sys.argv[i].upper()
-            if key == '--LISTPARMS':
-                listParms = True
-                pass
-            elif key in testSets:
+    if len(setsToRun) > 0:
+        for key in setsToRun:
+            key = key.upper()
+            if key in testSets:
                 driveTestSet(smut, key, testSets[key])
             else:
                 print("The following tests set was not recognized: " + key)

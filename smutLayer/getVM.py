@@ -197,6 +197,8 @@ def getConsole(rh):
     # We should set class to *, otherwise we will get errors like:
     # vmur: Reader device class does not match spool file class
     cmd = ["/sbin/vmcp", "spool reader class *"]
+    strCmd = ' '.join(cmd)
+    rh.printSysLog("Invoking: " + strCmd)
     try:
         subprocess.check_output(
             cmd,
@@ -206,7 +208,6 @@ def getConsole(rh):
         # If we couldn't change the class, that's not fatal
         # But we want to warn about possibly incomplete
         # results
-        strCmd = ' '.join(cmd)
         msg = msgs.msg['0407'][1] % (modId, strCmd, e.output)
         rh.printLn("WS", msg)
     except Exception as e:
@@ -214,13 +215,14 @@ def getConsole(rh):
         # If we couldn't change the class, that's not fatal
         # But we want to warn about possibly incomplete
         # results
-        strCmd = " ".join(cmd)
         rh.printLn("ES", msgs.msg['0422'][1] % (modId, strCmd,
             type(e).__name__, str(e)))
         rh.printLn("ES", msgs.msg['0423'][1] % modId)
 
     # List the spool files in the reader
     cmd = ["/usr/sbin/vmur", "list"]
+    strCmd = ' '.join(cmd)
+    rh.printSysLog("Invoking: " + strCmd)
     try:
         files = subprocess.check_output(
             cmd,
@@ -228,7 +230,6 @@ def getConsole(rh):
             stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         # Uh oh, vmur list command failed for some reason
-        strCmd = ' '.join(cmd)
         msg = msgs.msg['0408'][1] % (modId, rh.userid,
                                      strCmd, e.output)
         rh.printLn("ES", msg)
@@ -238,7 +239,6 @@ def getConsole(rh):
         return rh.results['overallRC']
     except Exception as e:
         # All other exceptions.
-        strCmd = " ".join(cmd)
         rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
             type(e).__name__, str(e)))
         rh.updateResults(msgs.msg['0421'][0])
