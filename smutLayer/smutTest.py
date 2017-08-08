@@ -527,6 +527,15 @@ smapiTests = [
         'out': "",
         'overallRC': [0],
     },
+    {
+        'description': "Failing disk pool query with operands.",
+        'request': "smapi <<<safeID>>> api Image_Volume_Space_Query_DM " +
+            "--operands '-q' 4 '-e' 1",
+        'out': "",
+        'overallRC': [8],
+        'rc': [24],
+        'rs': [1018],
+    },
     ]
 
 vmLCTests = [

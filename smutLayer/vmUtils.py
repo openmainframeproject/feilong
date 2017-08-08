@@ -482,7 +482,7 @@ def invokeSMCLI(rh, api, parms):
     """
 
     rh.printSysLog("Enter vmUtils.invokeSMCLI, userid: " + rh.userid +
-        " function: " + api)
+        ", function: " + api + ", parms: " + str(parms))
     goodHeader = False
 
     results = {
