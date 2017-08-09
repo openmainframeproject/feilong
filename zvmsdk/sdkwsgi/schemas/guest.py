@@ -44,8 +44,8 @@ create_nic = {
             'properties': {
                 'vdev': parameter_types.vdev,
                 # FIXME
-                'nic_id': parameter_types.name,
-                'mac_addr': parameter_types.name,
+                'nic_id': parameter_types.nic_id,
+                'mac_addr': parameter_types.mac_address,
                 'ip_addr': parameter_types.ipv4,
                 'active': parameter_types.boolean,
             },
