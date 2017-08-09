@@ -260,14 +260,22 @@ class HandlersGuestTest(SDKWSGITest):
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(api.SDKAPI, 'guest_create_nic')
     def test_guest_create_nic(self, mock_create, mock_userid):
-        body_str = '{"nic": {"vdev": "1234"}}'
+        vdev = '1234'
+        nic_id = "514fec03-0d96-4349-a670-d972805fb579"
+        mac_addr = "02:00:00:11:22:33"
+        ip = "192.168.111.1"
+        body_str = """{"nic": {"vdev": "1234",
+                             "nic_id": "514fec03-0d96-4349-a670-d972805fb579",
+                             "mac_addr": "02:00:00:11:22:33",
+                             "ip_addr": "192.168.111.1"}
+                      }"""
         self.req.body = body_str
 
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_create_nic(self.req)
         mock_create.assert_called_once_with(FAKE_USERID, active=False,
-            ip_addr=None, mac_addr=None, nic_id=None, vdev='1234')
+            ip_addr=ip, mac_addr=mac_addr, nic_id=nic_id, vdev=vdev)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(api.SDKAPI, 'guest_create_nic')
@@ -283,6 +291,20 @@ class HandlersGuestTest(SDKWSGITest):
 
     def test_guest_create_nic_invalid_vdev(self):
         body_str = '{"nic": {"vdev": 123}}'
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, guest.guest_create_nic,
+                          self.req)
+
+    def test_guest_create_nic_invalid_nic_id(self):
+        body_str = '{"nic": {"nic_id": "512da-3124-1234-123456"}}'
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, guest.guest_create_nic,
+                          self.req)
+
+    def test_guest_create_nic_invalid_mac_addr(self):
+        body_str = '{"nic": {"mac_addr": "11:22:33:44:55:6s"}}'
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, guest.guest_create_nic,
