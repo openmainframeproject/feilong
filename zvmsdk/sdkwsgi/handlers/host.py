@@ -14,7 +14,6 @@
 import json
 
 from zvmsdk import api
-from zvmsdk import config
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi import util
@@ -23,7 +22,6 @@ from zvmsdk import utils
 
 
 _HOSTACTION = None
-CONF = config.CONF
 LOG = log.LOG
 
 

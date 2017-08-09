@@ -15,7 +15,6 @@ import json
 import webob.exc
 
 from zvmsdk import api
-from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
@@ -28,7 +27,6 @@ from zvmsdk import utils
 
 _VMACTION = None
 _VMHANDLER = None
-CONF = config.CONF
 LOG = log.LOG
 
 
