@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "057be11b_783cf561",
+        "filename": "zvmsdk/importutils.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-08-09T06:17:09Z",
+      "side": 1,
+      "message": "why not put this helper function in existing utils.py?",
+      "revId": "c15fcd258e56dd1ddf33e6f05eabe14b8152a9b5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
