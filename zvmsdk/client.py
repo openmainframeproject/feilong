@@ -31,6 +31,7 @@ CONF = config.CONF
 LOG = log.LOG
 
 _XCAT_CLIENT = None
+_SMUT_CLIENT = None
 
 
 def get_zvmclient():
@@ -39,6 +40,16 @@ def get_zvmclient():
         if _XCAT_CLIENT is None:
             _XCAT_CLIENT = XCATClient()
         return _XCAT_CLIENT
+    elif CONF.zvm.client_type == 'smut':
+        global _SMUT_CLIENT
+        if _SMUT_CLIENT is None:
+            try:
+                _SMUT_CLIENT = zvmutils.import_object(
+                    'zvmsdk.smutclient.SMUTClient')
+            except ImportError:
+                LOG.error("Unable to get zvmclient")
+                raise ImportError
+        return _SMUT_CLIENT
     else:
         # TODO: raise Exception
         pass
