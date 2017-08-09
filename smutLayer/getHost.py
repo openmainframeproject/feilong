@@ -272,13 +272,14 @@ def getGeneralInfo(rh):
     # Get host using VMCP
     rh.results['overallRC'] = 0
     cmd = ["/sbin/vmcp", "query userid"]
+    strCmd = ' '.join(cmd)
+    rh.printSysLog("Invoking: " + strCmd)
     try:
         host = subprocess.check_output(
             cmd,
             close_fds=True,
             stderr=subprocess.STDOUT).split()[2]
     except subprocess.CalledProcessError as e:
-        strCmd = ' '.join(cmd)
         msg = msgs.msg['0405'][1] % (modId, "Hypervisor Name",
                                      strCmd, e.output)
         rh.printLn("ES", msg)
@@ -286,7 +287,6 @@ def getGeneralInfo(rh):
         host = "no info"
     except Exception as e:
         # All other exceptions.
-        strCmd = " ".join(cmd)
         rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
             type(e).__name__, str(e)))
         rh.updateResults(msgs.msg['0421'][0])
@@ -369,20 +369,20 @@ def getGeneralInfo(rh):
     # Get IPL Time
     ipl = ""
     cmd = ["/sbin/vmcp", "query cplevel"]
+    strCmd = ' '.join(cmd)
+    rh.printSysLog("Invoking: " + strCmd)
     try:
         ipl = subprocess.check_output(
             cmd,
             close_fds=True,
             stderr=subprocess.STDOUT).split("\n")[2]
     except subprocess.CalledProcessError as e:
-        strCmd = ' '.join(cmd)
         msg = msgs.msg['0405'][1] % (modId, "IPL Time",
                                      strCmd, e.output)
         rh.printLn("ES", msg)
         rh.updateResults(msgs.msg['0405'][0])
     except Exception as e:
         # All other exceptions.
-        strCmd = " ".join(cmd)
         rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
             type(e).__name__, str(e)))
         rh.updateResults(msgs.msg['0421'][0])
