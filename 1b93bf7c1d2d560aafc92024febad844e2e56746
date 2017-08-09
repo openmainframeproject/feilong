@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e009fcd9_e4519bd7",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1011375
+      },
+      "writtenOn": "2017-08-09T06:23:18Z",
+      "side": 1,
+      "message": "Do you want to do join again here ? I assume that strCmd already has the right values and spaces in place from line 342",
+      "range": {
+        "startLine": 305,
+        "startChar": 29,
+        "endLine": 305,
+        "endChar": 30
+      },
+      "revId": "1b93bf7c1d2d560aafc92024febad844e2e56746",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "222997f6_d70d8814",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 354,
+      "author": {
+        "id": 1011375
+      },
+      "writtenOn": "2017-08-09T06:23:18Z",
+      "side": 1,
+      "message": "Same comment as line 305",
+      "range": {
+        "startLine": 354,
+        "startChar": 33,
+        "endLine": 354,
+        "endChar": 34
+      },
+      "revId": "1b93bf7c1d2d560aafc92024febad844e2e56746",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
