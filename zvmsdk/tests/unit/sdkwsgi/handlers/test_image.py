@@ -17,6 +17,7 @@ import jwt
 import mock
 import unittest
 
+from zvmsdk import api
 from zvmsdk import exception
 from zvmsdk.sdkwsgi.handlers import image
 from zvmsdk.sdkwsgi import util
@@ -51,17 +52,62 @@ class HandlersImageTest(unittest.TestCase):
         self.req = FakeReq()
         self.req.headers['X-Auth-Token'] = payload
 
-    @mock.patch.object(image.ImageAction, 'create')
+    @mock.patch.object(api.SDKAPI, 'image_import')
     def test_image_create(self, mock_create):
-        body_str = '{"image": {"uuid": "1234"}}'
+        fake_url = "file://tmp/test.img"
+        fake_image_meta = {"os_version": "rhel7.2",
+                      "md5sum": "12345678912345678912345678912345"}
+        fake_remotehost = "hostname"
+        body_str = """{"image": {"url": "file://tmp/test.img",
+                                 "image_meta": {
+                                 "os_version": "rhel7.2",
+                                 "md5sum": "12345678912345678912345678912345"
+                                 },
+                                 "remotehost": "hostname"
+                                }
+                      }"""
         self.req.body = body_str
 
         image.image_create(self.req)
-        body = util.extract_json(body_str)
-        mock_create.assert_called_once_with(body=body)
+        mock_create.assert_called_once_with(fake_url,
+                                            fake_image_meta,
+                                            fake_remotehost)
 
     def test_image_create_invalidname(self):
         body_str = '{"image": {"version": ""}}'
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, image.image_create,
+                          self.req)
+
+    def test_image_create_invalid_url(self):
+        # FIXME: need url format validation
+        pass
+
+    def test_image_create_invalid_image_meta(self):
+        # miss os_version param
+        body_str = """{"image": {"url": "file://tmp/test.img",
+                                 "image_meta": {
+                                 "md5sum": "12345678912345678912345678912345"
+                                 },
+                                 "remotehost": "hostname"
+                                }
+                      }"""
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, image.image_create,
+                          self.req)
+
+    def test_image_create_invalid_image_meta_md5sum(self):
+        # md5sum is less than 32 chars
+        body_str = """{"image": {"url": "file://tmp/test.img",
+                                 "image_meta": {
+                                 "os_version": "rhel7.2",
+                                 "md5sum": "2345678912345678912345678912345"
+                                 },
+                                 "remotehost": "hostname"
+                                }
+                      }"""
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, image.image_create,
