@@ -20,7 +20,7 @@ create = {
             'type': 'object',
             'properties': {
                 'name': parameter_types.name,
-                'rdev': parameter_types.rdev,
+                'rdev': parameter_types.rdev_list,
                 # FIXME: controller has its own conventions
                 'controller': parameter_types.userid,
                 'connection': {

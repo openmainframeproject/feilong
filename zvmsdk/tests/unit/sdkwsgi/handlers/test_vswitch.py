@@ -60,7 +60,9 @@ class HandlersGuestTest(unittest.TestCase):
 
     @mock.patch.object(vswitch.VswitchAction, 'create')
     def test_vswitch_create(self, mock_create):
-        body_str = '{"vswitch": {"name": "name1", "port_type": 1}}'
+        body_str = """{"vswitch": {"name": "name1",
+                                   "rdev": "1234 abcd 123F",
+                                   "port_type": 1}}"""
         self.req.body = body_str
 
         vswitch.vswitch_create(self.req)
@@ -68,7 +70,14 @@ class HandlersGuestTest(unittest.TestCase):
         mock_create.assert_called_once_with(body=body)
 
     def test_vswitch_create_invalidname(self):
-        body_str = '{"vswitch": {"name": ""}}'
+        body_str = '{"vswitch": {"name": "", "rdev": "1234"}}'
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, vswitch.vswitch_create,
+                          self.req)
+
+    def test_vswitch_create_invalid_rdevlist(self):
+        body_str = '{"vswitch": {"name": "name1", "rdev": "12345 sss"}}'
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, vswitch.vswitch_create,
@@ -83,56 +92,72 @@ class HandlersGuestTest(unittest.TestCase):
         mock_delete.assert_called_once_with('vsw1')
 
     def test_vswitch_create_invalid_connection(self):
-        body_str = '{"vswitch": {"name": "name1", "connection": 3}}'
+        body_str = """{"vswitch": {"name": "name1",
+                                   "rdev": "1234",
+                                   "connection": 3}}"""
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, vswitch.vswitch_create,
                           self.req)
 
     def test_vswitch_create_invalid_queue_mem(self):
-        body_str = '{"vswitch": {"name": "name1", "queue_mem": 10}}'
+        body_str = """{"vswitch": {"name": "name1",
+                                   "rdev": "1234",
+                                   "queue_mem": 10}}"""
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, vswitch.vswitch_create,
                           self.req)
 
     def test_vswitch_create_invalid_network_type(self):
-        body_str = '{"vswitch": {"name": "name1", "network_type": 3}}'
+        body_str = """{"vswitch": {"name": "name1",
+                                   "rdev": "1234",
+                                   "network_type": 3}}"""
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, vswitch.vswitch_create,
                           self.req)
 
     def test_vswitch_create_invalid_update(self):
-        body_str = '{"vswitch": {"name": "name1", "update": 4}}'
+        body_str = """{"vswitch": {"name": "name1",
+                                   "rdev": "1234",
+                                   "update": 4}}"""
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, vswitch.vswitch_create,
                           self.req)
 
     def test_vswitch_create_invalid_vid(self):
-        body_str = '{"vswitch": {"name": "name1", "vid": -1}}'
+        body_str = """{"vswitch": {"name": "name1",
+                                   "rdev": "1234",
+                                   "vid": -1}}"""
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, vswitch.vswitch_create,
                           self.req)
 
     def test_vswitch_create_invalid_native_vid(self):
-        body_str = '{"vswitch": {"name": "name1", "native_vid": 4096}}'
+        body_str = """{"vswitch": {"name": "name1",
+                                   "rdev": "1234",
+                                   "native_vid": 4096}}"""
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, vswitch.vswitch_create,
                           self.req)
 
     def test_vswitch_create_invalid_router(self):
-        body_str = '{"vswitch": {"name": "name1", "router": 3}}'
+        body_str = """{"vswitch": {"name": "name1",
+                                   "rdev": "1234",
+                                   "router": 3}}"""
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, vswitch.vswitch_create,
                           self.req)
 
     def test_vswitch_create_invalid_grvp(self):
-        body_str = '{"vswitch": {"name": "name1", "gvrp": 3}}'
+        body_str = """{"vswitch": {"name": "name1",
+                                   "rdev": "1234",
+                                   "gvrp": 3}}"""
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, vswitch.vswitch_create,
