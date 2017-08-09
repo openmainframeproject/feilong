@@ -616,7 +616,8 @@ vmModifyTests = [
     {
         'description': "Add a 3390 disk to the system with ext4.",
         'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
-            "101 100m --mode w --filesystem ext4",
+            "101 100m --mode w --filesystem ext4 " +
+            "--readpw readpw --writepw writepw --multipw multipw",
         'out': "",
         'overallRC': [0],
     },

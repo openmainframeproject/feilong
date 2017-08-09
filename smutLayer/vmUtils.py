@@ -77,7 +77,7 @@ def disableEnableDisk(rh, userid, vaddr, option):
     return results
 
 
-def execCmdThruIUCV(rh, userid, strCmd):
+def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[]):
     """
     Send a command to a virtual machine using IUCV.
 
@@ -85,6 +85,8 @@ def execCmdThruIUCV(rh, userid, strCmd):
        Request Handle
        Userid of the target virtual machine
        Command string to send
+       (Optional) List of strCmd words (by index) to hide in
+          sysLog by replacing the word with "<hidden>".
 
     Output:
        Dictionary containing the following:
@@ -100,9 +102,16 @@ def execCmdThruIUCV(rh, userid, strCmd):
           to suppress it.  Instead, any error messages are put in the
           response dictionary element that is returned.
     """
+    if len(hideInLog) == 0:
+        rh.printSysLog("Enter vmUtils.execCmdThruIUCV, userid: " +
+                       userid + " cmd: " + strCmd)
+    else:
+        logCmd = strCmd.split(' ')
+        for i in hideInLog:
+            logCmd[i] = '<hidden>'
+        rh.printSysLog("Enter vmUtils.execCmdThruIUCV, userid: " +
+                       userid + " cmd: " + ' '.join(logCmd))
 
-    rh.printSysLog("Enter vmUtils.execCmdThruIUCV, userid: " +
-                           userid + " cmd: " + strCmd)
     iucvpath = '/opt/zthin/bin/IUCV/'
     results = {
               'overallRC': 0,
@@ -459,7 +468,7 @@ def installFS(rh, vaddr, mode, fileSystem):
     return results
 
 
-def invokeSMCLI(rh, api, parms):
+def invokeSMCLI(rh, api, parms, hideInLog=[]):
     """
     Invoke SMCLI and parse the results.
 
@@ -467,6 +476,8 @@ def invokeSMCLI(rh, api, parms):
        Request Handle
        API name,
        SMCLI parms as an array
+       (Optional) List of parms (by index) to hide in
+          sysLog by replacing the parm with "<hidden>".
 
     Output:
        Dictionary containing the following:
@@ -482,9 +493,17 @@ def invokeSMCLI(rh, api, parms):
          values or contain too few words then one or more error
          messages are generated. THIS SHOULD NEVER OCCUR !!!!
     """
-
-    rh.printSysLog("Enter vmUtils.invokeSMCLI, userid: " + rh.userid +
-        ", function: " + api + ", parms: " + str(parms))
+    if len(hideInLog) == 0:
+        rh.printSysLog("Enter vmUtils.invokeSMCLI, userid: " +
+                       rh.userid + ", function: " + api +
+                       ", parms: " + str(parms))
+    else:
+        logParms = parms
+        for i in hideInLog:
+            logParms[i] = '<hidden>'
+        rh.printSysLog("Enter vmUtils.invokeSMCLI, userid: " +
+               rh.userid + ", function: " + api +
+               ", parms: " + str(logParms))
     goodHeader = False
 
     results = {

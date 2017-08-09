@@ -167,6 +167,7 @@ def add3390(rh):
             "-u", "1",
             "-z", cyl,
             "-f", "1"]
+        hideList = []
 
         if 'mode' in rh.parms:
             parms.extend(["-m", rh.parms['mode']])
@@ -174,12 +175,18 @@ def add3390(rh):
             parms.extend(["-m", 'W'])
         if 'readPW' in rh.parms:
             parms.extend(["-R", rh.parms['readPW']])
+            hideList.append(len(parms) - 1)
         if 'writePW' in rh.parms:
             parms.extend(["-W", rh.parms['writePW']])
+            hideList.append(len(parms) - 1)
         if 'multiPW' in rh.parms:
             parms.extend(["-M", rh.parms['multiPW']])
+            hideList.append(len(parms) - 1)
 
-        results = invokeSMCLI(rh, "Image_Disk_Create_DM", parms)
+        results = invokeSMCLI(rh,
+                              "Image_Disk_Create_DM",
+                              parms,
+                              hideInLog=hideList)
 
         if results['overallRC'] != 0:
             # SMAPI API failed.
@@ -261,6 +268,7 @@ def add9336(rh):
             "-u", "1",
             "-z", blocks,
             "-f", "1"]
+        hideList = []
 
         if 'mode' in rh.parms:
             parms.extend(["-m", rh.parms['mode']])
@@ -268,12 +276,18 @@ def add9336(rh):
             parms.extend(["-m", 'W'])
         if 'readPW' in rh.parms:
             parms.extend(["-R", rh.parms['readPW']])
+            hideList.append(len(parms) - 1)
         if 'writePW' in rh.parms:
             parms.extend(["-W", rh.parms['writePW']])
+            hideList.append(len(parms) - 1)
         if 'multiPW' in rh.parms:
             parms.extend(["-M", rh.parms['multiPW']])
+            hideList.append(len(parms) - 1)
 
-        results = invokeSMCLI(rh, "Image_Disk_Create_DM", parms)
+        results = invokeSMCLI(rh,
+                              "Image_Disk_Create_DM",
+                              parms,
+                              hideInLog=hideList)
 
         if results['overallRC'] != 0:
             # SMAPI API failed.
