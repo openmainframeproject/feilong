@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Command line processor for Systems Management Ultra Thin Layer
 #
 # Copyright 2017 IBM Corp.
