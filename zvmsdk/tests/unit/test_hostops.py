@@ -14,7 +14,6 @@
 
 import mock
 
-import zvmsdk.client as zvmclient
 from zvmsdk import config
 from zvmsdk import hostops
 from zvmsdk.tests.unit import base
@@ -27,7 +26,7 @@ class SDKHostOpsTestCase(base.SDKTestCase):
         self._hostops = hostops.get_hostops()
 
     @mock.patch.object(hostops.HOSTOps, 'diskpool_get_info')
-    @mock.patch.object(zvmclient.XCATClient, 'get_host_info')
+    @mock.patch.object(hostops.get_hostops()._zvmclient, 'get_host_info')
     def test_get_host_info(self, get_host_info, diskpool_get_info):
         get_host_info.return_value = {
             "zvm_host": "FAKENODE",
@@ -57,7 +56,7 @@ class SDKHostOpsTestCase(base.SDKTestCase):
         self.assertEqual(host_info['hypervisor_version'], 610)
         self.assertEqual(host_info['disk_total'], 406105)
 
-    @mock.patch.object(zvmclient.XCATClient, 'get_diskpool_info')
+    @mock.patch.object(hostops.get_hostops()._zvmclient, 'get_diskpool_info')
     def test_get_diskpool_info(self, get_diskpool_info):
         get_diskpool_info.return_value = {
             "disk_total": "406105.3 G",

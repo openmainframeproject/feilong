@@ -14,7 +14,6 @@
 
 import mock
 
-import zvmsdk.client as zvmclient
 from zvmsdk import exception
 from zvmsdk import monitor
 from zvmsdk.tests.unit import base
@@ -150,7 +149,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
         self._monitor = monitor.ZVMMonitor()
 
     @mock.patch.object(monitor.MeteringCache, 'get')
-    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
+    @mock.patch.object(monitor.get_monitor()._zvmclient, 'get_power_state')
     @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
     def test_private_get_inspect_data_cache_hit_single(self, cache_enabled,
                                                        get_ps, cache_get):
@@ -167,7 +166,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
         cache_enabled.assert_not_called()
 
     @mock.patch.object(monitor.MeteringCache, 'get')
-    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
+    @mock.patch.object(monitor.get_monitor()._zvmclient, 'get_power_state')
     @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
     def test_private_get_inspect_data_cache_hit_multi(self, cache_enabled,
                                                        get_ps, cache_get):
@@ -190,7 +189,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
         cache_enabled.assert_not_called()
 
     @mock.patch.object(monitor.MeteringCache, 'get')
-    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
+    @mock.patch.object(monitor.get_monitor()._zvmclient, 'get_power_state')
     @mock.patch.object(monitor.ZVMMonitor, '_update_cpumem_data')
     def test_private_get_inspect_data_cache_miss_single(self,
                                                         update_cpumem_data,
@@ -212,7 +211,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
         self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
 
     @mock.patch.object(monitor.MeteringCache, 'get')
-    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
+    @mock.patch.object(monitor.get_monitor()._zvmclient, 'get_power_state')
     @mock.patch.object(monitor.ZVMMonitor, '_update_cpumem_data')
     def test_private_get_inspect_data_cache_miss_multi(self,
                                                         update_cpumem_data,
@@ -249,7 +248,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
         self.assertEqual(rdata['USERID1']['shared_memory'], '5222192 KB')
 
     @mock.patch.object(monitor.MeteringCache, 'get')
-    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
+    @mock.patch.object(monitor.get_monitor()._zvmclient, 'get_power_state')
     @mock.patch.object(monitor.ZVMMonitor, '_update_cpumem_data')
     def test_private_get_inspect_data_guest_off(self,
                                                 update_cpumem_data,
@@ -263,7 +262,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
         self.assertEqual(rdata, {})
 
     @mock.patch.object(monitor.MeteringCache, 'get')
-    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
+    @mock.patch.object(monitor.get_monitor()._zvmclient, 'get_power_state')
     @mock.patch.object(monitor.ZVMMonitor, '_update_cpumem_data')
     def test_private_get_inspect_data_guest_not_exist(self,
                                                       update_cpumem_data,
@@ -278,7 +277,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
         self.assertEqual(rdata, {})
 
     @mock.patch.object(monitor.MeteringCache, 'get')
-    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
+    @mock.patch.object(monitor.get_monitor()._zvmclient, 'get_power_state')
     @mock.patch.object(monitor.ZVMMonitor, '_update_nic_data')
     def test_private_get_inspect_data_vnics(self,
                                             update_nic_data,
@@ -296,8 +295,9 @@ class SDKMonitorTestCase(base.SDKTestCase):
                                  'USERID2': INST_NICS_SAMPLE2
                                  })
 
-    @mock.patch.object(zvmclient.XCATClient, 'image_performance_query')
-    @mock.patch.object(zvmclient.XCATClient, 'get_vm_list')
+    @mock.patch.object(monitor.get_monitor()._zvmclient,
+                       'image_performance_query')
+    @mock.patch.object(monitor.get_monitor()._zvmclient, 'get_vm_list')
     @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
     def test_private_update_cpumem_data_cache_enabled(self, cache_enabled,
                                                get_vm_list,
@@ -320,8 +320,9 @@ class SDKMonitorTestCase(base.SDKTestCase):
         '3')
 
     @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
-    @mock.patch.object(zvmclient.XCATClient, 'image_performance_query')
-    @mock.patch.object(zvmclient.XCATClient, 'get_vm_list')
+    @mock.patch.object(monitor.get_monitor()._zvmclient,
+                       'image_performance_query')
+    @mock.patch.object(monitor.get_monitor()._zvmclient, 'get_vm_list')
     def test_private_update_cpumem_data_cache_disabled(self, get_vm_list,
                                                 image_perform_query,
                                                 cache_enabled):
@@ -475,7 +476,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
         self.assertEqual(rdata['USERID1']['min_mem_kb'], 0)
         self.assertEqual(rdata['USERID1']['shared_mem_kb'], 5222192)
 
-    @mock.patch.object(zvmclient.XCATClient,
+    @mock.patch.object(monitor.get_monitor()._zvmclient,
                        'virtual_network_vswitch_query_iuo_stats')
     @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
     def test_private_update_nic_data(self, cache_enabled, smcli_iuo_query):
@@ -491,7 +492,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
         self.assertEqual(self._monitor._cache.get('vnics', 'USERID2'),
                          INST_NICS_SAMPLE2)
 
-    @mock.patch.object(zvmclient.XCATClient,
+    @mock.patch.object(monitor.get_monitor()._zvmclient,
                        'virtual_network_vswitch_query_iuo_stats')
     @mock.patch.object(monitor.ZVMMonitor, '_cache_enabled')
     def test_private_update_nic_data_cache_disabled(self, cache_enabled,

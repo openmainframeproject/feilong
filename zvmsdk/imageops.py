@@ -43,10 +43,9 @@ class ImageOps(object):
 
     def image_import(self, url, image_meta={}, remote_host=None):
         parsed_url = urlparse.urlparse(url)
-        if CONF.zvm.client_type == 'xcat':
-            self.zvmclient.image_import(parsed_url.path,
-                                        image_meta['os_version'],
-                                        remote_host=remote_host)
+        self.zvmclient.image_import(parsed_url.path,
+                                    image_meta['os_version'],
+                                    remote_host=remote_host)
 
     def image_query(self, imagekeyword=None):
         return self.zvmclient.image_query(imagekeyword)

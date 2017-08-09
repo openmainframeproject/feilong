@@ -15,8 +15,6 @@
 
 import mock
 
-# from zvmsdk.config import CONF
-from zvmsdk import client as zvmclient
 from zvmsdk import config
 from zvmsdk import imageops
 from zvmsdk import utils as zvmutils
@@ -31,7 +29,7 @@ class SDKImageOpsTestCase(base.SDKTestCase):
         self._image_ops = imageops.get_imageops()
         self._pathutil = zvmutils.PathUtils()
 
-    @mock.patch.object(zvmclient.XCATClient, 'image_import')
+    @mock.patch.object(imageops.get_imageops().zvmclient, 'image_import')
     def test_image_import_xcat(self, image_import):
         url = 'file:///path/to/image/file'
         image_meta = {'os_version': 'rhel7.2',
@@ -43,13 +41,13 @@ class SDKImageOpsTestCase(base.SDKTestCase):
                                              'rhel7.2',
                                              remote_host=remote_host)
 
-    @mock.patch.object(zvmclient.XCATClient, 'image_query')
+    @mock.patch.object(imageops.get_imageops().zvmclient, 'image_query')
     def test_image_query(self, image_query):
         imagekeyword = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'
         self._image_ops.image_query(imagekeyword)
         image_query.assert_called_once_with(imagekeyword)
 
-    @mock.patch.object(zvmclient.XCATClient, 'image_delete')
+    @mock.patch.object(imageops.get_imageops().zvmclient, 'image_delete')
     def test_image_delete(self, image_delete):
         image_name = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'
         self._image_ops.image_delete(image_name)

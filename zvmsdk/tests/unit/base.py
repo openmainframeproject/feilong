@@ -17,6 +17,15 @@ import unittest
 
 from curses.ascii import isupper
 
+from zvmsdk import config
+
+
+CONF = config.CONF
+
+
+def set_conf(section, opt, value):
+    CONF[section][opt] = value
+
 
 class SDKTestCase(unittest.TestCase):
     def setUp(self):

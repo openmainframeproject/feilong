@@ -19,13 +19,13 @@ import shutil
 import tarfile
 import xml
 
-
 from zvmsdk import client as zvmclient
 from zvmsdk import constants as const
 from zvmsdk import exception
 from zvmsdk import utils as zvmutils
 from zvmsdk import config
 from zvmsdk.tests.unit import base
+
 
 CONF = config.CONF
 
@@ -44,6 +44,17 @@ class SDKZVMClientTestCase(base.SDKTestCase):
 
 class SDKXCATClientTestCases(SDKZVMClientTestCase):
     """Test cases for xcat zvm client."""
+
+    @classmethod
+    def setUpClass(cls):
+        super(SDKXCATClientTestCases, cls).setUpClass()
+        cls.old_client_type = CONF.zvm.client_type
+        base.set_conf('zvm', 'client_type', 'xcat')
+
+    @classmethod
+    def tearDownClass(cls):
+        base.set_conf('zvm', 'client_type', cls.old_client_type)
+        super(SDKXCATClientTestCases, cls).tearDownClass()
 
     def setUp(self):
         super(SDKXCATClientTestCases, self).setUp()
@@ -769,7 +780,7 @@ class SDKXCATClientTestCases(SDKZVMClientTestCase):
         ret = self._zvmclient._lsvm(fake_userid)
         self.assertEqual(ret[0], fake_userid)
 
-    def test_get_node_status(self):
+    def test_get_guest_connection_status(self):
         # TODO:moving to vmops and change name to ''
         pass
 

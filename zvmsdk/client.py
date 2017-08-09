@@ -57,19 +57,101 @@ def get_zvmclient():
 
 class ZVMClient(object):
 
-    def power_on(self, userid):
+    def guest_start(self, userid):
+        pass
+
+    def guest_stop(self, userid):
         pass
 
     def get_power_state(self, userid):
         pass
 
-    def prepare_for_spawn(self, userid):
-        """
-        Every kind of client can do someting special for themselves before
-        spawn.Because some keywords can not appear in ops modules, so we can
-        put them in this interface.
-        eg. xcat client can create xcat node here.
-        """
+    def image_import(self, image_file_path, os_version, remote_host=None):
+        pass
+
+    def image_query(self, imagekeyword=None):
+        pass
+
+    def image_delete(self, image_name):
+        pass
+
+    def get_host_info(self):
+        pass
+
+    def get_diskpool_info(self, pool):
+        pass
+
+    def virtual_network_vswitch_query_iuo_stats(self):
+        pass
+
+    def get_vm_list(self):
+        pass
+
+    def image_performance_query(self, uid_list):
+        pass
+
+    def add_vswitch(self, name, rdev=None, controller='*',
+                    connection='CONNECT', network_type='IP',
+                    router="NONROUTER", vid='UNAWARE', port_type='ACCESS',
+                    gvrp='GVRP', queue_mem=8, native_vid=1, persist=True):
+        pass
+
+    def couple_nic_to_vswitch(self, userid, nic_vdev,
+                              vswitch_name, active=False):
+        pass
+
+    def create_nic(self, userid, vdev=None, nic_id=None,
+                   mac_addr=None, ip_addr=None, active=False):
+        pass
+
+    def delete_nic(self, userid, vdev, active=False):
+        pass
+
+    def delete_vswitch(self, switch_name, persist=True):
+        pass
+
+    def get_vm_nic_vswitch_info(self, vm_id):
+        pass
+
+    def get_vswitch_list(self):
+        pass
+
+    def grant_user_to_vswitch(self, vswitch_name, userid):
+        pass
+
+    def revoke_user_from_vswitch(self, vswitch_name, userid):
+        pass
+
+    def set_vswitch_port_vlan_id(self, vswitch_name, userid, vlan_id):
+        pass
+
+    def set_vswitch(self, switch_name, **kwargs):
+        pass
+
+    def uncouple_nic_from_vswitch(self, userid, nic_vdev,
+                                  active=False):
+        pass
+
+    def get_guest_connection_status(self, userid):
+        pass
+
+    def guest_deploy(self, node, image_name, transportfiles=None,
+                     remotehost=None, vdev=None):
+        pass
+
+    def process_additional_minidisks(self, userid, disk_info):
+        pass
+
+    def get_image_performance_info(self, userid):
+        pass
+
+    def get_user_direct(self, userid):
+        pass
+
+    def create_vm(self, userid, cpu, memory, disk_list, profile):
+        pass
+
+    def delete_vm(self, userid):
         pass
 
 
@@ -367,8 +449,7 @@ class XCATClient(ZVMClient):
         raw_dict = self._lsvm(userid)
         return [ent.partition(': ')[2] for ent in raw_dict]
 
-    # TODO:moving to vmops and change name to ''
-    def get_node_status(self, userid):
+    def get_guest_connection_status(self, userid):
         url = self._xcat_url.nodestat('/' + userid)
         res_dict = zvmutils.xcat_request("GET", url)
         return res_dict

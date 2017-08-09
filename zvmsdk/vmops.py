@@ -100,10 +100,10 @@ class VMOps(object):
     def add_instance_metadata(self):
         pass
 
-    def is_reachable(self, instance_name):
+    def is_reachable(self, userid):
         """Return True is the instance is reachable."""
-        res_dict = self._zvmclient.get_node_status(instance_name)
-        LOG.debug('Get instance status of %s', instance_name)
+        res_dict = self._zvmclient.get_guest_connection_status(userid)
+        LOG.debug('Get instance status of %s', userid)
 
         with zvmutils.expect_invalid_xcat_resp_data(res_dict):
             status = res_dict['node'][0][0]['data'][0]

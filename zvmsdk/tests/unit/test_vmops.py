@@ -14,10 +14,8 @@
 
 
 import mock
-import zvmsdk.client as zvmclient
 import zvmsdk.utils as zvmutils
 
-from zvmsdk.config import CONF
 from zvmsdk import exception
 from zvmsdk import vmops
 from zvmsdk.tests.unit import base
@@ -29,31 +27,26 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops = vmops.get_vmops()
         self.xcat_url = zvmutils.get_xcat_url()
 
-    @mock.patch.object(zvmutils, 'xcat_request')
-    def test_get_power_state(self, xrequest):
-        url = "/xcatws/nodes/cbi00063/power?" + \
-                "userName=" + CONF.xcat.username +\
-                "&password=" + CONF.xcat.password + "&format=json"
-        body = ['stat']
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'get_power_state')
+    def test_get_power_state(self, gps):
+        gps.return_value = 'on'
         self.vmops.get_power_state('cbi00063')
-        xrequest.assert_called_with('GET', url, body)
+        gps.assert_called_with('cbi00063')
 
-    @mock.patch.object(zvmutils, 'xcat_request')
-    def test_is_reachable(self, xrequest):
-        xrequest.return_value = {
-                'info': [],
-                'node': [[{u'data': [u'sshd'], u'name': [u'cbi00063']}]],
-                'errorcode': [], 'data': [], 'error': []}
+    @mock.patch.object(vmops.get_vmops()._zvmclient,
+                       'get_guest_connection_status')
+    def test_is_reachable(self, ggcs):
+        ggcs.return_value = {
+                'node': [[{u'data': [u'sshd'], u'name': [u'cbi00063']}]]}
         ret = self.vmops.is_reachable('cbi00063')
-
         self.assertEqual(ret, True)
 
-    @mock.patch.object(zvmclient.XCATClient, '_power_state')
-    def test_guest_start(self, power_state):
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'guest_start')
+    def test_guest_start(self, guest_start):
         self.vmops.guest_start('cbi00063')
-        power_state.assert_called_once_with('cbi00063', 'PUT', 'on')
+        guest_start.assert_called_once_with('cbi00063')
 
-    @mock.patch.object(zvmclient.XCATClient, 'create_vm')
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'create_vm')
     def test_create_vm(self, create_vm):
         userid = 'fakeuser'
         cpu = 2
@@ -64,7 +57,8 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(userid, cpu, memory, disk_list,
                                           user_profile)
 
-    @mock.patch('zvmsdk.client.XCATClient.process_additional_minidisks')
+    @mock.patch.object(vmops.get_vmops()._zvmclient,
+                       'process_additional_minidisks')
     def test_guest_config_minidisks(self, process_additional_minidisks):
         userid = 'userid'
         disk_list = [{'vdev': '0101',
@@ -73,13 +67,14 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.guest_config_minidisks(userid, disk_list)
         process_additional_minidisks.assert_called_once_with(userid, disk_list)
 
-    @mock.patch('zvmsdk.client.XCATClient.get_power_state')
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'get_power_state')
     def test_is_powered_off(self, check_stat):
         check_stat.return_value = 'off'
         ret = self.vmops.is_powered_off('cbi00063')
         self.assertEqual(True, ret)
 
-    @mock.patch('zvmsdk.client.XCATClient.get_image_performance_info')
+    @mock.patch.object(vmops.get_vmops()._zvmclient,
+                       'get_image_performance_info')
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
     def test_get_info(self, gps, gipi):
         gps.return_value = 'on'
@@ -97,7 +92,8 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertEqual(vm_info['num_cpu'], 2)
         self.assertEqual(vm_info['cpu_time_us'], 6911844399)
 
-    @mock.patch('zvmsdk.client.XCATClient.get_image_performance_info')
+    @mock.patch.object(vmops.get_vmops()._zvmclient,
+                       'get_image_performance_info')
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
     def test_get_info_error(self, gps, gipi):
         gps.return_value = 'on'
@@ -106,8 +102,9 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertRaises(exception.ZVMVirtualMachineNotExist,
                           self.vmops.get_info, 'fakeid')
 
-    @mock.patch('zvmsdk.client.XCATClient.get_user_direct')
-    @mock.patch('zvmsdk.client.XCATClient.get_image_performance_info')
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'get_user_direct')
+    @mock.patch.object(vmops.get_vmops()._zvmclient,
+                       'get_image_performance_info')
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
     def test_get_info_shutdown(self, gps, gipi, gud):
         gps.return_value = 'off'
@@ -129,8 +126,9 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertEqual(vm_info['num_cpu'], 2)
         self.assertEqual(vm_info['cpu_time_us'], 0)
 
-    @mock.patch('zvmsdk.client.XCATClient.get_user_direct')
-    @mock.patch('zvmsdk.client.XCATClient.get_image_performance_info')
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'get_user_direct')
+    @mock.patch.object(vmops.get_vmops()._zvmclient,
+                       'get_image_performance_info')
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
     def test_get_info_get_uid_failed(self, gps, gipi, gud):
         gps.return_value = 'off'
@@ -140,7 +138,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertRaises(exception.ZVMVirtualMachineNotExist,
                           self.vmops.get_info, 'fakeid')
 
-    @mock.patch('zvmsdk.client.XCATClient.guest_deploy')
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'guest_deploy')
     def test_guest_deploy(self, deploy_image_to_vm):
         self.vmops.guest_deploy('fakevm', 'fakeimg',
                                 '/test/transport.tgz')
@@ -148,7 +146,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                                               '/test/transport.tgz', None,
                                               None)
 
-    @mock.patch.object(zvmclient.XCATClient, 'get_user_direct')
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'get_user_direct')
     def test_get_definition_info(self, get_user_direct):
         get_user_direct.return_value = [
             'line1',
@@ -157,20 +155,20 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.get_definition_info("fake_user_id", nic_coupled='1000')
         get_user_direct.assert_called_with("fake_user_id")
 
-    @mock.patch.object(zvmclient.XCATClient, 'delete_vm')
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'delete_vm')
     def test_delete_vm(self, delete_vm):
         userid = 'userid'
         self.vmops.delete_vm(userid)
         delete_vm.assert_called_once_with(userid)
 
-    @mock.patch.object(zvmclient.XCATClient, 'guest_stop')
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'guest_stop')
     def test_guest_stop(self, gs):
         userid = 'userid'
         self.vmops.guest_stop(userid, 0, 10)
         gs.assert_called_once_with(userid)
 
-    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
-    @mock.patch.object(zvmclient.XCATClient, 'guest_stop')
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'get_power_state')
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'guest_stop')
     def test_guest_stop_with_retry(self, gs, gps):
         userid = 'userid'
         gps.return_value = u'off'
@@ -178,15 +176,15 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         gs.assert_called_once_with(userid)
         gps.assert_called_once_with(userid)
 
-    @mock.patch.object(zvmclient.XCATClient, 'get_power_state')
-    @mock.patch.object(zvmclient.XCATClient, 'guest_stop')
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'get_power_state')
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'guest_stop')
     def test_guest_stop_timeout(self, gs, gps):
         userid = 'userid'
         gps.return_value = u'on'
         self.vmops.guest_stop(userid, 1, 1)
         gps.assert_called_once_with(userid)
 
-    @mock.patch.object(zvmclient.XCATClient, 'get_vm_list')
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'get_vm_list')
     def test_guest_list(self, get_vm_list):
         self.vmops.guest_list()
         get_vm_list.assert_called_once_with()
