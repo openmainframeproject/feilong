@@ -21,8 +21,8 @@ from zvmsdk import config
 from zvmsdk import log
 from zvmsdk.exception import ZVMVolumeError
 from zvmsdk import dist
-from zvmsdk import utils as zvmutils
 from zvmsdk import vmops
+from zvmsdk import xcatclient
 
 
 _VolumeOP = None
@@ -156,7 +156,7 @@ class _xCATProxy(object):
     _TARGET = 'setupDisk'
 
     def __init__(self):
-        self._xcat_url = zvmutils.get_xcat_url()
+        self._xcat_url = xcatclient.get_xcat_url()
         self._dist_manager = dist.LinuxDistManager()
         self._host = CONF.zvm.host
 
@@ -179,7 +179,7 @@ class _xCATProxy(object):
 
     def _xcat_chhy(self, body):
         url = self._xcat_url.chhv('/' + self._host)
-        zvmutils.xcat_request('PUT', url, body)
+        xcatclient.xcat_request('PUT', url, body)
 
     def allocate_zfcp(self, instance, fcp, size, wwpn, lun):
         body = [" ".join(['--reservezfcp', self._ZFCP_POOL, 'used',
@@ -232,7 +232,7 @@ class _xCATProxy(object):
 
     def _xcat_chvm(self, node, body):
         url = self._xcat_url.chvm('/' + node)
-        zvmutils.xcat_request('PUT', url, body)
+        xcatclient.xcat_request('PUT', url, body)
 
     def _get_mountpoint_parms(self, action, fcp, wwpn, lun,
                               mountpoint, os_version):

@@ -13,12 +13,20 @@
 #    under the License.
 
 
+import contextlib
 import datetime
+import functools
+import json
 import os
 import re
 import shutil
+import socket
+import ssl
+import stat
 import tarfile
 import xml.dom.minidom as Dom
+
+from six.moves import http_client as httplib
 
 from zvmsdk import client
 from zvmsdk import config
@@ -30,12 +38,485 @@ from zvmsdk import utils as zvmutils
 
 CONF = config.CONF
 LOG = log.LOG
+_DEFAULT_MODE = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
+
+_XCAT_URL = None
+
+
+def get_xcat_url():
+    global _XCAT_URL
+
+    if _XCAT_URL is not None:
+        return _XCAT_URL
+
+    _XCAT_URL = XCATUrl()
+    return _XCAT_URL
+
+
+class XCATUrl(object):
+    """To return xCAT URLs for invoking xCAT REST APIs."""
+
+    def __init__(self):
+        self.PREFIX = '/xcatws'
+        self.SUFFIX = ''.join(('?userName=', CONF.xcat.username,
+                               '&password=', CONF.xcat.password,
+                               '&format=json'))
+
+        # xcat objects
+        self.VMS = '/vms'
+        self.NODES = '/nodes'
+        self.TABLES = '/tables'
+        self.IMAGES = '/images'
+        self.OBJECTS = '/objects/osimage'
+        self.OS = '/OS'
+        self.HV = '/hypervisor'
+        self.NETWORK = '/networks'
+
+        # xcat actions
+        self.POWER = '/power'
+        self.STATUS = '/status'
+        self.XDSH = '/dsh'
+        self.CAPTURE = '/capture'
+        self.IMGIMPORT = '/import'
+        self.INVENTORY = '/inventory'
+        self.STATUS = '/status'
+        self.MIGRATE = '/migrate'
+        self.CAPTURE = '/capture'
+        self.EXPORT = '/export'
+        self.IMGIMPORT = '/import'
+        self.BOOTSTAT = '/bootstate'
+        self.VERSION = '/version'
+        self.DIAGLOGS = '/logs/diagnostics'
+        self.PNODERANGE = '&nodeRange='
+
+    def _nodes(self, arg=''):
+        return self.PREFIX + self.NODES + arg + self.SUFFIX
+
+    def _vms(self, arg=''):
+        rurl = self.PREFIX + self.VMS + arg + self.SUFFIX
+        return rurl
+
+    def _append_addp(self, rurl, addp=None):
+        if addp is not None:
+            return ''.join((rurl, addp))
+        else:
+            return rurl
+
+    def _hv(self, arg=''):
+        return self.PREFIX + self.HV + arg + self.SUFFIX
+
+    def rpower(self, arg=''):
+        return self.PREFIX + self.NODES + arg + self.POWER + self.SUFFIX
+
+    def nodestat(self, arg=''):
+        return self.PREFIX + self.NODES + arg + self.STATUS + self.SUFFIX
+
+    def mkdef(self, arg=''):
+        return self._nodes(arg)
+
+    def rmdef(self, arg=''):
+        return self._nodes(arg)
+
+    def xdsh(self, arg=''):
+        """Run shell command."""
+        return ''.join((self.PREFIX, self.NODES, arg, self.XDSH, self.SUFFIX))
+
+    def capture(self, arg=''):
+        return self.PREFIX + self.IMAGES + arg + self.CAPTURE + self.SUFFIX
+
+    def rmimage(self, arg=''):
+        return self.PREFIX + self.IMAGES + arg + self.SUFFIX
+
+    def rmobject(self, arg=''):
+        return self.PREFIX + self.OBJECTS + arg + self.SUFFIX
+
+    def imgimport(self, arg=''):
+        return self.PREFIX + self.IMAGES + self.IMGIMPORT + arg + self.SUFFIX
+
+    def gettab(self, arg='', addp=None):
+        rurl = ''.join((self.PREFIX, self.TABLES, arg, self.SUFFIX))
+        return self._append_addp(rurl, addp)
+
+    def tabdump(self, arg='', addp=None):
+        rurl = self.PREFIX + self.TABLES + arg + self.SUFFIX
+        return self._append_addp(rurl, addp)
+
+    def lsdef_node(self, arg='', addp=None):
+        rurl = self.PREFIX + self.NODES + arg + self.SUFFIX
+        return self._append_addp(rurl, addp)
+
+    def mkvm(self, arg=''):
+        rurl = self._vms(arg)
+        return rurl
+
+    def chvm(self, arg=''):
+        return self._vms(arg)
+
+    def network(self, arg='', addp=None):
+        rurl = self.PREFIX + self.NETWORK + arg + self.SUFFIX
+        if addp is not None:
+            return rurl + addp
+        else:
+            return rurl
+
+    def chtab(self, arg=''):
+        return self.PREFIX + self.NODES + arg + self.SUFFIX
+
+    def nodeset(self, arg=''):
+        return self.PREFIX + self.NODES + arg + self.BOOTSTAT + self.SUFFIX
+
+    def rinv(self, arg='', addp=None):
+        rurl = self.PREFIX + self.NODES + arg + self.INVENTORY + self.SUFFIX
+        return self._append_addp(rurl, addp)
+
+    def tabch(self, arg='', addp=None):
+        """Add/update/delete row(s) in table arg, with attribute addp."""
+        rurl = self.PREFIX + self.TABLES + arg + self.SUFFIX
+        return self._append_addp(rurl, addp)
+
+    def lsdef_image(self, arg='', addp=None):
+        rurl = self.PREFIX + self.IMAGES + arg + self.SUFFIX
+        return self._append_addp(rurl, addp)
+
+    def rmvm(self, arg=''):
+        rurl = self._vms(arg)
+        return rurl
+
+    def lsvm(self, arg=''):
+        rurl = self._vms(arg)
+        return rurl
+
+    def version(self):
+        return self.PREFIX + self.VERSION + self.SUFFIX
+
+    def chhv(self, arg=''):
+        return self._hv(arg)
+
+
+class XCATConnection(object):
+    """Https requests to xCAT web service."""
+
+    def __init__(self):
+        """Initialize https connection to xCAT service."""
+        self.port = 443
+        self.host = CONF.xcat.server
+        self.conn = HTTPSClientAuthConnection(self.host, self.port,
+                        CONF.xcat.ca_file,
+                        timeout=CONF.xcat.connection_timeout)
+
+    def request(self, method, url, body=None, headers={}):
+        """Send https request to xCAT server.
+
+        Will return a python dictionary including:
+        {'status': http return code,
+         'reason': http reason,
+         'message': response message}
+
+        """
+        if body is not None:
+            body = json.dumps(body)
+            headers = {'content-type': 'text/plain',
+                       'content-length': len(body)}
+
+        _rep_ptn = ''.join(('&password=', CONF.xcat.password))
+        LOG.debug("Sending request to xCAT. xCAT-Server:%(xcat_server)s "
+                  "Request-method:%(method)s "
+                  "URL:%(url)s "
+                  "Headers:%(headers)s "
+                  "Body:%(body)s" %
+                  {'xcat_server': CONF.xcat.server,
+                   'method': method,
+                   'url': url.replace(_rep_ptn, ''),  # hide password in log
+                   'headers': str(headers),
+                   'body': body})
+
+        try:
+            self.conn.request(method, url, body, headers)
+        except socket.gaierror as err:
+            msg = ("Failed to connect xCAT server %(srv)s: %(err)s" %
+                   {'srv': self.host, 'err': err})
+            raise exception.ZVMXCATRequestFailed(msg)
+        except (socket.error, socket.timeout) as err:
+            msg = ("Communicate with xCAT server %(srv)s error: %(err)s" %
+                   {'srv': self.host, 'err': err})
+            raise exception.ZVMXCATRequestFailed(msg)
+
+        try:
+            res = self.conn.getresponse()
+        except Exception as err:
+            msg = ("Failed to get response from xCAT server %(srv)s: "
+                     "%(err)s" % {'srv': self.host, 'err': err})
+            raise exception.ZVMXCATRequestFailed(msg)
+
+        msg = res.read()
+        resp = {
+            'status': res.status,
+            'reason': res.reason,
+            'message': msg}
+
+        LOG.debug("xCAT response: %s" % str(resp))
+
+        # Only "200" or "201" returned from xCAT can be considered
+        # as good status
+        err = None
+        if method == "POST":
+            if res.status != 201:
+                err = str(resp)
+        else:
+            if res.status != 200:
+                err = str(resp)
+
+        if err is not None:
+            msg = ('Request to xCAT server %(srv)s failed:  %(err)s' %
+                   {'srv': self.host, 'err': err})
+            raise exception.ZVMXCATRequestFailed(msg)
+
+        return resp
+
+
+class HTTPSClientAuthConnection(httplib.HTTPSConnection):
+    """For https://wiki.openstack.org/wiki/OSSN/OSSN-0033"""
+
+    def __init__(self, host, port, ca_file, timeout=None, key_file=None,
+                 cert_file=None):
+        httplib.HTTPSConnection.__init__(self, host, port,
+                                         key_file=key_file,
+                                         cert_file=cert_file)
+        self.key_file = key_file
+        self.cert_file = cert_file
+        self.ca_file = ca_file
+        self.timeout = timeout
+        self.use_ca = True
+
+        if self.ca_file is None:
+            LOG.debug("no xCAT CA file specified, this is considered "
+                      "not secure")
+            self.use_ca = False
+
+    def connect(self):
+        sock = socket.create_connection((self.host, self.port), self.timeout)
+        if self._tunnel_host:
+            self.sock = sock
+            self._tunnel()
+
+        if (self.ca_file is not None and
+            not os.path.exists(self.ca_file)):
+            LOG.warning(("the CA file %(ca_file) does not exist!"),
+                        {'ca_file': self.ca_file})
+            self.use_ca = False
+
+        if not self.use_ca:
+            self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
+                                        cert_reqs=ssl.CERT_NONE)
+        else:
+            self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
+                                        ca_certs=self.ca_file,
+                                        cert_reqs=ssl.CERT_REQUIRED)
+
+
+def remove_prefix_of_unicode(str_unicode):
+    str_unicode = str_unicode.encode('unicode_escape')
+    str_unicode = str_unicode.replace('\u', '')
+    str_unicode = str_unicode.decode('utf-8')
+    return str_unicode
+
+
+def xcat_request(method, url, body=None, headers=None):
+    headers = headers or {}
+    conn = XCATConnection()
+    resp = conn.request(method, url, body, headers)
+    return load_xcat_resp(resp['message'])
+
+
+def jsonloads(jsonstr):
+    try:
+        return json.loads(jsonstr)
+    except ValueError:
+        errmsg = "xCAT response data is not in JSON format"
+        LOG.error(errmsg)
+        raise exception.ZVMInvalidXCATResponseDataError(msg=errmsg)
+
+
+@contextlib.contextmanager
+def expect_invalid_xcat_resp_data(data=''):
+    """Catch exceptions when using xCAT response data."""
+    try:
+        yield
+    except (ValueError, TypeError, IndexError, AttributeError,
+            KeyError) as err:
+        LOG.error('Parse %s encounter error', data)
+        raise exception.ZVMInvalidXCATResponseDataError(msg=err)
+
+
+@contextlib.contextmanager
+def expect_xcat_call_failed_and_reraise(exc, **kwargs):
+    """Catch all kinds of xCAT call failure and reraise.
+
+    exc: the exception that would be raised.
+    """
+    try:
+        yield
+    except (exception.ZVMXCATRequestFailed,
+            exception.ZVMInvalidXCATResponseDataError,
+            exception.ZVMXCATInternalError) as err:
+        msg = err.format_message()
+        kwargs['msg'] = msg
+        LOG.error('XCAT response return error: %s', msg)
+        raise exc(**kwargs)
+
+
+@contextlib.contextmanager
+def expect_invalid_xcat_node_and_reraise(userid):
+    """Catch <Invalid nodes and/or groups in noderange: > and reraise."""
+    try:
+        yield
+    except (exception.ZVMXCATRequestFailed,
+            exception.ZVMXCATInternalError) as err:
+        msg = err.format_message()
+        if "Invalid nodes and/or groups" in msg:
+            raise exception.ZVMVirtualMachineNotExist(
+                    zvm_host=CONF.zvm.host, userid=userid)
+        else:
+            raise err
+
+
+def wrap_invalid_xcat_resp_data_error(function):
+    """Catch exceptions when using xCAT response data."""
+
+    @functools.wraps(function)
+    def decorated_function(*arg, **kwargs):
+        try:
+            return function(*arg, **kwargs)
+        except (ValueError, TypeError, IndexError, AttributeError,
+                KeyError) as err:
+            raise exception.ZVMInvalidXCATResponseDataError(msg=err)
+
+    return decorated_function
+
+
+@wrap_invalid_xcat_resp_data_error
+def translate_xcat_resp(rawdata, dirt):
+    """Translate xCAT response JSON stream to a python dictionary.
+
+    xCAT response example:
+    node: keyword1: value1\n
+    node: keyword2: value2\n
+    ...
+    node: keywordn: valuen\n
+
+    Will return a python dictionary:
+    {keyword1: value1,
+     keyword2: value2,
+     ...
+     keywordn: valuen,}
+
+    """
+    data_list = rawdata.split("\n")
+
+    data = {}
+
+    for ls in data_list:
+        for k in list(dirt.keys()):
+            if ls.__contains__(dirt[k]):
+                data[k] = ls[(ls.find(dirt[k]) + len(dirt[k])):].strip()
+                break
+
+    if data == {}:
+        msg = "No value matched with keywords. Raw Data: %(raw)s; " \
+                "Keywords: %(kws)s" % {'raw': rawdata, 'kws': str(dirt)}
+        raise exception.ZVMInvalidXCATResponseDataError(msg=msg)
+
+    return data
+
+
+@wrap_invalid_xcat_resp_data_error
+def load_xcat_resp(message):
+    """Abstract information from xCAT REST response body.
+
+    As default, xCAT response will in format of JSON and can be
+    converted to Python dictionary, would looks like:
+    {"data": [{"info": [info,]}, {"data": [data,]}, ..., {"error": [error,]}]}
+
+    Returns a Python dictionary, looks like:
+    {'info': [info,],
+     'data': [data,],
+     ...
+     'error': [error,]}
+
+    """
+    resp_list = jsonloads(message)['data']
+    keys = const.XCAT_RESPONSE_KEYS
+
+    resp = {}
+
+    for k in keys:
+        resp[k] = []
+
+    for d in resp_list:
+        for k in keys:
+            if d.get(k) is not None:
+                resp[k].append(d.get(k))
+
+    err = resp.get('error')
+    if err != []:
+        for e in err:
+            if _is_warning_or_recoverable_issue(str(e)):
+                # ignore known warnings or errors:
+                continue
+            else:
+                raise exception.ZVMXCATInternalError(msg=message)
+
+    _log_warnings(resp)
+
+    return resp
+
+
+def _log_warnings(resp):
+    for msg in (resp['info'], resp['node'], resp['data']):
+        msgstr = str(msg)
+        if 'warn' in msgstr.lower():
+            LOG.info("Warning from xCAT: %s" % msgstr)
+
+
+def _is_warning_or_recoverable_issue(err_str):
+    return _is_warning(err_str) or _is_recoverable_issue(err_str)
+
+
+def _is_recoverable_issue(err_str):
+    dirmaint_request_counter_save = ['Return Code: 596', 'Reason Code: 1185']
+    dirmaint_request_limit = ['Return Code: 596', 'Reason Code: 6312']
+    recoverable_issues = [
+        dirmaint_request_counter_save,
+        dirmaint_request_limit,
+    ]
+    for issue in recoverable_issues:
+        # Search all matchs in the return value
+        # any mismatch leads to recoverable not empty
+        recoverable = [t for t in issue if t not in err_str]
+        if recoverable == []:
+            return True
+
+    return False
+
+
+def _is_warning(err_str):
+    ignore_list = (
+        'Warning: the RSA host key for',
+        'Warning: Permanently added',
+        'WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED',
+    )
+
+    for im in ignore_list:
+        if im in err_str:
+            return True
+
+    return False
 
 
 class XCATClient(client.ZVMClient):
 
     def __init__(self):
-        self._xcat_url = zvmutils.get_xcat_url()
+        self._xcat_url = get_xcat_url()
         self._zhcp_info = {}
         self._zhcp_userid = None
         self._xcat_node_name = None
@@ -45,8 +526,8 @@ class XCATClient(client.ZVMClient):
         """Invoke xCAT REST API to set/get power state for a instance."""
         body = [state]
         url = self._xcat_url.rpower('/' + userid)
-        with zvmutils.expect_invalid_xcat_node_and_reraise(userid):
-            return zvmutils.xcat_request(method, url, body)
+        with expect_invalid_xcat_node_and_reraise(userid):
+            return xcat_request(method, url, body)
 
     def guest_start(self, userid):
         """"Power on VM."""
@@ -78,7 +559,7 @@ class XCATClient(client.ZVMClient):
         LOG.debug('Query power stat of %s' % userid)
         res_dict = self._power_state(userid, "GET", "stat")
 
-        @zvmutils.wrap_invalid_xcat_resp_data_error
+        @wrap_invalid_xcat_resp_data_error
         def _get_power_string(d):
             tempstr = d['info'][0][0]
             return tempstr[(tempstr.find(':') + 2):].strip()
@@ -89,9 +570,9 @@ class XCATClient(client.ZVMClient):
         """ Retrive host information"""
         host = CONF.zvm.host
         url = self._xcat_url.rinv('/' + host)
-        inv_info_raw = zvmutils.xcat_request("GET", url)['info'][0]
+        inv_info_raw = xcat_request("GET", url)['info'][0]
         inv_keys = const.XCAT_RINV_HOST_KEYWORDS
-        inv_info = zvmutils.translate_xcat_resp(inv_info_raw[0], inv_keys)
+        inv_info = translate_xcat_resp(inv_info_raw[0], inv_keys)
 
         hcp_hostname = inv_info['zhcp']
         self._zhcp_info = self._construct_zhcp_info(hcp_hostname)
@@ -103,11 +584,11 @@ class XCATClient(client.ZVMClient):
         host = CONF.zvm.host
         addp = '&field=--diskpoolspace&field=' + pool
         url = self._xcat_url.rinv('/' + host, addp)
-        res_dict = zvmutils.xcat_request("GET", url)
+        res_dict = xcat_request("GET", url)
 
         dp_info_raw = res_dict['info'][0]
         dp_keys = const.XCAT_DISKPOOL_KEYWORDS
-        dp_info = zvmutils.translate_xcat_resp(dp_info_raw[0], dp_keys)
+        dp_info = translate_xcat_resp(dp_info_raw[0], dp_keys)
 
         return dp_info
 
@@ -128,18 +609,18 @@ class XCATClient(client.ZVMClient):
         hcp_node = hcp_hostname.partition('.')[0]
         return {'hostname': hcp_hostname,
                 'nodename': hcp_node,
-                'userid': zvmutils.get_userid(hcp_node)}
+                'userid': self._get_userid_from_node(hcp_node)}
 
     def get_vm_list(self):
         zvm_host = CONF.zvm.host
         hcp_base = self._get_hcp_info()['hostname']
 
         url = self._xcat_url.tabdump("/zvm")
-        res_dict = zvmutils.xcat_request("GET", url)
+        res_dict = xcat_request("GET", url)
 
         vms = []
 
-        with zvmutils.expect_invalid_xcat_resp_data(res_dict):
+        with expect_invalid_xcat_resp_data(res_dict):
             data_entries = res_dict['data'][0][1:]
             for data in data_entries:
                 l = data.split(",")
@@ -154,10 +635,10 @@ class XCATClient(client.ZVMClient):
 
         return vms
 
-    @zvmutils.wrap_invalid_xcat_resp_data_error
+    @wrap_invalid_xcat_resp_data_error
     def _lsdef(self, userid):
         url = self._xcat_url.lsdef_node('/' + userid)
-        resp_info = zvmutils.xcat_request("GET", url)['info'][0]
+        resp_info = xcat_request("GET", url)['info'][0]
         return resp_info
 
     def image_performance_query(self, uid_list):
@@ -173,8 +654,8 @@ class XCATClient(client.ZVMClient):
                {'uid_list': " ".join(uid_list), 'num': len(uid_list)})
 
         zhcp = self._get_hcp_info()['nodename']
-        with zvmutils.expect_invalid_xcat_resp_data():
-            resp = zvmutils.xdsh(zhcp, cmd)
+        with expect_invalid_xcat_resp_data():
+            resp = self.xdsh(zhcp, cmd)
             raw_data = resp["data"][0][0]
 
         ipq_kws = {
@@ -193,11 +674,11 @@ class XCATClient(client.ZVMClient):
         }
 
         pi_dict = {}
-        with zvmutils.expect_invalid_xcat_resp_data():
+        with expect_invalid_xcat_resp_data():
             rpi_list = raw_data.split(": \n")
             for rpi in rpi_list:
                 try:
-                    pi = zvmutils.translate_xcat_resp(rpi, ipq_kws)
+                    pi = translate_xcat_resp(rpi, ipq_kws)
                 except exception.ZVMInvalidXCATResponseDataError as err:
                     emsg = err.format_message()
                     # when there is only one userid queried and this userid is
@@ -225,8 +706,8 @@ class XCATClient(client.ZVMClient):
         cmd = ('/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Query_IUO_Stats '
                '-T "%s" -k "switch_name=*"' % zhcp_userid)
 
-        with zvmutils.expect_invalid_xcat_resp_data():
-            resp = zvmutils.xdsh(zhcp_node, cmd)
+        with expect_invalid_xcat_resp_data():
+            resp = self.xdsh(zhcp_node, cmd)
             raw_data_list = resp["data"][0]
 
         while raw_data_list.__contains__(None):
@@ -248,7 +729,7 @@ class XCATClient(client.ZVMClient):
             return idx + offset, data_list[idx].rpartition(keyword)[2].strip()
 
         vsw_dict = {}
-        with zvmutils.expect_invalid_xcat_resp_data():
+        with expect_invalid_xcat_resp_data():
             # vswitch count
             idx = 0
             idx, vsw_count = _parse_value(rd_list, idx, 'vswitch count:', 2)
@@ -315,11 +796,11 @@ class XCATClient(client.ZVMClient):
 
         return vsw_dict
 
-    @zvmutils.wrap_invalid_xcat_resp_data_error
+    @wrap_invalid_xcat_resp_data_error
     def _lsvm(self, userid):
         url = self._xcat_url.lsvm('/' + userid)
-        with zvmutils.expect_invalid_xcat_node_and_reraise(userid):
-            resp_info = zvmutils.xcat_request("GET", url)['info'][0][0]
+        with expect_invalid_xcat_node_and_reraise(userid):
+            resp_info = xcat_request("GET", url)['info'][0][0]
         return resp_info.split('\n')
 
     def get_user_direct(self, userid):
@@ -329,7 +810,7 @@ class XCATClient(client.ZVMClient):
     # TODO:moving to vmops and change name to ''
     def get_node_status(self, userid):
         url = self._xcat_url.nodestat('/' + userid)
-        res_dict = zvmutils.xcat_request("GET", url)
+        res_dict = xcat_request("GET", url)
         return res_dict
 
     def create_vm(self, userid, cpu, memory, disk_list, profile):
@@ -361,9 +842,9 @@ class XCATClient(client.ZVMClient):
             body.append('ipl=%s' % ipl_disk)
 
         url = self._xcat_url.mkvm('/' + userid)
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
             exception.ZVMXCATCreateUserIdFailed, userid=userid):
-            zvmutils.xcat_request("POST", url, body)
+            xcat_request("POST", url, body)
 
         if disk_list:
             # Add disks for vm
@@ -407,10 +888,10 @@ class XCATClient(client.ZVMClient):
         else:
             body = [" ".join([action, diskpool_name, vdev, size])]
 
-        url = zvmutils.get_xcat_url().chvm('/' + userid)
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        url = get_xcat_url().chvm('/' + userid)
+        with expect_xcat_call_failed_and_reraise(
             exception.ZVMXCATCreateUserIdFailed, userid=userid):
-            zvmutils.xcat_request("PUT", url, body)
+            xcat_request("PUT", url, body)
 
     # TODO:moving to vmops and change name to 'create_vm_node'
     def create_xcat_node(self, userid):
@@ -422,9 +903,9 @@ class XCATClient(client.ZVMClient):
                 'mgt=zvm',
                 'groups=%s' % const.ZVM_XCAT_GROUP]
         url = self._xcat_url.mkdef('/' + userid)
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
             exception.ZVMXCATCreateNodeFailed, node=userid):
-            zvmutils.xcat_request("POST", url, body)
+            xcat_request("POST", url, body)
 
     # xCAT client can something special for xCAT here
     def prepare_for_spawn(self, userid):
@@ -432,16 +913,16 @@ class XCATClient(client.ZVMClient):
 
     def remove_image_file(self, image_name):
         url = self._xcat_url.rmimage('/' + image_name)
-        zvmutils.xcat_request("DELETE", url)
+        xcat_request("DELETE", url)
 
     def remove_image_definition(self, image_name):
         url = self._xcat_url.rmobject('/' + image_name)
-        zvmutils.xcat_request("DELETE", url)
+        xcat_request("DELETE", url)
 
     def change_vm_ipl_state(self, userid, ipl_state):
         body = ["--setipl %s" % ipl_state]
-        url = zvmutils.get_xcat_url().chvm('/' + userid)
-        zvmutils.xcat_request("PUT", url, body)
+        url = get_xcat_url().chvm('/' + userid)
+        xcat_request("PUT", url, body)
 
     def change_vm_fmt(self, userid, fmt, action, diskpool, vdev, size):
         if fmt:
@@ -449,19 +930,19 @@ class XCATClient(client.ZVMClient):
                     "''", fmt])]
         else:
             body = [" ".join([action, diskpool, vdev, size])]
-        url = zvmutils.get_xcat_url().chvm('/' + userid)
-        zvmutils.xcat_request("PUT", url, body)
+        url = get_xcat_url().chvm('/' + userid)
+        xcat_request("PUT", url, body)
 
     def get_tabdump_info(self):
         url = self._xcat_url.tabdump("/zvm")
-        res_dict = zvmutils.xcat_request("GET", url)
+        res_dict = xcat_request("GET", url)
         return res_dict
 
     def do_capture(self, nodename, profile):
         url = self._xcat_url.capture()
         body = ['nodename=' + nodename,
                 'profile=' + profile]
-        res = zvmutils.xcat_request("POST", url, body)
+        res = xcat_request("POST", url, body)
         return res
 
     def _clean_network_resource(self, userid):
@@ -476,9 +957,9 @@ class XCATClient(client.ZVMClient):
         url = self._xcat_url.tabch("/mac")
         body = [commands]
 
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            return zvmutils.xcat_request("PUT", url, body)['data']
+            return xcat_request("PUT", url, body)['data']
 
     def _delete_host(self, userid):
         """Remove xcat hosts table rows where node name is node_name."""
@@ -486,9 +967,9 @@ class XCATClient(client.ZVMClient):
         body = [commands]
         url = self._xcat_url.tabch("/hosts")
 
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            return zvmutils.xcat_request("PUT", url, body)['data']
+            return xcat_request("PUT", url, body)['data']
 
     def _delete_switch(self, userid):
         """Remove node switch record from xcat switch table."""
@@ -496,9 +977,9 @@ class XCATClient(client.ZVMClient):
         url = self._xcat_url.tabch("/switch")
         body = [commands]
 
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            return zvmutils.xcat_request("PUT", url, body)['data']
+            return xcat_request("PUT", url, body)['data']
 
     def create_nic(self, userid, vdev=None, nic_id=None,
                    mac_addr=None, ip_addr=None, active=False):
@@ -568,9 +1049,9 @@ class XCATClient(client.ZVMClient):
             commands += ' -k mac_id=%s' % mac
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            result = zvmutils.xcat_request("PUT", url, body)
+            result = xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
                 raise exception.ZVMNetworkError(
                     msg=("Failed to create nic %s for %s in "
@@ -588,9 +1069,9 @@ class XCATClient(client.ZVMClient):
                                  "-k adapter_type=QDIO"))
             xdsh_commands = 'command=%s' % commands
             body = [xdsh_commands]
-            with zvmutils.expect_xcat_call_failed_and_reraise(
+            with expect_xcat_call_failed_and_reraise(
                     exception.ZVMNetworkError):
-                result = zvmutils.xcat_request("PUT", url, body)
+                result = xcat_request("PUT", url, body)
                 if (result['errorcode'][0][0] != '0'):
                     persist_OK = False
                     commands = ' '.join((
@@ -600,9 +1081,9 @@ class XCATClient(client.ZVMClient):
                         '-v %s' % vdev))
                     xdsh_commands = 'command=%s' % commands
                     body = [xdsh_commands]
-                    with zvmutils.expect_xcat_call_failed_and_reraise(
+                    with expect_xcat_call_failed_and_reraise(
                             exception.ZVMNetworkError):
-                        del_rc = zvmutils.xcat_request("PUT", url, body)
+                        del_rc = xcat_request("PUT", url, body)
                         if (del_rc['errorcode'][0][0] != '0'):
                             emsg = del_rc['data'][0][0]
                             if (emsg.__contains__("Return Code: 404") and
@@ -640,9 +1121,9 @@ class XCATClient(client.ZVMClient):
         url = self._xcat_url.tabch("/switch")
         body = [commands]
 
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            return zvmutils.xcat_request("PUT", url, body)['data']
+            return xcat_request("PUT", url, body)['data']
 
     def delete_nic(self, userid, vdev, active=False):
         zhcp = self._get_hcp_info()['nodename']
@@ -654,9 +1135,9 @@ class XCATClient(client.ZVMClient):
             '-v %s' % vdev))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            result = zvmutils.xcat_request("PUT", url, body)
+            result = xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
                 emsg = result['data'][0][0]
                 if (emsg.__contains__("Return Code: 404") and
@@ -678,9 +1159,9 @@ class XCATClient(client.ZVMClient):
             xdsh_commands = 'command=%s' % commands
             body = [xdsh_commands]
 
-            with zvmutils.expect_xcat_call_failed_and_reraise(
+            with expect_xcat_call_failed_and_reraise(
                     exception.ZVMNetworkError):
-                result = zvmutils.xcat_request("PUT", url, body)
+                result = xcat_request("PUT", url, body)
                 if (result['errorcode'][0][0] != '0'):
                     emsg = result['data'][0][0]
                     if (emsg.__contains__("Return Code: 204") and
@@ -699,9 +1180,9 @@ class XCATClient(client.ZVMClient):
         url = self._xcat_url.tabch("/switch")
         body = [commands]
 
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            return zvmutils.xcat_request("PUT", url, body)['data']
+            return xcat_request("PUT", url, body)['data']
 
     def _update_vm_info(self, node, node_info):
         """node_info looks like : ['sles12', 's390x', 'netboot',
@@ -714,9 +1195,9 @@ class XCATClient(client.ZVMClient):
                 'nodetype.provmethod=%s' % node_info[2],
                 'nodetype.profile=%s' % node_info[3]]
 
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMXCATUpdateNodeFailed, node=node):
-            zvmutils.xcat_request("PUT", url, body)
+            xcat_request("PUT", url, body)
 
     def guest_deploy(self, node, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
@@ -738,9 +1219,9 @@ class XCATClient(client.ZVMClient):
         if remotehost:
             body.append('remotehost=%s' % remotehost)
 
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMXCATDeployNodeFailed, node=node):
-            zvmutils.xcat_request("PUT", url, body)
+            xcat_request("PUT", url, body)
 
     def check_space_imgimport_xcat(self, tar_file, xcat_free_space_threshold,
                                    zvm_xcat_master):
@@ -797,7 +1278,7 @@ class XCATClient(client.ZVMClient):
         url = self._xcat_url.imgimport()
 
         try:
-            zvmutils.xcat_request("POST", url, body)
+            xcat_request("POST", url, body)
         except (exception.ZVMXCATRequestFailed,
                 exception.ZVMInvalidXCATResponseDataError,
                 exception.ZVMXCATInternalError) as err:
@@ -812,8 +1293,8 @@ class XCATClient(client.ZVMClient):
         Get NIC and switch mapping for the specified virtual machine.
         """
         url = self._xcat_url.tabdump("/switch")
-        with zvmutils.expect_invalid_xcat_resp_data():
-            switch_info = zvmutils.xcat_request("GET", url)['data'][0]
+        with expect_invalid_xcat_resp_data():
+            switch_info = xcat_request("GET", url)['data'][0]
             switch_info.pop(0)
             switch_dict = {}
             for item in switch_info:
@@ -834,16 +1315,16 @@ class XCATClient(client.ZVMClient):
         body = [commands]
         url = self._xcat_url.tabch("/hosts")
 
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            zvmutils.xcat_request("PUT", url, body)['data']
+            xcat_request("PUT", url, body)['data']
 
     def _makehost(self):
         """Update xCAT MN /etc/hosts file."""
         url = self._xcat_url.network("/makehosts")
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            zvmutils.xcat_request("PUT", url)['data']
+            xcat_request("PUT", url)['data']
 
     def _preset_vm_network(self, vm_id, ip_addr):
         LOG.debug("Add ip/host name on xCAT MN for instance %s",
@@ -855,8 +1336,8 @@ class XCATClient(client.ZVMClient):
     def _get_nic_ids(self):
         addp = ''
         url = self._xcat_url.tabdump("/switch", addp)
-        with zvmutils.expect_invalid_xcat_resp_data():
-            nic_settings = zvmutils.xcat_request("GET", url)['data'][0]
+        with expect_invalid_xcat_resp_data():
+            nic_settings = xcat_request("GET", url)['data'][0]
         # remove table header
         nic_settings.pop(0)
         # it's possible to return empty array
@@ -865,8 +1346,8 @@ class XCATClient(client.ZVMClient):
     def _get_userid_from_node(self, vm_id):
         addp = '&col=node&value=%s&attribute=userid' % vm_id
         url = self._xcat_url.gettab("/zvm", addp)
-        with zvmutils.expect_invalid_xcat_resp_data():
-            return zvmutils.xcat_request("GET", url)['data'][0][0]
+        with expect_invalid_xcat_resp_data():
+            return xcat_request("GET", url)['data'][0][0]
 
     def _get_nic_settings(self, port_id, field=None, get_node=False):
         """Get NIC information from xCat switch table."""
@@ -874,8 +1355,8 @@ class XCATClient(client.ZVMClient):
         addp = '&col=port&value=%s' % port_id + '&attribute=%s' % (
                                                 field and field or 'node')
         url = self._xcat_url.gettab("/switch", addp)
-        with zvmutils.expect_invalid_xcat_resp_data():
-            ret_value = zvmutils.xcat_request("GET", url)['data'][0][0]
+        with expect_invalid_xcat_resp_data():
+            ret_value = xcat_request("GET", url)['data'][0][0]
         if field is None and not get_node:
             ret_value = self._get_userid_from_node(ret_value)
         return ret_value
@@ -898,9 +1379,9 @@ class XCATClient(client.ZVMClient):
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
 
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            result = zvmutils.xcat_request("PUT", url, body)
+            result = xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
                 raise exception.ZVMNetworkError(
                     msg=("Failed to grant user %s to vswitch %s, %s") %
@@ -922,9 +1403,9 @@ class XCATClient(client.ZVMClient):
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
 
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            result = zvmutils.xcat_request("PUT", url, body)
+            result = xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
                 raise exception.ZVMNetworkError(
                     msg=("Failed to revoke user %s from vswitch %s, %s") %
@@ -943,9 +1424,9 @@ class XCATClient(client.ZVMClient):
                              "-n %s" % vswitch_name))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            result = zvmutils.xcat_request("PUT", url, body)
+            result = xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
                 raise exception.ZVMNetworkError(
                     msg=("Failed to couple nic %s to vswitch %s "
@@ -961,9 +1442,9 @@ class XCATClient(client.ZVMClient):
                                  "-n %s" % vswitch_name))
             xdsh_commands = 'command=%s' % commands
             body = [xdsh_commands]
-            with zvmutils.expect_xcat_call_failed_and_reraise(
+            with expect_xcat_call_failed_and_reraise(
                     exception.ZVMNetworkError):
-                result = zvmutils.xcat_request("PUT", url, body)
+                result = xcat_request("PUT", url, body)
                 if (result['errorcode'][0][0] != '0'):
                     emsg = result['data'][0][0]
                     if (emsg.__contains__("Return Code: 204") and
@@ -979,9 +1460,9 @@ class XCATClient(client.ZVMClient):
                             '-v %s' % vdev))
                         xdsh_commands = 'command=%s' % commands
                         body = [xdsh_commands]
-                        with zvmutils.expect_xcat_call_failed_and_reraise(
+                        with expect_xcat_call_failed_and_reraise(
                                 exception.ZVMNetworkError):
-                            dis_rc = zvmutils.xcat_request("PUT", url, body)
+                            dis_rc = xcat_request("PUT", url, body)
                             if (dis_rc['errorcode'][0][0] != '0'):
                                 emsg = dis_rc['data'][0][0]
                                 if (emsg.__contains__("Return Code: 212") and
@@ -1025,9 +1506,9 @@ class XCATClient(client.ZVMClient):
                              "-v %s" % vdev))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            result = zvmutils.xcat_request("PUT", url, body)
+            result = xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
                 emsg = result['data'][0][0]
                 if (emsg.__contains__("Return Code: 212") and
@@ -1051,9 +1532,9 @@ class XCATClient(client.ZVMClient):
                                  "-v %s" % vdev))
             xdsh_commands = 'command=%s' % commands
             body = [xdsh_commands]
-            with zvmutils.expect_xcat_call_failed_and_reraise(
+            with expect_xcat_call_failed_and_reraise(
                     exception.ZVMNetworkError):
-                result = zvmutils.xcat_request("PUT", url, body)
+                result = xcat_request("PUT", url, body)
                 if (result['errorcode'][0][0] != '0'):
                     emsg = result['data'][0][0]
                     if (emsg.__contains__("Return Code: 204") and
@@ -1074,8 +1555,8 @@ class XCATClient(client.ZVMClient):
     def _get_xcat_node_ip(self):
         addp = '&col=key&value=master&attribute=value'
         url = self._xcat_url.gettab("/site", addp)
-        with zvmutils.expect_invalid_xcat_resp_data():
-            return zvmutils.xcat_request("GET", url)['data'][0][0]
+        with expect_invalid_xcat_resp_data():
+            return xcat_request("GET", url)['data'][0][0]
 
     def _get_xcat_node_name(self):
         if self._xcat_node_name is not None:
@@ -1084,12 +1565,12 @@ class XCATClient(client.ZVMClient):
         xcat_ip = self._get_xcat_node_ip()
         addp = '&col=ip&value=%s&attribute=node' % (xcat_ip)
         url = self._xcat_url.gettab("/hosts", addp)
-        with zvmutils.expect_invalid_xcat_resp_data():
-            self._xcat_node_name = zvmutils.xcat_request(
+        with expect_invalid_xcat_resp_data():
+            self._xcat_node_name = xcat_request(
                 "GET", url)['data'][0][0]
             return self._xcat_node_name
 
-    @zvmutils.wrap_invalid_xcat_resp_data_error
+    @wrap_invalid_xcat_resp_data_error
     def get_vswitch_list(self):
         hcp_info = self._get_hcp_info()
         userid = hcp_info['userid']
@@ -1101,9 +1582,9 @@ class XCATClient(client.ZVMClient):
             "-s \'*\'"))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            result = zvmutils.xcat_request("PUT", url, body)
+            result = xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0' or not
                     result['data'] or not result['data'][0]):
                 return None
@@ -1113,7 +1594,7 @@ class XCATClient(client.ZVMClient):
                 output = re.findall('VSWITCH:  Name: (.*)', data)
                 return output
 
-    @zvmutils.wrap_invalid_xcat_resp_data_error
+    @wrap_invalid_xcat_resp_data_error
     def add_vswitch(self, name, rdev=None, controller='*',
                     connection='CONNECT', network_type='IP',
                     router="NONROUTER", vid='UNAWARE', port_type='ACCESS',
@@ -1159,9 +1640,9 @@ class XCATClient(client.ZVMClient):
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
 
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            result = zvmutils.xcat_request("PUT", url, body)
+            result = xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
                 raise exception.ZVMNetworkError(
                     msg=("Failed to create vswitch %s: %s") %
@@ -1175,9 +1656,9 @@ class XCATClient(client.ZVMClient):
         else:
             parm = None
         url = self._xcat_url.lsdef_image(addp=parm)
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMImageError):
-            res = zvmutils.xcat_request("GET", url)
+            res = xcat_request("GET", url)
         image_list = []
         if res['info'] and 'Could not find' not in res['info'][0][0]:
             for img in res['info'][0]:
@@ -1192,9 +1673,9 @@ class XCATClient(client.ZVMClient):
                                   '&field=%s') % log_size
 
         # Because we might have logs in the console, we need ignore the warning
-        res_info = zvmutils.xcat_request("GET", url)
+        res_info = xcat_request("GET", url)
 
-        with zvmutils.expect_invalid_xcat_resp_data(res_info):
+        with expect_invalid_xcat_resp_data(res_info):
             log_data = res_info['info'][0][0]
 
         raw_log_list = log_data.split('\n')
@@ -1250,13 +1731,13 @@ class XCATClient(client.ZVMClient):
         url = self._xcat_url.chvm('/' + instance_name)
         body = [" ".join(['--aemod', func_name, parms])]
         try:
-            zvmutils.xcat_request("PUT", url, body)
+            xcat_request("PUT", url, body)
         except Exception as err:
             emsg = err.format_message()
             LOG.error('Invoke AE method function: %(func)s on %(node)s '
                       'failed with reason: %(msg)s',
                       {'func': func_name, 'node': instance_name, 'msg': emsg})
-            raise exception.ZVMSDKInteralError(msg=emsg)
+            raise exception.ZVMSDKInternalError(msg=emsg)
 
     def delete_vm(self, userid):
         """Delete z/VM userid for the instance.This will remove xCAT node
@@ -1297,7 +1778,7 @@ class XCATClient(client.ZVMClient):
         """Remove xCAT node for z/VM instance."""
         url = self._xcat_url.rmdef('/' + nodename)
         try:
-            zvmutils.xcat_request("DELETE", url)
+            xcat_request("DELETE", url)
         except exception.ZVMXCATInternalError as err:
             if err.format_message().__contains__("Could not find an object"):
                 # The xCAT node not exist
@@ -1309,13 +1790,13 @@ class XCATClient(client.ZVMClient):
         """Unlock the specified userid"""
         cmd = "/opt/zhcp/bin/smcli Image_Unlock_DM -T %s" % userid
         zhcp_node = self._get_hcp_info()['nodename']
-        zvmutils.xdsh(zhcp_node, cmd)
+        self.xdsh(zhcp_node, cmd)
 
     def unlock_devices(self, userid):
         cmd = "/opt/zhcp/bin/smcli Image_Lock_Query_DM -T %s" % userid
         zhcp_node = self._get_hcp_info()['nodename']
-        resp = zvmutils.xdsh(zhcp_node, cmd)
-        with zvmutils.expect_invalid_xcat_resp_data(resp):
+        resp = self.xdsh(zhcp_node, cmd)
+        with expect_invalid_xcat_resp_data(resp):
             resp_str = resp['data'][0][0]
 
         if resp_str.__contains__("is Unlocked..."):
@@ -1325,7 +1806,7 @@ class XCATClient(client.ZVMClient):
         def _unlock_device(vdev):
             cmd = ("/opt/zhcp/bin/smcli Image_Unlock_DM -T %(uid)s -v %(vdev)s"
                    % {'uid': userid, 'vdev': vdev})
-            zvmutils.xdsh(zhcp_node, cmd)
+            self.xdsh(zhcp_node, cmd)
 
         resp_list = resp_str.split('\n')
         for s in resp_list:
@@ -1336,7 +1817,7 @@ class XCATClient(client.ZVMClient):
     def delete_userid(self, userid):
         url = self._xcat_url.rmvm('/' + userid)
         try:
-            zvmutils.xcat_request("DELETE", url)
+            xcat_request("DELETE", url)
         except exception.ZVMXCATInternalError as err:
             emsg = err.format_message()
             LOG.debug("error emsg in delete_userid: %s", emsg)
@@ -1486,9 +1967,9 @@ class XCATClient(client.ZVMClient):
             "-k persist=YES"))
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            result = zvmutils.xcat_request("PUT", url, body)
+            result = xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
                 raise exception.ZVMNetworkError(
                     msg=("Failed to set vlan id for user %s, %s") %
@@ -1556,16 +2037,16 @@ class XCATClient(client.ZVMClient):
 
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            result = zvmutils.xcat_request("PUT", url, body)
+            result = xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
                     raise exception.ZVMNetworkError(
                     msg=("switch %s changes failed, %s") %
                         (switch_name, result['data']))
         LOG.info('change vswitch %s done.' % switch_name)
 
-    @zvmutils.wrap_invalid_xcat_resp_data_error
+    @wrap_invalid_xcat_resp_data_error
     def delete_vswitch(self, switch_name, persist=True):
         hcp_info = self._get_hcp_info()
         userid = hcp_info['userid']
@@ -1580,9 +2061,9 @@ class XCATClient(client.ZVMClient):
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
 
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
-            result = zvmutils.xcat_request("PUT", url, body)
+            result = xcat_request("PUT", url, body)
 
             if (result['errorcode'][0][0] != '0'):
                 emsg = result['data'][0][0]
@@ -1606,16 +2087,16 @@ class XCATClient(client.ZVMClient):
 
         url = self._xcat_url.tabch("/switch")
         body = [commands]
-        zvmutils.xcat_request("PUT", url, body)
+        xcat_request("PUT", url, body)
 
     def run_commands_on_node(self, node, commands):
         url = self._xcat_url.xdsh("/%s" % node)
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]
         data = []
-        with zvmutils.expect_xcat_call_failed_and_reraise(
+        with expect_xcat_call_failed_and_reraise(
                 exception.ZVMException):
-            result = zvmutils.xcat_request("PUT", url, body)
+            result = xcat_request("PUT", url, body)
             if (result['errorcode'][0][0] != '0'):
                 raise exception.ZVMException(
                     msg=("Failed to run command: %s on node %s, %s") %
@@ -1633,8 +2114,8 @@ class XCATClient(client.ZVMClient):
         cmd = ('/opt/zhcp/bin/smcli Virtual_Network_Vswitch_Query_Extended '
                '-T "%s" -k "switch_name=%s"' % (zhcp_userid, switch_name))
 
-        with zvmutils.expect_invalid_xcat_resp_data():
-            resp = zvmutils.xdsh(zhcp_node, cmd)
+        with expect_invalid_xcat_resp_data():
+            resp = self.xdsh(zhcp_node, cmd)
             raw_data_list = resp["data"][0]
 
         while raw_data_list.__contains__(None):
@@ -1644,7 +2125,7 @@ class XCATClient(client.ZVMClient):
         rd_list = raw_data.split('\n')
 
         vsw_info = {}
-        with zvmutils.expect_invalid_xcat_resp_data():
+        with expect_invalid_xcat_resp_data():
             # The first 21 lines contains the vswitch basic info
             # eg, name, type, port_type, vlan_awareness, etc
             idx_end = len(rd_list)
@@ -1745,16 +2226,16 @@ class XCATClient(client.ZVMClient):
     def _get_vm_mgt_ip(self, vm_id):
         addp = '&col=node&value=%s&attribute=ip' % vm_id
         url = self._xcat_url.gettab("/hosts", addp)
-        with zvmutils.expect_invalid_xcat_resp_data():
-            return zvmutils.xcat_request("GET", url)['data'][0][0]
+        with expect_invalid_xcat_resp_data():
+            return xcat_request("GET", url)['data'][0][0]
 
     def image_get_root_disk_size(self, image_name):
         """use 'hexdump' to get the root_disk_size."""
         image_file_path = self.get_image_path_by_name(image_name)
 
         cmd = 'hexdump -C -n 64 %s' % image_file_path
-        with zvmutils.expect_invalid_xcat_resp_data():
-            output = zvmutils.xdsh(CONF.xcat.master_node, cmd)['data'][0][0]
+        with expect_invalid_xcat_resp_data():
+            output = self.xdsh(CONF.xcat.master_node, cmd)['data'][0][0]
             output = output.replace(CONF.xcat.master_node + ': ', '')
 
         LOG.debug("hexdump result is %s", output)
@@ -1773,3 +2254,152 @@ class XCATClient(client.ZVMClient):
 
         LOG.debug("The image's root_disk_size is %s", root_disk_size)
         return root_disk_size
+
+    def get_xcat_version(self):
+        """Return the version of xCAT."""
+        url = get_xcat_url().version()
+        with expect_invalid_xcat_resp_data():
+            data = xcat_request('GET', url)['data']
+            version = data[0][0].split()[1]
+            version = version.strip()
+            return version
+
+    def xdsh(self, node, commands):
+        """"Run command on xCAT node."""
+        LOG.debug('Run command %(cmd)s on xCAT node %(node)s' %
+                  {'cmd': commands, 'node': node})
+
+        def xdsh_execute(node, commands):
+            """Invoke xCAT REST API to execute command on node."""
+            xdsh_commands = 'command=%s' % commands
+            # Add -q (quiet) option to ignore ssh warnings and banner msg
+            opt = 'options=-q'
+            body = [xdsh_commands, opt]
+            url = get_xcat_url().xdsh('/' + node)
+            return xcat_request("PUT", url, body)
+
+        res_dict = xdsh_execute(node, commands)
+
+        return res_dict
+
+    def punch_file(self, node, fn, fclass):
+        body = [" ".join(['--punchfile', fn, fclass, zvmutils.get_host()])]
+        url = get_xcat_url().chvm('/' + node)
+
+        try:
+            xcat_request("PUT", url, body)
+        except Exception as err:
+            LOG.error('Punch file to %(node)s failed: %(msg)s' %
+                          {'node': node, 'msg': err})
+        finally:
+            os.remove(fn)
+
+    def punch_adminpass_file(self, temp_path, userid, admin_password,
+                             linuxdist):
+        adminpass_fn = ''.join([temp_path, '/adminpwd.sh'])
+        self._generate_adminpass_file(adminpass_fn, admin_password, linuxdist)
+        self.punch_file(userid, adminpass_fn, 'X')
+
+    def _generate_adminpass_file(self, fn, admin_password, linuxdist):
+        pwd_str = linuxdist.get_change_passwd_command(admin_password)
+        lines = ['#!/bin/bash\n', pwd_str]
+        with open(fn, 'w') as f:
+            f.writelines(lines)
+
+    def punch_xcat_auth_file(self, temp_path, userid):
+        """Make xCAT MN authorized by virtual machines."""
+        mn_pub_key = self.get_mn_pub_key()
+        auth_fn = ''.join([temp_path, '/xcatauth.sh'])
+        self._generate_auth_file(auth_fn, mn_pub_key)
+        self.punch_file(userid, auth_fn, 'X')
+
+    def get_mn_pub_key(self):
+        cmd = 'cat /root/.ssh/id_rsa.pub'
+        resp = self.xdsh(CONF.xcat.master_node, cmd)
+        key = resp['data'][0][0]
+        start_idx = key.find('ssh-rsa')
+        key = key[start_idx:]
+        return key
+
+    def _generate_auth_file(self, fn, pub_key):
+        lines = ['#!/bin/bash\n',
+        'echo "%s" >> /root/.ssh/authorized_keys' % pub_key]
+        with open(fn, 'w') as f:
+            f.writelines(lines)
+
+    @wrap_invalid_xcat_resp_data_error
+    def create_xcat_mgt_network(self, mgt_vswitch):
+        '''To talk to xCAT MN, xCAT MN requires every instance has a NIC which is
+        in the same subnet as xCAT. The xCAT MN's IP address is mgt_ip,
+        mask is mgt_mask in the config file,
+        by default zvmsdk.conf.
+        '''
+        mgt_ip = CONF.xcat.mgt_ip
+        mgt_mask = CONF.xcat.mgt_mask
+        if (mgt_ip is None or
+            mgt_mask is None):
+            LOG.info("User does not configure management IP. Don't need to"
+                     " initialize xCAT management network.")
+            return
+
+        xcat_node_name = CONF.xcat.master_node
+        url = get_xcat_url().xdsh("/%s" % xcat_node_name)
+        xdsh_commands = ('command=vmcp q v nic 800')
+        body = [xdsh_commands]
+        try:
+            result = xcat_request("PUT", url, body)['data'][0][0]
+        except exception.ZVMXCATInternalError as err:
+            msg = err.format_message()
+            output = re.findall('Error returned from xCAT: (.*)', msg)
+            output_dict = json.loads(output[0])
+            result = output_dict['data'][0]['data'][0]
+        cmd = ''
+        # nic does not exist
+        if 'does not exist' in result:
+            cmd = ('vmcp define nic 0800 type qdio\n' +
+                   'vmcp couple 0800 system %s\n' % (mgt_vswitch))
+        # nic is created but not couple
+        elif 'LAN: *' in result:
+            cmd = ('vmcp couple 0800 system %s\n' % (mgt_vswitch))
+        # couple and active
+        elif "VSWITCH: SYSTEM" in result:
+            # Only support one management network.
+            url = get_xcat_url().xdsh("/%s") % xcat_node_name
+            xdsh_commands = "command=ifconfig enccw0.0.0800|grep 'inet '"
+            body = [xdsh_commands]
+            result = xcat_request("PUT", url, body)
+            if result['errorcode'][0][0] == '0' and result['data']:
+                cur_ip = re.findall('inet (.*)  netmask',
+                                   result['data'][0][0])
+                cur_mask = re.findall('netmask (.*)  broadcast',
+                                   result['data'][0][0])
+                if not cur_ip:
+                    LOG.warning(("Nic 800 has been created, but IP "
+                          "address is not correct, will config it again"))
+                elif mgt_ip != cur_ip[0]:
+                    raise exception.zVMConfigException(
+                        msg=("Only support one Management network,"
+                             "it has been assigned by other agent!"
+                             "Please use current management network"
+                             "(%s/%s) to deploy." % (cur_ip[0], cur_mask)))
+                else:
+                    LOG.debug("IP address has been assigned for NIC 800.")
+                    return
+            else:
+                LOG.warning(("Nic 800 has been created, but IP address "
+                                "doesn't exist, will config it again"))
+        else:
+            message = ("Command 'query v nic' return %s,"
+                       " it is unkown information for zvm-agent") % result
+            LOG.error(("Error: %s") % message)
+            raise exception.ZVMNetworkError(msg=message)
+        url = get_xcat_url().xdsh("/%s") % xcat_node_name
+        cmd += ('/usr/bin/perl /usr/sbin/sspqeth2.pl ' +
+                '-a %s -d 0800 0801 0802 -e enccw0.0.0800 -m %s -g %s'
+              % (mgt_ip, mgt_mask, mgt_ip))
+        xdsh_commands = 'command=%s' % cmd
+        body = [xdsh_commands]
+        xcat_request("PUT", url, body)
+
+    def get_xcat_url(self):
+        return get_xcat_url()

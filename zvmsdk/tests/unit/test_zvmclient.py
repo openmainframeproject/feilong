@@ -33,4 +33,4 @@ class SDKZVMClientTestCase(base.SDKTestCase):
             self.assertTrue(isinstance(self._zvmclient, xcatclient.XCATClient))
         elif CONF.zvm.client_type == 'smut':
             self.assertTrue(isinstance(self._zvmclient,
-                                       smutclient.SMUTsClient))
+                                       smutclient.SMUTClient))

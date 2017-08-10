@@ -19,6 +19,7 @@ from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import utils as zvmutils
+from zvmsdk import xcatclient
 
 _MONITOR = None
 CONF = config.CONF
@@ -47,7 +48,7 @@ class ZVMMonitor(object):
         for uid in uid_list:
             uid = uid.upper()
             if uid in cpumem_data:
-                with zvmutils.expect_invalid_xcat_resp_data():
+                with xcatclient.expect_invalid_xcat_resp_data():
                     user_data = cpumem_data[uid]
                     guest_cpus = int(user_data['guest_cpus'])
                     used_cpu_time = user_data['used_cpu_time']
@@ -74,7 +75,7 @@ class ZVMMonitor(object):
         for uid in uid_list:
             uid = uid.upper()
             if uid in cpumem_data:
-                with zvmutils.expect_invalid_xcat_resp_data():
+                with xcatclient.expect_invalid_xcat_resp_data():
                     user_data = cpumem_data[uid]
                     used_mem = int(user_data['used_memory'].partition(' ')[0])
                     max_mem = int(user_data['max_memory'].partition(' ')[0])
@@ -98,7 +99,7 @@ class ZVMMonitor(object):
         for uid in uid_list:
             uid = uid.upper()
             if uid in vnics:
-                with zvmutils.expect_invalid_xcat_resp_data():
+                with xcatclient.expect_invalid_xcat_resp_data():
                     target_vnics[uid] = vnics[uid]
 
         return target_vnics
@@ -156,7 +157,7 @@ class ZVMMonitor(object):
     def _update_nic_data(self):
         nics = {}
         vsw_dict = self._zvmclient.virtual_network_vswitch_query_iuo_stats()
-        with zvmutils.expect_invalid_xcat_resp_data():
+        with xcatclient.expect_invalid_xcat_resp_data():
             for vsw in vsw_dict['vswitches']:
                 for nic in vsw['nics']:
                     userid = nic['userid'].upper()

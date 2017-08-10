@@ -23,6 +23,7 @@ from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import imageops
 from zvmsdk import utils as zvmutils
+from zvmsdk import xcatclient
 
 
 _VMOPS = None
@@ -49,7 +50,7 @@ class VMOps(object):
         """Get power status of a z/VM instance."""
         return self._zvmclient.get_power_state(guest_id)
 
-    @zvmutils.wrap_invalid_xcat_resp_data_error
+    @xcatclient.wrap_invalid_xcat_resp_data_error
     def _get_cpu_num_from_user_dict(self, dict_info):
         cpu_num = 0
         for inf in dict_info:
@@ -57,7 +58,7 @@ class VMOps(object):
                 cpu_num += 1
         return cpu_num
 
-    @zvmutils.wrap_invalid_xcat_resp_data_error
+    @xcatclient.wrap_invalid_xcat_resp_data_error
     def _get_max_memory_from_user_dict(self, dict_info):
         mem = dict_info[0].split(' ')[4]
         return zvmutils.convert_to_mb(mem) * 1024
@@ -76,7 +77,7 @@ class VMOps(object):
                     KeyError) as err:
                 LOG.error('Parse performance_info encounter error: %s',
                           str(perf_info))
-                raise exception.ZVMSDKInteralError(msg=str(err))
+                raise exception.ZVMSDKInternalError(msg=str(err))
 
             return {'power_state': power_stat,
                     'max_mem_kb': max_mem_kb,
@@ -85,7 +86,7 @@ class VMOps(object):
                     'cpu_time_us': cpu_time_us}
         else:
             # virtual machine in shutdown state or not exists
-            with zvmutils.expect_invalid_xcat_node_and_reraise(userid):
+            with xcatclient.expect_invalid_xcat_node_and_reraise(userid):
                 dict_info = self._zvmclient.get_user_direct(userid)
             return {
                 'power_state': power_stat,
@@ -105,7 +106,7 @@ class VMOps(object):
         res_dict = self._zvmclient.get_guest_connection_status(userid)
         LOG.debug('Get instance status of %s', userid)
 
-        with zvmutils.expect_invalid_xcat_resp_data(res_dict):
+        with xcatclient.expect_invalid_xcat_resp_data(res_dict):
             status = res_dict['node'][0][0]['data'][0]
 
         if status is not None:
