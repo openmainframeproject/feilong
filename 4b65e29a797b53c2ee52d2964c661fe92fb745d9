@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "275e1110_e981bb68",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 417,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-10T19:35:10Z",
+      "side": 1,
+      "message": "Indent this line please.",
+      "revId": "4b65e29a797b53c2ee52d2964c661fe92fb745d9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
