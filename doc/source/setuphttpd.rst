@@ -30,9 +30,9 @@ uwsgi_ via mod_proxy_uwsgi_ is recommended to be used
 .. _uwsgi: https://uwsgi-docs.readthedocs.io/
 .. _mod_proxy_uwsgi: http://uwsgi-docs.readthedocs.io/en/latest/Apache.html#mod-proxy-uwsgi
 
-==========================================
-Sample configuration steps based on apache
-==========================================
+==============================================
+Sample configuration and steps based on apache
+==============================================
 
 * make sure installed following items
    - apache httpd server
@@ -42,7 +42,6 @@ Sample configuration steps based on apache
 
    [uwsgi]
    chmod-socket = 666
-   # socket = /var/run/uwsgi/sdk-api.socket
    uwsgi-socket = 127.0.0.1:35000
    lazy-apps = true
    add-header = Connection: close
