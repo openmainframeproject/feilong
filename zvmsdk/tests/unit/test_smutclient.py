@@ -21,13 +21,12 @@ from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import smutclient
 from zvmsdk.tests.unit import base
-from zvmsdk.tests.unit import test_zvmclient
 
 
 CONF = config.CONF
 
 
-class SDKSMUTClientTestCases(test_zvmclient.SDKZVMClientTestCase):
+class SDKSMUTClientTestCases(base.SDKTestCase):
     """Test cases for xcat zvm client."""
 
     @classmethod
