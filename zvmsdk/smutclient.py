@@ -13,6 +13,7 @@
 #    under the License.
 
 
+import contextlib
 import functools
 
 from smutLayer import smut
@@ -41,33 +42,48 @@ def wrap_invalid_smut_resp_data_error(function):
     return decorated_function
 
 
+@contextlib.contextmanager
+def expect_invalid_smut_resp_data(data=''):
+    """Catch exceptions when converting SMUT response data."""
+    try:
+        yield
+    except (ValueError, TypeError, IndexError, AttributeError,
+            KeyError) as err:
+        LOG.error('Parse SMUT response data %s encounter error', data)
+        raise exception.ZVMInvalidSMUTResponseDataError(msg=err)
+
+
 class SMUTClient(client.ZVMClient):
 
     def __init__(self):
         self._smut = smut.SMUT()
 
     def _request(self, requestData):
-        results = self._smut.request(requestData)
+        try:
+            results = self._smut.request(requestData)
+        except (ValueError, TypeError, IndexError, AttributeError,
+            KeyError) as err:
+            LOG.error('SMUT internal parse encounter error')
+            raise exception.ZVMSMUTInternalError(msg=err)
+
         if results['overallRC'] != 0:
             raise exception.ZVMSMUTRequestFailed(results=results)
         return results
 
-    @wrap_invalid_smut_resp_data_error
     def get_power_state(self, userid):
         """Get power status of a z/VM instance."""
         LOG.debug('Query power stat of %s' % userid)
         requestData = "PowerVM " + userid + " status"
         results = self._request(requestData)
-        status = results['response'][0].partition(': ')[2]
+        with expect_invalid_smut_resp_data():
+            status = results['response'][0].partition(': ')[2]
         return status
 
-    @wrap_invalid_smut_resp_data_error
     def guest_start(self, userid):
         """"Power on VM."""
         requestData = "PowerVM " + userid + " on"
         self._request(requestData)
 
-    @wrap_invalid_smut_resp_data_error
     def guest_stop(self, userid):
         """"Power off VM."""
         requestData = "PowerVM " + userid + " off"
