@@ -369,20 +369,6 @@ class XCATClient(client.ZVMClient):
             # Add disks for vm
             self.add_mdisks(userid, disk_list)
 
-    def add_mdisks(self, userid, disk_list, start_vdev=None):
-        """Add disks for the userid
-
-        :disks: A list dictionary to describe disk info, for example:
-                disk: [{'size': '1g',
-                       'format': 'ext3',
-                       'disk_pool': 'ECKD:eckdpool1'}]
-
-        """
-
-        for idx, disk in enumerate(disk_list):
-            vdev = self.generate_disk_vdev(start_vdev=start_vdev, offset=idx)
-            self._add_mdisk(userid, disk, vdev)
-
     def _add_mdisk(self, userid, disk, vdev):
         """Create one disk for userid
 
@@ -1199,29 +1185,6 @@ class XCATClient(client.ZVMClient):
 
         raw_log_list = log_data.split('\n')
         return '\n'.join([rec.partition(': ')[2] for rec in raw_log_list])
-
-    def _generate_vdev(self, base, offset):
-        """Generate virtual device number based on base vdev
-        :param base: base virtual device number, string of 4 bit hex.
-        :param offset: offset to base, integer.
-        """
-        vdev = hex(int(base, 16) + offset)[2:]
-        return vdev.rjust(4, '0')
-
-    def generate_disk_vdev(self, start_vdev=None, offset=0):
-        """Generate virtual device number for disks
-        :param offset: offset of user_root_vdev.
-        :return: virtual device number, string of 4 bit hex.
-        """
-        if not start_vdev:
-            start_vdev = CONF.zvm.user_root_vdev
-        vdev = self._generate_vdev(start_vdev, offset)
-        if offset >= 0 and offset < 254:
-            return vdev
-        else:
-            msg = "Invalid virtual device number for disk:%s" % vdev
-            LOG.error(msg)
-            raise
 
     def _generate_disk_parmline(self, vdev, fmt, mntdir):
         parms = [

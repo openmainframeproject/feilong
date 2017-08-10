@@ -82,7 +82,7 @@ zvm_opts = [
     Opt('default_nic_vdev',
         section='zvm',
         default='1000'),
-    Opt('zvm_default_admin_userid',
+    Opt('logonby_users',
         section='zvm'),
     Opt('user_default_password',
         section='zvm',
