@@ -1231,12 +1231,6 @@ class SDKXCATClientTestCases(test_zvmclient.SDKZVMClientTestCase):
                           self._xcatclient.get_user_console_output,
                           'fakeid', 100)
 
-    def test_generate_vdev(self):
-        base = '0100'
-        idx = 1
-        vdev = self._xcatclient._generate_vdev(base, idx)
-        self.assertEqual(vdev, '0101')
-
     @mock.patch.object(xcatclient.XCATClient, 'aemod_handler')
     def test_process_additional_minidisks(self, aemod_handler):
         userid = 'inst001'
