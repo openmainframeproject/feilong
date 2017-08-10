@@ -20,6 +20,7 @@ from smutLayer import smut
 
 from zvmsdk import client
 from zvmsdk import config
+from zvmsdk import constants as const
 from zvmsdk import exception
 from zvmsdk import log
 
@@ -89,3 +90,48 @@ class SMUTClient(client.ZVMClient):
         """"Power off VM."""
         requestData = "PowerVM " + userid + " off"
         self._request(requestData)
+
+    def create_vm(self, userid, cpu, memory, disk_list, profile):
+        """ Create VM and add disks if specified. """
+        rd = ('makevm %(uid)s directory LBYONLY %(mem)im %(pri)s '
+              '--cpus %(cpu)i --profile %(prof)s' %
+              {'uid': userid, 'mem': memory,
+               'pri': const.ZVM_USER_DEFAULT_PRIVILEGE,
+               'cpu': cpu, 'prof': profile})
+
+        if CONF.zvm.logonby_users:
+            rd += ('--logonby %s' % CONF.zvm.logonby_users)
+
+        if disk_list and 'is_boot_disk' in disk_list[0]:
+            ipl_disk = CONF.zvm.user_root_vdev
+            rd += ('--ipl %s' % ipl_disk)
+
+        self._request(rd)
+
+        if disk_list:
+            # Add disks for vm
+            self.add_mdisks(userid, disk_list)
+
+    def _add_mdisk(self, userid, disk, vdev):
+        """Create one disk for userid
+
+        NOTE: No read, write and multi password specified, and
+        access mode default as 'MR'.
+
+        """
+        size = disk['size']
+        fmt = disk.get('format')
+        disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+        [diskpool_type, diskpool_name] = disk_pool.split(':')
+
+        if (diskpool_type.upper() == 'ECKD'):
+            action = 'add3390'
+        else:
+            action = 'add9336'
+
+        rd = ' '.join(['changevm', userid, action, diskpool_name,
+                       vdev, size, '--mode MR'])
+        if fmt:
+            rd += (' --filesystem %s' % fmt)
+
+        self._request(rd)
