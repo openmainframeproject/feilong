@@ -14,7 +14,6 @@
 
 
 import mock
-import zvmsdk.utils as zvmutils
 
 from zvmsdk import exception
 from zvmsdk import vmops
@@ -25,7 +24,6 @@ class SDKVMOpsTestCase(base.SDKTestCase):
     def setUp(self):
         super(SDKVMOpsTestCase, self).setUp()
         self.vmops = vmops.get_vmops()
-        self.xcat_url = zvmutils.get_xcat_url()
 
     @mock.patch.object(vmops.get_vmops()._zvmclient, 'get_power_state')
     def test_get_power_state(self, gps):
