@@ -21,13 +21,12 @@ from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import smutclient
 from zvmsdk.tests.unit import base
-from zvmsdk.tests.unit import test_zvmclient
 
 
 CONF = config.CONF
 
 
-class SDKSMUTClientTestCases(test_zvmclient.SDKZVMClientTestCase):
+class SDKSMUTClientTestCases(base.SDKTestCase):
     """Test cases for xcat zvm client."""
 
     @classmethod
@@ -83,3 +82,35 @@ class SDKSMUTClientTestCases(test_zvmclient.SDKZVMClientTestCase):
         status = self._smutclient.get_power_state(fake_userid)
         request.assert_called_once_with(requestData)
         self.assertEqual('on', status)
+
+    @mock.patch.object(smutclient.SMUTClient, 'add_mdisks')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_create_vm(self, request, add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '1g',
+                      'is_boot_disk': True,
+                      'disk_pool': 'ECKD:eckdpool1',
+                      'format': 'ext3'}]
+        profile = 'dfltprof'
+        base.set_conf('zvm', 'logonby_users', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+              '--profile dfltprof --logonby "lbyuser1 lbyuser2" --ipl 0100')
+        self._smutclient.create_vm(user_id, cpu, memory, disk_list, profile)
+        request.assert_called_once_with(rd)
+        add_mdisks.assert_called_once_with(user_id, disk_list)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_add_mdisk(self, request):
+        userid = 'fakeuser'
+        disk = {'size': '1g',
+                'disk_pool': 'ECKD:eckdpool1',
+                'format': 'ext3'}
+        vdev = '0101'
+        rd = ('changevm fakeuser add3390 eckdpool1 0101 1g --mode MR '
+              '--filesystem ext3')
+
+        self._smutclient._add_mdisk(userid, disk, vdev),
+        request.assert_called_once_with(rd)
