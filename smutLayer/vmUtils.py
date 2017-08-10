@@ -412,6 +412,31 @@ def installFS(rh, vaddr, mode, fileSystem):
             rh.updateResults(results)
 
     if results['overallRC'] == 0:
+        # Settle the devices so we can do the partition.
+        strCmd = ("which udevadm &> /dev/null && " +
+        "udevadm settle || udevsettle")
+        rh.printSysLog("Invoking: " + strCmd)
+        try:
+            subprocess.check_output(
+                strCmd,
+                stderr=subprocess.STDOUT,
+                close_fds=True,
+                shell=True)
+        except CalledProcessError as e:
+            rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
+                e.returncode, e.output))
+            results = msgs.msg['0415'][0]
+            results['rs'] = e.returncode
+            rh.updateResults(results)
+        except Exception as e:
+            # All other exceptions.
+            strCmd = " ".join(cmd)
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                type(e).__name__, str(e)))
+            results = msgs.msg['0421'][0]
+            rh.updateResults(results)
+
+    if results['overallRC'] == 0:
         # Install the file system into the disk.
         device = device + "1"       # Point to first partition
         if fileSystem != 'swap':
