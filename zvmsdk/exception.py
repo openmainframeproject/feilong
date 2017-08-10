@@ -169,3 +169,7 @@ class ZVMSMUTRequestFailed(SDKBaseException):
 
 class ZVMInvalidSMUTResponseDataError(SDKBaseException):
     msg_fmt = 'Invalid data returned from SMUT: %(msg)s'
+
+
+class ZVMSMUTInternalError(SDKBaseException):
+    msg_fmt = 'Error returned from SMUT: %(msg)s'
