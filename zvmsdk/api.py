@@ -332,7 +332,7 @@ class SDKAPI(object):
         return self._vmops.get_definition_info(userid, **kwargs)
 
     @utils.check_input_types(_TUSERID, int, int, list, _TSTR)
-    def guest_create(self, userid, vcpus, memory, disk_list=None,
+    def guest_create(self, userid, vcpus, memory, disk_list=[],
                      user_profile=CONF.zvm.user_profile):
         """create a vm in z/VM
 
@@ -379,6 +379,16 @@ class SDKAPI(object):
         """
         if disk_list:
             for disk in disk_list:
+                if not isinstance(disk, dict):
+                    errmsg = ('Invalid "disk_list" input, it should be a '
+                              'dictionary. Details could be found in doc.')
+                    raise exception.ZVMInvalidInput(msg=errmsg)
+
+                if 'size' not in disk.keys():
+                    errmsg = ('Invalid "disk_list" input, "size" is required '
+                              'for each disk.')
+                    raise exception.ZVMInvalidInput(msg=errmsg)
+
                 disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
                 if ':' not in disk_pool or (disk_pool.split(':')[0].upper()
                     not in ['ECKD', 'FBA']):
