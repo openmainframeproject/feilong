@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bedc54ae_c0f54877",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2017-08-10T03:39:32Z",
+      "side": 1,
+      "message": "Do we need to pass \u0027results\u0027 to this function",
+      "range": {
+        "startLine": 78,
+        "startChar": 42,
+        "endLine": 78,
+        "endChar": 45
+      },
+      "revId": "4ca658b8cbe991238b614c7aeed3002fec4a5a57",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
