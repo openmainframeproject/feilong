@@ -1404,7 +1404,7 @@ parser.add_argument('--listparms',
                     help='List the command being run.')
 parser.add_argument('setsToRun',
                     metavar='N',
-                    nargs='+',
+                    nargs='*',
                     help='Test sets to run')
 args = parser.parse_args()
 
