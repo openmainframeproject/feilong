@@ -27,7 +27,7 @@ from zvmsdk.tests.unit import test_zvmclient
 CONF = config.CONF
 
 
-class SDKSMUTClientTestCases(test_zvmclient.SDKZVMClientTestCase):
+class SDKSMUTClientTestCases(base.SDKTestCase):
     """Test cases for xcat zvm client."""
 
     @classmethod

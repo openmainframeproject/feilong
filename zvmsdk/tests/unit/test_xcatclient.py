@@ -26,13 +26,12 @@ from zvmsdk import utils as zvmutils
 from zvmsdk import xcatclient
 from zvmsdk import config
 from zvmsdk.tests.unit import base
-from zvmsdk.tests.unit import test_zvmclient
 
 
 CONF = config.CONF
 
 
-class SDKXCATClientTestCases(test_zvmclient.SDKZVMClientTestCase):
+class SDKXCATClientTestCases(base.SDKTestCase):
     """Test cases for xcat zvm client."""
 
     @classmethod
@@ -1231,12 +1230,6 @@ class SDKXCATClientTestCases(test_zvmclient.SDKZVMClientTestCase):
                           self._xcatclient.get_user_console_output,
                           'fakeid', 100)
 
-    def test_generate_vdev(self):
-        base = '0100'
-        idx = 1
-        vdev = self._xcatclient._generate_vdev(base, idx)
-        self.assertEqual(vdev, '0101')
-
     @mock.patch.object(xcatclient.XCATClient, 'aemod_handler')
     def test_process_additional_minidisks(self, aemod_handler):
         userid = 'inst001'
@@ -1404,19 +1397,6 @@ class SDKXCATClientTestCases(test_zvmclient.SDKZVMClientTestCase):
         prepare_for_spawn.assert_called_once_with(user_id)
         xrequest.assert_called_once_with('POST', url, body)
         add_mdisks.assert_called_once_with(user_id, disk_list)
-
-    @mock.patch.object(xcatclient.XCATClient, '_add_mdisk')
-    def test_add_mdisks(self, add_mdisk):
-        userid = 'fakeuser'
-        disk_list = [{'size': '1g',
-                      'is_boot_disk': True,
-                      'disk_pool': 'ECKD:eckdpool1'},
-                     {'size': '200000',
-                      'disk_pool': 'FBA:fbapool1',
-                      'format': 'ext3'}]
-        self._xcatclient.add_mdisks(userid, disk_list)
-        add_mdisk.assert_any_call(userid, disk_list[0], '0100')
-        add_mdisk.assert_any_call(userid, disk_list[1], '0101')
 
     @mock.patch.object(zvmutils, 'xcat_request')
     def test_add_mdisk(self, xrequest):
