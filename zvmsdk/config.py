@@ -138,37 +138,6 @@ zvm_opts = [
         default=30,
         opt_type='int',
         ),
-    # tests options
-    Opt('image_path',
-        section='tests',
-        opt_type='str',
-        ),
-    Opt('image_os_version',
-        section='tests',
-        opt_type='str',
-        ),
-    Opt('userid_list',
-        section='tests',
-        opt_type='str',
-        ),
-    Opt('ip_addr_list',
-        section='tests',
-        opt_type='str',
-        ),
-    Opt('mac_user_prefix',
-        section='tests',
-        opt_type='str',
-        ),
-    Opt('vswitch',
-        section='tests',
-        opt_type='str',
-        ),
-    Opt('broadcast_v4',
-        section='tests'),
-    Opt('gateway_v4',
-        section='tests'),
-    Opt('netmask_v4',
-        section='tests'),
     ]
 
 
@@ -413,4 +382,4 @@ class RequiredOptMissingError(Exception):
 
 
 CONF = ConfigOpts()
-CONF = CONF.register(zvm_opts)
+CONF.register(zvm_opts)
