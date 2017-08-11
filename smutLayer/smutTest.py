@@ -28,24 +28,6 @@ from ReqHandle import ReqHandle
 
 version = '1.0.0'         # Version of this script
 
-"""
-The try/except section will import local overrides for the subs and testSets
-structures if the exist.  This allows for extensions to the defined tests
-without modifying this file.
-"""
-try:
-    print("Importing smutTestLocal.py")
-    import smutTestLocal
-    print("Localizing localSubs dictionary.")
-    localSubs = smutTestLocal.localSubs
-    print("Localizing localSubs dictionary.")
-    localTestSets = smutTestLocal.localTestSets
-    print("Localization is complete.")
-except:
-    print("No localization will be performed.")
-    localSubs = {}
-    localTestSets = {}
-
 longstring = '1' * 4096
 
 """
@@ -86,14 +68,6 @@ subs = {
     '<<<longString>>>': longstring,
 }
 
-# Apply local overrides to the subs dictionary.
-if len(localSubs) > 0:
-    for key in localSubs:
-        print "Localizing " + key + ": " + localSubs[key]
-        subs[key] = localSubs[key]
-else:
-    print("No local overrides exist for the subs dictionary.")
-
 # Add a substitution key for the userid of this system.
 cmd = ["/sbin/vmcp", "query userid"]
 try:
@@ -115,10 +89,6 @@ file = open(modFile.name, 'w')
 file.write("#!/usr/bin/env bash\n")
 file.write("echo -n $1 > /etc/iucv_authorized_userid\n")
 file.close()
-
-# The next lines produce the code that allows the regular expressions to work.
-regSubs = dict((re.escape(k), v) for k, v in subs.iteritems())
-pattern = re.compile("|".join(regSubs.keys()))
 
 """
 A dictionary contains the elements needed to process a test.
@@ -1123,14 +1093,57 @@ testSets = {
         smapiTests],
     }
 
-# Apply local overrides to the testSets dictionary.
-if len(localTestSets) > 0:
-    print "Localizing the test sets."
-    for key in localTestSets:
-        print "Localizing test set: " + key
-        testSets[key] = localTestSets[key]
-else:
-    print "No local test sets exist."
+
+def localize(localFile, subs, testSets):
+    """
+    Perform localization of substitution variables and test sets.
+    This allows the invoker to extend or modify defined tests
+    without modifying this file.
+
+    Input:
+       Name of local tailorization file (without .py)
+          e.g. smutTestLocal for smutTestLocal.py file.
+       Substitution dictionary to be updated.
+       Test set dictionary to be updated.
+
+    Output:
+       None
+
+    Note:
+       - Upon exit the substitution and test set dictionary
+         have been updated with the data from the localization
+         file.
+    """
+    try:
+        smutTestLocal = __import__(localFile, fromlist=["*"])
+    except Exception as e:
+        print(e)
+        return 1
+
+    # Apply local overrides to the subs dictionary.
+    if len(smutTestLocal.localSubs) > 0:
+        print("Localizing localSubs dictionary.")
+        for key in smutTestLocal.localSubs:
+            print "Localizing " + key + ": " + smutTestLocal.localSubs[key]
+            subs[key] = smutTestLocal.localSubs[key]
+    else:
+        print("No local overrides exist for the subs dictionary.")
+
+    # Apply local overrides to the testSets dictionary.
+    if len(smutTestLocal.localTestSets) > 0:
+        print "Localizing the test sets."
+        if 'clear:testSets' in smutTestLocal.localTestSets:
+            print("Removing all original test sets.")
+            testSets.clear()
+        for key in smutTestLocal.localTestSets:
+            if key == 'clear:testSets':
+                continue
+            print "Localizing test set: " + key
+            testSets[key] = smutTestLocal.localTestSets[key]
+    else:
+        print "No local test sets exist."
+
+    return 0
 
 
 def runTest(smut, test):
@@ -1144,7 +1157,7 @@ def runTest(smut, test):
     Output:
        Final test score - 0: failed, 1: passed,
     """
-    global showLog
+    global args
 
     if test['request'][0:10] != 'SHELL_TEST':
         reqHandle = ReqHandle(cmdName=sys.argv[0], captureLogs=True)
@@ -1287,7 +1300,7 @@ def runTest(smut, test):
             print("        rs Validation: FAILED")
     else:
         testScore = 1
-        if showLog is True and len(results['logEntries']) != 0:
+        if args.showLog is True and len(results['logEntries']) != 0:
             print("    Log Entries:")
             for line in results['logEntries']:
                 print("        " + line)
@@ -1313,12 +1326,11 @@ def driveTestSet(smut, setId, setToTest):
     Output:
        Global values changed
     """
-    global showLog
+    global args
     global cnt
     global passed
     global failed
     global failedTests
-    global listParms
 
     print(" ")
     print("******************************************************************")
@@ -1332,7 +1344,7 @@ def driveTestSet(smut, setId, setToTest):
     failInfo = []
 
     for test in setToTest[1]:
-        if listParms is True:
+        if args.listParms is True:
             print(test['request'])
             continue
         if test['request'][0:6] == 'SHELL ':
@@ -1412,24 +1424,37 @@ parser.add_argument('--listareas',
                     dest='listAreas',
                     action='store_true',
                     help='List names of the test set areas.')
-parser.add_argument('--showlog',
-                    dest='showLog',
-                    action='store_true',
-                    help='Show log entries for successful tests.')
 parser.add_argument('--listparms',
                     dest='listParms',
                     action='store_true',
                     help='List the command being run.')
+parser.add_argument('--local',
+                    default='smutTestLocal',
+                    dest='localFile',
+                    help="Localization file or 'none'.")
+parser.add_argument('--showlog',
+                    dest='showLog',
+                    action='store_true',
+                    help='Show log entries for successful tests.')
 parser.add_argument('setsToRun',
                     metavar='N',
                     nargs='*',
                     help='Test sets to run')
 args = parser.parse_args()
 
-listAreas = args.listAreas
-listParms = args.listParms
-showLog = args.showLog
-setsToRun = args.setsToRun
+if args.localFile != 'none':
+    # Perform the localization.
+    print("Localization file specified as: " + args.localFile)
+    print("Importing " + args.localFile)
+    rc = localize(args.localFile, subs, testSets)
+    if rc != 0:
+        exit(2)
+else:
+    print("No localization will be performed.")
+
+# The next lines produce the code that allows the regular expressions to work.
+regSubs = dict((re.escape(k), v) for k, v in subs.iteritems())
+pattern = re.compile("|".join(regSubs.keys()))
 
 smut = SMUT()
 smut.enableLogCapture()              # Capture request related logs
@@ -1444,7 +1469,7 @@ f = open("sample.config", "w+")
 f.write("This is sample config file for punchFile Test")
 f.close()
 
-if listAreas is True:
+if args.listAreas is True:
     for key in sorted(testSets):
         print key + ": " + testSets[key][0]
 else:
@@ -1488,8 +1513,8 @@ else:
 
     # Determine the tests to run based on the first argument.
     tests = []
-    if len(setsToRun) > 0:
-        for key in setsToRun:
+    if len(args.setsToRun) > 0:
+        for key in args.setsToRun:
             key = key.upper()
             if key in testSets:
                 driveTestSet(smut, key, testSets[key])
@@ -1512,3 +1537,8 @@ else:
     print("Failed:    %s" % failed)
     print("Failed Test(s): " + str(failedTests))
     print("******************************************************************")
+
+    if failed == 0:
+        exit(0)
+    else:
+        exit(1)
