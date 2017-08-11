@@ -256,9 +256,15 @@ hostTests = [
         'overallRC': [0],
     },
     {
-        'description': "Get the space for a specific disk pools.",
+        'description': "Get the space for a specific 3390 disk pools.",
         'request': "GetHost diskpoolspace <<<pool3390>>>",
         'out': "^<<<pool3390>>> Total",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the space for a specific 9336 disk pools.",
+        'request': "GetHost diskpoolspace <<<pool9336>>>",
+        'out': "^<<<pool9336>>> Total",
         'overallRC': [0],
     },
     {
@@ -387,6 +393,18 @@ powerTests = [
     {
         'description': "Power off an already powered off system.",
         'request': "PowerVM <<<safeID>>> off",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Power on a system.",
+        'request': "PowerVM <<<safeID>>> on",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Power off a system with softOff option.",
+        'request': "PowerVM <<<safeID>>> softoff",
         'out': "",
         'overallRC': [0],
     },
