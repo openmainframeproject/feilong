@@ -58,7 +58,7 @@ class SDKBaseException(Exception):
         return self.args[0]
 
 
-class ZVMSDKInteralError(SDKBaseException):
+class ZVMSDKInternalError(SDKBaseException):
     msg_fmt = 'z/VM SDK internal error: %(msg)s'
 
 

@@ -25,27 +25,35 @@ _XCAT_CLIENT = None
 _SMUT_CLIENT = None
 
 
+def get_xcatclient():
+    global _XCAT_CLIENT
+    if _XCAT_CLIENT is None:
+        try:
+            _XCAT_CLIENT = zvmutils.import_object(
+                'zvmsdk.xcatclient.XCATClient')
+        except ImportError:
+            LOG.error("Unable to get zvmclient")
+            raise ImportError
+    return _XCAT_CLIENT
+
+
+def get_smutclient():
+    global _SMUT_CLIENT
+    if _SMUT_CLIENT is None:
+        try:
+            _SMUT_CLIENT = zvmutils.import_object(
+                'zvmsdk.smutclient.SMUTClient')
+        except ImportError:
+            LOG.error("Unable to get zvmclient")
+            raise ImportError
+    return _SMUT_CLIENT
+
+
 def get_zvmclient():
     if CONF.zvm.client_type == 'xcat':
-        global _XCAT_CLIENT
-        if _XCAT_CLIENT is None:
-            try:
-                _XCAT_CLIENT = zvmutils.import_object(
-                    'zvmsdk.xcatclient.XCATClient')
-            except ImportError:
-                LOG.error("Unable to get zvmclient")
-                raise ImportError
-        return _XCAT_CLIENT
+        return get_xcatclient()
     elif CONF.zvm.client_type == 'smut':
-        global _SMUT_CLIENT
-        if _SMUT_CLIENT is None:
-            try:
-                _SMUT_CLIENT = zvmutils.import_object(
-                    'zvmsdk.smutclient.SMUTClient')
-            except ImportError:
-                LOG.error("Unable to get zvmclient")
-                raise ImportError
-        return _SMUT_CLIENT
+        return get_smutclient()
     else:
         # TODO: raise Exception
         pass

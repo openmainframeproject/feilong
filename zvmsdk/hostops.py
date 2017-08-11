@@ -42,7 +42,7 @@ class HOSTOps(object):
         inv_info = self._zvmclient.get_host_info()
         host_info = {}
 
-        with zvmutils.expect_invalid_xcat_resp_data(inv_info):
+        with zvmutils.expect_invalid_resp_data(inv_info):
             host_info['zvm_host'] = inv_info['zvm_host']
             host_info['vcpus'] = int(inv_info['lpar_cpu_total'])
             host_info['vcpus_used'] = int(inv_info['lpar_cpu_used'])
@@ -67,7 +67,7 @@ class HOSTOps(object):
 
     def diskpool_get_info(self, pool):
         dp_info = self._zvmclient.get_diskpool_info(pool)
-        with zvmutils.expect_invalid_xcat_resp_data(dp_info):
+        with zvmutils.expect_invalid_resp_data(dp_info):
             for k in list(dp_info.keys()):
                 s = dp_info[k].strip().upper()
                 if s.endswith('G'):
