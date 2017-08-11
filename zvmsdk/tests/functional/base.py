@@ -29,10 +29,50 @@ from zvmsdk import utils as zvmutils
 
 CONF = config.CONF
 LOG = log.LOG
+Opt = config.Opt
 
 
 def set_conf(section, opt, value):
     CONF[section][opt] = value
+
+
+zvm_test_opts = [
+    # tests options
+    Opt('image_path',
+        section='tests',
+        opt_type='str',
+        ),
+    Opt('image_os_version',
+        section='tests',
+        opt_type='str',
+        ),
+    Opt('userid_list',
+        section='tests',
+        opt_type='str',
+        ),
+    Opt('ip_addr_list',
+        section='tests',
+        opt_type='str',
+        ),
+    Opt('mac_user_prefix',
+        section='tests',
+        opt_type='str',
+        ),
+    Opt('vswitch',
+        section='tests',
+        opt_type='str',
+        ),
+    Opt('broadcast_v4',
+        section='tests'),
+    Opt('gateway_v4',
+        section='tests'),
+    Opt('netmask_v4',
+        section='tests'),
+    ]
+
+
+CONF = config.CONF
+CONF.register(zvm_test_opts)
 
 
 class SDKAPITestUtils(object):
