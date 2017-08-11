@@ -26,13 +26,15 @@ class ZVMSDKConfigFileNotFound(Exception):
 
 class Opt(object):
     def __init__(self, opt_name, descritpion='', section='default',
-                 opt_type='str', default=None, required=False):
+                 opt_type='str', help = '',
+                 default=None, required=False):
         self.name = opt_name
         self.decsription = descritpion
         self.section = section
         self.opt_type = opt_type
         self.default = default
         self.required = required
+        self.help = help
 
 
 zvm_opts = [
@@ -131,6 +133,20 @@ zvm_opts = [
         section='wsgi',
         default='none',
         opt_type='str',
+        help='''
+Whether auth will be used.
+
+When sending http request from outside to running zvmsdk,
+Client will be requested to input username/password in order
+to authorize the call.
+Set this to 'none' indicated no auth will be used and 'auth'
+means username and password need to be specified.
+
+Possible value:
+'none': no auth will be required
+'auth': need auth, currently pyjwt is used to return a token
+        to caller if the username and password is correct.
+''',
         ),
     Opt('token_validation_period',
         section='wsgi',
@@ -184,7 +200,7 @@ class ConfigOpts(object):
     def __init__(self):
         self.dicts = {}
 
-    def _get_config_dicts_default(self, opts):
+    def get_config_dicts_default(self, opts):
         _dict = {}
         for opt in opts:
             sec = opt.section
@@ -192,7 +208,8 @@ class ConfigOpts(object):
                 _dict[sec] = {}
             _dict[sec][opt.name] = {'required': opt.required,
                                     'default': opt.default,
-                                    'type': opt.opt_type}
+                                    'type': opt.opt_type,
+                                    'help': opt.help}
         return _dict
 
     def register(self, opts):
@@ -203,7 +220,7 @@ class ConfigOpts(object):
         secs = cf.sections()
         config_dicts_override = self.config_ini_to_dicts(secs, cf)
 
-        config_dicts_default = self._get_config_dicts_default(opts)
+        config_dicts_default = self.get_config_dicts_default(opts)
 
         try:
             configs = self.merge(config_dicts_default, config_dicts_override)
