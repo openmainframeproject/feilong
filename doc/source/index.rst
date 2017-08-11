@@ -26,3 +26,11 @@ http solutions like nginx, apache etc.
 
    setuphttpd
    restapi
+
+configurations
+==============
+
+.. toctree::
+   :maxdepth: 1
+
+   configuration
