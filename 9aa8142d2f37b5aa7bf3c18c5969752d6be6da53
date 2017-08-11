@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba83cf92_2844ac78",
+        "filename": "zvmsdk/xcatclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2017-08-11T01:04:29Z",
+      "side": 1,
+      "message": "Both xcat and smut have the same requirement to check the response data, and the exception are same (ValueError, TypeError, IndexError, AttributeError, KeyError), maybe we could just one function to represent both (such as expect_invalid_resp_data and ZVMInvalidResponseDataError), and put it into the utils",
+      "range": {
+        "startLine": 341,
+        "startChar": 4,
+        "endLine": 341,
+        "endChar": 33
+      },
+      "revId": "9aa8142d2f37b5aa7bf3c18c5969752d6be6da53",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "57f80581_d9b0acb4",
+        "filename": "zvmsdk/xcatclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 383,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2017-08-11T01:04:29Z",
+      "side": 1,
+      "message": "Both xcat and smut have the same requirement to check the response data, and the exception are same (ValueError, TypeError, IndexError, AttributeError, KeyError), maybe we could just one function to represent both (such as wrap_invalid_resp_data_error and ZVMInvalidResponseDataError), and put it into the utils",
+      "range": {
+        "startLine": 383,
+        "startChar": 4,
+        "endLine": 383,
+        "endChar": 37
+      },
+      "revId": "9aa8142d2f37b5aa7bf3c18c5969752d6be6da53",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
