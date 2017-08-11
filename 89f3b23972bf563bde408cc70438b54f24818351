@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2dcf0b99_b1628924",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-08-11T02:55:12Z",
+      "side": 1,
+      "message": "if enable logonby, this option should not be a required opt?",
+      "range": {
+        "startLine": 89,
+        "startChar": 8,
+        "endLine": 89,
+        "endChar": 22
+      },
+      "revId": "89f3b23972bf563bde408cc70438b54f24818351",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
