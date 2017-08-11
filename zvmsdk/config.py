@@ -413,4 +413,4 @@ class RequiredOptMissingError(Exception):
 
 
 CONF = ConfigOpts()
-CONF = CONF.register(zvm_opts)
+CONF.register(zvm_opts)
