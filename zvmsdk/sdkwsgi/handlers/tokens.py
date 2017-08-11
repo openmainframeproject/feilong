@@ -30,13 +30,22 @@ DEFAULT_TOKEN_VALIDATION_PERIOD = 30
 
 @wsgi_wrapper.SdkWsgify
 def create(req):
+    if 'X-Auth-User' not in req.headers:
+        LOG.debug('no X-Auth-User given in reqeust header')
+        raise webob.exc.HTTPUnauthorized()
+
+    if (req.headers['X-Auth-User'] != CONF.wsgi.user or
+        req.headers['X-Auth-Password'] != CONF.wsgi.password):
+        LOG.debug('X-Auth-User or X-Auth-Password incorrect')
+        raise webob.exc.HTTPUnauthorized()
+
     expires = CONF.wsgi.token_validation_period
     if expires < 0:
         expires = DEFAULT_TOKEN_VALIDATION_PERIOD
 
     expired_elapse = datetime.timedelta(seconds=expires)
     expired_time = datetime.datetime.utcnow() + expired_elapse
-    payload = jwt.encode({'exp': expired_time}, 'username')
+    payload = jwt.encode({'exp': expired_time}, CONF.wsgi.password)
 
     req.response.headers.add('X-Auth-Token', payload)
 
@@ -59,7 +68,7 @@ def validate(function):
             raise webob.exc.HTTPUnauthorized()
 
         try:
-            jwt.decode(req.headers['X-Auth-Token'], 'username')
+            jwt.decode(req.headers['X-Auth-Token'], CONF.wsgi.password)
         except jwt.ExpiredSignatureError:
             LOG.debug('token validation failed because it is expired')
             raise webob.exc.HTTPUnauthorized()
