@@ -390,7 +390,7 @@ class SDKXCATClientTestCases(base.SDKTestCase):
                                      'nodename': "fakehcp",
                                      'userid': "fakeuserid"}
         dsh.return_value = {}
-        self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
+        self.assertRaises(exception.ZVMInvalidResponseDataError,
                           self._xcatclient.image_performance_query, 'fakevm')
 
     @mock.patch.object(xcatclient.XCATClient, '_get_hcp_info')
@@ -400,7 +400,7 @@ class SDKXCATClientTestCases(base.SDKTestCase):
                                      'nodename': "fakehcp",
                                      'userid': "fakeuserid"}
         dsh.return_value = {'data': [[]]}
-        self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
+        self.assertRaises(exception.ZVMInvalidResponseDataError,
                           self._xcatclient.image_performance_query, 'fakevm')
 
     @mock.patch.object(xcatclient.XCATClient, '_get_hcp_info')
@@ -622,7 +622,7 @@ class SDKXCATClientTestCases(base.SDKTestCase):
                                      'nodename': 'fakehcp',
                                      'userid': 'FAKEHCP'}
         xdsh.return_value = ['invalid', 'data']
-        self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
+        self.assertRaises(exception.ZVMInvalidResponseDataError,
                     self._xcatclient.virtual_network_vswitch_query_iuo_stats)
 
     @mock.patch.object(xcatclient.XCATClient, '_get_hcp_info')
@@ -1226,7 +1226,7 @@ class SDKXCATClientTestCases(base.SDKTestCase):
     @mock.patch.object(xcatclient, 'xcat_request')
     def test_get_user_console_output_invalid_output(self, xreq):
         xreq.return_value = {}
-        self.assertRaises(exception.ZVMInvalidXCATResponseDataError,
+        self.assertRaises(exception.ZVMInvalidResponseDataError,
                           self._xcatclient.get_user_console_output,
                           'fakeid', 100)
 

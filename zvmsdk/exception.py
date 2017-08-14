@@ -74,6 +74,10 @@ class ZVMInvalidInput(SDKBaseException):
     msg_fmt = 'Input parameters is invalid: %(msg)s'
 
 
+class ZVMInvalidResponseDataError(SDKBaseException):
+    msg_fmt = 'Invalid data returned from zvm client: %(msg)s'
+
+
 class ZVMInvalidXCATResponseDataError(SDKBaseException):
     msg_fmt = 'Invalid data returned from xCAT: %(msg)s'
 
