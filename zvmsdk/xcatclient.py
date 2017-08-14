@@ -333,7 +333,7 @@ def jsonloads(jsonstr):
     except ValueError:
         errmsg = "xCAT response data is not in JSON format"
         LOG.error(errmsg)
-        raise exception.ZVMInvalidXCATResponseDataError(msg=errmsg)
+        raise exception.ZVMInvalidResponseDataError(msg=errmsg)
 
 
 @contextlib.contextmanager
@@ -345,7 +345,7 @@ def expect_xcat_call_failed_and_reraise(exc, **kwargs):
     try:
         yield
     except (exception.ZVMXCATRequestFailed,
-            exception.ZVMInvalidXCATResponseDataError,
+            exception.ZVMInvalidResponseDataError,
             exception.ZVMXCATInternalError) as err:
         msg = err.format_message()
         kwargs['msg'] = msg
@@ -398,7 +398,7 @@ def translate_xcat_resp(rawdata, dirt):
     if data == {}:
         msg = "No value matched with keywords. Raw Data: %(raw)s; " \
                 "Keywords: %(kws)s" % {'raw': rawdata, 'kws': str(dirt)}
-        raise exception.ZVMInvalidXCATResponseDataError(msg=msg)
+        raise exception.ZVMInvalidResponseDataError(msg=msg)
 
     return data
 
@@ -653,7 +653,7 @@ class XCATClient(client.ZVMClient):
             for rpi in rpi_list:
                 try:
                     pi = translate_xcat_resp(rpi, ipq_kws)
-                except exception.ZVMInvalidXCATResponseDataError as err:
+                except exception.ZVMInvalidResponseDataError as err:
                     emsg = err.format_message()
                     # when there is only one userid queried and this userid is
                     # in 'off'state, the smcli will only returns the queried
@@ -1180,7 +1180,7 @@ class XCATClient(client.ZVMClient):
             body.append('remotehost=%s' % remotehost)
 
         with expect_xcat_call_failed_and_reraise(
-                exception.ZVMXCATDeployNodeFailed, node=node):
+                exception.ZVMGuestDeployFailed, userid=node):
             xcat_request("PUT", url, body)
 
     def check_space_imgimport_xcat(self, tar_file, xcat_free_space_threshold,
@@ -1240,7 +1240,7 @@ class XCATClient(client.ZVMClient):
         try:
             xcat_request("POST", url, body)
         except (exception.ZVMXCATRequestFailed,
-                exception.ZVMInvalidXCATResponseDataError,
+                exception.ZVMInvalidResponseDataError,
                 exception.ZVMXCATInternalError) as err:
             msg = ("Import the image bundle to xCAT MN failed: %s" %
                    err.format_message())
