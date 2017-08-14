@@ -57,7 +57,7 @@ class VSwitchTestCase(unittest.TestCase):
 
     def test_vswitch_create_delete(self):
         resp = self._vswitch_create()
-        self.assertEqual(204, resp.status_code)
+        self.assertEqual(200, resp.status_code)
 
         try:
             resp = self._vswitch_list()

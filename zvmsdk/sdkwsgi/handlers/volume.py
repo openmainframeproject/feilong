@@ -72,6 +72,9 @@ def volume_attach(req):
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     _volume_attach(userid, req)
+    req.response.status = 204
+    req.response.content_type = None
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
@@ -85,3 +88,6 @@ def volume_detach(req):
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     _volume_detach(userid, req)
+    req.response.status = 204
+    req.response.content_type = None
+    return req.response
