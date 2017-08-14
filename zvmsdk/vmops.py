@@ -190,11 +190,16 @@ class VMOps(object):
             self._zvmclient.guest_deploy(user_id, image_name,
                                          transportfiles, remotehost, vdev)
 
+        except exception.ZVMGuestDeployFailed as err:
+            LOG.error(('Failed to deploy image %(img)s to vm %(vm)s') %
+                      {'img': image_name,
+                       'vm': user_id})
+            raise
         except Exception as err:
             LOG.error(('Failed to deploy image %(img)s to vm %(vm)s') %
                       {'img': image_name,
                        'vm': user_id})
-            raise err
+            raise exception.ZVMGuestDeployFailed(userid=user_id, msg=str(err))
 
     def guest_list(self):
         return self._zvmclient.get_vm_list()
