@@ -10,6 +10,11 @@
 
 import requests
 
+from zvmsdk import config
+
+
+CONF = config.CONF
+
 
 class TestSDKClient(object):
 
@@ -17,9 +22,13 @@ class TestSDKClient(object):
         self.base_url = "http://127.0.0.1:8888"
 
     def _get_token(self):
+        _headers = {'Content-Type': 'application/json'}
+        _headers['X-Auth-User'] = CONF.wsgi.user
+        _headers['X-Auth-Password'] = CONF.wsgi.password
+
         url = self.base_url + '/token'
         method = 'POST'
-        response = requests.request(method, url)
+        response = requests.request(method, url, headers=_headers)
         token = response.headers['X-Auth-Token']
 
         return token
