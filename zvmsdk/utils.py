@@ -360,17 +360,17 @@ def import_object(import_str, *args, **kwargs):
 
 @contextlib.contextmanager
 def expect_invalid_resp_data(data=''):
-    """Catch exceptions when using xCAT response data."""
+    """Catch exceptions when using zvm client response data."""
     try:
         yield
     except (ValueError, TypeError, IndexError, AttributeError,
             KeyError) as err:
         LOG.error('Parse %s encounter error', data)
-        raise exception.ZVMInvalidXCATResponseDataError(msg=err)
+        raise exception.ZVMInvalidResponseDataError(msg=err)
 
 
 def wrap_invalid_resp_data_error(function):
-    """Catch exceptions when using xCAT response data."""
+    """Catch exceptions when using zvm client response data."""
 
     @functools.wraps(function)
     def decorated_function(*arg, **kwargs):
@@ -378,7 +378,7 @@ def wrap_invalid_resp_data_error(function):
             return function(*arg, **kwargs)
         except (ValueError, TypeError, IndexError, AttributeError,
                 KeyError) as err:
-            raise exception.ZVMInvalidXCATResponseDataError(msg=err)
+            raise exception.ZVMInvalidResponseDataError(msg=err)
 
     return decorated_function
 
