@@ -1559,9 +1559,18 @@ class XCATClient(client.ZVMClient):
         with expect_xcat_call_failed_and_reraise(
                 exception.ZVMNetworkError):
             result = xcat_request("PUT", url, body)
-            if (result['errorcode'][0][0] != '0' or not
-                    result['data'] or not result['data'][0]):
-                return None
+            if (result['errorcode'][0][0] != '0'):
+                emsg = result['data'][0][0]
+                if (emsg.__contains__("Return Code: 212") and
+                    emsg.__contains__("Reason Code: 40")):
+                    LOG.warning("No Virtual switch in the host")
+                    return []
+                else:
+                    raise exception.ZVMNetworkError(
+                            msg=("Failed to query vswitch list, %s") %
+                                 result['data'][0])
+            elif (not result['data'] or not result['data'][0]):
+                return []
             else:
                 data = '\n'.join([s for s in result['data'][0]
                                 if isinstance(s, unicode)])
