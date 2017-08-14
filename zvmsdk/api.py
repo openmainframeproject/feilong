@@ -23,7 +23,7 @@ from zvmsdk import monitor
 from zvmsdk import networkops
 from zvmsdk import vmops
 from zvmsdk import volumeop
-from zvmsdk import utils
+from zvmsdk import utils as zvmutils
 
 
 CONF = config.CONF
@@ -53,7 +53,7 @@ class SDKAPI(object):
         self._volumeop = volumeop.get_volumeop()
         self._skip_input_check = kwargs.get('skip_input_check')
 
-    @utils.check_input_types(_TUSERID)
+    @zvmutils.check_input_types(_TUSERID)
     def guest_start(self, userid):
         """Power on a virtual machine.
 
@@ -63,7 +63,7 @@ class SDKAPI(object):
         """
         self._vmops.guest_start(userid)
 
-    @utils.check_input_types(_TUSERID, int, int)
+    @zvmutils.check_input_types(_TUSERID, int, int)
     def guest_stop(self, userid, timeout=0, retry_interval=10):
         """Power off a virtual machine.
 
@@ -81,7 +81,7 @@ class SDKAPI(object):
 
         self._vmops.guest_stop(userid, timeout, retry_interval)
 
-    @utils.check_input_types(_TUSERID)
+    @zvmutils.check_input_types(_TUSERID)
     def guest_restart(self, userid):
         """Soft restart estart a virtual machine
         :param str userid: the id of the virtual machine to be reboot
@@ -89,7 +89,7 @@ class SDKAPI(object):
         """
         self._vmops.guest_restart(userid)
 
-    @utils.check_input_types(_TUSERID)
+    @zvmutils.check_input_types(_TUSERID)
     def guest_reset(self, userid):
         """reset a virtual machine
         :param str userid: the id of the virtual machine to be reset
@@ -97,12 +97,12 @@ class SDKAPI(object):
         """
         self._vmops.guest_reset(userid)
 
-    @utils.check_input_types(_TUSERID)
+    @zvmutils.check_input_types(_TUSERID)
     def guest_get_power_state(self, userid):
         """Returns power state."""
         return self._vmops.get_power_state(userid)
 
-    @utils.check_input_types(_TUSERID)
+    @zvmutils.check_input_types(_TUSERID)
     def guest_get_info(self, userid):
         """Get the status of a virtual machine.
 
@@ -131,7 +131,7 @@ class SDKAPI(object):
         """
         return self._hostops.get_info()
 
-    @utils.check_input_types(_TSTR)
+    @zvmutils.check_input_types(_TSTR)
     def host_diskpool_get_info(self, disk_pool=CONF.zvm.disk_pool):
         """ Retrieve diskpool information.
         :param str disk_pool: the disk pool info. It use ':' to separate
@@ -151,7 +151,7 @@ class SDKAPI(object):
 
         return self._hostops.diskpool_get_info(diskpool_name)
 
-    @utils.check_input_types(_TSTR)
+    @zvmutils.check_input_types(_TSTR)
     def image_delete(self, image_name):
         """Delete image from image repository
 
@@ -161,7 +161,7 @@ class SDKAPI(object):
         """
         self._imageops.image_delete(image_name)
 
-    @utils.check_input_types(_TSTR)
+    @zvmutils.check_input_types(_TSTR)
     def image_get_root_disk_size(self, image_file_name):
         """Get the root disk size of the image
 
@@ -170,7 +170,7 @@ class SDKAPI(object):
         """
         return self._imageops.image_get_root_disk_size(image_file_name)
 
-    @utils.check_input_types(_TSTR, dict, _TSTR_OR_NONE)
+    @zvmutils.check_input_types(_TSTR, dict, _TSTR_OR_NONE)
     def image_import(self, url, image_meta={}, remote_host=None):
         """Import image to zvmsdk image repository
 
@@ -199,7 +199,7 @@ class SDKAPI(object):
         self._imageops.image_import(url, image_meta=image_meta,
                                     remote_host=remote_host)
 
-    @utils.check_input_types(_TSTR_OR_NONE)
+    @zvmutils.check_input_types(_TSTR_OR_NONE)
     def image_query(self, imagekeyword=None):
         """Get the list of image names in image repository
 
@@ -216,7 +216,7 @@ class SDKAPI(object):
         """
         return self._imageops.image_query(imagekeyword)
 
-    @utils.check_input_types(_TUSERID, _TSTR, _TSTR_OR_NONE, _TSTR_OR_NONE,
+    @zvmutils.check_input_types(_TUSERID, _TSTR, _TSTR_OR_NONE, _TSTR_OR_NONE,
                        _TSTR_OR_NONE)
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
@@ -237,7 +237,7 @@ class SDKAPI(object):
         return self._vmops.guest_deploy(userid, image_name,
                                         transportfiles, remotehost, vdev)
 
-    @utils.check_input_types(_TUSERID, _TSTR_OR_NONE, _TSTR_OR_NONE,
+    @zvmutils.check_input_types(_TUSERID, _TSTR_OR_NONE, _TSTR_OR_NONE,
                        _TSTR_OR_NONE, _TSTR_OR_NONE, bool)
     def guest_create_nic(self, userid, vdev=None, nic_id=None,
                          mac_addr=None, ip_addr=None, active=False):
@@ -267,12 +267,12 @@ class SDKAPI(object):
                 - Smcli call failure, refer to the error message for detail
         """
         if mac_addr is not None:
-            if not utils.valid_mac_addr(mac_addr):
+            if not zvmutils.valid_mac_addr(mac_addr):
                 raise exception.ZVMInvalidInput(
                     msg=("Invalid mac address, format should be "
                          "xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit"))
         if ip_addr is not None:
-            if not utils.valid_IP(ip_addr):
+            if not zvmutils.valid_IP(ip_addr):
                 raise exception.ZVMInvalidInput(
                     msg=("Invalid management IP address, it should be the "
                          "value between 0.0.0.0 and 255.255.255.255"))
@@ -280,7 +280,7 @@ class SDKAPI(object):
                                            mac_addr=mac_addr, ip_addr=ip_addr,
                                            active=active)
 
-    @utils.check_input_types(_TUSERID, _TSTR, bool)
+    @zvmutils.check_input_types(_TUSERID, _TSTR, bool)
     def guest_delete_nic(self, userid, vdev, active=False):
         """ delete the nic for the vm
 
@@ -298,7 +298,7 @@ class SDKAPI(object):
         """
         self._networkops.delete_nic(userid, vdev, active=active)
 
-    @utils.check_input_types(_TUSERID)
+    @zvmutils.check_input_types(_TUSERID)
     def guest_get_nic_vswitch_info(self, userid):
         """ Return the nic and switch pair for the specified vm.
 
@@ -315,7 +315,7 @@ class SDKAPI(object):
         """
         return self._networkops.get_vm_nic_vswitch_info(userid)
 
-    @utils.check_input_types(_TUSERID, valid_keys=['nic_coupled'])
+    @zvmutils.check_input_types(_TUSERID, valid_keys=['nic_coupled'])
     def guest_get_definition_info(self, userid, **kwargs):
         """Get definition info for the specified guest vm, also could be used
         to check specific info.
@@ -331,7 +331,7 @@ class SDKAPI(object):
         """
         return self._vmops.get_definition_info(userid, **kwargs)
 
-    @utils.check_input_types(_TUSERID, int, int, list, _TSTR)
+    @zvmutils.check_input_types(_TUSERID, int, int, list, _TSTR)
     def guest_create(self, userid, vcpus, memory, disk_list=[],
                      user_profile=CONF.zvm.user_profile):
         """create a vm in z/VM
@@ -398,7 +398,7 @@ class SDKAPI(object):
 
         self._vmops.create_vm(userid, vcpus, memory, disk_list, user_profile)
 
-    @utils.check_input_types(_TUSERID, _TSTR, _TVSWNAME, bool)
+    @zvmutils.check_input_types(_TUSERID, _TSTR, _TVSWNAME, bool)
     def guest_nic_couple_to_vswitch(self, userid, nic_vdev,
                                     vswitch_name, active=False):
         """ Couple nic device to specified vswitch.
@@ -419,7 +419,7 @@ class SDKAPI(object):
         self._networkops.couple_nic_to_vswitch(userid, nic_vdev,
                                                vswitch_name, active=active)
 
-    @utils.check_input_types(_TUSERID, _TSTR, bool)
+    @zvmutils.check_input_types(_TUSERID, _TSTR, bool)
     def guest_nic_uncouple_from_vswitch(self, userid, nic_vdev,
                                         active=False):
         """ Couple nic device to specified vswitch.
@@ -449,9 +449,9 @@ class SDKAPI(object):
         """
         return self._networkops.get_vswitch_list()
 
-    @utils.check_input_types(_TVSWNAME, _TSTR_OR_NONE, _TUSERID, _TSTR, _TSTR,
-                       _TSTR, _INT_OR_TSTR, _TSTR, _TSTR, int,
-                       _INT_OR_NONE, bool)
+    @zvmutils.check_input_types(_TVSWNAME, _TSTR_OR_NONE, _TUSERID, _TSTR,
+                                _TSTR, _TSTR, _INT_OR_TSTR, _TSTR, _TSTR,
+                                int, _INT_OR_NONE, bool)
     def vswitch_create(self, name, rdev=None, controller='*',
                        connection='CONNECT', network_type='IP',
                        router="NONROUTER", vid='UNAWARE', port_type='ACCESS',
@@ -548,7 +548,7 @@ class SDKAPI(object):
                                      native_vid=native_vid,
                                      persist=persist)
 
-    @utils.check_input_types(_TUSERID)
+    @zvmutils.check_input_types(_TUSERID)
     def guest_get_console_output(self, userid):
         """Get the console output of the guest virtual machine.
 
@@ -558,7 +558,7 @@ class SDKAPI(object):
         """
         return self._vmops.get_console_output(userid)
 
-    @utils.check_input_types(_TUSERID)
+    @zvmutils.check_input_types(_TUSERID)
     def guest_delete(self, userid):
         """Delete guest.
 
@@ -571,7 +571,7 @@ class SDKAPI(object):
         """
         return self._vmops.delete_vm(userid)
 
-    @utils.check_input_types(_TUSERID_OR_LIST)
+    @zvmutils.check_input_types(_TUSERID_OR_LIST)
     def guest_inspect_cpus(self, userid_list):
         """Get the cpu statistics of the guest virtual machines
 
@@ -607,7 +607,7 @@ class SDKAPI(object):
             userid_list = [userid_list]
         return self._monitor.inspect_cpus(userid_list)
 
-    @utils.check_input_types(_TUSERID_OR_LIST)
+    @zvmutils.check_input_types(_TUSERID_OR_LIST)
     def guest_inspect_mem(self, userid_list):
         """Get the mem usage statistics of the guest virtual machines
 
@@ -636,7 +636,7 @@ class SDKAPI(object):
             userid_list = [userid_list]
         return self._monitor.inspect_mem(userid_list)
 
-    @utils.check_input_types(_TUSERID_OR_LIST)
+    @zvmutils.check_input_types(_TUSERID_OR_LIST)
     def guest_inspect_vnics(self, userid_list):
         """Get the vnics statistics of the guest virtual machines
 
@@ -681,7 +681,7 @@ class SDKAPI(object):
             userid_list = [userid_list]
         return self._monitor.inspect_vnics(userid_list)
 
-    @utils.check_input_types(_TVSWNAME, _TUSERID)
+    @zvmutils.check_input_types(_TVSWNAME, _TUSERID)
     def vswitch_grant_user(self, vswitch_name, userid):
         """Set vswitch to grant user
 
@@ -699,7 +699,7 @@ class SDKAPI(object):
 
         self._networkops.grant_user_to_vswitch(vswitch_name, userid)
 
-    @utils.check_input_types(_TVSWNAME, _TUSERID)
+    @zvmutils.check_input_types(_TVSWNAME, _TUSERID)
     def vswitch_revoke_user(self, vswitch_name, userid):
         """Revoke user for vswitch
 
@@ -715,7 +715,7 @@ class SDKAPI(object):
         """
         self._networkops.revoke_user_from_vswitch(vswitch_name, userid)
 
-    @utils.check_input_types(_TVSWNAME, _TUSERID, int)
+    @zvmutils.check_input_types(_TVSWNAME, _TUSERID, int)
     def vswitch_set_vlan_id_for_user(self, vswitch_name, userid, vlan_id):
         """Set vlan id for user when connecting to the vswitch
 
@@ -733,7 +733,7 @@ class SDKAPI(object):
         self._networkops.set_vswitch_port_vlan_id(vswitch_name,
                                                   userid, vlan_id)
 
-    @utils.check_input_types(_TUSERID, list)
+    @zvmutils.check_input_types(_TUSERID, list)
     def guest_config_minidisks(self, userid, disk_info):
         """Punch the script that used to process additional disks to vm
 
@@ -748,7 +748,7 @@ class SDKAPI(object):
         """
         self._vmops.guest_config_minidisks(userid, disk_info)
 
-    @utils.check_input_types(_TVSWNAME, valid_keys=['grant_userid',
+    @zvmutils.check_input_types(_TVSWNAME, valid_keys=['grant_userid',
         'user_vlan_id', 'revoke_userid', 'real_device_address',
         'port_name', 'controller_name', 'connection_value',
         'queue_memory_limit', 'routing_value', 'port_type',
@@ -895,7 +895,7 @@ class SDKAPI(object):
         """
         self._networkops.set_vswitch(vswitch_name, **kwargs)
 
-    @utils.check_input_types(_TVSWNAME, bool)
+    @zvmutils.check_input_types(_TVSWNAME, bool)
     def vswitch_delete(self, vswitch_name, persist=True):
         """ Delete vswitch.
 
@@ -912,7 +912,7 @@ class SDKAPI(object):
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
 
-    @utils.check_input_types(dict, dict, dict, bool)
+    @zvmutils.check_input_types(dict, dict, dict, bool)
     def volume_attach(self, guest, volume, connection_info,
                       is_rollback_in_failure=False):
         """ Attach a volume to a guest. It's prerequisite to active multipath
@@ -971,7 +971,7 @@ class SDKAPI(object):
                                                  connection_info,
                                                  is_rollback_in_failure)
 
-    @utils.check_input_types(dict, dict, dict, bool)
+    @zvmutils.check_input_types(dict, dict, dict, bool)
     def volume_detach(self, guest, volume, connection_info,
                       is_rollback_in_failure=False):
         """ Detach a volume from a guest. It's prerequisite to active multipath
