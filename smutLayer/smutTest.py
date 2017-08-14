@@ -39,8 +39,9 @@ is in the subs dictionary.
 subs = {
     '<<<safeID>>>': 'someid',           # An existing userid that can be
                                         #   started and stopped
-    '<<<unsafeID1>>>': 'TSTUSER1',      # A userid that gets created and
-                                        #   destroyed
+    '<<<unsafePre>>>': 'STUS',          # A prefix for a userid that gets
+                                        #   created and destroyed.  Tests
+                                        #   add to the prefix to get an id.
     '<<<horribleID1>>>': 'g[][325$$$',  # A userid that makes SMAPI cry
                                         #   and beg for a swift death
     '<<<consoleID>>>': 'cons',          # An existing userid who has
@@ -120,66 +121,66 @@ Note: A test must pass all specified tests (e.g. output, rc, etc.)
 deployTests = [
     {
         'description': "Create a simple system.",
-        'request': "MakeVM <<<unsafeID1>>> directory <<<pw>>> " +
+        'request': "MakeVM <<<unsafePre>>>1 directory <<<pw>>> " +
                    "<<<vmSize>>> g --ipl 100 --profile OSDFLT",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Purge the reader",
-        'request': "ChangeVM <<<unsafeID1>>> purgerdr",
+        'request': "ChangeVM <<<unsafePre>>>1 purgerdr",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Add a 3390 disk.",
-        'request': "ChangeVM <<<unsafeID1>>> add3390 <<<pool3390>>> 100 " +
+        'request': "ChangeVM <<<unsafePre>>>1 add3390 <<<pool3390>>> 100 " +
             "<<<size3390>>>",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Check out the user entry",
-        'request': "GetVM <<<unsafeID1>>> directory",
+        'request': "GetVM <<<unsafePre>>>1 directory",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Unpack the image into the disk.",
-        'request': "SHELL_TEST <<<unpackScript>>> <<<unsafeID1>>> 100 " +
+        'request': "SHELL_TEST <<<unpackScript>>> <<<unsafePre>>>1 100 " +
             "<<<simpleImage>>>",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Punch the config drive tar file to the system.",
-        'request': "ChangeVM <<<unsafeID1>>> punchfile " +
+        'request': "ChangeVM <<<unsafePre>>>1 punchfile " +
         "<<<SimpleCfgFile>>> --class x",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Send an aemod to allow IUCV access by this system.",
-        'request': "ChangeVM <<<unsafeID1>>> aemod <<<aeModScript>>> " +
+        'request': "ChangeVM <<<unsafePre>>>1 aemod <<<aeModScript>>> " +
             "--invparms <<<localUserid>>>",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Power on the system and wait for to OS to come up.",
-        'request': "PowerVM <<<unsafeID1>>> on --wait --state up",
+        'request': "PowerVM <<<unsafePre>>>1 on --wait --state up",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Send a commmand to a system.",
-        'request': "CmdVM <<<unsafeID1>>> cmd pwd",
+        'request': "CmdVM <<<unsafePre>>>1 cmd pwd",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Delete a system.",
-        'request': "DeleteVM <<<unsafeID1>>> directory",
+        'request': "DeleteVM <<<unsafePre>>>1 directory",
         'out': "",
         'overallRC': [0],
     },
@@ -531,25 +532,25 @@ smapiTests = [
 vmLCTests = [
     {
         'description': "Create a simple system.",
-        'request': "makevm <<<unsafeID1>>> directory smapi 2g g",
+        'request': "makevm <<<unsafePre>>>2 directory smapi 2g g",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Verify system exists.",
-        'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
+        'request': "smapi <<<unsafePre>>>2 api Image_Query_DM",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Delete a system.",
-        'request': "deletevm <<<unsafeID1>>> directory",
+        'request': "deletevm <<<unsafePre>>>2 directory",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Verify system no longer exists.",
-        'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
+        'request': "smapi <<<unsafePre>>>2 api Image_Query_DM",
         'out': "",
         'overallRC': [8],
         'rc': [400],
@@ -561,14 +562,14 @@ vmModifyTests = [
     # >>>>>>>>> Create a simple system for logged off tests.
     {
         'description': "Create a simple system.",
-        'request': "MakeVM <<<unsafeID1>>> directory <<<pw>>> " +
+        'request': "MakeVM <<<unsafePre>>>3 directory <<<pw>>> " +
                    "<<<vmSize>>> g --ipl 100 --profile OSDFLT",
         'out': "",
         'overallRC': [0],
     },
      {
         'description': "Add modifications to the activation engine",
-        'request': 'ChangeVM <<<unsafeID1>>> aemod <<<setupDisk>>> ' +
+        'request': 'ChangeVM <<<unsafePre>>>3 aemod <<<setupDisk>>> ' +
             '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
             'mntdir=/mnt/ephemeral/0.0.0101"',
 
@@ -577,7 +578,7 @@ vmModifyTests = [
     },
     {
         'description': "Add unknown script mods to the activation engine",
-        'request': 'ChangeVM <<<unsafeID1>>> aemod BAD ' +
+        'request': 'ChangeVM <<<unsafePre>>>3 aemod BAD ' +
             '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
             'mntdir=/mnt/ephemeral/0.0.0101"',
 
@@ -597,13 +598,13 @@ vmModifyTests = [
     },
     {
         'description': "Purge the reader",
-        'request': "ChangeVM <<<unsafeID1>>> purgerdr",
+        'request': "ChangeVM <<<unsafePre>>>3 purgerdr",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Add a 3390 disk to the system with ext4.",
-        'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
+        'request': "changevm <<<unsafePre>>>3 add3390 <<<pool3390>>> " +
             "101 100m --mode w --filesystem ext4 " +
             "--readpw readpw --writepw writepw --multipw multipw",
         'out': "",
@@ -611,94 +612,94 @@ vmModifyTests = [
     },
     {
         'description': "Remove the 3390 disk with ext4.",
-        'request': "changevm <<<unsafeID1>>> removedisk 101",
+        'request': "changevm <<<unsafePre>>>3 removedisk 101",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Add a 3390 disk to the system with xfs.",
-        'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
+        'request': "changevm <<<unsafePre>>>3 add3390 <<<pool3390>>> " +
             "102 100m --mode w --filesystem xfs",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Remove the 3390 disk with xfs.",
-        'request': "changevm <<<unsafeID1>>> removedisk 102",
+        'request': "changevm <<<unsafePre>>>3 removedisk 102",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Add a 3390 disk to the system with swap.",
-        'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
+        'request': "changevm <<<unsafePre>>>3 add3390 <<<pool3390>>> " +
             "103 100m --mode w --filesystem swap",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Remove the 3390 disk with swap.",
-        'request': "changevm <<<unsafeID1>>> removedisk 103",
+        'request': "changevm <<<unsafePre>>>3 removedisk 103",
         'out': "",
         'overallRC': [0],
     },
     # >>>>>>>>> Tests that are related to active systems.
     {
         'description': "Add a 3390 disk for the root disk.",
-        'request': "ChangeVM <<<unsafeID1>>> add3390 <<<pool3390>>> 100 " +
+        'request': "ChangeVM <<<unsafePre>>>3 add3390 <<<pool3390>>> 100 " +
             "<<<size3390>>>",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Unpack the image into the disk.",
-        'request': "SHELL_TEST <<<unpackScript>>> <<<unsafeID1>>> 100 " +
+        'request': "SHELL_TEST <<<unpackScript>>> <<<unsafePre>>>3 100 " +
             "<<<simpleImage>>>",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Punch the config drive tar file to the system.",
-        'request': "ChangeVM <<<unsafeID1>>> punchfile " +
+        'request': "ChangeVM <<<unsafePre>>>3 punchfile " +
         "<<<SimpleCfgFile>>> --class x",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Send an aemod to allow IUCV access by this system.",
-        'request': "ChangeVM <<<unsafeID1>>> aemod <<<aeModScript>>> " +
+        'request': "ChangeVM <<<unsafePre>>>3 aemod <<<aeModScript>>> " +
             "--invparms <<<localUserid>>>",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Power on the system and wait for to OS to come up.",
-        'request': "PowerVM <<<unsafeID1>>> on --wait --state up",
+        'request': "PowerVM <<<unsafePre>>>3 on --wait --state up",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Add a 3390 disk to the system with ext4.",
-        'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
+        'request': "changevm <<<unsafePre>>>3 add3390 <<<pool3390>>> " +
             "110 100m --mode w --filesystem ext4",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Online the 101 ECKD disk with ext4.",
-        'request': "CmdVM <<<unsafeID1>>> cmd '/sbin/cio_ignore -r 110; " +
+        'request': "CmdVM <<<unsafePre>>>3 cmd '/sbin/cio_ignore -r 110; " +
             "/sbin/chccwdev -e 110'",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Remove the 3390 disk with ext4.",
-        'request': "changevm <<<unsafeID1>>> removedisk 110",
+        'request': "changevm <<<unsafePre>>>3 removedisk 110",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Add a 3390 disk to the system with xfs.",
-        'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
+        'request': "changevm <<<unsafePre>>>3 add3390 <<<pool3390>>> " +
             "111 100m --mode w --filesystem xfs",
         'out': "",
         'overallRC': [0],
@@ -707,69 +708,69 @@ vmModifyTests = [
     # failure should be ignored.
     {
         'description': "Remove the 3390 disk with xfs.",
-        'request': "changevm <<<unsafeID1>>> removedisk 111",
+        'request': "changevm <<<unsafePre>>>3 removedisk 111",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Add a 3390 disk to the system with swap.",
-        'request': "changevm <<<unsafeID1>>> add3390 <<<pool3390>>> " +
+        'request': "changevm <<<unsafePre>>>3 add3390 <<<pool3390>>> " +
             "112 100m --mode w --filesystem swap",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Online the 101 ECKD disk with swap.",
-        'request': "CmdVM <<<unsafeID1>>> cmd '/sbin/cio_ignore -r 112; " +
+        'request': "CmdVM <<<unsafePre>>>3 cmd '/sbin/cio_ignore -r 112; " +
             "/sbin/chccwdev -e 112'",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Remove the 3390 disk with swap.",
-        'request': "changevm <<<unsafeID1>>> removedisk 112",
+        'request': "changevm <<<unsafePre>>>3 removedisk 112",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Add/change an IPL statement",
-        'request': "changevm <<<unsafeID1>>> ipl 100",
+        'request': "changevm <<<unsafePre>>>3 ipl 100",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Add/change an IPL statement with loadparms",
-        'request': "changevm <<<unsafeID1>>> ipl 100 --loadparms cl",
+        'request': "changevm <<<unsafePre>>>3 ipl 100 --loadparms cl",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Add/change an IPL statement with loadparms",
-        'request': "changevm <<<unsafeID1>>> ipl 100 --loadparms lots",
+        'request': "changevm <<<unsafePre>>>3 ipl 100 --loadparms lots",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Add/change an IPL statement with parms",
-        'request': "changevm <<<unsafeID1>>> ipl cms --parms autocr",
+        'request': "changevm <<<unsafePre>>>3 ipl cms --parms autocr",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Verify IPL statement exists.",
-        'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
+        'request': "smapi <<<unsafePre>>>3 api Image_Query_DM",
         'out': "IPL CMS PARM AUTOCR",
         'overallRC': [0],
     },
     {
         'description': "Remove an IPL statement",
-        'request': "changevm <<<unsafeID1>>> removeipl",
+        'request': "changevm <<<unsafePre>>>3 removeipl",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Add some loaddev statements",
-        'request': "changevm <<<unsafeID1>>> loaddev --boot 0 " +
+        'request': "changevm <<<unsafePre>>>3 loaddev --boot 0 " +
                    "--addr 123411 --lun 12345678 --wwpn " +
                    "5005076800aa0001 --scpDataType hex "
                    "--scpData 1212",
@@ -778,7 +779,7 @@ vmModifyTests = [
     },
     {
         'description': "No datatype loaddev statements",
-        'request': "changevm <<<unsafeID1>>> loaddev --boot 0 " +
+        'request': "changevm <<<unsafePre>>>3 loaddev --boot 0 " +
                    "--addr 123411 --lun 12345678 --wwpn " +
                    "5005076800aa0001 --scpData 1212",
         'out': "",
@@ -788,7 +789,7 @@ vmModifyTests = [
     },
     {
         'description': "No data loaddev statements",
-        'request': "changevm <<<unsafeID1>>> loaddev --boot 0 " +
+        'request': "changevm <<<unsafePre>>>3 loaddev --boot 0 " +
                    "--addr 123411 --lun 12345678 --wwpn " +
                    "5005076800aa0001 --scpDataType hex",
         'out': "",
@@ -798,7 +799,7 @@ vmModifyTests = [
     },
     {
         'description': "Bad datatype loaddev statements",
-        'request': "changevm <<<unsafeID1>>> loaddev --boot 0 " +
+        'request': "changevm <<<unsafePre>>>3 loaddev --boot 0 " +
                    "--addr 123411 --lun 12345678 --wwpn " +
                    "5005076800aa0001 --scpDataType BAD --scpData 1212",
         'out': "",
@@ -808,7 +809,7 @@ vmModifyTests = [
     },
     {
         'description': "Really long scp data",
-        'request': "changevm <<<unsafeID1>>> loaddev --boot 0 " +
+        'request': "changevm <<<unsafePre>>>3 loaddev --boot 0 " +
                    "--addr 123411 --lun 12345678 --wwpn " +
                    "5005076800aa0001 --scpDataType hex " +
                    "--scpData <<<longString>>>",
@@ -817,7 +818,7 @@ vmModifyTests = [
     },
     {
         'description': "No boot parm (keep old boot)",
-        'request': "changevm <<<unsafeID1>>> loaddev --addr 123411 " +
+        'request': "changevm <<<unsafePre>>>3 loaddev --addr 123411 " +
                    "--lun 12345678 --wwpn 5005076800aa0001 " +
                    "--scpDataType hex --scpData 1212",
         'out': "",
@@ -825,7 +826,7 @@ vmModifyTests = [
     },
     {
         'description': "No addr parm (keep old block address)",
-        'request': "changevm <<<unsafeID1>>> loaddev --lun " +
+        'request': "changevm <<<unsafePre>>>3 loaddev --lun " +
                    "12345678 --wwpn 5005076800aa0001 " +
                    "--scpDataType hex --scpData 1212",
         'out': "",
@@ -833,57 +834,57 @@ vmModifyTests = [
     },
     {
         'description': "No lun parm (keep old lun)",
-        'request': "changevm <<<unsafeID1>>> loaddev --wwpn " +
+        'request': "changevm <<<unsafePre>>>3 loaddev --wwpn " +
                    "5005076800aa0001 --scpDataType hex --scpData 1212",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "No wwpn parm (keep old wwpn)",
-        'request': "changevm <<<unsafeID1>>> loaddev --scpDataType " +
+        'request': "changevm <<<unsafePre>>>3 loaddev --scpDataType " +
                    "hex --scpData 1212",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "No parms (keep old parms)",
-        'request': "changevm <<<unsafeID1>>> loaddev",
+        'request': "changevm <<<unsafePre>>>3 loaddev",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Verify loaddev boot statements exist",
-        'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
+        'request': "smapi <<<unsafePre>>>3 api Image_Query_DM",
         'out': "LOADDEV BOOTPROG 0",
         'overallRC': [0],
     },
     {
         'description': "Verify loaddev addr statements exist",
-        'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
+        'request': "smapi <<<unsafePre>>>3 api Image_Query_DM",
         'out': "LOADDEV BR_LBA 0000000000123411",
         'overallRC': [0],
     },
     {
         'description': "Verify loaddev lun statements exist",
-        'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
+        'request': "smapi <<<unsafePre>>>3 api Image_Query_DM",
         'out': "LOADDEV LUN 0000000012345678",
         'overallRC': [0],
     },
     {
         'description': "Verify loaddev wwpn statements exist.",
-        'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
+        'request': "smapi <<<unsafePre>>>3 api Image_Query_DM",
         'out': "LOADDEV PORTNAME 5005076800AA0001",
         'overallRC': [0],
     },
     {
         'description': "Verify loaddev wwpn statements exist",
-        'request': "smapi <<<unsafeID1>>> api Image_Query_DM",
+        'request': "smapi <<<unsafePre>>>3 api Image_Query_DM",
         'out': "LOADDEV SCPDATA HEX",
         'overallRC': [0],
     },
     {
         'description': "Delete statements",
-        'request': "changevm <<<unsafeID1>>> loaddev --boot DELETE " +
+        'request': "changevm <<<unsafePre>>>3 loaddev --boot DELETE " +
                    "--addr DELETE --lun DELETE --wwpn DELETE " +
                    "--scpDataType DELETE",
         'out': "",
@@ -891,7 +892,7 @@ vmModifyTests = [
     },
     {
         'description': "Verify loaddev statements are gone",
-        'request': "SMAPI <<<unsafeID1>>> API " +
+        'request': "SMAPI <<<unsafePre>>>3 API " +
                    "Image_SCSI_Characteristics_Query_DM",
         'out': "",
         'overallRC': [8],
@@ -900,7 +901,7 @@ vmModifyTests = [
     },
     {
         'description': "Successfully purge the reader.",
-        'request': "changeVM <<<unsafeID1>>> purgeRDR ",
+        'request': "changeVM <<<unsafePre>>>3 purgeRDR ",
         'overallRC': [0],
     },
     {
@@ -913,14 +914,14 @@ vmModifyTests = [
     },
     {
         'description': "Punch the config drive tar file to the system.",
-        'request': "ChangeVM <<<unsafeID1>>> punchfile <<<SimpleCfgFile>>>",
+        'request': "ChangeVM <<<unsafePre>>>3 punchfile <<<SimpleCfgFile>>>",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Punch the config drive tar file to the system" +
             " with valid spool class.",
-        'request': "ChangeVM <<<unsafeID1>>> punchfile <<<SimpleCfgFile>>>" +
+        'request': "ChangeVM <<<unsafePre>>>3 punchfile <<<SimpleCfgFile>>>" +
             " --class b",
         'out': "",
         'overallRC': [0],
@@ -937,7 +938,7 @@ vmModifyTests = [
     {
         'description': "Punch the config drive tar file to the system" +
             " with an invalid userid and spool class.",
-        'request': "ChangeVM <<<unsafeID1>>> punchfile invalid.config" +
+        'request': "ChangeVM <<<unsafePre>>>3 punchfile invalid.config" +
             " --class b*",
         'out': "",
         'overallRC': [4],
@@ -957,7 +958,7 @@ vmModifyTests = [
     {
         'description': "Punch the config drive tar file to the system" +
             " with an invalid class.",
-        'request': "ChangeVM <<<unsafeID1>>> punchfile <<<SimpleCfgFile>>>" +
+        'request': "ChangeVM <<<unsafePre>>>3 punchfile <<<SimpleCfgFile>>>" +
             " --class b*",
         'out': "",
         'overallRC': [4],
@@ -967,7 +968,7 @@ vmModifyTests = [
     {
         'description': "Punch the config drive tar file to the system" +
             " with an invalid file.",
-        'request': "ChangeVM <<<unsafeID1>>> punchfile invalid.config",
+        'request': "ChangeVM <<<unsafePre>>>3 punchfile invalid.config",
         'out': "",
         'overallRC': [4],
         'rc': [7],
@@ -976,7 +977,7 @@ vmModifyTests = [
     # >>>>>>>>> Clean up by destroying the system.
     {
         'description': "Delete the system.",
-        'request': "deletevm <<<unsafeID1>>> directory",
+        'request': "deletevm <<<unsafePre>>>3 directory",
         'out': "",
         'overallRC': [0],
     },
