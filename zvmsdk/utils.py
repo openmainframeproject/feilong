@@ -411,6 +411,3 @@ def get_xcat_url(*args, **kwargs):
 def xcat_request(*args, **kwargs):
     return import_class('zvmsdk.xcatclient.xcat_request')(*args, **kwargs)
 
-
-expect_invalid_xcat_resp_data = expect_invalid_resp_data
-wrap_invalid_xcat_resp_data_error = wrap_invalid_resp_data_error

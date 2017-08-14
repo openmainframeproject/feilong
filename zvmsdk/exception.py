@@ -33,13 +33,17 @@ class SDKBaseException(Exception):
     headers = {}
     safe = False
 
-    def __init__(self, message=None, **kwargs):
+    def __init__(self, message=None, results=None, **kwargs):
         self.kw = kwargs
         if 'code' in self.kw:
             try:
                 self.kw['code'] = self.code
             except AttributeError:
                 pass
+
+        self.results = {}
+        if results:
+            self.results = results
 
         if not message:
             try:
@@ -76,10 +80,6 @@ class ZVMInvalidInput(SDKBaseException):
 
 class ZVMInvalidResponseDataError(SDKBaseException):
     msg_fmt = 'Invalid data returned from zvm client: %(msg)s'
-
-
-class ZVMInvalidXCATResponseDataError(SDKBaseException):
-    msg_fmt = 'Invalid data returned from xCAT: %(msg)s'
 
 
 class ZVMXCATInternalError(SDKBaseException):
@@ -122,8 +122,8 @@ class ZVMXCATUpdateNodeFailed(SDKBaseException):
     msg_fmt = 'Update node %(node)s info failed: %(msg)s'
 
 
-class ZVMXCATDeployNodeFailed(SDKBaseException):
-    msg_fmt = 'Deploy image on node %(node)s failed: %(msg)s'
+class ZVMGuestDeployFailed(SDKBaseException):
+    msg_fmt = 'Deploy image on guest %(userid)s failed: %(msg)s'
 
 
 class ZVMConfigDriveError(SDKBaseException):
@@ -167,12 +167,8 @@ class ZVMSMUTRequestFailed(SDKBaseException):
     def __init__(self, results):
         results.pop('logEntries')
         message = ('Request to SMUT failed: %s' % results)
-        super(ZVMSMUTRequestFailed, self).__init__(message)
-        self.results = results
-
-
-class ZVMInvalidSMUTResponseDataError(SDKBaseException):
-    msg_fmt = 'Invalid data returned from SMUT: %(msg)s'
+        super(ZVMSMUTRequestFailed, self).__init__(message=message,
+                                                   results=results)
 
 
 class ZVMSMUTInternalError(SDKBaseException):
