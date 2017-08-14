@@ -234,6 +234,9 @@ def guest_create(req):
         action.create(body=body)
 
     _guest_create(req)
+    req.response.status = 204
+    req.response.content_type = None
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
@@ -249,6 +252,10 @@ def guest_update(req):
     body = util.extract_json(req.body)
 
     _guest_update(userid, body)
+
+    req.response.status = 200
+    req.response.content_type = None
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
@@ -309,6 +316,9 @@ def guest_delete(req):
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     _guest_delete(userid)
+    req.response.status = 204
+    req.response.content_type = None
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
@@ -340,6 +350,9 @@ def guest_delete_nic(req):
     vdev = util.wsgi_path_item(req.environ, 'vdev')
 
     _guest_delete_nic(userid, vdev, req)
+    req.response.status = 204
+    req.response.content_type = None
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify

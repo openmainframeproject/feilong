@@ -22,7 +22,7 @@ Get SDK version
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_version.tpl
    :language: javascript
@@ -50,7 +50,7 @@ List Guests
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_list.tpl
    :language: javascript
@@ -68,7 +68,7 @@ Create Guest
 
   response
 
-  - Sample output:
+  - HTTP status code 204 on Success.
 
 Get Guests cpu info
 -------------------
@@ -83,7 +83,7 @@ Get Guests cpu info
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_cpu_info.tpl
    :language: javascript
@@ -101,7 +101,7 @@ Get Guests memory info
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_memory_info.tpl
    :language: javascript
@@ -119,7 +119,7 @@ Get Guests vnics info
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_vnics_info.tpl
    :language: javascript
@@ -137,7 +137,7 @@ Show Guest
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get.tpl
    :language: javascript
@@ -155,7 +155,7 @@ Update Guest
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 Delete Guest
 ------------
@@ -170,7 +170,7 @@ Delete Guest
 
   response
 
-  - Sample output:
+  - HTTP status code 204 on Success.
 
 Get Guest info
 --------------
@@ -185,7 +185,7 @@ Get Guest info
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get_info.tpl
    :language: javascript
@@ -203,7 +203,7 @@ Get Guest nic info
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get_nic.tpl
    :language: javascript
@@ -221,7 +221,7 @@ Create Guest nic
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 Guest action
 ------------
@@ -236,7 +236,7 @@ Guest action
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 Get Guest power state
 ---------------------
@@ -251,7 +251,7 @@ Get Guest power state
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get_power_state.tpl
    :language: javascript
@@ -269,7 +269,7 @@ Attach volume to Guest
 
   response
 
-  - Sample output:
+  - HTTP status code 204 on Success.
 
 Detach volume from Guest
 ------------------------
@@ -284,7 +284,7 @@ Detach volume from Guest
 
   response
 
-  - Sample output:
+  - HTTP status code 204 on Success.
 
 Update Guest nic
 ----------------
@@ -299,7 +299,7 @@ Update Guest nic
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 Delete Guest nic
 ----------------
@@ -314,7 +314,7 @@ Delete Guest nic
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 Host
 ====
@@ -334,7 +334,7 @@ Get Host Info
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_host_info.tpl
    :language: javascript
@@ -352,7 +352,7 @@ Get Host disk pool info
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_host_disk_info.tpl
    :language: javascript
@@ -375,7 +375,7 @@ List images
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_query.tpl
    :language: javascript
@@ -393,7 +393,7 @@ Create image
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 Get root disk size of image
 ---------------------------
@@ -408,7 +408,7 @@ Get root disk size of image
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_get_root_disk_size.tpl
    :language: javascript
@@ -426,7 +426,7 @@ Delete image
 
   response
 
-  - Sample output:
+  - HTTP status code 204 on Success.
 
 Volume(s)
 =========
@@ -451,9 +451,7 @@ Create vswitch
 
   response
 
-  - Sample output:
-
-  sample output
+  - HTTP status code 200 on Success.
 
 List vswitchs
 -------------
@@ -468,7 +466,7 @@ List vswitchs
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_get.tpl
    :language: javascript
@@ -486,7 +484,7 @@ Update vswitch
 
   response
 
-  - Sample output:
+  - HTTP status code 200 on Success.
 
 Delete vswitch
 --------------
@@ -501,4 +499,4 @@ Delete vswitch
 
   response
 
-  - Sample output:
+  - HTTP status code 204 on Success.
