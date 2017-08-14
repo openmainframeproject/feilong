@@ -15,6 +15,9 @@
 
 import contextlib
 import functools
+import os
+import subprocess
+import tempfile
 
 from smutLayer import smut
 
@@ -54,6 +57,27 @@ def expect_invalid_smut_resp_data(results):
         LOG.error('Parse SMUT response data encounter error, results: %s',
                   results)
         raise exception.ZVMInvalidSMUTResponseDataError(msg=err)
+
+
+@contextlib.contextmanager
+def expect_smut_request_failed_and_reraise(exc, **kwargs):
+    """Catch all kinds of smut request failure and reraise.
+
+    exc: the exception that would be raised.
+    """
+    try:
+        yield
+    except exception.ZVMSMUTRequestFailed as err:
+        msg = err.format_message()
+        kwargs['msg'] = msg
+        LOG.error('SMUT request failed: %s', msg)
+        raise exc(results=err.results, **kwargs)
+    except (exception.ZVMInvalidSMUTResponseDataError,
+            exception.ZVMInternalError) as err:
+        msg = err.format_message()
+        kwargs['msg'] = msg
+        LOG.error('SMUT request failed: %s', msg)
+        raise exc(**kwargs)
 
 
 class SMUTClient(client.ZVMClient):
@@ -135,3 +159,65 @@ class SMUTClient(client.ZVMClient):
             rd += (' --filesystem %s' % fmt)
 
         self._request(rd)
+
+    def guest_deploy(self, userid, image_name, transportfiles=None,
+                     remotehost=None, vdev=None):
+        """ Deploy image and punch config driver to target """
+        # Get image location (TODO: update this image location)
+        image_file = "/var/lib/zvmsdk/images/" + image_name
+        # Unpack image file to root disk
+        vdev = vdev or CONF.zvm.user_root_vdev
+        cmd = ['/opt/zthin/bin/unpackdiskimage', userid, vdev, image_file]
+        try:
+            resp = subprocess.check_output(cmd, close_fds=True,
+                                           stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError:
+            returncode = resp.returncode
+            output = resp.output.split('\n')
+            err_msg = ("unpackdiskimage failed with return code: %d."
+                       % returncode)
+            for line in output:
+                if line.__contains__("ERROR:"):
+                    err_msg.append('\n' + line)
+            raise exception.ZVMGuestDeployFailed(userid=userid, msg=err_msg)
+        except Exception as err:
+            err_msg = ("unpackdiskimage failed: %s" % str(err))
+            raise exception.ZVMGuestDeployFailed(userid=userid, msg=err_msg)
+
+        # Purge guest reader
+        rd = ("changevm %s purgerdr" % userid)
+        with expect_smut_request_failed_and_reraise(
+            exception.ZVMGuestDeployFailed, userid=userid):
+            self._smut._request(rd)
+
+        # Copy transport file to local
+        if transportfiles:
+            try:
+                local_trans = tempfile.mktemp()
+                if remotehost:
+                    cmd = ("/usr/bin/scp -B %(remote)s:%(trans)s %(local)s" %
+                           {'remote': remotehost, 'trans': transportfiles,
+                            'local': local_trans})
+                else:
+                    cmd = ("/bin/cp %s %s" % (transportfiles, local_trans))
+                resp = subprocess.check_output(cmd, close_fds=True,
+                                               stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError:
+                err_msg = ("copy config drive to local failed: rc=%d" %
+                           resp.returncode)
+                raise exception.ZVMGuestDeployFailed(userid=userid,
+                                                     msg=err_msg)
+            except Exception as err:
+                err_msg = ("copy config drive to local failed: %s" % str(err))
+                raise exception.ZVMGuestDeployFailed(userid=userid,
+                                                     msg=err_msg)
+
+            # Punch config drive to guest userid
+            rd = ("changevm %(uid)s punchfile %(file)s" %
+                  {'uid': userid, 'file': local_trans})
+            with expect_smut_request_failed_and_reraise(
+                exception.ZVMGuestDeployFailed, userid=userid):
+                self._smut._request(rd)
+            # remove the local temp config drive
+            if os.path.exists(local_trans):
+                os.remove(local_trans)
