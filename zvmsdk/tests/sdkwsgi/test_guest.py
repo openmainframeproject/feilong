@@ -50,7 +50,7 @@ class GuestHandlerTestCase(unittest.TestCase):
     def _guest_delete(self):
         url = '/guests/%s' % self.userid
         resp = self.client.api_request(url=url, method='DELETE')
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(204, resp.status_code)
 
         return resp
 
