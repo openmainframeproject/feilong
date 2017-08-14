@@ -15,12 +15,14 @@
 
 import os
 import mock
+import tempfile
 
 from smutLayer import smut
 
 from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import smutclient
+from zvmsdk import utils as zvmutils
 from zvmsdk.tests.unit import base
 
 
@@ -127,3 +129,25 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                                      client_userid)
         request.assert_called_once_with(requestData)
         self.assertIs(os.path.exists('/tmp/FakeID'), False)
+
+    @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
+    @mock.patch.object(tempfile, 'mkdtemp')
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_guest_deploy(self, request, execute, mkdtemp, cleantemp):
+        base.set_conf("zvm", "user_root_vdev", "0100")
+        execute.side_effect = [(0, ""), (0, "")]
+        mkdtemp.return_value = '/tmp/tmpdir'
+        userid = 'fakeuser'
+        image_name = 'fakeimg'
+        transportfiles = '/faketrans'
+        self._smutclient.guest_deploy(userid, image_name, transportfiles)
+        unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
+                     '/var/lib/zvmsdk/images/fakeimg']
+        cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrv']
+        execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
+        purge_rd = "changevm fakeuser purgerdr"
+        punch_rd = "changevm fakeuser punchfile /tmp/tmpdir/cfgdrv --class X"
+        request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
+        mkdtemp.assert_called_with()
+        cleantemp.assert_called_with('/tmp/tmpdir')
