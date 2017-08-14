@@ -173,7 +173,7 @@ class VMOps(object):
         """
         try:
             self._zvmclient.delete_vm(userid)
-        except exception as err:
+        except Exception as err:
             raise exception.ZVMDeleteVMFailed(userid=userid, msg=str(err))
 
     def guest_deploy(self, user_id, image_name, transportfiles=None,
@@ -184,7 +184,7 @@ class VMOps(object):
             self._zvmclient.guest_deploy(user_id, image_name,
                                          transportfiles, remotehost, vdev)
 
-        except exception as err:
+        except Exception as err:
             LOG.error(('Failed to deploy image %(img)s to vm %(vm)s') %
                       {'img': image_name,
                        'vm': user_id})
