@@ -194,3 +194,6 @@ class ZVMClient(object):
         for idx, disk in enumerate(disk_list):
             vdev = self.generate_disk_vdev(start_vdev=start_vdev, offset=idx)
             self._add_mdisk(userid, disk, vdev)
+
+    def authorize_iucv_client(self, guest_userid, client_userid):
+        pass

@@ -177,6 +177,11 @@ class VMOps(object):
         except exception as err:
             raise exception.ZVMDeleteVMFailed(userid=userid, msg=str(err))
 
+    def guest_authorize_iucv_client(self, guest, client=None):
+        """Punch a script to authorized the client on guest vm"""
+
+        return self._zvmclient.guest_authorize_iucv_client(guest, client)
+
     def guest_deploy(self, user_id, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
         try:
