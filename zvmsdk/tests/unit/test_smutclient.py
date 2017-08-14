@@ -13,6 +13,7 @@
 #    under the License.
 
 
+import os
 import mock
 
 from smutLayer import smut
@@ -114,3 +115,15 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
         self._smutclient._add_mdisk(userid, disk, vdev),
         request.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_guest_authorize_iucv_client(self, request):
+        fake_userid = 'FakeID'
+        client_userid = 'ClientID'
+        requestData = "ChangeVM FakeID punchfile /tmp/FakeID/iucvauth.sh" + \
+                      " --class x"
+        request.return_value = {'overallRC': 0}
+        self._smutclient.guest_authorize_iucv_client(fake_userid,
+                                                     client_userid)
+        request.assert_called_once_with(requestData)
+        self.assertIs(os.path.exists('/tmp/FakeID'), False)
