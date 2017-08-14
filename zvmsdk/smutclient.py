@@ -13,9 +13,6 @@
 #    under the License.
 
 
-import contextlib
-import functools
-
 from smutLayer import smut
 
 from zvmsdk import client
@@ -23,37 +20,11 @@ from zvmsdk import config
 from zvmsdk import constants as const
 from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk import utils
 
 
 CONF = config.CONF
 LOG = log.LOG
-
-
-def wrap_invalid_smut_resp_data_error(function):
-    """Catch exceptions when using smut result data."""
-
-    @functools.wraps(function)
-    def decorated_function(*arg, **kwargs):
-        try:
-            return function(*arg, **kwargs)
-        except (ValueError, TypeError, IndexError, AttributeError,
-                KeyError) as err:
-            raise exception.ZVMInvalidSMUTResponseDataError(msg=err)
-
-    return decorated_function
-
-
-@contextlib.contextmanager
-def expect_invalid_smut_resp_data(results):
-    """Catch exceptions when converting SMUT response data."""
-    try:
-        yield
-    except (ValueError, TypeError, IndexError, AttributeError,
-            KeyError) as err:
-        results.pop('logEntries')
-        LOG.error('Parse SMUT response data encounter error, results: %s',
-                  results)
-        raise exception.ZVMInvalidSMUTResponseDataError(msg=err)
 
 
 class SMUTClient(client.ZVMClient):
@@ -77,7 +48,7 @@ class SMUTClient(client.ZVMClient):
         LOG.debug('Query power stat of %s' % userid)
         requestData = "PowerVM " + userid + " status"
         results = self._request(requestData)
-        with expect_invalid_smut_resp_data(results):
+        with utils.expect_invalid_resp_data(results):
             status = results['response'][0].partition(': ')[2]
         return status
 
