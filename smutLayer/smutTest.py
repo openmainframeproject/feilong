@@ -120,7 +120,7 @@ Note: A test must pass all specified tests (e.g. output, rc, etc.)
 
 deployTests = [
     {
-        'description': "Create a simple system.",
+        'description': "Create a simple system: <<<unsafePre>>>1",
         'request': "MakeVM <<<unsafePre>>>1 directory <<<pw>>> " +
                    "<<<vmSize>>> g --ipl 100 --profile OSDFLT",
         'out': "",
@@ -133,7 +133,7 @@ deployTests = [
         'overallRC': [0],
     },
     {
-        'description': "Add a 3390 disk.",
+        'description': "Add a 3390 disk: 100",
         'request': "ChangeVM <<<unsafePre>>>1 add3390 <<<pool3390>>> 100 " +
             "<<<size3390>>>",
         'out': "",
@@ -179,7 +179,7 @@ deployTests = [
         'overallRC': [0],
     },
     {
-        'description': "Delete a system.",
+        'description': "Delete a system: <<<unsafePre>>>1",
         'request': "DeleteVM <<<unsafePre>>>1 directory",
         'out': "",
         'overallRC': [0],
@@ -227,13 +227,15 @@ hostTests = [
         'overallRC': [0],
     },
     {
-        'description': "Get the space for a specific 3390 disk pools.",
+        'description': "Get the space for a specific 3390 disk pool: " +
+            "<<<pool3390>>>",
         'request': "GetHost diskpoolspace <<<pool3390>>>",
         'out': "^<<<pool3390>>> Total",
         'overallRC': [0],
     },
     {
-        'description': "Get the space for a specific 9336 disk pools.",
+        'description': "Get the space for a specific 9336 disk pool: " +
+            "<<<pool9336>>>",
         'request': "GetHost diskpoolspace <<<pool9336>>>",
         'out': "^<<<pool9336>>> Total",
         'overallRC': [0],
@@ -280,7 +282,7 @@ iucvTests = [
 migrateTests = [
     {
         'description': "Get status for a specific userid that " +
-            "cannot be migrated.",
+            "cannot be migrated: <<<unmigrID>>>",
         'request': "migrateVM <<<unmigrID>>> status",
         'overallRC': [99],
         'rc': [99],
@@ -295,23 +297,23 @@ migrateTests = [
         'rs': [419],
     },
     {
-        'description': ("Get incoming migration status for a host with no " +
-            "active migrations."),
+        'description': ("Get incoming migration status for a host " +
+            "with no active migrations."),
         'request': "migrateVM <<<unmigrID>>> status --incoming",
         'overallRC': [99],
         'rc': [99],
         'rs': [419],
     },
     {
-        'description': "Get outgoing migration status for a host with no " +
-            "active migrations.",
+        'description': "Get outgoing migration status for a host " +
+            "with no active migrations.",
         'request': "migrateVM <<<unmigrID>>> status --outgoing",
         'overallRC': [99],
         'rc': [99],
         'rs': [419],
     },
     {
-        'description': "Test a system for migration",
+        'description': "Test a system for migration: <<<unmigrID>>>",
         'request': "migrateVM <<<unmigrID>>> test --destination " +
             "<<<migrDest>>>",
         'overallRC': [99],
@@ -341,7 +343,7 @@ powerTests = [
         'overallRC': [4],
     },
     {
-        'description': "Power off the system.",
+        'description': "Power off a system: <<<safeID>>>",
         'request': "PowerVM <<<safeID>>> off --wait",
         'out': "",
         'overallRC': [0],
@@ -368,31 +370,33 @@ powerTests = [
         'overallRC': [0],
     },
     {
-        'description': "Power on a system.",
+        'description': "Power on a system: <<<safeID>>>",
         'request': "PowerVM <<<safeID>>> on",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Power off a system with softOff option.",
+        'description': "Power off a system with softOff option: " +
+            "<<<safeID>>>",
         'request': "PowerVM <<<safeID>>> softoff",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Power on a system.",
+        'description': "Power on a system: <<<safeID>>>",
         'request': "PowerVM <<<safeID>>> on",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Power on a system that is on but not up.",
+        'description': "Power on a system that is on but not up: " +
+            "<<<safeID>>>",
         'request': "PowerVM <<<safeID>>> on --wait --state up",
         'out': "<<<safeID>>>: up",
         'overallRC': [0],
     },
     {
-        'description': "Check status of powered on system.",
+        'description': "Check status of powered on system: <<<safeID>>>",
         'request': "PowerVM <<<safeID>>> status",
         'out': "<<<safeID>>>: on",
         'overallRC': [0],
@@ -400,65 +404,70 @@ powerTests = [
         'rs': [0]
     },
     {
-        'description': "Check isreachable of powered on system.",
+        'description': "Check isreachable of powered on system: " +
+            "<<<safeID>>>",
         'request': "PowerVM <<<safeID>>> isreachable",
         'out': "<<<safeID>>>: reachable",
         'overallRC': [0],
         'rs': [1]
     },
     {
-        'description': "Pause a system.",
+        'description': "Pause a system: <<<safeID>>>",
         'request': "PowerVM <<<safeID>>> pause",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Isreachable of a paused system is unreachable.",
+        'description': "Isreachable of a paused system is unreachable: " +
+            "<<<safeID>>>",
         'request': "PowerVM <<<safeID>>> isreachable",
         'out': "<<<safeID>>>: unreachable",
         'overallRC': [0],
         'rs': [0]
     },
     {
-        'description': "Unpause a system.",
+        'description': "Unpause a system: <<<safeID>>>",
         'request': "PowerVM <<<safeID>>> unpause",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Isreachable of an unpaused system is reachable.",
+        'description': "Isreachable of an unpaused system is reachable: " +
+            "<<<safeID>>>",
         'request': "PowerVM <<<safeID>>> isreachable",
         'out': "<<<safeID>>>: reachable",
         'overallRC': [0],
         'rs': [1]
     },
     {
-        'description': "Reset a system.",
+        'description': "Reset a system: <<<safeID>>>",
         'request': "PowerVM <<<safeID>>> reset --wait --state up",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Isreachable of an unpaused system is reachable.",
+        'description': "Isreachable of an unpaused system is reachable: " +
+            "<<<safeID>>>",
         'request': "PowerVM <<<safeID>>> isreachable",
         'out': "<<<safeID>>>: reachable",
         'overallRC': [0],
         'rs': [1]
     },
     {
-        'description': "Reboot a system.",
+        'description': "Reboot a system: <<<safeID>>>",
         'request': "PowerVM <<<safeID>>> reboot --wait",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Reboot a system w/o waiting for the OS to be up",
+        'description': "Reboot a system w/o waiting for the OS to be up: " +
+            "<<<safeID>>>",
         'request': "PowerVM <<<safeID>>> reboot",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Wait for the OS to come up.",
+        'description': "Wait for the OS to come up: <<<safeID>>>",
         'request': "PowerVM <<<safeID>>> wait --state up",
         'out': "<<<safeID>>>: up",
         'overallRC': [0],
@@ -468,14 +477,14 @@ powerTests = [
 
 shellTests = [
     {
-        'description': "Issue a successful non-Test 1-line output related " +
-            "SHELL function.",
+        'description': "Issue a successful non-Test 1-line " +
+            "output related SHELL function.",
         'request': "SHELL echo \'Hurray!\'",
         'overallRC': [0],
     },
     {
-        'description': "Do a successful non-Test multi-line output related " +
-            "SHELL function.",
+        'description': "Do a successful non-Test multi-line " +
+            "output related SHELL function.",
         'request': "SHELL cat /etc/hosts",
         'overallRC': [0],
     },
@@ -531,25 +540,25 @@ smapiTests = [
 
 vmLCTests = [
     {
-        'description': "Create a simple system.",
+        'description': "Create a simple system: <<<unsafePre>>>2",
         'request': "makevm <<<unsafePre>>>2 directory smapi 2g g",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Verify system exists.",
+        'description': "Verify system exists: <<<unsafePre>>>2",
         'request': "smapi <<<unsafePre>>>2 api Image_Query_DM",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Delete a system.",
+        'description': "Delete a system: <<<unsafePre>>>2",
         'request': "deletevm <<<unsafePre>>>2 directory",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Verify system no longer exists.",
+        'description': "Verify system no longer exists: <<<unsafePre>>>2",
         'request': "smapi <<<unsafePre>>>2 api Image_Query_DM",
         'out': "",
         'overallRC': [8],
@@ -561,7 +570,7 @@ vmLCTests = [
 vmModifyTests = [
     # >>>>>>>>> Create a simple system for logged off tests.
     {
-        'description': "Create a simple system.",
+        'description': "Create a simple system: <<<unsafePre>>>3",
         'request': "MakeVM <<<unsafePre>>>3 directory <<<pw>>> " +
                    "<<<vmSize>>> g --ipl 100 --profile OSDFLT",
         'out': "",
@@ -597,13 +606,14 @@ vmModifyTests = [
         'overallRC': [4],
     },
     {
-        'description': "Purge the reader",
+        'description': "Purge the reader: <<<unsafePre>>>3",
         'request': "ChangeVM <<<unsafePre>>>3 purgerdr",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Add a 3390 disk to the system with ext4.",
+        'description': "Add a 3390 disk to the system with ext4: " +
+            "<<<unsafePre>>>3",
         'request': "changevm <<<unsafePre>>>3 add3390 <<<pool3390>>> " +
             "101 100m --mode w --filesystem ext4 " +
             "--readpw readpw --writepw writepw --multipw multipw",
@@ -611,54 +621,57 @@ vmModifyTests = [
         'overallRC': [0],
     },
     {
-        'description': "Remove the 3390 disk with ext4.",
+        'description': "Remove the 3390 disk with ext4: <<<unsafePre>>>3",
         'request': "changevm <<<unsafePre>>>3 removedisk 101",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Add a 3390 disk to the system with xfs.",
+        'description': "Add a 3390 disk to the system with xfs: " +
+            "<<<unsafePre>>>3",
         'request': "changevm <<<unsafePre>>>3 add3390 <<<pool3390>>> " +
             "102 100m --mode w --filesystem xfs",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Remove the 3390 disk with xfs.",
+        'description': "Remove the 3390 disk with xfs: <<<unsafePre>>>3",
         'request': "changevm <<<unsafePre>>>3 removedisk 102",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Add a 3390 disk to the system with swap.",
+        'description': "Add a 3390 disk to the system with swap: " +
+            "<<<unsafePre>>>3",
         'request': "changevm <<<unsafePre>>>3 add3390 <<<pool3390>>> " +
             "103 100m --mode w --filesystem swap",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Remove the 3390 disk with swap.",
+        'description': "Remove the 3390 disk with swap: <<<unsafePre>>>3",
         'request': "changevm <<<unsafePre>>>3 removedisk 103",
         'out': "",
         'overallRC': [0],
     },
     # >>>>>>>>> Tests that are related to active systems.
     {
-        'description': "Add a 3390 disk for the root disk.",
+        'description': "Add a 3390 disk for the root disk: <<<unsafePre>>>3",
         'request': "ChangeVM <<<unsafePre>>>3 add3390 <<<pool3390>>> 100 " +
             "<<<size3390>>>",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Unpack the image into the disk.",
+        'description': "Unpack the image into the disk: <<<unsafePre>>>3",
         'request': "SHELL_TEST <<<unpackScript>>> <<<unsafePre>>>3 100 " +
             "<<<simpleImage>>>",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Punch the config drive tar file to the system.",
+        'description': "Punch the config drive tar file to the system: " +
+            "<<<unsafePre>>>3",
         'request': "ChangeVM <<<unsafePre>>>3 punchfile " +
         "<<<SimpleCfgFile>>> --class x",
         'out': "",
@@ -672,33 +685,37 @@ vmModifyTests = [
         'overallRC': [0],
     },
     {
-        'description': "Power on the system and wait for to OS to come up.",
+        'description': "Power on the system and wait for to OS to " +
+            "come up: <<<unsafePre>>>3",
         'request': "PowerVM <<<unsafePre>>>3 on --wait --state up",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Add a 3390 disk to the system with ext4.",
+        'description': "Add a 3390 disk to the system with ext4: " +
+            "<<<unsafePre>>>3",
         'request': "changevm <<<unsafePre>>>3 add3390 <<<pool3390>>> " +
             "110 100m --mode w --filesystem ext4",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Online the 101 ECKD disk with ext4.",
+        'description': "Online the 101 ECKD disk with ext4: " +
+            "<<<unsafePre>>>3",
         'request': "CmdVM <<<unsafePre>>>3 cmd '/sbin/cio_ignore -r 110; " +
             "/sbin/chccwdev -e 110'",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Remove the 3390 disk with ext4.",
+        'description': "Remove the 3390 disk with ext4: <<<unsafePre>>>3 110",
         'request': "changevm <<<unsafePre>>>3 removedisk 110",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Add a 3390 disk to the system with xfs.",
+        'description': "Add a 3390 disk to the system with xfs: " +
+            "<<<unsafePre>>>3",
         'request': "changevm <<<unsafePre>>>3 add3390 <<<pool3390>>> " +
             "111 100m --mode w --filesystem xfs",
         'out': "",
@@ -707,27 +724,31 @@ vmModifyTests = [
     # Don't online the disk.  This makes the chccwdev fail but the
     # failure should be ignored.
     {
-        'description': "Remove the 3390 disk with xfs.",
+        'description': "Remove the 3390 disk with xfs: " +
+            "<<<unsafePre>>>3 111",
         'request': "changevm <<<unsafePre>>>3 removedisk 111",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Add a 3390 disk to the system with swap.",
+        'description': "Add a 3390 disk to the system with swap: " +
+            "<<<unsafePre>>>3 112",
         'request': "changevm <<<unsafePre>>>3 add3390 <<<pool3390>>> " +
             "112 100m --mode w --filesystem swap",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Online the 101 ECKD disk with swap.",
+        'description': "Online the 112 ECKD disk with swap: " +
+            "<<<unsafePre>>>3",
         'request': "CmdVM <<<unsafePre>>>3 cmd '/sbin/cio_ignore -r 112; " +
             "/sbin/chccwdev -e 112'",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Remove the 3390 disk with swap.",
+        'description': "Remove the 3390 disk with swap: " +
+            "<<<unsafePre>>>3 112",
         'request': "changevm <<<unsafePre>>>3 removedisk 112",
         'out': "",
         'overallRC': [0],
@@ -900,12 +921,12 @@ vmModifyTests = [
         'rs': [28],
     },
     {
-        'description': "Successfully purge the reader.",
+        'description': "Successfully purge the reader: <<<unsafePre>>>3",
         'request': "changeVM <<<unsafePre>>>3 purgeRDR ",
         'overallRC': [0],
     },
     {
-        'description': "Try to purge read of a bad id.",
+        'description': "Try to purge read of a bad id: <<<horribleID1>>>",
         'request': "changeVM <<<horribleID1>>> purgeRDR ",
         'out': "Syntax error in function parameter 8",
         'overallRC': [8],
@@ -976,7 +997,7 @@ vmModifyTests = [
     },
     # >>>>>>>>> Clean up by destroying the system.
     {
-        'description': "Delete the system.",
+        'description': "Delete the system: <<<unsafePre>>>3",
         'request': "deletevm <<<unsafePre>>>3 directory",
         'out': "",
         'overallRC': [0],
@@ -984,74 +1005,74 @@ vmModifyTests = [
    ]
 guestTests = [
     {
-        'description': "Power on the system.",
+        'description': "Power on a system: <<<consoleID>>>",
         'request': "PowerVM <<<consoleID>>> on",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Get the console log of the system.",
+        'description': "Get the console log of the system: <<<consoleID>>>",
         'request': "getvm <<<consoleID>>> consoleoutput",
         'out': "List of spool files containing console logs " +
                "from <<<consoleID>>>:",
         'overallRC': [0],
     },
     {
-        'description': "Get the status of the system.",
+        'description': "Get the status of the system: <<<consoleID>>>",
         'request': "getvm <<<consoleID>>> status --all",
         'out': "CPU Used Time:",
         'overallRC': [0],
     },
     {
-        'description': "Get the power status of the system.",
+        'description': "Get the power status of the system: <<<consoleID>>>",
         'request': "getvm <<<consoleID>>> status --power",
         'out': "Power state: on",
         'overallRC': [0],
     },
     {
-        'description': "Get the memory status of the system.",
+        'description': "Get the memory status of the system: <<<consoleID>>>",
         'request': "getvm <<<consoleID>>> status --memory",
         'out': "Total Memory:",
         'overallRC': [0],
     },
     {
-        'description': "Get the cpu status of the system.",
+        'description': "Get the cpu status of the system: <<<consoleID>>>",
         'request': "getvm <<<consoleID>>> status --cpu",
         'out': "Processors:",
         'overallRC': [0],
     },
     {
-        'description': "Power off the system.",
+        'description': "Power off the system: <<<consoleID>>>",
         'request': "PowerVM <<<consoleID>>> off",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Get the status of the system.",
+        'description': "Get the status of the system: <<<consoleID>>>",
         'request': "getvm <<<consoleID>>> status",
         'out': "CPU Used Time: 0 sec",
         'overallRC': [0],
     },
     {
-        'description': "Get the power status of the system.",
+        'description': "Get the power status of the system: <<<consoleID>>>",
         'request': "getvm <<<consoleID>>> status --power",
         'out': "Power state: off",
         'overallRC': [0],
     },
     {
-        'description': "Get the memory status of the system.",
+        'description': "Get the memory status of the system: <<<consoleID>>>",
         'request': "getvm <<<consoleID>>> status --memory",
         'out': "Total Memory: 0M",
         'overallRC': [0],
     },
     {
-        'description': "Get the cpu status of the system.",
+        'description': "Get the cpu status of the system: <<<consoleID>>>",
         'request': "getvm <<<consoleID>>> status --cpu",
         'out': "Processors: 0",
         'overallRC': [0],
     },
     {
-        'description': "Verify no console log is available",
+        'description': "Verify no console log is available: <<<consoleID>>>",
         'request': "getvm <<<consoleID>>> consoleoutput",
         'out': "",
         'overallRC': [8],
@@ -1506,6 +1527,8 @@ else:
     # Perform the substitution change to all requests and responses
     for key in testSets:
         for test in testSets[key][1]:
+            test['description'] = pattern.sub(lambda m:
+                regSubs[re.escape(m.group(0))], test['description'])
             test['request'] = pattern.sub(lambda m:
                 regSubs[re.escape(m.group(0))], test['request'])
             if 'out' in test:
