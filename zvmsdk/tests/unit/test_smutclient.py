@@ -15,12 +15,14 @@
 
 import os
 import mock
+import tempfile
 
 from smutLayer import smut
 
 from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import smutclient
+from zvmsdk import utils as zvmutils
 from zvmsdk.tests.unit import base
 
 
@@ -127,3 +129,113 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                                      client_userid)
         request.assert_called_once_with(requestData)
         self.assertIs(os.path.exists('/tmp/FakeID'), False)
+
+    @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
+    @mock.patch.object(tempfile, 'mkdtemp')
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_guest_deploy(self, request, execute, mkdtemp, cleantemp):
+        base.set_conf("zvm", "user_root_vdev", "0100")
+        execute.side_effect = [(0, ""), (0, "")]
+        mkdtemp.return_value = '/tmp/tmpdir'
+        userid = 'fakeuser'
+        image_name = 'fakeimg'
+        transportfiles = '/faketrans'
+        self._smutclient.guest_deploy(userid, image_name, transportfiles)
+        unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
+                     '/var/lib/zvmsdk/images/fakeimg']
+        cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrv']
+        execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
+        purge_rd = "changevm fakeuser purgerdr"
+        punch_rd = "changevm fakeuser punchfile /tmp/tmpdir/cfgdrv --class X"
+        request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
+        mkdtemp.assert_called_with()
+        cleantemp.assert_called_with('/tmp/tmpdir')
+
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_guest_deploy_unpackdiskimage_failed(self, request, execute):
+        base.set_conf("zvm", "user_root_vdev", "0100")
+        userid = 'fakeuser'
+        image_name = 'fakeimg'
+        transportfiles = '/faketrans'
+        unpack_error = ('unpackdiskimage fakeuser start time: '
+                        '2017-08-16-01:29:59.453\nSOURCE USER ID: "fakeuser"\n'
+                        'DISK CHANNEL:   "0100"\n'
+                        'IMAGE FILE:     "/var/lib/zvmsdk/images/fakeimg"\n\n'
+                        'Image file compression level: 6\n'
+                        'Deploying image to fakeuser\'s disk at channel 100.\n'
+                        'ERROR: Unable to link fakeuser 0100 disk. '
+                        'HCPLNM053E FAKEUSER not in CP directory\n'
+                        'HCPDTV040E Device 260C does not exist\n'
+                        'ERROR: Failed to connect disk: fakeuser:0100\n\n'
+                        'IMAGE DEPLOYMENT FAILED.\n'
+                        'A detailed trace can be found at: /var/log/zthin/'
+                        'unpackdiskimage_trace_2017-08-16-01:29:59.453.txt\n'
+                        'unpackdiskimage end time: 2017-08-16-01:29:59.605\n')
+        execute.return_value = (3, unpack_error)
+        self.assert_Raises(exception.ZVMGuestDeployFailed,
+                           self._smutclient.guest_deploy, userid, image_name,
+                           transportfiles)
+        unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
+                     '/var/lib/zvmsdk/images/fakeimg']
+        execute.assert_called_once_with(unpack_cmd)
+
+    @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
+    @mock.patch.object(tempfile, 'mkdtemp')
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_guest_deploy_cp_transport_failed(self, request, execute, mkdtemp,
+                                              cleantemp):
+        base.set_conf("zvm", "user_root_vdev", "0100")
+        cp_error = ("/usr/bin/cp: cannot stat '/faketrans': "
+                    "No such file or directory\n")
+        execute.side_effect = [(0, ""), (1, cp_error)]
+        mkdtemp.return_value = '/tmp/tmpdir'
+        userid = 'fakeuser'
+        image_name = 'fakeimg'
+        transportfiles = '/faketrans'
+        self.assert_Raises(exception.ZVMGuestDeployFailed,
+                           self._smutclient.guest_deploy, userid, image_name,
+                           transportfiles)
+        unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
+                     '/var/lib/zvmsdk/images/fakeimg']
+        cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrv']
+        execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
+        purge_rd = "changevm fakeuser purgerdr"
+        request.assert_called_once_with(purge_rd)
+        mkdtemp.assert_called_with()
+        cleantemp.assert_called_with('/tmp/tmpdir')
+
+    @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
+    @mock.patch.object(tempfile, 'mkdtemp')
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_guest_deploy_smut_request_failed(self, request, execute, mkdtemp,
+                                       cleantemp):
+        base.set_conf("zvm", "user_root_vdev", "0100")
+        fake_smut_results = {'rs': 8, 'errno': 0, 'strError': 'Failed',
+                             'overallRC': 3, 'rc': 400,
+                             'response': ['(Error) output and error info']}
+        execute.side_effect = [(0, ""), (0, "")]
+        request.side_effect = [None,
+                               exception.ZVMSMUTRequestFailed(
+                                   results=fake_smut_results)]
+        mkdtemp.return_value = '/tmp/tmpdir'
+        userid = 'fakeuser'
+        image_name = 'fakeimg'
+        transportfiles = '/faketrans'
+        remote_host = "user@1.1.1.1"
+        self.assert_Raises(exception.ZVMGuestDeployFailed,
+                           self._smutclient.guest_deploy, userid, image_name,
+                           transportfiles, remote_host)
+        unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
+                     '/var/lib/zvmsdk/images/fakeimg']
+        scp_cmd = ["/usr/bin/scp", "-B", 'user@1.1.1.1:/faketrans',
+                  '/tmp/tmpdir/cfgdrv']
+        execute.assert_has_calls([mock.call(unpack_cmd), mock.call(scp_cmd)])
+        purge_rd = "changevm fakeuser purgerdr"
+        punch_rd = "changevm fakeuser punchfile /tmp/tmpdir/cfgdrv --class X"
+        request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
+        mkdtemp.assert_called_with()
+        cleantemp.assert_called_with('/tmp/tmpdir')
