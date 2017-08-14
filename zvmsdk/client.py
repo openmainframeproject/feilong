@@ -61,6 +61,9 @@ def get_zvmclient():
 
 class ZVMClient(object):
 
+    def __init__(self):
+        self._pathutils = zvmutils.PathUtils()
+
     def guest_start(self, userid):
         pass
 
