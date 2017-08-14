@@ -22,6 +22,7 @@ import pwd
 import re
 import shutil
 import six
+import subprocess
 import sys
 import time
 import traceback
@@ -414,3 +415,16 @@ def xcat_request(*args, **kwargs):
 
 expect_invalid_xcat_resp_data = expect_invalid_resp_data
 wrap_invalid_xcat_resp_data_error = wrap_invalid_resp_data_error
+
+
+def get_smut_userid():
+    """Get the userid of smut server"""
+    cmd = ["/sbin/vmcp", "query userid"]
+    try:
+        userid = subprocess.check_output(cmd,
+                                         close_fds=True,
+                                         stderr=subprocess.STDOUT).split()[0]
+        return userid
+    except Exception as err:
+        msg = ("Could not find the userid of the smut server: %s") % err
+        raise exception.ZVMSMUTInternalError(msg)

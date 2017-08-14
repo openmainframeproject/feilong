@@ -216,8 +216,18 @@ class SDKAPI(object):
         """
         return self._imageops.image_query(imagekeyword)
 
+    @zvmutils.check_input_types(_TUSERID, _TSTR_OR_NONE)
+    def guest_authorize_iucv_client(self, guest, client=None):
+        """Punch a script that used to set the authorized client userid in vm
+
+        :param str guest: the user id of the vm
+        :param str client: the user id of the client that can communicate to
+               guest using IUCV
+        """
+        self._vmops.guest_authorize_iucv_client(guest, client)
+
     @zvmutils.check_input_types(_TUSERID, _TSTR, _TSTR_OR_NONE, _TSTR_OR_NONE,
-                       _TSTR_OR_NONE)
+                                _TSTR_OR_NONE)
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
         """ Deploy the image to vm.

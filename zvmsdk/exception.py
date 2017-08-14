@@ -177,3 +177,8 @@ class ZVMInvalidSMUTResponseDataError(SDKBaseException):
 
 class ZVMSMUTInternalError(SDKBaseException):
     msg_fmt = 'Error returned from SMUT: %(msg)s'
+
+
+class ZVMSMUTAuthorizeIUCVClientFailed(SDKBaseException):
+    msg_fmt = 'Failed to authorized the iucv client %(client)s on vm %(vm)s '\
+        'with reason: %(msg)s'

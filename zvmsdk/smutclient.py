@@ -13,6 +13,8 @@
 #    under the License.
 
 
+import os
+
 from smutLayer import smut
 
 from zvmsdk import client
@@ -106,3 +108,26 @@ class SMUTClient(client.ZVMClient):
             rd += (' --filesystem %s' % fmt)
 
         self._request(rd)
+
+    def guest_authorize_iucv_client(self, userid, client=None):
+        """Punch a script to authorized the client on guest vm"""
+        client = client or zvmutils.get_smut_userid()
+
+        iucv_path = "/tmp/" + userid
+        if not os.path.exists(iucv_path):
+            os.makedirs(iucv_path)
+        iucv_auth_file = iucv_path + "/iucvauth.sh"
+        lines = ['#!/bin/bash\n',
+                 'echo -n %s > /etc/iucv_authorized_userid\n' % client]
+        with open(iucv_auth_file, 'w') as f:
+            f.writelines(lines)
+
+        try:
+            requestData = "ChangeVM " + userid + " punchfile " + \
+                iucv_auth_file + " --class x"
+            self._request(requestData)
+        except Exception as err:
+            raise exception.ZVMSMUTAuthorizeIUCVClientFailed(
+                client=client, vm=userid, msg=err)
+        finally:
+            os.remove(iucv_auth_file)
