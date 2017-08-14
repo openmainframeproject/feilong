@@ -579,6 +579,7 @@ int systemPerformanceInfoQuery(int argC, char* argV[], struct _vmApiInternalCont
         printf("CPU utilization: %d\n", atoi(output->performanceInfo[1].vmapiString));
         printf("Memory paging rate: %d\n", atoi(output->performanceInfo[2].vmapiString));
         printf("Configured memory pages: %d\n", atoi(output->performanceInfo[3].vmapiString));
+        printf("Used memory pages: %d\n", atoi(output->performanceInfo[4].vmapiString));
     }
     return rc;
 }
