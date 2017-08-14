@@ -2354,8 +2354,10 @@ class XCATClient(client.ZVMClient):
                     raise exception.zVMConfigException(
                         msg=("Only support one Management network,"
                              "it has been assigned by other agent!"
-                             "Please use current management network"
-                             "(%s/%s) to deploy." % (cur_ip[0], cur_mask)))
+                             "Please replace the configuration (%s/%s),"
+                             "and use current management network"
+                             "(%s/%s) to deploy." % (mgt_ip, mgt_mask,
+                                                     cur_ip[0], cur_mask)))
                 else:
                     LOG.debug("IP address has been assigned for NIC 800.")
                     return
