@@ -229,7 +229,7 @@ class SDKAPI(object):
                format is username@IP, eg nova@192.168.99.1
         :param vdev: (str) the device that image will be deploy to
 
-        :raises ZVMXCATDeployNodeFailed if:
+        :raises ZVMGuestDeployFailed if:
                 - Failed to deploy image to guest, refer to the error message
                   for details
 
