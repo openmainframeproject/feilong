@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dc9e9190_5ab62065",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-08-15T05:58:15Z",
+      "side": 1,
+      "message": "Is there better way to handle such exceptions?",
+      "range": {
+        "startLine": 186,
+        "startChar": 19,
+        "endLine": 186,
+        "endChar": 28
+      },
+      "revId": "039f13677ace9f814d67cdaae0f8fe382f4431db",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ce42033_d9cd4f4c",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-08-15T05:58:15Z",
+      "side": 1,
+      "message": "Can use pathutils.clean_temp_folder",
+      "range": {
+        "startLine": 199,
+        "startChar": 33,
+        "endLine": 199,
+        "endChar": 46
+      },
+      "revId": "039f13677ace9f814d67cdaae0f8fe382f4431db",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
