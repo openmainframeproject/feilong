@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9744e43c_272be726",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 13
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-08-15T08:56:39Z",
+      "side": 1,
+      "message": "need to add a space - \u0027 \u0027 into each lines",
+      "revId": "2a1d2316140505eccb8e607592d58f50b860ccd3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
