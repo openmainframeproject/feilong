@@ -114,8 +114,8 @@ def convert_to_mb(s):
             return float(s[:-1].strip()) * 1024 * 1024
         else:
             return float(s[:-1].strip())
-    except (IndexError, ValueError, KeyError, TypeError) as e:
-        errmsg = ("Invalid memory format: %s") % e
+    except (IndexError, ValueError, KeyError, TypeError):
+        errmsg = ("Invalid memory format: %s") % s
         raise exception.ZVMSDKInternalError(msg=errmsg)
 
 
