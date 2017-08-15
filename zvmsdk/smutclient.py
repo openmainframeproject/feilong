@@ -206,3 +206,31 @@ class SMUTClient(client.ZVMClient):
             finally:
                 # remove the local temp config drive folder
                 self._pathutils.clean_temp_folder(tmp_trans_dir)
+
+    def grant_user_to_vswitch(self, vswitch_name, userid):
+        """Set vswitch to grant user."""
+        smut_userid = zvmutils.get_smut_userid()
+        requestData = ' '.join((
+            'SMAPI %s API Virtual_Network_Vswitch_Set_Extended' % smut_userid,
+            "--operands",
+            "-k switch_name=%s" % vswitch_name,
+            "-k grant_userid=%s" % userid,
+            "-k persist=YES"))
+
+        with expect_smut_request_failed_and_reraise(
+            exception.ZVMNetworkError):
+            self._request(requestData)
+
+    def revoke_user_from_vswitch(self, vswitch_name, userid):
+        """Revoke user for vswitch."""
+        smut_userid = zvmutils.get_smut_userid()
+        requestData = ' '.join((
+            'SMAPI %s API Virtual_Network_Vswitch_Set_Extended' % smut_userid,
+            "--operands",
+            "-k switch_name=%s" % vswitch_name,
+            "-k revoke_userid=%s" % userid,
+            "-k persist=YES"))
+
+        with expect_smut_request_failed_and_reraise(
+            exception.ZVMNetworkError):
+            self._request(requestData)
