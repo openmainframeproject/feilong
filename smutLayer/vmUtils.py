@@ -260,7 +260,7 @@ def getPerfInfo(rh, useridlist):
     return results
 
 
-def installFS(rh, vaddr, mode, fileSystem):
+def installFS(rh, vaddr, mode, fileSystem, diskType):
     """
     Install a filesystem on a virtual machine's dasd.
 
@@ -269,6 +269,7 @@ def installFS(rh, vaddr, mode, fileSystem):
           userid - Userid that owns the disk
        Virtual address as known to the owning system.
        Access mode to use to get the disk.
+       Disk Type - 3390 or 9336
 
     Output:
        Dictionary containing the following:
@@ -281,7 +282,7 @@ def installFS(rh, vaddr, mode, fileSystem):
 
     rh.printSysLog("Enter vmUtils.installFS, userid: " + rh.userid +
         " vaddr: " + str(vaddr) + " mode: " + mode + " file system: " +
-        fileSystem)
+        fileSystem + "disk type" + diskType)
 
     results = {
               'overallRC': 0,
@@ -340,7 +341,7 @@ def installFS(rh, vaddr, mode, fileSystem):
             results = msgs.msg['0417'][0]
             rh.updateResults(results)
 
-    if results['overallRC'] == 0:
+    if results['overallRC'] == 0 and diskType == "3390":
         # dasdfmt the disk
         cmd = ["/sbin/dasdfmt",
             "-y",
@@ -365,7 +366,7 @@ def installFS(rh, vaddr, mode, fileSystem):
             results = msgs.msg['0421'][0]
             rh.updateResults(results)
 
-    if results['overallRC'] == 0:
+    if results['overallRC'] == 0 and diskType == "3390":
         # Settle the devices so we can do the partition.
         strCmd = ("which udevadm &> /dev/null && " +
             "udevadm settle || udevsettle")
@@ -390,7 +391,7 @@ def installFS(rh, vaddr, mode, fileSystem):
             results = msgs.msg['0421'][0]
             rh.updateResults(results)
 
-    if results['overallRC'] == 0:
+    if results['overallRC'] == 0 and diskType == "3390":
         # Prepare the partition with fdasd
         cmd = ["/sbin/fdasd", "-a", device]
         strCmd = ' '.join(cmd)
@@ -407,6 +408,51 @@ def installFS(rh, vaddr, mode, fileSystem):
         except Exception as e:
             # All other exceptions.
             rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                type(e).__name__, str(e)))
+            results = msgs.msg['0421'][0]
+            rh.updateResults(results)
+
+    if results['overallRC'] == 0 and diskType == "9336":
+        # Delete the existing partition in case the disk already
+        # has a partition in it
+        cmd = "/sbin/fdisk " + device + " << EOF\nd\nw\nEOF"
+        rh.printSysLog("Invoking: " + cmd)
+        try:
+            out = subprocess.check_output(cmd,
+                stderr=subprocess.STDOUT,
+                close_fds=True,
+                shell=True)
+        except CalledProcessError as e:
+            rh.printLn("ES", msgs.msg['0415'][1] % (modId, cmd,
+                e.returncode, e.output))
+            results = msgs.msg['0415'][0]
+            results['rs'] = e.returncode
+            rh.updateResults(results)
+        except Exception as e:
+            # All other exceptions.
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, cmd,
+                type(e).__name__, str(e)))
+            results = msgs.msg['0421'][0]
+            rh.updateResults(results)
+
+    if results['overallRC'] == 0 and diskType == "9336":
+        # Prepare the partition with fdisk
+        cmd = "/sbin/fdisk " + device + " << EOF\nn\np\n1\n\n\nw\nEOF"
+        rh.printSysLog("Invoking: " + cmd)
+        try:
+            out = subprocess.check_output(cmd,
+                stderr=subprocess.STDOUT,
+                close_fds=True,
+                shell=True)
+        except CalledProcessError as e:
+            rh.printLn("ES", msgs.msg['0415'][1] % (modId, cmd,
+                e.returncode, e.output))
+            results = msgs.msg['0415'][0]
+            results['rs'] = e.returncode
+            rh.updateResults(results)
+        except Exception as e:
+            # All other exceptions.
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, cmd,
                 type(e).__name__, str(e)))
             results = msgs.msg['0421'][0]
             rh.updateResults(results)

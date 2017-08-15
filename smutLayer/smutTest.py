@@ -571,14 +571,8 @@ vmLCTests = [
         'out': "",
         'overallRC': [0],
     },
-    {
-        'description': "Verify system no longer exists: <<<unsafePre>>>2",
-        'request': "smapi <<<unsafePre>>>2 api Image_Query_DM",
-        'out': "",
-        'overallRC': [8],
-        'rc': [400],
-        'rs': [4],
-    },
+    # We used to verify that system no longer exists but dirmaint was slower
+    # and test case sometimes fails.
    ]
 
 vmModifyTests = [
@@ -664,6 +658,46 @@ vmModifyTests = [
     },
     {
         'description': "Remove the 3390 disk with swap: <<<unsafePre>>>3",
+        'request': "changevm <<<unsafePre>>>3 removedisk 103",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add a 9336 disk to the system with ext4.",
+        'request': "changevm <<<unsafePre>>>3 add9336 <<<pool9336>>> " +
+            "101 100m --mode w --filesystem ext4 " +
+            "--readpw readpw --writepw writepw --multipw multipw",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Remove the 9336 disk with ext4.",
+        'request': "changevm <<<unsafePre>>>3 removedisk 101",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add a 9336 disk to the system with xfs.",
+        'request': "changevm <<<unsafePre>>>3 add9336 <<<pool9336>>> " +
+            "102 100m --mode w --filesystem xfs",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Remove the 9336 disk with xfs.",
+        'request': "changevm <<<unsafePre>>>3 removedisk 102",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add a 9336 disk to the system with swap.",
+        'request': "changevm <<<unsafePre>>>3 add9336 <<<pool9336>>> " +
+            "103 100m --mode w --filesystem swap",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Remove the 9336 disk with swap.",
         'request': "changevm <<<unsafePre>>>3 removedisk 103",
         'out': "",
         'overallRC': [0],
