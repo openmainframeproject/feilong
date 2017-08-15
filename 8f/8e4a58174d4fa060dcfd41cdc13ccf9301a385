@@ -1,0 +1,9 @@
+Code-Review-1: <openstak@us.ibm.com>
+Code-Review+2: Steve Gessner <gessners@us.ibm.com>
+Verified+1: Steve Gessner <gessners@us.ibm.com>
+Code-Review+2: Chuck Brazie <brazie@us.ibm.com>
+Submitted-by: Chuck Brazie <brazie@us.ibm.com>
+Submitted-at: Tue, 15 Aug 2017 11:05:47 -0400
+Reviewed-on: https://review.gerrithub.io/374204
+Project: mfcloud/python-zvm-sdk
+Branch: refs/heads/master
