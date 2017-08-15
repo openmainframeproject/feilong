@@ -44,13 +44,15 @@ subs = {
                                         #   add to the prefix to get an id.
     '<<<horribleID1>>>': 'g[][325$$$',  # A userid that makes SMAPI cry
                                         #   and beg for a swift death
-    '<<<consoleID>>>': 'cons',          # An existing userid who has
+    '<<<consoleID>>>': '',              # An existing userid who has
                                         #   SP CONS * START in its profile or
-                                        #   directory
-    '<<<migrID>>>': 'someid',           # An existing userid that can be
-                                        #   migrated
-    '<<<unmigrID>>>': 'unmgr',          # An existing userid that cannot be
-                                        #   migrated
+                                        #   directory.  It can also be an
+                                        #   empty string to bypass related
+                                        #   tests.
+    '<<<migrID>>>': '',                 # An existing userid that can be
+                                        #   migrated or empty to bypass tests.
+    '<<<unmigrID>>>': '',               # An existing userid that cannot be
+                                        #   migrated or empty to bypass tests.
     '<<<migrDest>>>': 'zvmhost',        # A z/VM host for migration into it
     '<<<pw>>>': 'password',             # password
     '<<<vmSize>>>': '2G',               # Virtual machine size
@@ -256,6 +258,12 @@ hostTests = [
 
 iucvTests = [
     {
+        'description': "Power on a system: <<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> on --wait --state up",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
         'description': "Send a commmand to a system.",
         'request': "CmdVM <<<safeID>>> cmd pwd",
         'out': "",
@@ -283,6 +291,7 @@ migrateTests = [
     {
         'description': "Get status for a specific userid that " +
             "cannot be migrated: <<<unmigrID>>>",
+        'doIf': "'<<<unmigrID>>>' != ''",
         'request': "migrateVM <<<unmigrID>>> status",
         'overallRC': [99],
         'rc': [99],
@@ -291,6 +300,7 @@ migrateTests = [
     {
         'description': "Get all migration status for a host with " +
             "no active migrations.",
+        'doIf': "'<<<unmigrID>>>' != ''",
         'request': "migrateVM <<<unmigrID>>> status --all",
         'overallRC': [99],
         'rc': [99],
@@ -299,6 +309,7 @@ migrateTests = [
     {
         'description': ("Get incoming migration status for a host " +
             "with no active migrations."),
+        'doIf': "'<<<unmigrID>>>' != ''",
         'request': "migrateVM <<<unmigrID>>> status --incoming",
         'overallRC': [99],
         'rc': [99],
@@ -307,6 +318,7 @@ migrateTests = [
     {
         'description': "Get outgoing migration status for a host " +
             "with no active migrations.",
+        'doIf': "'<<<unmigrID>>>' != ''",
         'request': "migrateVM <<<unmigrID>>> status --outgoing",
         'overallRC': [99],
         'rc': [99],
@@ -314,6 +326,7 @@ migrateTests = [
     },
     {
         'description': "Test a system for migration: <<<unmigrID>>>",
+        'doIf': "'<<<unmigrID>>>' != ''",
         'request': "migrateVM <<<unmigrID>>> test --destination " +
             "<<<migrDest>>>",
         'overallRC': [99],
@@ -322,6 +335,7 @@ migrateTests = [
     },
     {
         'description': "Cancel a migration",
+        'doIf': "'<<<migrID>>>' != ''",
         'request': "migrateVM <<<migrID>>> cancel",
         'overallRC': [99],
         'rc': [99],
@@ -1006,78 +1020,94 @@ vmModifyTests = [
 guestTests = [
     {
         'description': "Power on a system: <<<consoleID>>>",
+        'doIf': "'<<<consoleID>>>' != ''",
         'request': "PowerVM <<<consoleID>>> on",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Get the console log of the system: <<<consoleID>>>",
+        'doIf': "'<<<consoleID>>>' != ''",
         'request': "getvm <<<consoleID>>> consoleoutput",
         'out': "List of spool files containing console logs " +
                "from <<<consoleID>>>:",
         'overallRC': [0],
     },
     {
-        'description': "Get the status of the system: <<<consoleID>>>",
-        'request': "getvm <<<consoleID>>> status --all",
-        'out': "CPU Used Time:",
-        'overallRC': [0],
-    },
-    {
-        'description': "Get the power status of the system: <<<consoleID>>>",
-        'request': "getvm <<<consoleID>>> status --power",
-        'out': "Power state: on",
-        'overallRC': [0],
-    },
-    {
-        'description': "Get the memory status of the system: <<<consoleID>>>",
-        'request': "getvm <<<consoleID>>> status --memory",
-        'out': "Total Memory:",
-        'overallRC': [0],
-    },
-    {
-        'description': "Get the cpu status of the system: <<<consoleID>>>",
-        'request': "getvm <<<consoleID>>> status --cpu",
-        'out': "Processors:",
-        'overallRC': [0],
-    },
-    {
         'description': "Power off the system: <<<consoleID>>>",
+        'doIf': "'<<<consoleID>>>' != ''",
         'request': "PowerVM <<<consoleID>>> off",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Get the status of the system: <<<consoleID>>>",
-        'request': "getvm <<<consoleID>>> status",
-        'out': "CPU Used Time: 0 sec",
-        'overallRC': [0],
-    },
-    {
-        'description': "Get the power status of the system: <<<consoleID>>>",
-        'request': "getvm <<<consoleID>>> status --power",
-        'out': "Power state: off",
-        'overallRC': [0],
-    },
-    {
-        'description': "Get the memory status of the system: <<<consoleID>>>",
-        'request': "getvm <<<consoleID>>> status --memory",
-        'out': "Total Memory: 0M",
-        'overallRC': [0],
-    },
-    {
-        'description': "Get the cpu status of the system: <<<consoleID>>>",
-        'request': "getvm <<<consoleID>>> status --cpu",
-        'out': "Processors: 0",
-        'overallRC': [0],
-    },
-    {
         'description': "Verify no console log is available: <<<consoleID>>>",
+        'doIf': "'<<<consoleID>>>' != ''",
         'request': "getvm <<<consoleID>>> consoleoutput",
         'out': "",
         'overallRC': [8],
         'rc': [8],
         'rs': [8]
+    },
+    {
+        'description': "Power on a system: <<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> on",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status --all",
+        'out': "CPU Used Time:",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the power status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status --power",
+        'out': "Power state: on",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the memory status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status --memory",
+        'out': "Total Memory:",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the cpu status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status --cpu",
+        'out': "Processors:",
+        'overallRC': [0],
+    },
+    {
+        'description': "Power off the system: <<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> off",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status",
+        'out': "CPU Used Time: 0 sec",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the power status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status --power",
+        'out': "Power state: off",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the memory status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status --memory",
+        'out': "Total Memory: 0M",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the cpu status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status --cpu",
+        'out': "Processors: 0",
+        'overallRC': [0],
     },
    ]
 
@@ -1349,10 +1379,7 @@ def driveTestSet(smut, setId, setToTest):
        Global values changed
     """
     global args
-    global cnt
-    global passed
-    global failed
-    global failedTests
+    global cnts
 
     print(" ")
     print("******************************************************************")
@@ -1360,17 +1387,33 @@ def driveTestSet(smut, setId, setToTest):
     print("Beginning Test Set: " + setToTest[0])
     print("******************************************************************")
     print("******************************************************************")
-    localCnt = 0
+    localTotal = 0
+    localAttempted = 0
     localPassed = 0
     localFailed = 0
+    localBypassed = 0
     failInfo = []
 
     for test in setToTest[1]:
         if args.listParms is True:
+            # Only want to list the requests.
             print(test['request'])
             continue
+
+        # Produce Common Test/shell count info.
+        print("")
+        localTotal += 1
+        cntInfo = "%i/%i" % (localTotal,
+                             (cnts['total'] + localTotal))
+
+        if 'doIf' in test and not eval(test['doIf']):
+            print("Bypassing %s: %s" % (cntInfo, test['description']))
+            localBypassed += 1
+            continue
+
         if test['request'][0:6] == 'SHELL ':
             # Issue a function that is not considered a test.
+            print("Shell %s: %s" % (cntInfo, test['description']))
             shellCmd = test['request'][6:]
             shellRC = 0
             try:
@@ -1410,10 +1453,9 @@ def driveTestSet(smut, setId, setToTest):
                     "returned rc: " + str(shellRC) +
                         " out: " + ''.join(out))
         else:
-            localCnt += 1
-            print("")
-            cntInfo = "%i/%i" % (localCnt, (cnt + localCnt))
+            # Attempt the test.
             print("Test %s: %s" % (cntInfo, test['description']))
+            localAttempted += 1
             testScore = runTest(smut, test)
             if testScore == 1:
                 localPassed += 1
@@ -1421,17 +1463,20 @@ def driveTestSet(smut, setId, setToTest):
                 localFailed += 1
                 failInfo.append(cntInfo)
 
-    cnt += localCnt
-    passed += localPassed
-    failed += localFailed
+    cnts['total'] += localTotal
+    cnts['attempted'] += localAttempted
+    cnts['passed'] += localPassed
+    cnts['failed'] += localFailed
+    cnts['bypassed'] += localBypassed
 
     print(" ")
-    print("Status of this set: " +
-            str(localCnt) + " run, " +
-            str(localPassed) + " passed, " +
-            str(localFailed) + " failed.")
+    print("Status of this set...")
+    print("    Total Requests: %i, Bypassed Requests: %i" %
+          (localTotal, localBypassed))
+    print("    Tests attempted: %i, passed: %i, failed: %i" %
+          (localAttempted, localPassed, localFailed))
     if localFailed > 0:
-        failedTests.append(setId + ": " + " ".join(failInfo))
+        cnts['failedTests'].append(setId + ": " + " ".join(failInfo))
 
 
 """
@@ -1481,10 +1526,13 @@ pattern = re.compile("|".join(regSubs.keys()))
 smut = SMUT()
 smut.enableLogCapture()              # Capture request related logs
 
-passed = 0
-failed = 0
-failedTests = []
-cnt = 0
+cnts = {}
+cnts['total'] = 0
+cnts['passed'] = 0
+cnts['failed'] = 0
+cnts['failedTests'] = []
+cnts['attempted'] = 0
+cnts['bypassed'] = 0
 
 # Temporary Preparation for punchFile Test. Create a sample config file.
 f = open("sample.config", "w+")
@@ -1531,6 +1579,9 @@ else:
                 regSubs[re.escape(m.group(0))], test['description'])
             test['request'] = pattern.sub(lambda m:
                 regSubs[re.escape(m.group(0))], test['request'])
+            if 'doIf' in test:
+                test['doIf'] = pattern.sub(lambda m:
+                    regSubs[re.escape(m.group(0))], test['doIf'])
             if 'out' in test:
                 test['out'] = pattern.sub(lambda m:
                     regSubs[re.escape(m.group(0))], test['out'])
@@ -1556,13 +1607,15 @@ else:
 
     print("")
     print("******************************************************************")
-    print("Attempted: %s" % cnt)
-    print("Passed:    %s" % passed)
-    print("Failed:    %s" % failed)
-    print("Failed Test(s): " + str(failedTests))
+    print("Status of this run...")
+    print("    Total Requests: %i, Bypassed Requests: %i" %
+          (cnts['total'], cnts['bypassed']))
+    print("    Tests attempted: %i, passed: %i, failed: %i" %
+          (cnts['attempted'], cnts['passed'], cnts['failed']))
+    print("    Failed Test(s): " + str(cnts['failedTests']))
     print("******************************************************************")
 
-    if failed == 0:
+    if cnts['failed'] == 0:
         exit(0)
     else:
         exit(1)
