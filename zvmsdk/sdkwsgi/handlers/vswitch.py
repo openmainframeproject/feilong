@@ -97,7 +97,7 @@ def vswitch_create(req):
 
     _vswitch_create(req)
 
-    req.response.status = 204
+    req.response.status = 200
     req.response.content_type = None
     return req.response
 

@@ -50,7 +50,7 @@ class GuestHandlerTestCase(unittest.TestCase):
     def _guest_delete(self):
         url = '/guests/%s' % self.userid
         resp = self.client.api_request(url=url, method='DELETE')
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(204, resp.status_code)
 
         return resp
 
@@ -69,7 +69,7 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self.client.api_request(url=url,
                                        method='DELETE',
                                        body=body)
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(204, resp.status_code)
 
     def _guest_nic_query(self):
         url = '/guests/%s/nic' % self.userid
@@ -210,7 +210,7 @@ class GuestHandlerTestCase(unittest.TestCase):
         body = '{"vswitch": {"name": "RESTVSW1", "rdev": "FF00"}}'
         resp = self.client.api_request(url='/vswitchs', method='POST',
                                        body=body)
-        self.assertEqual(204, resp.status_code)
+        self.assertEqual(200, resp.status_code)
 
     def _vswitch_delete(self):
         resp = self.client.api_request(url='/vswitchs/restvsw1',
