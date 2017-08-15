@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1f2249ed_43c49ce5",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1011375
+      },
+      "writtenOn": "2017-08-15T06:22:45Z",
+      "side": 1,
+      "message": "Do we want to specify \u003c\u003c\u003cunsafePre\u003e\u003e\u003e1 in the description section here ?",
+      "range": {
+        "startLine": 136,
+        "startChar": 44,
+        "endLine": 136,
+        "endChar": 46
+      },
+      "revId": "7957576bf51e3aa6d0403ae097993186c8e16177",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
