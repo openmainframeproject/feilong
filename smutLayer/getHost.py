@@ -20,7 +20,7 @@ import subprocess
 
 import generalUtils
 import msgs
-from vmUtils import invokeSMCLI
+from vmUtils import invokeSMCLI, getSizeFromPage
 
 modId = 'GHO'
 version = "1.0.0"
@@ -366,6 +366,26 @@ def getGeneralInfo(rh):
             "(see message 300)", results['response'])
         rh.printLn("ES", msg)
 
+    # Get LPAR memory in use
+    parm = ["-T", "dummy", "-k", "detailed_cpu=show=no"]
+
+    lparMemUsed = "no info"
+    results = invokeSMCLI(rh, "System_Performance_Information_Query",
+                          parm)
+    if results['overallRC'] == 0:
+        for line in results['response'].splitlines():
+            if "MEMORY_IN_USE=" in line:
+                lparMemUsed = line.split("=")[1]
+                lparMemUsed = getSizeFromPage(int(lparMemUsed))
+    else:
+        # SMAPI API failed, so we put out messages
+        # 300 and 405 for consistency
+        rh.printLn("ES", results['response'])
+        rh.updateResults(results)    # Use results from invokeSMCLI
+        msg = msgs.msg['0405'][1] % (modId, "LPAR memory in use",
+            "(see message 300)", results['response'])
+        rh.printLn("ES", msg)
+
     # Get IPL Time
     ipl = ""
     cmd = ["/sbin/vmcp", "query cplevel"]
@@ -398,6 +418,7 @@ def getGeneralInfo(rh):
     outstr += "\nLPAR CPU Used: " + lparCpuUsed
     outstr += "\nLPAR Memory Total: " + lparMemTotal
     outstr += "\nLPAR Memory Offline: " + lparMemStandby
+    outstr += "\nLPAR Memory Used: " + lparMemUsed
     outstr += "\nIPL Time: " + ipl
 
     rh.printLn("N", outstr)

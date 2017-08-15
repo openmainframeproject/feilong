@@ -1041,3 +1041,25 @@ def purgeReader(rh):
     rh.printSysLog("Exit vmUtils.purgeReader, rc: " +
                    str(results['overallRC']))
     return results
+
+
+def getSizeFromByte(byte_num):
+    """Return size (T, G or M) from given bytes"""
+    size = byte_num / (1024 * 1024)
+    if size < (1024 * 5):
+        # size < 5G, will use M to present
+        return str(size) + 'M'
+    elif size >= (1024 * 1024 * 5):
+        # size >= 5T, will use T to present
+        size = size / (1024 * 1024)
+        return str(size) + 'T'
+    else:
+        # use G to present
+        size = size / 1024
+        return str(size) + 'G'
+
+
+def getSizeFromPage(pages):
+    """Return size (T, G or M) from given pages"""
+    byte_num = pages * 4096
+    return getSizeFromByte(byte_num)
