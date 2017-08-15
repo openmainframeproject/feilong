@@ -239,3 +239,35 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_grant_user_to_vswitch(self, request, userid):
+        userid.return_value = 'FakeHostID'
+        vswitch_name = 'FakeVs'
+        userid = 'FakeID'
+        requestData = ' '.join((
+            'SMAPI FakeHostID api Virtual_Network_Vswitch_Set_Extended',
+            "--operands",
+            "-k switch_name=FakeVs",
+            "-k grant_userid=FakeID",
+            "-k persist=YES"))
+        self._smutclient.grant_user_to_vswitch(vswitch_name, userid)
+        request.assert_called_once_with(requestData)
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_revoke_user_from_vswitch(self, request, userid):
+        """Revoke user for vswitch."""
+        userid.return_value = 'FakeHostID'
+        vswitch_name = 'FakeVs'
+        userid = 'FakeID'
+        requestData = ' '.join((
+            'SMAPI FakeHostID api Virtual_Network_Vswitch_Set_Extended',
+            "--operands",
+            "-k switch_name=FakeVs",
+            "-k revoke_userid=FakeID",
+            "-k persist=YES"))
+
+        self._smutclient.grant_user_to_vswitch(vswitch_name, userid)
+        request.assert_called_once_with(requestData)
