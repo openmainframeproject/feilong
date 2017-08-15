@@ -253,8 +253,22 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
         sprintf(errMsg, "Volume is offline\n");
     } else if (rc == 8 && rs == 3014) {
         sprintf(errMsg, "Volume does not support sharing\n");
+    } else if (rc == 8 && rs == 3015) {
+        sprintf(errMsg, "File could not be saved\n");
+    } else if (rc == 8 && rs == 3016) {
+        sprintf(errMsg, "SMAPIOUT segment empty\n");
+    } else if (rc == 8 && rs == 3017) {
+        sprintf(errMsg, "SMAPIOUT segment does not contain valid data\n");
+    } else if (rc == 8 && rs == 3018) {
+        sprintf(errMsg, "SMAPIOUT segment not found\n");
+    } else if (rc == 8 && rs == 3019) {
+        sprintf(errMsg, "SMAPIOUT CPU data not found\n");
+    } else if (rc == 8 && rs == 3020) {
+        sprintf(errMsg, "Specified TCP/IP stack is not available\n");
+    } else if (rc == 8 && rs == 3021) {
+        sprintf(errMsg, "SMAPI worker server not in the obey list of specified TCP/IP stack\n");
     } else if (rc == 8) {
-        sprintf(errMsg, "The RS %d represents the HCP/DMS %d message number\n", rs, rs);
+        sprintf(errMsg, "Check the SMAPI manual for this reason code %d. It may represent a HCP/DMS %d message number\n", rs, rs);
     } else if (rc == 24) {
         fillSMAPIsyntaxReason(rs, syntaxErrorMessage);
         sprintf(errMsg, "Syntax error in function parameter %d; %s\n", (rs/100), syntaxErrorMessage);
@@ -690,10 +704,10 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
     } else if (rc == 900 && rs == 99) {
         sprintf(errMsg, "A system change occurred during the API call - reissue the API call to obtain the data\n");
     } else {
-        sprintf(errMsg, "Unknown\n");
+        sprintf(errMsg, "Unknown. Consult the SMAPI manual return and reason code summary\n");
     }
 
-    sprintf(errMsgPlusNum, "ULGSMC5%03d%s %s", rc, severity, errMsg);
+    sprintf(errMsgPlusNum, "ULGSMC5%03d%s %s  API issued : %s\n", rc, severity, errMsg, class);
 
     // If this call is only for the new header, just print that header out
     if (newHeader) {
