@@ -82,7 +82,25 @@ zvm_opts = [
         required=True),
     Opt('default_nic_vdev',
         section='zvm',
-        default='1000'),
+        default='1000'
+        help='''
+Default NIC virtual device address (in hex).
+
+When spawning zvm virtual machine, SDK need define
+virtual NIC address for it e.g
+NICDEF 1000 TYPE QDIO
+
+This configuration will be used to create NIC from,
+please make sure it won't conflict with other
+pre-defined virtual device or it will lead to NIC
+definition failure.
+
+Also, SDK will create additional NIC based on this
+configuration, e.g 2nd NIC will have address
+1003 (in hex) since 1st NIC will take 1000-1002
+as read, write and control channel.
+        '''
+        ),
     Opt('logonby_users',
         section='zvm'),
     Opt('user_default_password',
