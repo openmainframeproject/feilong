@@ -1,0 +1,141 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "55dd65d9_cad929d2",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-16T16:16:19Z",
+      "side": 1,
+      "message": "This is ok as is.  I was wondering why you did not specify \"3390\" as a constant on the call and avoid needing to create a variable that is used only for this one time.",
+      "range": {
+        "startLine": 154,
+        "startChar": 16,
+        "endLine": 154,
+        "endChar": 20
+      },
+      "revId": "6f3164f5afa0f27b1545d4a46e240fe4a9e8661c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e810854f_d30194c0",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-16T16:16:19Z",
+      "side": 1,
+      "message": "Same question as above.",
+      "range": {
+        "startLine": 256,
+        "startChar": 16,
+        "endLine": 256,
+        "endChar": 20
+      },
+      "revId": "6f3164f5afa0f27b1545d4a46e240fe4a9e8661c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "10e0d82b_b6eb802b",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 666,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-16T16:16:19Z",
+      "side": 1,
+      "message": "On each of these new tests, please add a doIf line that says \n\u0027doIf\u0027: \"\u0027\u003c\u003c\u003cpool9336\u003e\u003e\u003e\u0027 !\u003d \u0027\u0027\",\n\nThis allows us to not run these tests on z/VM systems that do not have 9336 pool sapce.",
+      "revId": "6f3164f5afa0f27b1545d4a46e240fe4a9e8661c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c81acca4_bd6db283",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-16T16:16:19Z",
+      "side": 1,
+      "message": "Shouldn\u0027t this be \" disk type: \" so that it does not run into the previous file system word and the following diskType value.",
+      "revId": "6f3164f5afa0f27b1545d4a46e240fe4a9e8661c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3698fd07_0eb881b4",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 417,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-16T16:16:19Z",
+      "side": 1,
+      "message": "\".\" at the end of the sentence please.",
+      "revId": "6f3164f5afa0f27b1545d4a46e240fe4a9e8661c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7749fb29_715a2da5",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 419,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-16T16:16:19Z",
+      "side": 1,
+      "message": "Please look at the log line to make certain that you are not doing anything weird to the log entry when you add the line which contains line ends.",
+      "revId": "6f3164f5afa0f27b1545d4a46e240fe4a9e8661c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f55a92c9_2dc01b7f",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 441,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-16T16:16:19Z",
+      "side": 1,
+      "message": "Please check the log entry in /var/log/messages to make certain it looks ok.",
+      "range": {
+        "startLine": 441,
+        "startChar": 38,
+        "endLine": 441,
+        "endChar": 41
+      },
+      "revId": "6f3164f5afa0f27b1545d4a46e240fe4a9e8661c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
