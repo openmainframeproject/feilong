@@ -13,13 +13,13 @@
 #    under the License.
 
 
-import commands
 import contextlib
 import errno
 import functools
 import os
 import pwd
 import re
+import shlex
 import shutil
 import six
 import subprocess
@@ -39,12 +39,28 @@ LOG = log.LOG
 
 
 def execute(cmd):
-    """execute command in shell and return output"""
-    # TODO:do some exception in future
-    status, output = commands.getstatusoutput(cmd)
-    # if success status will be 0
-    # if status != 0:
-    return output
+    """ execute command, return rc and output string.
+    The cmd argument can be a string or a list composed of
+    the command name and each of its argument.
+    eg, ['/usr/bin/cp', '-r', 'src', 'dst'] """
+
+    # Parse cmd string to a list
+    if not isinstance(cmd, list):
+        cmd = shlex.split(cmd)
+    # Execute command
+    rc = 0
+    output = ""
+    try:
+        subprocess.check_output(cmd, close_fds=True,
+                                       stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as err:
+        rc = err.returncode
+        output = err.output
+    except Exception as err:
+        err_msg = ('Command "%s" Error: %s' % (' '.join(cmd), str(err)))
+        raise exception.ZVMSDKInternalError(msg=err_msg)
+
+    return (rc, output)
 
 
 def get_host():
