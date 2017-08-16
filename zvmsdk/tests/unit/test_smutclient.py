@@ -97,7 +97,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                       'disk_pool': 'ECKD:eckdpool1',
                       'format': 'ext3'}]
         profile = 'dfltprof'
-        base.set_conf('zvm', 'logonby_users', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile dfltprof --logonby "lbyuser1 lbyuser2" --ipl 0100')

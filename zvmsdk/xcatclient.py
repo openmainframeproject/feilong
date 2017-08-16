@@ -803,7 +803,7 @@ class XCATClient(client.ZVMClient):
 #             body.append('password=LBYONLY')
 #         else:
 #             body.append('password=LBYONLY')
-#             body.append('logonby=%s' % CONF.zvm.zvm_default_admin_userid)
+#             body.append('logonby=%s' % CONF.zvm.default_admin_userid)
 
         if disk_list is None:
             disk_list = []
