@@ -34,6 +34,41 @@
       "revId": "967d83f9def10d53dcd749cbe0f112f4f2b2947f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "db28a3de_465f58cd",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1048,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-16T15:36:53Z",
+      "side": 1,
+      "message": "This routine is a general routine not unique to a VM so it should be in generalUtils.py.\n\nIn addition, please look at cvtToMag in generalUtils.py to see if it does what you want.",
+      "parentUuid": "f9279a05_6ae652d3",
+      "revId": "967d83f9def10d53dcd749cbe0f112f4f2b2947f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "91fcb127_c9264668",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1062,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-16T15:36:53Z",
+      "side": 1,
+      "message": "This routine should be in generalUtils.py because it is not specific to a VM.  i.e. we could use it for host related sizes too.",
+      "revId": "967d83f9def10d53dcd749cbe0f112f4f2b2947f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
