@@ -12,7 +12,38 @@ Lists version of this API.
 Get SDK version
 ---------------
 
-* GET /
+**GET /**
+
+* Request:
+
+  No parameters needed.
+
+
+* Response code:
+
+  HTTP status code 200 on Success.
+
+
+* Response contents:
+
+  Return the version of the API.
+
+  - min_version:
+  - max_version:
+  - version:
+
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_version.tpl
+   :language: javascript
+
+token
+=====
+
+Create token
+
+* POST /token
 
   - Request:
 
@@ -23,14 +54,6 @@ Get SDK version
   response
 
   - HTTP status code 200 on Success.
-
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_version.tpl
-   :language: javascript
-
-token
-=====
-
-Create and validate token.
 
 Guest(s)
 ========
@@ -48,9 +71,11 @@ List Guests
 
   - Response:
 
-  response
-
   - HTTP status code 200 on Success.
+
+  A list of guests on this host.
+
+  - guests: 
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_list.tpl
    :language: javascript
