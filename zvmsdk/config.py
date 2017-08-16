@@ -72,10 +72,37 @@ zvm_opts = [
     # logging options
     Opt('log_file',
         section='logging',
-        default='/tmp/zvmsdk.log'),
+        default='/tmp/zvmsdk.log',
+        help='''
+file where log to be put into.
+
+SDK has a set of logs to help administrator to debug
+and aduit actions performed through SDK. Edit this option
+if you want to put logs into specified place.
+
+Please ensure the service running on the consume which
+consumes SDK has the authorization to write to the file
+    '''),
     Opt('log_level',
         section='logging',
-        default='logging.INFO'),
+        default='logging.INFO',
+        help='''
+Level of the log.
+
+SDK utilize python logging package to help admin debug
+or analyze issues. it's recommend to set this value
+to logging.DEBUG to get more detailed logs and set it to
+logging.INFO(default) in normal situation.
+
+recommend values:
+logging.ERROR: level above ERROR will be written to log file.
+logging.WARNINS: level above WARNING(ERROR, WARNING)
+                 will be written to log file.
+logging.INFO: level above INFO(ERROR, WARNING, INFO)
+              will be written to log file.
+logging.DEBUG: All log level (ERROR, WARNING, INFO, DEBUG)
+               will be written to log file.
+    '''),
     # zvm options
     Opt('host',
         section='zvm',
