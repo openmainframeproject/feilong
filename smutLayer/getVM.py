@@ -366,18 +366,19 @@ def getStatus(rh):
         else:
             # Everything went well, response should be good
             memStr = results['response'].split("\n")[0]
-            procStr = results['response'].split("\n")[1]
-            timeStr = results['response'].split("\n")[2]
+            usedmemStr = results['response'].split("\n")[1]
+            procStr = results['response'].split("\n")[2]
+            timeStr = results['response'].split("\n")[3]
 
     # Build our output string according
     # to what information was asked for
     if 'memory' in rh.parms:
-        outStr = memStr
+        outStr = memStr + "\n" + usedmemStr
     elif 'cpu' in rh.parms:
         outStr = procStr + "\n" + timeStr
     else:
         # Default to all
-        outStr = powerStr + "\n" + memStr
+        outStr = powerStr + "\n" + memStr + "\n" + usedmemStr
         outStr += "\n" + procStr + "\n" + timeStr
     rh.printLn("N", outStr)
     rh.printSysLog("Exit getVM.getStatus, rc: " +
