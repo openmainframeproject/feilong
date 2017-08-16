@@ -82,6 +82,24 @@
     },
     {
       "key": {
+        "uuid": "c9b0a994_e057f5d0",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2017-08-16T17:39:21Z",
+      "side": 1,
+      "message": "agree",
+      "parentUuid": "c81acca4_bd6db283",
+      "revId": "6f3164f5afa0f27b1545d4a46e240fe4a9e8661c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3698fd07_0eb881b4",
         "filename": "smutLayer/vmUtils.py",
         "patchSetId": 1
