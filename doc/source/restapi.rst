@@ -12,7 +12,35 @@ Lists version of this API.
 Get SDK version
 ---------------
 
-* GET /
+**GET /**
+
+* Request:
+
+  No parameters needed.
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  Return the version of the SDK API.
+
+  - min_version:
+  - max_version:
+  - version:
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_version.tpl
+   :language: javascript
+
+token
+=====
+
+Create token
+
+* POST /token
 
   - Request:
 
@@ -23,14 +51,6 @@ Get SDK version
   response
 
   - HTTP status code 200 on Success.
-
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_version.tpl
-   :language: javascript
-
-token
-=====
-
-Create and validate token.
 
 Guest(s)
 ========
@@ -40,17 +60,23 @@ Lists, creates, shows details for, updates, and deletes guests.
 List Guests
 -----------
 
-* GET /guests
+**GET /guests**
 
-  - Request:
+* Request:
 
-  request
+  No parameters needed.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
+
+  `FIXME`: should only list guests managed/created by SDK.
+
+  - guests:
+
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_list.tpl
    :language: javascript
@@ -58,32 +84,40 @@ List Guests
 Create Guest
 ------------
 
-* POST /guests
+**POST /guests**
 
-  - Request:
+* Request:
 
-  request
+  - userid: 
+  - vcpus:
+  - memory:
+  - user_profile:
+  - disk_list:
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
 
 Get Guests cpu info
 -------------------
 
-* GET /guests/cpuinfo
+**GET /guests/cpuinfo**
 
-  - Request:
+* Request:
 
-  request
+  No parameters needed.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
+
+  - cpu:
+
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_cpu_info.tpl
    :language: javascript
@@ -91,17 +125,21 @@ Get Guests cpu info
 Get Guests memory info
 ----------------------
 
-* GET /guests/meminfo
+**GET /guests/meminfo**
 
-  - Request:
+* Request:
 
-  request
+  No parameters needed.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
+
+  - memory:
+
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_memory_info.tpl
    :language: javascript
@@ -109,35 +147,45 @@ Get Guests memory info
 Get Guests vnics info
 ---------------------
 
-* GET /guests/vnicsinfo
+**GET /guests/vnicsinfo**
 
-  - Request:
+* Request:
 
-  request
+  No parameters needed.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
+
+  - vnics:
+
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_vnics_info.tpl
    :language: javascript
 
-Show Guest
-----------
+Show Guest definition
+---------------------
 
-* GET /guests/{userid}
+**GET /guests/{userid}**
 
-  - Request:
+Display the user direct by the given userid.
 
-  request
+* Request:
 
-  - Response:
+  - userid: The userid to be displayed, it should comply with z/VM userid standard.
 
-  response
+* Response code:
 
-  - HTTP status code 200 on Success.
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  - user_direct: The user direct of the given userid.
+
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get.tpl
    :language: javascript
