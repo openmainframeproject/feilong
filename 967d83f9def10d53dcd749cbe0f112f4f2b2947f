@@ -16,6 +16,24 @@
       "revId": "967d83f9def10d53dcd749cbe0f112f4f2b2947f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f9279a05_6ae652d3",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1048,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-08-16T07:27:08Z",
+      "side": 1,
+      "message": "how about:  \nsize \u003d float(byte_num) / (1024 * 1024)  \n\nthen return round(size, 2) foreach T, G, M",
+      "parentUuid": "552af764_36c667fa",
+      "revId": "967d83f9def10d53dcd749cbe0f112f4f2b2947f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
