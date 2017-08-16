@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "552af764_36c667fa",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1048,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-16T04:02:42Z",
+      "side": 1,
+      "message": "With the division, do we want to use floats to make sure we don\u0027t get an integer that\u0027s been truncated?",
+      "revId": "967d83f9def10d53dcd749cbe0f112f4f2b2947f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
