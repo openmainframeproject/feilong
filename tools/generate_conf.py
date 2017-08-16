@@ -68,6 +68,10 @@ def generate(f):
         if (data == 'tests'):
             continue
 
+        # xcat is only used for internal test purpose
+        if (data == 'xcat'):
+            continue:
+
         _print_one_section(f, data, dicts[data])
         _print_one_line(f)
 
