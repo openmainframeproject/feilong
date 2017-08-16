@@ -151,14 +151,28 @@ Possible value:
         section='wsgi',
         default=30,
         opt_type='int',
+        help='''
+How long the token is valid.
+
+If a token auth is used, the token return to user will be
+expired after the period passed. This ensure an user who
+get this token will not be authorized all the time, a new
+token need to be recreated after certain time period.
+''',
         ),
     Opt('wsgi_user',
         section='wsgi',
         opt_type='str',
+        help='''
+user name to access sdk http server.
+'''
         ),
     Opt('wsgi_password',
         section='wsgi',
         opt_type='str',
+        help='''
+password to access sdk http server.
+'''
         ),
     # tests options
     Opt('image_path',
