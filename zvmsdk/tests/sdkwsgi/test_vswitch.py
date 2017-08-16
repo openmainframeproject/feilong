@@ -94,6 +94,7 @@ class VSwitchTestCase(unittest.TestCase):
         body = '{"vswitch": {"v1": "v1"}}'
         resp = self.client.api_request(url='/vswitchs', method='POST',
                                        body=body)
+        LOG.info('resp is %s', str(resp))
         self.assertEqual(400, resp.status_code)
 
     def test_vswitch_create_nobody(self):

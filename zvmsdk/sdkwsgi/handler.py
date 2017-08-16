@@ -119,7 +119,7 @@ def dispatch(environ, start_response, mapper):
     try:
         return handler(environ, start_response)
     except exception.ValidationError as exc:
-        LOG.debug('validation error: %(error)s' % {'error': exc})
+        LOG.info('%(error)s' % {'error': exc})
         raise webob.exc.HTTPBadRequest(
             ('JSON does not validate: %(error)s') % {'error': exc})
 
