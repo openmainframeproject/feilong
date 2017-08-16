@@ -1113,36 +1113,39 @@ guestTests = [
 
 
 testSets = {
-    'DEPLOY': [
-        'Full deploy image tests',
-        deployTests],
-    'GENERAL': [
-        'Tests that are not specific to a particular function.',
-        generalTests],
-    'GUEST': [
-        'Guest tests that are not covered under other functions.',
-        guestTests],
-    'HOST': [
-        'Host related tests',
-        hostTests],
-    'IUCV': [
-        'Send commands to VM over IUCV',
-        iucvTests],
-    'LIFECYCLE': [
-        'VM Life Cycle related tests',
-        vmLCTests],
-    'MIGRATE': [
-        'VM Migration related tests',
-        migrateTests],
-    'MODIFY': [
-        'Modify a VM',
-        vmModifyTests],
-    'POWER': [
-        'VM Power function tests',
-        powerTests],
-    'SMAPI': [
-        'SMAP API invocation tests',
-        smapiTests],
+    'DEPLOY': {
+        'description': 'ECKD deploy image tests',
+        'doIf': "'<<<pool3390>>>' != ''",
+        'tests': deployTests},
+    'GENERAL': {
+        'description': 'Tests that are not specific to a ' +
+            'particular function.',
+        'tests': generalTests},
+    'GUEST': {
+        'description': 'Guest tests that are not covered under ' +
+            'other functions.',
+        'tests': guestTests},
+    'HOST': {
+        'description': 'Host related tests',
+        'tests': hostTests},
+    'IUCV': {
+        'description': 'Send commands to VM over IUCV',
+        'tests': iucvTests},
+    'LIFECYCLE': {
+        'description': 'VM Life Cycle related tests',
+        'tests': vmLCTests},
+    'MIGRATE': {
+        'description': 'VM Migration related tests',
+        'tests': migrateTests},
+    'MODIFY': {
+        'description': 'Modify a VM',
+        'tests': vmModifyTests},
+    'POWER': {
+        'description': 'VM Power function tests',
+        'tests': powerTests},
+    'SMAPI': {
+        'description': 'SMAP API invocation tests',
+        'tests': smapiTests},
     }
 
 
@@ -1384,7 +1387,7 @@ def driveTestSet(smut, setId, setToTest):
     print(" ")
     print("******************************************************************")
     print("******************************************************************")
-    print("Beginning Test Set: " + setToTest[0])
+    print("Beginning Test Set: " + setToTest['description'])
     print("******************************************************************")
     print("******************************************************************")
     localTotal = 0
@@ -1394,7 +1397,7 @@ def driveTestSet(smut, setId, setToTest):
     localBypassed = 0
     failInfo = []
 
-    for test in setToTest[1]:
+    for test in setToTest['tests']:
         if args.listParms is True:
             # Only want to list the requests.
             print(test['request'])
@@ -1541,7 +1544,7 @@ f.close()
 
 if args.listAreas is True:
     for key in sorted(testSets):
-        print key + ": " + testSets[key][0]
+        print key + ": " + testSets[key]['description']
 else:
     # Initialize the environment.  Online the punch.
     cmd = "/sbin/cio_ignore -r d; /sbin/chccwdev -e d"
@@ -1574,7 +1577,10 @@ else:
 
     # Perform the substitution change to all requests and responses
     for key in testSets:
-        for test in testSets[key][1]:
+        if 'doIf' in testSets[key]:
+            testSets[key]['doIf'] = pattern.sub(lambda m:
+                regSubs[re.escape(m.group(0))], testSets[key]['doIf'])
+        for test in testSets[key]['tests']:
             test['description'] = pattern.sub(lambda m:
                 regSubs[re.escape(m.group(0))], test['description'])
             test['request'] = pattern.sub(lambda m:
@@ -1585,6 +1591,14 @@ else:
             if 'out' in test:
                 test['out'] = pattern.sub(lambda m:
                     regSubs[re.escape(m.group(0))], test['out'])
+
+            # Apply testSet['doIf'] to the tests, if it exists.
+            if 'doIf' in testSets[key]:
+                if 'doIf' in test:
+                    test['doIf'] = (testSets[key]['doIf'] + ' and ' +
+                                    test['doIf'])
+                else:
+                    test['doIf'] = testSets[key]['doIf']
 
     # Determine the tests to run based on the first argument.
     tests = []
