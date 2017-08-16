@@ -51,8 +51,8 @@ def execute(cmd):
     rc = 0
     output = ""
     try:
-        subprocess.check_output(cmd, close_fds=True,
-                                       stderr=subprocess.STDOUT)
+        output = subprocess.check_output(cmd, close_fds=True,
+                                         stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as err:
         rc = err.returncode
         output = err.output
