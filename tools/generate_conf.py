@@ -50,7 +50,10 @@ def _print_one_section(f, section, data):
             _print_with_comment(f, v['help'], False)
 
         if 'required' in v:
-            required = 'required=%s' % v['required']
+            if v['required']:
+                required = 'This param is required'
+            else:
+                required = 'This param is optional'
             _print_with_comment(f, required, False)
 
         if 'default' in v:
@@ -66,6 +69,10 @@ def generate(f):
     for data in sorted(dicts):
         # bypass test section on purpose
         if (data == 'tests'):
+            continue
+
+        # xcat is only used for internal test purpose
+        if (data == 'xcat'):
             continue
 
         _print_one_section(f, data, dicts[data])
