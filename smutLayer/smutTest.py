@@ -216,6 +216,100 @@ generalTests = [
     },
     ]
 
+guestTests = [
+    {
+        'description': "Power on a system: <<<consoleID>>>",
+        'doIf': "'<<<consoleID>>>' != ''",
+        'request': "PowerVM <<<consoleID>>> on",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the console log of the system: <<<consoleID>>>",
+        'doIf': "'<<<consoleID>>>' != ''",
+        'request': "getvm <<<consoleID>>> consoleoutput",
+        'out': "List of spool files containing console logs " +
+               "from <<<consoleID>>>:",
+        'overallRC': [0],
+    },
+    {
+        'description': "Power off the system: <<<consoleID>>>",
+        'doIf': "'<<<consoleID>>>' != ''",
+        'request': "PowerVM <<<consoleID>>> off",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Verify no console log is available: <<<consoleID>>>",
+        'doIf': "'<<<consoleID>>>' != ''",
+        'request': "getvm <<<consoleID>>> consoleoutput",
+        'out': "",
+        'overallRC': [8],
+        'rc': [8],
+        'rs': [8]
+    },
+    {
+        'description': "Power on a system: <<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> on",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status --all",
+        'out': "CPU Used Time:",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the power status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status --power",
+        'out': "Power state: on",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the memory status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status --memory",
+        'out': "Total Memory:",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the cpu status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status --cpu",
+        'out': "Processors:",
+        'overallRC': [0],
+    },
+    {
+        'description': "Power off the system: <<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> off",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status",
+        'out': "CPU Used Time: 0 sec",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the power status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status --power",
+        'out': "Power state: off",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the memory status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status --memory",
+        'out': "Total Memory: 0M",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the cpu status of the system: <<<safeID>>>",
+        'request': "getvm <<<safeID>>> status --cpu",
+        'out': "Processors: 0",
+        'overallRC': [0],
+    },
+   ]
+
 hostTests = [
     {
         'description': "Get the list of disk pools.",
@@ -287,6 +381,29 @@ iucvTests = [
     },
     ]
 
+lifecycleTests = [
+    {
+        'description': "Create a simple system: <<<unsafePre>>>2",
+        'request': "makevm <<<unsafePre>>>2 directory smapi 2g g",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Verify system exists: <<<unsafePre>>>2",
+        'request': "smapi <<<unsafePre>>>2 api Image_Query_DM",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Delete a system: <<<unsafePre>>>2",
+        'request': "deletevm <<<unsafePre>>>2 directory",
+        'out': "",
+        'overallRC': [0],
+    },
+    # We used to verify that system no longer exists but dirmaint was slower
+    # and test case sometimes fails.
+   ]
+
 migrateTests = [
     {
         'description': "Get status for a specific userid that " +
@@ -343,239 +460,7 @@ migrateTests = [
     },
     ]
 
-powerTests = [
-    {
-        'description': "Test PowerVM VERSION.",
-        'request': "PowerVM version",
-        'out': "^Version:",
-        'overallRC': [0],
-    },
-    {
-        'description': "'PowerVM xxx JUNK' fails",
-        'request': "PowerVM xxx junk",
-        'out': "",
-        'overallRC': [4],
-    },
-    {
-        'description': "Power off a system: <<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> off --wait",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Check status of powered off system.",
-        'request': "PowerVM <<<safeID>>> status",
-        'out': "<<<safeID>>>: off",
-        'overallRC': [0],
-        'rc': [0],
-        'rs': [1]
-    },
-    {
-        'description': "Check isreachable of powered off system.",
-        'request': "PowerVM <<<safeID>>> isreachable",
-        'out': "<<<safeID>>>: unreachable",
-        'overallRC': [0],
-        'rs': [0]
-    },
-    {
-        'description': "Power off an already powered off system.",
-        'request': "PowerVM <<<safeID>>> off",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Power on a system: <<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> on",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Power off a system with softOff option: " +
-            "<<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> softoff",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Power on a system: <<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> on",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Power on a system that is on but not up: " +
-            "<<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> on --wait --state up",
-        'out': "<<<safeID>>>: up",
-        'overallRC': [0],
-    },
-    {
-        'description': "Check status of powered on system: <<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> status",
-        'out': "<<<safeID>>>: on",
-        'overallRC': [0],
-        'rc': [0],
-        'rs': [0]
-    },
-    {
-        'description': "Check isreachable of powered on system: " +
-            "<<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> isreachable",
-        'out': "<<<safeID>>>: reachable",
-        'overallRC': [0],
-        'rs': [1]
-    },
-    {
-        'description': "Pause a system: <<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> pause",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Isreachable of a paused system is unreachable: " +
-            "<<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> isreachable",
-        'out': "<<<safeID>>>: unreachable",
-        'overallRC': [0],
-        'rs': [0]
-    },
-    {
-        'description': "Unpause a system: <<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> unpause",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Isreachable of an unpaused system is reachable: " +
-            "<<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> isreachable",
-        'out': "<<<safeID>>>: reachable",
-        'overallRC': [0],
-        'rs': [1]
-    },
-    {
-        'description': "Reset a system: <<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> reset --wait --state up",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Isreachable of an unpaused system is reachable: " +
-            "<<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> isreachable",
-        'out': "<<<safeID>>>: reachable",
-        'overallRC': [0],
-        'rs': [1]
-    },
-    {
-        'description': "Reboot a system: <<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> reboot --wait",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Reboot a system w/o waiting for the OS to be up: " +
-            "<<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> reboot",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Wait for the OS to come up: <<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> wait --state up",
-        'out': "<<<safeID>>>: up",
-        'overallRC': [0],
-        'rs': [0]
-    },
-    ]
-
-shellTests = [
-    {
-        'description': "Issue a successful non-Test 1-line " +
-            "output related SHELL function.",
-        'request': "SHELL echo \'Hurray!\'",
-        'overallRC': [0],
-    },
-    {
-        'description': "Do a successful non-Test multi-line " +
-            "output related SHELL function.",
-        'request': "SHELL cat /etc/hosts",
-        'overallRC': [0],
-    },
-    {
-        'description': "Do an unsuccessful non-Test related SHELL function.",
-        'request': "SHELL bob",
-        'overallRC': [127],
-    },
-    {
-        'description': "Issue a successful Test related SHELL function.",
-        'request': "SHELL_TEST echo \'Hurray!\'",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Issue a successful Test related SHELL function.",
-        'request': "SHELL_TEST cat /etc/hosts",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Issue an unsuccessful Test related SHELL function.",
-        'request': "SHELL_TEST bob",
-        'out': "",
-        'overallRC': [127],
-    },
-    ]
-
-smapiTests = [
-    {
-        'description': "Directory related query w/o operands.",
-        'request': "smapi <<<safeID>>> api Image_Query_DM",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Disk pool query with operands.",
-        'request': "smapi <<<safeID>>> api Image_Volume_Space_Query_DM " +
-            "--operands '-q' 1 '-e' 1",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Failing disk pool query with operands.",
-        'request': "smapi <<<safeID>>> api Image_Volume_Space_Query_DM " +
-            "--operands '-q' 4 '-e' 1",
-        'out': "",
-        'overallRC': [8],
-        'rc': [24],
-        'rs': [1018],
-    },
-    ]
-
-vmLCTests = [
-    {
-        'description': "Create a simple system: <<<unsafePre>>>2",
-        'request': "makevm <<<unsafePre>>>2 directory smapi 2g g",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Verify system exists: <<<unsafePre>>>2",
-        'request': "smapi <<<unsafePre>>>2 api Image_Query_DM",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Delete a system: <<<unsafePre>>>2",
-        'request': "deletevm <<<unsafePre>>>2 directory",
-        'out': "",
-        'overallRC': [0],
-    },
-    # We used to verify that system no longer exists but dirmaint was slower
-    # and test case sometimes fails.
-   ]
-
-vmModifyTests = [
+modifyTests = [
     # >>>>>>>>> Create a simple system for logged off tests.
     {
         'description': "Create a simple system: <<<unsafePre>>>3",
@@ -1057,37 +942,46 @@ vmModifyTests = [
         'overallRC': [0],
     },
    ]
-guestTests = [
+
+powerTests = [
     {
-        'description': "Power on a system: <<<consoleID>>>",
-        'doIf': "'<<<consoleID>>>' != ''",
-        'request': "PowerVM <<<consoleID>>> on",
+        'description': "Test PowerVM VERSION.",
+        'request': "PowerVM version",
+        'out': "^Version:",
+        'overallRC': [0],
+    },
+    {
+        'description': "'PowerVM xxx JUNK' fails",
+        'request': "PowerVM xxx junk",
+        'out': "",
+        'overallRC': [4],
+    },
+    {
+        'description': "Power off a system: <<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> off --wait",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Get the console log of the system: <<<consoleID>>>",
-        'doIf': "'<<<consoleID>>>' != ''",
-        'request': "getvm <<<consoleID>>> consoleoutput",
-        'out': "List of spool files containing console logs " +
-               "from <<<consoleID>>>:",
+        'description': "Check status of powered off system.",
+        'request': "PowerVM <<<safeID>>> status",
+        'out': "<<<safeID>>>: off",
         'overallRC': [0],
+        'rc': [0],
+        'rs': [1]
     },
     {
-        'description': "Power off the system: <<<consoleID>>>",
-        'doIf': "'<<<consoleID>>>' != ''",
-        'request': "PowerVM <<<consoleID>>> off",
-        'out': "",
+        'description': "Check isreachable of powered off system.",
+        'request': "PowerVM <<<safeID>>> isreachable",
+        'out': "<<<safeID>>>: unreachable",
         'overallRC': [0],
+        'rs': [0]
     },
     {
-        'description': "Verify no console log is available: <<<consoleID>>>",
-        'doIf': "'<<<consoleID>>>' != ''",
-        'request': "getvm <<<consoleID>>> consoleoutput",
+        'description': "Power off an already powered off system.",
+        'request': "PowerVM <<<safeID>>> off",
         'out': "",
-        'overallRC': [8],
-        'rc': [8],
-        'rs': [8]
+        'overallRC': [0],
     },
     {
         'description': "Power on a system: <<<safeID>>>",
@@ -1096,60 +990,129 @@ guestTests = [
         'overallRC': [0],
     },
     {
-        'description': "Get the status of the system: <<<safeID>>>",
-        'request': "getvm <<<safeID>>> status --all",
-        'out': "CPU Used Time:",
-        'overallRC': [0],
-    },
-    {
-        'description': "Get the power status of the system: <<<safeID>>>",
-        'request': "getvm <<<safeID>>> status --power",
-        'out': "Power state: on",
-        'overallRC': [0],
-    },
-    {
-        'description': "Get the memory status of the system: <<<safeID>>>",
-        'request': "getvm <<<safeID>>> status --memory",
-        'out': "Total Memory:",
-        'overallRC': [0],
-    },
-    {
-        'description': "Get the cpu status of the system: <<<safeID>>>",
-        'request': "getvm <<<safeID>>> status --cpu",
-        'out': "Processors:",
-        'overallRC': [0],
-    },
-    {
-        'description': "Power off the system: <<<safeID>>>",
-        'request': "PowerVM <<<safeID>>> off",
+        'description': "Power off a system with softOff option: " +
+            "<<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> softoff",
         'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Get the status of the system: <<<safeID>>>",
-        'request': "getvm <<<safeID>>> status",
-        'out': "CPU Used Time: 0 sec",
+        'description': "Power on a system: <<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> on",
+        'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Get the power status of the system: <<<safeID>>>",
-        'request': "getvm <<<safeID>>> status --power",
-        'out': "Power state: off",
+        'description': "Power on a system that is on but not up: " +
+            "<<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> on --wait --state up",
+        'out': "<<<safeID>>>: up",
         'overallRC': [0],
     },
     {
-        'description': "Get the memory status of the system: <<<safeID>>>",
-        'request': "getvm <<<safeID>>> status --memory",
-        'out': "Total Memory: 0M",
+        'description': "Check status of powered on system: <<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> status",
+        'out': "<<<safeID>>>: on",
+        'overallRC': [0],
+        'rc': [0],
+        'rs': [0]
+    },
+    {
+        'description': "Check isreachable of powered on system: " +
+            "<<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> isreachable",
+        'out': "<<<safeID>>>: reachable",
+        'overallRC': [0],
+        'rs': [1]
+    },
+    {
+        'description': "Pause a system: <<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> pause",
+        'out': "",
         'overallRC': [0],
     },
     {
-        'description': "Get the cpu status of the system: <<<safeID>>>",
-        'request': "getvm <<<safeID>>> status --cpu",
-        'out': "Processors: 0",
+        'description': "Isreachable of a paused system is unreachable: " +
+            "<<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> isreachable",
+        'out': "<<<safeID>>>: unreachable",
+        'overallRC': [0],
+        'rs': [0]
+    },
+    {
+        'description': "Unpause a system: <<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> unpause",
+        'out': "",
         'overallRC': [0],
     },
-   ]
+    {
+        'description': "Isreachable of an unpaused system is reachable: " +
+            "<<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> isreachable",
+        'out': "<<<safeID>>>: reachable",
+        'overallRC': [0],
+        'rs': [1]
+    },
+    {
+        'description': "Reset a system: <<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> reset --wait --state up",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Isreachable of an unpaused system is reachable: " +
+            "<<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> isreachable",
+        'out': "<<<safeID>>>: reachable",
+        'overallRC': [0],
+        'rs': [1]
+    },
+    {
+        'description': "Reboot a system: <<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> reboot --wait",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Reboot a system w/o waiting for the OS to be up: " +
+            "<<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> reboot",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Wait for the OS to come up: <<<safeID>>>",
+        'request': "PowerVM <<<safeID>>> wait --state up",
+        'out': "<<<safeID>>>: up",
+        'overallRC': [0],
+        'rs': [0]
+    },
+    ]
+
+smapiTests = [
+    {
+        'description': "Directory related query w/o operands.",
+        'request': "smapi <<<safeID>>> api Image_Query_DM",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Disk pool query with operands.",
+        'request': "smapi <<<safeID>>> api Image_Volume_Space_Query_DM " +
+            "--operands '-q' 1 '-e' 1",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Failing disk pool query with operands.",
+        'request': "smapi <<<safeID>>> api Image_Volume_Space_Query_DM " +
+            "--operands '-q' 4 '-e' 1",
+        'out': "",
+        'overallRC': [8],
+        'rc': [24],
+        'rs': [1018],
+    },
+    ]
 
 
 testSets = {
@@ -1173,13 +1136,13 @@ testSets = {
         'tests': iucvTests},
     'LIFECYCLE': {
         'description': 'VM Life Cycle related tests',
-        'tests': vmLCTests},
+        'tests': lifecycleTests},
     'MIGRATE': {
         'description': 'VM Migration related tests',
         'tests': migrateTests},
     'MODIFY': {
         'description': 'Modify a VM',
-        'tests': vmModifyTests},
+        'tests': modifyTests},
     'POWER': {
         'description': 'VM Power function tests',
         'tests': powerTests},
