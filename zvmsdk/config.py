@@ -174,6 +174,17 @@ user name to access sdk http server.
 password to access sdk http server.
 '''
         ),
+    # database options
+    Opt('path',
+        section='database',
+        default='/zvmsdkDB',
+        opt_type='str',
+        ),
+    Opt('name',
+        section='database',
+        default='ZVMSDKDB.db',
+        opt_type='str',
+        ),
     # tests options
     Opt('image_path',
         section='tests',
