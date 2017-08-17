@@ -256,7 +256,7 @@ def getPerfInfo(rh, useridlist):
 
     if results['overallRC'] == 0:
         memstr = "Total Memory: %iM\n" % totalMem
-        usedmemstr = "Used memory: %iM\n" % usedMem
+        usedmemstr = "Used Memory: %iM\n" % usedMem
         procstr = "Processors: %s\n" % totalCpu
         timestr = "CPU Used Time: %i sec\n" % usedTime
         results['response'] = memstr + usedmemstr + procstr + timestr

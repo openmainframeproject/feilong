@@ -338,6 +338,7 @@ def getStatus(rh):
         # Guest is logged off, everything is 0
         powerStr = "Power state: off"
         memStr = "Total Memory: 0M"
+        usedMemStr = "Used Memory: 0M"
         procStr = "Processors: 0"
         timeStr = "CPU Used Time: 0 sec"
 
@@ -366,19 +367,19 @@ def getStatus(rh):
         else:
             # Everything went well, response should be good
             memStr = results['response'].split("\n")[0]
-            usedmemStr = results['response'].split("\n")[1]
+            usedMemStr = results['response'].split("\n")[1]
             procStr = results['response'].split("\n")[2]
             timeStr = results['response'].split("\n")[3]
 
     # Build our output string according
     # to what information was asked for
     if 'memory' in rh.parms:
-        outStr = memStr + "\n" + usedmemStr
+        outStr = memStr + "\n" + usedMemStr
     elif 'cpu' in rh.parms:
         outStr = procStr + "\n" + timeStr
     else:
         # Default to all
-        outStr = powerStr + "\n" + memStr + "\n" + usedmemStr
+        outStr = powerStr + "\n" + memStr + "\n" + usedMemStr
         outStr += "\n" + procStr + "\n" + timeStr
     rh.printLn("N", outStr)
     rh.printSysLog("Exit getVM.getStatus, rc: " +
