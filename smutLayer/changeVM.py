@@ -151,7 +151,6 @@ def add3390(rh):
     """
 
     rh.printSysLog("Enter changeVM.add3390")
-
     results, cyl = generalUtils.cvtToCyl(rh, rh.parms['diskSize'])
     if results['overallRC'] != 0:
         # message already sent.  Only need to update the final results.
@@ -198,7 +197,8 @@ def add3390(rh):
             rh,
             rh.parms['vaddr'],
             rh.parms['mode'],
-            rh.parms['fileSystem'])
+            rh.parms['fileSystem'],
+            "3390")
 
     if results['overallRC'] == 0:
         results = isLoggedOn(rh, rh.userid)
@@ -252,7 +252,6 @@ def add9336(rh):
     """
 
     rh.printSysLog("Enter changeVM.add9336")
-
     results, blocks = generalUtils.cvtToBlocks(rh, rh.parms['diskSize'])
     if results['overallRC'] != 0:
         # message already sent.  Only need to update the final results.
@@ -300,7 +299,8 @@ def add9336(rh):
             rh,
             rh.parms['vaddr'],
             rh.parms['mode'],
-            rh.parms['fileSystem'])
+            rh.parms['fileSystem'],
+            "9336")
 
     if results['overallRC'] == 0:
         results = isLoggedOn(rh, rh.userid)
