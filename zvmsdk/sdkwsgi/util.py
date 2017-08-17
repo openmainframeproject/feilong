@@ -17,6 +17,7 @@ import six
 
 import webob
 
+from zvmsdk import exception
 from zvmsdk import log
 
 
@@ -144,3 +145,34 @@ def bool_from_string(subject, strict=False, default=False):
         raise ValueError(msg)
     else:
         return default
+
+
+def expected_errors(errors):
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapped(*args, **kwargs):
+            try:
+                return f(*args, **kwargs)
+            except Exception as exc:
+                if isinstance(exc, webob.exc.WSGIHTTPException):
+                    if isinstance(errors, int):
+                        t_errors = (errors,)
+                    else:
+                        t_errors = errors
+                    if exc.code in t_errors:
+                        raise
+                elif isinstance(exc, exception.ValidationError):
+                    # Note(oomichi): Handle a validation error, which
+                    # happens due to invalid API parameters, as an
+                    # expected error.
+                    raise
+
+                LOG.exception("Unexpected exception in API method")
+                msg = ('Unexpected API Error. Please report this at '
+                    'https://bugs.launchpad.net/python-zvm-sdk/+bugs '
+                    'and attach the sdk API log if possible.\n%s') % type(exc)
+                raise webob.exc.HTTPInternalServerError(explanation=msg)
+
+        return wrapped
+
+    return decorator
