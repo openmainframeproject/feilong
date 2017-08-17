@@ -224,6 +224,7 @@ def guest_get_power_state(req):
 
 
 @wsgi_wrapper.SdkWsgify
+@util.expected_errors(400)
 @tokens.validate
 def guest_create(req):
 
