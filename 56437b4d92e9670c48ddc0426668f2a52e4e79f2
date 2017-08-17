@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "33df0d37_eb98e7d1",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-17T07:43:47Z",
+      "side": 1,
+      "message": "can you add more information about this?\notherwise, hard to know how and why to use this conf option...",
+      "range": {
+        "startLine": 127,
+        "startChar": 0,
+        "endLine": 127,
+        "endChar": 19
+      },
+      "revId": "56437b4d92e9670c48ddc0426668f2a52e4e79f2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
