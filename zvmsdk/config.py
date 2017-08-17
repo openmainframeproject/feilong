@@ -106,7 +106,18 @@ logging.DEBUG: All log level (ERROR, WARNING, INFO, DEBUG)
     # zvm options
     Opt('host',
         section='zvm',
-        required=True),
+        required=True,
+        help='''
+z/VM host name of this hypervisor.
+
+This is the name of the hypervisor that is managed by the cloud,
+The admin should refer to the z/VM system configuration file
+SYSTEM_IDENTIFIER statement for the hypervisor name.
+
+Possible values:
+    A 1-8 character string, matching the z/VM system name this
+    compute service is managing.
+    '''),
     Opt('default_nic_vdev',
         section='zvm',
         default='1000',
@@ -142,7 +153,7 @@ The option is combined by 2 parts and use : as separator.
 
 First part is the volume group name from your directory manager
 on your z/VM system, which will be used for ephemeral disks for
-new instances. A dollar sign ($) is not allowed in the name.
+new guest. A dollar sign ($) is not allowed in the name.
 
 Second part is type of the disk in the disk pool.
 The disks in the disk pool must all be the same type (ECKD or FBA).
@@ -158,7 +169,7 @@ Sample configuration:
         help='''
 PROFILE name to use when creating a z/VM guest.
 
-When SDK deploys an instance on z/VM, it can include some
+When SDK deploys an guest on z/VM, it can include some
 common statements from a PROFILE definition.
 This PROFILE must already be included in your z/VM user directory.
 
@@ -172,7 +183,7 @@ Possible values:
         help='''
 Virtual device number for root disk.
 
-When SDK deploys an instance, it creates a root disk and potentially
+When SDK deploys an guest, it creates a root disk and potentially
 several data disks. This value is the virtual device number of the root
 disk.
 
@@ -187,19 +198,48 @@ Sample root disk in user directory:
 '''),
     Opt('client_type',
         section='zvm',
-        default='xcat'),
+        default='xcat',
+        help='''
+Backend type of SDK.
+
+z/VM SDK has a legacy backend called xcat while it's deprecated and only
+used internally. smut is the only valid backend for now.
+    '''),
     # image options
     Opt('temp_path',
         section='image',
-        default='/tmp/zvmsdk/images/'),
+        default='/tmp/zvmsdk/images/',
+        help='''
+Temp path to store image temp information.
+
+During guest creation, image transferred from upper layer need to be
+create some temp files, this option is used to tell SDK where
+to store the temp files, make sure the process running SDK is able to
+read write the directory.
+    '''),
     # network options
     Opt('my_ip',
         section='network',
-        required=True),
+        required=True,
+        help='''
+IP address of the Linux machine which is running SDK on.
+
+Some remote copy operations need to be performed during guest creation,
+this option tell the SDK the host ip which can be used to perform copy
+from and copy to operations.
+    '''),
     # guest options
     Opt('temp_path',
         section='guest',
-        default='/tmp/zvmsdk/guests/'),
+        default='/tmp/zvmsdk/guests/',
+        help='''
+Temp path to store guest temp information.
+
+During guest creation, some temp data need to be stored in order to
+be provided to guest later, this option is used to tell SDK where
+to store the temp files, make sure the process running SDK is able to
+read write the directory.
+    '''),
     Opt('reachable_timeout',
         section='guest',
         default=300,
