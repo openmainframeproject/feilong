@@ -123,6 +123,12 @@ zvm_opts = [
         section='monitor',
         default=600,
         opt_type='int',
+        help='''
+Cached monitor data update interval
+
+When this value is below or equal to zero, the cache
+will be disabled. 
+        '''
         ),
     # wsgi options
     # this option is used when sending http request
