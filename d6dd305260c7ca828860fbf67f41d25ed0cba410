@@ -22,6 +22,23 @@
       "revId": "d6dd305260c7ca828860fbf67f41d25ed0cba410",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5614c152_824437e1",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-08-17T08:29:48Z",
+      "side": 1,
+      "message": "as we talked, it\u0027s not getting a database, in fact, it\u0027s a db connector or db operator.",
+      "revId": "d6dd305260c7ca828860fbf67f41d25ed0cba410",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
