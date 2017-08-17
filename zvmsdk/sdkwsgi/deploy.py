@@ -11,6 +11,8 @@
 #    under the License.
 """Deployment handling for sdk API."""
 
+import json
+import six
 import sys
 import traceback
 import webob
@@ -36,6 +38,43 @@ def walk_class_hierarchy(clazz, encountered=None):
             for subsubclass in walk_class_hierarchy(subclass, encountered):
                 yield subsubclass
             yield subclass
+
+
+class Fault(webob.exc.HTTPException):
+
+    def __init__(self, exception):
+        """Create a Fault for the given webob.exc.exception."""
+        self.wrapped_exc = exception
+        for key, value in list(self.wrapped_exc.headers.items()):
+            self.wrapped_exc.headers[key] = str(value)
+        self.status_int = exception.status_int
+
+    @webob.dec.wsgify()
+    def __call__(self, req):
+
+        code = self.wrapped_exc.status_int
+        fault_name = "SDKFailure"
+        explanation = self.wrapped_exc.explanation
+        LOG.debug("Returning %(code)s to user: %(explanation)s",
+                  {'code': code, 'explanation': explanation})
+
+        fault_data = {
+            fault_name: {
+                'code': code,
+                'message': explanation}}
+        if code == 413 or code == 429:
+            retry = self.wrapped_exc.headers.get('Retry-After', None)
+            if retry:
+                fault_data[fault_name]['retryAfter'] = retry
+
+        self.wrapped_exc.content_type = 'application/json'
+        self.wrapped_exc.charset = 'UTF-8'
+        self.wrapped_exc.text = six.text_type(json.dumps(fault_data))
+
+        return self.wrapped_exc
+
+    def __str__(self):
+        return self.wrapped_exc.__str__()
 
 
 class FaultWrapper(object):
@@ -72,7 +111,7 @@ class FaultWrapper(object):
             outer.explanation = '%s: %s' % (inner.__class__.__name__,
                                             inner.msg)
 
-        return outer
+        return Fault(outer)
 
     @webob.dec.wsgify()
     def __call__(self, req):
