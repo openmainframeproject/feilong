@@ -551,7 +551,7 @@ modifyTests = [
         'description': "Add a 9336 disk to the system with ext4.",
         'doIf': "'<<<pool9336>>>' != ''",
         'request': "changevm <<<unsafePre>>>3 add9336 <<<pool9336>>> " +
-            "101 100m --mode w --filesystem ext4 " +
+            "120 100m --mode w --filesystem ext4 " +
             "--readpw readpw --writepw writepw --multipw multipw",
         'out': "",
         'overallRC': [0],
@@ -559,7 +559,7 @@ modifyTests = [
     {
         'description': "Remove the 9336 disk with ext4.",
         'doIf': "'<<<pool9336>>>' != ''",
-        'request': "changevm <<<unsafePre>>>3 removedisk 101",
+        'request': "changevm <<<unsafePre>>>3 removedisk 120",
         'out': "",
         'overallRC': [0],
     },
@@ -567,14 +567,14 @@ modifyTests = [
         'description': "Add a 9336 disk to the system with xfs.",
         'doIf': "'<<<pool9336>>>' != ''",
         'request': "changevm <<<unsafePre>>>3 add9336 <<<pool9336>>> " +
-            "102 100m --mode w --filesystem xfs",
+            "121 100m --mode w --filesystem xfs",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Remove the 9336 disk with xfs.",
         'doIf': "'<<<pool9336>>>' != ''",
-        'request': "changevm <<<unsafePre>>>3 removedisk 102",
+        'request': "changevm <<<unsafePre>>>3 removedisk 121",
         'out': "",
         'overallRC': [0],
     },
@@ -582,14 +582,14 @@ modifyTests = [
         'description': "Add a 9336 disk to the system with swap.",
         'doIf': "'<<<pool9336>>>' != ''",
         'request': "changevm <<<unsafePre>>>3 add9336 <<<pool9336>>> " +
-            "103 100m --mode w --filesystem swap",
+            "122 100m --mode w --filesystem swap",
         'out': "",
         'overallRC': [0],
     },
     {
         'description': "Remove the 9336 disk with swap.",
         'doIf': "'<<<pool9336>>>' != ''",
-        'request': "changevm <<<unsafePre>>>3 removedisk 103",
+        'request': "changevm <<<unsafePre>>>3 removedisk 122",
         'out': "",
         'overallRC': [0],
     },
@@ -639,7 +639,7 @@ modifyTests = [
         'overallRC': [0],
     },
     {
-        'description': "Online the 101 ECKD disk with ext4: " +
+        'description': "Online the 110 ECKD disk with ext4: " +
             "<<<unsafePre>>>3",
         'request': "CmdVM <<<unsafePre>>>3 cmd '/sbin/cio_ignore -r 110; " +
             "/sbin/chccwdev -e 110'",
@@ -689,6 +689,82 @@ modifyTests = [
         'description': "Remove the 3390 disk with swap: " +
             "<<<unsafePre>>>3 112",
         'request': "changevm <<<unsafePre>>>3 removedisk 112",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add a 9336 disk to an active system with ext4.",
+        'doIf': "'<<<pool9336>>>' != ''",
+        'request': "changevm <<<unsafePre>>>3 add9336 <<<pool9336>>> " +
+            "130 100m --mode w --filesystem ext4 " +
+            "--readpw readpw --writepw writepw --multipw multipw",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Check out the user entry",
+        'request': "GetVM <<<unsafePre>>>3 directory",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Online the 130 ECKD disk with swap: " +
+            "<<<unsafePre>>>3",
+        'request': "CmdVM <<<unsafePre>>>3 cmd '/sbin/cio_ignore -r 130; " +
+            "/sbin/chccwdev -e 130'",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Remove the 9336 disk with ext4.",
+        'doIf': "'<<<pool9336>>>' != ''",
+        'request': "changevm <<<unsafePre>>>3 removedisk 130",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add a 9336 disk to an active system with xfs.",
+        'doIf': "'<<<pool9336>>>' != ''",
+        'request': "changevm <<<unsafePre>>>3 add9336 <<<pool9336>>> " +
+            "131 100m --mode w --filesystem xfs",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Online the 131 ECKD disk with swap: " +
+            "<<<unsafePre>>>3",
+        'request': "CmdVM <<<unsafePre>>>3 cmd '/sbin/cio_ignore -r 131; " +
+            "/sbin/chccwdev -e 131'",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Remove the 9336 disk with xfs.",
+        'doIf': "'<<<pool9336>>>' != ''",
+        'request': "changevm <<<unsafePre>>>3 removedisk 131",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Add a 9336 disk to an active system with swap.",
+        'doIf': "'<<<pool9336>>>' != ''",
+        'request': "changevm <<<unsafePre>>>3 add9336 <<<pool9336>>> " +
+            "132 100m --mode w --filesystem swap",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Online the 132 ECKD disk with swap: " +
+            "<<<unsafePre>>>3",
+        'request': "CmdVM <<<unsafePre>>>3 cmd '/sbin/cio_ignore -r 132; " +
+            "/sbin/chccwdev -e 132'",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
+        'description': "Remove the 9336 disk with swap.",
+        'doIf': "'<<<pool9336>>>' != ''",
+        'request': "changevm <<<unsafePre>>>3 removedisk 132",
         'out': "",
         'overallRC': [0],
     },
