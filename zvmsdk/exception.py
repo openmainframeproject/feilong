@@ -152,6 +152,8 @@ class InvalidName(SDKBaseException):
 
 
 class ValidationError(SDKBaseException):
+    safe = True
+    code = 400
     msg_fmt = 'Validation error: %(detail)s'
 
 
