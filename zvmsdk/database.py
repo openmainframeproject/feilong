@@ -15,6 +15,7 @@
 
 import os
 import sqlite3
+import stat
 
 from zvmsdk import config
 from zvmsdk import constants as const
@@ -37,27 +38,31 @@ def get_DbOperator():
 class DbOperator(object):
 
     def __init__(self):
-
-        database = self._prepare()
-        self._conn = sqlite3.connect(database)
-        # autocommit
-        self._conn.isolation_level = None
+        self._prepare()
 
     def _prepare(self):
-        file_mode = 777
+        path_mode = stat.S_IRWXU + stat.S_IRWXG + stat.S_IRWXO
+        file_mode = stat.S_IRUSR + stat.S_IWUSR + stat.S_IRGRP +\
+                    stat.S_IWGRP + stat.S_IROTH + stat.S_IWOTH
 
         if not os.path.exists(CONF.database.path):
-            os.makedirs(CONF.database.path, file_mode)
+            os.makedirs(CONF.database.path, path_mode)
         else:
-            mode = oct(os.stat(CONF.database.path).st_mode)[-3:]
-            if mode != '777':
-                os.chmod(CONF.database.path, file_mode)
+            path_mode = oct(os.stat(CONF.database.path).st_mode)[-3:]
+            if path_mode != '777':
+                os.chmod(CONF.database.path, path_mode)
 
-        return ''.join((CONF.database.path, "/", const.DATABASE_NAME))
+        database = ''.join((CONF.database.path, "/", const.DATABASE_NAME))
+        self._conn = sqlite3.connect(database)
 
-    def create_table(self, table_name, attribute):
+        db_mode = os.stat(database).st_mode
 
-        create_table_sql = ' '.join((
-                        'create table if not exists %s (' % self.table_name,
-                        '%s);' % attribute))
-        self._conn.execute(create_table_sql)
+        mu = (db_mode & stat.S_IRWXU) >> 6
+        mg = (db_mode & stat.S_IRWXG) >> 3
+        mo = db_mode & stat.S_IRWXO
+
+        if ((mu < 6) or (mg < 6) or (mo < 6)):
+            os.chmod(database, file_mode)
+
+        # autocommit
+        self._conn.isolation_level = None
