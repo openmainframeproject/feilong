@@ -45,6 +45,45 @@ class Database(object):
     def create_table(self, table_name, attribute):
 
         create_table_sql = ' '.join((
-                        'create table if not exists %s (' % self.table_name,
+                        'create table if not exists %s (' % table_name,
                         '%s);' % attribute))
         self._conn.execute(create_table_sql)
+
+    def drop_table(self, table_name):
+        drop_table_sql = 'DROP TABLE %s' % table_name
+        self._conn.execute(drop_table_sql)
+
+    def delete_table_record(self, table_name, filter):
+        delete_record_sql = 'DELETE FROM %s WHERE %s' % (table_name, filter)
+        self._conn.execute(delete_record_sql)
+
+    def insert_table_record(self, table_name, values, column_set=None):
+
+        if column_set is not None:
+            insert_record_sql = ('INSERT INTO %s (%s) VALUES %s' %
+                                 (table_name, column_set, values))
+        else:
+            insert_record_sql = ('INSERT INTO %s VALUES %s' %
+                                 (table_name, values))
+        self._conn.execute(insert_record_sql)
+
+    def update_table_record(self, table_name, values, filter=None):
+
+        if filter is None:
+            update_record_sql = 'UPDATE %s SET %s' % (table_name, values)
+        else:
+            update_record_sql = ('UPDATE %s SET %s WHERE %s' %
+                                 (table_name, values, filter))
+        self._conn.execute(update_record_sql)
+
+    def select_table_record(self, table_name, column_set='*', filter=None):
+        if filter is None:
+            select_record_sql = 'SELECT %s FROM %s' % (column_set, table_name)
+        else:
+            select_record_sql = ('SELECT %s FROM %s WHERE %s' %
+                                 (column_set, table_name, filter))
+        cur = self._conn.cursor()
+        cur.execute(select_record_sql)
+        result = cur.fetchall()
+        cur.close()
+        return result
