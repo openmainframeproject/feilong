@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b65a2f33_a9de40fd",
+        "filename": "zvmsdk/sdkwsgi/schemas/image.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-17T02:45:03Z",
+      "side": 1,
+      "message": "please remove this FIXME\n\nand change additionalProperties to False",
+      "range": {
+        "startLine": 27,
+        "startChar": 0,
+        "endLine": 28,
+        "endChar": 40
+      },
+      "revId": "251a7a5fc856b5137e30e922f50bc56a17da38e9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "309cb470_ba01f6e6",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-17T02:45:03Z",
+      "side": 1,
+      "message": "do you have test for those pattern?",
+      "range": {
+        "startLine": 163,
+        "startChar": 1,
+        "endLine": 172,
+        "endChar": 1
+      },
+      "revId": "251a7a5fc856b5137e30e922f50bc56a17da38e9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6f5fc2c9_849455e3",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-17T02:45:03Z",
+      "side": 1,
+      "message": "any test for this?",
+      "range": {
+        "startLine": 226,
+        "startChar": 0,
+        "endLine": 236,
+        "endChar": 1
+      },
+      "revId": "251a7a5fc856b5137e30e922f50bc56a17da38e9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
