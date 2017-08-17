@@ -140,7 +140,37 @@ Sample NIC definitions in the z/VM user directory:
         '''
         ),
     Opt('logonby_users',
-        section='zvm'),
+        section='zvm',
+        help='''
+Default LOGONBY userid(s) for the cloud.
+
+This is a set of z/VM userid(s) which are allowed to logon using the LOGONBY
+keyword to the guests created by the z/VM SDK solution, compatible with
+the LBYONLY keyword of the user directory statement. This value is only used
+when a guest is created. If you change this value, existing guests' directory
+entries are not automatically updated with the new value.
+When an ESM is installed, this parameter only governs when the ESM
+defers to CP's processing.
+
+Usage note:
+    The default is an empty string (''). When the string is empty, you can't
+    log on to your instances using the 3270 protocol; When a
+    non-empty string is provided, blank chars will be used as delimiter,
+    you can use LOGONBY xxx command to log on the
+    OpenStack created guest using the corresponding admin userid's password.
+
+    For example, when you set this value to 'oper1 oper2 oper3 jones', it means
+    you can use any one of 'oper1', 'oper2', 'oper3', 'jones' as an admin user.
+
+    see the z/VM CP Planning and Administration for additional information.
+
+Possible values:
+    A maximum of 8 blank-delimited strings. Each non-blank string must be a
+    valid z/VM userid.
+    e.g  '' is a valid value.
+         'oper1 oper2' is a valid value.
+         'o1 o2 o3 o4 o5 o6 o7 o8 o9' is NOT a valid value.
+    '''),
     Opt('user_default_password',
         section='zvm'),
     Opt('disk_pool',
