@@ -163,6 +163,26 @@ def cvtToMag(rh, size):
     return mSize
 
 
+def getSizeFromPage(rh, page):
+    """
+    Convert a size value from page to a number with a magnitude appended.
+
+    Input:
+       Request Handle
+       Size in page
+
+    Output:
+       Converted value with a magnitude
+    """
+    rh.printSysLog("Enter generalUtils.getSizeFromPage")
+
+    bSize = float(page) * 4096
+    mSize = cvtToMag(rh, bSize)
+
+    rh.printSysLog("Exit generalUtils.getSizeFromPage, magSize: " + mSize)
+    return mSize
+
+
 def parseCmdline(rh, posOpsList, keyOpsList):
     """
     Parse the request command input.
