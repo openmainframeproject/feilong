@@ -16,6 +16,7 @@ import mock
 import unittest
 import webob.exc
 
+from zvmsdk import exception
 from zvmsdk.sdkwsgi import handler
 from zvmsdk.sdkwsgi.handlers import tokens
 
@@ -329,7 +330,7 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = 'userid=l1,l2&userd=l3,l4'
         h = handler.SdkHandler()
-        self.assertRaises(webob.exc.HTTPBadRequest, h, self.env,
+        self.assertRaises(exception.ValidationError, h, self.env,
                           dummy)
 
     @mock.patch.object(tokens, 'validate')
@@ -367,7 +368,7 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = 'use=l1,l2'
         h = handler.SdkHandler()
-        self.assertRaises(webob.exc.HTTPBadRequest, h, self.env,
+        self.assertRaises(exception.ValidationError, h, self.env,
                           dummy)
 
     @mock.patch.object(tokens, 'validate')
@@ -405,7 +406,7 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = 'userid=l1,l2&userid=l3,l4'
         h = handler.SdkHandler()
-        self.assertRaises(webob.exc.HTTPBadRequest, h, self.env,
+        self.assertRaises(exception.ValidationError, h, self.env,
                           dummy)
 
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')

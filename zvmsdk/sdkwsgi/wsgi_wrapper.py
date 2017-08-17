@@ -11,6 +11,8 @@
 #    under the License.
 """Extend functionality from webob.dec.wsgify for sdk API."""
 
+import json
+import six
 import webob
 
 from webob.dec import wsgify
@@ -32,4 +34,13 @@ class SdkWsgify(wsgify):
             msg = ('encounter %(error)s error') % {'error': exc}
             LOG.debug(msg)
             exc.json_formatter = util.json_error_formatter
-            raise
+            code = exc.status_int
+            fault_name = "SDKFailure"
+            explanation = six.text_type(exc)
+
+            fault_data = {
+                fault_name: {
+                    'code': code,
+                    'message': explanation}}
+            exc.text = six.text_type(json.dumps(fault_data))
+            return exc
