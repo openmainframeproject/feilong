@@ -298,7 +298,7 @@ int imagePerformanceQuery(int argC, char* argV[], struct _vmApiInternalContext* 
             printf("Minimum CPU count: \"%u\"\n", output2->performanceRecords[i].minCPUCount);
             printf("Max CPU limit: \"%u\"\n", output2->performanceRecords[i].maxCPULimit);
             printf("Processor share: \"%u\"\n", output2->performanceRecords[i].processorShare);
-            printf("Samples CPU in use: \"%u\"\n,", output2->performanceRecords[i].samplesCPUInUse);
+            printf("Samples CPU in use: \"%u\"\n", output2->performanceRecords[i].samplesCPUInUse);
             printf("Samples CPU delay: \"%u\"\n", output2->performanceRecords[i].samplesCPUDelay);
             printf("Samples page wait: \"%u\"\n", output2->performanceRecords[i].samplesPageWait);
             printf("Samples idle: \"%u\"\n", output2->performanceRecords[i].samplesIdle);
