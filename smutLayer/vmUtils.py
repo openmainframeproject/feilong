@@ -231,6 +231,7 @@ def getPerfInfo(rh, useridlist):
     usedTime = 0
     totalCpu = 0
     totalMem = 0
+    usedMem = 0
     try:
         for line in lines:
             if "Used CPU time:" in line:
@@ -243,6 +244,9 @@ def getPerfInfo(rh, useridlist):
                 totalMem = line.split()[2].strip('"')
                 # Value is in Kb, need to make it Mb
                 totalMem = int(totalMem) / 1024
+            if "Used memory:" in line:
+                usedMem = line.split()[2].strip('"')
+                usedMem = int(usedMem) / 1024
     except:
         msg = msgs.msg['0412'][1] % (modId, results['response'])
         rh.printLn("ES", msg)
@@ -252,9 +256,10 @@ def getPerfInfo(rh, useridlist):
 
     if results['overallRC'] == 0:
         memstr = "Total Memory: %iM\n" % totalMem
+        usedmemstr = "Used memory: %iM\n" % usedMem
         procstr = "Processors: %s\n" % totalCpu
         timestr = "CPU Used Time: %i sec\n" % usedTime
-        results['response'] = memstr + procstr + timestr
+        results['response'] = memstr + usedmemstr + procstr + timestr
     rh.printSysLog("Exit vmUtils.getPerfInfo, rc: " +
                    str(results['rc']))
     return results
