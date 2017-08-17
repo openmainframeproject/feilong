@@ -96,8 +96,8 @@ class SMUTClient(client.ZVMClient):
                'pri': const.ZVM_USER_DEFAULT_PRIVILEGE,
                'cpu': cpu, 'prof': profile})
 
-        if CONF.zvm.logonby_users:
-            rd += (' --logonby "%s"' % CONF.zvm.logonby_users)
+        if CONF.zvm.default_admin_userid:
+            rd += (' --logonby "%s"' % CONF.zvm.default_admin_userid)
 
         if disk_list and 'is_boot_disk' in disk_list[0]:
             ipl_disk = CONF.zvm.user_root_vdev

@@ -799,11 +799,11 @@ class XCATClient(client.ZVMClient):
                 'privilege=%s' % const.ZVM_USER_DEFAULT_PRIVILEGE]
 
 #         # TODO: add it until xcat support it
-#         if not CONF.zvm.zvm_default_admin_userid:
+#         if not CONF.zvm.default_admin_userid:
 #             body.append('password=LBYONLY')
 #         else:
 #             body.append('password=LBYONLY')
-#             body.append('logonby=%s' % CONF.zvm.zvm_default_admin_userid)
+#             body.append('logonby=%s' % CONF.zvm.default_admin_userid)
 
         if disk_list is None:
             disk_list = []
