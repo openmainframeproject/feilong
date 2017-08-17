@@ -15,6 +15,7 @@
 
 import os
 import sqlite3
+import stat
 
 from zvmsdk import config
 
@@ -24,23 +25,27 @@ CONF = config.CONF
 class Database(object):
 
     def __init__(self):
-
-        database = self._prepare()
-        self._conn = sqlite3.connect(database)
-        # autocommit
-        self._conn.isolation_level = None
+        self._prepare()
 
     def _prepare(self):
-        file_mode = 777
+        file_mode = stat.S_IRWXU + stat.S_IRWXG + stat.S_IRWXO
 
         if not os.path.exists(CONF.database.path):
             os.makedirs(CONF.database.path, file_mode)
         else:
-            mode = oct(os.stat(CONF.database.path).st_mode)[-3:]
-            if mode != '777':
+            path_mode = oct(os.stat(CONF.database.path).st_mode)[-3:]
+            if path_mode != '777':
                 os.chmod(CONF.database.path, file_mode)
 
-        return ''.join((CONF.database.path, "/", CONF.database.name))
+        database = ''.join((CONF.database.path, "/", CONF.database.name))
+        self._conn = sqlite3.connect(database)
+
+        db_mode = oct(os.stat(database).st_mode)[-3:]
+        if db_mode != '777':
+            os.chmod(database, file_mode)
+
+        # autocommit
+        self._conn.isolation_level = None
 
     def create_table(self, table_name, attribute):
 
