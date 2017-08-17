@@ -14,12 +14,11 @@
 import datetime
 import functools
 import jwt
-import webob.exc
 
-
-from zvmsdk.sdkwsgi import wsgi_wrapper
 from zvmsdk import config
+from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk.sdkwsgi import wsgi_wrapper
 
 
 CONF = config.CONF
@@ -32,12 +31,12 @@ DEFAULT_TOKEN_VALIDATION_PERIOD = 30
 def create(req):
     if 'X-Auth-User' not in req.headers:
         LOG.debug('no X-Auth-User given in reqeust header')
-        raise webob.exc.HTTPUnauthorized()
+        raise exception.ZVMUnauthorized()
 
     if (req.headers['X-Auth-User'] != CONF.wsgi.user or
         req.headers['X-Auth-Password'] != CONF.wsgi.password):
         LOG.debug('X-Auth-User or X-Auth-Password incorrect')
-        raise webob.exc.HTTPUnauthorized()
+        raise exception.ZVMUnauthorized()
 
     expires = CONF.wsgi.token_validation_period
     if expires < 0:
@@ -65,19 +64,19 @@ def validate(function):
         # so, this is for token validation
         if 'X-Auth-Token' not in req.headers:
             LOG.debug('no X-Auth-Token given in reqeust header')
-            raise webob.exc.HTTPUnauthorized()
+            raise exception.ZVMUnauthorized()
 
         try:
             jwt.decode(req.headers['X-Auth-Token'], CONF.wsgi.password)
         except jwt.ExpiredSignatureError:
             LOG.debug('token validation failed because it is expired')
-            raise webob.exc.HTTPUnauthorized()
+            raise exception.ZVMUnauthorized()
         except jwt.DecodeError:
             LOG.debug('token not valid')
-            raise webob.exc.HTTPUnauthorized()
+            raise exception.ZVMUnauthorized()
         except Exception:
             LOG.debug('unknown exception occur during token validation')
-            raise webob.exc.HTTPUnauthorized()
+            raise exception.ZVMUnauthorized()
 
         return function(req, *args, **kwargs)
     return wrap_func

@@ -174,3 +174,7 @@ class ZVMClientRequestFailed(SDKBaseException):
 
 class ZVMClientInternalError(SDKBaseException):
     msg_fmt = 'zVM client internal error: %(msg)s'
+
+
+class ZVMUnauthorized(SDKBaseException):
+    code = 401
