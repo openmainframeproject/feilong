@@ -117,7 +117,15 @@ zvm_opts = [
     Opt('console_log_size',
         section='guest',
         default=100,
-        opt_type='int'),
+        opt_type='int',
+        help='''
+The maximum allowed console log size, in kilobytes.
+
+Console logs might be transferred to sdk user, this option controls how
+large each file can be. A smaller size may mean more calls will be needed
+to transfer large consoles, which may not be desirable for performance reasons.
+    '''
+    ),
     # monitor options
     Opt('cache_interval',
         section='monitor',
