@@ -14,6 +14,7 @@
 
 
 from zvmsdk import config
+from zvmsdk import database
 from zvmsdk import log
 from zvmsdk import utils as zvmutils
 
@@ -63,6 +64,7 @@ class ZVMClient(object):
 
     def __init__(self):
         self._pathutils = zvmutils.PathUtils()
+        self._database = database.get_database()
 
     def guest_start(self, userid):
         pass

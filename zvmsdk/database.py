@@ -20,6 +20,18 @@ from zvmsdk import config
 
 CONF = config.CONF
 
+_DATABASE = None
+
+
+def get_database():
+    global _DATABASE
+
+    if _DATABASE is not None:
+        return _DATABASE
+
+    _DATABASE = Database()
+    return _DATABASE
+
 
 class Database(object):
 
