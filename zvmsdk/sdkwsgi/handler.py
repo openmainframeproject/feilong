@@ -116,12 +116,7 @@ def dispatch(environ, start_response, mapper):
     handler = result.pop('action')
 
     environ['wsgiorg.routing_args'] = ((), result)
-    try:
-        return handler(environ, start_response)
-    except exception.ValidationError as exc:
-        LOG.debug('validation error: %(error)s' % {'error': exc})
-        raise webob.exc.HTTPBadRequest(
-            ('JSON does not validate: %(error)s') % {'error': exc})
+    return handler(environ, start_response)
 
 
 def handle_405(environ, start_response):

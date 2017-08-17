@@ -53,7 +53,7 @@ class RequestLog(object):
     def _log_app(self, environ, start_response):
         req_uri = self._get_uri(environ)
 
-        def replacement_start_response(status, headers, exc_info=None):
+        def _start_response(status, headers, exc_info=None):
             """We need to gaze at the content-length, if set, to
             write log info.
             """
@@ -64,7 +64,7 @@ class RequestLog(object):
             self.write_log(environ, req_uri, status, size)
             return start_response(status, headers, exc_info)
 
-        return self.application(environ, replacement_start_response)
+        return self.application(environ, _start_response)
 
     def write_log(self, environ, req_uri, status, size):
         """Write the log info out in a formatted form to ``LOG.info``.
