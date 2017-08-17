@@ -123,6 +123,21 @@ zvm_opts = [
         section='monitor',
         default=600,
         opt_type='int',
+        help='''
+Cached monitor data update interval
+
+This is used to prevent excessive effort spent retrieving the
+monitor data by calling the SDK backend utilities. When this cache
+is enabled, a inspect call will only call the SDK backend utilities
+when the inspected guest's info does not exist in the cache or
+when the cache data is expired. And when an cache update is needed,
+all the existing guests' data will be retrieved in a single call to
+the backend.
+
+When this value is below or equal to zero, the cache
+will be disabled and each inspect call will need to call the backend
+utilities to get the inspected guest's monitor data.
+        '''
         ),
     # wsgi options
     # this option is used when sending http request
