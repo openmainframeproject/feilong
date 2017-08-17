@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6a667563_99ace850",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1010896
+      },
+      "writtenOn": "2017-08-17T05:53:59Z",
+      "side": 1,
+      "message": "As mentioned in official document, we should use the DB-API’s parameter substitution instead of Python’s string operations, which is insecure and easy to be SQL injection attacked. For example: self._conn.execute(\u0027DROP TABLE ?\u0027, (table_name, ))",
+      "range": {
+        "startLine": 53,
+        "startChar": 25,
+        "endLine": 53,
+        "endChar": 53
+      },
+      "revId": "b786febc24a1380a66d698b7921aaa11977e53ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
