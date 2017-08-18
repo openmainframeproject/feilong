@@ -61,3 +61,6 @@ class DbOperator(object):
                         'create table if not exists %s (' % self.table_name,
                         '%s);' % attribute))
         self._conn.execute(create_table_sql)
+
+    def get_connection(self):
+        return self._conn
