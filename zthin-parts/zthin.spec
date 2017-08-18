@@ -51,7 +51,7 @@ mkdir -p /var/log/zthin
 touch /var/log/zthin/zthin.log
 
 # syslog located in different directories in Red Hat/SUSE
-ZTHIN_LOG_HEADER="# Logging for xCAT zThin"
+ZTHIN_LOG_HEADER="# Logging for SDK zThin"
 ZTHIN_LOG="/var/log/zthin/zthin.log"
 echo "Configuring syslog"
 
