@@ -1,3 +1,3 @@
 {
-  "guests": ["v1", "v2"]
+    u"guests": [u"vm01", u"vm02"]
 }
