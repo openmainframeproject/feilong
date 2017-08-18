@@ -195,11 +195,6 @@ password to access sdk http server.
         default='/zvmsdkDB',
         opt_type='str',
         ),
-    Opt('name',
-        section='database',
-        default='ZVMSDKDB.db',
-        opt_type='str',
-        ),
     # tests options
     Opt('image_path',
         section='tests',

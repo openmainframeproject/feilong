@@ -17,11 +17,24 @@ import os
 import sqlite3
 
 from zvmsdk import config
+from zvmsdk import constants as const
 
 CONF = config.CONF
 
+_DB_OPERATOR = None
 
-class Database(object):
+
+def get_DbOperator():
+    global _DB_OPERATOR
+
+    if _DB_OPERATOR is not None:
+        return _DB_OPERATOR
+
+    _DB_OPERATOR = DbOperator()
+    return _DB_OPERATOR
+
+
+class DbOperator(object):
 
     def __init__(self):
 
@@ -40,7 +53,7 @@ class Database(object):
             if mode != '777':
                 os.chmod(CONF.database.path, file_mode)
 
-        return ''.join((CONF.database.path, "/", CONF.database.name))
+        return ''.join((CONF.database.path, "/", const.DATABASE_NAME))
 
     def create_table(self, table_name, attribute):
 

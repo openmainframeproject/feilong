@@ -57,6 +57,7 @@ VOLUME_MULTI_PASS = 'MULTI'
 POWER_STATE_ON = u'on'
 POWER_STATE_OFF = u'off'
 
+DATABASE_NAME = 'ZVMSDKDB.db'
 
 _TSTR = types.StringTypes
 _TNONE = types.NoneType
