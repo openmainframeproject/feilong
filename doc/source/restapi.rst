@@ -45,8 +45,10 @@ Create token
 
 * Request:
 
-  - user:
-  - password:
+.. restapi_parameters:: parameters.yaml
+
+  - user: token_user
+  - password: token_password
 
 * Response code:
 
@@ -75,8 +77,9 @@ List Guests
 * Response contents:
 
   `FIXME`: should only list guests managed/created by SDK.
+.. restapi_parameters:: parameters.yaml
 
-  - guests:
+  - guests: guest_list
 
 * Response sample:
 
@@ -90,11 +93,13 @@ Create Guest
 
 * Request:
 
-  - userid: 
-  - vcpus:
-  - memory:
-  - user_profile:
-  - disk_list:
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - vcpus: guest_vcpus
+  - memory: guest_memory
+  - user_profile: user_profile_guest
+  - disk_list: disk_list_guest
 
 * Response code:
 
@@ -109,7 +114,9 @@ Get Guests cpu info
 
 * Request:
 
-  No parameters needed.
+.. restapi_parameters:: parameters.yaml
+
+  - userid_list: userid_list_guest
 
 * Response code:
 
@@ -117,7 +124,9 @@ Get Guests cpu info
 
 * Response contents:
 
-  - cpu:
+.. restapi_parameters:: parameters.yaml
+
+  - cpu: cpu_info
 
 * Response sample:
 

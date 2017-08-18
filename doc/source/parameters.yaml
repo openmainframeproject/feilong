@@ -1,0 +1,102 @@
+token_user:
+  description: |
+    user
+  in: header
+  required: true
+  type: string
+
+token_password:
+  description: |
+    password
+  in: header
+  required: true
+  type: string
+
+guest_list:
+  description: |
+    guests list
+  in: header
+  required: true
+  type: list
+
+guest_userid:
+  description: |
+    guest userid
+  in: header
+  required: true
+  type: string
+
+guest_vcpus:
+  description: |
+    amount of vcpus
+  in: header
+  required: true
+  type: integer
+
+guest_memory:
+  description: |
+    size of memory in MB
+  in: header
+  required: true
+  type: integer
+
+user_profile_guest:
+  description: |
+    profile of guest
+  in: header
+  required: false
+  type: string
+
+disk_list_guest:
+  description: |
+    a list of disks info for the guest.
+    It has one dictionary that contain some of the below keys for
+    each disk, the root disk should be the first element in the list,
+    the format is:
+    .. code-block:: javascript
+
+        {'size': str,
+         'format': str,
+         'is_boot_disk': bool,
+         'disk_pool': str}
+
+    - ``size``: In which, case insensitive, the unit can be in
+    Megabytes (M), Gigabytes (G), or number of cylinders/blocks, eg
+    512M, 1g or just 2000.
+    - ``format``: can be ext2, ext3, ext4, xfs.
+    - ``is_boot_disk``: only root disk need to set this key.
+    - ``disk_pool``: optional, if not specified, the disk will be
+
+    created by using the value from configure file,the format is
+    ECKD:eckdpoolname or FBA:fbapoolname.
+    For example:
+    .. code-block:: javascript
+
+        [{'size': '1g',
+          'is_boot_disk': True,
+          'disk_pool': 'ECKD:eckdpool1'},
+         {'size': '200000',
+          'disk_pool': 'FBA:fbapool1',
+          'format': 'ext3'}]
+    In this case it will create one disk 0100(in case the vdev
+    for root disk is 0100) with size 1g from ECKD disk pool
+    eckdpool1 for guest , then set IPL 0100 in guest's user
+    directory, and it will create 0101 with 200000 blocks from
+    FBA disk pool fbapool1, and formated with ext3.
+  in: header
+  required: false
+  type: string
+
+userid_list_guest:
+  description: |
+      a single userid string or a list of guest userids
+  in: header
+  required: true
+  type: list
+
+cpu_info:
+  description: |
+    cpu statics of the guest
+  in: header
+  required: true
+  type: dict
