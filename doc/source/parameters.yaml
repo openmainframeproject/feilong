@@ -1,0 +1,13 @@
+token_user:
+  description: |
+    user
+  in: header
+  required: true
+  type: string
+
+token_password:
+  description: |
+    password
+  in: header
+  required: true
+  type: string
