@@ -47,12 +47,6 @@ class ImageTestCase(unittest.TestCase):
         self.assertEqual(200, resp.status_code)
         return resp
 
-    def _image_delete(self):
-        url = '/images/rhel7.2-s390x-netboot-image1'
-        resp = self.client.api_request(url=url, method='DELETE')
-        self.assertEqual(204, resp.status_code)
-        return resp
-
     def _image_get_root_disk_size(self):
         # Note here we query the image that already exist in the test system
         # it might be changed if the test system is changed

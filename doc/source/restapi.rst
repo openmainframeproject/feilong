@@ -6,7 +6,6 @@ This is a reference for the cloudlib4zvm API.
 
 Version
 =======
-
 Lists version of this API.
 
 Get SDK version
@@ -26,9 +25,11 @@ Get SDK version
 
   Return the version of the SDK API.
 
-  - min_version:
-  - max_version:
-  - version:
+.. restapi_parameters:: parameters.yaml
+
+  - min_version: min_version_sdk
+  - max_version: max_version_sdk
+  - version: version_sdk
 
 * Response sample:
 
@@ -45,8 +46,15 @@ Create token
 
 * Request:
 
-  - user:
-  - password:
+.. restapi_parameters:: parameters.yaml
+
+  - user: token_user
+  - password: token_password
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_create_token.tpl
+   :language: javascript
 
 * Response code:
 
@@ -76,7 +84,9 @@ List Guests
 
   `FIXME`: should only list guests managed/created by SDK.
 
-  - guests:
+.. restapi_parameters:: parameters.yaml
+
+  - guests: guest_list
 
 * Response sample:
 
@@ -90,11 +100,18 @@ Create Guest
 
 * Request:
 
-  - userid: 
-  - vcpus:
-  - memory:
-  - user_profile:
-  - disk_list:
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - vcpus: guest_vcpus
+  - memory: guest_memory
+  - user_profile: user_profile_guest
+  - disk_list: disk_list_guest
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_create.tpl
+   :language: javascript
 
 * Response code:
 
@@ -109,7 +126,9 @@ Get Guests cpu info
 
 * Request:
 
-  No parameters needed.
+.. restapi_parameters:: parameters.yaml
+
+  - userid_list: userid_list_guest
 
 * Response code:
 
@@ -117,7 +136,9 @@ Get Guests cpu info
 
 * Response contents:
 
-  - cpu:
+.. restapi_parameters:: parameters.yaml
+
+  - cpu: cpu_info
 
 * Response sample:
 
@@ -224,6 +245,7 @@ Delete Guest
   HTTP status code 204 on success.
 
 * Response contents:
+
 
 Get Guest info
 --------------
