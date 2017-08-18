@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e11f31d5_1fdb06b8",
+        "filename": "zvmsdk/sdkwsgi/schemas/image.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-18T03:23:40Z",
+      "side": 1,
+      "message": "this need to be changed",
+      "range": {
+        "startLine": 27,
+        "startChar": 12,
+        "endLine": 28,
+        "endChar": 40
+      },
+      "revId": "dca6b9059071f19e5f296151bb6edf5ca46c6c65",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fd41b3d1_aff3b652",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-18T03:23:40Z",
+      "side": 1,
+      "message": "we need make sure with yalian on this \n\nwe not only support openstack ,but other solutions",
+      "range": {
+        "startLine": 207,
+        "startChar": 5,
+        "endLine": 208,
+        "endChar": 71
+      },
+      "revId": "dca6b9059071f19e5f296151bb6edf5ca46c6c65",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
