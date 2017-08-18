@@ -45,8 +45,10 @@ Create token
 
 * Request:
 
-  - user:
-  - password:
+.. restapi_parameters:: parameters.yaml
+
+  - user: token_user
+  - password: token_password
 
 * Response code:
 
