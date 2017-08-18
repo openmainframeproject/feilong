@@ -40,6 +40,8 @@ mkdir -p $RPM_BUILD_ROOT/etc/ld.so.conf.d
 cp config/zthin.conf $RPM_BUILD_ROOT/etc/ld.so.conf.d
 chmod -R 755 zthin/bin/*
 chmod -R 755 zthin/lib/*
+chmod -R 644 zthin/bin/IUCV/iucvserd
+chmod -R 644 zthin/bin/IUCV/iucvserd.service
 cp -rf zthin/bin/* $RPM_BUILD_ROOT/opt/zthin/bin
 cp zthin/lib/* $RPM_BUILD_ROOT/opt/zthin/lib
 echo "zthin version: "%{version} "Built on: "%{builddate} > $RPM_BUILD_ROOT/opt/zthin/version
@@ -51,7 +53,7 @@ mkdir -p /var/log/zthin
 touch /var/log/zthin/zthin.log
 
 # syslog located in different directories in Red Hat/SUSE
-ZTHIN_LOG_HEADER="# Logging for xCAT zThin"
+ZTHIN_LOG_HEADER="# Logging for SDK zThin"
 ZTHIN_LOG="/var/log/zthin/zthin.log"
 echo "Configuring syslog"
 

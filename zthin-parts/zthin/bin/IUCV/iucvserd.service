@@ -1,5 +1,5 @@
 [Unit]
-Description=IUCV agent service which is used to communicate with xCAT for z/VM.
+Description=IUCV agent service which is used to communicate with zthin server for z/VM.
 Wants=local-fs.target
 After=local-fs.target
 Before=

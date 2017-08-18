@@ -118,7 +118,7 @@ elif [[ "$lnx_name" = "Red" && $lnx_version -ge 7 ]] || [[ "$lnx_name" = "Ubuntu
         exit 1
     fi
     systemctl daemon-reload >>/var/log/messages
-    systemctl restart iucvserd >>/var/log/messages
+    systemctl start iucvserd.service >>/var/log/messages
 
     # roll back
     ps_iucv=`ps -ef|grep -c iucvserv`
@@ -152,7 +152,7 @@ elif [[ "$lnx_name" = "SUSE" && $lnx_version -ge 12 ]]; then
         exit 1
     fi
     systemctl daemon-reload >>/var/log/messages
-    systemctl restart iucvserd >>/var/log/messages
+    systemctl start iucvserd.service >>/var/log/messages
 
     # roll back
     ps_iucv=`ps -ef|grep -c iucvserv`

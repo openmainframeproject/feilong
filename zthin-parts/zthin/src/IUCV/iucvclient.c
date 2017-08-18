@@ -346,7 +346,8 @@ int main(int argc, char *argv[])
     int need_reconnect = 1;
     int check_upgrade_version = 0;
 
-    openlog(NULL, 0, LOG_LOCAL5);
+    /* Print the log to console and /var/log/messages */
+    openlog(NULL, LOG_CONS, 0);
     if (argc < 3)
     {
         if (argc==2 && strcmp(argv[1],"--version")==0)
@@ -460,7 +461,7 @@ int main(int argc, char *argv[])
                     close(sockfd);
                     return FILE_TRANSPORT_ERROR;
                 }
-                printf("Receive %s, begin to send file.\n", buffer);
+                //printf("Receive %s, begin to send file.\n", buffer);
                 if (n < 0 || strcmp(buffer,READY_TO_RECEIVE) != 0)
                 {
                     sprintf(result, "ERROR: Server can't receive file. Reason: %s.", buffer);

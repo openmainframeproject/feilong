@@ -595,7 +595,7 @@ int main(int argc,char* argv[])
             {
                 return 0;
             }
-            else if (rt ==-1)
+            else if (rt == -1)
             {
                 syslog(LOG_INFO,"IUCV server upgrade finished, exit from old iucvserv.");
                 return 0;
@@ -610,12 +610,13 @@ int main(int argc,char* argv[])
         while (1)
         {
             syslog(LOG_INFO,"Begin a new socket.\n");
+            rt = server_socket();
             //address in used
-            if (server_socket() == 98)
+            if (rt == 98)
             {
                 return 0;
             }
-            else if (rt ==-1)
+            else if (rt == -1)
             {
                 syslog(LOG_INFO,"IUCV server upgrade finished, exit from old iucvserv.");
                 return 0;
