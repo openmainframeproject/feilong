@@ -455,3 +455,16 @@ class HandlersGuestTest(SDKWSGITest):
         self.assertRaises(exception.ValidationError,
                           guest.guest_couple_uncouple_nic,
                           self.req)
+
+    @mock.patch.object(guest.VMHandler, 'create')
+    def test_guest_create_unauthorized(self, mock_create):
+        body_str = '{"guest": {"userid": "name1", "vcpus": 1, "memory": 1}}'
+        self.req.body = body_str
+        mock_create.side_effect = webob.exc.HTTPBadRequest
+
+        self.assertRaises(webob.exc.HTTPBadRequest,
+                          guest.guest_create, self.req)
+
+        mock_create.side_effect = Exception
+        self.assertRaises(webob.exc.HTTPInternalServerError,
+                          guest.guest_create, self.req)
