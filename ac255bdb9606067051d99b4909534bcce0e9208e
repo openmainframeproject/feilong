@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1a6b1e9d_80ff285b",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 711,
+      "author": {
+        "id": 1011375
+      },
+      "writtenOn": "2017-08-18T05:51:43Z",
+      "side": 1,
+      "message": "Shouldn\u0027t it be FBA disk with ext4 here ?",
+      "range": {
+        "startLine": 711,
+        "startChar": 39,
+        "endLine": 711,
+        "endChar": 43
+      },
+      "revId": "ac255bdb9606067051d99b4909534bcce0e9208e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4ca5b591_8b916022",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 734,
+      "author": {
+        "id": 1011375
+      },
+      "writtenOn": "2017-08-18T05:51:43Z",
+      "side": 1,
+      "message": "Shouldn\u0027t it be FBA disk with xfs here ?",
+      "range": {
+        "startLine": 734,
+        "startChar": 39,
+        "endLine": 734,
+        "endChar": 43
+      },
+      "revId": "ac255bdb9606067051d99b4909534bcce0e9208e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "015765a6_12e0dcc5",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 757,
+      "author": {
+        "id": 1011375
+      },
+      "writtenOn": "2017-08-18T05:51:43Z",
+      "side": 1,
+      "message": "FBA ?",
+      "range": {
+        "startLine": 757,
+        "startChar": 39,
+        "endLine": 757,
+        "endChar": 43
+      },
+      "revId": "ac255bdb9606067051d99b4909534bcce0e9208e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
