@@ -66,3 +66,6 @@ class DbOperator(object):
 
         # autocommit
         self._conn.isolation_level = None
+
+    def get_connection(self):
+        return self._conn
