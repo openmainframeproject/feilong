@@ -1,0 +1,81 @@
+min_version_sdk:
+  description: |
+    min version of SDK
+  in: header
+  required: true
+  type: string
+max_version_sdk:
+  description: |
+    max version of SDK
+  in: header
+  required: true
+  type: string
+version_sdk:
+  description: |
+    version of SDK
+  in: header
+  required: true
+  type: string
+token_user:
+  description: |
+    user
+  in: body
+  required: true
+  type: string
+token_password:
+  description: |
+    password
+  in: body
+  required: true
+  type: string
+guest_list:
+  description: |
+    guests list
+  in: body
+  required: true
+  type: list
+guest_userid:
+  description: |
+    guest userid
+  in: body
+  required: true
+  type: string
+guest_vcpus:
+  description: |
+    amount of vcpus
+  in: body
+  required: true
+  type: integer
+guest_memory:
+  description: |
+    size of memory in MB
+  in: body
+  required: true
+  type: integer
+user_profile_guest:
+  description: |
+    profile of guest
+  in: body
+  required: false
+  type: string
+disk_list_guest:
+  description: |
+    disk list of guest
+    It has one dictionary that contain some of the below keys for
+    each disk, the root disk should be the first element in the
+    list.
+  in: body
+  required: false
+  type: list
+userid_list_guest:
+  description: |
+      a single userid string or a list of guest userids
+  in: body
+  required: true
+  type: list
+cpu_info:
+  description: |
+    cpu statics of the guest
+  in: body
+  required: true
+  type: dict
