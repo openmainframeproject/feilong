@@ -13,7 +13,6 @@
 #    under the License.
 
 
-import contextlib
 import os
 import tempfile
 
@@ -31,27 +30,6 @@ CONF = config.CONF
 LOG = log.LOG
 
 
-@contextlib.contextmanager
-def expect_smut_request_failed_and_reraise(exc, **kwargs):
-    """Catch all kinds of smut request failure and reraise.
-
-    exc: the exception that would be raised.
-    """
-    try:
-        yield
-    except exception.ZVMSMUTRequestFailed as err:
-        msg = err.format_message()
-        kwargs['msg'] = msg
-        LOG.error(msg)
-        raise exc(results=err.results, **kwargs)
-    except (exception.ZVMInvalidResponseDataError,
-            exception.ZVMSMUTInternalError) as err:
-        msg = err.format_message()
-        kwargs['msg'] = msg
-        LOG.error(msg)
-        raise exc(**kwargs)
-
-
 class SMUTClient(client.ZVMClient):
 
     def __init__(self):
@@ -63,10 +41,10 @@ class SMUTClient(client.ZVMClient):
             results = self._smut.request(requestData)
         except Exception as err:
             LOG.error('SMUT internal parse encounter error')
-            raise exception.ZVMSMUTInternalError(msg=err)
+            raise exception.ZVMClientInternalError(msg=err)
 
         if results['overallRC'] != 0:
-            raise exception.ZVMSMUTRequestFailed(results=results)
+            raise exception.ZVMClientRequestFailed(results=results)
         return results
 
     def get_power_state(self, userid):
@@ -173,7 +151,7 @@ class SMUTClient(client.ZVMClient):
 
         # Purge guest reader to clean dirty data
         rd = ("changevm %s purgerdr" % userid)
-        with expect_smut_request_failed_and_reraise(
+        with zvmutils.expect_request_failed_and_reraise(
             exception.ZVMGuestDeployFailed, userid=userid):
             self._request(rd)
 
@@ -200,7 +178,7 @@ class SMUTClient(client.ZVMClient):
                 # Punch config drive to guest userid
                 rd = ("changevm %(uid)s punchfile %(file)s --class X" %
                       {'uid': userid, 'file': local_trans})
-                with expect_smut_request_failed_and_reraise(
+                with zvmutils.expect_request_failed_and_reraise(
                     exception.ZVMGuestDeployFailed, userid=userid):
                     self._request(rd)
             finally:
@@ -217,7 +195,7 @@ class SMUTClient(client.ZVMClient):
             "-k grant_userid=%s" % userid,
             "-k persist=YES"))
 
-        with expect_smut_request_failed_and_reraise(
+        with zvmutils.expect_request_failed_and_reraise(
             exception.ZVMNetworkError):
             self._request(requestData)
 
@@ -231,6 +209,6 @@ class SMUTClient(client.ZVMClient):
             "-k revoke_userid=%s" % userid,
             "-k persist=YES"))
 
-        with expect_smut_request_failed_and_reraise(
+        with zvmutils.expect_request_failed_and_reraise(
             exception.ZVMNetworkError):
             self._request(requestData)

@@ -748,7 +748,7 @@ class SDKXCATClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(xcatclient, 'xcat_request')
     def test_private_power_state_invalid_node(self, xreq):
-        xreq.side_effect = exception.ZVMXCATRequestFailed(xcatserver='xcat',
+        xreq.side_effect = exception.ZVMClientRequestFailed(
             msg='error: Invalid nodes and/or groups: fakenode')
         self.assertRaises(exception.ZVMVirtualMachineNotExist,
             self._xcatclient._power_state, 'fakeid', 'GET', ['state'])
@@ -1290,7 +1290,7 @@ class SDKXCATClientTestCases(base.SDKTestCase):
     def test_delete_userid_not_exist(self, delete_xcat_node, xrequest):
         fake_userid = 'fakeuser'
         fake_url = self._xcat_url.rmvm('/' + fake_userid)
-        xrequest.side_effect = exception.ZVMXCATInternalError(
+        xrequest.side_effect = exception.ZVMClientInternalError(
             'Return Code: 400\nReason Code: 4\n')
 
         self._xcatclient.delete_userid(fake_userid)
@@ -1311,7 +1311,7 @@ class SDKXCATClientTestCases(base.SDKTestCase):
     def test_delete_vm_with_locked_device(self, delete_userid, unlock_devices,
                                           clean_net):
         fake_userid = 'fakeuser'
-        delete_userid.side_effect = [exception.ZVMXCATInternalError(
+        delete_userid.side_effect = [exception.ZVMClientInternalError(
         'Return Code: 408\n Reason Code: 12\n'), None]
 
         self._xcatclient.delete_vm(fake_userid)
@@ -1322,9 +1322,9 @@ class SDKXCATClientTestCases(base.SDKTestCase):
     @mock.patch.object(xcatclient.XCATClient, 'delete_userid')
     def test_delete_vm_node_not_exist(self, delete_userid, clean_net):
         fake_userid = 'fakeuser'
-        delete_userid.side_effect = exception.ZVMXCATRequestFailed('msg')
+        delete_userid.side_effect = exception.ZVMClientRequestFailed(msg='msg')
 
-        self.assertRaises(exception.ZVMXCATRequestFailed,
+        self.assertRaises(exception.ZVMClientRequestFailed,
                           self._xcatclient.delete_vm, fake_userid)
 
     @mock.patch.object(xml.dom.minidom, 'Document')

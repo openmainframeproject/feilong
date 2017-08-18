@@ -400,6 +400,27 @@ def wrap_invalid_resp_data_error(function):
     return decorated_function
 
 
+@contextlib.contextmanager
+def expect_request_failed_and_reraise(exc, **kwargs):
+    """Catch all kinds of zvm client request failure and reraise.
+
+    exc: the exception that would be raised.
+    """
+    try:
+        yield
+    except exception.ZVMClientRequestFailed as err:
+        msg = err.format_message()
+        kwargs['msg'] = msg
+        LOG.error(msg)
+        raise exc(results=err.results, **kwargs)
+    except (exception.ZVMInvalidResponseDataError,
+            exception.ZVMClientInternalError) as err:
+        msg = err.format_message()
+        kwargs['msg'] = msg
+        LOG.error(msg)
+        raise exc(**kwargs)
+
+
 # mappings for zvm driver/plugin compatible
 def get_xcatclient():
     return import_object('zvmsdk.client.get_xcatclient')
@@ -443,7 +464,7 @@ def get_smut_userid():
         return userid
     except Exception as err:
         msg = ("Could not find the userid of the smut server: %s") % err
-        raise exception.ZVMSMUTInternalError(msg=msg)
+        raise exception.ZVMClientInternalError(msg=msg)
 
 
 def generate_iucv_authfile(fn, client):

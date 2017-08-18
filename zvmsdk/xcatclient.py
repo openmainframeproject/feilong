@@ -234,18 +234,18 @@ class XCATConnection(object):
         except socket.gaierror as err:
             msg = ("Failed to connect xCAT server %(srv)s: %(err)s" %
                    {'srv': self.host, 'err': err})
-            raise exception.ZVMXCATRequestFailed(msg)
+            raise exception.ZVMClientRequestFailed(msg=msg)
         except (socket.error, socket.timeout) as err:
             msg = ("Communicate with xCAT server %(srv)s error: %(err)s" %
                    {'srv': self.host, 'err': err})
-            raise exception.ZVMXCATRequestFailed(msg)
+            raise exception.ZVMClientRequestFailed(msg=msg)
 
         try:
             res = self.conn.getresponse()
         except Exception as err:
             msg = ("Failed to get response from xCAT server %(srv)s: "
                      "%(err)s" % {'srv': self.host, 'err': err})
-            raise exception.ZVMXCATRequestFailed(msg)
+            raise exception.ZVMClientRequestFailed(msg=msg)
 
         msg = res.read()
         resp = {
@@ -268,7 +268,7 @@ class XCATConnection(object):
         if err is not None:
             msg = ('Request to xCAT server %(srv)s failed:  %(err)s' %
                    {'srv': self.host, 'err': err})
-            raise exception.ZVMXCATRequestFailed(msg)
+            raise exception.ZVMClientRequestFailed(msg=msg)
 
         return resp
 
@@ -344,9 +344,9 @@ def expect_xcat_call_failed_and_reraise(exc, **kwargs):
     """
     try:
         yield
-    except (exception.ZVMXCATRequestFailed,
+    except (exception.ZVMClientRequestFailed,
             exception.ZVMInvalidResponseDataError,
-            exception.ZVMXCATInternalError) as err:
+            exception.ZVMClientInternalError) as err:
         msg = err.format_message()
         kwargs['msg'] = msg
         LOG.error('XCAT response return error: %s', msg)
@@ -358,8 +358,8 @@ def expect_invalid_xcat_node_and_reraise(userid):
     """Catch <Invalid nodes and/or groups in noderange: > and reraise."""
     try:
         yield
-    except (exception.ZVMXCATRequestFailed,
-            exception.ZVMXCATInternalError) as err:
+    except (exception.ZVMClientRequestFailed,
+            exception.ZVMClientInternalError) as err:
         msg = err.format_message()
         if "Invalid nodes and/or groups" in msg:
             raise exception.ZVMVirtualMachineNotExist(
@@ -438,7 +438,7 @@ def load_xcat_resp(message):
                 # ignore known warnings or errors:
                 continue
             else:
-                raise exception.ZVMXCATInternalError(msg=message)
+                raise exception.ZVMClientInternalError(msg=message)
 
     _log_warnings(resp)
 
@@ -507,7 +507,7 @@ class XCATClient(client.ZVMClient):
         """"Power on VM."""
         try:
             self._power_state(userid, "PUT", "on")
-        except exception.ZVMXCATInternalError as err:
+        except exception.ZVMClientInternalError as err:
             err_str = err.format_message()
             if ("Return Code: 200" in err_str and
                     "Reason Code: 8" in err_str):
@@ -1239,9 +1239,9 @@ class XCATClient(client.ZVMClient):
 
         try:
             xcat_request("POST", url, body)
-        except (exception.ZVMXCATRequestFailed,
+        except (exception.ZVMClientRequestFailed,
                 exception.ZVMInvalidResponseDataError,
-                exception.ZVMXCATInternalError) as err:
+                exception.ZVMClientInternalError) as err:
             msg = ("Import the image bundle to xCAT MN failed: %s" %
                    err.format_message())
             raise exception.ZVMImageError(msg=msg)
@@ -1695,7 +1695,7 @@ class XCATClient(client.ZVMClient):
             LOG.warning("Clean MAC and VSWITCH failed in delete_userid")
         try:
             self.delete_userid(userid)
-        except exception.ZVMXCATInternalError as err:
+        except exception.ZVMClientInternalError as err:
             emsg = err.format_message()
             if (emsg.__contains__("Return Code: 400") and
                     emsg.__contains__("Reason Code: 12")):
@@ -1711,7 +1711,7 @@ class XCATClient(client.ZVMClient):
                 raise err
             # delete the vm after unlock
             self.delete_userid(userid)
-        except exception.ZVMXCATRequestFailed as err:
+        except exception.ZVMClientRequestFailed as err:
             emsg = err.format_message()
             if (emsg.__contains__("Invalid nodes and/or groups") and
                     emsg.__contains__("Forbidden")):
@@ -1725,7 +1725,7 @@ class XCATClient(client.ZVMClient):
         url = self._xcat_url.rmdef('/' + nodename)
         try:
             xcat_request("DELETE", url)
-        except exception.ZVMXCATInternalError as err:
+        except exception.ZVMClientInternalError as err:
             if err.format_message().__contains__("Could not find an object"):
                 # The xCAT node not exist
                 return
@@ -1764,7 +1764,7 @@ class XCATClient(client.ZVMClient):
         url = self._xcat_url.rmvm('/' + userid)
         try:
             xcat_request("DELETE", url)
-        except exception.ZVMXCATInternalError as err:
+        except exception.ZVMClientInternalError as err:
             emsg = err.format_message()
             LOG.debug("error emsg in delete_userid: %s", emsg)
             if (emsg.__contains__("Return Code: 400") and
@@ -1925,7 +1925,7 @@ class XCATClient(client.ZVMClient):
         try:
             self.remove_image_file(image_name)
             self.remove_image_definition(image_name)
-        except exception.ZVMXCATInternalError as err:
+        except exception.ZVMClientInternalError as err:
             emsg = err.format_message()
             if (emsg.__contains__("Invalid image name")):
                 LOG.info('The image %s does not exist in xCAT image'
@@ -2294,7 +2294,7 @@ class XCATClient(client.ZVMClient):
         body = [xdsh_commands]
         try:
             result = xcat_request("PUT", url, body)['data'][0][0]
-        except exception.ZVMXCATInternalError as err:
+        except exception.ZVMClientInternalError as err:
             msg = err.format_message()
             output = re.findall('Error returned from xCAT: (.*)', msg)
             output_dict = json.loads(output[0])

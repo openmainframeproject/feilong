@@ -67,20 +67,8 @@ class ZVMException(SDKBaseException):
     msg_fmt = 'ZVMException happened: %(msg)s'
 
 
-class ZVMXCATRequestFailed(SDKBaseException):
-    msg_fmt = 'Request to xCAT server failed: %(msg)s'
-
-
 class ZVMInvalidInput(SDKBaseException):
     msg_fmt = 'Input parameters is invalid: %(msg)s'
-
-
-class ZVMInvalidResponseDataError(SDKBaseException):
-    msg_fmt = 'Invalid data returned from zvm client: %(msg)s'
-
-
-class ZVMXCATInternalError(SDKBaseException):
-    msg_fmt = 'Error returned from xCAT: %(msg)s'
 
 
 class ZVMVolumeError(SDKBaseException):
@@ -159,19 +147,28 @@ class zVMConfigException(SDKBaseException):
     msg_fmt = 'zVMConfig Error: %(msg)s'
 
 
-class ZVMSMUTRequestFailed(SDKBaseException):
-
-    def __init__(self, results):
-        results.pop('logEntries')
-        message = ('Request to SMUT failed: %s' % results)
-        super(ZVMSMUTRequestFailed, self).__init__(message=message,
-                                                   results=results)
-
-
-class ZVMSMUTInternalError(SDKBaseException):
-    msg_fmt = 'Error returned from SMUT: %(msg)s'
-
-
 class ZVMSMUTAuthorizeIUCVClientFailed(SDKBaseException):
     msg_fmt = 'Failed to authorized the iucv client %(client)s on vm %(vm)s '\
         'with reason: %(msg)s'
+
+
+class ZVMInvalidResponseDataError(SDKBaseException):
+    msg_fmt = 'Invalid data returned from zvm client: %(msg)s'
+
+
+class ZVMClientRequestFailed(SDKBaseException):
+
+    def __init__(self, results=None, msg=''):
+        self.msg_fmt = 'zVM client request failed: %(msg)s'
+        # When the backend is smut, results should be passed in.
+        if results:
+            results.pop('logEntries')
+            msg += str(results)
+            super(ZVMClientRequestFailed, self).__init__(results=results,
+                                                         msg=msg)
+        else:
+            super(ZVMClientRequestFailed, self).__init__(msg=msg)
+
+
+class ZVMClientInternalError(SDKBaseException):
+    msg_fmt = 'zVM client internal error: %(msg)s'

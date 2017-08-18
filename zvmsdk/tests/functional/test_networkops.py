@@ -280,7 +280,7 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
         for i in range(5):
             try:
                 self.sdkapi.guest_start(userid)
-            except exception.ZVMXCATInternalError as err:
+            except exception.ZVMClientInternalError as err:
                 err_str = err.format_message()
                 if ("Return Code: 396" in err_str and
                         "Reason Code: 59" in err_str):
