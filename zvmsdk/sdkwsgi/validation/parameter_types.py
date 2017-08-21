@@ -144,9 +144,9 @@ nic_info = {
         'type': 'object',
         'properties': {
             'nic_id': {'type': 'string'},
-            'mac_addr': {'type': 'string'},
+            'mac_addr': {'type': 'string'}
         },
-        'additionalProperties': False,
+        'additionalProperties': False
     }
 }
 
@@ -156,38 +156,61 @@ boolean = {
     'enum': [True, 'True', 'TRUE', 'true', '1', 'ON', 'On', 'on',
              'YES', 'Yes', 'yes',
              False, 'False', 'FALSE', 'false', '0', 'OFF', 'Off', 'off',
-             'NO', 'No', 'no'],
+             'NO', 'No', 'no']
+}
+
+
+rdev_list = {
+    'type': ['string'],
+    'pattern': '^([0-9a-fA-F]{,4})(\s+[0-9a-fA-F]{,4}){,2}$'
 }
 
 
 rdev = {
-    'type': ['string'],
+    'type': ['string'], 'minLength': 1, 'maxLength': 4,
+    'pattern': '^[0-9a-fA-F]{,4}$'
 }
 
 
 vdev = {
-    'type': ['string'],
+    'type': ['string'], 'minLength': 1, 'maxLength': 4,
+    'pattern': '^[0-9a-fA-F]{,4}$'
 }
 
 
 url = {
     'type': ['string'],
+    # FIXME: uri cannot validate url, need accurate definition
+    'format': 'uri'
+}
+
+
+mac_address = {
+    'type': 'string',
+    'pattern': '^([0-9a-fA-F]{2})(:[0-9a-fA-F]{2}){5}$'
 }
 
 
 remotehost = {
     'type': ['string'],
+    'format': 'hostname'
 }
 
 
 userid = {
-    'type': ['string'],
+    'type': ['string'], 'minLength': 1, 'maxLength': 8
 }
 
 
-# This should be a comma separated string
+nic_id = {
+    'type': ['string']
+}
+
+
 userid_list = {
     'type': ['string'],
+    # TODO:validate userid_list in inspect APIs
+    'pattern': '^(\w{,8})(,\w{,8}){0,}$'
 }
 
 
@@ -197,11 +220,24 @@ disk_list = {
         'type': 'object',
         'properties': {
             'size': {'type': 'string'},
+            # TODO: set format to enum
             'format': {'type': 'string'},
             'is_boot_disk': boolean,
-            'disk_pool': {'type': 'string'},
+            'disk_pool': {'type': 'string', 'pattern': '^\w+:\w+$'}
         },
         'required': ['size'],
-        'additionalProperties': False,
+        'additionalProperties': False
     }
+}
+
+
+image_meta = {
+    'type': 'object',
+    'properties': {
+        'os_version': {'type': 'string'},
+        # md5 shoule be 32 hexadeciaml numbers
+        'md5sum': {'type': 'string', 'pattern': '^[0-9a-fA-F]{32}$'}
+    },
+    'required': ['os_version', 'md5sum'],
+    'additionalProperties': False
 }

@@ -34,7 +34,8 @@ class ImageTestCase(unittest.TestCase):
         image_fpath = ''.join([CONF.image.temp_path, image_fname])
         os.system('touch %s' % image_fpath)
         url = "file://" + image_fpath
-        image_meta = '{"os_version": "rhel7.2"}'
+        image_meta = """{"os_version": "rhel7.2",
+                         "md5sum": "12345678912345678912345678912345"}"""
 
         body = '{"image": {"url": "%s", "image_meta": %s}}' % (url,
                                                                image_meta)
