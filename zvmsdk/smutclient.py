@@ -331,3 +331,15 @@ class SMUTClient(client.ZVMClient):
             self._conn.execute("UPDATE switch SET switch=NULL "
                                "WHERE node=? and interface=?",
                                (userid, nic_vdev))
+
+    def virtual_network_vswitch_query_iuo_stats(self):
+        smut_userid = zvmutils.get_smut_userid()
+        rd = ' '.join((
+            "SMAPI %s API Virtual_Network_Vswitch_Query_IUO_Stats" %
+            smut_userid,
+            "--operands",
+            '-T "%s"' % smut_userid,
+            '-k "switch_name=*"'
+            ))
+        results = self._request(rd)
+        return self._parse_vswitch_inspect_data(results['response'])
