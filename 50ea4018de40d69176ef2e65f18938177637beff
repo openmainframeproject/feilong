@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "44f77b4a_5fb1ca79",
+        "filename": "zvmsdk/sdkwsgi/schemas/vswitch.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-21T03:23:02Z",
+      "side": 1,
+      "message": "could you please help to fix it in *follow up* (another) patch?",
+      "range": {
+        "startLine": 24,
+        "startChar": 16,
+        "endLine": 25,
+        "endChar": 53
+      },
+      "revId": "50ea4018de40d69176ef2e65f18938177637beff",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7987e50c_c8c9f7ec",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-21T03:23:02Z",
+      "side": 1,
+      "message": "do you have test for it?",
+      "range": {
+        "startLine": 163,
+        "startChar": 0,
+        "endLine": 165,
+        "endChar": 60
+      },
+      "revId": "50ea4018de40d69176ef2e65f18938177637beff",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2078da08_ec49b70c",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-21T03:23:02Z",
+      "side": 1,
+      "message": "do you have test for it?",
+      "range": {
+        "startLine": 169,
+        "startChar": 0,
+        "endLine": 172,
+        "endChar": 1
+      },
+      "revId": "50ea4018de40d69176ef2e65f18938177637beff",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "714849a3_52f49d16",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-21T03:23:02Z",
+      "side": 1,
+      "message": "why we have this here and rdev not ?",
+      "range": {
+        "startLine": 176,
+        "startChar": 24,
+        "endLine": 176,
+        "endChar": 55
+      },
+      "revId": "50ea4018de40d69176ef2e65f18938177637beff",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "accf2372_176b6e06",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-21T03:23:02Z",
+      "side": 1,
+      "message": "I think we need validate them later?",
+      "range": {
+        "startLine": 221,
+        "startChar": 12,
+        "endLine": 222,
+        "endChar": 41
+      },
+      "revId": "50ea4018de40d69176ef2e65f18938177637beff",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b7a86c4d_efd54530",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-21T03:23:02Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 224,
+        "startChar": 0,
+        "endLine": 224,
+        "endChar": 43
+      },
+      "revId": "50ea4018de40d69176ef2e65f18938177637beff",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
