@@ -82,7 +82,25 @@ zvm_opts = [
         required=True),
     Opt('default_nic_vdev',
         section='zvm',
-        default='1000'),
+        default='1000',
+        help='''
+Virtual device number for default NIC address.
+
+This value is the first NIC virtual device number,
+each NIC needs 3 numbers for control/read/write, so by default
+the first NIC's address is 1000, the second one is 1003 etc.
+
+Possible values:
+    An integer value in hex format, between 0 and 65536 (x'FFFF').
+    It should not conflict with other device numbers in the z/VM guest's
+    configuration, for example device numbers of the root or ephemeral or
+    persistent disks.
+
+Sample NIC definitions in the z/VM user directory:
+    NICDEF 1000 TYPE QDIO LAN SYSTEM <vswitch1> MACID <macid1>
+    NICDEF 1003 TYPE QDIO LAN SYSTEM <vswitch2> MACID <macid2>
+        '''
+        ),
     Opt('logonby_users',
         section='zvm'),
     Opt('user_default_password',
