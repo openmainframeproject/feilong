@@ -285,3 +285,12 @@ class ZVMClient(object):
                 vsw_dict['vswitches'].append(vsw_data)
 
         return vsw_dict
+
+    def _is_vdev_valid(self, vdev, vdev_info):
+        for used_vdev in vdev_info:
+            max_used_vdev = str(hex(int(used_vdev, 16) + 2))[2:]
+            if ((int(vdev, 16) >= int(used_vdev, 16)) and
+                (int(vdev, 16) <= int(max_used_vdev, 16))):
+                return False
+
+        return True

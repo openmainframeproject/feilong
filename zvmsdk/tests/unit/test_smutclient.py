@@ -727,3 +727,56 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
             "-k persist=YES"))
         self._smutclient.delete_vswitch(switch_name, True)
         request.assert_called_once_with(rd)
+
+    @mock.patch.object(database.NetDbOperator, 'switch_select_table')
+    @mock.patch.object(smutclient.SMUTClient, '_create_nic')
+    def test_create_nic(self, create_nic, switch_select_table):
+        userid = 'fake_id'
+        switch_select_table.return_value = [("fake_id", "1003")
+                                            ("fake_id", "1006")]
+        self._smutclient.create_nic(userid, vdev='1009', nic_id='nic_id')
+        create_nic.assert_called_with(userid, '1009', nic_id="nic_id",
+                                      mac_addr=None, active=False)
+
+    @mock.patch.object(database.NetDbOperator, 'switch_select_table')
+    @mock.patch.object(smutclient.SMUTClient, '_create_nic')
+    def test_create_nic_without_vdev(self, create_nic, switch_select_table):
+        userid = 'fake_id'
+        switch_select_table.return_value = [("fake_id", "1003")
+                                            ("fake_id", "2003")]
+        self._smutclient.create_nic(userid, nic_id='nic_id')
+        create_nic.assert_called_with(userid, '2006', nic_id='nic_id',
+                                      mac_addr=None, active=False)
+
+    @mock.patch.object(database.NetDbOperator, 'switch_select_table')
+    def test_create_nic_with_used_vdev(self, get_nic, switch_select_table):
+        switch_select_table.return_value = [("fake_id", "1003")
+                                            ("fake_id", "1006")]
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self._smutclient.create_nic,
+                          'fake_id', nic_id="nic_id", vdev='1004')
+
+    @mock.patch.object(database.NetDbOperator, 'switch_add_record_for_nic')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_private_create_nic_active(self, request, add_record):
+        request.return_value = {'overallRC': 0}
+        self._smutclient._create_nic("fakenode", "fake_vdev",
+                                     nic_id="fake_nic",
+                                     mac_addr='11:22:33:44:55:66',
+                                     active=True)
+        add_record.assert_called_once_with("fakenode", "fake_vdev",
+                                            port="fake_nic")
+        rd1 = ' '.join((
+            'SMAPI fakenode API Virtual_Network_Adapter_Create_Extended_DM',
+            "--operands",
+            "-k image_device_number=fake_vdev",
+            "-k adapter_type=QDIO",
+            "-k mac_id=445566"))
+
+        rd2 = ' '.join((
+            'SMAPI fakenode API Virtual_Network_Adapter_Create_Extended',
+            "--operands",
+            "-k image_device_number=fake_vdev",
+            "-k adapter_type=QDIO"))
+        request.assert_any_call(rd1)
+        request.assert_any_call(rd2)
