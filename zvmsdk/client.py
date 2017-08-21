@@ -211,3 +211,79 @@ class ZVMClient(object):
         """
         pi_dict = self.image_performance_query([userid])
         return pi_dict.get(userid.upper(), None)
+
+    def _parse_vswitch_inspect_data(self, rd_list):
+        """ Parse the Virtual_Network_Vswitch_Query_IUO_Stats data to get
+        inspect data. This is an internal function shared by both smut and
+        xcat client.
+        """
+        def _parse_value(data_list, idx, keyword, offset):
+            return idx + offset, data_list[idx].rpartition(keyword)[2].strip()
+
+        vsw_dict = {}
+        with zvmutils.expect_invalid_resp_data():
+            # vswitch count
+            idx = 0
+            idx, vsw_count = _parse_value(rd_list, idx, 'vswitch count:', 2)
+            vsw_dict['vswitch_count'] = int(vsw_count)
+
+            # deal with each vswitch data
+            vsw_dict['vswitches'] = []
+            for i in range(vsw_dict['vswitch_count']):
+                vsw_data = {}
+                # skip vswitch number
+                idx += 1
+                # vswitch name
+                idx, vsw_name = _parse_value(rd_list, idx, 'vswitch name:', 1)
+                vsw_data['vswitch_name'] = vsw_name
+                # uplink count
+                idx, up_count = _parse_value(rd_list, idx, 'uplink count:', 1)
+                # skip uplink data
+                idx += int(up_count) * 9
+                # skip bridge data
+                idx += 8
+                # nic count
+                vsw_data['nics'] = []
+                idx, nic_count = _parse_value(rd_list, idx, 'nic count:', 1)
+                nic_count = int(nic_count)
+                for j in range(nic_count):
+                    nic_data = {}
+                    idx, nic_id = _parse_value(rd_list, idx, 'nic_id:', 1)
+                    userid, toss, vdev = nic_id.partition(' ')
+                    nic_data['userid'] = userid
+                    nic_data['vdev'] = vdev
+                    idx, nic_data['nic_fr_rx'] = _parse_value(rd_list, idx,
+                                                              'nic_fr_rx:', 1
+                                                              )
+                    idx, nic_data['nic_fr_rx_dsc'] = _parse_value(rd_list, idx,
+                                                            'nic_fr_rx_dsc:', 1
+                                                            )
+                    idx, nic_data['nic_fr_rx_err'] = _parse_value(rd_list, idx,
+                                                            'nic_fr_rx_err:', 1
+                                                            )
+                    idx, nic_data['nic_fr_tx'] = _parse_value(rd_list, idx,
+                                                              'nic_fr_tx:', 1
+                                                              )
+                    idx, nic_data['nic_fr_tx_dsc'] = _parse_value(rd_list, idx,
+                                                            'nic_fr_tx_dsc:', 1
+                                                            )
+                    idx, nic_data['nic_fr_tx_err'] = _parse_value(rd_list, idx,
+                                                            'nic_fr_tx_err:', 1
+                                                            )
+                    idx, nic_data['nic_rx'] = _parse_value(rd_list, idx,
+                                                           'nic_rx:', 1
+                                                           )
+                    idx, nic_data['nic_tx'] = _parse_value(rd_list, idx,
+                                                           'nic_tx:', 1
+                                                           )
+                    vsw_data['nics'].append(nic_data)
+                # vlan count
+                idx, vlan_count = _parse_value(rd_list, idx, 'vlan count:', 1)
+                # skip vlan data
+                idx += int(vlan_count) * 3
+                # skip the blank line
+                idx += 1
+
+                vsw_dict['vswitches'].append(vsw_data)
+
+        return vsw_dict
