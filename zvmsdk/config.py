@@ -107,12 +107,57 @@ Sample NIC definitions in the z/VM user directory:
         section='zvm'),
     Opt('disk_pool',
         section='zvm',
-        required=True),
+        required=True,
+        help='''
+zVM disk pool and type for root/ephemeral disks.
+
+The option is combined by 2 parts and use : as separator.
+
+First part is the volume group name from your directory manager
+on your z/VM system, which will be used for ephemeral disks for
+new instances. A dollar sign ($) is not allowed in the name.
+
+Second part is type of the disk in the disk pool.
+The disks in the disk pool must all be the same type (ECKD or FBA).
+Possible values of the disk pool type:
+    A string, either ECKD or FBA.
+
+Sample configuration:
+    diskpo1:ECKD
+    testpool:FBA
+    '''),
     Opt('user_profile',
-        section='zvm'),
+        section='zvm',
+        help='''
+PROFILE name to use when creating a z/VM guest.
+
+When SDK deploys an instance on z/VM, it can include some
+common statements from a PROFILE definition.
+This PROFILE must already be included in your z/VM user directory.
+
+Possible values:
+    An 8 character name of a PROFILE that is already defined in the z/VM
+    user directory.
+    '''),
     Opt('user_root_vdev',
         section='zvm',
-        default='0100'),
+        default='0100',
+        help='''
+Virtual device number for root disk.
+
+When SDK deploys an instance, it creates a root disk and potentially
+several data disks. This value is the virtual device number of the root
+disk.
+
+Possible values:
+    An integer value in hex format, between 0 and 65536 (x'FFFF').
+    It should not conflict with other device numbers in the z/VM guest's
+    configuration, for example device numbers of the NICs or ephemeral or
+    persistent disks.
+
+Sample root disk in user directory:
+    MDISK 0100 <disktype> <start> <end> <volumelabel> <readwrite>
+'''),
     Opt('client_type',
         section='zvm',
         default='xcat'),
