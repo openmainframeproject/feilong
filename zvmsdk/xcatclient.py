@@ -369,41 +369,6 @@ def expect_invalid_xcat_node_and_reraise(userid):
 
 
 @zvmutils.wrap_invalid_resp_data_error
-def translate_xcat_resp(rawdata, dirt):
-    """Translate xCAT response JSON stream to a python dictionary.
-
-    xCAT response example:
-    node: keyword1: value1\n
-    node: keyword2: value2\n
-    ...
-    node: keywordn: valuen\n
-
-    Will return a python dictionary:
-    {keyword1: value1,
-     keyword2: value2,
-     ...
-     keywordn: valuen,}
-
-    """
-    data_list = rawdata.split("\n")
-
-    data = {}
-
-    for ls in data_list:
-        for k in list(dirt.keys()):
-            if ls.__contains__(dirt[k]):
-                data[k] = ls[(ls.find(dirt[k]) + len(dirt[k])):].strip()
-                break
-
-    if data == {}:
-        msg = "No value matched with keywords. Raw Data: %(raw)s; " \
-                "Keywords: %(kws)s" % {'raw': rawdata, 'kws': str(dirt)}
-        raise exception.ZVMInvalidResponseDataError(msg=msg)
-
-    return data
-
-
-@zvmutils.wrap_invalid_resp_data_error
 def load_xcat_resp(message):
     """Abstract information from xCAT REST response body.
 
@@ -546,7 +511,8 @@ class XCATClient(client.ZVMClient):
         url = self._xcat_url.rinv('/' + host)
         inv_info_raw = xcat_request("GET", url)['info'][0]
         inv_keys = const.XCAT_RINV_HOST_KEYWORDS
-        inv_info = translate_xcat_resp(inv_info_raw[0], inv_keys)
+        inv_info = zvmutils.translate_response_to_dict(
+            inv_info_raw[0].split("\n"), inv_keys)
 
         hcp_hostname = inv_info['zhcp']
         self._zhcp_info = self._construct_zhcp_info(hcp_hostname)
@@ -562,7 +528,8 @@ class XCATClient(client.ZVMClient):
 
         dp_info_raw = res_dict['info'][0]
         dp_keys = const.XCAT_DISKPOOL_KEYWORDS
-        dp_info = translate_xcat_resp(dp_info_raw[0], dp_keys)
+        dp_info = zvmutils.translate_response_to_dict(
+            dp_info_raw[0].split("\n"), dp_keys)
 
         return dp_info
 
@@ -652,7 +619,8 @@ class XCATClient(client.ZVMClient):
             rpi_list = raw_data.split(": \n")
             for rpi in rpi_list:
                 try:
-                    pi = translate_xcat_resp(rpi, ipq_kws)
+                    pi = zvmutils.translate_response_to_dict(
+                        rpi.split("\n"), ipq_kws)
                 except exception.ZVMInvalidResponseDataError as err:
                     emsg = err.format_message()
                     # when there is only one userid queried and this userid is
@@ -668,10 +636,6 @@ class XCATClient(client.ZVMClient):
                     pi_dict[pi['userid']] = pi
 
         return pi_dict
-
-    def get_image_performance_info(self, userid):
-        pi_dict = self.image_performance_query([userid])
-        return pi_dict.get(userid.upper(), None)
 
     def virtual_network_vswitch_query_iuo_stats(self):
         hcp_info = self._get_hcp_info()
