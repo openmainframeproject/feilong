@@ -212,3 +212,15 @@ class SMUTClient(client.ZVMClient):
         with zvmutils.expect_request_failed_and_reraise(
             exception.ZVMNetworkError):
             self._request(requestData)
+
+    def virtual_network_vswitch_query_iuo_stats(self):
+        smut_userid = zvmutils.get_smut_userid()
+        rd = ' '.join((
+            "SMAPI %s API Virtual_Network_Vswitch_Query_IUO_Stats" %
+            smut_userid,
+            "--operands",
+            '-T "%s"' % smut_userid,
+            '-k "switch_name=*"'
+            ))
+        results = self._request(rd)
+        return self._parse_vswitch_inspect_data(results['response'])
