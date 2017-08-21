@@ -16,6 +16,7 @@
 #    under the License.
 
 import argparse
+import datetime
 import os
 import re
 import sys
@@ -1523,6 +1524,7 @@ def driveTestSet(smut, setId, setToTest):
     localFailed = 0
     localBypassed = 0
     failInfo = []
+    startTime = datetime.datetime.now()
 
     for test in setToTest['tests']:
         if args.listParms is True:
@@ -1597,6 +1599,7 @@ def driveTestSet(smut, setId, setToTest):
                 localFailed += 1
                 failInfo.append(cntInfo)
 
+    endTime = datetime.datetime.now()
     cnts['total'] += localTotal
     cnts['attempted'] += localAttempted
     cnts['passed'] += localPassed
@@ -1605,6 +1608,10 @@ def driveTestSet(smut, setId, setToTest):
 
     print(" ")
     print("Status of this set...")
+    print("    Time:")
+    print("        Started:  " + str(startTime))
+    print("        Ended:    " + str(endTime))
+    print("        Duration: " + str(endTime - startTime))
     print("    Total Requests: %i, Bypassed Requests: %i" %
           (localTotal, localBypassed))
     print("    Tests attempted: %i, passed: %i, failed: %i" %
@@ -1733,6 +1740,7 @@ else:
 
     # Determine the tests to run based on the first argument.
     tests = []
+    totalStartTime = datetime.datetime.now()
     if len(args.setsToRun) > 0:
         for key in args.setsToRun:
             key = key.upper()
@@ -1743,6 +1751,7 @@ else:
     else:
         for key in sorted(testSets):
             driveTestSet(smut, key, testSets[key])
+    totalEndTime = datetime.datetime.now()
 
     # Cleanup the work files.
     if (os.path.exists("sample.config")):
@@ -1753,6 +1762,10 @@ else:
     print("")
     print("******************************************************************")
     print("Status of this run...")
+    print("    Time:")
+    print("        Started:  " + str(totalStartTime))
+    print("        Ended:    " + str(totalEndTime))
+    print("        Duration: " + str(totalEndTime - totalStartTime))
     print("    Total Requests: %i, Bypassed Requests: %i" %
           (cnts['total'], cnts['bypassed']))
     print("    Tests attempted: %i, passed: %i, failed: %i" %
