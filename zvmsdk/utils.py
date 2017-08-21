@@ -473,3 +473,43 @@ def generate_iucv_authfile(fn, client):
              'echo -n %s > /etc/iucv_authorized_userid\n' % client]
     with open(fn, 'w') as f:
         f.writelines(lines)
+
+
+@wrap_invalid_resp_data_error
+def translate_response_to_dict(rawdata, dirt):
+    """Translate xCAT/SMUT response to a python dictionary.
+
+    xCAT response example:
+    node: keyword1: value1\n
+    node: keyword2: value2\n
+    ...
+    node: keywordn: valuen\n
+
+    SMUT response example:
+    keyword1: value1\n
+    keyword2: value2\n
+    ...
+    keywordn: valuen\n
+
+    Will return a python dictionary:
+    {keyword1: value1,
+     keyword2: value2,
+     ...
+     keywordn: valuen,}
+
+    """
+    data_list = rawdata.split("\n")
+    data = {}
+
+    for ls in data_list:
+        for k in list(dirt.keys()):
+            if ls.__contains__(dirt[k]):
+                data[k] = ls[(ls.find(dirt[k]) + len(dirt[k])):].strip()
+                break
+
+    if data == {}:
+        msg = "No value matched with keywords. Raw Data: %(raw)s; " \
+                "Keywords: %(kws)s" % {'raw': rawdata, 'kws': str(dirt)}
+        raise exception.ZVMInvalidResponseDataError(msg=msg)
+
+    return data

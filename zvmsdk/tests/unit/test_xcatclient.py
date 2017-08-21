@@ -236,24 +236,6 @@ class SDKXCATClientTestCases(base.SDKTestCase):
         self.assertRaises(exception.ZVMNetworkError,
                           self._xcatclient._delete_host, 'fakenode')
 
-    @mock.patch('zvmsdk.xcatclient.XCATClient.image_performance_query')
-    def test_get_image_performance_info(self, ipq):
-        ipq.return_value = {
-            u'FAKEVM': {
-                'used_memory': u'5222192 KB',
-                'used_cpu_time': u'25640530229 uS',
-                'guest_cpus': u'2',
-                'userid': u'FKAEVM',
-                'max_memory': u'8388608 KB'}}
-        info = self._xcatclient.get_image_performance_info('fakevm')
-        self.assertEqual(info['used_memory'], '5222192 KB')
-
-    @mock.patch('zvmsdk.xcatclient.XCATClient.image_performance_query')
-    def test_get_image_performance_info_not_exist(self, ipq):
-        ipq.return_value = {}
-        info = self._xcatclient.get_image_performance_info('fakevm')
-        self.assertEqual(info, None)
-
     @mock.patch.object(xcatclient.XCATClient, '_get_hcp_info')
     @mock.patch('zvmsdk.xcatclient.XCATClient.xdsh')
     def test_image_performance_query_single(self, dsh, _get_hcp_info):
