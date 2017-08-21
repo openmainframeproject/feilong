@@ -266,3 +266,25 @@ class SMUTClient(client.ZVMClient):
                     pi_dict[pi['userid']] = pi
 
         return pi_dict
+
+    def get_vm_nic_vswitch_info(self, vm_id):
+        """
+        Get NIC and switch mapping for the specified virtual machine.
+        """
+        result = self._conn.execute("SELECT interface, switch FROM switch "
+                                    "WHERE node=?", (vm_id,))
+        switch_info = result.fetchall()
+
+        with zvmutils.expect_invalid_resp_data():
+            switch_dict = {}
+            for item in switch_info:
+                switch_dict[item[0]] = item[1]
+
+            LOG.debug("Switch info the %(vm_id)s is %(switch_dict)s",
+                      {"vm_id": vm_id, "switch_dict": switch_dict})
+            return switch_dict
+
+    def _get_nic_ids(self):
+        result = self._conn.execute("SELECT * FROM switch")
+        nic_settings = result.fetchall()
+        return nic_settings
