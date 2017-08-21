@@ -454,3 +454,103 @@ class SMUTClient(client.ZVMClient):
                     raise exception.ZVMNetworkError(
                         msg=("Failed to delete vswitch %s: %s") %
                             (switch_name, emsg))
+
+    def create_nic(self, userid, vdev=None, nic_id=None,
+                   mac_addr=None, ip_addr=None, active=False):
+        ports_info = self._NetDbOperator.switch_select_table()
+        vdev_info = []
+        for p in ports_info:
+            if p[0] == userid:
+                vdev_info.append(p[1])
+
+        if len(vdev_info) == 0:
+            # no nic defined for the guest
+            if vdev is None:
+                nic_vdev = CONF.zvm.default_nic_vdev
+            else:
+                nic_vdev = vdev
+        else:
+            if vdev is None:
+                used_vdev = max(vdev_info)
+                nic_vdev = str(hex(int(used_vdev, 16) + 3))[2:]
+            else:
+                if self._is_vdev_valid(vdev, vdev_info):
+                    nic_vdev = vdev
+                else:
+                    raise exception.ZVMInvalidInput(
+                        msg=("The specified virtual device number %s "
+                             "has already been used" % vdev))
+        if len(nic_vdev) > 4:
+            raise exception.ZVMNetworkError(
+                        msg=("Virtual device number %s is not valid" %
+                             nic_vdev))
+
+        LOG.debug('Nic attributes: vdev is %(vdev)s, '
+                  'ID is %(id)s, address is %(address)s',
+                  {'vdev': nic_vdev,
+                   'id': nic_id or 'not specified',
+                   'address': mac_addr or 'not specified'})
+        self._create_nic(userid, nic_vdev, nic_id=nic_id,
+                         mac_addr=mac_addr, active=active)
+        return nic_vdev
+
+    def _create_nic(self, userid, vdev, nic_id=None, mac_addr=None,
+                    active=False):
+        requestData = ' '.join((
+            'SMAPI %s API Virtual_Network_Adapter_Create_Extended_DM' %
+            userid,
+            "--operands",
+            "-k image_device_number=%s" % vdev,
+            "-k adapter_type=QDIO"))
+
+        if mac_addr is not None:
+            mac = ''.join(mac_addr.split(':'))[6:]
+            requestData += ' -k mac_id=%s' % mac
+
+        with zvmutils.expect_request_failed_and_reraise(
+            exception.ZVMNetworkError):
+            self._request(requestData)
+
+        if active:
+            if mac_addr is not None:
+                LOG.warning("Ignore the mac address %s when "
+                            "adding nic on an active system" % mac_addr)
+            requestData = ' '.join((
+                'SMAPI %s API Virtual_Network_Adapter_Create_Extended' %
+                userid,
+                "--operands",
+                "-k image_device_number=%s" % vdev,
+                "-k adapter_type=QDIO"))
+
+            try:
+                self._request(requestData)
+            except (exception.ZVMClientRequestFailed,
+                    exception.ZVMClientInternalError) as err1:
+                msg1 = err1.format_message()
+                persist_OK = True
+                requestData = ' '.join((
+                    'SMAPI %s API Virtual_Network_Adapter_Delete_DM' % userid,
+                    "--operands",
+                    '-v %s' % vdev))
+                try:
+                    self._request(requestData)
+                except exception.ZVMClientRequestFailed as err2:
+                    results = err2.results
+                    msg2 = err2.format_message()
+                    if ((results['rc'] == 404) and
+                        (results['rs'] == 8)):
+                        persist_OK = True
+                    else:
+                        persist_OK = False
+                if persist_OK:
+                    msg = ("Failed to create nic %s for %s on the active "
+                           "guest system, %s") % (vdev, userid, msg1)
+                else:
+                    msg = ("Failed to create nic %s for %s on the active "
+                           "guest system, %s, and failed to revoke user "
+                           "direct's changes, %s") % (vdev, userid,
+                                                      msg1, msg2)
+                raise exception.ZVMNetworkError(msg)
+
+        self._NetDbOperator.switch_add_record_for_nic(userid, vdev,
+                                                      port=nic_id)

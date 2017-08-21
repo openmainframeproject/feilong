@@ -75,3 +75,15 @@ class SDKZVMClientTestCase(base.SDKTestCase):
         ipq.return_value = {}
         info = self._zvmclient.get_image_performance_info('fakevm')
         self.assertEqual(info, None)
+
+    def test_is_vdev_valid_true(self):
+        vdev = '1009'
+        vdev_info = ['1003', '1006']
+        result = self._zvmclient._is_vdev_valid(vdev, vdev_info)
+        self.assertEqual(result, True)
+
+    def test_is_vdev_valid_False(self):
+        vdev = '2002'
+        vdev_info = ['2000', '2004']
+        result = self._zvmclient._is_vdev_valid(vdev, vdev_info)
+        self.assertEqual(result, False)
