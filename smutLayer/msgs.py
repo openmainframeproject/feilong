@@ -193,9 +193,10 @@ msg = {
             "ULT%s0408E Error getting list of files in the reader " +
             "to search for logs from user %s. Response from %s is %s"],
     '0409': [{'overallRC': 4, 'rc': 4, 'rs': 409},
-            "ULT%s0409E Unable to get console log for user %s " +
-            "the userid is either not logged on or is not spooling " +
-            "its console.  Error rc=rs=8 returned from " +
+            "ULT%s0409E Unable to get console log for user %s. " +
+            "The userid is either: not logged on, not spooling " +
+            "its console, or has not created any console output. " +
+            "Error rc=rs=8 returned from " +
             "Image_Console_Get."],
     '0410': [{'overallRC': 4, 'rc': 4, 'rs': 410},
             "ULT%s0410E Unable to get console log for user %s " +
