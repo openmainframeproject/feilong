@@ -880,15 +880,6 @@ class XCATClient(client.ZVMClient):
 
         return nic_vdev
 
-    def _is_vdev_valid(self, vdev, vdev_info):
-        for used_vdev in vdev_info:
-            max_used_vdev = str(hex(int(used_vdev, 16) + 2))[2:]
-            if ((int(vdev, 16) >= int(used_vdev, 16)) and
-                (int(vdev, 16) <= int(max_used_vdev, 16))):
-                return False
-
-        return True
-
     def _create_nic(self, userid, vdev, zhcpnode, nic_id=None, mac_addr=None,
                     active=False):
         zhcp = self._get_hcp_info()['nodename']
@@ -1404,24 +1395,6 @@ class XCATClient(client.ZVMClient):
     def uncouple_nic_from_vswitch(self, userid, nic_vdev,
                                   active=False):
         self._uncouple_nic(userid, nic_vdev, active=active)
-
-    def _get_xcat_node_ip(self):
-        addp = '&col=key&value=master&attribute=value'
-        url = self._xcat_url.gettab("/site", addp)
-        with zvmutils.expect_invalid_resp_data():
-            return xcat_request("GET", url)['data'][0][0]
-
-    def _get_xcat_node_name(self):
-        if self._xcat_node_name is not None:
-            return self._xcat_node_name
-
-        xcat_ip = self._get_xcat_node_ip()
-        addp = '&col=ip&value=%s&attribute=node' % (xcat_ip)
-        url = self._xcat_url.gettab("/hosts", addp)
-        with zvmutils.expect_invalid_resp_data():
-            self._xcat_node_name = xcat_request(
-                "GET", url)['data'][0][0]
-            return self._xcat_node_name
 
     @zvmutils.wrap_invalid_resp_data_error
     def get_vswitch_list(self):
@@ -2061,12 +2034,6 @@ class XCATClient(client.ZVMClient):
             # Todo: analyze and add the uplink NIC info and global member info
 
         return vsw_info
-
-    def _get_vm_mgt_ip(self, vm_id):
-        addp = '&col=node&value=%s&attribute=ip' % vm_id
-        url = self._xcat_url.gettab("/hosts", addp)
-        with zvmutils.expect_invalid_resp_data():
-            return xcat_request("GET", url)['data'][0][0]
 
     def image_get_root_disk_size(self, image_name):
         """use 'hexdump' to get the root_disk_size."""
