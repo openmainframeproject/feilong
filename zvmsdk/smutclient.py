@@ -266,3 +266,34 @@ class SMUTClient(client.ZVMClient):
                     pi_dict[pi['userid']] = pi
 
         return pi_dict
+
+    def _delete_switch(self, userid):
+        """Remove node switch record from switch table."""
+        self._conn.execute("DELETE FROM switch WHERE node=?", (userid,))
+
+    def _delete_nic_from_switch(self, userid, vdev):
+        """Remove node switch record from switch table."""
+        self._conn.execute("DELETE FROM switch WHERE node=? and interface=?",
+                           (userid, vdev))
+
+    def _add_switch_table_record(self, userid, interface, nic_id=None):
+        """Add node name and nic name address into switch table."""
+        if nic_id is not None:
+            self._conn.execute("INSERT INTO switch (node, interface, port"
+                               ") VALUES (?, ?, ?)",
+                               (userid, interface, nic_id))
+        else:
+            self._conn.execute("INSERT INTO switch (node, interface)"
+                               " VALUES (?, ?)",
+                               (userid, interface))
+
+    def _update_xcat_switch(self, userid, nic_vdev, vswitch):
+        """Update information in switch table."""
+        if vswitch is not None:
+            self._conn.execute("UPDATE switch SET switch=?"
+                               " WHERE node=? and interface=?",
+                               (vswitch, userid, nic_vdev))
+        else:
+            self._conn.execute("UPDATE switch SET switch=NULL"
+                               " WHERE node=? and interface=?",
+                               (userid, nic_vdev))
