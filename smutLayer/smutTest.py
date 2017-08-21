@@ -44,11 +44,6 @@ subs = {
                                         #   add to the prefix to get an id.
     '<<<horribleID1>>>': 'g[][325$$$',  # A userid that makes SMAPI cry
                                         #   and beg for a swift death
-    '<<<consoleID>>>': '',              # An existing userid who has
-                                        #   SP CONS * START in its profile or
-                                        #   directory.  It can also be an
-                                        #   empty string to bypass related
-                                        #   tests.
     '<<<migrID>>>': '',                 # An existing userid that can be
                                         #   migrated or empty to bypass tests.
     '<<<unmigrID>>>': '',               # An existing userid that cannot be
@@ -217,37 +212,6 @@ generalTests = [
     ]
 
 guestTests = [
-    {
-        'description': "Power on a system: <<<consoleID>>>",
-        'doIf': "'<<<consoleID>>>' != ''",
-        'request': "PowerVM <<<consoleID>>> on",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Get the console log of the system: <<<consoleID>>>",
-        'doIf': "'<<<consoleID>>>' != ''",
-        'request': "getvm <<<consoleID>>> consoleoutput",
-        'out': "List of spool files containing console logs " +
-               "from <<<consoleID>>>:",
-        'overallRC': [0],
-    },
-    {
-        'description': "Power off the system: <<<consoleID>>>",
-        'doIf': "'<<<consoleID>>>' != ''",
-        'request': "PowerVM <<<consoleID>>> off",
-        'out': "",
-        'overallRC': [0],
-    },
-    {
-        'description': "Verify no console log is available: <<<consoleID>>>",
-        'doIf': "'<<<consoleID>>>' != ''",
-        'request': "getvm <<<consoleID>>> consoleoutput",
-        'out': "",
-        'overallRC': [8],
-        'rc': [8],
-        'rs': [8]
-    },
     {
         'description': "Power on a system: <<<safeID>>>",
         'request': "PowerVM <<<safeID>>> on",
@@ -469,7 +433,15 @@ modifyTests = [
         'out': "",
         'overallRC': [0],
     },
-     {
+    {
+        'description': "Verify no console log is available: <<<unsafePre>>>3",
+        'request': "getvm <<<unsafePre>>>3 consoleoutput",
+        'out': "",
+        'overallRC': [8],
+        'rc': [8],
+        'rs': [8]
+    },
+    {
         'description': "Add modifications to the activation engine",
         'request': 'ChangeVM <<<unsafePre>>>3 aemod <<<setupDisk>>> ' +
             '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
@@ -593,7 +565,7 @@ modifyTests = [
         'out': "",
         'overallRC': [0],
     },
-    # >>>>>>>>> Tests that are related to active systems.
+    # >>>>>>>>> Deploy an image for active system tests.
     {
         'description': "Add a 3390 disk for the root disk: <<<unsafePre>>>3",
         'request': "ChangeVM <<<unsafePre>>>3 add3390 <<<pool3390>>> 100 " +
@@ -628,6 +600,33 @@ modifyTests = [
             "come up: <<<unsafePre>>>3",
         'request': "PowerVM <<<unsafePre>>>3 on --wait --state up",
         'out': "",
+        'overallRC': [0],
+    },
+    # >>>>>>>>> Tests that are related to active systems.
+    {
+        'description': "Start console spooling on the system: " +
+            "<<<unsafePre>>>3",
+        'request': "CmdVM <<<unsafePre>>>3 cmd 'vmcp spool console " +
+            "to <<<unsafePre>>>3 start'",
+        'overallRC': [0],
+    },
+    {
+        'description': "Enable tracing so we put stuff to the " +
+            "console of <<<unsafePre>>>3",
+        'request': "CmdVM <<<unsafePre>>>3 cmd 'vmcp trace diag run'",
+        'overallRC': [0],
+    },
+    {
+        'description': "Force more to the console of " +
+            "<<<unsafePre>>>3",
+        'request': "CmdVM <<<unsafePre>>>3 cmd 'vmcp query userid'",
+        'overallRC': [0],
+    },
+    {
+        'description': "Get the console log of the system: <<<unsafePre>>>3",
+        'request': "getvm <<<unsafePre>>>3 consoleoutput",
+        'out': "List of spool files containing console logs " +
+               "from <<<unsafePre>>>3:",
         'overallRC': [0],
     },
     {
@@ -1017,6 +1016,11 @@ modifyTests = [
         'out': "",
         'overallRC': [0],
     },
+    {
+        'description': "Clean up an reader files for <<<unsafePre>>>3.",
+        'request': "CODE_SEG purgeRdr('<<<unsafePre>>>3')",
+        'overallRC': [0],
+    },
    ]
 
 powerTests = [
@@ -1280,6 +1284,50 @@ def localize(localFile, subs, testSets):
     return 0
 
 
+def purgeRdr(userid):
+    """
+    Purge contents in this system's reader from a userid.
+
+    Input:
+       userid that originated the files we want to purge.
+
+    Output:
+       Return code - 0: no problems, 1: problem encountered.
+    """
+
+    subRC = 0
+    userid = userid.upper()
+    spoolList = []
+    queryCmd = ("/sbin/vmcp query rdr userid '*' | " +
+        "grep ^" + userid + " | awk '{print $2}'")
+    try:
+        qryRes = subprocess.check_output(
+                queryCmd,
+                close_fds=True,
+                shell=True)
+        spoolList = qryRes.splitlines()
+    except Exception as e:
+        # All exceptions.
+        print("Unable to purge reader files for in this " +
+              "system's reader originally owned by: " + userid +
+              ", exception: " + str(e))
+        subRC = 1
+
+    purgeCmd = ['/sbin/vmcp', 'purge', 'reader', '0']
+    for purgeCmd[3] in spoolList:
+        try:
+            subprocess.check_output(
+                purgeCmd,
+                close_fds=True)
+        except Exception as e:
+            # All exceptions.
+            print("Unable to purge reader file " + purgeCmd[3] +
+                  ", exception: " + str(e))
+            subRC = 1
+
+    return subRC
+
+
 def runTest(smut, test):
     """
     Drive a test and validate the results.
@@ -1534,6 +1582,10 @@ def driveTestSet(smut, setId, setToTest):
                 print("***Warning*** A non test related shell function " +
                     "returned rc: " + str(shellRC) +
                         " out: " + ''.join(out))
+        elif test['request'][0:9] == 'CODE_SEG ':
+            print("Code Segment: %s: %s" % (cntInfo, test['description']))
+            codeSeg = test['request'][9:]
+            exec(codeSeg)
         else:
             # Attempt the test.
             print("Test %s: %s" % (cntInfo, test['description']))
