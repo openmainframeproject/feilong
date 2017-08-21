@@ -644,18 +644,6 @@ class SDKXCATClientTestCases(base.SDKTestCase):
         xrequest.assert_any_call("PUT", url, body1)
         xrequest.assert_any_call("PUT", url, body2)
 
-    def test_is_vdev_valid_true(self):
-        vdev = '1009'
-        vdev_info = ['1003', '1006']
-        result = self._xcatclient._is_vdev_valid(vdev, vdev_info)
-        self.assertEqual(result, True)
-
-    def test_is_vdev_valid_False(self):
-        vdev = '2002'
-        vdev_info = ['2000', '2004']
-        result = self._xcatclient._is_vdev_valid(vdev, vdev_info)
-        self.assertEqual(result, False)
-
     @mock.patch.object(xcatclient, 'xcat_request')
     def test_add_switch_table_record(self, xrequest):
         xrequest.return_value = {"data": ["fakereturn"]}
@@ -1050,35 +1038,6 @@ class SDKXCATClientTestCases(base.SDKTestCase):
         update_switch.assert_called_with("fakeuserid", "fakevdev", None)
         xrequest.assert_any_call("PUT", url, body1)
         xrequest.assert_any_call("PUT", url, body2)
-
-    @mock.patch.object(xcatclient, 'xcat_request')
-    def test_get_xcat_node_ip(self, xrequest):
-        xrequest.return_value = {"data": [["fakeip"]]}
-        url = "/xcatws/tables/site?userName=" +\
-                CONF.xcat.username +\
-               "&password=" + CONF.xcat.password +\
-               "&format=json" +\
-               "&col=key&value=master&attribute=value"
-
-        info = self._xcatclient._get_xcat_node_ip()
-        xrequest.assert_called_with("GET", url)
-        self.assertEqual(info, "fakeip")
-
-    @mock.patch.object(xcatclient.XCATClient, '_get_xcat_node_ip')
-    @mock.patch.object(xcatclient, 'xcat_request')
-    def test_get_xcat_node_name(self, xrequest, get_ip):
-        get_ip.return_value = "fakeip"
-        xrequest.return_value = {"data": [["fakename"]]}
-        url = "/xcatws/tables/hosts?userName=" +\
-              CONF.xcat.username +\
-              "&password=" + CONF.xcat.password +\
-              "&format=json" +\
-              "&col=ip&value=fakeip&attribute=node"
-
-        info = self._xcatclient._get_xcat_node_name()
-        get_ip.assert_called_with()
-        xrequest.assert_called_with("GET", url)
-        self.assertEqual(info, "fakename")
 
     @mock.patch.object(xcatclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(xcatclient, 'xcat_request')
