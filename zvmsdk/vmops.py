@@ -240,7 +240,7 @@ class VMOps(object):
         try:
             console_log = self._zvmclient.get_user_console_output(userid,
                                                                   log_size)
-        except exception.ZVMXCATInternalError:
+        except exception.ZVMClientInternalError:
             # Ignore no console log avaiable error
             LOG.info("No new console log avaiable.")
 

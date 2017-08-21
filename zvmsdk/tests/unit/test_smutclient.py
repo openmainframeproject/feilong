@@ -57,7 +57,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_private_request_failed(self, request):
         requestData = "fake request"
         request.return_value = {'overallRC': 1, 'logEntries': []}
-        self.assertRaises(exception.ZVMSMUTRequestFailed,
+        self.assertRaises(exception.ZVMClientRequestFailed,
                           self._smutclient._request, requestData)
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
@@ -219,7 +219,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                              'response': ['(Error) output and error info']}
         execute.side_effect = [(0, ""), (0, "")]
         request.side_effect = [None,
-                               exception.ZVMSMUTRequestFailed(
+                               exception.ZVMClientRequestFailed(
                                    results=fake_smut_results)]
         mkdtemp.return_value = '/tmp/tmpdir'
         userid = 'fakeuser'
