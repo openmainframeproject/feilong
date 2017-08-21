@@ -26,7 +26,7 @@ class ZVMSDKConfigFileNotFound(Exception):
 
 class Opt(object):
     def __init__(self, opt_name, descritpion='', section='default',
-                 opt_type='str', default=None, required=False):
+                 opt_type='str', default='', required=False):
         self.name = opt_name
         self.decsription = descritpion
         self.section = section
@@ -189,19 +189,20 @@ class ConfigOpts(object):
         return _dict
 
     def register(self, opts):
-        cf = ConfigParser.ConfigParser()
-        read_file = self.find_config_file(project="zvmsdk")
-        cf.read(read_file)
-        # return all sections in a list
-        secs = cf.sections()
-        config_dicts_override = self.config_ini_to_dicts(secs, cf)
+        configs = self._get_config_dicts_default(opts)
+        read_file = self.find_config_file(project="zvmsdk") or ''
+        if read_file:
+            cf = ConfigParser.ConfigParser()
+            cf.read(read_file)
+            # return all sections in a list
+            secs = cf.sections()
+            config_dicts_override = self.config_ini_to_dicts(secs, cf)
 
-        config_dicts_default = self._get_config_dicts_default(opts)
+            try:
+                configs = self.merge(configs, config_dicts_override)
+            except ImportError:
+                pass
 
-        try:
-            configs = self.merge(config_dicts_default, config_dicts_override)
-        except ImportError:
-            pass
         con = self._config_fill_option(configs)
         con = self.toDict(con)
         self._check_required(con)
@@ -360,13 +361,13 @@ class ConfigOpts(object):
         :param extension: the file extension, for example '.conf'
         :returns: the path to a matching file, or None
         """
+        path = ''
         for d in dirs:
             path = os.path.join(d, '%s%s' % (basename, extension))
             if os.path.exists(path):
                 return path
 
-        msg = "zvmsdk config file not found in %s" % str(dirs)
-        raise ZVMSDKConfigFileNotFound(msg)
+        return path
 
     def find_config_file(self, project=None, extension='.conf'):
         """Return the config file.
