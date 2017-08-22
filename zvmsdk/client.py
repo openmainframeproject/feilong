@@ -96,9 +96,6 @@ class ZVMClient(object):
     def get_vm_list(self):
         pass
 
-    def image_performance_query(self, uid_list):
-        pass
-
     def add_vswitch(self, name, rdev=None, controller='*',
                     connection='CONNECT', network_type='IP',
                     router="NONROUTER", vid='UNAWARE', port_type='ACCESS',
@@ -151,9 +148,6 @@ class ZVMClient(object):
     def process_additional_minidisks(self, userid, disk_info):
         pass
 
-    def get_image_performance_info(self, userid):
-        pass
-
     def get_user_direct(self, userid):
         pass
 
@@ -202,3 +196,18 @@ class ZVMClient(object):
 
     def authorize_iucv_client(self, guest_userid, client_userid):
         pass
+
+    def image_performance_query(self, uid_list):
+        """Call Image_Performance_Query to get guest current status.
+
+        :uid_list: A list of zvm userids to be queried
+        """
+        pass
+
+    def get_image_performance_info(self, userid):
+        """Get CPU and memory usage information.
+
+        :userid: the zvm userid to be queried
+        """
+        pi_dict = self.image_performance_query([userid])
+        return pi_dict.get(userid.upper(), None)
