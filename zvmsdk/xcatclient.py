@@ -510,7 +510,7 @@ class XCATClient(client.ZVMClient):
         host = CONF.zvm.host
         url = self._xcat_url.rinv('/' + host)
         inv_info_raw = xcat_request("GET", url)['info'][0]
-        inv_keys = const.XCAT_RINV_HOST_KEYWORDS
+        inv_keys = const.RINV_HOST_KEYWORDS
         inv_info = zvmutils.translate_response_to_dict(inv_info_raw[0],
                                                        inv_keys)
 
@@ -527,7 +527,7 @@ class XCATClient(client.ZVMClient):
         res_dict = xcat_request("GET", url)
 
         dp_info_raw = res_dict['info'][0]
-        dp_keys = const.XCAT_DISKPOOL_KEYWORDS
+        dp_keys = const.DISKPOOL_KEYWORDS
         dp_info = zvmutils.translate_response_to_dict(dp_info_raw[0],
                                                       dp_keys)
 
