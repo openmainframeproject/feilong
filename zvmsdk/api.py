@@ -477,7 +477,7 @@ class SDKAPI(object):
     @zvmutils.check_input_types(_TUSERID, _TSTR, bool)
     def guest_nic_uncouple_from_vswitch(self, userid, nic_vdev,
                                         active=False):
-        """ Couple nic device to specified vswitch.
+        """ Disonnect nic device with network.
 
         :param str userid: the user's name who owns the nic
         :param str nic_vdev: nic device number, 1- to 4- hexadecimal digits
