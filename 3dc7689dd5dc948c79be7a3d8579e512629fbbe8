@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e9f94a48_23b8149e",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-22T05:40:19Z",
+      "side": 1,
+      "message": "just a minor suggestion\nto leave this blank at end of 286 to be consistent to other code",
+      "range": {
+        "startLine": 287,
+        "startChar": 32,
+        "endLine": 287,
+        "endChar": 33
+      },
+      "revId": "3dc7689dd5dc948c79be7a3d8579e512629fbbe8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
