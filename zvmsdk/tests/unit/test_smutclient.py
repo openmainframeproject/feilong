@@ -517,3 +517,74 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                          vsw_dict['vswitches'][0]['nics'][0]['userid'])
         self.assertEqual('3577163',
                          vsw_dict['vswitches'][1]['nics'][1]['nic_rx'])
+
+    @mock.patch.object(smutclient.SMUTClient, '_couple_nic')
+    def test_couple_nic_to_vswitch(self, couple_nic):
+        self._smutclient.couple_nic_to_vswitch("fake_userid",
+                                               "fakevdev",
+                                               "fake_VS_name",
+                                               True)
+        couple_nic.assert_called_with("fake_userid",
+                                      "fakevdev",
+                                      "fake_VS_name",
+                                      active=True)
+
+    @mock.patch.object(smutclient.SMUTClient, '_uncouple_nic')
+    def test_uncouple_nic_from_vswitch(self, uncouple_nic):
+        self._smutclient.uncouple_nic_from_vswitch("fake_userid",
+                                                   "fakevdev",
+                                                   False)
+        uncouple_nic.assert_called_with("fake_userid",
+                                        "fakevdev", active=False)
+
+    @mock.patch.object(smutclient.SMUTClient, '_update_xcat_switch')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_couple_nic(self, request, update_switch):
+        request.return_value = {'overallRC': 0}
+        userid = 'FakeID'
+        vdev = 'FakeVdev'
+        vswitch_name = 'FakeVS'
+
+        requestData1 = ' '.join((
+            'SMAPI FakeID',
+            "API Virtual_Network_Adapter_Connect_Vswitch_DM",
+            "--operands",
+            "-v FakeVdev",
+            "-n FakeVS"))
+
+        requestData2 = ' '.join((
+            'SMAPI FakeID',
+            "API Virtual_Network_Adapter_Connect_Vswitch",
+            "--operands",
+            "-v FakeVdev",
+            "-n FakeVS"))
+
+        self._smutclient._couple_nic(userid, vdev, vswitch_name,
+                                     active=True)
+        update_switch.assert_called_with(userid, vdev, vswitch_name)
+        request.assert_any_call(requestData1)
+        request.assert_any_call(requestData2)
+
+    @mock.patch.object(smutclient.SMUTClient, '_update_xcat_switch')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_uncouple_nic(self, request, update_switch):
+        request.return_value = {'overallRC': 0}
+        userid = 'FakeID'
+        vdev = 'FakeVdev'
+
+        requestData1 = ' '.join((
+            'SMAPI FakeID',
+            "API Virtual_Network_Adapter_Disconnect_DM",
+            "--operands",
+            "-v FakeVdev"))
+
+        requestData2 = ' '.join((
+            'SMAPI FakeID',
+            "API Virtual_Network_Adapter_Disconnect",
+            "--operands",
+            "-v FakeVdev"))
+
+        self._smutclient._uncouple_nic(userid, vdev, active=True)
+        update_switch.assert_called_with(userid, vdev, None)
+        request.assert_any_call(requestData1)
+        request.assert_any_call(requestData2)
