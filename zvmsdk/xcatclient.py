@@ -300,7 +300,7 @@ class HTTPSClientAuthConnection(httplib.HTTPSConnection):
 
         if (self.ca_file is not None and
             not os.path.exists(self.ca_file)):
-            LOG.warning(("the CA file %(ca_file) does not exist!"),
+            LOG.warning(("the CA file %(ca_file)s does not exist!"),
                         {'ca_file': self.ca_file})
             self.use_ca = False
 
