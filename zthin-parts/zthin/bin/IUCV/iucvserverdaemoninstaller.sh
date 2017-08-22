@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2017 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -112,10 +112,17 @@ function installIucvserver {
     COPY_SERVICE_CMD="cp iucvserd /etc/init.d/"
     REGISTER_SERVICE_CMD="chkconfig --add iucvserd"
     START_SERVICE_CMD="service iucvserd start"
-  else
+  elif [[ $os == ubuntu* || $os == rhel7* ]]; then
+    COPY_SERVICE_CMD="cp iucvserd.service /lib/systemd/system/"
+    REGISTER_SERVICE_CMD="systemctl enable iucvserd.service"
+    START_SERVICE_CMD="systemctl start iucvserd.service"
+  elif [[ $os == sles12* ]]; then
     COPY_SERVICE_CMD="cp iucvserd.service /usr/lib/systemd/system/"
     REGISTER_SERVICE_CMD="systemctl enable iucvserd.service"
     START_SERVICE_CMD="systemctl start iucvserd.service"
+  else
+    echo "Error: Unknown linux distribution, fail to install iucvserver daemon!"
+    exit 1
   fi
 
   eval $COPY_SERVICE_CMD 2>&1
