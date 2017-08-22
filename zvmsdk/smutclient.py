@@ -21,6 +21,7 @@ from smutLayer import smut
 from zvmsdk import client
 from zvmsdk import config
 from zvmsdk import constants as const
+from zvmsdk import database
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import utils as zvmutils
@@ -35,7 +36,8 @@ class SMUTClient(client.ZVMClient):
     def __init__(self):
         super(SMUTClient, self).__init__()
         self._smut = smut.SMUT()
-        self._conn = self._DbOperator.get_connection()
+        with database.get_db_conn() as conn:
+            self._conn = conn
         self._create_switch_table()
 
     def _create_switch_table(self):
