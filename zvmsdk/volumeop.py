@@ -18,9 +18,10 @@ import re
 import six
 
 from zvmsdk import config
-from zvmsdk import log
-from zvmsdk.exception import ZVMVolumeError
+from zvmsdk.database import get_db_conn
 from zvmsdk import dist
+from zvmsdk.exception import ZVMVolumeError
+from zvmsdk import log
 from zvmsdk import vmops
 from zvmsdk import xcatclient
 
@@ -646,3 +647,19 @@ class VolumeOperator(VolumeOperatorAPI):
         else:
             raise ZVMVolumeError("unknown instance os: %s!"
                                  % instance[OS_TYPE])
+
+
+class VolumeUtils(object):
+
+    TABLE_VOLUME = "volumes"
+
+    def __init__(self):
+        with get_db_conn() as conn:
+            conn.execute("CREATE TABLE IF NOT EXISTS test(i)")
+            conn.execute("INSERT INTO test VALUES (1)")
+            conn.execute("INSERT INTO test VALUES (2)")
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM test WHERE i=?", (1,))
+            result = cur.fetchone()
+            print result  # (1,) expected
+            print result[0]  # 1 expected

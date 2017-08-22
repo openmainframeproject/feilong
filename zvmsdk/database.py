@@ -13,14 +13,21 @@
 #    under the License.
 
 
+import contextlib
 import os
 import sqlite3
 import stat
+from time import sleep
 
 from zvmsdk import config
 from zvmsdk import constants as const
+from zvmsdk import exception
+from zvmsdk import log
+from zvmsdk.exception import ZVMSDKInternalError
+
 
 CONF = config.CONF
+LOG = log.LOG
 
 _DB_OPERATOR = None
 
@@ -35,9 +42,29 @@ def get_DbOperator():
     return _DB_OPERATOR
 
 
+@contextlib.contextmanager
+def get_db_conn():
+    """Get a database connection object to execute some SQL statements
+    and release the connection object finally.
+    """
+    _op = get_DbOperator()
+    (i, conn) = _op.get_connection()
+    try:
+        yield conn
+    except Exception as err:
+        LOG.error('Execute SQL statements error: ', err)
+        raise exception.ZVMSDKInternalError(msg=err)
+    finally:
+        _op.release_connection(i)
+
+
 class DbOperator(object):
 
     def __init__(self):
+        # make pool size as a config item if necessary
+        self._pool_size = 3
+        self._conn_pool = {}
+        self._free_conn = {}
         self._prepare()
 
     def _prepare(self):
@@ -52,20 +79,36 @@ class DbOperator(object):
             if mode != '777':
                 os.chmod(CONF.database.path, path_mode)
 
-        database = ''.join((CONF.database.path, "/", const.DATABASE_NAME))
-        self._conn = sqlite3.connect(database)
+        for i in range(self._pool_size):
+            database = ''.join((CONF.database.path, "/", const.DATABASE_NAME))
+            conn = sqlite3.connect(database)
 
-        db_mode = os.stat(database).st_mode
+            db_mode = os.stat(database).st_mode
 
-        mu = (db_mode & stat.S_IRWXU) >> 6
-        mg = (db_mode & stat.S_IRWXG) >> 3
-        mo = db_mode & stat.S_IRWXO
+            mu = (db_mode & stat.S_IRWXU) >> 6
+            mg = (db_mode & stat.S_IRWXG) >> 3
+            mo = db_mode & stat.S_IRWXO
 
-        if ((mu < 6) or (mg < 6) or (mo < 6)):
-            os.chmod(database, file_mode)
+            if ((mu < 6) or (mg < 6) or (mo < 6)):
+                os.chmod(database, file_mode)
 
-        # autocommit
-        self._conn.isolation_level = None
+            # autocommit
+            conn.isolation_level = None
+            self._conn_pool[i] = conn
+            self._free_conn[i] = 'free'
 
     def get_connection(self):
-        return self._conn
+        timeout = 5
+        for _ in range(timeout):
+            for i in range(self._pool_size):
+                # Not really thread safe, fix if necessary
+                if self._free_conn[i] == 'free':
+                    self._free_conn[i] = 'in-use'
+                    return i, self._conn_pool[i]
+            sleep(1)
+        # If timeout happens, it means the pool is too small to meet
+        # request performance, so enlarge it
+        raise ZVMSDKInternalError("Get database connection time out!")
+
+    def release_connection(self, i):
+        self._free_conn[i] = 'free'
