@@ -415,3 +415,54 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         self.assertEqual(pi_info['FAKEVM2']['max_memory'], "8388608 KB")
         self.assertEqual(pi_info['FAKEVM2']['min_memory'], "0 KB")
         self.assertEqual(pi_info['FAKEVM2']['shared_memory'], "8383048 KB")
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_get_host_info(self, smut_req):
+        resp = ['z/VM Host: OPNSTK2',
+                'Architecture: s390x',
+                'CEC Vendor: IBM',
+                'CEC Model: 2817',
+                'Hypervisor OS: z/VM 6.4.0',
+                'Hypervisor Name: OPNSTK2',
+                'LPAR CPU Total: 6',
+                'LPAR CPU Used: 6',
+                'LPAR Memory Total: 50G',
+                'LPAR Memory Offline: 0',
+                'LPAR Memory Used: 36.5G',
+                'IPL Time: IPL at 07/12/17 22:37:47 EDT']
+        smut_req.return_value = {'rs': 0, 'errno': 0, 'strError': '',
+                                 'overallRC': 0, 'logEntries': [], 'rc': 0,
+                                 'response': resp}
+
+        expect = {'architecture': 's390x',
+                  'cec_model': '2817',
+                  'cec_vendor': 'IBM',
+                  'hypervisor_name': 'OPNSTK2',
+                  'hypervisor_os': 'z/VM 6.4.0',
+                  'ipl_time': 'IPL at 07/12/17 22:37:47 EDT',
+                  'lpar_cpu_total': '6',
+                  'lpar_cpu_used': '6',
+                  'lpar_memory_offline': '0',
+                  'lpar_memory_total': '50G',
+                  'lpar_memory_used': '36.5G',
+                  'zvm_host': 'OPNSTK2'}
+        host_info = self._smutclient.get_host_info()
+
+        smut_req.assert_called_once_with('getHost general')
+        self.assertDictEqual(host_info, expect)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_get_diskpool_info(self, smut_req):
+        resp = ['XCATECKD Total: 3623.0G',
+                'XCATECKD Used: 397.4G',
+                'XCATECKD Free: 3225.6G']
+        smut_req.return_value = {'rs': 0, 'errno': 0, 'strError': '',
+                                 'overallRC': 0, 'logEntries': [], 'rc': 0,
+                                 'response': resp}
+        expect = {'disk_available': '3225.6G',
+                  'disk_total': '3623.0G',
+                  'disk_used': '397.4G'}
+        dp_info = self._smutclient.get_diskpool_info('pool')
+
+        smut_req.assert_called_once_with('getHost diskpoolspace pool')
+        self.assertDictEqual(dp_info, expect)

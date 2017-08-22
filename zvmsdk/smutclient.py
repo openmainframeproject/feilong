@@ -331,3 +331,17 @@ class SMUTClient(client.ZVMClient):
             self._conn.execute("UPDATE switch SET switch=NULL "
                                "WHERE node=? and interface=?",
                                (userid, nic_vdev))
+
+    def get_host_info(self):
+        results = self._request("getHost general")
+        host_info = zvmutils.translate_response_to_dict(
+            '\n'.join(results['response']), const.RINV_HOST_KEYWORDS)
+
+        return host_info
+
+    def get_diskpool_info(self, pool):
+        results = self._request("getHost diskpoolspace %s" % pool)
+        dp_info = zvmutils.translate_response_to_dict(
+            '\n'.join(results['response']), const.DISKPOOL_KEYWORDS)
+
+        return dp_info

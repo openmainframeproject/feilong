@@ -26,7 +26,7 @@ CONFIG_DRIVE_FORMAT = 'tgz'
 DEFAULT_EPH_DISK_FMT = 'ext3'
 DISK_FUNC_NAME = 'setupDisk'
 
-XCAT_RINV_HOST_KEYWORDS = {
+RINV_HOST_KEYWORDS = {
     "zvm_host": "z/VM Host:",
     "zhcp": "zHCP:",
     "cec_vendor": "CEC Vendor:",
@@ -42,7 +42,7 @@ XCAT_RINV_HOST_KEYWORDS = {
     "ipl_time": "IPL Time:",
     }
 
-XCAT_DISKPOOL_KEYWORDS = {
+DISKPOOL_KEYWORDS = {
     "disk_total": "Total:",
     "disk_used": "Used:",
     "disk_available": "Free:",
