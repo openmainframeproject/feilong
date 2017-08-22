@@ -321,7 +321,7 @@ class SMUTClient(client.ZVMClient):
                                "VALUES (?, ?)",
                                (userid, interface))
 
-    def _update_xcat_switch(self, userid, nic_vdev, vswitch):
+    def _update_switch_table(self, userid, nic_vdev, vswitch):
         """Update information in switch table."""
         if vswitch is not None:
             self._conn.execute("UPDATE switch SET switch=? "
@@ -357,3 +357,140 @@ class SMUTClient(client.ZVMClient):
             '\n'.join(results['response']), const.DISKPOOL_KEYWORDS)
 
         return dp_info
+
+    def _couple_nic(self, userid, vdev, vswitch_name,
+                    active=False):
+        """Couple NIC to vswitch by adding vswitch into user direct."""
+        requestData = ' '.join((
+            'SMAPI %s' % userid,
+            "API Virtual_Network_Adapter_Connect_Vswitch_DM",
+            "--operands",
+            "-v %s" % vdev,
+            "-n %s" % vswitch_name))
+
+        try:
+            self._request(requestData)
+        except Exception as err:
+            raise exception.ZVMNetworkError(
+                msg=("Failed to couple nic %s to vswitch %s "
+                     "in the guest's user direct, %s") %
+                     (vdev, vswitch_name, err.format_message()))
+
+        # the inst must be active, or this call will failed
+        if active:
+            requestData = ' '.join((
+                'SMAPI %s' % userid,
+                'API Virtual_Network_Adapter_Connect_Vswitch',
+                "--operands",
+                "-v %s" % vdev,
+                "-n %s" % vswitch_name))
+            try:
+                self._request(requestData)
+            except Exception as err1:
+                msg1 = err1.format_message()
+                if (msg1.__contains__("Return Code: 204") and
+                    msg1.__contains__("Reason Code: 20")):
+                    LOG.warning("Virtual device %s already connected "
+                                "on the active guest system", vdev)
+                else:
+                    persist_OK = False
+                    requestData = ' '.join((
+                        'SMAPI %s' % userid,
+                        'API Virtual_Network_Adapter_Disconnect_DM',
+                        "--operands",
+                        '-v %s' % vdev))
+                    try:
+                        result = None
+                        result = self._request(requestData)
+                    except Exception as err2:
+                        msg2 = err2.format_message()
+                        if (msg2.__contains__("Return Code: 212") and
+                            msg2.__contains__("Reason Code: 32")):
+                            persist_OK = True
+                        else:
+                            persist_OK = False
+                    if result and (result['overallRC'] == 0):
+                        persist_OK = True
+                    if persist_OK:
+                        msg = ("Failed to couple nic %s to vswitch %s "
+                               "on the active guest system, %s") % (vdev,
+                                                    vswitch_name, msg1)
+                    else:
+                        msg = ("Failed to couple nic %s to vswitch %s "
+                               "on the active guest system, %s, and "
+                               "failed to revoke user direct's changes, "
+                               "%s") % (vdev, vswitch_name,
+                                        msg1, msg2)
+                    raise exception.ZVMNetworkError(msg)
+
+        """Update information in switch table."""
+        self._update_switch_table(userid, vdev, vswitch_name)
+
+    def couple_nic_to_vswitch(self, userid, nic_vdev,
+                              vswitch_name, active=False):
+        """Couple nic to vswitch."""
+        if active:
+            msg = ("both in the user direct of guest %s and on "
+                   "the active guest system" % userid)
+        else:
+            msg = "in the user direct of guest %s" % userid
+        LOG.debug("Connect nic %s to switch %s %s",
+                  nic_vdev, vswitch_name, msg)
+        self._couple_nic(userid, nic_vdev, vswitch_name, active=active)
+
+    def _uncouple_nic(self, userid, vdev, active=False):
+        """Uncouple NIC from vswitch"""
+        requestData = ' '.join((
+            'SMAPI %s' % userid,
+            "API Virtual_Network_Adapter_Disconnect_DM",
+            "--operands",
+            "-v %s" % vdev))
+        try:
+            self._request(requestData)
+        except Exception as err:
+            emsg = err.format_message()
+            if (emsg.__contains__("Return Code: 212") and
+                emsg.__contains__("Reason Code: 32")):
+                LOG.warning("Virtual device %s is already disconnected "
+                            "in the guest's user direct", vdev)
+            else:
+                raise exception.ZVMNetworkError(
+                    msg=("Failed to uncouple nic %s "
+                         "in the guest's user direct,  %s") %
+                         (vdev, err.format_message()))
+
+        """Update information in switch table."""
+        self._update_switch_table(userid, vdev, None)
+
+        # the inst must be active, or this call will failed
+        if active:
+            requestData = ' '.join((
+                'SMAPI %s' % userid,
+                'API Virtual_Network_Adapter_Disconnect',
+                "--operands",
+                "-v %s" % vdev))
+            try:
+                self._request(requestData)
+            except Exception as err:
+                emsg = err.format_message()
+                if (emsg.__contains__("Return Code: 204") and
+                    emsg.__contains__("Reason Code: 48")):
+                    LOG.warning("Virtual device %s is already "
+                                "disconnected on the active "
+                                "guest system", vdev)
+                else:
+                    raise exception.ZVMNetworkError(
+                        msg=("Failed to uncouple nic %s "
+                             "on the active guest system, %s") %
+                             (vdev, emsg))
+
+    def uncouple_nic_from_vswitch(self, userid, nic_vdev,
+                                  active=False):
+        if active:
+            msg = ("both in the user direct of guest %s and on "
+                   "the active guest system" % userid)
+        else:
+            msg = "in the user direct of guest %s" % userid
+        LOG.debug("Disconnect nic %s with network %s",
+                  nic_vdev, msg)
+        self._uncouple_nic(userid, nic_vdev, active=active)
