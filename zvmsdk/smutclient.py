@@ -35,6 +35,18 @@ class SMUTClient(client.ZVMClient):
     def __init__(self):
         super(SMUTClient, self).__init__()
         self._smut = smut.SMUT()
+        self._conn = self._DbOperator.get_connection()
+        self._create_switch_table()
+
+    def _create_switch_table(self):
+        create_table_sql = ' '.join((
+                'create table if not exists switch (',
+                'node varchar(8),',
+                'interface varchar(4),',
+                'switch varchar(8),',
+                'port varchar(128),',
+                'primary key (node, interface));'))
+        self._conn.execute(create_table_sql)
 
     def _request(self, requestData):
         try:
