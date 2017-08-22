@@ -568,3 +568,20 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
         smut_req.assert_called_once_with('getHost diskpoolspace pool')
         self.assertDictEqual(dp_info, expect)
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_get_vswitch_list(self, request, get_smut_userid):
+        get_smut_userid.return_value = "SMUTUSER"
+        request.return_value = {'overallRC': 0,
+            'response': ['Vswitch:  Name: VSTEST1', 'Vswitch:  Name: VSTEST2',
+                         'Vswitch:  Name: VSTEST3', 'Vswitch:  Name: VSTEST4']}
+        expect = ['VSTEST1', 'VSTEST2', 'VSTEST3', 'VSTEST4']
+        rd = ' '.join((
+            "SMAPI SMUTUSER API Virtual_Network_Vswitch_Query",
+            "--operands",
+            "-s \'*\'"))
+
+        list = self._smutclient.get_vswitch_list()
+        request.assert_called_once_with(rd)
+        self.assertEqual(list, expect)
