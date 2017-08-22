@@ -35,7 +35,7 @@ class SMUTClient(client.ZVMClient):
     def __init__(self):
         super(SMUTClient, self).__init__()
         self._smut = smut.SMUT()
-        self._conn = self._DbOperator.get_connection()
+        (_, self._conn) = self._DbOperator.get_connection()
         self._create_switch_table()
 
     def _create_switch_table(self):
