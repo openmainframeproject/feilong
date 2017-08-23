@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a781bcf8_49fda582",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-08-23T08:00:53Z",
+      "side": 1,
+      "message": "can we pass smapi rc/rs to zvmnetworkerror?",
+      "range": {
+        "startLine": 374,
+        "startChar": 12,
+        "endLine": 374,
+        "endChar": 44
+      },
+      "revId": "25e5811d18cc3690b07d05236eef0648e7274a10",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e1cbf9b6_f8d1c467",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-08-23T08:00:53Z",
+      "side": 1,
+      "message": "utilize smut results to get accurate smapi rc/rs in this if condition?",
+      "range": {
+        "startLine": 391,
+        "startChar": 16,
+        "endLine": 392,
+        "endChar": 58
+      },
+      "revId": "25e5811d18cc3690b07d05236eef0648e7274a10",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
