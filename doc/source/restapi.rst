@@ -12,17 +12,25 @@ Lists version of this API.
 Get SDK version
 ---------------
 
-* GET /
+**GET /**
 
-  - Request:
+* Request:
 
-  request
+  No parameters needed.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
+
+  Return the version of the SDK API.
+
+  - min_version:
+  - max_version:
+  - version:
+
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_version.tpl
    :language: javascript
@@ -30,7 +38,21 @@ Get SDK version
 token
 =====
 
-Create and validate token.
+Create token
+------------
+
+**POST /token**
+
+* Request:
+
+  - user:
+  - password:
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
 
 Guest(s)
 ========
@@ -40,17 +62,23 @@ Lists, creates, shows details for, updates, and deletes guests.
 List Guests
 -----------
 
-* GET /guests
+**GET /guests**
 
-  - Request:
+* Request:
 
-  request
+  No parameters needed.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
+
+  `FIXME`: should only list guests managed/created by SDK.
+
+  - guests:
+
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_list.tpl
    :language: javascript
@@ -58,32 +86,40 @@ List Guests
 Create Guest
 ------------
 
-* POST /guests
+**POST /guests**
 
-  - Request:
+* Request:
 
-  request
+  - userid: 
+  - vcpus:
+  - memory:
+  - user_profile:
+  - disk_list:
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
 
 Get Guests cpu info
 -------------------
 
-* GET /guests/cpuinfo
+**GET /guests/cpuinfo**
 
-  - Request:
+* Request:
 
-  request
+  No parameters needed.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
+
+  - cpu:
+
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_cpu_info.tpl
    :language: javascript
@@ -91,17 +127,21 @@ Get Guests cpu info
 Get Guests memory info
 ----------------------
 
-* GET /guests/meminfo
+**GET /guests/meminfo**
 
-  - Request:
+* Request:
 
-  request
+  No parameters needed.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
+
+  - memory:
+
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_memory_info.tpl
    :language: javascript
@@ -109,35 +149,45 @@ Get Guests memory info
 Get Guests vnics info
 ---------------------
 
-* GET /guests/vnicsinfo
+**GET /guests/vnicsinfo**
 
-  - Request:
+* Request:
 
-  request
+  No parameters needed.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
+
+  - vnics:
+
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_vnics_info.tpl
    :language: javascript
 
-Show Guest
-----------
+Show Guest definition
+---------------------
 
-* GET /guests/{userid}
+**GET /guests/{userid}**
 
-  - Request:
+Display the user direct by the given userid.
 
-  request
+* Request:
 
-  - Response:
+  - userid: The userid to be displayed, it should comply with z/VM userid standard.
 
-  response
+* Response code:
 
-  - HTTP status code 200 on Success.
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  - user_direct: The user direct of the given userid.
+
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get.tpl
    :language: javascript
@@ -145,47 +195,59 @@ Show Guest
 Update Guest
 ------------
 
-* PUT /guests/{userid}
+**PUT /guests/{userid}**
 
-  - Request:
+Update given guest.
 
-  request
+* Request:
 
-  - Response:
+  - userid: The userid to be updated.
 
-  response
+* Response code:
 
-  - HTTP status code 200 on Success.
+  HTTP status code 200 on success.
+
+* Response contents:
+
 
 Delete Guest
 ------------
 
-* DELETE /guests/{userid}
+**DELETE /guests/{userid}**
 
-  - Request:
+* Request:
 
-  request
+  - userid: The userid to be deleted.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 204 on success.
 
-  - HTTP status code 204 on Success.
+* Response contents:
 
 Get Guest info
 --------------
 
-* GET /guests/{userid}/info
+**GET /guests/{userid}/info**
 
-  - Request:
+* Request:
 
-  request
+  - userid: The userid to get information from.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
+
+  - info: the object of the information returned
+  - max_mem_kb:
+  - num_cpu:
+  - cpu_time_us:
+  - power_state:
+  - mem_kb:
+
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get_info.tpl
    :language: javascript
@@ -193,17 +255,21 @@ Get Guest info
 Get Guest nic info
 ------------------
 
-* GET /guests/{userid}/nic
+**GET /guests/{userid}/nic**
 
-  - Request:
+* Request:
 
-  request
+  - userid: The userid to get nic information from.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
+
+  - nic: the nic information
+
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get_nic.tpl
    :language: javascript
@@ -211,50 +277,270 @@ Get Guest nic info
 Create Guest nic
 ----------------
 
-* POST /guests/{userid}/nic
+**POST /guests/{userid}/nic**
 
-  - Request:
+* Request:
 
-  request
+  - userid: The userid to create nic.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
 
-Guest action
+Start guest
+-----------
+
+**POST /guests/{userid}/action**
+
+* Request:
+
+  - guest:
+  - action:
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+Stop guest
+----------
+
+**POST /guests/{userid}/action**
+
+* Request:
+
+  - guest:
+  - action:
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+Get guest console output 
+------------------------
+
+**POST /guests/{userid}/action**
+
+* Request:
+
+  - guest:
+  - action:
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+Deploy guest
 ------------
 
-* POST /guests/{userid}/action
+**POST /guests/{userid}/action**
 
-  - Request:
+* Request:
 
-  request
+  - guest:
+  - action:
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
 
 Get Guest power state
 ---------------------
 
-* GET /guests/{userid}/power_state
+**GET /guests/{userid}/power_state**
 
-  - Request:
+* Request:
 
-  request
+  - userid: The userid to get power state information from.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
+
+  - power_state: the power state of the guest.
+
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get_power_state.tpl
    :language: javascript
+
+Update Guest nic
+----------------
+
+**PUT /guests/{userid}/nic/{vdev}**
+
+* Request:
+
+  - userid:
+  - vdev:
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+Delete Guest nic
+----------------
+
+**DELETE /guests/{userid}/nic/{vdev}**
+
+* Request:
+
+  - userid:
+  - vdev:
+
+* Response code:
+
+  HTTP status code 204 on success.
+
+* Response contents:
+
+Host
+====
+
+Get info from host (hypervisor) running on.
+
+Get Host Info
+-------------
+
+**GET /host/info**
+
+* Request:
+
+  No parameters needed. 
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  - host: the object of host information.
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_host_info.tpl
+   :language: javascript
+
+Get Host disk pool info
+-----------------------
+
+**GET /host/disk_info/{disk}**
+
+* Request:
+
+  - disk: the disk name to get pool information from.
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  - disk_info: the object of disk information.
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_host_disk_info.tpl
+   :language: javascript
+
+Image(s)
+========
+
+Lists, creates, shows details for, updates, and deletes images.
+
+List images
+-----------
+
+**GET /images**
+
+* Request:
+
+  No parameters needed.
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  - disk_info: the object of disk information.
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_query.tpl
+   :language: javascript
+
+Create image
+------------
+
+**POST /images**
+
+* Request:
+
+  - image:
+  - url:
+  - remotehost:
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+Get root disk size of image
+---------------------------
+
+**GET /images/{name}/root_disk_size**
+
+* Request:
+
+  - name: Name of the image to get root disk size from.
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  - size: the size of the given disk.
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_get_root_disk_size.tpl
+   :language: javascript
+
+Delete image
+------------
+
+**DELETE /images/{name}**
+
+* Request:
+
+  Name of the image to be deleted.
+
+* Response code:
+
+  HTTP status code 204 on success.
+
+* Response contents:
+
+Volume(s)
+=========
+
+Lists, creates, shows details for, updates, and deletes volumes.
 
 Attach volume to Guest
 ----------------------
@@ -286,153 +572,6 @@ Detach volume from Guest
 
   - HTTP status code 204 on Success.
 
-Update Guest nic
-----------------
-
-* PUT /guests/{userid}/nic/{vdev}
-
-  - Request:
-
-  request
-
-  - Response:
-
-  response
-
-  - HTTP status code 200 on Success.
-
-Delete Guest nic
-----------------
-
-* DELETE /guests/{userid}/nic/{vdev}
-
-  - Request:
-
-  request
-
-  - Response:
-
-  response
-
-  - HTTP status code 200 on Success.
-
-Host
-====
-
-Get info from host (hypervisor) running on.
-
-Get Host Info
--------------
-
-* GET /host/info
-
-  - Request:
-
-  request
-
-  - Response:
-
-  response
-
-  - HTTP status code 200 on Success.
-
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_host_info.tpl
-   :language: javascript
-
-Get Host disk pool info
------------------------
-
-* GET /host/disk_info/{disk}
-
-  - Request:
-
-  request
-
-  - Response:
-
-  response
-
-  - HTTP status code 200 on Success.
-
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_host_disk_info.tpl
-   :language: javascript
-
-Image(s)
-========
-
-Lists, creates, shows details for, updates, and deletes images.
-
-List images
------------
-
-* GET /images
-
-  - Request:
-
-  request
-
-  - Response:
-
-  response
-
-  - HTTP status code 200 on Success.
-
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_query.tpl
-   :language: javascript
-
-Create image
-------------
-
-* POST /images
-
-  - Request:
-
-  request
-
-  - Response:
-
-  response
-
-  - HTTP status code 200 on Success.
-
-Get root disk size of image
----------------------------
-
-* GET /images/{name}/root_disk_size
-
-  - Request:
-
-  request
-
-  - Response:
-
-  response
-
-  - HTTP status code 200 on Success.
-
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_get_root_disk_size.tpl
-   :language: javascript
-
-Delete image
-------------
-
-* DELETE /images/{name}
-
-  - Request:
-
-  request
-
-  - Response:
-
-  response
-
-  - HTTP status code 204 on Success.
-
-Volume(s)
-=========
-
-Lists, creates, shows details for, updates, and deletes volumes.
-
 VSwitch
 =======
 
@@ -441,32 +580,48 @@ Lists, creates, shows details for, updates, and deletes vswitch.
 Create vswitch
 --------------
 
-* POST /vswitchs
+**POST /vswitchs**
 
-  - Request:
+* Request:
 
-  request
+  - vswitch:
+  - name:
+  - rdev:
+  - controller:
+  - connection:
+  - queue_mem:
+  - router:
+  - network_type:
+  - vid:
+  - port_type:
+  - update:
+  - gvrp:
+  - native_vid:  
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
 
 List vswitchs
 -------------
 
-* GET /vswitchs
+**GET /vswitchs**
 
-  - Request:
+* Request:
 
-  request
+  No parameter needed.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
+
+  - vswlist: a list of vswitch that defined in the z/VM.
+
+* Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_get.tpl
    :language: javascript
@@ -474,29 +629,29 @@ List vswitchs
 Update vswitch
 --------------
 
-* PUT /vswitchs/{name}
+**PUT /vswitchs/{name}**
 
-  - Request:
+* Request:
 
-  request
+  -name:
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 200 on success.
 
-  - HTTP status code 200 on Success.
+* Response contents:
 
 Delete vswitch
 --------------
 
-* DELETE /vswitchs/{name}
+**DELETE /vswitchs/{name}**
 
-  - Request:
+* Request:
 
-  request
+  -name: the name of the vswitch to be deleted.
 
-  - Response:
+* Response code:
 
-  response
+  HTTP status code 204 on success.
 
-  - HTTP status code 204 on Success.
+* Response contents:
