@@ -62,7 +62,20 @@ class HandlersGuestTest(unittest.TestCase):
     def test_vswitch_create(self, mock_create):
         body_str = """{"vswitch": {"name": "name1",
                                    "rdev": "1234 abcd 123F",
-                                   "port_type": 1}}"""
+                                   "port_type": 1,
+                                   "controller": "*"}}"""
+        self.req.body = body_str
+
+        vswitch.vswitch_create(self.req)
+        body = util.extract_json(body_str)
+        mock_create.assert_called_once_with(body=body)
+
+    @mock.patch.object(vswitch.VswitchAction, 'create')
+    def test_vswitch_create_with_userid_controller(self, mock_create):
+        body_str = """{"vswitch": {"name": "name1",
+                                   "rdev": "1234 abcd 123F",
+                                   "port_type": 1,
+                                   "controller": "userid01"}}"""
         self.req.body = body_str
 
         vswitch.vswitch_create(self.req)
@@ -158,6 +171,15 @@ class HandlersGuestTest(unittest.TestCase):
         body_str = """{"vswitch": {"name": "name1",
                                    "rdev": "1234",
                                    "gvrp": 3}}"""
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, vswitch.vswitch_create,
+                          self.req)
+
+    def test_vswitch_create_invalid_controller(self):
+        body_str = """{"vswitch": {"name": "name1",
+                                   "rdev": "1234",
+                                   "controller": "node12345"}}"""
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, vswitch.vswitch_create,
