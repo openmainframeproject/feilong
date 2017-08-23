@@ -20,6 +20,7 @@ import tempfile
 from smutLayer import smut
 
 from zvmsdk import config
+from zvmsdk import database
 from zvmsdk import exception
 from zvmsdk import smutclient
 from zvmsdk import utils as zvmutils
@@ -568,3 +569,15 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
         smut_req.assert_called_once_with('getHost diskpoolspace pool')
         self.assertDictEqual(dp_info, expect)
+
+    @mock.patch.object(database.NetworkDbUtils,
+                       'switch_select_record_for_node')
+    def test_get_vm_nic_vswitch_info(self, request, select):
+        """
+        Get NIC and switch mapping for the specified virtual machine.
+        """
+        select.return_value = [('1000', 'testvs1'), ('2000', 'testvs2')]
+        expect = {'1000': 'testvs1', '2000': 'testvs2'}
+        switch_dict = self._smutclient.get_vm_nic_vswitch_info('FakeID')
+        select.assert_called_once_with('FakeID')
+        self.assertDictEqual(switch_dict, expect)
