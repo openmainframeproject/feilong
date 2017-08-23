@@ -24,7 +24,7 @@ create = {
                 'remotehost': parameter_types.remotehost
             },
             'required': ['url', 'image_meta'],
-            'additionalProperties': True
+            'additionalProperties': False
         },
         'additionalProperties': False
     },

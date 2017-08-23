@@ -127,12 +127,25 @@ class GuestActionsTest(SDKWSGITest):
                           self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    def test_guest_deploy_invalid_param(self, mock_userid):
+    def test_guest_deploy_invalid_vdev(self, mock_userid):
+        # vdev not string type
         self.req.body = """{"action": "deploy",
                             "image": "image1",
                             "transportfiles": "file1",
                             "remotehost": "host1",
                             "vdev": 1000}"""
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_deploy_invalid_remotehost(self, mock_userid):
+        self.req.body = """{"action": "deploy",
+                            "image": "image1",
+                            "transportfiles": "file1",
+                            "remotehost": ".122.sd..",
+                            "vdev": "1000"}"""
         mock_userid.return_value = FAKE_USERID
 
         self.assertRaises(exception.ValidationError, guest.guest_action,

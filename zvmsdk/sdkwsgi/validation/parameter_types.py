@@ -202,6 +202,15 @@ userid = {
 }
 
 
+controller = {
+    'type': ['string'],
+    'anyOf': [
+        {'pattern': '\*'},
+        {'minLength': 1, 'maxLength': 8}
+        ]
+}
+
+
 nic_id = {
     'type': ['string']
 }
