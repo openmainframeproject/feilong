@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa765c56_3f72079b",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 411,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-23T01:01:39Z",
+      "side": 1,
+      "message": "I think this is a typo? or it will be always true",
+      "range": {
+        "startLine": 411,
+        "startChar": 19,
+        "endLine": 411,
+        "endChar": 37
+      },
+      "revId": "8d254da4bb21ed64e9e12f103cddec3de4b943e5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7999a957_8ab5f5a9",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 424,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-23T01:01:39Z",
+      "side": 1,
+      "message": "wrong comment",
+      "range": {
+        "startLine": 424,
+        "startChar": 33,
+        "endLine": 424,
+        "endChar": 37
+      },
+      "revId": "8d254da4bb21ed64e9e12f103cddec3de4b943e5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "38da3b3b_0bf0c7ed",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 430,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-23T01:01:39Z",
+      "side": 1,
+      "message": "please add nic_vdev as well and maybe the active param info",
+      "range": {
+        "startLine": 430,
+        "startChar": 9,
+        "endLine": 430,
+        "endChar": 60
+      },
+      "revId": "8d254da4bb21ed64e9e12f103cddec3de4b943e5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7d7067c5_0504a3c2",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 445,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-23T01:01:39Z",
+      "side": 1,
+      "message": "just a question, smut will also contains those info?",
+      "range": {
+        "startLine": 444,
+        "startChar": 15,
+        "endLine": 445,
+        "endChar": 54
+      },
+      "revId": "8d254da4bb21ed64e9e12f103cddec3de4b943e5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4f245cf7_c0f2bcad",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 480,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-23T01:01:39Z",
+      "side": 1,
+      "message": "you may need same log lie couple operation?",
+      "revId": "8d254da4bb21ed64e9e12f103cddec3de4b943e5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
