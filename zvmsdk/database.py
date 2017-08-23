@@ -98,6 +98,7 @@ class DbOperator(object):
 
         # Create other connections of the pool
         for i in range(1, self._pool_size):
+            conn = sqlite3.connect(database)
             # autocommit
             conn.isolation_level = None
             self._conn_pool[i] = conn
@@ -118,3 +119,72 @@ class DbOperator(object):
 
     def release_connection(self, i):
         self._free_conn[i] = True
+        return self._conn
+
+
+class NetworkDbUtils(object):
+
+    def __init__(self):
+        self._create_switch_table()
+
+    def _create_switch_table(self):
+        create_table_sql = ' '.join((
+                'create table if not exists switch (',
+                'node varchar(8),',
+                'interface varchar(4),',
+                'switch varchar(8),',
+                'port varchar(128),',
+                'comments varchar(128),',
+                'primary key (node, interface));'))
+        with get_db_conn() as conn:
+            conn.execute(create_table_sql)
+
+    def switch_delete_record_for_node(self, node):
+        """Remove node switch record from switch table."""
+        with get_db_conn() as conn:
+            conn.execute("DELETE FROM switch WHERE node=?", (node,))
+
+    def switch_delete_record_for_nic(self, node, interface):
+        """Remove node switch record from switch table."""
+        with get_db_conn() as conn:
+            conn.execute("DELETE FROM switch WHERE node=? and interface=?",
+                         (node, interface))
+
+    def switch_add_record_for_nic(self, node, interface, port=None):
+        """Add node name and nic name address into switch table."""
+        if port is not None:
+            with get_db_conn() as conn:
+                conn.execute("INSERT INTO switch (node, interface, port) "
+                             "VALUES (?, ?, ?)",
+                             (node, interface, port))
+        else:
+            with get_db_conn() as conn:
+                conn.execute("INSERT INTO switch (node, interface) "
+                             "VALUES (?, ?)",
+                             (node, interface))
+
+    def switch_updat_record_with_switch(self, node, interface, switch):
+        """Update information in switch table."""
+        if switch is not None:
+            with get_db_conn() as conn:
+                conn.execute("UPDATE switch SET switch=? "
+                             "WHERE node=? and interface=?",
+                             (switch, node, interface))
+        else:
+            with get_db_conn() as conn:
+                conn.execute("UPDATE switch SET switch=NULL "
+                             "WHERE node=? and interface=?",
+                             (node, interface))
+
+    def switch_select_table(self):
+        with get_db_conn() as conn:
+            result = conn.execute("SELECT * FROM switch")
+            nic_settings = result.fetchall()
+        return nic_settings
+
+    def switch_select_record_for_node(self, node):
+        with get_db_conn() as conn:
+            result = conn.execute("SELECT interface, switch FROM switch "
+                                  "WHERE node=?", (node,))
+            switch_info = result.fetchall()
+        return switch_info
