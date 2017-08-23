@@ -37,19 +37,7 @@ class SMUTClient(client.ZVMClient):
     def __init__(self):
         super(SMUTClient, self).__init__()
         self._smut = smut.SMUT()
-        with database.get_db_conn() as conn:
-            self._conn = conn
-        self._create_switch_table()
-
-    def _create_switch_table(self):
-        create_table_sql = ' '.join((
-                'create table if not exists switch (',
-                'node varchar(8),',
-                'interface varchar(4),',
-                'switch varchar(8),',
-                'port varchar(128),',
-                'primary key (node, interface));'))
-        self._conn.execute(create_table_sql)
+        self._NetDbOperator = database.NetworkDbOperator()
 
     def _request(self, requestData):
         try:
@@ -286,10 +274,7 @@ class SMUTClient(client.ZVMClient):
         """
         Get NIC and switch mapping for the specified virtual machine.
         """
-        result = self._conn.execute("SELECT interface, switch FROM switch "
-                                    "WHERE node=?", (vm_id,))
-        switch_info = result.fetchall()
-
+        switch_info = self._NetDbOperator.switch_select_record_for_node(vm_id)
         with zvmutils.expect_invalid_resp_data():
             switch_dict = {}
             for item in switch_info:
@@ -298,42 +283,6 @@ class SMUTClient(client.ZVMClient):
             LOG.debug("Switch info the %(vm_id)s is %(switch_dict)s",
                       {"vm_id": vm_id, "switch_dict": switch_dict})
             return switch_dict
-
-    def _get_nic_ids(self):
-        result = self._conn.execute("SELECT * FROM switch")
-        nic_settings = result.fetchall()
-        return nic_settings
-
-    def _delete_switch(self, userid):
-        """Remove node switch record from switch table."""
-        self._conn.execute("DELETE FROM switch WHERE node=?", (userid,))
-
-    def _delete_nic_from_switch(self, userid, vdev):
-        """Remove node switch record from switch table."""
-        self._conn.execute("DELETE FROM switch WHERE node=? and interface=?",
-                           (userid, vdev))
-
-    def _add_switch_table_record(self, userid, interface, nic_id=None):
-        """Add node name and nic name address into switch table."""
-        if nic_id is not None:
-            self._conn.execute("INSERT INTO switch (node, interface, port) "
-                               "VALUES (?, ?, ?)",
-                               (userid, interface, nic_id))
-        else:
-            self._conn.execute("INSERT INTO switch (node, interface) "
-                               "VALUES (?, ?)",
-                               (userid, interface))
-
-    def _update_xcat_switch(self, userid, nic_vdev, vswitch):
-        """Update information in switch table."""
-        if vswitch is not None:
-            self._conn.execute("UPDATE switch SET switch=? "
-                               "WHERE node=? and interface=?",
-                               (vswitch, userid, nic_vdev))
-        else:
-            self._conn.execute("UPDATE switch SET switch=NULL "
-                               "WHERE node=? and interface=?",
-                               (userid, nic_vdev))
 
     def virtual_network_vswitch_query_iuo_stats(self):
         smut_userid = zvmutils.get_smut_userid()
