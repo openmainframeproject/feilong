@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7b554b5c_0ebefde4",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1010896
+      },
+      "writtenOn": "2017-08-24T06:04:43Z",
+      "side": 1,
+      "message": "OpenStack use deleted\u003d0?1 to decide if the item has been deleted, rather than erase it from the table, so we can still find it out when we have needs. I tend to vote for OpenStack way.",
+      "revId": "5d7220c61ab7505783a2f32f88ce3458ae19bd83",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a6b95f6d_f062b977",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1010896
+      },
+      "writtenOn": "2017-08-24T06:04:43Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "5d7220c61ab7505783a2f32f88ce3458ae19bd83",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
