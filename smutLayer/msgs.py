@@ -48,88 +48,200 @@ msg = {
     '0001': [{'overallRC': 4, 'rc': 4, 'rs': 1},
             "ULT%s0001E %s %s subfunction's operand at position %i (%s) " +
             "is not an integer: %s"],
+        # Explain: An error was detected while parsing the command.
+        #   The indicated operand is not an integer.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the syntax so that the indicated operand is
+        #   an integer, e.g. 10 and reissue the command.
     '0002': [{'overallRC': 4, 'rc': 4, 'rs': 2},
             "ULT%s0002E %s's %s subfunction is missing positional " +
             "operand (%s) at position %i."],
+        # Explain: An error was detected while parsing the command.
+        #   A positional operand is missing.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the syntax by specifying the missing operand
+        #   and reissue the command.
     '0003': [{'overallRC': 4, 'rc': 4, 'rs': 3},
             "ULT%s0003E %s's %s subfunction %s keyword operand is " +
             "missing a value."],
+        # Explain: An error was detected while parsing the command.
+        #   A keyword operand that requires a value was specified without
+        #   the value.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the syntax to provide a value for the specified
+        #   keyword operand.
     '0004': [{'overallRC': 4, 'rc': 4, 'rs': 4},
             "ULT%s0004E %s's %s subfunction %s keyword operand is not " +
             "an integer: %s"],
+        # Explain: An error was detected while parsing the command.
+        #   The specified operand for a keyword is not an integer.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the syntax so that the keyword operand is
+        #   an integer, e.g. 10 and reissue the command.
     '0005': [{'overallRC': 4, 'rc': 4, 'rs': 5},
             "ULT%s0005E %s's %s subfunction does not recognize keyword: %s"],
+        # Explain: An error was detected while parsing the command.
+        #   An unrecognized keyword was encountered.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the syntax to specify a recognized keyword
+        #   and reissue the command.
     '0006': [{'overallRC': 4, 'rc': 4, 'rs': 6},
             "ULT%s0006E %s's %s subfunction encountered an unknown " +
             "operand: %s"],
+        # Explain:  An error was detected while parsing the command.
+        #   An unknown operand was encountered.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the syntax and try again.
     '0007': [{'overallRC': 4, 'rc': 4, 'rs': 7},
             "ULT%s0007E Unrecognized function: %s"],
+        # Explain:  An error was detected while parsing the command.
+        #   The specified function is not known.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the syntax and try again.
     '0008': [{'overallRC': 4, 'rc': 4, 'rs': 8},
-            "ULT%s0008E Specified function is not 'HELP' or 'Version': %s"],
+            "ULT%s0008E Specified function is not 'HELP' or 'VERSION': %s"],
+        # Explain: An error was detected while parsing the command.
+        #   The specified function was not 'HELP' or 'VERSION' which are the
+        #   only valid functions for a command of the specified length.
+        # SysAct: Processing of the function terminates.
+        # UserResp: Correct the syntax and try again.
     '0009': [{'overallRC': 4, 'rc': 4, 'rs': 9},
             "ULT%s0009E Too few arguments specified."],
+        # Explain: An error was detected while parsing the command.
+        #   The minimum number of arguments were not provided for the command.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the syntax and try again.
     '0010': [{'overallRC': 4, 'rc': 4, 'rs': 10},
         "ULT%s0010E Userid is missing"],
+        # Explain: An error was detected while parsing the command.
+        #   A userid operand was not specified.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the syntax and specify the userid along
+        #   with any other required operands.
     '0011': [{'overallRC': 4, 'rc': 4, 'rs': 11},
         "ULT%s0011E Subfunction is missing. It should be one of " +
         "the following: %s"],
+        # Explain: An error was detected while parsing the command.
+        #   The name of the subfunction was not specified.
+        # SysAct: Processing of the function terminates.
+        # UserResp: Correct the syntax and specify the userid along
+        #   with any other required operands.
     '0012': [{'overallRC': 4, 'rc': 4, 'rs': 12},
         "ULT%s0012E The request data is not one of the supported types " +
         "of list or string: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0013': [{'overallRC': 4, 'rc': 4, 'rs': 13},
         "ULT%s0010E The desired state was: %s. Valid states are: %s"],
+        # Explain: An error was detected while parsing the command.
+        #   The state operand value is not one of the accepted values.
+        #   The valid values are shown in the message.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the syntax to use one of the valid states.
     '0014': [{'overallRC': 4, 'rc': 4, 'rs': 14},
         "ULT%s0014E The option %s was specified but the option %s " +
         "was not specified.  These options must both be specified."],
+        # Explain: An error was detected while parsing the command.
+        #   An option was specified which required a related
+        #   option that was not specified.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the syntax to specify both options.
     '0015': [{'overallRC': 4, 'rc': 4, 'rs': 15},
             "ULT%s0015E The file system was not 'ext2', 'ext3', " +
             "'ext4', 'xfs' or 'swap': %s"],
+        # Explain: An error was detected while parsing the command.
+        #   The type of file system does not match one of the valid
+        #   values.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the syntax to use a value file system type.
     '0016': [{'overallRC': 4, 'rc': 4, 'rs': 16},
             "ULT%s0016E The scp Data Type was not 'hex', 'ebcdic', " +
             "or 'delete': %s"],
+        # Explain: An error was detected while parsing the command.
+        #   The value specified for the scp data type is not one of the
+        #   recognized values.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the syntax to use a valid scp data type.
     '0017': [{'overallRC': 4, 'rc': 4, 'rs': 17},    # dict is not used
             "ULT%s0017W The maxwait time %i sec is not evenly divisible " +
             "by the poll interval %i sec.  Maximum wait time will be %i " +
             "sec or %i poll intervals."],
+        # Explain:
+        # SysAct:
+        # UserResp:
 
     # 0200-0299: Utility Messages
     '0200': [{'overallRC': 4, 'rc': 4, 'rs': 200},
             "ULT%s0200E The size of the disk is not valid: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0201': [{'overallRC': 4, 'rc': 4, 'rs': 201},
             "ULT%s0201E Failed to convert %s to a number of blocks."],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0202': [{'overallRC': 4, 'rc': 4, 'rs': 202},
             "ULT%s0202E %s is not an integer size of blocks."],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0203': [{'overallRC': 4, 'rc': 4, 'rs': 203},
             "ULT%s0203E Failed to convert %s to a number of cylinders."],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0204': [{'overallRC': 4, 'rc': 4, 'rs': 204},
             "ULT%s0204E %s is not an integer size of cylinders."],
+        # Explain:
+        # SysAct:
+        # UserResp:
     # 0205-0299: Available
 
     # SMCLI and SMAPI related messages.
     '0300': [{'overallRC': 8},    # dict is not used.
             "ULT%s0300E SMAPI API failed: %s, overall rc: %s, rc: %s, " +
             "rs: %s, errno: %s, cmd: %s, out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0301': [{'overallRC': 25, 'rc': 301, 'rs': 0},
             "ULT%s0301E SMAPI API failed: %s, response header does not " +
             "have the expected 3 values before the (details) string. " +
             "cmd: %s, response header: %s, out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0302': [{'overallRC': 25, 'rc': 302, 'rs': 0},
             "ULT%s0302E SMAPI API failed: %s, word 1 in " +
             "the response header is not an integer or in the range of " +
             "expected values. word 1: %s, cmd: %s, response " +
             "header: %s, out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0303': [{'overallRC': 25, 'rc': 303, 'rs': 0},
             "ULT%s0303E SMAPI API failed: %s, word 2 in the response " +
             "header is not an integer. word 2: %s, cmd: %s, response " +
             "header: %s, out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0304': [{'overallRC': 25, 'rc': 304, 'rs': 0},
             "ULT%s0304E SMAPI API failed: %s, word 3 in the response " +
             "header is not an integer. word 3: %s, cmd: %s, response " +
             "header: %s, out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0305': [{'overallRC': 99, 'rc': 305, 'rs': 0},
             "ULT%s0305E Exception received on an attempt to " +
             "communicate with SMAPI, cmd: %s, exception: %s, " +
             "details: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     # 0306-0310: Available
 
     # IUCV related messages
@@ -137,114 +249,213 @@ msg = {
             "ULT%s0311E On %s, command sent through IUCV failed, " +
             "rc in response string is not an integer. " +
             "cmd: %s, rc: %s, out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0312': [{'overallRC': 2, 'rc': 2, 'rs': 99},    # dict is not used.
             "ULT%s0312E On %s, command sent through IUCV failed, " +
             "reason code in response string is not an integer. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0313': [{'overallRC': 2, 'rc': 1},      # dict is not used.
             "ULT%s0313E On %s, command sent through IUCV was not " +
             "authorized or a generic Linux error occurred. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0314': [{'overallRC': 2, 'rc': 2},      # dict is not used.
             "ULT%s0314E IUCV client parameter error sending command to %s. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0315': [{'overallRC': 2, 'rc': 4},      # dict is not used.
             "ULT%s0315E IUCV socket error sending command to %s. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0316': [{'overallRC': 2, 'rc': 8},      # dict is not used.
             "ULT%s0316E On %s, command sent through IUCV failed. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0317': [{'overallRC': 2, 'rc': 16},     # dict is not used.
             "ULT%s0317E File transport failure while sending " +
             "command to %s. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0318': [{'overallRC': 2, 'rc': 32},     # dict is not used.
             "ULT%s0318E On %s, IUCV server file was not found. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0319': [{'overallRC': 2},               # dict is not used.
             "ULT%s0319E Unrecognized IUCV client error encountered " +
             "while sending a command through IUCV to $s. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
 
     # General subfunction processing messages
     '0400': [{'overallRC': 4, 'rc': 4, 'rs': 400},
             "ULT%s0400E The worker script %s does not exist."],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0401': [{'overallRC': 4, 'rc': 7, 'rs': 401},
             "ULT%s0401E Failed to punch %s file to guest: %s, out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0402': [{'overallRC': 4, 'rc': 5, 'rs': 402},
             "ULT%s0402E No information was found for the specified " +
             "pool(s): %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:  Correct the syntax and try again.
     '0403': [{'overallRC': 4, 'rc': 99, 'rs': 403},
             "ULT%s0403E  %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0404': [{'overallRC': 4, 'rc': 8, 'rs': 404},
             "ULT%s0404E Failed to spool the punch to the specified class %s" +
             ", out:%s "],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0405': [{'overallRC': 4, 'rc': 6, 'rs': 405},
             "ULT%s0405E Unable to obtain information related to: " +
             "%s. Command used was: %s. Output was: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0406': [{'overallRC': 4, 'rc': 9, 'rs': 406},
             "ULT%s0406E Failed to punch %s because of VMUR timeout "],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0407': [{'overallRC': 4, 'rc': 4, 'rs': 407},     # dict is not used.
             "ULT%s0407W Unable to spool reader to all classes, " +
             "it is possible that there may be additional console " +
             "files available that are not listed in the response. " +
             "Response from %s is %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0408': [{'overallRC': 4, 'rc': 4, 'rs': 408},
             "ULT%s0408E Error getting list of files in the reader " +
             "to search for logs from user %s. Response from %s is %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0409': [{'overallRC': 4, 'rc': 4, 'rs': 409},
             "ULT%s0409E Unable to get console log for user %s. " +
             "The userid is either: not logged on, not spooling " +
             "its console, or has not created any console output. " +
             "Error rc=rs=8 returned from " +
             "Image_Console_Get."],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0410': [{'overallRC': 4, 'rc': 4, 'rs': 410},
             "ULT%s0410E Unable to get console log for user %s " +
             "no spool files were found in our reader from this " +
             "user, it is possible another process has already " +
             "received them."],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0411': [{'overallRC': 4, 'rc': 4, 'rs': 411},
             "ULT%s0411E Unable to receive console output file. " +
             "Reader not online.  /sys/bus/ccw/drivers/vmur/0.0.000c" +
             "/online = 0"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0412': [{'overallRC': 4, 'rc': 4, 'rs': 412},     # dict is not used.
             "ULT%s0412E Malformed reply from SMAPI, unable to fill " +
             "in performance information.  Response is %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0413': [{'overallRC': 99, 'rc': 99, 'rs': 413},
             "ULT%s0413E Userid '%s' did not enter the expected " +
             "operating system state of '%s' in %i seconds."],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0414': [{'overallRC': 99, 'rc': 99, 'rs': 414},
             "ULT%s0414E Userid '%s' did not enter the expected " +
             "virtual machine state of '%s' in %i seconds."],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0415': [{'overallRC': 3, 'rc': 415},    # rs comes from failing rc
             "ULT%s0415E Command failed: '%s', rc: %i out: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0416': [{'overallRC': 99, 'rc': 99, 'rs': 416},
             "ULT%s0416E Command returned a response " +
             "containing '%s' but did not have at least %i words " +
             "following it. cmd: '%s', out: '%s'"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0417': [{'overallRC': 99, 'rc': 99, 'rs': 417},
             "ULT%s0417E Command did not return the expected response " +
             "containing '%s', cmd: '%s', out: '%s'"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0418': [{'overallRC': 99, 'rc': 99, 'rs': 418},
             "ULT%s0418E Userid %s is not logged on to this system."],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0419': [{'overallRC': 99, 'rc': 99, 'rs': 419},
             "ULT%s0419E A relocation is not in progress for userid %s."],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0420': [{'overallRC': 99, 'rc': 99, 'rs': 420},     # dict is not used.
             "ULT%s0420E An error occurred issuing a %s for userid %s.\n" +
             "Please look up message(s): %s in the CP Messages book for " +
             "more information."],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0421': [{'overallRC': 99, 'rc': 421, 'rs': 0},
             "ULT%s0421E Exception received on an attempt to " +
             "execute a cmd: %s, exception: %s, " +
             "details: %s"],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0422': [{'overallRC': 99, 'rc': 422, 'rs': 0},
             "ULT%s0422W Exception received on an attempt to " +
             "execute a cmd: %s, exception: %s, " +
             "details: %s. Will attempt to continue processing."],
+        # Explain:
+        # SysAct:
+        # UserResp:
     '0423': [{'overallRC': 4, 'rc': 4, 'rs': 423},    # dict is not used.
             "ULT%s0423W Unable to spool reader to all classes, " +
             "it is possible that there may be additional console " +
             "files available that are not listed in the response."],
+        # Explain:
+        # SysAct:
+        # UserResp:
 
     # 5000-6100: Reserved for SMCLI
     }
