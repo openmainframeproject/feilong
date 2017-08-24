@@ -1491,11 +1491,10 @@ int getAndParseSmapiBuffer(struct _vmApiInternalContext* vmapiContextP, char * *
     TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_ZTHIN_GENERAL);
 
     TRACE_1SUB(vmapiContextP, TRACEAREA_PARSER, TRACELEVEL_DETAILS, "Table being parsed: <%s>\n", parserTableName);
-
     // Create a retry in case the socket loses connection
     // Cover creating the socket, sending SMAPI the API, and also getting the requestID
     for (k = 0;; k++) {
-        if (k > SEND_RETRY_LIMIT) {
+        if (k >= SEND_RETRY_LIMIT) {
             sprintf(line, "Socket create/send/receive requestId failed after %d retries\n", SEND_RETRY_LIMIT);
             errorLog(vmapiContextP, __func__, TO_STRING(__LINE__), RcIucv, RsUnexpected, line);
             FREE_MEMORY(*inputPp);
@@ -1516,10 +1515,9 @@ int getAndParseSmapiBuffer(struct _vmApiInternalContext* vmapiContextP, char * *
         }
         if (k > 0) {
             // Display the api buffer table name in message
-            sprintf(line, "Retry %n of sending SMAPI API for table %s\n", k, parserTableName);
+            sprintf(line, "Retry %d of sending SMAPI API for table %s\n", k, parserTableName);
             errorLog(vmapiContextP, __func__, TO_STRING(__LINE__), RcIucv, RsUnexpected, line);
         }
-
         // Initialize our socket, no need to retry this, usually not a problem
         if (0 != (rc = smSocketInitialize(vmapiContextP, &sockDesc))) {
             FREE_MEMORY(*inputPp);
@@ -1529,7 +1527,6 @@ int getAndParseSmapiBuffer(struct _vmApiInternalContext* vmapiContextP, char * *
         TRACE_1SUB(vmapiContextP, TRACEAREA_SMAPI_ONLY, TRACELEVEL_DETAILS, "Socket write starting for <%s>\n", parserTableName);
 
         saverc = 0;
-
         // Retry the send if the error detected is ok to retry
         for (j = 0;; j++) {
             if (0 != (rc = smSocketWrite(vmapiContextP, sockDesc, *inputPp, inputSize))) {
@@ -1546,13 +1543,16 @@ int getAndParseSmapiBuffer(struct _vmApiInternalContext* vmapiContextP, char * *
                 }
 
                 FREE_MEMORY(*inputPp);
-                TRACE_2SUBS(vmapiContextP, TRACEAREA_SMAPI_ONLY, TRACELEVEL_DETAILS, "Socket write for <%s> did not complete after %d retries\n",
-                            parserTableName, SEND_RETRY_LIMIT);
+                if (j >= SEND_RETRY_LIMIT) {
+                    sprintf(line, "Socket write failed after %d retries. rc: %d\n", SEND_RETRY_LIMIT, rc);
+                } else {
+                    sprintf(line, "Socket write failed. rc: %d\n", rc);
+                }
+                errorLog(vmapiContextP, __func__, TO_STRING(__LINE__), RcIucv, RsUnexpected, line);
                 return rc;
             }
             break;
         }
-
 
         // Get the request Id
         if (0 != (rc = smSocketRead(vmapiContextP, sockDesc, (char*) &requestId, 4))) {
@@ -1561,7 +1561,7 @@ int getAndParseSmapiBuffer(struct _vmApiInternalContext* vmapiContextP, char * *
                 saverc = rc;
                 continue;
             }
-            sprintf(line, "Socket %d receive of the requestId failed after %n retries\n", sockDesc, SEND_RETRY_LIMIT);
+            sprintf(line, "Socket %d receive of the requestId failed after %d retries\n", sockDesc, SEND_RETRY_LIMIT);
             errorLog(vmapiContextP, __func__, TO_STRING(__LINE__), RcIucv, RsUnexpected, line);
             FREE_MEMORY(*inputPp);
             return rc;
@@ -1569,7 +1569,7 @@ int getAndParseSmapiBuffer(struct _vmApiInternalContext* vmapiContextP, char * *
 
         // Read in the output length and retry if an error. Retry a few times if needed
         for (jk=0;; jk++) {
-            if (jk > SEND_RETRY_LIMIT) {
+            if (jk >= SEND_RETRY_LIMIT) {
                 sprintf(line, "SMAPI response_recovery retry limit of %d exceeded\n", SEND_RETRY_LIMIT);
                 errorLog(vmapiContextP, __func__, TO_STRING(__LINE__), RcIucv, RsUnexpected, line);
                 FREE_MEMORY(*inputPp);
