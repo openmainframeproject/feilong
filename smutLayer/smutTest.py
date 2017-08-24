@@ -642,7 +642,8 @@ modifyTests = [
         'description': "Online the 110 ECKD disk with ext4: " +
             "<<<unsafePre>>>3",
         'request': "CmdVM <<<unsafePre>>>3 cmd '/sbin/cio_ignore -r 110; " +
-            "/sbin/chccwdev -e 110'",
+            "which udevadm &> /dev/null && udevadm settle || udevsettle ;" +
+            "/sbin/chccwdev -e 110 2>&1'",
         'out': "",
         'overallRC': [0],
     },
@@ -681,7 +682,8 @@ modifyTests = [
         'description': "Online the 112 ECKD disk with swap: " +
             "<<<unsafePre>>>3",
         'request': "CmdVM <<<unsafePre>>>3 cmd '/sbin/cio_ignore -r 112; " +
-            "/sbin/chccwdev -e 112'",
+            "which udevadm &> /dev/null && udevadm settle || udevsettle ;" +
+            "/sbin/chccwdev -e 112 2>&1'",
         'out': "",
         'overallRC': [0],
     },
@@ -711,7 +713,8 @@ modifyTests = [
         'description': "Online the 130 FBA disk with swap: " +
             "<<<unsafePre>>>3",
         'request': "CmdVM <<<unsafePre>>>3 cmd '/sbin/cio_ignore -r 130; " +
-            "/sbin/chccwdev -e 130'",
+            "which udevadm &> /dev/null && udevadm settle || udevsettle ;" +
+            "/sbin/chccwdev -e 130 2>&1'",
         'out': "",
         'overallRC': [0],
     },
@@ -734,7 +737,8 @@ modifyTests = [
         'description': "Online the 131 FBA disk with swap: " +
             "<<<unsafePre>>>3",
         'request': "CmdVM <<<unsafePre>>>3 cmd '/sbin/cio_ignore -r 131; " +
-            "/sbin/chccwdev -e 131'",
+            "which udevadm &> /dev/null && udevadm settle || udevsettle ;" +
+            "/sbin/chccwdev -e 131 2>&1'",
         'out': "",
         'overallRC': [0],
     },
@@ -757,7 +761,8 @@ modifyTests = [
         'description': "Online the 132 FBA disk with swap: " +
             "<<<unsafePre>>>3",
         'request': "CmdVM <<<unsafePre>>>3 cmd '/sbin/cio_ignore -r 132; " +
-            "/sbin/chccwdev -e 132'",
+            "which udevadm &> /dev/null && udevadm settle || udevsettle ;" +
+            "/sbin/chccwdev -e 132 2>&1'",
         'out': "",
         'overallRC': [0],
     },
