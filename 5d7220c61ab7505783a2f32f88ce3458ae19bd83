@@ -33,6 +33,52 @@
       "revId": "5d7220c61ab7505783a2f32f88ce3458ae19bd83",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2bf9c2d1_da4e54dd",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-08-24T06:40:20Z",
+      "side": 1,
+      "message": "Maybe you need a place to check whether the record has already existed?",
+      "range": {
+        "startLine": 152,
+        "startChar": 33,
+        "endLine": 152,
+        "endChar": 34
+      },
+      "revId": "5d7220c61ab7505783a2f32f88ce3458ae19bd83",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "07b21f93_76d0d1fd",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-08-24T06:40:20Z",
+      "side": 1,
+      "message": "suggest to set None as default value for switch.",
+      "range": {
+        "startLine": 165,
+        "startChar": 63,
+        "endLine": 165,
+        "endChar": 69
+      },
+      "revId": "5d7220c61ab7505783a2f32f88ce3458ae19bd83",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
