@@ -31,14 +31,16 @@ class SDKImageOpsTestCase(base.SDKTestCase):
 
     @mock.patch.object(imageops.get_imageops().zvmclient, 'image_import')
     def test_image_import_xcat(self, image_import):
+        image_name = '95a4da37-9f9b-4fb2-841f-f0bb441b7544'
         url = 'file:///path/to/image/file'
         image_meta = {'os_version': 'rhel7.2',
                       'md5sum': 'e34166f61130fc9221415d76298d7987'}
         remote_host = 'image@192.168.99.1'
-        self._image_ops.image_import(url, image_meta=image_meta,
+        self._image_ops.image_import(image_name, url, image_meta,
                                      remote_host=remote_host)
-        image_import.assert_called_once_with('/path/to/image/file',
-                                             'rhel7.2',
+        image_import.assert_called_once_with(image_name,
+                                             url,
+                                             image_meta,
                                              remote_host=remote_host)
 
     @mock.patch.object(imageops.get_imageops().zvmclient, 'image_query')

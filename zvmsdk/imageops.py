@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import urlparse
-
 from zvmsdk import client as zvmclient
 from zvmsdk import config
 from zvmsdk import utils as zvmutils
@@ -41,10 +39,10 @@ class ImageOps(object):
     def image_get_root_disk_size(self, image_name):
         return self.zvmclient.image_get_root_disk_size(image_name)
 
-    def image_import(self, url, image_meta={}, remote_host=None):
-        parsed_url = urlparse.urlparse(url)
-        self.zvmclient.image_import(parsed_url.path,
-                                    image_meta['os_version'],
+    def image_import(self, image_name, url, image_meta, remote_host=None):
+        self.zvmclient.image_import(image_name,
+                                    url,
+                                    image_meta,
                                     remote_host=remote_host)
 
     def image_query(self, imagekeyword=None):

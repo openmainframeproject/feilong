@@ -33,7 +33,8 @@ class SDKAPIImageTestCase(base.SDKAPIBaseTestCase):
         os.system('touch %s' % image_fpath)
         url = "file://" + image_fpath
         image_meta = {'os_version': 'rhel7.2'}
-        self.sdkapi.image_import(url, image_meta, utils.get_host())
+        self.sdkapi.image_import(image_fname, url, image_meta,
+                                 utils.get_host())
 
         query_result = self.sdkapi.image_query(image_fname)
         expect_result = ['rhel7.2-s390x-netboot-%s'

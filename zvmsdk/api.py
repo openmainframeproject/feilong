@@ -162,18 +162,19 @@ class SDKAPI(object):
         self._imageops.image_delete(image_name)
 
     @zvmutils.check_input_types(_TSTR)
-    def image_get_root_disk_size(self, image_file_name):
+    def image_get_root_disk_size(self, image_name):
         """Get the root disk size of the image
 
-        :param image_file_name: the image file name in image Repository
+        :param image_name: the image name in image Repository
         :returns: the disk size in units CYL or BLK
         """
-        return self._imageops.image_get_root_disk_size(image_file_name)
+        return self._imageops.image_get_root_disk_size(image_name)
 
-    @zvmutils.check_input_types(_TSTR, dict, _TSTR_OR_NONE)
-    def image_import(self, url, image_meta={}, remote_host=None):
+    @zvmutils.check_input_types(_TSTR, _TSTR, dict, _TSTR_OR_NONE)
+    def image_import(self, image_name, url, image_meta, remote_host=None):
         """Import image to zvmsdk image repository
 
+        :param image_name: image name that can be uniquely identify an image
         :param str url: image url to specify the location of image such as
                http://netloc/path/to/file.tar.gz.0
                https://netloc/path/to/file.tar.gz.0
@@ -196,7 +197,7 @@ class SDKAPI(object):
                 - Free space is not enough in image repository
         """
 
-        self._imageops.image_import(url, image_meta=image_meta,
+        self._imageops.image_import(image_name, url, image_meta,
                                     remote_host=remote_host)
 
     @zvmutils.check_input_types(_TSTR_OR_NONE)

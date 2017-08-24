@@ -47,10 +47,12 @@ class SDKAPITestCase(base.SDKTestCase):
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_import")
     def test_image_import(self, image_import):
+        image_name = '95a4da37-9f9b-4fb2-841f-f0bb441b7544'
         url = "file:////install/temp/test.img"
         image_meta = {'os_version': "rhel6.7"}
-        self.api.image_import(url, image_meta=image_meta)
-        image_import.assert_called_once_with(url, image_meta=image_meta,
+        self.api.image_import(image_name, url, image_meta)
+        image_import.assert_called_once_with(image_name, url,
+                                             image_meta,
                                              remote_host=None)
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")

@@ -826,17 +826,17 @@ class SDKXCATClientTestCases(base.SDKTestCase):
                                 file_exists,
                                 remove_file,
                                 xrequest):
-
-        image_file_path = '/test/62599661-3D7A-40C1-8210-B6A4BC66DDB7'
+        imagename = '95a4da37-9f9b-4fb2-841f-f0bb441b7544'
+        url = 'file:///path/to/image/imagefile'
+        imagemeta = {'os_version': 'rhel7.2'}
         time_stamp_dir = self._pathutils.make_time_stamp()
         bundle_file_path = self._pathutils.get_bundle_tmp_path(time_stamp_dir)
-        os_version = 'rhel7.2'
         remote_host_info = 'nova@192.168.99.99'
-        image_profile = '62599661_3D7A_40C1_8210_B6A4BC66DDB7'
+        image_profile = '95a4da37_9f9b_4fb2_841f_f0bb441b7544'
         image_meta = {
-                u'id': '62599661-3D7A-40C1-8210-B6A4BC66DDB7',
+                u'id': imagename,
                 u'properties': {u'image_type_xcat': u'linux',
-                               u'os_version': os_version,
+                               u'os_version': imagemeta['os_version'],
                                u'os_name': u'Linux',
                                u'architecture': u's390x',
                                u'provision_method': u'netboot'}
@@ -854,8 +854,8 @@ class SDKXCATClientTestCases(base.SDKTestCase):
                      'remotehost=%s' % remote_host_info]
 
         remove_file.return_value = None
-        self._xcatclient.image_import(image_file_path, os_version,
-                          remote_host=remote_host_info)
+        self._xcatclient.image_import(imagename, url, imagemeta,
+                                      remote_host=remote_host_info)
         generate_manifest_file.assert_called_with(image_meta,
             '0100.img', bundle_file_path)
 

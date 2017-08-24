@@ -23,6 +23,7 @@ import socket
 import ssl
 import stat
 import tarfile
+import urlparse
 import xml.dom.minidom as Dom
 
 from six.moves import http_client as httplib
@@ -1083,10 +1084,9 @@ class XCATClient(client.ZVMClient):
     def export_image(self, image_file_path):
         pass
 
-    def image_import(self, image_file_path, os_version, remote_host=None):
+    def image_import(self, imagename, url, imagemeta, remote_host=None):
         """import a spawn image to XCAT"""
-        LOG.debug("Getting a spawn image...")
-        image_uuid = image_file_path.split('/')[-1]
+        image_file_path = urlparse.urlparse(url)
         disk_file_name = CONF.zvm.user_root_vdev + '.img'
         spawn_path = self._pathutils.get_spawn_folder()
 
@@ -1094,9 +1094,9 @@ class XCATClient(client.ZVMClient):
         bundle_file_path = self._pathutils.get_bundle_tmp_path(time_stamp_dir)
 
         image_meta = {
-                u'id': image_uuid,
+                u'id': imagename,
                 u'properties': {u'image_type_xcat': u'linux',
-                               u'os_version': os_version,
+                               u'os_version': imagemeta['os_version'],
                                u'os_name': u'Linux',
                                u'architecture': u's390x',
                                u'provision_method': u'netboot'}
@@ -1115,7 +1115,7 @@ class XCATClient(client.ZVMClient):
 
         # Import image bundle to xCAT MN's image repository
         LOG.debug("Importing the image %s to xCAT", image_meta['id'])
-        profile_str = image_uuid.replace('-', '_')
+        profile_str = imagename.replace('-', '_')
         image_profile = profile_str
         self.check_space_imgimport_xcat(image_bundle_package,
                         CONF.xcat.free_space_threshold,

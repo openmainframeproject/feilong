@@ -75,7 +75,7 @@ class ZVMClient(object):
     def get_power_state(self, userid):
         pass
 
-    def image_import(self, image_file_path, os_version, remote_host=None):
+    def image_import(self, image_name, url, image_meta, remote_host=None):
         pass
 
     def image_query(self, imagekeyword=None):
