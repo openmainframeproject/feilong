@@ -1,0 +1,174 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4a55f6c6_b1aa4af5",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-24T20:50:42Z",
+      "side": 1,
+      "message": "e.g., 10,",
+      "revId": "625b82effe3f61e8f21d1c3fe4cb0ee9ec493a47",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fb7b0220_021608b3",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-24T20:50:42Z",
+      "side": 1,
+      "message": "add \"and reissue the command\"",
+      "revId": "625b82effe3f61e8f21d1c3fe4cb0ee9ec493a47",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a3e94ca9_76010ad8",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-24T20:50:42Z",
+      "side": 1,
+      "message": "e.g., 10,",
+      "revId": "625b82effe3f61e8f21d1c3fe4cb0ee9ec493a47",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "58b50a59_8c15eb49",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-24T20:50:42Z",
+      "side": 1,
+      "message": "Can we change \"try again\" to \"reissue the command\", please?  (same goes for next several messages)",
+      "revId": "625b82effe3f61e8f21d1c3fe4cb0ee9ec493a47",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "67ef4b45_137854af",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-24T20:50:42Z",
+      "side": 1,
+      "message": "add \"and reissue the command\"",
+      "revId": "625b82effe3f61e8f21d1c3fe4cb0ee9ec493a47",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f6f3456b_8a107486",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-24T20:50:42Z",
+      "side": 1,
+      "message": "add \"and reissue the command\"",
+      "revId": "625b82effe3f61e8f21d1c3fe4cb0ee9ec493a47",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3594747e_9b130bea",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-24T20:50:42Z",
+      "side": 1,
+      "message": "add \"and reissue the command\"",
+      "revId": "625b82effe3f61e8f21d1c3fe4cb0ee9ec493a47",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3172b86e_165a4473",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-24T20:50:42Z",
+      "side": 1,
+      "message": "add \"and reissue the command\"",
+      "revId": "625b82effe3f61e8f21d1c3fe4cb0ee9ec493a47",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0240e3a7_458cb62b",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-24T20:50:42Z",
+      "side": 1,
+      "message": "to use a valid file system type and reissue the command.\"",
+      "revId": "625b82effe3f61e8f21d1c3fe4cb0ee9ec493a47",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa41354c_7e99f733",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-24T20:50:42Z",
+      "side": 1,
+      "message": "add \"and reissue the command\"",
+      "revId": "625b82effe3f61e8f21d1c3fe4cb0ee9ec493a47",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
