@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7bdeb0a3_7342799a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2017-08-24T13:53:04Z",
+      "side": 1,
+      "message": "I meant to type: needed \u003e\u003d test",
+      "revId": "d04c0d08c7af7d69d0cdd1839694f4a4d74782d1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
