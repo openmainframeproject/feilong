@@ -25,6 +25,53 @@
     },
     {
       "key": {
+        "uuid": "6231c1f3_78b7d2fa",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-08-24T02:34:55Z",
+      "side": 1,
+      "message": "you can use the expect_request_failed_and_reraise in utils.py, it will automatically pass the smut response info into the zvmnetworkerror exception, just need to pass the msg.\n\nThis can also avoid using \"except Exception\" to catch all exception, since the _request function would only possibly throw two kinds of exception.",
+      "parentUuid": "a781bcf8_49fda582",
+      "range": {
+        "startLine": 374,
+        "startChar": 12,
+        "endLine": 374,
+        "endChar": 44
+      },
+      "revId": "25e5811d18cc3690b07d05236eef0648e7274a10",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa3d03d_41e39760",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 389,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-08-24T02:34:55Z",
+      "side": 1,
+      "message": "suggest to catch only the requestfailed exception, not all Exception.",
+      "range": {
+        "startLine": 389,
+        "startChar": 36,
+        "endLine": 389,
+        "endChar": 37
+      },
+      "revId": "25e5811d18cc3690b07d05236eef0648e7274a10",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e1cbf9b6_f8d1c467",
         "filename": "zvmsdk/smutclient.py",
         "patchSetId": 3
@@ -41,6 +88,52 @@
         "startChar": 16,
         "endLine": 392,
         "endChar": 58
+      },
+      "revId": "25e5811d18cc3690b07d05236eef0648e7274a10",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "40bc25dd_c6a574a9",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 405,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-08-24T02:34:55Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 405,
+        "startChar": 20,
+        "endLine": 405,
+        "endChar": 45
+      },
+      "revId": "25e5811d18cc3690b07d05236eef0648e7274a10",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6fa36d10_c0729dbc",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 413,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-08-24T02:34:55Z",
+      "side": 1,
+      "message": "suggest to make True as the default value for persist_OK, then don\u0027t need this. up to you~",
+      "range": {
+        "startLine": 412,
+        "startChar": 20,
+        "endLine": 413,
+        "endChar": 41
       },
       "revId": "25e5811d18cc3690b07d05236eef0648e7274a10",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
