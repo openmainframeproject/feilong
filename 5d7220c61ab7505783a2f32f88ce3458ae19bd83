@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "8de57a3f_a8323395",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-08-24T09:03:58Z",
+      "side": 1,
+      "message": "Do we need to set the database mode as 777. I think 755 is enough?",
+      "range": {
+        "startLine": 79,
+        "startChar": 24,
+        "endLine": 79,
+        "endChar": 27
+      },
+      "revId": "5d7220c61ab7505783a2f32f88ce3458ae19bd83",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6b8db159_085d4398",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-08-24T09:03:58Z",
+      "side": 1,
+      "message": "Why not combine these three lines into for statement?",
+      "range": {
+        "startLine": 95,
+        "startChar": 6,
+        "endLine": 97,
+        "endChar": 33
+      },
+      "revId": "5d7220c61ab7505783a2f32f88ce3458ae19bd83",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7b554b5c_0ebefde4",
         "filename": "zvmsdk/database.py",
         "patchSetId": 3
