@@ -125,7 +125,7 @@ def cvtToCyl(rh, diskSize):
                 results = msgs.msg['0203'][0]
     elif cyl.strip('1234567890'):
         # Size is not an integer value.
-        msg = msgs.msg['0202'][1] % (modId, cyl)
+        msg = msgs.msg['0204'][1] % (modId, cyl)
         rh.printLn("ES", msg)
         results = msgs.msg['0202'][0]
 
