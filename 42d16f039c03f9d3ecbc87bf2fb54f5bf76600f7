@@ -1,0 +1,199 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7449e07f_c620a30d",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-25T16:23:27Z",
+      "side": 1,
+      "message": "I have problems with using \"command\" or \"SMUT command\" in functional related messages.  \"SMUT\" does not exist as a command.  \"smutCmd.py\" is a means to invoke a function/subfunction.  Products that use the SMUT layer have a wide range of means to use it.  They could use smutCmd.py, call the function using the ReqHandle object from a command of their own or a GUI, etc.  For this reason, I think messages that do not come out of specific parsing failures should tell the human to correct the error and reinvoke the function.",
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "93f63d04_fedb5a60",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 325,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-25T16:23:27Z",
+      "side": 1,
+      "message": "function",
+      "range": {
+        "startLine": 325,
+        "startChar": 37,
+        "endLine": 325,
+        "endChar": 44
+      },
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ddb7984b_183dd892",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 328,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-25T16:23:27Z",
+      "side": 1,
+      "message": "Do not use SMUT or SMUT command.  I will not restate this comment further.",
+      "range": {
+        "startLine": 328,
+        "startChar": 40,
+        "endLine": 328,
+        "endChar": 52
+      },
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0106c7fb_2bb6d3d3",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-25T16:23:27Z",
+      "side": 1,
+      "message": "Processing terminates with an error is more flexible for our environemnt.  I will only call it out here and not restate it on the other changes.",
+      "range": {
+        "startLine": 334,
+        "startChar": 18,
+        "endLine": 334,
+        "endChar": 31
+      },
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c265557e_2473d46f",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-25T16:23:27Z",
+      "side": 1,
+      "message": "We don\u0027t know what is wrappering our functions.  We should refer to them as functions.  I don\u0027t think telling them getHost General helps too much but if you want to refer to the specific function/subfunction then you should refer to them as that and not as a command.",
+      "range": {
+        "startLine": 358,
+        "startChar": 38,
+        "endLine": 358,
+        "endChar": 45
+      },
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a2868745_4de3d43d",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 413,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-25T16:23:27Z",
+      "side": 1,
+      "message": "It might be helpful to indicate the possible causes of this error that include \"not spooling\", \"not spooling to class t\", \"not logged on\", or \"has not generated as console output yet\".  The last one is the one that I encountered with smutTest.",
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "46a52317_c337c68e",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-25T16:23:27Z",
+      "side": 1,
+      "message": "It this problem persists for this managed system then it could be that they have not set it up correctly.  That might be a user response that they think about.",
+      "range": {
+        "startLine": 416,
+        "startChar": 64,
+        "endLine": 416,
+        "endChar": 65
+      },
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d13be751_d0adeea0",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 425,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-25T16:23:27Z",
+      "side": 1,
+      "message": "\"this\" -\u003e \"the alternate device address.  Otherwise\"",
+      "range": {
+        "startLine": 425,
+        "startChar": 55,
+        "endLine": 425,
+        "endChar": 60
+      },
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fdb40de5_48797698",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 502,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-25T16:23:27Z",
+      "side": 1,
+      "message": "They do not need to know it was a \"SMUT\" subfunction only that the subfunction failed.",
+      "range": {
+        "startLine": 502,
+        "startChar": 30,
+        "endLine": 502,
+        "endChar": 46
+      },
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
