@@ -1086,7 +1086,7 @@ class XCATClient(client.ZVMClient):
 
     def image_import(self, imagename, url, imagemeta, remote_host=None):
         """import a spawn image to XCAT"""
-        image_file_path = urlparse.urlparse(url)
+        image_file_path = urlparse.urlparse(url).path
         disk_file_name = CONF.zvm.user_root_vdev + '.img'
         spawn_path = self._pathutils.get_spawn_folder()
 

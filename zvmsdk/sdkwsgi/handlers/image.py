@@ -34,11 +34,12 @@ class ImageAction(object):
     @validation.schema(image.create)
     def create(self, body):
         image = body['image']
+        image_name = image['image_name']
         url = image['url']
         remote_host = image.get('remotehost', None)
-        image_meta = image.get('image_meta', None)
+        image_meta = image['image_meta']
 
-        self.api.image_import(url, image_meta, remote_host)
+        self.api.image_import(image_name, url, image_meta, remote_host)
 
     def get_root_disk_size(self, name):
         # FIXME: this param need combined image nameg, e.g the profile

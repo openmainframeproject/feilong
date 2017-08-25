@@ -54,11 +54,13 @@ class HandlersImageTest(unittest.TestCase):
 
     @mock.patch.object(api.SDKAPI, 'image_import')
     def test_image_create(self, mock_create):
+        fake_image_name = '46a4aea3-54b6-4b1c'
         fake_url = "file://tmp/test.img"
         fake_image_meta = {"os_version": "rhel7.2",
                       "md5sum": "12345678912345678912345678912345"}
         fake_remotehost = "hostname"
-        body_str = """{"image": {"url": "file://tmp/test.img",
+        body_str = """{"image": {"image_name": "46a4aea3-54b6-4b1c",
+                                 "url": "file://tmp/test.img",
                                  "image_meta": {
                                  "os_version": "rhel7.2",
                                  "md5sum": "12345678912345678912345678912345"
@@ -69,7 +71,8 @@ class HandlersImageTest(unittest.TestCase):
         self.req.body = body_str
 
         image.image_create(self.req)
-        mock_create.assert_called_once_with(fake_url,
+        mock_create.assert_called_once_with(fake_image_name,
+                                            fake_url,
                                             fake_image_meta,
                                             fake_remotehost)
 

@@ -30,6 +30,7 @@ class ImageTestCase(unittest.TestCase):
         self.client = test_sdkwsgi.TestSDKClient()
 
     def _image_create(self):
+        image_name = "46a4aea3-54b6-4b1c-8a49-01f302e70c60"
         image_fname = "image1"
         image_fpath = ''.join([CONF.image.temp_path, image_fname])
         os.system('touch %s' % image_fpath)
@@ -37,8 +38,10 @@ class ImageTestCase(unittest.TestCase):
         image_meta = """{"os_version": "rhel7.2",
                          "md5sum": "12345678912345678912345678912345"}"""
 
-        body = '{"image": {"url": "%s", "image_meta": %s}}' % (url,
-                                                               image_meta)
+        body = """{"image": {"image_name": "%s",
+                             "url": "%s",
+                             "image_meta": %s}}""" % (image_name, url,
+                                                      image_meta)
 
         resp = self.client.api_request(url='/images', method='POST',
                                        body=body)
