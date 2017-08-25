@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6b5da430_1e3f08d5",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-25T15:36:05Z",
+      "side": 1,
+      "message": "I consider our consumers to include the admin who is using the tool that imbedded our function.  They are not always protected by a gui and thus may input the magnitude.  To address your concern, I changed the e.g. to and i.e.",
+      "parentUuid": "a1909731_d5f272ee",
+      "revId": "365323e87adf7229e3052742bf21779a92e83f1f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "583241d7_d945a5b6",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2017-08-25T15:19:29Z",
       "side": 1,
       "message": "characters",
+      "revId": "365323e87adf7229e3052742bf21779a92e83f1f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "917af018_4e82c477",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-25T15:36:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "583241d7_d945a5b6",
       "revId": "365323e87adf7229e3052742bf21779a92e83f1f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
