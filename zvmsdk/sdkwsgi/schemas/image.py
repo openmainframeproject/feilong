@@ -19,11 +19,12 @@ create = {
         'image': {
             'type': 'object',
             'properties': {
+                'image_name': parameter_types.name,
                 'url': parameter_types.url,
                 'image_meta': parameter_types.image_meta,
                 'remotehost': parameter_types.remotehost
             },
-            'required': ['url', 'image_meta'],
+            'required': ['image_name', 'url', 'image_meta'],
             'additionalProperties': False
         },
         'additionalProperties': False
