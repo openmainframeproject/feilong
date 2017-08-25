@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4a45ec06_3987a90c",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-25T16:45:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7449e07f_c620a30d",
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "93f63d04_fedb5a60",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2017-08-25T16:23:27Z",
       "side": 1,
       "message": "function",
+      "range": {
+        "startLine": 325,
+        "startChar": 37,
+        "endLine": 325,
+        "endChar": 44
+      },
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "549f8180_da2f2e0a",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 325,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-25T16:45:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "93f63d04_fedb5a60",
       "range": {
         "startLine": 325,
         "startChar": 37,
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "6548d831_4757613a",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 328,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-25T16:45:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ddb7984b_183dd892",
+      "range": {
+        "startLine": 328,
+        "startChar": 40,
+        "endLine": 328,
+        "endChar": 52
+      },
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0106c7fb_2bb6d3d3",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 1
@@ -76,6 +142,30 @@
       "writtenOn": "2017-08-25T16:23:27Z",
       "side": 1,
       "message": "Processing terminates with an error is more flexible for our environemnt.  I will only call it out here and not restate it on the other changes.",
+      "range": {
+        "startLine": 334,
+        "startChar": 18,
+        "endLine": 334,
+        "endChar": 31
+      },
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "633dbc94_fa78b427",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-25T16:45:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0106c7fb_2bb6d3d3",
       "range": {
         "startLine": 334,
         "startChar": 18,
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "62088394_b37e2d4d",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-25T16:45:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c265557e_2473d46f",
+      "range": {
+        "startLine": 358,
+        "startChar": 38,
+        "endLine": 358,
+        "endChar": 45
+      },
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a2868745_4de3d43d",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 1
@@ -128,6 +242,24 @@
     },
     {
       "key": {
+        "uuid": "cfee1446_3511ecbb",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 413,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-25T16:45:01Z",
+      "side": 1,
+      "message": "That\u0027s not this message (or it should not have been).  In this case the Image_Console_Get returned that we had a console file.  We found something in our reader via vmur, but it was not the console file that SMAPI said it sent.  SO I think the most likely scenario is that another process interfered.",
+      "parentUuid": "a2868745_4de3d43d",
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "46a52317_c337c68e",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 1
@@ -139,6 +271,30 @@
       "writtenOn": "2017-08-25T16:23:27Z",
       "side": 1,
       "message": "It this problem persists for this managed system then it could be that they have not set it up correctly.  That might be a user response that they think about.",
+      "range": {
+        "startLine": 416,
+        "startChar": 64,
+        "endLine": 416,
+        "endChar": 65
+      },
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c2c6807d_1482ff9a",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-25T16:45:01Z",
+      "side": 1,
+      "message": "See above comment",
+      "parentUuid": "46a52317_c337c68e",
       "range": {
         "startLine": 416,
         "startChar": 64,
@@ -185,6 +341,30 @@
       "writtenOn": "2017-08-25T16:23:27Z",
       "side": 1,
       "message": "They do not need to know it was a \"SMUT\" subfunction only that the subfunction failed.",
+      "range": {
+        "startLine": 502,
+        "startChar": 30,
+        "endLine": 502,
+        "endChar": 46
+      },
+      "revId": "42d16f039c03f9d3ecbc87bf2fb54f5bf76600f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "59297ee6_d2aec5d3",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 502,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-25T16:45:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fdb40de5_48797698",
       "range": {
         "startLine": 502,
         "startChar": 30,
