@@ -844,9 +844,9 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
             # We only need to issue the printLn.
             # Don't need to change return/reason code values
             except CalledProcessError as e:
-                msg = msgs.msg['0401'][1] % (modId,
-                                             fileLoc,
-                                             userid, e.output)
+                msg = msgs.msg['0403'][1] % (modId,
+                                             spoolId[0],
+                                             e.output)
                 rh.printLn("ES", msg)
             except Exception as e:
                 # All other exceptions related to purge.
@@ -873,11 +873,11 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
                                         stderr=subprocess.STDOUT)
             rh.updateResults(results)
         except CalledProcessError as e:
-            msg = msgs.msg['0401'][1] % (modId,
+            msg = msgs.msg['0424'][1] % (modId,
                                          fileLoc,
                                          userid, e.output)
             rh.printLn("ES", msg)
-            rh.updateResults(msgs.msg['0401'][0])
+            rh.updateResults(msgs.msg['0424'][0])
 
             # Transfer failed so delete the punched file from current userid
             cmd = ["vmcp", "purge", "rdr", spoolId[0]]
@@ -890,9 +890,9 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
                 # We only need to issue the printLn.
                 # Don't need to change return/reason code values
             except CalledProcessError as e:
-                msg = msgs.msg['0401'][1] % (modId,
-                                             fileLoc,
-                                             userid, e.output)
+                msg = msgs.msg['0403'][1] % (modId,
+                                             spoolId[0],
+                                             e.output)
                 rh.printLn("ES", msg)
             except Exception as e:
                 # All other exceptions related to purge.

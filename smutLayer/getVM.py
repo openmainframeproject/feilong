@@ -217,7 +217,8 @@ def getConsole(rh):
         # results
         rh.printLn("ES", msgs.msg['0422'][1] % (modId, strCmd,
             type(e).__name__, str(e)))
-        rh.printLn("ES", msgs.msg['0423'][1] % modId)
+        rh.printLn("ES", msgs.msg['0423'][1] % modId, strCmd,
+            type(e).__name__, str(e))
 
     # List the spool files in the reader
     cmd = ["/usr/sbin/vmur", "list"]
