@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a1909731_d5f272ee",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-25T15:19:29Z",
+      "side": 1,
+      "message": "Could it also be that there\u0027s a magnitude character that we don\u0027t recognize?  I had one case in my messages where I recommended that the user action be to change the smut code to recognize the new option.  I considered that valid because our consumers for these messages are likely coders.",
+      "revId": "365323e87adf7229e3052742bf21779a92e83f1f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "583241d7_d945a5b6",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-25T15:19:29Z",
+      "side": 1,
+      "message": "characters",
+      "revId": "365323e87adf7229e3052742bf21779a92e83f1f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
