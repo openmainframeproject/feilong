@@ -166,7 +166,7 @@ msg = {
         #   recognized values.
         # SysAct: Processing of the subfunction terminates.
         # UserResp: Correct the syntax to use a valid scp data type and
-        #   reissue the command
+        #   reissue the command.
     '0017': [{'overallRC': 4, 'rc': 4, 'rs': 17},    # dict is not used
             "ULT%s0017W The maxwait time %i sec is not evenly divisible " +
             "by the poll interval %i sec.  Maximum wait time will be %i " +
@@ -178,29 +178,64 @@ msg = {
     # 0200-0299: Utility Messages
     '0200': [{'overallRC': 4, 'rc': 4, 'rs': 200},
             "ULT%s0200E The size of the disk is not valid: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: An error was encountered while attempting
+        #   to convert the size of a disk from bytes to cylinders
+        #   (for 3390 type disks) or bytes to blocks (for FBA type disks).
+        #   This error can be caused by specifying the size as only a
+        #   magnitude, (e.g., 'G' or 'M') instead of an integer
+        #   appended to a magnitude (e.g., '20G').
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the disk size to specify a disk magnitude
+        #   that includes the integer portion of the size in addition
+        #   to the magnitude and reissue the command.
     '0201': [{'overallRC': 4, 'rc': 4, 'rs': 201},
             "ULT%s0201E Failed to convert %s to a number of blocks."],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: An error was encountered while attempting
+        #   to convert the size of a disk from bytes to blocks.
+        #   The size ended with a magnitude character and should have
+        #   had an integer value prepended to the magnitude character
+        #   (e.g. '10M' or '10G').
+        #   The probable cause of the error is that the integer
+        #   portion of the size contains a non-numeric character.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the disk size to specify a valid value
+        #   and reissue the command.
     '0202': [{'overallRC': 4, 'rc': 4, 'rs': 202},
             "ULT%s0202E %s is not an integer size of blocks."],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: An error was encountered while attempting
+        #   to convert the size of a disk from bytes to blocks.
+        #   The size did not end with a valid magnitude character
+        #   (i.e., 'M' or 'G') so it was treated as an integer
+        #   value (e.g. '100000').  The probable cause of this
+        #   error is that the size contains non-numeric
+        #   characters.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the disk size to specify a valid value
+        #   and reissue the command.
     '0203': [{'overallRC': 4, 'rc': 4, 'rs': 203},
             "ULT%s0203E Failed to convert %s to a number of cylinders."],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: An error was encountered while attempting
+        #   to convert the size of a disk from bytes to cylinders.
+        #   The size ended with a magnitude character and should have
+        #   had an integer value prepended to the magnitude character
+        #   (e.g. '10M' or '10G').
+        #   The probable cause of the error is that the integer
+        #   portion of the size contains non-numeric characters.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the disk size to specify a valid value
+        #   and reissue the command.
     '0204': [{'overallRC': 4, 'rc': 4, 'rs': 204},
             "ULT%s0204E %s is not an integer size of cylinders."],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: An error was encountered while attempting
+        #   to convert the size of a disk from bytes to cylinders.
+        #   The size did not end with a valid magnitude character
+        #   (i.e., 'M' or 'G') so it was treated as an integer
+        #   value (e.g. '100000').  The probable cause of this
+        #   error is that the size contains non-numeric
+        #   characters.
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the disk size to specify a valid value
+        #   and reissue the command.
     # 0205-0299: Available
 
     # SMCLI and SMAPI related messages.
