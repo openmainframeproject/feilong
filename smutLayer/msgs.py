@@ -369,11 +369,16 @@ msg = {
         # SysAct: Processing terminates with an error.
         # UserResp:  Correct the function call to query existing pools and
         #   reinvoke the function.
-    '0403': [{'overallRC': 4, 'rc': 99, 'rs': 403},
-            "ULT%s0403E  %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+    '0403': [{'overallRC': 4, 'rc': 99, 'rs': 403},     # dict is not used.
+            "ULT%s0403E  Failed to purge reader file %s, out: %s"],
+        # Explain: The vmcp purge reader file command failed.
+        #   The system was already in the process of cleaning up from a
+        #   failed attempt to punch a file, so the error processing
+        #   continues.
+        # SysAct: Error processing continues.
+        # UserResp: Manually clean up the specified reader file using
+        #   CP commands to avoid problems with old files or spool space
+        #   filling up.
     '0404': [{'overallRC': 4, 'rc': 8, 'rs': 404},
             "ULT%s0404E Failed to spool the punch to the specified class %s" +
             ", out:%s "],
@@ -544,10 +549,25 @@ msg = {
     '0423': [{'overallRC': 4, 'rc': 4, 'rs': 423},    # dict is not used.
             "ULT%s0423W Unable to spool reader to all classes, " +
             "it is possible that there may be additional console " +
-            "files available that are not listed in the response."],
-        # Explain:
-        # SysAct:
-        # UserResp:
-
+            "files available that are not listed in the response. " +
+            "Command: %s, exception %s, details %s.  Will attempt " +
+            "to continue processing."],
+        # Explain: The vmcp spool reader class * command was not
+        #   successful.  This means the reader could not be changed
+        #   to get files of all classes, and thus there could be
+        #   files that are ignored.  The exception was of a different
+        #   type than in message 407.
+        # SysAct: Processing of the function continues.
+        # UserResp: If missing files are suspected, investigate the
+        #   cause of the failure in the CP messages book or vmcp
+        #   help and reinvoke the function.
+    '0424': [{'overallRC': 4, 'rc': 4, 'rs': 424},
+            "ULT%s0401E Failed to transfer %s file to guest: %s, out: %s"],
+        # Explain: The vmcp transfer command failed for the specified
+        #   reason.
+        # SysAct: Processing of the function ends with no action
+        #   taken.
+        # UserResp: Look up the reason the vmcp transfer command failed,
+        #   correct the problem and reinvoke the function.
     # 5000-6100: Reserved for SMCLI
     }
