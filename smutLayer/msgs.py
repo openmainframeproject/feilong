@@ -312,20 +312,28 @@ msg = {
     # General subfunction processing messages
     '0400': [{'overallRC': 4, 'rc': 4, 'rs': 400},
             "ULT%s0400E The worker script %s does not exist."],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The activation engine modification script specified
+        #   for "aeScript" cannot be found.
+        # SysAct: Processing of the function ends with no action
+        #   taken.
+        # UserResp: Correct the function call to point to an existing script
+        #   and reinvoke the function.
     '0401': [{'overallRC': 4, 'rc': 7, 'rs': 401},
             "ULT%s0401E Failed to punch %s file to guest: %s, out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The vmur punch command failed for the specified
+        #   reason.
+        # SysAct: Processing of the function ends with no action
+        #   taken.
+        # UserResp: Look up the reason the vmur command failed, correct
+        #   the problem and reinvoke the function.
     '0402': [{'overallRC': 4, 'rc': 5, 'rs': 402},
             "ULT%s0402E No information was found for the specified " +
             "pool(s): %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:  Correct the syntax and try again.
+        # Explain: Image_Volume_Space_Query_DM returned successfully
+        #   but the list of pools of the specified names was empty.
+        # SysAct: Processing terminates with an error.
+        # UserResp:  Correct the function call to query existing pools and
+        #   reinvoke the function.
     '0403': [{'overallRC': 4, 'rc': 99, 'rs': 403},
             "ULT%s0403E  %s"],
         # Explain:
@@ -334,58 +342,89 @@ msg = {
     '0404': [{'overallRC': 4, 'rc': 8, 'rs': 404},
             "ULT%s0404E Failed to spool the punch to the specified class %s" +
             ", out:%s "],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The vmcp change reader command failed with the
+        #   specified output.
+        # SysAct: Processing of the function ends with no action
+        #   taken.
+        # UserResp: Look up the reason the change reader command failed
+        #   in the CP messages book or vmcp help.  Correct the problem
+        #   and reinvoke the function.
     '0405': [{'overallRC': 4, 'rc': 6, 'rs': 405},
             "ULT%s0405E Unable to obtain information related to: " +
             "%s. Command used was: %s. Output was: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: While gathering hypervisor information, one of the
+        #   commands used failed and that piece of information could
+        #   not be queried.
+        # SysAct: The getHost GENERAL function returns "no info" for
+        #   the specified hypervisor information.
+        # UserResp: If the information is needed, investigate the
+        #   failure, correct it and reinvoke the function.
     '0406': [{'overallRC': 4, 'rc': 9, 'rs': 406},
             "ULT%s0406E Failed to punch %s because of VMUR timeout "],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: When punching a file to the reader, the vmur punch
+        #   command is issued up to 5 times with increasing timeouts.
+        #   This error comes after the 5th try if the vmur command
+        #   was still unsuccessful.
+        # SysAct:  Processing of the function ends with no action taken.
+        # UserResp: This error could be because of another process
+        #   also issuing vmur commands at the same time.  Wait a few
+        #   seconds and reinvoke the function.
     '0407': [{'overallRC': 4, 'rc': 4, 'rs': 407},     # dict is not used.
             "ULT%s0407W Unable to spool reader to all classes, " +
             "it is possible that there may be additional console " +
             "files available that are not listed in the response. " +
             "Response from %s is %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The vmcp spool reader class * command was not
+        #   successful.  This means the reader could not be changed
+        #   to get files of all classes, and thus there could be
+        #   files that are ignored.
+        # SysAct: Processing of the function continues.
+        # UserResp: If missing files are suspected, investigate the
+        #   cause of the failure in the CP messages book or vmcp
+        #   help and reinvoke the function.
     '0408': [{'overallRC': 4, 'rc': 4, 'rs': 408},
             "ULT%s0408E Error getting list of files in the reader " +
             "to search for logs from user %s. Response from %s is %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The vmur list command failed.  The list of files
+        #   in the user's reader could not be determined.
+        # SysAct:  Processing of the function ends with no action taken.
+        # UserResp: Investigate the failure in vmur and correct the
+        #   problem, then reinvoke the function.
     '0409': [{'overallRC': 4, 'rc': 4, 'rs': 409},
             "ULT%s0409E Unable to get console log for user %s. " +
             "The userid is either: not logged on, not spooling " +
             "its console, or has not created any console output. " +
             "Error rc=rs=8 returned from " +
             "Image_Console_Get."],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The Image_Console_Get SMAPI call returned that
+        #   there were no spool files available for that user.
+        # SysAct: Processing of the function ends with no action taken.
+        # UserResp: Check that the user is logged on, has issued a
+        #   SPOOL CONSOLE command and has done some actions that
+        #   would result in console output, then reinvoke the function.
     '0410': [{'overallRC': 4, 'rc': 4, 'rs': 410},
             "ULT%s0410E Unable to get console log for user %s " +
             "no spool files were found in our reader from this " +
             "user, it is possible another process has already " +
             "received them."],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The Image_Console_Get SMAPI call should have
+        #   put files of class T and "CON" with the userid as the
+        #   filename in our reader.  However no files were found
+        #   in the vmur list output with these characteristcs.
+        # SysAct: Processing of the function ends with no action taken.
+        # UserResp: Likely another process in this virtual machine
+        #   has already processed the spool files. They are gone.
     '0411': [{'overallRC': 4, 'rc': 4, 'rs': 411},
             "ULT%s0411E Unable to receive console output file. " +
             "Reader not online.  /sys/bus/ccw/drivers/vmur/0.0.000c" +
             "/online = 0"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The reader is typically at virtual device address
+        #   x'000C'.  Linux does not believe this device is online.
+        # SysAct:  Processing of the function ends with no action taken.
+        # UserResp: If the reader is at a different virtual device
+        #   address, update the SMUT code to recognize the alternative
+        #   device address, otherwise bring the reader at x'000C' online
+        #   to Linux.  Then, reinvoke the function.
     '0412': [{'overallRC': 4, 'rc': 4, 'rs': 412},     # dict is not used.
             "ULT%s0412E Malformed reply from SMAPI, unable to fill " +
             "in performance information.  Response is %s"],
@@ -424,21 +463,30 @@ msg = {
         # UserResp:
     '0418': [{'overallRC': 99, 'rc': 99, 'rs': 418},
             "ULT%s0418E Userid %s is not logged on to this system."],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: A CP message HCP0045E was returned, indicating the
+        #   userid specified is not logged on to this z/VM system,
+        #   thus it cannot be relocated.
+        # SysAct:  Processing of the function ends with no action taken.
+        # UserResp: Correct the function call to specify a correct userid and
+        #   reinvoke the function.
     '0419': [{'overallRC': 99, 'rc': 99, 'rs': 419},
             "ULT%s0419E A relocation is not in progress for userid %s."],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: An attempt was made to query or cancel a relocation
+        #   for a user, but the SMAPI command indicated that no
+        #   relocation was in progress.
+        # SysAct:  Processing of the function ends with no action taken.
+        # UserResp: Reinvoke the function for a relocation that is in
+        #   progress.
     '0420': [{'overallRC': 99, 'rc': 99, 'rs': 420},     # dict is not used.
             "ULT%s0420E An error occurred issuing a %s for userid %s.\n" +
             "Please look up message(s): %s in the CP Messages book for " +
             "more information."],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The VMRELOCATE command returns a list of messages
+        #   containing all the problems encountered when trying to issue
+        #   the command.
+        # SysAct:   Processing of the function ends with no action taken.
+        # UserResp: Look up the codes provided in the CP messages book,
+        #   correct the problems and reinvoke the function.
     '0421': [{'overallRC': 99, 'rc': 421, 'rs': 0},
             "ULT%s0421E Exception received on an attempt to " +
             "execute a cmd: %s, exception: %s, " +
@@ -450,9 +498,14 @@ msg = {
             "ULT%s0422W Exception received on an attempt to " +
             "execute a cmd: %s, exception: %s, " +
             "details: %s. Will attempt to continue processing."],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: While trying to execute a vmcp command, an error
+        #   occurred. However the vmcp command was not central
+        #   to processing the subfunction, so processing
+        #   continues.
+        # SysAct: Function processing continues.
+        # UserResp: If there is reason to suspect the function did
+        #   not execute completely, investigate the error.  Otherwise
+        #   ignore this message.
     '0423': [{'overallRC': 4, 'rc': 4, 'rs': 423},    # dict is not used.
             "ULT%s0423W Unable to spool reader to all classes, " +
             "it is possible that there may be additional console " +
