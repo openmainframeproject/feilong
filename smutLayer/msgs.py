@@ -242,45 +242,102 @@ msg = {
     '0300': [{'overallRC': 8},    # dict is not used.
             "ULT%s0300E SMAPI API failed: %s, overall rc: %s, rc: %s, " +
             "rs: %s, errno: %s, cmd: %s, out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The smcli program was invoked to call z/VM SMAPI for
+        #   the indicated API.  An error was encountered.  The overall rc
+        #   indicates the location of the problem:
+        #   8  - SMAPI returned the error.  The rc and rs values are
+        #        the values provided by SMAPI.
+        #   24 - The smcli program detected an error in the program
+        #        invocation. The rc value indicates something that Chuck
+        #        would know about.
+        #   25 - The smcli program encountered an internal error.
+        #        The rc and errno contains information related to the
+        #        problem.
+        # SysAct: Processing of the function terminates.
+        # UserResp: Use the information in the message to determine the
+        #   Cause of the problem.  The output of the command should
+        #   contain an additional message produced by the smcli program
+        #   to aid in debug.  If the overall RC is 8, consult the
+        #   z/VM Systems Management Application Programming manual for
+        #   the API that was invoked.  The API documentation should provide
+        #   additional guidance to identify the problem.
+        #   Reinvoke the function after you correct the problem.
     '0301': [{'overallRC': 25, 'rc': 301, 'rs': 0},
             "ULT%s0301E SMAPI API failed: %s, response header does not " +
             "have the expected 3 values before the (details) string. " +
             "cmd: %s, response header: %s, out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The smcli program was invoked to call z/VM SMAPI for
+        #   the indicated API.  The response returned by the program
+        #   does not have the expected header string that contains
+        #   three words representing integer values before the string,
+        #   '(details)'.  This indicates a problem in the smcli program
+        #   or a problem invoking the smcli program.
+        # SysAct: Processing of the function terminates.
+        # UserResp: Determine the cause of the failure.  If it is not a
+        #   Linux permission problem then investigate a possible coding
+        #   error in the smcli program.  Correct the problem and reinvoke
+        #   the function.
     '0302': [{'overallRC': 25, 'rc': 302, 'rs': 0},
             "ULT%s0302E SMAPI API failed: %s, word 1 in " +
             "the response header is not an integer or in the range of " +
             "expected values. word 1: %s, cmd: %s, response " +
             "header: %s, out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The smcli program was invoked to call z/VM SMAPI for
+        #   the indicated API.  The response returned by the program
+        #   is expected to contain header string that contains
+        #   three words representing integer values before the string,
+        #   '(details)'.  The first word should provide the overall
+        #   return code of the smcli invocation that indicates where
+        #   the failure occurred.  However, it does not represent an
+        #   integer value or is not the expected error values of
+        #   8, 24 or 25.  This indicates a problem in the smcli program.
+        # SysAct: Processing of the function terminates.
+        # UserResp: Determine the cause of the failure.  
+        #   You may need an update to the smcli program.
+        #   Correct the problem and reinvoke the function.
     '0303': [{'overallRC': 25, 'rc': 303, 'rs': 0},
             "ULT%s0303E SMAPI API failed: %s, word 2 in the response " +
             "header is not an integer. word 2: %s, cmd: %s, response " +
             "header: %s, out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The smcli program was invoked to call z/VM SMAPI for
+        #   the indicated API.  The response returned by the program
+        #   is expected to contain header string that contains
+        #   three words representing integer values before the string,
+        #   '(details)'.  The second word should provide the specific
+        #   return code of the smcli invocation.  However, it does not 
+        #   represent an integer value.  This indicates a problem in
+        #   the smcli program.
+        # SysAct: Processing of the function terminates.
+        # UserResp: Determine the cause of the failure.  
+        #   You may need an update to the smcli program.
+        #   Correct the problem and reinvoke the function.
     '0304': [{'overallRC': 25, 'rc': 304, 'rs': 0},
             "ULT%s0304E SMAPI API failed: %s, word 3 in the response " +
             "header is not an integer. word 3: %s, cmd: %s, response " +
             "header: %s, out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The smcli program was invoked to call z/VM SMAPI for
+        #   the indicated API.  The response returned by the program
+        #   is expected to contain header string that contains
+        #   three words representing integer values before the string,
+        #   '(details)'.  The third word should provide the reason code
+        #   or errno, depending on the error.  However, it does not 
+        #   represent an integer value.  This indicates a problem in
+        #   the smcli program.
+        # SysAct: Processing of the function terminates.
+        # UserResp: Determine the cause of the failure.  
+        #   You may need an update to the smcli program.
+        #   Correct the problem and reinvoke the function.
     '0305': [{'overallRC': 99, 'rc': 305, 'rs': 0},
             "ULT%s0305E Exception received on an attempt to " +
             "communicate with SMAPI, cmd: %s, exception: %s, " +
             "details: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The function attempted to invoke the smcli
+        #   program to communicate with z/VM SMAPI.  This failed
+        #   due to the exception show in the message.
+        # SysAct: Processing of the function terminates.
+        # UserResp: Determine the cause of the failure using
+        #   the exception and exception details provided in the message.
+        #   Reinvoke the function after correcting the problem.
     # 0306-0310: Available
 
     # IUCV related messages
@@ -288,61 +345,110 @@ msg = {
             "ULT%s0311E On %s, command sent through IUCV failed, " +
             "rc in response string is not an integer. " +
             "cmd: %s, rc: %s, out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The IUCV client returned a non-integer return
+        #   code value.
+        # SysAct: This failure is expected to cause the function to
+        #   terminate.
+        # UserResp: Contact the support team with the information
+        #   included in the message.  The IUCVCLNT program is the probable
+        #   cause of the failure.  This will require a code change.
     '0312': [{'overallRC': 2, 'rc': 2, 'rs': 99},    # dict is not used.
             "ULT%s0312E On %s, command sent through IUCV failed, " +
             "reason code in response string is not an integer. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The IUCV client returned a non-integer reason
+        #   code value.
+        # SysAct: This failure is expected to cause the function to
+        #   terminate.
+        # UserResp: Contact the support team with the information
+        #   included in the message.  The IUCVCLNT program is the probable
+        #   cause of the failure.  This will require a code change.
     '0313': [{'overallRC': 2, 'rc': 1},      # dict is not used.
             "ULT%s0313E On %s, command sent through IUCV was not " +
             "authorized or a generic Linux error occurred. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The command that was sent to the target system failed.
+        #   The cause of the failure is either a Linux permission problem
+        #   for the command being executed or a generic Linux error.
+        # SysAct: The command was not successfully executed.  This is
+        #   expected to affect the function being executed, causing it to
+        #   terminate.
+        # UserResp: Use the information included in the message to determine
+        #   the cause of the failure on the target system and correct the
+        #   problem.  After correcting the problem, you should be able to
+        #   reinvoke the failing function.
     '0314': [{'overallRC': 2, 'rc': 2},      # dict is not used.
             "ULT%s0314E IUCV client parameter error sending command to %s. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The IUCVCLNT program communicates with managed
+        #   systems using IUCV.  The program detected invocation
+        #   errors.  This can be caused by a problem in the level of the
+        #   IUCVCLNT program or the function that invoked it.
+        # SysAct: The command was not successfully executed.  This is
+        #   expected to affect the function being executed, causing it to
+        #   terminate.
+        # UserResp: Use the information included in the message to determine
+        #   the cause of the failure.  This could require the support
+        #   team to provide a code change to either the IUCVCLNT program
+        #   or the code that invoked it.
     '0315': [{'overallRC': 2, 'rc': 4},      # dict is not used.
             "ULT%s0315E IUCV socket error sending command to %s. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The IUCVCLNT program communicates with managed
+        #   systems using IUCV.  The program encountered an IUCV
+        #   communication failure when it attempted to send a
+        #   command to the managed system.
+        #   This is probably caused by a failure in the managed system
+        #   that prevents the system from receiving the command.
+        #   One cause could be that the system logged off z/VM.
+        # SysAct: The command was not successfully executed.  This is
+        #   expected to affect the function being executed, causing it to
+        #   terminate.
+        # UserResp: Use the information included in the message to
+        #   determine the cause of the failure.  Reinvoke the function
+        #   after you correct the problem.
     '0316': [{'overallRC': 2, 'rc': 8},      # dict is not used.
             "ULT%s0316E On %s, command sent through IUCV failed. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The command that was sent to the target system failed.
+        # SysAct: The command was not successfully executed.  This is
+        #   expected to affect the function being executed, causing it to
+        #   terminate.
+        # UserResp: Use the information included in the message to
+        #   determine the cause of the failure.  Reinvoke the function
+        #   after you correct the problem.
     '0317': [{'overallRC': 2, 'rc': 16},     # dict is not used.
-            "ULT%s0317E File transport failure while sending " +
-            "command to %s. " +
+            "ULT%s0317E File transport failure while processing " +
+            "command for %s. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The IUCVCLNT program failed to send a file to
+        #   the target system.
+        # SysAct: The function terminates.
+        # UserResp: Use the information included in the message to
+        #   determine the cause of the failure.  Reinvoke the function
+        #   after you correct the problem.
     '0318': [{'overallRC': 2, 'rc': 32},     # dict is not used.
             "ULT%s0318E On %s, IUCV server file was not found. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The IUCVCLNT program failed to find the IUCVSERV
+        #   file on the local system.  This file is expected to exist
+        #   in the same directory as the IUCVCLNT program.
+        # SysAct: The function terminates.
+        # UserResp: Determine the reason that the IUCVSERV file could
+        #   not be located and correct the problem.  Reinvoke the
+        #   function after you correct the problem.
     '0319': [{'overallRC': 2},               # dict is not used.
             "ULT%s0319E Unrecognized IUCV client error encountered " +
             "while sending a command through IUCV to $s. " +
             "cmd: %s, rc: %s, rs: %s, out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The IUCVCLNT program returned a non-zero return code
+        #   that does not correspond to a recognized error value.
+        # SysAct: The function terminates.
+        # UserResp: Determine the cause of the error using the
+        #   information in the message.  Log files on the local system
+        #   and the target system may contain useful information to
+        #   identify the failure.  Reinvoke the function after you
+        #   correct the problem.
 
     # General subfunction processing messages
     '0400': [{'overallRC': 4, 'rc': 4, 'rs': 400},
@@ -467,40 +573,75 @@ msg = {
         #   to Linux.  Then, reinvoke the function.
     '0412': [{'overallRC': 4, 'rc': 4, 'rs': 412},     # dict is not used.
             "ULT%s0412E Malformed reply from SMAPI, unable to fill " +
-            "in performance information.  Response is %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+            "in performance information, exception: %s, " +
+            "details: %s, Response: %s"],
+        # Explain: An error was encountered while processing the
+        #   response information from the SMAPI Image_Performance_Query
+        #   API.  The response is not in the expected format.
+        #   The exception that occurred during processing of the
+        #   response, its details and the response are included
+        #   in the message.
+        # SysAct: Processing terminates.  A formatted response for the
+        #   invoked function is not returned to the invoker.
+        # UserResp: Determine the cause of the failure.  A code change
+        #   may be needed in the function or in the z/VM SMAPI code.
+        #   After correcting the code, reinvoke the function.
     '0413': [{'overallRC': 99, 'rc': 99, 'rs': 413},
             "ULT%s0413E Userid '%s' did not enter the expected " +
             "operating system state of '%s' in %i seconds."],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The managed system did not enter the operating
+        #   system state that was show in the message in the
+        #   maximum number of seconds allowed for this to happen.
+        #   The maximum number of seconds a combination of the,
+        #   specified or defaulted, polling interval and maximum
+        #   maximum number of polling attempts.
+        # SysAct: The function terminates.
+        # UserResp: Determine the cause of the failure and correct
+        #   the cause.
     '0414': [{'overallRC': 99, 'rc': 99, 'rs': 414},
             "ULT%s0414E Userid '%s' did not enter the expected " +
             "virtual machine state of '%s' in %i seconds."],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The managed system did not enter the virtual
+        #   machine log on/off state that was show in the message
+        #   in the maximum number of seconds allowed for this to happen.
+        #   The maximum number of seconds a combination of the,
+        #   specified or defaulted, polling interval and maximum
+        #   maximum number of polling attempts.
+        # SysAct: The function terminates.
+        # UserResp: Determine the cause of the failure and correct
+        #   the cause.
     '0415': [{'overallRC': 3, 'rc': 415},    # rs comes from failing rc
             "ULT%s0415E Command failed: '%s', rc: %i out: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The indicated command failed.  The return code
+        #   and output from the command are shown.
+        # SysAct: Function processing terminates.
+        # UserResp: Use the information provided with the message
+        #   to determine the cause of the failure and correct the
+        #   problem.  Reinvoke the function after you correct the
+        #   problem.
     '0416': [{'overallRC': 99, 'rc': 99, 'rs': 416},
             "ULT%s0416E Command returned a response " +
             "containing '%s' but did not have at least %i words " +
             "following it. cmd: '%s', out: '%s'"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: A command was invoked that returned a successful
+        #   return code indication.  The response contained the
+        #   expected string but did not contain the expected number
+        #   of words that follow the string.
+        # SysAct: Processing of the function terminates.
+        # UserResp: Use the information provided in the message
+        #   to determine the cause of the problem and correct it.
+        #   Reinvoke the function after you correct the problem.
     '0417': [{'overallRC': 99, 'rc': 99, 'rs': 417},
             "ULT%s0417E Command did not return the expected response " +
             "containing '%s', cmd: '%s', out: '%s'"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: A command was invoked that returned a successful
+        #   return code indication.  The response did not contained the
+        #   expected string.
+        # SysAct: Processing of the function terminates.
+        # UserResp: Use the information provided in the message
+        #   to determine the reason the identified string was not
+        #   present in the response to identify the cause.
+        #   Reinvoke the function after you correct the problem.
     '0418': [{'overallRC': 99, 'rc': 99, 'rs': 418},
             "ULT%s0418E Userid %s is not logged on to this system."],
         # Explain: A CP message HCP0045E was returned, indicating the
@@ -531,9 +672,14 @@ msg = {
             "ULT%s0421E Exception received on an attempt to " +
             "execute a cmd: %s, exception: %s, " +
             "details: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The command indicated by the message failed.
+        #   The error message contains exception name and details
+        #   contained in the exception.
+        # SysAct:   Processing of the function ends with no further
+        #   action taken.
+        # UserResp: Use the information in the message to determine
+        #   the cause of the error and correct the problem.
+        #   Reinvoke the function after you have corrected the problem.
     '0422': [{'overallRC': 99, 'rc': 422, 'rs': 0},
             "ULT%s0422W Exception received on an attempt to " +
             "execute a cmd: %s, exception: %s, " +
