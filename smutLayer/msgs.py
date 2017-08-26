@@ -562,7 +562,7 @@ msg = {
         #   cause of the failure in the CP messages book or vmcp
         #   help and reinvoke the function.
     '0424': [{'overallRC': 4, 'rc': 4, 'rs': 424},
-            "ULT%s0401E Failed to transfer %s file to guest: %s, out: %s"],
+            "ULT%s0424E Failed to transfer %s file to guest: %s, out: %s"],
         # Explain: The vmcp transfer command failed for the specified
         #   reason.
         # SysAct: Processing of the function ends with no action

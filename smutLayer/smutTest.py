@@ -993,8 +993,8 @@ modifyTests = [
             " --class b",
         'out': "",
         'overallRC': [4],
-        'rc': [7],
-        'rs': [401],
+        'rc': [4],
+        'rs': [424],
     },
     {
         'description': "Punch the config drive tar file to the system" +
