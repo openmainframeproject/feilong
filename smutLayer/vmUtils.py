@@ -247,8 +247,9 @@ def getPerfInfo(rh, useridlist):
             if "Used memory:" in line:
                 usedMem = line.split()[2].strip('"')
                 usedMem = int(usedMem) / 1024
-    except:
-        msg = msgs.msg['0412'][1] % (modId, results['response'])
+    except Exception as e:
+        msg = msgs.msg['0412'][1] % (modId, type(e).__name__,
+            str(e), results['response'])
         rh.printLn("ES", msg)
         results['overallRC'] = 4
         results['rc'] = 4
