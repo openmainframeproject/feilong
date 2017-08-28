@@ -359,3 +359,48 @@ class SMUTClient(client.ZVMClient):
             '\n'.join(results['response']), const.DISKPOOL_KEYWORDS)
 
         return dp_info
+
+    @zvmutils.wrap_invalid_resp_data_error
+    def add_vswitch(self, name, rdev=None, controller='*',
+                    connection='CONNECT', network_type='IP',
+                    router="NONROUTER", vid='UNAWARE', port_type='ACCESS',
+                    gvrp='GVRP', queue_mem=8, native_vid=1, persist=True):
+
+        smut_userid = zvmutils.get_smut_userid()
+        rd = ' '.join((
+            "SMAPI %s API Virtual_Network_Vswitch_Create_Extended" %
+            smut_userid,
+            "--operands",
+            '-k switch_name=%s' % name))
+        if rdev is not None:
+            rd += " -k real_device_address" +\
+                  "=\'%s\'" % rdev.replace(',', ' ')
+
+        if controller != '*':
+            rd += " -k controller_name=%s" % controller
+        rd = ' '.join((rd,
+                       "-k connection_value=%s" % connection,
+                       "-k queue_memory_limit=%s" % queue_mem,
+                       "-k transport_type=%s" % network_type,
+                       "-k vlan_id=%s" % vid,
+                       "-k persist=%s" % (persist and 'YES' or 'NO')))
+        # Only if vswitch is vlan awared, port_type, gvrp and native_vid are
+        # allowed to specified
+        if isinstance(vid, int) or vid.upper() != 'UNAWARE':
+            if ((native_vid is not None) and
+                ((native_vid < 1) or (native_vid > 4094))):
+                raise exception.ZVMInvalidInput(
+                    msg=("Failed to create vswitch %s: %s") % (name,
+                         'valid native VLAN id should be 1-4094 or None'))
+
+            rd = ' '.join((rd,
+                           "-k port_type=%s" % port_type,
+                           "-k gvrp_value=%s" % gvrp,
+                           "-k native_vlanid=%s" % native_vid))
+
+        if router is not None:
+            rd += " -k routing_value=%s" % router
+
+        with zvmutils.expect_request_failed_and_reraise(
+            exception.ZVMNetworkError):
+            self._request(rd)
