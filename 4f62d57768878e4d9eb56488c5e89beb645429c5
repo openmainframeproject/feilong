@@ -16,6 +16,267 @@
       "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2becdf6b_761e6668",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-28T13:47:44Z",
+      "side": 1,
+      "message": "I think I used \"Processing of the function ends with no action taken.\"  I don\u0027t really have a preference one or the other, but we should probably be consistent.",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a97adbc3_f8592a26",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-28T13:47:44Z",
+      "side": 1,
+      "message": "I think I used \"Book\" in my messages, again, no preference, just looking for consistency.",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0727f484_4a879ea4",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-28T13:47:44Z",
+      "side": 1,
+      "message": "The expected response from the smcli program has a header that contains 3 integers followed by the string \u0027(details)\u0027.  Same comment goes for next several messages.",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9d73ad14_1ca86037",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-28T13:47:44Z",
+      "side": 1,
+      "message": "I\u0027m not sure about the shift in tone here.  I\u0027d reword this user response to match 301 - \"Investigate a possible coding error in the smcli program.\"",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3196c478_2fa708e7",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-28T13:47:44Z",
+      "side": 1,
+      "message": "shown*",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3be35e7c_4d5ca6d7",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-28T13:47:44Z",
+      "side": 1,
+      "message": "Weird, are there cases where it doesn\u0027t cause the function to terminate?  If so, should it be a warning instead?",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b1642045_283af4b3",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 354,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-28T13:47:44Z",
+      "side": 1,
+      "message": "We\u0027ve switched here from \"investigate the problem in the code and fix it yourself\" to \"pick up the phone and someone will help you\", I think we want to stick with \"investigate the problem in the IUCVCLNT program, fix the code and reinvoke the function\"",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9036f599_73d1ca9b",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-28T13:47:44Z",
+      "side": 1,
+      "message": "Is there a difference here that we really expect these messages to result in the command not being executed but the earlier messages could result from a case where the command was executed?  If so, we should mention that in the earlier 300 messages, that we can\u0027t determine if the command was issued or not.",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "31b44550_df05057a",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 409,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-28T13:47:44Z",
+      "side": 1,
+      "message": "Could this one come from something as simple as not having IUCV auths for the sending machine?  Or not having the IUCVCLNT program on the guest?",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "60d85729_279e8940",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 583,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-28T13:47:44Z",
+      "side": 1,
+      "message": "Could offer some information about the expected format, or at least a pointer to where to look it up (maybe we have an example in the comments of the function?)",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2330877f_451d75fc",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 584,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-28T13:47:44Z",
+      "side": 1,
+      "message": "In the next few messages we have a lot of variations on \"processing/function terminates\"  we should be consistent.  If they really mean different actions, we should make that clear by adding some modifiers, e.g.,   \"Processing of this subfunction terminates with an error passed back to the parent function\"",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5f38a6fd_85306447",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 593,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-28T13:47:44Z",
+      "side": 1,
+      "message": "shown",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bd956f53_30f0ae79",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 600,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-28T13:47:44Z",
+      "side": 1,
+      "message": "I think we can give more details here, tell them to check the invocation for the maximum seconds/polls allowed, tell them where to look for the defaults, etc.\nSame comment applies on other messages.",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "09ae9f41_2bb94fdf",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 605,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-28T13:47:44Z",
+      "side": 1,
+      "message": "shown",
+      "range": {
+        "startLine": 605,
+        "startChar": 50,
+        "endLine": 605,
+        "endChar": 51
+      },
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e036fa26_327dfb64",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 638,
+      "author": {
+        "id": 1010466
+      },
+      "writtenOn": "2017-08-28T13:47:44Z",
+      "side": 1,
+      "message": "contain*",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
