@@ -171,9 +171,19 @@ msg = {
             "ULT%s0017W The maxwait time %i sec is not evenly divisible " +
             "by the poll interval %i sec.  Maximum wait time will be %i " +
             "sec or %i poll intervals."],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: When trying to determine how many polling intervals
+        #   to wait for a desired guest power state, it was found the
+        #   specified max wait time was not evenly divisible by the
+        #   number of polling interval seconds.  The program instead
+        #   rounded the maximum wait time up to be evenly divisble
+        #   into the polling interval.  Waiting a partial interval
+        #   is not possible with the code as written.
+        # SysAct: Processing of the function continues with the
+        #   new wait time.
+        # UserResp: If the wait time has become unacceptably long,
+        #   cancel the current call and reinvoke the function with
+        #   a maximum wait time and polling interval time which is
+        #   acceptable.
 
     # 0200-0299: Utility Messages
     '0200': [{'overallRC': 4, 'rc': 4, 'rs': 200},
