@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f8f9e43b_9dfa1a68",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-28T16:40:20Z",
+      "side": 1,
+      "message": "reworded with Chuck\u0027s help.",
+      "parentUuid": "451e7ddf_0a0a21e2",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2becdf6b_761e6668",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 2
@@ -53,6 +71,24 @@
     },
     {
       "key": {
+        "uuid": "9f2db3ed_f864a47a",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-28T16:40:20Z",
+      "side": 1,
+      "message": "Switched to \"book\"",
+      "parentUuid": "a97adbc3_f8592a26",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0727f484_4a879ea4",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 2
@@ -64,6 +100,24 @@
       "writtenOn": "2017-08-28T13:47:44Z",
       "side": 1,
       "message": "The expected response from the smcli program has a header that contains 3 integers followed by the string \u0027(details)\u0027.  Same comment goes for next several messages.",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "69bfeadf_5af78900",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-28T16:40:20Z",
+      "side": 1,
+      "message": "Message explanations are reworded.",
+      "parentUuid": "0727f484_4a879ea4",
       "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -87,6 +141,24 @@
     },
     {
       "key": {
+        "uuid": "aa8c03a5_6691f13c",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-28T16:40:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d73ad14_1ca86037",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3196c478_2fa708e7",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 2
@@ -98,6 +170,24 @@
       "writtenOn": "2017-08-28T13:47:44Z",
       "side": 1,
       "message": "shown*",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a8656c01_d2744b9e",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-28T16:40:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3196c478_2fa708e7",
       "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -121,6 +211,24 @@
     },
     {
       "key": {
+        "uuid": "690be702_458fb79e",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-28T16:40:20Z",
+      "side": 1,
+      "message": "Changed to processing terminates.",
+      "parentUuid": "3be35e7c_4d5ca6d7",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b1642045_283af4b3",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 2
@@ -132,6 +240,24 @@
       "writtenOn": "2017-08-28T13:47:44Z",
       "side": 1,
       "message": "We\u0027ve switched here from \"investigate the problem in the code and fix it yourself\" to \"pick up the phone and someone will help you\", I think we want to stick with \"investigate the problem in the IUCVCLNT program, fix the code and reinvoke the function\"",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9632c500_53b3c526",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 354,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-28T16:40:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1642045_283af4b3",
       "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -155,6 +281,24 @@
     },
     {
       "key": {
+        "uuid": "56a9a05c_f634b18d",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-28T16:40:20Z",
+      "side": 1,
+      "message": "Changed to terminate.",
+      "parentUuid": "9036f599_73d1ca9b",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "31b44550_df05057a",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 2
@@ -172,6 +316,24 @@
     },
     {
       "key": {
+        "uuid": "9b814639_bbfc0c0e",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 409,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-28T16:40:20Z",
+      "side": 1,
+      "message": "Added additional causes.",
+      "parentUuid": "31b44550_df05057a",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "60d85729_279e8940",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 2
@@ -183,6 +345,24 @@
       "writtenOn": "2017-08-28T13:47:44Z",
       "side": 1,
       "message": "Could offer some information about the expected format, or at least a pointer to where to look it up (maybe we have an example in the comments of the function?)",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9898c_179c761e",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 583,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-28T16:40:20Z",
+      "side": 1,
+      "message": "Will not change.  The variations can be anything.  The exception will provide the hint that the user needs.",
+      "parentUuid": "60d85729_279e8940",
       "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -223,6 +403,24 @@
     },
     {
       "key": {
+        "uuid": "d856b703_80d6fa62",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 593,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-28T16:40:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5f38a6fd_85306447",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bd956f53_30f0ae79",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 2
@@ -234,6 +432,24 @@
       "writtenOn": "2017-08-28T13:47:44Z",
       "side": 1,
       "message": "I think we can give more details here, tell them to check the invocation for the maximum seconds/polls allowed, tell them where to look for the defaults, etc.\nSame comment applies on other messages.",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c98a1c73_98cfae32",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 600,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-28T16:40:20Z",
+      "side": 1,
+      "message": "No change will be made.  We are a functional routine to other functions.  Those functions will choose whether to use a default or a different value.  The user needs to know the information that we are providing which is the number of seconds that we waited.  Whether they change an external or internal will depend on the function that SDK uses.",
+      "parentUuid": "bd956f53_30f0ae79",
       "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -263,6 +479,30 @@
     },
     {
       "key": {
+        "uuid": "4fe1a207_8a2c1ac6",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 605,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-28T16:40:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "09ae9f41_2bb94fdf",
+      "range": {
+        "startLine": 605,
+        "startChar": 50,
+        "endLine": 605,
+        "endChar": 51
+      },
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e036fa26_327dfb64",
         "filename": "smutLayer/msgs.py",
         "patchSetId": 2
@@ -274,6 +514,24 @@
       "writtenOn": "2017-08-28T13:47:44Z",
       "side": 1,
       "message": "contain*",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "46ee2781_f13cd7ff",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 638,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-08-28T16:40:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e036fa26_327dfb64",
       "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
