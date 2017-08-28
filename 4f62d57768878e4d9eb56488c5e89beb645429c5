@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "451e7ddf_0a0a21e2",
+        "filename": "smutLayer/msgs.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2017-08-28T11:57:30Z",
+      "side": 1,
+      "message": "The rc 24 indicates a parameter error. A message will indicate what was detected. It could be a missing parameter, invalid parameter, etc. Use the help for the API along with the message to determine the problem.",
+      "revId": "4f62d57768878e4d9eb56488c5e89beb645429c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
