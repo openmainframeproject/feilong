@@ -129,9 +129,14 @@ msg = {
     '0012': [{'overallRC': 4, 'rc': 4, 'rs': 12},
         "ULT%s0012E The request data is not one of the supported types " +
         "of list or string: %s"],
-        # Explain:
-        # SysAct:
-        # UserResp:
+        # Explain: The ReqHandle parseCmdline method was called with
+        #   the request passed in a variable that was not a
+        #   list or base string.  Only these types of variables are
+        #   supported for passing of the request to be parsed.
+        # SysAct: Processing of the function terminates.
+        # UserResp: Correct the calling function to use either a
+        #   list or base string to hold the request to be processed
+        #   and reinvoke the call.
     '0013': [{'overallRC': 4, 'rc': 4, 'rs': 13},
         "ULT%s0010E The desired state was: %s. Valid states are: %s"],
         # Explain: An error was detected while parsing the command.
