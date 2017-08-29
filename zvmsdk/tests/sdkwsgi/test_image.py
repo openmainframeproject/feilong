@@ -59,7 +59,7 @@ class ImageTestCase(unittest.TestCase):
         # it might be changed if the test system is changed
         # another way is to use mkdummyimage to create a dummy image
         url = '/images/'
-        url += 'rhel7.2-s390x-netboot-e19708cf_a55b_4f97_b9d5_bab54fa6f94f/'
+        url += 'rhel7.2-s390x-netboot-46a4aea3_54b6_4b1c_8a49_01f302e70c60/'
         url += 'root_disk_size'
 
         resp = self.client.api_request(url=url, method='GET')
