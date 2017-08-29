@@ -568,3 +568,23 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
         smut_req.assert_called_once_with('getHost diskpoolspace pool')
         self.assertDictEqual(dp_info, expect)
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_set_vswitch_port_vlan_id(self, request, get_smut_userid):
+        get_smut_userid.return_value = "SMUTUSER"
+        request.return_value = {'overallRC': 0}
+        userid = 'FakeID'
+        vswitch_name = 'FakeVS'
+        vlan_id = 'FakeVLAN'
+        rd = ' '.join((
+            "SMAPI SMUTUSER API Virtual_Network_Vswitch_Set_Extended",
+            "--operands",
+            "-k grant_userid=FakeID",
+            "-k switch_name=FakeVS",
+            "-k user_vlan_id=FakeVLAN",
+            "-k persist=YES"))
+
+        self._smutclient.set_vswitch_port_vlan_id(userid,
+                                                  vswitch_name, vlan_id)
+        request.assert_called_once_with(rd)
