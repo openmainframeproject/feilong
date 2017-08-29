@@ -423,7 +423,6 @@ class SMUTClient(client.ZVMClient):
             "--operands",
             "-k switch_name=%s" % switch_name,
             "-k persist=%s" % (persist and 'YES' or 'NO')))
-
         with zvmutils.expect_request_failed_and_reraise(
             exception.ZVMNetworkError):
             try:
@@ -543,3 +542,48 @@ class SMUTClient(client.ZVMClient):
     def get_user_direct(self, userid):
         results = self._request("getvm %s directory" % userid)
         return results.get('response', [])
+
+    def delete_nic(self, userid, vdev, active=False):
+        rd = ' '.join((
+            "SMAPI %s API Virtual_Network_Adapter_Delete_DM" %
+            userid,
+            '-v %s' % vdev))
+        with zvmutils.expect_request_failed_and_reraise(
+            exception.ZVMNetworkError):
+            try:
+                self._request(rd)
+            except exception.ZVMClientRequestFailed as err:
+                results = err.results
+                emsg = err.format_message()
+                if ((results['rc'] == 404) and
+                    (results['rs'] == 8)):
+                    LOG.warning("Virtual device %s does not exist in "
+                                "the guest's user direct", vdev)
+                else:
+                    raise exception.ZVMNetworkError(
+                        msg=("Failed to delete nic %s for %s in "
+                             "the guest's user direct, %s") %
+                             (vdev, userid, emsg))
+
+        self._NetDbOperator.switch_delete_record_for_nic(userid, vdev)
+        if active:
+            rd = ' '.join((
+                "SMAPI %s API Virtual_Network_Adapter_Delete" %
+                userid,
+                '-v %s' % vdev))
+            with zvmutils.expect_request_failed_and_reraise(
+                exception.ZVMNetworkError):
+                try:
+                    self._request(rd)
+                except exception.ZVMClientRequestFailed as err:
+                    results = err.results
+                    emsg = err.format_message()
+                    if ((results['rc'] == 204) and
+                        (results['rs'] == 8)):
+                        LOG.warning("Virtual device %s does not exist on "
+                                    "the active guest system", vdev)
+                    else:
+                        raise exception.ZVMNetworkError(
+                            msg=("Failed to delete nic %s for %s on "
+                                 "the active guest system, %s") %
+                                 (vdev, userid, emsg))
