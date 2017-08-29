@@ -42,8 +42,10 @@ from zvmsdk.exception import ZVMVolumeError
 
 class _BaseConfiguratorTestCase(unittest.TestCase):
 
-    def setUp(self):
-        self._base_cnf = volumeop._BaseConfigurator()
+    @classmethod
+    def setUpClass(cls):
+        super(_BaseConfiguratorTestCase, cls).setUpClass()
+        cls._base_cnf = volumeop._BaseConfigurator()
 
     @mock.patch.object(volumeop._BaseConfigurator, 'config_attach_inactive')
     @mock.patch.object(volumeop._BaseConfigurator, 'config_attach_active')
@@ -67,8 +69,10 @@ class _BaseConfiguratorTestCase(unittest.TestCase):
 
 class _xCATProxyTestCase(unittest.TestCase):
 
-    def setUp(self):
-        self._proxy = volumeop._xCATProxy()
+    @classmethod
+    def setUpClass(cls):
+        super(_xCATProxyTestCase, cls).setUpClass()
+        cls._proxy = volumeop._xCATProxy()
 
     @mock.patch.object(volumeop._xCATProxy, '_xcat_chvm')
     def test_dedicate_device(self, _xcat_chvm):
@@ -282,8 +286,10 @@ class _xCATProxyTestCase(unittest.TestCase):
 
 class _Configurator_SLES12TestCases(unittest.TestCase):
 
-    def setUp(self):
-        self._conf = volumeop._Configurator_SLES12()
+    @classmethod
+    def setUpClass(cls):
+        super(_Configurator_SLES12TestCases, cls).setUpClass()
+        cls._conf = volumeop._Configurator_SLES12()
 
     @mock.patch.object(volumeop._Configurator_SLES12,
                        '_config_fc_attach_inactive_with_xCAT')
@@ -448,8 +454,10 @@ class _Configurator_SLES12TestCases(unittest.TestCase):
 
 class _Configurator_RHEL7TestCases(unittest.TestCase):
 
-    def setUp(self):
-        self._conf = volumeop._Configurator_RHEL7()
+    @classmethod
+    def setUpClass(cls):
+        super(_Configurator_RHEL7TestCases, cls).setUpClass()
+        cls._conf = volumeop._Configurator_RHEL7()
 
     @mock.patch.object(volumeop._Configurator_RHEL7,
                        '_config_fc_attach_inactive_with_xCAT')
@@ -614,8 +622,10 @@ class _Configurator_RHEL7TestCases(unittest.TestCase):
 
 class VolumeOpTestCase(unittest.TestCase):
 
-    def setUp(self):
-        self._vol_op = volumeop.VolumeOperator()
+    @classmethod
+    def setUpClass(cls):
+        super(VolumeOpTestCase, cls).setUpClass()
+        cls._vol_op = volumeop.VolumeOperator()
 
     @mock.patch.object(volumeop.VolumeOperator, '_get_configurator')
     @mock.patch.object(volumeop.VolumeOperator, '_validate_connection_info')
