@@ -14,16 +14,17 @@
 
 
 import contextlib
+from datetime import datetime
 import os
 import sqlite3
 import stat
 from time import sleep
+import uuid
 
 from zvmsdk import config
 from zvmsdk import constants as const
 from zvmsdk import exception
 from zvmsdk import log
-from zvmsdk.exception import ZVMSDKInternalError
 
 
 CONF = config.CONF
@@ -52,8 +53,8 @@ def get_db_conn():
     try:
         yield conn
     except Exception as err:
-        LOG.error('Execute SQL statements error: ', err)
-        raise exception.ZVMSDKInternalError(msg=err)
+        LOG.error("Execute SQL statements error: ", err)
+        raise exception.DatabaseException(msg=err)
     finally:
         _op.release_connection(i)
 
@@ -114,7 +115,179 @@ class DbOperator(object):
             sleep(1)
         # If timeout happens, it means the pool is too small to meet
         # request performance, so enlarge it
-        raise ZVMSDKInternalError("Get database connection time out!")
+        raise exception.DBTimeout("Get database connection time out!")
 
     def release_connection(self, i):
         self._free_conn[i] = True
+
+
+class VolumeDBUtils(object):
+
+    def __init__(self):
+        self._initialize_table_volumes()
+        self._initialize_table_volume_attachments()
+        self._VOLUME_STATUS_FREE = 'free'
+        self._VOLUME_STATUS_IN_USE = 'in-use'
+
+    def _initialize_table_volumes(self):
+        # The snapshots table doesn't exist by now, but it must be there when
+        # we decide to support copy volumes. So leave 'snapshot-id' there as a
+        # placeholder, since it's hard to migrate a database table in future.
+        sql = ' '.join((
+            'CREATE TABLE IF NOT EXISTS volumes(',
+            'id             char(36)      PRIMARY KEY,',
+            'protocol_type  varchar(32)   NOT NULL,',
+            'size           varchar(8)    NOT NULL,',
+            'status         varchar(32),',
+            'image_id       char(36),',
+            'snapshot_id    char(36),',
+            'deleted        smallint      DEFAULT 0,',
+            'deleted_at     char(26),',
+            'comment        varchar(128))'))
+        with get_db_conn() as conn:
+            conn.execute(sql)
+
+    def _initialize_table_volume_attachments(self):
+        sql = ' '.join((
+            'CREATE TABLE IF NOT EXISTS volume_attachments(',
+            'id               char(36)      PRIMARY KEY,',
+            'volume_id        char(36)      NOT NULL,',
+            'instance_id      char(36)      NOT NULL,',
+            'connection_info  varchar(256)  NOT NULL,',
+            'mountpoint       varchar(32)   NOT NULL,',
+            'deleted          smallint      DEFAULT 0,',
+            'deleted_at       char(26),',
+            'comment          varchar(128))'))
+        with get_db_conn() as conn:
+            conn.execute(sql)
+
+    def get_volume_by_id(self, volume_id):
+        """Query a volume form database by its id.
+        The id must be a 36-character string.
+        """
+        if not volume_id:
+            msg = "Volume id must be specified!"
+            raise exception.DatabaseException(msg=msg)
+
+        with get_db_conn() as conn:
+            result_list = conn.execute(
+                "SELECT * FROM volumes WHERE id=:id AND deleted=0",
+                {'id': volume_id}
+                ).fetchall()
+
+        if len(result_list) == 1:
+            return result_list[0]
+        elif len(result_list) == 0:
+            LOG.debug("Volume with id: %s not found!" % volume_id)
+            return None
+
+    def insert_volume(self, volume):
+        """Insert a volume into database.
+        The volume is represented by a dict of all volume properties:
+        id: volume id, auto generated and can not be specified.
+        protocol_type: protocol type to access the volume, like 'fc' or
+                      'iscsi', must be specified.
+        size: volume size in Terabytes, Gigabytes or Megabytes, must be
+              specified.
+        status: volume status, auto generated and can not be specified.
+        image_id: source image id when boot-from-volume, optional.
+        snapshot_id: snapshot id when a volume comes from a snapshot, optional.
+        deleted: if deleted, auto generated and can not be specified.
+        deleted_at: auto generated and can not be specified.
+        comment: any comment, optional.
+        """
+        if not (isinstance(volume, dict) and
+                'protocol_type' in volume.keys() and
+                'size' in volume.keys()):
+            msg = "Invalid volume database entry %s !" % volume
+            raise exception.DatabaseException(msg=msg)
+
+        volume_id = str(uuid.uuid4())
+        protocol_type = volume['protocol_type']
+        size = volume['size']
+        status = self._VOLUME_STATUS_FREE
+        image_id = None
+        if 'image_id' in volume.keys():
+            image_id = volume['image_id']
+        snapshot_id = None
+        if 'snapshot_id' in volume.keys():
+            snapshot_id = volume['snapshot_id']
+        deleted = '0'
+        deleted_at = None
+        comment = None
+        if 'comment' in volume.keys():
+            comment = volume['comment']
+
+        with get_db_conn() as conn:
+            conn.execute(
+                "INSERT INTO volumes VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (volume_id, protocol_type, size, status, image_id, snapshot_id,
+                 deleted, deleted_at, comment))
+
+        return volume_id
+
+    def update_volume(self, volume):
+        """Update a volume in database.
+        The volume is represented by a dict of all volume properties:
+        id: volume id, must be specified.
+        protocol_type: protocol type to access the volume, like 'fc' or
+                      'iscsi', can not update, don't set.
+        size: volume size in Terabytes, Gigabytes or Megabytes, optional.
+        status: volume status, optional.
+        image_id: source image id when boot-from-volume, optional.
+        snapshot_id: snapshot id when a volume comes from a snapshot, optional.
+        deleted: if deleted, can not be updated, use delete_volume() to delete.
+        deleted_at: auto generated and can not be specified.
+        comment: any comment, optional.
+        """
+        if not (isinstance(volume, dict) and
+                'id' in volume.keys()):
+            msg = "Invalid volume database entry %s !" % volume
+            raise exception.DatabaseException(msg=msg)
+
+        # get current volume properties
+        volume_id = volume['id']
+        old_volume = self.get_volume_by_id(volume_id)
+        if not old_volume:
+            msg = "Volume %s not found in database!" % volume_id
+            raise exception.DatabaseException(msg=msg)
+        else:
+            (_, _, size, status, image_id, snapshot_id, _, _, comment
+             ) = old_volume
+
+        if 'size' in volume.keys():
+            size = volume['size']
+        if 'status' in volume.keys():
+            status = volume['status']
+        if 'image_id' in volume.keys():
+            image_id = volume['image_id']
+        if 'snapshot_id' in volume.keys():
+            snapshot_id = volume['snapshot_id']
+        if 'comment' in volume.keys():
+            comment = volume['comment']
+
+        with get_db_conn() as conn:
+            conn.execute(' '.join((
+                "UPDATE volumes",
+                "SET size=?, status=?, image_id=?, snapshot_id=?, comment=?"
+                "WHERE id=?")),
+                (size, status, image_id, snapshot_id, comment, volume_id))
+
+    def delete_volume(self, volume_id):
+        """Delete a volume from database."""
+        if not volume_id:
+            msg = "Volume id must be specified!"
+            raise exception.DatabaseException(msg=msg)
+
+        volume = self.get_volume_by_id(volume_id)
+        if not volume:
+            msg = "Volume %s not found in database!" % volume_id
+            raise exception.DatabaseException(msg=msg)
+
+        time = str(datetime.now())
+        with get_db_conn() as conn:
+            conn.execute(' '.join((
+                "UPDATE volumes",
+                "SET deleted=1, deleted_at=?",
+                "WHERE id=?")),
+                (time, volume_id))
