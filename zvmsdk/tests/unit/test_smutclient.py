@@ -568,3 +568,37 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
         smut_req.assert_called_once_with('getHost diskpoolspace pool')
         self.assertDictEqual(dp_info, expect)
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_set_vswitch_port_vlan_id(self, request, get_smut_userid):
+        get_smut_userid.return_value = "SMUTUSER"
+        request.return_value = {'overallRC': 0}
+        rd = ' '.join((
+            "SMAPI SMUTUSER API Virtual_Network_Vswitch_Set_Extended",
+            "--operands",
+            "-k switch_name=fake_vs",
+            "-k real_device_address='1000 1003'"))
+        self._smutclient.set_vswitch("fake_vs",
+                                     real_device_address='1000 1003')
+        request.assert_called_with(rd)
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    def test_set_vswitch_with_invalid_key(self, get_smut_userid):
+        get_smut_userid.return_value = "SMUTUSER"
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self._smutclient.set_vswitch,
+                          "vswitch_name", unknown='fake_id')
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_set_vswitch_with_errorcode(self, request, get_smut_userid):
+        get_smut_userid.return_value = "SMUTUSER"
+        results = {'rs': 0, 'errno': 0, 'strError': '',
+                   'overallRC': 1, 'logEntries': [], 'rc': 0,
+                   'response': ['fake response']}
+        request.side_effect = exception.ZVMClientRequestFailed(
+                                                results=results)
+        self.assertRaises(exception.ZVMNetworkError,
+                          self._smutclient.set_vswitch,
+                          "vswitch_name", grant_userid='fake_id')
