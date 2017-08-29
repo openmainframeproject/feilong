@@ -359,3 +359,29 @@ class SMUTClient(client.ZVMClient):
             '\n'.join(results['response']), const.DISKPOOL_KEYWORDS)
 
         return dp_info
+
+    @zvmutils.wrap_invalid_resp_data_error
+    def delete_vswitch(self, switch_name, persist=True):
+        smut_userid = zvmutils.get_smut_userid()
+        rd = ' '.join((
+            "SMAPI %s API Virtual_Network_Vswitch_Delete_Extended" %
+            smut_userid,
+            "--operands",
+            "-k switch_name=%s" % switch_name,
+            "-k persist=%s" % (persist and 'YES' or 'NO')))
+
+        with zvmutils.expect_request_failed_and_reraise(
+            exception.ZVMNetworkError):
+            try:
+                self._request(rd)
+            except exception.ZVMClientRequestFailed as err:
+                results = err.results
+                emsg = err.format_message()
+                if ((results['rc'] == 212) and
+                    (results['rs'] == 40)):
+                    LOG.warning("Vswitch %s does not exist", switch_name)
+                    return
+                else:
+                    raise exception.ZVMNetworkError(
+                        msg=("Failed to delete vswitch %s: %s") %
+                            (switch_name, emsg))
