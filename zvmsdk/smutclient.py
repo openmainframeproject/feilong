@@ -388,3 +388,17 @@ class SMUTClient(client.ZVMClient):
                                 if isinstance(s, const._TSTR_OR_TUNI)])
                 output = re.findall('VSWITCH:  Name: (.*)', data)
                 return output
+
+    def set_vswitch_port_vlan_id(self, vswitch_name, userid, vlan_id):
+        smut_userid = zvmutils.get_smut_userid()
+        rd = ' '.join((
+            "SMAPI %s API Virtual_Network_Vswitch_Set_Extended" %
+            smut_userid,
+            "--operands",
+            "-k grant_userid=%s" % userid,
+            "-k switch_name=%s" % vswitch_name,
+            "-k user_vlan_id=%s" % vlan_id,
+            "-k persist=YES"))
+        with zvmutils.expect_request_failed_and_reraise(
+            exception.ZVMNetworkError):
+            self._request(rd)
