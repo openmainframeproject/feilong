@@ -568,3 +568,50 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
         smut_req.assert_called_once_with('getHost diskpoolspace pool')
         self.assertDictEqual(dp_info, expect)
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, 'request')
+    def test_delete_vswitch(self, request, get_smut_userid):
+        get_smut_userid.return_value = "SMUTUSER"
+        request.return_value = {'rs': 0, 'errno': 0, 'strError': '',
+                                'overallRC': 0, 'logEntries': [], 'rc': 0,
+                                'response': ['fake response']}
+        switch_name = 'FakeVS'
+        rd = ' '.join((
+            "SMAPI SMUTUSER API Virtual_Network_Vswitch_Delete_Extended",
+            "--operands",
+            "-k switch_name=FakeVS",
+            "-k persist=YES"))
+        self._smutclient.delete_vswitch(switch_name, True)
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, 'request')
+    def test_delete_vswitch_with_errorcode(self, request, get_smut_userid):
+        get_smut_userid.return_value = "SMUTUSER"
+        results = {'rs': 0, 'errno': 0, 'strError': '',
+                   'overallRC': 1, 'logEntries': [], 'rc': 0,
+                   'response': ['fake response']}
+        request.side_effect = exception.ZVMClientRequestFailed(
+                                                results=results)
+        self.assertRaises(exception.ZVMNetworkError,
+                          self._smutclient.delete_vswitch,
+                          "vswitch_name", True)
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, 'request')
+    def test_delete_vswitch_not_exist(self, request, get_smut_userid):
+        get_smut_userid.return_value = "SMUTUSER"
+        results = {'rs': 40, 'errno': 0, 'strError': '',
+                   'overallRC': 1, 'logEntries': [], 'rc': 212,
+                   'response': ['fake response']}
+        request.side_effect = exception.ZVMClientRequestFailed(
+                                                results=results)
+        switch_name = 'FakeVS'
+        rd = ' '.join((
+            "SMAPI SMUTUSER API Virtual_Network_Vswitch_Delete_Extended",
+            "--operands",
+            "-k switch_name=FakeVS",
+            "-k persist=YES"))
+        self._smutclient.delete_vswitch(switch_name, True)
+        request.assert_called_once_with(rd)
