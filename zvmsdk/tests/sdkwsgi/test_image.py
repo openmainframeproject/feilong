@@ -29,18 +29,23 @@ class ImageTestCase(unittest.TestCase):
     def setUp(self):
         self.client = test_sdkwsgi.TestSDKClient()
 
+    def _image_delete(self):
+        url = '/images/rhel7.2-s390x-netboot-image1'
+        resp = self.client.api_request(url=url, method='DELETE')
+        self.assertEqual(204, resp.status_code)
+        return resp
+
     def _image_create(self):
-        image_name = "46a4aea3-54b6-4b1c-8a49-01f302e70c60"
         image_fname = "image1"
         image_fpath = ''.join([CONF.image.temp_path, image_fname])
         os.system('touch %s' % image_fpath)
         url = "file://" + image_fpath
-        image_meta = """{"os_version": "rhel7.2",
-                         "md5sum": "12345678912345678912345678912345"}"""
+        image_meta = '''{"os_version": "rhel7.2",
+                         "md5sum": "12345678912345678912345678912345"}'''
 
         body = """{"image": {"image_name": "%s",
                              "url": "%s",
-                             "image_meta": %s}}""" % (image_name, url,
+                             "image_meta": %s}}""" % (image_fname, url,
                                                       image_meta)
 
         resp = self.client.api_request(url='/images', method='POST',
@@ -59,7 +64,7 @@ class ImageTestCase(unittest.TestCase):
         # it might be changed if the test system is changed
         # another way is to use mkdummyimage to create a dummy image
         url = '/images/'
-        url += 'rhel7.2-s390x-netboot-e19708cf_a55b_4f97_b9d5_bab54fa6f94f/'
+        url += 'rhel7.2-s390x-netboot-46a4aea3_54b6_4b1c_8a49_01f302e70c60/'
         url += 'root_disk_size'
 
         resp = self.client.api_request(url=url, method='GET')
