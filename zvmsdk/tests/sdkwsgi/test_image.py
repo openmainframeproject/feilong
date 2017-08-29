@@ -29,12 +29,6 @@ class ImageTestCase(unittest.TestCase):
     def setUp(self):
         self.client = test_sdkwsgi.TestSDKClient()
 
-    def _image_delete(self):
-        url = '/images/rhel7.2-s390x-netboot-image1'
-        resp = self.client.api_request(url=url, method='DELETE')
-        self.assertEqual(204, resp.status_code)
-        return resp
-
     def _image_create(self):
         image_fname = "image1"
         image_fpath = ''.join([CONF.image.temp_path, image_fname])
