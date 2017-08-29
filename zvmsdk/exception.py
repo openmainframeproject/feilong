@@ -186,3 +186,11 @@ class SDKUnsupportedImageBackend(SDKBaseException):
 
 class SDKImageImportException(SDKBaseException):
     msg_fmt = 'Error detected during image import: %s(msg)s'
+
+
+class DatabaseException(SDKBaseException):
+    msg_fmt = "SDK database error: %(msg)s"
+
+
+class DBTimeout(DatabaseException):
+    msg_fmt = "SDK database operation timeout: %(msg)s"
