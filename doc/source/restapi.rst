@@ -206,7 +206,9 @@ Display the user direct by the given userid.
 
 * Response contents:
 
-  - user_direct: The user direct of the given userid.
+.. restapi_parameters:: parameters.yaml
+
+  - user_direct: user_direct
 
 * Response sample:
 

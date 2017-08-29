@@ -79,3 +79,11 @@ cpu_info:
   in: body
   required: true
   type: dict
+
+
+user_direct:
+  description: |
+    The user direct (definition of the guest) returned.
+  in: body
+  required: true
+  type: array
