@@ -102,7 +102,7 @@ Create Guest
 
 .. restapi_parameters:: parameters.yaml
 
-  - userid: guest_userid
+  - userid: userid_body
   - vcpus: guest_vcpus
   - memory: guest_memory
   - user_profile: user_profile_guest
@@ -118,6 +118,8 @@ Create Guest
   HTTP status code 200 on success.
 
 * Response contents:
+
+  No Response
 
 Get Guests cpu info
 -------------------
@@ -138,7 +140,7 @@ Get Guests cpu info
 
 .. restapi_parameters:: parameters.yaml
 
-  - cpu: cpu_info
+  - cpu: cpu_info_guest
 
 * Response sample:
 
@@ -152,7 +154,9 @@ Get Guests memory info
 
 * Request:
 
-  No parameters needed.
+.. restapi_parameters:: parameters.yaml
+
+  - userid_list: userid_list_guest
 
 * Response code:
 
@@ -160,7 +164,9 @@ Get Guests memory info
 
 * Response contents:
 
-  - memory:
+.. restapi_parameters:: parameters.yaml
+
+  - memory: guest_memory
 
 * Response sample:
 
@@ -174,7 +180,9 @@ Get Guests vnics info
 
 * Request:
 
-  No parameters needed.
+.. restapi_parameters:: parameters.yaml
+
+  - userid_list: userid_list_guest
 
 * Response code:
 
@@ -182,7 +190,9 @@ Get Guests vnics info
 
 * Response contents:
 
-  - vnics:
+.. restapi_parameters:: parameters.yaml
+
+  - vnics: guest_vnics
 
 * Response sample:
 
@@ -198,7 +208,9 @@ Display the user direct by the given userid.
 
 * Request:
 
-  - userid: The userid to be displayed, it should comply with z/VM userid standard.
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
 
 * Response code:
 
@@ -206,7 +218,9 @@ Display the user direct by the given userid.
 
 * Response contents:
 
-  - user_direct: The user direct of the given userid.
+.. restapi_parameters:: parameters.yaml
+
+  - user_direct: user_direct_guest
 
 * Response sample:
 
@@ -222,7 +236,9 @@ Update given guest.
 
 * Request:
 
-  - userid: The userid to be updated.
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
 
 * Response code:
 
@@ -230,6 +246,7 @@ Update given guest.
 
 * Response contents:
 
+  No Response
 
 Delete Guest
 ------------
@@ -238,13 +255,17 @@ Delete Guest
 
 * Request:
 
-  - userid: The userid to be deleted.
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
 
 * Response code:
 
   HTTP status code 204 on success.
 
 * Response contents:
+
+  No Response
 
 
 Get Guest info
@@ -254,7 +275,9 @@ Get Guest info
 
 * Request:
 
-  - userid: The userid to get information from.
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
 
 * Response code:
 
@@ -262,12 +285,14 @@ Get Guest info
 
 * Response contents:
 
-  - info: the object of the information returned
-  - max_mem_kb:
-  - num_cpu:
-  - cpu_time_us:
-  - power_state:
-  - mem_kb:
+.. restapi_parameters:: parameters.yaml
+
+  - info: guest_info
+  - max_mem_kb: guest_memory_kb
+  - num_cpu: num_cpu_guest
+  - cpu_time_us: cpu_time_us_guest
+  - power_state: power_status_guest
+  - mem_kb: guest_memory_kb
 
 * Response sample:
 
@@ -279,9 +304,13 @@ Get Guest nic info
 
 **GET /guests/{userid}/nic**
 
+Return the nic and vswitch pair for specified guest
+
 * Request:
 
-  - userid: The userid to get nic information from.
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
 
 * Response code:
 
@@ -289,7 +318,7 @@ Get Guest nic info
 
 * Response contents:
 
-  - nic: the nic information
+  - nic: guest_nic_info
 
 * Response sample:
 
@@ -303,13 +332,17 @@ Create Guest nic
 
 * Request:
 
-  - userid: The userid to create nic.
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
 
 * Response code:
 
   HTTP status code 200 on success.
 
 * Response contents:
+
+  No response.
 
 Start guest
 -----------
@@ -318,14 +351,18 @@ Start guest
 
 * Request:
 
-  - guest:
-  - action:
+.. restapi_parameters:: parameters.yaml
+
+  - guest: guest_userid
+  - action: action_start_guest
 
 * Response code:
 
   HTTP status code 200 on success.
 
 * Response contents:
+
+  No response.
 
 Stop guest
 ----------
@@ -334,14 +371,18 @@ Stop guest
 
 * Request:
 
-  - guest:
-  - action:
+.. restapi_parameters:: parameters.yaml
+
+  - guest: guest_userid
+  - action: action_stop_guest
 
 * Response code:
 
   HTTP status code 200 on success.
 
 * Response contents:
+
+  No response.
 
 Get guest console output 
 ------------------------
@@ -350,14 +391,18 @@ Get guest console output
 
 * Request:
 
-  - guest:
-  - action:
+.. restapi_parameters:: parameters.yaml
+
+  - guest: guest_userid
+  - action: action_get_console_guest
 
 * Response code:
 
   HTTP status code 200 on success.
 
 * Response contents:
+
+  `FIXME`: implement the output contents
 
 Deploy guest
 ------------
@@ -366,14 +411,18 @@ Deploy guest
 
 * Request:
 
-  - guest:
-  - action:
+.. restapi_parameters:: parameters.yaml
+
+  - guest: guest_userid
+  - action: action_deploy_guest
 
 * Response code:
 
   HTTP status code 200 on success.
 
 * Response contents:
+
+  No response.
 
 Get Guest power state
 ---------------------
@@ -382,7 +431,9 @@ Get Guest power state
 
 * Request:
 
-  - userid: The userid to get power state information from.
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
 
 * Response code:
 
@@ -390,7 +441,9 @@ Get Guest power state
 
 * Response contents:
 
-  - power_state: the power state of the guest.
+.. restapi_parameters:: parameters.yaml
+
+  - power_state: power_status_guest
 
 * Response sample:
 
@@ -402,16 +455,22 @@ Update Guest nic
 
 **PUT /guests/{userid}/nic/{vdev}**
 
+Couple nic to vswitch
+
 * Request:
 
-  - userid:
-  - vdev:
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - vdev: vdev_guest
 
 * Response code:
 
   HTTP status code 200 on success.
 
 * Response contents:
+  
+  No response.
 
 Delete Guest nic
 ----------------
@@ -420,14 +479,18 @@ Delete Guest nic
 
 * Request:
 
-  - userid:
-  - vdev:
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - vdev: vdev_guest
 
 * Response code:
 
   HTTP status code 204 on success.
 
 * Response contents:
+  
+  No response.
 
 Host
 ====
