@@ -5,4 +5,5 @@ webob
 jsonschema
 microversion_parse
 pyjwt
-jsonschema
+sphinx
+PyYAML

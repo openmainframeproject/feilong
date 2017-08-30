@@ -178,3 +178,11 @@ class ZVMClientInternalError(SDKBaseException):
 
 class ZVMUnauthorized(SDKBaseException):
     code = 401
+
+
+class SDKUnsupportedImageBackend(SDKBaseException):
+    msg_fmt = 'Unsupported SDK image backend %(msg)s'
+
+
+class SDKImageImportException(SDKBaseException):
+    msg_fmt = 'Error detected during image import: %s(msg)s'

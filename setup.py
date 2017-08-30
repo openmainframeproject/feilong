@@ -25,6 +25,7 @@ setuptools.setup(
     long_description=open('README.md').read(),
     url='https://github.com/mfcloud/python-zvm-sdk',
     keywords='zvm cloud library',
+    install_requires=open('requirements.txt').read(),
     packages=setuptools.find_packages(exclude=["zvmsdk.tests*"]),
     classifiers=[
         "Intended Audience :: Information Technology",
