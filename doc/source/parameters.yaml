@@ -28,6 +28,12 @@ token_password:
   in: body
   required: true
   type: string
+userid_body:
+  description: |
+    guests userid
+  in: body
+  required: true
+  type: string
 guest_list:
   description: |
     guests list
@@ -37,7 +43,7 @@ guest_list:
 guest_userid:
   description: |
     guest userid
-  in: body
+  in: path
   required: true
   type: string
 guest_vcpus:
@@ -52,11 +58,41 @@ guest_memory:
   in: body
   required: true
   type: integer
+guest_memory_kb:
+  description: |
+    size of memory in KB
+  in: body
+  required: true
+  type: integer
+guest_vnics:
+  description: |
+    vNICs statistics of one guest
+  in: body
+  required: true
+  type: dict
+guest_nic_info:
+  description: |
+    vNIC and vswitch pair of guest
+  in: body
+  required: true
+  type: dict
+guest_info:
+  description: |
+    status of guest
+  in: body
+  required: true
+  type: integer
 user_profile_guest:
   description: |
     profile of guest
   in: body
   required: false
+  type: string
+user_direct_guest:
+  description: |
+    user direct of guest
+  in: body
+  required: true
   type: string
 disk_list_guest:
   description: |
@@ -73,9 +109,40 @@ userid_list_guest:
   in: body
   required: true
   type: list
-cpu_info:
+cpu_info_guest:
   description: |
-    cpu statics of the guest
+    cpu statics of guest
   in: body
   required: true
   type: dict
+power_status_guest:
+  description: |
+    power status of guest, **on** or **off**
+  in: body
+  required: true
+  type: string
+cpu_time_us_guest:
+  description: |
+    cpu time used in microseconds
+  in: body
+  required: true
+  type: integer
+num_cpu_guest:
+  description: |
+    the number of virtual CPUs of guest
+  in: body
+  required: true
+  type: integer
+action_on_guest:
+  description: |
+    operations on one guest, include **start**, **stop**, **deploy**
+    or **get-console-output** of guest.
+  in: body
+  required: true
+  type: dict
+vdev_guest:
+  description: |
+    nic device number, 1- to 4- hexadecimal digits
+  in: path
+  required: true
+  type: string
