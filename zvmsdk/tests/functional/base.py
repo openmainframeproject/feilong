@@ -41,12 +41,12 @@ class SDKAPITestUtils(object):
         self.api = api.SDKAPI()
         self.zvmclient = zvmclient.get_zvmclient()
 
-    def image_import(self, image_path=CONF.tests.image_path,
+    def image_import(self, image_name, image_path=CONF.tests.image_path,
                      os_version=CONF.tests.image_os_version):
         image_url = ''.join(('file://', image_path))
         remote_host = zvmutils.get_host()
-        self.api.image_import(image_url, {'os_version': os_version},
-                              remote_host)
+        self.api.image_import(image_name, image_url,
+                              {'os_version': os_version}, remote_host)
 
     def get_available_test_userid(self):
         exist_list = self.api.guest_list()
@@ -98,7 +98,7 @@ class SDKAPITestUtils(object):
 
         if not self.api.image_query(image_name.replace('-', '_')):
             print("Importing image %s ..." % image_name)
-            self.image_import()
+            self.image_import(image_name)
 
         print("Using image %s ..." % image_name)
 
