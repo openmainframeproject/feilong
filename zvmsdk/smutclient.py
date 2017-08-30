@@ -14,6 +14,7 @@
 
 
 import os
+import re
 import tempfile
 
 from smutLayer import smut
@@ -359,3 +360,31 @@ class SMUTClient(client.ZVMClient):
             '\n'.join(results['response']), const.DISKPOOL_KEYWORDS)
 
         return dp_info
+
+    @zvmutils.wrap_invalid_resp_data_error
+    def get_vswitch_list(self):
+        smut_userid = zvmutils.get_smut_userid()
+        rd = ' '.join((
+            "SMAPI %s API Virtual_Network_Vswitch_Query" % smut_userid,
+            "--operands",
+            "-s \'*\'"))
+        with zvmutils.expect_request_failed_and_reraise(
+                exception.ZVMNetworkError):
+            try:
+                result = self._request(rd)
+            except exception.ZVMClientRequestFailed as err:
+                emsg = err.format_message()
+                if ((err.results['rc'] == 212) and (err.results['rs'] == 40)):
+                    LOG.warning("No Virtual switch in the host")
+                    return []
+                else:
+                    raise exception.ZVMNetworkError(
+                            msg=("Failed to query vswitch list, %s") % emsg)
+
+            if (not result['response'] or not result['response'][0]):
+                return []
+            else:
+                data = '\n'.join([s for s in result['response']
+                                if isinstance(s, const._TSTR_OR_TUNI)])
+                output = re.findall('VSWITCH:  Name: (.*)', data)
+                return output

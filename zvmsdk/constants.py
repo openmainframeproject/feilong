@@ -62,6 +62,7 @@ DATABASE_NAME = 'ZVMSDKDB.db'
 _TSTR = types.StringTypes
 _TNONE = types.NoneType
 _TSTR_OR_NONE = (types.StringType, types.UnicodeType, types.NoneType)
+_TSTR_OR_TUNI = (types.StringType, types.UnicodeType)
 _INT_OR_NONE = (int, types.NoneType)
 _INT_OR_TSTR = (int, types.StringType, types.UnicodeType)
 _TUSERID = 'TYPE_USERID'
