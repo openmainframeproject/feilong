@@ -196,7 +196,6 @@ class SDKAPI(object):
                   the source image server
                 - Free space is not enough in image repository
         """
-
         self._imageops.image_import(image_name, url, image_meta,
                                     remote_host=remote_host)
 
