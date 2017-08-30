@@ -30,15 +30,19 @@ uwsgi_ via mod_proxy_uwsgi_ is recommended to be used
 .. _uwsgi: https://uwsgi-docs.readthedocs.io/
 .. _mod_proxy_uwsgi: http://uwsgi-docs.readthedocs.io/en/latest/Apache.html#mod-proxy-uwsgi
 
-==============================================
-Sample configuration and steps based on apache
-==============================================
+==========================================================
+Sample configuration and steps based on apache http server
+==========================================================
 
-* make sure installed following items
+* make sure installed following items::
+
    - apache httpd server
    - uwsgi and apache modules for uwsgi 
 
-* Create a uwsgi configuration file (your_config_file)::
+* Create a uwsgi configuration file, usually the configuration can be placed
+  at /etc/uwsgi.d/ folder, for example, /etc/uwsgi.d/your_config_file,
+  The sample below indicated the uwsgi service will be running at port 35000
+  so apache server can connect to port 35000 and communicate with it::
 
    [uwsgi]
    chmod-socket = 666
@@ -55,7 +59,10 @@ Sample configuration and steps based on apache
    processes = 2
    wsgi-file = /usr/local/bin/sdk-api
 
-* Create a uwsgi service::
+* Create a uwsgi service, following sample is based on RHEL and you can 
+  create a file /lib/systemd/system/zvmsdk.service, the following contents
+  are reference input; for other distribution please refer to their system
+  service architecture::
 
    [Unit]
    Description=zvm sdk uwsgi
@@ -64,16 +71,21 @@ Sample configuration and steps based on apache
    [Service]
    Type=simple
    User=your_user
-   ExecStart=/usr/sbin/uwsgi --ini /etc/your_config_file
-   ExecReload=/usr/sbin/uwsgi --reload /tmp/your_pid_file
-   ExecStop=/usr/sbin/uwsgi --stop /tmp/your_pid_file
+   ExecStart=/usr/sbin/uwsgi --ini /etc/uwsgi.d/your_config_file
+   ExecReload=/usr/sbin/uwsgi --reload /etc/uwsgi.d/your_config_file
+   ExecStop=/usr/sbin/uwsgi --stop /etc/uwsgi.d/your_config_file
 
    [Install]
    WantedBy=multi-user.target
 
-* Start the uwsgi service created at above step
+* Start the uwsgi service created at above step::
 
-* Create Apache setting, e.g /etc/apache2/sites-available/010-sdkapi.conf::
+   /bin/systemctl restart  zvmsdk.service
+
+* Create Apache setting, for example in RHEL, /etc/httpd/conf.d/zvmsdk.conf;
+  the following contents means the zvmsdk httpd service will running at port 8080
+  and any incoming request will be redirected to zvmsdk uwsgi which is listening
+  at port 35000::
 
    Listen 8080
 
@@ -83,7 +95,13 @@ Sample configuration and steps based on apache
 
    ProxyPass / uwsgi://127.0.0.1:35000/
 
-* Verify your settings after restart apache servers::
+* Restart httpd service::
+
+  /bin/systemctl restart httpd.service
+
+* Verify your settings after restart httpd servers (assume you are using above
+  configurations), if are you able to see similar output below, it means the zvmsdk
+  http service is running well::
 
    user@ubuntu1:~$curl localhost:8080
    {"versions": [{"min_version": "1.0", "version": "1.0", "max_version": "1.0"}]}
