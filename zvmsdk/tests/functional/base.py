@@ -41,8 +41,9 @@ class SDKAPITestUtils(object):
         self.api = api.SDKAPI()
         self.zvmclient = zvmclient.get_zvmclient()
 
-    def image_import(self, image_name, image_path=CONF.tests.image_path,
+    def image_import(self, image_path=CONF.tests.image_path,
                      os_version=CONF.tests.image_os_version):
+        image_name = os.path.basename(image_path)
         image_url = ''.join(('file://', image_path))
         remote_host = zvmutils.get_host()
         self.api.image_import(image_name, image_url,
@@ -98,7 +99,7 @@ class SDKAPITestUtils(object):
 
         if not self.api.image_query(image_name.replace('-', '_')):
             print("Importing image %s ..." % image_name)
-            self.image_import(image_name)
+            self.image_import()
 
         print("Using image %s ..." % image_name)
 
