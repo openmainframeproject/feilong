@@ -206,6 +206,10 @@ class PathUtils(object):
             LOG.debug('Removing existing folder %s ', tmp_file_fn)
             shutil.rmtree(tmp_file_fn)
 
+    def remove_file(self, fpath):
+        if os.path.exists(fpath):
+            os.remove(fpath)
+
     def _get_instances_path(self):
         return os.path.normpath(CONF.guest.temp_path)
 
@@ -220,6 +224,18 @@ class PathUtils(object):
     def get_console_log_path(self, os_node, instance_name):
         return os.path.join(self.get_instance_path(os_node, instance_name),
                             "console.log")
+
+    def create_import_image_repository(self, image_osdistro):
+        zvmsdk_image_import_repo = os.path.join(
+                                    CONF.image.sdk_image_repository,
+                                    'netboot',
+                                    image_osdistro)
+
+        if not os.path.exists(zvmsdk_image_import_repo):
+            LOG.debug('Creating image repository %s for image import',
+                      zvmsdk_image_import_repo)
+            os.makedirs(zvmsdk_image_import_repo)
+        return
 
 
 def to_utf8(text):
