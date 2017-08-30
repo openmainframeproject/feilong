@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "71b4e3bf_3b1bdcff",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 411,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-08-30T02:27:19Z",
+      "side": 1,
+      "message": "I\u0027d suggest we consider move this out, you can do it later\nas they are valid commands for now and API layer might consume it as well.. so further changes to configuration items instead of code here will be helpful",
+      "range": {
+        "startLine": 402,
+        "startChar": 30,
+        "endLine": 411,
+        "endChar": 62
+      },
+      "revId": "17dcc35a54e639a389e6f73af661a3ef1f7add8e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
