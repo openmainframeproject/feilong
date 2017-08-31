@@ -157,6 +157,17 @@ class VMOps(object):
         except Exception as err:
             raise exception.ZVMCreateVMFailed(userid=userid, msg=str(err))
 
+    def create_disks(self, userid, disk_list):
+        user_direct = self._zvmclient.get_user_direct(userid)
+
+        exist_disks = []
+        for ent in user_direct:
+            if 'MDISK' in ent:
+                exist_disks.append(ent.split()[1].strip())
+
+        start_vdev = hex(int(max(exist_disks), 16) + 1)[2:0].rjust(4, '0')
+        self._zvmclient.add_mdisks(userid, disk_list, start_vdev)
+
     def guest_config_minidisks(self, userid, disk_info):
         if disk_info != []:
             LOG.debug("Start to configure disks to %s." % userid)
