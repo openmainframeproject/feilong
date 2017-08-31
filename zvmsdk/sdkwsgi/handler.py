@@ -71,10 +71,10 @@ ROUTE_LIST = (
         'POST': volume.volume_attach,
         'DELETE': volume.volume_detach,
     }),
-    ('/host/info', {
+    ('/host', {
         'GET': host.host_get_info,
     }),
-    ('/host/disk_info/{disk}', {
+    ('/host/disk/{disk}', {
         'GET': host.host_get_disk_info,
     }),
     ('/images', {
