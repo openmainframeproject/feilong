@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "07664748_3c137333",
+        "filename": "zvmsdk/client.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-08-31T02:46:47Z",
+      "side": 1,
+      "message": "no need to convert to hex string here, just using integer which can be referenced directly in next if condition.",
+      "range": {
+        "startLine": 291,
+        "startChar": 12,
+        "endLine": 291,
+        "endChar": 64
+      },
+      "revId": "35f2ab40c55a531efffb9dabea0b772d8b618176",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "82f9c3c6_e4e0e0e7",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 466,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-08-31T02:46:47Z",
+      "side": 1,
+      "message": "if p[0] \u003d\u003d userid:  \n    vdev_info.append(p[1])",
+      "range": {
+        "startLine": 463,
+        "startChar": 0,
+        "endLine": 466,
+        "endChar": 43
+      },
+      "revId": "35f2ab40c55a531efffb9dabea0b772d8b618176",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "60930ca1_0ab16c27",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 487,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-08-31T02:46:47Z",
+      "side": 1,
+      "message": "better to print the nic_vdev in this error msg",
+      "range": {
+        "startLine": 487,
+        "startChar": 24,
+        "endLine": 487,
+        "endChar": 66
+      },
+      "revId": "35f2ab40c55a531efffb9dabea0b772d8b618176",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "662c4884_018f9697",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 493,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-08-31T02:46:47Z",
+      "side": 1,
+      "message": "mac_addr or \u0027not specified\u0027 is enough",
+      "range": {
+        "startLine": 493,
+        "startChar": 20,
+        "endLine": 493,
+        "endChar": 70
+      },
+      "revId": "35f2ab40c55a531efffb9dabea0b772d8b618176",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
