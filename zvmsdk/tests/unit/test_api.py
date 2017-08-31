@@ -176,3 +176,15 @@ class SDKAPITestCase(base.SDKTestCase):
         self.assertRaises(exception.ZVMInvalidInput,
                           self.api.vswitch_set,
                           "vswitch_name", unknown='fake_id')
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_disks")
+    def test_guest_add_disks(self, cds):
+        userid = 'testuid'
+        disk_list = [{'size': '1g'}]
+        self.api.guest_create_disks(userid, disk_list)
+        cds.assert_called_once_with(userid, disk_list)
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_disks")
+    def test_guest_add_disks_nothing_to_do(self, cds):
+        self.api.guest_create_disks('userid', [])
+        cds.assert_not_called()

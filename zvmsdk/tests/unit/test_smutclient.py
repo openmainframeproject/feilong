@@ -775,3 +775,10 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
             "-k adapter_type=QDIO"))
         request.assert_any_call(rd1)
         request.assert_any_call(rd2)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_get_user_direct(self, req):
+        req.return_value = {'response': 'OK'}
+        resp = self._smutclient.get_user_direct('user1')
+        req.assert_called_once_with('getvm user1 directory')
+        self.assertEqual(resp, 'OK')

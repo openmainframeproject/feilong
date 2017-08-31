@@ -539,3 +539,7 @@ class SMUTClient(client.ZVMClient):
 
         self._NetDbOperator.switch_add_record_for_nic(userid, vdev,
                                                       port=nic_id)
+
+    def get_user_direct(self, userid):
+        results = self._request("getvm %s directory" % userid)
+        return results.get('response', [])
