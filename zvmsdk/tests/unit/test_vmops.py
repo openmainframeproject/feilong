@@ -186,3 +186,27 @@ class SDKVMOpsTestCase(base.SDKTestCase):
     def test_guest_list(self, get_vm_list):
         self.vmops.guest_list()
         get_vm_list.assert_called_once_with()
+
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'add_mdisks')
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'get_user_direct')
+    def test_create_disks(self, gud, amds):
+        user_direct = ['USER TEST TEST',
+                       'MDISK 100 3390',
+                       'MDISK 101 3390']
+        gud.return_value = user_direct
+
+        self.vmops.create_disks('userid', [])
+        gud.assert_called_once_with('userid')
+        amds.assert_called_once_with('userid', [], '0102')
+
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'add_mdisks')
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'get_user_direct')
+    def test_create_disks_200(self, gud, amds):
+        user_direct = ['USER TEST TEST',
+                       'MDISK 100 3390',
+                       'MDISK 200 3390']
+        gud.return_value = user_direct
+
+        self.vmops.create_disks('userid', [])
+        gud.assert_called_once_with('userid')
+        amds.assert_called_once_with('userid', [], '0201')

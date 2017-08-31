@@ -408,6 +408,51 @@ class SDKAPI(object):
 
         self._vmops.create_vm(userid, vcpus, memory, disk_list, user_profile)
 
+    @zvmutils.check_input_types(_TUSERID, list)
+    def guest_create_disks(self, userid, disk_list):
+        """Add disks to an existing guest vm.
+
+        :param userid: (str) the userid of the vm to be created
+        :param disk_list: (list) a list of disks info for the guest.
+               It has one dictionary that contain some of the below keys for
+               each disk, the root disk should be the first element in the
+               list, the format is:
+               {'size': str,
+               'format': str,
+               'is_boot_disk': bool,
+               'disk_pool': str}
+
+               In which, 'size': case insensitive, the unit can be in
+               Megabytes (M), Gigabytes (G), or number of cylinders/blocks, eg
+               512M, 1g or just 2000.
+               'format': optional, can be ext2, ext3, ext4, xfs, if not
+               specified, the disk will not be formatted.
+               'is_boot_disk': only root disk need to set this key.
+               'disk_pool': optional, if not specified, the disk will be
+               created by using the value from configure file,the format is
+               ECKD:eckdpoolname or FBA:fbapoolname.
+
+               For example:
+               [{'size': '1g',
+               'is_boot_disk': True,
+               'disk_pool': 'ECKD:eckdpool1'},
+               {'size': '200000',
+               'disk_pool': 'FBA:fbapool1',
+               'format': 'ext3'}]
+               In this case it will create one disk 0100(in case the vdev
+               for root disk is 0100) with size 1g from ECKD disk pool
+               eckdpool1 for guest , then set IPL 0100 in guest's user
+               directory, and it will create 0101 with 200000 blocks from
+               FBA disk pool fbapool1, and formated with ext3.
+        """
+        if disk_list == []:
+            # nothing to do
+            LOG.debug("No disk specified when calling guest_create_disks, "
+                      "nothing happened")
+            return
+
+        self._vmops.create_disks(userid, disk_list)
+
     @zvmutils.check_input_types(_TUSERID, _TSTR, _TVSWNAME, bool)
     def guest_nic_couple_to_vswitch(self, userid, nic_vdev,
                                     vswitch_name, active=False):

@@ -727,3 +727,10 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
             "-k persist=YES"))
         self._smutclient.delete_vswitch(switch_name, True)
         request.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_get_user_direct(self, req):
+        req.return_value = {'response': 'OK'}
+        resp = self._smutclient.get_user_direct('user1')
+        req.assert_called_once_with('getvm user1 directory')
+        self.assertEqual(resp, 'OK')

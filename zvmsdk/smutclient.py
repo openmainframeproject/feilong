@@ -454,3 +454,7 @@ class SMUTClient(client.ZVMClient):
                     raise exception.ZVMNetworkError(
                         msg=("Failed to delete vswitch %s: %s") %
                             (switch_name, emsg))
+
+    def get_user_direct(self, userid):
+        results = self._request("getvm %s directory" % userid)
+        return results.get('response', [])
