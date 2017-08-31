@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3b237283_69485ef2",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 449,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-08-31T07:06:02Z",
+      "side": 1,
+      "message": "ok",
+      "parentUuid": "474e9e86_cb3f4d36",
+      "range": {
+        "startLine": 449,
+        "startChar": 11,
+        "endLine": 449,
+        "endChar": 27
+      },
+      "revId": "6e733b2ed83229e1faf81a87eeb2c5a99f650968",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c473d532_1ee68a69",
         "filename": "zvmsdk/smutclient.py",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "27939fd4_a5e3ee26",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 463,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-08-31T07:06:02Z",
+      "side": 1,
+      "message": "always returns results from smut",
+      "parentUuid": "c473d532_1ee68a69",
+      "range": {
+        "startLine": 463,
+        "startChar": 8,
+        "endLine": 463,
+        "endChar": 42
+      },
+      "revId": "6e733b2ed83229e1faf81a87eeb2c5a99f650968",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eecfea43_fbe04bc4",
         "filename": "zvmsdk/vmops.py",
         "patchSetId": 1
@@ -59,6 +107,30 @@
       "writtenOn": "2017-08-31T06:52:50Z",
       "side": 1,
       "message": "I believe the keyword is enough, but do we need consider \n# MDISK xxx\ncase?",
+      "range": {
+        "startLine": 165,
+        "startChar": 12,
+        "endLine": 165,
+        "endChar": 30
+      },
+      "revId": "6e733b2ed83229e1faf81a87eeb2c5a99f650968",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b05016b2_77ca22c6",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-08-31T07:06:02Z",
+      "side": 1,
+      "message": "not sure smut will return user direct entries that already comment out",
+      "parentUuid": "eecfea43_fbe04bc4",
       "range": {
         "startLine": 165,
         "startChar": 12,
