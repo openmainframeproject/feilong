@@ -18,6 +18,7 @@ import json
 import os
 import socket
 import sys
+import syslog
 import threading
 
 from zvmsdk import api
@@ -31,16 +32,20 @@ CONF = config.CONF
 class SDKServer(object):
     def __init__(self):
         self.sdkapi = api.SDKAPI()
+        syslog.openlog(logoption=syslog.LOG_PID)
         self.server_socket = self.setup()
 
     def log_error(self, msg):
-        print msg
+        msg = "ERROR: " + msg
+        syslog.syslog(syslog.LOG_ERR, msg)
 
     def log_info(self, msg):
-        print msg
+        msg = "INFO: " + msg
+        syslog.syslog(syslog.LOG_INFO, msg)
 
     def log_warn(self, msg):
-        print msg
+        msg = "WARNING: " + msg
+        syslog.syslog(syslog.LOG_WARNING, msg)
 
     def send_results(self, client, results):
         """ send back results to client in the json format of:
