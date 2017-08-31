@@ -1,0 +1,10 @@
+[Unit]
+Description=zVM SDK API server
+After=network.target syslog.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/sdkserver
+
+[Install]
+WantedBy=multi-user.target
