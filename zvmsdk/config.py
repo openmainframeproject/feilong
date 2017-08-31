@@ -249,6 +249,19 @@ create some temp files, this option is used to tell SDK where
 to store the temp files, make sure the process running SDK is able to
 read write the directory.
     '''),
+    # image options
+    Opt('sdk_image_repository',
+        section='image',
+        default='/opt/zvmsdk/images/',
+        help='''
+Directory to store skd images.
+
+SDK image repository to store the imported images and the staging images that
+is in snapshotting. Once snapshot finished, the image will be removed to the
+netboot directory accordingly. Two kinds of image repository looks like:
+/opt/zvmsdk/images/netboot/<image_osversion>/<imagename>
+/opt/zvmsdk/images/staging/<image_osversion>/<imagename>
+    '''),
     # network options
     Opt('my_ip',
         section='network',
