@@ -355,6 +355,23 @@ user name to access sdk http server.
 password to access sdk http server.
 '''
         ),
+    # Daemon server options
+    Opt('bind_addr',
+        section='sdkserver',
+        default='127.0.0.1',
+        opt_type='str',
+        help='''
+The IP address that the SDK server is listen on.
+'''
+        ),
+    Opt('bind_port',
+        section='sdkserver',
+        opt_type='int',
+        default=2000,
+        help='''
+The port that the SDK server is listen on.
+'''
+        ),
     # database options
     Opt('path',
         section='database',
