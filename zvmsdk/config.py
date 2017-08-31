@@ -140,7 +140,7 @@ Sample NIC definitions in the z/VM user directory:
     NICDEF 1003 TYPE QDIO LAN SYSTEM <vswitch2> MACID <macid2>
         '''
         ),
-    Opt('logonby_users',
+    Opt('default_admin_userid',
         section='zvm',
         help='''
 Default LOGONBY userid(s) for the cloud.
