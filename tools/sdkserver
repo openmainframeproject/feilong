@@ -15,7 +15,6 @@
 
 
 import json
-import os
 import socket
 import sys
 import syslog
@@ -66,81 +65,84 @@ class SDKServer(object):
                       json_results)
         else:
             self.log_info("Results sent back to client successfully.")
-        # Close the connection
-        client.close()
 
     def serve_API(self, client):
         """ Read client request and call target SDK API"""
         self.log_info("new thread started to handle client request")
-        data = client.recv(4096)
-        # When client failed to send the data or quit before sending the data
-        # Server side would receive null data.
-        # In such case, server would not send back any info and just terminate
-        # this thread.
-        if not data:
-            self.log_warn("Failed to receive data from client.")
-            return
-
-        api_data = json.loads(data)
-        # API_data should be in the form [funcname, args_list, kwargs_dict]
-        if not isinstance(api_data, list) or len(api_data) != 3:
-            msg = "SDK server got wrong input: %s" % data
-            self.log_error(msg)
-            result = {'overallRC': 2, 'rc': 2, 'rs': 1,
-                      'errmsg': msg,
-                      'output': ''}
-            self.send_results(client, results)
-            return
-
-        # Check called API is supported by SDK
-        (func_name, api_args, api_kwargs) = api_data
-        self.log_info("func: %s, args: %s, kwargs: %s" % (func_name,
-                                                          str(api_args),
-                                                          str(api_kwargs)))
         try:
-            api_func = getattr(self.sdkapi, func_name)
-        except AttributeError:
-            msg = "Wrong API name: %s." % func_name
-            self.log_error(msg)
-            results = {'overallRC': 2, 'rc': 2, 'rs': 2,
-                       'errmsg': msg,
-                       'output': ''}
-            self.send_results(client, results)
-            return
+            data = client.recv(4096)
+            # When client failed to send the data or quit before sending the
+            # data, server side would receive null data.
+            # In such case, server would not send back any info and just
+            # terminate this thread.
+            if not data:
+                self.log_warn("Failed to receive data from client.")
+                return
+            api_data = json.loads(data)
 
-        # invoke target API function
-        try:
-            return_data = api_func(*api_args, **api_kwargs)
-        except exception.SDKBaseException as e:
-            # get the error info from exception attribute
-            # All SDKbaseexception should eventually has a
-            # results attribute defined which can be used by
-            # sdkserver here
-            if e.results:
-                results = {'overallRC': e.results['overallRC'],
-                           'rc': e.results['rc'], 'rs': e.results['rs'],
-                           'errmsg': e.format_message(),
+            # API_data should be in the form [funcname, args_list, kwargs_dict]
+            if not isinstance(api_data, list) or len(api_data) != 3:
+                msg = "SDK server got wrong input: %s" % data
+                self.log_error(msg)
+                results = {'overallRC': 2, 'rc': 2, 'rs': 1,
+                           'errmsg': msg,
                            'output': ''}
-            else:
-                results = {'overallRC': 2,
-                           'rc': 2, 'rs': 3,
+                self.send_results(client, results)
+                return
+
+            # Check called API is supported by SDK
+            (func_name, api_args, api_kwargs) = api_data
+            self.log_info("func: %s, args: %s, kwargs: %s" % (func_name,
+                                                              str(api_args),
+                                                              str(api_kwargs)))
+            try:
+                api_func = getattr(self.sdkapi, func_name)
+            except AttributeError:
+                msg = "Wrong API name: %s." % func_name
+                self.log_error(msg)
+                results = {'overallRC': 2, 'rc': 2, 'rs': 2,
+                           'errmsg': msg,
+                           'output': ''}
+                self.send_results(client, results)
+                return
+
+            # invoke target API function
+            try:
+                return_data = api_func(*api_args, **api_kwargs)
+            except exception.SDKBaseException as e:
+                # get the error info from exception attribute
+                # All SDKbaseexception should eventually has a
+                # results attribute defined which can be used by
+                # sdkserver here
+                if e.results:
+                    results = {'overallRC': e.results['overallRC'],
+                               'rc': e.results['rc'], 'rs': e.results['rs'],
+                               'errmsg': e.format_message(),
+                               'output': ''}
+                else:
+                    results = {'overallRC': 2,
+                               'rc': 2, 'rs': 3,
+                               'errmsg': str(e),
+                               'output': ''}
+            except Exception as e:
+                results = {'overallRC': 2, 'rc': 2, 'rs': 3,
                            'errmsg': str(e),
                            'output': ''}
-        except Exception as e:
-            results = {'overallRC': 2, 'rc': 2, 'rs': 3,
-                       'errmsg': str(e),
-                       'output': ''}
-        else:
-            if not return_data:
-                return_data = ''
-            results = {'overallRC': 0, 'rc': 0, 'rs': 0,
-                       'errmsg': '',
-                       'output': return_data}
-        # Send back the final results
-        self.send_results(client, results)
+            else:
+                if not return_data:
+                    return_data = ''
+                results = {'overallRC': 0, 'rc': 0, 'rs': 0,
+                           'errmsg': '',
+                           'output': return_data}
+            # Send back the final results
+            self.send_results(client, results)
+        finally:
+            # Close the connection to make sure the thread socket got closed
+            # even when it got unexpected exceptions.
+            client.close()
 
     def setup(self):
-        #create server socket
+        # create server socket
         try:
             server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         except socket.error as msg:
@@ -175,8 +177,15 @@ class SDKServer(object):
 
 
 def start_daemon():
-    server = SDKServer()
-    server.run()
+    try:
+        server = SDKServer()
+        server.run()
+    finally:
+        # This finally won't catch exceptions from child thread, so
+        # the close here is safe.
+        if server.server_socket is not None:
+            server.log_info("Closing the server socket.")
+            server.server_socket.close()
 
 
 if __name__ == '__main__':
