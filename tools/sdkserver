@@ -73,8 +73,15 @@ class SDKServer(object):
         """ Read client request and call target SDK API"""
         self.log_info("new thread started to handle client request")
         data = client.recv(4096)
-        api_data = json.loads(data)
+        # When client failed to send the data or quit before sending the data
+        # Server side would receive null data.
+        # In such case, server would not send back any info and just terminate
+        # this thread.
+        if not data:
+            self.log_warn("Failed to receive data from client.")
+            return
 
+        api_data = json.loads(data)
         # API_data should be in the form [funcname, args_list, kwargs_dict]
         if not isinstance(api_data, list) or len(api_data) != 3:
             msg = "SDK server got wrong input: %s" % data

@@ -75,9 +75,7 @@ class SDKClient(object):
         # Receive data from server
         return_blocks = []
         while True:
-            # TODO: Add timeout to socket, otherwise when SDK server got
-            # uncaught exception or shutdown, the client would be blocked
-            # here forever.
+            # TODO: Add timeout to socket
             block = cs.recv(4096)
             if not block:
                 break
