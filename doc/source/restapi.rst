@@ -512,7 +512,9 @@ Get Host Info
 
 * Response contents:
 
-  - host: the object of host information.
+.. restapi_parameters:: parameters.yaml
+
+  - host: host_info
 
 * Response sample:
 
@@ -526,7 +528,9 @@ Get Host disk pool info
 
 * Request:
 
-  - disk: the disk name to get pool information from.
+.. restapi_parameters:: parameters.yaml
+
+  - disk: disk_host
 
 * Response code:
 
@@ -534,7 +538,9 @@ Get Host disk pool info
 
 * Response contents:
 
-  - disk_info: the object of disk information.
+.. restapi_parameters:: parameters.yaml
+
+  - disk_info: disk_info_host
 
 * Response sample:
 
@@ -561,7 +567,9 @@ List images
 
 * Response contents:
 
-  - disk_info: the object of disk information.
+.. restapi_parameters:: parameters.yaml
+
+  - disk_info: disk_info_host
 
 * Response sample:
 
@@ -575,15 +583,20 @@ Create image
 
 * Request:
 
-  - image:
-  - url:
-  - remotehost:
+.. restapi_parameters:: parameters.yaml
+
+  - image: image_name
+  - url: image_url
+  - image_meta: image_metadata
+  - remotehost: remotehost_image
 
 * Response code:
 
   HTTP status code 200 on success.
 
 * Response contents:
+
+  No response.
 
 Get root disk size of image
 ---------------------------
@@ -592,7 +605,9 @@ Get root disk size of image
 
 * Request:
 
-  - name: Name of the image to get root disk size from.
+.. restapi_parameters:: parameters.yaml
+
+  - name: image_name
 
 * Response code:
 
@@ -600,7 +615,9 @@ Get root disk size of image
 
 * Response contents:
 
-  - size: the size of the given disk.
+.. restapi_parameters:: parameters.yaml
+
+  - size: root_disk_size_image
 
 * Response sample:
 
@@ -614,13 +631,17 @@ Delete image
 
 * Request:
 
-  Name of the image to be deleted.
+.. restapi_parameters:: parameters.yaml
+
+  - name: image_name
 
 * Response code:
 
   HTTP status code 204 on success.
 
 * Response contents:
+
+  No response.
 
 Volume(s)
 =========
@@ -630,32 +651,40 @@ Lists, creates, shows details for, updates, and deletes volumes.
 Attach volume to Guest
 ----------------------
 
-* POST /guests/{userid}/volumes
+**POST /guests/{userid}/volumes**
 
-  - Request:
+* Request:
 
-  request
+.. restapi_parameters:: parameters.yaml
 
-  - Response:
+  - userid: guest_userid
 
-  response
+* Response:
 
-  - HTTP status code 204 on Success.
+  HTTP status code 204 on Success.
+
+* Response contents
+
+  No response.
 
 Detach volume from Guest
 ------------------------
 
-* DELETE /guests/{userid}/volumes
+**DELETE /guests/{userid}/volumes**
 
-  - Request:
+* Request:
 
-  request
+.. restapi_parameters:: parameters.yaml
 
-  - Response:
+  - userid: guest_userid
 
-  response
+* Response:
 
-  - HTTP status code 204 on Success.
+  HTTP status code 204 on Success.
+
+* Response contents
+
+  No response.
 
 VSwitch
 =======
@@ -669,25 +698,28 @@ Create vswitch
 
 * Request:
 
-  - vswitch:
-  - name:
-  - rdev:
-  - controller:
-  - connection:
-  - queue_mem:
-  - router:
-  - network_type:
-  - vid:
-  - port_type:
-  - update:
-  - gvrp:
-  - native_vid:  
+.. restapi_parameters:: parameters.yaml
+
+  - name: vswitch_name_body
+  - rdev: rdev_vswitch
+  - controller: controller_vswitch
+  - connection: connection_vswitch
+  - network_type: network_type_vswitch
+  - router: router_vswitch
+  - vid: vid_vswitch
+  - port_type: port_type_vswitch
+  - gvrp: gvrp_vswitch
+  - queue_mem: queue_mem_vswitch
+  - native_vid: native_vid_vswitch
+  - persist: persist_option_vswitch
 
 * Response code:
 
   HTTP status code 200 on success.
 
 * Response contents:
+
+  No response.
 
 List vswitchs
 -------------
@@ -704,7 +736,9 @@ List vswitchs
 
 * Response contents:
 
-  - vswlist: a list of vswitch that defined in the z/VM.
+.. restapi_parameters:: parameters.yaml
+
+  - vswlist: vswitch_list
 
 * Response sample:
 
@@ -718,13 +752,17 @@ Update vswitch
 
 * Request:
 
-  -name:
+.. restapi_parameters:: parameters.yaml
+
+  - name: vswitch_name
 
 * Response code:
 
   HTTP status code 200 on success.
 
 * Response contents:
+
+  No response.
 
 Delete vswitch
 --------------
@@ -733,10 +771,14 @@ Delete vswitch
 
 * Request:
 
-  -name: the name of the vswitch to be deleted.
+.. restapi_parameters:: parameters.yaml
+
+  - name: vswitch_name
 
 * Response code:
 
   HTTP status code 204 on success.
 
 * Response contents:
+
+  No response.

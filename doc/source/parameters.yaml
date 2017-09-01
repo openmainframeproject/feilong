@@ -163,3 +163,174 @@ vdev_guest:
   in: path
   required: true
   type: string
+host_info:
+  description: |
+    the object of host information.
+  in: body
+  required: true
+  type: dict
+disk_host:
+  description: |
+    the disk name to get pool information from.
+  in: body
+  required: true
+  type: string
+disk_info_host:
+  description: |
+    the object of disk information.
+  in: body
+  required: true
+  type: dict
+image_name:
+  description: |
+    the image name in image repository.
+  in: body
+  required: true
+  type: string
+image_url:
+  description: |
+    the url to specify the location of image.
+  in: body
+  required: true
+  type: string
+image_metadata:
+  description: |
+    the metadata to describe image.
+  in: body
+  required: true
+  type: dict
+remotehost_image:
+  description: |
+    the remotehost to indicate where the image comes from.
+  in: body
+  required: false
+  type: string
+root_disk_size_image:
+  description: |
+    root disk size in units CYL or BLK of image
+  in: body
+  required: true
+  type: integer
+vswitch_name:
+  description: |
+    vswitch name
+  in: path
+  required: true
+  type: string
+vswitch_name_body:
+  description: |
+    vswitch name
+  in: body
+  required: true
+  type: string
+rdev_vswitch:
+  description: |
+    the real device number, a maximum of three devices.
+  in: body
+  required: true
+  type: string
+controller_vswitch:
+  description: |
+    the vswitch's controller. It could be userid or "*" to
+    specifies any available controller.
+  in: body
+  required: false
+  type: string
+connection_vswitch:
+  description: |
+    Connection type option:
+
+    - ``CONnect``: Activate the real device connection.
+    - ``DISCONnect``: Do not active the real device connection.
+    - ``NOUPLINK``: the vswitch will never have connectivity through.
+  in: body
+  required: false
+  type: string
+network_type_vswitch:
+  description: |
+    Specifies the transport mechanism to be used for switch,
+    as follow:IP, ETHERNET.
+  in: body
+  required: false
+  type: string
+router_vswitch:
+  description: |
+    Connection type option.
+
+    - ``NONrouter``: The OSA-Express device identified in
+      real_device_address= will not act as a router to the vswitch.
+    - ``PRIrouter``: The OSA-Express device identified in
+      real_device_address= will act as a primary router to the vswitch.
+    - ``Note``: If the network_type is ETHERNET, this value must be
+      unspecified, otherwise, if this value is unspecified,
+      default is NONROUTER
+  in: body
+  required: false
+  type: string
+vid_vswitch:
+  description: |
+    the VLAN ID. This can be any of the following values:UNAWARE,
+    AWARE or 1-4094
+  in: body
+  required: false
+  type: string, integer
+port_type_vswitch:
+  description: |
+    port type.
+
+    - ``ACCESS``: The default porttype attribute for
+      guests authorized for the virtual switch.
+      The guest is unaware of VLAN IDs and sends and
+      receives only untagged traffic
+    - ``TRUNK``: The default porttype attribute for
+      guests authorized for the virtual switch.
+      The guest is VLAN aware and sends and receives tagged
+      traffic for those VLANs to which the guest is authorized.
+      If the guest is also authorized to the natvid, untagged
+      traffic sent or received by the guest is associated with
+      the native VLAN ID (natvid) of the virtual switch.
+  in: body
+  required: false
+  type: string
+gvrp_vswitch:
+  description: |
+    gvrp.
+
+    - ``GVRP``: Indicates that the VLAN IDs in use on the virtual
+      switch should be registered with GVRP-aware switches on the
+      LAN. This provides dynamic VLAN registration and VLAN
+      registration removal for networking switches. This
+      eliminates the need to manually configure the individual
+      port VLAN assignments.
+    - ``NOGVRP``: Do not register VLAN IDs with GVRP-aware switches on
+      the LAN. When NOGVRP is specified VLAN port assignments
+      must be configured manually
+  in: body
+  required: false
+  type: string
+queue_mem_vswitch:
+  description: |
+    A number between 1 and 8, specifying the QDIO
+    buffer size in megabytes
+  in: body
+  required: false
+  type: integer
+native_vid_vswitch:
+  description: |
+    the native vlan id, 1-4094 or None.
+  in: body
+  required: false
+  type: integer
+persist_option_vswitch:
+  description: |
+    whether create the vswitch in the permanent
+    configuration for the system.
+  in: body
+  required: false
+  type: boolean
+vswitch_list:
+  description: |
+    list of vswitches.
+  in: body
+  required: true
+  type: list
