@@ -20,9 +20,12 @@ import socket
 class SDKClient(object):
     """"""
 
-    def __init__(self, addr='127.0.0.1', port=2000):
+    def __init__(self, addr='127.0.0.1', port=2000, request_timeout=3600):
         self.addr = addr
         self.port = port
+        # request_timeout is used to set the client socket timeout when
+        # waiting results returned from server.
+        self.timeout = request_timeout
 
     def call(self, func, *api_args, **api_kwargs):
         """Send API call to SDK server and return results"""
@@ -43,6 +46,8 @@ class SDKClient(object):
                     'errmsg': 'Failed to create client socket: %s' % msg,
                     'output': ''}
 
+        # Set socket timeout
+        cs.settimeout(self.timeout)
         # Connect SDK server
         try:
             cs.connect((self.addr, self.port))
@@ -82,7 +87,6 @@ class SDKClient(object):
         # Receive data from server
         return_blocks = []
         while True:
-            # TODO: Add timeout to socket
             block = cs.recv(4096)
             if not block:
                 break
