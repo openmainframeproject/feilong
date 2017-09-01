@@ -24,8 +24,15 @@ class SDKClient(object):
         self.addr = addr
         self.port = port
 
-    def call(self, func, *args, **kwargs):
+    def call(self, func, *api_args, **api_kwargs):
         """Send API call to SDK server and return results"""
+        if not isinstance(func, str):
+            return {'overallRC': 1,
+                    'rc': 1,
+                    'rs': 5,
+                    'errmsg': ('Invalid input for API name, should be a'
+                               'string, type: %s specified.') % type(func),
+                    'output': ''}
         # Create client socket
         try:
             cs = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -48,7 +55,7 @@ class SDKClient(object):
                     'output': ''}
 
         # Prepare the data to be sent
-        api_data = json.dumps((func, args, kwargs))
+        api_data = json.dumps((func, api_args, api_kwargs))
         print "generated command: %s" % api_data
         # Send the API call data to SDK server
         sent = 0
