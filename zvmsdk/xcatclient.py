@@ -1845,16 +1845,6 @@ class XCATClient(client.ZVMClient):
 
     def set_vswitch(self, switch_name, **kwargs):
         """Set vswitch"""
-        set_vswitch_command = ["grant_userid", "user_vlan_id",
-                               "revoke_userid", "real_device_address",
-                               "port_name", "controller_name",
-                               "connection_value", "queue_memory_limit",
-                               "routing_value", "port_type", "persist",
-                               "gvrp_value", "mac_id", "uplink",
-                               "nic_userid", "nic_vdev",
-                               "lacp", "interval", "group_rdev",
-                               "iptimeout", "port_isolation", "promiscuous",
-                               "MAC_protect", "VLAN_counters"]
         hcp_info = self._get_hcp_info()
         userid = hcp_info['userid']
         zhcp = hcp_info['nodename']
@@ -1865,14 +1855,9 @@ class XCATClient(client.ZVMClient):
             "-k switch_name=%s" % switch_name))
 
         for k, v in kwargs.items():
-            if k in set_vswitch_command:
-                commands = ' '.join((commands,
-                                     "-k %(key)s=\'%(value)s\'" %
-                                     {'key': k, 'value': v}))
-            else:
-                raise exception.ZVMInvalidInput(
-                    msg=("switch %s changes failed, invalid keyword %s") %
-                    (switch_name, k))
+            commands = ' '.join((commands,
+                                 "-k %(key)s=\'%(value)s\'" %
+                                 {'key': k, 'value': v}))
 
         xdsh_commands = 'command=%s' % commands
         body = [xdsh_commands]

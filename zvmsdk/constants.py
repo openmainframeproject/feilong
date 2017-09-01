@@ -48,6 +48,17 @@ DISKPOOL_KEYWORDS = {
     "disk_available": "Free:",
     }
 
+SET_VSWITCH_KEYWORDS = ["grant_userid", "user_vlan_id",
+                        "revoke_userid", "real_device_address",
+                        "port_name", "controller_name",
+                        "connection_value", "queue_memory_limit",
+                        "routing_value", "port_type", "persist",
+                        "gvrp_value", "mac_id", "uplink",
+                        "nic_userid", "nic_vdev",
+                        "lacp", "interval", "group_rdev",
+                        "iptimeout", "port_isolation", "promiscuous",
+                        "MAC_protect", "VLAN_counters"]
+
 XCAT_RESPONSE_KEYS = ('info', 'data', 'node', 'errorcode', 'error')
 
 ZVM_VOLUMES_FILE = 'zvm_volumes'

@@ -662,13 +662,6 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request.assert_called_with(rd)
 
     @mock.patch.object(zvmutils, 'get_smut_userid')
-    def test_set_vswitch_with_invalid_key(self, get_smut_userid):
-        get_smut_userid.return_value = "SMUTUSER"
-        self.assertRaises(exception.ZVMInvalidInput,
-                          self._smutclient.set_vswitch,
-                          "vswitch_name", unknown='fake_id')
-
-    @mock.patch.object(zvmutils, 'get_smut_userid')
     @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_set_vswitch_with_errorcode(self, request, get_smut_userid):
         get_smut_userid.return_value = "SMUTUSER"
