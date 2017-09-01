@@ -52,6 +52,8 @@ def get_db_conn():
     (i, conn) = _op.get_connection()
     try:
         yield conn
+    except exception.SDKBaseException:
+        raise
     except Exception as err:
         LOG.error("Execute SQL statements error: ", err)
         raise exception.DatabaseException(msg=err)
@@ -190,7 +192,7 @@ class NetworkDbOperator(object):
         return switch_info
 
 
-class VolumeDBUtils(object):
+class VolumeDbOperator(object):
 
     def __init__(self):
         self._initialize_table_volumes()
@@ -205,7 +207,7 @@ class VolumeDBUtils(object):
         sql = ' '.join((
             'CREATE TABLE IF NOT EXISTS volumes(',
             'id             char(36)      PRIMARY KEY,',
-            'protocol_type  varchar(32)   NOT NULL,',
+            'protocol_type  varchar(8)    NOT NULL,',
             'size           varchar(8)    NOT NULL,',
             'status         varchar(32),',
             'image_id       char(36),',
@@ -223,7 +225,7 @@ class VolumeDBUtils(object):
             'volume_id        char(36)      NOT NULL,',
             'instance_id      char(36)      NOT NULL,',
             'connection_info  varchar(256)  NOT NULL,',
-            'mountpoint       varchar(32)   NOT NULL,',
+            'mountpoint       varchar(32),',
             'deleted          smallint      DEFAULT 0,',
             'deleted_at       char(26),',
             'comment          varchar(128))'))
@@ -240,14 +242,13 @@ class VolumeDBUtils(object):
 
         with get_db_conn() as conn:
             result_list = conn.execute(
-                "SELECT * FROM volumes WHERE id=:id AND deleted=0",
-                {'id': volume_id}
+                "SELECT * FROM volumes WHERE id=? AND deleted=0", (volume_id,)
                 ).fetchall()
 
         if len(result_list) == 1:
             return result_list[0]
         elif len(result_list) == 0:
-            LOG.debug("Volume with id: %s not found!" % volume_id)
+            LOG.debug("Volume %s is not found!" % volume_id)
             return None
 
     def insert_volume(self, volume):
@@ -318,8 +319,8 @@ class VolumeDBUtils(object):
         volume_id = volume['id']
         old_volume = self.get_volume_by_id(volume_id)
         if not old_volume:
-            msg = "Volume %s not found in database!" % volume_id
-            raise exception.DatabaseException(msg=msg)
+            msg = "Volume %s is not found!" % volume_id
+            raise exception.ZVMVolumeError(msg=msg)
         else:
             (_, _, size, status, image_id, snapshot_id, _, _, comment
              ) = old_volume
@@ -350,8 +351,8 @@ class VolumeDBUtils(object):
 
         volume = self.get_volume_by_id(volume_id)
         if not volume:
-            msg = "Volume %s not found in database!" % volume_id
-            raise exception.DatabaseException(msg=msg)
+            msg = "Volume %s is not found!" % volume_id
+            raise exception.ZVMVolumeError(msg=msg)
 
         time = str(datetime.now())
         with get_db_conn() as conn:
@@ -360,3 +361,153 @@ class VolumeDBUtils(object):
                 "SET deleted=1, deleted_at=?",
                 "WHERE id=?")),
                 (time, volume_id))
+
+    def get_attachment_by_volume_id(self, volume_id):
+        """Query a volume-instance attachment map form database by volume id.
+        The id must be a 36-character string.
+        """
+        if not volume_id:
+            msg = "Volume id must be specified!"
+            raise exception.DatabaseException(msg=msg)
+
+        with get_db_conn() as conn:
+            result_list = conn.execute(' '.join((
+                "SELECT * FROM volume_attachments",
+                "WHERE volume_id=? AND deleted=0")),
+                (volume_id,)
+                ).fetchall()
+
+        if len(result_list) == 1:
+            return result_list[0]
+        elif len(result_list) == 0:
+            LOG.debug("Attachment info of volume %s is not found!" % volume_id)
+            return None
+
+    def get_attachments_by_instance_id(self, instance_id):
+        """Query a volume-instance attachment map form database by instance id.
+        The id must be a 36-character string.
+        """
+        if not instance_id:
+            msg = "Instance id must be specified!"
+            raise exception.DatabaseException(msg=msg)
+
+        with get_db_conn() as conn:
+            result_list = conn.execute(' '.join((
+                "SELECT * FROM volume_attachments",
+                "WHERE instance_id=? AND deleted=0")),
+                (instance_id,)
+                ).fetchall()
+
+        if len(result_list) > 0:
+            return result_list
+        else:
+            LOG.debug(
+                "Attachments info of instance %s is not found!" % instance_id)
+            return None
+
+    def insert_volume_attachment(self, volume_attachment):
+        """Insert a volume-instance attachment map into database.
+        The volume-instance attachment map is represented by a dict of
+        following properties:
+        id: unique id of this attachment map. Auto generated and can not be
+        specified.
+        volume_id, volume id, must be specified.
+        instance_id, instance id, must be specified.
+        connection_info: all connection information about this attachment,
+        represented by a dict defined by specific implementations. Must be
+        specified.
+        mountpoint: the mount point on which the volume will be attached on,
+        optional.
+        deleted: if deleted, auto generated and can not be specified.
+        deleted_at: auto generated and can not be specified.
+        comment: any comment, optional.
+        """
+        if not (isinstance(volume_attachment, dict) and
+                'volume_id' in volume_attachment.keys() and
+                'instance_id' in volume_attachment.keys() and
+                'connection_info' in volume_attachment.keys()):
+            msg = ("Invalid volume_attachment database entry %s !"
+                   ) % volume_attachment
+            raise exception.DatabaseException(msg=msg)
+
+        # TOOD  volume and instance must exist
+        volume_id = volume_attachment['volume_id']
+        if not self.get_volume_by_id(volume_id):
+            msg = "Volume %s is not found!" % volume_id
+            raise exception.ZVMVolumeError(msg=msg)
+        instance_id = volume_attachment['instance_id']
+        # FIXME  need to use get_instance function by Dong Yan
+
+        # attachment must not exist
+        with get_db_conn() as conn:
+            count = conn.execute(' '.join((
+                "SELECT COUNT(*) FROM volume_attachments",
+                "WHERE volume_id=? AND instance_id=? AND deleted=0")),
+                (volume_id, instance_id)
+                ).fetchone()[0]
+        if count > 0:
+            msg = ("Volume %s has already been attached on instance %s !"
+                   ) % (volume_id, instance_id)
+            raise exception.ZVMVolumeError(msg=msg)
+
+        attachment_id = str(uuid.uuid4())
+        connection_info = str(volume_attachment['connection_info'])
+        mountpoint = None
+        if 'mountpoint' in volume_attachment.keys():
+            mountpoint = volume_attachment['mountpoint']
+        deleted = '0'
+        deleted_at = None
+        comment = None
+        if 'comment' in volume_attachment.keys():
+            comment = volume_attachment['comment']
+
+        with get_db_conn() as conn:
+            conn.execute(' '.join((
+                "INSERT INTO volume_attachments",
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)")),
+                (attachment_id, volume_id, instance_id, connection_info,
+                 mountpoint, deleted, deleted_at, comment))
+
+    def delete_volume_attachment(self, volume_id, instance_id):
+        """Update a volume in database.
+        The volume is represented by a dict of all volume properties:
+        id: volume id, must be specified.
+        protocol_type: protocol type to access the volume, like 'fc' or
+                      'iscsi', can not update, don't set.
+        size: volume size in Terabytes, Gigabytes or Megabytes, optional.
+        status: volume status, optional.
+        image_id: source image id when boot-from-volume, optional.
+        snapshot_id: snapshot id when a volume comes from a snapshot, optional.
+        deleted: if deleted, can not be updated, use delete_volume() to delete.
+        deleted_at: auto generated and can not be specified.
+        comment: any comment, optional.
+        """
+        if not volume_id or not instance_id:
+            msg = "Volume id and instance id must be specified!"
+            raise exception.DatabaseException(msg=msg)
+
+        # if volume-instance attachment exists in the database
+        with get_db_conn() as conn:
+            count = conn.execute(' '.join((
+                "SELECT COUNT(*) FROM volume_attachments",
+                "WHERE volume_id=? AND instance_id=? AND deleted=0")),
+                (volume_id, instance_id)
+                ).fetchone()[0]
+
+        if count == 0:
+            msg = ("Volume %s is not attached on instance %s !"
+                   ) % (volume_id, instance_id)
+            raise exception.ZVMVolumeError(msg=msg)
+        elif count > 1:
+            msg = ("Duplicated records found in volume_attachment with "
+                   "volume_id %s and instance_id %s !"
+                   ) % (volume_id, instance_id)
+            raise exception.DatabaseException(msg=msg)
+
+        time = str(datetime.now())
+        with get_db_conn() as conn:
+            conn.execute(' '.join((
+                "UPDATE volume_attachments",
+                "SET deleted=1, deleted_at=?",
+                "WHERE volume_id=? AND instance_id=?")),
+                (time, volume_id, instance_id))
