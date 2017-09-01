@@ -1394,13 +1394,6 @@ class SDKXCATClientTestCases(base.SDKTestCase):
         self.assertEqual(ret, expected_path)
 
     @mock.patch.object(xcatclient.XCATClient, '_get_hcp_info')
-    def test_set_vswitch_with_invalid_key(self, get_hcp):
-        get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'cmabvt'}
-        self.assertRaises(exception.ZVMInvalidInput,
-                          self._xcatclient.set_vswitch,
-                          "vswitch_name", unknown='fake_id')
-
-    @mock.patch.object(xcatclient.XCATClient, '_get_hcp_info')
     @mock.patch.object(xcatclient, 'xcat_request')
     def test_set_vswitch(self, xrequest, get_hcp):
         get_hcp.return_value = {'nodename': 'zhcp2', 'userid': 'fakenode'}

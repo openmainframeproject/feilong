@@ -399,16 +399,6 @@ class SMUTClient(client.ZVMClient):
     @zvmutils.wrap_invalid_resp_data_error
     def set_vswitch(self, switch_name, **kwargs):
         """Set vswitch"""
-        set_vswitch_command = ["grant_userid", "user_vlan_id",
-                               "revoke_userid", "real_device_address",
-                               "port_name", "controller_name",
-                               "connection_value", "queue_memory_limit",
-                               "routing_value", "port_type", "persist",
-                               "gvrp_value", "mac_id", "uplink",
-                               "nic_userid", "nic_vdev",
-                               "lacp", "interval", "group_rdev",
-                               "iptimeout", "port_isolation", "promiscuous",
-                               "MAC_protect", "VLAN_counters"]
         smut_userid = zvmutils.get_smut_userid()
         rd = ' '.join((
             "SMAPI %s API Virtual_Network_Vswitch_Set_Extended" %
@@ -417,14 +407,9 @@ class SMUTClient(client.ZVMClient):
             "-k switch_name=%s" % switch_name))
 
         for k, v in kwargs.items():
-            if k in set_vswitch_command:
-                rd = ' '.join((rd,
-                               "-k %(key)s=\'%(value)s\'" %
-                               {'key': k, 'value': v}))
-            else:
-                raise exception.ZVMInvalidInput(
-                    msg=("switch %s changes failed, invalid keyword %s") %
-                        (switch_name, k))
+            rd = ' '.join((rd,
+                           "-k %(key)s=\'%(value)s\'" %
+                           {'key': k, 'value': v}))
         with zvmutils.expect_request_failed_and_reraise(
             exception.ZVMNetworkError):
             self._request(rd)

@@ -903,6 +903,12 @@ class SDKAPI(object):
                 - Smcli call failure, refer to the error message for detail
 
         """
+        for k in kwargs.keys():
+            if k not in constants.SET_VSWITCH_KEYWORDS:
+                raise exception.ZVMInvalidInput(
+                    msg=("switch %s changes failed, invalid keyword %s") %
+                        (vswitch_name, k))
+
         self._networkops.set_vswitch(vswitch_name, **kwargs)
 
     @zvmutils.check_input_types(_TVSWNAME, bool)

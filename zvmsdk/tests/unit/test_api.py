@@ -171,3 +171,8 @@ class SDKAPITestCase(base.SDKTestCase):
         image_name = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'
         self.api.image_delete(image_name)
         image_delete.assert_called_once_with(image_name)
+
+    def test_set_vswitch(self):
+        self.assertRaises(exception.ZVMInvalidInput,
+                          self.api.vswitch_set,
+                          "vswitch_name", unknown='fake_id')
