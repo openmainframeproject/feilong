@@ -453,6 +453,16 @@ class SDKAPI(object):
 
         self._vmops.create_disks(userid, disk_list)
 
+    @zvmutils.check_input_types(_TUSERID, list)
+    def guest_delete_disks(self, userid, disk_vdev_list):
+        """Delete disks from an existing guest vm.
+
+        :param userid: (str) the userid of the vm to be created
+        :param disk_vdev_list: (list) the vdev list of disks to be deleted,
+            for example: ['0101', '0102']
+        """
+        self._vmops.delete_disks(userid, disk_vdev_list)
+
     @zvmutils.check_input_types(_TUSERID, _TSTR, _TVSWNAME, bool)
     def guest_nic_couple_to_vswitch(self, userid, nic_vdev,
                                     vswitch_name, active=False):

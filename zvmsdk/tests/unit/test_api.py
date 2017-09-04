@@ -188,3 +188,10 @@ class SDKAPITestCase(base.SDKTestCase):
     def test_guest_add_disks_nothing_to_do(self, cds):
         self.api.guest_create_disks('userid', [])
         cds.assert_not_called()
+
+    @mock.patch("zvmsdk.vmops.VMOps.delete_disks")
+    def test_guest_delete_disks(self, dds):
+        userid = 'testuid'
+        vdev_list = ['0102', '0103']
+        self.api.guest_delete_disks(userid, vdev_list)
+        dds.assert_called_once_with(userid, vdev_list)
