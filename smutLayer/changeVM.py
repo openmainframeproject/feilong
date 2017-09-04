@@ -761,8 +761,12 @@ def removeDisk(rh):
         strCmd = "/sbin/vmcp detach " + rh.parms['vaddr']
         results = execCmdThruIUCV(rh, rh.userid, strCmd)
         if results['overallRC'] != 0:
-            rh.printLn("ES", results['response'])
-            rh.updateResults(results)
+            if "HCPDTV040E" in results['response']:
+                # Device does not exist, ignore the error
+                results = {'overallRC': 0, 'rc': 0, 'rs': 0, 'response': ''}
+            else:
+                rh.printLn("ES", results['response'])
+                rh.updateResults(results)
 
     if results['overallRC'] == 0:
         # Remove the disk from the user entry.
@@ -773,9 +777,14 @@ def removeDisk(rh):
 
         results = invokeSMCLI(rh, "Image_Disk_Delete_DM", parms)
         if results['overallRC'] != 0:
-            # SMAPI API failed.
-            rh.printLn("ES", results['response'])
-            rh.updateResults(results)    # Use results from invokeSMCLI
+            if (results['overallRC'] == 8 and results['rc'] == 208 and
+                    results['rs'] == 36):
+                # Disk does not exist, ignore the error
+                results = {'overallRC': 0, 'rc': 0, 'rs': 0, 'response': ''}
+            else:
+                # SMAPI API failed.
+                rh.printLn("ES", results['response'])
+                rh.updateResults(results)    # Use results from invokeSMCLI
 
     else:
         # Unexpected error.  Message already sent.
