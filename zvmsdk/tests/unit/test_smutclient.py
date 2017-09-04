@@ -122,6 +122,15 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request.assert_called_once_with(rd)
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_remove_mdisk(self, request):
+        userid = 'fakeuser'
+        vdev = '0102'
+        rd = 'changevm fakeuser removedisk 0102'
+
+        self._smutclient._remove_mdisk(userid, vdev),
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_guest_authorize_iucv_client(self, request):
         fake_userid = 'FakeID'
         client_userid = 'ClientID'

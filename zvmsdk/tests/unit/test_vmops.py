@@ -210,3 +210,8 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.create_disks('userid', [])
         gud.assert_called_once_with('userid')
         amds.assert_called_once_with('userid', [], '0201')
+
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'remove_mdisks')
+    def test_delete_disks(self, rmd):
+        self.vmops.delete_disks('userid', ['101', '102'])
+        rmd.assert_called_once_with('userid', ['101', '102'])
