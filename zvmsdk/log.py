@@ -14,6 +14,7 @@
 
 
 import logging
+import os
 
 from zvmsdk import config
 
@@ -22,14 +23,19 @@ CONF = config.CONF
 
 
 class Logger():
-    def __init__(self, logger, path="/tmp/zvmsdk.log",
-                 level=logging.INFO):
+    def __init__(self, logger, log_dir=CONF.logging.log_dir,
+                 log_file_name='zvmsdk.log', level=logging.INFO):
+        # make sure target directory exists
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
         # create a logger
         self.logger = logging.getLogger(logger)
         self.logger.setLevel(level)
 
         # create a handler for the file
-        fh = logging.FileHandler(path)
+        log_file = os.path.join(log_dir, log_file_name)
+        fh = logging.FileHandler(log_file)
         fh.setLevel(level)
 
         # set the formate of the handler
@@ -60,5 +66,5 @@ else:
     log_level = logging.INFO
 
 
-LOG = Logger(path=CONF.logging.log_file, logger='ZVMSDK',
-             level=log_level).getlog()
+LOG = Logger(log_dir=CONF.logging.log_dir, logger='ZVMSDK',
+             log_file_name='zvmsdk.log', level=log_level).getlog()
