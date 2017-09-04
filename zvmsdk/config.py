@@ -73,7 +73,7 @@ zvm_opts = [
     # logging options
     Opt('log_file',
         section='logging',
-        default='/tmp/zvmsdk.log',
+        default='/var/log/zvmsdk/zvmsdk.log',
         help='''
 file where log to be put into.
 
@@ -252,15 +252,15 @@ read write the directory.
     # image options
     Opt('sdk_image_repository',
         section='image',
-        default='/opt/zvmsdk/images/',
+        default='/var/lib/zvmsdk/images/',
         help='''
-Directory to store skd images.
+Directory to store sdk images.
 
 SDK image repository to store the imported images and the staging images that
 is in snapshotting. Once snapshot finished, the image will be removed to the
 netboot directory accordingly. Two kinds of image repository looks like:
-/opt/zvmsdk/images/netboot/<image_osversion>/<imagename>
-/opt/zvmsdk/images/staging/<image_osversion>/<imagename>
+/var/lib/zvmsdk/images/netboot/<image_osversion>/<imagename>
+/var/lib/zvmsdk/images/staging/<image_osversion>/<imagename>
     '''),
     # network options
     Opt('my_ip',
@@ -388,7 +388,7 @@ The port that the SDK server is listen on.
     # database options
     Opt('path',
         section='database',
-        default='/zvmsdkDB',
+        default='/var/lib/zvmsdk/databases',
         opt_type='str',
         ),
     # tests options
