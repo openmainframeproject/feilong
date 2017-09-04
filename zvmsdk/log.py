@@ -14,6 +14,7 @@
 
 
 import logging
+import os
 
 from zvmsdk import config
 
@@ -24,6 +25,11 @@ CONF = config.CONF
 class Logger():
     def __init__(self, logger, path="/tmp/zvmsdk.log",
                  level=logging.INFO):
+        # make sure target directory exists
+        log_dir = os.path.dirname(path)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
         # create a logger
         self.logger = logging.getLogger(logger)
         self.logger.setLevel(level)
