@@ -38,6 +38,7 @@ class SMUTClient(client.ZVMClient):
         super(SMUTClient, self).__init__()
         self._smut = smut.SMUT()
         self._NetDbOperator = database.NetworkDbOperator()
+        self._GuestDbOperator = database.GuestDbOperator()
 
     def _request(self, requestData):
         try:
