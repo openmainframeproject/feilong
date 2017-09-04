@@ -782,3 +782,20 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         resp = self._smutclient.get_user_direct('user1')
         req.assert_called_once_with('getvm user1 directory')
         self.assertEqual(resp, 'OK')
+
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_delete_record_for_nic')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_delete_nic(self, request, delete_nic):
+        userid = 'FakeID'
+        vdev = 'FakeVdev'
+        rd1 = ' '.join((
+            "SMAPI FakeID API Virtual_Network_Adapter_Delete_DM",
+            '-v FakeVdev'))
+        rd2 = ' '.join((
+            "SMAPI FakeID API Virtual_Network_Adapter_Delete",
+            '-v FakeVdev'))
+        self._smutclient.delete_nic(userid, vdev, True)
+        request.assert_any_call(rd1)
+        request.assert_any_call(rd2)
+        delete_nic.assert_called_with(userid, vdev)
