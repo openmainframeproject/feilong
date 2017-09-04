@@ -33,7 +33,7 @@ class SDKBaseException(Exception):
     headers = {}
     safe = False
 
-    def __init__(self, message=None, results={}, **kwargs):
+    def __init__(self, message=None, results=None, **kwargs):
         self.results = results
         self.kw = kwargs
         if 'code' in self.kw:
