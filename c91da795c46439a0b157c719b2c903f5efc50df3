@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a53fbc77_46cc6ecb",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1010896
+      },
+      "writtenOn": "2017-09-04T08:46:51Z",
+      "side": 1,
+      "message": "The purpose of SDK is to hide zvm concept to cloud applications, and we create tables to support \u0027cloud business\u0027 rather than zvm business. So I don\u0027t think we should stick to zvm concept. Even \u0027volume\u0027 is not a zvm concept.",
+      "parentUuid": "726c7d20_cfc9975f",
+      "range": {
+        "startLine": 226,
+        "startChar": 13,
+        "endLine": 226,
+        "endChar": 21
+      },
+      "revId": "c91da795c46439a0b157c719b2c903f5efc50df3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "43fb623c_dd046d4c",
         "filename": "zvmsdk/database.py",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2017-09-04T08:08:23Z",
       "side": 1,
       "message": "typo",
+      "range": {
+        "startLine": 366,
+        "startChar": 50,
+        "endLine": 366,
+        "endChar": 54
+      },
+      "revId": "c91da795c46439a0b157c719b2c903f5efc50df3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f1eabe47_8b5f9b2c",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 366,
+      "author": {
+        "id": 1010896
+      },
+      "writtenOn": "2017-09-04T08:46:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "43fb623c_dd046d4c",
       "range": {
         "startLine": 366,
         "startChar": 50,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "62d79270_1da5cfda",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1010896
+      },
+      "writtenOn": "2017-09-04T08:46:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "833bbf7c_91e9b973",
+      "range": {
+        "startLine": 387,
+        "startChar": 50,
+        "endLine": 387,
+        "endChar": 54
+      },
+      "revId": "c91da795c46439a0b157c719b2c903f5efc50df3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bac724f0_9ff2afad",
         "filename": "zvmsdk/database.py",
         "patchSetId": 1
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "f8e5c829_8f702fd1",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1010896
+      },
+      "writtenOn": "2017-09-04T08:46:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bac724f0_9ff2afad",
+      "range": {
+        "startLine": 455,
+        "startChar": 0,
+        "endLine": 457,
+        "endChar": 56
+      },
+      "revId": "c91da795c46439a0b157c719b2c903f5efc50df3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c62f8c16_eca1e739",
         "filename": "zvmsdk/database.py",
         "patchSetId": 1
@@ -105,6 +201,30 @@
       "writtenOn": "2017-09-04T08:08:23Z",
       "side": 1,
       "message": "ditto",
+      "range": {
+        "startLine": 460,
+        "startChar": 0,
+        "endLine": 462,
+        "endChar": 50
+      },
+      "revId": "c91da795c46439a0b157c719b2c903f5efc50df3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "85e0fafb_95230612",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 462,
+      "author": {
+        "id": 1010896
+      },
+      "writtenOn": "2017-09-04T08:46:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c62f8c16_eca1e739",
       "range": {
         "startLine": 460,
         "startChar": 0,
