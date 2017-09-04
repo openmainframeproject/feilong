@@ -443,6 +443,12 @@ modifyTests = [
         'rs': [8]
     },
     {
+        'description': "Verify system exists: <<<unsafePre>>>3",
+        'request': "smapi <<<unsafePre>>>3 api Image_Query_DM",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
         'description': "Add modifications to the activation engine",
         'request': 'ChangeVM <<<unsafePre>>>3 aemod <<<setupDisk>>> ' +
             '--invparms "action=addMdisk vaddr=101 filesys=ext4 ' +
