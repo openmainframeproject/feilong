@@ -71,18 +71,18 @@ zvm_opts = [
         section='xcat',
         default=None),
     # logging options
-    Opt('log_file',
+    Opt('log_dir',
         section='logging',
-        default='/tmp/zvmsdk.log',
+        default='/var/log/zvmsdk/',
         help='''
-file where log to be put into.
+Directory where log file to be put into.
 
 SDK has a set of logs to help administrator to debug
 and aduit actions performed through SDK. Edit this option
 if you want to put logs into specified place.
 
 Please ensure the service running on the consume which
-consumes SDK has the authorization to write to the file
+consumes SDK has the authorization to write to the path.
     '''),
     Opt('log_level',
         section='logging',
@@ -252,15 +252,15 @@ read write the directory.
     # image options
     Opt('sdk_image_repository',
         section='image',
-        default='/opt/zvmsdk/images/',
+        default='/var/lib/zvmsdk/images/',
         help='''
-Directory to store skd images.
+Directory to store sdk images.
 
 SDK image repository to store the imported images and the staging images that
 is in snapshotting. Once snapshot finished, the image will be removed to the
 netboot directory accordingly. Two kinds of image repository looks like:
-/opt/zvmsdk/images/netboot/<image_osversion>/<imagename>
-/opt/zvmsdk/images/staging/<image_osversion>/<imagename>
+/var/lib/zvmsdk/images/netboot/<image_osversion>/<imagename>
+/var/lib/zvmsdk/images/staging/<image_osversion>/<imagename>
     '''),
     # network options
     Opt('my_ip',
@@ -388,7 +388,7 @@ The port that the SDK server is listen on.
     # database options
     Opt('path',
         section='database',
-        default='/zvmsdkDB',
+        default='/var/lib/zvmsdk/databases/',
         opt_type='str',
         ),
     # tests options

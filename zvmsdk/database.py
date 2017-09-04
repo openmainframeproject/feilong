@@ -82,7 +82,7 @@ class DbOperator(object):
 
         # Initialize a very first connection to activate the database and
         # check for its modes
-        database = ''.join((CONF.database.path, "/", const.DATABASE_NAME))
+        database = os.path.join(CONF.database.path, const.DATABASE_NAME)
         conn = sqlite3.connect(database, check_same_thread=False)
 
         db_mode = os.stat(database).st_mode
