@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5ea84b68_2e1705d9",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 622,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-04T05:47:40Z",
+      "side": 1,
+      "message": "should be rs?",
+      "range": {
+        "startLine": 622,
+        "startChar": 31,
+        "endLine": 622,
+        "endChar": 33
+      },
+      "revId": "1eeb4cfc35ac2bb56478c489dfbc04ccb362b963",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "37cd951a_e477f403",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 640,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-04T05:47:40Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 640,
+        "startChar": 39,
+        "endLine": 640,
+        "endChar": 41
+      },
+      "revId": "1eeb4cfc35ac2bb56478c489dfbc04ccb362b963",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f73e96f0_1f0ad4ee",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 680,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-04T05:47:40Z",
+      "side": 1,
+      "message": "seems this \u0027with\u0027 is duplicated with the following \u0027try-except\u0027, just need to add the zvmclientinternalerror exception to the except block.",
+      "range": {
+        "startLine": 679,
+        "startChar": 8,
+        "endLine": 680,
+        "endChar": 39
+      },
+      "revId": "1eeb4cfc35ac2bb56478c489dfbc04ccb362b963",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d2430c3b_d881f42f",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 708,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-04T05:47:40Z",
+      "side": 1,
+      "message": "ditto, suggest to use same workflow with _couple_nic",
+      "range": {
+        "startLine": 707,
+        "startChar": 12,
+        "endLine": 708,
+        "endChar": 43
+      },
+      "revId": "1eeb4cfc35ac2bb56478c489dfbc04ccb362b963",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
