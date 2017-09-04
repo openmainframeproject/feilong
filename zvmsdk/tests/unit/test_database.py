@@ -14,6 +14,7 @@
 
 
 import mock
+import os
 import unittest
 import uuid
 
@@ -22,6 +23,8 @@ from zvmsdk import database
 from zvmsdk.database import VolumeDBUtils
 from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk.tests.unit import base
+from zvmsdk import utils as zvmutils
 
 
 CONF = config.CONF
@@ -199,3 +202,214 @@ class VolumeDBUtilsTestCase(unittest.TestCase):
         self._util.delete_volume(volume_id)
         # query again
         self.assertIsNone(self._util.get_volume_by_id(volume_id))
+
+
+class GuestDbOperatorTestCase(base.SDKTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(GuestDbOperatorTestCase, cls).setUpClass()
+        cls.old_db_path = CONF.database.path
+        base.set_conf('database', 'path', '/tmp/test_guests.db')
+        cls.pathutils = zvmutils.PathUtils()
+
+    def _destroy_guests(self):
+        with database.get_db_conn() as conn:
+            conn.execute("DROP TABLE guests")
+
+    def setUp(self):
+        super(GuestDbOperatorTestCase, self).setUp()
+        try:
+            self.db_op = database.GuestDbOperator()
+        finally:
+            self.addCleanup(self._destroy_guests)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.pathutils.clean_temp_folder('/tmp/test_guests.db')
+        # Restore the original db path
+        CONF.database.path = cls.old_db_path
+
+    def test_init(self):
+        self.assertTrue(os.path.exists('/tmp/test_guests.db'))
+
+    @mock.patch.object(uuid, 'uuid4')
+    def test_add_guest(self, get_uuid):
+        userid = 'fakeuser'
+        meta = 'fakemeta=1, fakemeta2=True'
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        self.db_op.add_guest(userid, meta=meta)
+        # Query, the guest should in table
+        guests = self.db_op.get_guest_list()
+        self.assertEqual(1, len(guests))
+        self.assertListEqual([(u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
+                               u'FAKEUSER', u'fakemeta=1, fakemeta2=True',
+                               u'')], guests)
+
+    @mock.patch.object(uuid, 'uuid4')
+    def test_add_guest_twice_error(self, get_uuid):
+        userid = 'fakeuser'
+        meta = 'fakemeta=1, fakemeta2=True'
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        self.db_op.add_guest(userid, meta=meta)
+        # Add same user the second time
+        self.assertRaises(exception.DatabaseException,
+                          self.db_op.add_guest, 'fakeuser')
+
+    @mock.patch.object(uuid, 'uuid4')
+    def test_delete_guest_by_id(self, get_uuid):
+        userid = 'fakeuser'
+        meta = 'fakemeta=1, fakemeta2=True'
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        self.db_op.add_guest(userid, meta=meta)
+        # Delete
+        self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
+        guests = self.db_op.get_guest_list()
+        self.assertListEqual([], guests)
+
+    def test_delete_guest_by_id_not_exist(self):
+        self.assertRaises(exception.DatabaseException,
+                          self.db_op.delete_guest_by_id,
+                          'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
+
+    @mock.patch.object(uuid, 'uuid4')
+    def test_delete_guest_by_userid(self, get_uuid):
+        userid = 'fakeuser'
+        meta = 'fakemeta=1, fakemeta2=True'
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        self.db_op.add_guest(userid, meta=meta)
+        # Delete
+        self.db_op.delete_guest_by_userid('FaKeuser')
+        guests = self.db_op.get_guest_list()
+        self.assertListEqual([], guests)
+
+    def test_delete_guest_by_userid_not_exist(self):
+        self.assertRaises(exception.DatabaseException,
+                          self.db_op.delete_guest_by_userid,
+                          'Fakeuser')
+
+    @mock.patch.object(uuid, 'uuid4')
+    def test_get_guest_by_userid(self, get_uuid):
+        userid = 'fakeuser'
+        meta = 'fakemeta=1, fakemeta2=True'
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        self.db_op.add_guest(userid, meta=meta)
+        # get guest
+        guest = self.db_op.get_guest_by_userid('FaKeuser')
+        self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
+                          u'FAKEUSER', u'fakemeta=1, fakemeta2=True',
+                          u''), guest)
+
+    def test_get_guest_by_userid_not_exist(self):
+        guest = self.db_op.get_guest_by_userid('FaKeuser')
+        self.assertEqual(None, guest)
+
+    @mock.patch.object(uuid, 'uuid4')
+    def test_get_guest_by_id(self, get_uuid):
+        userid = 'fakeuser'
+        meta = 'fakemeta=1, fakemeta2=True'
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        self.db_op.add_guest(userid, meta=meta)
+        # get guest
+        guest = self.db_op.get_guest_by_id(
+            'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
+        self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
+                          u'FAKEUSER', u'fakemeta=1, fakemeta2=True',
+                          u''), guest)
+
+    def test_get_guest_by_id_not_exist(self):
+        guest = self.db_op.get_guest_by_id(
+            'aa8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
+        self.assertEqual(None, guest)
+
+    @mock.patch.object(uuid, 'uuid4')
+    def test_update_guest_by_id(self, get_uuid):
+        userid = 'fakeuser'
+        meta = 'fakemeta=1, fakemeta2=True'
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        self.db_op.add_guest(userid, meta=meta)
+        # Update
+        self.db_op.update_guest_by_id(
+            'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c', meta='newmeta',
+            comments='newcomment')
+        guest = self.db_op.get_guest_by_id(
+            'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
+        self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
+                          u'FAKEUSER', u'newmeta',
+                          u'newcomment'), guest)
+
+    @mock.patch.object(uuid, 'uuid4')
+    def test_update_guest_by_id_wrong_input(self, get_uuid):
+        userid = 'fakeuser'
+        meta = 'fakemeta=1, fakemeta2=True'
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        self.db_op.add_guest(userid, meta=meta)
+        # Update
+        self.assertRaises(exception.DatabaseException,
+                          self.db_op.update_guest_by_id,
+                          'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
+
+    def test_update_guest_by_id_not_exist(self):
+        self.assertRaises(exception.DatabaseException,
+                          self.db_op.update_guest_by_id,
+                          'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
+                          meta='newmeta')
+
+    @mock.patch.object(uuid, 'uuid4')
+    def test_update_guest_by_id_null_value(self, get_uuid):
+        userid = 'fakeuser'
+        meta = 'fakemeta=1, fakemeta2=True'
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        self.db_op.add_guest(userid, meta=meta)
+        # Update
+        self.db_op.update_guest_by_id(
+            'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c', meta='',
+            comments='')
+        guest = self.db_op.get_guest_by_id(
+            'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
+        self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
+                          u'FAKEUSER', u'', u''), guest)
+
+    @mock.patch.object(uuid, 'uuid4')
+    def test_update_guest_by_userid(self, get_uuid):
+        userid = 'fakeuser'
+        meta = 'fakemeta=1, fakemeta2=True'
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        self.db_op.add_guest(userid, meta=meta)
+        # Update
+        self.db_op.update_guest_by_userid(
+            'Fakeuser', meta='newmetauserid', comments='newcommentuserid')
+        guest = self.db_op.get_guest_by_userid('Fakeuser')
+        self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
+                          u'FAKEUSER', u'newmetauserid',
+                          u'newcommentuserid'), guest)
+
+    @mock.patch.object(uuid, 'uuid4')
+    def test_update_guest_by_userid_wrong_input(self, get_uuid):
+        userid = 'fakeuser'
+        meta = 'fakemeta=1, fakemeta2=True'
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        self.db_op.add_guest(userid, meta=meta)
+        # Update
+        self.assertRaises(exception.DatabaseException,
+                          self.db_op.update_guest_by_userid,
+                          'FakeUser')
+
+    def test_update_guest_by_userid_not_exist(self):
+        self.assertRaises(exception.DatabaseException,
+                          self.db_op.update_guest_by_userid,
+                          'FaKeUser',
+                          meta='newmeta')
+
+    @mock.patch.object(uuid, 'uuid4')
+    def test_update_guest_by_userid_null_value(self, get_uuid):
+        userid = 'fakeuser'
+        meta = 'fakemeta=1, fakemeta2=True'
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        self.db_op.add_guest(userid, meta=meta)
+        # Update
+        self.db_op.update_guest_by_userid(
+            'FaKeUser', meta='', comments='')
+        guest = self.db_op.get_guest_by_userid('fakeuser')
+        self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
+                          u'FAKEUSER', u'', u''), guest)

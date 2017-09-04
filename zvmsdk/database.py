@@ -16,6 +16,7 @@
 import contextlib
 from datetime import datetime
 import os
+import six
 import sqlite3
 import stat
 from time import sleep
@@ -53,7 +54,7 @@ def get_db_conn():
     try:
         yield conn
     except Exception as err:
-        LOG.error("Execute SQL statements error: ", err)
+        LOG.error("Execute SQL statements error: %s", six.text_type(err))
         raise exception.DatabaseException(msg=err)
     finally:
         _op.release_connection(i)
@@ -411,3 +412,152 @@ class ImageDbOperator(object):
         """Delete the record for specified imagename from image table"""
         with get_db_conn() as conn:
             conn.execute("DELETE FROM image WHERE imagename=?", (imagename))
+
+
+class GuestDbOperator(object):
+
+    def __init__(self):
+        self._create_guests_table()
+
+    def _create_guests_table(self):
+        """"""
+        sql = ' '.join((
+            'CREATE TABLE IF NOT EXISTS guests(',
+            'id             char(36)      PRIMARY KEY,',
+            'userid         varchar(8)    NOT NULL UNIQUE,',
+            'metadata       varchar(255),',
+            'comments       text)'))
+        with get_db_conn() as conn:
+            conn.execute(sql)
+
+    def _check_existence_by_id(self, id):
+        guest = self.get_guest_by_id(id)
+        if guest is None:
+            msg = 'Guest with id: %s does not exist in DB.' % id
+            LOG.error(msg)
+            raise exception.DatabaseException(msg=msg)
+
+    def _check_existence_by_userid(self, userid):
+        guest = self.get_guest_by_userid(userid)
+        if guest is None:
+            msg = 'Guest with userid: %s does not exist in DB.' % userid
+            LOG.error(msg)
+            raise exception.DatabaseException(msg=msg)
+
+    def add_guest(self, userid, meta='', comments=''):
+        # Generate uuid automatically
+        id = str(uuid.uuid4())
+        with get_db_conn() as conn:
+            conn.execute(
+                "INSERT INTO guests VALUES (?, ?, ?, ?)",
+                (id, userid.upper(), meta, comments))
+
+    def delete_guest_by_id(self, id):
+        # First check whether the guest exist in db table
+        self._check_existence_by_id(id)
+        # Update guest if exist
+        with get_db_conn() as conn:
+            conn.execute(
+                "DELETE FROM guests WHERE id=?", (id,))
+
+    def delete_guest_by_userid(self, userid):
+        # First check whether the guest exist in db table
+        self._check_existence_by_userid(userid)
+        with get_db_conn() as conn:
+            conn.execute(
+                "DELETE FROM guests WHERE userid=?", (userid.upper(),))
+
+    def update_guest_by_id(self, uuid, userid=None, meta=None, comments=None):
+        if (userid is None) and (meta is None) and (comments is None):
+            msg = ("Update guest with id: %s failed, no field "
+                   "specified to be updated." % uuid)
+            LOG.error(msg)
+            raise exception.DatabaseException(msg=msg)
+
+        # First check whether the guest exist in db table
+        self._check_existence_by_id(uuid)
+        # Start update
+        sql_cmd = "UPDATE guests SET"
+        sql_var = []
+        if userid is not None:
+            sql_cmd += " userid=?,"
+            sql_var.append(userid.upper())
+        if meta is not None:
+            sql_cmd += " metadata=?,"
+            sql_var.append(meta)
+        if comments is not None:
+            sql_cmd += " comments=?,"
+            sql_var.append(comments)
+
+        # remove the tailing comma
+        sql_cmd = sql_cmd.strip(',')
+        # Add the id filter
+        sql_cmd += " WHERE id=?"
+        sql_var.append(uuid)
+
+        with get_db_conn() as conn:
+            conn.execute(sql_cmd, sql_var)
+
+    def update_guest_by_userid(self, userid, meta=None, comments=None):
+        userid = userid.upper()
+        if (meta is None) and (comments is None):
+            msg = ("Update guest with userid: %s failed, no field "
+                   "specified to be updated." % userid)
+            LOG.error(msg)
+            raise exception.DatabaseException(msg=msg)
+
+        # First check whether the guest exist in db table
+        self._check_existence_by_userid(userid)
+        # Start update
+        sql_cmd = "UPDATE guests SET"
+        sql_var = []
+        if meta is not None:
+            sql_cmd += " metadata=?,"
+            sql_var.append(meta)
+        if comments is not None:
+            sql_cmd += " comments=?,"
+            sql_var.append(comments)
+
+        # remove the tailing comma
+        sql_cmd = sql_cmd.strip(',')
+        # Add the id filter
+        sql_cmd += " WHERE userid=?"
+        sql_var.append(userid)
+
+        with get_db_conn() as conn:
+            conn.execute(sql_cmd, sql_var)
+
+    def get_guest_list(self):
+        with get_db_conn() as conn:
+            res = conn.execute("SELECT * FROM guests")
+            guests = res.fetchall()
+        return guests
+
+    def get_guest_by_id(self, id):
+        with get_db_conn() as conn:
+            res = conn.execute("SELECT * FROM guests "
+                               "WHERE id=?", (id,))
+            guest = res.fetchall()
+        # As id is the primary key, the filtered entry number should be 0 or 1
+        if len(guest) == 1:
+            return guest[0]
+        elif len(guest) == 0:
+            LOG.debug("Guest with id: %s not found from DB!" % id)
+            return None
+        # Code shouldn't come here, just in case
+        return None
+
+    def get_guest_by_userid(self, userid):
+        userid = userid.upper()
+        with get_db_conn() as conn:
+            res = conn.execute("SELECT * FROM guests "
+                               "WHERE userid=?", (userid,))
+            guest = res.fetchall()
+        # As id is the primary key, the filtered entry number should be 0 or 1
+        if len(guest) == 1:
+            return guest[0]
+        elif len(guest) == 0:
+            LOG.debug("Guest with userid: %s not found from DB!" % userid)
+            return None
+        # Code shouldn't come here, just in case
+        return None
