@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "726c7d20_cfc9975f",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-04T08:08:23Z",
+      "side": 1,
+      "message": "instance is not an concept of zvm, can we change the name? And, the id here is userid or an uuid?",
+      "range": {
+        "startLine": 226,
+        "startChar": 13,
+        "endLine": 226,
+        "endChar": 21
+      },
+      "revId": "c91da795c46439a0b157c719b2c903f5efc50df3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "43fb623c_dd046d4c",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 366,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-04T08:08:23Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 366,
+        "startChar": 50,
+        "endLine": 366,
+        "endChar": 54
+      },
+      "revId": "c91da795c46439a0b157c719b2c903f5efc50df3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "833bbf7c_91e9b973",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-04T08:08:23Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 387,
+        "startChar": 50,
+        "endLine": 387,
+        "endChar": 54
+      },
+      "revId": "c91da795c46439a0b157c719b2c903f5efc50df3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bac724f0_9ff2afad",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-04T08:08:23Z",
+      "side": 1,
+      "message": "mountpoint \u003d volume_attachment.get(\u0027mountpoint\u0027, None)",
+      "range": {
+        "startLine": 455,
+        "startChar": 0,
+        "endLine": 457,
+        "endChar": 56
+      },
+      "revId": "c91da795c46439a0b157c719b2c903f5efc50df3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c62f8c16_eca1e739",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 462,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-04T08:08:23Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 460,
+        "startChar": 0,
+        "endLine": 462,
+        "endChar": 50
+      },
+      "revId": "c91da795c46439a0b157c719b2c903f5efc50df3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
