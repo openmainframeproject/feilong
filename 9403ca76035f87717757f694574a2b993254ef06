@@ -22,6 +22,30 @@
       "revId": "9403ca76035f87717757f694574a2b993254ef06",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1b917c07_074743b5",
+        "filename": "data/sdkserver.service",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-04T05:27:41Z",
+      "side": 1,
+      "message": "Stop and restart is already supported, just uses the default action which is sending a sigkill signal.",
+      "parentUuid": "6c09a32c_9c62aa17",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 28
+      },
+      "revId": "9403ca76035f87717757f694574a2b993254ef06",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
