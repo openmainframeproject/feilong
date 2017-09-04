@@ -61,7 +61,6 @@ class SDKClient(object):
 
             # Prepare the data to be sent
             api_data = json.dumps((func, api_args, api_kwargs))
-            print "generated command: %s" % api_data
             # Send the API call data to SDK server
             sent = 0
             total_len = len(api_data)
@@ -80,9 +79,6 @@ class SDKClient(object):
                                    '%d bytes sent. API call: %s') % (sent,
                                                                      api_data),
                         'output': ''}
-            else:
-                print ("API call is sent to SDK server successfully: %s" %
-                       api_data)
 
             # Receive data from server
             return_blocks = []
@@ -102,7 +98,6 @@ class SDKClient(object):
         # data
         if return_blocks != []:
             results = json.loads(''.join(return_blocks))
-            print "Received results from server: %s" % results
         else:
             results = {'overallRC': 1,
                       'rc': 1,
