@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6c09a32c_9c62aa17",
+        "filename": "data/sdkserver.service",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-04T05:21:01Z",
+      "side": 1,
+      "message": "do we plan to add stop/restart later?",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 28
+      },
+      "revId": "9403ca76035f87717757f694574a2b993254ef06",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
