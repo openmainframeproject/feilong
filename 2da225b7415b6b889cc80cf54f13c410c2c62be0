@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ee5c89d6_697d5327",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-04T11:03:12Z",
+      "side": 1,
+      "message": "GuestDBOperator. Refer to others.",
+      "range": {
+        "startLine": 365,
+        "startChar": 6,
+        "endLine": 365,
+        "endChar": 19
+      },
+      "revId": "2da225b7415b6b889cc80cf54f13c410c2c62be0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f2d1f94a_cc01ebd6",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-04T11:03:12Z",
+      "side": 1,
+      "message": "UNIQUE? create, delete then re-create with same userid?",
+      "range": {
+        "startLine": 375,
+        "startChar": 51,
+        "endLine": 375,
+        "endChar": 58
+      },
+      "revId": "2da225b7415b6b889cc80cf54f13c410c2c62be0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "de730173_e66f5019",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 383,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-04T11:03:12Z",
+      "side": 1,
+      "message": "prefer to use uuid1()",
+      "range": {
+        "startLine": 383,
+        "startChar": 17,
+        "endLine": 383,
+        "endChar": 29
+      },
+      "revId": "2da225b7415b6b889cc80cf54f13c410c2c62be0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ef6de6c_f1fd2cde",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-04T11:03:12Z",
+      "side": 1,
+      "message": "if userid or meta or comments is None:",
+      "range": {
+        "startLine": 400,
+        "startChar": 11,
+        "endLine": 400,
+        "endChar": 69
+      },
+      "revId": "2da225b7415b6b889cc80cf54f13c410c2c62be0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d1efd26d_d1d0f668",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-04T11:03:12Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 428,
+        "startChar": 11,
+        "endLine": 428,
+        "endChar": 48
+      },
+      "revId": "2da225b7415b6b889cc80cf54f13c410c2c62be0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
