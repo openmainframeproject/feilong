@@ -99,7 +99,7 @@ class DbOperator(object):
 
         # Create other connections of the pool
         for i in range(1, self._pool_size):
-            conn = sqlite3.connect(database)
+            conn = sqlite3.connect(database, check_same_thread=False)
             # autocommit
             conn.isolation_level = None
             self._conn_pool[i] = conn
