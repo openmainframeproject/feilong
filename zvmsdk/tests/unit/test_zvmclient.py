@@ -58,6 +58,14 @@ class SDKZVMClientTestCase(base.SDKTestCase):
         add_mdisk.assert_any_call(userid, disk_list[0], '0100')
         add_mdisk.assert_any_call(userid, disk_list[1], '0101')
 
+    @mock.patch.object(zvmclient.get_zvmclient(), '_remove_mdisk')
+    def test_remove_mdisks(self, remove_mdisk):
+        userid = 'fakeuser'
+        vdev_list = ['102', '103']
+        self._zvmclient.remove_mdisks(userid, vdev_list)
+        remove_mdisk.assert_any_call(userid, vdev_list[0])
+        remove_mdisk.assert_any_call(userid, vdev_list[1])
+
     @mock.patch.object(zvmclient.get_zvmclient(), 'image_performance_query')
     def test_get_image_performance_info(self, ipq):
         ipq.return_value = {

@@ -169,6 +169,9 @@ class VMOps(object):
         start_vdev = hex(int(max(exist_disks), 16) + 1)[2:].rjust(4, '0')
         self._zvmclient.add_mdisks(userid, disk_list, start_vdev)
 
+    def delete_disks(self, userid, vdev_list):
+        self._zvmclient.remove_mdisks(userid, vdev_list)
+
     def guest_config_minidisks(self, userid, disk_info):
         if disk_info != []:
             LOG.debug("Start to configure disks to %s." % userid)

@@ -114,6 +114,10 @@ class SMUTClient(client.ZVMClient):
 
         self._request(rd)
 
+    def _remove_mdisk(self, userid, vdev):
+        rd = ' '.join(('changevm', userid, 'removedisk', vdev))
+        self._request(rd)
+
     def guest_authorize_iucv_client(self, userid, client=None):
         """Punch a script to authorized the client on guest vm"""
         client = client or zvmutils.get_smut_userid()
