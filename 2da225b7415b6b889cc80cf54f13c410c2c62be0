@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "282a111c_acb304d9",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-05T02:25:39Z",
+      "side": 1,
+      "message": "got it, sure.",
+      "parentUuid": "de9f73a5_956c4e10",
+      "range": {
+        "startLine": 56,
+        "startChar": 54,
+        "endLine": 56,
+        "endChar": 62
+      },
+      "revId": "2da225b7415b6b889cc80cf54f13c410c2c62be0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ee5c89d6_697d5327",
         "filename": "zvmsdk/database.py",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2017-09-04T11:03:12Z",
       "side": 1,
       "message": "GuestDBOperator. Refer to others.",
+      "range": {
+        "startLine": 365,
+        "startChar": 6,
+        "endLine": 365,
+        "endChar": 19
+      },
+      "revId": "2da225b7415b6b889cc80cf54f13c410c2c62be0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d0915a19_041815a4",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-05T02:25:39Z",
+      "side": 1,
+      "message": "Ok... I refered to volumedbutils.",
+      "parentUuid": "ee5c89d6_697d5327",
       "range": {
         "startLine": 365,
         "startChar": 6,
@@ -95,6 +143,54 @@
     },
     {
       "key": {
+        "uuid": "518f9633_648fd6da",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-05T02:25:39Z",
+      "side": 1,
+      "message": "unique means only one entry with same value can exist in the table at the same time. This can work in your said scenario.",
+      "parentUuid": "f2d1f94a_cc01ebd6",
+      "range": {
+        "startLine": 375,
+        "startChar": 51,
+        "endLine": 375,
+        "endChar": 58
+      },
+      "revId": "2da225b7415b6b889cc80cf54f13c410c2c62be0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0cfcd768_769e936a",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-05T02:25:39Z",
+      "side": 1,
+      "message": "by \"soft delete\", I think you mean set \"deleted\u003d1\" when deleting. \n\nCurrently I cann\u0027t think of a scenario needing this, we can add that if we need.",
+      "parentUuid": "51917997_05c041e3",
+      "range": {
+        "startLine": 375,
+        "startChar": 51,
+        "endLine": 375,
+        "endChar": 58
+      },
+      "revId": "2da225b7415b6b889cc80cf54f13c410c2c62be0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "de730173_e66f5019",
         "filename": "zvmsdk/database.py",
         "patchSetId": 2
@@ -118,6 +214,30 @@
     },
     {
       "key": {
+        "uuid": "6be856e5_b01fc428",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 383,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-05T02:25:39Z",
+      "side": 1,
+      "message": "I will check that, here I just refered to volume id.",
+      "parentUuid": "de730173_e66f5019",
+      "range": {
+        "startLine": 383,
+        "startChar": 17,
+        "endLine": 383,
+        "endChar": 29
+      },
+      "revId": "2da225b7415b6b889cc80cf54f13c410c2c62be0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ef6de6c_f1fd2cde",
         "filename": "zvmsdk/database.py",
         "patchSetId": 2
@@ -129,6 +249,30 @@
       "writtenOn": "2017-09-04T11:03:12Z",
       "side": 1,
       "message": "if userid or meta or comments is None:",
+      "range": {
+        "startLine": 400,
+        "startChar": 11,
+        "endLine": 400,
+        "endChar": 69
+      },
+      "revId": "2da225b7415b6b889cc80cf54f13c410c2c62be0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e78c4cdd_f1e6f419",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-05T02:25:39Z",
+      "side": 1,
+      "message": "no，here I want to make sure not all three is None.",
+      "parentUuid": "1ef6de6c_f1fd2cde",
       "range": {
         "startLine": 400,
         "startChar": 11,
