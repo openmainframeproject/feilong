@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "21230751_fd001846",
+        "filename": "etc/zvmsdk.conf",
+        "patchSetId": 3
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-05T01:11:43Z",
+      "side": 1,
+      "message": "this suggestion make sense to me",
+      "parentUuid": "9adfb763_ee59a251",
+      "range": {
+        "startLine": 2,
+        "startChar": 8,
+        "endLine": 2,
+        "endChar": 9
+      },
+      "revId": "da223081eabcfb6729129f952e63bd9059573d4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d00be4e1_e47a3954",
         "filename": "zvmsdk/config.py",
         "patchSetId": 3
@@ -65,6 +89,53 @@
         "startChar": 17,
         "endLine": 391,
         "endChar": 42
+      },
+      "revId": "da223081eabcfb6729129f952e63bd9059573d4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "25483d71_3a6f2f7a",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-05T01:11:43Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "e96a3942_9fab4b71",
+      "range": {
+        "startLine": 391,
+        "startChar": 17,
+        "endLine": 391,
+        "endChar": 42
+      },
+      "revId": "da223081eabcfb6729129f952e63bd9059573d4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0770eacc_1883d086",
+        "filename": "zvmsdk/log.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-05T01:11:43Z",
+      "side": 1,
+      "message": "this need change as well?",
+      "range": {
+        "startLine": 26,
+        "startChar": 31,
+        "endLine": 26,
+        "endChar": 54
       },
       "revId": "da223081eabcfb6729129f952e63bd9059573d4d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
