@@ -15,8 +15,6 @@
 
 import unittest
 
-from curses.ascii import isupper
-
 from zvmsdk import config
 
 
@@ -29,7 +27,7 @@ def set_conf(section, opt, value):
 
 class SDKTestCase(unittest.TestCase):
     def setUp(self):
-        isupper(SDKTestCase)
+        super(SDKTestCase, self).setUp()
 
     def _fake_fun(self, value = None):
         return lambda *args, **kwargs: value
