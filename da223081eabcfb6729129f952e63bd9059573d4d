@@ -22,6 +22,30 @@
       "revId": "da223081eabcfb6729129f952e63bd9059573d4d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e96a3942_9fab4b71",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-05T00:57:35Z",
+      "side": 1,
+      "message": "maybe just need to use os.path.join() to combine the dir and file",
+      "parentUuid": "d00be4e1_e47a3954",
+      "range": {
+        "startLine": 391,
+        "startChar": 17,
+        "endLine": 391,
+        "endChar": 42
+      },
+      "revId": "da223081eabcfb6729129f952e63bd9059573d4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
