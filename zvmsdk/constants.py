@@ -80,3 +80,7 @@ _TUSERID = 'TYPE_USERID'
 # Vswitch name has same rule with userid
 _TVSWNAME = _TUSERID
 _TUSERID_OR_LIST = (_TUSERID, list)
+
+IMAGE_TYPE = {
+    'DEPLOY': 'netboot',
+    'CAPTURE': 'staging'}
