@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "ad696ab2_f4e0b588",
+        "filename": "etc/zvmsdk.conf",
+        "patchSetId": 3
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-05T01:27:04Z",
+      "side": 1,
+      "message": "good suggestion",
+      "parentUuid": "9adfb763_ee59a251",
+      "range": {
+        "startLine": 2,
+        "startChar": 8,
+        "endLine": 2,
+        "endChar": 9
+      },
+      "revId": "da223081eabcfb6729129f952e63bd9059573d4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d00be4e1_e47a3954",
         "filename": "zvmsdk/config.py",
         "patchSetId": 3
@@ -120,6 +144,30 @@
     },
     {
       "key": {
+        "uuid": "4e24d248_d57acaed",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-05T01:27:04Z",
+      "side": 1,
+      "message": "should use os.path.join() to get path in database.py.\n\nAnyway, I will modify the path to /var/lib/zvmsdk/databases/ here, to consist with other path format",
+      "parentUuid": "d00be4e1_e47a3954",
+      "range": {
+        "startLine": 391,
+        "startChar": 17,
+        "endLine": 391,
+        "endChar": 42
+      },
+      "revId": "da223081eabcfb6729129f952e63bd9059573d4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0770eacc_1883d086",
         "filename": "zvmsdk/log.py",
         "patchSetId": 3
@@ -131,6 +179,30 @@
       "writtenOn": "2017-09-05T01:11:43Z",
       "side": 1,
       "message": "this need change as well?",
+      "range": {
+        "startLine": 26,
+        "startChar": 31,
+        "endLine": 26,
+        "endChar": 54
+      },
+      "revId": "da223081eabcfb6729129f952e63bd9059573d4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "82da3b29_b61f9e86",
+        "filename": "zvmsdk/log.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-05T01:27:04Z",
+      "side": 1,
+      "message": "ok",
+      "parentUuid": "0770eacc_1883d086",
       "range": {
         "startLine": 26,
         "startChar": 31,
