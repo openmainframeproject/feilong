@@ -375,6 +375,10 @@ password to access sdk http server.
         opt_type='str',
         help='''
 The IP address that the SDK server is listen on.
+
+When the SDK server deamon starts, it will try to bind to
+this address and port bind_port, and wait for the SDK client
+connection to handle API request.
 '''
         ),
     Opt('bind_port',
@@ -383,6 +387,9 @@ The IP address that the SDK server is listen on.
         default=2000,
         help='''
 The port that the SDK server is listen on.
+
+This will work as a pair with bind_addr when the SDK server daemon
+starts, more info can be found in that configuration description.
 '''
         ),
     # database options
