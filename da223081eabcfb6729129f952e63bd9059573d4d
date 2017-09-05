@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d00be4e1_e47a3954",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2017-09-05T00:51:00Z",
+      "side": 1,
+      "message": "Better to use \"/var/lib/zvmsdk/databases/\", so it is similar to the other path and the same to database path in zvmsdk.conf.\n\nAlso, database.py need to be changed, remove \u0027/\u0027 from the following code:\ndatabase \u003d \u0027\u0027.join((CONF.database.path, \"/\", const.DATABASE_NAME))",
+      "range": {
+        "startLine": 391,
+        "startChar": 17,
+        "endLine": 391,
+        "endChar": 42
+      },
+      "revId": "da223081eabcfb6729129f952e63bd9059573d4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
