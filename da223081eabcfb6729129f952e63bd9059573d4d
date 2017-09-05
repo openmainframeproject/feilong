@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "9adfb763_ee59a251",
+        "filename": "etc/zvmsdk.conf",
+        "patchSetId": 3
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-05T01:08:54Z",
+      "side": 1,
+      "message": "maybe we can change the conf to log_dir, in case we would have more log files in future, eg, smut log which is now in /var/log/messages, I think we can move it out of syslog.",
+      "range": {
+        "startLine": 2,
+        "startChar": 8,
+        "endLine": 2,
+        "endChar": 9
+      },
+      "revId": "da223081eabcfb6729129f952e63bd9059573d4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d00be4e1_e47a3954",
         "filename": "zvmsdk/config.py",
         "patchSetId": 3
