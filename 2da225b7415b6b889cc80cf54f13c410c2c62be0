@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "de9f73a5_956c4e10",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-05T01:28:41Z",
+      "side": 1,
+      "message": "we may use six.text_type for this kind of error info\nit\u0027s py3 compatible",
+      "range": {
+        "startLine": 56,
+        "startChar": 54,
+        "endLine": 56,
+        "endChar": 62
+      },
+      "revId": "2da225b7415b6b889cc80cf54f13c410c2c62be0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ee5c89d6_697d5327",
         "filename": "zvmsdk/database.py",
         "patchSetId": 2
@@ -36,6 +59,30 @@
       "writtenOn": "2017-09-04T11:03:12Z",
       "side": 1,
       "message": "UNIQUE? create, delete then re-create with same userid?",
+      "range": {
+        "startLine": 375,
+        "startChar": 51,
+        "endLine": 375,
+        "endChar": 58
+      },
+      "revId": "2da225b7415b6b889cc80cf54f13c410c2c62be0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "51917997_05c041e3",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 375,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-05T01:28:41Z",
+      "side": 1,
+      "message": "we don\u0027t have soft delete , this should be fine ?",
+      "parentUuid": "f2d1f94a_cc01ebd6",
       "range": {
         "startLine": 375,
         "startChar": 51,
