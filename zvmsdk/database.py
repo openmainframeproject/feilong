@@ -360,3 +360,54 @@ class VolumeDBUtils(object):
                 "SET deleted=1, deleted_at=?",
                 "WHERE id=?")),
                 (time, volume_id))
+
+
+class ImageDbOperator(object):
+
+    def __init__(self):
+        self._create_image_table()
+
+    def _create_image_table(self):
+        create_image_table_sql = ' '.join((
+                'CREATE TABLE IF NOT EXISTS image (',
+                'imagename                varchar(128) PRIMARY KEY,',
+                'imageosdistro            varchar(16),',
+                'md5sum                   varchar(32),',
+                'disk_size_units          varchar(16),',
+                'image_size_in_bytes     varchar(32),',
+                'comments                 varchar(128))'))
+        with get_db_conn() as conn:
+            conn.execute(create_image_table_sql)
+
+    def image_add_record(self, imagename, imageosdistro, md5sum,
+                         disk_size_units, image_size_in_bytes, comments=None):
+        if comments is not None:
+            with get_db_conn() as conn:
+                conn.execute("INSERT INTO image (imagename, imageosdistro,"
+                             "md5sum, disk_size_units, image_size_in_bytes,"
+                             " comments) VALUES (?, ?, ?, ?, ?, ?)",
+                             (imagename, imageosdistro, md5sum,
+                              disk_size_units, image_size_in_bytes, comments))
+        else:
+            with get_db_conn() as conn:
+                conn.execute("INSERT INTO image (imagename, imageosdistro,"
+                             "md5sum, disk_size_units, image_size_in_bytes)"
+                             " VALUES (?, ?, ?, ?, ?)",
+                             (imagename, imageosdistro, md5sum,
+                              disk_size_units, image_size_in_bytes))
+
+    def query_disk_size_units(self, imagename):
+        """Return the root disk units of the specified image
+        imagename: the unique image name in db
+        Return the disk units in format like 3339:CYL or 467200:BLK
+        """
+        with get_db_conn() as conn:
+            result = conn.execute("SELECT disk_units FROM image "
+                                  "WHERE imagename=?", (imagename))
+            disk_size_units = result.fetchall()
+        return disk_size_units
+
+    def image_query_record(self, imagename):
+        """Delete the record for specified imagename from image table"""
+        with get_db_conn() as conn:
+            conn.execute("DELETE FROM image WHERE imagename=?", (imagename))

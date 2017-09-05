@@ -225,10 +225,10 @@ class PathUtils(object):
         return os.path.join(self.get_instance_path(os_node, instance_name),
                             "console.log")
 
-    def create_import_image_repository(self, image_osdistro):
+    def create_import_image_repository(self, image_osdistro, type):
         zvmsdk_image_import_repo = os.path.join(
                                     CONF.image.sdk_image_repository,
-                                    'netboot',
+                                    type,
                                     image_osdistro)
 
         if not os.path.exists(zvmsdk_image_import_repo):

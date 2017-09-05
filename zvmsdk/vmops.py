@@ -21,7 +21,6 @@ from zvmsdk import constants
 from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import log
-from zvmsdk import imageops
 from zvmsdk import utils as zvmutils
 from zvmsdk import xcatclient
 
@@ -43,7 +42,6 @@ class VMOps(object):
     def __init__(self):
         self._zvmclient = zvmclient.get_zvmclient()
         self._dist_manager = dist.LinuxDistManager()
-        self._imageops = imageops.get_imageops()
         self._pathutils = zvmutils.PathUtils()
 
     def get_power_state(self, guest_id):
