@@ -404,14 +404,27 @@ class ImageDbOperator(object):
         """
         with get_db_conn() as conn:
             result = conn.execute("SELECT disk_units FROM image "
-                                  "WHERE imagename=?", (imagename))
+                                  "WHERE imagename=?", (imagename,))
             disk_size_units = result.fetchall()
         return disk_size_units
 
     def image_query_record(self, imagename):
-        """Delete the record for specified imagename from image table"""
+        """Select the record for specified imagename in image table"""
         with get_db_conn() as conn:
             conn.execute("DELETE FROM image WHERE imagename=?", (imagename))
+            result = conn.execute("SELECT imagename FROM image WHERE "
+                                  "imagename=?", (imagename,))
+            image_list = result.fetchall()
+            if len(image_list) == 1:
+                return image_list[0]
+            elif len(image_list) == 0:
+                LOG.debug("Imagename: %s not found!" % imagename)
+            return None
+
+    def image_delete_record(self, imagename):
+        """Delete the record of specified imagename from image table"""
+        with get_db_conn() as conn:
+            conn.execute("DELETE FROM image WHERE imagename=?", (imagename,))
 
 
 class GuestDbOperator(object):
