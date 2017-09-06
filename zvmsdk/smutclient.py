@@ -115,6 +115,16 @@ class SMUTClient(client.ZVMClient):
 
         self._request(rd)
 
+    def get_vm_list(self):
+        """Get the list of guests that are created by SDK
+        return userid list"""
+        guests = self._GuestDbOperator.get_guest_list()
+        # guests is a list of tuple (uuid, userid, metadata, comments)
+        userid_list = []
+        for g in guests:
+            userid_list.append(g[1])
+        return userid_list
+
     def guest_authorize_iucv_client(self, userid, client=None):
         """Punch a script to authorized the client on guest vm"""
         client = client or zvmutils.get_smut_userid()
