@@ -79,6 +79,17 @@ class GuestHandlerTestCase(unittest.TestCase):
         self.apibase.verify_result('test_guest_get_nic', resp.content)
         return resp
 
+    def _guest_disks_create(self):
+        body = """{"disk_info": {"disk_list":
+                                    [{"size": "1g",
+                                      "disk_pool": "ECKD:poolname"}]}}"""
+        url = '/guests/%s/disks' % self.userid
+
+        resp = self.client.api_request(url=url,
+                                       method='POST',
+                                       body=body)
+        self.assertEqual(200, resp.status_code)
+
     def _guest_get(self):
         url = '/guests/%s' % self.userid
         resp = self.client.api_request(url=url,
@@ -205,6 +216,21 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self.client.api_request(url='/guests')
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_guests_list', resp.content)
+
+    def test_guest_disks_create_delete(self):
+        self._guest_create()
+        try:
+            self._guest_deploy()
+            self._guest_nic_create()
+            self._guest_disks_create()
+            resp = self._guest_get_info()
+            user_direct = resp.content
+            self.assertTrue('MDISK 0101' in user_direct['user_direct'][-1])
+        except Exception as e:
+            raise e
+        finally:
+            self._guest_delete()
+            self._vswitch_delete()
 
     def _vswitch_create(self):
         body = '{"vswitch": {"name": "RESTVSW1", "rdev": "FF00"}}'
