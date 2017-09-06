@@ -108,6 +108,16 @@ class VMHandler(object):
         except exception.ZVMInvalidInput as e:
             raise webob.exc.HTTPBadRequest(str(e))
 
+    @validation.schema(guest.create_disks)
+    def create_disks(self, userid, body=None):
+        disk_info = body['disk_info']
+        disk_list = disk_info.get('disk_list', None)
+
+        try:
+            self.api.guest_create_disks(userid, disk_list)
+        except exception.ZVMInvalidInput as e:
+            raise webob.exc.HTTPBadRequest(str(e))
+
     @validation.schema(guest.couple_uncouple_nic)
     def couple_uncouple_nic(self, userid, vdev, body):
         info = body['info']
@@ -445,3 +455,17 @@ def guest_get_vnics_info(req):
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def guest_create_disks(req):
+
+    def _guest_create_disks(userid, req):
+        action = get_handler()
+        body = util.extract_json(req.body)
+        return action.create_disks(userid, body=body)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+
+    _guest_create_disks(userid, req)
