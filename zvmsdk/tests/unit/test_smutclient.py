@@ -89,7 +89,8 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(smutclient.SMUTClient, 'add_mdisks')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_create_vm(self, request, add_mdisks):
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm(self, request, add_mdisks, add_guest):
         user_id = 'fakeuser'
         cpu = 2
         memory = 1024
@@ -105,6 +106,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         self._smutclient.create_vm(user_id, cpu, memory, disk_list, profile)
         request.assert_called_once_with(rd)
         add_mdisks.assert_called_once_with(user_id, disk_list)
+        add_guest.assert_called_once_with(user_id)
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_add_mdisk(self, request):
