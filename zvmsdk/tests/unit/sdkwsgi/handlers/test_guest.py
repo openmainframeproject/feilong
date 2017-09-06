@@ -336,6 +336,21 @@ class HandlersGuestTest(SDKWSGITest):
                           self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(api.SDKAPI, 'guest_create_disks')
+    def test_guest_create_disks(self, mock_create, mock_userid):
+        disk_list = [{u'size': u'1g',
+                     'disk_pool': 'ECKD:poolname'}]
+        body_str = """{"disk_info": {"disk_list": [{"size": "1g",
+                                                "disk_pool": "ECKD:poolname"}
+                                              ]}}"""
+        self.req.body = body_str
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_create_disks(self.req)
+        mock_create.assert_called_once_with(FAKE_USERID,
+                                            disk_list)
+
+    @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get_nic')
     def test_guest_get_nic_info(self, mock_get, mock_userid):
         mock_userid.return_value = FAKE_USERID
