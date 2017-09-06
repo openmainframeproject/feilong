@@ -57,6 +57,23 @@ create_nic = {
 }
 
 
+create_disks = {
+    'type': 'object',
+    'properties': {
+        'disk_info': {
+            'type': 'object',
+            'properties': {
+                'disk_list': parameter_types.disk_list,
+            },
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
+    },
+    'required': ['disk_info'],
+    'additionalProperties': False,
+}
+
+
 couple_uncouple_nic = {
     'type': 'object',
     'properties': {
