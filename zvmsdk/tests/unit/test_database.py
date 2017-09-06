@@ -46,8 +46,7 @@ class VolumeDBUtilsTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.db_path = CONF.database.path
-        CONF.database.path = '/tmp/test_sdk.db'
+        super(VolumeDBUtilsTestCase, cls).setUpClass()
         cls._util = VolumeDBUtils()
 
     @classmethod
@@ -55,7 +54,7 @@ class VolumeDBUtilsTestCase(unittest.TestCase):
         with database.get_db_conn() as conn:
             conn.execute("DROP TABLE volumes")
             conn.execute("DROP TABLE volume_attachments")
-        CONF.database.path = cls.db_path
+        super(VolumeDBUtilsTestCase, cls).tearDownClass()
 
     @mock.patch.object(VolumeDBUtils, '_initialize_table_volume_attachments')
     @mock.patch.object(VolumeDBUtils, '_initialize_table_volumes')
@@ -207,17 +206,13 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
     @classmethod
     def setUpClass(cls):
         super(GuestDbOperatorTestCase, cls).setUpClass()
-        cls.old_db_path = CONF.database.path
-        base.set_conf('database', 'path', '/tmp/test_sdk.db')
         cls.db_op = database.GuestDbOperator()
 
     @classmethod
     def tearDownClass(cls):
-        super(GuestDbOperatorTestCase, cls).tearDownClass()
         with database.get_db_conn() as conn:
             conn.execute("DROP TABLE guests")
-        # Restore the original db path
-        CONF.database.path = cls.old_db_path
+        super(GuestDbOperatorTestCase, cls).tearDownClass()
 
     @mock.patch.object(uuid, 'uuid4')
     def test_add_guest(self, get_uuid):
