@@ -24,6 +24,7 @@ import shutil
 import six
 import subprocess
 import sys
+import tempfile
 import time
 import traceback
 import types
@@ -213,13 +214,15 @@ class PathUtils(object):
     def _get_instances_path(self):
         return os.path.normpath(CONF.guest.temp_path)
 
-    def get_instance_path(self, os_node, instance_name):
+    def get_instance_path(self, os_node, instance_name, module):
         instance_folder = os.path.join(self._get_instances_path(), os_node,
                                        instance_name)
         if not os.path.exists(instance_folder):
             LOG.debug("Creating the instance path %s", instance_folder)
             os.makedirs(instance_folder)
-        return instance_folder
+        tmp_inst_dir = tempfile.mkdtemp(prefix=module,
+                                        dir=instance_folder)
+        return tmp_inst_dir
 
     def get_console_log_path(self, os_node, instance_name):
         return os.path.join(self.get_instance_path(os_node, instance_name),

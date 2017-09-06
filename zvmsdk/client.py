@@ -156,6 +156,12 @@ class ZVMClient(object):
     def delete_vm(self, userid):
         pass
 
+    def punch_file(self, node, fn, fclass):
+        pass
+
+    def get_instance_path(self, os_node, userid, module):
+        return self._pathutils.get_instance_path(os_node, userid, module)
+
     def _generate_vdev(self, base, offset):
         """Generate virtual device number based on base vdev
         :param base: base virtual device number, string of 4 bit hex.
