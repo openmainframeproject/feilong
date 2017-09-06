@@ -29,6 +29,149 @@ CONF = config.CONF
 LOG = log.LOG
 
 
+class NetworkDbOperatorTestCase(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(NetworkDbOperatorTestCase, cls).setUpClass()
+        # back up the business database directory and create test database in a
+        # different directory in case the business databases are dropped
+        cls.db_path = CONF.database.dir
+        CONF.database.path = '/tmp/'
+        cls.db_op = database.NetworkDbOperator()
+
+    @classmethod
+    def tearDownClass(cls):
+        with database.get_db_conn() as conn:
+            conn.execute("DROP TABLE switch")
+        # restore database dir to its configured value
+        CONF.database.dir = cls.db_path
+        super(NetworkDbOperatorTestCase, cls).tearDownClass()
+
+    @mock.patch.object(database.NetworkDbOperator, '_create_switch_table')
+    def test__init__(self, create_table):
+        self.db_op.__init__()
+        create_table.assert_called_once_with()
+
+    def test_switch_add_record_for_nic(self):
+        userid = 'testuser'
+        interface = '1000'
+        port = None
+
+        # insert a record without port
+        self.db_op.switch_add_record_for_nic(userid, interface, port)
+
+        # query
+        switch_record = self.db_op.switch_select_table()
+        expected = [userid, interface, None, port, None]
+        self.assertEqual(expected, switch_record)
+
+        # clean test switch
+        self.db_op.switch_delete_record_for_userid(userid)
+
+        port = 'testport'
+        # insert a record with port
+        self.db_op.switch_add_record_for_nic(userid, interface, port)
+
+        # query
+        switch_record = self.db_op.switch_select_table()
+        expected = [userid, interface, None, port, None]
+        self.assertEqual(expected, switch_record)
+
+        # clean test switch
+        self.db_op.switch_delete_record_for_userid(userid)
+
+    def test_switch_updat_record_with_switch(self):
+        userid = 'testuser'
+        interface = '1000'
+        port = 'testport'
+        switch = 'testswitch'
+
+        # insert a record first
+        self.db_op.switch_add_record_for_nic(userid, interface, port)
+
+        # update record with switch info
+        self.db_op.switch_updat_record_with_switch(userid, interface, switch)
+
+        # query
+        switch_record = self.db_op.switch_select_table()
+        expected = [userid, interface, switch, port, None]
+        self.assertEqual(expected, switch_record)
+
+        switch = None
+        # update record to remove switch info
+        self.db_op.switch_updat_record_with_switch(userid, interface, switch)
+
+        # query
+        switch_record = self.db_op.switch_select_table()
+        expected = [userid, interface, switch, port, None]
+        self.assertEqual(expected, switch_record)
+
+        # clean test switch
+        self.db_op.switch_delete_record_for_userid(userid)
+
+    def test_switch_delete_record_for_userid(self):
+        list = [('id01', 'interface01', 'port_id01'),
+                ('id01', 'interface02', 'port_id02')
+                ('id02', 'interface02', 'port_id02')
+                ('id03', 'interface03', 'port_id03')]
+        # insert multiple records
+        for (userid, interface, port) in list:
+            self.db_op.switch_add_record_for_nic(userid, interface, port)
+
+        # delete specific records
+        userid = 'id01'
+        self.db_op.switch_delete_record_for_userid(userid)
+
+        # query: specific records removed
+        switch_record = self.db_op.switch_select_record_for_userid(userid)
+        expected = []
+        self.assertEqual(expected, switch_record)
+
+        # query: the other records still exist
+        switch_record = self.db_op.switch_select_record_for_userid('id02')
+        expected = ['id01', 'interface02', None, 'port_id02', None]
+        self.assertEqual(expected, switch_record)
+        switch_record = self.db_op.switch_select_record_for_userid('id03')
+        expected = ['id03', 'interface03', None, 'port_id03', None]
+        self.assertEqual(expected, switch_record)
+
+        # clean test switch and check
+        self.db_op.switch_delete_record_for_userid('id02')
+        self.db_op.switch_delete_record_for_userid('id03')
+        switch_record = self.db_op.switch_select_table()
+        expected = []
+        self.assertEqual(expected, switch_record)
+
+    def test_switch_delete_record_for_nic(self):
+        list = [('id01', 'interface01', 'port_id01'),
+                ('id01', 'interface02', 'port_id02')
+                ('id02', 'interface02', 'port_id02')
+                ('id03', 'interface03', 'port_id03')]
+        # insert multiple records
+        for (userid, interface, port) in list:
+            self.db_op.switch_add_record_for_nic(userid, interface, port)
+
+        # query: specific record in the table
+        record = ['id01', 'interface01', None, 'port_id01', None]
+        switch_record = self.db_op.switch_select_table()
+        self.assertEqual(record in switch_record, True)
+
+        # delete one specific record
+        userid = 'id01'
+        interface = 'interface01'
+        self.db_op.switch_delete_record_for_nic(userid, interface)
+
+        # query: specific record not in the table
+        switch_record = self.db_op.switch_select_table()
+        self.assertEqual(record not in switch_record, True)
+
+        # clean test switch
+        self.db_op.switch_delete_record_for_userid('id01')
+        self.db_op.switch_delete_record_for_userid('id02')
+        self.db_op.switch_delete_record_for_userid('id03')
+
+
 class VolumeDbOperatorTestCase(unittest.TestCase):
 
     @classmethod
