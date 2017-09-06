@@ -132,7 +132,7 @@ class NetworkDbOperator(object):
     def _create_switch_table(self):
         create_table_sql = ' '.join((
                 'create table if not exists switch (',
-                'userid       varchar(8),',
+                'userid     varchar(8),',
                 'interface    varchar(4),',
                 'switch       varchar(8),',
                 'port         varchar(128),',
@@ -144,26 +144,27 @@ class NetworkDbOperator(object):
     def switch_delete_record_for_userid(self, userid):
         """Remove userid switch record from switch table."""
         with get_network_conn() as conn:
-            conn.execute("DELETE FROM switch WHERE userid=?", (userid,))
+            conn.execute("DELETE FROM switch WHERE userid=?",
+                         (userid.upper(),))
 
     def switch_delete_record_for_nic(self, userid, interface):
         """Remove userid switch record from switch table."""
         with get_network_conn() as conn:
             conn.execute("DELETE FROM switch WHERE userid=? and interface=?",
-                         (userid, interface))
+                         (userid.upper(), interface))
 
     def switch_add_record_for_nic(self, userid, interface, port=None):
-        """Add userid name and nic name address into switch table."""
+        """Add userid and nic name address into switch table."""
         if port is not None:
             with get_network_conn() as conn:
                 conn.execute("INSERT INTO switch (userid, interface, port) "
                              "VALUES (?, ?, ?)",
-                             (userid, interface, port))
+                             (userid.upper(), interface, port))
         else:
             with get_network_conn() as conn:
                 conn.execute("INSERT INTO switch (userid, interface) "
                              "VALUES (?, ?)",
-                             (userid, interface))
+                             (userid.upper(), interface))
 
     def switch_updat_record_with_switch(self, userid, interface, switch=None):
         """Update information in switch table."""
@@ -171,12 +172,12 @@ class NetworkDbOperator(object):
             with get_network_conn() as conn:
                 conn.execute("UPDATE switch SET switch=? "
                              "WHERE userid=? and interface=?",
-                             (switch, userid, interface))
+                             (switch, userid.upper(), interface))
         else:
             with get_network_conn() as conn:
                 conn.execute("UPDATE switch SET switch=NULL "
                              "WHERE userid=? and interface=?",
-                             (userid, interface))
+                             (userid.upper(), interface))
 
     def switch_select_table(self):
         with get_network_conn() as conn:
@@ -187,7 +188,7 @@ class NetworkDbOperator(object):
     def switch_select_record_for_userid(self, userid):
         with get_network_conn() as conn:
             result = conn.execute("SELECT * FROM switch "
-                                  "WHERE userid=?", (userid,))
+                                  "WHERE userid=?", (userid.upper(),))
             switch_info = result.fetchall()
         return switch_info
 
