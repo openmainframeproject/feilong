@@ -375,27 +375,30 @@ class ImageDbOperator(object):
                 'imageosdistro            varchar(16),',
                 'md5sum                   varchar(32),',
                 'disk_size_units          varchar(16),',
-                'image_size_in_bytes     varchar(32),',
+                'image_size_in_bytes      varchar(32),',
+                'type                     varchar(16),',
                 'comments                 varchar(128))'))
         with get_db_conn() as conn:
             conn.execute(create_image_table_sql)
 
     def image_add_record(self, imagename, imageosdistro, md5sum,
-                         disk_size_units, image_size_in_bytes, comments=None):
+                         disk_size_units, image_size_in_bytes,
+                         type, comments=None):
         if comments is not None:
             with get_db_conn() as conn:
                 conn.execute("INSERT INTO image (imagename, imageosdistro,"
                              "md5sum, disk_size_units, image_size_in_bytes,"
-                             " comments) VALUES (?, ?, ?, ?, ?, ?)",
+                             " type, comments) VALUES (?, ?, ?, ?, ?, ?, ?)",
                              (imagename, imageosdistro, md5sum,
-                              disk_size_units, image_size_in_bytes, comments))
+                              disk_size_units, image_size_in_bytes, type,
+                              comments))
         else:
             with get_db_conn() as conn:
                 conn.execute("INSERT INTO image (imagename, imageosdistro,"
-                             "md5sum, disk_size_units, image_size_in_bytes)"
-                             " VALUES (?, ?, ?, ?, ?)",
+                             "md5sum, disk_size_units, image_size_in_bytes,"
+                             " type) VALUES (?, ?, ?, ?, ?, ?)",
                              (imagename, imageosdistro, md5sum,
-                              disk_size_units, image_size_in_bytes))
+                              disk_size_units, image_size_in_bytes, type))
 
     def query_disk_size_units(self, imagename):
         """Return the root disk units of the specified image
@@ -403,15 +406,32 @@ class ImageDbOperator(object):
         Return the disk units in format like 3339:CYL or 467200:BLK
         """
         with get_db_conn() as conn:
-            result = conn.execute("SELECT disk_units FROM image "
-                                  "WHERE imagename=?", (imagename))
-            disk_size_units = result.fetchall()
-        return disk_size_units
+            result = conn.execute("SELECT disk_size_units FROM image "
+                                  "WHERE imagename=?", (imagename,))
+            q_result = result.fetchall()
+
+        if len(q_result) == 1:
+            return q_result[0][0]
+        elif len(q_result) == 0:
+            LOG.debug("Imagename: %s not found!" % imagename)
+        return ''
 
     def image_query_record(self, imagename):
-        """Delete the record for specified imagename from image table"""
+        """Select the record for specified imagename in image table"""
         with get_db_conn() as conn:
-            conn.execute("DELETE FROM image WHERE imagename=?", (imagename))
+            result = conn.execute("SELECT * FROM image WHERE "
+                                  "imagename=?", (imagename,))
+            image_list = result.fetchall()
+        if len(image_list) == 1:
+            return image_list[0]
+        elif len(image_list) == 0:
+            LOG.debug("Imagename: %s not found!" % imagename)
+        return None
+
+    def image_delete_record(self, imagename):
+        """Delete the record of specified imagename from image table"""
+        with get_db_conn() as conn:
+            conn.execute("DELETE FROM image WHERE imagename=?", (imagename,))
 
 
 class GuestDbOperator(object):

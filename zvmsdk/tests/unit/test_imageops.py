@@ -37,11 +37,11 @@ class SDKImageOpsTestCase(base.SDKTestCase):
                       'md5sum': 'e34166f61130fc9221415d76298d7987'}
         remote_host = 'image@192.168.99.1'
         self._image_ops.image_import(image_name, url, image_meta,
-                                     remote_host=remote_host)
+                                     remote_host)
         image_import.assert_called_once_with(image_name,
                                              url,
                                              image_meta,
-                                             remote_host=remote_host)
+                                             remote_host)
 
     @mock.patch.object(imageops.get_imageops().zvmclient, 'image_query')
     def test_image_query(self, image_query):
