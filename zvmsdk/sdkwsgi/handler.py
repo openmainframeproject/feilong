@@ -67,6 +67,9 @@ ROUTE_LIST = (
     ('/guests/{userid}/power_state', {
         'GET': guest.guest_get_power_state,
     }),
+    ('/guests/{userid}/create_disks', {
+        'POST': guest.guest_create_disks,
+    }),
     ('/guests/{userid}/volumes', {
         'POST': volume.volume_attach,
         'DELETE': volume.volume_detach,
