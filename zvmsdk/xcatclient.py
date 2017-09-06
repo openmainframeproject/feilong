@@ -2082,6 +2082,7 @@ class XCATClient(client.ZVMClient):
         except Exception as err:
             LOG.error('Punch file to %(node)s failed: %(msg)s' %
                           {'node': node, 'msg': err})
+            raise
         finally:
             os.remove(fn)
 
