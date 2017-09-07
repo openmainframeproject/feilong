@@ -898,6 +898,30 @@ class SMUTClient(client.ZVMClient):
 
         self._pathutils.remove_file(image_path)
 
+    def delete_userid(self, userid):
+        rd = ' '.join(('deletevm', userid, 'directory'))
+        try:
+            self._request(rd)
+        except exception.ZVMClientRequestFailed as err:
+            if err.results['rc'] == 400 and err.results['rs'] == 4:
+                # guest vm definition not found
+                LOG.debug("The guest vm %s not found" % userid)
+                return
+            else:
+                raise err
+
+    def delete_vm(self, userid):
+        self.delete_userid(userid)
+
+        # TODO: cleanup db record from network table
+        pass
+
+        # TODO: cleanup db record from volume table
+        pass
+
+        # TODO: cleanup db record from guest table
+        pass
+
 
 class FilesystemBackend(object):
     @classmethod
