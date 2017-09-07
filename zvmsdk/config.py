@@ -397,6 +397,14 @@ starts, more info can be found in that configuration description.
         section='database',
         default='/var/lib/zvmsdk/databases/',
         opt_type='str',
+        help='''
+Directory to store database.
+
+SDK databases are used to store a set of tables which contain the
+information of network, volume, image, etc. This option is used to
+tell SDK where to store the database files, make sure the process
+running SDK is able to read write and execute the directory.
+'''
         ),
     # tests options
     Opt('image_path',
