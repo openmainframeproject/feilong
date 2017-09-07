@@ -1001,3 +1001,23 @@ class MultiThreadDownloader(threading.Thread):
             i.join()
         LOG.debug('Download %s success' % (self.name))
         self.fd.close()
+
+    def delete_userid(self, userid):
+        rd = ' '.join(('deletevm', userid, 'directory'))
+        try:
+            self._request(rd)
+        except exception.ZVMClientRequestFailed as err:
+            if err.results['rc'] == 400 and err.results['rs'] == 4:
+                # guest vm definition not found
+                return
+            else:
+                raise err
+
+    def delete_vm(self, userid):
+        self.delete_userid(userid)
+
+        # TODO: cleanup db record from network table
+        pass
+
+        # TODO: cleanup db record from guest table
+        pass

@@ -894,3 +894,26 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         userid_list = self._smutclient.get_vm_list()
         self.assertListEqual(sorted(userid_list),
                              sorted(['TEST0', 'TEST1', 'TEST2']))
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_delete_userid(self, request):
+        rd = 'deletevm fuser1 directory'
+        self._smutclient.delete_userid('fuser1')
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_delete_userid_not_exist(self, request):
+        rd = 'deletevm fuser1 directory'
+        results = {'rc': 400, 'rs': 4, 'logEntries': ''}
+        request.side_effect = exception.ZVMClientRequestFailed(results=results)
+        self._smutclient.delete_userid('fuser1')
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_delete_userid_failed(self, request):
+        rd = 'deletevm fuser1 directory'
+        results = {'rc': 400, 'rs': 104, 'logEntries': ''}
+        request.side_effect = exception.ZVMClientRequestFailed(results=results)
+        self.assertRaises(exception.ZVMClientRequestFailed,
+                          self._smutclient.delete_userid, 'fuser1')
+        request.assert_called_once_with(rd)
