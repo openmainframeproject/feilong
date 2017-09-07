@@ -2,8 +2,6 @@ mock
 python-subunit
 routes
 webob
-jsonschema
 microversion_parse
-pyjwt
 sphinx
 PyYAML
