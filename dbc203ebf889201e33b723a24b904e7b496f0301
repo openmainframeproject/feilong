@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "117000d6_89388f78",
+        "filename": "smutLayer/changeVM.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 764,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-09-07T14:09:08Z",
+      "side": 1,
+      "message": "We should try NOT to search on the full message id.  A CP module split could change the module id.  I encountered this problem in June.  CP had split a module that generated a message and broke new code that I was writing.\n\nI think using the python match function and wildcarding the module id portion of the message would be safer in this case.",
+      "range": {
+        "startLine": 764,
+        "startChar": 19,
+        "endLine": 764,
+        "endChar": 22
+      },
+      "revId": "dbc203ebf889201e33b723a24b904e7b496f0301",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b716823e_849db0fd",
+        "filename": "smutLayer/smutTest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 524,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2017-09-07T14:09:08Z",
+      "side": 1,
+      "message": "I suggest you reword the descriptioin to \"Remove a disk that does not exist: \u003c\u003c\u003cunsafePre\u003e\u003e\u003e3\".",
+      "range": {
+        "startLine": 524,
+        "startChar": 24,
+        "endLine": 524,
+        "endChar": 50
+      },
+      "revId": "dbc203ebf889201e33b723a24b904e7b496f0301",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
