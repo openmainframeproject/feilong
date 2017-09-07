@@ -14,6 +14,7 @@
 
 
 import abc
+import netaddr
 import six
 
 from zvmsdk import config
@@ -33,9 +34,33 @@ class LinuxDist(object):
     according to the dist version. Currently only RHEL and SLES are supported
     """
 
-    def create_network_configuration_files(self, file_path, network_info):
-        """Generate network configuration files for guest vm."""
-        base_vdev = CONF.zvm.default_nic_vdev
+    def create_network_configuration_files(self, file_path, guest_networks,
+                                           with_nic=True):
+        """Generate network configuration files for guest vm
+        :param list guest_networks:  a list of network info for the guest.
+               It has one dictionary that contain some of the below keys for
+               each network, the format is:
+               {'ip_addr': (str) IP address,
+               'dns_addr': (list) dns addresses,
+               'gateway_addr': (str) gateway address,
+               'cidr': (str) cidr format
+               'nic_vdev': (str) VDEV of the nic, optional}
+
+               Example for guest_networks:
+               [{'ip_addr': '192.168.95.10',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.95.1',
+               'cidr': "192.168.95.0/24",
+               'nic_vdev': '1000'},
+               {'ip_addr': '192.168.96.10',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.96.1',
+               'cidr': "192.168.96.0/24",
+               'nic_vdev': '1003}]
+        :param bool with_nic: whether guest_networks include nic_vdev
+        """
+        if not with_nic:
+            base_vdev = CONF.zvm.default_nic_vdev
         device_num = 0
         cfg_files = []
         cmd_strings = ''
@@ -47,9 +72,10 @@ class LinuxDist(object):
         file_name_route = file_path + 'routes'
 
         file_name_dns = self._get_dns_filename()
-        for vif in network_info:
+        for network in guest_networks:
+            if with_nic:
+                base_vdev = network['nic_vdev']
             file_name = self._get_device_filename(device_num)
-            network = vif['network']
             (cfg_str, cmd_str, dns_str,
                 route_str) = self._generate_network_configuration(network,
                                                 base_vdev, device_num)
@@ -65,7 +91,9 @@ class LinuxDist(object):
                 dns_cfg_str += dns_str
             if len(route_str) > 0:
                 route_cfg_str += route_str
-            base_vdev = str(hex(int(base_vdev, 16) + 3))[2:]
+
+            if not with_nic:
+                base_vdev = str(hex(int(base_vdev, 16) + 3))[2:]
             device_num += 1
 
         if len(dns_cfg_str) > 0:
@@ -76,17 +104,15 @@ class LinuxDist(object):
 
     def _generate_network_configuration(self, network, vdev, device_num):
         ip_v4 = dns_str = ''
+        if len(network['ip_addr']) > 0:
+            ip_v4 = network['ip_addr']
+        if len(network['dns_addr']) > 0:
+            for dns in network['dns_addr']:
+                dns_str += 'nameserver ' + dns + '\n'
 
-        subnets_v4 = [s for s in network['subnets'] if s['version'] == 4]
-
-        if len(subnets_v4[0]['ips']) > 0:
-            ip_v4 = subnets_v4[0]['ips'][0]['address']
-        if len(subnets_v4[0]['dns']) > 0:
-            for dns in subnets_v4[0]['dns']:
-                dns_str += 'nameserver ' + dns['address'] + '\n'
-        netmask_v4 = str(subnets_v4[0].as_netaddr().netmask)
-        gateway_v4 = subnets_v4[0]['gateway']['address'] or ''
-        broadcast_v4 = str(subnets_v4[0].as_netaddr().broadcast)
+        netmask_v4 = str(netaddr.IPNetwork(network['cidr']).netmask)
+        gateway_v4 = network['gateway_addr'] or ''
+        broadcast_v4 = str(netaddr.IPNetwork(network['cidr']).broadcast)
         device = self._get_device_name(device_num)
         address_read = str(vdev).zfill(4)
         address_write = str(hex(int(vdev, 16) + 1))[2:].zfill(4)
@@ -521,26 +547,54 @@ class sles12(sles):
 
 
 class ubuntu(LinuxDist):
-    def create_network_configuration_files(self, file_path, network_info):
-        base_vdev = CONF.zvm.default_nic_vdev
+    def create_network_configuration_files(self, file_path, guest_networks,
+                                           with_nic=True):
+        """Generate network configuration files for guest vm
+        :param list guest_networks:  a list of network info for the guest.
+               It has one dictionary that contain some of the below keys for
+               each network, the format is:
+               {'ip_addr': (str) IP address,
+               'dns_addr': (list) dns addresses,
+               'gateway_addr': (str) gateway address,
+               'cidr': (str) cidr format
+               'nic_vdev': (str) VDEV of the nic, optional}
+
+               Example for guest_networks:
+               [{'ip_addr': '192.168.95.10',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.95.1',
+               'cidr': "192.168.95.0/24",
+               'nic_vdev': '1000'},
+               {'ip_addr': '192.168.96.10',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.96.1',
+               'cidr': "192.168.96.0/24",
+               'nic_vdev': '1003}]
+        :param bool with_nic: whether guest_networks include nic_vdev
+        """
+        if not with_nic:
+            base_vdev = CONF.zvm.default_nic_vdev
         cfg_files = []
         cmd_strings = ''
         network_config_file_name = self._get_network_file()
         network_cfg_str = 'auto lo\n'
         network_cfg_str += 'iface lo inet loopback\n'
 
-        for vif in network_info:
+        for network in guest_networks:
+            if with_nic:
+                base_vdev = network['nic_vdev']
             network_hw_config_fname = self._get_device_filename(base_vdev)
             network_hw_config_str = self._get_network_hw_config_str(base_vdev)
             cfg_files.append((network_hw_config_fname, network_hw_config_str))
-            network = vif['network']
             (cfg_str, dns_str) = self._generate_network_configuration(network,
                 base_vdev)
             LOG.debug('Network configure file content is: %s', cfg_str)
             network_cfg_str += cfg_str
             if len(dns_str) > 0:
                 network_cfg_str += dns_str
-            base_vdev = str(hex(int(base_vdev, 16) + 3))[2:]
+
+            if not with_nic:
+                base_vdev = str(hex(int(base_vdev, 16) + 3))[2:]
         cfg_files.append((network_config_file_name, network_cfg_str))
         return cfg_files, cmd_strings
 
@@ -559,16 +613,15 @@ class ubuntu(LinuxDist):
 
     def _generate_network_configuration(self, network, vdev):
         ip_v4 = dns_str = ''
-        subnets_v4 = [s for s in network['subnets'] if s['version'] == 4]
+        if len(network['ip_addr']) > 0:
+            ip_v4 = network['ip_addr']
+        if len(network['dns_addr']) > 0:
+            for dns in network['dns_addr']:
+                dns_str += 'dns-nameservers ' + dns + '\n'
 
-        if len(subnets_v4[0]['ips']) > 0:
-            ip_v4 = subnets_v4[0]['ips'][0]['address']
-        if len(subnets_v4[0]['dns']) > 0:
-            for dns in subnets_v4[0]['dns']:
-                dns_str += 'dns-nameservers ' + dns['address'] + '\n'
-        netmask_v4 = str(subnets_v4[0].as_netaddr().netmask)
-        gateway_v4 = subnets_v4[0]['gateway']['address'] or ''
-        broadcast_v4 = str(subnets_v4[0].as_netaddr().broadcast)
+        netmask_v4 = str(netaddr.IPNetwork(network['cidr']).netmask)
+        gateway_v4 = network['gateway_addr'] or ''
+        broadcast_v4 = str(netaddr.IPNetwork(network['cidr']).broadcast)
         device = self._get_device_name(vdev)
         cfg_str = self._get_cfg_str(device, broadcast_v4, gateway_v4,
                                     ip_v4, netmask_v4)
