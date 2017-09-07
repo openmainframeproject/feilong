@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "289d7b4e_716a7a0d",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-07T02:22:07Z",
+      "side": 1,
+      "message": "do we need to consider remove the definition if any thing failed? or should we add it at the end of the whole process?",
+      "range": {
+        "startLine": 91,
+        "startChar": 8,
+        "endLine": 91,
+        "endChar": 47
+      },
+      "revId": "c18e58c30fcefd6a4abef56a5907169f3539f2a6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
