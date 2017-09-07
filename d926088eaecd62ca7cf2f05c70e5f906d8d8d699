@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f2d00a86_2aa3c2cf",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1011,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-07T02:38:19Z",
+      "side": 1,
+      "message": "we can add a debug message here",
+      "range": {
+        "startLine": 1011,
+        "startChar": 16,
+        "endLine": 1011,
+        "endChar": 47
+      },
+      "revId": "d926088eaecd62ca7cf2f05c70e5f906d8d8d699",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "557a37df_a845e309",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1023,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-07T02:38:19Z",
+      "side": 1,
+      "message": "a volume table might as well ,e.g attach info",
+      "range": {
+        "startLine": 1019,
+        "startChar": 8,
+        "endLine": 1023,
+        "endChar": 12
+      },
+      "revId": "d926088eaecd62ca7cf2f05c70e5f906d8d8d699",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
