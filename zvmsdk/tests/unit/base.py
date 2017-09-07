@@ -31,17 +31,17 @@ class SDKTestCase(unittest.TestCase):
     def setUpClass(cls):
         # This can be used to set up confs before running all cases
         super(SDKTestCase, cls).setUpClass()
-        cls.old_db_path = CONF.database.path
-        set_conf('database', 'path', '/tmp/test_sdk.db')
+        cls.old_db_dir = CONF.database.dir
+        set_conf('database', 'dir', '/tmp/')
 
     @classmethod
     def tearDownClass(cls):
         super(SDKTestCase, cls).tearDownClass()
         # Restore the original db path
-        CONF.database.path = cls.old_db_path
+        CONF.database.dir = cls.old_db_dir
 
     def setUp(self):
         super(SDKTestCase, self).setUp()
 
-    def _fake_fun(self, value = None):
+    def _fake_fun(self, value=None):
         return lambda *args, **kwargs: value
