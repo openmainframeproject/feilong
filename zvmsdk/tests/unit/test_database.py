@@ -34,15 +34,19 @@ class VolumeDbOperatorTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(VolumeDbOperatorTestCase, cls).setUpClass()
-        cls.db_path = CONF.database.path
-        CONF.database.path = '/tmp/test_volume.db'
+        # back up the business database directory and create test database in a
+        # different directory in case the business databases are dropped
+        cls.db_dir = CONF.database.dir
+        CONF.database.dir = '/tmp/'
         cls._util = VolumeDbOperator()
 
     @classmethod
     def tearDownClass(cls):
-        with database.get_db_conn() as conn:
+        with database.get_volume_conn() as conn:
             conn.execute("DROP TABLE volumes")
             conn.execute("DROP TABLE volume_attachments")
+        # restore database dir to its configured value
+        CONF.database.dir = cls.db_dir
         super(VolumeDbOperatorTestCase, cls).tearDownClass()
 
     @mock.patch.object(VolumeDbOperator,
@@ -405,12 +409,18 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
     @classmethod
     def setUpClass(cls):
         super(GuestDbOperatorTestCase, cls).setUpClass()
+        # back up the business database directory and create test database in a
+        # different directory in case the business databases are dropped
+        cls.db_dir = CONF.database.dir
+        CONF.database.dir = '/tmp/'
         cls.db_op = database.GuestDbOperator()
 
     @classmethod
     def tearDownClass(cls):
-        with database.get_db_conn() as conn:
+        with database.get_guest_conn() as conn:
             conn.execute("DROP TABLE guests")
+        # restore database dir to its configured value
+        CONF.database.dir = cls.db_dir
         super(GuestDbOperatorTestCase, cls).tearDownClass()
 
     @mock.patch.object(uuid, 'uuid4')
