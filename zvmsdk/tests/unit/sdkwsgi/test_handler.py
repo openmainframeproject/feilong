@@ -549,7 +549,7 @@ class HostHandlerTest(unittest.TestCase):
 
     @mock.patch.object(tokens, 'validate')
     def test_host_get_info(self, mock_validate):
-        self.env['PATH_INFO'] = '/host/info'
+        self.env['PATH_INFO'] = '/host'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.get_info'
@@ -561,7 +561,7 @@ class HostHandlerTest(unittest.TestCase):
 
     @mock.patch.object(tokens, 'validate')
     def test_host_get_disk_info(self, mock_validate):
-        self.env['PATH_INFO'] = '/host/disk_info/disk1'
+        self.env['PATH_INFO'] = '/host/disk/disk1'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.get_disk_info'

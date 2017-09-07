@@ -23,11 +23,11 @@ class HostTestCase(unittest.TestCase):
         self.client = test_sdkwsgi.TestSDKClient()
 
     def test_host_info(self):
-        resp = self.client.api_request(url='/host/info')
+        resp = self.client.api_request(url='/host')
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_host_info', resp.content)
 
     def test_host_disk_info(self):
-        resp = self.client.api_request(url='/host/disk_info/ECKD:xcateckd')
+        resp = self.client.api_request(url='/host/disk/ECKD:xcateckd')
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_host_disk_info', resp.content)
