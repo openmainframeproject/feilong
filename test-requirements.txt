@@ -7,3 +7,4 @@ microversion_parse
 pyjwt
 sphinx
 PyYAML
+netaddr
