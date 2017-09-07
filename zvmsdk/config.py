@@ -393,7 +393,7 @@ starts, more info can be found in that configuration description.
 '''
         ),
     # database options
-    Opt('path',
+    Opt('dir',
         section='database',
         default='/var/lib/zvmsdk/databases/',
         opt_type='str',
