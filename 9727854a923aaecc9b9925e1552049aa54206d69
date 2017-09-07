@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "81b9afdf_67901c7d",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 406,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-07T02:26:46Z",
+      "side": 1,
+      "message": "seems not \u0027execute the directory\u0027\nseems you need x in order to access the file under this directory, we can change it later",
+      "range": {
+        "startLine": 406,
+        "startChar": 23,
+        "endLine": 406,
+        "endChar": 60
+      },
+      "revId": "9727854a923aaecc9b9925e1552049aa54206d69",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
