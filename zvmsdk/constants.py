@@ -68,7 +68,10 @@ VOLUME_MULTI_PASS = 'MULTI'
 POWER_STATE_ON = u'on'
 POWER_STATE_OFF = u'off'
 
-DATABASE_NAME = 'ZVMSDKDB.db'
+DATABASE_VOLUME = 'sdk_volume.sqlite'
+DATABASE_NETWORK = 'sdk_network.sqlite'
+DATABASE_GUEST = 'sdk_guest.sqlite'
+DATABASE_IMAGE = 'sdk_image.sqlite'
 
 _TSTR = types.StringTypes
 _TNONE = types.NoneType

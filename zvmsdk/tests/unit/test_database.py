@@ -34,13 +34,11 @@ class VolumeDbOperatorTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(VolumeDbOperatorTestCase, cls).setUpClass()
-        cls.db_path = CONF.database.path
-        CONF.database.path = '/tmp/test_volume.db'
         cls._util = VolumeDbOperator()
 
     @classmethod
     def tearDownClass(cls):
-        with database.get_db_conn() as conn:
+        with database.get_volume_conn() as conn:
             conn.execute("DROP TABLE volumes")
             conn.execute("DROP TABLE volume_attachments")
         super(VolumeDbOperatorTestCase, cls).tearDownClass()
@@ -409,7 +407,7 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        with database.get_db_conn() as conn:
+        with database.get_guest_conn() as conn:
             conn.execute("DROP TABLE guests")
         super(GuestDbOperatorTestCase, cls).tearDownClass()
 
@@ -614,7 +612,7 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        with database.get_db_conn() as conn:
+        with database.get_image_conn() as conn:
             conn.execute("DROP TABLE image")
         super(ImageDbOperatorTestCase, cls).tearDownClass()
 
@@ -626,14 +624,16 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
         image_size_in_bytes = '5120000'
         type = 'netboot'
         # Add an record
-        self.db_op.image_add_record(imagename, imageosdistro, md5sum,
-            disk_size_units, image_size_in_bytes, type)
+        self.db_op.image_add_record(
+            imagename, imageosdistro, md5sum, disk_size_units,
+            image_size_in_bytes, type)
         # Query the record
         image_record = self.db_op.image_query_record(imagename)
         self.assertEqual(1, len(image_record))
-        self.assertListEqual([(u'test', u'rhel6.5',
-            u'c73ce117eef8077c3420bfc8f473ac2f',
-            u'3338:CYL', u'5120000', u'netboot', None)], image_record)
+        self.assertListEqual(
+            [(u'test', u'rhel6.5', u'c73ce117eef8077c3420bfc8f473ac2f',
+              u'3338:CYL', u'5120000', u'netboot', None)],
+            image_record)
         # Query the disk size units
         disk_size_units_query_result = self.db_op.query_disk_size_units(
                                                             imagename)
@@ -653,11 +653,14 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
         type = 'netboot'
 
         # Add an record
-        self.db_op.image_add_record(imagename, imageosdistro, md5sum,
-            disk_size_units, image_size_in_bytes, type)
-        self.assertRaises(exception.DatabaseException,
-            self.db_op.image_add_record, imagename, imageosdistro, md5sum,
-            disk_size_units, image_size_in_bytes, type)
+        self.db_op.image_add_record(
+            imagename, imageosdistro, md5sum, disk_size_units,
+            image_size_in_bytes, type)
+        self.assertRaises(
+            exception.DatabaseException,
+            self.db_op.image_add_record,
+            imagename, imageosdistro, md5sum, disk_size_units,
+            image_size_in_bytes, type)
         self.db_op.image_delete_record(imagename)
 
     def test_image_query_record_multiple_image(self):
@@ -670,19 +673,21 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
         type = 'netboot'
 
         # Add two records
-        self.db_op.image_add_record(imagename1, imageosdistro, md5sum,
-            disk_size_units, image_size_in_bytes, type)
-        self.db_op.image_add_record(imagename2, imageosdistro, md5sum,
-            disk_size_units, image_size_in_bytes, type)
+        self.db_op.image_add_record(
+            imagename1, imageosdistro, md5sum, disk_size_units,
+            image_size_in_bytes, type)
+        self.db_op.image_add_record(
+            imagename2, imageosdistro, md5sum, disk_size_units,
+            image_size_in_bytes, type)
 
         image_records = self.db_op.image_query_record()
         self.assertEqual(2, len(image_records))
-        self.assertListEqual([(u'testimage1', u'rhel6.5',
-            u'c73ce117eef8077c3420bfc8f473ac2f',
-            u'3338:CYL', u'5120000', u'netboot', None),
-            (u'testimage2', u'rhel6.5',
-            u'c73ce117eef8077c3420bfc8f473ac2f',
-            u'3338:CYL', u'5120000', u'netboot', None)], image_records)
+        self.assertListEqual(
+            [(u'testimage1', u'rhel6.5', u'c73ce117eef8077c3420bfc8f473ac2f',
+              u'3338:CYL', u'5120000', u'netboot', None),
+             (u'testimage2', u'rhel6.5', u'c73ce117eef8077c3420bfc8f473ac2f',
+              u'3338:CYL', u'5120000', u'netboot', None)],
+            image_records)
         # Clean up the images
         self.db_op.image_delete_record(imagename1)
         self.db_op.image_delete_record(imagename2)
