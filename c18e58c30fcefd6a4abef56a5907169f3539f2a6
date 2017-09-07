@@ -22,6 +22,30 @@
       "revId": "c18e58c30fcefd6a4abef56a5907169f3539f2a6",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9c31742f_a9e655be",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-07T07:15:49Z",
+      "side": 1,
+      "message": "As long as the smut request success, the userid is created, it has no problem to add it into the guests DB.\nAs for the following add_mdisks failure, I think it does not affect, the userid is already created, we should track it in DB.",
+      "parentUuid": "289d7b4e_716a7a0d",
+      "range": {
+        "startLine": 91,
+        "startChar": 8,
+        "endLine": 91,
+        "endChar": 47
+      },
+      "revId": "c18e58c30fcefd6a4abef56a5907169f3539f2a6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
