@@ -619,12 +619,13 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request.assert_called_once_with(rd)
 
     @mock.patch.object(database.NetworkDbOperator,
-                       'switch_select_record_for_node')
+                       'switch_select_record_for_userid')
     def test_get_vm_nic_vswitch_info(self, select):
         """
         Get NIC and switch mapping for the specified virtual machine.
         """
-        select.return_value = [('1000', 'testvs1'), ('2000', 'testvs2')]
+        select.return_value = [('FakeID', '1000', 'testvs1', None, None),
+                               ('FakeID', '2000', 'testvs2', None, None)]
         expect = {'1000': 'testvs1', '2000': 'testvs2'}
         switch_dict = self._smutclient.get_vm_nic_vswitch_info('FakeID')
         select.assert_called_once_with('FakeID')

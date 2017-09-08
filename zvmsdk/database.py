@@ -133,51 +133,51 @@ class NetworkDbOperator(object):
     def _create_switch_table(self):
         create_table_sql = ' '.join((
                 'create table if not exists switch (',
-                'node varchar(8),',
-                'interface varchar(4),',
-                'switch varchar(8),',
-                'port varchar(128),',
-                'comments varchar(128),',
-                'primary key (node, interface));'))
+                'userid       varchar(8),',
+                'interface    varchar(4),',
+                'switch       varchar(8),',
+                'port         varchar(128),',
+                'comments     varchar(128),',
+                'primary key (userid, interface));'))
         with get_db_conn() as conn:
             conn.execute(create_table_sql)
 
-    def switch_delete_record_for_node(self, node):
-        """Remove node switch record from switch table."""
+    def switch_delete_record_for_userid(self, userid):
+        """Remove userid switch record from switch table."""
         with get_db_conn() as conn:
-            conn.execute("DELETE FROM switch WHERE node=?", (node,))
+            conn.execute("DELETE FROM switch WHERE userid=?", (userid,))
 
-    def switch_delete_record_for_nic(self, node, interface):
-        """Remove node switch record from switch table."""
+    def switch_delete_record_for_nic(self, userid, interface):
+        """Remove userid switch record from switch table."""
         with get_db_conn() as conn:
-            conn.execute("DELETE FROM switch WHERE node=? and interface=?",
-                         (node, interface))
+            conn.execute("DELETE FROM switch WHERE userid=? and interface=?",
+                         (userid, interface))
 
-    def switch_add_record_for_nic(self, node, interface, port=None):
-        """Add node name and nic name address into switch table."""
+    def switch_add_record_for_nic(self, userid, interface, port=None):
+        """Add userid name and nic name address into switch table."""
         if port is not None:
             with get_db_conn() as conn:
-                conn.execute("INSERT INTO switch (node, interface, port) "
+                conn.execute("INSERT INTO switch (userid, interface, port) "
                              "VALUES (?, ?, ?)",
-                             (node, interface, port))
+                             (userid, interface, port))
         else:
             with get_db_conn() as conn:
-                conn.execute("INSERT INTO switch (node, interface) "
+                conn.execute("INSERT INTO switch (userid, interface) "
                              "VALUES (?, ?)",
-                             (node, interface))
+                             (userid, interface))
 
-    def switch_updat_record_with_switch(self, node, interface, switch=None):
+    def switch_updat_record_with_switch(self, userid, interface, switch=None):
         """Update information in switch table."""
         if switch is not None:
             with get_db_conn() as conn:
                 conn.execute("UPDATE switch SET switch=? "
-                             "WHERE node=? and interface=?",
-                             (switch, node, interface))
+                             "WHERE userid=? and interface=?",
+                             (switch, userid, interface))
         else:
             with get_db_conn() as conn:
                 conn.execute("UPDATE switch SET switch=NULL "
-                             "WHERE node=? and interface=?",
-                             (node, interface))
+                             "WHERE userid=? and interface=?",
+                             (userid, interface))
 
     def switch_select_table(self):
         with get_db_conn() as conn:
@@ -185,10 +185,10 @@ class NetworkDbOperator(object):
             nic_settings = result.fetchall()
         return nic_settings
 
-    def switch_select_record_for_node(self, node):
+    def switch_select_record_for_userid(self, userid):
         with get_db_conn() as conn:
-            result = conn.execute("SELECT interface, switch FROM switch "
-                                  "WHERE node=?", (node,))
+            result = conn.execute("SELECT * FROM switch "
+                                  "WHERE userid=?", (userid,))
             switch_info = result.fetchall()
         return switch_info
 
