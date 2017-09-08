@@ -14,6 +14,7 @@
 
 
 from zvmsdk import config
+from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import utils as zvmutils
 
@@ -174,9 +175,10 @@ class ZVMClient(object):
         if offset >= 0 and offset < 254:
             return vdev
         else:
-            msg = "Invalid virtual device number for disk:%s" % vdev
+            msg = ("Failed to generate disk vdev, invalid virtual device"
+                   "number for disk:%s" % vdev)
             LOG.error(msg)
-            raise
+            raise exception.SDKGuestOperationError(rs=1, msg=msg)
 
     def add_mdisks(self, userid, disk_list, start_vdev=None):
         """Add disks for the userid

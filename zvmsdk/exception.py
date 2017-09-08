@@ -16,6 +16,7 @@
 import config
 import log
 import six
+from zvmsdk import returncode
 
 
 CONF = config.CONF
@@ -57,10 +58,6 @@ class SDKBaseException(Exception):
 
     def format_message(self):
         return self.args[0]
-
-
-class ZVMSDKInternalError(SDKBaseException):
-    msg_fmt = 'z/VM SDK internal error: %(msg)s'
 
 
 class ZVMException(SDKBaseException):
@@ -172,10 +169,6 @@ class ZVMClientRequestFailed(SDKBaseException):
             super(ZVMClientRequestFailed, self).__init__(msg=msg)
 
 
-class ZVMClientInternalError(SDKBaseException):
-    msg_fmt = 'zVM client internal error: %(msg)s'
-
-
 class ZVMUnauthorized(SDKBaseException):
     code = 401
 
@@ -194,3 +187,64 @@ class DatabaseException(SDKBaseException):
 
 class DBTimeout(DatabaseException):
     msg_fmt = "SDK database operation timeout: %(msg)s"
+
+
+class ZVMInvalidInputNumber(SDKBaseException):
+    def __init__(self, api, expected, provided):
+        rc = returncode.errors['0500']
+        results = rc[0]
+        results['rs'] = 1
+        results['strError'] = rc[1][1] % {'api': api, 'expected': expected,
+                                          'provided': provided}
+        super(ZVMInvalidInputNumber, self).__init__(results=results,
+                                                    message=rc[2])
+
+
+class ZVMInvalidInputtypes(SDKBaseException):
+    def __init__(self, api, expected, inputtypes):
+        rc = returncode.errors['0500']
+        results = rc[0]
+        results['rs'] = 2
+        results['strError'] = rc[1][2] % {'api': api, 'expected': expected,
+                                          'inputtypes': inputtypes}
+        super(ZVMInvalidInputtypes, self).__init__(results=results,
+                                                   message=rc[2])
+
+
+class ZVMInvalidInputFormat(SDKBaseException):
+    def __init__(self, api, msg):
+        rc = returncode.errors['0500']
+        results = rc[0]
+        results['rs'] = 3
+        results['strError'] = rc[1][3] % {'api': api, 'msg': msg}
+        super(ZVMInvalidInputFormat, self).__init__(results=results,
+                                                    message=rc[2])
+
+
+class ZVMSDKInternalError(SDKBaseException):
+    def __init__(self, msg, modID='SDK'):
+        rc = returncode.errors['0600']
+        results = rc[0]
+        results['rs'] = 1
+        results['strError'] = rc[1][1] % {'msg': msg}
+        results['rc'] = returncode.ModRCs[modID]
+        super(ZVMSDKInternalError, self).__init__(results=results,
+                                                  message=rc[2])
+
+
+class ZVMClientInternalError(ZVMSDKInternalError):
+    def __init__(self, msg):
+        super(ZVMClientInternalError, self).__init__(msg=msg,
+                                                     modID = 'smutclient')
+
+
+class SDKGuestOperationError(SDKBaseException):
+    def __init__(self, rs, **kwargs):
+        # kwargs can be used to contain different keyword for constructing
+        # the rs error msg
+        rc = returncode.errors['0700']
+        results = rc[0]
+        results['rs'] = rs
+        results['strError'] = rc[1][rs] % kwargs
+        super(SDKGuestOperationError, self).__init__(results=results,
+                                                     message=rc[2])

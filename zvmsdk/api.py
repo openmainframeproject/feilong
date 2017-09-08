@@ -13,6 +13,8 @@
 #    under the License.
 
 
+import sys
+
 from zvmsdk import config
 from zvmsdk import constants
 from zvmsdk import exception
@@ -392,19 +394,22 @@ class SDKAPI(object):
                 if not isinstance(disk, dict):
                     errmsg = ('Invalid "disk_list" input, it should be a '
                               'dictionary. Details could be found in doc.')
-                    raise exception.ZVMInvalidInput(msg=errmsg)
+                    raise exception.ZVMInvalidInputFormat(
+                        sys._getframe().f_code.co_name, msg=errmsg)
 
                 if 'size' not in disk.keys():
                     errmsg = ('Invalid "disk_list" input, "size" is required '
                               'for each disk.')
-                    raise exception.ZVMInvalidInput(msg=errmsg)
+                    raise exception.ZVMInvalidInputFormat(
+                        sys._getframe().f_code.co_name, msg=errmsg)
 
                 disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
                 if ':' not in disk_pool or (disk_pool.split(':')[0].upper()
                     not in ['ECKD', 'FBA']):
                     errmsg = ("Invalid disk_pool input, it should be in format"
                               " ECKD:eckdpoolname or FBA:fbapoolname")
-                    raise exception.ZVMInvalidInput(msg=errmsg)
+                    raise exception.ZVMInvalidInputFormat(
+                        sys._getframe().f_code.co_name, msg=errmsg)
 
         self._vmops.create_vm(userid, vcpus, memory, disk_list, user_profile)
 
