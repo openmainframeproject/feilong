@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "432a1e25_3464c5ab",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-08T03:07:56Z",
+      "side": 1,
+      "message": "add a threading lock to self._free_conn?",
+      "range": {
+        "startLine": 146,
+        "startChar": 0,
+        "endLine": 146,
+        "endChar": 31
+      },
+      "revId": "7fe43aeacea69b8ae054f8385cabcbf2bf157d28",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
