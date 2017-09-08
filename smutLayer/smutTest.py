@@ -521,6 +521,12 @@ modifyTests = [
         'overallRC': [0],
     },
     {
+        'description': "Remove a disk that does not exist: <<<unsafePre>>>3",
+        'request': "changevm <<<unsafePre>>>3 removedisk 104",
+        'out': "",
+        'overallRC': [0],
+    },
+    {
         'description': "Add a 9336 disk to the system with ext4.",
         'doIf': "'<<<pool9336>>>' != ''",
         'request': "changevm <<<unsafePre>>>3 add9336 <<<pool9336>>> " +
