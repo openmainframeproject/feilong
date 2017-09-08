@@ -16,6 +16,7 @@
 import config
 import log
 import six
+from zvmsdk import returncode
 
 
 CONF = config.CONF
@@ -59,10 +60,6 @@ class SDKBaseException(Exception):
         return self.args[0]
 
 
-class ZVMSDKInternalError(SDKBaseException):
-    msg_fmt = 'z/VM SDK internal error: %(msg)s'
-
-
 class ZVMException(SDKBaseException):
     msg_fmt = 'ZVMException happened: %(msg)s'
 
@@ -97,10 +94,6 @@ class ZVMXCATCreateNodeFailed(SDKBaseException):
 
 class ZVMXCATCreateUserIdFailed(SDKBaseException):
     msg_fmt = 'Create xCAT user id %(userid)s failed: %(msg)s'
-
-
-class ZVMCreateVMFailed(SDKBaseException):
-    msg_fmt = 'Create vm %(userid)s failed: %(msg)s'
 
 
 class ZVMXCATUpdateNodeFailed(SDKBaseException):
@@ -158,24 +151,6 @@ class ZVMInvalidResponseDataError(SDKBaseException):
     msg_fmt = 'Invalid data returned from zvm client: %(msg)s'
 
 
-class ZVMClientRequestFailed(SDKBaseException):
-
-    def __init__(self, results=None, msg=''):
-        self.msg_fmt = 'zVM client request failed: %(msg)s'
-        # When the backend is smut, results should be passed in.
-        if results:
-            results.pop('logEntries')
-            msg += str(results)
-            super(ZVMClientRequestFailed, self).__init__(results=results,
-                                                         msg=msg)
-        else:
-            super(ZVMClientRequestFailed, self).__init__(msg=msg)
-
-
-class ZVMClientInternalError(SDKBaseException):
-    msg_fmt = 'zVM client internal error: %(msg)s'
-
-
 class ZVMUnauthorized(SDKBaseException):
     code = 401
 
@@ -194,3 +169,101 @@ class DatabaseException(SDKBaseException):
 
 class DBTimeout(DatabaseException):
     msg_fmt = "SDK database operation timeout: %(msg)s"
+
+
+class ZVMInvalidInputNumber(SDKBaseException):
+    def __init__(self, api, expected, provided):
+        rc = returncode.errors['input']
+        results = rc[0]
+        results['modID'] = returncode.ModRCs['zvmsdk']
+        results['rs'] = 1
+        errormsg = rc[1][1] % {'api': api, 'expected': expected,
+                               'provided': provided}
+        results['strError'] = errormsg
+        super(ZVMInvalidInputNumber, self).__init__(results=results,
+                                                    message=errormsg)
+
+
+class ZVMInvalidInputtypes(SDKBaseException):
+    def __init__(self, api, expected, inputtypes):
+        rc = returncode.errors['input']
+        results = rc[0]
+        results['modID'] = returncode.ModRCs['zvmsdk']
+        results['rs'] = 2
+        errormsg = rc[1][2] % {'api': api, 'expected': expected,
+                               'inputtypes': inputtypes}
+        results['strError'] = errormsg
+        super(ZVMInvalidInputtypes, self).__init__(results=results,
+                                                   message=errormsg)
+
+
+class ZVMInvalidInputFormat(SDKBaseException):
+    def __init__(self, api, msg):
+        rc = returncode.errors['input']
+        results = rc[0]
+        results['modID'] = returncode.ModRCs['zvmsdk']
+        results['rs'] = 3
+        errormsg = rc[1][3] % {'api': api, 'msg': msg}
+        results['strError'] = errormsg
+        super(ZVMInvalidInputFormat, self).__init__(results=results,
+                                                    message=errormsg)
+
+
+class ZVMSDKInternalError(SDKBaseException):
+    def __init__(self, msg, modID='zvmsdk'):
+        rc = returncode.errors['internal']
+        results = rc[0]
+        results['rs'] = 1
+        errormsg = rc[1][1] % {'msg': msg}
+        results['strError'] = errormsg
+        results['modID'] = returncode.ModRCs[modID]
+        super(ZVMSDKInternalError, self).__init__(results=results,
+                                                  message=errormsg)
+
+
+class ZVMClientInternalError(ZVMSDKInternalError):
+    def __init__(self, msg):
+        super(ZVMClientInternalError, self).__init__(msg=msg,
+                                                     modID = 'zvmsdk')
+
+
+class ZVMObjectNotExistError(SDKBaseException):
+    def __init__(self, object, modID='zvmsdk'):
+        rc = returncode.errors['notExist']
+        results = rc[0]
+        results['modID'] = returncode.ModRCs[modID]
+        results['rs'] = 1
+        errormsg = rc[1][1] % {'object': object}
+        results['strError'] = errormsg
+        super(ZVMObjectNotExistError, self).__init__(results=results,
+                                                     message=errormsg)
+
+
+class ZVMClientRequestFailed(SDKBaseException):
+
+    def __init__(self, rd=None, results=None, msg=''):
+        self.msg_fmt = 'zVM client request failed: %(msg)s'
+        # When the backend is smut, results should be passed in.
+        if results:
+            results.pop('logEntries')
+            results['modID'] = returncode.ModRCs['smut']
+            if rd is not None:
+                msg += ("RequestData: '%s'" % rd)
+            msg += ("Results: %s" % str(results))
+            super(ZVMClientRequestFailed, self).__init__(results=results,
+                                                         msg=msg)
+        else:
+            super(ZVMClientRequestFailed, self).__init__(msg=msg)
+
+
+class SDKGuestOperationError(SDKBaseException):
+    def __init__(self, rs, **kwargs):
+        # kwargs can be used to contain different keyword for constructing
+        # the rs error msg
+        rc = returncode.errors['guest']
+        results = rc[0]
+        results['rs'] = rs
+        errormsg = rc[1][rs] % kwargs
+        results['strError'] = errormsg
+        super(SDKGuestOperationError, self).__init__(results=results,
+                                                     message=errormsg)

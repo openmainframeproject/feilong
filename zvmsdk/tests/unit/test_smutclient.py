@@ -187,7 +187,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                         'unpackdiskimage_trace_2017-08-16-01:29:59.453.txt\n'
                         'unpackdiskimage end time: 2017-08-16-01:29:59.605\n')
         execute.return_value = (3, unpack_error)
-        self.assertRaises(exception.ZVMGuestDeployFailed,
+        self.assertRaises(exception.SDKGuestOperationError,
                            self._smutclient.guest_deploy, userid, image_name,
                            transportfiles)
         unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
@@ -208,7 +208,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         userid = 'fakeuser'
         image_name = 'fakeimg'
         transportfiles = '/faketrans'
-        self.assertRaises(exception.ZVMGuestDeployFailed,
+        self.assertRaises(exception.SDKGuestOperationError,
                            self._smutclient.guest_deploy, userid, image_name,
                            transportfiles)
         unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
@@ -233,13 +233,14 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         execute.side_effect = [(0, ""), (0, "")]
         request.side_effect = [None,
                                exception.ZVMClientRequestFailed(
+                                   rd="fakerequestdata",
                                    results=fake_smut_results)]
         mkdtemp.return_value = '/tmp/tmpdir'
         userid = 'fakeuser'
         image_name = 'fakeimg'
         transportfiles = '/faketrans'
         remote_host = "user@1.1.1.1"
-        self.assertRaises(exception.ZVMGuestDeployFailed,
+        self.assertRaises(exception.ZVMClientRequestFailed,
                            self._smutclient.guest_deploy, userid, image_name,
                            transportfiles, remote_host)
         unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
