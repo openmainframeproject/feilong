@@ -908,11 +908,14 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         self.assertListEqual(sorted(userid_list),
                              sorted(['TEST0', 'TEST1', 'TEST2']))
 
+    @mock.patch.object(database.GuestDbOperator,
+                       'delete_guest_by_userid')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_delete_userid(self, request):
+    def test_delete_userid(self, request, delete_guest_in_db):
         rd = 'deletevm fuser1 directory'
         self._smutclient.delete_userid('fuser1')
         request.assert_called_once_with(rd)
+        delete_guest_in_db.assert_called_once_with('fuser1')
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_delete_userid_not_exist(self, request):
