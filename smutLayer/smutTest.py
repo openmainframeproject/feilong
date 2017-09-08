@@ -65,6 +65,8 @@ subs = {
     '<<<unpackScript>>>': '/opt/zthin/bin/unpackdiskimage',
                                         # Location of unpackdiskimage
     '<<<longString>>>': longstring,
+    '<<<makevmWait>>>': '0',            # Wait time for makeVM to fully
+                                        # complete
 }
 
 # Add a substitution key for the userid of this system.
@@ -441,6 +443,15 @@ modifyTests = [
         'overallRC': [8],
         'rc': [8],
         'rs': [8]
+    },
+    {
+        'description': "Wait <<<makevmWait>>> seconds for source " +
+            "directory to be updated.",
+        'request': "SHELL echo 'Sleeping for <<<makevmWait>>> seconds " +
+            "to allow source directory update to complete';sleep " +
+            "<<<makevmWait>>>",
+        'out': "",
+        'overallRC': [0],
     },
     {
         'description': "Add modifications to the activation engine",
