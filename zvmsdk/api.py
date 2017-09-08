@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 from zvmsdk import config
 from zvmsdk import constants
 from zvmsdk import exception
@@ -239,13 +238,21 @@ class SDKAPI(object):
                format is username@IP, eg nova@192.168.99.1
         :param vdev: (str) the device that image will be deploy to
 
-        :raises ZVMGuestDeployFailed if:
-                - Failed to deploy image to guest, refer to the error message
-                  for details
+        :raises SDKGuestOperationError if:
+                - Failed to unpackdiskimage to guest's root vdev
+                - Failed to copy config drive to local
+        :raises ZVMClientRequestFailed if:
+                - Failed to purge reader
+                - Failed to punch file to user's reader
 
         """
-        return self._vmops.guest_deploy(userid, image_name,
-                                        transportfiles, remotehost, vdev)
+        try:
+            self._vmops.guest_deploy(userid, image_name,
+                                     transportfiles, remotehost, vdev)
+        except exception.SDKBaseException:
+            LOG.error(('Failed to deploy image %(img)s to vm %(vm)s') %
+                      {'img': image_name, 'vm': userid})
+            raise
 
     @zvmutils.check_input_types(_TUSERID, _TSTR_OR_NONE, _TSTR_OR_NONE,
                        _TSTR_OR_NONE, _TSTR_OR_NONE, bool)
@@ -381,32 +388,39 @@ class SDKAPI(object):
                FBA disk pool fbapool1, and formated with ext3.
         :param user_profile: the profile for the guest
 
-        :raises ZVMInvalidInput if:
-                - Input parameters are not proper
-        :raises ZVMCreateVMFailed if:
-                - All kinds of xCAT call failure
-                - Smcli call failure, refer to the error message for detail
+        :raises SDKGuestOperationError if:
+                - Failed to generate valid vdev when adding mdisks
+        :raises ZVMClientRequestFailed if:
+                - SMUT layer failed to create VM
         """
         if disk_list:
             for disk in disk_list:
                 if not isinstance(disk, dict):
                     errmsg = ('Invalid "disk_list" input, it should be a '
                               'dictionary. Details could be found in doc.')
-                    raise exception.ZVMInvalidInput(msg=errmsg)
+                    raise exception.ZVMInvalidInputFormat(
+                        'guest_create', msg=errmsg)
 
                 if 'size' not in disk.keys():
                     errmsg = ('Invalid "disk_list" input, "size" is required '
                               'for each disk.')
-                    raise exception.ZVMInvalidInput(msg=errmsg)
+                    raise exception.ZVMInvalidInputFormat(
+                        'guest_create', msg=errmsg)
 
                 disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
                 if ':' not in disk_pool or (disk_pool.split(':')[0].upper()
                     not in ['ECKD', 'FBA']):
                     errmsg = ("Invalid disk_pool input, it should be in format"
                               " ECKD:eckdpoolname or FBA:fbapoolname")
-                    raise exception.ZVMInvalidInput(msg=errmsg)
+                    raise exception.ZVMInvalidInputFormat(
+                        'guest_create', msg=errmsg)
 
-        self._vmops.create_vm(userid, vcpus, memory, disk_list, user_profile)
+        try:
+            self._vmops.create_vm(userid, vcpus, memory, disk_list,
+                                  user_profile)
+        except exception.SDKBaseException:
+            LOG.error("Failed to create guest '%s'" % userid)
+            raise
 
     @zvmutils.check_input_types(_TUSERID, list)
     def guest_create_disks(self, userid, disk_list):

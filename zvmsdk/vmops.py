@@ -149,11 +149,8 @@ class VMOps(object):
         LOG.debug("Creating the z/VM user entry for instance %s"
                   % userid)
 
-        try:
-            self._zvmclient.create_vm(userid, cpu, memory,
-                                      disk_list, user_profile)
-        except Exception as err:
-            raise exception.ZVMCreateVMFailed(userid=userid, msg=str(err))
+        self._zvmclient.create_vm(userid, cpu, memory,
+                                  disk_list, user_profile)
 
     def create_disks(self, userid, disk_list):
         user_direct = self._zvmclient.get_user_direct(userid)
