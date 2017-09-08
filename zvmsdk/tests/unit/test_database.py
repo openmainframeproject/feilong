@@ -18,6 +18,7 @@ import unittest
 import uuid
 
 from zvmsdk import config
+from zvmsdk import constants as const
 from zvmsdk import database
 from zvmsdk.database import VolumeDbOperator
 from zvmsdk import exception
@@ -40,7 +41,7 @@ class VolumeDbOperatorTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        with database.get_db_conn() as conn:
+        with database.get_db_conn(const.VOLUMEDB_NAME) as conn:
             conn.execute("DROP TABLE volumes")
             conn.execute("DROP TABLE volume_attachments")
         super(VolumeDbOperatorTestCase, cls).tearDownClass()
@@ -409,7 +410,7 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        with database.get_db_conn() as conn:
+        with database.get_db_conn(const.GUESTDB_NAME) as conn:
             conn.execute("DROP TABLE guests")
         super(GuestDbOperatorTestCase, cls).tearDownClass()
 

@@ -31,26 +31,69 @@ from zvmsdk import log
 CONF = config.CONF
 LOG = log.LOG
 
-_DB_OPERATOR = None
+_NETDB_OPERATOR = None
+_VOLDB_OPERATOR = None
+_IMGDB_OPERATOR = None
+_GSTDB_OPERATOR = None
 
 
-def get_DbOperator():
-    global _DB_OPERATOR
+def get_NETDbOperator():
+    global _NETDB_OPERATOR
+    if _NETDB_OPERATOR is not None:
+        return _NETDB_OPERATOR
 
-    if _DB_OPERATOR is not None:
-        return _DB_OPERATOR
+    _NETDB_OPERATOR = DbOperator(const.NETWORKDB_NAME)
+    return _NETDB_OPERATOR
 
-    _DB_OPERATOR = DbOperator()
-    return _DB_OPERATOR
+
+def get_VOLDbOperator():
+    global _VOLDB_OPERATOR
+    if _VOLDB_OPERATOR is not None:
+        return _VOLDB_OPERATOR
+
+    _VOLDB_OPERATOR = DbOperator(const.VOLUMEDB_NAME)
+    return _VOLDB_OPERATOR
+
+
+def get_IMGDbOperator():
+    global _IMGDB_OPERATOR
+    if _IMGDB_OPERATOR is not None:
+        return _IMGDB_OPERATOR
+
+    _IMGDB_OPERATOR = DbOperator(const.IMAGEDB_NAME)
+    return _IMGDB_OPERATOR
+
+
+def get_GSTDbOperator():
+    global _GSTDB_OPERATOR
+    if _GSTDB_OPERATOR is not None:
+        return _GSTDB_OPERATOR
+
+    _GSTDB_OPERATOR = DbOperator(const.GUESTDB_NAME)
+    return _GSTDB_OPERATOR
+
+
+def get_DbOperator(DB_name):
+    if DB_name == const.NETWORKDB_NAME:
+        return get_NETDbOperator()
+    elif DB_name == const.VOLUMEDB_NAME:
+        return get_VOLDbOperator()
+    elif DB_name == const.IMAGEDB_NAME:
+        return get_IMGDbOperator()
+    elif DB_name == const.GUESTDB_NAME:
+        return get_GSTDbOperator()
+    else:
+        # TODO: raise Exception
+        pass
 
 
 @contextlib.contextmanager
-def get_db_conn():
+def get_db_conn(DB_name):
     """Get a database connection object to execute some SQL statements
     and release the connection object finally.
     """
-    _op = get_DbOperator()
-    (i, conn) = _op.get_connection()
+    _op = get_DbOperator(DB_name)
+    conn = _op.get_connection()
     try:
         yield conn
     except exception.SDKBaseException:
@@ -59,19 +102,16 @@ def get_db_conn():
         LOG.error("Execute SQL statements error: %s", six.text_type(err))
         raise exception.DatabaseException(msg=err)
     finally:
-        _op.release_connection(i)
+        _op.release_connection()
 
 
 class DbOperator(object):
 
-    def __init__(self):
+    def __init__(self, DB_name):
         # make pool size as a config item if necessary
-        self._pool_size = 3
-        self._conn_pool = {}
-        self._free_conn = {}
-        self._prepare()
+        self._prepare(DB_name)
 
-    def _prepare(self):
+    def _prepare(self, DB_name):
         path_mode = stat.S_IRWXU + stat.S_IRWXG + stat.S_IRWXO
         file_mode = (stat.S_IRUSR + stat.S_IWUSR + stat.S_IRGRP +
                      stat.S_IWGRP + stat.S_IROTH + stat.S_IWOTH)
@@ -85,7 +125,7 @@ class DbOperator(object):
 
         # Initialize a very first connection to activate the database and
         # check for its modes
-        database = os.path.join(CONF.database.path, const.DATABASE_NAME)
+        database = os.path.join(CONF.database.path, DB_name)
         conn = sqlite3.connect(database, check_same_thread=False)
 
         db_mode = os.stat(database).st_mode
@@ -97,37 +137,28 @@ class DbOperator(object):
         if ((mu < 6) or (mg < 6) or (mo < 6)):
             os.chmod(database, file_mode)
         conn.isolation_level = None
-        self._conn_pool[0] = conn
-        self._free_conn[0] = True
-
-        # Create other connections of the pool
-        for i in range(1, self._pool_size):
-            conn = sqlite3.connect(database, check_same_thread=False)
-            # autocommit
-            conn.isolation_level = None
-            self._conn_pool[i] = conn
-            self._free_conn[i] = True
+        self._conn = conn
+        self._free_conn = True
 
     def get_connection(self):
         timeout = 5
         for _ in range(timeout):
-            for i in range(self._pool_size):
-                # Not really thread safe, fix if necessary
-                if self._free_conn[i]:
-                    self._free_conn[i] = False
-                    return i, self._conn_pool[i]
+            if self._free_conn:
+                self._free_conn = False
+                return self._conn
             sleep(1)
         # If timeout happens, it means the pool is too small to meet
         # request performance, so enlarge it
         raise exception.DBTimeout("Get database connection time out!")
 
-    def release_connection(self, i):
-        self._free_conn[i] = True
+    def release_connection(self):
+        self._free_conn = True
 
 
 class NetworkDbOperator(object):
 
     def __init__(self):
+        self._DB_name = const.NETWORKDB_NAME
         self._create_switch_table()
 
     def _create_switch_table(self):
@@ -139,29 +170,29 @@ class NetworkDbOperator(object):
                 'port varchar(128),',
                 'comments varchar(128),',
                 'primary key (node, interface));'))
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute(create_table_sql)
 
     def switch_delete_record_for_node(self, node):
         """Remove node switch record from switch table."""
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute("DELETE FROM switch WHERE node=?", (node,))
 
     def switch_delete_record_for_nic(self, node, interface):
         """Remove node switch record from switch table."""
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute("DELETE FROM switch WHERE node=? and interface=?",
                          (node, interface))
 
     def switch_add_record_for_nic(self, node, interface, port=None):
         """Add node name and nic name address into switch table."""
         if port is not None:
-            with get_db_conn() as conn:
+            with get_db_conn(self._DB_name) as conn:
                 conn.execute("INSERT INTO switch (node, interface, port) "
                              "VALUES (?, ?, ?)",
                              (node, interface, port))
         else:
-            with get_db_conn() as conn:
+            with get_db_conn(self._DB_name) as conn:
                 conn.execute("INSERT INTO switch (node, interface) "
                              "VALUES (?, ?)",
                              (node, interface))
@@ -169,24 +200,24 @@ class NetworkDbOperator(object):
     def switch_updat_record_with_switch(self, node, interface, switch=None):
         """Update information in switch table."""
         if switch is not None:
-            with get_db_conn() as conn:
+            with get_db_conn(self._DB_name) as conn:
                 conn.execute("UPDATE switch SET switch=? "
                              "WHERE node=? and interface=?",
                              (switch, node, interface))
         else:
-            with get_db_conn() as conn:
+            with get_db_conn(self._DB_name) as conn:
                 conn.execute("UPDATE switch SET switch=NULL "
                              "WHERE node=? and interface=?",
                              (node, interface))
 
     def switch_select_table(self):
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             result = conn.execute("SELECT * FROM switch")
             nic_settings = result.fetchall()
         return nic_settings
 
     def switch_select_record_for_node(self, node):
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             result = conn.execute("SELECT interface, switch FROM switch "
                                   "WHERE node=?", (node,))
             switch_info = result.fetchall()
@@ -196,6 +227,7 @@ class NetworkDbOperator(object):
 class VolumeDbOperator(object):
 
     def __init__(self):
+        self._DB_name = const.VOLUMEDB_NAME
         self._initialize_table_volumes()
         self._initialize_table_volume_attachments()
         self._VOLUME_STATUS_FREE = 'free'
@@ -216,7 +248,7 @@ class VolumeDbOperator(object):
             'deleted        smallint      DEFAULT 0,',
             'deleted_at     char(26),',
             'comment        varchar(128))'))
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute(sql)
 
     def _initialize_table_volume_attachments(self):
@@ -230,7 +262,7 @@ class VolumeDbOperator(object):
             'deleted          smallint      DEFAULT 0,',
             'deleted_at       char(26),',
             'comment          varchar(128))'))
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute(sql)
 
     def get_volume_by_id(self, volume_id):
@@ -241,7 +273,7 @@ class VolumeDbOperator(object):
             msg = "Volume id must be specified!"
             raise exception.DatabaseException(msg=msg)
 
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             result_list = conn.execute(
                 "SELECT * FROM volumes WHERE id=? AND deleted=0", (volume_id,)
                 ).fetchall()
@@ -283,7 +315,7 @@ class VolumeDbOperator(object):
         deleted_at = None
         comment = volume.get('comment', None)
 
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute(
                 "INSERT INTO volumes VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (volume_id, protocol_type, size, status, image_id, snapshot_id,
@@ -326,7 +358,7 @@ class VolumeDbOperator(object):
         snapshot_id = volume.get('snapshot_id', snapshot_id)
         comment = volume.get('comment', comment)
 
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute(' '.join((
                 "UPDATE volumes",
                 "SET size=?, status=?, image_id=?, snapshot_id=?, comment=?"
@@ -345,7 +377,7 @@ class VolumeDbOperator(object):
             raise exception.ZVMVolumeError(msg=msg)
 
         time = str(datetime.now())
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute(' '.join((
                 "UPDATE volumes",
                 "SET deleted=1, deleted_at=?",
@@ -360,7 +392,7 @@ class VolumeDbOperator(object):
             msg = "Volume id must be specified!"
             raise exception.DatabaseException(msg=msg)
 
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             result_list = conn.execute(' '.join((
                 "SELECT * FROM volume_attachments",
                 "WHERE volume_id=? AND deleted=0")),
@@ -381,7 +413,7 @@ class VolumeDbOperator(object):
             msg = "Instance id must be specified!"
             raise exception.DatabaseException(msg=msg)
 
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             result_list = conn.execute(' '.join((
                 "SELECT * FROM volume_attachments",
                 "WHERE instance_id=? AND deleted=0")),
@@ -429,7 +461,7 @@ class VolumeDbOperator(object):
         # FIXME  need to use get_instance function by Dong Yan
 
         # attachment must not exist
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             count = conn.execute(' '.join((
                 "SELECT COUNT(*) FROM volume_attachments",
                 "WHERE volume_id=? AND instance_id=? AND deleted=0")),
@@ -447,7 +479,7 @@ class VolumeDbOperator(object):
         deleted_at = None
         comment = volume_attachment.get('comment', None)
 
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute(' '.join((
                 "INSERT INTO volume_attachments",
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)")),
@@ -473,7 +505,7 @@ class VolumeDbOperator(object):
             raise exception.DatabaseException(msg=msg)
 
         # if volume-instance attachment exists in the database
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             count = conn.execute(' '.join((
                 "SELECT COUNT(*) FROM volume_attachments",
                 "WHERE volume_id=? AND instance_id=? AND deleted=0")),
@@ -491,7 +523,7 @@ class VolumeDbOperator(object):
             raise exception.DatabaseException(msg=msg)
 
         time = str(datetime.now())
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute(' '.join((
                 "UPDATE volume_attachments",
                 "SET deleted=1, deleted_at=?",
@@ -502,6 +534,7 @@ class VolumeDbOperator(object):
 class ImageDbOperator(object):
 
     def __init__(self):
+        self._DB_name = const.IMAGEDB_NAME
         self._create_image_table()
 
     def _create_image_table(self):
@@ -514,14 +547,14 @@ class ImageDbOperator(object):
                 'image_size_in_bytes      varchar(32),',
                 'type                     varchar(16),',
                 'comments                 varchar(128))'))
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute(create_image_table_sql)
 
     def image_add_record(self, imagename, imageosdistro, md5sum,
                          disk_size_units, image_size_in_bytes,
                          type, comments=None):
         if comments is not None:
-            with get_db_conn() as conn:
+            with get_db_conn(self._DB_name) as conn:
                 conn.execute("INSERT INTO image (imagename, imageosdistro,"
                              "md5sum, disk_size_units, image_size_in_bytes,"
                              " type, comments) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -529,7 +562,7 @@ class ImageDbOperator(object):
                               disk_size_units, image_size_in_bytes, type,
                               comments))
         else:
-            with get_db_conn() as conn:
+            with get_db_conn(self._DB_name) as conn:
                 conn.execute("INSERT INTO image (imagename, imageosdistro,"
                              "md5sum, disk_size_units, image_size_in_bytes,"
                              " type) VALUES (?, ?, ?, ?, ?, ?)",
@@ -541,7 +574,7 @@ class ImageDbOperator(object):
         imagename: the unique image name in db
         Return the disk units in format like 3339:CYL or 467200:BLK
         """
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             result = conn.execute("SELECT disk_size_units FROM image "
                                   "WHERE imagename=?", (imagename,))
             q_result = result.fetchall()
@@ -554,7 +587,7 @@ class ImageDbOperator(object):
 
     def image_query_record(self, imagename):
         """Select the record for specified imagename in image table"""
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             result = conn.execute("SELECT * FROM image WHERE "
                                   "imagename=?", (imagename,))
             image_list = result.fetchall()
@@ -566,13 +599,14 @@ class ImageDbOperator(object):
 
     def image_delete_record(self, imagename):
         """Delete the record of specified imagename from image table"""
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute("DELETE FROM image WHERE imagename=?", (imagename,))
 
 
 class GuestDbOperator(object):
 
     def __init__(self):
+        self._DB_name = const.GUESTDB_NAME
         self._create_guests_table()
 
     def _create_guests_table(self):
@@ -583,7 +617,7 @@ class GuestDbOperator(object):
             'userid         varchar(8)    NOT NULL UNIQUE,',
             'metadata       varchar(255),',
             'comments       text)'))
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute(sql)
 
     def _check_existence_by_id(self, id):
@@ -603,7 +637,7 @@ class GuestDbOperator(object):
     def add_guest(self, userid, meta='', comments=''):
         # Generate uuid automatically
         id = str(uuid.uuid4())
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute(
                 "INSERT INTO guests VALUES (?, ?, ?, ?)",
                 (id, userid.upper(), meta, comments))
@@ -612,14 +646,14 @@ class GuestDbOperator(object):
         # First check whether the guest exist in db table
         self._check_existence_by_id(id)
         # Update guest if exist
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute(
                 "DELETE FROM guests WHERE id=?", (id,))
 
     def delete_guest_by_userid(self, userid):
         # First check whether the guest exist in db table
         self._check_existence_by_userid(userid)
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute(
                 "DELETE FROM guests WHERE userid=?", (userid.upper(),))
 
@@ -651,7 +685,7 @@ class GuestDbOperator(object):
         sql_cmd += " WHERE id=?"
         sql_var.append(uuid)
 
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute(sql_cmd, sql_var)
 
     def update_guest_by_userid(self, userid, meta=None, comments=None):
@@ -680,17 +714,17 @@ class GuestDbOperator(object):
         sql_cmd += " WHERE userid=?"
         sql_var.append(userid)
 
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             conn.execute(sql_cmd, sql_var)
 
     def get_guest_list(self):
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             res = conn.execute("SELECT * FROM guests")
             guests = res.fetchall()
         return guests
 
     def get_guest_by_id(self, id):
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             res = conn.execute("SELECT * FROM guests "
                                "WHERE id=?", (id,))
             guest = res.fetchall()
@@ -705,7 +739,7 @@ class GuestDbOperator(object):
 
     def get_guest_by_userid(self, userid):
         userid = userid.upper()
-        with get_db_conn() as conn:
+        with get_db_conn(self._DB_name) as conn:
             res = conn.execute("SELECT * FROM guests "
                                "WHERE userid=?", (userid,))
             guest = res.fetchall()
