@@ -142,6 +142,20 @@ class NetworkDbOperator(object):
         with get_db_conn() as conn:
             conn.execute(create_table_sql)
 
+    def _get_switch_by_user_interface(self, userid, interface):
+        with get_db_conn(self._DB_name) as conn:
+            res = conn.execute("SELECT * FROM switch "
+                               "WHERE userid=? and interface=?",
+                               (userid, interface))
+            switch_record = res.fetchall()
+
+        if len(switch_record) == 1:
+            return switch_record[0]
+        elif len(switch_record) == 0:
+            LOG.debug("User %s with nic %s not found from network DB!" %
+                      (userid, interface))
+            return None
+
     def switch_delete_record_for_userid(self, userid):
         """Remove userid switch record from switch table."""
         with get_db_conn() as conn:
@@ -155,6 +169,10 @@ class NetworkDbOperator(object):
 
     def switch_add_record_for_nic(self, userid, interface, port=None):
         """Add userid name and nic name address into switch table."""
+        if self._get_switch_by_user_interface(userid, interface) is not None:
+            msg = "User %s with nic %s already exist" % (userid, interface)
+            raise exception.ZVMNetworkError(msg=msg)
+
         if port is not None:
             with get_db_conn() as conn:
                 conn.execute("INSERT INTO switch (userid, interface, port) "
@@ -168,6 +186,10 @@ class NetworkDbOperator(object):
 
     def switch_updat_record_with_switch(self, userid, interface, switch=None):
         """Update information in switch table."""
+        if not self._get_switch_by_user_interface(userid, interface):
+            msg = "User %s with nic %s not found" % (userid, interface)
+            raise exception.ZVMNetworkError(msg=msg)
+
         if switch is not None:
             with get_db_conn() as conn:
                 conn.execute("UPDATE switch SET switch=? "
