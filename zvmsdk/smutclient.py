@@ -297,11 +297,12 @@ class SMUTClient(client.ZVMClient):
         """
         Get NIC and switch mapping for the specified virtual machine.
         """
-        switch_info = self._NetDbOperator.switch_select_record_for_node(vm_id)
+        switch_info = self._NetDbOperator.switch_select_record_for_userid(
+                                                                    vm_id)
         with zvmutils.expect_invalid_resp_data():
             switch_dict = {}
             for item in switch_info:
-                switch_dict[item[0]] = item[1]
+                switch_dict[item[1]] = item[2]
 
             LOG.debug("Switch info the %(vm_id)s is %(switch_dict)s",
                       {"vm_id": vm_id, "switch_dict": switch_dict})
