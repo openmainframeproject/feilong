@@ -20,6 +20,7 @@ import tempfile
 from smutLayer import smut
 
 from zvmsdk import config
+from zvmsdk import constants as const
 from zvmsdk import database
 from zvmsdk import exception
 from zvmsdk import smutclient
@@ -46,6 +47,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
     def setUp(self):
         self._smutclient = smutclient.SMUTClient()
+#         self._imagefilebackend = smutclient.FilesystemBackend()
 
     @mock.patch.object(smut.SMUT, 'request')
     def test_private_request_success(self, request):
@@ -894,3 +896,86 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         userid_list = self._smutclient.get_vm_list()
         self.assertListEqual(sorted(userid_list),
                              sorted(['TEST0', 'TEST1', 'TEST2']))
+
+    @mock.patch.object(database.ImageDbOperator, 'image_add_record')
+    @mock.patch.object(smutclient.SMUTClient, '_get_image_size')
+    @mock.patch.object(smutclient.SMUTClient, '_get_disk_size_units')
+    @mock.patch.object(smutclient.SMUTClient, '_get_md5sum')
+    @mock.patch.object(smutclient.FilesystemBackend, 'image_import')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    def test_image_import(self, image_query, image_import, get_md5sum,
+                          disk_size_units, image_size, image_add_record):
+        image_name = 'testimage'
+        url = 'file:///tmp/testdummyimg'
+        image_meta = {'os_version': 'rhel6.5',
+                      'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
+        target = self._smutclient._get_image_path_by_name(image_name,
+                image_meta['os_version'], const.IMAGE_TYPE['DEPLOY'])
+        image_query.return_value = []
+        get_md5sum.return_value = 'c73ce117eef8077c3420bfc8f473ac2f'
+        disk_size_units.return_value = '3338:CYL'
+        image_size.return_value = '512000'
+        self._smutclient.image_import(image_name, url, image_meta)
+        image_query.assert_called_once_with(image_name)
+        image_import.assert_called_once_with(image_name, url, image_meta,
+                                             remote_host=None)
+        get_md5sum.assert_called_once_with(target)
+        disk_size_units.assert_called_once_with(target)
+        image_size.assert_called_once_with(target)
+        image_add_record.assert_called_once_with(image_name,
+                                    'rhel6.5',
+                                    'c73ce117eef8077c3420bfc8f473ac2f',
+                                    '3338:CYL',
+                                    '512000',
+                                    'netboot')
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_image_path_by_name')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    def test_image_import_image_already_exist(self, image_query,
+                                              get_image_path):
+        image_name = 'testimage'
+        url = 'file:///tmp/testdummyimg'
+        image_meta = {'os_version': 'rhel6.5',
+                      'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
+        image_query.return_value = [(u'testimage', u'rhel6.5',
+            u'c73ce117eef8077c3420bfc8f473ac2f',
+            u'3338:CYL', u'5120000', u'netboot', None)]
+        self._smutclient.image_import(image_name, url, image_meta)
+        image_query.assert_called_once_with(image_name)
+        get_image_path.assert_not_called()
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_md5sum')
+    @mock.patch.object(smutclient.FilesystemBackend, 'image_import')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    def test_image_import_invalid_md5sum(self, image_query, image_import,
+                                         get_md5sum):
+        image_name = 'testimage'
+        url = 'file:///tmp/testdummyimg'
+        image_meta = {'os_version': 'rhel6.5',
+                      'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
+        image_query.return_value = []
+        get_md5sum.return_value = 'c73ce117eef8077c3420bfc000000'
+#         self._smutclient.image_import(image_name, url, image_meta)
+        self.assertRaises(exception.SDKImageImportException,
+                          self._smutclient.image_import,
+                          image_name, url, image_meta)
+
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    def test_image_query(self, image_query):
+        image_name = "testimage"
+        self._smutclient.image_query(image_name)
+        image_query.assert_called_once_with(image_name)
+
+    @mock.patch.object(database.ImageDbOperator, 'image_delete_record')
+    @mock.patch.object(smutclient.SMUTClient, '_delete_image_file')
+    def test_image_delete(self, delete_file, delete_db_record):
+        image_name = 'testimage'
+        self._smutclient.image_delete(image_name)
+        delete_file.assert_called_once_with(image_name)
+        delete_db_record.assert_called_once_with(image_name)
+
+    @mock.patch.object(database.ImageDbOperator, 'query_disk_size_units')
+    def test_image_get_root_disk_size(self, query_disk_size_units):
+        image_name = 'testimage'
+        self._smutclient.image_get_root_disk_size(image_name)
+        query_disk_size_units.assert_called_once_with(image_name)
