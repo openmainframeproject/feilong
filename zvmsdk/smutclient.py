@@ -96,6 +96,9 @@ class SMUTClient(client.ZVMClient):
 
         self._request(rd)
 
+        # Add the guest to db immediately after user created
+        self._GuestDbOperator.add_guest(userid)
+        # Continue to add disk
         if disk_list:
             # Add disks for vm
             self.add_mdisks(userid, disk_list)
