@@ -552,17 +552,22 @@ class ImageDbOperator(object):
             LOG.debug("Imagename: %s not found!" % imagename)
         return ''
 
-    def image_query_record(self, imagename):
-        """Select the record for specified imagename in image table"""
-        with get_db_conn() as conn:
-            result = conn.execute("SELECT * FROM image WHERE "
-                                  "imagename=?", (imagename,))
-            image_list = result.fetchall()
-        if len(image_list) == 1:
-            return image_list[0]
-        elif len(image_list) == 0:
-            LOG.debug("Imagename: %s not found!" % imagename)
-        return None
+    def image_query_record(self, imagename=None):
+        """Query the image record from database, if imagename is None, all
+        of the image records will be returned, otherwise only the specified
+        image record will be returned."""
+
+        if imagename:
+            with get_db_conn() as conn:
+                result = conn.execute("SELECT * FROM image WHERE "
+                                      "imagename=?", (imagename,))
+                image_list = result.fetchall()
+        else:
+            with get_db_conn() as conn:
+                result = conn.execute("SELECT * FROM image")
+                image_list = result.fetchall()
+
+        return image_list
 
     def image_delete_record(self, imagename):
         """Delete the record of specified imagename from image table"""

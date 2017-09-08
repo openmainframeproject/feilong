@@ -762,6 +762,30 @@ class SMUTClient(client.ZVMClient):
                   nic_vdev, msg)
         self._uncouple_nic(userid, nic_vdev, active=active)
 
+    def delete_userid(self, userid):
+        rd = ' '.join(('deletevm', userid, 'directory'))
+        try:
+            self._request(rd)
+        except exception.ZVMClientRequestFailed as err:
+            if err.results['rc'] == 400 and err.results['rs'] == 4:
+                # guest vm definition not found
+                LOG.debug("The guest vm %s not found" % userid)
+                return
+            else:
+                raise err
+
+    def delete_vm(self, userid):
+        self.delete_userid(userid)
+
+        # TODO: cleanup db record from network table
+        pass
+
+        # TODO: cleanup db record from volume table
+        pass
+
+        # TODO: cleanup db record from guest table
+        pass
+
     def image_import(self, image_name, url, image_meta, remote_host=None):
         """Import the image specified in url to SDK image repository, and
         create a record in image db, the imported images are located in
@@ -769,7 +793,7 @@ class SMUTClient(client.ZVMClient):
         /opt/sdk/images/netboot/rhel7.2/90685d2b-167b.img"""
 
         try:
-            # Ensure the specified image is not exisit in image DB
+            # Ensure the specified image is not exist in image DB
             image_exists = self._ImageDbOperator.image_query_record(image_name)
             if image_exists:
                 LOG.info("The image %s has already exist in image repository"
@@ -784,7 +808,7 @@ class SMUTClient(client.ZVMClient):
                                                     image_meta,
                                                     remote_host=remote_host)
             # Check md5 after import to ensure import a correct image
-            # TODO change to use query imagename in db
+            # TODO change to use query imagename in DB
             expect_md5sum = image_meta.get('md5sum')
             real_md5sum = self._get_md5sum(target)
             if expect_md5sum and expect_md5sum != real_md5sum:
@@ -900,35 +924,19 @@ class SMUTClient(client.ZVMClient):
     def _delete_image_file(self, image_name):
         target_info = self._ImageDbOperator.image_query_record(image_name)
         image_path = '/'.join([CONF.image.sdk_image_repository,
-                               target_info[5],
-                               target_info[1],
+                               target_info[0][5],
+                               target_info[0][1],
                                image_name])
 
         self._pathutils.remove_file(image_path)
 
-    def delete_userid(self, userid):
-        rd = ' '.join(('deletevm', userid, 'directory'))
-        try:
-            self._request(rd)
-        except exception.ZVMClientRequestFailed as err:
-            if err.results['rc'] == 400 and err.results['rs'] == 4:
-                # guest vm definition not found
-                LOG.debug("The guest vm %s not found" % userid)
-                return
-            else:
-                raise err
+    def image_query(self, imagename=None):
+        return self._ImageDbOperator.image_query_record(imagename)
 
-    def delete_vm(self, userid):
-        self.delete_userid(userid)
-
-        # TODO: cleanup db record from network table
-        pass
-
-        # TODO: cleanup db record from volume table
-        pass
-
-        # TODO: cleanup db record from guest table
-        pass
+    def image_get_root_disk_size(self, image_name):
+        disk_size_units = self._ImageDbOperator.query_disk_size_units(
+                                                                image_name)
+        return disk_size_units
 
 
 class FilesystemBackend(object):
