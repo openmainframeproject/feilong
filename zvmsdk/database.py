@@ -578,6 +578,7 @@ class GuestDbOperator(object):
 
     def __init__(self):
         self._create_guests_table()
+        self._module_id = 'guest'
 
     def _create_guests_table(self):
         """"""
@@ -595,14 +596,16 @@ class GuestDbOperator(object):
         if guest is None:
             msg = 'Guest with id: %s does not exist in DB.' % guest_id
             LOG.error(msg)
-            raise exception.DatabaseException(msg=msg)
+            raise exception.ZVMObjectNotExistError(object=guest_id,
+                                                   modID=self._module_id)
 
     def _check_existence_by_userid(self, userid):
         guest = self.get_guest_by_userid(userid)
         if guest is None:
             msg = 'Guest with userid: %s does not exist in DB.' % userid
             LOG.error(msg)
-            raise exception.DatabaseException(msg=msg)
+            raise exception.ZVMObjectNotExistError(object=userid,
+                                                   modID=self._module_id)
 
     def add_guest(self, userid, meta='', comments=''):
         # Generate uuid automatically
@@ -632,7 +635,7 @@ class GuestDbOperator(object):
             msg = ("Update guest with id: %s failed, no field "
                    "specified to be updated." % uuid)
             LOG.error(msg)
-            raise exception.DatabaseException(msg=msg)
+            raise exception.ZVMSDKInternalError(msg=msg, modID=self._module_id)
 
         # First check whether the guest exist in db table
         self._check_existence_by_id(uuid)
@@ -664,7 +667,7 @@ class GuestDbOperator(object):
             msg = ("Update guest with userid: %s failed, no field "
                    "specified to be updated." % userid)
             LOG.error(msg)
-            raise exception.DatabaseException(msg=msg)
+            raise exception.ZVMSDKInternalError(msg=msg, modID=self._module_id)
 
         # First check whether the guest exist in db table
         self._check_existence_by_userid(userid)
