@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5648d874_1daab564",
+        "filename": "zvmsdk/tests/unit/base.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1010896
+      },
+      "writtenOn": "2017-09-11T08:43:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c0902f2f_9073cf4c",
+      "range": {
+        "startLine": 35,
+        "startChar": 36,
+        "endLine": 35,
+        "endChar": 54
+      },
+      "revId": "4515a002e15976f4c3b8c0345d9d9319bd0dfbef",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "11690b98_13b8b925",
         "filename": "zvmsdk/tests/unit/test_database.py",
         "patchSetId": 6
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "03e02299_038c289b",
+        "filename": "zvmsdk/tests/unit/test_database.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1010896
+      },
+      "writtenOn": "2017-09-11T08:43:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11690b98_13b8b925",
+      "range": {
+        "startLine": 32,
+        "startChar": 31,
+        "endLine": 32,
+        "endChar": 48
+      },
+      "revId": "4515a002e15976f4c3b8c0345d9d9319bd0dfbef",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f2c48188_01c22022",
         "filename": "zvmsdk/tests/unit/test_database.py",
         "patchSetId": 6
@@ -83,6 +131,30 @@
       "writtenOn": "2017-09-11T08:00:24Z",
       "side": 1,
       "message": "The database dir conf will be backup and replaced in sdkbase class setup and teardown.\nNo need to be done for each db operator test.",
+      "range": {
+        "startLine": 39,
+        "startChar": 35,
+        "endLine": 39,
+        "endChar": 38
+      },
+      "revId": "4515a002e15976f4c3b8c0345d9d9319bd0dfbef",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4b61d39c_09688a5c",
+        "filename": "zvmsdk/tests/unit/test_database.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1010896
+      },
+      "writtenOn": "2017-09-11T08:43:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f2c48188_01c22022",
       "range": {
         "startLine": 39,
         "startChar": 35,
