@@ -783,8 +783,8 @@ class SMUTClient(client.ZVMClient):
         # TODO: cleanup db record from volume table
         pass
 
-        # TODO: cleanup db record from guest table
-        pass
+        # cleanup db record from guest table
+        self._GuestDbOperator.delete_guest_by_userid(userid)
 
     def image_import(self, image_name, url, image_meta, remote_host=None):
         """Import the image specified in url to SDK image repository, and
