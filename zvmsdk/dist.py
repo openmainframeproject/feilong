@@ -70,7 +70,7 @@ class LinuxDist(object):
         file_name_dns = self._get_dns_filename()
         for network in guest_networks:
             base_vdev = network['nic_vdev']
-            file_name = self._get_device_filename(device_num)
+            file_name = self._get_device_filename(device_num, vdev=base_vdev)
             (cfg_str, cmd_str, dns_str,
                 route_str) = self._generate_network_configuration(network,
                                                 base_vdev, device_num)
@@ -106,7 +106,7 @@ class LinuxDist(object):
         netmask_v4 = str(netaddr.IPNetwork(network['cidr']).netmask)
         gateway_v4 = network['gateway_addr'] or ''
         broadcast_v4 = str(netaddr.IPNetwork(network['cidr']).broadcast)
-        device = self._get_device_name(device_num)
+        device = self._get_device_name(device_num, vdev=vdev)
         address_read = str(vdev).zfill(4)
         address_write = str(hex(int(vdev, 16) + 1))[2:].zfill(4)
         address_data = str(hex(int(vdev, 16) + 2))[2:].zfill(4)
@@ -123,8 +123,8 @@ class LinuxDist(object):
 
         return cfg_str, cmd_str, dns_str, route_str
 
-    def get_device_name(self, device_num):
-        return self._get_device_name(device_num)
+    def get_device_name(self, device_num, vdev=None):
+        return self._get_device_name(device_num, vdev=vdev)
 
     @abc.abstractmethod
     def _get_network_file_path(self):
@@ -145,7 +145,7 @@ class LinuxDist(object):
         pass
 
     @abc.abstractmethod
-    def _get_device_filename(self, device_num):
+    def _get_device_filename(self, device_num, vdev=None):
         """construct the name of a network device file."""
         pass
 
@@ -170,7 +170,7 @@ class LinuxDist(object):
         pass
 
     @abc.abstractmethod
-    def _get_device_name(self, device_num):
+    def _get_device_name(self, device_num, vdev=None):
         """construct the name of a network device."""
         pass
 
@@ -239,7 +239,7 @@ class rhel(LinuxDist):
     def _get_dns_filename(self):
         return '/etc/resolv.conf'
 
-    def _get_device_name(self, device_num):
+    def _get_device_name(self, device_num, vdev=None):
         return 'eth' + str(device_num)
 
     def _get_udev_configuration(self, device, dev_channel):
@@ -268,10 +268,10 @@ class rhel6(rhel):
                           'service network restart',
                           'cio_ignore -u'))
 
-    def _get_device_filename(self, device_num):
+    def _get_device_filename(self, device_num, vdev=None):
         return 'ifcfg-eth' + str(device_num)
 
-    def _get_device_name(self, device_num):
+    def _get_device_name(self, device_num, vdev=None):
         return 'eth' + str(device_num)
 
     def get_scp_string(self, root, fcp, wwpn, lun):
@@ -306,17 +306,13 @@ class rhel7(rhel):
                           'znetconf -A',
                           'cio_ignore -u'))
 
-    def _get_device_filename(self, device_num):
+    def _get_device_filename(self, device_num, vdev=None):
         # Construct a device like ifcfg-enccw0.0.1000, ifcfg-enccw0.0.1003
-        base = int(CONF.zvm.default_nic_vdev, 16)
-        device = str(hex(base + device_num * 3))[2:]
-        return 'ifcfg-enccw0.0.' + str(device).zfill(4)
+        return 'ifcfg-enccw0.0.' + str(vdev).zfill(4)
 
-    def _get_device_name(self, device_num):
+    def _get_device_name(self, device_num, vdev=None):
         # Construct a device like enccw0.0.1000, enccw0.0.1003
-        base = int(CONF.zvm.default_nic_vdev, 16)
-        device = str(hex(base + device_num * 3))[2:]
-        return 'enccw0.0.' + str(device).zfill(4)
+        return 'enccw0.0.' + str(vdev).zfill(4)
 
     def get_scp_string(self, root, fcp, wwpn, lun):
         return ("=root=%(root)s selinux=0 zfcp.allow_lun_scan=0 "
@@ -382,10 +378,10 @@ class sles(LinuxDist):
     def _get_dns_filename(self):
         return '/etc/resolv.conf'
 
-    def _get_device_filename(self, device_num):
+    def _get_device_filename(self, device_num, vdev=None):
         return 'ifcfg-eth' + str(device_num)
 
-    def _get_device_name(self, device_num):
+    def _get_device_name(self, device_num, vdev=None):
         return 'eth' + str(device_num)
 
     def _append_udev_info(self, cfg_files, file_name_route, route_cfg_str,
