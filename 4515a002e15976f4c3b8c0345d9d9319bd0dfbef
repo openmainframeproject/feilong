@@ -45,6 +45,53 @@
       "revId": "4515a002e15976f4c3b8c0345d9d9319bd0dfbef",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d01c0c6e_a312d369",
+        "filename": "zvmsdk/tests/unit/test_database.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-11T08:00:24Z",
+      "side": 1,
+      "message": "Agree.",
+      "parentUuid": "11690b98_13b8b925",
+      "range": {
+        "startLine": 32,
+        "startChar": 31,
+        "endLine": 32,
+        "endChar": 48
+      },
+      "revId": "4515a002e15976f4c3b8c0345d9d9319bd0dfbef",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f2c48188_01c22022",
+        "filename": "zvmsdk/tests/unit/test_database.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-11T08:00:24Z",
+      "side": 1,
+      "message": "The database dir conf will be backup and replaced in sdkbase class setup and teardown.\nNo need to be done for each db operator test.",
+      "range": {
+        "startLine": 39,
+        "startChar": 35,
+        "endLine": 39,
+        "endChar": 38
+      },
+      "revId": "4515a002e15976f4c3b8c0345d9d9319bd0dfbef",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
