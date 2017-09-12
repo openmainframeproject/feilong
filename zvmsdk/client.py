@@ -162,8 +162,8 @@ class ZVMClient(object):
     def punch_file(self, node, fn, fclass):
         pass
 
-    def get_instance_path(self, os_node, userid, module):
-        return self._pathutils.get_instance_path(os_node, userid, module)
+    def get_guest_temp_path(self, os_node, userid, module):
+        return self._pathutils.get_guest_temp_path(os_node, userid, module)
 
     def _generate_vdev(self, base, offset):
         """Generate virtual device number based on base vdev

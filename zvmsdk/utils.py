@@ -211,22 +211,31 @@ class PathUtils(object):
         if os.path.exists(fpath):
             os.remove(fpath)
 
-    def _get_instances_path(self):
+    def _get_guest_path(self):
+        return os.path.join(constants.SDK_DATA_PATH, 'guests')
+
+    def _get_guest_temp_path(self):
         return os.path.normpath(CONF.guest.temp_path)
 
-    def get_instance_path(self, os_node, instance_name, module):
-        instance_folder = os.path.join(self._get_instances_path(), os_node,
-                                       instance_name)
-        if not os.path.exists(instance_folder):
-            LOG.debug("Creating the instance path %s", instance_folder)
-            os.makedirs(instance_folder)
+    def _mkdir_if_not_exist(self, folder):
+        if not os.path.exists(folder):
+            LOG.debug("Creating the guest path %s", folder)
+            os.makedirs(folder)
+
+    def get_guest_temp_path(self, userid, module):
+        guest_folder = os.path.join(self._get_guest_temp_path(), userid)
+        self._mkdir_if_not_exist(guest_folder)
         tmp_inst_dir = tempfile.mkdtemp(prefix=module,
-                                        dir=instance_folder)
+                                        dir=guest_folder)
         return tmp_inst_dir
 
-    def get_console_log_path(self, os_node, instance_name):
-        return os.path.join(self.get_instance_path(os_node, instance_name),
-                            "console.log")
+    def get_guest_path(self, userid, sub_dir):
+        guest_folder = os.path.join(self._get_guest_path(), userid)
+        self._mkdir_if_not_exist(guest_folder)
+        return guest_folder
+
+    def get_console_log_path(self, userid):
+        return os.path.join(self.get_guest_path(userid), "console.log")
 
     def create_import_image_repository(self, image_osdistro, type):
         zvmsdk_image_import_repo = os.path.join(

@@ -87,3 +87,5 @@ _TUSERID_OR_LIST = (_TUSERID, list)
 IMAGE_TYPE = {
     'DEPLOY': 'netboot',
     'CAPTURE': 'staging'}
+
+SDK_DATA_PATH = '/var/lib/zvmsdk/'
