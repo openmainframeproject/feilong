@@ -22,6 +22,30 @@
       "revId": "b2415f72ddc2e84403184c1f8b5286bb6fd2dfcf",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9f5fb43c_d8b52963",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2017-09-12T07:08:23Z",
+      "side": 1,
+      "message": "guest_networkt is not the same to network_info in the openstack, there are too much unnecessary info in the network_info, all the users need to construct the structure like below when calling this function \n[{\u0027ip_addr\u0027: \u0027192.168.95.10\u0027,\n  \u0027dns_addr\u0027: [\u00279.0.2.1\u0027, \u00279.0.3.1\u0027],\n  \u0027gateway_addr\u0027: \u0027192.168.95.1\u0027,\n  \u0027cidr\u0027: \"192.168.95.0/24\",\n  \u0027nic_vdev\u0027: \u00271000\u0027},\n {\u0027ip_addr\u0027: \u0027192.168.96.10\u0027,\n  \u0027dns_addr\u0027: [\u00279.0.2.1\u0027, \u00279.0.3.1\u0027],\n  \u0027gateway_addr\u0027: \u0027192.168.96.1\u0027,\n  \u0027cidr\u0027: \"192.168.96.0/24\",\n  \u0027nic_vdev\u0027: \u00271003}]",
+      "parentUuid": "a68a13a1_74eb65b3",
+      "range": {
+        "startLine": 72,
+        "startChar": 12,
+        "endLine": 73,
+        "endChar": 77
+      },
+      "revId": "b2415f72ddc2e84403184c1f8b5286bb6fd2dfcf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
