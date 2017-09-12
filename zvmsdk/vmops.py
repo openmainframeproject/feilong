@@ -149,11 +149,8 @@ class VMOps(object):
         LOG.debug("Creating the z/VM user entry for instance %s"
                   % userid)
 
-        try:
-            self._zvmclient.create_vm(userid, cpu, memory,
-                                      disk_list, user_profile)
-        except Exception as err:
-            raise exception.ZVMCreateVMFailed(userid=userid, msg=str(err))
+        self._zvmclient.create_vm(userid, cpu, memory,
+                                  disk_list, user_profile)
 
     def create_disks(self, userid, disk_list):
         user_direct = self._zvmclient.get_user_direct(userid)
@@ -197,22 +194,9 @@ class VMOps(object):
 
     def guest_deploy(self, user_id, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
-        try:
-            LOG.debug("Begin to deploy image on vm %s", user_id)
-
-            self._zvmclient.guest_deploy(user_id, image_name,
-                                         transportfiles, remotehost, vdev)
-
-        except exception.ZVMGuestDeployFailed as err:
-            LOG.error(('Failed to deploy image %(img)s to vm %(vm)s') %
-                      {'img': image_name,
-                       'vm': user_id})
-            raise
-        except Exception as err:
-            LOG.error(('Failed to deploy image %(img)s to vm %(vm)s') %
-                      {'img': image_name,
-                       'vm': user_id})
-            raise exception.ZVMGuestDeployFailed(userid=user_id, msg=str(err))
+        LOG.debug("Begin to deploy image on vm %s", user_id)
+        self._zvmclient.guest_deploy(user_id, image_name,
+                                     transportfiles, remotehost, vdev)
 
     def guest_list(self):
         return self._zvmclient.get_vm_list()

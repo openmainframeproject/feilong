@@ -319,7 +319,8 @@ def check_input_types(*types, **validkeys):
                        "%(expected)d expected." %
                        {'specified': len(inputs), 'expected': len(types)})
                 LOG.info(msg)
-                raise exception.ZVMInvalidInput(msg=msg)
+                raise exception.ZVMInvalidInputNumber(function.__name__,
+                                                      len(types), len(inputs))
 
             argtypes = tuple(map(type, inputs))
             match_types = types[0:len(argtypes)]
@@ -351,14 +352,16 @@ def check_input_types(*types, **validkeys):
                        "length should be less or equal to 8 and should not be "
                        "null or contain spaces." % (invalid_userid_idx + 1))
                 LOG.info(msg)
-                raise exception.ZVMInvalidInput(msg=msg)
+                raise exception.ZVMInvalidInputFormat(function.__name__,
+                                                      msg=msg)
 
             if invalid_type:
                 msg = ("Invalid input types: %(argtypes)s; "
                        "Expected types: %(types)s" %
                        {'argtypes': str(argtypes), 'types': str(types)})
                 LOG.info(msg)
-                raise exception.ZVMInvalidInput(msg=msg)
+                raise exception.ZVMInvalidInputtypes(function.__name__,
+                                                     str(types), str(argtypes))
 
             valid_keys = validkeys.get('valid_keys')
             if valid_keys:
@@ -368,7 +371,8 @@ def check_input_types(*types, **validkeys):
                                "Expected keywords are: %(keys)s" %
                                {'key': k, 'keys': str(valid_keys)})
                         LOG.info(msg)
-                        raise exception.ZVMInvalidInput(msg=msg)
+                        raise exception.ZVMInvalidInputFormat(
+                            function.__name__, msg=msg)
             return function(*args, **kwargs)
         return wrap_func
     return decorator
@@ -437,6 +441,32 @@ def expect_request_failed_and_reraise(exc, **kwargs):
         raise exc(**kwargs)
 
 
+@contextlib.contextmanager
+def expect_and_reraise_internal_error(modID='SDK'):
+    """Catch all kinds of zvm client request failure and reraise.
+
+    exc: the exception that would be raised.
+    """
+    try:
+        yield
+    except exception.ZVMSDKInternalError as err:
+        msg = err.format_message()
+        raise exception.ZVMSDKInternalError(msg, modID=modID)
+
+
+@contextlib.contextmanager
+def expect_database_error_and_reraise(exc):
+    """Catch all kinds of zvm client request failure and reraise.
+
+    exc: the exception that would be raised.
+    """
+    try:
+        yield
+    except exception.DatabaseException as err:
+        msg = err.format_message()
+        raise exception.ZVMGuestOperationFailed(rs=1, msg=msg)
+
+
 # mappings for zvm driver/plugin compatible
 def get_xcatclient():
     return import_object('zvmsdk.client.get_xcatclient')
@@ -480,7 +510,7 @@ def get_smut_userid():
         return userid
     except Exception as err:
         msg = ("Could not find the userid of the smut server: %s") % err
-        raise exception.ZVMClientInternalError(msg=msg)
+        raise exception.ZVMSDKInternalError(msg=msg)
 
 
 def generate_iucv_authfile(fn, client):

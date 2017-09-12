@@ -593,7 +593,7 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         self.assertListEqual([], guests)
 
     def test_delete_guest_by_id_not_exist(self):
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.ZVMObjectNotExistError,
                           self.db_op.delete_guest_by_id,
                           'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
@@ -609,7 +609,7 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         self.assertListEqual([], guests)
 
     def test_delete_guest_by_userid_not_exist(self):
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.ZVMObjectNotExistError,
                           self.db_op.delete_guest_by_userid,
                           'Fakeuser')
 
@@ -673,13 +673,13 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
         self.db_op.add_guest(userid, meta=meta)
         # Update
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.ZVMSDKInternalError,
                           self.db_op.update_guest_by_id,
                           'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
     def test_update_guest_by_id_not_exist(self):
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.ZVMObjectNotExistError,
                           self.db_op.update_guest_by_id,
                           'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
                           meta='newmeta')
@@ -722,13 +722,13 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
         self.db_op.add_guest(userid, meta=meta)
         # Update
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.ZVMSDKInternalError,
                           self.db_op.update_guest_by_userid,
                           'FakeUser')
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
     def test_update_guest_by_userid_not_exist(self):
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.ZVMObjectNotExistError,
                           self.db_op.update_guest_by_userid,
                           'FaKeUser',
                           meta='newmeta')
