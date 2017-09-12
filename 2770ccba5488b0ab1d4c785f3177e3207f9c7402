@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "26aad4f2_8db54f05",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-12T04:27:20Z",
+      "side": 1,
+      "message": "all occurrance in the functions from this class consider change later?",
+      "range": {
+        "startLine": 145,
+        "startChar": 33,
+        "endLine": 145,
+        "endChar": 39
+      },
+      "revId": "2770ccba5488b0ab1d4c785f3177e3207f9c7402",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
