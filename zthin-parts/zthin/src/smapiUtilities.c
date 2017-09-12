@@ -688,7 +688,7 @@ void logLine(struct _vmApiInternalContext* vmapiContextP, char aSeverity, const 
         snprintf(line, LINESIZE, "%*.s%s\n", prefixL, prefix, aLineP);
     }
 
-    openlog(NULL, 0, LOG_LOCAL4);
+    openlog(NULL, 0, LOG_LOCAL5);
     syslog(syslogSeverity, "%s", line);
     closelog();
 }
