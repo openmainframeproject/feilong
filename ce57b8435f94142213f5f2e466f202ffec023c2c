@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5397ab36_fdc5a8ed",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-12T03:07:56Z",
+      "side": 1,
+      "message": "as you are checking in insert and update, do we need consider at least some logs to indicate whether delete really success or not?",
+      "range": {
+        "startLine": 159,
+        "startChar": 4,
+        "endLine": 168,
+        "endChar": 45
+      },
+      "revId": "ce57b8435f94142213f5f2e466f202ffec023c2c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
