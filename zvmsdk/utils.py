@@ -210,19 +210,19 @@ class PathUtils(object):
         if os.path.exists(fpath):
             os.remove(fpath)
 
-    def _get_instances_path(self):
-        return os.path.normpath(CONF.guest.temp_path)
+    def _get_guest_path(self):
+        return os.path.normpath('/var/lib/zvmsdk/guests/')
 
-    def get_instance_path(self, os_node, instance_name):
-        instance_folder = os.path.join(self._get_instances_path(), os_node,
-                                       instance_name)
-        if not os.path.exists(instance_folder):
-            LOG.debug("Creating the instance path %s", instance_folder)
-            os.makedirs(instance_folder)
-        return instance_folder
+    def get_guest_path(self, guest_id):
+        guest_folder = os.path.join(self._get_guest_path(),
+                                       guest_id)
+        if not os.path.exists(guest_folder):
+            LOG.debug("Creating the guest path %s", guest_folder)
+            os.makedirs(guest_folder)
+        return guest_folder
 
-    def get_console_log_path(self, os_node, instance_name):
-        return os.path.join(self.get_instance_path(os_node, instance_name),
+    def get_console_log_path(self, guest_id):
+        return os.path.join(self.get_guest_path(guest_id),
                             "console.log")
 
     def create_import_image_repository(self, image_osdistro, type):
