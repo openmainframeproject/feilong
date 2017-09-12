@@ -51,3 +51,7 @@ class ImageOps(object):
 
     def image_delete(self, image_name):
         return self.zvmclient.image_delete(image_name)
+
+    def image_export(self, image_name, dest_url, remote_host=None):
+        return self.zvmclient.image_export(image_name, dest_url,
+                                           remote_host)
