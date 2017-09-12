@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a68a13a1_74eb65b3",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-12T03:16:25Z",
+      "side": 1,
+      "message": "is this we got from upper layer (network info if openstack ) and others need construct a similar structure then we can consume?",
+      "range": {
+        "startLine": 72,
+        "startChar": 12,
+        "endLine": 73,
+        "endChar": 77
+      },
+      "revId": "b2415f72ddc2e84403184c1f8b5286bb6fd2dfcf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
