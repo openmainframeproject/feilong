@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f4da8118_e6799780",
+        "filename": "zvmsdk/networkops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-12T04:44:41Z",
+      "side": 1,
+      "message": "this is useless, just use CONF.zvm.host at next line",
+      "range": {
+        "startLine": 106,
+        "startChar": 8,
+        "endLine": 106,
+        "endChar": 31
+      },
+      "revId": "51f5ec863e3404a573d16e91c55a0d2cb33f2a00",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "55593db1_c9705982",
+        "filename": "zvmsdk/networkops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-12T04:44:41Z",
+      "side": 1,
+      "message": "we are sure this will not raise exception or we don\u0027t need to process it?",
+      "range": {
+        "startLine": 114,
+        "startChar": 12,
+        "endLine": 114,
+        "endChar": 74
+      },
+      "revId": "51f5ec863e3404a573d16e91c55a0d2cb33f2a00",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ad632520_4e89199f",
+        "filename": "zvmsdk/networkops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-12T04:44:41Z",
+      "side": 1,
+      "message": "you removed punchfile in above punch_file function\nwhy we need remove the path here?",
+      "range": {
+        "startLine": 117,
+        "startChar": 12,
+        "endLine": 117,
+        "endChar": 40
+      },
+      "revId": "51f5ec863e3404a573d16e91c55a0d2cb33f2a00",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fd8a4ae6_4570ea28",
+        "filename": "zvmsdk/networkops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-12T04:44:41Z",
+      "side": 1,
+      "message": "I checked our _create_znetconfig function\nactually we won\u0027t return None e.g\n\n    def get_znetconfig_contents(self):\n        return \u0027\\n\u0027.join((\u0027cio_ignore -R\u0027,\n                          \u0027znetconf -R -n\u0027,\n                          \u0027udevadm trigger\u0027,\n                          \u0027udevadm settle\u0027,\n                          \u0027sleep 2\u0027,\n                          \u0027znetconf -A\u0027,\n                          \u0027service network restart\u0027,\n                          \u0027cio_ignore -u\u0027))",
+      "range": {
+        "startLine": 145,
+        "startChar": 8,
+        "endLine": 147,
+        "endChar": 77
+      },
+      "revId": "51f5ec863e3404a573d16e91c55a0d2cb33f2a00",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0c819989_9dfca794",
+        "filename": "zvmsdk/networkops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-12T04:44:41Z",
+      "side": 1,
+      "message": "is this name right? seems it\u0027s getting znet conf file contents, not udev settle command....",
+      "range": {
+        "startLine": 173,
+        "startChar": 8,
+        "endLine": 173,
+        "endChar": 20
+      },
+      "revId": "51f5ec863e3404a573d16e91c55a0d2cb33f2a00",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "457402e6_4214a055",
+        "filename": "zvmsdk/networkops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-12T04:44:41Z",
+      "side": 1,
+      "message": "follow up patch could you please help to describe a little bit here about invoke scripts and do script below?",
+      "range": {
+        "startLine": 186,
+        "startChar": 8,
+        "endLine": 186,
+        "endChar": 28
+      },
+      "revId": "51f5ec863e3404a573d16e91c55a0d2cb33f2a00",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "047d0809_7ffdf952",
+        "filename": "zvmsdk/networkops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-12T04:44:41Z",
+      "side": 1,
+      "message": "nit: add instance_path here in log",
+      "revId": "51f5ec863e3404a573d16e91c55a0d2cb33f2a00",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
