@@ -22,6 +22,30 @@
       "revId": "44a28e6bd1d016669365d01a08d90ef2aada440a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4113dbf8_ac4a16af",
+        "filename": "zvmsdk/tests/unit/test_database.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1010896
+      },
+      "writtenOn": "2017-09-12T02:49:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7755a3c2_072fc76a",
+      "range": {
+        "startLine": 32,
+        "startChar": 31,
+        "endLine": 32,
+        "endChar": 48
+      },
+      "revId": "44a28e6bd1d016669365d01a08d90ef2aada440a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
