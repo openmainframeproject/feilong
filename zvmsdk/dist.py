@@ -96,17 +96,28 @@ class LinuxDist(object):
         return cfg_files, cmd_strings
 
     def _generate_network_configuration(self, network, vdev, device_num):
-        ip_v4 = dns_str = ''
-        if len(network['ip_addr']) > 0:
+        ip_v4 = dns_str = gateway_v4 = ''
+        netmask_v4 = broadcast_v4 = ''
+        if (('ip_addr' in network.keys()) and
+            (network['ip_addr'] is not None)):
             ip_v4 = network['ip_addr']
-        if len(network['dns_addr']) > 0:
+
+        if (('gateway_addr' in network.keys()) and
+            (network['gateway_addr'] is not None)):
+            gateway_v4 = network['gateway_addr']
+
+        if (('dns_addr' in network.keys()) and
+            (network['dns_addr'] is not None) and
+            (len(network['dns_addr']) > 0)):
             for dns in network['dns_addr']:
                 dns_str += 'nameserver ' + dns + '\n'
 
-        netmask_v4 = str(netaddr.IPNetwork(network['cidr']).netmask)
-        gateway_v4 = network['gateway_addr'] or ''
-        broadcast_v4 = str(netaddr.IPNetwork(network['cidr']).broadcast)
-        device = self._get_device_name(device_num, vdev=vdev)
+        if (('cidr' in network.keys()) and
+            (network['cidr'] is not None)):
+            netmask_v4 = str(netaddr.IPNetwork(network['cidr']).netmask)
+            broadcast_v4 = str(netaddr.IPNetwork(network['cidr']).broadcast)
+
+        device = self._get_device_name(device_num)
         address_read = str(vdev).zfill(4)
         address_write = str(hex(int(vdev, 16) + 1))[2:].zfill(4)
         address_data = str(hex(int(vdev, 16) + 2))[2:].zfill(4)
@@ -594,16 +605,27 @@ class ubuntu(LinuxDist):
         return cfg_str
 
     def _generate_network_configuration(self, network, vdev):
-        ip_v4 = dns_str = ''
-        if len(network['ip_addr']) > 0:
+        ip_v4 = dns_str = gateway_v4 = ''
+        netmask_v4 = broadcast_v4 = ''
+        if (('ip_addr' in network.keys()) and
+            (network['ip_addr'] is not None)):
             ip_v4 = network['ip_addr']
-        if len(network['dns_addr']) > 0:
+
+        if (('gateway_addr' in network.keys()) and
+            (network['gateway_addr'] is not None)):
+            gateway_v4 = network['gateway_addr']
+
+        if (('dns_addr' in network.keys()) and
+            (network['dns_addr'] is not None) and
+            (len(network['dns_addr']) > 0)):
             for dns in network['dns_addr']:
                 dns_str += 'dns-nameservers ' + dns + '\n'
 
-        netmask_v4 = str(netaddr.IPNetwork(network['cidr']).netmask)
-        gateway_v4 = network['gateway_addr'] or ''
-        broadcast_v4 = str(netaddr.IPNetwork(network['cidr']).broadcast)
+        if (('cidr' in network.keys()) and
+            (network['cidr'] is not None)):
+            netmask_v4 = str(netaddr.IPNetwork(network['cidr']).netmask)
+            broadcast_v4 = str(netaddr.IPNetwork(network['cidr']).broadcast)
+
         device = self._get_device_name(vdev)
         cfg_str = self._get_cfg_str(device, broadcast_v4, gateway_v4,
                                     ip_v4, netmask_v4)

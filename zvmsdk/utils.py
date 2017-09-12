@@ -281,6 +281,26 @@ def valid_IP(IPaddr):
                         map(int, filter(lambda x: x.isdigit(), q)))) == 4
 
 
+def valid_cidr(cidr):
+    if type(cidr) not in types.StringTypes:
+        return False
+    if ((cidr.find('/') == -1) or
+        (cidr.find('/') == 0)):
+        return False
+
+    ip_addr = cidr.split('/')[0]
+    if not valid_IP(ip_addr):
+        return False
+
+    mask = cidr.split('/')[1]
+    if (mask.isdigit() and
+        (int(mask) >= 0) and
+        (int(mask) <= 32)):
+        return True
+
+    return False
+
+
 def last_bytes(file_like_object, num):
     try:
         file_like_object.seek(-num, os.SEEK_END)
