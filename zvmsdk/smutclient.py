@@ -799,8 +799,10 @@ class SMUTClient(client.ZVMClient):
                 LOG.info("The image %s has already exist in image repository"
                          % image_name)
                 return
-            target = self._get_image_path_by_name(image_name,
-                image_meta['os_version'], const.IMAGE_TYPE['DEPLOY'])
+            target = '/'.join([CONF.image.sdk_image_repository,
+                           const.IMAGE_TYPE['DEPLOY'],
+                           image_meta['os_version'],
+                           image_name])
             self._pathutils.create_import_image_repository(
                 image_meta['os_version'], const.IMAGE_TYPE['DEPLOY'])
             self._scheme2backend(urlparse.urlparse(url).scheme).image_import(
@@ -833,6 +835,36 @@ class SMUTClient(client.ZVMClient):
             # Cleanup the image from image repository
             self._pathutils.remove_file(target)
             raise exception.SDKImageImportException(msg=msg)
+
+    def image_export(self, image_name, dest_url, remote_host=None):
+        """Export the specific image to remote host or local file system
+        :param image_name: image name that can be uniquely identify an image
+        :param dest_path: the location to store exported image, eg.
+        /opt/images, the image will be stored in folder
+         /opt/images/
+        :param remote_host: the server that export image to, the format is
+         username@IP eg. nova@192.168.99.1, if remote_host is
+        None, it means the image will be stored in local server
+        :returns a dictionary that contains the exported image info
+        {
+         'image_name': the image_name that exported
+         'image_path': the image_path after exported
+         'os_version': the os version of the exported image
+         'md5sum': the md5sum of the original image
+        }
+        """
+        source_path = self._get_image_path_by_name(image_name)
+        self._scheme2backend(urlparse.urlparse(dest_url).scheme).image_export(
+                                                    source_path, dest_url,
+                                                    remote_host=remote_host)
+        image_info = self._ImageDbOperator.image_query_record(image_name)
+
+        export_dict = {'image_name': image_name,
+                       'image_path': dest_url,
+                       'os_version': image_info[0][1],
+                       'md5sum': image_info[0][2]}
+        LOG.info("Image %s export successfully" % image_name)
+        return export_dict
 
     def _get_disk_size_units(self, image_path):
         """Return a string to indicate disk units in format 3390:CYL or 408200:
@@ -876,12 +908,13 @@ class SMUTClient(client.ZVMClient):
         size = output.split()[0]
         return size
 
-    def _get_image_path_by_name(self, image_name, image_os_version, type):
-        target = '/'.join([CONF.image.sdk_image_repository,
-                           type,
-                           image_os_version,
-                           image_name])
-        return target
+    def _get_image_path_by_name(self, image_name):
+        target_info = self._ImageDbOperator.image_query_record(image_name)
+        image_path = '/'.join([CONF.image.sdk_image_repository,
+                               target_info[0][5],
+                               target_info[0][1],
+                               image_name])
+        return image_path
 
     def _scheme2backend(self, scheme):
         return {
@@ -922,12 +955,7 @@ class SMUTClient(client.ZVMClient):
         self._ImageDbOperator.image_delete_record(image_name)
 
     def _delete_image_file(self, image_name):
-        target_info = self._ImageDbOperator.image_query_record(image_name)
-        image_path = '/'.join([CONF.image.sdk_image_repository,
-                               target_info[0][5],
-                               target_info[0][1],
-                               image_name])
-
+        image_path = self._get_image_path_by_name(image_name)
         self._pathutils.remove_file(image_path)
 
     def image_query(self, imagename=None):
@@ -955,7 +983,8 @@ class FilesystemBackend(object):
             if kwargs['remote_host']:
                 if '@' in kwargs['remote_host']:
                     source_path = ':'.join([kwargs['remote_host'], source])
-                    command = ' '.join(['/usr/bin/scp', source_path, target])
+                    command = ' '.join(['/usr/bin/scp -r ', source_path,
+                                        target])
                     (rc, output) = commands.getstatusoutput(command)
                     if rc:
                         msg = ("Error happened when copying image file with"
@@ -976,6 +1005,24 @@ class FilesystemBackend(object):
                           " image repository with reason: %s" % str(err))
                 LOG.error(msg)
                 raise err
+
+    @classmethod
+    def image_export(cls, source_path, dest_url, **kwargs):
+        """Export the specific image to remote host or local file system """
+        dest_path = urlparse.urlparse(dest_url).path
+        if kwargs['remote_host']:
+            target_path = ':'.join([kwargs['remote_host'], dest_path])
+            command = ' '.join(['/usr/bin/scp -r ', source_path, target_path])
+            (rc, output) = commands.getstatusoutput(command)
+            if rc:
+                msg = ("Error happened when remote copy image file with"
+                       " reason: %s" % output)
+                LOG.error(msg)
+                raise
+        else:
+            # Copy to local file system
+            LOG.debug("Remote_host not specified, will copy to local server")
+            shutil.copyfile(source_path, dest_path)
 
 
 class HTTPBackend(object):

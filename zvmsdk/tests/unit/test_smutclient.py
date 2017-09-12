@@ -20,7 +20,6 @@ import tempfile
 from smutLayer import smut
 
 from zvmsdk import config
-from zvmsdk import constants as const
 from zvmsdk import database
 from zvmsdk import exception
 from zvmsdk import smutclient
@@ -936,15 +935,18 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smutclient.SMUTClient, '_get_disk_size_units')
     @mock.patch.object(smutclient.SMUTClient, '_get_md5sum')
     @mock.patch.object(smutclient.FilesystemBackend, 'image_import')
+    @mock.patch.object(smutclient.SMUTClient, '_get_image_path_by_name')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
-    def test_image_import(self, image_query, image_import, get_md5sum,
-                          disk_size_units, image_size, image_add_record):
+    def test_image_import(self, image_query, get_img_path, image_import,
+                          get_md5sum, disk_size_units, image_size,
+                          image_add_record):
         image_name = 'testimage'
         url = 'file:///tmp/testdummyimg'
         image_meta = {'os_version': 'rhel6.5',
                       'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
-        target = self._smutclient._get_image_path_by_name(image_name,
-                image_meta['os_version'], const.IMAGE_TYPE['DEPLOY'])
+        get_img_path.return_value = \
+            '/var/lib/zvmsdk/images/netboot/rhel6.5/testimage'
+        target = self._smutclient._get_image_path_by_name(image_name)
         image_query.return_value = []
         get_md5sum.return_value = 'c73ce117eef8077c3420bfc8f473ac2f'
         disk_size_units.return_value = '3338:CYL'
@@ -1012,3 +1014,26 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         image_name = 'testimage'
         self._smutclient.image_get_root_disk_size(image_name)
         query_disk_size_units.assert_called_once_with(image_name)
+
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    @mock.patch.object(smutclient.FilesystemBackend, 'image_export')
+    @mock.patch.object(smutclient.SMUTClient, '_get_image_path_by_name')
+    def test_image_export(self, get_img_path, image_export, image_query):
+        image_name = u'testimage'
+        dest_url = 'file:///path/to/exported/image'
+        remote_host = 'nova@9.x.x.x'
+        get_img_path.return_value = '/opt/zvmsdk/netboot/rhel6.5/testimage'
+        image_query.return_value = [(u'testimage', u'rhel6.5',
+            u'c73ce117eef8077c3420bfc8f473ac2f',
+            u'3338:CYL', u'5120000', u'netboot', None)]
+        expect_return = {
+            'image_name': u'testimage',
+            'image_path': u'file:///path/to/exported/image',
+            'os_version': u'rhel6.5',
+            'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f'
+        }
+        real_return = self._smutclient.image_export(image_name, dest_url,
+                                                remote_host=remote_host)
+        get_img_path.assert_called_once_with(image_name)
+        image_query.assert_called_once_with(image_name)
+        self.assertDictEqual(real_return, expect_return)

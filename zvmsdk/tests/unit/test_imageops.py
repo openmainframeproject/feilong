@@ -30,7 +30,7 @@ class SDKImageOpsTestCase(base.SDKTestCase):
         self._pathutil = zvmutils.PathUtils()
 
     @mock.patch.object(imageops.get_imageops().zvmclient, 'image_import')
-    def test_image_import_xcat(self, image_import):
+    def test_image_import(self, image_import):
         image_name = '95a4da37-9f9b-4fb2-841f-f0bb441b7544'
         url = 'file:///path/to/image/file'
         image_meta = {'os_version': 'rhel7.2',
@@ -54,3 +54,10 @@ class SDKImageOpsTestCase(base.SDKTestCase):
         image_name = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'
         self._image_ops.image_delete(image_name)
         image_delete.assert_called_once_with(image_name)
+
+    @mock.patch.object(imageops.get_imageops().zvmclient, 'image_export')
+    def test_image_export(self, image_export):
+        image_name = 'testimage'
+        dest_url = 'file:///path/to/export/image'
+        self._image_ops.image_export(image_name, dest_url)
+        image_export.assert_called_once_with(image_name, dest_url, None)
