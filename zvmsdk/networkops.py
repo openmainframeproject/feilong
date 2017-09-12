@@ -20,7 +20,6 @@ import tarfile
 from zvmsdk import client as zvmclient
 from zvmsdk import config
 from zvmsdk import dist
-from zvmsdk import exception
 from zvmsdk import log
 
 
@@ -100,9 +99,6 @@ class NetworkOPS(object):
                                   active=active)
 
     def network_configuration(self, userid, os_version, network_info):
-        if len(network_info) == 0:
-            raise exception.ZVMInvalidInput(
-                    msg="Network information is required")
         network_file_path = self.zvmclient.get_guest_temp_path(userid,
                                                                'network')
         LOG.debug('Creating folder %s to contain network configuration files'

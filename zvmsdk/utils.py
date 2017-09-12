@@ -16,6 +16,7 @@
 import contextlib
 import errno
 import functools
+import netaddr
 import os
 import pwd
 import re
@@ -253,23 +254,18 @@ def valid_userid(userid):
     return True
 
 
-def valid_mac_addr(addr):
-    ''' Validates a mac address'''
-    if type(addr) not in types.StringTypes:
+def valid_cidr(cidr):
+    if type(cidr) not in types.StringTypes:
         return False
-    valid = re.compile(r'''
-                      (^([0-9A-F]{1,2}[:]){5}([0-9A-F]{1,2})$)
-                      ''',
-                      re.VERBOSE | re.IGNORECASE)
-    return valid.match(addr) is not None
-
-
-def valid_IP(IPaddr):
-    if type(IPaddr) not in types.StringTypes:
+    try:
+        netaddr.IPNetwork(cidr)
+    except netaddr.AddrFormatError:
         return False
-    q = IPaddr.split('.')
-    return len(q) == 4 and len(filter(lambda x: x >= 0 and x <= 255,
-                        map(int, filter(lambda x: x.isdigit(), q)))) == 4
+    if '/' not in cidr:
+        return False
+    if re.search('\s', cidr):
+        return False
+    return True
 
 
 def last_bytes(file_like_object, num):

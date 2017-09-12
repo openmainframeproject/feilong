@@ -12,6 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
+import netaddr
+
 from zvmsdk import config
 from zvmsdk import constants
 from zvmsdk import exception
@@ -1136,3 +1139,115 @@ class SDKAPI(object):
                                                    volume,
                                                    connection_info,
                                                    is_rollback_in_failure)
+
+    @zvmutils.check_input_types(_TUSERID, str, list, bool)
+    def guest_create_network_interface(self, userid, os_version,
+                                       guest_networks, active=False):
+        """ Create network interface(s) for the guest inux system. It will
+            create the nic for the guest, add NICDEF record into the user
+            direct. It will also construct network interface configuration
+            files and punch the files to the guest. These files will take
+            effect when initializing and configure guest.
+
+        :param str userid: the user id of the guest
+        :param str os_version: operating system version of the guest
+        :param list guest_networks: a list of network info for the guest.
+               It has one dictionary that contain some of the below keys for
+               each network, the format is:
+               {'ip_addr': (str) IP address or None,
+               'dns_addr': (list) dns addresses or None,
+               'gateway_addr': (str) gateway address or None,
+               'cidr': (str) cidr format,
+               'nic_vdev': (str)nic VDEV, 1- to 4- hexadecimal digits or None,
+               'nic_id': (str) nic identifier or None,
+               'mac_addr': (str) mac address or None, it is only be used when
+               changing the guest's user direct. Format should be
+               xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit}
+
+               Example for guest_networks:
+               [{'ip_addr': '192.168.95.10',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.95.1',
+               'cidr': "192.168.95.0/24",
+               'nic_vdev': '1000',
+               'mac_addr': '02:00:00:12:34:56'},
+               {'ip_addr': '192.168.96.10',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.96.1',
+               'cidr': "192.168.96.0/24",
+               'nic_vdev': '1003}]
+        :param bool active: whether add a nic on active guest system
+        """
+        if len(guest_networks) == 0:
+            errmsg = ("Network information is required but not provided")
+            raise exception.ZVMInvalidInputFormat(msg=errmsg)
+
+        vdev = nic_id = mac_addr = ip_addr = None
+        for network in guest_networks:
+            if 'nic_vdev' in network.keys():
+                vdev = network['nic_vdev']
+            if 'nic_id' in network.keys():
+                nic_id = network['nic_id']
+
+            if (('mac_addr' in network.keys()) and
+                (network['mac_addr'] is not None)):
+                mac_addr = network['mac_addr']
+                if not netaddr.valid_mac(mac_addr):
+                    errmsg = ("Invalid mac address, format should be "
+                              "xx:xx:xx:xx:xx:xx, and x is a hexadecimal "
+                              "digit")
+                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
+
+            if (('ip_addr' in network.keys()) and
+                (network['ip_addr'] is not None)):
+                ip_addr = network['ip_addr']
+                if not netaddr.valid_ipv4(ip_addr):
+                    errmsg = ("Invalid management IP address, it should be "
+                              "the value between 0.0.0.0 and 255.255.255.255")
+                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
+
+            if (('dns_addr' in network.keys()) and
+                (network['dns_addr'] is not None)):
+                if not isinstance(network['dns_addr'], list):
+                    raise exception.ZVMInvalidInputtypes(
+                        'guest_config_network',
+                        str(list), str(type(network['dns_addr'])))
+                for dns in network['dns_addr']:
+                    if not netaddr.valid_ipv4(dns):
+                        errmsg = ("Invalid dns IP address, it should be the "
+                                  "value between 0.0.0.0 and 255.255.255.255")
+                        raise exception.ZVMInvalidInputFormat(msg=errmsg)
+
+            if (('gateway_addr' in network.keys()) and
+                (network['gateway_addr'] is not None)):
+                if not netaddr.valid_ipv4(
+                                    network['gateway_addr']):
+                    errmsg = ("Invalid gateway IP address, it should be "
+                              "the value between 0.0.0.0 and 255.255.255.255")
+                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
+            if (('cidr' in network.keys()) and
+                (network['cidr'] is not None)):
+                if not zvmutils.valid_cidr(network['cidr']):
+                    errmsg = ("Invalid CIDR, format should be a.b.c.d/n, and "
+                              "a.b.c.d is IP address, n is the value "
+                              "between 0-32")
+                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
+
+            try:
+                used_vdev = self._networkops.create_nic(userid, vdev=vdev,
+                                                        nic_id=nic_id,
+                                                        mac_addr=mac_addr,
+                                                        ip_addr=ip_addr,
+                                                        active=active)
+                network['nic_vdev'] = used_vdev
+            except exception.SDKBaseException:
+                LOG.error(('Failed to create nic on vm %s') % userid)
+                raise
+
+        try:
+            self._networkops.network_configuration(userid, os_version,
+                                                   guest_networks)
+        except exception.SDKBaseException:
+            LOG.error(('Failed to set network configuration file on vm %s') %
+                      userid)
+            raise
