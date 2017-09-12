@@ -215,6 +215,26 @@ class SDKAPI(object):
         """
         return self._imageops.image_query(imagekeyword)
 
+    @zvmutils.check_input_types(_TSTR, _TSTR, _TSTR_OR_NONE)
+    def image_export(self, image_name, dest_url, remote_host=None):
+        """Export the image to the specified location
+        :param image_name: image name that can be uniquely identify an image
+        :param dest_url: the location of exported image, eg.
+        file:///opt/images/export.img, now only support export to remote server
+        or local server's file system
+        :param remote_host: the server that the image will be export to, if
+        remote_host is None, the image will be stored in the dest_path in
+        local server,  the format is username@IP eg. nova@9.x.x.x
+        :returns a dictionary that contains the exported image info
+        {
+        'image_name': the image_name that exported
+        'image_path': the image_path after exported
+        'os_version': the os version of the exported image
+        'md5sum': the md5sum of the original image
+        }
+        """
+        return self._imageops.image_export(image_name, dest_url, remote_host)
+
     @zvmutils.check_input_types(_TUSERID, _TSTR_OR_NONE)
     def guest_authorize_iucv_client(self, guest, client=None):
         """Punch a script that used to set the authorized client userid in vm
