@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "096ee267_f2eeab5d",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-13T02:36:24Z",
+      "side": 1,
+      "message": "have you had chance to talk to Bill about this add?",
+      "range": {
+        "startLine": 219,
+        "startChar": 4,
+        "endLine": 237,
+        "endChar": 77
+      },
+      "revId": "232392576d3da75e16397eb3a23da4532ee99e75",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2db6b712_25afdf88",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 860,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-13T02:36:24Z",
+      "side": 1,
+      "message": "api layer didn\u0027t check whether image_name exist or not\n\nare we sure this image_info will be a valid value ,e.g image_name doesn\u0027t exist? I checked the implementation of image_query_record but it might empty ( [] ? )?\n\nAlso, see below, I believe you queried twice for the image_name, can we query once and store it?",
+      "range": {
+        "startLine": 860,
+        "startChar": 8,
+        "endLine": 860,
+        "endChar": 73
+      },
+      "revId": "232392576d3da75e16397eb3a23da4532ee99e75",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a7f7dec7_6232184f",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 912,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-13T02:36:24Z",
+      "side": 1,
+      "message": "here",
+      "range": {
+        "startLine": 912,
+        "startChar": 8,
+        "endLine": 912,
+        "endChar": 74
+      },
+      "revId": "232392576d3da75e16397eb3a23da4532ee99e75",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2be1efad_772883cf",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1013,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-13T02:36:24Z",
+      "side": 1,
+      "message": "whether it\u0027s possible it is \u0027\u0027 ? \nif so we should check \nif kwargs[\u0027remote_host\u0027] is None: ?",
+      "range": {
+        "startLine": 1013,
+        "startChar": 11,
+        "endLine": 1013,
+        "endChar": 32
+      },
+      "revId": "232392576d3da75e16397eb3a23da4532ee99e75",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f94ae2cb_b9a12be0",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1021,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-13T02:36:24Z",
+      "side": 1,
+      "message": "raise what?",
+      "range": {
+        "startLine": 1021,
+        "startChar": 16,
+        "endLine": 1021,
+        "endChar": 21
+      },
+      "revId": "232392576d3da75e16397eb3a23da4532ee99e75",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
