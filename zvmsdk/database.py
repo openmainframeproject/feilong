@@ -141,43 +141,83 @@ class NetworkDbOperator(object):
         with get_network_conn() as conn:
             conn.execute(create_table_sql)
 
+    def _get_switch_by_user_interface(self, userid, interface):
+        with get_network_conn() as conn:
+            res = conn.execute("SELECT * FROM switch "
+                               "WHERE userid=? and interface=?",
+                               (userid.upper(), interface))
+            switch_record = res.fetchall()
+
+        if len(switch_record) == 1:
+            return switch_record[0]
+        elif len(switch_record) == 0:
+            LOG.debug("User %s with nic %s not found from network DB!" %
+                      (userid.upper(), interface))
+            return None
+
     def switch_delete_record_for_userid(self, userid):
         """Remove userid switch record from switch table."""
         with get_network_conn() as conn:
             conn.execute("DELETE FROM switch WHERE userid=?",
                          (userid.upper(),))
+            LOG.debug("Switch record for user %s is removed from "
+                      "switch table" % userid.upper())
 
     def switch_delete_record_for_nic(self, userid, interface):
         """Remove userid switch record from switch table."""
         with get_network_conn() as conn:
             conn.execute("DELETE FROM switch WHERE userid=? and interface=?",
                          (userid.upper(), interface))
+            LOG.debug("Switch record for user %s with nic %s is removed from "
+                      "switch table" % (userid.upper(), interface))
 
     def switch_add_record_for_nic(self, userid, interface, port=None):
         """Add userid and nic name address into switch table."""
+        if self._get_switch_by_user_interface(userid, interface) is not None:
+            msg = "User %s with nic %s already exist" % (userid.upper(),
+                                                         interface)
+            raise exception.ZVMNetworkError(msg=msg)
+
         if port is not None:
             with get_network_conn() as conn:
                 conn.execute("INSERT INTO switch (userid, interface, port) "
                              "VALUES (?, ?, ?)",
                              (userid.upper(), interface, port))
+                LOG.debug("New record in the switch table: user %s, "
+                          "nic %s, port %s" %
+                          (userid.upper(), interface, port))
         else:
             with get_network_conn() as conn:
                 conn.execute("INSERT INTO switch (userid, interface) "
                              "VALUES (?, ?)",
                              (userid.upper(), interface))
+                LOG.debug("New record in the switch table: user %s, "
+                          "nic %s" %
+                          (userid.upper(), interface))
 
     def switch_updat_record_with_switch(self, userid, interface, switch=None):
         """Update information in switch table."""
+        if not self._get_switch_by_user_interface(userid, interface):
+            msg = "User %s with nic %s not found" % (userid.upper(),
+                                                     interface)
+            raise exception.ZVMNetworkError(msg=msg)
+
         if switch is not None:
             with get_network_conn() as conn:
                 conn.execute("UPDATE switch SET switch=? "
                              "WHERE userid=? and interface=?",
                              (switch, userid.upper(), interface))
+                LOG.debug("Set switch to %s for user %s with nic %s "
+                          "in switch table" %
+                          (switch, userid.upper(), interface))
         else:
             with get_network_conn() as conn:
                 conn.execute("UPDATE switch SET switch=NULL "
                              "WHERE userid=? and interface=?",
                              (userid.upper(), interface))
+                LOG.debug("Set switch to None for user %s with nic %s "
+                          "in switch table" %
+                          (userid.upper(), interface))
 
     def switch_select_table(self):
         with get_network_conn() as conn:
