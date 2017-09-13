@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa727279_cad437c2",
+        "filename": "zvmsdk/networkops.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-13T08:18:32Z",
+      "side": 1,
+      "message": "why \u0027wb\u0027?",
+      "range": {
+        "startLine": 165,
+        "startChar": 13,
+        "endLine": 165,
+        "endChar": 34
+      },
+      "revId": "77ded83d9a9db7c06d781eb5c46f5b36dbbf9585",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2f3e3be8_3b692b81",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 975,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-13T08:18:32Z",
+      "side": 1,
+      "message": "except Exception?\n\nAnd just log the error, not raise?",
+      "range": {
+        "startLine": 973,
+        "startChar": 8,
+        "endLine": 975,
+        "endChar": 55
+      },
+      "revId": "77ded83d9a9db7c06d781eb5c46f5b36dbbf9585",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
