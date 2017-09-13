@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f18a5a9d_bb50d4b5",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-13T01:13:45Z",
+      "side": 1,
+      "message": "do we really want to hard code this?\nI think it\u0027s should be configurable",
+      "range": {
+        "startLine": 214,
+        "startChar": 33,
+        "endLine": 214,
+        "endChar": 56
+      },
+      "revId": "53fe834fa400d8218d5179dbcccf3e34598fba45",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
