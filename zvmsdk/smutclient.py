@@ -804,8 +804,14 @@ class SMUTClient(client.ZVMClient):
     def delete_vm(self, userid):
         self.delete_userid(userid)
 
-        # TODO: cleanup db record from network table
-        pass
+        # cleanup db record from network table
+        try:
+            with zvmutils.expect_database_error_and_reraise(
+                exception.SDKNetworkOperationError):
+                self._NetDbOperator.switch_delete_record_for_userid(userid)
+        except exception.SDKBaseException:
+            LOG.error("Failed to delete switch record for guest %s" % userid)
+            raise
 
         # TODO: cleanup db record from volume table
         pass
