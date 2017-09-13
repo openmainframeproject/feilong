@@ -302,6 +302,8 @@ class SDKAPI(object):
                 - The virtual device number is out of the range
                 - All kinds of xCAT call failure
                 - Smcli call failure, refer to the error message for detail
+        :raises ZVMClientRequestFailed if:
+                - SMUT layer failed to create nic
         """
         if mac_addr is not None:
             if not zvmutils.valid_mac_addr(mac_addr):
@@ -331,7 +333,8 @@ class SDKAPI(object):
         :raises ZVMNetworkError if:
                 - All kinds of xCAT call failure
                 - Smcli call failure, refer to the error message for detail
-
+        :raises ZVMClientRequestFailed if:
+                - SMUT layer failed to delete nic user
         """
         self._networkops.delete_nic(userid, vdev, active=active)
 
@@ -513,7 +516,8 @@ class SDKAPI(object):
         :raises ZVMNetworkError if:
                 - All kinds of xCAT call failure
                 - Smcli call failure, refer to the error message for detail
-
+        :raises ZVMClientRequestFailed if:
+                - SMUT layer failed to couple nic
         """
         self._networkops.couple_nic_to_vswitch(userid, nic_vdev,
                                                vswitch_name, active=active)
@@ -545,6 +549,8 @@ class SDKAPI(object):
 
         :raises ZVMNetworkError if:
                 - All kinds of xCAT call failure
+        :raises ZVMClientRequestFailed if:
+                - SMUT layer failed to get vswitch list
         """
         return self._networkops.get_vswitch_list()
 
@@ -628,7 +634,8 @@ class SDKAPI(object):
         :raises ZVMNetworkError if:
                 - All kinds of xCAT call failure
                 - Smcli call failure, refer to the error message for detail
-
+        :raises ZVMClientRequestFailed if:
+                - SMUT layer failed to create vswitch
         """
         if ((queue_mem < 1) or (queue_mem > 8)):
             raise exception.ZVMInvalidInput(
@@ -793,7 +800,8 @@ class SDKAPI(object):
         :raises ZVMNetworkError if:
                 - All kinds of xCAT call failure
                 - Smcli call failure, refer to the error message for detail
-
+        :raises ZVMClientRequestFailed if:
+                - SMUT layer failed to grant user
         """
 
         self._networkops.grant_user_to_vswitch(vswitch_name, userid)
@@ -811,6 +819,8 @@ class SDKAPI(object):
         :raises ZVMNetworkError:
                 - All kinds of xCAT call failure
                 - Smcli call failure, refer to the error message for detail
+        :raises ZVMClientRequestFailed if:
+                - SMUT layer failed to revoke user
         """
         self._networkops.revoke_user_from_vswitch(vswitch_name, userid)
 
@@ -828,6 +838,8 @@ class SDKAPI(object):
         :raises ZVMNetworkError:
                 - All kinds of xCAT call failure
                 - Smcli call failure, refer to the error message for detail
+        :raises ZVMClientRequestFailed if:
+                - SMUT layer failed to set vlan id
         """
         self._networkops.set_vswitch_port_vlan_id(vswitch_name,
                                                   userid, vlan_id)
@@ -990,7 +1002,8 @@ class SDKAPI(object):
         :raises ZVMNetworkError if:
                 - All kinds of xCAT call failure
                 - Smcli call failure, refer to the error message for detail
-
+        :raises ZVMClientRequestFailed if:
+                - SMUT layer failed to set vswitch user
         """
         for k in kwargs.keys():
             if k not in constants.SET_VSWITCH_KEYWORDS:
@@ -1014,6 +1027,8 @@ class SDKAPI(object):
         :raises ZVMNetworkError if:
                 - All kinds of xCAT call failure
                 - Smcli call failure, refer to the error message for detail
+        :raises ZVMClientRequestFailed if:
+                - SMUT layer failed to delete vswitch
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
 

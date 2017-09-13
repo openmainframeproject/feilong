@@ -683,7 +683,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                    'response': ['fake response']}
         request.side_effect = exception.ZVMClientRequestFailed(
                                                 results=results)
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.ZVMClientRequestFailed,
                           self._smutclient.set_vswitch,
                           "vswitch_name", grant_userid='fake_id')
 
@@ -712,7 +712,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                    'response': ['fake response']}
         request.side_effect = exception.ZVMClientRequestFailed(
                                                 results=results)
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.ZVMClientRequestFailed,
                           self._smutclient.delete_vswitch,
                           "vswitch_name", True)
 
