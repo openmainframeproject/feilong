@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "494eaf3d_db49dc2b",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-13T03:07:07Z",
+      "side": 1,
+      "message": "I think we need avoid this kind of exception\ntake a look at our existing exceptions\n\nclass ZVMVirtualMachineNotExist(SDKBaseException):\n    msg_fmt \u003d \u0027Virtual machine %(userid)s does not exist in %(zvm_host)s\u0027\n\ncan we be more specific on at least :\nRecordExist\nRecordNotExist \n\nthen upper layer can know what kind of exception raised in detail and handle it?\n\nor this is a bigger topic other than network( all others should have similar situation)",
+      "range": {
+        "startLine": 179,
+        "startChar": 12,
+        "endLine": 179,
+        "endChar": 52
+      },
+      "revId": "8493c29ad6cd31a7871947f735011e2494164024",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
