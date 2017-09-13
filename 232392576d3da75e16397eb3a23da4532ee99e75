@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "a6d846d6_67763818",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 860,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-09-13T06:47:45Z",
+      "side": 1,
+      "message": "change to add one check",
+      "parentUuid": "2db6b712_25afdf88",
+      "range": {
+        "startLine": 860,
+        "startChar": 8,
+        "endLine": 860,
+        "endChar": 73
+      },
+      "revId": "232392576d3da75e16397eb3a23da4532ee99e75",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a7f7dec7_6232184f",
         "filename": "zvmsdk/smutclient.py",
         "patchSetId": 2
@@ -94,6 +118,30 @@
     },
     {
       "key": {
+        "uuid": "fd925a54_bfc5516f",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1013,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-09-13T06:47:45Z",
+      "side": 1,
+      "message": "remote_host can be None,it means image should be coped to local server",
+      "parentUuid": "2be1efad_772883cf",
+      "range": {
+        "startLine": 1013,
+        "startChar": 11,
+        "endLine": 1013,
+        "endChar": 32
+      },
+      "revId": "232392576d3da75e16397eb3a23da4532ee99e75",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f94ae2cb_b9a12be0",
         "filename": "zvmsdk/smutclient.py",
         "patchSetId": 2
@@ -105,6 +153,30 @@
       "writtenOn": "2017-09-13T02:36:24Z",
       "side": 1,
       "message": "raise what?",
+      "range": {
+        "startLine": 1021,
+        "startChar": 16,
+        "endLine": 1021,
+        "endChar": 21
+      },
+      "revId": "232392576d3da75e16397eb3a23da4532ee99e75",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9d976122_bb066458",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1021,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-09-13T06:47:45Z",
+      "side": 1,
+      "message": "All image exception will be refined in another commit",
+      "parentUuid": "f94ae2cb_b9a12be0",
       "range": {
         "startLine": 1021,
         "startChar": 16,
