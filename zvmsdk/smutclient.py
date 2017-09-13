@@ -986,16 +986,16 @@ class SMUTClient(object):
                 raise err
 
     def delete_vm(self, userid):
-        self.delete_userid(userid)
-
-        # TODO: cleanup db record from network table
-        pass
+        # cleanup db record from network table
+        self._NetDbOperator.switch_delete_record_for_userid(userid)
 
         # TODO: cleanup db record from volume table
         pass
 
         # cleanup db record from guest table
         self._GuestDbOperator.delete_guest_by_userid(userid)
+
+        self.delete_userid(userid)
 
     def image_import(self, image_name, url, image_meta, remote_host=None):
         """Import the image specified in url to SDK image repository, and
