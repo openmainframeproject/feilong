@@ -74,6 +74,23 @@ create_disks = {
 }
 
 
+delete_disks = {
+    'type': 'object',
+    'properties': {
+        'vdev_info': {
+            'type': 'object',
+            'properties': {
+                'vdev_list': parameter_types.vdev_list,
+            },
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
+    },
+    'required': ['vdev_info'],
+    'additionalProperties': False,
+}
+
+
 couple_uncouple_nic = {
     'type': 'object',
     'properties': {
