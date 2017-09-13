@@ -178,6 +178,18 @@ vdev = {
 }
 
 
+vdev_list = {
+    'type': 'array',
+    'minItems': 1,
+    'maxItems': 3,
+    'items': {
+        'type': 'string',
+        'pattern': '^[0-9a-fA-F]{,4}$'
+    },
+    'uniqueItems': True
+}
+
+
 url = {
     'type': ['string'],
     # FIXME: uri cannot validate url, need accurate definition

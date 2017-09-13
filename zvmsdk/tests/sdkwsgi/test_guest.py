@@ -90,6 +90,15 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
+    def _guest_disks_delete(self):
+        body = """{"vdev_info": {"vdev_list": ["0101"]}}"""
+        url = '/guests/%s/disks' % self.userid
+
+        resp = self.client.api_request(url=url,
+                                       method='DELETE',
+                                       body=body)
+        self.assertEqual(200, resp.status_code)
+
     def _guest_get(self):
         url = '/guests/%s' % self.userid
         resp = self.client.api_request(url=url,
@@ -225,6 +234,9 @@ class GuestHandlerTestCase(unittest.TestCase):
             self._guest_disks_create()
             resp = self._guest_get()
             self.assertTrue('MDISK 0101' in resp.content)
+            self._guest_disks_delete()
+            resp = self._guest_get()
+            self.assertTrue('MDISK 0101' not in resp.content)
         except Exception as e:
             raise e
         finally:
