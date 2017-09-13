@@ -15,6 +15,7 @@
 
 import os
 import random
+import re
 import unittest
 import uuid
 
@@ -49,12 +50,18 @@ class SDKAPITestUtils(object):
         self.api.image_import(image_name, image_url,
                               {'os_version': os_version}, remote_host)
 
+    def _guest_exist(self, userid):
+        cmd = 'vmcp q %s' % userid
+        rc, output = zvmutils.execute(cmd)
+        if re.search('(^HCP\w\w\w003E)', output):
+            # userid not exist
+            return False
+        return True
+
     def get_available_test_userid(self):
-        exist_list = self.api.guest_list()
-        print("Existing guest list: %s" % str(exist_list))
         test_list = CONF.tests.userid_list.split(' ')
         for uid in test_list:
-            if uid in exist_list:
+            if self._guest_exist(uid):
                 try:
                     self.api.guest_delete(uid)
                 except exception.SDKBaseException as e:
@@ -93,8 +100,6 @@ class SDKAPITestUtils(object):
                      image_path=CONF.tests.image_path, ip_addr=None,
                      root_disk_size='3g', login_password='password'):
         image_name = os.path.basename(image_path)
-        image_name_xcat = '-'.join((CONF.tests.image_os_version,
-                                's390x-netboot', image_name.replace('-', '_')))
         print('\n')
 
         if not self.api.image_query(image_name.replace('-', '_')):
@@ -160,7 +165,7 @@ class SDKAPITestUtils(object):
 
         # Deploy image on vm
         print("Deploying userid %s ..." % userid)
-        self.api.guest_deploy(userid, image_name_xcat, transportfiles,
+        self.api.guest_deploy(userid, image_name, transportfiles,
                               remote_host)
 
         # Power on the vm, then put MN's public key into vm
