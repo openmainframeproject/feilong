@@ -22,6 +22,30 @@
       "revId": "8493c29ad6cd31a7871947f735011e2494164024",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ff4f9be_3f2cfc01",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2017-09-13T08:20:40Z",
+      "side": 1,
+      "message": "I prefer to handle it in the next path, especially we need to modify the exception to utilize returncode",
+      "parentUuid": "494eaf3d_db49dc2b",
+      "range": {
+        "startLine": 179,
+        "startChar": 12,
+        "endLine": 179,
+        "endChar": 52
+      },
+      "revId": "8493c29ad6cd31a7871947f735011e2494164024",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
