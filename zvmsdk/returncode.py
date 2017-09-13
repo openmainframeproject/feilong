@@ -22,19 +22,19 @@ Each error corresponds to a dictionary contains: 'overallRC', 'modID', 'rc',
     classified into group with different overallRC value.
 
 -- 'modID' is used to indicate which module this error happens in. The
-    available Module and their RC value to use is listed in the following:
+    available Module and their modID value to use is listed in the following:
 
-    ModID    ModName    RC
-    ------   ------     --
-    SUT      SMUT       1
-    GST      GUEST      10
-    NET      NETWORK    20
-    VLM      VOLUME     30
-    IMG      IMAGE      40
-    MNT      MONITOR    50
-    SVR      SDKSERVER  100
-    CLT      SDKCLIENT  110
-    SDK      SDKGENERAL 400
+    ModName    ModID
+    ------     --
+    SMUT       1
+    GUEST      10
+    NETWORK    20
+    VOLUME     30
+    IMAGE      40
+    MONITOR    50
+    SDKSERVER  100
+    SDKCLIENT  110
+    SDKGENERAL 400
 
 -- 'rc' is used together with rs to indicate the specific error. If 'rs' is
     enough to indicate the error, 'rc' would be set same to the overallRC.

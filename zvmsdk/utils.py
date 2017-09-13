@@ -464,7 +464,7 @@ def expect_database_error_and_reraise(exc):
         yield
     except exception.DatabaseException as err:
         msg = err.format_message()
-        raise exception.ZVMGuestOperationFailed(rs=1, msg=msg)
+        raise exc(rs=1, msg=msg)
 
 
 # mappings for zvm driver/plugin compatible
