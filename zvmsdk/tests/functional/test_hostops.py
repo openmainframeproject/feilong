@@ -13,6 +13,8 @@
 #    under the License.
 
 
+import types
+
 from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk.tests.functional import base
@@ -27,7 +29,8 @@ class SDKAPIHostTestCase(base.SDKAPIBaseTestCase):
         """Positive test case of host_get_info."""
         host_info = self.sdkapi.host_get_info()
         self.assertTrue(isinstance(host_info.get('disk_available'), int))
-        self.assertTrue(isinstance(host_info.get('ipl_time'), unicode))
+        self.assertTrue(isinstance(host_info.get('ipl_time'),
+                                   types.StringTypes))
         self.assertTrue(isinstance(host_info.get('vcpus_used'), int))
         self.assertEqual(host_info.get('hypervisor_type'), 'zvm')
         self.assertTrue(isinstance(host_info.get('disk_total'), int))
@@ -39,12 +42,6 @@ class SDKAPIHostTestCase(base.SDKAPIBaseTestCase):
         self.assertTrue(isinstance(host_info.get('hypervisor_version'), int))
         self.assertTrue(isinstance(host_info.get('disk_used'), int))
         self.assertTrue(isinstance(host_info.get('memory_mb_used'), float))
-
-    def test_host_get_info_invalid_host(self):
-        """TO test host_get_info when invalid zvm host specified."""
-        self.set_conf('zvm', 'host', 'invalidhost')
-        self.assertRaises(exception.SDKBaseException,
-                          self.sdkapi.host_get_info)
 
     def test_host_diskpool_get_info(self):
         """To test host_diskpool_get_info."""
