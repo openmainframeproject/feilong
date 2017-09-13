@@ -958,6 +958,7 @@ static const char * APIS_640[APIS_640_COUNT] = {
     }
 
     TRACE_EXIT_FLOW(&vmapiContext, TRACEAREA_ZTHIN_GENERAL, rc);
+    TRACE_EXIT_FLOW(&vmapiContext, TRACEAREA_SMCLI, rc);
     /* Clean up for memory context */
     FREE_CONTEXT_MEMORY(&vmapiContext);
     return rc;

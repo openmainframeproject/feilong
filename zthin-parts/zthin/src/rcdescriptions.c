@@ -29,7 +29,7 @@ void fillSMAPIsyntaxReason(int rs, char * outreasonMsg);
  * Use SMC for zthin smcli errors as the module abbreviation.
  * example: ULGSMC5000E
  */
-void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct _vmApiInternalContext* vmapiContextP,
+void printSmapiDescriptionAndLogError(const char * APIname, int rc, int rs, struct _vmApiInternalContext* vmapiContextP,
                                       int newHeader) {
     char errMsg[512];
     char errMsgPlusNum[540];
@@ -53,20 +53,20 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
     if (rc == 0 && rs == 0) {
         sprintf(errMsg, "Request successful\n");
         logMSG = false;
-    } else if (rc == 0 && rs == 4 && strcmp(class, "Image_CPU_Define") == 0) {
+    } else if (rc == 0 && rs == 4 && strcmp(APIname, "Image_CPU_Define") == 0) {
         sprintf(errMsg, "CPU defined, but CPU affinity suppressed\n");
     } else if (rc == 0 && rs == 4) {
         sprintf(errMsg, "Segment was created or replaced, but specified userid in memory_access_identifier could not be found to give RSTD access\n");
     } else if (rc == 0 && rs == 8) {
         sprintf(errMsg, "Request successful; object directory offline\n");
         logMSG = false;
-    } else if (rc == 0 && rs == 12 && strcmp(class, "Name_List_Add") == 0) {
+    } else if (rc == 0 && rs == 12 && strcmp(APIname, "Name_List_Add") == 0) {
         sprintf(errMsg, "Request successful; new list created\n");
         logMSG = false;
-    } else if (rc == 0 && rs == 12 && strcmp(class, "Image_Status_Query") == 0) {
+    } else if (rc == 0 && rs == 12 && strcmp(APIname, "Image_Status_Query") == 0) {
         sprintf(errMsg, "Image not active\n");
         logMSG = false;
-    } else if (rc == 0 && rs == 12 && strcmp(class, "Image_Pause") == 0) {
+    } else if (rc == 0 && rs == 12 && strcmp(APIname, "Image_Pause") == 0) {
         sprintf(errMsg, "Image not active\n");
         logMSG = false;
     } else if (rc == 0 && rs == 12) {
@@ -75,7 +75,7 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
     } else if (rc == 0 && rs == 16) {
         sprintf(errMsg, "Request successful; no more entries, list destroyed\n");
         logMSG = false;
-    } else if (rc == 0 && rs == 20 && strcmp(class, "Virtual_Network_LAN_Create") == 0) {
+    } else if (rc == 0 && rs == 20 && strcmp(APIname, "Virtual_Network_LAN_Create") == 0) {
         sprintf(errMsg, "Request successful; new virtual network LAN created\n");
         logMSG = false;
     } else if (rc == 0 && rs == 20) {
@@ -83,13 +83,13 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
     } else if (rc == 0 && rs == 24) {
         sprintf(errMsg, "Request successful; virtual network LAN removed\n");
         logMSG = false;
-    } else if (rc == 0 && rs == 28 && strcmp(class, "Image_SCSI_Characteristics_Query_DM") == 0) {
+    } else if (rc == 0 && rs == 28 && strcmp(APIname, "Image_SCSI_Characteristics_Query_DM") == 0) {
         sprintf(errMsg, "There are no SCSI characteristics for this image\n");
         logMSG = false;
-    } else if (rc == 0 && rs == 28 && strcmp(class, "Shared_Memory_Query") == 0) {
+    } else if (rc == 0 && rs == 28 && strcmp(APIname, "Shared_Memory_Query") == 0) {
         sprintf(errMsg, "Query request successful, but segment not found\n");
         logMSG = false;
-    } else if (rc == 0 && rs == 28 && strcmp(class, "Asynchronous_Notification_Query_DM") == 0) {
+    } else if (rc == 0 && rs == 28 && strcmp(APIname, "Asynchronous_Notification_Query_DM") == 0) {
         sprintf(errMsg, "No matching entries found\n");
         logMSG = false;
     } else if (rc == 0 && rs == 28) {
@@ -157,25 +157,25 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
         sprintf(errMsg, "Invalid access user\n");
     } else if (rc == 8 && rs == 3) {
         sprintf(errMsg, "Invalid op value\n");
-    } else if (rc == 8 && rs == 4 && strcmp(class, "Virtual_Network_LAN_Access") == 0) {
+    } else if (rc == 8 && rs == 4 && strcmp(APIname, "Virtual_Network_LAN_Access") == 0) {
         sprintf(errMsg, "Invalid promiscuity value\n");
-    } else if (rc == 8 && rs == 4 && strcmp(class, "Image_Definition_Delete_DM") == 0) {
+    } else if (rc == 8 && rs == 4 && strcmp(APIname, "Image_Definition_Delete_DM") == 0) {
         sprintf(errMsg, "Directory entry to be deleted not found\n");
-    } else if (rc == 8 && rs == 4 && strcmp(class, "System_Performance_Threshold_Enable") == 0) {
+    } else if (rc == 8 && rs == 4 && strcmp(APIname, "System_Performance_Threshold_Enable") == 0) {
         sprintf(errMsg, "Performance monitoring virtual server not found\n");
-    } else if (rc == 8 && rs == 8 && strcmp(class, "Virtual_Network_Vswitch_Query_Stats") == 0) {
+    } else if (rc == 8 && rs == 8 && strcmp(APIname, "Virtual_Network_Vswitch_Query_Stats") == 0) {
         sprintf(errMsg, "This funcion is not available on this system\n");
     } else if (rc == 8 && rs == 8) {
         sprintf(errMsg, "Device does not exist\n");
     } else if (rc == 8 && rs == 10) {
         sprintf(errMsg, "Device not available for attachment\n");
-    } else if (rc == 8 && rs == 12 && strcmp(class, "Image_MDISK_Link_Query") == 0) {
+    } else if (rc == 8 && rs == 12 && strcmp(APIname, "Image_MDISK_Link_Query") == 0) {
         sprintf(errMsg, "target_identifier not logged on\n");
-    } else if (rc == 8 && rs == 12 && strcmp(class, "Page_or_Spool_Volume_Add") == 0) {
+    } else if (rc == 8 && rs == 12 && strcmp(APIname, "Page_or_Spool_Volume_Add") == 0) {
         sprintf(errMsg, "Device not a volume\n");
-    } else if (rc == 8 && rs == 12 && strcmp(class, "VMRELOCATE_Image_Attributes") == 0) {
+    } else if (rc == 8 && rs == 12 && strcmp(APIname, "VMRELOCATE_Image_Attributes") == 0) {
         sprintf(errMsg, "target_identifier not logged on\n");
-    } else if (rc == 8 && rs == 12 && strcmp(class, "Network_IP_Interface_Remove") == 0) {
+    } else if (rc == 8 && rs == 12 && strcmp(APIname, "Network_IP_Interface_Remove") == 0) {
         sprintf(errMsg, "An error was encountered on IFCONFIG command\n");
     } else if (rc == 8 && rs == 13) {
         sprintf(errMsg, "Match key length does not match the match key specified\n");
@@ -185,11 +185,11 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
         sprintf(errMsg, "Volume does not exist\n");
     } else if (rc == 8 && rs == 19) {
         sprintf(errMsg, "Volume is CP owned and cannot be used\n");
-    } else if (rc == 8 && rs == 20 && strcmp(class, "Image_Volume_Share") == 0) {
+    } else if (rc == 8 && rs == 20 && strcmp(APIname, "Image_Volume_Share") == 0) {
         sprintf(errMsg, "Volume is CP system and cannot be used\n");
     } else if (rc == 8 && rs == 20) {
         sprintf(errMsg, "Volume label already CP_OWNED on this system or in this system's configuration\n");
-    } else if (rc == 8 && rs == 24 && strcmp(class, "Image_Definition_Async_Updates") == 0) {
+    } else if (rc == 8 && rs == 24 && strcmp(APIname, "Image_Definition_Async_Updates") == 0) {
         sprintf(errMsg, "Unable to write ASYNCH file\n");
     } else if (rc == 8 && rs == 24) {
         sprintf(errMsg, "Error linking parm disk\n");
@@ -320,9 +320,9 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
         sprintf(errMsg, "Some images in list not activated\n");
     } else if (rc == 200 && rs == 32) {
         sprintf(errMsg, "Some images in list not deactivated\n");
-    } else if (rc == 200 && rs == 36 && strcmp(class, "Image_Recycle") == 0) {
+    } else if (rc == 200 && rs == 36 && strcmp(APIname, "Image_Recycle") == 0) {
         sprintf(errMsg, "Some images in list not recycled\n");
-    } else if (rc == 200 && rs == 36 && strcmp(class, "Image_Deactivate") == 0) {
+    } else if (rc == 200 && rs == 36 && strcmp(APIname, "Image_Deactivate") == 0) {
         sprintf(errMsg, "Specified time results in interval greater than max allowed\n");
     } else if (rc == 204 && rs == 0) {
         sprintf(errMsg, "Image device usage error\n");
@@ -340,7 +340,7 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
         sprintf(errMsg, "Image device already connected\n");
     } else if (rc == 204 && rs == 24) {
         sprintf(errMsg, "Image device is not a tape drive, or cannot be assigned/reset\n");
-    } else if (rc == 204 && rs == 28 && strcmp(class, "Image_Device_Reset") == 0) {
+    } else if (rc == 204 && rs == 28 && strcmp(APIname, "Image_Device_Reset") == 0) {
         sprintf(errMsg, "Image device is not a shared DASD\n");
     } else if (rc == 204 && rs == 28) {
         sprintf(errMsg, "Image device already defined as type other than network adapter\n");
@@ -378,9 +378,9 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
         sprintf(errMsg, "Active image connectivity error\n");
     } else if (rc == 212 && rs == 4) {
         sprintf(errMsg, "Partner image not found\n");
-    } else if (rc == 212 && rs == 8 && strcmp(class, "Virtual_Network_Adapter_Query") == 0) {
+    } else if (rc == 212 && rs == 8 && strcmp(APIname, "Virtual_Network_Adapter_Query") == 0) {
         sprintf(errMsg, "Adapter does not exist\n");
-    } else if (rc == 212 && rs == 8 && strcmp(class, "Virtual_Network_Adapter_Query_Extended") == 0) {
+    } else if (rc == 212 && rs == 8 && strcmp(APIname, "Virtual_Network_Adapter_Query_Extended") == 0) {
         sprintf(errMsg, "Adapter does not exist\n");
     } else if (rc == 212 && rs == 8) {
         sprintf(errMsg, "Image not authorized to connect\n");
@@ -493,7 +493,7 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
     } else if (rc == 404 && rs == 12) {
         sprintf(errMsg, "Image device is locked\n");
     } else if (rc == 404 && rs == 24 &&
-    		((strcmp(class, "Image_Disk_Copy_DM") == 0) || strcmp(class, "Image_Disk_Create_DM") == 0)) {
+            ((strcmp(APIname, "Image_Disk_Copy_DM") == 0) || strcmp(APIname, "Image_Disk_Create_DM") == 0)) {
         sprintf(errMsg, "Image device type not same as source\n");
     } else if (rc == 404 && rs == 24) {
         sprintf(errMsg, "Image device is not locked\n");
@@ -553,7 +553,7 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
         sprintf(errMsg, "Tag name is not defined\n");
     } else if (rc == 432 && rs == 12) {
         sprintf(errMsg, "Tag ordinal is already defined\n");
-    } else if (rc == 432 && rs == 16 && strcmp(class, "Directory_Manager_Local_Tag_Set_DM") == 0) {
+    } else if (rc == 432 && rs == 16 && strcmp(APIname, "Directory_Manager_Local_Tag_Set_DM") == 0) {
         sprintf(errMsg, "Tag too long\n");
     } else if (rc == 432 && rs == 16) {
         sprintf(errMsg, "Tag is in use in one or more directory entries, can not be revoked\n");
@@ -707,18 +707,17 @@ void printSmapiDescriptionAndLogError(const char * class, int rc, int rs, struct
         sprintf(errMsg, "Unknown. Consult the SMAPI manual return and reason code summary\n");
     }
 
-    sprintf(errMsgPlusNum, "ULGSMC5%03d%s %s  API issued : %s\n", rc, severity, errMsg, class);
+    TRACE_START(vmapiContextP, TRACEAREA_SMCLI, TRACELEVEL_ERROR);
+        sprintf(line, "SMAPi error found (from %s); RC = %d, RS = %d, Description: %s\n", APIname, rc, rs, errMsg);
+    TRACE_END_DEBUG(vmapiContextP, line);
+
+    sprintf(errMsgPlusNum, "ULGSMC5%03d%s %s  API issued : %s\n", rc, severity, errMsg, APIname);
 
     // If this call is only for the new header, just print that header out
     if (newHeader) {
         printf("8 %d %d (details) %s", rc, rs, errMsgPlusNum);
     } else {
         printf("  Description: %s", errMsgPlusNum);
-        if (logMSG == true) {
-            TRACE_START(vmapiContextP, TRACEAREA_SMCLI, TRACELEVEL_ERROR);
-                sprintf(line, "SMAPI error. SMAPi API: %s RC = %d RS = %d Description: %s\n", class, rc, rs, errMsgPlusNum);
-            TRACE_END_DEBUG(vmapiContextP, line);
-        }
     }
 }
 

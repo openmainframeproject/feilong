@@ -145,17 +145,10 @@ TRACE_START(_context_, _tracearea_, TRACELEVEL_FLOW); \
 #define TRACE_EXIT_FLOW(_context_ , _tracearea_ , _rc_) \
 TRACE_START(_context_, _tracearea_, TRACELEVEL_FLOW); \
     char _line_[LINESIZE]; \
-    if (_rc_ != 0) { \
     sprintf(_line_,  \
         "%s function EXIT. RC: %d (at line %d in %s) \n",   \
         __func__, \
         _rc_, __LINE__, __FILE__); \
-    } else {\
-        sprintf(_line_,  \
-            "%s function EXIT. at line %d in %s \n",   \
-            __func__, \
-            __LINE__, __FILE__); \
-    } \
     logLine(_context_ , LOGLINE_DEBUG, _line_);  \
 }
 
