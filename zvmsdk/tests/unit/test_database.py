@@ -648,9 +648,7 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         self.assertListEqual([], guests)
 
     def test_delete_guest_by_id_not_exist(self):
-        self.assertRaises(exception.ZVMObjectNotExistError,
-                          self.db_op.delete_guest_by_id,
-                          'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
+        self.db_op.delete_guest_by_id('Fakeid')
 
     @mock.patch.object(uuid, 'uuid4')
     def test_delete_guest_by_userid(self, get_uuid):
@@ -664,9 +662,7 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         self.assertListEqual([], guests)
 
     def test_delete_guest_by_userid_not_exist(self):
-        self.assertRaises(exception.ZVMObjectNotExistError,
-                          self.db_op.delete_guest_by_userid,
-                          'Fakeuser')
+        self.db_op.delete_guest_by_id('Fakeuser')
 
     @mock.patch.object(uuid, 'uuid4')
     def test_get_guest_by_userid(self, get_uuid):
