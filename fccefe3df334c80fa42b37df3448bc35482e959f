@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "3e5dae64_50be7c52",
+        "filename": "zvmsdk/exception.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-13T21:10:06Z",
+      "side": 1,
+      "message": "I have no idea why we name this ....Client caused internal error?",
+      "range": {
+        "startLine": 233,
+        "startChar": 6,
+        "endLine": 233,
+        "endChar": 28
+      },
+      "revId": "fccefe3df334c80fa42b37df3448bc35482e959f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "52ea8901_874c77e3",
         "filename": "zvmsdk/smutclient.py",
         "patchSetId": 1
