@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "daa2ce46_45460093",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 814,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-13T08:42:29Z",
+      "side": 1,
+      "message": "so if cleanup network db record failed, will not attempt to cleanup volume db and guest db?",
+      "range": {
+        "startLine": 814,
+        "startChar": 0,
+        "endLine": 814,
+        "endChar": 17
+      },
+      "revId": "4629a85f1e30a917fff11a0b632359f02ea150e9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
