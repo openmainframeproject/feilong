@@ -980,9 +980,13 @@ class SMUTClient(object):
 
     def delete_vm(self, userid):
         self.delete_userid(userid)
-
-        # TODO: cleanup db record from network table
-        pass
+        # cleanup db record from network table
+        try:
+            self._NetDbOperator.switch_delete_record_for_userid(userid)
+        except exception.SDKNetworkOperationError as err:
+            LOG.error("Failed to delete network record for user %s, "
+                      "error: %s" %
+                      (userid, err.format_message()))
 
         # TODO: cleanup db record from volume table
         pass
