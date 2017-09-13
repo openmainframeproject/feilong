@@ -208,3 +208,15 @@ errors = {
                  "ZVM SDK Internal Error"
                  ],
     }
+
+# smut internal error
+# This const defines the list of smut errors that should be converted to
+# internal error in SDK layer.
+# Each element in the list is a tuple consisting the 'overallRC', 'rc',
+# list of 'rs'
+# when the value is 'None', it means always match.
+SMUT_INTERNAL_ERROR = [(4, 4, range(1, 18)),
+                       (2, 2, [99, ]),
+                       (25, None, None),
+                       (99, 99, [416, 417])
+                       ]

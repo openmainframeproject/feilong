@@ -210,13 +210,22 @@ class ZVMInvalidInputFormat(SDKBaseException):
 
 
 class ZVMSDKInternalError(SDKBaseException):
-    def __init__(self, msg, modID='zvmsdk'):
+    def __init__(self, msg, modID='zvmsdk', results=None):
+        # if results is set, it means the internal error comes from
+        # smut module, we need to keep the rc/rs value from SMUT
         rc = returncode.errors['internal']
-        results = rc[0]
-        results['rs'] = 1
         errormsg = rc[1][1] % {'msg': msg}
-        results['strError'] = errormsg
-        results['modID'] = returncode.ModRCs[modID]
+        if results is None:
+            results = rc[0]
+            results['rs'] = 1
+            results['strError'] = errormsg
+            results['modID'] = returncode.ModRCs[modID]
+        else:
+            # SMUT internal error
+            # Reset the overallRC in results to the overallRC value
+            # corresponding to internal error
+            results['overallRC'] = (rc[0]['overallRC'])
+            results['modID'] = returncode.ModRCs['smut']
         super(ZVMSDKInternalError, self).__init__(results=results,
                                                   message=errormsg)
 
