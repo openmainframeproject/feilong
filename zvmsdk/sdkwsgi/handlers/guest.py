@@ -118,6 +118,16 @@ class VMHandler(object):
         except exception.ZVMInvalidInput as e:
             raise webob.exc.HTTPBadRequest(str(e))
 
+    @validation.schema(guest.delete_disks)
+    def delete_disks(self, userid, body=None):
+        vdev_info = body['vdev_info']
+        vdev_list = vdev_info.get('vdev_list', None)
+
+        try:
+            self.api.guest_delete_disks(userid, vdev_list)
+        except exception.ZVMInvalidInput as e:
+            raise webob.exc.HTTPBadRequest(str(e))
+
     @validation.schema(guest.couple_uncouple_nic)
     def couple_uncouple_nic(self, userid, vdev, body):
         info = body['info']
@@ -469,3 +479,17 @@ def guest_create_disks(req):
     userid = util.wsgi_path_item(req.environ, 'userid')
 
     _guest_create_disks(userid, req)
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def guest_delete_disks(req):
+
+    def _guest_delete_disks(userid, req):
+        action = get_handler()
+        body = util.extract_json(req.body)
+        return action.delete_disks(userid, body=body)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+
+    _guest_delete_disks(userid, req)

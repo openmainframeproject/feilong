@@ -69,6 +69,7 @@ ROUTE_LIST = (
     }),
     ('/guests/{userid}/disks', {
         'POST': guest.guest_create_disks,
+        'DELETE': guest.guest_delete_disks,
     }),
     ('/guests/{userid}/volumes', {
         'POST': volume.volume_attach,
