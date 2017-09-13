@@ -179,7 +179,7 @@ class ZVMInvalidInputNumber(SDKBaseException):
         results['rs'] = 1
         errormsg = rc[1][1] % {'api': api, 'expected': expected,
                                'provided': provided}
-        results['strError'] = errormsg
+        results['errmsg'] = errormsg
         super(ZVMInvalidInputNumber, self).__init__(results=results,
                                                     message=errormsg)
 
@@ -192,7 +192,7 @@ class ZVMInvalidInputtypes(SDKBaseException):
         results['rs'] = 2
         errormsg = rc[1][2] % {'api': api, 'expected': expected,
                                'inputtypes': inputtypes}
-        results['strError'] = errormsg
+        results['errmsg'] = errormsg
         super(ZVMInvalidInputtypes, self).__init__(results=results,
                                                    message=errormsg)
 
@@ -204,7 +204,7 @@ class ZVMInvalidInputFormat(SDKBaseException):
         results['modID'] = returncode.ModRCs['zvmsdk']
         results['rs'] = 3
         errormsg = rc[1][3] % {'api': api, 'msg': msg}
-        results['strError'] = errormsg
+        results['errmsg'] = errormsg
         super(ZVMInvalidInputFormat, self).__init__(results=results,
                                                     message=errormsg)
 
@@ -218,7 +218,7 @@ class ZVMSDKInternalError(SDKBaseException):
         if results is None:
             results = rc[0]
             results['rs'] = 1
-            results['strError'] = errormsg
+            results['errmsg'] = errormsg
             results['modID'] = returncode.ModRCs[modID]
         else:
             # SMUT internal error
@@ -226,6 +226,8 @@ class ZVMSDKInternalError(SDKBaseException):
             # corresponding to internal error
             results['overallRC'] = (rc[0]['overallRC'])
             results['modID'] = returncode.ModRCs['smut']
+            # move the error message from 'response' to 'errmsg'
+            results['errmsg'] = results.pop('response')
         super(ZVMSDKInternalError, self).__init__(results=results,
                                                   message=errormsg)
 
@@ -243,7 +245,7 @@ class ZVMObjectNotExistError(SDKBaseException):
         results['modID'] = returncode.ModRCs[modID]
         results['rs'] = 1
         errormsg = rc[1][1] % {'object': object}
-        results['strError'] = errormsg
+        results['errmsg'] = errormsg
         super(ZVMObjectNotExistError, self).__init__(results=results,
                                                      message=errormsg)
 
@@ -256,6 +258,7 @@ class ZVMClientRequestFailed(SDKBaseException):
         if results:
             results.pop('logEntries')
             results['modID'] = returncode.ModRCs['smut']
+            results['errmsg'] = results.pop('response')
             if rd is not None:
                 msg += ("RequestData: '%s'" % rd)
             msg += ("Results: %s" % str(results))
@@ -273,6 +276,6 @@ class SDKGuestOperationError(SDKBaseException):
         results = rc[0]
         results['rs'] = rs
         errormsg = rc[1][rs] % kwargs
-        results['strError'] = errormsg
+        results['errmsg'] = errormsg
         super(SDKGuestOperationError, self).__init__(results=results,
                                                      message=errormsg)
