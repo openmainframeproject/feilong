@@ -31,6 +31,7 @@ from zvmsdk import constants as const
 from zvmsdk import database
 from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk import returncode
 from zvmsdk import utils as zvmutils
 
 
@@ -56,9 +57,31 @@ class SMUTClient(client.ZVMClient):
             LOG.error('SMUT internal parse encounter error')
             raise exception.ZVMClientInternalError(msg=err)
 
+        def _smut_internal_error(results):
+            internal_error_list = returncode.SMUT_INTERNAL_ERROR
+            for error in internal_error_list:
+                if results['overallRC'] != error[0]:
+                    # overallRC does not match, continue next
+                    continue
+                if error[1] is not None and results['rc'] != error[1]:
+                    # rc match failed
+                    continue
+                if error[2] is not None and results['rs'] != error[2]:
+                    # rs match failed
+                    continue
+                # All match finish successfully, return true
+                return True
+            return False
+
         if results['overallRC'] != 0:
-            raise exception.ZVMClientRequestFailed(rd=requestData,
-                                                   results=results)
+            # Check whether this smut error belongs to internal error, if so,
+            # raise internal error, otherwise raise clientrequestfailed error
+            if _smut_internal_error(results):
+                msg = "SMUT internal Results: %s" % str(results)
+                raise exception.SDKInternalError(msg=msg, results=results)
+            else:
+                raise exception.ZVMClientRequestFailed(rd=requestData,
+                                                       results=results)
         return results
 
     def get_power_state(self, userid):
