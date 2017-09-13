@@ -295,18 +295,22 @@ typedef struct _vmApiInternalContext {
 } vmApiInternalContext;
 
 #define DOES_CALLER_WANT_RC_HEADER_ALLOK(_globalcontextptr_) \
+  TRACE_IT(_globalcontextptr_, TRACEAREA_SMCLI, TRACELEVEL_FLOW, "No errors found in function call\n");\
   if (_globalcontextptr_->addRcHeader) \
     {                  \
       printf("0 0 0 (details) None\n"); \
     }
 
 #define DOES_CALLER_WANT_RC_HEADER_SMAPI_RC0_RS(_globalcontextptr_, _smapirc_, _smapirs_) \
+  TRACE_1SUB(_globalcontextptr_, TRACEAREA_SMCLI, TRACELEVEL_DETAILS, "SMAPI call RC 0, but had rs: %d\n",\
+             _smapirs_);\
   if (_globalcontextptr_->addRcHeader) \
     {                  \
       printf("0 %d %d (details) None\n",_smapirc_, _smapirs_); \
     }
 
 #define DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(_globalcontextptr_) \
+  TRACE_IT(_globalcontextptr_, TRACEAREA_SMCLI, TRACELEVEL_ERROR, "Input error detected\n");\
   if (_globalcontextptr_->addRcHeader) \
     {                  \
       printf("24 0 0 (details) Input error\n"); \
