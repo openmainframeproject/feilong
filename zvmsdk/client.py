@@ -83,6 +83,9 @@ class ZVMClient(object):
     def image_delete(self, image_name):
         pass
 
+    def image_export(self, image_name, dest_path, remote_host=None):
+        pass
+
     def get_host_info(self):
         pass
 

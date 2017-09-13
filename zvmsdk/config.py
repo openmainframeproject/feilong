@@ -252,7 +252,7 @@ read write the directory.
     # image options
     Opt('sdk_image_repository',
         section='image',
-        default='/var/lib/zvmsdk/images/',
+        default='/var/lib/zvmsdk/images',
         help='''
 Directory to store sdk images.
 
