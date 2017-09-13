@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fdfe567c_faa98738",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-13T17:03:53Z",
+      "side": 1,
+      "message": "this should be identical to rdev_list above?",
+      "revId": "9ce0901180ebded559b946fe6eb72073499bde0c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "befd95ed_230f8a59",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-13T17:03:53Z",
+      "side": 1,
+      "message": "you can move this after line 236",
+      "range": {
+        "startLine": 241,
+        "startChar": 12,
+        "endLine": 241,
+        "endChar": 64
+      },
+      "revId": "9ce0901180ebded559b946fe6eb72073499bde0c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
