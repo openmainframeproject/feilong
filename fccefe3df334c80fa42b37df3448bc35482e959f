@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "52ea8901_874c77e3",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-13T08:39:24Z",
+      "side": 1,
+      "message": "_is_smut_internal_error",
+      "range": {
+        "startLine": 60,
+        "startChar": 12,
+        "endLine": 60,
+        "endChar": 32
+      },
+      "revId": "fccefe3df334c80fa42b37df3448bc35482e959f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4980e16c_412d8000",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-13T08:39:24Z",
+      "side": 1,
+      "message": "error[2] is a list of reason codes, results[\u0027rs\u0027] not in error[2]?",
+      "range": {
+        "startLine": 69,
+        "startChar": 61,
+        "endLine": 69,
+        "endChar": 69
+      },
+      "revId": "fccefe3df334c80fa42b37df3448bc35482e959f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
