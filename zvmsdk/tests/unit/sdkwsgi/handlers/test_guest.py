@@ -351,6 +351,18 @@ class HandlersGuestTest(SDKWSGITest):
                                             disk_list)
 
     @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(api.SDKAPI, 'guest_delete_disks')
+    def test_guest_delete_disks(self, mock_delete, mock_userid):
+        vdev_list = ['0101']
+        body_str = """{"vdev_info": {"vdev_list": ["0101"]}}"""
+        self.req.body = body_str
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_delete_disks(self.req)
+        mock_delete.assert_called_once_with(FAKE_USERID,
+                                            vdev_list)
+
+    @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get_nic')
     def test_guest_get_nic_info(self, mock_get, mock_userid):
         mock_userid.return_value = FAKE_USERID
