@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cddcce79_a44f9ee2",
+        "filename": "zvmsdk/tests/unit/test_database.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-13T01:50:33Z",
+      "side": 1,
+      "message": "guess \u0027by\u0027 userid is better, but this works for me",
+      "range": {
+        "startLine": 220,
+        "startChar": 56,
+        "endLine": 220,
+        "endChar": 59
+      },
+      "revId": "2fe293813d5a1c2fb71d0fa5e99576048cb91334",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
