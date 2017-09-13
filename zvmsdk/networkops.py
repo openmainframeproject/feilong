@@ -13,8 +13,14 @@
 #    under the License.
 
 
+import os
+import shutil
+import tarfile
+
 from zvmsdk import client as zvmclient
 from zvmsdk import config
+from zvmsdk import dist
+from zvmsdk import exception
 from zvmsdk import log
 
 
@@ -36,6 +42,7 @@ class NetworkOPS(object):
     """
     def __init__(self):
         self.zvmclient = zvmclient.get_zvmclient()
+        self._dist_manager = dist.LinuxDistManager()
 
     def create_nic(self, vm_id, vdev=None, nic_id=None,
                    mac_addr=None, ip_addr=None, active=False):
@@ -91,3 +98,126 @@ class NetworkOPS(object):
     def delete_nic(self, userid, vdev, active=False):
         self.zvmclient.delete_nic(userid, vdev,
                                   active=active)
+
+    def network_configuration(self, userid, os_version, network_info):
+        if len(network_info) == 0:
+            raise exception.ZVMInvalidInput(
+                    msg="Network information is required")
+        network_file_path = self.zvmclient.get_instance_path(CONF.zvm.host,
+                                                             userid,
+                                                             'network')
+        LOG.debug('Creating folder %s to contain network configuration files'
+                  % network_file_path)
+        network_doscript = self._generate_network_doscript(userid,
+                                                           os_version,
+                                                           network_info,
+                                                           network_file_path)
+        fileClass = "X"
+        try:
+            self.zvmclient.punch_file(userid, network_doscript, fileClass)
+        finally:
+            LOG.debug('Removing the folder %s ', network_file_path)
+            shutil.rmtree(network_file_path)
+
+    # Prepare and create network doscript for instance
+    def _generate_network_doscript(self, userid, os_version,
+                                   network_info, network_file_path):
+        path_contents = []
+        content_dir = {}
+        files_map = []
+
+        # Create network configuration files
+        LOG.debug('Creating network configuration files '
+                  'for guest %s in the folder' % (userid, network_file_path))
+        linuxdist = self._dist_manager.get_linux_dist(os_version)()
+        files_and_cmds = linuxdist.create_network_configuration_files(
+                             network_file_path, network_info)
+
+        (net_conf_files, net_conf_cmds) = files_and_cmds
+
+        # Add network configure files to path_contents
+        if len(net_conf_files) > 0:
+            path_contents.extend(net_conf_files)
+
+        net_cmd_file = self._create_znetconfig(net_conf_cmds,
+                                               linuxdist)
+        # Add znetconfig file to path_contents
+        if len(net_cmd_file) > 0:
+            path_contents.extend(net_cmd_file)
+
+        for (path, contents) in path_contents:
+            key = "%04i" % len(content_dir)
+            files_map.append({'target_path': path,
+                        'source_file': "%s" % key})
+            content_dir[key] = contents
+            file_name = os.path.join(network_file_path, key)
+            self._add_file(file_name, contents)
+
+        self._create_invokeScript(network_file_path, files_map)
+        network_doscript = self._create_network_doscript(network_file_path)
+        return network_doscript
+
+    def _add_file(self, file_name, data):
+        with open(file_name, "w") as f:
+            f.write(data)
+
+    def _create_znetconfig(self, commands, linuxdist):
+        LOG.debug('Creating znetconfig file')
+
+        znet_content = linuxdist.get_znetconfig_contents()
+        net_cmd_file = []
+        if znet_content:
+            if len(commands) == 0:
+                znetconfig = '\n'.join(('#!/bin/bash', znet_content))
+            else:
+                znetconfig = '\n'.join(('#!/bin/bash', commands, znet_content))
+            znetconfig += '\nrm -rf /tmp/znetconfig.sh\n'
+            # Create a temp file in instance to execute above commands
+            net_cmd_file.append(('/tmp/znetconfig.sh', znetconfig))  # nosec
+
+        return net_cmd_file
+
+    def _create_invokeScript(self, network_file_path, files_map):
+        """invokeScript: Configure zLinux os network
+
+        invokeScript is included in the network.doscript, it is used to put
+        the network configuration file to the directory where it belongs and
+        call znetconfig to configure the network
+        """
+        LOG.debug('Creating invokeScript shell in the folder %s'
+                  % network_file_path)
+        invokeScript = "invokeScript.sh"
+
+        conf = "#!/bin/bash \n"
+        command = ''
+        for file in files_map:
+            target_path = file['target_path']
+            source_file = file['source_file']
+            # potential risk: whether target_path exist
+            command += 'mv ' + source_file + ' ' + target_path + '\n'
+
+        command += '/bin/bash /tmp/znetconfig.sh\n'
+        command += '/bin/bash rm -rf invokeScript.sh\n'
+
+        scriptfile = os.path.join(network_file_path, invokeScript)
+        with open(scriptfile, "w") as f:
+            f.write(conf)
+            f.write(command)
+
+    def _create_network_doscript(self, network_file_path):
+        """doscript: contains a invokeScript.sh which will do the special work
+
+        The network.doscript contains network configuration files and it will
+        be used by zvmguestconfigure to configure zLinux os network when it
+        starts up
+        """
+        # Generate the tar package for punch
+        LOG.debug('Creating network doscript in the folder %s'
+                  % network_file_path)
+        network_doscript = os.path.join(network_file_path, 'network.doscript')
+        tar = tarfile.open(network_doscript, "w")
+        for file in os.listdir(network_file_path):
+            file_name = os.path.join(network_file_path, file)
+            tar.add(file_name, arcname=file)
+        tar.close()
+        return network_doscript

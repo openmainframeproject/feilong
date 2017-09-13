@@ -1001,6 +1001,18 @@ class SMUTClient(client.ZVMClient):
                                                                 image_name)
         return disk_size_units
 
+    def punch_file(self, userid, fn, fclass):
+        rd = ("changevm %(uid)s punchfile %(file)s --class %(class)s" %
+                      {'uid': userid, 'file': fn, 'class': fclass})
+        try:
+            self._request(rd)
+        except exception.ZVMClientRequestFailed as err:
+            LOG.error("Failed to punch file to userid '%s',"
+                      "error: %s" % (userid, err.format_message()))
+            raise
+        finally:
+            os.remove(fn)
+
 
 class FilesystemBackend(object):
     @classmethod
