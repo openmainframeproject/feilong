@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c22d83f7_82f5bada",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 1056,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-13T15:48:34Z",
+      "side": 1,
+      "message": "you are not in Excpetion handling code, from following test\nyou need raise exact exception here\n\n\n\njichen@ubuntu:~$ python t9.py\nTraceback (most recent call last):\n  File \"t9.py\", line 7, in \u003cmodule\u003e\n    a()\n  File \"t9.py\", line 5, in a\n    raise\nTypeError: exceptions must be old-style classes or derived from BaseException, not NoneType\njichen@ubuntu:~$ cat t9.py\nia \u003d [1,2,3]\n\n\ndef a():\n    raise\n\na()",
+      "range": {
+        "startLine": 1056,
+        "startChar": 16,
+        "endLine": 1056,
+        "endChar": 21
+      },
+      "revId": "4155a2a56224a7dad8ea645f497bb2785765f36c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
