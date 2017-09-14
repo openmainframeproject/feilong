@@ -186,12 +186,6 @@ class ZVMSDKInternalError(SDKBaseException):
                                                   message=errormsg)
 
 
-class ZVMClientInternalError(ZVMSDKInternalError):
-    def __init__(self, msg):
-        super(ZVMClientInternalError, self).__init__(msg=msg,
-                                                     modID = 'zvmsdk')
-
-
 class ZVMObjectNotExistError(SDKBaseException):
     def __init__(self, object, modID='zvmsdk'):
         rc = returncode.errors['notExist']
