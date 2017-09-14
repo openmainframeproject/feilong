@@ -417,7 +417,7 @@ def expect_request_failed_and_reraise(exc, **kwargs):
         LOG.error(msg)
         raise exc(results=err.results, **kwargs)
     except (exception.ZVMInvalidResponseDataError,
-            exception.ZVMClientInternalError) as err:
+            exception.ZVMSDKInternalError) as err:
         msg = err.format_message()
         kwargs['msg'] = msg
         LOG.error(msg)

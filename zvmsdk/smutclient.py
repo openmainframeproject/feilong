@@ -55,7 +55,7 @@ class SMUTClient(client.ZVMClient):
             results = self._smut.request(requestData)
         except Exception as err:
             LOG.error('SMUT internal parse encounter error')
-            raise exception.ZVMClientInternalError(msg=err)
+            raise exception.ZVMSDKInternalError(msg=err, modID='smut')
 
         def _is_smut_internal_error(results):
             internal_error_list = returncode.SMUT_INTERNAL_ERROR
@@ -608,7 +608,7 @@ class SMUTClient(client.ZVMClient):
             try:
                 self._request(requestData)
             except (exception.ZVMClientRequestFailed,
-                    exception.ZVMClientInternalError) as err1:
+                    exception.ZVMSDKInternalError) as err1:
                 msg1 = err1.format_message()
                 persist_OK = True
                 requestData = ' '.join((
@@ -713,7 +713,7 @@ class SMUTClient(client.ZVMClient):
             try:
                 self._request(requestData)
             except (exception.ZVMClientRequestFailed,
-                    exception.ZVMClientInternalError) as err1:
+                    exception.ZVMSDKInternalError) as err1:
                 results1 = err1.results
                 msg1 = err1.format_message()
                 if ((results1 is not None) and
@@ -731,7 +731,7 @@ class SMUTClient(client.ZVMClient):
                     try:
                         self._request(requestData)
                     except (exception.ZVMClientRequestFailed,
-                            exception.ZVMClientInternalError) as err2:
+                            exception.ZVMSDKInternalError) as err2:
                         results2 = err2.results
                         msg2 = err2.format_message()
                         if ((results2 is not None) and
@@ -779,7 +779,7 @@ class SMUTClient(client.ZVMClient):
         try:
             self._request(requestData)
         except (exception.ZVMClientRequestFailed,
-                exception.ZVMClientInternalError) as err:
+                exception.ZVMSDKInternalError) as err:
             results = err.results
             emsg = err.format_message()
             if ((results is not None) and
@@ -807,7 +807,7 @@ class SMUTClient(client.ZVMClient):
             try:
                 self._request(requestData)
             except (exception.ZVMClientRequestFailed,
-                    exception.ZVMClientInternalError) as err:
+                    exception.ZVMSDKInternalError) as err:
                 results = err.results
                 emsg = err.format_message()
                 if ((results is not None) and
