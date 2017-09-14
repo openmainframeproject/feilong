@@ -22,7 +22,6 @@ from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import utils as zvmutils
-from zvmsdk import xcatclient
 
 
 _VMOPS = None
@@ -84,8 +83,7 @@ class VMOps(object):
                     'cpu_time_us': cpu_time_us}
         else:
             # virtual machine in shutdown state or not exists
-            with xcatclient.expect_invalid_xcat_node_and_reraise(userid):
-                dict_info = self._zvmclient.get_user_direct(userid)
+            dict_info = self._zvmclient.get_user_direct(userid)
             return {
                 'power_state': power_stat,
                 'max_mem_kb': self._get_max_memory_from_user_dict(dict_info),
