@@ -277,9 +277,12 @@ class SMUTClient(client.ZVMClient):
             "-k grant_userid=%s" % userid,
             "-k persist=YES"))
 
-        with zvmutils.expect_request_failed_and_reraise(
-            exception.ZVMNetworkError):
+        try:
             self._request(requestData)
+        except exception.ZVMClientRequestFailed as err:
+            LOG.error("Failed to grant user %s to vswitch %s, error: %s"
+                      % (userid, vswitch_name, err.format_message()))
+            raise
 
     def revoke_user_from_vswitch(self, vswitch_name, userid):
         """Revoke user for vswitch."""
@@ -291,9 +294,12 @@ class SMUTClient(client.ZVMClient):
             "-k revoke_userid=%s" % userid,
             "-k persist=YES"))
 
-        with zvmutils.expect_request_failed_and_reraise(
-            exception.ZVMNetworkError):
+        try:
             self._request(requestData)
+        except exception.ZVMClientRequestFailed as err:
+            LOG.error("Failed to revoke user %s from vswitch %s, error: %s"
+                      % (userid, vswitch_name, err.format_message()))
+            raise
 
     def image_performance_query(self, uid_list):
         """Call Image_Performance_Query to get guest current status.
@@ -397,26 +403,24 @@ class SMUTClient(client.ZVMClient):
             "SMAPI %s API Virtual_Network_Vswitch_Query" % smut_userid,
             "--operands",
             "-s \'*\'"))
-        with zvmutils.expect_request_failed_and_reraise(
-                exception.ZVMNetworkError):
-            try:
-                result = self._request(rd)
-            except exception.ZVMClientRequestFailed as err:
-                emsg = err.format_message()
-                if ((err.results['rc'] == 212) and (err.results['rs'] == 40)):
-                    LOG.warning("No Virtual switch in the host")
-                    return []
-                else:
-                    raise exception.ZVMNetworkError(
-                            msg=("Failed to query vswitch list, %s") % emsg)
-
-            if (not result['response'] or not result['response'][0]):
+        try:
+            result = self._request(rd)
+        except exception.ZVMClientRequestFailed as err:
+            if ((err.results['rc'] == 212) and (err.results['rs'] == 40)):
+                LOG.warning("No Virtual switch in the host")
                 return []
             else:
-                data = '\n'.join([s for s in result['response']
-                                if isinstance(s, const._TSTR_OR_TUNI)])
-                output = re.findall('VSWITCH:  Name: (.*)', data)
-                return output
+                LOG.error("Failed to get vswitch list, error: %s" %
+                          err.format_message())
+                raise
+
+        if (not result['response'] or not result['response'][0]):
+            return []
+        else:
+            data = '\n'.join([s for s in result['response']
+                              if isinstance(s, const._TSTR_OR_TUNI)])
+            output = re.findall('VSWITCH:  Name: (.*)', data)
+            return output
 
     def set_vswitch_port_vlan_id(self, vswitch_name, userid, vlan_id):
         smut_userid = zvmutils.get_smut_userid()
@@ -428,9 +432,14 @@ class SMUTClient(client.ZVMClient):
             "-k switch_name=%s" % vswitch_name,
             "-k user_vlan_id=%s" % vlan_id,
             "-k persist=YES"))
-        with zvmutils.expect_request_failed_and_reraise(
-            exception.ZVMNetworkError):
+
+        try:
             self._request(rd)
+        except exception.ZVMClientRequestFailed as err:
+            LOG.error("Failed to set VLAN ID %s on vswitch %s for user %s, "
+                      "error: %s" %
+                      (vlan_id, vswitch_name, userid, err.format_message()))
+            raise
 
     @zvmutils.wrap_invalid_resp_data_error
     def add_vswitch(self, name, rdev=None, controller='*',
@@ -472,9 +481,13 @@ class SMUTClient(client.ZVMClient):
 
         if router is not None:
             rd += " -k routing_value=%s" % router
-        with zvmutils.expect_request_failed_and_reraise(
-            exception.ZVMNetworkError):
+
+        try:
             self._request(rd)
+        except exception.ZVMClientRequestFailed as err:
+            LOG.error("Failed to create vswitch %s, error: %s" %
+                      (name, err.format_message()))
+            raise
 
     @zvmutils.wrap_invalid_resp_data_error
     def set_vswitch(self, switch_name, **kwargs):
@@ -490,9 +503,13 @@ class SMUTClient(client.ZVMClient):
             rd = ' '.join((rd,
                            "-k %(key)s=\'%(value)s\'" %
                            {'key': k, 'value': v}))
-        with zvmutils.expect_request_failed_and_reraise(
-            exception.ZVMNetworkError):
+
+        try:
             self._request(rd)
+        except exception.ZVMClientRequestFailed as err:
+            LOG.error("Failed to set vswitch %s, error: %s" %
+                      (switch_name, err.format_message()))
+            raise
 
     @zvmutils.wrap_invalid_resp_data_error
     def delete_vswitch(self, switch_name, persist=True):
@@ -503,21 +520,19 @@ class SMUTClient(client.ZVMClient):
             "--operands",
             "-k switch_name=%s" % switch_name,
             "-k persist=%s" % (persist and 'YES' or 'NO')))
-        with zvmutils.expect_request_failed_and_reraise(
-            exception.ZVMNetworkError):
-            try:
-                self._request(rd)
-            except exception.ZVMClientRequestFailed as err:
-                results = err.results
-                emsg = err.format_message()
-                if ((results['rc'] == 212) and
-                    (results['rs'] == 40)):
-                    LOG.warning("Vswitch %s does not exist", switch_name)
-                    return
-                else:
-                    raise exception.ZVMNetworkError(
-                        msg=("Failed to delete vswitch %s: %s") %
-                            (switch_name, emsg))
+
+        try:
+            self._request(rd)
+        except exception.ZVMClientRequestFailed as err:
+            results = err.results
+            if ((results['rc'] == 212) and
+                (results['rs'] == 40)):
+                LOG.warning("Vswitch %s does not exist", switch_name)
+                return
+            else:
+                LOG.error("Failed to delete vswitch %s, error: %s" %
+                      (switch_name, err.format_message()))
+                raise
 
     def create_nic(self, userid, vdev=None, nic_id=None,
                    mac_addr=None, ip_addr=None, active=False):
@@ -571,9 +586,13 @@ class SMUTClient(client.ZVMClient):
             mac = ''.join(mac_addr.split(':'))[6:]
             requestData += ' -k mac_id=%s' % mac
 
-        with zvmutils.expect_request_failed_and_reraise(
-            exception.ZVMNetworkError):
+        try:
             self._request(requestData)
+        except exception.ZVMClientRequestFailed as err:
+            LOG.error("Failed to create nic %s for user %s in "
+                      "the guest's user direct,, error: %s" %
+                      (vdev, userid, err.format_message()))
+            raise
 
         if active:
             if mac_addr is not None:
@@ -628,22 +647,20 @@ class SMUTClient(client.ZVMClient):
             "SMAPI %s API Virtual_Network_Adapter_Delete_DM" %
             userid,
             '-v %s' % vdev))
-        with zvmutils.expect_request_failed_and_reraise(
-            exception.ZVMNetworkError):
-            try:
-                self._request(rd)
-            except exception.ZVMClientRequestFailed as err:
-                results = err.results
-                emsg = err.format_message()
-                if ((results['rc'] == 404) and
-                    (results['rs'] == 8)):
-                    LOG.warning("Virtual device %s does not exist in "
-                                "the guest's user direct", vdev)
-                else:
-                    raise exception.ZVMNetworkError(
-                        msg=("Failed to delete nic %s for %s in "
-                             "the guest's user direct, %s") %
-                             (vdev, userid, emsg))
+        try:
+            self._request(rd)
+        except exception.ZVMClientRequestFailed as err:
+            results = err.results
+            emsg = err.format_message()
+            if ((results['rc'] == 404) and
+                (results['rs'] == 8)):
+                LOG.warning("Virtual device %s does not exist in "
+                            "the guest's user direct", vdev)
+            else:
+                LOG.error("Failed to delete nic %s for %s in "
+                          "the guest's user direct, error: %s" %
+                          (vdev, userid, emsg))
+                raise
 
         self._NetDbOperator.switch_delete_record_for_nic(userid, vdev)
         if active:
@@ -651,22 +668,20 @@ class SMUTClient(client.ZVMClient):
                 "SMAPI %s API Virtual_Network_Adapter_Delete" %
                 userid,
                 '-v %s' % vdev))
-            with zvmutils.expect_request_failed_and_reraise(
-                exception.ZVMNetworkError):
-                try:
-                    self._request(rd)
-                except exception.ZVMClientRequestFailed as err:
-                    results = err.results
-                    emsg = err.format_message()
-                    if ((results['rc'] == 204) and
-                        (results['rs'] == 8)):
-                        LOG.warning("Virtual device %s does not exist on "
-                                    "the active guest system", vdev)
-                    else:
-                        raise exception.ZVMNetworkError(
-                            msg=("Failed to delete nic %s for %s on "
-                                 "the active guest system, %s") %
-                                 (vdev, userid, emsg))
+            try:
+                self._request(rd)
+            except exception.ZVMClientRequestFailed as err:
+                results = err.results
+                emsg = err.format_message()
+                if ((results['rc'] == 204) and
+                    (results['rs'] == 8)):
+                    LOG.warning("Virtual device %s does not exist on "
+                                "the active guest system", vdev)
+                else:
+                    LOG.error("Failed to delete nic %s for %s on "
+                              "the active guest system, error: %s" %
+                              (vdev, userid, emsg))
+                    raise
 
     def _couple_nic(self, userid, vdev, vswitch_name,
                     active=False):
@@ -678,9 +693,13 @@ class SMUTClient(client.ZVMClient):
             "-v %s" % vdev,
             "-n %s" % vswitch_name))
 
-        with zvmutils.expect_request_failed_and_reraise(
-            exception.ZVMNetworkError):
+        try:
             self._request(requestData)
+        except exception.ZVMClientRequestFailed as err:
+            LOG.error("Failed to couple nic %s to vswitch %s for user %s "
+                      "in the guest's user direct, error: %s" %
+                      (vdev, vswitch_name, userid, err.format_message()))
+            raise
 
         # the inst must be active, or this call will failed
         if active:
