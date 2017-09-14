@@ -179,7 +179,6 @@ class ZVMInvalidInputNumber(SDKBaseException):
         results['rs'] = 1
         errormsg = rc[1][1] % {'api': api, 'expected': expected,
                                'provided': provided}
-        results['strError'] = errormsg
         super(ZVMInvalidInputNumber, self).__init__(results=results,
                                                     message=errormsg)
 
@@ -192,7 +191,6 @@ class ZVMInvalidInputtypes(SDKBaseException):
         results['rs'] = 2
         errormsg = rc[1][2] % {'api': api, 'expected': expected,
                                'inputtypes': inputtypes}
-        results['strError'] = errormsg
         super(ZVMInvalidInputtypes, self).__init__(results=results,
                                                    message=errormsg)
 
@@ -204,7 +202,6 @@ class ZVMInvalidInputFormat(SDKBaseException):
         results['modID'] = returncode.ModRCs['zvmsdk']
         results['rs'] = 3
         errormsg = rc[1][3] % {'msg': msg}
-        results['strError'] = errormsg
         super(ZVMInvalidInputFormat, self).__init__(results=results,
                                                     message=errormsg)
 
@@ -218,7 +215,6 @@ class ZVMSDKInternalError(SDKBaseException):
         if results is None:
             results = rc[0]
             results['rs'] = 1
-            results['strError'] = errormsg
             results['modID'] = returncode.ModRCs[modID]
         else:
             # SMUT internal error
@@ -243,7 +239,6 @@ class ZVMObjectNotExistError(SDKBaseException):
         results['modID'] = returncode.ModRCs[modID]
         results['rs'] = 1
         errormsg = rc[1][1] % {'object': object}
-        results['strError'] = errormsg
         super(ZVMObjectNotExistError, self).__init__(results=results,
                                                      message=errormsg)
 
@@ -273,6 +268,5 @@ class SDKGuestOperationError(SDKBaseException):
         results = rc[0]
         results['rs'] = rs
         errormsg = rc[1][rs] % kwargs
-        results['strError'] = errormsg
         super(SDKGuestOperationError, self).__init__(results=results,
                                                      message=errormsg)

@@ -17,7 +17,7 @@
 
 """
 Each error corresponds to a dictionary contains: 'overallRC', 'modID', 'rc',
-'rs' and 'strError'.
+'rs'.
 --'overallRC' is used to indicate the overall return code, all the errors are
     classified into group with different overallRC value.
 
@@ -43,7 +43,6 @@ Each error corresponds to a dictionary contains: 'overallRC', 'modID', 'rc',
     each module. Different error inside a module should use different
     'rc'/'rs' combination.
 
--- 'strError' is used to return the detail error despcription.
 
 -------------------------------------------------------------------------------
 ErrorCode General Classification
