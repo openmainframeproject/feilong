@@ -18,7 +18,7 @@
 """
 Each error corresponds to a dictionary contains: 'overallRC', 'modID', 'rc',
 'rs'.
---'overallRC' is used to indicate the overall return code, all the errors are
+-- 'overallRC' is used to indicate the overall return code, all the errors are
     classified into group with different overallRC value.
 
 -- 'modID' is used to indicate which module this error happens in. The

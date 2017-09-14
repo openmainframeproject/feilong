@@ -51,8 +51,6 @@ def get_volume_conn():
     _DBLOCK_VOLUME.acquire()
     try:
         yield _VOLUME_CONN
-    except exception.SDKBaseException:
-        raise
     except Exception as err:
         LOG.error("Execute SQL statements error: %s", six.text_type(err))
         raise exception.DatabaseException(msg=err)
@@ -69,8 +67,6 @@ def get_network_conn():
     _DBLOCK_NETWORK.acquire()
     try:
         yield _NETWORK_CONN
-    except exception.SDKBaseException:
-        raise
     except Exception as err:
         LOG.error("Execute SQL statements error: %s", six.text_type(err))
         raise exception.DatabaseException(msg=err)
@@ -87,8 +83,6 @@ def get_image_conn():
     _DBLOCK_IMAGE.acquire()
     try:
         yield _IMAGE_CONN
-    except exception.SDKBaseException:
-        raise
     except Exception as err:
         LOG.error("Execute SQL statements error: %s", six.text_type(err))
         raise exception.DatabaseException(msg=err)
@@ -105,11 +99,10 @@ def get_guest_conn():
     _DBLOCK_GUEST.acquire()
     try:
         yield _GUEST_CONN
-    except exception.SDKBaseException:
-        raise
     except Exception as err:
-        LOG.error("Execute SQL statements error: %s", six.text_type(err))
-        raise exception.DatabaseException(msg=err)
+        msg = "Execute SQL statements error: %s" % six.text_type(err)
+        LOG.error(msg)
+        raise exception.SDKGuestOperationError(rs=1, msg=msg)
     finally:
         _DBLOCK_GUEST.release()
 

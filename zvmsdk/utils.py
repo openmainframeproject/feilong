@@ -455,19 +455,6 @@ def expect_and_reraise_internal_error(modID='SDK'):
         raise exception.ZVMSDKInternalError(msg, modID=modID)
 
 
-@contextlib.contextmanager
-def expect_database_error_and_reraise(exc):
-    """Catch all kinds of zvm client request failure and reraise.
-
-    exc: the exception that would be raised.
-    """
-    try:
-        yield
-    except exception.DatabaseException as err:
-        msg = err.format_message()
-        raise exc(rs=1, msg=msg)
-
-
 # mappings for zvm driver/plugin compatible
 def get_xcatclient():
     return import_object('zvmsdk.client.get_xcatclient')
