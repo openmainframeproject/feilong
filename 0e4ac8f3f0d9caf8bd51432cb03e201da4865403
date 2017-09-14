@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a3982bc_e403544c",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1129,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-14T05:47:03Z",
+      "side": 1,
+      "message": "rename?",
+      "range": {
+        "startLine": 1129,
+        "startChar": 8,
+        "endLine": 1129,
+        "endChar": 28
+      },
+      "revId": "0e4ac8f3f0d9caf8bd51432cb03e201da4865403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cf0d0be6_9e275671",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1131,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-14T05:47:03Z",
+      "side": 1,
+      "message": "Add more description for this API",
+      "range": {
+        "startLine": 1131,
+        "startChar": 11,
+        "endLine": 1131,
+        "endChar": 40
+      },
+      "revId": "0e4ac8f3f0d9caf8bd51432cb03e201da4865403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "65654160_daff3a1b",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-14T05:47:03Z",
+      "side": 1,
+      "message": "does netaddr provide valid ip/cidr/mac function?",
+      "range": {
+        "startLine": 276,
+        "startChar": 4,
+        "endLine": 276,
+        "endChar": 12
+      },
+      "revId": "0e4ac8f3f0d9caf8bd51432cb03e201da4865403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
