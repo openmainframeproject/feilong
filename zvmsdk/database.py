@@ -632,21 +632,31 @@ class GuestDbOperator(object):
         with get_guest_conn() as conn:
             conn.execute(sql)
 
-    def _check_existence_by_id(self, guest_id):
+    def _check_existence_by_id(self, guest_id, ignore=False):
         guest = self.get_guest_by_id(guest_id)
         if guest is None:
             msg = 'Guest with id: %s does not exist in DB.' % guest_id
-            LOG.error(msg)
-            raise exception.ZVMObjectNotExistError(object=guest_id,
-                                                   modID=self._module_id)
+            if ignore:
+                # Just print a warning message
+                LOG.info(msg)
+            else:
+                LOG.error(msg)
+                raise exception.ZVMObjectNotExistError(object=guest_id,
+                                                       modID=self._module_id)
+        return guest
 
-    def _check_existence_by_userid(self, userid):
+    def _check_existence_by_userid(self, userid, ignore=False):
         guest = self.get_guest_by_userid(userid)
         if guest is None:
             msg = 'Guest with userid: %s does not exist in DB.' % userid
-            LOG.error(msg)
-            raise exception.ZVMObjectNotExistError(object=userid,
-                                                   modID=self._module_id)
+            if ignore:
+                # Just print a warning message
+                LOG.info(msg)
+            else:
+                LOG.error(msg)
+                raise exception.ZVMObjectNotExistError(object=userid,
+                                                       modID=self._module_id)
+        return guest
 
     def add_guest(self, userid, meta='', comments=''):
         # Generate uuid automatically
@@ -658,7 +668,9 @@ class GuestDbOperator(object):
 
     def delete_guest_by_id(self, guest_id):
         # First check whether the guest exist in db table
-        self._check_existence_by_id(guest_id)
+        guest = self._check_existence_by_id(guest_id, ignore=True)
+        if guest is None:
+            return
         # Update guest if exist
         with get_guest_conn() as conn:
             conn.execute(
@@ -666,7 +678,9 @@ class GuestDbOperator(object):
 
     def delete_guest_by_userid(self, userid):
         # First check whether the guest exist in db table
-        self._check_existence_by_userid(userid)
+        guest = self._check_existence_by_userid(userid, ignore=True)
+        if guest is None:
+            return
         with get_guest_conn() as conn:
             conn.execute(
                 "DELETE FROM guests WHERE userid=?", (userid.upper(),))
