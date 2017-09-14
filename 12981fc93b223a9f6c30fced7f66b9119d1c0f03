@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4fbf9946_4da59f9b",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-14T17:27:03Z",
+      "side": 1,
+      "message": "consult with Bill, there should be a url check utility function to use",
+      "range": {
+        "startLine": 199,
+        "startChar": 8,
+        "endLine": 202,
+        "endChar": 77
+      },
+      "revId": "12981fc93b223a9f6c30fced7f66b9119d1c0f03",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f5919ab3_ea90220e",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 874,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-14T17:27:03Z",
+      "side": 1,
+      "message": "you can remove this?",
+      "range": {
+        "startLine": 867,
+        "startChar": 1,
+        "endLine": 874,
+        "endChar": 19
+      },
+      "revId": "12981fc93b223a9f6c30fced7f66b9119d1c0f03",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6d235b4e_50e0b290",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 883,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-14T17:27:03Z",
+      "side": 1,
+      "message": "you can move this out of try except",
+      "range": {
+        "startLine": 880,
+        "startChar": 12,
+        "endLine": 883,
+        "endChar": 22
+      },
+      "revId": "12981fc93b223a9f6c30fced7f66b9119d1c0f03",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
