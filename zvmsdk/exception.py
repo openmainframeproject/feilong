@@ -267,3 +267,17 @@ class SDKGuestOperationError(SDKBaseException):
         results['strError'] = errormsg
         super(SDKGuestOperationError, self).__init__(results=results,
                                                      message=errormsg)
+
+
+class SDKImageOperationError(SDKBaseException):
+    def __init__(self, rs, **kwargs):
+        # kwargs can be used to contain different keyword for constructing
+        # the rs error msg
+        rc = returncode.errors['image']
+        results = rc[0]
+        results['rs'] = rs
+        errormsg = rc[1][rs] % kwargs
+        results['strError'] = errormsg
+        super(SDKImageOperationError, self).__init__(results=results,
+                                                     message=errormsg)
+        
