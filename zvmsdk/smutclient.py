@@ -103,9 +103,7 @@ class SMUTClient(client.ZVMClient):
 
         # Add the guest to db immediately after user created
         try:
-            with zvmutils.expect_database_error_and_reraise(
-                exception.SDKGuestOperationError):
-                self._GuestDbOperator.add_guest(userid)
+            self._GuestDbOperator.add_guest(userid)
         except exception.SDKBaseException:
             LOG.error("Failed to add '%s' to database." % userid)
             raise

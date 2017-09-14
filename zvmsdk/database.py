@@ -25,6 +25,7 @@ from zvmsdk import config
 from zvmsdk import constants as const
 from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk import utils as zvmutils
 
 
 CONF = config.CONF
@@ -105,11 +106,10 @@ def get_guest_conn():
     _DBLOCK_GUEST.acquire()
     try:
         yield _GUEST_CONN
-    except exception.SDKBaseException:
-        raise
     except Exception as err:
-        LOG.error("Execute SQL statements error: %s", six.text_type(err))
-        raise exception.DatabaseException(msg=err)
+        msg = "Execute SQL statements error: %s" % six.text_type(err)
+        LOG.error(msg)
+        raise exception.SDKGuestOperationError(rs=1, msg=msg)
     finally:
         _DBLOCK_GUEST.release()
 
