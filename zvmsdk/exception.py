@@ -76,40 +76,12 @@ class ZVMImageError(SDKBaseException):
     msg_fmt = "Image error: %(msg)s"
 
 
-class ZVMGetImageFromXCATFailed(SDKBaseException):
-    msg_fmt = 'Get image from xCAT failed: %(msg)s'
-
-
 class ZVMNetworkError(SDKBaseException):
     msg_fmt = "z/VM network error: %(msg)s"
 
 
-class ZVMXCATXdshFailed(SDKBaseException):
-    msg_fmt = 'Execute xCAT xdsh command failed: %(msg)s'
-
-
-class ZVMXCATCreateNodeFailed(SDKBaseException):
-    msg_fmt = 'Create xCAT node %(node)s failed: %(msg)s'
-
-
-class ZVMXCATCreateUserIdFailed(SDKBaseException):
-    msg_fmt = 'Create xCAT user id %(userid)s failed: %(msg)s'
-
-
-class ZVMXCATUpdateNodeFailed(SDKBaseException):
-    msg_fmt = 'Update node %(node)s info failed: %(msg)s'
-
-
-class ZVMGuestDeployFailed(SDKBaseException):
-    msg_fmt = 'Deploy image on guest %(userid)s failed: %(msg)s'
-
-
 class ZVMConfigDriveError(SDKBaseException):
     msg_fmt = 'Create configure drive failed: %(msg)s'
-
-
-class ZVMRetryException(SDKBaseException):
-    msg_fmt = 'retry connect to instance timeout: %(msg)s'
 
 
 class ZVMVirtualMachineNotExist(SDKBaseException):
@@ -124,10 +96,6 @@ class NotFound(SDKBaseException):
     msg_fmt = 'The resource can not be found'
 
 
-class zVMInvalidDataError(SDKBaseException):
-    msg_fmt = 'Invalid data error: %(msg)s'
-
-
 class InvalidName(SDKBaseException):
     msg_fmt = 'Invalid name provided, reason is %(reason)s'
 
@@ -136,10 +104,6 @@ class ValidationError(SDKBaseException):
     safe = True
     code = 400
     msg_fmt = 'Validation error: %(detail)s'
-
-
-class zVMConfigException(SDKBaseException):
-    msg_fmt = 'zVMConfig Error: %(msg)s'
 
 
 class ZVMSMUTAuthorizeIUCVClientFailed(SDKBaseException):
@@ -165,10 +129,6 @@ class SDKImageImportException(SDKBaseException):
 
 class DatabaseException(SDKBaseException):
     msg_fmt = "SDK database error: %(msg)s"
-
-
-class DBTimeout(DatabaseException):
-    msg_fmt = "SDK database operation timeout: %(msg)s"
 
 
 class ZVMInvalidInputNumber(SDKBaseException):

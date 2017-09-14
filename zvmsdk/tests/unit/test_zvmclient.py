@@ -18,7 +18,6 @@ import mock
 
 from zvmsdk import client as zvmclient
 from zvmsdk import smutclient
-from zvmsdk import xcatclient
 from zvmsdk import config
 from zvmsdk.tests.unit import base
 
@@ -33,9 +32,7 @@ class SDKZVMClientTestCase(base.SDKTestCase):
 
     def test_get_zvmclient(self):
         _client = zvmclient.get_zvmclient()
-        if CONF.zvm.client_type == 'xcat':
-            self.assertTrue(isinstance(_client, xcatclient.XCATClient))
-        elif CONF.zvm.client_type == 'smut':
+        if CONF.zvm.client_type == 'smut':
             self.assertTrue(isinstance(_client,
                                        smutclient.SMUTClient))
 
