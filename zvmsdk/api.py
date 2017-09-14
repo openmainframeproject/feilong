@@ -418,22 +418,19 @@ class SDKAPI(object):
                 if not isinstance(disk, dict):
                     errmsg = ('Invalid "disk_list" input, it should be a '
                               'dictionary. Details could be found in doc.')
-                    raise exception.ZVMInvalidInputFormat(
-                        'guest_create', msg=errmsg)
+                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
 
                 if 'size' not in disk.keys():
                     errmsg = ('Invalid "disk_list" input, "size" is required '
                               'for each disk.')
-                    raise exception.ZVMInvalidInputFormat(
-                        'guest_create', msg=errmsg)
+                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
 
                 disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
                 if ':' not in disk_pool or (disk_pool.split(':')[0].upper()
                     not in ['ECKD', 'FBA']):
                     errmsg = ("Invalid disk_pool input, it should be in format"
                               " ECKD:eckdpoolname or FBA:fbapoolname")
-                    raise exception.ZVMInvalidInputFormat(
-                        'guest_create', msg=errmsg)
+                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
 
         try:
             self._vmops.create_vm(userid, vcpus, memory, disk_list,

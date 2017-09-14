@@ -172,12 +172,12 @@ class DBTimeout(DatabaseException):
 
 
 class ZVMInvalidInputNumber(SDKBaseException):
-    def __init__(self, api, expected, provided):
+    def __init__(self, expected, provided):
         rc = returncode.errors['input']
         results = rc[0]
         results['modID'] = returncode.ModRCs['zvmsdk']
         results['rs'] = 1
-        errormsg = rc[1][1] % {'api': api, 'expected': expected,
+        errormsg = rc[1][1] % {'expected': expected,
                                'provided': provided}
         results['strError'] = errormsg
         super(ZVMInvalidInputNumber, self).__init__(results=results,
@@ -185,12 +185,12 @@ class ZVMInvalidInputNumber(SDKBaseException):
 
 
 class ZVMInvalidInputtypes(SDKBaseException):
-    def __init__(self, api, expected, inputtypes):
+    def __init__(self, expected, inputtypes):
         rc = returncode.errors['input']
         results = rc[0]
         results['modID'] = returncode.ModRCs['zvmsdk']
         results['rs'] = 2
-        errormsg = rc[1][2] % {'api': api, 'expected': expected,
+        errormsg = rc[1][2] % {'expected': expected,
                                'inputtypes': inputtypes}
         results['strError'] = errormsg
         super(ZVMInvalidInputtypes, self).__init__(results=results,
@@ -198,12 +198,12 @@ class ZVMInvalidInputtypes(SDKBaseException):
 
 
 class ZVMInvalidInputFormat(SDKBaseException):
-    def __init__(self, api, msg):
+    def __init__(self, msg):
         rc = returncode.errors['input']
         results = rc[0]
         results['modID'] = returncode.ModRCs['zvmsdk']
         results['rs'] = 3
-        errormsg = rc[1][3] % {'api': api, 'msg': msg}
+        errormsg = rc[1][3] % {'msg': msg}
         results['strError'] = errormsg
         super(ZVMInvalidInputFormat, self).__init__(results=results,
                                                     message=errormsg)
