@@ -198,12 +198,12 @@ class ZVMInvalidInputtypes(SDKBaseException):
 
 
 class ZVMInvalidInputFormat(SDKBaseException):
-    def __init__(self, api, msg):
+    def __init__(self, msg):
         rc = returncode.errors['input']
         results = rc[0]
         results['modID'] = returncode.ModRCs['zvmsdk']
         results['rs'] = 3
-        errormsg = rc[1][3] % {'api': api, 'msg': msg}
+        errormsg = rc[1][3] % {'msg': msg}
         results['strError'] = errormsg
         super(ZVMInvalidInputFormat, self).__init__(results=results,
                                                     message=errormsg)

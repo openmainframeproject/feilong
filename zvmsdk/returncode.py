@@ -119,11 +119,11 @@ errors = {
 
 # Invalid input error
     'input': [{'overallRC': 100, 'modID': ModRCs['zvmsdk'], 'rc': 100},
-              {1: ("API: '%(api)s', %(expected)d expected while %(provided)d"
-                   "provided."),
-               2: ("API: '%(api)s', expected types: '%(expected)s'"
-                   "input types: '%(inputtypes)s'"),
-               3: ("API: '%(api)s', parameter format error: %(msg)s")
+              {1: ("Invalid API arg count, API: %(api)s, %(expected)d expected"
+                   " while %(provided)d provided."),
+               2: ("Invalid API arg type, API: %(api)s, expected types: "
+                   "'%(expected)s', input types: '%(inputtypes)s'"),
+               3: ("Invalid API arg format, error: %(msg)s")
                },
               "Invalid API Input",
              ],

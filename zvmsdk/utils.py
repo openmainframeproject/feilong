@@ -355,8 +355,7 @@ def check_input_types(*types, **validkeys):
                        "length should be less or equal to 8 and should not be "
                        "null or contain spaces." % (invalid_userid_idx + 1))
                 LOG.info(msg)
-                raise exception.ZVMInvalidInputFormat(function.__name__,
-                                                      msg=msg)
+                raise exception.ZVMInvalidInputFormat(msg=msg)
 
             if invalid_type:
                 msg = ("Invalid input types: %(argtypes)s; "
@@ -374,8 +373,7 @@ def check_input_types(*types, **validkeys):
                                "Expected keywords are: %(keys)s" %
                                {'key': k, 'keys': str(valid_keys)})
                         LOG.info(msg)
-                        raise exception.ZVMInvalidInputFormat(
-                            function.__name__, msg=msg)
+                        raise exception.ZVMInvalidInputFormat(msg=msg)
             return function(*args, **kwargs)
         return wrap_func
     return decorator
