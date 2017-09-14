@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import re
 
 from zvmsdk import config
 from zvmsdk import constants
@@ -195,8 +196,17 @@ class SDKAPI(object):
                   the source image server
                 - Free space is not enough in image repository
         """
-        self._imageops.image_import(image_name, url, image_meta,
-                                    remote_host=remote_host)
+        if not re.match(r'^https?:/{2}|^file:/{3}\w.+$', url):
+            errmsg = ('Invalid "url" input, it should be start with "http://"'
+                      ' or "file:///"')
+            raise exception.ZVMInvalidInputFormat('image_import', msg=errmsg)
+
+        try:
+            self._imageops.image_import(image_name, url, image_meta,
+                                        remote_host=remote_host)
+        except exception.SDKBaseException:
+            LOG.error("Failed to import image '%s'" % image_name)
+            raise
 
     @zvmutils.check_input_types(_TSTR_OR_NONE)
     def image_query(self, imagekeyword=None):

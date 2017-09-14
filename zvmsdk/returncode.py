@@ -156,6 +156,10 @@ errors = {
 # Image Operation failed
     'image': [{'overallRC': 300, 'modID': ModRCs['image'], 'rc': 300},
               {1: "Database operation failed, error: %(msg)s",
+               2: "Image import failed, error: %(msg)s",
+               3: "Image export failed, error: %(msg)s",
+               4: "Image query failed, error: %(msg)s",
+               5: "Image delete failed, error: %(msg)s",
                },
               "Operation on Image failed"
               ],
