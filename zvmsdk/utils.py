@@ -423,6 +423,21 @@ def wrap_invalid_resp_data_error(function):
     return decorated_function
 
 
+def wrap_database_error(exc):
+    """Catch database exceptions and raise specific module
+    (guest/network/volume/image/monitor) operation failed exception."""
+
+    def decorator(function):
+        @functools.wraps(function)
+        def wrap_func(*args, **kwargs):
+            try:
+                return function(*args, **kwargs)
+            except exception.DatabaseException as err:
+                raise exc(rs=1, msg=err.format_message())
+        return wrap_func
+    return decorator
+
+
 @contextlib.contextmanager
 def expect_request_failed_and_reraise(exc, **kwargs):
     """Catch all kinds of zvm client request failure and reraise.
@@ -455,19 +470,6 @@ def expect_and_reraise_internal_error(modID='SDK'):
     except exception.ZVMSDKInternalError as err:
         msg = err.format_message()
         raise exception.ZVMSDKInternalError(msg, modID=modID)
-
-
-@contextlib.contextmanager
-def expect_database_error_and_reraise(exc):
-    """Catch all kinds of zvm client request failure and reraise.
-
-    exc: the exception that would be raised.
-    """
-    try:
-        yield
-    except exception.DatabaseException as err:
-        msg = err.format_message()
-        raise exc(rs=1, msg=msg)
 
 
 # mappings for zvm driver/plugin compatible

@@ -25,6 +25,7 @@ from zvmsdk import config
 from zvmsdk import constants as const
 from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk import utils as zvmutils
 
 
 CONF = config.CONF
@@ -621,6 +622,7 @@ class GuestDbOperator(object):
         self._create_guests_table()
         self._module_id = 'guest'
 
+    @zvmutils.wrap_database_error(exception.SDKGuestOperationError)
     def _create_guests_table(self):
         """"""
         sql = ' '.join((
@@ -648,6 +650,7 @@ class GuestDbOperator(object):
             raise exception.ZVMObjectNotExistError(object=userid,
                                                    modID=self._module_id)
 
+    @zvmutils.wrap_database_error(exception.SDKGuestOperationError)
     def add_guest(self, userid, meta='', comments=''):
         # Generate uuid automatically
         guest_id = str(uuid.uuid4())
@@ -656,6 +659,7 @@ class GuestDbOperator(object):
                 "INSERT INTO guests VALUES (?, ?, ?, ?)",
                 (guest_id, userid.upper(), meta, comments))
 
+    @zvmutils.wrap_database_error(exception.SDKGuestOperationError)
     def delete_guest_by_id(self, guest_id):
         # First check whether the guest exist in db table
         self._check_existence_by_id(guest_id)
@@ -664,6 +668,7 @@ class GuestDbOperator(object):
             conn.execute(
                 "DELETE FROM guests WHERE id=?", (guest_id,))
 
+    @zvmutils.wrap_database_error(exception.SDKGuestOperationError)
     def delete_guest_by_userid(self, userid):
         # First check whether the guest exist in db table
         self._check_existence_by_userid(userid)
@@ -671,6 +676,7 @@ class GuestDbOperator(object):
             conn.execute(
                 "DELETE FROM guests WHERE userid=?", (userid.upper(),))
 
+    @zvmutils.wrap_database_error(exception.SDKGuestOperationError)
     def update_guest_by_id(self, uuid, userid=None, meta=None, comments=None):
         if (userid is None) and (meta is None) and (comments is None):
             msg = ("Update guest with id: %s failed, no field "
@@ -702,6 +708,7 @@ class GuestDbOperator(object):
         with get_guest_conn() as conn:
             conn.execute(sql_cmd, sql_var)
 
+    @zvmutils.wrap_database_error(exception.SDKGuestOperationError)
     def update_guest_by_userid(self, userid, meta=None, comments=None):
         userid = userid.upper()
         if (meta is None) and (comments is None):
@@ -731,12 +738,14 @@ class GuestDbOperator(object):
         with get_guest_conn() as conn:
             conn.execute(sql_cmd, sql_var)
 
+    @zvmutils.wrap_database_error(exception.SDKGuestOperationError)
     def get_guest_list(self):
         with get_guest_conn() as conn:
             res = conn.execute("SELECT * FROM guests")
             guests = res.fetchall()
         return guests
 
+    @zvmutils.wrap_database_error(exception.SDKGuestOperationError)
     def get_guest_by_id(self, guest_id):
         with get_guest_conn() as conn:
             res = conn.execute("SELECT * FROM guests "
@@ -751,6 +760,7 @@ class GuestDbOperator(object):
         # Code shouldn't come here, just in case
         return None
 
+    @zvmutils.wrap_database_error(exception.SDKGuestOperationError)
     def get_guest_by_userid(self, userid):
         userid = userid.upper()
         with get_guest_conn() as conn:

@@ -660,7 +660,7 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
         self.db_op.add_guest(userid, meta=meta)
         # Add same user the second time
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKGuestOperationError,
                           self.db_op.add_guest, 'fakeuser')
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
