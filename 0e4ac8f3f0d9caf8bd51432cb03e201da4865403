@@ -48,6 +48,29 @@
     },
     {
       "key": {
+        "uuid": "6569b9b2_30dd32df",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1131,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-09-14T07:13:23Z",
+      "side": 1,
+      "message": "gutst_networks , typo?",
+      "range": {
+        "startLine": 1131,
+        "startChar": 35,
+        "endLine": 1131,
+        "endChar": 40
+      },
+      "revId": "0e4ac8f3f0d9caf8bd51432cb03e201da4865403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "65654160_daff3a1b",
         "filename": "zvmsdk/utils.py",
         "patchSetId": 1
@@ -64,6 +87,29 @@
         "startChar": 4,
         "endLine": 276,
         "endChar": 12
+      },
+      "revId": "0e4ac8f3f0d9caf8bd51432cb03e201da4865403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "864c3706_e7ba1ed8",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-09-14T07:13:23Z",
+      "side": 1,
+      "message": "Should we take IPV6 into considerations? need to change to valid_IPv4 now?",
+      "range": {
+        "startLine": 280,
+        "startChar": 22,
+        "endLine": 280,
+        "endChar": 23
       },
       "revId": "0e4ac8f3f0d9caf8bd51432cb03e201da4865403",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
