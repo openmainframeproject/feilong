@@ -47,8 +47,8 @@ class ImageOps(object):
                                              image_meta,
                                              remote_host)
 
-    def image_query(self, imagekeyword=None):
-        return self._smutclient.image_query(imagekeyword)
+    def image_query(self, imagename=None):
+        return self._smutclient.image_query(imagename)
 
     def image_delete(self, image_name):
         return self._smutclient.image_delete(image_name)
