@@ -158,7 +158,11 @@ class SDKAPI(object):
         :raises: none
 
         """
-        self._imageops.image_delete(image_name)
+        try:
+            self._imageops.image_delete(image_name)
+        except exception.SDKBaseException:
+            LOG.error("Failed to delete image '%s'" % image_name)
+            raise
 
     @zvmutils.check_input_types(_TSTR)
     def image_get_root_disk_size(self, image_name):
@@ -167,7 +171,11 @@ class SDKAPI(object):
         :param image_name: the image name in image Repository
         :returns: the disk size in units CYL or BLK
         """
-        return self._imageops.image_get_root_disk_size(image_name)
+        try:
+            return self._imageops.image_get_root_disk_size(image_name)
+        except exception.SDKBaseException:
+            LOG.error("Failed to export image '%s'" % image_name)
+            raise
 
     @zvmutils.check_input_types(_TSTR, _TSTR, dict, _TSTR_OR_NONE)
     def image_import(self, image_name, url, image_meta, remote_host=None):
@@ -195,8 +203,12 @@ class SDKAPI(object):
                   the source image server
                 - Free space is not enough in image repository
         """
-        self._imageops.image_import(image_name, url, image_meta,
-                                    remote_host=remote_host)
+        try:
+            self._imageops.image_import(image_name, url, image_meta,
+                                        remote_host=remote_host)
+        except exception.SDKBaseException:
+            LOG.error("Failed to import image '%s'" % image_name)
+            raise
 
     @zvmutils.check_input_types(_TSTR_OR_NONE)
     def image_query(self, imagekeyword=None):
@@ -213,7 +225,11 @@ class SDKAPI(object):
         :raises: ZVMImageError if:
                  - All kinds of xCAT call failure
         """
-        return self._imageops.image_query(imagekeyword)
+        try:
+            return self._imageops.image_query(imagekeyword)
+        except exception.SDKBaseException:
+            LOG.error("Failed to query image")
+            raise
 
     @zvmutils.check_input_types(_TSTR, _TSTR, _TSTR_OR_NONE)
     def image_export(self, image_name, dest_url, remote_host=None):
@@ -233,7 +249,12 @@ class SDKAPI(object):
         'md5sum': the md5sum of the original image
         }
         """
-        return self._imageops.image_export(image_name, dest_url, remote_host)
+        try:
+            return self._imageops.image_export(image_name, dest_url,
+                                               remote_host)
+        except exception.SDKBaseException:
+            LOG.error("Failed to export image '%s'" % image_name)
+            raise
 
     @zvmutils.check_input_types(_TUSERID, _TSTR_OR_NONE)
     def guest_authorize_iucv_client(self, guest, client=None):
