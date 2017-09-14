@@ -108,19 +108,6 @@ def looping_call(f, sleep=5, inc_sleep=0, max_sleep=60, timeout=600,
         retry = False
 
 
-def parse_image_name(os_image_name):
-    profile = os_image_name.split('-')[3]
-    image_name = profile.split('_')[0]
-    xcat_image_id = profile.split('_', 1)[1]
-    image_id = xcat_image_id.replace('_', '-')
-    return image_name, image_id
-
-
-def get_image_version(os_image_name):
-    os_version = os_image_name.split('-')[0]
-    return os_version
-
-
 def convert_to_mb(s):
     """Convert memory size from GB to MB."""
     s = s.upper()
@@ -134,11 +121,6 @@ def convert_to_mb(s):
     except (IndexError, ValueError, KeyError, TypeError):
         errmsg = ("Invalid memory format: %s") % s
         raise exception.ZVMSDKInternalError(msg=errmsg)
-
-
-def get_zhcp_node():
-    """Return zhcp node."""
-    return CONF.xcat.zhcp.partition('.')[0]
 
 
 class PathUtils(object):
@@ -455,39 +437,6 @@ def expect_and_reraise_internal_error(modID='SDK'):
         raise exception.ZVMSDKInternalError(msg, modID=modID)
 
 
-# mappings for zvm driver/plugin compatible
-def get_xcatclient():
-    return import_object('zvmsdk.client.get_xcatclient')
-
-
-def xdsh(*args, **kwargs):
-    return get_xcatclient().xdsh(*args, **kwargs)
-
-
-def punch_xcat_auth_file(*args, **kwargs):
-    return get_xcatclient().punch_xcat_auth_file(*args, **kwargs)
-
-
-def get_xcat_version(*args, **kwargs):
-    return get_xcatclient().get_xcat_version(*args, **kwargs)
-
-
-def create_xcat_mgt_network(*args, **kwargs):
-    return get_xcatclient().create_xcat_mgt_network(*args, **kwargs)
-
-
-def get_xcat_url(*args, **kwargs):
-    return get_xcatclient().get_xcat_url(*args, **kwargs)
-
-
-def xcat_request(*args, **kwargs):
-    return import_class('zvmsdk.xcatclient.xcat_request')(*args, **kwargs)
-
-
-expect_invalid_xcat_resp_data = expect_invalid_resp_data
-wrap_invalid_xcat_resp_data_error = wrap_invalid_resp_data_error
-
-
 def get_smut_userid():
     """Get the userid of smut server"""
     cmd = ["/sbin/vmcp", "query userid"]
@@ -511,13 +460,7 @@ def generate_iucv_authfile(fn, client):
 
 @wrap_invalid_resp_data_error
 def translate_response_to_dict(rawdata, dirt):
-    """Translate xCAT/SMUT response to a python dictionary.
-
-    xCAT response example:
-    node: keyword1: value1\n
-    node: keyword2: value2\n
-    ...
-    node: keywordn: valuen\n
+    """Translate SMUT response to a python dictionary.
 
     SMUT response example:
     keyword1: value1\n

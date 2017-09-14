@@ -18,9 +18,7 @@ import types
 HYPERVISOR_TYPE = 'zvm'
 ARCHITECTURE = 's390x'
 ALLOWED_VM_TYPE = 'zLinux'
-XCAT_MGT = 'zvm'
 PROV_METHOD = 'netboot'
-ZVM_XCAT_GROUP = 'zvm'
 ZVM_USER_DEFAULT_PRIVILEGE = 'G'
 CONFIG_DRIVE_FORMAT = 'tgz'
 DEFAULT_EPH_DISK_FMT = 'ext3'
@@ -58,8 +56,6 @@ SET_VSWITCH_KEYWORDS = ["grant_userid", "user_vlan_id",
                         "lacp", "interval", "group_rdev",
                         "iptimeout", "port_isolation", "promiscuous",
                         "MAC_protect", "VLAN_counters"]
-
-XCAT_RESPONSE_KEYS = ('info', 'data', 'node', 'errorcode', 'error')
 
 ZVM_VOLUMES_FILE = 'zvm_volumes'
 ZVM_VOLUME_STATUS = ['free', 'in-use']

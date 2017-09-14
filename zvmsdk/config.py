@@ -37,39 +37,6 @@ class Opt(object):
 
 
 zvm_opts = [
-    # xcat options
-    Opt('server',
-        section='xcat',
-        required=True),
-    Opt('username',
-        section='xcat',
-        required=True),
-    Opt('password',
-        section='xcat',
-        required=True),
-    Opt('master_node',
-        section='xcat',
-        required=True),
-    Opt('zhcp',
-        section='xcat',
-        required=True),
-    Opt('ca_file',
-        section='xcat',
-        default=None),
-    Opt('connection_timeout',
-        section='xcat',
-        default=3600,
-        opt_type='int'),
-    Opt('free_space_threshold',
-        section='xcat',
-        default=50,
-        opt_type='int'),
-    Opt('mgt_ip',
-        section='xcat',
-        default=None),
-    Opt('mgt_mask',
-        section='xcat',
-        default=None),
     # logging options
     Opt('log_dir',
         section='logging',
@@ -230,12 +197,11 @@ Sample root disk in user directory:
 '''),
     Opt('client_type',
         section='zvm',
-        default='xcat',
+        default='smut',
         help='''
 Backend type of SDK.
 
-z/VM SDK has a legacy backend called xcat while it's deprecated and only
-used internally. smut is the only valid backend for now.
+smut is the only valid backend for now.
     '''),
     # image options
     Opt('temp_path',
