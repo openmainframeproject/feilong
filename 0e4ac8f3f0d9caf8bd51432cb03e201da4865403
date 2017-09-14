@@ -71,6 +71,29 @@
     },
     {
       "key": {
+        "uuid": "41ddb6f7_c0d0d499",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1239,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-14T17:38:07Z",
+      "side": 1,
+      "message": "you need notify bill for this",
+      "range": {
+        "startLine": 1128,
+        "startChar": 3,
+        "endLine": 1239,
+        "endChar": 17
+      },
+      "revId": "0e4ac8f3f0d9caf8bd51432cb03e201da4865403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "65654160_daff3a1b",
         "filename": "zvmsdk/utils.py",
         "patchSetId": 1
@@ -110,6 +133,52 @@
         "startChar": 22,
         "endLine": 280,
         "endChar": 23
+      },
+      "revId": "0e4ac8f3f0d9caf8bd51432cb03e201da4865403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "32a2f30d_df0739e0",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-14T17:38:07Z",
+      "side": 1,
+      "message": "FYI: https://github.com/openstack/nova/blob/master/nova/api/validation/parameter_types.py#L240",
+      "range": {
+        "startLine": 276,
+        "startChar": 0,
+        "endLine": 281,
+        "endChar": 73
+      },
+      "revId": "0e4ac8f3f0d9caf8bd51432cb03e201da4865403",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a038ca80_7ab08707",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 301,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-14T17:38:07Z",
+      "side": 1,
+      "message": "have you considered existing netaddr code?\n\n\nhttps://github.com/openstack/nova/blob/master/nova/api/validation/validators.py#L73",
+      "range": {
+        "startLine": 284,
+        "startChar": 0,
+        "endLine": 301,
+        "endChar": 16
       },
       "revId": "0e4ac8f3f0d9caf8bd51432cb03e201da4865403",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
