@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b125a724_df73a822",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-14T05:59:22Z",
+      "side": 1,
+      "message": "no value to add exception info in __doc__",
+      "range": {
+        "startLine": 296,
+        "startChar": 0,
+        "endLine": 306,
+        "endChar": 49
+      },
+      "revId": "72125a0a80716a3ba69c282a40f6fc740ad785bc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}

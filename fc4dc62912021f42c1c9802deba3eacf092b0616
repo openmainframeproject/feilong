@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "09526744_f0b0abb3",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-14T05:59:22Z",
+      "side": 0,
+      "message": "modify this function to expect_request_failed_and_log_err() ? Because I saw too much duplicated try/except sections ...",
+      "range": {
+        "startLine": 255,
+        "startChar": 13,
+        "endLine": 255,
+        "endChar": 55
+      },
+      "revId": "fc4dc62912021f42c1c9802deba3eacf092b0616",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
