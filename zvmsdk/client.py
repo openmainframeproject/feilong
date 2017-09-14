@@ -22,20 +22,8 @@ from zvmsdk import utils as zvmutils
 CONF = config.CONF
 LOG = log.LOG
 
-_XCAT_CLIENT = None
+
 _SMUT_CLIENT = None
-
-
-def get_xcatclient():
-    global _XCAT_CLIENT
-    if _XCAT_CLIENT is None:
-        try:
-            _XCAT_CLIENT = zvmutils.import_object(
-                'zvmsdk.xcatclient.XCATClient')
-        except ImportError:
-            LOG.error("Unable to get zvmclient")
-            raise ImportError
-    return _XCAT_CLIENT
 
 
 def get_smutclient():
@@ -51,9 +39,7 @@ def get_smutclient():
 
 
 def get_zvmclient():
-    if CONF.zvm.client_type == 'xcat':
-        return get_xcatclient()
-    elif CONF.zvm.client_type == 'smut':
+    if CONF.zvm.client_type == 'smut':
         return get_smutclient()
     else:
         # TODO: raise Exception
