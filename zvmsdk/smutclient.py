@@ -13,6 +13,7 @@
 #    under the License.
 
 import commands
+import functools
 import hashlib
 import urlparse
 import requests
@@ -819,10 +820,20 @@ class SMUTClient(client.ZVMClient):
         image_repository/prov_method/os_version/, for example,
         /opt/sdk/images/netboot/rhel7.2/90685d2b-167b.img"""
 
+#         try:
+#             with zvmutils.expect_database_error_and_reraise(
+#                 exception.SDKImageOperationError):
+#                 image_info = self._ImageDbOperator.image_query_record(
+#                                                                 image_name)
+#         except exception.SDKBaseException:
+#             LOG.error("Failed to query image '%s' in database." % image_name)
+#             raise
+
+        image_info = self._ImageDbOperator.image_query_record(image_name)
+
         try:
             # Ensure the specified image is not exist in image DB
-            image_exists = self._ImageDbOperator.image_query_record(image_name)
-            if image_exists:
+            if image_info:
                 LOG.info("The image %s has already exist in image repository"
                          % image_name)
                 return
@@ -1009,37 +1020,36 @@ class FilesystemBackend(object):
         If remote_host not specified, it means the source file exist in local
         file system, just copy the image to image repository
         """
-        try:
-            source = urlparse.urlparse(url).path
-            target = '/'.join([CONF.image.sdk_image_repository,
-                              const.IMAGE_TYPE['DEPLOY'],
-                              image_meta['os_version'],
-                              image_name])
-            if kwargs['remote_host']:
-                if '@' in kwargs['remote_host']:
-                    source_path = ':'.join([kwargs['remote_host'], source])
-                    command = ' '.join(['/usr/bin/scp -r ', source_path,
-                                        target])
-                    (rc, output) = commands.getstatusoutput(command)
-                    if rc:
-                        msg = ("Error happened when copying image file with"
-                               "reason: %s" % output)
-                        LOG.error(msg)
-                        raise
-                else:
-                    msg = ("The specified remote_host %s format invalid" %
-                            kwargs['remote_host'])
-                    LOG.error(msg)
-                    raise
-            else:
-                LOG.debug("Remote_host not specified, will copy from local")
-                shutil.copyfile(source, target)
 
-        except Exception as err:
-                msg = ("Error happened when importing image to SDK"
-                          " image repository with reason: %s" % str(err))
+        source = urlparse.urlparse(url).path
+        target = '/'.join([CONF.image.sdk_image_repository,
+                          const.IMAGE_TYPE['DEPLOY'],
+                          image_meta['os_version'],
+                          image_name])
+        if kwargs['remote_host']:
+            if '@' in kwargs['remote_host']:
+                source_path = ':'.join([kwargs['remote_host'], source])
+                command = ' '.join(['/usr/bin/scp -r ', source_path,
+                                    target])
+                (rc, output) = commands.getstatusoutput(command)
+                if rc:
+                    msg = ("Copying image file from remote filesystem failed"
+                           " with reason: %s" % output)
+                    LOG.error(msg)
+                    raise exception.SDKImageOperationError(rs=2, msg=msg)
+            else:
+                msg = ("The specified remote_host %s format invalid" %
+                        kwargs['remote_host'])
                 LOG.error(msg)
-                raise err
+                raise exception.SDKImageOperationError(rs=2, msg=msg)
+        else:
+            LOG.debug("Remote_host not specified, will copy from local")
+            try:
+                shutil.copyfile(source, target)
+            except Exception as err:
+                msg = ("Error import image from local file system failed"
+                       " with reason %s" % err)
+                raise exception.SDKImageOperationError(rs=2, msg=msg)
 
     @classmethod
     def image_export(cls, source_path, dest_url, **kwargs):
@@ -1083,6 +1093,17 @@ class MultiThreadDownloader(threading.Thread):
                                 self.image_osdistro,
                                 self.name])
 
+    def handle_download_errors(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            try:
+                return func(self, *args, **kwargs)
+            except Exception as err:
+                self.fd.close()
+                msg = ("Download image from http server failed: %s" % err)
+                raise exception.SDKImageOperationError(rs=2, msg=msg)
+        return wrapper
+
     def get_range(self):
         ranges = []
         offset = int(self.totalsize / self.threadnum)
@@ -1106,6 +1127,7 @@ class MultiThreadDownloader(threading.Thread):
             self.fd.seek(start)
             self.fd.write(res.content)
 
+    @handle_download_errors
     def run(self):
         self.fd = open(self.target, 'w')
         thread_list = []
@@ -1121,5 +1143,5 @@ class MultiThreadDownloader(threading.Thread):
 
         for i in thread_list:
             i.join()
-        LOG.debug('Download %s success' % (self.name))
+        LOG.info('Download %s success' % (self.name))
         self.fd.close()
