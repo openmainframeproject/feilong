@@ -682,7 +682,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                    'overallRC': 1, 'logEntries': [], 'rc': 0,
                    'response': ['fake response']}
         request.side_effect = exception.ZVMClientRequestFailed(
-                                                results=results)
+            'faker request data', results)
         self.assertRaises(exception.ZVMClientRequestFailed,
                           self._smutclient.set_vswitch,
                           "vswitch_name", grant_userid='fake_id')
@@ -711,7 +711,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                    'overallRC': 1, 'logEntries': [], 'rc': 0,
                    'response': ['fake response']}
         request.side_effect = exception.ZVMClientRequestFailed(
-                                                results=results)
+            'faker request data', results)
         self.assertRaises(exception.ZVMClientRequestFailed,
                           self._smutclient.delete_vswitch,
                           "vswitch_name", True)
@@ -724,7 +724,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                    'overallRC': 1, 'logEntries': [], 'rc': 212,
                    'response': ['fake response']}
         request.side_effect = exception.ZVMClientRequestFailed(
-                                                results=results)
+            'faker request data', results)
         switch_name = 'FakeVS'
         rd = ' '.join((
             "SMAPI SMUTUSER API Virtual_Network_Vswitch_Delete_Extended",
@@ -918,7 +918,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_delete_userid_not_exist(self, request):
         rd = 'deletevm fuser1 directory'
         results = {'rc': 400, 'rs': 4, 'logEntries': ''}
-        request.side_effect = exception.ZVMClientRequestFailed(results=results)
+        request.side_effect = exception.ZVMClientRequestFailed(rd, results)
         self._smutclient.delete_userid('fuser1')
         request.assert_called_once_with(rd)
 
@@ -926,7 +926,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_delete_userid_failed(self, request):
         rd = 'deletevm fuser1 directory'
         results = {'rc': 400, 'rs': 104, 'logEntries': ''}
-        request.side_effect = exception.ZVMClientRequestFailed(results=results)
+        request.side_effect = exception.ZVMClientRequestFailed(rd, results)
         self.assertRaises(exception.ZVMClientRequestFailed,
                           self._smutclient.delete_userid, 'fuser1')
         request.assert_called_once_with(rd)

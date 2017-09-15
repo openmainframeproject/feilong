@@ -47,7 +47,6 @@ class VMOps(object):
         """Get power status of a z/VM instance."""
         return self._zvmclient.get_power_state(guest_id)
 
-    @zvmutils.wrap_invalid_resp_data_error
     def _get_cpu_num_from_user_dict(self, dict_info):
         cpu_num = 0
         for inf in dict_info:
@@ -55,10 +54,10 @@ class VMOps(object):
                 cpu_num += 1
         return cpu_num
 
-    @zvmutils.wrap_invalid_resp_data_error
     def _get_max_memory_from_user_dict(self, dict_info):
-        mem = dict_info[0].split(' ')[4]
-        return zvmutils.convert_to_mb(mem) * 1024
+        with zvmutils.expect_invalid_resp_data():
+            mem = dict_info[0].split(' ')[4]
+            return zvmutils.convert_to_mb(mem) * 1024
 
     def get_info(self, userid):
         power_stat = self.get_power_state(userid)

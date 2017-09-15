@@ -82,8 +82,11 @@ class SMUTClient(client.ZVMClient):
                                                     modID='smut',
                                                     results=results)
             else:
-                raise exception.ZVMClientRequestFailed(rd=requestData,
-                                                       results=results)
+                msg = ("SMUT request failed. RequestData: '%s', Results: '%s'"
+                       % (requestData, str(results)))
+                LOG.error(msg)
+                raise exception.ZVMClientRequestFailed(requestData,
+                                                       results)
         return results
 
     def get_power_state(self, userid):
@@ -332,24 +335,23 @@ class SMUTClient(client.ZVMClient):
 
         pi_dict = {}
         pi = {}
-        with zvmutils.expect_invalid_resp_data():
-            rpi_list = ('\n'.join(results['response'])).split("\n\n")
-            for rpi in rpi_list:
-                try:
-                    pi = zvmutils.translate_response_to_dict(rpi, ipq_kws)
-                except exception.ZVMInvalidResponseDataError as err:
-                    emsg = err.format_message()
-                    # when there is only one userid queried and this userid is
-                    # in 'off'state, the smcli will only returns the queried
-                    # userid number, no valid performance info returned.
-                    if(emsg.__contains__("No value matched with keywords.")):
-                        continue
-                    else:
-                        raise err
-                for k, v in pi.items():
-                    pi[k] = v.strip('" ')
-                if pi.get('userid') is not None:
-                    pi_dict[pi['userid']] = pi
+        rpi_list = ('\n'.join(results['response'])).split("\n\n")
+        for rpi in rpi_list:
+            try:
+                pi = zvmutils.translate_response_to_dict(rpi, ipq_kws)
+            except exception.ZVMSDKInternalError as err:
+                emsg = err.format_message()
+                # when there is only one userid queried and this userid is
+                # in 'off'state, the smcli will only returns the queried
+                # userid number, no valid performance info returned.
+                if(emsg.__contains__("No value matched with keywords.")):
+                    continue
+                else:
+                    raise err
+            for k, v in pi.items():
+                pi[k] = v.strip('" ')
+            if pi.get('userid') is not None:
+                pi_dict[pi['userid']] = pi
 
         return pi_dict
 
@@ -359,14 +361,13 @@ class SMUTClient(client.ZVMClient):
         """
         switch_info = self._NetDbOperator.switch_select_record_for_userid(
                                                                     vm_id)
-        with zvmutils.expect_invalid_resp_data():
-            switch_dict = {}
-            for item in switch_info:
-                switch_dict[item[1]] = item[2]
+        switch_dict = {}
+        for item in switch_info:
+            switch_dict[item[1]] = item[2]
 
-            LOG.debug("Switch info the %(vm_id)s is %(switch_dict)s",
-                      {"vm_id": vm_id, "switch_dict": switch_dict})
-            return switch_dict
+        LOG.debug("Switch info the %(vm_id)s is %(switch_dict)s",
+                  {"vm_id": vm_id, "switch_dict": switch_dict})
+        return switch_dict
 
     def virtual_network_vswitch_query_iuo_stats(self):
         smut_userid = zvmutils.get_smut_userid()
@@ -394,7 +395,6 @@ class SMUTClient(client.ZVMClient):
 
         return dp_info
 
-    @zvmutils.wrap_invalid_resp_data_error
     def get_vswitch_list(self):
         smut_userid = zvmutils.get_smut_userid()
         rd = ' '.join((
@@ -412,13 +412,14 @@ class SMUTClient(client.ZVMClient):
                           err.format_message())
                 raise
 
-        if (not result['response'] or not result['response'][0]):
-            return []
-        else:
-            data = '\n'.join([s for s in result['response']
-                              if isinstance(s, const._TSTR_OR_TUNI)])
-            output = re.findall('VSWITCH:  Name: (.*)', data)
-            return output
+        with zvmutils.expect_invalid_resp_data():
+            if (not result['response'] or not result['response'][0]):
+                return []
+            else:
+                data = '\n'.join([s for s in result['response']
+                                  if isinstance(s, const._TSTR_OR_TUNI)])
+                output = re.findall('VSWITCH:  Name: (.*)', data)
+                return output
 
     def set_vswitch_port_vlan_id(self, vswitch_name, userid, vlan_id):
         smut_userid = zvmutils.get_smut_userid()
@@ -439,7 +440,6 @@ class SMUTClient(client.ZVMClient):
                       (vlan_id, vswitch_name, userid, err.format_message()))
             raise
 
-    @zvmutils.wrap_invalid_resp_data_error
     def add_vswitch(self, name, rdev=None, controller='*',
                     connection='CONNECT', network_type='IP',
                     router="NONROUTER", vid='UNAWARE', port_type='ACCESS',
@@ -487,7 +487,6 @@ class SMUTClient(client.ZVMClient):
                       (name, err.format_message()))
             raise
 
-    @zvmutils.wrap_invalid_resp_data_error
     def set_vswitch(self, switch_name, **kwargs):
         """Set vswitch"""
         smut_userid = zvmutils.get_smut_userid()
@@ -509,7 +508,6 @@ class SMUTClient(client.ZVMClient):
                       (switch_name, err.format_message()))
             raise
 
-    @zvmutils.wrap_invalid_resp_data_error
     def delete_vswitch(self, switch_name, persist=True):
         smut_userid = zvmutils.get_smut_userid()
         rd = ' '.join((
