@@ -89,7 +89,7 @@ class HandlersImageTest(unittest.TestCase):
 
     def test_image_create_invalid_image_meta(self):
         # miss os_version param
-        body_str = """{"image": {"url": "file://tmp/test.img",
+        body_str = """{"image": {"url": "file:///tmp/test.img",
                                  "image_meta": {
                                  "md5sum": "12345678912345678912345678912345"
                                  },

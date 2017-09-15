@@ -598,6 +598,20 @@ class SDKAPI(object):
         """
         return self._vmops.delete_vm(userid)
 
+    @zvmutils.check_input_types(_TUSERID, _TSTR)
+    def guest_execute_cmd(self, userid, cmdStr):
+        """execute commands on guest.
+
+        :param userid: the user id of the vm
+        :param userid: the command line to be executed
+        """
+        try:
+            ret = self._vmops.execute_cmd(userid, cmdStr)
+        except exception.SDKBaseException:
+            LOG.error("Failed to execute cmd on guest '%s'" % userid)
+            raise
+        return ret
+
     @zvmutils.check_input_types(_TUSERID_OR_LIST)
     def guest_inspect_cpus(self, userid_list):
         """Get the cpu statistics of the guest virtual machines
