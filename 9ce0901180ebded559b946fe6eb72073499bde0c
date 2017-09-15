@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "ee292102_e1c60817",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-15T15:46:00Z",
+      "side": 1,
+      "message": "this is weird definition, we need ask Rui or Na fei",
+      "parentUuid": "b12cceef_acc91c66",
+      "revId": "9ce0901180ebded559b946fe6eb72073499bde0c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "befd95ed_230f8a59",
         "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
         "patchSetId": 3
