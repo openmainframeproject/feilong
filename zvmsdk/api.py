@@ -638,9 +638,16 @@ class SDKAPI(object):
                 - SMUT layer failed to create vswitch
         """
         if ((queue_mem < 1) or (queue_mem > 8)):
-            raise exception.ZVMInvalidInput(
-                msg=("Failed to create vswitch %s: %s") %
-                    (name, 'valid query memory value should be 1-8'))
+            errmsg = ('API vswitch_create: Invalid "queue_mem" input, '
+                      'it should be 1-8')
+            raise exception.ZVMInvalidInputFormat(msg=errmsg)
+
+        if isinstance(vid, int) or vid.upper() != 'UNAWARE':
+            if ((native_vid is not None) and
+                ((native_vid < 1) or (native_vid > 4094))):
+                errmsg = ('API vswitch_create: Invalid "native_vid" input, '
+                          'it should be 1-4094 or None')
+                raise exception.ZVMInvalidInputFormat(msg=errmsg)
 
         if network_type.upper() == 'ETHERNET':
             router = None
@@ -1007,9 +1014,8 @@ class SDKAPI(object):
         """
         for k in kwargs.keys():
             if k not in constants.SET_VSWITCH_KEYWORDS:
-                raise exception.ZVMInvalidInput(
-                    msg=("switch %s changes failed, invalid keyword %s") %
-                        (vswitch_name, k))
+                errmsg = ('API vswitch_set: Invalid keyword %s' % k)
+                raise exception.ZVMInvalidInputFormat(msg=errmsg)
 
         self._networkops.set_vswitch(vswitch_name, **kwargs)
 
@@ -1179,7 +1185,8 @@ class SDKAPI(object):
         :param bool active: whether add a nic on active guest system
         """
         if len(guest_networks) == 0:
-            errmsg = ("Network information is required but not provided")
+            errmsg = ("API guest_create_network_interface: "
+                      "Network information is required but not provided")
             raise exception.ZVMInvalidInputFormat(msg=errmsg)
 
         vdev = nic_id = mac_addr = ip_addr = None
@@ -1193,7 +1200,8 @@ class SDKAPI(object):
                 (network['mac_addr'] is not None)):
                 mac_addr = network['mac_addr']
                 if not netaddr.valid_mac(mac_addr):
-                    errmsg = ("Invalid mac address, format should be "
+                    errmsg = ("API guest_create_network_interface: "
+                              "Invalid mac address, format should be "
                               "xx:xx:xx:xx:xx:xx, and x is a hexadecimal "
                               "digit")
                     raise exception.ZVMInvalidInputFormat(msg=errmsg)
@@ -1202,7 +1210,8 @@ class SDKAPI(object):
                 (network['ip_addr'] is not None)):
                 ip_addr = network['ip_addr']
                 if not netaddr.valid_ipv4(ip_addr):
-                    errmsg = ("Invalid management IP address, it should be "
+                    errmsg = ("API guest_create_network_interface: "
+                              "Invalid management IP address, it should be "
                               "the value between 0.0.0.0 and 255.255.255.255")
                     raise exception.ZVMInvalidInputFormat(msg=errmsg)
 
@@ -1214,7 +1223,8 @@ class SDKAPI(object):
                         str(list), str(type(network['dns_addr'])))
                 for dns in network['dns_addr']:
                     if not netaddr.valid_ipv4(dns):
-                        errmsg = ("Invalid dns IP address, it should be the "
+                        errmsg = ("API guest_create_network_interface: "
+                                  "Invalid dns IP address, it should be the "
                                   "value between 0.0.0.0 and 255.255.255.255")
                         raise exception.ZVMInvalidInputFormat(msg=errmsg)
 
@@ -1222,13 +1232,15 @@ class SDKAPI(object):
                 (network['gateway_addr'] is not None)):
                 if not netaddr.valid_ipv4(
                                     network['gateway_addr']):
-                    errmsg = ("Invalid gateway IP address, it should be "
+                    errmsg = ("API guest_create_network_interface: "
+                              "Invalid gateway IP address, it should be "
                               "the value between 0.0.0.0 and 255.255.255.255")
                     raise exception.ZVMInvalidInputFormat(msg=errmsg)
             if (('cidr' in network.keys()) and
                 (network['cidr'] is not None)):
                 if not zvmutils.valid_cidr(network['cidr']):
-                    errmsg = ("Invalid CIDR, format should be a.b.c.d/n, and "
+                    errmsg = ("API guest_create_network_interface: "
+                              "Invalid CIDR, format should be a.b.c.d/n, and "
                               "a.b.c.d is IP address, n is the value "
                               "between 0-32")
                     raise exception.ZVMInvalidInputFormat(msg=errmsg)
