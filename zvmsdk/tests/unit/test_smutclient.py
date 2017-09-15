@@ -915,6 +915,12 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request.assert_called_once_with(rd)
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_execute_cmd(self, request):
+        rd = 'cmdVM fuser1 CMD ls'
+        self._smutclient.execute_cmd('fuser1', 'ls')
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_delete_userid_not_exist(self, request):
         rd = 'deletevm fuser1 directory'
         results = {'rc': 400, 'rs': 4, 'logEntries': ''}

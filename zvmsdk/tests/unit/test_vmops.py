@@ -159,6 +159,13 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.delete_vm(userid)
         delete_vm.assert_called_once_with(userid)
 
+    @mock.patch.object(vmops.get_vmops()._zvmclient, 'execute_cmd')
+    def test_execute_cmd(self, execute_cmd):
+        userid = 'userid'
+        cmdStr = 'ls'
+        self.vmops.execute_cmd(userid, cmdStr)
+        execute_cmd.assert_called_once_with(userid, cmdStr)
+
     @mock.patch.object(vmops.get_vmops()._zvmclient, 'guest_stop')
     def test_guest_stop(self, gs):
         userid = 'userid'

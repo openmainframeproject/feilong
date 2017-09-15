@@ -88,6 +88,13 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.guest_delete(userid)
         delete_vm.assert_called_once_with(userid)
 
+    @mock.patch("zvmsdk.vmops.VMOps.execute_cmd")
+    def test_guest_execute_cmd(self, execute_cmd):
+        userid = 'userid'
+        cmdStr = 'ls'
+        self.api.guest_execute_cmd(userid, cmdStr)
+        execute_cmd.assert_called_once_with(userid, cmdStr)
+
     @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_cpus")
     def test_guest_inspect_cpus_list(self, inspect_cpus):
         userid_list = ["userid1", "userid2"]

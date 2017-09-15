@@ -855,6 +855,11 @@ class SMUTClient(client.ZVMClient):
         # cleanup db record from guest table
         self._GuestDbOperator.delete_guest_by_userid(userid)
 
+    def execute_cmd(self, userid, cmdStr):
+        """"cmdVM."""
+        requestData = ' '.join(('cmdVM', userid, 'CMD', cmdStr))
+        self._request(requestData)
+
     def image_import(self, image_name, url, image_meta, remote_host=None):
         """Import the image specified in url to SDK image repository, and
         create a record in image db, the imported images are located in
