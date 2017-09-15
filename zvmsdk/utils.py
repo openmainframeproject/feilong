@@ -394,8 +394,10 @@ def expect_invalid_resp_data(data=''):
         yield
     except (ValueError, TypeError, IndexError, AttributeError,
             KeyError) as err:
-        LOG.error('Parse %s encounter error', data)
-        raise exception.ZVMInvalidResponseDataError(msg=err)
+        msg = ('Invalid smut response data: %s. Error: %s' %
+               (data, six.text_type(err)))
+        LOG.error(msg)
+        raise exception.ZVMSDKInternalError(msg=msg)
 
 
 def wrap_invalid_resp_data_error(function):
@@ -407,30 +409,12 @@ def wrap_invalid_resp_data_error(function):
             return function(*arg, **kwargs)
         except (ValueError, TypeError, IndexError, AttributeError,
                 KeyError) as err:
-            raise exception.ZVMInvalidResponseDataError(msg=err)
+            msg = ('Invalid smut response data. Error: %s' %
+                   six.text_type(err))
+            LOG.error(msg)
+            raise exception.ZVMSDKInternalError(msg=msg)
 
     return decorated_function
-
-
-@contextlib.contextmanager
-def expect_request_failed_and_reraise(exc, **kwargs):
-    """Catch all kinds of zvm client request failure and reraise.
-
-    exc: the exception that would be raised.
-    """
-    try:
-        yield
-    except exception.ZVMClientRequestFailed as err:
-        msg = err.format_message()
-        kwargs['msg'] = msg
-        LOG.error(msg)
-        raise exc(results=err.results, **kwargs)
-    except (exception.ZVMInvalidResponseDataError,
-            exception.ZVMSDKInternalError) as err:
-        msg = err.format_message()
-        kwargs['msg'] = msg
-        LOG.error(msg)
-        raise exc(**kwargs)
 
 
 @contextlib.contextmanager
@@ -494,8 +478,9 @@ def translate_response_to_dict(rawdata, dirt):
                 break
 
     if data == {}:
-        msg = "No value matched with keywords. Raw Data: %(raw)s; " \
-                "Keywords: %(kws)s" % {'raw': rawdata, 'kws': str(dirt)}
-        raise exception.ZVMInvalidResponseDataError(msg=msg)
+        msg = ("Invalid smut response data. Error: No value matched with "
+               "keywords. Raw Data: %(raw)s; Keywords: %(kws)s" %
+               {'raw': rawdata, 'kws': str(dirt)})
+        raise exception.ZVMSDKInternalError(msg=msg)
 
     return data

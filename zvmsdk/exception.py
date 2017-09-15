@@ -111,10 +111,6 @@ class ZVMSMUTAuthorizeIUCVClientFailed(SDKBaseException):
         'with reason: %(msg)s'
 
 
-class ZVMInvalidResponseDataError(SDKBaseException):
-    msg_fmt = 'Invalid data returned from zvm client: %(msg)s'
-
-
 class ZVMUnauthorized(SDKBaseException):
     code = 401
 
@@ -199,19 +195,13 @@ class ZVMObjectNotExistError(SDKBaseException):
 
 class ZVMClientRequestFailed(SDKBaseException):
 
-    def __init__(self, rd=None, results=None, msg=''):
-        self.msg_fmt = 'zVM client request failed: %(msg)s'
-        # When the backend is smut, results should be passed in.
-        if results:
-            results.pop('logEntries')
-            results['modID'] = returncode.ModRCs['smut']
-            if rd is not None:
-                msg += ("RequestData: '%s'" % rd)
-            msg += ("Results: %s" % str(results))
-            super(ZVMClientRequestFailed, self).__init__(results=results,
-                                                         msg=msg)
-        else:
-            super(ZVMClientRequestFailed, self).__init__(msg=msg)
+    def __init__(self, rd, results):
+        results.pop('logEntries')
+        results['modID'] = returncode.ModRCs['smut']
+        msg = ("SMUT request failed. RequestData: '%s', Results: '%s'"
+               % (rd, str(results)))
+        super(ZVMClientRequestFailed, self).__init__(results=results,
+                                                     message=msg)
 
 
 class SDKGuestOperationError(SDKBaseException):
