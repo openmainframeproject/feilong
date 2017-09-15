@@ -700,10 +700,9 @@ class SMUTClient(object):
                               "has already been used." % vdev)
                     raise exception.ZVMInvalidInputFormat(msg=errmsg)
         if len(nic_vdev) > 4:
-            raise exception.ZVMNetworkError(
-                        msg=("Virtual device number %s is not valid" %
-                             nic_vdev))
-
+            errmsg = ("Virtual device number %s is not valid" % nic_vdev)
+            raise exception.SDKNetworkOperationError(rs=2,
+                                                     msg=errmsg)
         LOG.debug('Nic attributes: vdev is %(vdev)s, '
                   'ID is %(id)s, address is %(address)s',
                   {'vdev': nic_vdev,
@@ -757,7 +756,8 @@ class SMUTClient(object):
                     '-v %s' % vdev))
                 try:
                     self._request(requestData)
-                except exception.ZVMClientRequestFailed as err2:
+                except (exception.ZVMClientRequestFailed,
+                        exception.ZVMSDKInternalError) as err2:
                     results = err2.results
                     msg2 = err2.format_message()
                     if ((results['rc'] == 404) and
@@ -766,14 +766,11 @@ class SMUTClient(object):
                     else:
                         persist_OK = False
                 if persist_OK:
-                    msg = ("Failed to create nic %s for %s on the active "
-                           "guest system, %s") % (vdev, userid, msg1)
+                    raise err1
                 else:
-                    msg = ("Failed to create nic %s for %s on the active "
-                           "guest system, %s, and failed to revoke user "
-                           "direct's changes, %s") % (vdev, userid,
-                                                      msg1, msg2)
-                raise exception.ZVMNetworkError(msg)
+                    raise exception.SDKNetworkOperationError(rs=4,
+                                    nic=vdev, userid=userid,
+                                    create_err=msg1, revoke_err=msg2)
 
         self._NetDbOperator.switch_add_record_for_nic(userid, vdev,
                                                       port=nic_id)
@@ -883,16 +880,11 @@ class SMUTClient(object):
                         else:
                             persist_OK = False
                     if persist_OK:
-                        msg = ("Failed to couple nic %s to vswitch %s "
-                               "on the active guest system, %s") % (vdev,
-                                                    vswitch_name, msg1)
+                        raise err1
                     else:
-                        msg = ("Failed to couple nic %s to vswitch %s "
-                               "on the active guest system, %s, and "
-                               "failed to revoke user direct's changes, "
-                               "%s") % (vdev, vswitch_name,
-                                        msg1, msg2)
-                    raise exception.ZVMNetworkError(msg)
+                        raise exception.SDKNetworkOperationError(rs=3,
+                                    nic=vdev, vswitch=vswitch_name,
+                                    couple_err=msg1, revoke_err=msg2)
 
         """Update information in switch table."""
         self._NetDbOperator.switch_updat_record_with_switch(userid, vdev,
@@ -928,12 +920,11 @@ class SMUTClient(object):
                 (results['rc'] == 212) and
                 (results['rs'] == 32)):
                 LOG.warning("Virtual device %s is already disconnected "
-                        "in the guest's user direct", vdev)
+                            "in the guest's user direct", vdev)
             else:
-                raise exception.ZVMNetworkError(
-                    msg=("Failed to uncouple nic %s "
-                         "in the guest's user direct,  %s") %
-                         (vdev, emsg))
+                LOG.error("Failed to uncouple nic %s in the guest's user "
+                          "direct, error: %s" % (vdev, emsg))
+                raise
 
         """Update information in switch table."""
         self._NetDbOperator.switch_updat_record_with_switch(userid, vdev,
@@ -959,10 +950,9 @@ class SMUTClient(object):
                                 "disconnected on the active "
                                 "guest system", vdev)
                 else:
-                    raise exception.ZVMNetworkError(
-                        msg=("Failed to uncouple nic %s "
-                             "on the active guest system, %s") %
-                             (vdev, emsg))
+                    LOG.error("Failed to uncouple nic %s on the active "
+                              "guest system, error: %s" % (vdev, emsg))
+                    raise
 
     def uncouple_nic_from_vswitch(self, userid, nic_vdev,
                                   active=False):
