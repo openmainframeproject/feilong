@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "db50e5c1_8fda2024",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 677,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-15T03:46:32Z",
+      "side": 1,
+      "message": "add @zvmutils.check_input_types",
+      "range": {
+        "startLine": 677,
+        "startChar": 4,
+        "endLine": 677,
+        "endChar": 25
+      },
+      "revId": "c8a3720e00e10eec7525a19c9a18dd49a1c693c1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8733ee52_0db8a25d",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 684,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-15T03:46:32Z",
+      "side": 1,
+      "message": "no longer need to add :raises:",
+      "range": {
+        "startLine": 683,
+        "startChar": 0,
+        "endLine": 684,
+        "endChar": 47
+      },
+      "revId": "c8a3720e00e10eec7525a19c9a18dd49a1c693c1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
