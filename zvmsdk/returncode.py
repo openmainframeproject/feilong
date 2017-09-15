@@ -150,6 +150,15 @@ errors = {
 # Network Operation failed
     'network': [{'overallRC': 300, 'modID': ModRCs['network'], 'rc': 300},
                 {1: "Database operation failed, error: %(msg)s",
+                 2: "ZVMSDK network error: %(msg)s",
+                 3: ("Failed to couple nic %(nic)s to vswitch %(vswitch)s "
+                     "on the active guest system, error: %(couple_err)s, and "
+                     "failed to revoke user direct's changes, "
+                     "error: %(revoke_err)s "),
+                 4: ("Failed to create nic %(nic)s for %(userid)s on the "
+                     "active guest system, error: %(create_err)s, and "
+                     "failed to revoke user direct's changes, "
+                     "error: %(revoke_err)s "),
                  },
                 "Operation on Network failed"
                 ],
