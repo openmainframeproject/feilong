@@ -68,8 +68,9 @@ def get_network_conn():
     try:
         yield _NETWORK_CONN
     except Exception as err:
-        LOG.error("Execute SQL statements error: %s", six.text_type(err))
-        raise exception.DatabaseException(msg=err)
+        msg = "Execute SQL statements error: %s" % six.text_type(err)
+        LOG.error(msg)
+        raise exception.SDKNetworkOperationError(rs=1, msg=msg)
     finally:
         _DBLOCK_NETWORK.release()
 
@@ -120,6 +121,7 @@ def _init_db_conn(db_file):
 class NetworkDbOperator(object):
 
     def __init__(self):
+        self._module_id = 'network'
         self._create_switch_table()
 
     def _create_switch_table(self):
@@ -144,8 +146,6 @@ class NetworkDbOperator(object):
         if len(switch_record) == 1:
             return switch_record[0]
         elif len(switch_record) == 0:
-            LOG.debug("User %s with nic %s not found from network DB!" %
-                      (userid.upper(), interface))
             return None
 
     def switch_delete_record_for_userid(self, userid):
@@ -166,11 +166,6 @@ class NetworkDbOperator(object):
 
     def switch_add_record_for_nic(self, userid, interface, port=None):
         """Add userid and nic name address into switch table."""
-        if self._get_switch_by_user_interface(userid, interface) is not None:
-            msg = "User %s with nic %s already exist" % (userid.upper(),
-                                                         interface)
-            raise exception.ZVMNetworkError(msg=msg)
-
         if port is not None:
             with get_network_conn() as conn:
                 conn.execute("INSERT INTO switch (userid, interface, port) "
@@ -191,9 +186,12 @@ class NetworkDbOperator(object):
     def switch_updat_record_with_switch(self, userid, interface, switch=None):
         """Update information in switch table."""
         if not self._get_switch_by_user_interface(userid, interface):
-            msg = "User %s with nic %s not found" % (userid.upper(),
-                                                     interface)
-            raise exception.ZVMNetworkError(msg=msg)
+            msg = "User %s with nic %s does not exist in DB" % (userid.upper(),
+                                                                interface)
+            LOG.error(msg)
+            object = ('User %s with nic %s' % (userid.upper(), interface))
+            raise exception.ZVMObjectNotExistError(object,
+                                                   modID=self._module_id)
 
         if switch is not None:
             with get_network_conn() as conn:

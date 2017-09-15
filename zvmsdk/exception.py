@@ -224,3 +224,15 @@ class SDKGuestOperationError(SDKBaseException):
         errormsg = rc[1][rs] % kwargs
         super(SDKGuestOperationError, self).__init__(results=results,
                                                      message=errormsg)
+
+
+class SDKNetworkOperationError(SDKBaseException):
+    def __init__(self, rs, **kwargs):
+        # kwargs can be used to contain different keyword for constructing
+        # the rs error msg
+        rc = returncode.errors['network']
+        results = rc[0]
+        results['rs'] = rs
+        errormsg = rc[1][rs] % kwargs
+        super(SDKNetworkOperationError, self).__init__(results=results,
+                                                       message=errormsg)
