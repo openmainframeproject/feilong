@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f40a8b5d_c38c248f",
+        "filename": "zvmsdk/sdkwsgi/handler.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-15T15:54:21Z",
+      "side": 1,
+      "message": "this should not be GET\nPUT I think",
+      "range": {
+        "startLine": 89,
+        "startChar": 9,
+        "endLine": 89,
+        "endChar": 12
+      },
+      "revId": "57000f4e82b171b5df3cf0bb90094bca5d763cd5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa579124_e1fb0548",
+        "filename": "zvmsdk/tests/sdkwsgi/test_image.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-15T15:54:21Z",
+      "side": 1,
+      "message": "are you sure this will work? \n\nwithout jenkins job currently, do we have a way to verify REST changes?",
+      "range": {
+        "startLine": 77,
+        "startChar": 4,
+        "endLine": 89,
+        "endChar": 19
+      },
+      "revId": "57000f4e82b171b5df3cf0bb90094bca5d763cd5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
