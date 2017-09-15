@@ -1035,3 +1035,60 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                                 remote_host=remote_host)
         image_query.assert_called_once_with(image_name)
         self.assertDictEqual(real_return, expect_return)
+
+    def test_generate_vdev(self):
+        base = '0100'
+        idx = 1
+        vdev = self._smutclient._generate_vdev(base, idx)
+        self.assertEqual(vdev, '0101')
+
+    @mock.patch.object(smutclient.SMUTClient, '_add_mdisk')
+    def test_add_mdisks(self, add_mdisk):
+        userid = 'fakeuser'
+        disk_list = [{'size': '1g',
+                      'is_boot_disk': True,
+                      'disk_pool': 'ECKD:eckdpool1'},
+                     {'size': '200000',
+                      'disk_pool': 'FBA:fbapool1',
+                      'format': 'ext3'}]
+        self._smutclient.add_mdisks(userid, disk_list)
+        add_mdisk.assert_any_call(userid, disk_list[0], '0100')
+        add_mdisk.assert_any_call(userid, disk_list[1], '0101')
+
+    @mock.patch.object(smutclient.SMUTClient, '_remove_mdisk')
+    def test_remove_mdisks(self, remove_mdisk):
+        userid = 'fakeuser'
+        vdev_list = ['102', '103']
+        self._smutclient.remove_mdisks(userid, vdev_list)
+        remove_mdisk.assert_any_call(userid, vdev_list[0])
+        remove_mdisk.assert_any_call(userid, vdev_list[1])
+
+    @mock.patch.object(smutclient.SMUTClient, 'image_performance_query')
+    def test_get_image_performance_info(self, ipq):
+        ipq.return_value = {
+            u'FAKEVM': {
+                'used_memory': u'5222192 KB',
+                'used_cpu_time': u'25640530229 uS',
+                'guest_cpus': u'2',
+                'userid': u'FKAEVM',
+                'max_memory': u'8388608 KB'}}
+        info = self._smutclient.get_image_performance_info('fakevm')
+        self.assertEqual(info['used_memory'], '5222192 KB')
+
+    @mock.patch.object(smutclient.SMUTClient, 'image_performance_query')
+    def test_get_image_performance_info_not_exist(self, ipq):
+        ipq.return_value = {}
+        info = self._smutclient.get_image_performance_info('fakevm')
+        self.assertEqual(info, None)
+
+    def test_is_vdev_valid_true(self):
+        vdev = '1009'
+        vdev_info = ['1003', '1006']
+        result = self._smutclient._is_vdev_valid(vdev, vdev_info)
+        self.assertEqual(result, True)
+
+    def test_is_vdev_valid_False(self):
+        vdev = '2002'
+        vdev_info = ['2000', '2004']
+        result = self._smutclient._is_vdev_valid(vdev, vdev_info)
+        self.assertEqual(result, False)

@@ -195,14 +195,6 @@ Possible values:
 Sample root disk in user directory:
     MDISK 0100 <disktype> <start> <end> <volumelabel> <readwrite>
 '''),
-    Opt('client_type',
-        section='zvm',
-        default='smut',
-        help='''
-Backend type of SDK.
-
-smut is the only valid backend for now.
-    '''),
     # image options
     Opt('temp_path',
         section='image',
@@ -447,55 +439,27 @@ class ConfigOpts(object):
             for k2, v2 in v1.items():
                 r_con[k2] = v2.default
             con[k1] = r_con
-        # the format of conf : xCAT:{'server':xxx,'username':xxx}
-        # call method :CONF.group.option   e.g: CONF.xCAT.zvm_xcat_server
+
         con = self.toDict(con)
         return con
 
     def _check_required(self, conf):
-        '''Check that all opts marked as required have values specified.
-        raises: RequiredOptError
-        the format of conf:
-        xat:{
-            'zvm_xcat_server':{"default":xx,"type":int,"required":true}
-            }
-        '''
+        '''Check that all opts marked as required have values specified.'''
         for k1, v1 in conf.items():
             for k2, v2 in v1.items():
                 if v2.required and (v2.default is None):
                     raise RequiredOptMissingError(k1, k2)
 
     def _check_type(self, conf):
-        '''
-        the format of conf:
-        xat:{
-            'zvm_xcat_server':{"default":xx,"type":int,"required":true}
-            }
-        '''
         for v1 in conf.values():
             for k2, v2 in v1.items():
                 if v2.type == 'int':
                     v2.default = int(v2.default)
 
     def _config_fill_option(self, conf):
-        '''
-        :param conf:
-        xat:{
-            'zvm_xcat_server':{"default":xx,"type":int,"required":true}
-            }
-        :return conf:
-        xat:{
-            'zvm_xcat_server':{"default":xx,"type":int,"required":true}
-            }
-        '''
         for k, v in conf.items():
             confs = {}
             for dk, dv in v.items():
-                # the format of dk,dv:
-                # 'zvm_xcat_server':{"default":xx,"type":int,"required":true}
-                #     'zvm_xcat_server':{}
-                #     'zvm_xcat_server':xx,
-                # }
                 if isinstance(dv, dict):
                     dv.setdefault('type', None)
                     dv.setdefault('required', False)
@@ -521,18 +485,6 @@ class ConfigOpts(object):
         return self.dicts
 
     def merge(self, defaults, override):
-        '''
-        param defaults:
-        'xcat':{
-            'zvm_xcat_server':{"default":None,"type":None,"required":false}
-            }
-        param override:
-        'xcat':{
-            'zvm_xcat_server':None,
-            }
-        returns r: is a dict and the format is same as
-        the parameter 'default' or 'override'
-        '''
         r = {}
         for k, v in defaults.items():
             if k in override:

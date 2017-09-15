@@ -15,9 +15,9 @@
 
 from zvmsdk.tests.functional import base
 
-from zvmsdk import client as zvmclient
 from zvmsdk import config
 from zvmsdk import exception
+from zvmsdk import smutclient
 
 
 CONF = config.CONF
@@ -28,7 +28,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
     def __init__(self, methodName='runTest'):
         super(SDKVswitchTestCase, self).__init__(methodName)
         self.basevm = "TESTVMID"
-        self.client = zvmclient.get_zvmclient()
+        self.client = smutclient.get_smutclient()
         self.vswitch = "VSWTEST"
         # Delete test vswitch to make test env more stable
         self.sdkapi.vswitch_delete(self.vswitch)
@@ -261,7 +261,7 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
     def __init__(self, methodName='runTest'):
         super(SDKNICTestCase, self).__init__(methodName)
         self.basevm = "NICTEST"
-        self.client = zvmclient.get_zvmclient()
+        self.client = smutclient.get_smutclient()
         self.vswitch = "VSWTEST"
         # Delete test vm/vsw before run cases to make test env more stable
         self.sdkapi.guest_delete(self.basevm)

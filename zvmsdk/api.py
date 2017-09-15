@@ -155,8 +155,6 @@ class SDKAPI(object):
         """Delete image from image repository
 
         :param image_name: the name of the image to be deleted
-        :raises: none
-
         """
         self._imageops.image_delete(image_name)
 
@@ -189,11 +187,6 @@ class SDKAPI(object):
                 eg. nova@192.168.99.1, the default value is None, it indicate
                 the image is from a local file system. If the image url schema
                 is http/https, this value will be useless
-        :raises ZVMImageError if:
-                - All kinds of xCAT call failure
-                - xCAT MN's root user is not authorized by the user of
-                  the source image server
-                - Free space is not enough in image repository
         """
         self._imageops.image_import(image_name, url, image_meta,
                                     remote_host=remote_host)
@@ -203,15 +196,10 @@ class SDKAPI(object):
         """Get the list of image names in image repository
 
         :param imagekeyword: The key strings that can be used to retrieve
-               images, if CONF.zvm.client_type=='xcat', the images will be
-               stored in xCAT's image repository, the imagekeyword should be
-               the string from image's profile field, Otherwise, the
-               imagekeyword should be the string from image name, if not
-               specified, all image names will be listed
+               images, the imagekeyword should be the string from image name,
+               if not specified, all image names will be listed
 
         :returns: A list that contains image names
-        :raises: ZVMImageError if:
-                 - All kinds of xCAT call failure
         """
         return self._imageops.image_query(imagekeyword)
 
@@ -257,14 +245,6 @@ class SDKAPI(object):
         :param remotehost: the server where the transportfiles located, the
                format is username@IP, eg nova@192.168.99.1
         :param vdev: (str) the device that image will be deploy to
-
-        :raises SDKGuestOperationError if:
-                - Failed to unpackdiskimage to guest's root vdev
-                - Failed to copy config drive to local
-        :raises ZVMClientRequestFailed if:
-                - Failed to purge reader
-                - Failed to punch file to user's reader
-
         """
         try:
             self._vmops.guest_deploy(userid, image_name,
@@ -292,18 +272,6 @@ class SDKAPI(object):
 
         :returns: nic device number, 1- to 4- hexadecimal digits
         :rtype: str
-
-        :raises ZVMInvalidInput if:
-                - Input parameter is invalid, refer to the error message for
-                  detail
-                - Invalid mac address or IP address format is provided
-                - The specified virtual device number has already been used
-        :raises ZVMNetworkError if:
-                - The virtual device number is out of the range
-                - All kinds of xCAT call failure
-                - Smcli call failure, refer to the error message for detail
-        :raises ZVMClientRequestFailed if:
-                - SMUT layer failed to create nic
         """
         if mac_addr is not None:
             if not zvmutils.valid_mac_addr(mac_addr):
@@ -326,15 +294,6 @@ class SDKAPI(object):
         :param str userid: the user id of the vm
         :param str vdev: nic device number, 1- to 4- hexadecimal digits
         :param bool active: whether delete a nic on active guest system
-
-        :raises ZVMInvalidInput if:
-                - Input parameter is invalid, refer to the error message for
-                  detail
-        :raises ZVMNetworkError if:
-                - All kinds of xCAT call failure
-                - Smcli call failure, refer to the error message for detail
-        :raises ZVMClientRequestFailed if:
-                - SMUT layer failed to delete nic user
         """
         self._networkops.delete_nic(userid, vdev, active=active)
 
@@ -348,10 +307,6 @@ class SDKAPI(object):
                   {'vdev': 'vswitch'}, such as
                   {'1000': 'VSWITCH1', '1003': 'VSWITCH2'}
         :rtype: dict
-
-        :raises ZVMInvalidInput if:
-                - Input parameter is invalid, refer to the error message for
-                  detail
         """
         return self._networkops.get_vm_nic_vswitch_info(userid)
 
@@ -410,11 +365,6 @@ class SDKAPI(object):
                directory, and it will create 0101 with 200000 blocks from
                FBA disk pool fbapool1, and formated with ext3.
         :param user_profile: the profile for the guest
-
-        :raises SDKGuestOperationError if:
-                - Failed to generate valid vdev when adding mdisks
-        :raises ZVMClientRequestFailed if:
-                - SMUT layer failed to create VM
         """
         if disk_list:
             for disk in disk_list:
@@ -506,15 +456,6 @@ class SDKAPI(object):
         :param str nic_vdev: nic device number, 1- to 4- hexadecimal digits
         :param str vswitch_name: the name of the vswitch
         :param bool active: whether make the change on active guest system
-
-        :raises ZVMInvalidInput if:
-                - Input parameter is invalid, refer to the error message for
-                  detail
-        :raises ZVMNetworkError if:
-                - All kinds of xCAT call failure
-                - Smcli call failure, refer to the error message for detail
-        :raises ZVMClientRequestFailed if:
-                - SMUT layer failed to couple nic
         """
         self._networkops.couple_nic_to_vswitch(userid, nic_vdev,
                                                vswitch_name, active=active)
@@ -527,13 +468,6 @@ class SDKAPI(object):
         :param str userid: the user's name who owns the nic
         :param str nic_vdev: nic device number, 1- to 4- hexadecimal digits
         :param bool active: whether make the change on active guest system
-
-        :raises ZVMInvalidInput if:
-                - Input parameter is invalid, refer to the error message for
-                  detail
-        :raises ZVMNetworkError if:
-                - All kinds of xCAT call failure
-                - Smcli call failure, refer to the error message for detail
         """
         self._networkops.uncouple_nic_from_vswitch(userid, nic_vdev,
                                                    active=active)
@@ -543,11 +477,6 @@ class SDKAPI(object):
 
         :returns: vswitch name list
         :rtype: list
-
-        :raises ZVMNetworkError if:
-                - All kinds of xCAT call failure
-        :raises ZVMClientRequestFailed if:
-                - SMUT layer failed to get vswitch list
         """
         return self._networkops.get_vswitch_list()
 
@@ -623,16 +552,6 @@ class SDKAPI(object):
         :param int native_vid: the native vlan id, 1-4094 or None
         :param bool persist: whether create the vswitch in the permanent
                configuration for the system
-
-        :raises ZVMInvalidInput if:
-                - Input parameter is invalid, refer to the error message for
-                  detail
-                - The value of queue_mem or native_vid is out of the range
-        :raises ZVMNetworkError if:
-                - All kinds of xCAT call failure
-                - Smcli call failure, refer to the error message for detail
-        :raises ZVMClientRequestFailed if:
-                - SMUT layer failed to create vswitch
         """
         if ((queue_mem < 1) or (queue_mem > 8)):
             raise exception.ZVMInvalidInput(
@@ -666,11 +585,6 @@ class SDKAPI(object):
         """Delete guest.
 
         :param userid: the user id of the vm
-
-        :raises ZVMDeleteVMFailed if:
-                - All kinds of xCAT call failure, refer to the message for
-                  details
-
         """
         return self._vmops.delete_vm(userid)
 
@@ -703,8 +617,6 @@ class SDKAPI(object):
                   }
                   for the guests that are shutdown or not exist, no data
                   returned in the dictionary
-
-        :raises: None
         """
         if not isinstance(userid_list, list):
             userid_list = [userid_list]
@@ -733,7 +645,6 @@ class SDKAPI(object):
                   }
                   for the guests that are shutdown or not exist, no data
                   returned in the dictionary
-        :raises: None
         """
         if not isinstance(userid_list, list):
             userid_list = [userid_list]
@@ -777,8 +688,6 @@ class SDKAPI(object):
                   }
                   for the guests that are shutdown or not exist, no data
                   returned in the dictionary
-
-        :raises: None
         """
         if not isinstance(userid_list, list):
             userid_list = [userid_list]
@@ -790,15 +699,6 @@ class SDKAPI(object):
 
         :param str vswitch_name: the name of the vswitch
         :param str userid: the user id of the vm
-
-        :raises ZVMInvalidInput if:
-                - Input parameter is invalid, refer to the error message for
-                  detail
-        :raises ZVMNetworkError if:
-                - All kinds of xCAT call failure
-                - Smcli call failure, refer to the error message for detail
-        :raises ZVMClientRequestFailed if:
-                - SMUT layer failed to grant user
         """
 
         self._networkops.grant_user_to_vswitch(vswitch_name, userid)
@@ -809,15 +709,6 @@ class SDKAPI(object):
 
         :param str vswitch_name: the name of the vswitch
         :param str userid: the user id of the vm
-
-        :raises ZVMInvalidInput:
-                - Input parameter is invalid, refer to the error message for
-                  detail
-        :raises ZVMNetworkError:
-                - All kinds of xCAT call failure
-                - Smcli call failure, refer to the error message for detail
-        :raises ZVMClientRequestFailed if:
-                - SMUT layer failed to revoke user
         """
         self._networkops.revoke_user_from_vswitch(vswitch_name, userid)
 
@@ -828,15 +719,6 @@ class SDKAPI(object):
         :param str vswitch_name: the name of the vswitch
         :param str userid: the user id of the vm
         :param int vlan_id: the VLAN id
-
-        :raises ZVMInvalidInput:
-                - Input parameter is invalid, refer to the error message for
-                  detail
-        :raises ZVMNetworkError:
-                - All kinds of xCAT call failure
-                - Smcli call failure, refer to the error message for detail
-        :raises ZVMClientRequestFailed if:
-                - SMUT layer failed to set vlan id
         """
         self._networkops.set_vswitch_port_vlan_id(vswitch_name,
                                                   userid, vlan_id)
@@ -991,16 +873,6 @@ class SDKAPI(object):
                 ON, OFF or UNSPECified
             - VLAN_counters=<value>:
                 ON or OFF
-
-        :raises ZVMInvalidInput if:
-                - Input parameter is invalid, refer to the error message for
-                  detail
-                - Invalid keyword in the input dictionary
-        :raises ZVMNetworkError if:
-                - All kinds of xCAT call failure
-                - Smcli call failure, refer to the error message for detail
-        :raises ZVMClientRequestFailed if:
-                - SMUT layer failed to set vswitch user
         """
         for k in kwargs.keys():
             if k not in constants.SET_VSWITCH_KEYWORDS:
@@ -1017,15 +889,6 @@ class SDKAPI(object):
         :param str name: the vswitch name
         :param bool persist: whether delete the vswitch from the permanent
                configuration for the system
-
-        :raises ZVMInvalidInput if:
-                - Input parameter is invalid, refer to the error message for
-                  detail
-        :raises ZVMNetworkError if:
-                - All kinds of xCAT call failure
-                - Smcli call failure, refer to the error message for detail
-        :raises ZVMClientRequestFailed if:
-                - SMUT layer failed to delete vswitch
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
 
@@ -1038,7 +901,7 @@ class SDKAPI(object):
         :param dict guest:
                 - name:
                     The type is string, it's the node name of the guest
-                    instance in xCAT database.
+                    instance in database.
                 - os_type:
                     The type is string, it's the OS running on the guest.
                     Currently supported are RHEL7, SLES12 and their
@@ -1074,14 +937,6 @@ class SDKAPI(object):
                 Whether to roll back in failure.
                 It's not guaranteed that the roll back operation must be
                 successful.
-
-        :raises ZVMVolumeError if:
-               - Multipath feature is not active on the guest.
-               - The volume is unaccessible.
-               - The FCP devices can not be dedicated when protocol 'fc' is
-                   specified.
-               - The FCP devices belong to a same CHPID when protocol 'fc' is
-                   specified.
         """
         self._volumeop.attach_volume_to_instance(guest,
                                                  volume,
@@ -1097,7 +952,7 @@ class SDKAPI(object):
         :param dict guest: A dict comprised of a list of properties of a guest,
                including:
                - name: of type string. The node name of the guest instance in
-               xCAT database.
+               database.
                - os_type: of type string. The OS running on the guest.
                Currently supported are RHEL7, SLES12 and their sub-versions,
                i.e. 'rhel7', 'rhel7.2', 'sles12', 'sles12sp1'.
@@ -1127,10 +982,6 @@ class SDKAPI(object):
         :param bool is_rollback_in_failure: Whether to roll back in failure.
                It's not guaranteed that the roll back operation must be
                successful.
-
-        :raises ZVMVolumeError if:
-                - Multipath feature is not active on the guest.
-                - The volume is not found on the guest.
         """
         self._volumeop.detach_volume_from_instance(guest,
                                                    volume,

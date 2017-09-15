@@ -15,12 +15,12 @@
 
 import time
 
-from zvmsdk import client as zvmclient
 from zvmsdk import config
 from zvmsdk import constants
 from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk import smutclient
 from zvmsdk import utils as zvmutils
 
 
@@ -39,13 +39,13 @@ def get_vmops():
 class VMOps(object):
 
     def __init__(self):
-        self._zvmclient = zvmclient.get_zvmclient()
+        self._smutclient = smutclient.get_smutclient()
         self._dist_manager = dist.LinuxDistManager()
         self._pathutils = zvmutils.PathUtils()
 
     def get_power_state(self, guest_id):
         """Get power status of a z/VM instance."""
-        return self._zvmclient.get_power_state(guest_id)
+        return self._smutclient.get_power_state(guest_id)
 
     @zvmutils.wrap_invalid_resp_data_error
     def _get_cpu_num_from_user_dict(self, dict_info):
@@ -62,7 +62,7 @@ class VMOps(object):
 
     def get_info(self, userid):
         power_stat = self.get_power_state(userid)
-        perf_info = self._zvmclient.get_image_performance_info(userid)
+        perf_info = self._smutclient.get_image_performance_info(userid)
 
         if perf_info:
             try:
@@ -83,7 +83,7 @@ class VMOps(object):
                     'cpu_time_us': cpu_time_us}
         else:
             # virtual machine in shutdown state or not exists
-            dict_info = self._zvmclient.get_user_direct(userid)
+            dict_info = self._smutclient.get_user_direct(userid)
             return {
                 'power_state': power_stat,
                 'max_mem_kb': self._get_max_memory_from_user_dict(dict_info),
@@ -99,7 +99,7 @@ class VMOps(object):
 
     def is_reachable(self, userid):
         """Return True is the instance is reachable."""
-        res_dict = self._zvmclient.get_guest_connection_status(userid)
+        res_dict = self._smutclient.get_guest_connection_status(userid)
         LOG.debug('Get instance status of %s', userid)
 
         with zvmutils.expect_invalid_resp_data(res_dict):
@@ -113,10 +113,10 @@ class VMOps(object):
 
     def guest_start(self, userid):
         """"Power on z/VM instance."""
-        self._zvmclient.guest_start(userid)
+        self._smutclient.guest_start(userid)
 
     def guest_stop(self, userid, timeout, retry_interval):
-        self._zvmclient.guest_stop(userid)
+        self._smutclient.guest_stop(userid)
 
         # retry shutdown until timeout
         if timeout > 0:
@@ -126,7 +126,7 @@ class VMOps(object):
                     # In shutdown state already
                     return
                 else:
-                    self._zvmclient.guest_stop(userid)
+                    self._smutclient.guest_stop(userid)
                     time.sleep(retry_interval)
                     retry_count -= 1
 
@@ -135,11 +135,11 @@ class VMOps(object):
 
     def guest_restart(self, userid):
         """Soft restart z/VM instance."""
-        self._zvmclient.guest_restart(userid)
+        self._smutclient.guest_restart(userid)
 
     def guest_reset(self, userid):
         """Reset z/VM instance."""
-        self._zvmclient.guest_reset(userid)
+        self._smutclient.guest_reset(userid)
 
     def create_vm(self, userid, cpu, memory, disk_list=[],
                   user_profile=CONF.zvm.user_profile):
@@ -147,11 +147,11 @@ class VMOps(object):
         LOG.debug("Creating the z/VM user entry for instance %s"
                   % userid)
 
-        self._zvmclient.create_vm(userid, cpu, memory,
-                                  disk_list, user_profile)
+        self._smutclient.create_vm(userid, cpu, memory,
+                                   disk_list, user_profile)
 
     def create_disks(self, userid, disk_list):
-        user_direct = self._zvmclient.get_user_direct(userid)
+        user_direct = self._smutclient.get_user_direct(userid)
 
         exist_disks = []
         for ent in user_direct:
@@ -160,48 +160,46 @@ class VMOps(object):
                 exist_disks.append(md_vdev)
 
         start_vdev = hex(int(max(exist_disks), 16) + 1)[2:].rjust(4, '0')
-        self._zvmclient.add_mdisks(userid, disk_list, start_vdev)
+        self._smutclient.add_mdisks(userid, disk_list, start_vdev)
 
     def delete_disks(self, userid, vdev_list):
-        self._zvmclient.remove_mdisks(userid, vdev_list)
+        self._smutclient.remove_mdisks(userid, vdev_list)
 
     def guest_config_minidisks(self, userid, disk_info):
         if disk_info != []:
             LOG.debug("Start to configure disks to %s." % userid)
-            self._zvmclient.process_additional_minidisks(userid, disk_info)
+            self._smutclient.process_additional_minidisks(userid, disk_info)
         else:
             LOG.debug("No disk to handle on %s." % userid)
 
     def is_powered_off(self, instance_name):
         """Return True if the instance is powered off."""
-        return self._zvmclient.get_power_state(instance_name) == 'off'
+        return self._smutclient.get_power_state(instance_name) == 'off'
 
     def delete_vm(self, userid):
-        """Delete z/VM userid for the instance.This will remove xCAT node
-        at same time.
-        """
+        """Delete z/VM userid for the instance."""
         try:
-            self._zvmclient.delete_vm(userid)
+            self._smutclient.delete_vm(userid)
         except Exception as err:
             raise exception.ZVMDeleteVMFailed(userid=userid, msg=str(err))
 
     def guest_authorize_iucv_client(self, guest, client=None):
         """Punch a script to authorized the client on guest vm"""
 
-        return self._zvmclient.guest_authorize_iucv_client(guest, client)
+        return self._smutclient.guest_authorize_iucv_client(guest, client)
 
     def guest_deploy(self, user_id, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
         LOG.debug("Begin to deploy image on vm %s", user_id)
-        self._zvmclient.guest_deploy(user_id, image_name,
-                                     transportfiles, remotehost, vdev)
+        self._smutclient.guest_deploy(user_id, image_name,
+                                      transportfiles, remotehost, vdev)
 
     def guest_list(self):
-        return self._zvmclient.get_vm_list()
+        return self._smutclient.get_vm_list()
 
     def get_definition_info(self, userid, **kwargs):
         check_command = ["nic_coupled"]
-        direct_info = self._zvmclient.get_user_direct(userid)
+        direct_info = self._smutclient.get_user_direct(userid)
         info = {}
         info['user_direct'] = direct_info
 
@@ -233,8 +231,8 @@ class VMOps(object):
         console_log = ""
 
         try:
-            console_log = self._zvmclient.get_user_console_output(userid,
-                                                                  log_size)
+            console_log = self._smutclient.get_user_console_output(userid,
+                                                                   log_size)
         except exception.ZVMClientRequestFailed:
             # Ignore no console log avaiable error
             LOG.info("No new console log avaiable.")

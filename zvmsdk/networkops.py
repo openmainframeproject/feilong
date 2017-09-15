@@ -17,11 +17,11 @@ import os
 import shutil
 import tarfile
 
-from zvmsdk import client as zvmclient
 from zvmsdk import config
 from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk import smutclient
 
 
 _NetworkOPS = None
@@ -41,70 +41,71 @@ class NetworkOPS(object):
        oriented towards SDK driver
     """
     def __init__(self):
-        self.zvmclient = zvmclient.get_zvmclient()
+        self._smutclient = smutclient.get_smutclient()
         self._dist_manager = dist.LinuxDistManager()
 
     def create_nic(self, vm_id, vdev=None, nic_id=None,
                    mac_addr=None, ip_addr=None, active=False):
-        return self.zvmclient.create_nic(vm_id, vdev=vdev, nic_id=nic_id,
-                                         mac_addr=mac_addr, ip_addr=ip_addr,
-                                         active=active)
+        return self._smutclient.create_nic(vm_id, vdev=vdev, nic_id=nic_id,
+                                           mac_addr=mac_addr, ip_addr=ip_addr,
+                                           active=active)
 
     def get_vm_nic_vswitch_info(self, vm_id):
-        return self.zvmclient.get_vm_nic_vswitch_info(vm_id)
+        return self._smutclient.get_vm_nic_vswitch_info(vm_id)
 
     def get_vswitch_list(self):
-        return self.zvmclient.get_vswitch_list()
+        return self._smutclient.get_vswitch_list()
 
     def couple_nic_to_vswitch(self, userid, nic_vdev,
                               vswitch_name, active=False):
-        self.zvmclient.couple_nic_to_vswitch(userid, nic_vdev,
-                                             vswitch_name, active=active)
+        self._smutclient.couple_nic_to_vswitch(userid, nic_vdev,
+                                               vswitch_name, active=active)
 
     def uncouple_nic_from_vswitch(self, userid, nic_vdev,
                                   active=False):
-        self.zvmclient.uncouple_nic_from_vswitch(userid,
-                                                 nic_vdev,
-                                                 active=active)
+        self._smutclient.uncouple_nic_from_vswitch(userid,
+                                                   nic_vdev,
+                                                   active=active)
 
     def add_vswitch(self, name, rdev=None, controller='*',
                     connection='CONNECT', network_type='IP',
                     router="NONROUTER", vid='UNAWARE', port_type='ACCESS',
                     gvrp='GVRP', queue_mem=8, native_vid=1, persist=True):
-        self.zvmclient.add_vswitch(name, rdev=rdev, controller=controller,
-                                   connection=connection,
-                                   network_type=network_type,
-                                   router=router, vid=vid,
-                                   port_type=port_type, gvrp=gvrp,
-                                   queue_mem=queue_mem,
-                                   native_vid=native_vid,
-                                   persist=persist)
+        self._smutclient.add_vswitch(name, rdev=rdev, controller=controller,
+                                     connection=connection,
+                                     network_type=network_type,
+                                     router=router, vid=vid,
+                                     port_type=port_type, gvrp=gvrp,
+                                     queue_mem=queue_mem,
+                                     native_vid=native_vid,
+                                     persist=persist)
 
     def grant_user_to_vswitch(self, vswitch_name, userid):
-        self.zvmclient.grant_user_to_vswitch(vswitch_name, userid)
+        self._smutclient.grant_user_to_vswitch(vswitch_name, userid)
 
     def revoke_user_from_vswitch(self, vswitch_name, userid):
-        self.zvmclient.revoke_user_from_vswitch(vswitch_name, userid)
+        self._smutclient.revoke_user_from_vswitch(vswitch_name, userid)
 
     def set_vswitch_port_vlan_id(self, vswitch_name, userid, vlan_id):
-        self.zvmclient.set_vswitch_port_vlan_id(vswitch_name, userid, vlan_id)
+        self._smutclient.set_vswitch_port_vlan_id(vswitch_name, userid,
+                                                  vlan_id)
 
     def set_vswitch(self, vswitch_name, **kwargs):
-        self.zvmclient.set_vswitch(vswitch_name, **kwargs)
+        self._smutclient.set_vswitch(vswitch_name, **kwargs)
 
     def delete_vswitch(self, vswitch_name, persist=True):
-        self.zvmclient.delete_vswitch(vswitch_name, persist)
+        self._smutclient.delete_vswitch(vswitch_name, persist)
 
     def delete_nic(self, userid, vdev, active=False):
-        self.zvmclient.delete_nic(userid, vdev,
-                                  active=active)
+        self._smutclient.delete_nic(userid, vdev,
+                                    active=active)
 
     def network_configuration(self, userid, os_version, network_info):
         if len(network_info) == 0:
             raise exception.ZVMInvalidInput(
                     msg="Network information is required")
-        network_file_path = self.zvmclient.get_guest_temp_path(userid,
-                                                               'network')
+        network_file_path = self._smutclient.get_guest_temp_path(userid,
+                                                                 'network')
         LOG.debug('Creating folder %s to contain network configuration files'
                   % network_file_path)
         network_doscript = self._generate_network_doscript(userid,
@@ -113,7 +114,7 @@ class NetworkOPS(object):
                                                            network_file_path)
         fileClass = "X"
         try:
-            self.zvmclient.punch_file(userid, network_doscript, fileClass)
+            self._smutclient.punch_file(userid, network_doscript, fileClass)
         finally:
             LOG.debug('Removing the folder %s ', network_file_path)
             shutil.rmtree(network_file_path)
