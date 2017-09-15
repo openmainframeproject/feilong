@@ -25,7 +25,6 @@ import tempfile
 
 from smutLayer import smut
 
-from zvmsdk import client
 from zvmsdk import config
 from zvmsdk import constants as const
 from zvmsdk import database
@@ -37,15 +36,30 @@ from zvmsdk import utils as zvmutils
 
 CONF = config.CONF
 LOG = log.LOG
+
 _LOCK = threading.Lock()
 CHUNKSIZE = 4096
 
+_SMUT_CLIENT = None
 
-class SMUTClient(client.ZVMClient):
+
+def get_smutclient():
+    global _SMUT_CLIENT
+    if _SMUT_CLIENT is None:
+        try:
+            _SMUT_CLIENT = zvmutils.import_object(
+                'zvmsdk.smutclient.SMUTClient')
+        except ImportError:
+            LOG.error("Unable to get smutclient")
+            raise ImportError
+    return _SMUT_CLIENT
+
+
+class SMUTClient(object):
 
     def __init__(self):
-        super(SMUTClient, self).__init__()
         self._smut = smut.SMUT()
+        self._pathutils = zvmutils.PathUtils()
         self._NetDbOperator = database.NetworkDbOperator()
         self._GuestDbOperator = database.GuestDbOperator()
         self._ImageDbOperator = database.ImageDbOperator()
@@ -88,6 +102,142 @@ class SMUTClient(client.ZVMClient):
                 raise exception.ZVMClientRequestFailed(requestData,
                                                        results)
         return results
+
+    def get_guest_temp_path(self, os_node, userid, module):
+        return self._pathutils.get_guest_temp_path(os_node, userid, module)
+
+    def _generate_vdev(self, base, offset):
+        """Generate virtual device number based on base vdev
+        :param base: base virtual device number, string of 4 bit hex.
+        :param offset: offset to base, integer.
+        """
+        vdev = hex(int(base, 16) + offset)[2:]
+        return vdev.rjust(4, '0')
+
+    def generate_disk_vdev(self, start_vdev=None, offset=0):
+        """Generate virtual device number for disks
+        :param offset: offset of user_root_vdev.
+        :return: virtual device number, string of 4 bit hex.
+        """
+        if not start_vdev:
+            start_vdev = CONF.zvm.user_root_vdev
+        vdev = self._generate_vdev(start_vdev, offset)
+        if offset >= 0 and offset < 254:
+            return vdev
+        else:
+            msg = ("Failed to generate disk vdev, invalid virtual device"
+                   "number for disk:%s" % vdev)
+            LOG.error(msg)
+            raise exception.SDKGuestOperationError(rs=2, msg=msg)
+
+    def add_mdisks(self, userid, disk_list, start_vdev=None):
+        """Add disks for the userid
+
+        :disks: A list dictionary to describe disk info, for example:
+                disk: [{'size': '1g',
+                       'format': 'ext3',
+                       'disk_pool': 'ECKD:eckdpool1'}]
+
+        """
+
+        for idx, disk in enumerate(disk_list):
+            vdev = self.generate_disk_vdev(start_vdev=start_vdev, offset=idx)
+            self._add_mdisk(userid, disk, vdev)
+
+    def remove_mdisks(self, userid, vdev_list):
+        for vdev in vdev_list:
+            self._remove_mdisk(userid, vdev)
+
+    def get_image_performance_info(self, userid):
+        """Get CPU and memory usage information.
+
+        :userid: the zvm userid to be queried
+        """
+        pi_dict = self.image_performance_query([userid])
+        return pi_dict.get(userid.upper(), None)
+
+    def _parse_vswitch_inspect_data(self, rd_list):
+        """ Parse the Virtual_Network_Vswitch_Query_IUO_Stats data to get
+        inspect data.
+        """
+        def _parse_value(data_list, idx, keyword, offset):
+            return idx + offset, data_list[idx].rpartition(keyword)[2].strip()
+
+        vsw_dict = {}
+        with zvmutils.expect_invalid_resp_data():
+            # vswitch count
+            idx = 0
+            idx, vsw_count = _parse_value(rd_list, idx, 'vswitch count:', 2)
+            vsw_dict['vswitch_count'] = int(vsw_count)
+
+            # deal with each vswitch data
+            vsw_dict['vswitches'] = []
+            for i in range(vsw_dict['vswitch_count']):
+                vsw_data = {}
+                # skip vswitch number
+                idx += 1
+                # vswitch name
+                idx, vsw_name = _parse_value(rd_list, idx, 'vswitch name:', 1)
+                vsw_data['vswitch_name'] = vsw_name
+                # uplink count
+                idx, up_count = _parse_value(rd_list, idx, 'uplink count:', 1)
+                # skip uplink data
+                idx += int(up_count) * 9
+                # skip bridge data
+                idx += 8
+                # nic count
+                vsw_data['nics'] = []
+                idx, nic_count = _parse_value(rd_list, idx, 'nic count:', 1)
+                nic_count = int(nic_count)
+                for j in range(nic_count):
+                    nic_data = {}
+                    idx, nic_id = _parse_value(rd_list, idx, 'nic_id:', 1)
+                    userid, toss, vdev = nic_id.partition(' ')
+                    nic_data['userid'] = userid
+                    nic_data['vdev'] = vdev
+                    idx, nic_data['nic_fr_rx'] = _parse_value(rd_list, idx,
+                                                              'nic_fr_rx:', 1
+                                                              )
+                    idx, nic_data['nic_fr_rx_dsc'] = _parse_value(rd_list, idx,
+                                                            'nic_fr_rx_dsc:', 1
+                                                            )
+                    idx, nic_data['nic_fr_rx_err'] = _parse_value(rd_list, idx,
+                                                            'nic_fr_rx_err:', 1
+                                                            )
+                    idx, nic_data['nic_fr_tx'] = _parse_value(rd_list, idx,
+                                                              'nic_fr_tx:', 1
+                                                              )
+                    idx, nic_data['nic_fr_tx_dsc'] = _parse_value(rd_list, idx,
+                                                            'nic_fr_tx_dsc:', 1
+                                                            )
+                    idx, nic_data['nic_fr_tx_err'] = _parse_value(rd_list, idx,
+                                                            'nic_fr_tx_err:', 1
+                                                            )
+                    idx, nic_data['nic_rx'] = _parse_value(rd_list, idx,
+                                                           'nic_rx:', 1
+                                                           )
+                    idx, nic_data['nic_tx'] = _parse_value(rd_list, idx,
+                                                           'nic_tx:', 1
+                                                           )
+                    vsw_data['nics'].append(nic_data)
+                # vlan count
+                idx, vlan_count = _parse_value(rd_list, idx, 'vlan count:', 1)
+                # skip vlan data
+                idx += int(vlan_count) * 3
+                # skip the blank line
+                idx += 1
+
+                vsw_dict['vswitches'].append(vsw_data)
+
+        return vsw_dict
+
+    def _is_vdev_valid(self, vdev, vdev_info):
+        for used_vdev in vdev_info:
+            if ((int(vdev, 16) >= int(used_vdev, 16)) and
+                (int(vdev, 16) <= int(used_vdev, 16) + 2)):
+                return False
+
+        return True
 
     def get_power_state(self, userid):
         """Get power status of a z/VM instance."""
@@ -1052,6 +1202,18 @@ class SMUTClient(client.ZVMClient):
             raise
         finally:
             os.remove(fn)
+
+    def get_guest_connection_status(self, userid):
+        '''Get guest vm connection status.'''
+        # TODO: implement it
+        pass
+
+    def process_additional_minidisks(self, userid, disk_info):
+        '''Generate and punch the scripts used to process additional disk into
+        target vm's reader.
+        '''
+        # TODO: implement it
+        pass
 
 
 class FilesystemBackend(object):

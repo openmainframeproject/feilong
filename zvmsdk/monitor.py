@@ -14,10 +14,10 @@
 
 import time
 
-from zvmsdk import client as zvmclient
 from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk import smutclient
 from zvmsdk import utils as zvmutils
 
 _MONITOR = None
@@ -38,7 +38,7 @@ class ZVMMonitor(object):
 
     def __init__(self):
         self._cache = MeteringCache(self._TYPES)
-        self._zvmclient = zvmclient.get_zvmclient()
+        self._smutclient = smutclient.get_smutclient()
 
     def inspect_cpus(self, uid_list):
         cpumem_data = self._get_inspect_data('cpumem', uid_list)
@@ -117,7 +117,7 @@ class ZVMMonitor(object):
                 inspect_data[uid.upper()] = cache_data
             else:
                 try:
-                    if self._zvmclient.get_power_state(uid) == 'on':
+                    if self._smutclient.get_power_state(uid) == 'on':
                         update_needed = True
                         inspect_data = {}
                         break
@@ -145,17 +145,17 @@ class ZVMMonitor(object):
     def _update_cpumem_data(self, uid_list):
         rdata = {}
         if self._cache_enabled():
-            rdata = self._zvmclient.image_performance_query(
-                self._zvmclient.get_vm_list())
+            rdata = self._smutclient.image_performance_query(
+                self._smutclient.get_vm_list())
             self._cache.refresh('cpumem', rdata)
         else:
-            rdata = self._zvmclient.image_performance_query(uid_list)
+            rdata = self._smutclient.image_performance_query(uid_list)
 
         return rdata
 
     def _update_nic_data(self):
         nics = {}
-        vsw_dict = self._zvmclient.virtual_network_vswitch_query_iuo_stats()
+        vsw_dict = self._smutclient.virtual_network_vswitch_query_iuo_stats()
         with zvmutils.expect_invalid_resp_data():
             for vsw in vsw_dict['vswitches']:
                 for nic in vsw['nics']:
