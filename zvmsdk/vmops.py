@@ -239,7 +239,7 @@ class VMOps(object):
             # Ignore no console log avaiable error
             LOG.info("No new console log avaiable.")
 
-        log_path = self._pathutils.get_console_log_path(CONF.zvm.host, userid)
+        log_path = self._pathutils.get_console_log_path(userid)
         # TODO: need consider shrink log file size
         append_to_log(console_log, log_path)
 

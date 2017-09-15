@@ -103,9 +103,8 @@ class NetworkOPS(object):
         if len(network_info) == 0:
             raise exception.ZVMInvalidInput(
                     msg="Network information is required")
-        network_file_path = self.zvmclient.get_instance_path(CONF.zvm.host,
-                                                             userid,
-                                                             'network')
+        network_file_path = self.zvmclient.get_guest_temp_path(userid,
+                                                               'network')
         LOG.debug('Creating folder %s to contain network configuration files'
                   % network_file_path)
         network_doscript = self._generate_network_doscript(userid,
