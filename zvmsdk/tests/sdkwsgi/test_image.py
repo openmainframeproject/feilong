@@ -74,6 +74,20 @@ class ImageTestCase(unittest.TestCase):
         self.apibase.verify_result('test_image_query', resp.content)
         return resp
 
+    def _image_export(self):
+        url = '/images/rhel7.2-s390x-netboot-image1'
+        dest_url = 'file:///tmp/images/'
+        remotehost = '192.168.12.34'
+        body = """{"location": {"dest_url": "%s",
+                                "remotehost": "%s"}}""" % (dest_url,
+                                                           remotehost)
+        resp = self.client.api_request(url=url,
+                                       method='GET',
+                                       body=body)
+        self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_image_export', resp.content)
+        return resp
+
     def test_image_create_empty_body(self):
         body = {}
         resp = self.client.api_request(url='/images', method='POST',

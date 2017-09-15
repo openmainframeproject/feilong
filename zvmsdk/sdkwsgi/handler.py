@@ -86,6 +86,7 @@ ROUTE_LIST = (
     }),
     ('/images/{name}', {
         'DELETE': image.image_delete,
+        'GET': image.image_export,
     }),
     ('/images/{name}/root_disk_size', {
         'GET': image.image_get_root_disk_size,

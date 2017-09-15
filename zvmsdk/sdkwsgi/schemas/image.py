@@ -32,3 +32,22 @@ create = {
     'required': ['image'],
     'additionalProperties': False
 }
+
+
+export = {
+    'type': 'object',
+    'properties': {
+        'location': {
+            'type': 'object',
+            'properties': {
+                'dest_url': parameter_types.url,
+                'remotehost': parameter_types.remotehost
+            },
+            'required': ['dest_url'],
+            'additionalProperties': False
+        },
+        'additionalProperties': False
+    },
+    'required': ['location'],
+    'additionalProperties': False
+}
