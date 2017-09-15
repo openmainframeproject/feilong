@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8b8d6f42_4e1f2931",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 996,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-15T15:59:14Z",
+      "side": 1,
+      "message": "2 ways we might have here:\n\n1) delete record one by one , if any error encountered, we log and skip it to next one , this will leave some \u0027orphan\u0027 record\n\n2) delete one by one, if any error, raise the exception, the shortcoming is we might stuck the guest forever\n\nI prefer to #1, any comments?",
+      "range": {
+        "startLine": 990,
+        "startChar": 8,
+        "endLine": 996,
+        "endChar": 60
+      },
+      "revId": "b039e22a77790f1fd914ecfaacad74f66b4d60f4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
