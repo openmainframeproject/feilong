@@ -466,12 +466,6 @@ class SMUTClient(client.ZVMClient):
         # Only if vswitch is vlan awared, port_type, gvrp and native_vid are
         # allowed to specified
         if isinstance(vid, int) or vid.upper() != 'UNAWARE':
-            if ((native_vid is not None) and
-                ((native_vid < 1) or (native_vid > 4094))):
-                raise exception.ZVMInvalidInput(
-                    msg=("Failed to create vswitch %s: %s") % (name,
-                         'valid native VLAN id should be 1-4094 or None'))
-
             rd = ' '.join((rd,
                            "-k port_type=%s" % port_type,
                            "-k gvrp_value=%s" % gvrp,
@@ -552,9 +546,9 @@ class SMUTClient(client.ZVMClient):
                 if self._is_vdev_valid(vdev, vdev_info):
                     nic_vdev = vdev
                 else:
-                    raise exception.ZVMInvalidInput(
-                        msg=("The specified virtual device number %s "
-                             "has already been used" % vdev))
+                    errmsg = ("The specified virtual device number %s "
+                              "has already been used." % vdev)
+                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
         if len(nic_vdev) > 4:
             raise exception.ZVMNetworkError(
                         msg=("Virtual device number %s is not valid" %
