@@ -36,12 +36,9 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @classmethod
     def setUpClass(cls):
         super(SDKSMUTClientTestCases, cls).setUpClass()
-        cls.old_client_type = CONF.zvm.client_type
-        base.set_conf('zvm', 'client_type', 'smut')
 
     @classmethod
     def tearDownClass(cls):
-        base.set_conf('zvm', 'client_type', cls.old_client_type)
         super(SDKSMUTClientTestCases, cls).tearDownClass()
 
     def setUp(self):
@@ -914,6 +911,12 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_delete_userid(self, request):
         rd = 'deletevm fuser1 directory'
         self._smutclient.delete_userid('fuser1')
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_execute_cmd(self, request):
+        rd = 'cmdVM fuser1 CMD ls'
+        self._smutclient.execute_cmd('fuser1', 'ls')
         request.assert_called_once_with(rd)
 
     @mock.patch.object(smutclient.SMUTClient, '_request')

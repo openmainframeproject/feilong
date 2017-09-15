@@ -182,6 +182,10 @@ class VMOps(object):
         except Exception as err:
             raise exception.ZVMDeleteVMFailed(userid=userid, msg=str(err))
 
+    def execute_cmd(self, userid, cmdStr):
+        """Execute commands on the instance"""
+        return self._smutclient.execute_cmd(userid, cmdStr)
+
     def guest_authorize_iucv_client(self, guest, client=None):
         """Punch a script to authorized the client on guest vm"""
 
