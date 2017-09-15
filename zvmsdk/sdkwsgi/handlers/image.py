@@ -52,6 +52,13 @@ class ImageAction(object):
     def query(self, imagename):
         return self.api.image_query(imagename)
 
+    @validation.schema(image.export)
+    def export(self, imagename, body):
+        location = body['location']
+        dest_url = location['dest_url']
+        remotehost = location.get('remotehost', None)
+        return self.api.image_export(imagename, dest_url, remotehost)
+
 
 def get_action():
     global _IMAGEACTION
@@ -106,6 +113,24 @@ def image_delete(req):
 
     req.response.status = 204
     req.response.content_type = None
+    return req.response
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def image_export(req):
+
+    def _image_export(name, req):
+        action = get_action()
+        body = util.extract_json(req.body)
+        return action.export(name, body)
+
+    name = util.wsgi_path_item(req.environ, 'name')
+    info = _image_export(name, req)
+
+    info_json = json.dumps({'image_info': info})
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
     return req.response
 
 
