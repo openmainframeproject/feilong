@@ -14,12 +14,10 @@
 
 
 import os
-import random
 import re
 import unittest
 
 from zvmsdk import api
-from zvmsdk import client as zvmclient
 from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import log
@@ -38,7 +36,6 @@ class SDKAPITestUtils(object):
 
     def __init__(self):
         self.api = api.SDKAPI()
-        self.zvmclient = zvmclient.get_zvmclient()
 
     def image_import(self, image_path=CONF.tests.image_path,
                      os_version=CONF.tests.image_os_version):
@@ -68,22 +65,6 @@ class SDKAPITestUtils(object):
                 continue
             else:
                 return uid
-
-    def get_available_ip_addr(self):
-        ip_list = CONF.tests.ip_addr_list.split(' ')
-        vs_info = str(self.zvmclient.virtual_network_vswitch_query_iuo_stats())
-        for ip in ip_list:
-            if ip not in vs_info:
-                return ip
-
-    def generate_mac_addr(self):
-        tmp_list = []
-        for i in (1, 2, 3):
-            tmp_list.append(''.join(random.sample("0123456789abcdef", 2)))
-
-        mac_suffix = ':'.join(tmp_list)
-        mac_addr = ':'.join((CONF.tests.mac_user_prefix, mac_suffix))
-        return mac_addr
 
     def _get_next_test_userid(self, userid):
         userids = CONF.tests.userid_list.split(' ')
@@ -115,24 +96,6 @@ class SDKAPITestUtils(object):
         user_profile = CONF.zvm.user_profile
         remote_host = zvmutils.get_host()
 
-#         nic_id = str(uuid.uuid1())
-#
-#         if ip_addr is None:
-#             ip_addr = self.get_available_ip_addr()
-#
-#         print("Using IP address of %s ..." % ip_addr)
-#
-#         mac_addr = self.generate_mac_addr()
-#         print("Using MAC address of %s ..." % mac_addr)
-
-#         vswitch_name = CONF.tests.vswitch
-#         network_interface_info = {'ip_addr': ip_addr,
-#                                   'nic_vdev': CONF.zvm.default_nic_vdev,
-#                                   'gateway_v4': CONF.tests.gateway_v4,
-#                                   'broadcast_v4': CONF.tests.broadcast_v4,
-#                                   'netmask_v4': CONF.tests.netmask_v4}
-#         transportfiles = configdrive.create_config_drive(
-#             network_interface_info, CONF.tests.image_os_version)
         size = self.api.image_get_root_disk_size(image_name)
         root_disk_size = size.partition(':')[0]
         disks_list = [{'size': root_disk_size,
@@ -160,14 +123,6 @@ class SDKAPITestUtils(object):
         # Grant IUCV access
         smut_uid = zvmutils.get_smut_userid()
         self.api.guest_authorize_iucv_client(userid, smut_uid)
-
-        # Setup network for vm
-#         print("Creating nic with nic_id=%s, "
-#               "mac_address=%s ..." % (nic_id, mac_addr))
-#         vdev = self.api.guest_create_nic(userid, nic_id=nic_id,
-#                                          mac_addr=mac_addr, ip_addr=ip_addr)
-#         self.api.guest_nic_couple_to_vswitch(userid, vdev, vswitch_name)
-#         self.api.vswitch_grant_user(vswitch_name, userid)
 
         # Deploy image on vm
         print("Deploying userid %s ..." % userid)

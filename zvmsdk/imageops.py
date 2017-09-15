@@ -12,10 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from zvmsdk import client as zvmclient
+
 from zvmsdk import config
-from zvmsdk import utils as zvmutils
 from zvmsdk import log
+from zvmsdk import smutclient
+from zvmsdk import utils as zvmutils
 
 
 LOG = log.LOG
@@ -33,25 +34,25 @@ def get_imageops():
 
 class ImageOps(object):
     def __init__(self):
-        self.zvmclient = zvmclient.get_zvmclient()
+        self._smutclient = smutclient.get_smutclient()
         self._pathutils = zvmutils.PathUtils()
 
     def image_get_root_disk_size(self, image_name):
-        return self.zvmclient.image_get_root_disk_size(image_name)
+        return self._smutclient.image_get_root_disk_size(image_name)
 
     def image_import(self, image_name, url, image_meta, remote_host=None):
 
-        return self.zvmclient.image_import(image_name,
-                                           url,
-                                           image_meta,
-                                           remote_host)
+        return self._smutclient.image_import(image_name,
+                                             url,
+                                             image_meta,
+                                             remote_host)
 
     def image_query(self, imagekeyword=None):
-        return self.zvmclient.image_query(imagekeyword)
+        return self._smutclient.image_query(imagekeyword)
 
     def image_delete(self, image_name):
-        return self.zvmclient.image_delete(image_name)
+        return self._smutclient.image_delete(image_name)
 
     def image_export(self, image_name, dest_url, remote_host=None):
-        return self.zvmclient.image_export(image_name, dest_url,
-                                           remote_host)
+        return self._smutclient.image_export(image_name, dest_url,
+                                             remote_host)
