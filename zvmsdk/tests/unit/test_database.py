@@ -46,29 +46,13 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         self.db_op.__init__()
         create_table.assert_called_once_with()
 
-    @mock.patch.object(database.NetworkDbOperator,
-                       '_get_switch_by_user_interface')
-    def test_switch_add_record_for_nic_fail(self, get_record):
-        get_record.return_value = [('return value')]
-        userid = 'testuser'
-        interface = '1000'
-        port = None
-
-        self.assertRaises(exception.ZVMNetworkError,
-                          self.db_op.switch_add_record_for_nic,
-                          userid, interface, port)
-
-    @mock.patch.object(database.NetworkDbOperator,
-                       '_get_switch_by_user_interface')
-    def test_switch_add_record_for_nic(self, get_record):
-        get_record.return_value = None
+    def test_switch_add_record_for_nic(self):
         userid = 'testuser'
         interface = '1000'
         port = None
 
         # insert a record without port
         self.db_op.switch_add_record_for_nic(userid, interface, port)
-        get_record.assert_called_once_with(userid, interface)
 
         # query
         switch_record = self.db_op.switch_select_table()
@@ -101,7 +85,7 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         interface = '1000'
         switch = 'testswitch'
 
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.ZVMObjectNotExistError,
                           self.db_op.switch_updat_record_with_switch,
                           userid, interface, switch)
 
