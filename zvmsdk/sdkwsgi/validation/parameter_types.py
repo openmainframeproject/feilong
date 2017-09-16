@@ -257,6 +257,6 @@ image_meta = {
         # md5 shoule be 32 hexadeciaml numbers
         'md5sum': {'type': 'string', 'pattern': '^[0-9a-fA-F]{32}$'}
     },
-    'required': ['os_version', 'md5sum'],
+    'required': ['os_version'],
     'additionalProperties': False
 }
