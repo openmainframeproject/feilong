@@ -123,7 +123,7 @@ def image_export(req):
     def _image_export(name, req):
         action = get_action()
         body = util.extract_json(req.body)
-        return action.export(name, body)
+        return action.export(name, body=body)
 
     name = util.wsgi_path_item(req.environ, 'name')
     info = _image_export(name, req)
