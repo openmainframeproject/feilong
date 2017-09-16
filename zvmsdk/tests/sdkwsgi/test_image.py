@@ -70,12 +70,10 @@ class ImageTestCase(unittest.TestCase):
         return resp
 
     def _image_export(self):
-        url = '/images/rhel7.2-s390x-netboot-image1'
+        url = '/images/image1'
         dest_url = 'file:///tmp/images/'
-        remotehost = '192.168.12.34'
-        body = """{"location": {"dest_url": "%s",
-                                "remotehost": "%s"}}""" % (dest_url,
-                                                           remotehost)
+        body = """{"location": {"dest_url": "%s"}}""" % (dest_url)
+
         resp = self.client.api_request(url=url,
                                        method='PUT',
                                        body=body)
