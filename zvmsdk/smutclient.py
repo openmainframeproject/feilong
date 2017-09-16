@@ -21,6 +21,7 @@ import threading
 import os
 import re
 import shutil
+import six
 import tempfile
 
 
@@ -1299,10 +1300,10 @@ class FilesystemBackend(object):
                 shutil.copyfile(source, target)
             except Exception as err:
                 msg = ("Import image from local file system failed"
-                       " with reason %s" % err)
+                       " with reason %s" % six.text_type(err))
                 LOG.error(msg)
                 raise exception.SDKImageOperationError(rs=12,
-                                                    err=err.format_message())
+                                                    err=six.text_type(err))
 
     @classmethod
     def image_export(cls, source_path, dest_url, **kwargs):
@@ -1323,10 +1324,14 @@ class FilesystemBackend(object):
             try:
                 shutil.copyfile(source_path, dest_path)
             except Exception as err:
-                msg = ("Export image to local file system failed: %s" %
-                       err.format_message())
+                msg = ("Export image from %(src)s to local file system"
+                       " %(dest)s failed: %(err)s" %
+                       {'src': source_path,
+                        'dest': dest_path,
+                        'err': six.text_type(err)})
+                LOG.error(msg)
                 raise exception.SDKImageOperationError(rs=22,
-                                                err=err.format_message())
+                                                       err=six.text_type(err))
 
 
 class HTTPBackend(object):
@@ -1359,10 +1364,11 @@ class MultiThreadDownloader(threading.Thread):
                 return func(self, *args, **kwargs)
             except Exception as err:
                 self.fd.close()
-                msg = ("Download image from http server failed: %s" % err)
+                msg = ("Download image from http server failed: %s" %
+                       six.text_type(err))
                 LOG.error(msg)
                 raise exception.SDKImageOperationError(rs=9,
-                                                    err=err.format_message())
+                                                    err=six.text_type(err))
         return wrapper
 
     def get_range(self):
