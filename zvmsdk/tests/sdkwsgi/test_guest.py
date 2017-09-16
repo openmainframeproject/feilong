@@ -140,7 +140,7 @@ class GuestHandlerTestCase(unittest.TestCase):
         return self._guest_action(body)
 
     def _guest_deploy(self):
-        image = 'rhel7.2-s390x-netboot-46a4aea3_54b6_4b1c_8a49_01f302e70c60'
+        image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
         # "transportfiles" is None here
         # "remotehost" is None here because transportfiles is None
         body = """{"action": "deploy",
