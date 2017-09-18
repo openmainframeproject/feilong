@@ -22,6 +22,30 @@
       "revId": "b039e22a77790f1fd914ecfaacad74f66b4d60f4",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ae43986d_77d33d02",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 996,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-18T03:20:07Z",
+      "side": 1,
+      "message": "I think we should first delete the userid, then the several db records, because the delete userid is more possible to get error than db operation.\n\nFor the several db delete, since user can always delete same record many times without exception. I would prefer #1 to inform user there is an error happened and let user decide whether to ignore it or take some action. \notherwise #2 would act like no error happens, return 200 status code, I think that is not that reasonable.",
+      "parentUuid": "8b8d6f42_4e1f2931",
+      "range": {
+        "startLine": 990,
+        "startChar": 8,
+        "endLine": 996,
+        "endChar": 60
+      },
+      "revId": "b039e22a77790f1fd914ecfaacad74f66b4d60f4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
