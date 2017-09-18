@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "09330c03_c6e9854f",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 1043,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-18T08:20:16Z",
+      "side": 1,
+      "message": "raise after cleanup file",
+      "range": {
+        "startLine": 1043,
+        "startChar": 12,
+        "endLine": 1043,
+        "endChar": 17
+      },
+      "revId": "51d49b08c4166a46a4fe19d2c1672c5219c7a10d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
