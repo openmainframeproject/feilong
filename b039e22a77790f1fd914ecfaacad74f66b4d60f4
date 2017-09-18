@@ -46,6 +46,30 @@
       "revId": "b039e22a77790f1fd914ecfaacad74f66b4d60f4",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "78dbea03_2a7efe59",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 996,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-18T03:27:40Z",
+      "side": 1,
+      "message": "is it possible to setup a periodic task to cleanup orphan resources, e.g. db records, deleted guests ...",
+      "parentUuid": "8b8d6f42_4e1f2931",
+      "range": {
+        "startLine": 990,
+        "startChar": 8,
+        "endLine": 996,
+        "endChar": 60
+      },
+      "revId": "b039e22a77790f1fd914ecfaacad74f66b4d60f4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
