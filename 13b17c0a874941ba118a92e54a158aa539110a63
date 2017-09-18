@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "dd78807f_42df3c9b",
+        "filename": "zvmsdk/returncode.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-18T02:58:20Z",
+      "side": 1,
+      "message": "rs 3 and 5",
+      "range": {
+        "startLine": 154,
+        "startChar": 17,
+        "endLine": 155,
+        "endChar": 67
+      },
+      "revId": "13b17c0a874941ba118a92e54a158aa539110a63",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "761c545d_00938e55",
+        "filename": "zvmsdk/returncode.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-18T02:58:20Z",
+      "side": 1,
+      "message": "not need to set rs 3 and 5, just pass zvmclientrequestfailed to upper layer and log it in sdk layer is enough.\n\nrs 4 and 6 are complex cases from sdk rollback logic, nice to see new customized rs code for them.",
+      "range": {
+        "startLine": 160,
+        "startChar": 17,
+        "endLine": 161,
+        "endChar": 60
+      },
+      "revId": "13b17c0a874941ba118a92e54a158aa539110a63",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "024a4ba1_bf9b3415",
         "filename": "zvmsdk/smutclient.py",
         "patchSetId": 1
@@ -16,6 +62,29 @@
       "range": {
         "startLine": 759,
         "startChar": 33,
+        "endLine": 759,
+        "endChar": 55
+      },
+      "revId": "13b17c0a874941ba118a92e54a158aa539110a63",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0d5b5772_f7980d23",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 759,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-18T02:58:20Z",
+      "side": 1,
+      "message": "add zvmsdkinternalerror into except list, to make sure all the error can be handled",
+      "range": {
+        "startLine": 759,
+        "startChar": 23,
         "endLine": 759,
         "endChar": 55
       },
@@ -64,6 +133,29 @@
         "startChar": 24,
         "endLine": 771,
         "endChar": 29
+      },
+      "revId": "13b17c0a874941ba118a92e54a158aa539110a63",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "01d2a8cf_2378b0a6",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 771,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-18T02:58:20Z",
+      "side": 1,
+      "message": "bad indentation",
+      "range": {
+        "startLine": 771,
+        "startChar": 20,
+        "endLine": 771,
+        "endChar": 24
       },
       "revId": "13b17c0a874941ba118a92e54a158aa539110a63",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
