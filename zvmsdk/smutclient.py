@@ -786,6 +786,7 @@ class SMUTClient(object):
         rd = ' '.join((
             "SMAPI %s API Virtual_Network_Adapter_Delete_DM" %
             userid,
+            "--operands",
             '-v %s' % vdev))
         try:
             self._request(rd)
@@ -807,6 +808,7 @@ class SMUTClient(object):
             rd = ' '.join((
                 "SMAPI %s API Virtual_Network_Adapter_Delete" %
                 userid,
+                "--operands",
                 '-v %s' % vdev))
             try:
                 self._request(rd)
