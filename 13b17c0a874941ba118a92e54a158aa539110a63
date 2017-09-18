@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "024a4ba1_bf9b3415",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 759,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-18T02:55:06Z",
+      "side": 1,
+      "message": "also need to catch sdkinternalerror.",
+      "range": {
+        "startLine": 759,
+        "startChar": 33,
+        "endLine": 759,
+        "endChar": 55
+      },
+      "revId": "13b17c0a874941ba118a92e54a158aa539110a63",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b7947f78_5fb4c07e",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 768,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-18T02:55:06Z",
+      "side": 1,
+      "message": "here no need to raise a networkerror, just raise the original exception out.",
+      "range": {
+        "startLine": 768,
+        "startChar": 36,
+        "endLine": 768,
+        "endChar": 60
+      },
+      "revId": "13b17c0a874941ba118a92e54a158aa539110a63",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c0bb6911_1d030768",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 771,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-18T02:55:06Z",
+      "side": 1,
+      "message": "need to adjust indent.",
+      "range": {
+        "startLine": 771,
+        "startChar": 24,
+        "endLine": 771,
+        "endChar": 29
+      },
+      "revId": "13b17c0a874941ba118a92e54a158aa539110a63",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
