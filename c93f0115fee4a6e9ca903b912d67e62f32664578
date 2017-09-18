@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ae8dc98_abf8e190",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-18T03:49:43Z",
+      "side": 1,
+      "message": "get root disk size",
+      "range": {
+        "startLine": 178,
+        "startChar": 32,
+        "endLine": 178,
+        "endChar": 51
+      },
+      "revId": "c93f0115fee4a6e9ca903b912d67e62f32664578",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "917d0287_2a0445ef",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-18T03:49:43Z",
+      "side": 1,
+      "message": "suggest to add \u0027with keywords %s\u0027 in the log message.",
+      "range": {
+        "startLine": 222,
+        "startChar": 44,
+        "endLine": 222,
+        "endChar": 45
+      },
+      "revId": "c93f0115fee4a6e9ca903b912d67e62f32664578",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6ba620e4_6d32a74a",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-18T03:49:43Z",
+      "side": 1,
+      "message": "also print the destination?",
+      "range": {
+        "startLine": 247,
+        "startChar": 49,
+        "endLine": 247,
+        "endChar": 51
+      },
+      "revId": "c93f0115fee4a6e9ca903b912d67e62f32664578",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1c1d87b3_d20c067c",
+        "filename": "zvmsdk/exception.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-18T03:49:43Z",
+      "side": 1,
+      "message": "this can be deleted, we removed this \u0027strError\u0027 attribute from results since it is duplicated with the exception message.",
+      "range": {
+        "startLine": 239,
+        "startChar": 8,
+        "endLine": 239,
+        "endChar": 38
+      },
+      "revId": "c93f0115fee4a6e9ca903b912d67e62f32664578",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "44f808a5_0c76e809",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 1010,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-18T03:49:43Z",
+      "side": 1,
+      "message": "Not related to this patch, but I think this needs to raise an exception to inform user.",
+      "range": {
+        "startLine": 1009,
+        "startChar": 12,
+        "endLine": 1010,
+        "endChar": 34
+      },
+      "revId": "c93f0115fee4a6e9ca903b912d67e62f32664578",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4904eb34_36a88a76",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 1041,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-18T03:49:43Z",
+      "side": 1,
+      "message": "should avoid such KeyError, maybe change to adding some value check to avoid this exception.",
+      "range": {
+        "startLine": 1041,
+        "startChar": 8,
+        "endLine": 1041,
+        "endChar": 24
+      },
+      "revId": "c93f0115fee4a6e9ca903b912d67e62f32664578",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
