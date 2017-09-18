@@ -124,7 +124,8 @@ class NetworkOPS(object):
 
         # Create network configuration files
         LOG.debug('Creating network configuration files '
-                  'for guest %s in the folder' % (userid, network_file_path))
+                  'for guest %s in the folder %s' %
+                  (userid, network_file_path))
         linuxdist = self._dist_manager.get_linux_dist(os_version)()
         files_and_cmds = linuxdist.create_network_configuration_files(
                              network_file_path, network_info)

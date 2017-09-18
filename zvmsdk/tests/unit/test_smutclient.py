@@ -804,9 +804,11 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         vdev = 'FakeVdev'
         rd1 = ' '.join((
             "SMAPI FakeID API Virtual_Network_Adapter_Delete_DM",
+            "--operands",
             '-v FakeVdev'))
         rd2 = ' '.join((
             "SMAPI FakeID API Virtual_Network_Adapter_Delete",
+            "--operands",
             '-v FakeVdev'))
         self._smutclient.delete_nic(userid, vdev, True)
         request.assert_any_call(rd1)
