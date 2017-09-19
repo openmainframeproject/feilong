@@ -73,7 +73,8 @@ class VMOps(object):
                     KeyError) as err:
                 LOG.error('Parse performance_info encounter error: %s',
                           str(perf_info))
-                raise exception.ZVMSDKInternalError(msg=str(err))
+                raise exception.ZVMSDKInternalError(msg=str(err),
+                                                    modID='guest')
 
             return {'power_state': power_stat,
                     'max_mem_kb': max_mem_kb,
