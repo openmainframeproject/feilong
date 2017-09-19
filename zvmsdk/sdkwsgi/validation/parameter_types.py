@@ -191,8 +191,7 @@ vdev_list = {
 
 url = {
     'type': ['string'],
-    # FIXME: uri cannot validate url, need accurate definition
-    'format': 'uri'
+    'pattern': '^https?:/{2}|^file:/{3}\w.+$'
 }
 
 

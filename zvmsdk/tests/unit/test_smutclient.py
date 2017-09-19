@@ -994,7 +994,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                       'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
         image_query.return_value = []
         get_md5sum.return_value = 'c73ce117eef8077c3420bfc000000'
-        self.assertRaises(exception.SDKImageImportException,
+        self.assertRaises(exception.SDKImageOperationError,
                           self._smutclient.image_import,
                           image_name, url, image_meta)
 
