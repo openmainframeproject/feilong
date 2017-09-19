@@ -242,9 +242,11 @@ class SMUTClient(object):
 
     def get_power_state(self, userid):
         """Get power status of a z/VM instance."""
-        LOG.debug('Query power stat of %s' % userid)
+        LOG.debug('Querying power stat of %s' % userid)
         requestData = "PowerVM " + userid + " status"
-        results = self._request(requestData)
+        action = "query power state of '%s'" % userid
+        with zvmutils.log_and_reraise_smut_request_failed(action):
+            results = self._request(requestData)
         with zvmutils.expect_invalid_resp_data(results):
             status = results['response'][0].partition(': ')[2]
         return status
@@ -252,12 +254,16 @@ class SMUTClient(object):
     def guest_start(self, userid):
         """"Power on VM."""
         requestData = "PowerVM " + userid + " on"
-        self._request(requestData)
+        action = "power on vm '%s'" % userid
+        with zvmutils.log_and_reraise_smut_request_failed(action):
+            self._request(requestData)
 
     def guest_stop(self, userid):
         """"Power off VM."""
         requestData = "PowerVM " + userid + " off"
-        self._request(requestData)
+        action = "power off vm '%s'" % userid
+        with zvmutils.log_and_reraise_smut_request_failed(action):
+            self._request(requestData)
 
     def create_vm(self, userid, cpu, memory, disk_list, profile):
         """ Create VM and add disks if specified. """
