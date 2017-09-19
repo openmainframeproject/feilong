@@ -269,13 +269,11 @@ class SDKAPI(object):
                format is username@IP, eg nova@192.168.99.1
         :param vdev: (str) the device that image will be deploy to
         """
-        try:
+        action = ("deploy image '%(img)s' to guest '%(vm)s'" %
+                  {'img': image_name, 'vm': userid})
+        with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.guest_deploy(userid, image_name,
                                      transportfiles, remotehost, vdev)
-        except exception.SDKBaseException:
-            LOG.error(('Failed to deploy image %(img)s to vm %(vm)s') %
-                      {'img': image_name, 'vm': userid})
-            raise
 
     @zvmutils.check_input_types(_TUSERID, _TSTR_OR_NONE, _TSTR_OR_NONE,
                        _TSTR_OR_NONE, _TSTR_OR_NONE, bool)
@@ -408,12 +406,10 @@ class SDKAPI(object):
                               " ECKD:eckdpoolname or FBA:fbapoolname")
                     raise exception.ZVMInvalidInputFormat(msg=errmsg)
 
-        try:
+        action = "create guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.create_vm(userid, vcpus, memory, disk_list,
                                   user_profile)
-        except exception.SDKBaseException:
-            LOG.error("Failed to create guest '%s'" % userid)
-            raise
 
     @zvmutils.check_input_types(_TUSERID, list)
     def guest_create_disks(self, userid, disk_list):
