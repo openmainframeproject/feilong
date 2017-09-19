@@ -417,13 +417,27 @@ def wrap_invalid_resp_data_error(function):
 def expect_and_reraise_internal_error(modID='SDK'):
     """Catch all kinds of zvm client request failure and reraise.
 
-    exc: the exception that would be raised.
+    modID: the moduleID that the internal error happens in.
     """
     try:
         yield
     except exception.ZVMSDKInternalError as err:
         msg = err.format_message()
         raise exception.ZVMSDKInternalError(msg, modID=modID)
+
+
+@contextlib.contextmanager
+def log_and_reraise_sdkbase_error(action):
+    """Catch SDK base exception and print error log before reraise exception.
+
+    msg: the error message to be logged.
+    """
+    try:
+        yield
+    except exception.SDKBaseException:
+        msg = "Failed to " + action + "."
+        LOG.error(msg)
+        raise
 
 
 def get_smut_userid():
