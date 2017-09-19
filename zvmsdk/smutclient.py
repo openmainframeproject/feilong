@@ -317,7 +317,9 @@ class SMUTClient(object):
     def get_vm_list(self):
         """Get the list of guests that are created by SDK
         return userid list"""
-        guests = self._GuestDbOperator.get_guest_list()
+        action = "list all guests in database"
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            guests = self._GuestDbOperator.get_guest_list()
         # guests is a list of tuple (uuid, userid, metadata, comments)
         userid_list = []
         for g in guests:
@@ -455,7 +457,8 @@ class SMUTClient(object):
             "--operands",
             '-T "%s"' % (' '.join(uid_list)),
             "-c %d" % len(uid_list)))
-        results = self._request(rd)
+        action = "get performance info of userid '%s'" % str(uid_list)
+        results = self._request(rd, action)
 
         ipq_kws = {
             'userid': "Guest name:",
@@ -765,7 +768,8 @@ class SMUTClient(object):
                                                       port=nic_id)
 
     def get_user_direct(self, userid):
-        results = self._request("getvm %s directory" % userid)
+        action = "get user direct of '%s'" % userid
+        results = self._request("getvm %s directory" % userid, action)
         return results.get('response', [])
 
     def delete_nic(self, userid, vdev, active=False):
