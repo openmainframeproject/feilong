@@ -480,3 +480,19 @@ def translate_response_to_dict(rawdata, dirt):
         raise exception.ZVMSDKInternalError(msg=msg)
 
     return data
+
+
+def make_dummy_image(image_path, d_type='CKD'):
+    if d_type not in ('CKD', 'FBA'):
+        d_type = 'CKD'
+
+    d_unit = 'CYL'
+    if d_type == 'FBA':
+        d_unit = 'BLK'
+
+    header = ("z/VM %(type)s Disk Image:           0 %(unit)s" %
+              {'type': d_type, 'unit': d_unit})
+
+    header = bytes(' '.join((header, 'HLen: 0055', 'GZIP: 0')))
+    with open(image_path, 'wb') as f:
+        f.write(header)
