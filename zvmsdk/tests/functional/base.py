@@ -39,11 +39,11 @@ class SDKAPITestUtils(object):
 
     def image_import(self, image_path=CONF.tests.image_path,
                      os_version=CONF.tests.image_os_version):
+        print("Importing image %s ..." % image_name)
         image_name = os.path.basename(image_path)
         image_url = ''.join(('file://', image_path))
-        remote_host = zvmutils.get_host()
         self.api.image_import(image_name, image_url,
-                              {'os_version': os_version}, remote_host)
+                              {'os_version': os_version})
 
     def _guest_exist(self, userid):
         cmd = 'vmcp q %s' % userid
@@ -79,13 +79,17 @@ class SDKAPITestUtils(object):
                      image_path=CONF.tests.image_path, ip_addr=None,
                      login_password='password'):
         image_name = os.path.basename(image_path)
-        image_name_smut = '/'.join(('netboot', CONF.tests.image_os_version,
-                                    image_name))
-        print('\n')
+        url = 'file://' + image_path
 
-        if not self.api.image_query(image_name.replace('-', '_')):
+        print("Checking if image %s exists or not, import it if not exists" %
+              image_name)
+        image_info = self.api.image_query(image_name)
+        print("Image query result is %s" % str(image_info))
+
+        if not image_info:
             print("Importing image %s ..." % image_name)
-            self.image_import()
+            self.api.image_import(image_name, url,
+                        {'os_version': CONF.tests.image_os_version})
 
         print("Using image %s ..." % image_name)
 
@@ -94,7 +98,6 @@ class SDKAPITestUtils(object):
         print("Using userid %s ..." % userid)
 
         user_profile = CONF.zvm.user_profile
-        remote_host = zvmutils.get_host()
 
         size = self.api.image_get_root_disk_size(image_name)
         root_disk_size = size.partition(':')[0]
@@ -126,7 +129,7 @@ class SDKAPITestUtils(object):
 
         # Deploy image on vm
         print("Deploying userid %s ..." % userid)
-        self.api.guest_deploy(userid, image_name_smut, remotehost=remote_host)
+        self.api.guest_deploy(userid, image_name)
 
         # Power on the vm, then put MN's public key into vm
         print("Power on userid %s ..." % userid)

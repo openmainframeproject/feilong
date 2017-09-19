@@ -175,7 +175,8 @@ class SDKAPI(object):
         try:
             return self._imageops.image_get_root_disk_size(image_name)
         except exception.SDKBaseException:
-            LOG.error("Failed to export image '%s'" % image_name)
+            LOG.error("Failed to get root disk size units of image '%s'" %
+                      image_name)
             raise
 
     @zvmutils.check_input_types(_TSTR, _TSTR, dict, _TSTR_OR_NONE)
