@@ -814,7 +814,8 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_get_user_direct(self, req):
         req.return_value = {'response': 'OK'}
         resp = self._smutclient.get_user_direct('user1')
-        req.assert_called_once_with('getvm user1 directory')
+        req.assert_called_once_with('getvm user1 directory',
+                                    "get user direct of 'user1'")
         self.assertEqual(resp, 'OK')
 
     @mock.patch.object(database.NetworkDbOperator,

@@ -117,14 +117,18 @@ class SDKAPI(object):
                   num_cpu: (int) the number of virtual CPUs for the instance
                   cpu_time_us: (int) the CPU time used in microseconds
         """
-        return self._vmops.get_info(userid)
+        action = "get info of guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_info(userid)
 
     def guest_list(self):
         """list names of all the VMs on this host.
 
         :returns: names of the vm on this host, in a list.
         """
-        return self._vmops.guest_list()
+        action = "list guests on host"
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.guest_list()
 
     def host_get_info(self):
         """ Retrieve host information including host, memory, disk etc.
