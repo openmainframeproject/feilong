@@ -358,7 +358,7 @@ class SMUTClient(object):
                      remotehost=None, vdev=None):
         """ Deploy image and punch config driver to target """
         # Get image location (TODO: update this image location)
-        image_file = "/var/lib/zvmsdk/images/" + image_name
+        image_file = self._get_image_path_by_name(image_name)
         # Unpack image file to root disk
         vdev = vdev or CONF.zvm.user_root_vdev
         cmd = ['/opt/zthin/bin/unpackdiskimage', userid, vdev, image_file]
