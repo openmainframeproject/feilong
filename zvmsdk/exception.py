@@ -195,11 +195,9 @@ class ZVMObjectNotExistError(SDKBaseException):
 
 class ZVMClientRequestFailed(SDKBaseException):
 
-    def __init__(self, rd, results):
+    def __init__(self, results, msg):
         results.pop('logEntries')
         results['modID'] = returncode.ModRCs['smut']
-        msg = ("SMUT request failed. RequestData: '%s', Results: '%s'"
-               % (rd, str(results)))
         super(ZVMClientRequestFailed, self).__init__(results=results,
                                                      message=msg)
 

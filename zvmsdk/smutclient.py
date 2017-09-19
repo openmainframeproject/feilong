@@ -65,7 +65,7 @@ class SMUTClient(object):
         self._GuestDbOperator = database.GuestDbOperator()
         self._ImageDbOperator = database.ImageDbOperator()
 
-    def _request(self, requestData):
+    def _request(self, requestData, action=None):
         try:
             results = self._smut.request(requestData)
         except Exception as err:
@@ -89,19 +89,21 @@ class SMUTClient(object):
             return False
 
         if results['overallRC'] != 0:
+            msg = ""
+            if action is not None:
+                msg = "Failed to %s. " % action
             # Check whether this smut error belongs to internal error, if so,
             # raise internal error, otherwise raise clientrequestfailed error
             if _is_smut_internal_error(results):
-                msg = "SMUT internal Results: %s" % str(results)
+                msg += "SMUT internal Results: %s" % str(results)
                 raise exception.ZVMSDKInternalError(msg=msg,
                                                     modID='smut',
                                                     results=results)
             else:
-                msg = ("SMUT request failed. RequestData: '%s', Results: '%s'"
-                       % (requestData, str(results)))
+                msg += ("SMUT request failed. RequestData: '%s', Results: '%s'"
+                        % (requestData, str(results)))
                 LOG.error(msg)
-                raise exception.ZVMClientRequestFailed(requestData,
-                                                       results)
+                raise exception.ZVMClientRequestFailed(results, msg)
         return results
 
     def get_guest_temp_path(self, userid, module):
@@ -273,19 +275,15 @@ class SMUTClient(object):
         if disk_list and 'is_boot_disk' in disk_list[0]:
             ipl_disk = CONF.zvm.user_root_vdev
             rd += (' --ipl %s' % ipl_disk)
-        try:
-            self._request(rd)
-        except exception.ZVMClientRequestFailed as err:
-            LOG.error("Failed to create userid '%s',"
-                      "error: %s" % (userid, err.format_message()))
-            raise
+
+        action = "create userid '%s'" % userid
+        self._request(rd, action)
 
         # Add the guest to db immediately after user created
-        try:
+        action = "add guest '%s' to database" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
             self._GuestDbOperator.add_guest(userid)
-        except exception.SDKBaseException:
-            LOG.error("Failed to add '%s' to database." % userid)
-            raise
+
         # Continue to add disk
         if disk_list:
             # Add disks for vm
@@ -313,12 +311,8 @@ class SMUTClient(object):
         if fmt:
             rd += (' --filesystem %s' % fmt)
 
-        try:
-            self._request(rd)
-        except exception.ZVMClientRequestFailed as err:
-            LOG.error("Failed to add mdisk to userid '%s',"
-                      "error: %s" % (userid, err.format_message()))
-            raise
+        action = "add mdisk to userid '%s'" % userid
+        self._request(rd, action)
 
     def get_vm_list(self):
         """Get the list of guests that are created by SDK
@@ -378,12 +372,8 @@ class SMUTClient(object):
 
         # Purge guest reader to clean dirty data
         rd = ("changevm %s purgerdr" % userid)
-        try:
-            self._request(rd)
-        except exception.ZVMClientRequestFailed as err:
-            LOG.error("Failed to purge reader of '%s', error: %s"
-                      % (userid, err.format_message()))
-            raise
+        action = "purge reader of '%s'" % userid
+        self._request(rd, action)
 
         # Punch transport files if specified
         if transportfiles:
@@ -409,12 +399,8 @@ class SMUTClient(object):
                 # Punch config drive to guest userid
                 rd = ("changevm %(uid)s punchfile %(file)s --class X" %
                       {'uid': userid, 'file': local_trans})
-                try:
-                    self._request(rd)
-                except exception.ZVMClientRequestFailed as err:
-                    LOG.error("Failed to punch config drive to userid '%s',"
-                              "error: %s" % (userid, err.format_message()))
-                    raise
+                action = "punch config drive to userid '%s'" % userid
+                self._request(rd, action)
             finally:
                 # remove the local temp config drive folder
                 self._pathutils.clean_temp_folder(tmp_trans_dir)
