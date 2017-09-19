@@ -63,7 +63,9 @@ class SDKAPI(object):
 
         :returns: None
         """
-        self._vmops.guest_start(userid)
+        action = "start guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._vmops.guest_start(userid)
 
     @zvmutils.check_input_types(_TUSERID, int, int)
     def guest_stop(self, userid, timeout=0, retry_interval=10):
@@ -81,7 +83,9 @@ class SDKAPI(object):
                       'expect an integer > 0')
             raise exception.ZVMInvalidInput('retry_interval')
 
-        self._vmops.guest_stop(userid, timeout, retry_interval)
+        action = "stop guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._vmops.guest_stop(userid, timeout, retry_interval)
 
     @zvmutils.check_input_types(_TUSERID)
     def guest_restart(self, userid):
@@ -89,7 +93,9 @@ class SDKAPI(object):
         :param str userid: the id of the virtual machine to be reboot
         :returns: None
         """
-        self._vmops.guest_restart(userid)
+        action = "restart guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._vmops.guest_restart(userid)
 
     @zvmutils.check_input_types(_TUSERID)
     def guest_reset(self, userid):
@@ -97,12 +103,16 @@ class SDKAPI(object):
         :param str userid: the id of the virtual machine to be reset
         :returns: None
         """
-        self._vmops.guest_reset(userid)
+        action = "reset guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._vmops.guest_reset(userid)
 
     @zvmutils.check_input_types(_TUSERID)
     def guest_get_power_state(self, userid):
         """Returns power state."""
-        return self._vmops.get_power_state(userid)
+        action = "get power state of guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_power_state(userid)
 
     @zvmutils.check_input_types(_TUSERID)
     def guest_get_info(self, userid):
