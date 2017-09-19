@@ -358,7 +358,7 @@ class SMUTClient(object):
                      remotehost=None, vdev=None):
         """ Deploy image and punch config driver to target """
         # Get image location (TODO: update this image location)
-        image_file = "/var/lib/zvmsdk/images/" + image_name
+        image_file = self._get_image_path_by_name(image_name)
         # Unpack image file to root disk
         vdev = vdev or CONF.zvm.user_root_vdev
         cmd = ['/opt/zthin/bin/unpackdiskimage', userid, vdev, image_file]
@@ -1196,8 +1196,14 @@ class SMUTClient(object):
         return self._ImageDbOperator.image_query_record(imagename)
 
     def image_get_root_disk_size(self, image_name):
-        disk_size_units = self._ImageDbOperator.query_disk_size_units(
-                                                                image_name)
+        """Return the root disk units of the specified image
+        image_name: the unique image name in db
+        Return the disk units in format like 3339:CYL or 467200:BLK
+        """
+        image_info = self.image_query(image_name)
+        if not image_info:
+            raise exception.SDKImageOperationError(rs=20, img=image_name)
+        disk_size_units = image_info[0][0]
         return disk_size_units
 
     def punch_file(self, userid, fn, fclass):
@@ -1248,7 +1254,7 @@ class FilesystemBackend(object):
                     msg = ("Copying image file from remote filesystem failed"
                            " with reason: %s" % output)
                     LOG.error(msg)
-                    raise exception.SDKImageOperationError(rs=10)
+                    raise exception.SDKImageOperationError(rs=10, err=output)
             else:
                 msg = ("The specified remote_host %s format invalid" %
                         kwargs['remote_host'])

@@ -842,10 +842,7 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
             [(u'test', u'rhel6.5', u'c73ce117eef8077c3420bfc8f473ac2f',
               u'3338:CYL', u'5120000', u'netboot', None)],
             image_record)
-        # Query the disk size units
-        disk_size_units_query_result = self.db_op.query_disk_size_units(
-                                                            imagename)
-        self.assertEqual(disk_size_units, disk_size_units_query_result)
+
         # Delete it
         self.db_op.image_delete_record(imagename)
         image_record = self.db_op.image_query_record(imagename)
