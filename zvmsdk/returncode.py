@@ -157,23 +157,27 @@ errors = {
     'image': [{'overallRC': 300, 'modID': ModRCs['image'], 'rc': 300},
               {1: "Database operation failed, error: %(msg)s",
                2: "No image schema found for %(schema)s",
-               3: "Failed to calculate the md5sum of image",
-               4: "The md5sum after import is not same as source image, it "
-                  "is possible that the image has been broken during import",
-               5: "Failed to get the root disk size units of the image via "
-                  "hexdump",
-               6: "The built-in disk size units is missing in the header of"
+               3: "Image import error: Failed to calculate the md5sum of the"
                   " image",
-               7: "The image's disk type is not valid. Currently only FBA "
-                  "or CKD type image is supported",
-               8: "Failed to get the physical size of image in bytes",
+               4: "Image import error: The md5sum after import is not same as"
+                  " source image, it is possible that the image has been "
+                  "broken during import",
+               5: "Image import error: Failed to get the root disk size units"
+                  " of the image via hexdump",
+               6: "Image import error: The header of image does not contain"
+                  " built-in disk size units",
+               7: "Image import error: The image's disk type is not valid."
+                  " Currently only FBA or CKD type image is supported",
+               8: "Image import error: Failed to get the physical size of"
+                  " image in bytes",
                9: "Import image from http server failed with reason %(err)s",
-               10: "Copying image file from remote filesystem failed",
+               10: "Image import error: Copying image file from remote"
+                   " filesystem failed with error %(err)s",
                11: "The specified remote_host %(rh)s format invalid",
                12: "Import image from local file system failed with error"
                    " %(err)s",
                20: "The image record of %(img)s does not exist",
-               21: "Error happened when copying image file to remote "
+               21: "Image Export error: Faile to copy image file to remote "
                    "host with reason: %(msg)s",
                22: "Export image to local file system failed: %(err)s",
                },

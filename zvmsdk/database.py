@@ -567,22 +567,6 @@ class ImageDbOperator(object):
                              (imagename, imageosdistro, md5sum,
                               disk_size_units, image_size_in_bytes, type))
 
-    def query_disk_size_units(self, imagename):
-        """Return the root disk units of the specified image
-        imagename: the unique image name in db
-        Return the disk units in format like 3339:CYL or 467200:BLK
-        """
-        with get_image_conn() as conn:
-            result = conn.execute("SELECT disk_size_units FROM image "
-                                  "WHERE imagename=?", (imagename,))
-            q_result = result.fetchall()
-
-        if len(q_result) == 1:
-            return q_result[0][0]
-        elif len(q_result) == 0:
-            LOG.debug("Imagename: %s not found!" % imagename)
-        return ''
-
     def image_query_record(self, imagename=None):
         """Query the image record from database, if imagename is None, all
         of the image records will be returned, otherwise only the specified

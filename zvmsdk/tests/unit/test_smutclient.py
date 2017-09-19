@@ -146,16 +146,21 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(tempfile, 'mkdtemp')
     @mock.patch.object(zvmutils, 'execute')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_guest_deploy(self, request, execute, mkdtemp, cleantemp):
+    @mock.patch.object(smutclient.SMUTClient, '_get_image_path_by_name')
+    def test_guest_deploy(self, get_image_path, request, execute, mkdtemp,
+                          cleantemp):
         base.set_conf("zvm", "user_root_vdev", "0100")
         execute.side_effect = [(0, ""), (0, "")]
         mkdtemp.return_value = '/tmp/tmpdir'
         userid = 'fakeuser'
         image_name = 'fakeimg'
+        get_image_path.return_value = \
+            '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg'
         transportfiles = '/faketrans'
         self._smutclient.guest_deploy(userid, image_name, transportfiles)
+        get_image_path.assert_called_once_with(image_name)
         unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
-                     '/var/lib/zvmsdk/images/fakeimg']
+                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
         cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrv']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
@@ -166,11 +171,15 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(zvmutils, 'execute')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_guest_deploy_unpackdiskimage_failed(self, request, execute):
+    @mock.patch.object(smutclient.SMUTClient, '_get_image_path_by_name')
+    def test_guest_deploy_unpackdiskimage_failed(self, get_image_path,
+                                                 request, execute):
         base.set_conf("zvm", "user_root_vdev", "0100")
         userid = 'fakeuser'
         image_name = 'fakeimg'
         transportfiles = '/faketrans'
+        get_image_path.return_value = \
+            '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg'
         unpack_error = ('unpackdiskimage fakeuser start time: '
                         '2017-08-16-01:29:59.453\nSOURCE USER ID: "fakeuser"\n'
                         'DISK CHANNEL:   "0100"\n'
@@ -189,16 +198,18 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         self.assertRaises(exception.SDKGuestOperationError,
                            self._smutclient.guest_deploy, userid, image_name,
                            transportfiles)
+        get_image_path.assert_called_once_with(image_name)
         unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
-                     '/var/lib/zvmsdk/images/fakeimg']
+                     '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
         execute.assert_called_once_with(unpack_cmd)
 
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
     @mock.patch.object(tempfile, 'mkdtemp')
     @mock.patch.object(zvmutils, 'execute')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_guest_deploy_cp_transport_failed(self, request, execute, mkdtemp,
-                                              cleantemp):
+    @mock.patch.object(smutclient.SMUTClient, '_get_image_path_by_name')
+    def test_guest_deploy_cp_transport_failed(self, get_image_path, request,
+                                              execute, mkdtemp, cleantemp):
         base.set_conf("zvm", "user_root_vdev", "0100")
         cp_error = ("/usr/bin/cp: cannot stat '/faketrans': "
                     "No such file or directory\n")
@@ -207,11 +218,14 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         userid = 'fakeuser'
         image_name = 'fakeimg'
         transportfiles = '/faketrans'
+        get_image_path.return_value = \
+            '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg'
         self.assertRaises(exception.SDKGuestOperationError,
                            self._smutclient.guest_deploy, userid, image_name,
                            transportfiles)
+        get_image_path.assert_called_once_with(image_name)
         unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
-                     '/var/lib/zvmsdk/images/fakeimg']
+                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
         cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrv']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
@@ -223,9 +237,12 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(tempfile, 'mkdtemp')
     @mock.patch.object(zvmutils, 'execute')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_guest_deploy_smut_request_failed(self, request, execute, mkdtemp,
-                                       cleantemp):
+    @mock.patch.object(smutclient.SMUTClient, '_get_image_path_by_name')
+    def test_guest_deploy_smut_request_failed(self, get_image_path, request,
+                                              execute, mkdtemp, cleantemp):
         base.set_conf("zvm", "user_root_vdev", "0100")
+        get_image_path.return_value = \
+            '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg'
         fake_smut_results = {'rs': 8, 'errno': 0, 'strError': 'Failed',
                              'overallRC': 3, 'rc': 400, 'logEntries': '',
                              'response': ['(Error) output and error info']}
@@ -242,8 +259,9 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         self.assertRaises(exception.ZVMClientRequestFailed,
                            self._smutclient.guest_deploy, userid, image_name,
                            transportfiles, remote_host)
+        get_image_path.assert_called_once_with(image_name)
         unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
-                     '/var/lib/zvmsdk/images/fakeimg']
+                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
         scp_cmd = ["/usr/bin/scp", "-B", 'user@1.1.1.1:/faketrans',
                   '/tmp/tmpdir/cfgdrv']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(scp_cmd)])
