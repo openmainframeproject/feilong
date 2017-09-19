@@ -81,7 +81,8 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request.return_value = {'overallRC': 0,
                                 'response': [fake_userid + ': on']}
         status = self._smutclient.get_power_state(fake_userid)
-        request.assert_called_once_with(requestData)
+        request.assert_called_once_with(requestData,
+                                        "query power state of 'FakeID'")
         self.assertEqual('on', status)
 
     @mock.patch.object(smutclient.SMUTClient, 'add_mdisks')
