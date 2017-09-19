@@ -244,9 +244,10 @@ class SMUTClient(object):
 
     def get_power_state(self, userid):
         """Get power status of a z/VM instance."""
-        LOG.debug('Query power stat of %s' % userid)
+        LOG.debug('Querying power stat of %s' % userid)
         requestData = "PowerVM " + userid + " status"
-        results = self._request(requestData)
+        action = "query power state of '%s'" % userid
+        results = self._request(requestData, action)
         with zvmutils.expect_invalid_resp_data(results):
             status = results['response'][0].partition(': ')[2]
         return status
