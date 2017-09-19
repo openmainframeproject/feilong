@@ -97,9 +97,6 @@ class SMUTClient(object):
                                                     modID='smut',
                                                     results=results)
             else:
-                msg = ("SMUT request failed. RequestData: '%s', Results: '%s'"
-                       % (requestData, str(results)))
-                LOG.error(msg)
                 raise exception.ZVMClientRequestFailed(requestData,
                                                        results)
         return results
