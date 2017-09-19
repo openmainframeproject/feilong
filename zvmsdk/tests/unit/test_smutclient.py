@@ -104,7 +104,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile dfltprof --logonby "lbyuser1 lbyuser2" --ipl 0100')
         self._smutclient.create_vm(user_id, cpu, memory, disk_list, profile)
-        request.assert_called_once_with(rd)
+        request.assert_called_once_with(rd, "create userid 'fakeuser'")
         add_mdisks.assert_called_once_with(user_id, disk_list)
         add_guest.assert_called_once_with(user_id)
 
@@ -119,7 +119,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
               '--filesystem ext3')
 
         self._smutclient._add_mdisk(userid, disk, vdev),
-        request.assert_called_once_with(rd)
+        request.assert_called_once_with(rd, "add mdisk to userid 'fakeuser'")
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_remove_mdisk(self, request):
@@ -160,7 +160,10 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
         punch_rd = "changevm fakeuser punchfile /tmp/tmpdir/cfgdrv --class X"
-        request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
+        request.assert_has_calls([mock.call(purge_rd, ("purge reader "
+                                                       "of 'fakeuser'")),
+                                  mock.call(punch_rd, ("punch config drive to"
+                                                       " userid 'fakeuser'"))])
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
 
@@ -215,7 +218,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrv']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
-        request.assert_called_once_with(purge_rd)
+        request.assert_called_once_with(purge_rd, "purge reader of 'fakeuser'")
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
 
@@ -232,8 +235,8 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         execute.side_effect = [(0, ""), (0, "")]
         request.side_effect = [None,
                                exception.ZVMClientRequestFailed(
-                                   rd="fakerequestdata",
-                                   results=fake_smut_results)]
+                                   results=fake_smut_results,
+                                   msg='Fake test msg')]
         mkdtemp.return_value = '/tmp/tmpdir'
         userid = 'fakeuser'
         image_name = 'fakeimg'
@@ -249,7 +252,10 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(scp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
         punch_rd = "changevm fakeuser punchfile /tmp/tmpdir/cfgdrv --class X"
-        request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
+        request.assert_has_calls([mock.call(purge_rd, ("purge reader of "
+                                                       "'fakeuser'")),
+                                  mock.call(punch_rd, ("punch config drive to "
+                                                       "userid 'fakeuser'"))])
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
 
@@ -682,7 +688,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                    'overallRC': 1, 'logEntries': [], 'rc': 0,
                    'response': ['fake response']}
         request.side_effect = exception.ZVMClientRequestFailed(
-            'faker request data', results)
+            results, 'Fake test msg')
         self.assertRaises(exception.ZVMClientRequestFailed,
                           self._smutclient.set_vswitch,
                           "vswitch_name", grant_userid='fake_id')
@@ -711,7 +717,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                    'overallRC': 1, 'logEntries': [], 'rc': 0,
                    'response': ['fake response']}
         request.side_effect = exception.ZVMClientRequestFailed(
-            'faker request data', results)
+            results, 'Fake test msg')
         self.assertRaises(exception.ZVMClientRequestFailed,
                           self._smutclient.delete_vswitch,
                           "vswitch_name", True)
@@ -724,7 +730,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                    'overallRC': 1, 'logEntries': [], 'rc': 212,
                    'response': ['fake response']}
         request.side_effect = exception.ZVMClientRequestFailed(
-            'faker request data', results)
+            results, 'Fake test msg')
         switch_name = 'FakeVS'
         rd = ' '.join((
             "SMAPI SMUTUSER API Virtual_Network_Vswitch_Delete_Extended",
@@ -920,7 +926,8 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_delete_userid_not_exist(self, request):
         rd = 'deletevm fuser1 directory'
         results = {'rc': 400, 'rs': 4, 'logEntries': ''}
-        request.side_effect = exception.ZVMClientRequestFailed(rd, results)
+        request.side_effect = exception.ZVMClientRequestFailed(results,
+                                                               'Fake test msg')
         self._smutclient.delete_userid('fuser1')
         request.assert_called_once_with(rd)
 
@@ -928,7 +935,8 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_delete_userid_failed(self, request):
         rd = 'deletevm fuser1 directory'
         results = {'rc': 400, 'rs': 104, 'logEntries': ''}
-        request.side_effect = exception.ZVMClientRequestFailed(rd, results)
+        request.side_effect = exception.ZVMClientRequestFailed(results,
+                                                               'Fake test msg')
         self.assertRaises(exception.ZVMClientRequestFailed,
                           self._smutclient.delete_userid, 'fuser1')
         request.assert_called_once_with(rd)
