@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e8c65f9e_10e7d553",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 611,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-19T02:52:02Z",
+      "side": 1,
+      "message": "will you care the command itself when error occurs?",
+      "range": {
+        "startLine": 611,
+        "startChar": 12,
+        "endLine": 611,
+        "endChar": 69
+      },
+      "revId": "74c54671feed3cdf282bf27cd0ce209929826928",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
