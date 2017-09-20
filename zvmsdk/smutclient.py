@@ -969,18 +969,17 @@ class SMUTClient(object):
     def delete_vm(self, userid):
         self.delete_userid(userid)
         # cleanup db record from network table
-        try:
+        action = "delete network record for user %s" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
             self._NetDbOperator.switch_delete_record_for_userid(userid)
-        except exception.SDKNetworkOperationError as err:
-            LOG.error("Failed to delete network record for user %s, "
-                      "error: %s" %
-                      (userid, err.format_message()))
 
         # TODO: cleanup db record from volume table
         pass
 
         # cleanup db record from guest table
-        self._GuestDbOperator.delete_guest_by_userid(userid)
+        action = "delete guest %s from database" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._GuestDbOperator.delete_guest_by_userid(userid)
 
     def execute_cmd(self, userid, cmdStr):
         """"cmdVM."""
