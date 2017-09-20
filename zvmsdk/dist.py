@@ -117,7 +117,7 @@ class LinuxDist(object):
             netmask_v4 = str(netaddr.IPNetwork(network['cidr']).netmask)
             broadcast_v4 = str(netaddr.IPNetwork(network['cidr']).broadcast)
 
-        device = self._get_device_name(device_num)
+        device = self._get_device_name(device_num, vdev)
         address_read = str(vdev).zfill(4)
         address_write = str(hex(int(vdev, 16) + 1))[2:].zfill(4)
         address_data = str(hex(int(vdev, 16) + 2))[2:].zfill(4)
