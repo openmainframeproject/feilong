@@ -33,14 +33,6 @@ CONF = config.CONF
 class SDKSMUTClientTestCases(base.SDKTestCase):
     """Test cases for smut zvm client."""
 
-    @classmethod
-    def setUpClass(cls):
-        super(SDKSMUTClientTestCases, cls).setUpClass()
-
-    @classmethod
-    def tearDownClass(cls):
-        super(SDKSMUTClientTestCases, cls).tearDownClass()
-
     def setUp(self):
         self._smutclient = smutclient.SMUTClient()
 

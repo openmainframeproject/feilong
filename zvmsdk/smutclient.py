@@ -1004,8 +1004,8 @@ class SMUTClient(object):
         """"cmdVM."""
         requestData = ' '.join(('cmdVM', userid, 'CMD', cmdStr))
         results = self._request(requestData)
-        with zvmutils.expect_invalid_resp_data(results):
-            ret = results['response']
+
+        ret = results['response']
         return ret
 
     def image_import(self, image_name, url, image_meta, remote_host=None):
