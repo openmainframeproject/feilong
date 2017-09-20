@@ -1,0 +1,10 @@
+/var/log/zthin/*.log {
+    compress
+    dateext
+    dateformat -%Y-%m-%d-%s
+    rotate 4
+    create
+    size=20M
+    notifempty
+    missingok
+}
