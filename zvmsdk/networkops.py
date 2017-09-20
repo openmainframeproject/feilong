@@ -194,7 +194,7 @@ class NetworkOPS(object):
             command += 'mv ' + source_file + ' ' + target_path + '\n'
 
         command += '/bin/bash /tmp/znetconfig.sh\n'
-        command += '/bin/bash rm -rf invokeScript.sh\n'
+        command += 'rm -rf invokeScript.sh\n'
 
         scriptfile = os.path.join(network_file_path, invokeScript)
         with open(scriptfile, "w") as f:
