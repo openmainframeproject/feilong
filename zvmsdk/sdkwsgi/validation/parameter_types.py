@@ -260,3 +260,26 @@ image_meta = {
     'required': ['os_version', 'md5sum'],
     'additionalProperties': False
 }
+
+network_list = {
+    'type': 'array',
+    'items': {
+        'type': 'object',
+        'properties': {
+            'ip_addr': {'type': 'string', 'format': 'ipv4'},
+            'dns_addr': {'type': 'array',
+                        'items': {'type': 'string',
+                                  'format': 'ipv4'}},
+            'gateway_addr': {'type': 'string', 'format': 'ipv4'},
+            'mac_addr': {'type': 'string',
+                         'pattern': '^([0-9a-fA-F]{2})(:[0-9a-fA-F]{2}){5}$'},
+        # cidr should be more detailed
+            'cidr': {'type': 'string'},
+            'nic_vdev': {'type': 'string',
+                         'minLength': 1, 'maxLength': 4,
+                         'pattern': '^[0-9a-fA-F]{,4}$'},
+            'nic_id': {'type': 'string'}},
+    },
+    'required': ['ip_addr'],
+    'additionalProperties': False
+}

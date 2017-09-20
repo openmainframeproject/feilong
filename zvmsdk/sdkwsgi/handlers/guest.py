@@ -108,6 +108,20 @@ class VMHandler(object):
         except exception.ZVMInvalidInput as e:
             raise webob.exc.HTTPBadRequest(str(e))
 
+    @validation.schema(guest.create_network_interface)
+    def create_network_interface(self, userid, body=None):
+        interface = body['interface']
+        version = interface['os_version']
+        networks = interface.get('guest_networks', None)
+        active = interface.get('active', False)
+        try:
+            self.api.guest_create_network_interface(userid,
+                                                    os_version=version,
+                                                    guest_networks=networks,
+                                                    active=active)
+        except exception.ZVMInvalidInput as e:
+            raise webob.exc.HTTPBadRequest(str(e))
+
     @validation.schema(guest.create_disks)
     def create_disks(self, userid, body=None):
         disk_info = body['disk_info']
@@ -404,6 +418,20 @@ def guest_couple_uncouple_nic(req):
     vdev = util.wsgi_path_item(req.environ, 'vdev')
 
     _guest_couple_uncouple_nic(userid, vdev, req)
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def guest_create_network_interface(req):
+
+    def _guest_create_network_interface(userid, req):
+        action = get_handler()
+        body = util.extract_json(req.body)
+
+        action.create_network_interface(userid, body=body)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    _guest_create_network_interface(userid, req)
 
 
 def _get_userid_list(req):

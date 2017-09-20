@@ -57,6 +57,26 @@ create_nic = {
 }
 
 
+create_network_interface = {
+    'type': 'object',
+    'properties': {
+        'interface': {
+            'type': 'object',
+            'properties': {
+                'os_version': {'type': 'string'},
+                'guest_networks': parameter_types.network_list,
+                'active': parameter_types.boolean,
+            },
+            'required': ['os_version'],
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
+    },
+    'required': ['interface'],
+    'additionalProperties': False,
+}
+
+
 create_disks = {
     'type': 'object',
     'properties': {
