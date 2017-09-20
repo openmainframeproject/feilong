@@ -10,6 +10,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
 import re
 
 import jsonschema
@@ -29,3 +30,16 @@ def _validate_name(instance):
         pass
 
     raise Exception
+
+
+@jsonschema.FormatChecker.cls_checks('cidr')
+def _validate_cidr_format(cidr):
+    try:
+        netaddr.IPNetwork(cidr)
+    except netaddr.AddrFormatError:
+        return False
+    if '/' not in cidr:
+        return False
+    if re.search('\s', cidr):
+        return False
+    return True
