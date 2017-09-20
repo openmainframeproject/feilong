@@ -235,7 +235,7 @@ class VMOps(object):
         try:
             console_log = self._smutclient.get_user_console_output(userid,
                                                                    log_size)
-        except exception.ZVMClientRequestFailed:
+        except exception.SDKSMUTRequestFailed:
             # Ignore no console log avaiable error
             LOG.info("No new console log avaiable.")
 

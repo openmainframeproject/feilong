@@ -164,12 +164,12 @@ class ZVMObjectNotExistError(SDKBaseException):
                                                      message=errormsg)
 
 
-class ZVMClientRequestFailed(SDKBaseException):
+class SDKSMUTRequestFailed(SDKBaseException):
 
     def __init__(self, results, msg):
         results['modID'] = returncode.ModRCs['smut']
-        super(ZVMClientRequestFailed, self).__init__(results=results,
-                                                     message=msg)
+        super(SDKSMUTRequestFailed, self).__init__(results=results,
+                                                   message=msg)
 
 
 class SDKGuestOperationError(SDKBaseException):

@@ -47,7 +47,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_private_request_failed(self, request):
         requestData = "fake request"
         request.return_value = {'overallRC': 1, 'logEntries': []}
-        self.assertRaises(exception.ZVMClientRequestFailed,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self._smutclient._request, requestData)
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
@@ -237,14 +237,14 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                              'response': ['(Error) output and error info']}
         execute.side_effect = [(0, ""), (0, "")]
         request.side_effect = [None,
-                               exception.ZVMClientRequestFailed(
+                               exception.SDKSMUTRequestFailed(
                                    fake_smut_results, 'fake error')]
         mkdtemp.return_value = '/tmp/tmpdir'
         userid = 'fakeuser'
         image_name = 'fakeimg'
         transportfiles = '/faketrans'
         remote_host = "user@1.1.1.1"
-        self.assertRaises(exception.ZVMClientRequestFailed,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                            self._smutclient.guest_deploy, userid, image_name,
                            transportfiles, remote_host)
         get_image_path.assert_called_once_with(image_name)
@@ -687,9 +687,9 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         results = {'rs': 0, 'errno': 0, 'strError': '',
                    'overallRC': 1, 'logEntries': [], 'rc': 0,
                    'response': ['fake response']}
-        request.side_effect = exception.ZVMClientRequestFailed(
+        request.side_effect = exception.SDKSMUTRequestFailed(
             results, 'fake error')
-        self.assertRaises(exception.ZVMClientRequestFailed,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self._smutclient.set_vswitch,
                           "vswitch_name", grant_userid='fake_id')
 
@@ -716,9 +716,9 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         results = {'rs': 0, 'errno': 0, 'strError': '',
                    'overallRC': 1, 'logEntries': [], 'rc': 0,
                    'response': ['fake response']}
-        request.side_effect = exception.ZVMClientRequestFailed(
+        request.side_effect = exception.SDKSMUTRequestFailed(
             results, 'fake error')
-        self.assertRaises(exception.ZVMClientRequestFailed,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self._smutclient.delete_vswitch,
                           "vswitch_name", True)
 
@@ -729,7 +729,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         results = {'rs': 40, 'errno': 0, 'strError': '',
                    'overallRC': 1, 'logEntries': [], 'rc': 212,
                    'response': ['fake response']}
-        request.side_effect = exception.ZVMClientRequestFailed(
+        request.side_effect = exception.SDKSMUTRequestFailed(
             results, 'fake error')
         switch_name = 'FakeVS'
         rd = ' '.join((
@@ -932,7 +932,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_delete_userid_not_exist(self, request):
         rd = 'deletevm fuser1 directory'
         results = {'rc': 400, 'rs': 4, 'logEntries': ''}
-        request.side_effect = exception.ZVMClientRequestFailed(results,
+        request.side_effect = exception.SDKSMUTRequestFailed(results,
                                                                "fake error")
         self._smutclient.delete_userid('fuser1')
         request.assert_called_once_with(rd)
@@ -941,9 +941,9 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_delete_userid_failed(self, request):
         rd = 'deletevm fuser1 directory'
         results = {'rc': 400, 'rs': 104, 'logEntries': ''}
-        request.side_effect = exception.ZVMClientRequestFailed(results,
+        request.side_effect = exception.SDKSMUTRequestFailed(results,
                                                                "fake error")
-        self.assertRaises(exception.ZVMClientRequestFailed,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self._smutclient.delete_userid, 'fuser1')
         request.assert_called_once_with(rd)
 
