@@ -263,21 +263,6 @@ class SDKMonitorTestCase(base.SDKTestCase):
 
     @mock.patch.object(monitor.MeteringCache, 'get')
     @mock.patch.object(monitor.get_monitor()._smutclient, 'get_power_state')
-    @mock.patch.object(monitor.ZVMMonitor, '_update_cpumem_data')
-    def test_private_get_inspect_data_guest_not_exist(self,
-                                                      update_cpumem_data,
-                                                      get_ps, cache_get):
-        cache_get.return_value = None
-        get_ps.side_effect = exception.ZVMVirtualMachineNotExist(
-            userid='userid1', zvm_host='dummy')
-        rdata = self._monitor._get_inspect_data('cpumem',
-                                                ['userid1'])
-        get_ps.assert_called_once_with('userid1')
-        update_cpumem_data.assert_not_called()
-        self.assertEqual(rdata, {})
-
-    @mock.patch.object(monitor.MeteringCache, 'get')
-    @mock.patch.object(monitor.get_monitor()._smutclient, 'get_power_state')
     @mock.patch.object(monitor.ZVMMonitor, '_update_nic_data')
     def test_private_get_inspect_data_vnics(self,
                                             update_nic_data,

@@ -467,7 +467,7 @@ class SMUTClient(object):
             "-c %d" % len(uid_list)))
         action = "get performance info of userid '%s'" % str(uid_list)
         with zvmutils.log_and_reraise_smut_request_failed(action):
-            results = self._request(rd, action)
+            results = self._request(rd)
 
         ipq_kws = {
             'userid': "Guest name:",
@@ -529,7 +529,9 @@ class SMUTClient(object):
             '-T "%s"' % smut_userid,
             '-k "switch_name=*"'
             ))
-        results = self._request(rd)
+        action = "query vswitch usage info"
+        with zvmutils.log_and_reraise_smut_request_failed(action):
+            results = self._request(rd)
         return self._parse_vswitch_inspect_data(results['response'])
 
     def get_host_info(self):
