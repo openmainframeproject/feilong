@@ -131,7 +131,9 @@ class SDKAPI(object):
 
         :returns: Dictionary describing resources
         """
-        return self._hostops.get_info()
+        action = "get host information"
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._hostops.get_info()
 
     @zvmutils.check_input_types(_TSTR)
     def host_diskpool_get_info(self, disk_pool=CONF.zvm.disk_pool):
@@ -141,17 +143,21 @@ class SDKAPI(object):
         :returns: Dictionary describing diskpool usage info
         """
         if ':' not in disk_pool:
-            LOG.error('Invalid input parameter disk_pool, expect ":" in'
-                      'disk_pool, eg. ECKD:eckdpool')
-            raise exception.ZVMInvalidInput('disk_pool')
+            msg = ('Invalid input parameter disk_pool, expect ":" in'
+                   'disk_pool, eg. ECKD:eckdpool')
+            LOG.error(msg)
+            raise exception.ZVMInvalidInputFormat(msg)
         diskpool_type = disk_pool.split(':')[0].upper()
         diskpool_name = disk_pool.split(':')[1]
         if diskpool_type not in ('ECKD', 'FBA'):
-            LOG.error('Invalid disk pool type found in disk_pool, expect'
-                      'disk_pool like ECKD:eckdpool or FBA:fbapool')
-            raise exception.ZVMInvalidInput('disk_pool')
+            msg = ('Invalid disk pool type found in disk_pool, expect'
+                   'disk_pool like ECKD:eckdpool or FBA:fbapool')
+            LOG.error(msg)
+            raise exception.ZVMInvalidInputFormat(msg)
 
-        return self._hostops.diskpool_get_info(diskpool_name)
+        action = "get information of disk pool: '%s'" % disk_pool
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._hostops.diskpool_get_info(diskpool_name)
 
     @zvmutils.check_input_types(_TSTR)
     def image_delete(self, image_name):
