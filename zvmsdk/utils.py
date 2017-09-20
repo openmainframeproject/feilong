@@ -448,13 +448,13 @@ def log_and_reraise_smut_request_failed(action=None):
     """
     try:
         yield
-    except exception.ZVMClientRequestFailed as err:
+    except exception.SDKSMUTRequestFailed as err:
         msg = ''
         if action is not None:
             msg = "Failed to %s. " % action
         msg += "SMUT error: %s" % err.format_message()
         LOG.error(msg)
-        raise exception.ZVMClientRequestFailed(err.results, msg)
+        raise exception.SDKSMUTRequestFailed(err.results, msg)
 
 
 def get_smut_userid():

@@ -101,7 +101,7 @@ class SMUTClient(object):
             else:
                 msg = ("SMUT request failed. RequestData: '%s', Results: '%s'"
                        % (requestData, str(results)))
-                raise exception.ZVMClientRequestFailed(results, msg)
+                raise exception.SDKSMUTRequestFailed(results, msg)
         return results
 
     def get_guest_temp_path(self, userid, module):
@@ -350,11 +350,11 @@ class SMUTClient(object):
             requestData = "ChangeVM " + userid + " punchfile " + \
                 iucv_auth_file + " --class x"
             self._request(requestData)
-        except exception.ZVMClientRequestFailed as err:
+        except exception.SDKSMUTRequestFailed as err:
             msg = ("Failed to punch IUCV auth file to userid '%s'. SMUT error:"
                    " %s" % (userid, err.format_message()))
             LOG.error(msg)
-            raise exception.ZVMClientRequestFailed(err.results, msg)
+            raise exception.SDKSMUTRequestFailed(err.results, msg)
         finally:
             self._pathutils.clean_temp_folder(iucv_path)
 
@@ -429,7 +429,7 @@ class SMUTClient(object):
 
         try:
             self._request(requestData)
-        except exception.ZVMClientRequestFailed as err:
+        except exception.SDKSMUTRequestFailed as err:
             LOG.error("Failed to grant user %s to vswitch %s, error: %s"
                       % (userid, vswitch_name, err.format_message()))
             raise
@@ -446,7 +446,7 @@ class SMUTClient(object):
 
         try:
             self._request(requestData)
-        except exception.ZVMClientRequestFailed as err:
+        except exception.SDKSMUTRequestFailed as err:
             LOG.error("Failed to revoke user %s from vswitch %s, error: %s"
                       % (userid, vswitch_name, err.format_message()))
             raise
@@ -556,7 +556,7 @@ class SMUTClient(object):
             "-s \'*\'"))
         try:
             result = self._request(rd)
-        except exception.ZVMClientRequestFailed as err:
+        except exception.SDKSMUTRequestFailed as err:
             if ((err.results['rc'] == 212) and (err.results['rs'] == 40)):
                 LOG.warning("No Virtual switch in the host")
                 return []
@@ -587,7 +587,7 @@ class SMUTClient(object):
 
         try:
             self._request(rd)
-        except exception.ZVMClientRequestFailed as err:
+        except exception.SDKSMUTRequestFailed as err:
             LOG.error("Failed to set VLAN ID %s on vswitch %s for user %s, "
                       "error: %s" %
                       (vlan_id, vswitch_name, userid, err.format_message()))
@@ -629,7 +629,7 @@ class SMUTClient(object):
 
         try:
             self._request(rd)
-        except exception.ZVMClientRequestFailed as err:
+        except exception.SDKSMUTRequestFailed as err:
             LOG.error("Failed to create vswitch %s, error: %s" %
                       (name, err.format_message()))
             raise
@@ -650,7 +650,7 @@ class SMUTClient(object):
 
         try:
             self._request(rd)
-        except exception.ZVMClientRequestFailed as err:
+        except exception.SDKSMUTRequestFailed as err:
             LOG.error("Failed to set vswitch %s, error: %s" %
                       (switch_name, err.format_message()))
             raise
@@ -666,7 +666,7 @@ class SMUTClient(object):
 
         try:
             self._request(rd)
-        except exception.ZVMClientRequestFailed as err:
+        except exception.SDKSMUTRequestFailed as err:
             results = err.results
             if ((results['rc'] == 212) and
                 (results['rs'] == 40)):
@@ -730,7 +730,7 @@ class SMUTClient(object):
 
         try:
             self._request(requestData)
-        except exception.ZVMClientRequestFailed as err:
+        except exception.SDKSMUTRequestFailed as err:
             LOG.error("Failed to create nic %s for user %s in "
                       "the guest's user direct,, error: %s" %
                       (vdev, userid, err.format_message()))
@@ -749,7 +749,7 @@ class SMUTClient(object):
 
             try:
                 self._request(requestData)
-            except (exception.ZVMClientRequestFailed,
+            except (exception.SDKSMUTRequestFailed,
                     exception.ZVMSDKInternalError) as err1:
                 msg1 = err1.format_message()
                 persist_OK = True
@@ -759,7 +759,7 @@ class SMUTClient(object):
                     '-v %s' % vdev))
                 try:
                     self._request(requestData)
-                except (exception.ZVMClientRequestFailed,
+                except (exception.SDKSMUTRequestFailed,
                         exception.ZVMSDKInternalError) as err2:
                     results = err2.results
                     msg2 = err2.format_message()
@@ -791,7 +791,7 @@ class SMUTClient(object):
             '-v %s' % vdev))
         try:
             self._request(rd)
-        except exception.ZVMClientRequestFailed as err:
+        except exception.SDKSMUTRequestFailed as err:
             results = err.results
             emsg = err.format_message()
             if ((results['rc'] == 404) and
@@ -813,7 +813,7 @@ class SMUTClient(object):
                 '-v %s' % vdev))
             try:
                 self._request(rd)
-            except exception.ZVMClientRequestFailed as err:
+            except exception.SDKSMUTRequestFailed as err:
                 results = err.results
                 emsg = err.format_message()
                 if ((results['rc'] == 204) and
@@ -838,7 +838,7 @@ class SMUTClient(object):
 
         try:
             self._request(requestData)
-        except exception.ZVMClientRequestFailed as err:
+        except exception.SDKSMUTRequestFailed as err:
             LOG.error("Failed to couple nic %s to vswitch %s for user %s "
                       "in the guest's user direct, error: %s" %
                       (vdev, vswitch_name, userid, err.format_message()))
@@ -855,7 +855,7 @@ class SMUTClient(object):
 
             try:
                 self._request(requestData)
-            except (exception.ZVMClientRequestFailed,
+            except (exception.SDKSMUTRequestFailed,
                     exception.ZVMSDKInternalError) as err1:
                 results1 = err1.results
                 msg1 = err1.format_message()
@@ -873,7 +873,7 @@ class SMUTClient(object):
                         '-v %s' % vdev))
                     try:
                         self._request(requestData)
-                    except (exception.ZVMClientRequestFailed,
+                    except (exception.SDKSMUTRequestFailed,
                             exception.ZVMSDKInternalError) as err2:
                         results2 = err2.results
                         msg2 = err2.format_message()
@@ -916,7 +916,7 @@ class SMUTClient(object):
 
         try:
             self._request(requestData)
-        except (exception.ZVMClientRequestFailed,
+        except (exception.SDKSMUTRequestFailed,
                 exception.ZVMSDKInternalError) as err:
             results = err.results
             emsg = err.format_message()
@@ -943,7 +943,7 @@ class SMUTClient(object):
                 "-v %s" % vdev))
             try:
                 self._request(requestData)
-            except (exception.ZVMClientRequestFailed,
+            except (exception.SDKSMUTRequestFailed,
                     exception.ZVMSDKInternalError) as err:
                 results = err.results
                 emsg = err.format_message()
@@ -973,14 +973,14 @@ class SMUTClient(object):
         rd = ' '.join(('deletevm', userid, 'directory'))
         try:
             self._request(rd)
-        except exception.ZVMClientRequestFailed as err:
+        except exception.SDKSMUTRequestFailed as err:
             if err.results['rc'] == 400 and err.results['rs'] == 4:
                 # guest vm definition not found
                 LOG.debug("The guest %s does not exist." % userid)
                 return
             else:
                 msg = "SMUT error: %s" % err.format_message()
-                raise exception.ZVMClientRequestFailed(err.results, msg)
+                raise exception.SDKSMUTRequestFailed(err.results, msg)
 
     def delete_vm(self, userid):
         self.delete_userid(userid)
@@ -1217,7 +1217,7 @@ class SMUTClient(object):
                       {'uid': userid, 'file': fn, 'class': fclass})
         try:
             self._request(rd)
-        except exception.ZVMClientRequestFailed as err:
+        except exception.SDKSMUTRequestFailed as err:
             LOG.error("Failed to punch file to userid '%s',"
                       "error: %s" % (userid, err.format_message()))
             raise
