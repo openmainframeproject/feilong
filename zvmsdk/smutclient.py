@@ -263,6 +263,18 @@ class SMUTClient(object):
         with zvmutils.log_and_reraise_smut_request_failed():
             self._request(requestData)
 
+    def guest_restart(self, userid):
+        """"Power on VM."""
+        requestData = ' '.join(("PowerVM", userid, "reboot"))
+        with zvmutils.log_and_reraise_smut_request_failed():
+            self._request(requestData)
+
+    def guest_reset(self, userid):
+        """"Power on VM."""
+        requestData = ' '.join(("PowerVM", userid, "reset"))
+        with zvmutils.log_and_reraise_smut_request_failed():
+            self._request(requestData)
+
     def create_vm(self, userid, cpu, memory, disk_list, profile):
         """ Create VM and add disks if specified. """
         rd = ('makevm %(uid)s directory LBYONLY %(mem)im %(pri)s '
