@@ -15,7 +15,6 @@
 import time
 
 from zvmsdk import config
-from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import smutclient
 from zvmsdk import utils as zvmutils
@@ -116,18 +115,10 @@ class ZVMMonitor(object):
             if cache_data is not None:
                 inspect_data[uid.upper()] = cache_data
             else:
-                try:
-                    if self._smutclient.get_power_state(uid) == 'on':
-                        update_needed = True
-                        inspect_data = {}
-                        break
-                    else:
-                        # Skip the guest that is in 'off' state
-                        continue
-                except exception.ZVMVirtualMachineNotExist:
-                    # Skip the guest that does not exist, ignore this exception
-                    LOG.info('Guest %s does not exist.' % uid)
-                    continue
+                if self._smutclient.get_power_state(uid) == 'on':
+                    update_needed = True
+                    inspect_data = {}
+                    break
 
         # If all data are found in cache, just return
         if not update_needed:

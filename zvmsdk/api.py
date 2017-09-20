@@ -693,7 +693,9 @@ class SDKAPI(object):
         """
         if not isinstance(userid_list, list):
             userid_list = [userid_list]
-        return self._monitor.inspect_cpus(userid_list)
+        action = "get the cpu statistics of guest '%s'" % str(userid_list)
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._monitor.inspect_cpus(userid_list)
 
     @zvmutils.check_input_types(_TUSERID_OR_LIST)
     def guest_inspect_mem(self, userid_list):
@@ -721,7 +723,9 @@ class SDKAPI(object):
         """
         if not isinstance(userid_list, list):
             userid_list = [userid_list]
-        return self._monitor.inspect_mem(userid_list)
+        action = "get the memory statistics of guest '%s'" % str(userid_list)
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._monitor.inspect_mem(userid_list)
 
     @zvmutils.check_input_types(_TUSERID_OR_LIST)
     def guest_inspect_vnics(self, userid_list):
@@ -764,7 +768,9 @@ class SDKAPI(object):
         """
         if not isinstance(userid_list, list):
             userid_list = [userid_list]
-        return self._monitor.inspect_vnics(userid_list)
+        action = "get the vnics statistics of guest '%s'" % str(userid_list)
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._monitor.inspect_vnics(userid_list)
 
     @zvmutils.check_input_types(_TVSWNAME, _TUSERID)
     def vswitch_grant_user(self, vswitch_name, userid):
