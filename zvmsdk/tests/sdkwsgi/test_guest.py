@@ -63,6 +63,22 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
+    def _guest_create_network_interface(self, vdev="1000"):
+        body = """{"interface": {"os_version": "rhel6",
+                                 "guest_networks":
+                                    [{"ip_addr": "192.168.12.344",
+                                     "dns_addr": ["9.1.2.3"],
+                                     "gateway_addr": "192.168.95.1",
+                                     "cidr": "192.168.95.0/24",
+                                     "nic_vdev": "1000",
+                                     "mac_addr": "02:00:00:12:34:56"}],
+                                  active: False}}"""
+        url = '/guests/%s/interface' % self.userid
+        resp = self.client.api_request(url=url,
+                                       method='POST',
+                                       body=body)
+        self.assertEqual(200, resp.status_code)
+
     def _guest_nic_delete(self, vdev="1000"):
         body = '{"nic": {}}'
         url = '/guests/%s/nic/%s' % (self.userid, vdev)
