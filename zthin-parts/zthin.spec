@@ -44,6 +44,7 @@ chmod -R 644 zthin/bin/IUCV/iucvserd
 chmod -R 644 zthin/bin/IUCV/iucvserd.service
 cp -rf zthin/bin/* $RPM_BUILD_ROOT/opt/zthin/bin
 cp zthin/lib/* $RPM_BUILD_ROOT/opt/zthin/lib
+cp zthinlogs $RPM_BUILD_ROOT/var/opt/zthin
 echo "zthin version: "%{version} "Built on: "%{builddate} > $RPM_BUILD_ROOT/opt/zthin/version
 
 %post
@@ -77,6 +78,13 @@ if [[ -e "/etc/rc.d/init.d/rsyslog" ]] || [[ -e "/etc/sysconfig/rsyslog" ]]; the
     grep ${ZTHIN_LOG} /etc/rsyslog.conf > /dev/null || (echo -e "\n${ZTHIN_LOG_HEADER}\nlocal5.*        ${ZTHIN_LOG}" >> /etc/rsyslog.conf)
 fi
 
+# Copy a zthin logrotate configuration file if it does not exist
+if [ ! -f "/etc/logrotate.d/zthinlogs" ]; then
+    cp /var/opt/zthin/zthinlogs /etc/logrotate.d
+fi
+
+
+
 # Restart syslog
 if [ -e "/etc/rc.d/init.d/rsyslog" ]; then
     /etc/rc.d/init.d/rsyslog restart
@@ -100,4 +108,5 @@ rm -rf /usr/share/man/man1/smcli.1.gz
 %config(noreplace) /usr/share/man/man1/smcli.1.gz
 %config(noreplace) /var/opt/zthin/tracing.conf
 %config(noreplace) /var/opt/zthin/settings.conf
+%config(noreplace) /var/opt/zthin/zthinlogs
 %config(noreplace) /etc/ld.so.conf.d/zthin.conf
