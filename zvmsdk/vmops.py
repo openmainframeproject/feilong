@@ -13,6 +13,7 @@
 #    under the License.
 
 
+import six
 import time
 
 from zvmsdk import config
@@ -177,10 +178,7 @@ class VMOps(object):
 
     def delete_vm(self, userid):
         """Delete z/VM userid for the instance."""
-        try:
-            self._smutclient.delete_vm(userid)
-        except Exception as err:
-            raise exception.ZVMDeleteVMFailed(userid=userid, msg=str(err))
+        self._smutclient.delete_vm(userid)
 
     def execute_cmd(self, userid, cmdStr):
         """Execute commands on the instance"""
@@ -216,7 +214,7 @@ class VMOps(object):
                             info['nic_coupled'] = True
                             break
             else:
-                raise exception.ZVMInvalidInput(
+                raise exception.ZVMInvalidInputFormat(
                     msg=("invalid check option for user direct: %s") % k)
 
         return info
@@ -245,7 +243,14 @@ class VMOps(object):
         append_to_log(console_log, log_path)
 
         log_fp = file(log_path, 'rb')
-        log_data, remaining = zvmutils.last_bytes(log_fp, log_size)
+        try:
+            log_data, remaining = zvmutils.last_bytes(log_fp, log_size)
+        except Exception as err:
+            msg = ("Failed to truncate console log, error: %s" %
+                   six.text_type(err))
+            LOG.error(msg)
+            raise exception.ZVMSDKInternalError(msg)
+
         if remaining > 0:
             LOG.info('Truncated console log returned, %d bytes ignored' %
                      remaining)

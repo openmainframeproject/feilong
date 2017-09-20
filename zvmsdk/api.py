@@ -346,7 +346,9 @@ class SDKAPI(object):
         :returns: Dictionary describing user direct and check info result
         :rtype: dict
         """
-        return self._vmops.get_definition_info(userid, **kwargs)
+        action = "get the definition info of guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_definition_info(userid, **kwargs)
 
     @zvmutils.check_input_types(_TUSERID, int, int, list, _TSTR)
     def guest_create(self, userid, vcpus, memory, disk_list=[],
@@ -605,7 +607,9 @@ class SDKAPI(object):
         :returns: console log string
         :rtype: str
         """
-        return self._vmops.get_console_output(userid)
+        action = "get the console output of guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_console_output(userid)
 
     @zvmutils.check_input_types(_TUSERID)
     def guest_delete(self, userid):
@@ -613,7 +617,9 @@ class SDKAPI(object):
 
         :param userid: the user id of the vm
         """
-        return self._vmops.delete_vm(userid)
+        action = "delete guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.delete_vm(userid)
 
     @zvmutils.check_input_types(_TUSERID, _TSTR)
     def guest_execute_cmd(self, userid, cmdStr):
