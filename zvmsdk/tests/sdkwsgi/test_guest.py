@@ -63,6 +63,21 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
+    def _guest_create_network_interface(self):
+        body = """{"interface": {"os_version": "rhel6",
+                                 "guest_networks":
+                                    [{"ip_addr": "192.168.98.123",
+                                     "dns_addr": ["9.0.3.1"],
+                                     "gateway_addr": "192.168.98.1",
+                                     "cidr": "192.168.98.0/24",
+                                     "nic_vdev": "1000",
+                                     "mac_addr": "02:00:00:12:34:56"}]}}"""
+        url = '/guests/%s/interface' % self.userid
+        resp = self.client.api_request(url=url,
+                                       method='POST',
+                                       body=body)
+        self.assertEqual(200, resp.status_code)
+
     def _guest_nic_delete(self, vdev="1000"):
         body = '{"nic": {}}'
         url = '/guests/%s/nic/%s' % (self.userid, vdev)
@@ -249,6 +264,17 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             self.assertTrue('MDISK 0101' in resp_create.content)
             self.assertTrue('MDISK 0101' not in resp_delete.content)
+        except Exception as e:
+            raise e
+        finally:
+            self._guest_delete()
+            self._vswitch_delete()
+
+    def test_guest_create_network_interface(self):
+        self._guest_create()
+        try:
+            self._guest_deploy()
+            self._guest_create_network_interface()
         except Exception as e:
             raise e
         finally:
