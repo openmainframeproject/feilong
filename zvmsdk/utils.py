@@ -349,7 +349,7 @@ def check_input_types(*types, **validkeys):
                        "Expected types: %(types)s" %
                        {'argtypes': str(argtypes), 'types': str(types)})
                 LOG.info(msg)
-                raise exception.ZVMInvalidInputtypes(function.__name__,
+                raise exception.ZVMInvalidInputTypes(function.__name__,
                                                      str(types), str(argtypes))
 
             valid_keys = validkeys.get('valid_keys')

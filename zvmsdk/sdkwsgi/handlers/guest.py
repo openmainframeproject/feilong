@@ -105,7 +105,9 @@ class VMHandler(object):
             self.api.guest_create_nic(userid, vdev=vdev, nic_id=nic_id,
                                       mac_addr=mac_addr, ip_addr=ip_addr,
                                       active=active)
-        except exception.ZVMInvalidInput as e:
+        except (exception.ZVMInvalidInputNumber,
+                exception.ZVMInvalidInputTypes,
+                exception.ZVMInvalidInputFormat) as e:
             raise webob.exc.HTTPBadRequest(str(e))
 
     @validation.schema(guest.create_disks)
@@ -115,7 +117,9 @@ class VMHandler(object):
 
         try:
             self.api.guest_create_disks(userid, disk_list)
-        except exception.ZVMInvalidInput as e:
+        except (exception.ZVMInvalidInputNumber,
+                exception.ZVMInvalidInputTypes,
+                exception.ZVMInvalidInputFormat) as e:
             raise webob.exc.HTTPBadRequest(str(e))
 
     @validation.schema(guest.delete_disks)
@@ -125,7 +129,9 @@ class VMHandler(object):
 
         try:
             self.api.guest_delete_disks(userid, vdev_list)
-        except exception.ZVMInvalidInput as e:
+        except (exception.ZVMInvalidInputNumber,
+                exception.ZVMInvalidInputTypes,
+                exception.ZVMInvalidInputFormat) as e:
             raise webob.exc.HTTPBadRequest(str(e))
 
     @validation.schema(guest.couple_uncouple_nic)

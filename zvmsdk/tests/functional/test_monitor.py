@@ -149,38 +149,38 @@ class SDKAPIMonitorTestCase(base.SDKAPIBaseTestCase):
 
         print("Error case of monitor API: user id length > 8")
         user_id = "TESTLONGNAME"
-        self.assertRaises(exception.ZVMInvalidInput,
+        self.assertRaises(exception.ZVMInvalidInputFormat,
                           self.sdkapi.guest_inspect_cpus,
                           user_id)
-        self.assertRaises(exception.ZVMInvalidInput,
+        self.assertRaises(exception.ZVMInvalidInputFormat,
                           self.sdkapi.guest_inspect_mem,
                           user_id)
-        self.assertRaises(exception.ZVMInvalidInput,
+        self.assertRaises(exception.ZVMInvalidInputFormat,
                           self.sdkapi.guest_inspect_vnics,
                           user_id)
 
         print("Error case of monitor API: user id is ' '")
         user_id = ' '
-        self.assertRaises(exception.ZVMInvalidInput,
+        self.assertRaises(exception.ZVMInvalidInputFormat,
                           self.sdkapi.guest_inspect_cpus,
                           user_id)
-        self.assertRaises(exception.ZVMInvalidInput,
+        self.assertRaises(exception.ZVMInvalidInputFormat,
                           self.sdkapi.guest_inspect_mem,
                           user_id)
-        self.assertRaises(exception.ZVMInvalidInput,
+        self.assertRaises(exception.ZVMInvalidInputFormat,
                           self.sdkapi.guest_inspect_vnics,
                           user_id)
 
         print("Error case of monitor API: input is not list or userid")
         user_input = {'key': 'value'}
-        self.assertRaises(exception.ZVMInvalidInput,
+        self.assertRaises(exception.ZVMInvalidInputFormat,
                           self.sdkapi.guest_inspect_cpus,
                           user_input)
         user_input = 1234
-        self.assertRaises(exception.ZVMInvalidInput,
+        self.assertRaises(exception.ZVMInvalidInputFormat,
                           self.sdkapi.guest_inspect_mem,
                           user_input)
         user_input = ('str1', 'str2')
-        self.assertRaises(exception.ZVMInvalidInput,
+        self.assertRaises(exception.ZVMInvalidInputFormat,
                           self.sdkapi.guest_inspect_vnics,
                           user_input)

@@ -212,7 +212,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         # Test
         vswitch_name = "TESTLONGVSWNAME"
         # vswitch name length should be <=8
-        self.assertRaises(exception.ZVMInvalidInput,
+        self.assertRaises(exception.ZVMInvalidInputFormat,
                           self.sdkapi.vswitch_create,
                           vswitch_name, '1111')
         self.assertNotIn(vswitch_name, self.sdkapi.vswitch_get_list())
@@ -232,7 +232,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         # Test
         vswitch_name = self.vswitch
         # Queue_mem should be in range 1-8
-        self.assertRaises(exception.ZVMInvalidInput,
+        self.assertRaises(exception.ZVMInvalidInputFormat,
                           self.sdkapi.vswitch_create,
                           vswitch_name, '1111',
                           queue_mem=10)
@@ -346,7 +346,7 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
         self.assertEqual(vsw, "")
 
         print("Creating NIC with vdev conflict with defined NIC.")
-        self.assertRaises(exception.ZVMInvalidInput,
+        self.assertRaises(exception.ZVMInvalidInputFormat,
                           self.sdkapi.guest_create_nic,
                           self.basevm, vdev='3002')
 
@@ -373,7 +373,7 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
         self.assertEqual(vsw, "")
 
         print("Creating NIC with invalid mac_addr.")
-        self.assertRaises(exception.ZVMInvalidInput,
+        self.assertRaises(exception.ZVMInvalidInputFormat,
                           self.sdkapi.guest_create_nic,
                           self.basevm, vdev='5003',
                           mac_addr='123456789012')
@@ -398,7 +398,7 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
         self.assertEqual(ip_in_hosts_table, '12.34.56.78')
 
         print("Creating NIC with invalid ip_addr.")
-        self.assertRaises(exception.ZVMInvalidInput,
+        self.assertRaises(exception.ZVMInvalidInputFormat,
                           self.sdkapi.guest_create_nic,
                           self.basevm, vdev='7003',
                           ip_addr='110.120.255.256')

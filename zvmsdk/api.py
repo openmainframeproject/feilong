@@ -81,7 +81,7 @@ class SDKAPI(object):
         if retry_interval < 0:
             LOG.error('Invalid input parameter - retry_interval, '
                       'expect an integer > 0')
-            raise exception.ZVMInvalidInput('retry_interval')
+            raise exception.ZVMInvalidInputFormat('retry_interval')
 
         action = "stop guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
@@ -319,12 +319,12 @@ class SDKAPI(object):
         """
         if mac_addr is not None:
             if not zvmutils.valid_mac_addr(mac_addr):
-                raise exception.ZVMInvalidInput(
+                raise exception.ZVMInvalidInputFormat(
                     msg=("Invalid mac address, format should be "
                          "xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit"))
         if ip_addr is not None:
             if not zvmutils.valid_IP(ip_addr):
-                raise exception.ZVMInvalidInput(
+                raise exception.ZVMInvalidInputFormat(
                     msg=("Invalid management IP address, it should be the "
                          "value between 0.0.0.0 and 255.255.255.255"))
         return self._networkops.create_nic(userid, vdev=vdev, nic_id=nic_id,
@@ -1132,7 +1132,7 @@ class SDKAPI(object):
             if (('dns_addr' in network.keys()) and
                 (network['dns_addr'] is not None)):
                 if not isinstance(network['dns_addr'], list):
-                    raise exception.ZVMInvalidInputtypes(
+                    raise exception.ZVMInvalidInputTypes(
                         'guest_config_network',
                         str(list), str(type(network['dns_addr'])))
                 for dns in network['dns_addr']:

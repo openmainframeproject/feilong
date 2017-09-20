@@ -64,32 +64,16 @@ class ZVMException(SDKBaseException):
     msg_fmt = 'ZVMException happened: %(msg)s'
 
 
-class ZVMInvalidInput(SDKBaseException):
-    msg_fmt = 'Input parameters is invalid: %(msg)s'
-
-
 class ZVMVolumeError(SDKBaseException):
     msg_fmt = 'Volume error: %(msg)s'
-
-
-class ZVMImageError(SDKBaseException):
-    msg_fmt = "Image error: %(msg)s"
 
 
 class ZVMNetworkError(SDKBaseException):
     msg_fmt = "z/VM network error: %(msg)s"
 
 
-class ZVMConfigDriveError(SDKBaseException):
-    msg_fmt = 'Create configure drive failed: %(msg)s'
-
-
 class ZVMVirtualMachineNotExist(SDKBaseException):
     msg_fmt = 'Virtual machine %(userid)s does not exist in %(zvm_host)s'
-
-
-class ZVMDeleteVMFailed(SDKBaseException):
-    msg_fmt = 'Delete vm %(userid)s failed: %(msg)s'
 
 
 class NotFound(SDKBaseException):
@@ -106,21 +90,8 @@ class ValidationError(SDKBaseException):
     msg_fmt = 'Validation error: %(detail)s'
 
 
-class ZVMSMUTAuthorizeIUCVClientFailed(SDKBaseException):
-    msg_fmt = 'Failed to authorized the iucv client %(client)s on vm %(vm)s '\
-        'with reason: %(msg)s'
-
-
 class ZVMUnauthorized(SDKBaseException):
     code = 401
-
-
-class SDKUnsupportedImageBackend(SDKBaseException):
-    msg_fmt = 'Unsupported SDK image backend %(msg)s'
-
-
-class SDKImageImportException(SDKBaseException):
-    msg_fmt = 'Error detected during image import: %s(msg)s'
 
 
 class DatabaseException(SDKBaseException):
@@ -139,7 +110,7 @@ class ZVMInvalidInputNumber(SDKBaseException):
                                                     message=errormsg)
 
 
-class ZVMInvalidInputtypes(SDKBaseException):
+class ZVMInvalidInputTypes(SDKBaseException):
     def __init__(self, api, expected, inputtypes):
         rc = returncode.errors['input']
         results = rc[0]
@@ -147,7 +118,7 @@ class ZVMInvalidInputtypes(SDKBaseException):
         results['rs'] = 2
         errormsg = rc[1][2] % {'api': api, 'expected': expected,
                                'inputtypes': inputtypes}
-        super(ZVMInvalidInputtypes, self).__init__(results=results,
+        super(ZVMInvalidInputTypes, self).__init__(results=results,
                                                    message=errormsg)
 
 
