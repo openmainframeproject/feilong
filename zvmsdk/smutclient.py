@@ -765,7 +765,8 @@ class SMUTClient(object):
                                                       port=nic_id)
 
     def get_user_direct(self, userid):
-        results = self._request("getvm %s directory" % userid)
+        with zvmutils.log_and_reraise_smut_request_failed():
+            results = self._request("getvm %s directory" % userid)
         return results.get('response', [])
 
     def delete_nic(self, userid, vdev, active=False):
@@ -961,26 +962,26 @@ class SMUTClient(object):
         except exception.ZVMClientRequestFailed as err:
             if err.results['rc'] == 400 and err.results['rs'] == 4:
                 # guest vm definition not found
-                LOG.debug("The guest vm %s not found" % userid)
+                LOG.debug("The guest %s does not exist." % userid)
                 return
             else:
-                raise err
+                msg = "SMUT error: %s" % err.format_message()
+                raise exception.ZVMClientRequestFailed(err.results, msg)
 
     def delete_vm(self, userid):
         self.delete_userid(userid)
         # cleanup db record from network table
-        try:
+        action = "delete network record for user %s" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
             self._NetDbOperator.switch_delete_record_for_userid(userid)
-        except exception.SDKNetworkOperationError as err:
-            LOG.error("Failed to delete network record for user %s, "
-                      "error: %s" %
-                      (userid, err.format_message()))
 
         # TODO: cleanup db record from volume table
         pass
 
         # cleanup db record from guest table
-        self._GuestDbOperator.delete_guest_by_userid(userid)
+        action = "delete guest %s from database" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._GuestDbOperator.delete_guest_by_userid(userid)
 
     def execute_cmd(self, userid, cmdStr):
         """"cmdVM."""
