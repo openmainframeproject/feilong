@@ -158,7 +158,7 @@ class SDKAPITestCase(base.SDKTestCase):
         gs.assert_called_once_with('fakeuser', 60, 10)
 
     def test_api_input_check_failed(self):
-        self.assertRaises(exception.ZVMInvalidInputFormat,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self.api.guest_start, 1)
 
     @mock.patch("zvmsdk.vmops.VMOps.get_definition_info")
@@ -168,18 +168,18 @@ class SDKAPITestCase(base.SDKTestCase):
 
     @mock.patch("zvmsdk.vmops.VMOps.get_definition_info")
     def test_api_input_check_with_invalid_keyword(self, gdi):
-        self.assertRaises(exception.ZVMInvalidInputFormat,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self.api.guest_get_definition_info, 'uid',
                           invalid='1000')
 
     @mock.patch("zvmsdk.vmops.VMOps.guest_start")
     def test_check_input_userid_length(self, gs):
-        self.assertRaises(exception.ZVMInvalidInputFormat,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self.api.guest_start, '123456789')
 
     @mock.patch("zvmsdk.vmops.VMOps.guest_start")
     def test_check_input_too_many_parameters(self, gs):
-        self.assertRaises(exception.ZVMInvalidInputNumber,
+        self.assertRaises(exception.SDKInvalidInputNumber,
                           self.api.guest_start,
                           'fakeuser', '12345678')
 
@@ -190,7 +190,7 @@ class SDKAPITestCase(base.SDKTestCase):
         image_delete.assert_called_once_with(image_name)
 
     def test_set_vswitch(self):
-        self.assertRaises(exception.ZVMInvalidInputFormat,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self.api.vswitch_set,
                           "vswitch_name", unknown='fake_id')
 

@@ -60,7 +60,7 @@ def execute(cmd):
         output = err.output
     except Exception as err:
         err_msg = ('Command "%s" Error: %s' % (' '.join(cmd), str(err)))
-        raise exception.ZVMSDKInternalError(msg=err_msg)
+        raise exception.SDKInternalError(msg=err_msg)
 
     return (rc, output)
 
@@ -121,7 +121,7 @@ def convert_to_mb(s):
             return float(s[:-1].strip())
     except (IndexError, ValueError, KeyError, TypeError):
         errmsg = ("Invalid memory format: %s") % s
-        raise exception.ZVMSDKInternalError(msg=errmsg)
+        raise exception.SDKInternalError(msg=errmsg)
 
 
 class PathUtils(object):
@@ -309,7 +309,7 @@ def check_input_types(*types, **validkeys):
                        "%(expected)d expected." %
                        {'specified': len(inputs), 'expected': len(types)})
                 LOG.info(msg)
-                raise exception.ZVMInvalidInputNumber(function.__name__,
+                raise exception.SDKInvalidInputNumber(function.__name__,
                                                       len(types), len(inputs))
 
             argtypes = tuple(map(type, inputs))
@@ -342,14 +342,14 @@ def check_input_types(*types, **validkeys):
                        "length should be less or equal to 8 and should not be "
                        "null or contain spaces." % (invalid_userid_idx + 1))
                 LOG.info(msg)
-                raise exception.ZVMInvalidInputFormat(msg=msg)
+                raise exception.SDKInvalidInputFormat(msg=msg)
 
             if invalid_type:
                 msg = ("Invalid input types: %(argtypes)s; "
                        "Expected types: %(types)s" %
                        {'argtypes': str(argtypes), 'types': str(types)})
                 LOG.info(msg)
-                raise exception.ZVMInvalidInputTypes(function.__name__,
+                raise exception.SDKInvalidInputTypes(function.__name__,
                                                      str(types), str(argtypes))
 
             valid_keys = validkeys.get('valid_keys')
@@ -360,7 +360,7 @@ def check_input_types(*types, **validkeys):
                                "Expected keywords are: %(keys)s" %
                                {'key': k, 'keys': str(valid_keys)})
                         LOG.info(msg)
-                        raise exception.ZVMInvalidInputFormat(msg=msg)
+                        raise exception.SDKInvalidInputFormat(msg=msg)
             return function(*args, **kwargs)
         return wrap_func
     return decorator
@@ -393,7 +393,7 @@ def expect_invalid_resp_data(data=''):
         msg = ('Invalid smut response data: %s. Error: %s' %
                (data, six.text_type(err)))
         LOG.error(msg)
-        raise exception.ZVMSDKInternalError(msg=msg)
+        raise exception.SDKInternalError(msg=msg)
 
 
 def wrap_invalid_resp_data_error(function):
@@ -408,7 +408,7 @@ def wrap_invalid_resp_data_error(function):
             msg = ('Invalid smut response data. Error: %s' %
                    six.text_type(err))
             LOG.error(msg)
-            raise exception.ZVMSDKInternalError(msg=msg)
+            raise exception.SDKInternalError(msg=msg)
 
     return decorated_function
 
@@ -421,9 +421,9 @@ def expect_and_reraise_internal_error(modID='SDK'):
     """
     try:
         yield
-    except exception.ZVMSDKInternalError as err:
+    except exception.SDKInternalError as err:
         msg = err.format_message()
-        raise exception.ZVMSDKInternalError(msg, modID=modID)
+        raise exception.SDKInternalError(msg, modID=modID)
 
 
 @contextlib.contextmanager
@@ -467,7 +467,7 @@ def get_smut_userid():
         return userid
     except Exception as err:
         msg = ("Could not find the userid of the smut server: %s") % err
-        raise exception.ZVMSDKInternalError(msg=msg)
+        raise exception.SDKInternalError(msg=msg)
 
 
 def generate_iucv_authfile(fn, client):
@@ -508,7 +508,7 @@ def translate_response_to_dict(rawdata, dirt):
         msg = ("Invalid smut response data. Error: No value matched with "
                "keywords. Raw Data: %(raw)s; Keywords: %(kws)s" %
                {'raw': rawdata, 'kws': str(dirt)})
-        raise exception.ZVMSDKInternalError(msg=msg)
+        raise exception.SDKInternalError(msg=msg)
 
     return data
 

@@ -94,11 +94,11 @@ class ZVMUnauthorized(SDKBaseException):
     code = 401
 
 
-class DatabaseException(SDKBaseException):
+class SDKDatabaseException(SDKBaseException):
     msg_fmt = "SDK database error: %(msg)s"
 
 
-class ZVMInvalidInputNumber(SDKBaseException):
+class SDKInvalidInputNumber(SDKBaseException):
     def __init__(self, api, expected, provided):
         rc = returncode.errors['input']
         results = rc[0]
@@ -106,11 +106,11 @@ class ZVMInvalidInputNumber(SDKBaseException):
         results['rs'] = 1
         errormsg = rc[1][1] % {'api': api, 'expected': expected,
                                'provided': provided}
-        super(ZVMInvalidInputNumber, self).__init__(results=results,
+        super(SDKInvalidInputNumber, self).__init__(results=results,
                                                     message=errormsg)
 
 
-class ZVMInvalidInputTypes(SDKBaseException):
+class SDKInvalidInputTypes(SDKBaseException):
     def __init__(self, api, expected, inputtypes):
         rc = returncode.errors['input']
         results = rc[0]
@@ -118,22 +118,22 @@ class ZVMInvalidInputTypes(SDKBaseException):
         results['rs'] = 2
         errormsg = rc[1][2] % {'api': api, 'expected': expected,
                                'inputtypes': inputtypes}
-        super(ZVMInvalidInputTypes, self).__init__(results=results,
+        super(SDKInvalidInputTypes, self).__init__(results=results,
                                                    message=errormsg)
 
 
-class ZVMInvalidInputFormat(SDKBaseException):
+class SDKInvalidInputFormat(SDKBaseException):
     def __init__(self, msg):
         rc = returncode.errors['input']
         results = rc[0]
         results['modID'] = returncode.ModRCs['zvmsdk']
         results['rs'] = 3
         errormsg = rc[1][3] % {'msg': msg}
-        super(ZVMInvalidInputFormat, self).__init__(results=results,
+        super(SDKInvalidInputFormat, self).__init__(results=results,
                                                     message=errormsg)
 
 
-class ZVMSDKInternalError(SDKBaseException):
+class SDKInternalError(SDKBaseException):
     def __init__(self, msg, modID='zvmsdk', results=None):
         # if results is set, it means the internal error comes from
         # smut module, we need to keep the rc/rs value from SMUT
@@ -149,18 +149,18 @@ class ZVMSDKInternalError(SDKBaseException):
             # corresponding to internal error
             results['overallRC'] = (rc[0]['overallRC'])
             results['modID'] = returncode.ModRCs['smut']
-        super(ZVMSDKInternalError, self).__init__(results=results,
+        super(SDKInternalError, self).__init__(results=results,
                                                   message=errormsg)
 
 
-class ZVMObjectNotExistError(SDKBaseException):
+class SDKObjectNotExistError(SDKBaseException):
     def __init__(self, object, modID='zvmsdk'):
         rc = returncode.errors['notExist']
         results = rc[0]
         results['modID'] = returncode.ModRCs[modID]
         results['rs'] = 1
         errormsg = rc[1][1] % {'object': object}
-        super(ZVMObjectNotExistError, self).__init__(results=results,
+        super(SDKObjectNotExistError, self).__init__(results=results,
                                                      message=errormsg)
 
 

@@ -70,7 +70,7 @@ class SMUTClient(object):
             results = self._smut.request(requestData)
         except Exception as err:
             LOG.error('SMUT internal parse encounter error')
-            raise exception.ZVMSDKInternalError(msg=err, modID='smut')
+            raise exception.SDKInternalError(msg=err, modID='smut')
 
         def _is_smut_internal_error(results):
             internal_error_list = returncode.SMUT_INTERNAL_ERROR
@@ -95,7 +95,7 @@ class SMUTClient(object):
             if _is_smut_internal_error(results):
                 msg = "SMUT internal error. Results: %s" % str(results)
                 LOG.error(msg)
-                raise exception.ZVMSDKInternalError(msg=msg,
+                raise exception.SDKInternalError(msg=msg,
                                                     modID='smut',
                                                     results=results)
             else:
@@ -490,7 +490,7 @@ class SMUTClient(object):
         for rpi in rpi_list:
             try:
                 pi = zvmutils.translate_response_to_dict(rpi, ipq_kws)
-            except exception.ZVMSDKInternalError as err:
+            except exception.SDKInternalError as err:
                 emsg = err.format_message()
                 # when there is only one userid queried and this userid is
                 # in 'off'state, the smcli will only returns the queried
@@ -701,7 +701,7 @@ class SMUTClient(object):
                 else:
                     errmsg = ("The specified virtual device number %s "
                               "has already been used." % vdev)
-                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
+                    raise exception.SDKInvalidInputFormat(msg=errmsg)
         if len(nic_vdev) > 4:
             errmsg = ("Virtual device number %s is not valid" % nic_vdev)
             raise exception.SDKNetworkOperationError(rs=2,
@@ -750,7 +750,7 @@ class SMUTClient(object):
             try:
                 self._request(requestData)
             except (exception.SDKSMUTRequestFailed,
-                    exception.ZVMSDKInternalError) as err1:
+                    exception.SDKInternalError) as err1:
                 msg1 = err1.format_message()
                 persist_OK = True
                 requestData = ' '.join((
@@ -760,7 +760,7 @@ class SMUTClient(object):
                 try:
                     self._request(requestData)
                 except (exception.SDKSMUTRequestFailed,
-                        exception.ZVMSDKInternalError) as err2:
+                        exception.SDKInternalError) as err2:
                     results = err2.results
                     msg2 = err2.format_message()
                     if ((results['rc'] == 404) and
@@ -856,7 +856,7 @@ class SMUTClient(object):
             try:
                 self._request(requestData)
             except (exception.SDKSMUTRequestFailed,
-                    exception.ZVMSDKInternalError) as err1:
+                    exception.SDKInternalError) as err1:
                 results1 = err1.results
                 msg1 = err1.format_message()
                 if ((results1 is not None) and
@@ -874,7 +874,7 @@ class SMUTClient(object):
                     try:
                         self._request(requestData)
                     except (exception.SDKSMUTRequestFailed,
-                            exception.ZVMSDKInternalError) as err2:
+                            exception.SDKInternalError) as err2:
                         results2 = err2.results
                         msg2 = err2.format_message()
                         if ((results2 is not None) and
@@ -917,7 +917,7 @@ class SMUTClient(object):
         try:
             self._request(requestData)
         except (exception.SDKSMUTRequestFailed,
-                exception.ZVMSDKInternalError) as err:
+                exception.SDKInternalError) as err:
             results = err.results
             emsg = err.format_message()
             if ((results is not None) and
@@ -944,7 +944,7 @@ class SMUTClient(object):
             try:
                 self._request(requestData)
             except (exception.SDKSMUTRequestFailed,
-                    exception.ZVMSDKInternalError) as err:
+                    exception.SDKInternalError) as err:
                 results = err.results
                 emsg = err.format_message()
                 if ((results is not None) and
