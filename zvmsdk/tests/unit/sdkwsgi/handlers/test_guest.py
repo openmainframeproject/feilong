@@ -308,7 +308,7 @@ class HandlersGuestTest(SDKWSGITest):
         body_str = '{"nic": {"vdev": "1234"}}'
         self.req.body = body_str
         mock_userid.return_value = FAKE_USERID
-        mock_create.side_effect = exception.ZVMInvalidInputFormat(msg='dummy')
+        mock_create.side_effect = exception.SDKInvalidInputFormat(msg='dummy')
 
         self.assertRaises(webob.exc.HTTPBadRequest,
                           guest.guest_create_nic,

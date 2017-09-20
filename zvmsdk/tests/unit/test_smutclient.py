@@ -766,7 +766,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_create_nic_with_used_vdev(self, switch_select_table):
         switch_select_table.return_value = [("fake_id", "1003"),
                                             ("fake_id", "1006")]
-        self.assertRaises(exception.ZVMInvalidInputFormat,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._smutclient.create_nic,
                           'fake_id', nic_id="nic_id", vdev='1004')
 

@@ -74,7 +74,7 @@ class VMOps(object):
                     KeyError) as err:
                 LOG.error('Parse performance_info encounter error: %s',
                           str(perf_info))
-                raise exception.ZVMSDKInternalError(msg=str(err),
+                raise exception.SDKInternalError(msg=str(err),
                                                     modID='guest')
 
             return {'power_state': power_stat,
@@ -215,7 +215,7 @@ class VMOps(object):
                             info['nic_coupled'] = True
                             break
             else:
-                raise exception.ZVMInvalidInputFormat(
+                raise exception.SDKInvalidInputFormat(
                     msg=("invalid check option for user direct: %s") % k)
 
         return info
@@ -250,7 +250,7 @@ class VMOps(object):
             msg = ("Failed to truncate console log, error: %s" %
                    six.text_type(err))
             LOG.error(msg)
-            raise exception.ZVMSDKInternalError(msg)
+            raise exception.SDKInternalError(msg)
 
         if remaining > 0:
             LOG.info('Truncated console log returned, %d bytes ignored' %

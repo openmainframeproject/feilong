@@ -81,7 +81,7 @@ class SDKAPI(object):
         if retry_interval < 0:
             LOG.error('Invalid input parameter - retry_interval, '
                       'expect an integer > 0')
-            raise exception.ZVMInvalidInputFormat('retry_interval')
+            raise exception.SDKInvalidInputFormat('retry_interval')
 
         action = "stop guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
@@ -160,14 +160,14 @@ class SDKAPI(object):
             msg = ('Invalid input parameter disk_pool, expect ":" in'
                    'disk_pool, eg. ECKD:eckdpool')
             LOG.error(msg)
-            raise exception.ZVMInvalidInputFormat(msg)
+            raise exception.SDKInvalidInputFormat(msg)
         diskpool_type = disk_pool.split(':')[0].upper()
         diskpool_name = disk_pool.split(':')[1]
         if diskpool_type not in ('ECKD', 'FBA'):
             msg = ('Invalid disk pool type found in disk_pool, expect'
                    'disk_pool like ECKD:eckdpool or FBA:fbapool')
             LOG.error(msg)
-            raise exception.ZVMInvalidInputFormat(msg)
+            raise exception.SDKInvalidInputFormat(msg)
 
         action = "get information of disk pool: '%s'" % disk_pool
         with zvmutils.log_and_reraise_sdkbase_error(action):
@@ -319,12 +319,12 @@ class SDKAPI(object):
         """
         if mac_addr is not None:
             if not zvmutils.valid_mac_addr(mac_addr):
-                raise exception.ZVMInvalidInputFormat(
+                raise exception.SDKInvalidInputFormat(
                     msg=("Invalid mac address, format should be "
                          "xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit"))
         if ip_addr is not None:
             if not zvmutils.valid_IP(ip_addr):
-                raise exception.ZVMInvalidInputFormat(
+                raise exception.SDKInvalidInputFormat(
                     msg=("Invalid management IP address, it should be the "
                          "value between 0.0.0.0 and 255.255.255.255"))
         return self._networkops.create_nic(userid, vdev=vdev, nic_id=nic_id,
@@ -417,19 +417,19 @@ class SDKAPI(object):
                 if not isinstance(disk, dict):
                     errmsg = ('Invalid "disk_list" input, it should be a '
                               'dictionary. Details could be found in doc.')
-                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
+                    raise exception.SDKInvalidInputFormat(msg=errmsg)
 
                 if 'size' not in disk.keys():
                     errmsg = ('Invalid "disk_list" input, "size" is required '
                               'for each disk.')
-                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
+                    raise exception.SDKInvalidInputFormat(msg=errmsg)
 
                 disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
                 if ':' not in disk_pool or (disk_pool.split(':')[0].upper()
                     not in ['ECKD', 'FBA']):
                     errmsg = ("Invalid disk_pool input, it should be in format"
                               " ECKD:eckdpoolname or FBA:fbapoolname")
-                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
+                    raise exception.SDKInvalidInputFormat(msg=errmsg)
 
         action = "create guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
@@ -605,14 +605,14 @@ class SDKAPI(object):
         if ((queue_mem < 1) or (queue_mem > 8)):
             errmsg = ('API vswitch_create: Invalid "queue_mem" input, '
                       'it should be 1-8')
-            raise exception.ZVMInvalidInputFormat(msg=errmsg)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
 
         if isinstance(vid, int) or vid.upper() != 'UNAWARE':
             if ((native_vid is not None) and
                 ((native_vid < 1) or (native_vid > 4094))):
                 errmsg = ('API vswitch_create: Invalid "native_vid" input, '
                           'it should be 1-4094 or None')
-                raise exception.ZVMInvalidInputFormat(msg=errmsg)
+                raise exception.SDKInvalidInputFormat(msg=errmsg)
 
         if network_type.upper() == 'ETHERNET':
             router = None
@@ -950,7 +950,7 @@ class SDKAPI(object):
         for k in kwargs.keys():
             if k not in constants.SET_VSWITCH_KEYWORDS:
                 errmsg = ('API vswitch_set: Invalid keyword %s' % k)
-                raise exception.ZVMInvalidInputFormat(msg=errmsg)
+                raise exception.SDKInvalidInputFormat(msg=errmsg)
 
         self._networkops.set_vswitch(vswitch_name, **kwargs)
 
@@ -1101,7 +1101,7 @@ class SDKAPI(object):
         if len(guest_networks) == 0:
             errmsg = ("API guest_create_network_interface: "
                       "Network information is required but not provided")
-            raise exception.ZVMInvalidInputFormat(msg=errmsg)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
 
         vdev = nic_id = mac_addr = ip_addr = None
         for network in guest_networks:
@@ -1118,7 +1118,7 @@ class SDKAPI(object):
                               "Invalid mac address, format should be "
                               "xx:xx:xx:xx:xx:xx, and x is a hexadecimal "
                               "digit")
-                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
+                    raise exception.SDKInvalidInputFormat(msg=errmsg)
 
             if (('ip_addr' in network.keys()) and
                 (network['ip_addr'] is not None)):
@@ -1127,12 +1127,12 @@ class SDKAPI(object):
                     errmsg = ("API guest_create_network_interface: "
                               "Invalid management IP address, it should be "
                               "the value between 0.0.0.0 and 255.255.255.255")
-                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
+                    raise exception.SDKInvalidInputFormat(msg=errmsg)
 
             if (('dns_addr' in network.keys()) and
                 (network['dns_addr'] is not None)):
                 if not isinstance(network['dns_addr'], list):
-                    raise exception.ZVMInvalidInputTypes(
+                    raise exception.SDKInvalidInputTypes(
                         'guest_config_network',
                         str(list), str(type(network['dns_addr'])))
                 for dns in network['dns_addr']:
@@ -1140,7 +1140,7 @@ class SDKAPI(object):
                         errmsg = ("API guest_create_network_interface: "
                                   "Invalid dns IP address, it should be the "
                                   "value between 0.0.0.0 and 255.255.255.255")
-                        raise exception.ZVMInvalidInputFormat(msg=errmsg)
+                        raise exception.SDKInvalidInputFormat(msg=errmsg)
 
             if (('gateway_addr' in network.keys()) and
                 (network['gateway_addr'] is not None)):
@@ -1149,7 +1149,7 @@ class SDKAPI(object):
                     errmsg = ("API guest_create_network_interface: "
                               "Invalid gateway IP address, it should be "
                               "the value between 0.0.0.0 and 255.255.255.255")
-                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
+                    raise exception.SDKInvalidInputFormat(msg=errmsg)
             if (('cidr' in network.keys()) and
                 (network['cidr'] is not None)):
                 if not zvmutils.valid_cidr(network['cidr']):
@@ -1157,7 +1157,7 @@ class SDKAPI(object):
                               "Invalid CIDR, format should be a.b.c.d/n, and "
                               "a.b.c.d is IP address, n is the value "
                               "between 0-32")
-                    raise exception.ZVMInvalidInputFormat(msg=errmsg)
+                    raise exception.SDKInvalidInputFormat(msg=errmsg)
 
             try:
                 used_vdev = self._networkops.create_nic(userid, vdev=vdev,

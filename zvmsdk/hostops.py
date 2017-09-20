@@ -87,6 +87,6 @@ class HOSTOps(object):
                     errmsg = ("Invalid diskpool size format: %(invalid)s; "
                         "Expected: %(exp)s") % {'invalid': s, 'exp': exp}
                     LOG.error(errmsg)
-                    raise exception.ZVMSDKInternalError(msg=errmsg)
+                    raise exception.SDKInternalError(msg=errmsg)
 
         return dp_info

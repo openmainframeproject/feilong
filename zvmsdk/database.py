@@ -53,7 +53,7 @@ def get_volume_conn():
         yield _VOLUME_CONN
     except Exception as err:
         LOG.error("Execute SQL statements error: %s", six.text_type(err))
-        raise exception.DatabaseException(msg=err)
+        raise exception.SDKDatabaseException(msg=err)
     finally:
         _DBLOCK_VOLUME.release()
 
@@ -86,7 +86,7 @@ def get_image_conn():
         yield _IMAGE_CONN
     except Exception as err:
         LOG.error("Execute SQL statements error: %s", six.text_type(err))
-        raise exception.DatabaseException(msg=err)
+        raise exception.SDKDatabaseException(msg=err)
     finally:
         _DBLOCK_IMAGE.release()
 
@@ -190,7 +190,7 @@ class NetworkDbOperator(object):
                                                                 interface)
             LOG.error(msg)
             object = ('User %s with nic %s' % (userid.upper(), interface))
-            raise exception.ZVMObjectNotExistError(object,
+            raise exception.SDKObjectNotExistError(object,
                                                    modID=self._module_id)
 
         if switch is not None:
@@ -270,7 +270,7 @@ class VolumeDbOperator(object):
         """
         if not volume_id:
             msg = "Volume id must be specified!"
-            raise exception.DatabaseException(msg=msg)
+            raise exception.SDKDatabaseException(msg=msg)
 
         with get_volume_conn() as conn:
             result_list = conn.execute(
@@ -302,7 +302,7 @@ class VolumeDbOperator(object):
                 'protocol_type' in volume.keys() and
                 'size' in volume.keys()):
             msg = "Invalid volume database entry %s !" % volume
-            raise exception.DatabaseException(msg=msg)
+            raise exception.SDKDatabaseException(msg=msg)
 
         volume_id = str(uuid.uuid4())
         protocol_type = volume['protocol_type']
@@ -339,7 +339,7 @@ class VolumeDbOperator(object):
         if not (isinstance(volume, dict) and
                 'id' in volume.keys()):
             msg = "Invalid volume database entry %s !" % volume
-            raise exception.DatabaseException(msg=msg)
+            raise exception.SDKDatabaseException(msg=msg)
 
         # get current volume properties
         volume_id = volume['id']
@@ -368,7 +368,7 @@ class VolumeDbOperator(object):
         """Delete a volume from database."""
         if not volume_id:
             msg = "Volume id must be specified!"
-            raise exception.DatabaseException(msg=msg)
+            raise exception.SDKDatabaseException(msg=msg)
 
         volume = self.get_volume_by_id(volume_id)
         if not volume:
@@ -389,7 +389,7 @@ class VolumeDbOperator(object):
         """
         if not volume_id:
             msg = "Volume id must be specified!"
-            raise exception.DatabaseException(msg=msg)
+            raise exception.SDKDatabaseException(msg=msg)
 
         with get_volume_conn() as conn:
             result_list = conn.execute(' '.join((
@@ -410,7 +410,7 @@ class VolumeDbOperator(object):
         """
         if not instance_id:
             msg = "Instance id must be specified!"
-            raise exception.DatabaseException(msg=msg)
+            raise exception.SDKDatabaseException(msg=msg)
 
         with get_volume_conn() as conn:
             result_list = conn.execute(' '.join((
@@ -449,7 +449,7 @@ class VolumeDbOperator(object):
                 'connection_info' in volume_attachment.keys()):
             msg = ("Invalid volume_attachment database entry %s !"
                    ) % volume_attachment
-            raise exception.DatabaseException(msg=msg)
+            raise exception.SDKDatabaseException(msg=msg)
 
         # TOOD  volume and instance must exist
         volume_id = volume_attachment['volume_id']
@@ -501,7 +501,7 @@ class VolumeDbOperator(object):
         """
         if not volume_id or not instance_id:
             msg = "Volume id and instance id must be specified!"
-            raise exception.DatabaseException(msg=msg)
+            raise exception.SDKDatabaseException(msg=msg)
 
         # if volume-instance attachment exists in the database
         with get_volume_conn() as conn:
@@ -519,7 +519,7 @@ class VolumeDbOperator(object):
             msg = ("Duplicated records found in volume_attachment with "
                    "volume_id %s and instance_id %s !"
                    ) % (volume_id, instance_id)
-            raise exception.DatabaseException(msg=msg)
+            raise exception.SDKDatabaseException(msg=msg)
 
         time = str(datetime.now())
         with get_volume_conn() as conn:
@@ -616,7 +616,7 @@ class GuestDbOperator(object):
                 LOG.info(msg)
             else:
                 LOG.error(msg)
-                raise exception.ZVMObjectNotExistError(object=guest_id,
+                raise exception.SDKObjectNotExistError(object=guest_id,
                                                        modID=self._module_id)
         return guest
 
@@ -629,7 +629,7 @@ class GuestDbOperator(object):
                 LOG.info(msg)
             else:
                 LOG.error(msg)
-                raise exception.ZVMObjectNotExistError(object=userid,
+                raise exception.SDKObjectNotExistError(object=userid,
                                                        modID=self._module_id)
         return guest
 
@@ -665,7 +665,7 @@ class GuestDbOperator(object):
             msg = ("Update guest with id: %s failed, no field "
                    "specified to be updated." % uuid)
             LOG.error(msg)
-            raise exception.ZVMSDKInternalError(msg=msg, modID=self._module_id)
+            raise exception.SDKInternalError(msg=msg, modID=self._module_id)
 
         # First check whether the guest exist in db table
         self._check_existence_by_id(uuid)
@@ -697,7 +697,7 @@ class GuestDbOperator(object):
             msg = ("Update guest with userid: %s failed, no field "
                    "specified to be updated." % userid)
             LOG.error(msg)
-            raise exception.ZVMSDKInternalError(msg=msg, modID=self._module_id)
+            raise exception.SDKInternalError(msg=msg, modID=self._module_id)
 
         # First check whether the guest exist in db table
         self._check_existence_by_userid(userid)

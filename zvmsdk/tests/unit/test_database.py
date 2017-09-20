@@ -85,7 +85,7 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         interface = '1000'
         switch = 'testswitch'
 
-        self.assertRaises(exception.ZVMObjectNotExistError,
+        self.assertRaises(exception.SDKObjectNotExistError,
                           self.db_op.switch_updat_record_with_switch,
                           userid, interface, switch)
 
@@ -268,7 +268,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
     def test_get_volume_by_id_errors(self):
         # error - Empty volume id
         volume_id_null = None
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKDatabaseException,
                           self._util.get_volume_by_id, volume_id_null)
 
         # not found
@@ -292,15 +292,15 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
     def test_insert_volume_errors(self):
         # empty volume
         volume = None
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKDatabaseException,
                           self._util.insert_volume, volume)
 
         # protocol_type absent
         volume = {'size': '3G'}
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKDatabaseException,
                           self._util.insert_volume, volume)
         volume = {'protocol_type': 'fc'}
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKDatabaseException,
                           self._util.insert_volume, volume)
 
     def test_insert_volume(self):
@@ -339,10 +339,10 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
     def test_update_volume_errors(self):
         # empty volume
         volume = None
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKDatabaseException,
                           self._util.update_volume, volume)
         volume = {}
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKDatabaseException,
                           self._util.update_volume, volume)
 
         # volume not found
@@ -385,7 +385,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
     def test_delete_volume_errors(self):
         # empty volume
         volume_id = None
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKDatabaseException,
                           self._util.insert_volume, volume_id)
 
         # not found
@@ -406,7 +406,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
     def test_get_attachment_by_volume_id_errors(self):
         # error - Empty volume id
         volume_id_null = None
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKDatabaseException,
                           self._util.get_attachment_by_volume_id,
                           volume_id_null)
 
@@ -446,7 +446,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
     def test_get_attachments_by_instance_id_errors(self):
         # error - Empty volume id
         instance_id_null = None
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKDatabaseException,
                           self._util.get_attachment_by_volume_id,
                           instance_id_null)
 
@@ -495,7 +495,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
         self.assertEqual(expected_2, actual_2)
 
     def test_insert_volume_attachment_error(self):
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKDatabaseException,
                           self._util.insert_volume_attachment,
                           None)
         volume_id = str(uuid.uuid4())
@@ -504,17 +504,17 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
                            'lun': '0x1001100110011001'}
         attachment = {'instance_id': instance_id,
                       'connection_info': connection_info}
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKDatabaseException,
                           self._util.insert_volume_attachment,
                           attachment)
         attachment = {'volume_id': volume_id,
                       'connection_info': connection_info}
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKDatabaseException,
                           self._util.insert_volume_attachment,
                           attachment)
         attachment = {'volume_id': volume_id,
                       'instance_id': instance_id}
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKDatabaseException,
                           self._util.insert_volume_attachment,
                           attachment)
 
@@ -572,10 +572,10 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
     def test_delete_volume_attachment_error(self):
         volume_id = str(uuid.uuid4())
         instance_id = str(uuid.uuid4())
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKDatabaseException,
                           self._util.delete_volume_attachment,
                           None, instance_id)
-        self.assertRaises(exception.DatabaseException,
+        self.assertRaises(exception.SDKDatabaseException,
                           self._util.delete_volume_attachment,
                           volume_id, None)
         # volume is not attached on the instance
@@ -736,13 +736,13 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
         self.db_op.add_guest(userid, meta=meta)
         # Update
-        self.assertRaises(exception.ZVMSDKInternalError,
+        self.assertRaises(exception.SDKInternalError,
                           self.db_op.update_guest_by_id,
                           'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
     def test_update_guest_by_id_not_exist(self):
-        self.assertRaises(exception.ZVMObjectNotExistError,
+        self.assertRaises(exception.SDKObjectNotExistError,
                           self.db_op.update_guest_by_id,
                           'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
                           meta='newmeta')
@@ -785,13 +785,13 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
         self.db_op.add_guest(userid, meta=meta)
         # Update
-        self.assertRaises(exception.ZVMSDKInternalError,
+        self.assertRaises(exception.SDKInternalError,
                           self.db_op.update_guest_by_userid,
                           'FakeUser')
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
     def test_update_guest_by_userid_not_exist(self):
-        self.assertRaises(exception.ZVMObjectNotExistError,
+        self.assertRaises(exception.SDKObjectNotExistError,
                           self.db_op.update_guest_by_userid,
                           'FaKeUser',
                           meta='newmeta')
@@ -862,7 +862,7 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
             imagename, imageosdistro, md5sum, disk_size_units,
             image_size_in_bytes, type)
         self.assertRaises(
-            exception.DatabaseException,
+            exception.SDKDatabaseException,
             self.db_op.image_add_record,
             imagename, imageosdistro, md5sum, disk_size_units,
             image_size_in_bytes, type)
