@@ -1236,6 +1236,30 @@ class SMUTClient(object):
         # TODO: implement it
         pass
 
+    def get_user_console_output(self, userid):
+        # get console into reader
+        rd = 'getvm %s consoleoutput' % userid
+        action = 'get console log reader file list for guest vm: %s' % userid
+        with zvmutils.log_and_reraise_smut_request_failed(action):
+            resp = self._request(rd)
+
+        with zvmutils.expect_invalid_resp_data(resp):
+            rf_list = resp['response'][0].rpartition(':')[2].strip().split()
+
+        # TODO: make sure reader device is online
+        # via 'cat /sys/bus/ccw/drivers/vmur/0.0.000c/online'
+        #     '/sbin/cio_ignore -r 000c; /sbin/chccwdev -e 000c'
+        #     'which udevadm &> /dev/null && udevadm settle || udevsettle'
+
+        logs = []
+        for rf in rf_list:
+            cmd = '/usr/sbin/vmur re -t -O %s' % rf
+            rc, output = zvmutils.execute(cmd)
+            if rc == 0:
+                logs.append(output)
+
+        return ''.join(logs)
+
 
 class FilesystemBackend(object):
     @classmethod
