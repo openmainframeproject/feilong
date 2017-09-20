@@ -139,3 +139,21 @@ class HandlersImageTest(unittest.TestCase):
         self.req.GET['imagename'] = 'image1'
         image.image_query(self.req)
         mock_query.assert_called_once_with('image1')
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(image.ImageAction, 'export')
+    def test_image_export(self, mock_export, mock_get):
+        mock_export.return_value = '{}'
+        body_str = """{"location":{
+                                    "dest_url": "file:///tmp/images/",
+                                    "remote_host": "192.168.12.34"
+                                  }
+                      }"""
+        body = {u'location': {u'dest_url': u'file:///tmp/images/',
+                              u'remote_host': u'192.168.12.34'}}
+        fake_image_name = '46a4aea3-54b6-4b1c'
+        mock_get.return_value = fake_image_name
+        self.req.body = body_str
+        image.image_export(self.req)
+        mock_export.assert_called_once_with(fake_image_name,
+                                            body)
