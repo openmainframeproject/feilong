@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "771d4d61_f070c17c",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-20T06:36:37Z",
+      "side": 1,
+      "message": "what kind of exception might occur here?",
+      "range": {
+        "startLine": 246,
+        "startChar": 7,
+        "endLine": 252,
+        "endChar": 52
+      },
+      "revId": "aa2e530ff3710105c7a3e67e2ed051eb3d833d0b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
