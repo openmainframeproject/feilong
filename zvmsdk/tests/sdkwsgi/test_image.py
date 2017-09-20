@@ -8,11 +8,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-
 import unittest
 
 from zvmsdk import config
+from zvmsdk import utils
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
 
@@ -32,10 +31,9 @@ class ImageTestCase(unittest.TestCase):
     def _image_create(self):
         image_fname = "image1"
         image_fpath = ''.join([CONF.image.temp_path, image_fname])
-        os.system('touch %s' % image_fpath)
+        utils.make_dummy_image(image_fpath)
         url = "file://" + image_fpath
-        image_meta = '''{"os_version": "rhel7.2",
-                         "md5sum": "12345678912345678912345678912345"}'''
+        image_meta = '''{"os_version": "rhel7.2"}'''
 
         body = """{"image": {"image_name": "%s",
                              "url": "%s",
@@ -48,17 +46,14 @@ class ImageTestCase(unittest.TestCase):
         return resp
 
     def _image_delete(self):
-        url = '/images/rhel7.2-s390x-netboot-image1'
+        url = '/images/image1'
         resp = self.client.api_request(url=url, method='DELETE')
         self.assertEqual(204, resp.status_code)
         return resp
 
     def _image_get_root_disk_size(self):
-        # Note here we query the image that already exist in the test system
-        # it might be changed if the test system is changed
-        # another way is to use mkdummyimage to create a dummy image
         url = '/images/'
-        url += 'rhel7.2-s390x-netboot-46a4aea3_54b6_4b1c_8a49_01f302e70c60/'
+        url += 'image1/'
         url += 'root_disk_size'
 
         resp = self.client.api_request(url=url, method='GET')

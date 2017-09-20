@@ -30,18 +30,20 @@ class SDKAPIImageTestCase(base.SDKAPIBaseTestCase):
         """ Import a image, query the existence and then delete it"""
         image_fname = str(uuid.uuid1())
         image_fpath = ''.join([CONF.image.temp_path, image_fname])
-        os.system('touch %s' % image_fpath)
+        utils.make_dummy_image(image_fpath)
         url = "file://" + image_fpath
         image_meta = {'os_version': 'rhel7.2'}
         self.sdkapi.image_import(image_fname, url, image_meta,
                                  utils.get_host())
 
         query_result = self.sdkapi.image_query(image_fname)
-        expect_result = ['rhel7.2-s390x-netboot-%s'
-                         % image_fname.replace('-', '_')]
-        self.assertEqual(query_result, expect_result)
+        result_length = len(query_result)
+        self.assertEqual(result_length, 1)
 
-        self.sdkapi.image_delete(query_result[0])
+        image_size = self.sdkapi.image_get_root_disk_size(image_fname)
+        self.assertEqual(image_size, u'0')
+
+        self.sdkapi.image_delete(query_result[0][0])
         query_result_after_delete = self.sdkapi.image_query(image_fname)
         expect_result_after_delete = []
         self.assertEqual(query_result_after_delete,
