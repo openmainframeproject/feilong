@@ -346,9 +346,11 @@ class SMUTClient(object):
             requestData = "ChangeVM " + userid + " punchfile " + \
                 iucv_auth_file + " --class x"
             self._request(requestData)
-        except Exception as err:
-            raise exception.ZVMSMUTAuthorizeIUCVClientFailed(
-                client=client, vm=userid, msg=err)
+        except exception.ZVMClientRequestFailed as err:
+            msg = ("Failed to punch IUCV auth file to userid '%s'. SMUT error:"
+                   " %s" % (userid, err.format_message()))
+            LOG.error(msg)
+            raise exception.ZVMClientRequestFailed(err.results, msg)
         finally:
             self._pathutils.clean_temp_folder(iucv_path)
 
@@ -989,7 +991,8 @@ class SMUTClient(object):
     def execute_cmd(self, userid, cmdStr):
         """"cmdVM."""
         requestData = ' '.join(('cmdVM', userid, 'CMD', cmdStr))
-        results = self._request(requestData)
+        with zvmutils.log_and_reraise_smut_request_failed():
+            results = self._request(requestData)
 
         ret = results['response']
         return ret

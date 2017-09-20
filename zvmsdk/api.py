@@ -265,7 +265,9 @@ class SDKAPI(object):
         :param str client: the user id of the client that can communicate to
                guest using IUCV
         """
-        self._vmops.guest_authorize_iucv_client(guest, client)
+        action = "authorize client to userid '%s'" % guest
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._vmops.guest_authorize_iucv_client(guest, client)
 
     @zvmutils.check_input_types(_TUSERID, _TSTR, _TSTR_OR_NONE, _TSTR_OR_NONE,
                                 _TSTR_OR_NONE)
@@ -632,13 +634,9 @@ class SDKAPI(object):
         :param userid: the user id of the vm
         :param userid: the command line to be executed
         """
-        try:
-            ret = self._vmops.execute_cmd(userid, cmdStr)
-        except exception.SDKBaseException:
-            LOG.error("Failed to execute cmd '%s' on guest '%s'" %
-                      (cmdStr, userid))
-            raise
-        return ret
+        action = "execute cmd '%s' on guest '%s'" % (cmdStr, userid)
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.execute_cmd(userid, cmdStr)
 
     @zvmutils.check_input_types(_TUSERID_OR_LIST)
     def guest_inspect_cpus(self, userid_list):
@@ -788,7 +786,9 @@ class SDKAPI(object):
                'mntdir': '/mnt/0101'}]
 
         """
-        self._vmops.guest_config_minidisks(userid, disk_info)
+        action = "config disks for userid '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._vmops.guest_config_minidisks(userid, disk_info)
 
     @zvmutils.check_input_types(_TVSWNAME, valid_keys=['grant_userid',
         'user_vlan_id', 'revoke_userid', 'real_device_address',
