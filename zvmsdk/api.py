@@ -636,7 +636,9 @@ class SDKAPI(object):
         """
         action = "get the console output of guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            return self._vmops.get_console_output(userid)
+            output = self._vmops.get_console_output(userid)
+
+        return output
 
     @zvmutils.check_input_types(_TUSERID)
     def guest_delete(self, userid):

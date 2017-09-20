@@ -36,6 +36,16 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def setUp(self):
         self._smutclient = smutclient.SMUTClient()
 
+    def _generate_results(self, overallrc=0, rc=0, rs=0, errno=0, strerror='',
+                          logentries=[], response=[]):
+        return {'rs': rc,
+                'errno': errno,
+                'strError': strerror,
+                'overallRC': overallrc,
+                'logEntries': logentries,
+                'rc': rs,
+                'response': response}
+
     @mock.patch.object(smut.SMUT, 'request')
     def test_private_request_success(self, request):
         requestData = "fake request"
@@ -1108,3 +1118,21 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         vdev_info = ['2000', '2004']
         result = self._smutclient._is_vdev_valid(vdev, vdev_info)
         self.assertEqual(result, False)
+
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_get_user_console_output(self, req, execu):
+        req.return_value = self._generate_results(response=['cons: 0001 0002'])
+        execu.side_effect = [(0, 'first line\n'), (0, 'second line\n')]
+
+        cons_log = self._smutclient.get_user_console_output('fakeuser')
+        req.assert_called_once_with('getvm fakeuser consoleoutput')
+        execu.assert_any_call('/usr/sbin/vmur re -t -O 0001')
+        execu.assert_any_call('/usr/sbin/vmur re -t -O 0002')
+        self.assertEqual(cons_log, 'first line\nsecond line\n')
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_get_user_console_output_request_failed(self, req):
+        req.side_effect = exception.ZVMClientRequestFailed({}, '')
+        self.assertRaises(exception.ZVMClientRequestFailed,
+                          self._smutclient.get_user_console_output, 'fakeuser')

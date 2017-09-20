@@ -224,20 +224,13 @@ class VMOps(object):
         def append_to_log(log_data, log_path):
             LOG.debug('log_data: %(log_data)r, log_path: %(log_path)r',
                          {'log_data': log_data, 'log_path': log_path})
-            fp = open(log_path, 'a+')
-            fp.write(log_data)
-            fp.close()
+            with open(log_path, 'a+') as fp:
+                fp.write(log_data)
+
             return log_path
 
         log_size = CONF.guest.console_log_size * 1024
-        console_log = ""
-
-        try:
-            console_log = self._smutclient.get_user_console_output(userid,
-                                                                   log_size)
-        except exception.ZVMClientRequestFailed:
-            # Ignore no console log avaiable error
-            LOG.info("No new console log avaiable.")
+        console_log = self._smutclient.get_user_console_output(userid)
 
         log_path = self._pathutils.get_console_log_path(userid)
         # TODO: need consider shrink log file size
