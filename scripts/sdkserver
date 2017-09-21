@@ -23,6 +23,7 @@ import threading
 from zvmsdk import api
 from zvmsdk import config
 from zvmsdk import exception
+from zvmsdk import returncode
 
 
 CONF = config.CONF
@@ -46,9 +47,29 @@ class SDKServer(object):
         msg = "WARNING: " + msg
         syslog.syslog(syslog.LOG_WARNING, msg)
 
+    def construct_internal_error(self, client, msg):
+        self.log_error(msg)
+        error = returncode.errors['internal']
+        results = error[0]
+        results['modID'] = returncode.modRCs['sdkserver']
+        results.update({'rs': 1,
+                        'errmsg': error[1][1] % {'msg': msg},
+                        'output': ''})
+        self.send_results(client, results)
+
+    def construct_api_name_error(self, client, msg):
+        self.log_error(msg)
+        results = returncode.errors['API'][0]
+        results['modID'] = returncode.modRCs['sdkserver']
+        results.update({'rs': 1,
+                        'errmsg': msg,
+                        'output': ''})
+        self.send_results(client, results)
+
     def send_results(self, client, results):
         """ send back results to client in the json format of:
-        {'overallRC': x, 'rc': x, 'rs': x, 'errmsg': 'msg', 'output': 'out'}
+        {'overallRC': x, 'modID': x, 'rc': x, 'rs': x, 'errmsg': 'msg',
+         'output': 'out'}
         """
         json_results = json.dumps(results)
         sent = 0
@@ -83,10 +104,7 @@ class SDKServer(object):
             # API_data should be in the form [funcname, args_list, kwargs_dict]
             if not isinstance(api_data, list) or len(api_data) != 3:
                 msg = "SDK server got wrong input: %s" % data
-                self.log_error(msg)
-                results = {'overallRC': 2, 'rc': 2, 'rs': 1,
-                           'errmsg': msg,
-                           'output': ''}
+                results = self.construct_internal_error(msg)
                 self.send_results(client, results)
                 return
 
@@ -98,11 +116,8 @@ class SDKServer(object):
             try:
                 api_func = getattr(self.sdkapi, func_name)
             except AttributeError:
-                msg = "Wrong API name: %s." % func_name
-                self.log_error(msg)
-                results = {'overallRC': 2, 'rc': 2, 'rs': 2,
-                           'errmsg': msg,
-                           'output': ''}
+                msg = "SDK server got wrong API name: %s." % func_name
+                results = self.construct_api_name_error(msg)
                 self.send_results(client, results)
                 return
 
@@ -114,24 +129,26 @@ class SDKServer(object):
                 # All SDKbaseexception should eventually has a
                 # results attribute defined which can be used by
                 # sdkserver here
-                if e.results:
+                if e.results is None:
+                    msg = ("SDK server got exception without results defined: "
+                           "%s" % e.format_message())
+                    results = self.construct_internal_error(msg)
+                else:
                     results = {'overallRC': e.results['overallRC'],
-                               'rc': e.results['rc'], 'rs': e.results['rs'],
+                               'modID': None,
+                               'rc': e.results['rc'],
+                               'rs': e.results['rs'],
                                'errmsg': e.format_message(),
                                'output': ''}
-                else:
-                    results = {'overallRC': 2,
-                               'rc': 2, 'rs': 3,
-                               'errmsg': str(e),
-                               'output': ''}
             except Exception as e:
-                results = {'overallRC': 2, 'rc': 2, 'rs': 3,
-                           'errmsg': str(e),
-                           'output': ''}
+                msg = ("SDK server got unexpected exception: "
+                       "%s" % e.format_message())
+                results = self.construct_internal_error(msg)
             else:
                 if not return_data:
                     return_data = ''
-                results = {'overallRC': 0, 'rc': 0, 'rs': 0,
+                results = {'overallRC': 0, 'modID': None,
+                           'rc': 0, 'rs': 0,
                            'errmsg': '',
                            'output': return_data}
             # Send back the final results
