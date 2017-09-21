@@ -325,7 +325,7 @@ class SMUTClient(object):
         rd = ' '.join(['changevm', userid, action, diskpool_name,
                        vdev, size, '--mode MR'])
         if fmt:
-            rd += (' --filesystem %s' % fmt)
+            rd += (' --filesystem %s' % fmt.lower())
 
         action = "add mdisk to userid '%s'" % userid
         with zvmutils.log_and_reraise_smut_request_failed(action):

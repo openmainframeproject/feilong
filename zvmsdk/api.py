@@ -417,18 +417,29 @@ class SDKAPI(object):
                 if not isinstance(disk, dict):
                     errmsg = ('Invalid "disk_list" input, it should be a '
                               'dictionary. Details could be found in doc.')
+                    LOG.error(errmsg)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
-
+                # 'size' is required for each disk
                 if 'size' not in disk.keys():
                     errmsg = ('Invalid "disk_list" input, "size" is required '
                               'for each disk.')
+                    LOG.error(errmsg)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
-
+                # 'disk_pool' format check
                 disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
                 if ':' not in disk_pool or (disk_pool.split(':')[0].upper()
                     not in ['ECKD', 'FBA']):
                     errmsg = ("Invalid disk_pool input, it should be in format"
                               " ECKD:eckdpoolname or FBA:fbapoolname")
+                    LOG.error(errmsg)
+                    raise exception.SDKInvalidInputFormat(msg=errmsg)
+                # 'format' value check
+                if ('format' in disk.keys()) and (disk['format'].lower() not in
+                                                  ('ext2', 'ext3', 'ext4',
+                                                   'xfs')):
+                    errmsg = ("Invalid disk_pool input, supported 'format' "
+                              "includes 'ext2', 'ext3', 'ext4', 'xfs'")
+                    LOG.error(errmsg)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
 
         action = "create guest '%s'" % userid
