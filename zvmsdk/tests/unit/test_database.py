@@ -268,7 +268,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
     def test_get_volume_by_id_errors(self):
         # error - Empty volume id
         volume_id_null = None
-        self.assertRaises(exception.SDKDatabaseException,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.get_volume_by_id, volume_id_null)
 
         # not found
@@ -292,15 +292,16 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
     def test_insert_volume_errors(self):
         # empty volume
         volume = None
-        self.assertRaises(exception.SDKDatabaseException,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.insert_volume, volume)
 
         # protocol_type absent
         volume = {'size': '3G'}
-        self.assertRaises(exception.SDKDatabaseException,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.insert_volume, volume)
+        # size absent
         volume = {'protocol_type': 'fc'}
-        self.assertRaises(exception.SDKDatabaseException,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.insert_volume, volume)
 
     def test_insert_volume(self):
@@ -339,16 +340,16 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
     def test_update_volume_errors(self):
         # empty volume
         volume = None
-        self.assertRaises(exception.SDKDatabaseException,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.update_volume, volume)
         volume = {}
-        self.assertRaises(exception.SDKDatabaseException,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.update_volume, volume)
 
         # volume not found
         volume_id = str(uuid.uuid4())
         volume = {'id': volume_id}
-        self.assertRaises(exception.ZVMVolumeError,
+        self.assertRaises(exception.SDKVolumeOperationError,
                           self._util.update_volume, volume)
 
     def test_update_volume(self):
@@ -385,7 +386,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
     def test_delete_volume_errors(self):
         # empty volume
         volume_id = None
-        self.assertRaises(exception.SDKDatabaseException,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.insert_volume, volume_id)
 
         # not found
@@ -406,7 +407,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
     def test_get_attachment_by_volume_id_errors(self):
         # error - Empty volume id
         volume_id_null = None
-        self.assertRaises(exception.SDKDatabaseException,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.get_attachment_by_volume_id,
                           volume_id_null)
 
@@ -446,7 +447,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
     def test_get_attachments_by_instance_id_errors(self):
         # error - Empty volume id
         instance_id_null = None
-        self.assertRaises(exception.SDKDatabaseException,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.get_attachment_by_volume_id,
                           instance_id_null)
 
@@ -495,7 +496,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
         self.assertEqual(expected_2, actual_2)
 
     def test_insert_volume_attachment_error(self):
-        self.assertRaises(exception.SDKDatabaseException,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.insert_volume_attachment,
                           None)
         volume_id = str(uuid.uuid4())
@@ -504,17 +505,17 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
                            'lun': '0x1001100110011001'}
         attachment = {'instance_id': instance_id,
                       'connection_info': connection_info}
-        self.assertRaises(exception.SDKDatabaseException,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.insert_volume_attachment,
                           attachment)
         attachment = {'volume_id': volume_id,
                       'connection_info': connection_info}
-        self.assertRaises(exception.SDKDatabaseException,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.insert_volume_attachment,
                           attachment)
         attachment = {'volume_id': volume_id,
                       'instance_id': instance_id}
-        self.assertRaises(exception.SDKDatabaseException,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.insert_volume_attachment,
                           attachment)
 
@@ -522,7 +523,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
         attachment = {'volume_id': volume_id,
                       'instance_id': instance_id,
                       'connection_info': connection_info}
-        self.assertRaises(exception.ZVMVolumeError,
+        self.assertRaises(exception.SDKVolumeOperationError,
                           self._util.insert_volume_attachment,
                           attachment)
         volume = {'protocol_type': 'fc', 'size': '3G'}
@@ -533,7 +534,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
                       'instance_id': instance_id,
                       'connection_info': connection_info}
         self._util.insert_volume_attachment(attachment)
-        self.assertRaises(exception.ZVMVolumeError,
+        self.assertRaises(exception.SDKVolumeOperationError,
                           self._util.insert_volume_attachment,
                           attachment)
 
@@ -572,14 +573,14 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
     def test_delete_volume_attachment_error(self):
         volume_id = str(uuid.uuid4())
         instance_id = str(uuid.uuid4())
-        self.assertRaises(exception.SDKDatabaseException,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.delete_volume_attachment,
                           None, instance_id)
-        self.assertRaises(exception.SDKDatabaseException,
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.delete_volume_attachment,
                           volume_id, None)
         # volume is not attached on the instance
-        self.assertRaises(exception.ZVMVolumeError,
+        self.assertRaises(exception.SDKVolumeOperationError,
                           self._util.delete_volume_attachment,
                           volume_id, instance_id)
 
