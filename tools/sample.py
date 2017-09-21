@@ -149,7 +149,8 @@ def _run_guest(userid, image_path, os_version, profile,
 
     # Create network device and configure network interface
     print("Configuring network interface for %s ..." % userid)
-    sdkapi.guest_create_network_interface(userid, os_version, [network_info])
+    sdkapi.guest_create_network_interface(userid, os_version, [network_info],
+                                          True)
     sdkapi.guest_nic_couple_to_vswitch(userid, '1000',
                                        network_info['vswitch_name'])
     sdkapi.vswitch_grant_user(network_info['vswitch_name'], userid)
