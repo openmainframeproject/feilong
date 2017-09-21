@@ -125,10 +125,12 @@ class VMHandler(object):
         interface = body['interface']
         version = interface['os_version']
         networks = interface.get('guest_networks', None)
+        first = interface['first']
         active = interface.get('active', False)
         info = self.client.send_request('guest_create_network_interface',
                                         userid, os_version=version,
                                         guest_networks=networks,
+                                        first=first,
                                         active=active)
         return info
 
