@@ -99,7 +99,8 @@ class NetworkOPS(object):
         self._smutclient.delete_nic(userid, vdev,
                                     active=active)
 
-    def network_configuration(self, userid, os_version, network_info):
+    def network_configuration(self, userid, os_version, network_info,
+                              active=False, first=False):
         network_file_path = self._smutclient.get_guest_temp_path(userid,
                                                                  'network')
         LOG.debug('Creating folder %s to contain network configuration files'
@@ -107,7 +108,9 @@ class NetworkOPS(object):
         network_doscript = self._generate_network_doscript(userid,
                                                            os_version,
                                                            network_info,
-                                                           network_file_path)
+                                                           network_file_path,
+                                                           active=active,
+                                                           first=first)
         fileClass = "X"
         try:
             self._smutclient.punch_file(userid, network_doscript, fileClass)
@@ -117,7 +120,8 @@ class NetworkOPS(object):
 
     # Prepare and create network doscript for instance
     def _generate_network_doscript(self, userid, os_version,
-                                   network_info, network_file_path):
+                                   network_info, network_file_path,
+                                   active=False, first=False):
         path_contents = []
         content_dir = {}
         files_map = []
@@ -128,9 +132,11 @@ class NetworkOPS(object):
                   (userid, network_file_path))
         linuxdist = self._dist_manager.get_linux_dist(os_version)()
         files_and_cmds = linuxdist.create_network_configuration_files(
-                             network_file_path, network_info)
+                             network_file_path, network_info,
+                             active=active, first=first)
 
-        (net_conf_files, net_conf_cmds) = files_and_cmds
+        (net_conf_files, net_conf_cmds,
+             activeIP_cfg_str, clean_cmd) = files_and_cmds
 
         # Add network configure files to path_contents
         if len(net_conf_files) > 0:
@@ -142,6 +148,13 @@ class NetworkOPS(object):
         if len(net_cmd_file) > 0:
             path_contents.extend(net_cmd_file)
 
+        if (active and
+            len(activeIP_cfg_str) > 0):
+            active_ipaddr_file = self._create_activeconfig(activeIP_cfg_str)
+            path_contents.extend(active_ipaddr_file)
+        else:
+            active = False
+
         for (path, contents) in path_contents:
             key = "%04i" % len(content_dir)
             files_map.append({'target_path': path,
@@ -150,7 +163,8 @@ class NetworkOPS(object):
             file_name = os.path.join(network_file_path, key)
             self._add_file(file_name, contents)
 
-        self._create_invokeScript(network_file_path, files_map)
+        self._create_invokeScript(network_file_path, clean_cmd,
+                                  files_map, active=active)
         network_doscript = self._create_network_doscript(network_file_path)
         return network_doscript
 
@@ -174,7 +188,19 @@ class NetworkOPS(object):
 
         return net_cmd_file
 
-    def _create_invokeScript(self, network_file_path, files_map):
+    def _create_activeconfig(self, activeIP_cfg_str):
+        LOG.debug('Creating activeIPaddr file')
+        active_ipaddr_file = []
+        activeIPaddr = '\n'.join(('#!/bin/bash', activeIP_cfg_str))
+        activeIPaddr += '\nrm -rf /tmp/activeIPaddr.sh\n'
+
+        # Create a temp file in instance to execute above commands
+        active_ipaddr_file.append(('/tmp/activeIPaddr.sh', activeIPaddr))
+
+        return active_ipaddr_file
+
+    def _create_invokeScript(self, network_file_path, commands,
+                             files_map, active=False):
         """invokeScript: Configure zLinux os network
 
         invokeScript is included in the network.doscript, it is used to put
@@ -186,7 +212,7 @@ class NetworkOPS(object):
         invokeScript = "invokeScript.sh"
 
         conf = "#!/bin/bash \n"
-        command = ''
+        command = commands
         for file in files_map:
             target_path = file['target_path']
             source_file = file['source_file']
@@ -194,6 +220,8 @@ class NetworkOPS(object):
             command += 'mv ' + source_file + ' ' + target_path + '\n'
 
         command += '/bin/bash /tmp/znetconfig.sh\n'
+        if active:
+            command += '/bin/bash /tmp/activeIPaddr.sh\n'
         command += 'rm -rf invokeScript.sh\n'
 
         scriptfile = os.path.join(network_file_path, invokeScript)
@@ -218,3 +246,8 @@ class NetworkOPS(object):
             tar.add(file_name, arcname=file)
         tar.close()
         return network_doscript
+
+    def active_network_interface(self, userid, os_version):
+        linuxdist = self._dist_manager.get_linux_dist(os_version)()
+        active_cmds = linuxdist.create_active_net_interf_cmd()
+        self._smutclient.execute_cmd(userid, active_cmds)
