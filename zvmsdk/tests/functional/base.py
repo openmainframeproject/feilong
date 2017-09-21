@@ -298,7 +298,8 @@ class SDKAPITestUtils(object):
             'cidr': CONF.tests.cidr,
         }]
         netinfo = self.sdkapi.guest_create_network_interface(
-                                        userid, os_version, guest_networks)
+                                        userid, os_version, guest_networks,
+                                        True)
         nic_vdev = netinfo[0]['nic_vdev']
         self.sdkapi.guest_nic_couple_to_vswitch(userid, nic_vdev,
                                              CONF.tests.vswitch)

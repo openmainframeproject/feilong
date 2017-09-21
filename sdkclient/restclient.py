@@ -220,6 +220,7 @@ def body_guest_couple_uncouple_nic(start_index, *args, **kwargs):
 def body_guest_create_network_interface(start_index, *args, **kwargs):
     body = {'interface': {'os_version': args[start_index],
                           'guest_networks': args[start_index + 1],
+                          'first': args[start_index + 2],
                           'active': kwargs.get('active', False)}}
     return body
 
