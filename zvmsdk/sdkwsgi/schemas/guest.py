@@ -65,9 +65,10 @@ create_network_interface = {
             'properties': {
                 'os_version': {'type': 'string'},
                 'guest_networks': parameter_types.network_list,
+                'first': parameter_types.boolean,
                 'active': parameter_types.boolean,
             },
-            'required': ['os_version', 'guest_networks'],
+            'required': ['os_version', 'guest_networks', 'first'],
             'additionalProperties': False,
         },
         'additionalProperties': False,
