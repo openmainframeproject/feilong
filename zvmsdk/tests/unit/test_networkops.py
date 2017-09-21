@@ -50,10 +50,17 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         get_vswitch_list.assert_called_with()
 
     @mock.patch.object(networkops.get_networkops()._smutclient,
+                       'execute_cmd')
+    @mock.patch.object(networkops.get_networkops()._smutclient,
+                       'guest_get_os_version')
+    @mock.patch.object(networkops.get_networkops()._smutclient,
                        'couple_nic_to_vswitch')
     @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_couple_nic_to_vswitch(self, ige, couple_nic_to_vswitch):
+    def test_couple_nic_to_vswitch(self, ige, couple_nic_to_vswitch, get_os,
+                                   execute_cmd):
         ige.return_value = True
+        get_os.return_value = 'rhel7.0'
+        execute_cmd.return_value = []
         self.networkops.couple_nic_to_vswitch("fake_userid", "nic_vdev",
                                               "fake_VS_name",
                                               True)

@@ -797,8 +797,10 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(database.NetworkDbOperator, 'switch_add_record')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_private_create_nic_active(self, request, add_record):
+    @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
+    def test_private_create_nic_active(self, power_state, request, add_record):
         request.return_value = {'overallRC': 0}
+        power_state.return_value = 'on'
         self._smutclient._create_nic("fakenode", "fake_vdev",
                                      nic_id="fake_nic",
                                      mac_addr='11:22:33:44:55:66',
@@ -830,7 +832,9 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(database.NetworkDbOperator,
                        'switch_delete_record_for_nic')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_delete_nic(self, request, delete_nic):
+    @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
+    def test_delete_nic(self, power_state, request, delete_nic):
+        power_state.return_value = 'on'
         userid = 'FakeID'
         vdev = 'FakeVdev'
         rd1 = ' '.join((
@@ -868,8 +872,10 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(database.NetworkDbOperator,
                        'switch_update_record_with_switch')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_couple_nic(self, request, update_switch):
+    @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
+    def test_couple_nic(self, power_state, request, update_switch):
         request.return_value = {'overallRC': 0}
+        power_state.return_value = 'on'
         userid = 'FakeID'
         vdev = 'FakeVdev'
         vswitch_name = 'FakeVS'
@@ -897,8 +903,10 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(database.NetworkDbOperator,
                        'switch_update_record_with_switch')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_uncouple_nic(self, request, update_switch):
+    @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
+    def test_uncouple_nic(self, power_state, request, update_switch):
         request.return_value = {'overallRC': 0}
+        power_state.return_value = 'on'
         userid = 'FakeID'
         vdev = 'FakeVdev'
 
@@ -1220,7 +1228,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                 'CPE_NAME="cpe:/o:redhat:enterprise_linux:'
                                 '7.0:GA:server"',
                                 'HOME_URL="https://www.redhat.com/"']]
-        result = self._smutclient._guest_get_os_version(userid)
+        result = self._smutclient.guest_get_os_version(userid)
         self.assertEqual(result, 'rhel7.0')
 
     @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
@@ -1230,7 +1238,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                 '/etc/system-release'],
                                ['Red Hat Enterprise Linux Server release 6.7'
                                 ' (Santiago)']]
-        result = self._smutclient._guest_get_os_version(userid)
+        result = self._smutclient.guest_get_os_version(userid)
         self.assertEqual(result, 'rhel6.7')
 
     @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
@@ -1249,7 +1257,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                 'BUG_REPORT_URL="http://bugs.launchpad.net'
                                 '/ubuntu/"',
                                 'UBUNTU_CODENAME=xenial']]
-        result = self._smutclient._guest_get_os_version(userid)
+        result = self._smutclient.guest_get_os_version(userid)
         self.assertEqual(result, 'ubuntu16.04')
 
     @mock.patch.object(database.ImageDbOperator, 'image_add_record')
@@ -1260,7 +1268,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
     @mock.patch.object(smutclient.SMUTClient, 'guest_softstop')
     @mock.patch.object(smutclient.SMUTClient, '_get_capture_devices')
-    @mock.patch.object(smutclient.SMUTClient, '_guest_get_os_version')
+    @mock.patch.object(smutclient.SMUTClient, 'guest_get_os_version')
     @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
     @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
     def test_guest_capture_good_path(self, get_power_state, execcmd,
@@ -1313,7 +1321,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
             '547396211b558490d31e0de8e15eef0c', '1000:CYL', '1024000',
             'netboot')
 
-    @mock.patch.object(smutclient.SMUTClient, '_guest_get_os_version')
+    @mock.patch.object(smutclient.SMUTClient, 'guest_get_os_version')
     @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
     @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
     def test_guest_capture_error_path(self, get_power_state, execcmd,

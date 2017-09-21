@@ -471,7 +471,7 @@ class SMUTClient(object):
                                                    msg=msg)
         # Get the os version of the vm
         try:
-            os_version = self._guest_get_os_version(userid)
+            os_version = self.guest_get_os_version(userid)
         except exception.SDKSMUTRequestFailed as err:
             msg = ('Failed to execute command on capture source vm %(vm)s'
                    'to get os version with error %(err)s' % {'vm': userid,
@@ -568,7 +568,7 @@ class SMUTClient(object):
             const.IMAGE_TYPE['DEPLOY'])
         LOG.info("Image %s is import successfully" % image_name)
 
-    def _guest_get_os_version(self, userid):
+    def guest_get_os_version(self, userid):
         os_version = ''
         release_file = self.execute_cmd(userid, 'ls /etc/*-release')
         if '/etc/os-release' in release_file:
@@ -959,6 +959,14 @@ class SMUTClient(object):
 
     def _create_nic(self, userid, vdev, nic_id=None, mac_addr=None,
                     active=False):
+        if active:
+            # Get the vm status
+            power_state = self.get_power_state(userid)
+            if power_state == 'off':
+                msg = ('The vm %(vm)s is powered off' % userid)
+                raise exception.SDKNetworkOperationError(rs=5, userid=userid,
+                                                         msg=msg)
+
         requestData = ' '.join((
             'SMAPI %s API Virtual_Network_Adapter_Create_Extended_DM' %
             userid,
@@ -1025,6 +1033,13 @@ class SMUTClient(object):
         return results.get('response', [])
 
     def delete_nic(self, userid, vdev, active=False):
+        if active:
+            # Get the vm status
+            power_state = self.get_power_state(userid)
+            if power_state == 'off':
+                msg = ('The vm %(vm)s is powered off' % userid)
+                raise exception.SDKNetworkOperationError(rs=5, userid=userid,
+                                                         msg=msg)
         rd = ' '.join((
             "SMAPI %s API Virtual_Network_Adapter_Delete_DM" %
             userid,
@@ -1070,6 +1085,13 @@ class SMUTClient(object):
     def _couple_nic(self, userid, vdev, vswitch_name,
                     active=False):
         """Couple NIC to vswitch by adding vswitch into user direct."""
+        if active:
+            # Get the vm status
+            power_state = self.get_power_state(userid)
+            if power_state == 'off':
+                msg = ('The vm %(vm)s is powered off' % userid)
+                raise exception.SDKNetworkOperationError(rs=5, userid=userid,
+                                                         msg=msg)
         requestData = ' '.join((
             'SMAPI %s' % userid,
             "API Virtual_Network_Adapter_Connect_Vswitch_DM",
@@ -1149,6 +1171,13 @@ class SMUTClient(object):
 
     def _uncouple_nic(self, userid, vdev, active=False):
         """Uncouple NIC from vswitch"""
+        if active:
+            # Get the vm status
+            power_state = self.get_power_state(userid)
+            if power_state == 'off':
+                msg = ('The vm %(vm)s is powered off' % userid)
+                raise exception.SDKNetworkOperationError(rs=5, userid=userid,
+                                                         msg=msg)
         requestData = ' '.join((
             'SMAPI %s' % userid,
             "API Virtual_Network_Adapter_Disconnect_DM",
@@ -1656,6 +1685,21 @@ class SMUTClient(object):
         nic_info = self._NetDbOperator.switch_select_record(userid=userid,
                                             nic_id=nic_id, vswitch=vswitch)
         return nic_info
+
+    def is_first_network_config(self, userid):
+        action = "get guest '%s' to database" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            info = self._GuestDbOperator.get_guest_by_userid(userid)
+            # check net_set
+            if int(info[3]) == 0:
+                return True
+            else:
+                return False
+
+    def update_guestdb_with_net_set(self, userid):
+        action = "update guest '%s' in database" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._GuestDbOperator.update_guest_by_userid(userid, net_set='1')
 
 
 class FilesystemBackend(object):

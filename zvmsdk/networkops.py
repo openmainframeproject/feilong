@@ -16,9 +16,11 @@
 import os
 import shutil
 import tarfile
+import six
 
 from zvmsdk import config
 from zvmsdk import dist
+from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import smutclient
 from zvmsdk import utils as zvmutils
@@ -66,6 +68,28 @@ class NetworkOPS(object):
 
         self._smutclient.couple_nic_to_vswitch(userid, nic_vdev,
                                                vswitch_name, active=active)
+        # restart network if the change is required to take effect actively
+        if active:
+            try:
+                os_version = self._smutclient.guest_get_os_version(userid)
+            except exception.SDKSMUTRequestFailed as err:
+                msg = ('Failed to get os version for guest %(vm)s with '
+                       'error %(err)s' % {'vm': userid,
+                                        'err': err.results['response'][0]})
+                LOG.error(msg)
+                raise exception.SDKNetworkOperationError(rs=6, userid=userid,
+                                                   msg=msg)
+            except Exception as err:
+                msg = ('Error happened when parsing os version on vm '
+                   '%(vm)s with error: %(err)s' % {'vm': userid,
+                                                   'err': six.text_type(err)})
+                LOG.error(msg)
+                raise exception.SDKNetworkOperationError(rs=6, userid=userid,
+                                                   msg=msg)
+            linuxdist = self._dist_manager.get_linux_dist(os_version)()
+            active_cmds = linuxdist.restart_network()
+            if len(active_cmds) > 0:
+                self._smutclient.execute_cmd(userid, active_cmds)
 
     def uncouple_nic_from_vswitch(self, userid, nic_vdev,
                                   active=False):
@@ -110,15 +134,22 @@ class NetworkOPS(object):
         self._smutclient.delete_nic(userid, vdev,
                                     active=active)
 
-    def network_configuration(self, userid, os_version, network_info):
+    def network_configuration(self, userid, os_version, network_info,
+                              active=False):
         network_file_path = self._smutclient.get_guest_temp_path(userid,
                                                                  'network')
         LOG.debug('Creating folder %s to contain network configuration files'
                   % network_file_path)
-        network_doscript = self._generate_network_doscript(userid,
+        # check whether network interface has already been set for the guest
+        # if not, means this the first time to set the network interface
+        first = self._smutclient.is_first_network_config(userid)
+        (network_doscript, active_cmds) = self._generate_network_doscript(
+                                                           userid,
                                                            os_version,
                                                            network_info,
-                                                           network_file_path)
+                                                           network_file_path,
+                                                           first,
+                                                           active=active)
         fileClass = "X"
         try:
             self._smutclient.punch_file(userid, network_doscript, fileClass)
@@ -126,9 +157,17 @@ class NetworkOPS(object):
             LOG.debug('Removing the folder %s ', network_file_path)
             shutil.rmtree(network_file_path)
 
+        # update guest db to mark the network is already set
+        if first:
+            self._smutclient.update_guestdb_with_net_set(userid)
+
+        # using zvmguestconfigure tool to parse network_doscript
+        if active:
+            self._smutclient.execute_cmd(userid, active_cmds)
+
     # Prepare and create network doscript for instance
-    def _generate_network_doscript(self, userid, os_version,
-                                   network_info, network_file_path):
+    def _generate_network_doscript(self, userid, os_version, network_info,
+                                   network_file_path, first, active=False):
         path_contents = []
         content_dir = {}
         files_map = []
@@ -139,16 +178,21 @@ class NetworkOPS(object):
                   (userid, network_file_path))
         linuxdist = self._dist_manager.get_linux_dist(os_version)()
         files_and_cmds = linuxdist.create_network_configuration_files(
-                             network_file_path, network_info)
+                             network_file_path, network_info,
+                             first)
 
-        (net_conf_files, net_conf_cmds) = files_and_cmds
+        (net_conf_files, net_conf_cmds, clean_cmd) = files_and_cmds
 
         # Add network configure files to path_contents
         if len(net_conf_files) > 0:
             path_contents.extend(net_conf_files)
 
+        restart_cmds = ''
+        if active:
+            restart_cmds = linuxdist.restart_network()
         net_cmd_file = self._create_znetconfig(net_conf_cmds,
-                                               linuxdist)
+                                               linuxdist,
+                                               restart_cmds)
         # Add znetconfig file to path_contents
         if len(net_cmd_file) > 0:
             path_contents.extend(net_cmd_file)
@@ -161,15 +205,21 @@ class NetworkOPS(object):
             file_name = os.path.join(network_file_path, key)
             self._add_file(file_name, contents)
 
-        self._create_invokeScript(network_file_path, files_map)
+        self._create_invokeScript(network_file_path, clean_cmd, files_map)
         network_doscript = self._create_network_doscript(network_file_path)
-        return network_doscript
+
+        # get command about zvmguestconfigure
+        active_cmds = ''
+        if active:
+            active_cmds = linuxdist.create_active_net_interf_cmd()
+
+        return network_doscript, active_cmds
 
     def _add_file(self, file_name, data):
         with open(file_name, "w") as f:
             f.write(data)
 
-    def _create_znetconfig(self, commands, linuxdist):
+    def _create_znetconfig(self, commands, linuxdist, append_cmd):
         LOG.debug('Creating znetconfig file')
 
         znet_content = linuxdist.get_znetconfig_contents()
@@ -179,13 +229,16 @@ class NetworkOPS(object):
                 znetconfig = '\n'.join(('#!/bin/bash', znet_content))
             else:
                 znetconfig = '\n'.join(('#!/bin/bash', commands, znet_content))
+            if len(append_cmd) > 0:
+                znetconfig += '\n%s\n' % append_cmd
             znetconfig += '\nrm -rf /tmp/znetconfig.sh\n'
             # Create a temp file in instance to execute above commands
             net_cmd_file.append(('/tmp/znetconfig.sh', znetconfig))  # nosec
 
         return net_cmd_file
 
-    def _create_invokeScript(self, network_file_path, files_map):
+    def _create_invokeScript(self, network_file_path, commands,
+                             files_map):
         """invokeScript: Configure zLinux os network
 
         invokeScript is included in the network.doscript, it is used to put
@@ -197,7 +250,7 @@ class NetworkOPS(object):
         invokeScript = "invokeScript.sh"
 
         conf = "#!/bin/bash \n"
-        command = ''
+        command = commands
         for file in files_map:
             target_path = file['target_path']
             source_file = file['source_file']
