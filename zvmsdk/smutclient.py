@@ -1658,6 +1658,21 @@ class SMUTClient(object):
                                             nic_id=nic_id, vswitch=vswitch)
         return nic_info
 
+    def is_first_network_config(self, userid):
+        action = "get guest '%s' to database" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            info = self._GuestDbOperator.get_guest_by_userid(userid)
+            # check net_set
+            if int(info[3]) == 0:
+                return True
+            else:
+                return False
+
+    def update_guestdb_with_net_set(self, userid):
+        action = "update guest '%s' in database" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._GuestDbOperator.update_guest_by_userid(userid, net_set='1')
+
 
 class FilesystemBackend(object):
     @classmethod

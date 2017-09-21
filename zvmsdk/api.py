@@ -1116,7 +1116,8 @@ class SDKAPI(object):
 
     @zvmutils.check_input_types(_TUSERID, _TSTR, list, bool)
     def guest_create_network_interface(self, userid, os_version,
-                                       guest_networks, active=False):
+                                       guest_networks,
+                                       active=False):
         """ Create network interface(s) for the guest inux system. It will
             create the nic for the guest, add NICDEF record into the user
             direct. It will also construct network interface configuration
@@ -1228,7 +1229,8 @@ class SDKAPI(object):
 
         try:
             self._networkops.network_configuration(userid, os_version,
-                                                   guest_networks)
+                                                   guest_networks,
+                                                   active=active)
         except exception.SDKBaseException:
             LOG.error(('Failed to set network configuration file on vm %s') %
                       userid)

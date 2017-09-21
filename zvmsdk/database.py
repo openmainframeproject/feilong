@@ -636,6 +636,7 @@ class GuestDbOperator(object):
             'id             char(36)      PRIMARY KEY,',
             'userid         varchar(8)    NOT NULL UNIQUE,',
             'metadata       varchar(255),',
+            'net_set        smallint      DEFAULT 0,',
             'comments       text)'))
         with get_guest_conn() as conn:
             conn.execute(sql)
@@ -671,10 +672,11 @@ class GuestDbOperator(object):
     def add_guest(self, userid, meta='', comments=''):
         # Generate uuid automatically
         guest_id = str(uuid.uuid4())
+        net_set = '0'
         with get_guest_conn() as conn:
             conn.execute(
-                "INSERT INTO guests VALUES (?, ?, ?, ?)",
-                (guest_id, userid.upper(), meta, comments))
+                "INSERT INTO guests VALUES (?, ?, ?, ?, ?)",
+                (guest_id, userid.upper(), meta, net_set, comments))
 
     def delete_guest_by_id(self, guest_id):
         # First check whether the guest exist in db table
@@ -695,8 +697,10 @@ class GuestDbOperator(object):
             conn.execute(
                 "DELETE FROM guests WHERE userid=?", (userid.upper(),))
 
-    def update_guest_by_id(self, uuid, userid=None, meta=None, comments=None):
-        if (userid is None) and (meta is None) and (comments is None):
+    def update_guest_by_id(self, uuid, userid=None, meta=None, net_set=None,
+                           comments=None):
+        if ((userid is None) and (meta is None) and
+            (net_set is None) and (comments is None)):
             msg = ("Update guest with id: %s failed, no field "
                    "specified to be updated." % uuid)
             LOG.error(msg)
@@ -713,6 +717,9 @@ class GuestDbOperator(object):
         if meta is not None:
             sql_cmd += " metadata=?,"
             sql_var.append(meta)
+        if net_set is not None:
+            sql_cmd += " net_set=?,"
+            sql_var.append(net_set)
         if comments is not None:
             sql_cmd += " comments=?,"
             sql_var.append(comments)
@@ -726,9 +733,10 @@ class GuestDbOperator(object):
         with get_guest_conn() as conn:
             conn.execute(sql_cmd, sql_var)
 
-    def update_guest_by_userid(self, userid, meta=None, comments=None):
+    def update_guest_by_userid(self, userid, meta=None, net_set=None,
+                               comments=None):
         userid = userid.upper()
-        if (meta is None) and (comments is None):
+        if (meta is None) and (net_set is None) and (comments is None):
             msg = ("Update guest with userid: %s failed, no field "
                    "specified to be updated." % userid)
             LOG.error(msg)
@@ -742,6 +750,9 @@ class GuestDbOperator(object):
         if meta is not None:
             sql_cmd += " metadata=?,"
             sql_var.append(meta)
+        if net_set is not None:
+            sql_cmd += " net_set=?,"
+            sql_var.append(net_set)
         if comments is not None:
             sql_cmd += " comments=?,"
             sql_var.append(comments)
