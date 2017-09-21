@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "597add92_de9a66c4",
+        "filename": "zvmsdk/volumeop.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-21T08:20:35Z",
+      "side": 1,
+      "message": "For the input format error, we\u0027d better add in the error message more information of what the value is supported.",
+      "range": {
+        "startLine": 273,
+        "startChar": 12,
+        "endLine": 273,
+        "endChar": 64
+      },
+      "revId": "c1dddc319e2cc082ad94e77fb4a24e9ce941a5ac",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}

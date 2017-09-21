@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3c427037_bcac218d",
+        "filename": "zvmsdk/volumeop.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-09-21T08:20:35Z",
+      "side": 0,
+      "message": "Now we would have the SDKVolumeOperationError exception.\n\nIf zvmvolumeerror exception is not used in other place, please remember to delete the exception definition.",
+      "range": {
+        "startLine": 22,
+        "startChar": 29,
+        "endLine": 22,
+        "endChar": 43
+      },
+      "revId": "6ff2a8c7e6dd720393e9d86599c64ed15143c62f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
