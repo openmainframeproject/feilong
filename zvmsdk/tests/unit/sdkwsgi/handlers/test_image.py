@@ -145,15 +145,15 @@ class HandlersImageTest(unittest.TestCase):
     def test_image_export(self, mock_export, mock_get):
         mock_export.return_value = '{}'
         body_str = """{"location":{
-                                    "dest_url": "file:///tmp/images/",
+                                    "dest_url": "file:///tmp/images/image1",
                                     "remote_host": "192.168.12.34"
                                   }
                       }"""
-        body = {u'location': {u'dest_url': u'file:///tmp/images/',
+        body = {u'location': {u'dest_url': u'file:///tmp/images/image1',
                               u'remote_host': u'192.168.12.34'}}
         fake_image_name = '46a4aea3-54b6-4b1c'
         mock_get.return_value = fake_image_name
         self.req.body = body_str
         image.image_export(self.req)
         mock_export.assert_called_once_with(fake_image_name,
-                                            body)
+                                            body=body)
