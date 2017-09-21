@@ -362,7 +362,8 @@ class HandlersGuestTest(SDKWSGITest):
                                       "gateway_addr": "192.168.95.1",
                                       "cidr": "192.168.95.0/24",
                                       "nic_vdev": "1000",
-                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
+                                      "mac_addr": "02:00:00:12:34:56"}]
+                                 "first": True}}"""
         self.req.body = bstr
         mock_userid.return_value = FAKE_USERID
         mock_interface.return_value = ''
@@ -373,6 +374,7 @@ class HandlersGuestTest(SDKWSGITest):
             FAKE_USERID,
             os_version=os_version,
             guest_networks=guest_networks,
+            first=True,
             active=False)
 
     # TODO: move this test to sdk layer instead of API layer
