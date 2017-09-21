@@ -153,6 +153,8 @@ errors = {
                      "active guest system, error: %(create_err)s, and "
                      "failed to revoke user direct's changes, "
                      "error: %(revoke_err)s "),
+                 5: ("Failed to actively change network setting for user "
+                     "%(userid)s, error: %(msg)s")
                  },
                 "Operation on Network failed"
                 ],

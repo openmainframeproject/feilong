@@ -621,7 +621,11 @@ class GuestDbOperator(object):
         self._module_id = 'guest'
 
     def _create_guests_table(self):
-        """"""
+        """
+        net_set: it is used to describe network interface status, the initial
+                 value is 0, no network interface. It will be updated to be
+                 1 after the network interface is configured
+        """
         sql = ' '.join((
             'CREATE TABLE IF NOT EXISTS guests(',
             'id             char(36)      PRIMARY KEY,',

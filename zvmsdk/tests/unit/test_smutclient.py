@@ -799,8 +799,10 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(database.NetworkDbOperator, 'switch_add_record')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_private_create_nic_active(self, request, add_record):
+    @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
+    def test_private_create_nic_active(self, power_state, request, add_record):
         request.return_value = {'overallRC': 0}
+        power_state.return_value = 'on'
         self._smutclient._create_nic("fakenode", "fake_vdev",
                                      nic_id="fake_nic",
                                      mac_addr='11:22:33:44:55:66',
@@ -832,7 +834,9 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(database.NetworkDbOperator,
                        'switch_delete_record_for_nic')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_delete_nic(self, request, delete_nic):
+    @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
+    def test_delete_nic(self, power_state, request, delete_nic):
+        power_state.return_value = 'on'
         userid = 'FakeID'
         vdev = 'FakeVdev'
         rd1 = ' '.join((
@@ -870,8 +874,10 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(database.NetworkDbOperator,
                        'switch_update_record_with_switch')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_couple_nic(self, request, update_switch):
+    @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
+    def test_couple_nic(self, power_state, request, update_switch):
         request.return_value = {'overallRC': 0}
+        power_state.return_value = 'on'
         userid = 'FakeID'
         vdev = 'FakeVdev'
         vswitch_name = 'FakeVS'
@@ -899,8 +905,10 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(database.NetworkDbOperator,
                        'switch_update_record_with_switch')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_uncouple_nic(self, request, update_switch):
+    @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
+    def test_uncouple_nic(self, power_state, request, update_switch):
         request.return_value = {'overallRC': 0}
+        power_state.return_value = 'on'
         userid = 'FakeID'
         vdev = 'FakeVdev'
 
