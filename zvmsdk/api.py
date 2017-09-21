@@ -1094,9 +1094,10 @@ class SDKAPI(object):
                                                    connection_info,
                                                    is_rollback_in_failure)
 
-    @zvmutils.check_input_types(_TUSERID, str, list, bool)
+    @zvmutils.check_input_types(_TUSERID, str, list, bool, bool)
     def guest_create_network_interface(self, userid, os_version,
-                                       guest_networks, active=False):
+                                       guest_networks, active=False,
+                                       first=False):
         """ Create network interface(s) for the guest inux system. It will
             create the nic for the guest, add NICDEF record into the user
             direct. It will also construct network interface configuration
@@ -1131,6 +1132,12 @@ class SDKAPI(object):
                'cidr': "192.168.96.0/24",
                'nic_vdev': '1003}]
         :param bool active: whether add a nic on active guest system
+        :param bool first: Should be True if it is the first time to create
+               the network interface, it will help to delete the network
+               interface files which come from the image. These files may
+               prevent the current network configuration from working.
+               And it must be False if not the first time, otherwise, it
+               will erase the previous network configuration.
         :returns: guest_networks list, including nic_vdev for each network
         :rtype: list
         """
@@ -1208,9 +1215,26 @@ class SDKAPI(object):
 
         try:
             self._networkops.network_configuration(userid, os_version,
-                                                   guest_networks)
+                                                   guest_networks,
+                                                   active=active,
+                                                   first=first)
         except exception.SDKBaseException:
             LOG.error(('Failed to set network configuration file on vm %s') %
                       userid)
             raise
         return guest_networks
+
+    @zvmutils.check_input_types(_TUSERID, str)
+    def guest_active_net_interface_configuration(self, userid, os_version):
+        """ Active network configuration without restart the guest.
+        It is generally called after user changes the new network interface
+        configuration, such as after adding a new interface through API
+        guest_create_network_interface which setting active True and the
+        new interface has already been coupled and granted to a vswitch
+
+        :param str userid: the user id of the guest
+        :param str os_version: operating system version of the guest
+        """
+        action = "active the network configuration for guest %s" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._networkops.active_network_interface(userid, os_version)
