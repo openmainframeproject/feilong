@@ -72,7 +72,8 @@ class GuestHandlerTestCase(unittest.TestCase):
                                      "gateway_addr": "192.168.98.1",
                                      "cidr": "192.168.98.0/24",
                                      "nic_vdev": "1000",
-                                     "mac_addr": "02:00:00:12:34:56"}]}}"""
+                                     "mac_addr": "02:00:00:12:34:56"}],
+                                 "first": "True"}}"""
         if userid is None:
             userid = self.userid
         url = '/guests/%s/interface' % userid
