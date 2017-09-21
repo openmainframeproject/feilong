@@ -659,9 +659,9 @@ def parseCmdline(rh):
             if ('fileSystem' in rh.parms and rh.parms['fileSystem'] not in
                 ['ext2', 'ext3', 'ext4', 'xfs', 'swap']):
                 # Invalid file system specified.
-                msg = msgs.msg['0011'][1] % (modId, rh.parms['fileSystem'])
+                msg = msgs.msg['0015'][1] % (modId, rh.parms['fileSystem'])
                 rh.printLn("ES", msg)
-                rh.updateResults(msgs.msg['0011'][0])
+                rh.updateResults(msgs.msg['0015'][0])
 
     rh.printSysLog("Exit changeVM.parseCmdLine, rc: " +
         str(rh.results['overallRC']))
