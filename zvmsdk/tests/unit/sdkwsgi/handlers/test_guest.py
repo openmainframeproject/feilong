@@ -195,6 +195,7 @@ class HandlersGuestTest(SDKWSGITest):
     def test_guest_create_with_disk_list(self, mock_create):
         body_str = """{"guest": {"userid": "name1", "vcpus": 1, "memory": 1,
                                  "disk_list": [{"size": "1g",
+                                                "format": "xfs",
                                                 "disk_pool": "ECKD:poolname"}
                                               ]}}"""
         self.req.body = body_str
@@ -202,11 +203,24 @@ class HandlersGuestTest(SDKWSGITest):
         guest.guest_create(self.req)
         mock_create.assert_called_once_with('name1', 1, 1,
                                             disk_list=[{u'size': u'1g',
+                                                'format': 'xfs',
                                                 'disk_pool': 'ECKD:poolname'}])
 
     def test_guest_create_invalid_disk_list(self):
         body_str = """{"guest": {"userid": "name1", "vcpus": 1, "memory": 1,
                                  "disk_list": [{"size": 1}]}}"""
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, guest.guest_create,
+                          self.req)
+
+    @mock.patch.object(api.SDKAPI, 'guest_create')
+    def test_guest_create_with_invalid_format(self, mock_create):
+        body_str = """{"guest": {"userid": "name1", "vcpus": 1, "memory": 1,
+                                 "disk_list": [{"size": "1g",
+                                                "format": "dummy",
+                                                "disk_pool": "ECKD:poolname"}
+                                              ]}}"""
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, guest.guest_create,

@@ -233,14 +233,19 @@ userid_list = {
 }
 
 
+file_type = {
+    'type': 'string',
+    'enum': ['ext2', 'ext3', 'ext4', 'xfs']
+}
+
+
 disk_list = {
     'type': 'array',
     'items': {
         'type': 'object',
         'properties': {
             'size': {'type': 'string'},
-            # TODO: set format to enum
-            'format': {'type': 'string'},
+            'format': file_type,
             'is_boot_disk': boolean,
             'disk_pool': {'type': 'string', 'pattern': '^\w+:\w+$'}
         },
