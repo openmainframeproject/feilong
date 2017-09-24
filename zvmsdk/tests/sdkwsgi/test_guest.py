@@ -159,11 +159,19 @@ class GuestHandlerTestCase(unittest.TestCase):
         return self._guest_action(body)
 
     def _guest_pause(self):
-        body = '{"pause": "none"}'
+        body = '{"action": "pause"}'
         return self._guest_action(body)
 
     def _guest_unpause(self):
-        body = '{"unpause": "none"}'
+        body = '{"action": "unpause"}'
+        return self._guest_action(body)
+
+    def _guest_reboot(self):
+        body = '{"action": "reboot"}'
+        return self._guest_action(body)
+
+    def _guest_reset(self):
+        body = '{"action": "reset"}'
         return self._guest_action(body)
 
     def _guest_cpuinfo(self):
@@ -225,6 +233,10 @@ class GuestHandlerTestCase(unittest.TestCase):
             # FIXME need further enhancement to test start
             # the action is supported, but need add IPL param etc
             # self._guest_start()
+
+            # self._guest_pause()
+            # self._guest_unpause()
+
 
         except Exception as e:
             raise e
