@@ -347,6 +347,8 @@ Create Guest nic
 Start guest
 -----------
 
+Start a guest.
+
 **POST /guests/{userid}/action**
 
 * Request:
@@ -367,6 +369,8 @@ Start guest
 Stop guest
 ----------
 
+Stop a guest.
+
 **POST /guests/{userid}/action**
 
 * Request:
@@ -375,6 +379,96 @@ Stop guest
 
   - guest: guest_userid
   - action: action_stop_guest
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No response.
+
+Pause guest
+-----------
+
+Pause a guest.
+
+**POST /guests/{userid}/action**
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - guest: guest_userid
+  - action: action_pause_guest
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No response.
+
+Unpause guest
+-------------
+
+Unpause a guest.
+
+**POST /guests/{userid}/action**
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - guest: guest_userid
+  - action: action_unpause_guest
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No response.
+
+Reboot guest
+----------
+
+Reboot a guest, this will use 'reboot' command on the
+given guest.
+
+**POST /guests/{userid}/action**
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - guest: guest_userid
+  - action: action_reboot_guest
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No response.
+
+Reset guest
+-----------
+
+Reset a guest, this will first gracefully logoff the guest from
+z/VM it is running on, then log on the guest and IPL.
+
+**POST /guests/{userid}/action**
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - guest: guest_userid
+  - action: action_reset_guest
 
 * Response code:
 
