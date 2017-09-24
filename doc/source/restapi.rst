@@ -724,6 +724,11 @@ Create image
   - image_meta: image_metadata
   - remotehost: remotehost_image
 
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_create_req.tpl
+   :language: javascript
+
 * Response code:
 
   HTTP status code 200 on success.
@@ -889,6 +894,11 @@ Update vswitch
 .. restapi_parameters:: parameters.yaml
 
   - name: vswitch_name
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_update_req.tpl
+   :language: javascript
 
 * Response code:
 
