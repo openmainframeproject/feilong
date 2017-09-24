@@ -177,6 +177,18 @@ class VMAction(object):
     def stop(self, userid, body):
         self.api.guest_stop(userid)
 
+    def pause(self, userid):
+        self.api.guest_pause(userid)
+
+    def unpause(self, userid):
+        self.api.guest_unpause(userid)
+
+    def reboot(self, userid):
+        self.api.guest_reboot(userid)
+
+    def reset(self, userid):
+        self.api.guest_reset(userid)
+
     def get_console_output(self, userid, body):
         return self.api.guest_get_console_output(userid)
 

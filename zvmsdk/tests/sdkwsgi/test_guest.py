@@ -159,11 +159,19 @@ class GuestHandlerTestCase(unittest.TestCase):
         return self._guest_action(body)
 
     def _guest_pause(self):
-        body = '{"pause": "none"}'
+        body = '{"action": "pause"}'
         return self._guest_action(body)
 
     def _guest_unpause(self):
-        body = '{"unpause": "none"}'
+        body = '{"action": "unpause"}'
+        return self._guest_action(body)
+
+    def _guest_reboot(self):
+        body = '{"action": "reboot"}'
+        return self._guest_action(body)
+
+    def _guest_reset(self):
+        body = '{"action": "reset"}'
         return self._guest_action(body)
 
     def _guest_cpuinfo(self):
@@ -209,6 +217,9 @@ class GuestHandlerTestCase(unittest.TestCase):
             self._guest_cpuinfo()
             self._guest_meminfo()
             self._guest_vnicsinfo()
+
+            self._guest_pause()
+            self._guest_unpause()
 
             self._guest_nic_create("2000")
 
