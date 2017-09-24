@@ -88,10 +88,8 @@ fi
 # Restart syslog
 if [ -e "/etc/rc.d/init.d/rsyslog" ]; then
     /etc/rc.d/init.d/rsyslog restart
-elif [[ -e "/opt/ibm/cmo/version" ]] || [[ -e "/etc/sysconfig/rsyslog" ]]; then
-    service rsyslog restart
 else
-    /etc/init.d/syslog restart
+    service rsyslog restart
 fi
 
 /sbin/ldconfig
