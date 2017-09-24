@@ -121,14 +121,29 @@ class FaultWrapper(object):
             return self._error(ex, req)
 
 
+class HeaderAddOn(object):
+
+    def __init__(self, application):
+        self.application = application
+
+    @webob.dec.wsgify
+    def __call__(self, req):
+
+        response = req.get_response(self.application)
+        response.headers.add('cache-control', 'no-cache')
+        return response
+
+
 def deploy(project_name):
     """Assemble the middleware pipeline leading to the placement app."""
     microversion_middleware = microversion.MicroversionMiddleware
     request_log = requestlog.RequestLog
+    header_addon = HeaderAddOn
     fault_wrap = FaultWrapper
     application = handler.SdkHandler()
 
     for middleware in (microversion_middleware,
+                       header_addon,
                        fault_wrap,
                        request_log,
                        ):
