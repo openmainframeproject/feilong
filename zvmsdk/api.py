@@ -318,12 +318,12 @@ class SDKAPI(object):
         :rtype: str
         """
         if mac_addr is not None:
-            if not zvmutils.valid_mac_addr(mac_addr):
+            if not netaddr.valid_mac(mac_addr):
                 raise exception.SDKInvalidInputFormat(
                     msg=("Invalid mac address, format should be "
                          "xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit"))
         if ip_addr is not None:
-            if not zvmutils.valid_IP(ip_addr):
+            if not netaddr.valid_ipv4(ip_addr):
                 raise exception.SDKInvalidInputFormat(
                     msg=("Invalid management IP address, it should be the "
                          "value between 0.0.0.0 and 255.255.255.255"))
