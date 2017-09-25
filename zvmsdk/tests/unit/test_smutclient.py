@@ -1003,7 +1003,9 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         image_query.return_value = [(u'testimage', u'rhel6.5',
             u'c73ce117eef8077c3420bfc8f473ac2f',
             u'3338:CYL', u'5120000', u'netboot', None)]
-        self._smutclient.image_import(image_name, url, image_meta)
+        self.assertRaises(exception.SDKImageOperationError,
+                          self._smutclient.image_import,
+                          image_name, url, image_meta)
         image_query.assert_called_once_with(image_name)
         get_image_path.assert_not_called()
 

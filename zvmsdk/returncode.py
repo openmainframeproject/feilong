@@ -185,8 +185,10 @@ errors = {
                11: "The specified remote_host %(rh)s format invalid",
                12: "Import image from local file system failed with error"
                    " %(err)s",
+               13: "Image import error: image name %(img)s already exist in "
+                   "image database",
                20: "The image record of %(img)s does not exist",
-               21: "Image Export error: Faile to copy image file to remote "
+               21: "Image Export error: Failed to copy image file to remote "
                    "host with reason: %(msg)s",
                22: "Export image to local file system failed: %(err)s",
                },
