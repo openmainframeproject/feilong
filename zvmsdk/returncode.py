@@ -131,7 +131,12 @@ errors = {
 # 'modID' as the sdkserver or sdkclient module rc when got error, and use 'rs'
 # as the socket error code.
     'socket': [{'overallRC': 101, 'modID': None, 'rc': 101},
-               {},
+               {1: "Failed to create client socket, error: %(error)s",
+                2: ("Failed to connect SDK server %(addr)s:%(port)s, "
+                    "error: %(error)s"),
+                3: ("Failed to send API call to SDK server, "
+                    "%(sent)d bytes sent. API call: %(api)s"),
+                4: "Failed to receive API results from SDK server"},
                "SDK client or server get socket error",
                ],
 # General Errors for each module, same overallRC = 300

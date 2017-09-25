@@ -14,7 +14,9 @@
 
 
 import json
+import six
 import socket
+from zvmsdk import returncode
 
 
 class SDKClient(object):
@@ -27,24 +29,35 @@ class SDKClient(object):
         # waiting results returned from server.
         self.timeout = request_timeout
 
+    def _construct_api_name_error(self, msg):
+        results = returncode.errors['API'][0]
+        results['modID'] = returncode.modRCs['sdkclient']
+        results.update({'rs': 1,
+                        'errmsg': msg,
+                        'output': ''})
+        return results
+
+    def _construct_socket_error(self, rs, **kwargs):
+        error = returncode.errors['socket']
+        results = error[0]
+        results['modID'] = returncode.modRCs['sdkclient']
+        results.update({'rs': rs,
+                        'errmsg': error[1][rs] % kwargs,
+                        'output': ''})
+        return results
+
     def call(self, func, *api_args, **api_kwargs):
         """Send API call to SDK server and return results"""
         if not isinstance(func, str) or (func == ''):
-            return {'overallRC': 1,
-                    'rc': 1,
-                    'rs': 5,
-                    'errmsg': ('Invalid input for API name, should be a'
-                               'string, type: %s specified.') % type(func),
-                    'output': ''}
+            msg = ('Invalid input for API name, should be a'
+                   'string, type: %s specified.') % type(func)
+            return self._construct_api_name_error(msg)
+
         # Create client socket
         try:
             cs = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        except socket.error as msg:
-            return {'overallRC': 1,
-                    'rc': 1,
-                    'rs': 1,
-                    'errmsg': 'Failed to create client socket: %s' % msg,
-                    'output': ''}
+        except socket.error as err:
+            return self._construct_socket_error(1, error=six.text_type(err))
 
         try:
             # Set socket timeout
@@ -52,12 +65,10 @@ class SDKClient(object):
             # Connect SDK server
             try:
                 cs.connect((self.addr, self.port))
-            except socket.error as msg:
-                return {'overallRC': 1,
-                        'rc': 1,
-                        'rs': 2,
-                        'errmsg': 'Failed to connect SDK server: %s' % msg,
-                        'output': ''}
+            except socket.error as err:
+                return self._construct_socket_error(2, addr=self.addr,
+                                                    port=self.port,
+                                                    error=six.text_type(err))
 
             # Prepare the data to be sent
             api_data = json.dumps((func, api_args, api_kwargs))
@@ -72,13 +83,8 @@ class SDKClient(object):
                     break
                 sent += this_sent
             if got_error or sent != total_len:
-                return {'overallRC': 1,
-                        'rc': 1,
-                        'rs': 3,
-                        'errmsg': ('Failed to send API call to SDK server,'
-                                   '%d bytes sent. API call: %s') % (sent,
-                                                                     api_data),
-                        'output': ''}
+                return self._construct_socket_error(3, sent=sent,
+                                                    api=api_data)
 
             # Receive data from server
             return_blocks = []
@@ -99,10 +105,5 @@ class SDKClient(object):
         if return_blocks != []:
             results = json.loads(''.join(return_blocks))
         else:
-            results = {'overallRC': 1,
-                      'rc': 1,
-                      'rs': 4,
-                      'errmsg': ('Failed to receive API results from'
-                                 'SDK server'),
-                      'output': ''}
+            results = self._construct_socket_error(4)
         return results
