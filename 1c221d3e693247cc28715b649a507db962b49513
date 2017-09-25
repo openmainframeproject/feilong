@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ee53bae_af68c019",
+        "filename": "zvmsdk/sdkwsgi/schemas/guest.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2017-09-25T01:40:34Z",
+      "side": 1,
+      "message": "guest_networks is also required",
+      "range": {
+        "startLine": 70,
+        "startChar": 26,
+        "endLine": 70,
+        "endChar": 36
+      },
+      "revId": "1c221d3e693247cc28715b649a507db962b49513",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5da0d9e1_b22b0677",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2017-09-25T01:40:34Z",
+      "side": 1,
+      "message": "https://github.com/openstack/nova/blob/a0a8a3f339d6ac990810137b2d00fa8c3b91ec02/nova/api/validation/parameter_types.py\n\nhttps://github.com/openstack/nova/blob/a0a8a3f339d6ac990810137b2d00fa8c3b91ec02/nova/api/validation/validators.py",
+      "range": {
+        "startLine": 277,
+        "startChar": 12,
+        "endLine": 277,
+        "endChar": 39
+      },
+      "revId": "1c221d3e693247cc28715b649a507db962b49513",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ed8ff74_b1f781e3",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2017-09-25T01:40:34Z",
+      "side": 1,
+      "message": "No items are required",
+      "range": {
+        "startLine": 283,
+        "startChar": 4,
+        "endLine": 283,
+        "endChar": 27
+      },
+      "revId": "1c221d3e693247cc28715b649a507db962b49513",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
