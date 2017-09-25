@@ -76,8 +76,7 @@ class SDKAPITestUtils(object):
             return userids[idx + 1]
 
     def guest_deploy(self, userid=None, cpu=1, memory=1024,
-                     image_path=CONF.tests.image_path, ip_addr=None,
-                     login_password='password'):
+                     image_path=CONF.tests.image_path, ip_addr=None):
         image_name = os.path.basename(image_path)
         url = 'file://' + image_path
 
