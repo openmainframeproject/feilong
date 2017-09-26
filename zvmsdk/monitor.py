@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import threading
 import time
 
 from zvmsdk import config
@@ -179,13 +180,18 @@ class MeteringCache(object):
     def __init__(self, types):
         self._cache = {}
         self._types = types
+        self._lock = threading.RLock()
         self._reset(types)
 
     def _reset(self, types):
-        for type in types:
-            self._cache[type] = {'expiration': time.time(),
-                                'data': {},
-                                }
+        self._lock.acquire()
+        try:
+            for type in types:
+                self._cache[type] = {'expiration': time.time(),
+                                    'data': {},
+                                    }
+        finally:
+            self._lock.release()
 
     def _get_ctype_cache(self, ctype):
         return self._cache[ctype]
@@ -197,32 +203,52 @@ class MeteringCache(object):
         :param key: the key to be set value
         :param data: cache data
         """
-        target_cache = self._get_ctype_cache(ctype)
-        target_cache['data'][key] = data
+        self._lock.acquire()
+        try:
+            target_cache = self._get_ctype_cache(ctype)
+            target_cache['data'][key] = data
+        finally:
+            self._lock.release()
 
     def get(self, ctype, key):
-        target_cache = self._get_ctype_cache(ctype)
-        if(time.time() > target_cache['expiration']):
-            return None
-        else:
-            return target_cache['data'].get(key, None)
+        self._lock.acquire()
+        try:
+            target_cache = self._get_ctype_cache(ctype)
+            if(time.time() > target_cache['expiration']):
+                return None
+            else:
+                return target_cache['data'].get(key, None)
+        finally:
+            self._lock.release()
 
     def delete(self, ctype, key):
-        target_cache = self._get_ctype_cache(ctype)
-        if key in target_cache['data']:
-            del target_cache['data'][key]
+        self._lock.acquire()
+        try:
+            target_cache = self._get_ctype_cache(ctype)
+            if key in target_cache['data']:
+                del target_cache['data'][key]
+        finally:
+            self._lock.release()
 
     def clear(self, ctype='all'):
-        if ctype == 'all':
-            self._reset()
-        else:
-            target_cache = self._get_ctype_cache(ctype)
-            target_cache['data'] = {}
+        self._lock.acquire()
+        try:
+            if ctype == 'all':
+                self._reset()
+            else:
+                target_cache = self._get_ctype_cache(ctype)
+                target_cache['data'] = {}
+        finally:
+            self._lock.release()
 
     def refresh(self, ctype, data):
-        self.clear(ctype)
-        target_cache = self._get_ctype_cache(ctype)
-        target_cache['expiration'] = (time.time() +
-                                        float(CONF.monitor.cache_interval))
-        for (k, v) in data.items():
-            self.set(ctype, k, v)
+        self._lock.acquire()
+        try:
+            self.clear(ctype)
+            target_cache = self._get_ctype_cache(ctype)
+            target_cache['expiration'] = (time.time() +
+                                            float(CONF.monitor.cache_interval))
+            for (k, v) in data.items():
+                self.set(ctype, k, v)
+        finally:
+            self._lock.release()
