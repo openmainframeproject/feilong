@@ -11,13 +11,16 @@
 #    under the License.
 """Handler for the root of the sdk API."""
 
-from zvmsdk import api
+import json
+
+from sdkclient import client
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import vswitch
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi import validation
 from zvmsdk.sdkwsgi import wsgi_wrapper
+from zvmsdk import utils
 
 
 _VOLUMEACTION = None
@@ -26,7 +29,7 @@ LOG = log.LOG
 
 class VolumeAction(object):
     def __init__(self):
-        self.api = api.SDKAPI(skip_input_check=True)
+        self.client = client.SDKClient()
 
     def attach(self, userid, body):
         info = body['info']
@@ -36,8 +39,9 @@ class VolumeAction(object):
         connection = info['connection']
         rollback = info['rollback']
 
-        self.api.volume_attach(guest, volume, connection,
-                               is_rollback_in_failure=rollback)
+        info = self.client.send_request('volume_attach', guest, volume,
+                                        connection,
+                                        is_rollback_in_failure=rollback)
 
         return info
 
@@ -50,8 +54,11 @@ class VolumeAction(object):
         connection = info['connection']
         rollback = info['rollback']
 
-        self.api.volume_detach(guest, volume, connection,
-                               is_rollback_in_failure=rollback)
+        info = self.client.send_request('volume_detach', guest, volume,
+                                        connection,
+                                        is_rollback_in_failure=rollback)
+
+        return info
 
 
 def get_action():
@@ -68,12 +75,15 @@ def volume_attach(req):
     def _volume_attach(userid, req):
         action = get_action()
         body = util.extract_json(req.body)
-        action.attach(userid, body)
+        return action.attach(userid, body)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
-    _volume_attach(userid, req)
+    info = _volume_attach(userid, req)
+
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
     req.response.status = 204
-    req.response.content_type = None
     return req.response
 
 
@@ -84,10 +94,13 @@ def volume_detach(req):
     def _volume_detach(userid, req):
         action = get_action()
         body = util.extract_json(req.body)
-        action.detach(userid, body)
+        return action.detach(userid, body)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
-    _volume_detach(userid, req)
+    info = _volume_detach(userid, req)
+    info_json = json.dumps(info)
+
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
     req.response.status = 204
-    req.response.content_type = None
     return req.response

@@ -60,6 +60,7 @@ class HandlersGuestTest(unittest.TestCase):
 
     @mock.patch.object(vswitch.VswitchAction, 'create')
     def test_vswitch_create(self, mock_create):
+        mock_create.return_value = {}
         body_str = """{"vswitch": {"name": "name1",
                                    "rdev": "1234 abcd 123F",
                                    "port_type": 1,
@@ -72,6 +73,7 @@ class HandlersGuestTest(unittest.TestCase):
 
     @mock.patch.object(vswitch.VswitchAction, 'create')
     def test_vswitch_create_with_userid_controller(self, mock_create):
+        mock_create.return_value = {}
         body_str = """{"vswitch": {"name": "name1",
                                    "rdev": "1234 abcd 123F",
                                    "port_type": 1,
@@ -99,6 +101,7 @@ class HandlersGuestTest(unittest.TestCase):
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(vswitch.VswitchAction, 'delete')
     def test_vswitch_delete(self, mock_delete, mock_name):
+        mock_delete.return_value = {}
         mock_name.return_value = 'vsw1'
 
         vswitch.vswitch_delete(self.req)
@@ -190,6 +193,7 @@ class HandlersGuestTest(unittest.TestCase):
     def test_vswitch_update(self, mock_update, mock_name):
         mock_name.return_value = 'vsw1'
         body_str = '{"vswitch": {"grant_userid": "user1"}}'
+        mock_update.return_value = {}
         self.req.body = body_str
 
         vswitch.vswitch_update(self.req)

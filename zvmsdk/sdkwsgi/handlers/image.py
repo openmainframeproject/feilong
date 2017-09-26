@@ -13,7 +13,7 @@
 
 import json
 
-from zvmsdk import api
+from sdkclient import client
 from zvmsdk import log
 from zvmsdk import utils
 from zvmsdk.sdkwsgi.handlers import tokens
@@ -29,7 +29,7 @@ LOG = log.LOG
 class ImageAction(object):
 
     def __init__(self):
-        self.api = api.SDKAPI(skip_input_check=True)
+        self.client = client.SDKClient()
 
     @validation.schema(image.create)
     def create(self, body):
@@ -39,25 +39,33 @@ class ImageAction(object):
         remote_host = image.get('remotehost', None)
         image_meta = image['image_meta']
 
-        self.api.image_import(image_name, url, image_meta, remote_host)
+        info = self.client.send_request('image_import', image_name,
+                                        url, image_meta, remote_host)
+        return info
 
     def get_root_disk_size(self, name):
         # FIXME: this param need combined image nameg, e.g the profile
         # name, not the given image name from customer side
-        return self.api.image_get_root_disk_size(name)
+        info = self.client.send_request('image_get_root_disk_size',
+                                        name)
+        return info
 
     def delete(self, name):
-        self.api.image_delete(name)
+        info = self.client.send_request('image_delete', name)
+        return info
 
-    def query(self, imagename):
-        return self.api.image_query(imagename)
+    def query(self, name):
+        info = self.client.send_request('image_query', name)
+        return info
 
     @validation.schema(image.export)
-    def export(self, imagename, body):
+    def export(self, name, body):
         location = body['location']
         dest_url = location['dest_url']
         remotehost = location.get('remotehost', None)
-        return self.api.image_export(imagename, dest_url, remotehost)
+        info = self.client.send_request('image_export', name,
+                                        dest_url, remotehost)
+        return info
 
 
 def get_action():
@@ -74,12 +82,14 @@ def image_create(req):
     def _image_create(req):
         action = get_action()
         body = util.extract_json(req.body)
-        action.create(body=body)
+        return action.create(body=body)
 
-    _image_create(req)
+    info = _image_create(req)
 
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
     req.response.status = 200
-    req.response.content_type = None
+    req.response.content_type = 'application/json'
     return req.response
 
 
@@ -94,7 +104,7 @@ def image_get_root_disk_size(req):
     name = util.wsgi_path_item(req.environ, 'name')
     info = _image_get_root_disk_size(name)
 
-    info_json = json.dumps({'size': info})
+    info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
@@ -106,13 +116,15 @@ def image_delete(req):
 
     def _image_delete(name):
         action = get_action()
-        action.delete(name)
+        return action.delete(name)
 
     name = util.wsgi_path_item(req.environ, 'name')
-    _image_delete(name)
+    info = _image_delete(name)
 
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
     req.response.status = 204
-    req.response.content_type = None
+    req.response.content_type = 'application/json'
     return req.response
 
 
@@ -128,8 +140,9 @@ def image_export(req):
     name = util.wsgi_path_item(req.environ, 'name')
     info = _image_export(name, req)
 
-    info_json = json.dumps({'image_info': info})
+    info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
+    req.response.status = 200
     req.response.content_type = 'application/json'
     return req.response
 
@@ -147,7 +160,7 @@ def image_query(req):
         imagename = req.GET['imagename']
     info = _image_query(imagename)
 
-    info_json = json.dumps({'images': info})
+    info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response

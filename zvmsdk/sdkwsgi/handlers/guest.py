@@ -14,8 +14,7 @@
 import json
 import webob.exc
 
-from zvmsdk import api
-from zvmsdk import exception
+from sdkclient import client
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import guest
@@ -32,7 +31,7 @@ LOG = log.LOG
 
 class VMHandler(object):
     def __init__(self):
-        self.api = api.SDKAPI(skip_input_check=True)
+        self.client = client.SDKClient()
 
     @validation.schema(guest.create)
     def create(self, body):
@@ -46,50 +45,64 @@ class VMHandler(object):
         user_profile = guest.get('user_profile', None)
 
         if user_profile is not None:
-            self.api.guest_create(userid, vcpus, memory, disk_list=disk_list,
-                                  user_profile=user_profile)
+            info = self.client.send_request('guest_create', userid, vcpus,
+                                            memory, disk_list=disk_list,
+                                            user_profile=user_profile)
         else:
-            self.api.guest_create(userid, vcpus, memory, disk_list=disk_list)
+            info = self.client.send_request('guest_create', userid, vcpus,
+                                            memory, disk_list=disk_list)
+
+        return info
 
     def list(self):
         # list all guest on the given host
-        guests = self.api.guest_list()
-        return guests
+        info = self.client.send_request('guest_list')
+        return info
 
     def get_info(self, userid):
-        info = self.api.guest_get_info(userid)
+        info = self.client.send_request('guest_get_info', userid)
         return info
 
     def get(self, userid):
-        definition = self.api.guest_get_definition_info(userid)
-        return definition
+        info = self.client.send_request('guest_get_definition_info', userid)
+        return info
 
     def get_power_state(self, userid):
-        state = self.api.guest_get_power_state(userid)
-        return state
+        info = self.client.send_request('guest_get_power_state', userid)
+        return info
 
     def delete(self, userid):
-        self.api.guest_delete(userid)
+        info = self.client.send_request('guest_delete', userid)
+        return info
 
     def get_nic(self, userid):
-        return self.api.guest_get_nic_vswitch_info(userid)
+        info = self.client.send_request('guest_get_nic_vswitch_info', userid)
+        return info
 
     def delete_nic(self, userid, vdev, body):
         active = body.get('vdev', False)
 
-        self.api.guest_delete_nic(userid, vdev, active=active)
+        info = self.client.send_request('guest_delete_nic', userid, vdev,
+                                        active=active)
+        return info
 
     @validation.query_schema(guest.userid_list_query)
     def get_cpu_info(self, req, userid_list):
-        return self.api.guest_inspect_cpus(userid_list)
+        info = self.client.send_request('guest_inspect_cpus',
+                                        userid_list)
+        return info
 
     @validation.query_schema(guest.userid_list_query)
     def get_memory_info(self, req, userid_list):
-        return self.api.guest_inspect_mem(userid_list)
+        info = self.client.send_request('guest_inspect_mem',
+                                        userid_list)
+        return info
 
     @validation.query_schema(guest.userid_list_query)
     def get_vnics_info(self, req, userid_list):
-        return self.api.guest_inspect_vnics(userid_list)
+        info = self.client.send_request('guest_inspect_vnics',
+                                        userid_list)
+        return info
 
     @validation.schema(guest.create_nic)
     def create_nic(self, userid, body=None):
@@ -101,14 +114,11 @@ class VMHandler(object):
         ip_addr = nic.get('ip_addr', None)
         active = nic.get('active', False)
 
-        try:
-            self.api.guest_create_nic(userid, vdev=vdev, nic_id=nic_id,
-                                      mac_addr=mac_addr, ip_addr=ip_addr,
-                                      active=active)
-        except (exception.SDKInvalidInputNumber,
-                exception.SDKInvalidInputTypes,
-                exception.SDKInvalidInputFormat) as e:
-            raise webob.exc.HTTPBadRequest(str(e))
+        info = self.client.send_request('guest_create_nic', userid,
+                                        vdev=vdev, nic_id=nic_id,
+                                        mac_addr=mac_addr, ip_addr=ip_addr,
+                                        active=active)
+        return info
 
     @validation.schema(guest.create_network_interface)
     def create_network_interface(self, userid, body=None):
@@ -116,39 +126,29 @@ class VMHandler(object):
         version = interface['os_version']
         networks = interface.get('guest_networks', None)
         active = interface.get('active', False)
-        try:
-            self.api.guest_create_network_interface(userid,
-                                                    os_version=version,
-                                                    guest_networks=networks,
-                                                    active=active)
-        except (exception.SDKInvalidInputNumber,
-                exception.SDKInvalidInputTypes,
-                exception.SDKInvalidInputFormat) as e:
-            raise webob.exc.HTTPBadRequest(str(e))
+        info = self.client.send_request('guest_create_network_interface',
+                                        userid, os_version=version,
+                                        guest_networks=networks,
+                                        active=active)
+        return info
 
     @validation.schema(guest.create_disks)
     def create_disks(self, userid, body=None):
         disk_info = body['disk_info']
         disk_list = disk_info.get('disk_list', None)
-
-        try:
-            self.api.guest_create_disks(userid, disk_list)
-        except (exception.SDKInvalidInputNumber,
-                exception.SDKInvalidInputTypes,
-                exception.SDKInvalidInputFormat) as e:
-            raise webob.exc.HTTPBadRequest(str(e))
+        info = self.client.send_request('guest_create_disks', userid,
+                                        disk_list)
+        return info
 
     @validation.schema(guest.delete_disks)
     def delete_disks(self, userid, body=None):
         vdev_info = body['vdev_info']
         vdev_list = vdev_info.get('vdev_list', None)
 
-        try:
-            self.api.guest_delete_disks(userid, vdev_list)
-        except (exception.SDKInvalidInputNumber,
-                exception.SDKInvalidInputTypes,
-                exception.SDKInvalidInputFormat) as e:
-            raise webob.exc.HTTPBadRequest(str(e))
+        info = self.client.send_request('guest_delete_disks', userid,
+                                        vdev_list)
+
+        return info
 
     @validation.schema(guest.couple_uncouple_nic)
     def couple_uncouple_nic(self, userid, vdev, body):
@@ -160,41 +160,55 @@ class VMHandler(object):
         couple = util.bool_from_string(info['couple'], strict=True)
 
         if couple:
-            self.api.guest_nic_couple_to_vswitch(userid,
-                vdev, info['vswitch'], active=active)
+            info = self.client.send_request('guest_nic_couple_to_vswitch',
+                                            userid, vdev, info['vswitch'],
+                                            active=active)
         else:
-            self.api.guest_nic_uncouple_from_vswitch(userid, vdev,
-                                                     active=active)
+            info = self.client.send_request('guest_nic_uncouple_from_vswitch',
+                                            userid, vdev,
+                                            active=active)
+        return info
 
 
 class VMAction(object):
     def __init__(self):
-        self.api = api.SDKAPI(skip_input_check=True)
+        self.client = client.SDKClient()
 
     def start(self, userid, body):
-        try:
-            self.api.guest_start(userid)
-        except Exception:
-            # FIXME: need to be specific on the exception handling
-            LOG.info('failed to start %s', userid)
+        info = self.client.send_request('guest_start', userid)
+
+        return info
 
     def stop(self, userid, body):
-        self.api.guest_stop(userid)
+        info = self.client.send_request('guest_stop', userid)
+
+        return info
 
     def pause(self, userid, body):
-        self.api.guest_pause(userid)
+        info = self.client.send_request('guest_pause', userid)
+
+        return info
 
     def unpause(self, userid, body):
-        self.api.guest_unpause(userid)
+        info = self.client.send_request('guest_unpause', userid)
+
+        return info
 
     def reboot(self, userid, body):
-        self.api.guest_reboot(userid)
+        info = self.client.send_request('guest_reboot', userid)
+
+        return info
 
     def reset(self, userid, body):
-        self.api.guest_reset(userid)
+        info = self.client.send_request('guest_reset', userid)
+
+        return info
 
     def get_console_output(self, userid, body):
-        return self.api.guest_get_console_output(userid)
+        info = self.client.send_request('guest_get_console_output',
+                                        userid)
+
+        return info
 
     @validation.schema(guest.deploy)
     def deploy(self, userid, body):
@@ -204,9 +218,12 @@ class VMAction(object):
         remotehost = body.get('remotehost', None)
         vdev = body.get('vdev', None)
 
-        self.api.guest_deploy(userid, image_name,
-            transportfiles=transportfiles, remotehost=remotehost,
-            vdev=vdev)
+        info = self.client.send_request('guest_deploy', userid,
+                                        image_name,
+                                        transportfiles=transportfiles,
+                                        remotehost=remotehost,
+                                        vdev=vdev)
+        return info
 
 
 def get_action():
@@ -234,7 +251,7 @@ def guest_get_info(req):
     userid = util.wsgi_path_item(req.environ, 'userid')
     info = _guest_get_info(userid)
 
-    info_json = json.dumps({'info': info})
+    info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
@@ -271,7 +288,7 @@ def guest_get_power_state(req):
     userid = util.wsgi_path_item(req.environ, 'userid')
     info = _guest_get_power_state(userid)
 
-    info_json = json.dumps({'power_state': info})
+    info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
@@ -286,11 +303,14 @@ def guest_create(req):
         action = get_handler()
         body = util.extract_json(req.body)
 
-        action.create(body=body)
+        return action.create(body=body)
 
-    _guest_create(req)
+    info = _guest_create(req)
+
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
     req.response.status = 200
-    req.response.content_type = None
+    req.response.content_type = 'application/json'
     return req.response
 
 
@@ -301,15 +321,16 @@ def guest_update(req):
     def _guest_update(userid, body):
         action = get_handler()
 
-        action.update(userid, body=body)
+        return action.update(userid, body=body)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     body = util.extract_json(req.body)
+    info = _guest_update(userid, body)
 
-    _guest_update(userid, body)
-
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
     req.response.status = 200
-    req.response.content_type = None
+    req.response.content_type = 'application/json'
     return req.response
 
 
@@ -321,9 +342,10 @@ def guest_list(req):
         return action.list()
 
     info = _guest_list()
-    info_json = json.dumps({'guests': info})
+    info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
+    req.response.status = 200
     return req.response
 
 
@@ -351,13 +373,10 @@ def guest_action(req):
     userid = util.wsgi_path_item(req.environ, 'userid')
     info = _guest_action(userid, req)
 
-    if info is not None:
-        info_json = json.dumps({'result': info})
-        req.response.body = utils.to_utf8(info_json)
-        req.response.content_type = 'application/json'
-    else:
-        req.response.content_type = None
-
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    req.response.status = 200
     return req.response
 
 
@@ -367,12 +386,15 @@ def guest_delete(req):
 
     def _guest_delete(userid):
         action = get_handler()
-        action.delete(userid)
+        return action.delete(userid)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
-    _guest_delete(userid)
+    info = _guest_delete(userid)
+
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
     req.response.status = 204
-    req.response.content_type = None
+    req.response.content_type = 'application/json'
     return req.response
 
 
@@ -386,8 +408,10 @@ def guest_get_nic_info(req):
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     info = _guest_get_nic_info(userid)
-    info_json = json.dumps({'nic': info})
+
+    info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
+    req.response.status = 200
     req.response.content_type = 'application/json'
     return req.response
 
@@ -404,9 +428,12 @@ def guest_delete_nic(req):
     userid = util.wsgi_path_item(req.environ, 'userid')
     vdev = util.wsgi_path_item(req.environ, 'vdev')
 
-    _guest_delete_nic(userid, vdev, req)
+    info = _guest_delete_nic(userid, vdev, req)
+
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
     req.response.status = 204
-    req.response.content_type = None
+    req.response.content_type = 'application/json'
     return req.response
 
 
@@ -418,10 +445,16 @@ def guest_create_nic(req):
         action = get_handler()
         body = util.extract_json(req.body)
 
-        action.create_nic(userid, body=body)
+        return action.create_nic(userid, body=body)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
-    _guest_create_nic(userid, req)
+    info = _guest_create_nic(userid, req)
+
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.status = 200
+    req.response.content_type = 'application/json'
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
@@ -432,12 +465,18 @@ def guest_couple_uncouple_nic(req):
         action = get_handler()
         body = util.extract_json(req.body)
 
-        action.couple_uncouple_nic(userid, vdev, body=body)
+        return action.couple_uncouple_nic(userid, vdev, body=body)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     vdev = util.wsgi_path_item(req.environ, 'vdev')
 
-    _guest_couple_uncouple_nic(userid, vdev, req)
+    info = _guest_couple_uncouple_nic(userid, vdev, req)
+
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.status = 200
+    req.response.content_type = 'application/json'
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
@@ -448,10 +487,16 @@ def guest_create_network_interface(req):
         action = get_handler()
         body = util.extract_json(req.body)
 
-        action.create_network_interface(userid, body=body)
+        return action.create_network_interface(userid, body=body)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
-    _guest_create_network_interface(userid, req)
+    info = _guest_create_network_interface(userid, req)
+
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.status = 200
+    req.response.content_type = 'application/json'
+    return req.response
 
 
 def _get_userid_list(req):
@@ -475,7 +520,9 @@ def guest_get_cpu_info(req):
         return action.get_cpu_info(req, userid_list)
 
     info = _guest_get_cpu_info(req, userid_list)
-    info_json = json.dumps({'cpu': info})
+
+    info_json = json.dumps(info)
+    req.response.status = 200
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
@@ -492,7 +539,9 @@ def guest_get_memory_info(req):
         return action.get_memory_info(req, userid_list)
 
     info = _guest_get_memory_info(req, userid_list)
-    info_json = json.dumps({'memory': info})
+
+    info_json = json.dumps(info)
+    req.response.status = 200
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
@@ -509,7 +558,9 @@ def guest_get_vnics_info(req):
         return action.get_vnics_info(req, userid_list)
 
     info = _guest_get_vnics_info(req, userid_list)
-    info_json = json.dumps({'vnics': info})
+
+    info_json = json.dumps(info)
+    req.response.status = 200
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
@@ -526,7 +577,13 @@ def guest_create_disks(req):
 
     userid = util.wsgi_path_item(req.environ, 'userid')
 
-    _guest_create_disks(userid, req)
+    info = _guest_create_disks(userid, req)
+
+    info_json = json.dumps(info)
+    req.response.status = 200
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
 
 
 @wsgi_wrapper.SdkWsgify
@@ -540,4 +597,10 @@ def guest_delete_disks(req):
 
     userid = util.wsgi_path_item(req.environ, 'userid')
 
-    _guest_delete_disks(userid, req)
+    info = _guest_delete_disks(userid, req)
+
+    info_json = json.dumps(info)
+    req.response.status = 204
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
