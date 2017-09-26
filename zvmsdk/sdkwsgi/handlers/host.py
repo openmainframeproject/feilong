@@ -13,7 +13,7 @@
 
 import json
 
-from zvmsdk import api
+from sdkclient import client
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi import util
@@ -28,14 +28,15 @@ LOG = log.LOG
 class HostAction(object):
 
     def __init__(self):
-        self.api = api.SDKAPI(skip_input_check=True)
+        self.client = client.SDKClient()
 
     def get_info(self):
-        info = self.api.host_get_info()
+        info = self.client.send_request('host_get_info')
         return info
 
     def get_disk_info(self, diskname):
-        info = self.api.host_diskpool_get_info(disk_pool=diskname)
+        info = self.client.send_request('host_diskpool_get_info',
+                                        disk_pool=diskname)
         return info
 
 
@@ -55,7 +56,7 @@ def host_get_info(req):
         return action.get_info()
 
     info = _host_get_info()
-    info_json = json.dumps({'host': info})
+    info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
@@ -72,7 +73,7 @@ def host_get_disk_info(req):
     diskname = util.wsgi_path_item(req.environ, 'disk')
 
     info = _host_get_disk_info(diskname)
-    info_json = json.dumps({'disk_info': info})
+    info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response

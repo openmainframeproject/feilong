@@ -17,7 +17,6 @@ import jwt
 import mock
 import unittest
 
-from zvmsdk import api
 from zvmsdk import exception
 from zvmsdk.sdkwsgi.handlers import image
 from zvmsdk.sdkwsgi import util
@@ -52,13 +51,8 @@ class HandlersImageTest(unittest.TestCase):
         self.req = FakeReq()
         self.req.headers['X-Auth-Token'] = payload
 
-    @mock.patch.object(api.SDKAPI, 'image_import')
+    @mock.patch.object(image.ImageAction, 'create')
     def test_image_create(self, mock_create):
-        fake_image_name = '46a4aea3-54b6-4b1c'
-        fake_url = "file:///tmp/test.img"
-        fake_image_meta = {"os_version": "rhel7.2",
-                      "md5sum": "12345678912345678912345678912345"}
-        fake_remotehost = "hostname"
         body_str = """{"image": {"image_name": "46a4aea3-54b6-4b1c",
                                  "url": "file:///tmp/test.img",
                                  "image_meta": {
@@ -69,12 +63,23 @@ class HandlersImageTest(unittest.TestCase):
                                 }
                       }"""
         self.req.body = body_str
+        body = {
+                  'image':
+                  {
+                       'remotehost': 'hostname',
+                       'image_meta':
+                       {
+                            'os_version': 'rhel7.2',
+                            'md5sum': '12345678912345678912345678912345'
+                       },
+                       'url': 'file:///tmp/test.img',
+                       'image_name': '46a4aea3-54b6-4b1c'
+                   }
+               }
+        mock_create.return_value = ''
 
         image.image_create(self.req)
-        mock_create.assert_called_once_with(fake_image_name,
-                                            fake_url,
-                                            fake_image_meta,
-                                            fake_remotehost)
+        mock_create.assert_called_once_with(body=body)
 
     def test_image_create_invalidname(self):
         body_str = '{"image": {"version": ""}}'
@@ -127,6 +132,7 @@ class HandlersImageTest(unittest.TestCase):
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(image.ImageAction, 'delete')
     def test_image_delete(self, mock_delete, mock_name):
+        mock_delete.return_value = ''
         mock_name.return_value = 'dummy'
 
         image.image_delete(self.req)

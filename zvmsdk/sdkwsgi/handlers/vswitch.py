@@ -13,7 +13,7 @@
 
 import json
 
-from zvmsdk import api
+from sdkclient import client
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import vswitch
@@ -29,12 +29,10 @@ LOG = log.LOG
 
 class VswitchAction(object):
     def __init__(self):
-        self.api = api.SDKAPI(skip_input_check=True)
+        self.client = client.SDKClient()
 
     def list(self):
-        info = self.api.vswitch_get_list()
-
-        return info
+        return self.client.send_request('vswitch_get_list')
 
     @validation.schema(vswitch.create)
     def create(self, body):
@@ -42,26 +40,36 @@ class VswitchAction(object):
         name = vsw['name']
         rdev = vsw['rdev']
 
-        self.api.vswitch_create(name, rdev)
+        info = self.client.send_request('vswitch_create', name, rdev)
+        return info
 
     def delete(self, name):
-        self.api.vswitch_delete(name)
+        info = self.client.send_request('vswitch_delete', name)
+        return info
 
     @validation.schema(vswitch.update)
     def update(self, name, body):
         vsw = body['vswitch']
+        # TODO: only allow one param at most once
+
         if 'grant_userid' in vsw:
             userid = vsw['grant_userid']
-            self.api.vswitch_grant_user(name, userid)
+            info = self.client.send_request('vswitch_grant_user',
+                                            name, userid)
+            return info
 
         if 'revoke_userid' in vsw:
             userid = vsw['revoke_userid']
-            self.api.vswitch_revoke_user(name, userid)
+            info = self.client.send_request('vswitch_revoke_user',
+                                            name, userid)
+            return info
 
         if 'user_vlan_id' in vsw:
             userid = vsw['user_vlan_id']['userid']
             vlanid = vsw['user_vlan_id']['vlanid']
-            self.api.vswitch_set_vlan_id_for_user(name, userid, vlanid)
+            info = self.client.send_request('vswitch_set_vlan_id_for_user',
+                                            name, userid, vlanid)
+            return info
 
 
 def get_action():
@@ -79,7 +87,7 @@ def vswitch_list(req):
         return action.list()
 
     info = _vswitch_list(req)
-    info_json = json.dumps({'vswlist': info})
+    info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
@@ -93,12 +101,14 @@ def vswitch_create(req):
         action = get_action()
         body = util.extract_json(req.body)
 
-        action.create(body=body)
+        return action.create(body=body)
 
-    _vswitch_create(req)
+    info = _vswitch_create(req)
 
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
     req.response.status = 200
-    req.response.content_type = None
+    req.response.content_type = 'application/json'
     return req.response
 
 
@@ -109,13 +119,15 @@ def vswitch_delete(req):
     def _vswitch_delete(name):
         action = get_action()
 
-        action.delete(name)
+        return action.delete(name)
 
     name = util.wsgi_path_item(req.environ, 'name')
-    _vswitch_delete(name)
+    info = _vswitch_delete(name)
 
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
     req.response.status = 204
-    req.response.content_type = None
+    req.response.content_type = 'application/json'
     return req.response
 
 
@@ -127,12 +139,14 @@ def vswitch_update(req):
         body = util.extract_json(req.body)
         action = get_action()
 
-        action.update(name, body=body)
+        return action.update(name, body=body)
 
     name = util.wsgi_path_item(req.environ, 'name')
 
-    _vswitch_update(name, req)
+    info = _vswitch_update(name, req)
 
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
     req.response.status = 200
-    req.response.content_type = None
+    req.response.content_type = 'application/json'
     return req.response

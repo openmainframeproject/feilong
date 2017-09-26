@@ -112,7 +112,7 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self.client.api_request(url=url,
                                        method='DELETE',
                                        body=body)
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(204, resp.status_code)
 
     def _guest_get(self):
         url = '/guests/%s' % self.userid
