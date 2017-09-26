@@ -71,6 +71,9 @@ ROUTE_LIST = (
         'POST': guest.guest_create_disks,
         'DELETE': guest.guest_delete_disks,
     }),
+    ('/guests/{userid}/execute', {
+        'GET': guest.guest_execute_cmd,
+    }),
     ('/guests/{userid}/volumes', {
         'POST': volume.volume_attach,
         'DELETE': volume.volume_detach,

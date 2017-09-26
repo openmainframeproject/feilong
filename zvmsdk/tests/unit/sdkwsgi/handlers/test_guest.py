@@ -377,6 +377,18 @@ class HandlersGuestTest(SDKWSGITest):
                                             vdev_list)
 
     @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(api.SDKAPI, 'guest_execute_cmd')
+    def test_guest_execute_cmd(self, mock_execute, mock_userid):
+        cmd_str = 'df -h'
+        body_str = """{"cmd_info": {"cmd": "df -h"}}"""
+        self.req.body = body_str
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_execute_cmd(self.req)
+        mock_execute.assert_called_once_with(FAKE_USERID,
+                                             cmd_str)
+
+    @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get_nic')
     def test_guest_get_nic_info(self, mock_get, mock_userid):
         mock_userid.return_value = FAKE_USERID

@@ -265,3 +265,8 @@ image_meta = {
     'required': ['os_version'],
     'additionalProperties': False
 }
+
+
+command = {
+    'type': 'string'
+}

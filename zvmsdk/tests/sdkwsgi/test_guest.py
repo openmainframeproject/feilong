@@ -99,6 +99,15 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         self.assertEqual(200, resp.status_code)
 
+    def _guest_execute_cmd(self):
+        body = """{"cmd_info": {"cmd": "df -h"}}"""
+        url = '/guests/%s/execute' % self.userid
+
+        resp = self.client.api_request(url=url,
+                                       method='GET',
+                                       body=body)
+        self.assertEqual(200, resp.status_code)
+
     def _guest_get(self):
         url = '/guests/%s' % self.userid
         resp = self.client.api_request(url=url,
