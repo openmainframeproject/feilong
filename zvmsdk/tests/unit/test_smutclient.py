@@ -1156,9 +1156,9 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                           self._smutclient.get_user_console_output, 'fakeuser')
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_guest_restart(self, req):
+    def test_guest_reboot(self, req):
         req.return_value = self._generate_results()
-        self._smutclient.guest_restart('fakeuser')
+        self._smutclient.guest_reboot('fakeuser')
         req.assert_called_once_with('PowerVM fakeuser reboot')
 
     @mock.patch.object(smutclient.SMUTClient, '_request')

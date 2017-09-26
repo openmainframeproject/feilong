@@ -274,14 +274,12 @@ class SMUTClient(object):
         with zvmutils.log_and_reraise_smut_request_failed():
             self._request(requestData)
 
-    def guest_restart(self, userid):
-        """"Power on VM."""
+    def guest_reboot(self, userid):
         requestData = ' '.join(("PowerVM", userid, "reboot"))
         with zvmutils.log_and_reraise_smut_request_failed():
             self._request(requestData)
 
     def guest_reset(self, userid):
-        """"Power on VM."""
         requestData = ' '.join(("PowerVM", userid, "reset"))
         with zvmutils.log_and_reraise_smut_request_failed():
             self._request(requestData)

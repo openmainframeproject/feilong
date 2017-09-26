@@ -140,9 +140,9 @@ class VMOps(object):
     def guest_unpause(self, userid):
         self._smutclient.guest_unpause(userid)
 
-    def guest_restart(self, userid):
-        """Soft restart z/VM instance."""
-        self._smutclient.guest_restart(userid)
+    def guest_reboot(self, userid):
+        """Reboot a guest vm."""
+        self._smutclient.guest_reboot(userid)
 
     def guest_reset(self, userid):
         """Reset z/VM instance."""
