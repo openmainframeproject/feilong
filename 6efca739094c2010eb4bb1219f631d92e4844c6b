@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fab9b0af_76aae426",
+        "filename": "scripts/sdkserver",
+        "patchSetId": 1
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-09-26T05:54:08Z",
+      "side": 1,
+      "message": "then you do not have to return anything",
+      "range": {
+        "startLine": 185,
+        "startChar": 8,
+        "endLine": 185,
+        "endChar": 26
+      },
+      "revId": "6efca739094c2010eb4bb1219f631d92e4844c6b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
