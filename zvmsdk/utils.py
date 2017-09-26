@@ -527,3 +527,13 @@ def make_dummy_image(image_path, d_type='CKD'):
     header = bytes(' '.join((header, 'HLen: 0055', 'GZIP: 0')))
     with open(image_path, 'wb') as f:
         f.write(header)
+
+
+@contextlib.contextmanager
+def acquire_lock(lock):
+    """ lock wrapper """
+    lock.acquire()
+    try:
+        yield
+    finally:
+        lock.release()
