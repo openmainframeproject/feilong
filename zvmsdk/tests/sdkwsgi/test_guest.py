@@ -192,6 +192,8 @@ class GuestHandlerTestCase(unittest.TestCase):
 
     def test_guest_create_delete(self):
         self._guest_create()
+        # give chance to make disk online
+        time.sleep(30)
 
         try:
             self._guest_deploy()
@@ -237,6 +239,9 @@ class GuestHandlerTestCase(unittest.TestCase):
 
     def test_guest_disks_create_delete(self):
         self._guest_create()
+        # give chance to make disk online
+        time.sleep(30)
+
         try:
             self._guest_deploy()
             self._guest_nic_create()
