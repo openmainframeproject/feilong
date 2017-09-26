@@ -210,7 +210,7 @@ errors = {
 # 'modID' would be set to ModRC['sdkserver'] or ModRC['sdkclient']
 # 'rs' would also be set when get this error.
     'API': [{'overallRC': 400, 'modID': None, 'rc': 400},
-            {},
+            {1: "Invalid API name, '%(msg)s'"},
             "Invalid API name"
             ],
 # Object not exist

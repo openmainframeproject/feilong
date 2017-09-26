@@ -59,10 +59,11 @@ class SDKServer(object):
 
     def construct_api_name_error(self, client, msg):
         self.log_error(msg)
-        results = returncode.errors['API'][0]
+        error = returncode.errors['API']
+        results = error[0]
         results['modID'] = returncode.modRCs['sdkserver']
         results.update({'rs': 1,
-                        'errmsg': msg,
+                        'errmsg': error[1][1] % {'msg': msg},
                         'output': ''})
         self.send_results(client, results)
 
