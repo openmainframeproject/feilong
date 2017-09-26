@@ -44,6 +44,16 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.guest_start('cbi00063')
         guest_start.assert_called_once_with('cbi00063')
 
+    @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_pause')
+    def test_guest_pause(self, guest_pause):
+        self.vmops.guest_pause('cbi00063')
+        guest_pause.assert_called_once_with('cbi00063')
+
+    @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_unpause')
+    def test_guest_unpause(self, guest_unpause):
+        self.vmops.guest_unpause('cbi00063')
+        guest_unpause.assert_called_once_with('cbi00063')
+
     @mock.patch.object(vmops.get_vmops()._smutclient, 'create_vm')
     def test_create_vm(self, create_vm):
         userid = 'fakeuser'

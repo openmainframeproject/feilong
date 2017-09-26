@@ -134,6 +134,12 @@ class VMOps(object):
             LOG.warning("Failed to shutdown guest vm %(userid)s in %(time)d "
                          "seconds" % {'userid': userid, 'time': timeout})
 
+    def guest_pause(self, userid):
+        self._smutclient.guest_pause(userid)
+
+    def guest_unpause(self, userid):
+        self._smutclient.guest_unpause(userid)
+
     def guest_restart(self, userid):
         """Soft restart z/VM instance."""
         self._smutclient.guest_restart(userid)

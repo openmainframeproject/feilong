@@ -131,8 +131,20 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.guest_inspect_vnics(userid_list)
         inspect_vnics.assert_called_once_with(["userid1"])
 
+    @mock.patch("zvmsdk.vmops.VMOps.guest_pause")
+    def test_guest_stop(self, gp):
+        userid = 'fakeuser'
+        self.api.guest_pause(userid)
+        gp.assert_called_once_with(userid)
+
+    @mock.patch("zvmsdk.vmops.VMOps.guest_unpause")
+    def test_guest_pause(self, gup):
+        userid = 'fakeuser'
+        self.api.guest_unpause(userid)
+        gup.assert_called_once_with(userid)
+
     @mock.patch("zvmsdk.vmops.VMOps.guest_stop")
-    def test_guest_stop(self, gs):
+    def test_guest_unpause(self, gs):
         userid = 'fakeuser'
         self.api.guest_stop(userid)
         gs.assert_called_once_with(userid, 0, 10)
