@@ -1029,9 +1029,11 @@ class SMUTClient(object):
         image_info = self._ImageDbOperator.image_query_record(image_name)
         # Ensure the specified image is not exist in image DB
         if image_info:
-            LOG.info("The image %s has already exist in image repository"
-                     % image_name)
-            return
+            msg = ("The image name %s has already exist in SDK image "
+                   "database, please check if they are same image or consider"
+                   " to use a different image name for import" % image_name)
+            LOG.error(msg)
+            raise exception.SDKImageOperationError(rs=13, img=image_name)
 
         try:
             target = '/'.join([CONF.image.sdk_image_repository,
