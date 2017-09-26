@@ -1,4 +1,9 @@
 {
+    "rs": 0,
+    "overallRC": 0,
+    "modID": null,
+    "rc": 0,
+    "errmsg": "",
     "host": 
     {
          "disk_available": 3057,
