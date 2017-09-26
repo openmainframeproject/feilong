@@ -610,6 +610,7 @@ class VswitchHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.create'
         with mock.patch(function) as create:
+            create.return_value = {}
             h(self.env, dummy)
 
             self.assertTrue(create.called)
@@ -621,6 +622,7 @@ class VswitchHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.delete'
         with mock.patch(function) as delete:
+            delete.return_value = {}
             h(self.env, dummy)
 
             delete.assert_called_once_with('vsw1')
@@ -634,6 +636,7 @@ class VswitchHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.update'
         with mock.patch(function) as update:
+            update.return_value = {}
             h(self.env, dummy)
 
             update.assert_called_once_with('vsw1', body={})
