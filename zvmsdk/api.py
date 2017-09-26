@@ -88,14 +88,14 @@ class SDKAPI(object):
             self._vmops.guest_stop(userid, timeout, retry_interval)
 
     @zvmutils.check_input_types(_TUSERID)
-    def guest_restart(self, userid):
-        """Soft restart estart a virtual machine
+    def guest_reboot(self, userid):
+        """Reboot a virtual machine
         :param str userid: the id of the virtual machine to be reboot
         :returns: None
         """
-        action = "restart guest '%s'" % userid
+        action = "reboot guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            self._vmops.guest_restart(userid)
+            self._vmops.guest_reboot(userid)
 
     @zvmutils.check_input_types(_TUSERID)
     def guest_reset(self, userid):
