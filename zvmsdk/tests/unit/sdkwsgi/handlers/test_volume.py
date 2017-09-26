@@ -51,6 +51,7 @@ class HandlersVolumeTest(unittest.TestCase):
 
     @mock.patch.object(volume.VolumeAction, 'attach')
     def test_volume_attach(self, mock_attach):
+        mock_attach.return_value = ''
         self.req.body = '{}'
 
         volume.volume_attach(self.req)
@@ -58,6 +59,7 @@ class HandlersVolumeTest(unittest.TestCase):
 
     @mock.patch.object(volume.VolumeAction, 'detach')
     def test_volume_detach(self, mock_detach):
+        mock_detach.return_value = ''
         self.req.body = '{}'
 
         volume.volume_detach(self.req)

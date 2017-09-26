@@ -1,5 +1,10 @@
 {
-    "host": 
+    "rs": 0,
+    "overallRC": 0,
+    "modID": null,
+    "rc": 0,
+    "errmsg": "",
+    "output": 
     {
          "disk_available": 3057,
          "ipl_time": "IPL at 06/02/17 11:07:10 EDT",
