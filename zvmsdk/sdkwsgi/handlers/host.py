@@ -15,6 +15,7 @@ import json
 
 from zvmsdk import api
 from zvmsdk import log
+from zvmsdk.sdkclient import client
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi import wsgi_wrapper
@@ -28,14 +29,15 @@ LOG = log.LOG
 class HostAction(object):
 
     def __init__(self):
-        self.api = api.SDKAPI(skip_input_check=True)
+        self.client = client.SDKClient()
 
     def get_info(self):
-        info = self.api.host_get_info()
+        info = self.client.send_request('host_get_info')
         return info
 
     def get_disk_info(self, diskname):
-        info = self.api.host_diskpool_get_info(disk_pool=diskname)
+        param = {'disk_pool': diskname}
+        info = self.client.send_request('host_diskpool_get_info')
         return info
 
 
