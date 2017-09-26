@@ -108,6 +108,28 @@ class SDKAPI(object):
             self._vmops.guest_reset(userid)
 
     @zvmutils.check_input_types(_TUSERID)
+    def guest_pause(self, userid):
+        """Pause a virtual machine.
+
+        :param str userid: the id of the virtual machine to be paused
+        :returns: None
+        """
+        action = "pause guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._vmops.guest_pause(userid)
+
+    @zvmutils.check_input_types(_TUSERID)
+    def guest_unpause(self, userid):
+        """Unpause a virtual machine.
+
+        :param str userid: the id of the virtual machine to be unpaused
+        :returns: None
+        """
+        action = "unpause guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._vmops.guest_unpause(userid)
+
+    @zvmutils.check_input_types(_TUSERID)
     def guest_get_power_state(self, userid):
         """Returns power state."""
         action = "get power state of guest '%s'" % userid

@@ -77,6 +77,22 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request.assert_called_once_with(requestData)
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_guest_pause(self, request):
+        fake_userid = 'FakeID'
+        requestData = "PowerVM FakeID pause"
+        request.return_value = {'overallRC': 0}
+        self._smutclient.guest_pause(fake_userid)
+        request.assert_called_once_with(requestData)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_guest_unpause(self, request):
+        fake_userid = 'FakeID'
+        requestData = "PowerVM FakeID unpause"
+        request.return_value = {'overallRC': 0}
+        self._smutclient.guest_unpause(fake_userid)
+        request.assert_called_once_with(requestData)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_get_power_state(self, request):
         fake_userid = 'FakeID'
         requestData = "PowerVM FakeID status"
