@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e6612d9b_013d7666",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-09-26T07:12:47Z",
+      "side": 1,
+      "message": "I think we missed those in REST API now",
+      "range": {
+        "startLine": 90,
+        "startChar": 3,
+        "endLine": 108,
+        "endChar": 43
+      },
+      "revId": "90cb8da23564d7517e6a9a11f02f70e9e746e5a5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
