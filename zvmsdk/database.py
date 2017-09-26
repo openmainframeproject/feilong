@@ -270,7 +270,7 @@ class VolumeDbOperator(object):
         """
         if not volume_id:
             msg = "Volume id must be specified!"
-            raise exception.SDKDatabaseException(msg=msg)
+            raise exception.SDKInvalidInputFormat(msg)
 
         with get_volume_conn() as conn:
             result_list = conn.execute(
@@ -302,7 +302,7 @@ class VolumeDbOperator(object):
                 'protocol_type' in volume.keys() and
                 'size' in volume.keys()):
             msg = "Invalid volume database entry %s !" % volume
-            raise exception.SDKDatabaseException(msg=msg)
+            raise exception.SDKInvalidInputFormat(msg)
 
         volume_id = str(uuid.uuid4())
         protocol_type = volume['protocol_type']
@@ -339,14 +339,13 @@ class VolumeDbOperator(object):
         if not (isinstance(volume, dict) and
                 'id' in volume.keys()):
             msg = "Invalid volume database entry %s !" % volume
-            raise exception.SDKDatabaseException(msg=msg)
+            raise exception.SDKInvalidInputFormat(msg)
 
         # get current volume properties
         volume_id = volume['id']
         old_volume = self.get_volume_by_id(volume_id)
         if not old_volume:
-            msg = "Volume %s is not found!" % volume_id
-            raise exception.ZVMVolumeError(msg=msg)
+            raise exception.SDKVolumeOperationError(rs=2, vol=volume_id)
         else:
             (_, _, size, status, image_id, snapshot_id, _, _, comment
              ) = old_volume
@@ -368,12 +367,11 @@ class VolumeDbOperator(object):
         """Delete a volume from database."""
         if not volume_id:
             msg = "Volume id must be specified!"
-            raise exception.SDKDatabaseException(msg=msg)
+            raise exception.SDKInvalidInputFormat(msg)
 
         volume = self.get_volume_by_id(volume_id)
         if not volume:
-            msg = "Volume %s is not found!" % volume_id
-            raise exception.ZVMVolumeError(msg=msg)
+            raise exception.SDKVolumeOperationError(rs=2, vol=volume_id)
 
         time = str(datetime.now())
         with get_volume_conn() as conn:
@@ -389,7 +387,7 @@ class VolumeDbOperator(object):
         """
         if not volume_id:
             msg = "Volume id must be specified!"
-            raise exception.SDKDatabaseException(msg=msg)
+            raise exception.SDKInvalidInputFormat(msg)
 
         with get_volume_conn() as conn:
             result_list = conn.execute(' '.join((
@@ -410,7 +408,7 @@ class VolumeDbOperator(object):
         """
         if not instance_id:
             msg = "Instance id must be specified!"
-            raise exception.SDKDatabaseException(msg=msg)
+            raise exception.SDKInvalidInputFormat(msg)
 
         with get_volume_conn() as conn:
             result_list = conn.execute(' '.join((
@@ -449,13 +447,12 @@ class VolumeDbOperator(object):
                 'connection_info' in volume_attachment.keys()):
             msg = ("Invalid volume_attachment database entry %s !"
                    ) % volume_attachment
-            raise exception.SDKDatabaseException(msg=msg)
+            raise exception.SDKInvalidInputFormat(msg)
 
         # TOOD  volume and instance must exist
         volume_id = volume_attachment['volume_id']
         if not self.get_volume_by_id(volume_id):
-            msg = "Volume %s is not found!" % volume_id
-            raise exception.ZVMVolumeError(msg=msg)
+            raise exception.SDKVolumeOperationError(rs=2, vol=volume_id)
         instance_id = volume_attachment['instance_id']
         # FIXME  need to use get_instance function by Dong Yan
 
@@ -467,9 +464,8 @@ class VolumeDbOperator(object):
                 (volume_id, instance_id)
                 ).fetchone()[0]
         if count > 0:
-            msg = ("Volume %s has already been attached on instance %s !"
-                   ) % (volume_id, instance_id)
-            raise exception.ZVMVolumeError(msg=msg)
+            raise exception.SDKVolumeOperationError(
+                rs=3, vol=volume_id, inst=instance_id)
 
         attachment_id = str(uuid.uuid4())
         connection_info = str(volume_attachment['connection_info'])
@@ -501,7 +497,7 @@ class VolumeDbOperator(object):
         """
         if not volume_id or not instance_id:
             msg = "Volume id and instance id must be specified!"
-            raise exception.SDKDatabaseException(msg=msg)
+            raise exception.SDKInvalidInputFormat(msg)
 
         # if volume-instance attachment exists in the database
         with get_volume_conn() as conn:
@@ -512,9 +508,8 @@ class VolumeDbOperator(object):
                 ).fetchone()[0]
 
         if count == 0:
-            msg = ("Volume %s is not attached on instance %s !"
-                   ) % (volume_id, instance_id)
-            raise exception.ZVMVolumeError(msg=msg)
+            raise exception.SDKVolumeOperationError(
+                rs=4, vol=volume_id, inst=instance_id)
         elif count > 1:
             msg = ("Duplicated records found in volume_attachment with "
                    "volume_id %s and instance_id %s !"

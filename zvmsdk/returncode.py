@@ -189,6 +189,10 @@ errors = {
 # Volume Operation failed
     'volume': [{'overallRC': 300, 'modID': ModRCs['volume'], 'rc': 300},
                {1: "Database operation failed, error: %(msg)s",
+                2: "Volume %(vol)s is not found!",
+                3: "Volume %(vol)s has already been attached on instance "
+                   "%(inst)s !",
+                4: "Volume %(vol)s is not attached on instance %(inst)s !",
                 },
                "Operation on Volume failed"
                ],

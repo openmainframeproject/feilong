@@ -64,10 +64,6 @@ class ZVMException(SDKBaseException):
     msg_fmt = 'ZVMException happened: %(msg)s'
 
 
-class ZVMVolumeError(SDKBaseException):
-    msg_fmt = 'Volume error: %(msg)s'
-
-
 class ZVMNetworkError(SDKBaseException):
     msg_fmt = "z/VM network error: %(msg)s"
 
@@ -207,3 +203,16 @@ class SDKImageOperationError(SDKBaseException):
         results['strError'] = errormsg
         super(SDKImageOperationError, self).__init__(results=results,
                                                      message=errormsg)
+
+
+class SDKVolumeOperationError(SDKBaseException):
+    def __init__(self, rs, **kwargs):
+        # kwargs can be used to contain different keyword for constructing
+        # the rs error msg
+        rc = returncode.errors['volume']
+        results = rc[0]
+        results['rs'] = rs
+        errormsg = rc[1][rs] % kwargs
+        results['strError'] = errormsg
+        super(SDKVolumeOperationError, self).__init__(results=results,
+                                                      message=errormsg)
