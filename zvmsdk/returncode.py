@@ -126,14 +126,6 @@ errors = {
                },
               "Invalid API Input",
              ],
-# SDK Client or Server socket error
-# This error is not used by sdk exception, sdk client or server would set the
-# 'modID' as the sdkserver or sdkclient module rc when got error, and use 'rs'
-# as the socket error code.
-    'socket': [{'overallRC': 101, 'modID': None, 'rc': 101},
-               {},
-               "SDK client or server get socket error",
-               ],
 # General Errors for each module, same overallRC = 300
 # Guest Operation failed
     'guest': [{'overallRC': 300, 'modID': ModRCs['guest'], 'rc': 300},
