@@ -1022,7 +1022,7 @@ class SMUTClient(object):
 
     def execute_cmd(self, userid, cmdStr):
         """"cmdVM."""
-        requestData = ' '.join(('cmdVM', userid, 'CMD', cmdStr))
+        requestData = 'cmdVM ' + userid + ' CMD \'' + cmdStr + '\''
         with zvmutils.log_and_reraise_smut_request_failed():
             results = self._request(requestData)
 

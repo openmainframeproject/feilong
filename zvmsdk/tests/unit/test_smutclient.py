@@ -950,7 +950,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_execute_cmd(self, request):
-        rd = 'cmdVM fuser1 CMD ls'
+        rd = 'cmdVM fuser1 CMD \'ls\''
         self._smutclient.execute_cmd('fuser1', 'ls')
         request.assert_called_once_with(rd)
 
