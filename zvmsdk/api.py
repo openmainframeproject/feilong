@@ -688,7 +688,7 @@ class SDKAPI(object):
         """execute commands on guest.
 
         :param userid: the user id of the vm
-        :param userid: the command line to be executed
+        :param cmdStr: the command line to be executed
         """
         action = "execute cmd '%s' on guest '%s'" % (cmdStr, userid)
         with zvmutils.log_and_reraise_sdkbase_error(action):
