@@ -156,7 +156,7 @@ def _run_guest(userid, image_path, os_version, profile,
 
     # Setup IUCV channel
     print("Configuring IUCV channel for %s ..." % userid)
-    sdkapi.guest_authorize_iucv_client(userid, 'cmabvt')
+    sdkapi.guest_authorize_iucv_client(userid)
 
     # Power on the vm
     print("Starting guest %s" % userid)
