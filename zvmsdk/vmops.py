@@ -188,7 +188,7 @@ class VMOps(object):
         self._smutclient.delete_vm(userid)
 
     def execute_cmd(self, userid, cmdStr):
-        """Execute commands on the instance"""
+        """Execute commands on the guest vm."""
         return self._smutclient.execute_cmd(userid, cmdStr)
 
     def guest_authorize_iucv_client(self, guest, client=None):
