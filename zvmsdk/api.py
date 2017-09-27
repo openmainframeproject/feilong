@@ -1138,6 +1138,8 @@ class SDKAPI(object):
                'cidr': "192.168.96.0/24",
                'nic_vdev': '1003}]
         :param bool active: whether add a nic on active guest system
+        :returns: guest_networks list, including nic_vdev for each network
+        :rtype: list
         """
         if len(guest_networks) == 0:
             errmsg = ("API guest_create_network_interface: "
@@ -1218,3 +1220,4 @@ class SDKAPI(object):
             LOG.error(('Failed to set network configuration file on vm %s') %
                       userid)
             raise
+        return guest_networks
