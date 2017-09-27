@@ -47,7 +47,7 @@ class SDKServer(object):
         msg = "WARNING: " + msg
         syslog.syslog(syslog.LOG_WARNING, msg)
 
-    def construct_internal_error(self, client, msg):
+    def construct_internal_error(self, msg):
         self.log_error(msg)
         error = returncode.errors['internal']
         results = error[0]
@@ -55,9 +55,8 @@ class SDKServer(object):
         results.update({'rs': 1,
                         'errmsg': error[1][1] % {'msg': msg},
                         'output': ''})
-        self.send_results(client, results)
 
-    def construct_api_name_error(self, client, msg):
+    def construct_api_name_error(self, msg):
         self.log_error(msg)
         error = returncode.errors['API']
         results = error[0]
@@ -65,7 +64,6 @@ class SDKServer(object):
         results.update({'rs': 1,
                         'errmsg': error[1][1] % {'msg': msg},
                         'output': ''})
-        self.send_results(client, results)
 
     def send_results(self, client, results):
         """ send back results to client in the json format of:
