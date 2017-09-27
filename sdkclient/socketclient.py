@@ -34,8 +34,7 @@ INVALID_API_ERROR = [{'overallRC': 400, 'modID': SDKCLIENT_MODID, 'rc': 400},
                      ]
 
 
-class SDKClient(object):
-    """"""
+class SDKSocketClient(object):
 
     def __init__(self, addr='127.0.0.1', port=2000, request_timeout=3600):
         self.addr = addr
