@@ -145,6 +145,30 @@ action_stop_guest:
   in: body
   required: true
   type: dict
+action_pause_guest:
+  description: |
+    take **pause** action on guest
+  in: body
+  required: true
+  type: dict
+action_unpause_guest:
+  description: |
+    take **unpause** action on guest
+  in: body
+  required: true
+  type: dict
+action_reboot_guest:
+  description: |
+    take **reboot** action on guest
+  in: body
+  required: true
+  type: dict
+action_reset_guest:
+  description: |
+    take **reset** action on guest
+  in: body
+  required: true
+  type: dict
 action_deploy_guest:
   description: |
     take **deploy** action on guest
