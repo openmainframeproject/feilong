@@ -150,18 +150,6 @@ class VMHandler(object):
             self.api.guest_nic_uncouple_from_vswitch(userid, vdev,
                                                      active=active)
 
-    @validation.schema(guest.execute_cmd)
-    def execute_cmd(self, userid, body=None):
-        cmd_info = body['cmd_info']
-        cmd_str = cmd_info.get('cmd', None)
-
-        try:
-            self.api.guest_execute_cmd(userid, cmd_str)
-        except (exception.SDKInvalidInputNumber,
-                exception.SDKInvalidInputTypes,
-                exception.SDKInvalidInputFormat) as e:
-            raise webob.exc.HTTPBadRequest(str(e))
-
 
 class VMAction(object):
     def __init__(self):
@@ -511,17 +499,3 @@ def guest_delete_disks(req):
     userid = util.wsgi_path_item(req.environ, 'userid')
 
     _guest_delete_disks(userid, req)
-
-
-@wsgi_wrapper.SdkWsgify
-@tokens.validate
-def guest_execute_cmd(req):
-
-    def _guest_execute_cmd(userid, req):
-        action = get_handler()
-        body = util.extract_json(req.body)
-        return action.execute_cmd(userid, body=body)
-
-    userid = util.wsgi_path_item(req.environ, 'userid')
-
-    _guest_execute_cmd(userid, req)
