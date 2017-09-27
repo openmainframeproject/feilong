@@ -477,6 +477,9 @@ class SMUTClient(object):
 
         :uid_list: A list of zvm userids to be queried
         """
+        if uid_list == []:
+            return {}
+
         if not isinstance(uid_list, list):
             uid_list = [uid_list]
 
