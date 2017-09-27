@@ -112,23 +112,6 @@ couple_uncouple_nic = {
 }
 
 
-execute_cmd = {
-    'type': 'object',
-    'properties': {
-        'cmd_info': {
-            'type': 'object',
-            'properties': {
-                'cmd': parameter_types.command,
-            },
-            'additionalProperties': False,
-        },
-        'additionalProperties': False,
-    },
-    'required': ['cmd_info'],
-    'additionalProperties': False,
-}
-
-
 deploy = {
     'type': 'object',
     'properties': {
