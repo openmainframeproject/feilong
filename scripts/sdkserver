@@ -15,19 +15,21 @@
 
 
 import json
-import six
 import socket
 import sys
 import syslog
 import threading
+import traceback
 
 from zvmsdk import api
 from zvmsdk import config
 from zvmsdk import exception
+from zvmsdk import log
 from zvmsdk import returncode
 
 
 CONF = config.CONF
+LOG = log.LOG
 
 
 class SDKServer(object):
@@ -125,6 +127,7 @@ class SDKServer(object):
             # invoke target API function
             return_data = api_func(*api_args, **api_kwargs)
         except exception.SDKBaseException as e:
+            LOG.error("%s", traceback.format_exc())
             # get the error info from exception attribute
             # All SDKbaseexception should eventually has a
             # results attribute defined which can be used by
@@ -141,8 +144,9 @@ class SDKServer(object):
                            'errmsg': e.format_message(),
                            'output': ''}
         except Exception as e:
+            LOG.error("%s", traceback.format_exc())
             msg = ("SDK server got unexpected exception: "
-                   "%s" % six.text_type(e))
+                   "%s" % repr(e))
             results = self.construct_internal_error(msg)
         else:
             if not return_data:
