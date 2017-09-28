@@ -18,7 +18,6 @@ import uuid
 
 from zvmsdk import config
 from zvmsdk import database
-from zvmsdk.database import VolumeDbOperator
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk.tests.unit import base
@@ -246,18 +245,21 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
     @classmethod
     def setUpClass(cls):
         super(VolumeDbOperatorTestCase, cls).setUpClass()
-        cls._util = VolumeDbOperator()
+        cls._util = database.VolumeDbOperator()
+        cls._guest_util = database.GuestDbOperator()
 
     @classmethod
     def tearDownClass(cls):
         with database.get_volume_conn() as conn:
             conn.execute("DROP TABLE volumes")
             conn.execute("DROP TABLE volume_attachments")
+        with database.get_guest_conn() as conn:
+            conn.execute("DROP TABLE guests")
         super(VolumeDbOperatorTestCase, cls).tearDownClass()
 
-    @mock.patch.object(VolumeDbOperator,
+    @mock.patch.object(database.VolumeDbOperator,
                        '_initialize_table_volume_attachments')
-    @mock.patch.object(VolumeDbOperator, '_initialize_table_volumes')
+    @mock.patch.object(database.VolumeDbOperator, '_initialize_table_volumes')
     def test__init__(self,
                      _initialize_table_volumes,
                      _initialize_table_volume_attachments):
@@ -419,13 +421,13 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
         # setup test volume
         volume = {'protocol_type': 'fc', 'size': '3G'}
         volume_id = self._util.insert_volume(volume)
-        # FIXME  need insert_instance() by Dong Yan
-        instance_id = str(uuid.uuid4())
+        guest_userid = 'testvm'
+        self._guest_util.add_guest(guest_userid)
         connection_info = {'wwpns': '0x5005500550055005',
                            'lun': '0x1001100110011001'}
         mountpoint = '/dev/vda'
         volume_attachment = {'volume_id': volume_id,
-                             'instance_id': instance_id,
+                             'guest_userid': guest_userid,
                              'connection_info': connection_info,
                              'mountpoint': mountpoint,
                              'comment': 'my comment'}
@@ -433,41 +435,43 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
 
         # query
         attachment = self._util.get_attachment_by_volume_id(volume_id)
-        expected = (volume_id, instance_id, str(connection_info),
+        expected = (volume_id, guest_userid, str(connection_info),
                     mountpoint, 'my comment')
         actual = (attachment[1], attachment[2], attachment[3], attachment[4],
                   attachment[7])
         self.assertEqual(expected, actual)
 
         # clean test volume
-        self._util.delete_volume_attachment(volume_id, instance_id)
+        self._util.delete_volume_attachment(volume_id, guest_userid)
         self._util.delete_volume(volume_id)
-        # FIXME  delete instance
+        self._guest_util.delete_guest_by_userid(guest_userid)
 
-    def test_get_attachments_by_instance_id_errors(self):
+    def test_get_attachments_by_guest_userid_errors(self):
         # error - Empty volume id
-        instance_id_null = None
+        guest_userid_null = None
         self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.get_attachment_by_volume_id,
-                          instance_id_null)
+                          guest_userid_null)
 
         # not found
-        instance_id = str(uuid.uuid4())
-        self.assertIsNone(self._util.get_attachment_by_volume_id(instance_id))
+        guest_userid = 'testvm'
+        self._guest_util.add_guest(guest_userid)
+        self.assertIsNone(self._util.get_attachment_by_volume_id(guest_userid))
+        self._guest_util.delete_guest_by_userid(guest_userid)
 
-    def test_get_attachments_by_instance_id(self):
+    def test_get_attachments_by_guest_userid(self):
         # setup test volume_1
         volume_1 = {'protocol_type': 'fc', 'size': '3G'}
         volume_id_1 = self._util.insert_volume(volume_1)
         volume_2 = {'protocol_type': 'iscsi', 'size': '2G'}
         volume_id_2 = self._util.insert_volume(volume_2)
-        # FIXME  need insert_instance() by Dong Yan
-        instance_id = str(uuid.uuid4())
+        guest_userid = 'testvm'
+        self._guest_util.add_guest(guest_userid)
         connection_info_1 = {'wwpns': '0x5005500550055005',
                              'lun': '0x1001100110011001'}
         mountpoint_1 = '/dev/vda'
         volume_attachment_1 = {'volume_id': volume_id_1,
-                               'instance_id': instance_id,
+                               'guest_userid': guest_userid,
                                'connection_info': connection_info_1,
                                'mountpoint': mountpoint_1,
                                'comment': 'my comment 1'}
@@ -476,34 +480,40 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
                              'lun': '0x1001100110011002'}
         mountpoint_2 = '/dev/vdb'
         volume_attachment_2 = {'volume_id': volume_id_2,
-                               'instance_id': instance_id,
+                               'guest_userid': guest_userid,
                                'connection_info': connection_info_2,
                                'mountpoint': mountpoint_2,
                                'comment': 'my comment 2'}
         self._util.insert_volume_attachment(volume_attachment_2)
 
         # query
-        attachments = self._util.get_attachments_by_instance_id(instance_id)
-        expected_1 = (volume_id_1, instance_id, str(connection_info_1),
+        attachments = self._util.get_attachments_by_guest_userid(guest_userid)
+        expected_1 = (volume_id_1, guest_userid, str(connection_info_1),
                       mountpoint_1, 'my comment 1')
         actual_1 = (attachments[0][1], attachments[0][2], attachments[0][3],
                     attachments[0][4], attachments[0][7])
         self.assertEqual(expected_1, actual_1)
-        expected_2 = (volume_id_2, instance_id, str(connection_info_2),
+        expected_2 = (volume_id_2, guest_userid, str(connection_info_2),
                       mountpoint_2, 'my comment 2')
         actual_2 = (attachments[1][1], attachments[1][2], attachments[1][3],
                     attachments[1][4], attachments[1][7])
         self.assertEqual(expected_2, actual_2)
+
+        self._util.delete_volume_attachment(volume_id_1, guest_userid)
+        self._util.delete_volume_attachment(volume_id_2, guest_userid)
+        self._util.delete_volume(volume_id_1)
+        self._util.delete_volume(volume_id_2)
+        self._guest_util.delete_guest_by_userid(guest_userid)
 
     def test_insert_volume_attachment_error(self):
         self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.insert_volume_attachment,
                           None)
         volume_id = str(uuid.uuid4())
-        instance_id = str(uuid.uuid4())
+        guest_userid = 'testvm'
         connection_info = {'wwpns': '0x5005500550055005;0x5005500550055006',
                            'lun': '0x1001100110011001'}
-        attachment = {'instance_id': instance_id,
+        attachment = {'guest_userid': guest_userid,
                       'connection_info': connection_info}
         self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.insert_volume_attachment,
@@ -514,87 +524,92 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
                           self._util.insert_volume_attachment,
                           attachment)
         attachment = {'volume_id': volume_id,
-                      'instance_id': instance_id}
+                      'guest_userid': guest_userid}
         self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.insert_volume_attachment,
                           attachment)
 
         # volume does not exist
         attachment = {'volume_id': volume_id,
-                      'instance_id': instance_id,
+                      'guest_userid': guest_userid,
                       'connection_info': connection_info}
         self.assertRaises(exception.SDKObjectNotExistError,
                           self._util.insert_volume_attachment,
                           attachment)
+        # volume exists but instance does not exist
         volume = {'protocol_type': 'fc', 'size': '3G'}
         volume_id = self._util.insert_volume(volume)
-        # FIXME  instance does not exist
-        # volume has already been attached on the instance
         attachment = {'volume_id': volume_id,
-                      'instance_id': instance_id,
+                      'guest_userid': guest_userid,
                       'connection_info': connection_info}
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self._util.insert_volume_attachment,
+                          attachment)
+
+        # volume has already been attached on the instance
+        self._guest_util.add_guest(guest_userid)
         self._util.insert_volume_attachment(attachment)
         self.assertRaises(exception.SDKVolumeOperationError,
                           self._util.insert_volume_attachment,
                           attachment)
 
-        self._util.delete_volume_attachment(volume_id, instance_id)
+        self._util.delete_volume_attachment(volume_id, guest_userid)
         self._util.delete_volume(volume_id)
-        # FIXME  delete instance
+        self._guest_util.delete_guest_by_userid(guest_userid)
 
     def test_insert_volume_attachment(self):
         volume = {'protocol_type': 'fc', 'size': '3G'}
         volume_id = self._util.insert_volume(volume)
-        # FIXME insert an instance
-        instance_id = str(uuid.uuid4())
+        guest_userid = 'testvm'
+        self._guest_util.add_guest(guest_userid)
         connection_info = {'wwpns': '0x5005500550055005;0x5005500550055006',
                            'lun': '0x1001100110011001'}
         mountpoint = '/dev/vda'
         comment = 'my comment'
         attachment = {'volume_id': volume_id,
-                      'instance_id': instance_id,
+                      'guest_userid': guest_userid,
                       'connection_info': connection_info,
                       'mountpoint': mountpoint,
                       'comment': comment}
         self._util.insert_volume_attachment(attachment)
 
         attachment = self._util.get_attachment_by_volume_id(volume_id)
-        expected = (volume_id, instance_id, str(connection_info),
+        expected = (volume_id, guest_userid, str(connection_info),
                     mountpoint, 'my comment')
         actual = (attachment[1], attachment[2], attachment[3], attachment[4],
                   attachment[7])
         self.assertEqual(expected, actual)
 
         # clean test volume
-        self._util.delete_volume_attachment(volume_id, instance_id)
+        self._util.delete_volume_attachment(volume_id, guest_userid)
         self._util.delete_volume(volume_id)
-        # FIXME  delete instance
+        self._guest_util.delete_guest_by_userid(guest_userid)
 
     def test_delete_volume_attachment_error(self):
         volume_id = str(uuid.uuid4())
-        instance_id = str(uuid.uuid4())
+        guest_userid = str(uuid.uuid4())
         self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.delete_volume_attachment,
-                          None, instance_id)
+                          None, guest_userid)
         self.assertRaises(exception.SDKInvalidInputFormat,
                           self._util.delete_volume_attachment,
                           volume_id, None)
         # volume is not attached on the instance
         self.assertRaises(exception.SDKVolumeOperationError,
                           self._util.delete_volume_attachment,
-                          volume_id, instance_id)
+                          volume_id, guest_userid)
 
     def test_delete_volume_attachment(self):
         volume = {'protocol_type': 'fc', 'size': '3G'}
         volume_id = self._util.insert_volume(volume)
-        # FIXME insert an instance
-        instance_id = str(uuid.uuid4())
+        guest_userid = 'testvm'
+        self._guest_util.add_guest(guest_userid)
         connection_info = {'wwpns': '0x5005500550055005;0x5005500550055006',
                            'lun': '0x1001100110011001'}
         mountpoint = '/dev/vda'
         comment = 'my comment'
         attachment = {'volume_id': volume_id,
-                      'instance_id': instance_id,
+                      'guest_userid': guest_userid,
                       'connection_info': connection_info,
                       'mountpoint': mountpoint,
                       'comment': comment}
@@ -603,12 +618,12 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
         attachment = self._util.get_attachment_by_volume_id(volume_id)
         self.assertIsNotNone(attachment)
 
-        self._util.delete_volume_attachment(volume_id, instance_id)
+        self._util.delete_volume_attachment(volume_id, guest_userid)
         attachment = self._util.get_attachment_by_volume_id(volume_id)
         self.assertIsNone(attachment)
 
         self._util.delete_volume(volume_id)
-        # FIXME  delete instance
+        self._guest_util.delete_guest_by_userid(guest_userid)
 
 
 class GuestDbOperatorTestCase(base.SDKTestCase):
