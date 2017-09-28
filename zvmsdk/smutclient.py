@@ -501,7 +501,7 @@ class SMUTClient(object):
             'min_cpu_count': "Minimum CPU count:",
             'max_cpu_limit': "Max CPU limit:",
             'samples_cpu_in_use': "Samples CPU in use:",
-            'samples_cpu_delay': ",Samples CPU delay:",
+            'samples_cpu_delay': "Samples CPU delay:",
             'used_memory': "Used memory:",
             'max_memory': "Max memory:",
             'min_memory': "Minimum memory:",
