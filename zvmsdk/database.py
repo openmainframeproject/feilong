@@ -233,6 +233,7 @@ class VolumeDbOperator(object):
         self._VOLUME_STATUS_FREE = 'free'
         self._VOLUME_STATUS_IN_USE = 'in-use'
         self._mod_id = "volume"
+        self._guest_op = GuestDbOperator()
 
     def _initialize_table_volumes(self):
         # The snapshots table doesn't exist by now, but it must be there when
@@ -257,7 +258,7 @@ class VolumeDbOperator(object):
             'CREATE TABLE IF NOT EXISTS volume_attachments(',
             'id               char(36)      PRIMARY KEY,',
             'volume_id        char(36)      NOT NULL,',
-            'instance_id      char(36)      NOT NULL,',
+            'guest_userid     char(36)      NOT NULL,',
             'connection_info  varchar(256)  NOT NULL,',
             'mountpoint       varchar(32),',
             'deleted          smallint      DEFAULT 0,',
@@ -388,7 +389,7 @@ class VolumeDbOperator(object):
                 (time, volume_id))
 
     def get_attachment_by_volume_id(self, volume_id):
-        """Query a volume-instance attachment map from database by volume id.
+        """Query a volume-guest attachment map from database by volume id.
         The id must be a 36-character string.
         """
         if not volume_id:
@@ -408,36 +409,36 @@ class VolumeDbOperator(object):
             LOG.debug("Attachment info of volume %s is not found!" % volume_id)
             return None
 
-    def get_attachments_by_instance_id(self, instance_id):
-        """Query a volume-instance attachment map database by instance id.
+    def get_attachments_by_guest_userid(self, guest_userid):
+        """Query a volume-guest attachment map database by guest userid.
         The id must be a 36-character string.
         """
-        if not instance_id:
-            msg = "Instance id must be specified!"
+        if not guest_userid:
+            msg = "guest userid must be specified!"
             raise exception.SDKInvalidInputFormat(msg)
 
         with get_volume_conn() as conn:
             result_list = conn.execute(' '.join((
                 "SELECT * FROM volume_attachments",
-                "WHERE instance_id=? AND deleted=0")),
-                (instance_id,)
+                "WHERE guest_userid=? AND deleted=0")),
+                (guest_userid,)
                 ).fetchall()
 
         if len(result_list) > 0:
             return result_list
         else:
             LOG.debug(
-                "Attachments info of instance %s is not found!" % instance_id)
+                "Attachments info of guest %s is not found!" % guest_userid)
             return None
 
     def insert_volume_attachment(self, volume_attachment):
-        """Insert a volume-instance attachment map into database.
-        The volume-instance attachment map is represented by a dict of
+        """Insert a volume-guest attachment map into database.
+        The volume-guest attachment map is represented by a dict of
         following properties:
         id: unique id of this attachment map. Auto generated and can not be
         specified.
         volume_id, volume id, must be specified.
-        instance_id, instance id, must be specified.
+        guest_userid, guest userid, must be specified.
         connection_info: all connection information about this attachment,
         represented by a dict defined by specific implementations. Must be
         specified.
@@ -449,31 +450,34 @@ class VolumeDbOperator(object):
         """
         if not (isinstance(volume_attachment, dict) and
                 'volume_id' in volume_attachment.keys() and
-                'instance_id' in volume_attachment.keys() and
+                'guest_userid' in volume_attachment.keys() and
                 'connection_info' in volume_attachment.keys()):
             msg = ("Invalid volume_attachment database entry %s !"
                    ) % volume_attachment
             raise exception.SDKInvalidInputFormat(msg)
 
-        # TOOD  volume and instance must exist
+        # volume and guest must exist
         volume_id = volume_attachment['volume_id']
         if not self.get_volume_by_id(volume_id):
             obj_desc = "Volume %s" % volume_id
             raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
                                                    modID=self._mod_id)
-        instance_id = volume_attachment['instance_id']
-        # FIXME  need to use get_instance function by Dong Yan
+        guest_userid = volume_attachment['guest_userid']
+        if not self._guest_op.get_guest_by_userid(guest_userid):
+            obj_desc = "Guest %s" % guest_userid
+            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                   modID=self._mod_id)
 
         # attachment must not exist
         with get_volume_conn() as conn:
             count = conn.execute(' '.join((
                 "SELECT COUNT(*) FROM volume_attachments",
-                "WHERE volume_id=? AND instance_id=? AND deleted=0")),
-                (volume_id, instance_id)
+                "WHERE volume_id=? AND guest_userid=? AND deleted=0")),
+                (volume_id, guest_userid)
                 ).fetchone()[0]
         if count > 0:
             raise exception.SDKVolumeOperationError(
-                rs=3, vol=volume_id, inst=instance_id)
+                rs=3, vol=volume_id, inst=guest_userid)
 
         attachment_id = str(uuid.uuid4())
         connection_info = str(volume_attachment['connection_info'])
@@ -486,10 +490,10 @@ class VolumeDbOperator(object):
             conn.execute(' '.join((
                 "INSERT INTO volume_attachments",
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)")),
-                (attachment_id, volume_id, instance_id, connection_info,
+                (attachment_id, volume_id, guest_userid, connection_info,
                  mountpoint, deleted, deleted_at, comment))
 
-    def delete_volume_attachment(self, volume_id, instance_id):
+    def delete_volume_attachment(self, volume_id, guest_userid):
         """Update a volume in database.
         The volume is represented by a dict of all volume properties:
         id: volume id, must be specified.
@@ -503,25 +507,25 @@ class VolumeDbOperator(object):
         deleted_at: auto generated and can not be specified.
         comment: any comment, optional.
         """
-        if not volume_id or not instance_id:
-            msg = "Volume id and instance id must be specified!"
+        if not volume_id or not guest_userid:
+            msg = "Volume id and guest userid must be specified!"
             raise exception.SDKInvalidInputFormat(msg)
 
-        # if volume-instance attachment exists in the database
+        # if volume-guest attachment exists in the database
         with get_volume_conn() as conn:
             count = conn.execute(' '.join((
                 "SELECT COUNT(*) FROM volume_attachments",
-                "WHERE volume_id=? AND instance_id=? AND deleted=0")),
-                (volume_id, instance_id)
+                "WHERE volume_id=? AND guest_userid=? AND deleted=0")),
+                (volume_id, guest_userid)
                 ).fetchone()[0]
 
         if count == 0:
             raise exception.SDKVolumeOperationError(
-                rs=4, vol=volume_id, inst=instance_id)
+                rs=4, vol=volume_id, inst=guest_userid)
         elif count > 1:
             msg = ("Duplicated records found in volume_attachment with "
-                   "volume_id %s and instance_id %s !"
-                   ) % (volume_id, instance_id)
+                   "volume_id %s and guest_userid %s !"
+                   ) % (volume_id, guest_userid)
             raise exception.SDKDatabaseException(msg=msg)
 
         time = str(datetime.now())
@@ -529,8 +533,8 @@ class VolumeDbOperator(object):
             conn.execute(' '.join((
                 "UPDATE volume_attachments",
                 "SET deleted=1, deleted_at=?",
-                "WHERE volume_id=? AND instance_id=?")),
-                (time, volume_id, instance_id))
+                "WHERE volume_id=? AND guest_userid=?")),
+                (time, volume_id, guest_userid))
 
 
 class ImageDbOperator(object):
