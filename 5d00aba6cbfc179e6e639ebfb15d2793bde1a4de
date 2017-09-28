@@ -22,6 +22,30 @@
       "revId": "5d00aba6cbfc179e6e639ebfb15d2793bde1a4de",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "824b72cf_ca7428d0",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1010896
+      },
+      "writtenOn": "2017-09-28T08:46:22Z",
+      "side": 1,
+      "message": "My opinion is: database logic doesn\u0027t know anything about business, it doesn\u0027t know what is safe and what is not, it doesn\u0027t know what should be ignored and what must be resolved. Then the best way is to tell business level what happened and let the business make decision, rather than swallowing the error.",
+      "parentUuid": "22e8aff3_adaa86f9",
+      "range": {
+        "startLine": 378,
+        "startChar": 50,
+        "endLine": 378,
+        "endChar": 51
+      },
+      "revId": "5d00aba6cbfc179e6e639ebfb15d2793bde1a4de",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
