@@ -917,8 +917,8 @@ class SMUTClient(object):
                                     couple_err=msg1, revoke_err=msg2)
 
         """Update information in switch table."""
-        self._NetDbOperator.switch_updat_record_with_switch(userid, vdev,
-                                                            vswitch_name)
+        self._NetDbOperator.switch_update_record_with_switch(userid, vdev,
+                                                             vswitch_name)
 
     def couple_nic_to_vswitch(self, userid, nic_vdev,
                               vswitch_name, active=False):
@@ -957,8 +957,8 @@ class SMUTClient(object):
                 raise
 
         """Update information in switch table."""
-        self._NetDbOperator.switch_updat_record_with_switch(userid, vdev,
-                                                            None)
+        self._NetDbOperator.switch_update_record_with_switch(userid, vdev,
+                                                             None)
 
         # the inst must be active, or this call will failed
         if active:

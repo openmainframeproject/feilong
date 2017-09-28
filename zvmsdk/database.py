@@ -183,7 +183,8 @@ class NetworkDbOperator(object):
                           "nic %s" %
                           (userid.upper(), interface))
 
-    def switch_updat_record_with_switch(self, userid, interface, switch=None):
+    def switch_update_record_with_switch(self, userid, interface,
+                                         switch=None):
         """Update information in switch table."""
         if not self._get_switch_by_user_interface(userid, interface):
             msg = "User %s with nic %s does not exist in DB" % (userid.upper(),

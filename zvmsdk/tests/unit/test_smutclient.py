@@ -867,7 +867,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                         "fakevdev", active=False)
 
     @mock.patch.object(database.NetworkDbOperator,
-                       'switch_updat_record_with_switch')
+                       'switch_update_record_with_switch')
     @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_couple_nic(self, request, update_switch):
         request.return_value = {'overallRC': 0}
@@ -896,7 +896,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request.assert_any_call(requestData2)
 
     @mock.patch.object(database.NetworkDbOperator,
-                       'switch_updat_record_with_switch')
+                       'switch_update_record_with_switch')
     @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_uncouple_nic(self, request, update_switch):
         request.return_value = {'overallRC': 0}
