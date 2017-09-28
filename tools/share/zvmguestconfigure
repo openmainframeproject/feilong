@@ -214,9 +214,6 @@ case "$1" in
     /bin/mkdir -p $transportdir
     cd $transportdir
 
-    # Get Linux version
-    getOsVersion
-
     if [[ -n "$authorizedSenders" ]]; then
       pullReader
       echo "zvmguestconfigure has successfully processed the reader files."
