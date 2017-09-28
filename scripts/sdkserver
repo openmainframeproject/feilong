@@ -15,6 +15,7 @@
 
 
 import json
+import six
 import socket
 import sys
 import syslog
@@ -51,7 +52,7 @@ class SDKServer(object):
         self.log_error(msg)
         error = returncode.errors['internal']
         results = error[0]
-        results['modID'] = returncode.modRCs['sdkserver']
+        results['modID'] = returncode.ModRCs['sdkserver']
         results.update({'rs': 1,
                         'errmsg': error[1][1] % {'msg': msg},
                         'output': ''})
@@ -60,7 +61,7 @@ class SDKServer(object):
         self.log_error(msg)
         error = returncode.errors['API']
         results = error[0]
-        results['modID'] = returncode.modRCs['sdkserver']
+        results['modID'] = returncode.ModRCs['sdkserver']
         results.update({'rs': 1,
                         'errmsg': error[1][1] % {'msg': msg},
                         'output': ''})
@@ -139,7 +140,7 @@ class SDKServer(object):
                            'output': ''}
         except Exception as e:
             msg = ("SDK server got unexpected exception: "
-                   "%s" % e.format_message())
+                   "%s" % six.text_type(e))
             results = self.construct_internal_error(msg)
         else:
             if not return_data:
