@@ -235,8 +235,10 @@ class SMUTClient(object):
 
     def _is_vdev_valid(self, vdev, vdev_info):
         for used_vdev in vdev_info:
-            if ((int(vdev, 16) >= int(used_vdev, 16)) and
-                (int(vdev, 16) <= int(used_vdev, 16) + 2)):
+            if (((int(vdev, 16) >= int(used_vdev, 16)) and
+                 (int(vdev, 16) <= int(used_vdev, 16) + 2)) or
+                ((int(vdev, 16) < int(used_vdev, 16)) and
+                 (int(vdev, 16) >= int(used_vdev, 16) - 2))):
                 return False
 
         return True
