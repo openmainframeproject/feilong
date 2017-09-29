@@ -349,7 +349,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
         # volume not found
         volume_id = str(uuid.uuid4())
         volume = {'id': volume_id}
-        self.assertRaises(exception.SDKVolumeOperationError,
+        self.assertRaises(exception.SDKObjectNotExistError,
                           self._util.update_volume, volume)
 
     def test_update_volume(self):
@@ -523,7 +523,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
         attachment = {'volume_id': volume_id,
                       'instance_id': instance_id,
                       'connection_info': connection_info}
-        self.assertRaises(exception.SDKVolumeOperationError,
+        self.assertRaises(exception.SDKObjectNotExistError,
                           self._util.insert_volume_attachment,
                           attachment)
         volume = {'protocol_type': 'fc', 'size': '3G'}

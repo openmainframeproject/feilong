@@ -190,8 +190,8 @@ class NetworkDbOperator(object):
             msg = "User %s with nic %s does not exist in DB" % (userid.upper(),
                                                                 interface)
             LOG.error(msg)
-            object = ('User %s with nic %s' % (userid.upper(), interface))
-            raise exception.SDKObjectNotExistError(object,
+            obj_desc = ('User %s with nic %s' % (userid.upper(), interface))
+            raise exception.SDKObjectNotExistError(obj_desc,
                                                    modID=self._module_id)
 
         if switch is not None:
@@ -232,6 +232,7 @@ class VolumeDbOperator(object):
         self._initialize_table_volume_attachments()
         self._VOLUME_STATUS_FREE = 'free'
         self._VOLUME_STATUS_IN_USE = 'in-use'
+        self._mod_id = "volume"
 
     def _initialize_table_volumes(self):
         # The snapshots table doesn't exist by now, but it must be there when
@@ -346,7 +347,9 @@ class VolumeDbOperator(object):
         volume_id = volume['id']
         old_volume = self.get_volume_by_id(volume_id)
         if not old_volume:
-            raise exception.SDKVolumeOperationError(rs=2, vol=volume_id)
+            obj_desc = "Volume %s" % volume_id
+            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                   modID=self._mod_id)
         else:
             (_, _, size, status, image_id, snapshot_id, _, _, comment
              ) = old_volume
@@ -372,7 +375,9 @@ class VolumeDbOperator(object):
 
         volume = self.get_volume_by_id(volume_id)
         if not volume:
-            raise exception.SDKVolumeOperationError(rs=2, vol=volume_id)
+            obj_desc = "Volume %s" % volume_id
+            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                   modID=self._mod_id)
 
         time = str(datetime.now())
         with get_volume_conn() as conn:
@@ -453,7 +458,9 @@ class VolumeDbOperator(object):
         # TOOD  volume and instance must exist
         volume_id = volume_attachment['volume_id']
         if not self.get_volume_by_id(volume_id):
-            raise exception.SDKVolumeOperationError(rs=2, vol=volume_id)
+            obj_desc = "Volume %s" % volume_id
+            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                   modID=self._mod_id)
         instance_id = volume_attachment['instance_id']
         # FIXME  need to use get_instance function by Dong Yan
 
@@ -612,7 +619,8 @@ class GuestDbOperator(object):
                 LOG.info(msg)
             else:
                 LOG.error(msg)
-                raise exception.SDKObjectNotExistError(object=guest_id,
+                obj_desc = "Guest with id: %s" % guest_id
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
                                                        modID=self._module_id)
         return guest
 
@@ -625,7 +633,8 @@ class GuestDbOperator(object):
                 LOG.info(msg)
             else:
                 LOG.error(msg)
-                raise exception.SDKObjectNotExistError(object=userid,
+                obj_desc = "Guest with userid: %s" % userid
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
                                                        modID=self._module_id)
         return guest
 

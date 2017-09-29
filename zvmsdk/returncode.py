@@ -189,7 +189,6 @@ errors = {
 # Volume Operation failed
     'volume': [{'overallRC': 300, 'modID': ModRCs['volume'], 'rc': 300},
                {1: "Database operation failed, error: %(msg)s",
-                2: "Volume %(vol)s is not found!",
                 3: "Volume %(vol)s has already been attached on instance "
                    "%(inst)s !",
                 4: "Volume %(vol)s is not attached on instance %(inst)s !",
@@ -214,7 +213,7 @@ errors = {
 # 'modID' would be set to each module rc when raise the exception
 # 'rs' is always 1
     'notExist': [{'overallRC': 404, 'modID': None, 'rc': 404},
-                 {1: "Object '%(object)s' does not exist."},
+                 {1: "%(obj_desc)s does not exist."},
                  "The operated object does not exist"
                  ],
 # Conflict Error (The to-be-updated object status conflict)
