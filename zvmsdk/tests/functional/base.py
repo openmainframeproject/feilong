@@ -53,9 +53,10 @@ class SDKAPITestUtils(object):
             return False
         return True
 
-    def get_available_test_userid(self):
-        test_list = CONF.tests.userid_list.split(' ')
-        for uid in test_list:
+    def get_available_userid_ipaddr(self):
+        userid_list = CONF.tests.userid_list.split(' ')
+        ip_list = CONF.tests.ip_addr_list.split(' ')
+        for uid in userid_list:
             if self._guest_exist(uid):
                 try:
                     self.api.guest_delete(uid)
@@ -64,19 +65,23 @@ class SDKAPITestUtils(object):
                           e.format_message())
                 continue
             else:
-                return uid
+                idx = userid_list.index(uid)
+                return uid, ip_list[idx]
 
-    def _get_next_test_userid(self, userid):
+    def _get_next_userid_ipaddr(self, userid):
         userids = CONF.tests.userid_list.split(' ')
+        ip_list = CONF.tests.ip_addr_list.split(' ')
         idx = userids.index(userid)
         if (idx + 1) == len(userids):
             # the userid is the last one in userids, return the first one
-            return userids[0]
+            return userids[0], ip_list[0]
         else:
-            return userids[idx + 1]
+            return userids[idx + 1], ip_list[idx + 1]
 
     def guest_deploy(self, userid=None, cpu=1, memory=1024,
-                     image_path=CONF.tests.image_path, ip_addr=None):
+                     image_path=CONF.tests.image_path,
+                     os_version=CONF.tests.image_os_version,
+                     ip_addr=None):
         image_name = os.path.basename(image_path)
         url = 'file://' + image_path
 
@@ -88,13 +93,15 @@ class SDKAPITestUtils(object):
         if not image_info:
             print("Importing image %s ..." % image_name)
             self.api.image_import(image_name, url,
-                        {'os_version': CONF.tests.image_os_version})
+                        {'os_version': os_version})
 
         print("Using image %s ..." % image_name)
 
+        ipaddr = '0.4.0.4'
         if userid is None:
-            userid = self.get_available_test_userid()
-        print("Using userid %s ..." % userid)
+            userid, ipaddr = self.get_available_userid_ipaddr()
+        ip_addr = ip_addr or ipaddr
+        print("Using userid %s and IP addr %s ..." % (userid, ip_addr))
 
         user_profile = CONF.zvm.user_profile
 
@@ -117,10 +124,24 @@ class SDKAPITestUtils(object):
                 # delete userid not completed
                 print("userid %s still exist" % userid)
                 # switch to new userid
-                userid = self._get_next_test_userid(userid)
-                print("turn to use new userid %s" % userid)
+                userid, ip_addr = self._get_next_userid_ipaddr(userid)
+                print("turn to use new userid %s and IP addr 5s" %
+                      (userid, ip_addr))
                 self.api.guest_create(userid, cpu, memory, disks_list,
                                       user_profile)
+
+        # Create nic and configure it
+        guest_networks = [{
+            'ip_addr': ip_addr,
+            'gateway_addr': CONF.tests.gateway_v4,
+            'cidr': CONF.tests.cidr,
+        }]
+        netinfo = self.api.guest_create_network_interface(userid, os_version,
+                                                          guest_networks)
+        nic_vdev = netinfo[0]['nic_vdev']
+        self.api.guest_nic_couple_to_vswitch(userid, nic_vdev,
+                                             CONF.tests.vswitch)
+        self.api.vswitch_grant_user(CONF.tests.vswitch, userid)
 
         # Grant IUCV access
         smut_uid = zvmutils.get_smut_userid()

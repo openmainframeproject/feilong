@@ -13,9 +13,10 @@
 #    under the License.
 
 
-from zvmsdk.tests.functional import base
+import types
 
 from zvmsdk import exception
+from zvmsdk.tests.functional import base
 
 
 class SDKAPIMonitorTestCase(base.SDKAPIBaseTestCase):
@@ -115,9 +116,9 @@ class SDKAPIMonitorTestCase(base.SDKAPIBaseTestCase):
         self.assertTrue(isinstance(result, dict))
         self.assertEqual(len(result), 2)
         self.assertTrue(isinstance(
-                result[test_id][0].get('vswitch_name'), unicode))
+                result[test_id][0].get('vswitch_name'), types.StringTypes))
         self.assertTrue(isinstance(
-                result[test_id][0].get('nic_vdev'), unicode))
+                result[test_id][0].get('nic_vdev'), types.StringTypes))
         self.assertTrue(isinstance(
                 result[test_id][0].get('nic_fr_rx'), int))
         self.assertTrue(isinstance(
