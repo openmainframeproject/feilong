@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8bee748d_8695b431",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1140,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-10-09T05:10:12Z",
+      "side": 1,
+      "message": "I don\u0027t fully get this parameter usage\nhow can end user know whether it\u0027s first create or not first create?",
+      "range": {
+        "startLine": 1135,
+        "startChar": 15,
+        "endLine": 1140,
+        "endChar": 61
+      },
+      "revId": "1282913e67db527cf9cd81281c069eb1c9514e59",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
