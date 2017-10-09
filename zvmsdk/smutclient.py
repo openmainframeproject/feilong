@@ -235,8 +235,10 @@ class SMUTClient(object):
 
     def _is_vdev_valid(self, vdev, vdev_info):
         for used_vdev in vdev_info:
-            if ((int(vdev, 16) >= int(used_vdev, 16)) and
-                (int(vdev, 16) <= int(used_vdev, 16) + 2)):
+            if (((int(vdev, 16) >= int(used_vdev, 16)) and
+                 (int(vdev, 16) <= int(used_vdev, 16) + 2)) or
+                ((int(vdev, 16) < int(used_vdev, 16)) and
+                 (int(vdev, 16) >= int(used_vdev, 16) - 2))):
                 return False
 
         return True
@@ -477,6 +479,9 @@ class SMUTClient(object):
 
         :uid_list: A list of zvm userids to be queried
         """
+        if uid_list == []:
+            return {}
+
         if not isinstance(uid_list, list):
             uid_list = [uid_list]
 
@@ -498,7 +503,7 @@ class SMUTClient(object):
             'min_cpu_count': "Minimum CPU count:",
             'max_cpu_limit': "Max CPU limit:",
             'samples_cpu_in_use': "Samples CPU in use:",
-            'samples_cpu_delay': ",Samples CPU delay:",
+            'samples_cpu_delay': "Samples CPU delay:",
             'used_memory': "Used memory:",
             'max_memory': "Max memory:",
             'min_memory': "Minimum memory:",
@@ -914,8 +919,8 @@ class SMUTClient(object):
                                     couple_err=msg1, revoke_err=msg2)
 
         """Update information in switch table."""
-        self._NetDbOperator.switch_updat_record_with_switch(userid, vdev,
-                                                            vswitch_name)
+        self._NetDbOperator.switch_update_record_with_switch(userid, vdev,
+                                                             vswitch_name)
 
     def couple_nic_to_vswitch(self, userid, nic_vdev,
                               vswitch_name, active=False):
@@ -954,8 +959,8 @@ class SMUTClient(object):
                 raise
 
         """Update information in switch table."""
-        self._NetDbOperator.switch_updat_record_with_switch(userid, vdev,
-                                                            None)
+        self._NetDbOperator.switch_update_record_with_switch(userid, vdev,
+                                                             None)
 
         # the inst must be active, or this call will failed
         if active:

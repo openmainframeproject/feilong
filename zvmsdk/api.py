@@ -292,6 +292,10 @@ class SDKAPI(object):
     @zvmutils.check_input_types(_TUSERID, _TSTR_OR_NONE)
     def guest_authorize_iucv_client(self, guest, client=None):
         """Punch a script that used to set the authorized client userid in vm
+        If the guest is in log off status, the change will take effect when
+        the guest start up at first time.
+        If the guest is in active status, power off and power on are needed
+        for the change to take effect.
 
         :param str guest: the user id of the vm
         :param str client: the user id of the client that can communicate to
@@ -1127,6 +1131,8 @@ class SDKAPI(object):
                'cidr': "192.168.96.0/24",
                'nic_vdev': '1003}]
         :param bool active: whether add a nic on active guest system
+        :returns: guest_networks list, including nic_vdev for each network
+        :rtype: list
         """
         if len(guest_networks) == 0:
             errmsg = ("API guest_create_network_interface: "
@@ -1207,3 +1213,4 @@ class SDKAPI(object):
             LOG.error(('Failed to set network configuration file on vm %s') %
                       userid)
             raise
+        return guest_networks

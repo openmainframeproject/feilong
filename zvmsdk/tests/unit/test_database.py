@@ -79,17 +79,17 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
 
     @mock.patch.object(database.NetworkDbOperator,
                        '_get_switch_by_user_interface')
-    def test_switch_updat_record_with_switch_fail(self, get_record):
+    def test_switch_update_record_with_switch_fail(self, get_record):
         get_record.return_value = None
         userid = 'testuser'
         interface = '1000'
         switch = 'testswitch'
 
         self.assertRaises(exception.SDKObjectNotExistError,
-                          self.db_op.switch_updat_record_with_switch,
+                          self.db_op.switch_update_record_with_switch,
                           userid, interface, switch)
 
-    def test_switch_updat_record_with_switch(self):
+    def test_switch_update_record_with_switch(self):
         userid = 'testuser'
         interface = '1000'
         port = 'testport'
@@ -99,7 +99,7 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         self.db_op.switch_add_record_for_nic(userid, interface, port)
 
         # update record with switch info
-        self.db_op.switch_updat_record_with_switch(userid, interface, switch)
+        self.db_op.switch_update_record_with_switch(userid, interface, switch)
 
         # query
         switch_record = self.db_op.switch_select_table()
@@ -108,7 +108,7 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
 
         switch = None
         # update record to remove switch info
-        self.db_op.switch_updat_record_with_switch(userid, interface, switch)
+        self.db_op.switch_update_record_with_switch(userid, interface, switch)
 
         # query
         switch_record = self.db_op.switch_select_table()
@@ -349,7 +349,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
         # volume not found
         volume_id = str(uuid.uuid4())
         volume = {'id': volume_id}
-        self.assertRaises(exception.SDKVolumeOperationError,
+        self.assertRaises(exception.SDKObjectNotExistError,
                           self._util.update_volume, volume)
 
     def test_update_volume(self):
@@ -523,7 +523,7 @@ class VolumeDbOperatorTestCase(base.SDKTestCase):
         attachment = {'volume_id': volume_id,
                       'instance_id': instance_id,
                       'connection_info': connection_info}
-        self.assertRaises(exception.SDKVolumeOperationError,
+        self.assertRaises(exception.SDKObjectNotExistError,
                           self._util.insert_volume_attachment,
                           attachment)
         volume = {'protocol_type': 'fc', 'size': '3G'}

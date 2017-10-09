@@ -37,6 +37,32 @@
 version=3.0
 authorizedSenders=''
 
+function onlineDevice {
+  # @Description:
+  #   Brings a Linux device online.
+  # @Input:
+  #   Device number, e.g. "0.0.000c"
+  # @Output:
+  #   Return code indicates success or failure
+  # @Code:
+  device=$1
+  local funcName="onlineDevice"
+  rc=$(/sbin/chccwdev -e $device > /dev/null; echo $?)
+  if (( rc != 0 )); then
+    if [[ -e /sbin/cio_ignore ]]; then
+      rc=$(/sbin/cio_ignore -r 0.0.$device > /dev/null; echo $?)
+      which udevadm &> /dev/null && udevadm settle || udevsettle
+    fi
+    rc=$(/sbin/chccwdev -e $device > /dev/null; echo $?)
+    if (( rc != 0 )); then
+      echo "zvmguestconfigure $funcName (Error) Could not activate the virtual device $device"
+      return 1
+    fi
+  fi
+  which udevadm &> /dev/null && udevadm settle || udevsettle
+  return 0
+}
+
 function pullReader {
   # @Description:
   #   Reads class x spool files from the reader if sent by an authorized sender.
@@ -113,13 +139,6 @@ function pullReader {
       /bin/tar xf $file -C $transportdir
       rm $file
       /bin/bash invokeScript.sh
-    elif [[ $type == "disk" ]]; then
-      echo 'disk file encountered and will be handled by the deprecated setupDisk function'
-      rc=$(/usr/sbin/vmur re $spoolid $file)
-      if (( rc == 0 )); then
-        setupDisk $transportdir'/'$file
-        rc=0
-      fi
     else
       # Receive block
       rc=$(/usr/sbin/vmur re $spoolid $file)
@@ -143,14 +162,11 @@ function setupIso {
   #   None
   # @Code:
   local funcName="setupIso"
-  iso="/var/opt/transport/transport.iso"
+  iso="/var/opt/zthin/transport.iso"
 
   # If there are files in the transport directory then create an ISO system.
   if [ "$(ls -A .)" ]; then
     /usr/bin/mkisofs -l -V 'config-2' -o $iso $transportdir
-    if [ -e /tmp/znetconfig.sh ]; then
-      /bin/bash /tmp/znetconfig.sh
-    fi
   fi
 
   # If the ISO filesystem exists then create loop back device pointing
@@ -216,9 +232,6 @@ case "$1" in
     rm -Rf $transportdir
     /bin/mkdir -p $transportdir
     cd $transportdir
-
-    # Get Linux version
-    getOsVersion
 
     if [[ -n "$authorizedSenders" ]]; then
       pullReader

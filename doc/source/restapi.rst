@@ -53,7 +53,7 @@ Create token
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_create_token.tpl
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_token_create.tpl
    :language: javascript
 
 * Response code:
@@ -358,6 +358,11 @@ Start a guest.
   - guest: guest_userid
   - action: action_start_guest
 
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_create.tpl
+   :language: javascript
+
 * Response code:
 
   HTTP status code 200 on success.
@@ -379,6 +384,11 @@ Stop a guest.
 
   - guest: guest_userid
   - action: action_stop_guest
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_stop.tpl
+   :language: javascript
 
 * Response code:
 
@@ -402,6 +412,11 @@ Pause a guest.
   - guest: guest_userid
   - action: action_pause_guest
 
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_pause.tpl
+   :language: javascript
+
 * Response code:
 
   HTTP status code 200 on success.
@@ -423,6 +438,11 @@ Unpause a guest.
 
   - guest: guest_userid
   - action: action_unpause_guest
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_unpause.tpl
+   :language: javascript
 
 * Response code:
 
@@ -447,6 +467,11 @@ given guest.
   - guest: guest_userid
   - action: action_reboot_guest
 
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_reboot.tpl
+   :language: javascript
+
 * Response code:
 
   HTTP status code 200 on success.
@@ -470,6 +495,11 @@ z/VM it is running on, then log on the guest and IPL.
   - guest: guest_userid
   - action: action_reset_guest
 
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_reset.tpl
+   :language: javascript
+
 * Response code:
 
   HTTP status code 200 on success.
@@ -490,6 +520,11 @@ Get guest console output
   - guest: guest_userid
   - action: action_get_console_guest
 
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get_console_output.tpl
+   :language: javascript
+
 * Response code:
 
   HTTP status code 200 on success.
@@ -509,6 +544,11 @@ Deploy guest
 
   - guest: guest_userid
   - action: action_deploy_guest
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_deploy.tpl
+   :language: javascript
 
 * Response code:
 
@@ -684,6 +724,11 @@ Create image
   - image_meta: image_metadata
   - remotehost: remotehost_image
 
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_create_req.tpl
+   :language: javascript
+
 * Response code:
 
   HTTP status code 200 on success.
@@ -849,6 +894,11 @@ Update vswitch
 .. restapi_parameters:: parameters.yaml
 
   - name: vswitch_name
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_update_req.tpl
+   :language: javascript
 
 * Response code:
 
