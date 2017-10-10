@@ -344,7 +344,7 @@ class SDKAPI(object):
         :rtype: str
         """
         if mac_addr is not None:
-            if not netaddr.valid_mac(mac_addr):
+            if not zvmutils.valid_mac_addr(mac_addr):
                 raise exception.SDKInvalidInputFormat(
                     msg=("Invalid mac address, format should be "
                          "xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit"))
@@ -1149,7 +1149,7 @@ class SDKAPI(object):
             if (('mac_addr' in network.keys()) and
                 (network['mac_addr'] is not None)):
                 mac_addr = network['mac_addr']
-                if not netaddr.valid_mac(mac_addr):
+                if not zvmutils.valid_mac_addr(mac_addr):
                     errmsg = ("API guest_create_network_interface: "
                               "Invalid mac address, format should be "
                               "xx:xx:xx:xx:xx:xx, and x is a hexadecimal "
