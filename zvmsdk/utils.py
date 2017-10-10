@@ -254,6 +254,17 @@ def valid_userid(userid):
     return True
 
 
+def valid_mac_addr(addr):
+    ''' Validates a mac address'''
+    if type(addr) not in types.StringTypes:
+        return False
+    valid = re.compile(r'''
+                      (^([0-9A-F]{2}[:]){5}([0-9A-F]{2})$)
+                      ''',
+                      re.VERBOSE | re.IGNORECASE)
+    return valid.match(addr) is not None
+
+
 def valid_cidr(cidr):
     if type(cidr) not in types.StringTypes:
         return False
