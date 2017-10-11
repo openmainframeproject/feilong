@@ -4448,7 +4448,10 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
                     }
                     goto end;
                 }
-                printf("user_vlan_id: %s\n", user_vlan_id);
+                snprintf(strMsg, sizeof(strMsg), "user_vlan_id: %s\n", user_vlan_id);
+                if (0 != (rc = addMessageToBuffer(&saveMsgs, strMsg))) {
+                    goto end;
+                }
                 for (k =1; k < vlanCount; k++) {
                     token = strtok_r(NULL, blank, &buffer);
                     if (token != NULL) {
