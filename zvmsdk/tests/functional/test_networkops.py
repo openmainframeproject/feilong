@@ -13,11 +13,13 @@
 #    under the License.
 
 
-from zvmsdk.tests.functional import base
+import time
 
 from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import smutclient
+from zvmsdk.tests.functional import base
+from zvmsdk import utils as zvmutils
 
 
 CONF = config.CONF
@@ -69,7 +71,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         if vswitch_name in self.sdkapi.vswitch_get_list():
             self.sdkapi.vswitch_delete(vswitch_name)
         # Test
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self.sdkapi.vswitch_grant_user,
                           vswitch_name, self.basevm)
 
@@ -80,7 +82,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         if vswitch_name in self.sdkapi.vswitch_get_list():
             self.sdkapi.vswitch_delete(vswitch_name)
         # Test
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self.sdkapi.vswitch_revoke_user,
                           vswitch_name, self.basevm)
 
@@ -107,7 +109,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         vswitch_name = self.vswitch
         self.sdkapi.vswitch_create(vswitch_name, '1111', vid=1)
         # Test
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self.sdkapi.vswitch_set_vlan_id_for_user,
                           vswitch_name, self.basevm, 0)
 
@@ -117,7 +119,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         vswitch_name = self.vswitch
         self.sdkapi.vswitch_create(vswitch_name, '1111')
         # Test
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self.sdkapi.vswitch_set_vlan_id_for_user,
                           vswitch_name, self.basevm, 1000)
 
@@ -128,7 +130,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         if vswitch_name in self.sdkapi.vswitch_get_list():
             self.sdkapi.vswitch_delete(vswitch_name)
         # Test
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self.sdkapi.vswitch_set_vlan_id_for_user,
                           vswitch_name, self.basevm, 1000)
 
@@ -203,7 +205,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         vswitch_name = self.vswitch
         self.sdkapi.vswitch_create(vswitch_name, '11 0022 333')
         # Test
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self.sdkapi.vswitch_create,
                           vswitch_name, '1111')
 
@@ -222,7 +224,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         # Test
         vswitch_name = self.vswitch
         # only support at most three rdevs
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self.sdkapi.vswitch_create,
                           vswitch_name, '1111 2222 3333 4444')
         self.assertNotIn(vswitch_name, self.sdkapi.vswitch_get_list())
@@ -276,22 +278,24 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
 
     def _activate_vm(self, userid):
         """ Add IPL entry to VM and then Power on the VM. """
-        zhcp_node = self.client._get_hcp_info()['nodename']
-        cmd = ' '.join((
-            '/opt/zhcp/bin/smcli Image_Definition_Update_DM',
-            "-T %s" % userid,
+        requestData = ' '.join((
+            'SMAPI %s API Image_Definition_Update_DM' % userid,
+            "--operands",
             "-k 'IPL=VDEV=190'",
             "-k 'LINK=USERID=MAINT VDEV1=0190 MODE=RR'"))
-        self.client.run_commands_on_node(zhcp_node, cmd)
+
+        self.client._request(requestData)
+
         print("Powering on the guest.")
         # Try 5 times to power on the vm.
         for i in range(5):
             try:
                 self.sdkapi.guest_start(userid)
-            except exception.SDKInternalError as err:
+            except exception.SDKSMUTRequestFailed as err:
                 err_str = err.format_message()
                 if ("Return Code: 396" in err_str and
                         "Reason Code: 59" in err_str):
+                    time.sleep(1)
                     continue
                 else:
                     raise
@@ -301,17 +305,15 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
         Returns a bool value to indicate whether the nic is defined in user and
         a string value of the vswitch that the nic is attached to.
         """
-        # Construct the expected NIC definition entry
-        zhcp_node = self.client._get_hcp_info()['nodename']
-        nic_entry = ('%s: NICDEF %s TYPE QDIO') % (zhcp_node, vdev)
+        nic_entry = 'NICDEF %s TYPE QDIO' % vdev
         if vsw is not None:
             nic_entry += (" LAN SYSTEM %s") % vsw
         nic_entry += (" DEVICES %d") % devices
         if mac is not None:
             nic_entry += (" MACID %s") % mac
+
         # Check definition
-        cmd = ("/opt/zhcp/bin/smcli Image_Query_DM -T %s" % self.basevm)
-        vm_definition = self.client.run_commands_on_node(zhcp_node, cmd)
+        vm_definition = self.client.get_user_direct(self.basevm)
         if nic_entry not in vm_definition:
             return False, ""
         else:
@@ -331,19 +333,19 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
         self.sdkapi.guest_create_nic(self.basevm)
         nic_defined, vsw = self._check_nic(CONF.zvm.default_nic_vdev)
         self.assertTrue(nic_defined)
-        self.assertEqual(vsw, "")
+        self.assertEqual(vsw, None)
 
         print("Creating NIC with fixed vdev.")
         self.sdkapi.guest_create_nic(self.basevm, vdev='3000')
         nic_defined, vsw = self._check_nic('3000')
         self.assertTrue(nic_defined)
-        self.assertEqual(vsw, "")
+        self.assertEqual(vsw, None)
 
         print("Creating NIC without vdev, should use max_vdev+3 as default.")
         self.sdkapi.guest_create_nic(self.basevm)
         nic_defined, vsw = self._check_nic('3003')
         self.assertTrue(nic_defined)
-        self.assertEqual(vsw, "")
+        self.assertEqual(vsw, None)
 
         print("Creating NIC with vdev conflict with defined NIC.")
         self.assertRaises(exception.SDKInvalidInputFormat,
@@ -354,15 +356,13 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
         print("Creating NIC with nic_id.")
         self.sdkapi.guest_create_nic(self.basevm, vdev='4000', nic_id='123456')
         # Check the nic_id added in the switch table
-        switch_tab = self.client._get_nic_ids()
-        nic_id_in_tab = ''
-        for e in switch_tab:
-            sec = e.split(',')
-            userid = sec[0].strip('"')
-            interface = sec[4].strip('"')
-            if (userid == self.basevm) and (interface == '4000'):
-                nic_id_in_tab = sec[2].strip('"')
-        self.assertEqual(nic_id_in_tab, '123456')
+        nic_list = self.client._NetDbOperator.switch_select_record_for_userid(
+                                                                self.basevm)
+        nic_id = None
+        for nic in nic_list:
+            if nic[1] == '4000':
+                nic_id = nic[3]
+        self.assertEqual(nic_id, '123456')
 
         # Start test parameter mac_addr
         print("Creating NIC with mac_addr.")
@@ -370,7 +370,7 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
                                      mac_addr='02:00:00:12:34:56')
         nic_defined, vsw = self._check_nic('5000', mac='123456')
         self.assertTrue(nic_defined)
-        self.assertEqual(vsw, "")
+        self.assertEqual(vsw, None)
 
         print("Creating NIC with invalid mac_addr.")
         self.assertRaises(exception.SDKInvalidInputFormat,
@@ -405,7 +405,7 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
 
         # Start test parameter active
         print("Creating NIC to active guest when guest is in off status.")
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self.sdkapi.guest_create_nic,
                           self.basevm, vdev='7006',
                           active=True)
@@ -439,16 +439,16 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
         # Check nic defined in user direct and not coupled to vswitch
         nic_defined, vsw = self._check_nic('1000')
         self.assertTrue(nic_defined)
-        self.assertEqual(vsw, "")
+        self.assertEqual(vsw, None)
 
         print("Coupling with active=True on an off-state VM.")
         # The active should fail and rollback the user direct and switch table
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self.sdkapi.guest_nic_couple_to_vswitch,
                           vm, '1000', vswitch, active=True)
         nic_defined, vsw = self._check_nic('1000')
         self.assertTrue(nic_defined)
-        self.assertEqual(vsw, '')
+        self.assertEqual(vsw, None)
 
         print("Coupling NIC to VSWITCH.")
         self.sdkapi.guest_nic_couple_to_vswitch(vm, '1000', vswitch)
@@ -464,7 +464,7 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
 
         print("Coupling NIC to VSWITCH, to different vswitch, not supported.")
         # Should still be coupled to original vswitch
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self.sdkapi.guest_nic_couple_to_vswitch,
                           vm, '1000', vswitch2)
         nic_defined, vsw = self._check_nic('1000', vsw=vswitch)
@@ -472,19 +472,19 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
         self.assertEqual(vsw, vswitch)
 
         print("Uncoupling with active=True on an off-state VM.")
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self.sdkapi.guest_nic_uncouple_from_vswitch,
                           vm, '1000', active=True)
         # The NIC shoule be uncoupled in user direct and switch table
         nic_defined, vsw = self._check_nic('1000')
         self.assertTrue(nic_defined)
-        self.assertEqual(vsw, "")
+        self.assertEqual(vsw, None)
 
         print("Uncoupling NIC from VSWITCH the second time.")
         self.sdkapi.guest_nic_uncouple_from_vswitch(vm, '1000')
         nic_defined, vsw = self._check_nic('1000')
         self.assertTrue(nic_defined)
-        self.assertEqual(vsw, "")
+        self.assertEqual(vsw, None)
 
         print("Deleting NIC.")
         self.sdkapi.guest_delete_nic(vm, '1000')
@@ -502,15 +502,15 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
         # Check nic defined in user direct and not coupled to vswitch
         nic_defined, vsw = self._check_nic('1000')
         self.assertTrue(nic_defined)
-        self.assertEqual(vsw, "")
+        self.assertEqual(vsw, None)
 
         print("Unauthorized to couple NIC in active mode.")
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self.sdkapi.guest_nic_couple_to_vswitch,
                           vm, '1000', vswitch, active=True)
         nic_defined, vsw = self._check_nic('1000')
         self.assertTrue(nic_defined)
-        self.assertEqual(vsw, "")
+        self.assertEqual(vsw, None)
 
         print("Authorizing VM to couple to vswitch.")
         self.sdkapi.vswitch_grant_user(vswitch, vm)
@@ -519,12 +519,12 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
         # active should rollback user direct and raise exception
         if "VSWNONE" in self.sdkapi.vswitch_get_list():
             self.sdkapi.vswitch_delete("SDKNONE")
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self.sdkapi.guest_nic_couple_to_vswitch,
                           vm, '1000', "VSWNONE", active=True)
         nic_defined, vsw = self._check_nic('1000')
         self.assertTrue(nic_defined)
-        self.assertEqual(vsw, "")
+        self.assertEqual(vsw, None)
 
         print("Coupling NIC to VSWITCH.")
         self.sdkapi.guest_nic_couple_to_vswitch(vm, '1000', vswitch,
@@ -543,7 +543,7 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
         print("Coupling NIC to VSWITCH, to different vswitch, not supported.")
         # Should still be coupled to original vswitch
         self.sdkapi.vswitch_grant_user(vswitch2, vm)
-        self.assertRaises(exception.ZVMNetworkError,
+        self.assertRaises(exception.SDKSMUTRequestFailed,
                           self.sdkapi.guest_nic_couple_to_vswitch,
                           vm, '1000', vswitch2, active=True)
         nic_defined, vsw = self._check_nic('1000', vsw=vswitch)
@@ -554,13 +554,13 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
         self.sdkapi.guest_nic_uncouple_from_vswitch(vm, '1000', active=True)
         nic_defined, vsw = self._check_nic('1000')
         self.assertTrue(nic_defined)
-        self.assertEqual(vsw, "")
+        self.assertEqual(vsw, None)
 
         print("Uncoupling NIC from VSWITCH the second time.")
         self.sdkapi.guest_nic_uncouple_from_vswitch(vm, '1000', active=True)
         nic_defined, vsw = self._check_nic('1000')
         self.assertTrue(nic_defined)
-        self.assertEqual(vsw, "")
+        self.assertEqual(vsw, None)
 
         print("Deleting NIC.")
         self.sdkapi.guest_delete_nic(vm, '1000', active=True)
