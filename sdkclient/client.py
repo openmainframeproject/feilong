@@ -14,6 +14,7 @@
 
 
 from sdkclient import socketclient
+from sdkclient import restclient
 
 
 CONN_TYPE_SOCKET = 'socket'
@@ -35,8 +36,12 @@ class socketConnection(baseConnection):
 
 
 class restConnection(baseConnection):
-    # TODO: implement rest connection
-    pass
+
+    def __init__(self, ip_addr='127.0.0.1', port=2012, timeout=3600):
+        self.client = restclient.RESTClient(ip_addr, port, timeout)
+
+    def request(self, api_name, *api_args, **api_kwargs):
+        return self.client.call(api_name, *api_args, **api_kwargs)
 
 
 class SDKClient(object):
