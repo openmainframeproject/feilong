@@ -15,6 +15,7 @@
 
 import os
 import re
+import time
 import unittest
 
 from zvmsdk import api
@@ -42,10 +43,18 @@ class SDKAPITestUtils(object):
 
         image_name = os.path.basename(image_path)
         image_url = ''.join(('file://', image_path))
-        self.api.image_import(image_name, image_url,
-                              {'os_version': os_version})
+        try:
+            self.api.image_import(image_name, image_url,
+                                  {'os_version': os_version})
+        except exception.SDKImageOperationError as err:
+            resp = err.results
+            if resp['rc'] == 300 and resp['rs'] == 13:
+                # image already exists
+                pass
+            else:
+                raise
 
-    def _guest_exist(self, userid):
+    def is_guest_exist(self, userid):
         cmd = 'vmcp q %s' % userid
         rc, output = zvmutils.execute(cmd)
         if re.search('(^HCP\w\w\w003E)', output):
@@ -57,7 +66,7 @@ class SDKAPITestUtils(object):
         userid_list = CONF.tests.userid_list.split(' ')
         ip_list = CONF.tests.ip_addr_list.split(' ')
         for uid in userid_list:
-            if self._guest_exist(uid):
+            if self.is_guest_exist(uid):
                 try:
                     self.api.guest_delete(uid)
                 except exception.SDKBaseException as e:
@@ -163,6 +172,30 @@ class SDKAPITestUtils(object):
             self.api.guest_delete(userid)
         except exception.SDKBaseException as err:
             print("WARNING: deleting userid failed: %s" % err.format_message())
+
+    def wait_until_guest_in_power_state(self, userid, expect_state):
+        # sleep intervals, total timeout 60 seconds
+        _inc_slp = [1, 2, 2, 5, 10, 20, 20]
+        for _slp in _inc_slp:
+            real_state = self.api.guest_get_power_state(userid)
+            if real_state == expect_state:
+                return True
+            else:
+                time.sleep(_slp)
+
+        # timeout
+        return False
+
+    def wait_until_create_userid_complete(self, userid):
+        _inc_slp = [1, 2, 2, 5, 10, 20, 20]
+        for _slp in _inc_slp:
+            if self.is_guest_exist(userid):
+                return True
+            else:
+                time.sleep(_slp)
+
+        # timeout
+        return False
 
 
 class SDKAPIBaseTestCase(unittest.TestCase):

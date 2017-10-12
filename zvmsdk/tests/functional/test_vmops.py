@@ -13,7 +13,8 @@
 #    under the License.
 
 
-import os.path
+import os
+import time
 
 from zvmsdk import config
 from zvmsdk import exception
@@ -27,116 +28,132 @@ printLOG = log.LOG
 
 class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
 
+    TEST_UIDS = ['ugcprof', 'ugcdup', 'ugdtrspt', 'ugdrhost', 'ugdvdev',
+                 'ugsnml']
+
     def __init__(self, methodName='runTest'):
         super(SDKGuestActionsTestCase, self).__init__(methodName)
         self.test_util = base.SDKAPITestUtils()
         self.test_util.image_import()
-        image_path = CONF.tests.image_path
-        image_os_version = CONF.tests.image_os_version
-        self.image_name = self._get_image_name(image_path, image_os_version)
+        self.image_name = os.path.basename(CONF.tests.image_path)
 
-    def _get_image_name(self, image_path, image_os_version):
-        image_file_name = os.path.basename(image_path).replace('-', '_')
-        return "%(os)s-s390x-netboot-%(name)s" % {'os': image_os_version,
-                                                  'name': image_file_name}
+        # cleanup all userids that will be used in this test
+        for userid in self.TEST_UIDS:
+            self.sdkapi.guest_delete(userid)
+            time.sleep(2)
 
-    def test_guest_create_delete_normal(self):
-        """ Normal cases of SDK API guest_create """
-        userid_small = "ugcsmall"
-        self.addCleanup(self.sdkapi.guest_delete, userid_small)
-        userid_big = "ugcbig"
-        self.addCleanup(self.sdkapi.guest_delete, userid_big)
-        userid_disk = "ugcdisk"
-        self.addCleanup(self.sdkapi.guest_delete, userid_disk)
+        self.disks = [
+            {'size': '3G',
+             'format': 'ext3',
+             'is_boot_disk': True,
+             'disk_pool': CONF.zvm.disk_pool}]
+
+    def test_create_with_profile(self):
+        """Create guest with profile specified.
+
+        :Steps:
+        1. Create guest with profile specified
+        2. Delete the guest
+
+        :Verify:
+        1. No exception
+        """
         userid_prof = "ugcprof"
         self.addCleanup(self.sdkapi.guest_delete, userid_prof)
 
-        # delete all guest before launch
-        self.sdkapi.guest_delete(userid_small)
-        self.sdkapi.guest_delete(userid_big)
-        self.sdkapi.guest_delete(userid_disk)
-        self.sdkapi.guest_delete(userid_prof)
+        # make sure the guest not exists
+        self.sdkapi.guest_create(userid_prof, 1, 1024,
+                                 user_profile=CONF.zvm.user_profile)
+        self.assertTrue(
+                self.test_util.wait_until_create_userid_complete(userid_prof))
 
-        userid = userid_small
-        vcpu = 1
-        memory = 512
-        self.sdkapi.guest_create(userid, vcpu, memory)
-        print("create guest %s ... ok!" % userid)
-        self.sdkapi.guest_delete(userid)
-        print("delete guest %s ... ok!" % userid)
+    def test_create_with_duplicate_userid(self):
+        """Create guest with duplicated userid.
 
-        userid = userid_big
-        vcpu = 8
-        memory = 8192
-        self.sdkapi.guest_create(userid, vcpu, memory)
-        print("create guest %s ... ok!" % userid)
-        self.sdkapi.guest_delete(userid)
-        print("delete guest %s ... ok!" % userid)
+        :Steps:
+        1. Create a guest
+        2. Create another guest with same userid as first one
 
-        userid = userid_disk
-        vcpu = 2
-        memory = 2048
-        disk = [{'size': '1G',
-                 'format': 'ext3',
-                 'is_boot_disk': True,
-                 'disk_pool': 'ECKD:xcateckd'},
-                {'size': '200M',
-                 'format': 'xfs',
-                 'is_boot_disk': False,
-                 'disk_pool': 'FBA:xcatfba1'}]
-        self.sdkapi.guest_create(userid, vcpu, memory, disk_list=disk)
-        print("create guest %s ... ok!" % userid)
-        self.sdkapi.guest_delete(userid)
-        print("delete guest %s ... ok!" % userid)
-
-        userid = userid_prof
-        # The profile should be created manually in advance
-        profile = 'testprof'
-        self.sdkapi.guest_create(userid, vcpu, memory, user_profile=profile)
-        print("create guest %s ... ok!" % userid)
-
-    def test_guest_create_delete_abnormal(self):
-        """ Abnormal cases of SDK API guest_create """
+        :Verify:
+        1. return value with rc/rs 400/8
+        """
         userid_duplicate = "ugcdup"
         self.addCleanup(self.sdkapi.guest_delete, userid_duplicate)
 
-        # delete all guest before launch
-        self.sdkapi.guest_delete(userid_duplicate)
+        self.sdkapi.guest_create(userid_duplicate, 1, 1024)
+        try:
+            self.sdkapi.guest_create(userid_duplicate, 1, 1024)
+        except exception.SDKSMUTRequestFailed as err:
+            self.assertEqual(err.results['rc'], 400)
+            self.assertEqual(err.results['rs'], 8)
 
-        # Duplicate creation
-        userid = userid_duplicate
-        vcpu = 1
-        memory = 512
-        self.sdkapi.guest_create(userid, vcpu, memory)
-        self.assertRaises(exception.SDKSMUTRequestFailed,
-                          self.sdkapi.guest_create,
-                          userid, vcpu, memory)
-        # Duplicate deletion. It's valid and there should be no error
-        self.sdkapi.guest_delete(userid)
-        self.sdkapi.guest_delete(userid)
-
-    def test_guest_deploy_delete_normal(self):
-        """ Normal cases of SDK API guest_deploy and guest_delete """
-        userid_normal = "ugdnorm"
-        self.addCleanup(self.sdkapi.guest_delete, userid_normal)
-        userid_trspt = "ugdtrspt"
-        self.addCleanup(self.sdkapi.guest_delete, userid_trspt)
-        userid_rmthost = 'ugdrhost'
-        self.addCleanup(self.sdkapi.guest_delete, userid_rmthost)
-        userid_vdev = 'ugdvdev'
-        self.addCleanup(self.sdkapi.guest_delete, userid_vdev)
-
-        # delete all guest before launch
-        self.sdkapi.guest_delete(userid_normal)
-        self.sdkapi.guest_delete(userid_trspt)
-        self.sdkapi.guest_delete(userid_rmthost)
-        self.sdkapi.guest_delete(userid_vdev)
-
-        # create temporary transport file for test
+    def _make_transport_file(self):
         transport_file = "/tmp/sdktest.txt"
         with open(transport_file, 'w') as f:
             f.write('A quick brown fox jump over the lazy dog.\n')
         self.addCleanup(os.remove, transport_file)
+        return transport_file
+
+    def test_deploy_with_transport_file(self):
+        """Deploy guest with transport file.
+
+        :Steps:
+        1. Create a guest
+        2. Deploy the guest with transport file
+
+        :Verify:
+        1. The guest can start correctly
+        """
+        userid_trspt = "ugdtrspt"
+        self.addCleanup(self.sdkapi.guest_delete, userid_trspt)
+
+        transport_file = self._make_transport_file()
+
+        self.sdkapi.guest_create(userid_trspt, 1, 1024, disk_list=self.disks)
+        self.sdkapi.guest_deploy(userid_trspt, self.image_name, transport_file)
+
+        self.sdkapi.guest_start(userid_trspt)
+        powered_on = self.test_util.wait_until_guest_in_power_state(
+                                                            userid_trspt, 'on')
+        self.assertTrue(powered_on)
+
+    def test_deploy_with_remote_host(self):
+        """Deploy guest with remote_host.
+
+        :Steps:
+        1. Create a guest
+        2. Deploy the guest with remote_host
+
+        :Verify:
+        1. The guest can start correctly
+        """
+        userid_rmthost = 'ugdrhost'
+        self.addCleanup(self.sdkapi.guest_delete, userid_rmthost)
+
+        remote_host = CONF.tests.remote_host
+        transportfile = self._make_transport_file()
+        self.sdkapi.guest_create(userid_rmthost, 1, 1024, disk_list=self.disks)
+        self.sdkapi.guest_deploy(userid_rmthost,
+                                 self.image_name,
+                                 transportfiles=transportfile,
+                                 remotehost=remote_host)
+        self.sdkapi.guest_start(userid_rmthost)
+        powered_on = self.test_util.wait_until_guest_in_power_state(
+                                                        userid_rmthost, 'on')
+        self.assertTrue(powered_on)
+
+    def test_deploy_with_vdev(self):
+        """Deploy guest with root vdev.
+
+        :Steps:
+        1. Create a guest
+        2. Deploy the guest to specified vdev
+
+        :Verify:
+        1. The guest can start correctly
+        """
+        userid_vdev = 'ugdvdev'
+        self.addCleanup(self.sdkapi.guest_delete, userid_vdev)
 
         # back up user_root_vdev value in config file
         def _restore_conf(root_vdev_back):
@@ -144,135 +161,58 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         root_vdev_back = CONF.zvm.user_root_vdev
         self.addCleanup(_restore_conf, root_vdev_back)
 
-        # simplest case
-        userid = userid_normal
-        vcpu = 1
-        memory = 1024
-        disk = [{'size': '3G',
-                 'format': 'ext3',
-                 'is_boot_disk': True,
-                 'disk_pool': CONF.zvm.disk_pool}]
-        self.sdkapi.guest_create(userid, vcpu, memory, disk_list=disk)
-        self.sdkapi.guest_deploy(userid, self.image_name)
-        print("deploy guest %s ... ok!") % userid
-        self.sdkapi.guest_delete(userid)
-        print("delete guest %s ... ok!" % userid)
-
-        # with transport file
-        userid = userid_trspt
-        self.sdkapi.guest_create(userid, vcpu, memory, disk_list=disk)
-        self.sdkapi.guest_deploy(userid, self.image_name, transport_file)
-        print("deploy guest %s ... ok!") % userid
-        self.sdkapi.guest_delete(userid)
-        print("delete guest %s ... ok!" % userid)
-
-        # with remote host
-        userid = userid_rmthost
-        remote_host = 'nova@127.0.0.1'
-        self.sdkapi.guest_create(userid, vcpu, memory, disk_list=disk)
-        self.sdkapi.guest_deploy(userid,
-                                 self.image_name,
-                                 transportfiles=transport_file,
-                                 remotehost=remote_host)
-        print("deploy guest %s ... ok!") % userid
-        self.sdkapi.guest_delete(userid)
-        print("delete guest %s ... ok!" % userid)
-
-        # specified root device
-        userid = userid_vdev
         new_root = '123'
         CONF.zvm.user_root_vdev = new_root
-        disk = [{'size': '3G',
-                 'format': 'xfs',
-                 'is_boot_disk': True,
-                 'disk_pool': CONF.zvm.disk_pool},
-                {'size': '200M',
-                 'format': 'ext3',
-                 'is_boot_disk': False,
-                 'disk_pool': 'ECKD:xcateckd'}]
-        self.sdkapi.guest_create(userid, vcpu, memory, disk_list=disk)
-        _restore_conf(root_vdev_back)
-        self.sdkapi.guest_deploy(userid, self.image_name, vdev=new_root)
-        print("deploy guest %s ... ok!") % userid
-        self.sdkapi.guest_delete(userid)
-        print("delete guest %s ... ok!" % userid)
+        disks = [
+            {'size': '3G',
+             'format': 'xfs',
+             'is_boot_disk': True,
+             'disk_pool': CONF.zvm.disk_pool},
+            {'size': '200M',
+             'format': 'ext3',
+             'is_boot_disk': False,
+             'disk_pool': 'ECKD:xcateckd'}]
 
-    def test_guest_deploy_delete_abnormal(self):
-        """ Abnormal cases of SDK API guest_deploy and guest_delete """
-        userid_duplicate = "ugddup"
-        self.addCleanup(self.sdkapi.guest_delete, userid_duplicate)
+        self.sdkapi.guest_create(userid_vdev, 1, 1024, disk_list=disks)
+        self.sdkapi.guest_deploy(userid_vdev,
+                                 self.image_name,
+                                 vdev=new_root)
+        self.sdkapi.guest_start(userid_vdev)
+        powered_on = self.test_util.wait_until_guest_in_power_state(
+                                                        userid_vdev, 'on')
+        self.assertTrue(powered_on)
 
-        # delete all guest before launch
-        self.sdkapi.guest_delete(userid_duplicate)
+    def test_guest_start_stop(self):
+        """Start and stop guest vm.
 
-        # Duplicate creation
-        userid = userid_duplicate
-        vcpu = 1
-        memory = 1024
-        disk = [{'size': '3G',
-                 'format': 'ext3',
-                 'is_boot_disk': True,
-                 'disk_pool': CONF.zvm.disk_pool}]
-        self.sdkapi.guest_create(userid, vcpu, memory, disk_list=disk)
-        self.sdkapi.guest_deploy(userid, self.image_name)
-        # It's valid to deploy a same guest multiple times, each time it makes
-        # the guest be reset by the image
-        self.sdkapi.guest_deploy(userid, self.image_name)
-        # Duplicate deletion. It's valid and there should be no error
-        self.sdkapi.guest_delete(userid)
-        self.sdkapi.guest_delete(userid)
+        :Steps:
+        1. Create a guest
+        2. Power off the guest
+        3. Power on the guest
+        4. Power off the guest again
+        2. Deploy the guest to specified vdev
 
-    def test_guest_start_stop_normal(self):
-        """ Normal cases of SDK API guest_start and guest_stop """
+        :Verify:
+        1. The guest can be set to expect power state.
+        """
         userid_normal = "ugsnml"
         self.addCleanup(self.sdkapi.guest_delete, userid_normal)
 
         # delete all guest before launch
         self.sdkapi.guest_delete(userid_normal)
 
-        userid = userid_normal
-        vcpu = 1
-        memory = 1024
-        disk = [{'size': '3G',
-                 'format': 'ext3',
-                 'is_boot_disk': True,
-                 'disk_pool': CONF.zvm.disk_pool}]
-        self.sdkapi.guest_create(userid, vcpu, memory, disk_list=disk)
-        self.sdkapi.guest_deploy(userid, self.image_name)
-        self.sdkapi.guest_stop(userid)
-        print("stop guest %s ... ok!" % userid)
+        self.sdkapi.guest_create(userid_normal, 1, 1024, disk_list=self.disks)
+        self.sdkapi.guest_deploy(userid_normal, self.image_name)
 
-        self.sdkapi.guest_start(userid)
-        print("start guest %s ... ok!" % userid)
-
-        self.sdkapi.guest_stop(userid, timeout=60, retry_interval=10)
-        print("stop guest %s ... within 60 seconds and "
-              "retry every 10 seconds ok!" % userid)
-
-    def test_guest_start_stop_abnormal(self):
-        """ Abnormal cases of SDK API guest_start and guest_stop """
-        userid_abnormal = "ugsabnml"
-        self.addCleanup(self.sdkapi.guest_delete, userid_abnormal)
-
-        # delete all guest before launch
-        self.sdkapi.guest_delete(userid_abnormal)
-
-        userid = userid_abnormal
-        vcpu = 1
-        memory = 1024
-        disk = [{'size': '3G',
-                 'format': 'ext3',
-                 'is_boot_disk': True,
-                 'disk_pool': CONF.zvm.disk_pool}]
-        self.sdkapi.guest_create(userid, vcpu, memory, disk_list=disk)
-        self.sdkapi.guest_deploy(userid, self.image_name)
-
-        self.sdkapi.guest_stop(userid)
-        # Stop again
-        self.sdkapi.guest_stop(userid)
-        print("stop guest %s ... ok!" % userid)
-
-        self.sdkapi.guest_start(userid)
-        # Start again
-        self.sdkapi.guest_start(userid)
-        print("start guest %s ... ok!" % userid)
+        # make sure the guest is off
+        self.sdkapi.guest_stop(userid_normal)
+        self.assertTrue(self.test_util.wait_until_guest_in_power_state(
+                                                        userid_normal, 'off'))
+        # power on the guest
+        self.sdkapi.guest_start(userid_normal)
+        self.assertTrue(self.test_util.wait_until_guest_in_power_state(
+                                                        userid_normal, 'on'))
+        # power off the guest
+        self.sdkapi.guest_stop(userid_normal)
+        self.assertTrue(self.test_util.wait_until_guest_in_power_state(
+                                                        userid_normal, 'off'))
