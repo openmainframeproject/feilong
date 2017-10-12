@@ -34,8 +34,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
     @mock.patch.object(vmops.get_vmops()._smutclient,
                        'get_guest_connection_status')
     def test_is_reachable(self, ggcs):
-        ggcs.return_value = {
-                'node': [[{u'data': [u'sshd'], u'name': [u'cbi00063']}]]}
+        ggcs.return_value = True
         ret = self.vmops.is_reachable('cbi00063')
         self.assertEqual(ret, True)
 

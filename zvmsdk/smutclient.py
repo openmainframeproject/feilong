@@ -1256,8 +1256,12 @@ class SMUTClient(object):
 
     def get_guest_connection_status(self, userid):
         '''Get guest vm connection status.'''
-        # TODO: implement it
-        pass
+        rd = ' '.join(('getvm', userid, 'isreachable'))
+        results = self._request(rd)
+        if results['rs'] == 1:
+            return True
+        else:
+            return False
 
     def process_additional_minidisks(self, userid, disk_info):
         '''Generate and punch the scripts used to process additional disk into
