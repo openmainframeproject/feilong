@@ -226,6 +226,12 @@ nic_id = {
 }
 
 
+cidr = {
+    'type': ['string'],
+    'format': 'cidr'
+}
+
+
 userid_list = {
     'type': ['string'],
     # TODO:validate userid_list in inspect APIs
@@ -263,5 +269,27 @@ image_meta = {
         'md5sum': {'type': 'string', 'pattern': '^[0-9a-fA-F]{32}$'}
     },
     'required': ['os_version'],
+    'additionalProperties': False
+}
+
+
+command = {
+    'type': 'string'
+}
+
+network_list = {
+    'type': 'array',
+    'items': {
+        'type': 'object',
+        'properties': {
+            'ip_addr': ipv4,
+            'dns_addr': {'type': 'array',
+                        'items': ipv4},
+            'gateway_addr': ipv4,
+            'mac_addr': mac_address,
+            'cidr': cidr,
+            'nic_vdev': vdev,
+            'nic_id': {'type': 'string'}},
+    },
     'additionalProperties': False
 }
