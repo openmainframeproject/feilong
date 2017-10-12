@@ -99,18 +99,8 @@ class VMOps(object):
         pass
 
     def is_reachable(self, userid):
-        """Return True is the instance is reachable."""
-        res_dict = self._smutclient.get_guest_connection_status(userid)
-        LOG.debug('Get instance status of %s', userid)
-
-        with zvmutils.expect_invalid_resp_data(res_dict):
-            status = res_dict['node'][0][0]['data'][0]
-
-        if status is not None:
-            if status.__contains__('sshd'):
-                return True
-
-        return False
+        """Reachable through IUCV communication channel."""
+        return self._smutclient.get_guest_connection_status(userid)
 
     def guest_start(self, userid):
         """"Power on z/VM instance."""

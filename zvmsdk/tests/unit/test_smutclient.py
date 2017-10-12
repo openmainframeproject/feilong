@@ -38,12 +38,12 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
     def _generate_results(self, overallrc=0, rc=0, rs=0, errno=0, strerror='',
                           logentries=[], response=[]):
-        return {'rs': rc,
+        return {'rc': rc,
                 'errno': errno,
                 'strError': strerror,
                 'overallRC': overallrc,
                 'logEntries': logentries,
-                'rc': rs,
+                'rs': rs,
                 'response': response}
 
     @mock.patch.object(smut.SMUT, 'request')
@@ -1166,3 +1166,11 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         req.return_value = self._generate_results()
         self._smutclient.guest_reset('fakeuser')
         req.assert_called_once_with('PowerVM fakeuser reset')
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_get_guest_connection_status(self, req):
+        result = self._generate_results(rs=1, response=['testuid: reachable'])
+        req.return_value = result
+
+        is_reachable = self._smutclient.get_guest_connection_status('testuid')
+        self.assertTrue(is_reachable)
