@@ -710,7 +710,7 @@ class SMUTClient(object):
         ports_info = self._NetDbOperator.switch_select_table()
         vdev_info = []
         for p in ports_info:
-            if p[0] == userid:
+            if p[0] == userid.upper():
                 vdev_info.append(p[1])
 
         if len(vdev_info) == 0:
