@@ -169,11 +169,12 @@ class SDKAPITestUtils(object):
         return userid, ip_addr
 
     def guest_destroy(self, userid):
-        print("Deleting userid %s ..." % userid)
         try:
             self.api.guest_delete(userid)
         except exception.SDKBaseException as err:
             print("WARNING: deleting userid failed: %s" % err.format_message())
+
+        self._wait_until(False, self.is_guest_exist, userid)
 
     def _wait_until(self, expect_state, func, *args, **kwargs):
         """Looping call func until get expected state, otherwise 1 min timeout.

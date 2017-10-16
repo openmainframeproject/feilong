@@ -28,61 +28,36 @@ printLOG = log.LOG
 
 class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
 
-    TEST_UIDS = ['ugcprof', 'ugcdup', 'ugdtrspt', 'ugdrhost', 'ugdvdev',
-                 'ugsnml']
-
     def __init__(self, methodName='runTest'):
         super(SDKGuestActionsTestCase, self).__init__(methodName)
         self.test_util = base.SDKAPITestUtils()
         self.test_util.image_import()
+        self.userid = 'ugatuid'
         self.image_name = os.path.basename(CONF.tests.image_path)
-
-        # cleanup all userids that will be used in this test
-        for userid in self.TEST_UIDS:
-            self.sdkapi.guest_delete(userid)
-            time.sleep(2)
-
         self.disks = [
             {'size': '1G',
              'format': 'ext3',
              'is_boot_disk': True,
              'disk_pool': CONF.zvm.disk_pool}]
 
+    def setUp(self):
+        base.SDKAPIBaseTestCase.setUp(self)
+        self.addCleanup(self.sdkutils.guest_destroy, self.userid)
+
     def test_create_with_profile(self):
-        """Create guest with profile specified.
-
-        :Steps:
-        1. Create guest with profile specified
-        2. Delete the guest
-
-        :Verify:
-        1. No exception
-        """
-        userid_prof = "ugcprof"
-        self.addCleanup(self.sdkapi.guest_delete, userid_prof)
-
+        """Create guest with profile specified."""
         # make sure the guest not exists
-        self.sdkapi.guest_create(userid_prof, 1, 1024,
+        self.sdkapi.guest_create(self.userid, 1, 1024,
                                  user_profile=CONF.zvm.user_profile)
         self.assertTrue(
-                self.test_util.wait_until_create_userid_complete(userid_prof))
+                self.test_util.wait_until_create_userid_complete(self.userid))
 
     def test_create_with_duplicate_userid(self):
-        """Create guest with duplicated userid.
+        """Create guest with duplicated userid."""
 
-        :Steps:
-        1. Create a guest
-        2. Create another guest with same userid as first one
-
-        :Verify:
-        1. return value with rc/rs 400/8
-        """
-        userid_duplicate = "ugcdup"
-        self.addCleanup(self.sdkapi.guest_delete, userid_duplicate)
-
-        self.sdkapi.guest_create(userid_duplicate, 1, 1024)
+        self.sdkapi.guest_create(self.userid, 1, 1024)
         try:
-            self.sdkapi.guest_create(userid_duplicate, 1, 1024)
+            self.sdkapi.guest_create(self.userid, 1, 1024)
         except exception.SDKSMUTRequestFailed as err:
             self.assertEqual(err.results['rc'], 400)
             self.assertEqual(err.results['rs'], 8)
@@ -95,66 +70,33 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         return transport_file
 
     def test_deploy_with_transport_file(self):
-        """Deploy guest with transport file.
-
-        :Steps:
-        1. Create a guest
-        2. Deploy the guest with transport file
-
-        :Verify:
-        1. The guest can start correctly
-        """
-        userid_trspt = "ugdtrspt"
-        self.addCleanup(self.sdkapi.guest_delete, userid_trspt)
-
+        """Deploy guest with transport file."""
         transport_file = self._make_transport_file()
 
-        self.sdkapi.guest_create(userid_trspt, 1, 1024, disk_list=self.disks)
-        self.sdkapi.guest_deploy(userid_trspt, self.image_name, transport_file)
+        self.sdkapi.guest_create(self.userid, 1, 1024, disk_list=self.disks)
+        self.sdkapi.guest_deploy(self.userid, self.image_name, transport_file)
 
-        self.sdkapi.guest_start(userid_trspt)
+        self.sdkapi.guest_start(self.userid)
         powered_on = self.test_util.wait_until_guest_in_power_state(
-                                                            userid_trspt, 'on')
+                                                            self.userid, 'on')
         self.assertTrue(powered_on)
 
     def test_deploy_with_remote_host(self):
-        """Deploy guest with remote_host.
-
-        :Steps:
-        1. Create a guest
-        2. Deploy the guest with remote_host
-
-        :Verify:
-        1. The guest can start correctly
-        """
-        userid_rmthost = 'ugdrhost'
-        self.addCleanup(self.sdkapi.guest_delete, userid_rmthost)
-
+        """Deploy guest with remote_host."""
         remote_host = CONF.tests.remote_host
         transportfile = self._make_transport_file()
-        self.sdkapi.guest_create(userid_rmthost, 1, 1024, disk_list=self.disks)
-        self.sdkapi.guest_deploy(userid_rmthost,
+        self.sdkapi.guest_create(self.userid, 1, 1024, disk_list=self.disks)
+        self.sdkapi.guest_deploy(self.userid,
                                  self.image_name,
                                  transportfiles=transportfile,
                                  remotehost=remote_host)
-        self.sdkapi.guest_start(userid_rmthost)
+        self.sdkapi.guest_start(self.userid)
         powered_on = self.test_util.wait_until_guest_in_power_state(
-                                                        userid_rmthost, 'on')
+                                                        self.userid, 'on')
         self.assertTrue(powered_on)
 
     def test_deploy_with_vdev(self):
-        """Deploy guest with root vdev.
-
-        :Steps:
-        1. Create a guest
-        2. Deploy the guest to specified vdev
-
-        :Verify:
-        1. The guest can start correctly
-        """
-        userid_vdev = 'ugdvdev'
-        self.addCleanup(self.sdkapi.guest_delete, userid_vdev)
-
+        """Deploy guest with root vdev."""
         # back up user_root_vdev value in config file
         def _restore_conf(root_vdev_back):
             CONF.zvm.user_root_vdev = root_vdev_back
@@ -173,43 +115,96 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
              'is_boot_disk': False,
              'disk_pool': 'ECKD:xcateckd'}]
 
-        self.sdkapi.guest_create(userid_vdev, 1, 1024, disk_list=disks)
-        self.sdkapi.guest_deploy(userid_vdev,
+        self.sdkapi.guest_create(self.userid, 1, 1024, disk_list=disks)
+        self.sdkapi.guest_deploy(self.userid,
                                  self.image_name,
                                  vdev=new_root)
-        self.sdkapi.guest_start(userid_vdev)
+        self.sdkapi.guest_start(self.userid)
         powered_on = self.test_util.wait_until_guest_in_power_state(
-                                                        userid_vdev, 'on')
+                                                        self.userid, 'on')
         self.assertTrue(powered_on)
 
-    def test_guest_start_stop(self):
-        """Start and stop guest vm.
+    def test_get_info(self):
+        """Test guest_get_info in active/inactive/paused state."""
+        self.addCleanup(self.sdkapi.guest_delete, self.userid)
 
-        :Steps:
-        1. Create a guest
-        2. Power off the guest
-        3. Power on the guest
-        4. Power off the guest again
-        2. Deploy the guest to specified vdev
+        self.sdkapi.guest_create(self.userid, 1, 1024, disk_list=self.disks)
+        self.sdkapi.guest_deploy(self.userid, self.image_name)
 
-        :Verify:
-        1. The guest can be set to expect power state.
-        """
-        userid_normal = "ugsnml"
-        self.addCleanup(self.sdkapi.guest_delete, userid_normal)
+        # get info in shutdown state
+        info_off = self.sdkapi.guest_get_info(self.userid)
+        self.assertEquals(info_off['power_state'], 'off')
+        self.assertEquals(info_off['mem_kb'], 0)
+        self.assertEquals(info_off['cpu_time_us'], 0)
 
-        self.sdkapi.guest_create(userid_normal, 1, 1024, disk_list=self.disks)
-        self.sdkapi.guest_deploy(userid_normal, self.image_name)
+        # get info in active state
+        self.sdkapi.guest_start(self.userid)
+        self.assertTrue(self.sdkutils.wait_until_guest_in_power_state(
+                                                        self.userid, 'on'))
+        time.sleep(1)
+        info_on = self.sdkapi.guest_get_info(self.userid)
+        self.assertEquals(info_on['power_state'], 'on')
+        self.assertNotEqual(info_on['cpu_time_us'], 0)
+        self.assertNotEqual(info_on['mem_kb'], 0)
 
+        # get info in paused state
+        self.sdkapi.guest_pause(self.userid)
+        info_on = self.sdkapi.guest_get_info(self.userid)
+        self.assertEquals(info_on['power_state'], 'on')
+        self.assertNotEqual(info_on['cpu_time_us'], 0)
+        self.assertNotEqual(info_on['mem_kb'], 0)
+
+    def test_guest_list(self):
+        pass
+
+    def test_get_definition_info(self):
+        pass
+
+    def test_create_disks(self):
+        pass
+
+    def test_delete_disks(self):
+        pass
+
+    def test_get_console_output(self):
+        pass
+
+    def test_config_minidisks(self):
+        pass
+
+
+class SDKGuestScenarioTestcase(base.SDKAPIGuestBaseTestCase):
+
+    def test_guest_power_actions(self):
         # make sure the guest is off
-        self.sdkapi.guest_stop(userid_normal)
-        self.assertTrue(self.test_util.wait_until_guest_in_power_state(
-                                                        userid_normal, 'off'))
+        self.sdkapi.guest_stop(self.userid)
+        self.assertTrue(self.sdkutils.wait_until_guest_in_power_state(
+                    self.userid, 'off'), 'Power off %s failed' % self.userid)
+
         # power on the guest
-        self.sdkapi.guest_start(userid_normal)
-        self.assertTrue(self.test_util.wait_until_guest_in_power_state(
-                                                        userid_normal, 'on'))
-        # power off the guest
-        self.sdkapi.guest_stop(userid_normal)
-        self.assertTrue(self.test_util.wait_until_guest_in_power_state(
-                                                        userid_normal, 'off'))
+        self.sdkapi.guest_start(self.userid)
+        self.assertTrue(self.sdkutils.wait_until_guest_in_power_state(
+                    self.userid, 'on'), 'Power on %s failed' % self.userid)
+
+        # pause the guest
+        self.sdkapi.guest_pause(self.userid)
+
+        # unpause the guest
+        self.sdkapi.guest_unpause(self.userid)
+
+        self.assertTrue(self.sdkutils.wait_until_guest_in_connection_state(
+                                                            self.userid, True))
+
+        # reboot the vm
+        self.sdkapi.guest_reboot(self.userid)
+        self.assertTrue(self.sdkutils.wait_until_guest_in_connection_state(
+                                                        self.userid, False))
+        self.assertTrue(self.sdkutils.wait_until_guest_in_connection_state(
+                                                            self.userid, True))
+
+        # reset the vm
+        self.sdkapi.guest_reset(self.userid)
+        self.assertTrue(self.sdkutils.wait_until_guest_in_connection_state(
+                                                        self.userid, False))
+        self.assertTrue(self.sdkutils.wait_until_guest_in_connection_state(
+                                                            self.userid, True))
