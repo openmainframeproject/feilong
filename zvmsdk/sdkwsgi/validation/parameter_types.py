@@ -202,7 +202,7 @@ mac_address = {
 
 
 remotehost = {
-    'type': ['string'],
+    'type': ['string'], 'maxLength': 255,
     'format': 'hostname'
 }
 
@@ -261,10 +261,16 @@ disk_list = {
 }
 
 
+os_version = {
+    'type': 'string',
+    'format': 'os_version'
+}
+
+
 image_meta = {
     'type': 'object',
     'properties': {
-        'os_version': {'type': 'string'},
+        'os_version': os_version,
         # md5 shoule be 32 hexadeciaml numbers
         'md5sum': {'type': 'string', 'pattern': '^[0-9a-fA-F]{32}$'}
     },

@@ -393,7 +393,7 @@ class HandlersGuestTest(SDKWSGITest):
 
         self.req.body = bstr
         mock_userid.return_value = FAKE_USERID
-
+        # FIXME: should raise ValidationError
         self.assertRaises(webob.exc.HTTPBadRequest,
                           guest.guest_create_network_interface,
                           self.req)
