@@ -32,6 +32,41 @@ def _validate_name(instance):
     raise Exception
 
 
+def validate_release(os_version, distro, remain):
+    supported = {'rhel': ['6', '7'],
+                 'sles': ['11', '12'],
+                 'ubuntu': ['16']}
+    releases = supported[distro]
+    for r in releases:
+        if remain.startswith(r):
+            return True
+    return False
+
+
+@jsonschema.FormatChecker.cls_checks('os_version')
+def _validate_os_version(os_version):
+    """Separate os and version from os_version.
+
+    Possible return value are only:
+    ('rhel', x.y) and ('sles', x.y) where x.y may not be digits
+    """
+    supported = {'rhel': ['rhel', 'redhat', 'red hat'],
+                 'sles': ['suse', 'sles'],
+                 'ubuntu': ['ubuntu']}
+    os_version = os_version.lower()
+    for distro, patterns in supported.items():
+        for i in patterns:
+            if os_version.startswith(i):
+                # Not guarrentee the version is digital
+                remain = os_version.split(i, 2)[1]
+                release = validate_release(os_version, distro, remain)
+                if release:
+                    return True
+                else:
+                    return False
+    return False
+
+
 @jsonschema.FormatChecker.cls_checks('cidr')
 def _validate_cidr_format(cidr):
     try:
