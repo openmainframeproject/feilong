@@ -108,7 +108,7 @@ class SDKAPITestUtils(object):
 
         ipaddr = '0.4.0.4'
         if userid is None:
-            userid, ipaddr = self.get_available_userid_ipaddr()
+            userid, ip_addr = self.get_available_userid_ipaddr()
         ip_addr = ip_addr or ipaddr
         print("Using userid %s and IP addr %s ..." % (userid, ip_addr))
 
@@ -139,6 +139,12 @@ class SDKAPITestUtils(object):
                 self.api.guest_create(userid, cpu, memory, disks_list,
                                       user_profile)
 
+        assert self.wait_until_create_userid_complete(userid)
+
+        # Deploy image on vm
+        print("Deploying userid %s ..." % userid)
+        self.api.guest_deploy(userid, image_name)
+
         # Create nic and configure it
         guest_networks = [{
             'ip_addr': ip_addr,
@@ -156,10 +162,6 @@ class SDKAPITestUtils(object):
         smut_uid = zvmutils.get_smut_userid()
         self.api.guest_authorize_iucv_client(userid, smut_uid)
 
-        # Deploy image on vm
-        print("Deploying userid %s ..." % userid)
-        self.api.guest_deploy(userid, image_name)
-
         # Power on the vm, then put MN's public key into vm
         print("Power on userid %s ..." % userid)
         self.api.guest_start(userid)
@@ -173,11 +175,17 @@ class SDKAPITestUtils(object):
         except exception.SDKBaseException as err:
             print("WARNING: deleting userid failed: %s" % err.format_message())
 
-    def wait_until_guest_in_power_state(self, userid, expect_state):
-        # sleep intervals, total timeout 60 seconds
+    def _wait_until(self, expect_state, func, *args, **kwargs):
+        """Looping call func until get expected state, otherwise 1 min timeout.
+
+        :param expect_state:    expected state
+        :param func:            function or method to be called
+        :param *args, **kwargs: parameters for the function
+        """
         _inc_slp = [1, 2, 2, 5, 10, 20, 20]
+        # sleep intervals, total timeout 60 seconds
         for _slp in _inc_slp:
-            real_state = self.api.guest_get_power_state(userid)
+            real_state = func(*args, **kwargs)
             if real_state == expect_state:
                 return True
             else:
@@ -186,16 +194,15 @@ class SDKAPITestUtils(object):
         # timeout
         return False
 
-    def wait_until_create_userid_complete(self, userid):
-        _inc_slp = [1, 2, 2, 5, 10, 20, 20]
-        for _slp in _inc_slp:
-            if self.is_guest_exist(userid):
-                return True
-            else:
-                time.sleep(_slp)
+    def wait_until_guest_in_power_state(self, userid, expect_state):
+        return self._wait_until(expect_state, self.api.guest_get_power_state,
+                                userid)
 
-        # timeout
-        return False
+    def wait_until_guest_in_connection_state(self, userid, expect_state):
+        return self._wait_until(True, self.api._vmops.is_reachable, userid)
+
+    def wait_until_create_userid_complete(self, userid):
+        return self._wait_until(True, self.is_guest_exist, userid)
 
 
 class SDKAPIBaseTestCase(unittest.TestCase):
@@ -222,9 +229,9 @@ class SDKAPIGuestBaseTestCase(SDKAPIBaseTestCase):
         super(SDKAPIGuestBaseTestCase, self).setUp()
 
         # create test server
-        self.userid, ip_addr = self.sdkutils.get_available_userid_ipaddr()
+        self.userid, self.ip_addr = self.sdkutils.get_available_userid_ipaddr()
         try:
-            userid, ip_addr = self.sdkutils.guest_deploy(self.userid)
-            self.userid = userid
+            self.userid, self.ip_addr = self.sdkutils.guest_deploy(
+                        userid=self.userid, ip_addr=self.ip_addr)
         finally:
             self.addCleanup(self.sdkutils.guest_destroy, self.userid)
