@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cb106597_e8135887",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-10-16T08:53:09Z",
+      "side": 1,
+      "message": "unrelated changes",
+      "range": {
+        "startLine": 205,
+        "startChar": 4,
+        "endLine": 205,
+        "endChar": 41
+      },
+      "revId": "3b055103b8f337355fdb771fb17b5b371c7d4c44",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d139269a_ecf3f9c6",
+        "filename": "zvmsdk/tests/unit/sdkwsgi/handlers/test_image.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-10-16T08:53:09Z",
+      "side": 1,
+      "message": "we can\u0027t verify in our REST API layer?",
+      "range": {
+        "startLine": 136,
+        "startChar": 36,
+        "endLine": 136,
+        "endChar": 58
+      },
+      "revId": "3b055103b8f337355fdb771fb17b5b371c7d4c44",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
