@@ -781,8 +781,8 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smutclient.SMUTClient, '_create_nic')
     def test_create_nic_without_vdev(self, create_nic, switch_select_table):
         userid = 'fake_id'
-        switch_select_table.return_value = [("fake_id", "1003"),
-                                            ("fake_id", "2003")]
+        switch_select_table.return_value = [("FAKE_ID", "1003"),
+                                            ("FAKE_ID", "2003")]
         self._smutclient.create_nic(userid, nic_id='nic_id')
         create_nic.assert_called_with(userid, '2006', nic_id='nic_id',
                                       mac_addr=None, active=False)
@@ -790,8 +790,8 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(database.NetworkDbOperator, 'switch_select_table')
     def test_create_nic_with_used_vdev(self, switch_select_table):
-        switch_select_table.return_value = [("fake_id", "1003"),
-                                            ("fake_id", "1006")]
+        switch_select_table.return_value = [("FAKE_ID", "1003"),
+                                            ("FAKE_ID", "1006")]
         self.assertRaises(exception.SDKInvalidInputFormat,
                           self._smutclient.create_nic,
                           'fake_id', nic_id="nic_id", vdev='1004')
