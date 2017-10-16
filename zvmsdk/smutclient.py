@@ -1012,6 +1012,19 @@ class SMUTClient(object):
 
     def delete_vm(self, userid):
         self.delete_userid(userid)
+
+        # revoke userid from vswitch
+        action = "revoke id %s authority from vswitch" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            switch_info = self._NetDbOperator.switch_select_record_for_userid(
+                                                                       userid)
+            switch_list = set()
+            for item in switch_info:
+                switch_list.add(item[2])
+
+            for item in switch_list:
+                self.revoke_user_from_vswitch(item, userid)
+
         # cleanup db record from network table
         action = "delete network record for user %s" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
