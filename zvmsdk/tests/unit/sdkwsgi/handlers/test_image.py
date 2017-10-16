@@ -56,7 +56,7 @@ class HandlersImageTest(unittest.TestCase):
         body_str = """{"image": {"image_name": "46a4aea3-54b6-4b1c",
                                  "url": "file:///tmp/test.img",
                                  "image_meta": {
-                                 "os_version": "rhel7.2",
+                                 "os_version": "xxx7.2",
                                  "md5sum": "12345678912345678912345678912345"
                                  },
                                  "remotehost": "hostname"
@@ -94,13 +94,15 @@ class HandlersImageTest(unittest.TestCase):
 
     def test_image_create_invalid_image_meta(self):
         # miss os_version param
-        body_str = """{"image": {"url": "file:///tmp/test.img",
+        body_str = """{"image": {"image_name": "46a4aea3-54b6-4b1c",
+                                 "url": "file:///tmp/test.img",
                                  "image_meta": {
                                  "md5sum": "12345678912345678912345678912345"
                                  },
                                  "remotehost": "hostname"
                                 }
                       }"""
+
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, image.image_create,
@@ -108,7 +110,8 @@ class HandlersImageTest(unittest.TestCase):
 
     def test_image_create_invalid_image_meta_md5sum(self):
         # md5sum is less than 32 chars
-        body_str = """{"image": {"url": "file://tmp/test.img",
+        body_str = """{"image": {"image_name": "46a4aea3-54b6-4b1c",
+                                 "url": "file:///tmp/test.img",
                                  "image_meta": {
                                  "os_version": "rhel7.2",
                                  "md5sum": "2345678912345678912345678912345"
@@ -116,9 +119,27 @@ class HandlersImageTest(unittest.TestCase):
                                  "remotehost": "hostname"
                                 }
                       }"""
+
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, image.image_create,
+                          self.req)
+
+    def test_image_create_invalid_image_meta_os_version(self):
+        body_str = """{"image": {"image_name": "46a4aea3-54b6-4b1c",
+                                 "url": "file:///tmp/test.img",
+                                 "image_meta": {
+                                 "os_version": "xxx7.2",
+                                 "md5sum": "12345678912345678912345678912345"
+                                 },
+                                 "remotehost": "hostname"
+                                }
+                      }"""
+
+        self.req.body = body_str
+        # FIXME: should raise ValidationError
+        self.assertRaises(exception.ValidationError,
+                          image.image_create,
                           self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')
