@@ -43,7 +43,7 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
             time.sleep(2)
 
         self.disks = [
-            {'size': '3G',
+            {'size': '1G',
              'format': 'ext3',
              'is_boot_disk': True,
              'disk_pool': CONF.zvm.disk_pool}]
@@ -197,9 +197,6 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         """
         userid_normal = "ugsnml"
         self.addCleanup(self.sdkapi.guest_delete, userid_normal)
-
-        # delete all guest before launch
-        self.sdkapi.guest_delete(userid_normal)
 
         self.sdkapi.guest_create(userid_normal, 1, 1024, disk_list=self.disks)
         self.sdkapi.guest_deploy(userid_normal, self.image_name)
