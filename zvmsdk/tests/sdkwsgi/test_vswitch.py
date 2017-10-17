@@ -61,7 +61,7 @@ class VSwitchTestCase(unittest.TestCase):
 
         try:
             resp = self._vswitch_list()
-            vswlist = json.loads(resp.content)['vswlist']
+            vswlist = json.loads(resp.content)['output']
             inlist = 'RESTVSW1' in vswlist
             self.assertTrue(inlist)
         except Exception:
@@ -71,7 +71,7 @@ class VSwitchTestCase(unittest.TestCase):
             self.assertEqual(204, resp.status_code)
 
             resp = self._vswitch_list()
-            vswlist = json.loads(resp.content)['vswlist']
+            vswlist = json.loads(resp.content)['output']
             inlist = 'RESTVSW1' in vswlist
             self.assertFalse(inlist)
 

@@ -253,6 +253,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.create'
         with mock.patch(function) as create:
+            create.return_value = ''
             h(self.env, dummy)
 
             self.assertTrue(create.called)
@@ -266,6 +267,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.delete'
         with mock.patch(function) as delete:
+            delete.return_value = ''
             h(self.env, dummy)
             delete.assert_called_once_with('1')
 
@@ -276,11 +278,12 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['PATH_INFO'] = '/guests/1/nic'
         self.env['REQUEST_METHOD'] = 'POST'
         h = handler.SdkHandler()
-        function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.create_nic'
-        with mock.patch(function) as create_nic:
+        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.create_nic'
+        with mock.patch(func) as create_nic:
+            create_nic.return_value = ''
             h(self.env, dummy)
 
-            self.assertTrue(create_nic.called)
+            create_nic.assert_called_once_with('1', body={})
 
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
     @mock.patch.object(tokens, 'validate')
@@ -291,9 +294,10 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.couple_uncouple_nic'
         with mock.patch(func) as update_nic:
+            update_nic.return_value = ''
             h(self.env, dummy)
 
-            self.assertTrue(update_nic.called)
+            update_nic.assert_called_once_with('1', '1000', body={})
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_mem_info_empty_userid_list(self, mock_validate):
@@ -302,12 +306,12 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = ''
         h = handler.SdkHandler()
-        func = 'zvmsdk.api.SDKAPI.guest_inspect_mem'
+        func = 'sdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
             get_info.return_value = '{}'
             h(self.env, dummy)
 
-            get_info.assert_called_once_with([])
+            get_info.assert_called_once_with('guest_inspect_mem', [])
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_mem_info_userid_list(self, mock_validate):
@@ -316,12 +320,13 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = 'userid=l1,l2'
         h = handler.SdkHandler()
-        func = 'zvmsdk.api.SDKAPI.guest_inspect_mem'
+        func = 'sdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
             get_info.return_value = '{}'
             h(self.env, dummy)
 
-            get_info.assert_called_once_with(['l1', 'l2'])
+            get_info.assert_called_once_with('guest_inspect_mem',
+                                             ['l1', 'l2'])
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_mem_info_invalid(self, mock_validate):
@@ -340,12 +345,13 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = ''
         h = handler.SdkHandler()
-        func = 'zvmsdk.api.SDKAPI.guest_inspect_vnics'
+        func = 'sdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
             get_info.return_value = '{}'
             h(self.env, dummy)
 
-            get_info.assert_called_once_with([])
+            get_info.assert_called_once_with('guest_inspect_vnics',
+                                             [])
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_vnics_info_user_list(self, mock_validate):
@@ -354,12 +360,13 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = 'userid=l1,l2'
         h = handler.SdkHandler()
-        func = 'zvmsdk.api.SDKAPI.guest_inspect_vnics'
+        func = 'sdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
             get_info.return_value = '{}'
             h(self.env, dummy)
 
-            get_info.assert_called_once_with(['l1', 'l2'])
+            get_info.assert_called_once_with('guest_inspect_vnics',
+                                             ['l1', 'l2'])
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_vnics_info_invalid(self, mock_validate):
@@ -378,12 +385,12 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = ''
         h = handler.SdkHandler()
-        func = 'zvmsdk.api.SDKAPI.guest_inspect_cpus'
+        func = 'sdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
             get_info.return_value = '{}'
             h(self.env, dummy)
 
-            get_info.assert_called_once_with([])
+            get_info.assert_called_once_with('guest_inspect_cpus', [])
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_cpu_info_userid_list(self, mock_validate):
@@ -392,12 +399,13 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = 'userid=l1,l2'
         h = handler.SdkHandler()
-        func = 'zvmsdk.api.SDKAPI.guest_inspect_cpus'
+        func = 'sdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
             get_info.return_value = '{}'
             h(self.env, dummy)
 
-            get_info.assert_called_once_with(['l1', 'l2'])
+            get_info.assert_called_once_with('guest_inspect_cpus',
+                                             ['l1', 'l2'])
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_cpu_info_multiple(self, mock_validate):
@@ -419,6 +427,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.attach'
         with mock.patch(func) as attach:
+            attach.return_value = ''
             h(self.env, dummy)
 
             attach.assert_called_once_with('1', {})
@@ -433,6 +442,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.detach'
         with mock.patch(func) as detach:
+            detach.return_value = ''
             h(self.env, dummy)
 
             detach.assert_called_once_with('1', {})
@@ -468,13 +478,13 @@ class ImageHandlerTest(unittest.TestCase):
         self.env['PATH_INFO'] = '/images/image1/root_disk_size'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
-        function = 'zvmsdk.sdkwsgi.handlers.image.ImageAction'\
-                   '.get_root_disk_size'
-        with mock.patch(function) as get_size:
+        func = 'sdkclient.client.SDKClient.send_request'
+        with mock.patch(func) as get_size:
             get_size.return_value = '100'
             h(self.env, dummy)
 
-            get_size.assert_called_once_with('image1')
+            get_size.assert_called_once_with('image_get_root_disk_size',
+                                             'image1')
 
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
     @mock.patch.object(tokens, 'validate')
@@ -483,11 +493,12 @@ class ImageHandlerTest(unittest.TestCase):
         self.env['PATH_INFO'] = '/images'
         self.env['REQUEST_METHOD'] = 'POST'
         h = handler.SdkHandler()
-        function = 'zvmsdk.sdkwsgi.handlers.image.ImageAction.create'
-        with mock.patch(function) as create:
+        func = 'zvmsdk.sdkwsgi.handlers.image.ImageAction.create'
+        with mock.patch(func) as create:
+            create.return_value = ''
             h(self.env, dummy)
 
-            self.assertTrue(create.called)
+            create.assert_called_once_with(body={})
 
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
     @mock.patch.object(tokens, 'validate')
@@ -496,23 +507,24 @@ class ImageHandlerTest(unittest.TestCase):
         self.env['PATH_INFO'] = '/images/image1'
         self.env['REQUEST_METHOD'] = 'DELETE'
         h = handler.SdkHandler()
-        function = 'zvmsdk.sdkwsgi.handlers.image.ImageAction.delete'
-        with mock.patch(function) as delete:
+        func = 'sdkclient.client.SDKClient.send_request'
+        with mock.patch(func) as delete:
+            delete.return_value = ''
             h(self.env, dummy)
 
-            delete.assert_called_once_with('image1')
+            delete.assert_called_once_with('image_delete', 'image1')
 
     @mock.patch.object(tokens, 'validate')
     def test_image_query(self, mock_validate):
         self.env['PATH_INFO'] = '/images'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
-        function = 'zvmsdk.sdkwsgi.handlers.image.ImageAction.query'
-        with mock.patch(function) as query:
-            query.return_value = '[]'
+        func = 'sdkclient.client.SDKClient.send_request'
+        with mock.patch(func) as query:
+            query.return_value = ''
             h(self.env, dummy)
 
-            query.assert_called_once_with(None)
+            query.assert_called_once_with('image_query', None)
 
 
 class HostHandlerNegativeTest(unittest.TestCase):
@@ -610,6 +622,7 @@ class VswitchHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.create'
         with mock.patch(function) as create:
+            create.return_value = {}
             h(self.env, dummy)
 
             self.assertTrue(create.called)
@@ -621,6 +634,7 @@ class VswitchHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.delete'
         with mock.patch(function) as delete:
+            delete.return_value = {}
             h(self.env, dummy)
 
             delete.assert_called_once_with('vsw1')
@@ -634,6 +648,7 @@ class VswitchHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.update'
         with mock.patch(function) as update:
+            update.return_value = {}
             h(self.env, dummy)
 
             update.assert_called_once_with('vsw1', body={})
