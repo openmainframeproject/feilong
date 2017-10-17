@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "26e63538_493cd9a0",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1026,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-10-17T03:00:10Z",
+      "side": 1,
+      "message": "please deal with the case that vswitch is None.",
+      "range": {
+        "startLine": 1021,
+        "startChar": 0,
+        "endLine": 1026,
+        "endChar": 59
+      },
+      "revId": "e9b1ad78e88d02c8a73abbbe09bcf88b1af85d93",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
