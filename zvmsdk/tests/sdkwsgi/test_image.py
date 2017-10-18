@@ -42,7 +42,6 @@ class ImageTestCase(unittest.TestCase):
 
         resp = self.client.api_request(url='/images', method='POST',
                                        body=body)
-        self.assertEqual(200, resp.status_code)
         return resp
 
     def _image_delete(self):
@@ -96,6 +95,13 @@ class ImageTestCase(unittest.TestCase):
     def test_image_get_not_valid_resource(self):
         resp = self.client.api_request(url='/images/image1/root')
         self.assertEqual(404, resp.status_code)
+
+    def test_image_create_duplicate(self):
+        resp = self._image_create()
+        self.assertEqual(200, resp.status_code)
+
+        resp = self._image_create()
+        self.assertEqual(409, resp.status_code)
 
     def test_image_create_delete(self):
         self._image_create()
