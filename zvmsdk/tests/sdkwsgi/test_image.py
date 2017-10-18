@@ -100,6 +100,8 @@ class ImageTestCase(unittest.TestCase):
     def test_image_create_delete(self):
         self._image_create()
 
+        self._image_create()
+
         try:
             self._image_query()
             self._image_get_root_disk_size()
