@@ -59,6 +59,10 @@ class VSwitchTestCase(unittest.TestCase):
         resp = self._vswitch_create()
         self.assertEqual(200, resp.status_code)
 
+        # Try to create another vswitch, this should fail
+        resp = self._vswitch_create()
+        self.assertEqual(409, resp.status_code)
+
         try:
             resp = self._vswitch_list()
             vswlist = json.loads(resp.content)['output']
@@ -67,6 +71,10 @@ class VSwitchTestCase(unittest.TestCase):
         except Exception:
             raise
         finally:
+            resp = self._vswitch_delete()
+            self.assertEqual(204, resp.status_code)
+
+            # Try to delete again, currently ignore not exist error
             resp = self._vswitch_delete()
             self.assertEqual(204, resp.status_code)
 
