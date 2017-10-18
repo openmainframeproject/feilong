@@ -88,7 +88,8 @@ def image_create(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = util.get_http_code_from_sdk_return(info)
+    req.response.status = util.get_http_code_from_sdk_return(info,
+        additional_handler=util.handle_already_exists)
     req.response.content_type = 'application/json'
     return req.response
 

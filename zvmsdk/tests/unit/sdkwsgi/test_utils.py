@@ -38,3 +38,18 @@ class SDKWsgiUtilsTestCase(unittest.TestCase):
         msg['overallRC'] = 300
         ret = util.get_http_code_from_sdk_return(msg, default=201)
         self.assertEqual(500, ret)
+
+    def test_get_http_code_from_sdk_return_with_already_exist(self):
+        msg = {}
+        msg['overallRC'] = 8
+        msg['rc'] = 212
+        msg['rs'] = 36
+
+        ret = util.get_http_code_from_sdk_return(msg,
+            additional_handler=util.handle_already_exists)
+        self.assertEqual(409, ret)
+
+        msg['rc'] = 100
+        ret = util.get_http_code_from_sdk_return(msg,
+            additional_handler=util.handle_already_exists)
+        self.assertEqual(500, ret)
