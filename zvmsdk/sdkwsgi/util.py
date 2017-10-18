@@ -175,3 +175,24 @@ def expected_errors(errors):
         return wrapped
 
     return decorator
+
+
+def get_http_code_from_sdk_return(msg, default=200):
+    if 'overallRC' in msg:
+        ret = msg['overallRC']
+
+        if ret != 0:
+            # same definition to sdk layer
+            if ret in [400, 404, 409]:
+                return ret
+
+            # 100 mean validation error in sdk layer and
+            # lead to a 400 badrequest
+            if ret in [100]:
+                return 400
+
+            # ok, we reach here because can't handle it
+            return 500
+        else:
+            # return default code
+            return default

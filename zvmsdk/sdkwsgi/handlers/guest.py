@@ -252,6 +252,7 @@ def guest_get_info(req):
     info = _guest_get_info(userid)
 
     info_json = json.dumps(info)
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
@@ -272,6 +273,7 @@ def guest_get(req):
     # {'user_direct': [u'USER RESTT305 PASSW0RD 1024m 1024m G',
     #                  u'INCLUDE OSDFLT']}
     info_json = json.dumps(info)
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
@@ -289,6 +291,7 @@ def guest_get_power_state(req):
     info = _guest_get_power_state(userid)
 
     info_json = json.dumps(info)
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
@@ -309,7 +312,7 @@ def guest_create(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = 200
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -329,7 +332,7 @@ def guest_update(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = 200
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -376,7 +379,7 @@ def guest_action(req):
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
-    req.response.status = 200
+    req.response.status = util.get_http_code_from_sdk_return(info)
     return req.response
 
 
@@ -393,7 +396,7 @@ def guest_delete(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = 204
+    req.response.status = util.get_http_code_from_sdk_return(info, default=204)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -411,7 +414,7 @@ def guest_get_nic_info(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = 200
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -423,7 +426,7 @@ def guest_delete_nic(req):
         action = get_handler()
         body = util.extract_json(req.body)
 
-        action.delete_nic(userid, vdev, body)
+        return action.delete_nic(userid, vdev, body)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     vdev = util.wsgi_path_item(req.environ, 'vdev')
@@ -432,7 +435,7 @@ def guest_delete_nic(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = 204
+    req.response.status = util.get_http_code_from_sdk_return(info, default=204)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -452,7 +455,7 @@ def guest_create_nic(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = 200
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -474,7 +477,7 @@ def guest_couple_uncouple_nic(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = 200
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -494,7 +497,7 @@ def guest_create_network_interface(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = 200
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -522,7 +525,7 @@ def guest_get_cpu_info(req):
     info = _guest_get_cpu_info(req, userid_list)
 
     info_json = json.dumps(info)
-    req.response.status = 200
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
@@ -541,7 +544,7 @@ def guest_get_memory_info(req):
     info = _guest_get_memory_info(req, userid_list)
 
     info_json = json.dumps(info)
-    req.response.status = 200
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
@@ -560,7 +563,7 @@ def guest_get_vnics_info(req):
     info = _guest_get_vnics_info(req, userid_list)
 
     info_json = json.dumps(info)
-    req.response.status = 200
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
@@ -580,7 +583,7 @@ def guest_create_disks(req):
     info = _guest_create_disks(userid, req)
 
     info_json = json.dumps(info)
-    req.response.status = 200
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
@@ -600,7 +603,7 @@ def guest_delete_disks(req):
     info = _guest_delete_disks(userid, req)
 
     info_json = json.dumps(info)
-    req.response.status = 204
+    req.response.status = util.get_http_code_from_sdk_return(info, default=204)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response

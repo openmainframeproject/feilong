@@ -72,7 +72,7 @@ class GuestActionTest(unittest.TestCase):
         h = handler.SdkHandler()
         with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMAction.start') \
             as start:
-            start.return_value = ''
+            start.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             start.assert_called_once_with('1', body={})
@@ -85,7 +85,7 @@ class GuestActionTest(unittest.TestCase):
         h = handler.SdkHandler()
         with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMAction.deploy') \
             as deploy:
-            deploy.return_value = ''
+            deploy.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             deploy.assert_called_once_with('1', body={})
@@ -98,7 +98,7 @@ class GuestActionTest(unittest.TestCase):
         h = handler.SdkHandler()
         with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMAction.stop') \
             as stop:
-            stop.return_value = ''
+            stop.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             stop.assert_called_once_with('1', body={})
@@ -111,7 +111,7 @@ class GuestActionTest(unittest.TestCase):
         h = handler.SdkHandler()
         url = 'zvmsdk.sdkwsgi.handlers.guest.VMAction.get_console_output'
         with mock.patch(url) as get_console_output:
-            get_console_output.return_value = ''
+            get_console_output.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             get_console_output.assert_called_once_with('1', body={})
@@ -177,7 +177,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMHandler.list') \
             as list:
-            list.return_value = ''
+            list.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             self.assertTrue(list.called)
@@ -189,7 +189,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_info') \
             as get_info:
-            get_info.return_value = ''
+            get_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             get_info.assert_called_once_with('1')
@@ -201,7 +201,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get'
         with mock.patch(func) as get:
-            get.return_value = ''
+            get.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             get.assert_called_once_with('1')
@@ -213,7 +213,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_nic'
         with mock.patch(func) as get_nic_info:
-            get_nic_info.return_value = ''
+            get_nic_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             get_nic_info.assert_called_once_with('1')
@@ -227,6 +227,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.delete_nic'
         with mock.patch(func) as delete_nic:
+            delete_nic.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             delete_nic.assert_called_once_with('1', '1000', '')
@@ -236,10 +237,10 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['PATH_INFO'] = '/guests/1/power_state'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
-        function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler'\
-                   '.get_power_state'
-        with mock.patch(function) as get_power:
-            get_power.return_value = ''
+        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler'\
+               '.get_power_state'
+        with mock.patch(func) as get_power:
+            get_power.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             get_power.assert_called_once_with('1')
@@ -251,9 +252,9 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['PATH_INFO'] = '/guests'
         self.env['REQUEST_METHOD'] = 'POST'
         h = handler.SdkHandler()
-        function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.create'
-        with mock.patch(function) as create:
-            create.return_value = ''
+        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.create'
+        with mock.patch(func) as create:
+            create.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             self.assertTrue(create.called)
@@ -265,9 +266,9 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['PATH_INFO'] = '/guests/1'
         self.env['REQUEST_METHOD'] = 'DELETE'
         h = handler.SdkHandler()
-        function = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.delete'
-        with mock.patch(function) as delete:
-            delete.return_value = ''
+        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.delete'
+        with mock.patch(func) as delete:
+            delete.return_value = {'overallRC': 0}
             h(self.env, dummy)
             delete.assert_called_once_with('1')
 
@@ -280,7 +281,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.create_nic'
         with mock.patch(func) as create_nic:
-            create_nic.return_value = ''
+            create_nic.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             create_nic.assert_called_once_with('1', body={})
@@ -294,7 +295,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.couple_uncouple_nic'
         with mock.patch(func) as update_nic:
-            update_nic.return_value = ''
+            update_nic.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             update_nic.assert_called_once_with('1', '1000', body={})
@@ -308,7 +309,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'sdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
-            get_info.return_value = '{}'
+            get_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             get_info.assert_called_once_with('guest_inspect_mem', [])
@@ -322,7 +323,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'sdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
-            get_info.return_value = '{}'
+            get_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             get_info.assert_called_once_with('guest_inspect_mem',
@@ -347,7 +348,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'sdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
-            get_info.return_value = '{}'
+            get_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             get_info.assert_called_once_with('guest_inspect_vnics',
@@ -362,7 +363,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'sdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
-            get_info.return_value = '{}'
+            get_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             get_info.assert_called_once_with('guest_inspect_vnics',
@@ -387,7 +388,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'sdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
-            get_info.return_value = '{}'
+            get_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             get_info.assert_called_once_with('guest_inspect_cpus', [])
@@ -401,7 +402,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'sdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
-            get_info.return_value = '{}'
+            get_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             get_info.assert_called_once_with('guest_inspect_cpus',
@@ -427,7 +428,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.attach'
         with mock.patch(func) as attach:
-            attach.return_value = ''
+            attach.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             attach.assert_called_once_with('1', {})
@@ -442,7 +443,7 @@ class GuestHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.volume.VolumeAction.detach'
         with mock.patch(func) as detach:
-            detach.return_value = ''
+            detach.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             detach.assert_called_once_with('1', {})
@@ -480,7 +481,7 @@ class ImageHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'sdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_size:
-            get_size.return_value = '100'
+            get_size.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             get_size.assert_called_once_with('image_get_root_disk_size',
@@ -495,7 +496,7 @@ class ImageHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'zvmsdk.sdkwsgi.handlers.image.ImageAction.create'
         with mock.patch(func) as create:
-            create.return_value = ''
+            create.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             create.assert_called_once_with(body={})
@@ -509,7 +510,7 @@ class ImageHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'sdkclient.client.SDKClient.send_request'
         with mock.patch(func) as delete:
-            delete.return_value = ''
+            delete.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             delete.assert_called_once_with('image_delete', 'image1')
@@ -521,7 +522,7 @@ class ImageHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         func = 'sdkclient.client.SDKClient.send_request'
         with mock.patch(func) as query:
-            query.return_value = ''
+            query.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             query.assert_called_once_with('image_query', None)
@@ -566,7 +567,7 @@ class HostHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.get_info'
         with mock.patch(function) as get_info:
-            get_info.return_value = ''
+            get_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             self.assertTrue(get_info.called)
@@ -578,7 +579,7 @@ class HostHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.get_disk_info'
         with mock.patch(function) as get_disk_info:
-            get_disk_info.return_value = ''
+            get_disk_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             get_disk_info.assert_called_once_with('disk1')
@@ -608,7 +609,7 @@ class VswitchHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.list'
         with mock.patch(function) as list:
-            list.return_value = ''
+            list.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             self.assertTrue(list.called)
@@ -622,7 +623,7 @@ class VswitchHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.create'
         with mock.patch(function) as create:
-            create.return_value = {}
+            create.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             self.assertTrue(create.called)
@@ -634,7 +635,7 @@ class VswitchHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.delete'
         with mock.patch(function) as delete:
-            delete.return_value = {}
+            delete.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             delete.assert_called_once_with('vsw1')
@@ -648,7 +649,7 @@ class VswitchHandlerTest(unittest.TestCase):
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.update'
         with mock.patch(function) as update:
-            update.return_value = {}
+            update.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
             update.assert_called_once_with('vsw1', body={})

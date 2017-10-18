@@ -482,6 +482,7 @@ class HandlersGuestTest(SDKWSGITest):
     def test_delete_nic(self, mock_userid, mock_delete):
         body_str = '{"info": {}}'
         self.req.body = body_str
+        mock_delete.return_value = {'overallRC': 0}
 
         mock_userid.side_effect = self.mock_get_userid_vdev
 

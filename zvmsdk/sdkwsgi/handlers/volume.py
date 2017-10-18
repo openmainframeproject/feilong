@@ -83,7 +83,7 @@ def volume_attach(req):
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
-    req.response.status = 204
+    req.response.status = util.get_http_code_from_sdk_return(info, default=204)
     return req.response
 
 
@@ -102,5 +102,5 @@ def volume_detach(req):
 
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
-    req.response.status = 204
+    req.response.status = util.get_http_code_from_sdk_return(info, default=204)
     return req.response

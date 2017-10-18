@@ -89,6 +89,7 @@ def vswitch_list(req):
     info = _vswitch_list(req)
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -107,7 +108,7 @@ def vswitch_create(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = 200
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -126,7 +127,7 @@ def vswitch_delete(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = 204
+    req.response.status = util.get_http_code_from_sdk_return(info, default=204)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -147,6 +148,6 @@ def vswitch_update(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = 200
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.content_type = 'application/json'
     return req.response

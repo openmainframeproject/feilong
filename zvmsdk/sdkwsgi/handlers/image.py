@@ -88,7 +88,7 @@ def image_create(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = 200
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -107,6 +107,7 @@ def image_get_root_disk_size(req):
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
+    req.response.status = util.get_http_code_from_sdk_return(info)
     return req.response
 
 
@@ -123,7 +124,7 @@ def image_delete(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = 204
+    req.response.status = util.get_http_code_from_sdk_return(info, default=204)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -142,7 +143,7 @@ def image_export(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = 200
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -162,5 +163,6 @@ def image_query(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.content_type = 'application/json'
     return req.response
