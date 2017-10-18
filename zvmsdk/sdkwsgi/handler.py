@@ -48,7 +48,6 @@ ROUTE_LIST = (
     ('/guests/{userid}', {
         'DELETE': guest.guest_delete,
         'GET': guest.guest_get,
-        'PUT': guest.guest_update,
     }),
     ('/guests/{userid}/action', {
         'POST': guest.guest_action,

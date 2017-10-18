@@ -319,26 +319,6 @@ def guest_create(req):
 
 @wsgi_wrapper.SdkWsgify
 @tokens.validate
-def guest_update(req):
-
-    def _guest_update(userid, body):
-        action = get_handler()
-
-        return action.update(userid, body=body)
-
-    userid = util.wsgi_path_item(req.environ, 'userid')
-    body = util.extract_json(req.body)
-    info = _guest_update(userid, body)
-
-    info_json = json.dumps(info)
-    req.response.body = utils.to_utf8(info_json)
-    req.response.status = util.get_http_code_from_sdk_return(info)
-    req.response.content_type = 'application/json'
-    return req.response
-
-
-@wsgi_wrapper.SdkWsgify
-@tokens.validate
 def guest_list(req):
     def _guest_list():
         action = get_handler()
