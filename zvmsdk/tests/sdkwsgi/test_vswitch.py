@@ -59,6 +59,9 @@ class VSwitchTestCase(unittest.TestCase):
         resp = self._vswitch_create()
         self.assertEqual(200, resp.status_code)
 
+        resp = self._vswitch_create()
+        self.assertEqual(409, resp.status_code)
+
         try:
             resp = self._vswitch_list()
             vswlist = json.loads(resp.content)['output']
