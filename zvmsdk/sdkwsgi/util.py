@@ -177,7 +177,9 @@ def expected_errors(errors):
     return decorator
 
 
-def get_http_code_from_sdk_return(msg, default=200):
+def get_http_code_from_sdk_return(msg, additional_handler=None, default=200):
+    LOG.debug("Get msg to handle: %s", msg)
+
     if 'overallRC' in msg:
         ret = msg['overallRC']
 
@@ -191,8 +193,39 @@ def get_http_code_from_sdk_return(msg, default=200):
             if ret in [100]:
                 return 400
 
+            # Add a special handle for smut return
+            if additional_handler:
+                ret = additional_handler(msg)
+                if ret:
+                    return ret
+
             # ok, we reach here because can't handle it
+            LOG.info("The msg <%s> lead to return internal error", msg)
             return 500
         else:
             # return default code
             return default
+
+
+def handle_already_exists(msg):
+    if 'overallRC' in msg and 'rc' in msg and 'rs' in msg:
+        # overall rc: 8, rc: 212, rs: 36 means vswitch already exist
+        if (msg['overallRC'] == 8 and msg['rc'] == 212 and
+            msg['rs'] == 36):
+            LOG.debug('vswitch already exist, change ret to 409')
+            return 409
+
+        # overall rc: 300, rc: 300, rc: 13 means image already exist
+        if (msg['overallRC'] == 300 and msg['rc'] == 300 and
+            msg['rs'] == 13):
+            LOG.debug('image already exist, change ret to 409')
+            return 409
+
+        # overall rc: 8, rc: 400, rs: 8 means guest already exist
+        if (msg['overallRC'] == 8 and msg['rc'] == 400 and
+            msg['rs'] == 8):
+            LOG.debug('guest already exist, change ret to 409')
+            return 409
+
+    # not handle it well, go to default
+    return 0
