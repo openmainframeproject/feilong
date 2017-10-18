@@ -70,6 +70,9 @@ class VSwitchTestCase(unittest.TestCase):
             resp = self._vswitch_delete()
             self.assertEqual(204, resp.status_code)
 
+            resp = self._vswitch_delete()
+            self.assertEqual(400, resp.status_code)
+
             resp = self._vswitch_list()
             vswlist = json.loads(resp.content)['output']
             inlist = 'RESTVSW1' in vswlist
