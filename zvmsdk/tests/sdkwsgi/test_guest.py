@@ -43,7 +43,6 @@ class GuestHandlerTestCase(unittest.TestCase):
         body = body % self.userid
         resp = self.client.api_request(url='/guests', method='POST',
                                        body=body)
-        self.assertEqual(200, resp.status_code)
 
         return resp
 
@@ -205,7 +204,9 @@ class GuestHandlerTestCase(unittest.TestCase):
                                    resp.content)
 
     def test_guest_create_delete(self):
-        self._guest_create()
+        resp = self._guest_create()
+        self.assertEqual(200, resp.status_code)
+
         # give chance to make disk online
         time.sleep(30)
 
@@ -255,7 +256,13 @@ class GuestHandlerTestCase(unittest.TestCase):
         self.apibase.verify_result('test_guests_list', resp.content)
 
     def test_guest_disks_create_delete(self):
-        self._guest_create()
+        resp = self._guest_create()
+        self.assertEqual(200, resp.status_code)
+
+        # another case, to test when we report create duplication error
+        resp = self._guest_create()
+        self.assertEqual(409, resp.status_code)
+
         # give chance to make disk online
         time.sleep(30)
 
@@ -278,7 +285,9 @@ class GuestHandlerTestCase(unittest.TestCase):
             self._vswitch_delete()
 
     def test_guest_create_network_interface(self):
-        self._guest_create()
+        resp = self._guest_create()
+        self.assertEqual(200, resp.status_code)
+
         try:
             self._guest_deploy()
             self._guest_create_network_interface()
@@ -316,7 +325,8 @@ class GuestHandlerTestCase(unittest.TestCase):
         self.assertEqual(200, resp.status_code)
 
     def test_guest_vswitch_couple_uncouple(self):
-        self._guest_create()
+        resp = self._guest_create()
+        self.assertEqual(200, resp.status_code)
 
         try:
             self._guest_nic_create("2000")
