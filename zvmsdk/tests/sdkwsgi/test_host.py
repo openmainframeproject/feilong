@@ -31,3 +31,16 @@ class HostTestCase(unittest.TestCase):
         resp = self.client.api_request(url='/host/disk/ECKD:xcateckd')
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_host_disk_info', resp.content)
+
+    def test_host_disk_info_incorrect(self):
+        # disk pool not found
+        resp = self.client.api_request(url='/host/disk/ECKD:dummy')
+        self.assertEqual(404, resp.status_code)
+        
+        # disk format not correct
+        resp = self.client.api_request(url='/host/disk/ECKD')
+        self.assertEqual(400, resp.status_code)
+
+        # disk type not correct
+        resp = self.client.api_request(url='/host/disk/xxxx:dummy')
+        self.assertEqual(400, resp.status_code)
