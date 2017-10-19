@@ -215,6 +215,30 @@ def handle_not_found(msg):
             LOG.debug('vswitch does not exist, change ret to 404')
             return 404
 
+        # overall rc: 4, rc: 5, rs: 402 means vswitch not exist
+        if (msg['overallRC'] == 4 and msg['rc'] == 5 and
+            msg['rs'] == 402):
+            LOG.debug('disk pool not exist, change ret to 404')
+            return 404
+
+        # overall rc: 300, rc: 300, rs: 20 means image not exist
+        if (msg['overallRC'] == 300 and msg['rc'] == 300 and
+            msg['rs'] == 20):
+            LOG.debug('image not exist, change ret to 404')
+            return 404
+
+        # overall rc: 8, rc: 400, rs: 4 means guest not exist
+        if (msg['overallRC'] == 8 and msg['rc'] == 400 and
+            msg['rs'] == 4):
+            LOG.debug('guest not exist, change ret to 404')
+            return 404
+
+        # overall rc: 8, rc: 200, rs: 4 means guest not exist
+        if (msg['overallRC'] == 8 and msg['rc'] == 200 and
+            msg['rs'] == 4):
+            LOG.debug('guest not exist, change ret to 404')
+            return 404
+
     return 0
 
 
