@@ -98,6 +98,16 @@ class VSwitchTestCase(unittest.TestCase):
             resp = self._vswitch_delete()
             self.assertEqual(204, resp.status_code)
 
+    def test_vswitch_delete_update_not_exist(self):
+        resp = self.client.api_request(url='/vswitchs/notexist',
+                                       method='DELETE')
+        self.assertEqual(204, resp.status_code)
+
+        body = '{"vswitch": {"grant_userid": "FVTUSER1"}}'
+        resp = self.client.api_request(url='/vswitchs/notexist',
+                                       method='PUT', body=body)
+        self.assertEqual(200, resp.status_code)
+
     def test_vswitch_create_invalid_body(self):
         body = '{"vswitch": {"v1": "v1"}}'
         resp = self.client.api_request(url='/vswitchs', method='POST',
