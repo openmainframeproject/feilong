@@ -207,6 +207,17 @@ def get_http_code_from_sdk_return(msg, additional_handler=None, default=200):
             return default
 
 
+def handle_not_found(msg):
+    if 'overallRC' in msg and 'rc' in msg and 'rs' in msg:
+        # overall rc: 8, rc: 212, rs: 40 means vswitch not exist
+        if (msg['overallRC'] == 8 and msg['rc'] == 212 and
+            msg['rs'] == 40):
+            LOG.debug('vswitch does not exist, change ret to 404')
+            return 404
+
+    return 0
+
+
 def handle_already_exists(msg):
     if 'overallRC' in msg and 'rc' in msg and 'rs' in msg:
         # overall rc: 8, rc: 212, rs: 36 means vswitch already exist

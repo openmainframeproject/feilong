@@ -258,7 +258,7 @@ class VolumeOperator(VolumeOperatorAPI):
         pattern = '^[0-9a-f]{16}$'
         try:
             return re.match(pattern, value)
-        except:
+        except Exception:
             return False
 
     def _validate_volume(self, volume):
@@ -357,7 +357,7 @@ class VolumeOperator(VolumeOperatorAPI):
             if not re.match(pattern, fcp):
                 raise exception.SDKInvalidInputFormat(
                     "fcp value: %s is illegal!" % fcp)
-        except:
+        except Exception:
             msg = ("fcp object must be of type string, "
                    "however the object passed in is: %s !" % fcp)
             raise exception.SDKInvalidInputFormat(msg)

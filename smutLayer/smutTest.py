@@ -76,7 +76,7 @@ try:
         cmd,
         close_fds=True,
         stderr=subprocess.STDOUT).split()[0]
-except:
+except Exception:
     print("Could not find the userid of this system.")
     subs['<<<localUserid>>>'] = 'unknownUserid'
 
@@ -1442,7 +1442,7 @@ def runTest(smut, test):
                 junk = subprocess.check_output(cmd, close_fds=True)
                 if junk == '':
                     respScore = 0
-            except:
+            except Exception:
                 respScore = 0
             os.remove(tempFile.name)
     else:
