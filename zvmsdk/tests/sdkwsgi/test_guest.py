@@ -113,24 +113,30 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         self.assertEqual(204, resp.status_code)
 
-    def _guest_get(self):
-        url = '/guests/%s' % self.userid
+    def _guest_get(self, userid=None):
+        if userid is None:
+            userid = self.userid
+        url = '/guests/%s' % userid
         resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_guest_get', resp.content)
         return resp
 
-    def _guest_get_info(self):
-        url = '/guests/%s/info' % self.userid
+    def _guest_get_info(self, userid=None):
+        if userid is None:
+            userid = self.userid
+        url = '/guests/%s/info' % userid
         resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_guest_get_info', resp.content)
         return resp
 
-    def _guest_get_power_state(self):
-        url = '/guests/%s/power_state' % self.userid
+    def _guest_get_power_state(self, userid=None):
+        if userid is None:
+            userid = self.userid
+        url = '/guests/%s/power_state' % userid
         resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
@@ -138,22 +144,24 @@ class GuestHandlerTestCase(unittest.TestCase):
                                    resp.content)
         return resp
 
-    def _guest_action(self, body):
-        url = '/guests/%s/action' % self.userid
+    def _guest_action(self, body, userid=None):
+        if userid is None:
+            userid = self.userid
+        url = '/guests/%s/action' % userid
         resp = self.client.api_request(url=url,
                                        method='POST', body=body)
         self.assertEqual(200, resp.status_code)
         return resp
 
-    def _guest_start(self):
+    def _guest_start(self, userid=None):
         body = '{"action": "start"}'
-        return self._guest_action(body)
+        return self._guest_action(body, userid=userid)
 
-    def _guest_stop(self):
+    def _guest_stop(self, userid=None):
         body = '{"action": "stop"}'
-        return self._guest_action(body)
+        return self._guest_action(body, userid=userid)
 
-    def _guest_deploy(self):
+    def _guest_deploy(self, userid=None):
         image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
         # "transportfiles" is None here
         # "remotehost" is None here because transportfiles is None
@@ -161,54 +169,100 @@ class GuestHandlerTestCase(unittest.TestCase):
                    "image": "%s",
                    "vdev": "100"}""" % image
 
-        return self._guest_action(body)
+        return self._guest_action(body, userid=userid)
 
-    def _guest_pause(self):
+    def _guest_pause(self, userid=None):
         body = '{"action": "pause"}'
-        return self._guest_action(body)
+        return self._guest_action(body, userid=userid)
 
-    def _guest_unpause(self):
+    def _guest_unpause(self, userid=None):
         body = '{"action": "unpause"}'
-        return self._guest_action(body)
+        return self._guest_action(body, userid=userid)
 
-    def _guest_reboot(self):
+    def _guest_reboot(self, userid=None):
         body = '{"action": "reboot"}'
-        return self._guest_action(body)
+        return self._guest_action(body, userid=userid)
 
-    def _guest_reset(self):
+    def _guest_reset(self, userid=None):
         body = '{"action": "reset"}'
-        return self._guest_action(body)
+        return self._guest_action(body, userid=userid)
 
-    def _guest_cpuinfo(self):
-        url = '/guests/cpuinfo?userid=%s' % self.userid
+    def _guest_cpuinfo(self, userid=None):
+        if userid is None:
+            userid = self.userid
+        url = '/guests/cpuinfo?userid=%s' % userid
         resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_guests_get_cpu_info',
                                    resp.content)
 
-    def _guest_meminfo(self):
-        url = '/guests/meminfo?userid=%s' % self.userid
+    def _guest_meminfo(self, userid=None):
+        if userid is None:
+            userid = self.userid
+        url = '/guests/meminfo?userid=%s' % userid
         resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_guests_get_memory_info',
                                    resp.content)
 
-    def _guest_vnicsinfo(self):
-        url = '/guests/vnicsinfo?userid=%s' % self.userid
+    def _guest_vnicsinfo(self, userid=None):
+        if userid is None:
+            userid = self.userid
+        url = '/guests/vnicsinfo?userid=%s' % userid
         resp = self.client.api_request(url=url,
                                        method='GET')
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_guests_get_vnics_info',
                                    resp.content)
 
+    def test_guest_update_not_exist(self):
+        resp = self._guest_get('notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_get_info('notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_get_power_state('notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_start('notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_stop('notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_deploy('notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_pause('notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_unpause('notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_reboot('notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_reset('notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_cpuinfo('notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_meminfo('notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_vnicsinfo('notexist')
+        self.assertEqual(404, resp.status_code)
+
     def test_guest_create_delete(self):
         resp = self._guest_create()
         self.assertEqual(200, resp.status_code)
 
         # give chance to make disk online
-        time.sleep(30)
+        time.sleep(15)
 
         try:
             self._guest_deploy()
@@ -259,12 +313,12 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_create()
         self.assertEqual(200, resp.status_code)
 
-        # another case, to test when we report create duplication error
+        # another create, to test when we report create duplication error
         resp = self._guest_create()
         self.assertEqual(409, resp.status_code)
 
         # give chance to make disk online
-        time.sleep(30)
+        time.sleep(15)
 
         try:
             self._guest_deploy()
