@@ -103,7 +103,7 @@ class VSwitchTestCase(unittest.TestCase):
                                        method='DELETE')
         self.assertEqual(204, resp.status_code)
 
-        # Test not found
+        # Test update the vswitch not found
         body = '{"vswitch": {"grant_userid": "FVTUSER1"}}'
         resp = self.client.api_request(url='/vswitchs/notexist',
                                        method='PUT', body=body)
