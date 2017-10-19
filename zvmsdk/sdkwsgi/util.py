@@ -215,6 +215,11 @@ def handle_not_found(msg):
             LOG.debug('vswitch does not exist, change ret to 404')
             return 404
 
+        if (msg['overallRC'] == 4 and msg['rc'] == 5 and
+            msg['rs'] == 402):
+            LOG.debug('disk pool not exist, change ret to 404')
+            return 404
+
     return 0
 
 

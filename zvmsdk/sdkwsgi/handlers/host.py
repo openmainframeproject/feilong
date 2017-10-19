@@ -75,7 +75,8 @@ def host_get_disk_info(req):
 
     info = _host_get_disk_info(diskname)
     info_json = json.dumps(info)
-    req.response.status = util.get_http_code_from_sdk_return(info)
+    req.response.status = util.get_http_code_from_sdk_return(info,
+        additional_handle=util.handle_not_found)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response

@@ -61,23 +61,20 @@ class ImageTestCase(unittest.TestCase):
                                    resp.content)
         return resp
 
-    def _image_query(self):
-        resp = self.client.api_request(url='/images?imagename=image1',
+    def _image_query(self, image_name='image1'):
+        url = '/images?imagename=%s' % image_name
+        resp = self.client.api_request(url=url,
                                        method='GET')
-        self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_image_query', resp.content)
         return resp
 
-    def _image_export(self):
-        url = '/images/image1'
-        dest_url = 'file:///tmp/images/image1'
+    def _image_export(self, image_name='image1'):
+        url = '/images/%s' % image_name
+        dest_url = 'file:///tmp/images/%s' % image_name
         body = """{"location": {"dest_url": "%s"}}""" % (dest_url)
 
         resp = self.client.api_request(url=url,
                                        method='PUT',
                                        body=body)
-        self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_image_export', resp.content)
         return resp
 
     def test_image_create_empty_body(self):
@@ -103,13 +100,30 @@ class ImageTestCase(unittest.TestCase):
         resp = self._image_create()
         self.assertEqual(409, resp.status_code)
 
+    def test_image_export_not_exist(self):
+        # image not created yet
+        resp = self._image_export(image_name='dummy')
+        self.assertEqual(404, resp.status_code)
+
+    def test_image_query_not_exist(self):
+        # image not created yet
+        resp = self._image_query(image_name='dummy')
+        self.assertEqual(404, resp.status_code)
+
     def test_image_create_delete(self):
         self._image_create()
 
         try:
             self._image_query()
+            self.assertEqual(200, resp.status_code)
+            self.apibase.verify_result('test_image_query', resp.content)
+
             self._image_get_root_disk_size()
-            self._image_export()
+
+            resp = self._image_export()        
+            self.assertEqual(200, resp.status_code)
+            self.apibase.verify_result('test_image_export', resp.content)
+
         except Exception:
             raise
         finally:
