@@ -360,6 +360,30 @@ This will work as a pair with bind_addr when the SDK server daemon
 starts, more info can be found in that configuration description.
 '''
         ),
+    Opt('request_queue_size',
+        section='sdkserver',
+        opt_type='int',
+        default=128,
+        help='''
+The size of request queue in SDK server.
+
+SDK server maintains a queue to keep all the accepted but not handled requests,
+and the SDK server workers fetch requests from this queue.
+To some extend, this queue size decides the max socket opened in SDK server.
+This value should be adjusted according to the system resource.
+'''
+        ),
+    Opt('worker_count',
+        section='sdkserver',
+        opt_type='int',
+        default=64,
+        help='''
+The count of worker thread in SDK server to handle client requests.
+
+These worker threads would work concurrently to handle requests from client.
+This value should be adjusted according to the system resource and workload.
+'''
+        ),
     # database options
     Opt('dir',
         section='database',

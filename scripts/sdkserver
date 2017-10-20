@@ -15,6 +15,7 @@
 
 
 import json
+import Queue
 import socket
 import sys
 import syslog
@@ -47,6 +48,9 @@ class SDKServer(object):
         else:
             self.sdkapi = api.SDKAPI()
         self.server_socket = None
+        self.request_queue = Queue.Queue(maxsize=
+                                         CONF.sdkserver.request_queue_size)
+        self.workers = []
 
     def log_error(self, msg):
         msg = "ERROR: " + msg
@@ -180,6 +184,16 @@ class SDKServer(object):
                 # closed even when it got unexpected exceptions.
                 client.close()
 
+    def worker_loop(self):
+        # The worker thread would continuously fetch request from queue
+        # in a while loop.
+        while True:
+            # This get() function would block here until there's an available
+            # item in queue
+            client_socket = self.request_queue.get()
+            self.serve_API(client_socket)
+            self.request_queue.task_done()
+
     def setup(self):
         # create server socket
         try:
@@ -201,6 +215,12 @@ class SDKServer(object):
             server_sock.close()
             sys.exit(1)
 
+        # Init thread pool
+        for i in range(CONF.sdkserver.worker_count):
+            thread = threading.Thread(target=self.worker_loop)
+            self.workers.append(thread)
+            thread.start()
+
         # Start listening
         server_sock.listen(5)
         self.log_info("SDK server now listening")
@@ -211,9 +231,9 @@ class SDKServer(object):
             # Wait client connection
             conn, addr = self.server_socket.accept()
             self.log_info("Connected with %s:%s" % (addr[0], addr[1]))
-            # Start a new thread to call the API
-            thread = threading.Thread(target=self.serve_API, args=(conn,))
-            thread.start()
+            # This put() function would be blocked here until there's
+            # a slot in the queue
+            self.request_queue.put(conn)
 
 
 def start_daemon():
