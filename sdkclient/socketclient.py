@@ -23,9 +23,13 @@ SOCKET_ERROR = [{'overallRC': 101, 'modID': SDKCLIENT_MODID, 'rc': 101},
                 {1: "Failed to create client socket, error: %(error)s",
                  2: ("Failed to connect SDK server %(addr)s:%(port)s, "
                      "error: %(error)s"),
-                 3: ("Failed to send API call to SDK server, "
-                    "%(sent)d bytes sent. API call: %(api)s"),
-                 4: "Failed to receive API results from SDK server"},
+                 3: ("Failed to send all API call data to SDK server, "
+                    "only %(sent)d bytes sent. API call: %(api)s"),
+                 4: "Client receive empty data from SDK server",
+                 5: ("Client got socket error when sending API call to "
+                     "SDK server, error： %(error)s"),
+                 6: ("Client got socket error when receiving response "
+                     "from SDK server, error： %(error)s")},
                 "SDK client or server get socket error",
                 ]
 INVALID_API_ERROR = [{'overallRC': 400, 'modID': SDKCLIENT_MODID, 'rc': 400},
@@ -87,23 +91,36 @@ class SDKSocketClient(object):
             sent = 0
             total_len = len(api_data)
             got_error = False
-            while (sent < total_len):
-                this_sent = cs.send(api_data[sent:])
-                if this_sent == 0:
-                    got_error = True
-                    break
-                sent += this_sent
+            try:
+                while (sent < total_len):
+                    this_sent = cs.send(api_data[sent:])
+                    if this_sent == 0:
+                        got_error = True
+                        break
+                    sent += this_sent
+            except socket.error as err:
+                return self._construct_socket_error(5,
+                                                    error=six.text_type(err))
             if got_error or sent != total_len:
                 return self._construct_socket_error(3, sent=sent,
                                                     api=api_data)
 
             # Receive data from server
             return_blocks = []
-            while True:
-                block = cs.recv(4096)
-                if not block:
-                    break
-                return_blocks.append(block)
+            try:
+                while True:
+                    block = cs.recv(4096)
+                    if not block:
+                        break
+                    return_blocks.append(block)
+            except socket.error as err:
+                # When the sdkserver cann't handle all the client request,
+                # some client request would be rejected.
+                # Under this case, the client socket can successfully
+                # connect/send, but would get exception in recv with error:
+                # "error: [Errno 104] Connection reset by peer"
+                return self._construct_socket_error(6,
+                                                    error=six.text_type(err))
         finally:
             # Always close the client socket to avoid too many hanging
             # socket left.
