@@ -15,6 +15,7 @@
 
 
 import json
+import Queue
 import socket
 import sys
 import syslog
@@ -47,6 +48,9 @@ class SDKServer(object):
         else:
             self.sdkapi = api.SDKAPI()
         self.server_socket = None
+        self.request_queue = Queue.Queue(maxsize=
+                                         CONF.sdkserver.request_queue_size)
+        self.workers = []
 
     def log_error(self, msg):
         msg = "ERROR: " + msg
@@ -59,6 +63,11 @@ class SDKServer(object):
     def log_warn(self, msg):
         msg = "WARNING: " + msg
         syslog.syslog(syslog.LOG_WARNING, msg)
+
+    def log_debug(self, msg):
+        if CONF.sdkserver.debug.lower() == "true":
+            msg = "DEBUG: " + msg
+            syslog.syslog(syslog.LOG_DEBUG, msg)
 
     def construct_internal_error(self, msg):
         self.log_error(msg)
@@ -99,11 +108,12 @@ class SDKServer(object):
             self.log_error("Failed to send back clients the results: %s" %
                       json_results)
         else:
-            self.log_info("Results sent back to client successfully.")
+            self.log_debug("Results sent back to client successfully.")
 
     def serve_API(self, client):
         """ Read client request and call target SDK API"""
-        self.log_info("new thread started to handle client request")
+        self.log_debug("[%s] Handling new request." %
+                       threading.current_thread().name)
         results = None
         try:
             data = client.recv(4096)
@@ -124,7 +134,7 @@ class SDKServer(object):
 
             # Check called API is supported by SDK
             (func_name, api_args, api_kwargs) = api_data
-            self.log_info("func: %s, args: %s, kwargs: %s" % (func_name,
+            self.log_debug("func: %s, args: %s, kwargs: %s" % (func_name,
                                                               str(api_args),
                                                               str(api_kwargs)))
             try:
@@ -180,6 +190,27 @@ class SDKServer(object):
                 # closed even when it got unexpected exceptions.
                 client.close()
 
+    def worker_loop(self):
+        # The worker thread would continuously fetch request from queue
+        # in a while loop.
+        while True:
+            try:
+                # This get() function raise Empty exception when there's no
+                # available item in queue
+                client_socket = self.request_queue.get(block=False)
+            except Queue.Empty:
+                self.log_debug("No more item in request queue, worker %s exit now."
+                          % threading.current_thread().name)
+                break
+            except Exception as err:
+                self.log_error("Failed to get request item from queue, error: %s. "
+                          "Worker %s exit now." %
+                          (repr(err), threading.current_thread().name))
+                break
+            else:
+                self.serve_API(client_socket)
+                self.request_queue.task_done()
+
     def setup(self):
         # create server socket
         try:
@@ -211,9 +242,15 @@ class SDKServer(object):
             # Wait client connection
             conn, addr = self.server_socket.accept()
             self.log_info("Connected with %s:%s" % (addr[0], addr[1]))
-            # Start a new thread to call the API
-            thread = threading.Thread(target=self.serve_API, args=(conn,))
-            thread.start()
+            # This put() function would be blocked here until there's
+            # a slot in the queue
+            self.request_queue.put(conn)
+            thread_count = threading.active_count()
+            if thread_count <= CONF.sdkserver.max_worker_count:
+                thread = threading.Thread(target=self.worker_loop)
+                self.log_debug("Worker count: %d, starting new thread: %s" %
+                               (thread_count, thread.name))
+                thread.start()
 
 
 def start_daemon():
