@@ -170,6 +170,11 @@ class SDKServer(object):
             try:
                 if results is not None:
                     self.send_results(client, results)
+            except Exception as e:
+                # The send_results may fail to send data to client, eg, when
+                # the client socket got closed unexpected. (eg, client process
+                # exited.)
+                LOG.error("%s", traceback.format_exc())
             finally:
                 # Close the connection to make sure the thread socket got
                 # closed even when it got unexpected exceptions.
