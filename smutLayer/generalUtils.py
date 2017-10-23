@@ -62,7 +62,7 @@ def cvtToBlocks(rh, diskSize):
                 elif lastChar == 'G':
                     blocks = (float(byteSize) * 1024 * 1024 * 1024) / 512
                 blocks = str(int(math.ceil(blocks)))
-            except:
+            except Exception:
                 # Failed to convert to a number of blocks.
                 msg = msgs.msg['0201'][1] % (modId, byteSize)
                 rh.printLn("ES", msg)
@@ -118,7 +118,7 @@ def cvtToCyl(rh, diskSize):
                 elif lastChar == 'G':
                     cyl = (float(byteSize) * 1024 * 1024 * 1024) / 737280
                 cyl = str(int(math.ceil(cyl)))
-            except:
+            except Exception:
                 # Failed to convert to a number of cylinders.
                 msg = msgs.msg['0203'][1] % (modId, byteSize)
                 rh.printLn("ES", msg)
