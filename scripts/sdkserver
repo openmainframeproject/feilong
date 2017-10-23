@@ -148,7 +148,7 @@ class SDKServer(object):
                 results = self.construct_internal_error(msg)
             else:
                 results = {'overallRC': e.results['overallRC'],
-                           'modID': None,
+                           'modID': e.results['modID'],
                            'rc': e.results['rc'],
                            'rs': e.results['rs'],
                            'errmsg': e.format_message(),
