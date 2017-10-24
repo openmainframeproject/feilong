@@ -13,6 +13,7 @@
 #    under the License.
 
 
+import re
 import six
 import time
 
@@ -44,9 +45,23 @@ class VMOps(object):
         self._dist_manager = dist.LinuxDistManager()
         self._pathutils = zvmutils.PathUtils()
 
-    def get_power_state(self, guest_id):
+    def is_guest_exist(self, userid):
+        cmd = 'vmcp q %s' % userid
+        rc, output = zvmutils.execute(cmd)
+        if re.search('(^HCP\w\w\w003E)', output):
+            # userid not exist
+            return False
+        return True
+
+    def get_power_state(self, userid):
         """Get power status of a z/VM instance."""
-        return self._smutclient.get_power_state(guest_id)
+        if not self.is_guest_exist(userid):
+            msg = "Userid %s does not exist" % userid.upper()
+            LOG.warn(msg)
+            obj_desc = 'Userid %s' % userid.upper()
+            raise exception.SDKObjectNotExistError(obj_desc,
+                                                   modID='guest')
+        return self._smutclient.get_power_state(userid)
 
     def _get_cpu_num_from_user_dict(self, dict_info):
         cpu_num = 0
