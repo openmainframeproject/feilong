@@ -26,10 +26,19 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops = vmops.get_vmops()
 
     @mock.patch.object(vmops.get_vmops()._smutclient, 'get_power_state')
-    def test_get_power_state(self, gps):
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
+    def test_get_power_state(self, ige, gps):
+        ige.return_value = True
         gps.return_value = 'on'
         self.vmops.get_power_state('cbi00063')
         gps.assert_called_with('cbi00063')
+
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
+    def test_get_power_state_not_exist(self, ige):
+        ige.return_value = False
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.vmops.get_power_state, 'cbi00063')
+        ige.assert_called_with('cbi00063')
 
     @mock.patch.object(vmops.get_vmops()._smutclient,
                        'get_guest_connection_status')
@@ -182,18 +191,22 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         gs.assert_called_once_with(userid)
 
     @mock.patch.object(vmops.get_vmops()._smutclient, 'get_power_state')
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
     @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_stop')
-    def test_guest_stop_with_retry(self, gs, gps):
+    def test_guest_stop_with_retry(self, gs, ige, gps):
         userid = 'userid'
+        ige.return_value = True
         gps.return_value = u'off'
         self.vmops.guest_stop(userid, 60, 10)
         gs.assert_called_once_with(userid)
         gps.assert_called_once_with(userid)
 
     @mock.patch.object(vmops.get_vmops()._smutclient, 'get_power_state')
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
     @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_stop')
-    def test_guest_stop_timeout(self, gs, gps):
+    def test_guest_stop_timeout(self, gs, ige, gps):
         userid = 'userid'
+        ige.return_value = True
         gps.return_value = u'on'
         self.vmops.guest_stop(userid, 1, 1)
         gps.assert_called_once_with(userid)
