@@ -162,6 +162,8 @@ class VMOps(object):
                                    disk_list, user_profile)
 
     def create_disks(self, userid, disk_list):
+        zvmutils.check_guest_exist(userid)
+
         user_direct = self._smutclient.get_user_direct(userid)
 
         exist_disks = []
@@ -174,9 +176,13 @@ class VMOps(object):
         self._smutclient.add_mdisks(userid, disk_list, start_vdev)
 
     def delete_disks(self, userid, vdev_list):
+        zvmutils.check_guest_exist(userid)
+
         self._smutclient.remove_mdisks(userid, vdev_list)
 
     def guest_config_minidisks(self, userid, disk_info):
+        zvmutils.check_guest_exist(userid)
+
         if disk_info != []:
             LOG.debug("Start to configure disks to %s." % userid)
             self._smutclient.process_additional_minidisks(userid, disk_info)

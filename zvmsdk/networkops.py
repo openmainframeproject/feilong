@@ -44,14 +44,18 @@ class NetworkOPS(object):
         self._smutclient = smutclient.get_smutclient()
         self._dist_manager = dist.LinuxDistManager()
 
-    def create_nic(self, vm_id, vdev=None, nic_id=None,
+    def create_nic(self, userid, vdev=None, nic_id=None,
                    mac_addr=None, ip_addr=None, active=False):
-        return self._smutclient.create_nic(vm_id, vdev=vdev, nic_id=nic_id,
+        zvmutils.check_guest_exist(userid)
+
+        return self._smutclient.create_nic(userid, vdev=vdev, nic_id=nic_id,
                                            mac_addr=mac_addr, ip_addr=ip_addr,
                                            active=active)
 
-    def get_vm_nic_vswitch_info(self, vm_id):
-        return self._smutclient.get_vm_nic_vswitch_info(vm_id)
+    def get_vm_nic_vswitch_info(self, userid):
+        zvmutils.check_guest_exist(userid)
+
+        return self._smutclient.get_vm_nic_vswitch_info(userid)
 
     def get_vswitch_list(self):
         return self._smutclient.get_vswitch_list()
@@ -101,6 +105,8 @@ class NetworkOPS(object):
         self._smutclient.delete_vswitch(vswitch_name, persist)
 
     def delete_nic(self, userid, vdev, active=False):
+        zvmutils.check_guest_exist(userid)
+
         self._smutclient.delete_nic(userid, vdev,
                                     active=active)
 
