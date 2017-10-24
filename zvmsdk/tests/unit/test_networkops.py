@@ -24,7 +24,9 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         self.networkops = networkops.get_networkops()
 
     @mock.patch.object(networkops.get_networkops()._smutclient, 'create_nic')
-    def test_create_nic(self, create_nic):
+    @mock.patch('zvmsdk.utils._is_guest_exist')
+    def test_create_nic(self, ide, create_nic):
+        ide.return_value = True
         self.networkops.create_nic("fakeid", '1000', 'Fake_nic_id',
                                    ip_addr="ipaddr",
                                    active=True)
@@ -35,7 +37,9 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
 
     @mock.patch.object(networkops.get_networkops()._smutclient,
                        'get_vm_nic_vswitch_info')
-    def test_get_vm_nic_vswitch_info(self, get_nic_vswitch_info):
+    @mock.patch('zvmsdk.utils._is_guest_exist')
+    def test_get_vm_nic_vswitch_info(self, ide, get_nic_vswitch_info):
+        ide.return_value = True
         self.networkops.get_vm_nic_vswitch_info("fakenode")
         get_nic_vswitch_info.assert_called_with("fakenode")
 
@@ -116,7 +120,9 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         delete_vswitch.assert_called_with("vswitch_name", True)
 
     @mock.patch.object(networkops.get_networkops()._smutclient, 'delete_nic')
-    def test_delete_nic(self, delete_nic):
+    @mock.patch('zvmsdk.utils._is_guest_exist')
+    def test_delete_nic(self, ide, delete_nic):
+        ide.return_value = True
         self.networkops.delete_nic("userid", "vdev", True)
         delete_nic.assert_called_with("userid", "vdev",
                                       active=True)

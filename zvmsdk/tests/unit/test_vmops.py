@@ -107,7 +107,9 @@ class SDKVMOpsTestCase(base.SDKTestCase):
 
     @mock.patch.object(vmops.get_vmops()._smutclient,
                        'process_additional_minidisks')
-    def test_guest_config_minidisks(self, process_additional_minidisks):
+    @mock.patch('zvmsdk.utils._is_guest_exist')
+    def test_guest_config_minidisks(self, ide, process_additional_minidisks):
+        ide.return_value = True
         userid = 'userid'
         disk_list = [{'vdev': '0101',
                       'format': 'ext3',
@@ -267,7 +269,9 @@ class SDKVMOpsTestCase(base.SDKTestCase):
 
     @mock.patch.object(vmops.get_vmops()._smutclient, 'add_mdisks')
     @mock.patch.object(vmops.get_vmops()._smutclient, 'get_user_direct')
-    def test_create_disks(self, gud, amds):
+    @mock.patch('zvmsdk.utils._is_guest_exist')
+    def test_create_disks(self, ide, gud, amds):
+        ide.return_value = True
         user_direct = ['USER TEST TEST',
                        'MDISK 100 3390',
                        'MDISK 101 3390']
@@ -279,7 +283,9 @@ class SDKVMOpsTestCase(base.SDKTestCase):
 
     @mock.patch.object(vmops.get_vmops()._smutclient, 'add_mdisks')
     @mock.patch.object(vmops.get_vmops()._smutclient, 'get_user_direct')
-    def test_create_disks_200(self, gud, amds):
+    @mock.patch('zvmsdk.utils._is_guest_exist')
+    def test_create_disks_200(self, ide, gud, amds):
+        ide.return_value = True
         user_direct = ['USER TEST TEST',
                        'MDISK 100 3390',
                        'MDISK 200 3390']
@@ -290,7 +296,9 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         amds.assert_called_once_with('userid', [], '0201')
 
     @mock.patch.object(vmops.get_vmops()._smutclient, 'remove_mdisks')
-    def test_delete_disks(self, rmd):
+    @mock.patch('zvmsdk.utils._is_guest_exist')
+    def test_delete_disks(self, ide, rmd):
+        ide.return_value = True
         self.vmops.delete_disks('userid', ['101', '102'])
         rmd.assert_called_once_with('userid', ['101', '102'])
 
