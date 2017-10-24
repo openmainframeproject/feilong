@@ -47,7 +47,9 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
 
     @mock.patch.object(networkops.get_networkops()._smutclient,
                        'couple_nic_to_vswitch')
-    def test_couple_nic_to_vswitch(self, couple_nic_to_vswitch):
+    @mock.patch('zvmsdk.utils._is_guest_exist')
+    def test_couple_nic_to_vswitch(self, ige, couple_nic_to_vswitch):
+        ige.return_value = True
         self.networkops.couple_nic_to_vswitch("fake_userid", "nic_vdev",
                                               "fake_VS_name",
                                               True)
@@ -58,7 +60,9 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
 
     @mock.patch.object(networkops.get_networkops()._smutclient,
                        'uncouple_nic_from_vswitch')
-    def test_uncouple_nic_from_vswitch(self, uncouple_nic_from_vswitch):
+    @mock.patch('zvmsdk.utils._is_guest_exist')
+    def test_uncouple_nic_from_vswitch(self, ige, uncouple_nic_from_vswitch):
+        ige.return_value = True
         self.networkops.uncouple_nic_from_vswitch("fake_userid",
                                                   "nic_vdev",
                                                   True)
