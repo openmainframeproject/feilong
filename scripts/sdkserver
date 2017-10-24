@@ -52,20 +52,24 @@ class SDKServer(object):
                                          CONF.sdkserver.request_queue_size)
 
     def log_error(self, msg):
-        msg = "ERROR: " + msg
+        thread = threading.current_thread().name
+        msg = ("ERROR: [%s] %s" % (thread, msg))
         syslog.syslog(syslog.LOG_ERR, msg)
 
     def log_info(self, msg):
-        msg = "INFO: " + msg
+        thread = threading.current_thread().name
+        msg = ("INFO: [%s] %s" % (thread, msg))
         syslog.syslog(syslog.LOG_INFO, msg)
 
     def log_warn(self, msg):
-        msg = "WARNING: " + msg
+        thread = threading.current_thread().name
+        msg = ("WARNING: [%s] %s" % (thread, msg))
         syslog.syslog(syslog.LOG_WARNING, msg)
 
     def log_debug(self, msg):
         if CONF.sdkserver.debug.lower() == "true":
-            msg = "DEBUG: " + msg
+            thread = threading.current_thread().name
+            msg = ("DEBUG: [%s] %s" % (thread, msg))
             syslog.syslog(syslog.LOG_DEBUG, msg)
 
     def construct_internal_error(self, msg):
@@ -88,7 +92,7 @@ class SDKServer(object):
                         'output': ''})
         return results
 
-    def send_results(self, client, results):
+    def send_results(self, client, addr, results):
         """ send back results to client in the json format of:
         {'overallRC': x, 'modID': x, 'rc': x, 'rs': x, 'errmsg': 'msg',
          'output': 'out'}
@@ -104,15 +108,16 @@ class SDKServer(object):
                 break
             sent += this_sent
         if got_error or sent != total_len:
-            self.log_error("Failed to send back clients the results: %s" %
-                      json_results)
+            self.log_error("(%s:%s) Failed to send back results to client, "
+                           "results: %s" % (addr[0], addr[1], json_results))
         else:
-            self.log_debug("Results sent back to client successfully.")
+            self.log_debug("(%s:%s) Results sent back to client successfully."
+                           % (addr[0], addr[1]))
 
-    def serve_API(self, client):
+    def serve_API(self, client, addr):
         """ Read client request and call target SDK API"""
-        self.log_debug("[%s] Handling new request." %
-                       threading.current_thread().name)
+        self.log_debug("(%s:%s) Handling new request from client." %
+                       (addr[0], addr[1]))
         results = None
         try:
             data = client.recv(4096)
@@ -121,39 +126,44 @@ class SDKServer(object):
             # In such case, server would not send back any info and just
             # terminate this thread.
             if not data:
-                self.log_warn("Failed to receive data from client.")
+                self.log_warn("(%s:%s) Failed to receive data from client." %
+                              (addr[0], addr[1]))
                 return
             api_data = json.loads(data)
 
             # API_data should be in the form [funcname, args_list, kwargs_dict]
             if not isinstance(api_data, list) or len(api_data) != 3:
-                msg = "SDK server got wrong input: %s" % data
+                msg = ("(%s,%s) SDK server got wrong input: '%s' from client."
+                       % (addr[0], addr[1], data))
                 results = self.construct_internal_error(msg)
                 return
 
             # Check called API is supported by SDK
             (func_name, api_args, api_kwargs) = api_data
-            self.log_debug("func: %s, args: %s, kwargs: %s" % (func_name,
-                                                              str(api_args),
-                                                              str(api_kwargs)))
+            self.log_debug("(%s,%s) Request func: %s, args: %s, kwargs: %s" %
+                           (addr[0], addr[1], func_name, str(api_args),
+                            str(api_kwargs)))
             try:
                 api_func = getattr(self.sdkapi, func_name)
             except AttributeError:
-                msg = "SDK server got wrong API name: %s." % func_name
+                msg = ("(%s,%s) SDK server got wrong API name: %s from"
+                       "client." % (addr[0], addr[1], func_name))
                 results = self.construct_api_name_error(msg)
                 return
 
             # invoke target API function
             return_data = api_func(*api_args, **api_kwargs)
         except exception.SDKBaseException as e:
-            LOG.error("%s", traceback.format_exc())
+            LOG.error("(%s,%s) %s", (addr[0], addr[1],
+                                      traceback.format_exc()))
             # get the error info from exception attribute
             # All SDKbaseexception should eventually has a
             # results attribute defined which can be used by
             # sdkserver here
             if e.results is None:
-                msg = ("SDK server got exception without results defined: "
-                       "%s" % e.format_message())
+                msg = ("(%s,%s) SDK server got exception without results "
+                       "defined, error: %s" % (addr[0], addr[1],
+                                               e.format_message()))
                 results = self.construct_internal_error(msg)
             else:
                 results = {'overallRC': e.results['overallRC'],
@@ -163,9 +173,10 @@ class SDKServer(object):
                            'errmsg': e.format_message(),
                            'output': ''}
         except Exception as e:
-            LOG.error("%s", traceback.format_exc())
-            msg = ("SDK server got unexpected exception: "
-                   "%s" % repr(e))
+            LOG.error("(%s,%s) %s", (addr[0], addr[1],
+                                      traceback.format_exc()))
+            msg = ("(%s,%s) SDK server got unexpected exception: "
+                   "%s" % (addr[0], addr[1], repr(e)))
             results = self.construct_internal_error(msg)
         else:
             if not return_data:
@@ -178,15 +189,18 @@ class SDKServer(object):
             # Send back the final results
             try:
                 if results is not None:
-                    self.send_results(client, results)
+                    self.send_results(client, addr, results)
             except Exception as e:
                 # This should not happen in normal case.
                 # A special case is the server side socket is closed/removed
                 # before the send() action.
-                LOG.error("%s", traceback.format_exc())
+                LOG.error("(%s,%s) %s", (addr[0], addr[1],
+                                          traceback.format_exc()))
             finally:
                 # Close the connection to make sure the thread socket got
                 # closed even when it got unexpected exceptions.
+                self.log_debug("(%s:%s) Finish handling request, closing "
+                               "socket." % (addr[0], addr[1]))
                 client.close()
 
     def worker_loop(self):
@@ -196,18 +210,17 @@ class SDKServer(object):
             try:
                 # This get() function raise Empty exception when there's no
                 # available item in queue
-                client_socket = self.request_queue.get(block=False)
+                clt_socket, clt_addr = self.request_queue.get(block=False)
             except Queue.Empty:
-                self.log_debug("No more item in request queue, worker %s exit "
-                               "now." % threading.current_thread().name)
+                self.log_debug("No more item in request queue, worker will "
+                               "exit now.")
                 break
             except Exception as err:
                 self.log_error("Failed to get request item from queue, error: "
-                               "%s. Worker %s exit now." %
-                               (repr(err), threading.current_thread().name))
+                               "%s. Worker will exit now." % repr(err))
                 break
             else:
-                self.serve_API(client_socket)
+                self.serve_API(clt_socket, clt_addr)
                 self.request_queue.task_done()
 
     def setup(self):
@@ -224,6 +237,7 @@ class SDKServer(object):
         host = CONF.sdkserver.bind_addr
         port = CONF.sdkserver.bind_port
         try:
+            server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             server_sock.bind((host, port))
         except socket.error as msg:
             self.log_error("Failed to bind to (%s, %d), reason: %s" %
@@ -240,10 +254,11 @@ class SDKServer(object):
         while True:
             # Wait client connection
             conn, addr = self.server_socket.accept()
-            self.log_debug("Connected with %s:%s" % (addr[0], addr[1]))
+            self.log_debug("(%s:%s) Client connected: " % (addr[0],
+                                                           addr[1]))
             # This put() function would be blocked here until there's
             # a slot in the queue
-            self.request_queue.put(conn)
+            self.request_queue.put((conn, addr))
             thread_count = threading.active_count()
             if thread_count <= CONF.sdkserver.max_worker_count:
                 thread = threading.Thread(target=self.worker_loop)
