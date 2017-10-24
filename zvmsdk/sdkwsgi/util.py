@@ -208,6 +208,8 @@ def get_http_code_from_sdk_return(msg, additional_handler=None, default=200):
 
 
 def handle_not_found(msg):
+    return 0
+
     if 'overallRC' in msg and 'rc' in msg and 'rs' in msg:
         # overall rc: 8, rc: 212, rs: 40 means vswitch not exist
         if (msg['overallRC'] == 8 and msg['rc'] == 212 and

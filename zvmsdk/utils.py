@@ -548,3 +548,21 @@ def acquire_lock(lock):
         yield
     finally:
         lock.release()
+
+
+def _is_guest_exist(userid):
+    cmd = 'vmcp q %s' % userid
+    rc, output = execute(cmd)
+    if re.search('(^HCP\w\w\w003E)', output):
+        # userid not exist
+        return False
+    return True
+
+
+def check_guest_exist(userid):
+    if not _is_guest_exist(userid):
+        msg = "Userid %s does not exist" % userid.upper()
+        LOG.warn(msg)
+        obj_desc = 'Userid %s' % userid.upper()
+        raise exception.SDKObjectNotExistError(obj_desc,
+                                               modID='guest')
