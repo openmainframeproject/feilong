@@ -154,7 +154,7 @@ class SDKServer(object):
             # invoke target API function
             return_data = api_func(*api_args, **api_kwargs)
         except exception.SDKBaseException as e:
-            LOG.error("(%s:%s) %s", (addr[0], addr[1],
+            LOG.error("(%s:%s) %s" % (addr[0], addr[1],
                                       traceback.format_exc()))
             # get the error info from exception attribute
             # All SDKbaseexception should eventually has a
@@ -173,7 +173,7 @@ class SDKServer(object):
                            'errmsg': e.format_message(),
                            'output': ''}
         except Exception as e:
-            LOG.error("(%s:%s) %s", (addr[0], addr[1],
+            LOG.error("(%s:%s) %s" % (addr[0], addr[1],
                                       traceback.format_exc()))
             msg = ("(%s:%s) SDK server got unexpected exception: "
                    "%s" % (addr[0], addr[1], repr(e)))
@@ -254,7 +254,7 @@ class SDKServer(object):
         while True:
             # Wait client connection
             conn, addr = self.server_socket.accept()
-            self.log_debug("(%s:%s) Client connected: " % (addr[0],
+            self.log_debug("(%s:%s) Client connected." % (addr[0],
                                                            addr[1]))
             # This put() function would be blocked here until there's
             # a slot in the queue
