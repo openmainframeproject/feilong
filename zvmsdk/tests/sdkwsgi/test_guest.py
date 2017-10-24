@@ -234,7 +234,7 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_reset('notexist')
         self.assertEqual(404, resp.status_code)
 
-        # FIXME: make 200 to 404 later
+        # following 200 is expected
         resp = self._guest_cpuinfo('notexist')
         self.assertEqual(200, resp.status_code)
 
@@ -289,9 +289,11 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             self._vswitch_create()
 
-            self._vswitch_couple()
+            resp = self._vswitch_couple()
+            self.assertEqual(200, resp.status_code)
 
-            self._vswitch_uncouple()
+            resp = self._vswitch_uncouple()
+            self.assertEqual(200, resp.status_code)
 
             self._guest_nic_delete()
 
@@ -374,21 +376,41 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        method='DELETE')
         self.assertEqual(204, resp.status_code)
 
-    def _vswitch_couple(self):
-        body = '{"info": {"couple": "True", "vswitch": "RESTVSW1"}}'
-        url = '/guests/%s/nic/2000' % self.userid
-        resp = self.client.api_request(url=url,
-                                       method='PUT',
-                                       body=body)
-        self.assertEqual(200, resp.status_code)
+    def _vswitch_couple(self, vswitch=None, userid=None):
+        body = '{"info": {"couple": "True", "vswitch": "%s"}}' % vswitch
+        if not userid:
+            userid = self.userid
 
-    def _vswitch_uncouple(self):
-        body = '{"info": {"couple": "False"}}'
-        url = '/guests/%s/nic/2000' % self.userid
+        if not vswitch:
+            vswitch = "RESTVSW1"
+
+        url = '/guests/%s/nic/2000' % userid
         resp = self.client.api_request(url=url,
                                        method='PUT',
                                        body=body)
-        self.assertEqual(200, resp.status_code)
+        return resp
+
+    def _vswitch_uncouple(self, userid=None):
+        body = '{"info": {"couple": "False"}}'
+        if not userid:
+            userid = self.userid
+
+        url = '/guests/%s/nic/2000' % userid
+        resp = self.client.api_request(url=url,
+                                       method='PUT',
+                                       body=body)
+        return resp
+
+    def test_guest_vswitch_couple_uncouple_not_exist(self):
+        resp = self._vswitch_couple(userid="notexist")
+        self.assertEqual(404, resp.status_code)
+
+        # vswitch = "notexist"
+        resp = self._vswitch_couple(vswitch="NOTEXIST")
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._vswitch_uncouple(userid="notexist")
+        self.assertEqual(404, resp.status_code)
 
     def test_guest_vswitch_couple_uncouple(self):
         resp = self._guest_create()
@@ -399,9 +421,11 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             self._vswitch_create()
 
-            self._vswitch_couple()
+            resp = self._vswitch_couple()
+            self.assertEqual(200, resp.status_code)
 
-            self._vswitch_uncouple()
+            resp = self._vswitch_uncouple()
+            self.assertEqual(200, resp.status_code)
 
             self._guest_nic_query()
 
