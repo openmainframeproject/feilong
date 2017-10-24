@@ -53,16 +53,18 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         return resp
 
-    def _guest_nic_create(self, vdev="1000"):
+    def _guest_nic_create(self, vdev="1000", userid=None):
         body = '{"nic": {"vdev": "%s"}}' % vdev
+        if userid is None:
+            userid = self.userid
 
-        url = '/guests/%s/nic' % self.userid
+        url = '/guests/%s/nic' % userid
         resp = self.client.api_request(url=url,
                                        method='POST',
                                        body=body)
-        self.assertEqual(200, resp.status_code)
+        return resp
 
-    def _guest_create_network_interface(self):
+    def _guest_create_network_interface(self, userid=None):
         body = """{"interface": {"os_version": "rhel6",
                                  "guest_networks":
                                     [{"ip_addr": "192.168.98.123",
@@ -71,51 +73,64 @@ class GuestHandlerTestCase(unittest.TestCase):
                                      "cidr": "192.168.98.0/24",
                                      "nic_vdev": "1000",
                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
-        url = '/guests/%s/interface' % self.userid
+        if userid is None:
+            userid = self.userid
+        url = '/guests/%s/interface' % userid
         resp = self.client.api_request(url=url,
                                        method='POST',
                                        body=body)
-        self.assertEqual(200, resp.status_code)
+        return resp
 
-    def _guest_nic_delete(self, vdev="1000"):
+    def _guest_nic_delete(self, vdev="1000", userid=None):
         body = '{"nic": {}}'
-        url = '/guests/%s/nic/%s' % (self.userid, vdev)
+        if userid is None:
+            userid = self.userid
+
+        url = '/guests/%s/nic/%s' % (userid, vdev)
         resp = self.client.api_request(url=url,
                                        method='DELETE',
                                        body=body)
-        self.assertEqual(204, resp.status_code)
-
-    def _guest_nic_query(self):
-        url = '/guests/%s/nic' % self.userid
-        resp = self.client.api_request(url=url,
-                                       method='GET')
-        self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_guest_get_nic', resp.content)
         return resp
 
-    def _guest_disks_create(self):
+    def _guest_nic_query(self, userid=None):
+        if userid is None:
+            userid = self.userid
+
+        url = '/guests/%s/nic' % userid
+        resp = self.client.api_request(url=url,
+                                       method='GET')
+        return resp
+
+    def _guest_disks_create(self, userid=None):
+        if userid is None:
+            userid = self.userid
+
         body = """{"disk_info": {"disk_list":
                                     [{"size": "1g",
                                       "disk_pool": "ECKD:xcateckd"}]}}"""
-        url = '/guests/%s/disks' % self.userid
+        url = '/guests/%s/disks' % userid
 
         resp = self.client.api_request(url=url,
                                        method='POST',
                                        body=body)
-        self.assertEqual(200, resp.status_code)
+        return resp
 
-    def _guest_disks_delete(self):
+    def _guest_disks_delete(self, userid=None):
+        if userid is None:
+            userid = self.userid
+
         body = """{"vdev_info": {"vdev_list": ["0101"]}}"""
-        url = '/guests/%s/disks' % self.userid
+        url = '/guests/%s/disks' % userid
 
         resp = self.client.api_request(url=url,
                                        method='DELETE',
                                        body=body)
-        self.assertEqual(204, resp.status_code)
+        return resp
 
     def _guest_get(self, userid=None):
         if userid is None:
             userid = self.userid
+
         url = '/guests/%s' % userid
         resp = self.client.api_request(url=url,
                                        method='GET')
@@ -124,6 +139,7 @@ class GuestHandlerTestCase(unittest.TestCase):
     def _guest_get_info(self, userid=None):
         if userid is None:
             userid = self.userid
+
         url = '/guests/%s/info' % userid
         resp = self.client.api_request(url=url,
                                        method='GET')
@@ -234,6 +250,24 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_reset('notexist')
         self.assertEqual(404, resp.status_code)
 
+        resp = self._guest_nic_create(userid='notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_create_network_interface(userid='notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_nic_query(userid='notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_nic_delete(userid='notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_disks_create(userid='notexist')
+        self.assertEqual(404, resp.status_code)
+
+        resp = self._guest_disks_delete(userid='notexist')
+        self.assertEqual(404, resp.status_code)
+
         # following 200 is expected
         resp = self._guest_cpuinfo('notexist')
         self.assertEqual(200, resp.status_code)
@@ -255,7 +289,8 @@ class GuestHandlerTestCase(unittest.TestCase):
             resp = self._guest_deploy()
             self.assertEqual(200, resp.status_code)
 
-            self._guest_nic_create()
+            resp = self._guest_nic_create()
+            self.assertEqual(200, resp.status_code)
 
             resp = self._guest_get()
             self.assertEqual(200, resp.status_code)
@@ -285,7 +320,8 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.apibase.verify_result('test_guests_get_vnics_info',
                                        resp.content)
 
-            self._guest_nic_create("2000")
+            resp = self._guest_nic_create("2000")
+            self.assertEqual(200, resp.status_code)
 
             self._vswitch_create()
 
@@ -295,7 +331,8 @@ class GuestHandlerTestCase(unittest.TestCase):
             resp = self._vswitch_uncouple()
             self.assertEqual(200, resp.status_code)
 
-            self._guest_nic_delete()
+            resp = self._guest_nic_delete()
+            self.assertEqual(204, resp.status_code)
 
             resp = self._guest_stop()
             self.assertEqual(200, resp.status_code)
@@ -330,15 +367,21 @@ class GuestHandlerTestCase(unittest.TestCase):
         time.sleep(15)
 
         try:
-            self._guest_deploy()
-            self._guest_nic_create()
+            resp = self._guest_deploy()
+            self.assertEqual(200, resp.status_code)
+
+            resp = self._guest_nic_create()
+            self.assertEqual(200, resp.status_code)
             # create new disks
-            self._guest_disks_create()
+            resp = self._guest_disks_create()
+            self.assertEqual(200, resp.status_code)
             resp_create = self._guest_get()
             self.assertEqual(200, resp_create.status_code)
 
             # delete new disks
-            self._guest_disks_delete()
+            resp = self._guest_disks_delete()
+            self.assertEqual(204, resp.status_code)
+
             resp_delete = self._guest_get()
             self.assertEqual(200, resp_delete.status_code)
 
@@ -358,7 +401,9 @@ class GuestHandlerTestCase(unittest.TestCase):
             resp = self._guest_deploy()
             self.assertEqual(200, resp.status_code)
 
-            self._guest_create_network_interface()
+            resp = self._guest_create_network_interface()
+            self.assertEqual(200, resp.status_code)
+
         except Exception as e:
             raise e
         finally:
@@ -417,7 +462,8 @@ class GuestHandlerTestCase(unittest.TestCase):
         self.assertEqual(200, resp.status_code)
 
         try:
-            self._guest_nic_create("2000")
+            resp = self._guest_nic_create("2000")
+            self.assertEqual(200, resp.status_code)
 
             self._vswitch_create()
 
@@ -427,9 +473,12 @@ class GuestHandlerTestCase(unittest.TestCase):
             resp = self._vswitch_uncouple()
             self.assertEqual(200, resp.status_code)
 
-            self._guest_nic_query()
+            resp = self._guest_nic_query()
+            self.assertEqual(200, resp.status_code)
+            self.apibase.verify_result('test_guest_get_nic', resp.content)
 
-            self._guest_nic_delete()
+            resp = self._guest_nic_delete()
+            self.assertEqual(204, resp.status_code)
 
         except Exception as e:
             raise e
