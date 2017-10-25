@@ -66,6 +66,8 @@ def validate(function):
             LOG.debug('no X-Auth-Token given in reqeust header')
             raise exception.ZVMUnauthorized()
 
+        LOG.debug('has X-Auth-Token given in reqeust header')
+
         try:
             jwt.decode(req.headers['X-Auth-Token'], CONF.wsgi.password)
         except jwt.ExpiredSignatureError:
