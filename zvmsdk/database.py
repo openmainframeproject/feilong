@@ -224,6 +224,31 @@ class NetworkDbOperator(object):
             switch_info = result.fetchall()
         return switch_info
 
+    def switch_select_record(self, userid=None, nic_id=None, vswitch=None):
+        if ((userid is None) and
+            (nic_id is None) and
+            (vswitch is None)):
+            return self.switch_select_table()
+
+        sql_cmd = "SELECT * FROM switch WHERE"
+        sql_var = []
+        if userid is not None:
+            sql_cmd += " userid=? and"
+            sql_var.append(userid.upper())
+        if nic_id is not None:
+            sql_cmd += " port=? and"
+            sql_var.append(nic_id)
+        if vswitch is not None:
+            sql_cmd += " switch=?"
+            sql_var.append(vswitch)
+
+        # remove the tailing ' and'
+        sql_cmd = sql_cmd.strip(' and')
+
+        with get_network_conn() as conn:
+            result = conn.execute(sql_cmd, sql_var)
+            return result.fetchall()
+
 
 class VolumeDbOperator(object):
 
