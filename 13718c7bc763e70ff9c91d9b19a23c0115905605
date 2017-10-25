@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5bfe7c3b_30d5ed75",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-10-25T09:24:37Z",
+      "side": 1,
+      "message": "please make this as a common function.....",
+      "range": {
+        "startLine": 174,
+        "startChar": 8,
+        "endLine": 179,
+        "endChar": 65
+      },
+      "revId": "13718c7bc763e70ff9c91d9b19a23c0115905605",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
