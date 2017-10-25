@@ -62,7 +62,8 @@ class SDKClient(object):
             return socketConnection(ip_addr or '127.0.0.1', port or 2000,
                                     timeout)
         else:
-            return
+            return restConnection(ip_addr or '127.0.0.1', port or 2000,
+                                    timeout)
 
     def send_request(self, api_name, *api_args, **api_kwargs):
         """Refer to SDK API documentation.
