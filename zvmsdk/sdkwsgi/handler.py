@@ -96,6 +96,7 @@ ROUTE_LIST = (
     }),
     ('/token', {
         'POST': tokens.create,
+        'GET': tokens.get,
     }),
     ('/vswitchs', {
         'GET': vswitch.vswitch_list,

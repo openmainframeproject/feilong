@@ -51,6 +51,27 @@ def create(req):
     return req.response
 
 
+def get(req):
+    if not 'token' in req.GET:
+        req.response.status = 401
+        return req.response
+
+    req.response.status = 200
+    try:
+        jwt.decode(req.headers['X-Auth-Token'], CONF.wsgi.password)
+    except jwt.ExpiredSignatureError:
+        LOG.debug('token validation failed because it is expired')
+        req.response.status = 401
+    except jwt.DecodeError:
+        LOG.debug('token not valid')
+        req.response.status = 401
+    except Exception:
+        LOG.debug('unknown exception occur during token validation')
+        req.response.status = 401
+
+    return req.response
+
+
 # To validate the token, it is possible the token is expired or the
 # token is not validated at all
 def validate(function):
