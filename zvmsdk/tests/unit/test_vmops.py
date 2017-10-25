@@ -48,19 +48,51 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertEqual(ret, True)
 
     @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_start')
-    def test_guest_start(self, guest_start):
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
+    def test_guest_start(self, ige, guest_start):
+        ige.return_value = True
         self.vmops.guest_start('cbi00063')
         guest_start.assert_called_once_with('cbi00063')
 
+    @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_start')
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
+    def test_guest_start_guest_not_exist(self, ige, guest_start):
+        ige.return_value = False
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.vmops.guest_start, 'fakeid')
+        ige.assert_called_with('fakeid')
+
     @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_pause')
-    def test_guest_pause(self, guest_pause):
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
+    def test_guest_pause(self, ige, guest_pause):
+        ige.return_value = True
         self.vmops.guest_pause('cbi00063')
+        ige.assert_called_once_with('cbi00063')
         guest_pause.assert_called_once_with('cbi00063')
 
+    @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_pause')
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
+    def test_guest_pause_guest_not_exist(self, ige, guest_pause):
+        ige.return_value = False
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.vmops.guest_pause, 'fakeid')
+        ige.assert_called_with('fakeid')
+
     @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_unpause')
-    def test_guest_unpause(self, guest_unpause):
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
+    def test_guest_unpause(self, ige, guest_unpause):
+        ige.return_value = True
         self.vmops.guest_unpause('cbi00063')
+        ige.assert_called_once_with('cbi00063')
         guest_unpause.assert_called_once_with('cbi00063')
+
+    @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_unpause')
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
+    def test_guest_unpause_guest_not_exist(self, ige, guest_unpause):
+        ige.return_value = False
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.vmops.guest_unpause, 'fakeid')
+        ige.assert_called_with('fakeid')
 
     @mock.patch.object(vmops.get_vmops()._smutclient, 'create_vm')
     def test_create_vm(self, create_vm):
@@ -155,12 +187,26 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                           self.vmops.get_info, 'fakeid')
 
     @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_deploy')
-    def test_guest_deploy(self, deploy_image_to_vm):
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
+    def test_guest_deploy(self, ige, deploy_image_to_vm):
+        ige.return_value = True
         self.vmops.guest_deploy('fakevm', 'fakeimg',
                                 '/test/transport.tgz')
+        ige.assert_called_with('fakevm')
         deploy_image_to_vm.assert_called_with('fakevm', 'fakeimg',
                                               '/test/transport.tgz', None,
                                               None)
+
+    @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_deploy')
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
+    def test_guest_deploy_guest_not_exist(self, ige, deploy_image_to_vm):
+        ige.return_value = False
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.vmops.guest_deploy,
+                          'fakevm', 'fakeimg',
+                          '/test/transport.tgz')
+        ige.assert_called_with('fakevm')
+        deploy_image_to_vm.assert_not_called()
 
     @mock.patch.object(vmops.get_vmops()._smutclient, 'get_user_direct')
     def test_get_definition_info(self, get_user_direct):
@@ -185,9 +231,12 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         execute_cmd.assert_called_once_with(userid, cmdStr)
 
     @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_stop')
-    def test_guest_stop(self, gs):
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
+    def test_guest_stop(self, ige, gs):
+        ige.return_value = True
         userid = 'userid'
         self.vmops.guest_stop(userid, 0, 10)
+        ige.assert_called_once_with(userid)
         gs.assert_called_once_with(userid)
 
     @mock.patch.object(vmops.get_vmops()._smutclient, 'get_power_state')
@@ -244,3 +293,35 @@ class SDKVMOpsTestCase(base.SDKTestCase):
     def test_delete_disks(self, rmd):
         self.vmops.delete_disks('userid', ['101', '102'])
         rmd.assert_called_once_with('userid', ['101', '102'])
+
+    @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_reboot')
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
+    def test_guest_reboot(self, ige, guest_reboot):
+        ige.return_value = True
+        self.vmops.guest_reboot('cbi00063')
+        ige.assert_called_once_with('cbi00063')
+        guest_reboot.assert_called_once_with('cbi00063')
+
+    @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_reboot')
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
+    def test_guest_reboot_guest_not_exist(self, ige, guest_reboot):
+        ige.return_value = False
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.vmops.guest_reboot, 'fakeid')
+        ige.assert_called_with('fakeid')
+
+    @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_reset')
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
+    def test_guest_reset(self, ige, guest_reset):
+        ige.return_value = True
+        self.vmops.guest_reset('cbi00063')
+        ige.assert_called_once_with('cbi00063')
+        guest_reset.assert_called_once_with('cbi00063')
+
+    @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_reset')
+    @mock.patch('zvmsdk.vmops.VMOps.is_guest_exist')
+    def test_guest_reset_guest_not_exist(self, ige, guest_reset):
+        ige.return_value = False
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.vmops.guest_reset, 'fakeid')
+        ige.assert_called_with('fakeid')

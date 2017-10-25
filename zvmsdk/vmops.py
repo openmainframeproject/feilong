@@ -119,9 +119,21 @@ class VMOps(object):
 
     def guest_start(self, userid):
         """"Power on z/VM instance."""
+        if not self.is_guest_exist(userid):
+            msg = "Userid %s does not exist" % userid.upper()
+            LOG.warn(msg)
+            obj_desc = 'Userid %s' % userid.upper()
+            raise exception.SDKObjectNotExistError(obj_desc,
+                                                   modID='guest')
         self._smutclient.guest_start(userid)
 
     def guest_stop(self, userid, timeout, retry_interval):
+        if not self.is_guest_exist(userid):
+            msg = "Userid %s does not exist" % userid.upper()
+            LOG.warn(msg)
+            obj_desc = 'Userid %s' % userid.upper()
+            raise exception.SDKObjectNotExistError(obj_desc,
+                                                   modID='guest')
         self._smutclient.guest_stop(userid)
 
         # retry shutdown until timeout
@@ -140,17 +152,41 @@ class VMOps(object):
                          "seconds" % {'userid': userid, 'time': timeout})
 
     def guest_pause(self, userid):
+        if not self.is_guest_exist(userid):
+            msg = "Userid %s does not exist" % userid.upper()
+            LOG.warn(msg)
+            obj_desc = 'Userid %s' % userid.upper()
+            raise exception.SDKObjectNotExistError(obj_desc,
+                                                   modID='guest')
         self._smutclient.guest_pause(userid)
 
     def guest_unpause(self, userid):
+        if not self.is_guest_exist(userid):
+            msg = "Userid %s does not exist" % userid.upper()
+            LOG.warn(msg)
+            obj_desc = 'Userid %s' % userid.upper()
+            raise exception.SDKObjectNotExistError(obj_desc,
+                                                   modID='guest')
         self._smutclient.guest_unpause(userid)
 
     def guest_reboot(self, userid):
         """Reboot a guest vm."""
+        if not self.is_guest_exist(userid):
+            msg = "Userid %s does not exist" % userid.upper()
+            LOG.warn(msg)
+            obj_desc = 'Userid %s' % userid.upper()
+            raise exception.SDKObjectNotExistError(obj_desc,
+                                                   modID='guest')
         self._smutclient.guest_reboot(userid)
 
     def guest_reset(self, userid):
         """Reset z/VM instance."""
+        if not self.is_guest_exist(userid):
+            msg = "Userid %s does not exist" % userid.upper()
+            LOG.warn(msg)
+            obj_desc = 'Userid %s' % userid.upper()
+            raise exception.SDKObjectNotExistError(obj_desc,
+                                                   modID='guest')
         self._smutclient.guest_reset(userid)
 
     def create_vm(self, userid, cpu, memory, disk_list=[],
@@ -203,6 +239,12 @@ class VMOps(object):
 
     def guest_deploy(self, user_id, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
+        if not self.is_guest_exist(user_id):
+            msg = "Userid %s does not exist" % user_id.upper()
+            LOG.warn(msg)
+            obj_desc = 'Userid %s' % user_id.upper()
+            raise exception.SDKObjectNotExistError(obj_desc,
+                                                   modID='guest')
         LOG.debug("Begin to deploy image on vm %s", user_id)
         self._smutclient.guest_deploy(user_id, image_name,
                                       transportfiles, remotehost, vdev)
