@@ -311,18 +311,24 @@ get this token will not be authorized all the time, a new
 token need to be recreated after certain time period.
 ''',
         ),
-    Opt('wsgi_user',
+    Opt('user',
         section='wsgi',
         opt_type='str',
         help='''
-user name to access sdk http server.
+Admin user to access sdk http server.
+
+User in order to get a token from zvm sdk, and the token
+will be used to validate request before token expire.
 '''
         ),
-    Opt('wsgi_password',
+    Opt('password',
         section='wsgi',
         opt_type='str',
         help='''
-password to access sdk http server.
+Admin password to access sdk http server.
+
+Password in order to get a token from zvm sdk, and the token
+will be used to validate request before token expire.
 '''
         ),
     # Daemon server options
