@@ -200,21 +200,21 @@ class PathUtils(object):
     def _get_guest_temp_path(self):
         return os.path.normpath(CONF.guest.temp_path)
 
-    def _mkdir_if_not_exist(self, folder):
+    def mkdir_if_not_exist(self, folder):
         if not os.path.exists(folder):
             LOG.debug("Creating the guest path %s", folder)
             os.makedirs(folder)
 
     def get_guest_temp_path(self, userid, module):
         guest_folder = os.path.join(self._get_guest_temp_path(), userid)
-        self._mkdir_if_not_exist(guest_folder)
+        self.mkdir_if_not_exist(guest_folder)
         tmp_inst_dir = tempfile.mkdtemp(prefix=module,
                                         dir=guest_folder)
         return tmp_inst_dir
 
     def get_guest_path(self, userid, sub_dir):
         guest_folder = os.path.join(self._get_guest_path(), userid)
-        self._mkdir_if_not_exist(guest_folder)
+        self.mkdir_if_not_exist(guest_folder)
         return guest_folder
 
     def get_console_log_path(self, userid):

@@ -22,6 +22,7 @@ import os
 import re
 import shutil
 import six
+import string
 import tempfile
 
 
@@ -255,14 +256,21 @@ class SMUTClient(object):
         return status
 
     def guest_start(self, userid):
-        """"Power on VM."""
+        """Power on VM."""
         requestData = "PowerVM " + userid + " on"
         with zvmutils.log_and_reraise_smut_request_failed():
             self._request(requestData)
 
     def guest_stop(self, userid):
-        """"Power off VM."""
+        """Power off VM."""
         requestData = "PowerVM " + userid + " off"
+        with zvmutils.log_and_reraise_smut_request_failed():
+            self._request(requestData)
+
+    def guest_softstop(self, userid):
+        """Power off VM gracefully, it will call shutdown then
+            deactivate it"""
+        requestData = "PowerVM" + userid + "softoff"
         with zvmutils.log_and_reraise_smut_request_failed():
             self._request(requestData)
 
@@ -439,6 +447,202 @@ class SMUTClient(object):
             finally:
                 # remove the local temp config drive folder
                 self._pathutils.clean_temp_folder(tmp_trans_dir)
+
+    def guest_capture(self, userid, image_name, capture_type='netboot',
+                      compress_level=6):
+        # Get the vm status
+        power_state = self.get_power_state(userid)
+        # Power on the vm if it is inactive
+        if power_state == 'off':
+            self.guest_start(userid)
+
+        # Make sure the iucv channel is ready for communication on source vm
+        try:
+            self.execute_cmd(userid, 'date')
+        except exception.SDKSMUTRequestFailed as err:
+            msg = ('Failed to check iucv status on capture source vm '
+                   '%(vm)s with error %(err)s' % {'vm': userid,
+                                        'err': err.results['response'][0]})
+            LOG.error(msg)
+            raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                   msg=msg)
+        # Get the os version of the vm
+        try:
+            os_version = self._guest_get_os_version(userid)
+        except exception.SDKSMUTRequestFailed as err:
+            msg = ('Failed to get the os version on capture source vm '
+                   '%(vm)s with error %(err)s' % {'vm': userid,
+                                        'err': err.results['response'][0]})
+            LOG.error(msg)
+        except Exception as err:
+            msg = ('Error happened when parsing os version on source vm '
+                   '%(vm)s with error: %(err)s' % {'vm': userid,
+                                                  'err': six.text_type(err)})
+            LOG.error(msg)
+        finally:
+            raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                   msg=msg)
+        print 'os_version is %s' % os_version
+
+        # Find the root device according to the capture type
+        try:
+            capture_devices = self._get_capture_devices(userid, capture_type)
+        except exception.SDKSMUTRequestFailed as err:
+            msg = ('Failed to get the devices for capture on source vm'
+                   '%(vm)s with error %(err)s' % {'vm': userid,
+                                        'err': err.results['response'][0]})
+            LOG.error(msg)
+            raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                   msg=msg)
+        except exception.SDKGuestOperationError:
+            raise
+        except Exception as err:
+            msg = ('Internal error happened when getting the devices for '
+                   'capture on source vm %(vm)s with error %(err)s' %
+                   {'vm': userid,
+                    'err': six.text_type(err)})
+            LOG.error(msg)
+            raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                   msg=msg)
+
+        # Shutdown the vm before capture
+        self.guest_softoff(userid)
+
+        # Prepare directory for writing image file
+        image_temp_dir = '/'.join([CONF.image.sdk_image_repository,
+                                   const.IMAGE_TYPE['CAPTURE'],
+                                   os_version,
+                                   image_name])
+        self._pathutils.mkdir_if_not_exist(image_temp_dir)
+
+        # Call creatediskimage to capture a vm to generate an image
+        # TODO:(nafei) to support multiple disk capture
+        vdev = capture_devices[0]
+        image_file_name = '.'.join((vdev, 'img'))
+        image_file_path = '/'.join((image_temp_dir, image_file_name))
+        cmd = ['/opt/zthin/bin/creatediskimage', userid, vdev,
+               image_file_path]
+        with zvmutils.expect_and_reraise_internal_error(modID='guest'):
+            (rc, output) = zvmutils.execute(cmd)
+        if rc != 0:
+            err_msg = ("creatediskimage failed with return code: %d." % rc)
+            err_output = ""
+            output_lines = output.split('\n')
+            for line in output_lines:
+                if line.__contains__("ERROR:"):
+                    err_output += ("\\n" + line.strip())
+            LOG.error(err_msg + err_output)
+            self._pathutils.clean_temp_folder(image_temp_dir)
+            raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                   msg=err_output)
+
+        # Move the generated image to netboot folder
+        image_final_dir = '/'.join([CONF.image.sdk_image_repository,
+                                    const.IMAGE_TYPE['DEPLOY'],
+                                    os_version,
+                                    image_name])
+        image_final_path = '/'.join((image_final_dir,
+                                      image_file_name))
+        self._pathutils.make_dir_if_not_exist(image_final_dir)
+        cmd = ['mv', image_file_path, image_final_path]
+        with zvmutils.expect_and_reraise_internal_error(modID='guest'):
+            (rc, output) = zvmutils.execute(cmd)
+            if rc != 0:
+                err_msg = ("move image file from staging to netboot "
+                           "folder failed with return code: %d." % rc)
+                LOG.error(err_msg)
+                raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                       err=err_msg)
+
+        # Get md5sum of image
+        real_md5sum = self._get_md5sum(image_final_path)
+        # Get disk_size_units of image
+        disk_size_units = self._get_disk_size_units(image_final_path)
+        # Get the image physical size
+        image_size = self._get_image_size(image_final_path)
+        # Create the image record in image database
+        self._ImageDbOperator.image_add_record(image_name, os_version,
+            real_md5sum, disk_size_units, image_size,
+            const.IMAGE_TYPE['DEPLOY'])
+        LOG.info("Image %s is import successfully" % image_name)
+
+    def _guest_get_os_version(self, userid):
+        os_version = ''
+        release_file = self.execute_cmd(userid, 'ls /etc/*-release')
+        if '/etc/os-release' in release_file:
+            # Get the release info in release file
+            release_info = self.execute_cmd(userid, 'cat /etc/os-release')
+            release_dict = {}
+            for item in release_info:
+                if item:
+                    release_dict[item.split('=')[0]] = item.split('=')[1]
+
+            os_version = ''.join((release_dict['ID'],
+                                  release_dict['VERSION_ID']))
+            return os_version
+
+        elif '/etc/redhat-release' in release_file:
+            # The output looks like:
+            # "Red Hat Enterprise Linux Server release 6.7 (Santiago)"
+            distro = 'rhel'
+            release_info = self.execute_cmd(userid, 'cat /etc/redhat-release')
+            distro_version = release_info[0].split()[6]
+            os_version = ''.join((distro, distro_version))
+            return os_version
+        elif '/etc/SuSE-release' in release_file:
+            # The output for this file looks like:
+            # SUSE Linux Enterprise Server 11 (s390x)
+            # VERSION = 11
+            # PATCHLEVEL = 3
+            distro = 'sles'
+            release_info = self.execute_cmd(userid, 'cat /etc/SuSE-release')
+            LOG.debug('OS release info is %s' % release_info)
+            release_version = '.'.join((release_info[1].split('=')[1].strip(),
+                                     release_info[2].split('=')[1].strip()))
+            os_version = ''.join((distro, release_version))
+            return os_version
+
+    def _get_capture_devices(self, userid, capture_type='netboot'):
+        capture_devices = []
+        if capture_type == 'netboot':
+            # Parse the /proc/cmdline to get root devices
+            proc_cmdline = self.execute_cmd(userid, 'cat /proc/cmdline '
+                            '| tr " " "\\n" | grep -a "^root=" | cut -c6-')
+            root_device_info = proc_cmdline[0].split()[0].split('=')[1]
+            if not root_device_info:
+                msg = ('Unable to get useful info from /proc/cmdline to '
+                      'locate the device associated with the root directory '
+                      'on capture source vm %s' % userid)
+                raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                       msg=msg)
+            else:
+                if 'UUID=' in root_device_info:
+                    uuid = root_device_info.split('=')[1].strip()
+                    root_device = ''.join(('/dev/disk/by-uuid', uuid))
+                elif 'LABEL=' in root_device_info:
+                    label = root_device_info.split('=')[1].strip()
+                    root_device = ''.join(('/dev/disk/by-label', label))
+                elif 'mapper' in root_device_info:
+                    msg = ('Capturing a disk with root filesystem on logical'
+                           ' volume is not supported')
+                    raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                           msg=msg)
+                else:
+                    root_device = root_device_info
+
+            root_device_node = self.execute_cmd(userid, 'readlink -f %s' %
+                                                root_device)[0]
+            # Get device node vdev by node name
+            cmd = ('cat /proc/dasd/devices | grep -i "is %s" ' %
+                    root_device_node.split('/')[-1].rstrip(string.digits))
+            result = self.execute_cmd(userid, cmd)[0]
+            root_device_vdev = result.split()[0][4:8]
+            capture_devices.append(root_device_vdev)
+            return capture_devices
+        else:
+            # For sysclone, parse the user directory entry to get the devices
+            # for capture, leave for future
+            pass
 
     def grant_user_to_vswitch(self, vswitch_name, userid):
         """Set vswitch to grant user."""
@@ -1028,7 +1232,8 @@ class SMUTClient(object):
     def execute_cmd(self, userid, cmdStr):
         """"cmdVM."""
         requestData = 'cmdVM ' + userid + ' CMD \'' + cmdStr + '\''
-        with zvmutils.log_and_reraise_smut_request_failed():
+        with zvmutils.log_and_reraise_smut_request_failed(action='execute '
+        'command on vm via iucv channel'):
             results = self._request(requestData)
 
         ret = results['response']
