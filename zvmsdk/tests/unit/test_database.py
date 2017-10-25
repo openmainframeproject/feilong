@@ -240,6 +240,52 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         expected = []
         self.assertEqual(expected, switch_record)
 
+    def test_switch_select_record(self):
+        list = [('id01', '1000', 'port_id01'),
+                ('id01', '2000', 'port_id02'),
+                ('id02', '1000', 'port_id02'),
+                ('id03', '1000', 'port_id03')]
+
+        # all record
+        record = [('ID01', '1000', 'switch01', 'port_id01', None),
+                  ('ID01', '2000', 'switch01', 'port_id02', None),
+                  ('ID02', '1000', 'switch02', 'port_id02', None),
+                  ('ID03', '1000', 'switch02', 'port_id03', None)]
+
+        # insert multiple records
+        for (userid, interface, port) in list:
+            self.db_op.switch_add_record_for_nic(userid, interface, port)
+
+        # update record with switch info
+        self.db_op.switch_update_record_with_switch('ID01', '1000', 'switch01')
+        self.db_op.switch_update_record_with_switch('ID01', '2000', 'switch01')
+        self.db_op.switch_update_record_with_switch('ID02', '1000', 'switch02')
+        self.db_op.switch_update_record_with_switch('ID03', '1000', 'switch02')
+
+        switch_record = self.db_op.switch_select_record()
+        self.assertEqual(record, switch_record)
+
+        switch_record = self.db_op.switch_select_record(userid='id01')
+        self.assertEqual([record[0], record[1]], switch_record)
+
+        switch_record = self.db_op.switch_select_record(nic_id='port_id02')
+        self.assertEqual([record[1], record[2]], switch_record)
+
+        switch_record = self.db_op.switch_select_record(vswitch='switch02')
+        self.assertEqual([record[2], record[3]], switch_record)
+
+        switch_record = self.db_op.switch_select_record(nic_id='port_id02',
+                                                        vswitch='switch02')
+        self.assertEqual([record[2]], switch_record)
+
+        # clean test switch
+        self.db_op.switch_delete_record_for_userid('id01')
+        self.db_op.switch_delete_record_for_userid('id02')
+        self.db_op.switch_delete_record_for_userid('id03')
+        switch_record = self.db_op.switch_select_table()
+        expected = []
+        self.assertEqual(expected, switch_record)
+
 
 class VolumeDbOperatorTestCase(base.SDKTestCase):
 
