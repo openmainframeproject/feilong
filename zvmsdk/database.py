@@ -537,6 +537,7 @@ class ImageDbOperator(object):
 
     def __init__(self):
         self._create_image_table()
+        self._module_id = 'image'
 
     def _create_image_table(self):
         create_image_table_sql = ' '.join((
@@ -580,6 +581,10 @@ class ImageDbOperator(object):
                 result = conn.execute("SELECT * FROM image WHERE "
                                       "imagename=?", (imagename,))
                 image_list = result.fetchall()
+                if not image_list:
+                    obj_desc = "Image with name: %s" % imagename
+                    raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
         else:
             with get_image_conn() as conn:
                 result = conn.execute("SELECT * FROM image")

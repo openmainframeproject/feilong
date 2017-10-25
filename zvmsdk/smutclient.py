@@ -1053,7 +1053,13 @@ class SMUTClient(object):
         create a record in image db, the imported images are located in
         image_repository/prov_method/os_version/, for example,
         /opt/sdk/images/netboot/rhel7.2/90685d2b-167b.img"""
-        image_info = self._ImageDbOperator.image_query_record(image_name)
+        try:
+            image_info = self._ImageDbOperator.image_query_record(image_name)
+        except exception.SDKObjectNotExistError as err:
+            msg = ("The image record %s doens't exist in SDK image datebase,"
+                   " will import the image and create record now")
+            LOG.info(msg)
+
         # Ensure the specified image is not exist in image DB
         if image_info:
             msg = ("The image name %s has already exist in SDK image "
