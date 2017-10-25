@@ -37,6 +37,7 @@ class TestSDKClient(object):
         _headers = {'Content-Type': 'application/json'}
         _headers.update(headers or {})
 
+        # Add token here so every request will validate before proceed
         _headers['X-Auth-Token'] = self._get_token()
 
         response = requests.request(method, url, data=body, headers=_headers)
