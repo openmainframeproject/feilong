@@ -15,6 +15,7 @@
 
 
 import json
+import logging
 import Queue
 import socket
 import sys
@@ -67,7 +68,7 @@ class SDKServer(object):
         syslog.syslog(syslog.LOG_WARNING, msg)
 
     def log_debug(self, msg):
-        if CONF.sdkserver.debug.lower() == "true":
+        if log.log_level <= logging.DEBUG:
             thread = threading.current_thread().name
             msg = ("DEBUG: [%s] %s" % (thread, msg))
             syslog.syslog(syslog.LOG_DEBUG, msg)

@@ -30,6 +30,8 @@ import migrateVM
 import msgs
 import powerVM
 
+from zvmsdk import log as zvmsdklog
+
 
 modId = "RQH"
 version = '1.0.0'         # Version of this script
@@ -302,10 +304,12 @@ class ReqHandle(object):
            Strings to be logged.
         """
 
-        if self.daemon == '':
-            self.logger.debug(self.requestId + ": " + logString)
-        else:
-            self.daemon.logger.debug(self.requestId + ": " + logString)
+        if zvmsdklog.log_level <= logging.DEBUG:
+            # print log only when debug is enabled
+            if self.daemon == '':
+                self.logger.debug(self.requestId + ": " + logString)
+            else:
+                self.daemon.logger.debug(self.requestId + ": " + logString)
 
         if self.captureLogs is True:
             self.results['logEntries'].append(self.requestId + ": " +
