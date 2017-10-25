@@ -115,11 +115,14 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         return resp
 
-    def _guest_disks_delete(self, userid=None):
+    def _guest_disks_delete(self, userid=None, vdev=None):
         if userid is None:
             userid = self.userid
 
-        body = """{"vdev_info": {"vdev_list": ["0101"]}}"""
+        if vdev is None:
+            vdev = "0101"
+
+        body = """{"vdev_info": {"vdev_list": ["%s"]}}""" % vdev
         url = '/guests/%s/disks' % userid
 
         resp = self.client.api_request(url=url,
@@ -198,6 +201,7 @@ class GuestHandlerTestCase(unittest.TestCase):
     def _guest_cpuinfo(self, userid=None):
         if userid is None:
             userid = self.userid
+
         url = '/guests/cpuinfo?userid=%s' % userid
         resp = self.client.api_request(url=url,
                                        method='GET')
@@ -206,6 +210,7 @@ class GuestHandlerTestCase(unittest.TestCase):
     def _guest_meminfo(self, userid=None):
         if userid is None:
             userid = self.userid
+
         url = '/guests/meminfo?userid=%s' % userid
         resp = self.client.api_request(url=url,
                                        method='GET')
@@ -214,60 +219,86 @@ class GuestHandlerTestCase(unittest.TestCase):
     def _guest_vnicsinfo(self, userid=None):
         if userid is None:
             userid = self.userid
+
         url = '/guests/vnicsinfo?userid=%s' % userid
         resp = self.client.api_request(url=url,
                                        method='GET')
         return resp
 
-    def test_guest_update_not_exist(self):
+    def test_guest_get_not_exist(self):
         resp = self._guest_get('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_get_info_not_exist(self):
         resp = self._guest_get_info('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_get_power_state_not_exist(self):
         resp = self._guest_get_power_state('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_get_start_not_exist(self):
         resp = self._guest_start('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_stop_not_exist(self):
         resp = self._guest_stop('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_deploy_not_exist(self):
         resp = self._guest_deploy('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_pause_not_exist(self):
         resp = self._guest_pause('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_unpause_not_exist(self):
         resp = self._guest_unpause('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_reboot_not_exist(self):
         resp = self._guest_reboot('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_reset_not_exist(self):
         resp = self._guest_reset('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_nic_create_not_exist(self):
         resp = self._guest_nic_create(userid='notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_vic_create_not_exist(self):
         resp = self._guest_create_network_interface(userid='notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_nic_query_not_exist(self):
         resp = self._guest_nic_query(userid='notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_nic_delete_not_exist(self):
         resp = self._guest_nic_delete(userid='notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_nic_device_delete_not_exist(self):
+        resp = self._guest_nic_delete(vdev='FFFF')
+        self.assertEqual(404, resp.status_code)
+
+    def test_guest_disk_create_not_exist(self):
         resp = self._guest_disks_create(userid='notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_disk_delete_not_exist(self):
         resp = self._guest_disks_delete(userid='notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_disk_device_delete_not_exist(self):
+        # disk not exist
+        resp = self._guest_disks_delete(vdev="FFFF")
+        self.assertEqual(404, resp.status_code)
+
+    def test_guest_inspect_not_exist(self):
         # following 200 is expected
         resp = self._guest_cpuinfo('notexist')
         self.assertEqual(200, resp.status_code)
@@ -375,6 +406,7 @@ class GuestHandlerTestCase(unittest.TestCase):
             # create new disks
             resp = self._guest_disks_create()
             self.assertEqual(200, resp.status_code)
+
             resp_create = self._guest_get()
             self.assertEqual(200, resp_create.status_code)
 
@@ -414,7 +446,7 @@ class GuestHandlerTestCase(unittest.TestCase):
         body = '{"vswitch": {"name": "RESTVSW1", "rdev": "FF00"}}'
         resp = self.client.api_request(url='/vswitchs', method='POST',
                                        body=body)
-        self.assertEqual(200, resp.status_code)
+        return resp
 
     def _vswitch_delete(self):
         resp = self.client.api_request(url='/vswitchs/restvsw1',
@@ -465,7 +497,8 @@ class GuestHandlerTestCase(unittest.TestCase):
             resp = self._guest_nic_create("2000")
             self.assertEqual(200, resp.status_code)
 
-            self._vswitch_create()
+            resp = self._vswitch_create()
+            self.assertEqual(200, resp.status_code)
 
             resp = self._vswitch_couple()
             self.assertEqual(200, resp.status_code)
