@@ -303,7 +303,6 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(zvmutils, 'get_smut_userid')
     @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_revoke_user_from_vswitch(self, request, userid):
-        """Revoke user for vswitch."""
         userid.return_value = 'FakeHostID'
         vswitch_name = 'FakeVs'
         userid = 'FakeID'
@@ -1174,3 +1173,9 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
         is_reachable = self._smutclient.get_guest_connection_status('testuid')
         self.assertTrue(is_reachable)
+
+    @mock.patch.object(database.NetworkDbOperator, 'switch_select_record')
+    def test_get_nic_info(self, select):
+        self._smutclient.get_nic_info(userid='testid', nic_id='fake_nic')
+        select.assert_called_with(userid='testid', nic_id='fake_nic',
+                                  vswitch=None)
