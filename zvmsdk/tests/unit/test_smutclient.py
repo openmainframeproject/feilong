@@ -1174,3 +1174,75 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
         is_reachable = self._smutclient.get_guest_connection_status('testuid')
         self.assertTrue(is_reachable)
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    def test_guest_capture_get_capture_devices_rh7(self, execcmd):
+        userid = 'fakeid'
+        execcmd.side_effect = [['/dev/disk/by-path/ccw-0.0.0100-part1'],
+                               ['/dev/dasda1'],
+                               ['0.0.0100(ECKD) at ( 94:     0) is dasda'
+                                '       : active at blocksize: 4096,'
+                                ' 600840 blocks, 2347 MB']]
+        result = self._smutclient._get_capture_devices(userid)
+        self.assertEqual(result, ['0100'])
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    def test_guest_capture_get_capture_devices_ubuntu(self, execcmd):
+        userid = 'fakeid'
+        execcmd.side_effect = [['UUID=8320ec9d-c2b5-439f-b0a0-cede08afe957'
+                                ' allow_lun_scan=0 crashkernel=128M'
+                                ' BOOT_IMAGE=0'],
+                                ['/dev/dasda1'],
+                                ['0.0.0100(ECKD) at ( 94:     0) is dasda'
+                                 '       : active at blocksize: 4096,'
+                                 ' 600840 blocks, 2347 MB']]
+        result = self._smutclient._get_capture_devices(userid)
+        self.assertEqual(result, ['0100'])
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    def test_guest_capture_get_os_version_rh7(self, execcmd):
+        userid = 'fakeid'
+        execcmd.side_effect = [['/etc/os-release', '/etc/redhat-release',
+                                '/etc/system-release'],
+                               ['NAME="Red Hat Enterprise Linux Server"',
+                                'VERSION="7.0 (Maipo)"',
+                                'ID="rhel"',
+                                'ID_LIKE="fedora"',
+                                'VERSION_ID="7.0"',
+                                'PRETTY_NAME="Red Hat Enterprise Linux'
+                                ' Server 7.0 (Maipo)"',
+                                'ANSI_COLOR="0;31"',
+                                'CPE_NAME="cpe:/o:redhat:enterprise_linux:'
+                                '7.0:GA:server"',
+                                'HOME_URL="https://www.redhat.com/"']]
+        result = self._smutclient._guest_get_os_version(userid)
+        self.assertEqual(result, 'rhel7.0')
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    def test_guest_capture_get_os_version_rhel67_sles11(self, execcmd):
+        userid = 'fakeid'
+        execcmd.side_effect = [['/etc/redhat-release',
+                                '/etc/system-release'],
+                               ['Red Hat Enterprise Linux Server release 6.7'
+                                ' (Santiago)']]
+        result = self._smutclient._guest_get_os_version(userid)
+        self.assertEqual(result, 'rhel6.7')
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    def test_guest_capture_get_os_version_ubuntu(self, execcmd):
+        userid = 'fakeid'
+        execcmd.side_effect = [['/etc/lsb-release',
+                                '/etc/os-release'],
+                               ['NAME="Ubuntu"',
+                                'VERSION="16.04 (Xenial Xerus)"',
+                                'ID=ubuntu',
+                                'ID_LIKE=debian',
+                                'PRETTY_NAME="Ubuntu 16.04"',
+                                'VERSION_ID="16.04"',
+                                'HOME_URL="http://www.ubuntu.com/"',
+                                'SUPPORT_URL="http://help.ubuntu.com/"',
+                                'BUG_REPORT_URL="http://bugs.launchpad.net'
+                                '/ubuntu/"',
+                                'UBUNTU_CODENAME=xenial']]
+        result = self._smutclient._guest_get_os_version(userid)
+        self.assertEqual(result, 'ubuntu16.04')
