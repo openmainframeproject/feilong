@@ -100,8 +100,13 @@ class ImageTestCase(unittest.TestCase):
         resp = self._image_create()
         self.assertEqual(200, resp.status_code)
 
-        resp = self._image_create()
-        self.assertEqual(409, resp.status_code)
+        try:
+            resp = self._image_create()
+            self.assertEqual(409, resp.status_code)
+        except Exception:
+            raise
+        finally:
+            self._image_delete()
 
     def test_image_create_delete(self):
         self._image_create()

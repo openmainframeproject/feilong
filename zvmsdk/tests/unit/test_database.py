@@ -847,8 +847,9 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
         # Delete it
         self.db_op.image_delete_record(imagename)
         image_record = self.db_op.image_query_record(imagename)
-        self.assertEqual(0, len(image_record))
-        self.assertListEqual([], image_record)
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.db_op.image_query_record,
+                          imagename)
 
     def test_image_add_record_with_existing_imagename(self):
         imagename = 'test'
