@@ -18,6 +18,8 @@ import re
 import time
 import unittest
 
+from sdkclient import client as sdkclient
+
 from zvmsdk import api
 from zvmsdk import config
 from zvmsdk import exception
@@ -33,10 +35,157 @@ def set_conf(section, opt, value):
     CONF[section][opt] = value
 
 
+class SDKAPIRequestHandler(object):
+
+    def __init__(self):
+        self.client = sdkclient.SDKClient(CONF.sdkserver.bind_addr)
+
+    def _call(self, func_name, *args, **kwargs):
+        results = self.client.send_request(func_name, *args, **kwargs)
+        if results['overallRC'] == 0:
+            return results['output']
+        else:
+            msg = ("SDK request %(api)s failed with parameters: %(args)s "
+                   "%(kwargs)s . Error messages: %(errmsg)s" %
+                   {'api': func_name, 'args': str(args), 'kwargs': str(kwargs),
+                    'errmsg': results['errmsg']})
+            raise exception.SDKBaseException(msg, results)
+
+    def guest_start(self, *args, **kwargs):
+        return self._call('guest_start', *args, **kwargs)
+
+    def guest_stop(self, *args, **kwargs):
+        return self._call('guest_stop', *args, **kwargs)
+
+    def guest_reboot(self, *args, **kwargs):
+        return self._call('guest_reboot', *args, **kwargs)
+
+    def guest_reset(self, *args, **kwargs):
+        return self._call('guest_reset', *args, **kwargs)
+
+    def guest_pause(self, *args, **kwargs):
+        return self._call('guest_pause', *args, **kwargs)
+
+    def guest_unpause(self, *args, **kwargs):
+        return self._call('guest_unpause', *args, **kwargs)
+
+    def guest_get_power_state(self, *args, **kwargs):
+        return self._call('guest_get_power_state', *args, **kwargs)
+
+    def guest_get_info(self, *args, **kwargs):
+        return self._call('guest_get_info', *args, **kwargs)
+
+    def guest_list(self, *args, **kwargs):
+        return self._call('guest_list', *args, **kwargs)
+
+    def host_get_info(self, *args, **kwargs):
+        return self._call('host_get_info', *args, **kwargs)
+
+    def host_diskpool_get_info(self, *args, **kwargs):
+        return self._call('host_diskpool_get_info', *args, **kwargs)
+
+    def image_delete(self, *args, **kwargs):
+        return self._call('image_delete', *args, **kwargs)
+
+    def image_get_root_disk_size(self, *args, **kwargs):
+        return self._call('image_get_root_disk_size', *args, **kwargs)
+
+    def image_import(self, *args, **kwargs):
+        return self._call('image_import', *args, **kwargs)
+
+    def image_query(self, *args, **kwargs):
+        return self._call('image_query', *args, **kwargs)
+
+    def image_export(self, *args, **kwargs):
+        return self._call('image_export', *args, **kwargs)
+
+    def guest_authorize_iucv_client(self, *args, **kwargs):
+        return self._call('guest_authorize_iucv_client', *args, **kwargs)
+
+    def guest_deploy(self, *args, **kwargs):
+        return self._call('guest_deploy', *args, **kwargs)
+
+    def guest_create_nic(self, *args, **kwargs):
+        return self._call('guest_create_nic', *args, **kwargs)
+
+    def guest_delete_nic(self, *args, **kwargs):
+        return self._call('guest_delete_nic', *args, **kwargs)
+
+    def guest_get_nic_vswitch_info(self, *args, **kwargs):
+        return self._call('guest_get_nic_vswitch_info', *args, **kwargs)
+
+    def guest_get_definition_info(self, *args, **kwargs):
+        return self._call('guest_get_definition_info', *args, **kwargs)
+
+    def guest_create(self, *args, **kwargs):
+        return self._call('guest_create', *args, **kwargs)
+
+    def guest_create_disks(self, *args, **kwargs):
+        return self._call('guest_create_disks', *args, **kwargs)
+
+    def guest_delete_disks(self, *args, **kwargs):
+        return self._call('guest_delete_disks', *args, **kwargs)
+
+    def guest_nic_couple_to_vswitch(self, *args, **kwargs):
+        return self._call('guest_nic_couple_to_vswitch', *args, **kwargs)
+
+    def guest_nic_uncouple_from_vswitch(self, *args, **kwargs):
+        return self._call('guest_nic_uncouple_from_vswitch', *args, **kwargs)
+
+    def vswitch_get_list(self, *args, **kwargs):
+        return self._call('vswitch_get_list', *args, **kwargs)
+
+    def vswitch_create(self, *args, **kwargs):
+        return self._call('vswitch_create', *args, **kwargs)
+
+    def guest_get_console_output(self, *args, **kwargs):
+        return self._call('guest_get_console_output', *args, **kwargs)
+
+    def guest_delete(self, *args, **kwargs):
+        return self._call('guest_delete', *args, **kwargs)
+
+    def guest_inspect_cpus(self, *args, **kwargs):
+        return self._call('guest_inspect_cpus', *args, **kwargs)
+
+    def guest_inspect_mem(self, *args, **kwargs):
+        return self._call('guest_inspect_mem', *args, **kwargs)
+
+    def guest_inspect_vnics(self, *args, **kwargs):
+        return self._call('guest_inspect_vnics', *args, **kwargs)
+
+    def vswitch_grant_user(self, *args, **kwargs):
+        return self._call('vswitch_grant_user', *args, **kwargs)
+
+    def vswitch_revoke_user(self, *args, **kwargs):
+        return self._call('vswitch_revoke_user', *args, **kwargs)
+
+    def vswitch_set_vlan_id_for_user(self, *args, **kwargs):
+        return self._call('vswitch_set_vlan_id_for_user', *args, **kwargs)
+
+    def guest_config_minidisks(self, *args, **kwargs):
+        return self._call('guest_config_minidisks', *args, **kwargs)
+
+    def vswitch_set(self, *args, **kwargs):
+        return self._call('vswitch_set', *args, **kwargs)
+
+    def vswitch_delete(self, *args, **kwargs):
+        return self._call('vswitch_delete', *args, **kwargs)
+
+    def volume_attach(self, *args, **kwargs):
+        return self._call('volume_attach', *args, **kwargs)
+
+    def volume_detach(self, *args, **kwargs):
+        return self._call('volume_detach', *args, **kwargs)
+
+    def guest_create_network_interface(self, *args, **kwargs):
+        return self._call('guest_create_network_interface', *args, **kwargs)
+
+
 class SDKAPITestUtils(object):
 
     def __init__(self):
-        self.api = api.SDKAPI()
+        self.sdkapi = SDKAPIRequestHandler()
+        self.rawapi = api.SDKAPI()
 
     def image_import(self, image_path=CONF.tests.image_path,
                      os_version=CONF.tests.image_os_version):
@@ -44,13 +193,12 @@ class SDKAPITestUtils(object):
         image_name = os.path.basename(image_path)
         image_url = ''.join(('file://', image_path))
         try:
-            self.api.image_import(image_name, image_url,
+            self.sdkapi.image_import(image_name, image_url,
                                   {'os_version': os_version})
-        except exception.SDKImageOperationError as err:
-            resp = err.results
-            if resp['rc'] == 300 and resp['rs'] == 13:
+        except exception.SDKBaseException as err:
+            if err.results['rc'] == 300 and err.results['rs'] == 13:
                 # image already exists
-                pass
+                return
             else:
                 raise
 
@@ -68,7 +216,7 @@ class SDKAPITestUtils(object):
         for uid in userid_list:
             if self.is_guest_exist(uid):
                 try:
-                    self.api.guest_delete(uid)
+                    self.sdkapi.guest_delete(uid)
                 except exception.SDKBaseException as e:
                     print("WARNING: Delete guest failed: %s" %
                           e.format_message())
@@ -96,12 +244,12 @@ class SDKAPITestUtils(object):
 
         print("Checking if image %s exists or not, import it if not exists" %
               image_name)
-        image_info = self.api.image_query(image_name)
+        image_info = self.sdkapi.image_query(image_name)
         print("Image query result is %s" % str(image_info))
 
         if not image_info:
             print("Importing image %s ..." % image_name)
-            self.api.image_import(image_name, url,
+            self.sdkapi.image_import(image_name, url,
                         {'os_version': os_version})
 
         print("Using image %s ..." % image_name)
@@ -114,7 +262,7 @@ class SDKAPITestUtils(object):
 
         user_profile = CONF.zvm.user_profile
 
-        size = self.api.image_get_root_disk_size(image_name)
+        size = self.sdkapi.image_get_root_disk_size(image_name)
         print("root disk size is %s" % size)
         disks_list = [{'size': size,
                        'is_boot_disk': True,
@@ -123,27 +271,25 @@ class SDKAPITestUtils(object):
         # Create vm in zVM
         print("Creating userid %s ..." % userid)
         try:
-            self.api.guest_create(userid, cpu, memory, disks_list,
+            self.sdkapi.guest_create(userid, cpu, memory, disks_list,
                                   user_profile)
-        except exception.ZVMException as err:
+        except exception.SDKBaseException as err:
             errmsg = err.format_message()
             print("WARNING: create userid failed: %s" % errmsg)
-            if (errmsg.__contains__("Return Code: 400") and
-                    errmsg.__contains__("Reason Code: 8")):
-                # delete userid not completed
+            if err.results['rc'] == 400 and err.results['rs'] == 8:
                 print("userid %s still exist" % userid)
                 # switch to new userid
                 userid, ip_addr = self._get_next_userid_ipaddr(userid)
                 print("turn to use new userid %s and IP addr 5s" %
                       (userid, ip_addr))
-                self.api.guest_create(userid, cpu, memory, disks_list,
+                self.sdkapi.guest_create(userid, cpu, memory, disks_list,
                                       user_profile)
 
         assert self.wait_until_create_userid_complete(userid)
 
         # Deploy image on vm
         print("Deploying userid %s ..." % userid)
-        self.api.guest_deploy(userid, image_name)
+        self.sdkapi.guest_deploy(userid, image_name)
 
         # Create nic and configure it
         guest_networks = [{
@@ -151,26 +297,26 @@ class SDKAPITestUtils(object):
             'gateway_addr': CONF.tests.gateway_v4,
             'cidr': CONF.tests.cidr,
         }]
-        netinfo = self.api.guest_create_network_interface(userid, os_version,
-                                                          guest_networks)
+        netinfo = self.sdkapi.guest_create_network_interface(
+                                        userid, os_version, guest_networks)
         nic_vdev = netinfo[0]['nic_vdev']
-        self.api.guest_nic_couple_to_vswitch(userid, nic_vdev,
+        self.sdkapi.guest_nic_couple_to_vswitch(userid, nic_vdev,
                                              CONF.tests.vswitch)
-        self.api.vswitch_grant_user(CONF.tests.vswitch, userid)
+        self.sdkapi.vswitch_grant_user(CONF.tests.vswitch, userid)
 
         # Grant IUCV access
         smut_uid = zvmutils.get_smut_userid()
-        self.api.guest_authorize_iucv_client(userid, smut_uid)
+        self.sdkapi.guest_authorize_iucv_client(userid, smut_uid)
 
         # Power on the vm, then put MN's public key into vm
         print("Power on userid %s ..." % userid)
-        self.api.guest_start(userid)
+        self.sdkapi.guest_start(userid)
 
         return userid, ip_addr
 
     def guest_destroy(self, userid):
         try:
-            self.api.guest_delete(userid)
+            self.sdkapi.guest_delete(userid)
         except exception.SDKBaseException as err:
             print("WARNING: deleting userid failed: %s" % err.format_message())
 
@@ -196,11 +342,11 @@ class SDKAPITestUtils(object):
         return False
 
     def wait_until_guest_in_power_state(self, userid, expect_state):
-        return self._wait_until(expect_state, self.api.guest_get_power_state,
-                                userid)
+        return self._wait_until(expect_state,
+                                self.sdkapi.guest_get_power_state, userid)
 
     def wait_until_guest_in_connection_state(self, userid, expect_state):
-        return self._wait_until(True, self.api._vmops.is_reachable, userid)
+        return self._wait_until(True, self.rawapi._vmops.is_reachable, userid)
 
     def wait_until_create_userid_complete(self, userid):
         return self._wait_until(True, self.is_guest_exist, userid)
@@ -210,7 +356,7 @@ class SDKAPIBaseTestCase(unittest.TestCase):
 
     def __init__(self, methodName='runTest'):
         super(SDKAPIBaseTestCase, self).__init__(methodName)
-        self.sdkapi = api.SDKAPI()
+        self.sdkapi = SDKAPIRequestHandler()
         self.sdkutils = SDKAPITestUtils()
 
     def set_conf(self, section, opt, value):
@@ -221,10 +367,6 @@ class SDKAPIBaseTestCase(unittest.TestCase):
 
 class SDKAPIGuestBaseTestCase(SDKAPIBaseTestCase):
     """Base test class for testcases that require a deployed vm."""
-
-    def __init__(self, methodName='runTest'):
-        super(SDKAPIGuestBaseTestCase, self).__init__(methodName)
-        self.sdkapi = api.SDKAPI()
 
     def setUp(self):
         super(SDKAPIGuestBaseTestCase, self).setUp()
