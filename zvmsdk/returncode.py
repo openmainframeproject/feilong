@@ -136,6 +136,8 @@ errors = {
                    "error: %(err)s"),
                4: ("Failed to deploy image to userid: '%(userid)s', "
                    "copy config drive to local failed with rc: %(cp_rc)d"),
+               5: ("Failed to capture userid %(userid)s to generate image, "
+                   "error: %(msg)s")
               },
               "Operation on Guest failed"
               ],
