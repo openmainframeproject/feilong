@@ -1431,6 +1431,11 @@ class SMUTClient(object):
 
         return vsw_info
 
+    def get_nic_info(self, userid=None, nic_id=None, vswitch=None):
+        nic_info = self._NetDbOperator.switch_select_record(userid=userid,
+                                            nic_id=nic_id, vswitch=vswitch)
+        return nic_info
+
 
 class FilesystemBackend(object):
     @classmethod
