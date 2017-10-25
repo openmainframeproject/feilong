@@ -214,6 +214,13 @@ class VMOps(object):
         self._smutclient.guest_deploy(userid, image_name,
                                       transportfiles, remotehost, vdev)
 
+    def guest_capture(self, userid, image_name, capture_type='netboot',
+                      compress_level=6):
+        LOG.debug("Begin to capture vm %s", userid)
+        self._smutclient.guest_capture(userid, image_name,
+                                       capture_type=capture_type,
+                                       compress_level=compress_level)
+
     def guest_list(self):
         return self._smutclient.get_vm_list()
 

@@ -1179,3 +1179,161 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         self._smutclient.get_nic_info(userid='testid', nic_id='fake_nic')
         select.assert_called_with(userid='testid', nic_id='fake_nic',
                                   vswitch=None)
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    def test_guest_capture_get_capture_devices_rh7(self, execcmd):
+        userid = 'fakeid'
+        execcmd.side_effect = [['/dev/disk/by-path/ccw-0.0.0100-part1'],
+                               ['/dev/dasda1'],
+                               ['0.0.0100(ECKD) at ( 94:     0) is dasda'
+                                '       : active at blocksize: 4096,'
+                                ' 600840 blocks, 2347 MB']]
+        result = self._smutclient._get_capture_devices(userid)
+        self.assertEqual(result, ['0100'])
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    def test_guest_capture_get_capture_devices_ubuntu(self, execcmd):
+        userid = 'fakeid'
+        execcmd.side_effect = [['UUID=8320ec9d-c2b5-439f-b0a0-cede08afe957'
+                                ' allow_lun_scan=0 crashkernel=128M'
+                                ' BOOT_IMAGE=0'],
+                                ['/dev/dasda1'],
+                                ['0.0.0100(ECKD) at ( 94:     0) is dasda'
+                                 '       : active at blocksize: 4096,'
+                                 ' 600840 blocks, 2347 MB']]
+        result = self._smutclient._get_capture_devices(userid)
+        self.assertEqual(result, ['0100'])
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    def test_guest_capture_get_os_version_rh7(self, execcmd):
+        userid = 'fakeid'
+        execcmd.side_effect = [['/etc/os-release', '/etc/redhat-release',
+                                '/etc/system-release'],
+                               ['NAME="Red Hat Enterprise Linux Server"',
+                                'VERSION="7.0 (Maipo)"',
+                                'ID="rhel"',
+                                'ID_LIKE="fedora"',
+                                'VERSION_ID="7.0"',
+                                'PRETTY_NAME="Red Hat Enterprise Linux'
+                                ' Server 7.0 (Maipo)"',
+                                'ANSI_COLOR="0;31"',
+                                'CPE_NAME="cpe:/o:redhat:enterprise_linux:'
+                                '7.0:GA:server"',
+                                'HOME_URL="https://www.redhat.com/"']]
+        result = self._smutclient._guest_get_os_version(userid)
+        self.assertEqual(result, 'rhel7.0')
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    def test_guest_capture_get_os_version_rhel67_sles11(self, execcmd):
+        userid = 'fakeid'
+        execcmd.side_effect = [['/etc/redhat-release',
+                                '/etc/system-release'],
+                               ['Red Hat Enterprise Linux Server release 6.7'
+                                ' (Santiago)']]
+        result = self._smutclient._guest_get_os_version(userid)
+        self.assertEqual(result, 'rhel6.7')
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    def test_guest_capture_get_os_version_ubuntu(self, execcmd):
+        userid = 'fakeid'
+        execcmd.side_effect = [['/etc/lsb-release',
+                                '/etc/os-release'],
+                               ['NAME="Ubuntu"',
+                                'VERSION="16.04 (Xenial Xerus)"',
+                                'ID=ubuntu',
+                                'ID_LIKE=debian',
+                                'PRETTY_NAME="Ubuntu 16.04"',
+                                'VERSION_ID="16.04"',
+                                'HOME_URL="http://www.ubuntu.com/"',
+                                'SUPPORT_URL="http://help.ubuntu.com/"',
+                                'BUG_REPORT_URL="http://bugs.launchpad.net'
+                                '/ubuntu/"',
+                                'UBUNTU_CODENAME=xenial']]
+        result = self._smutclient._guest_get_os_version(userid)
+        self.assertEqual(result, 'ubuntu16.04')
+
+    @mock.patch.object(database.ImageDbOperator, 'image_add_record')
+    @mock.patch.object(smutclient.SMUTClient, '_get_image_size')
+    @mock.patch.object(smutclient.SMUTClient, '_get_disk_size_units')
+    @mock.patch.object(smutclient.SMUTClient, '_get_md5sum')
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
+    @mock.patch.object(smutclient.SMUTClient, 'guest_softstop')
+    @mock.patch.object(smutclient.SMUTClient, '_get_capture_devices')
+    @mock.patch.object(smutclient.SMUTClient, '_guest_get_os_version')
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
+    def test_guest_capture_good_path(self, get_power_state, execcmd,
+                                     get_os_version, get_capture_devices,
+                                     softstop, mkdir, execute, md5sum,
+                                     disk_size_units, imagesize,
+                                     image_add_record):
+        userid = 'fakeid'
+        image_name = 'fakeimage'
+        get_power_state.return_value = 'on'
+        execcmd.return_value = ['/']
+        get_os_version.return_value = 'rhel7.0'
+        get_capture_devices.return_value = ['0100']
+        image_temp_dir = '/'.join([CONF.image.sdk_image_repository,
+                                   'staging',
+                                   'rhel7.0',
+                                   image_name])
+        image_file_path = '/'.join((image_temp_dir, '0100.img'))
+        cmd1 = ['/opt/zthin/bin/creatediskimage', userid, '0100',
+               image_file_path]
+        execute.side_effect = [(0, ''),
+                               (0, '')]
+        image_final_dir = '/'.join((CONF.image.sdk_image_repository,
+                                    'netboot',
+                                    'rhel7.0',
+                                    image_name))
+        image_final_path = '/'.join((image_final_dir,
+                                     '0100.img'))
+        cmd2 = ['mv', image_file_path, image_final_path]
+        md5sum.return_value = '547396211b558490d31e0de8e15eef0c'
+        disk_size_units.return_value = '1000:CYL'
+        imagesize.return_value = '1024000'
+
+        self._smutclient.guest_capture(userid, image_name)
+
+        get_power_state.assert_called_with(userid)
+        execcmd.assert_called_once_with(userid, 'pwd')
+        get_os_version.assert_called_once_with(userid)
+        get_capture_devices.assert_called_once_with(userid, 'netboot')
+        softstop.assert_called_once_with(userid)
+
+        execute.assert_has_calls([mock.call(cmd1), mock.call(cmd2)])
+        mkdir.assert_has_calls([mock.call(image_temp_dir)],
+                              [mock.call(image_final_dir)])
+#
+        md5sum.assert_called_once_with(image_final_path)
+        disk_size_units.assert_called_once_with(image_final_path)
+        imagesize.assert_called_once_with(image_final_path)
+        image_add_record.assert_called_once_with(image_name, 'rhel7.0',
+            '547396211b558490d31e0de8e15eef0c', '1000:CYL', '1024000',
+            'netboot')
+
+    @mock.patch.object(smutclient.SMUTClient, '_guest_get_os_version')
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
+    def test_guest_capture_error_path(self, get_power_state, execcmd,
+                                      get_os_version):
+        userid = 'fakeid'
+        image_name = 'fakeimage'
+        get_power_state.return_value = 'on'
+        result = {'rs': 101, 'errno': 0, 'strError': '',
+                  'overallRC': 2,
+                  'rc': 4,
+                  'response': ['(Error) ULTVMU0315E IUCV socket error'
+                               ' sending command to FP1T0006. cmd: pwd, '
+                               'rc: 4, rs: 101, out: ERROR: ERROR connecting'
+                               ' socket:', 'Network is unreachable', 'Return'
+                               ' code 4, Reason code 101.']}
+
+        execcmd.side_effect = exception.SDKSMUTRequestFailed(result, '')
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.guest_capture, userid,
+                          image_name)
+        get_power_state.assert_called_once_with(userid)
+        execcmd.assert_called_once_with(userid, 'pwd')
+        get_os_version.assert_not_called()

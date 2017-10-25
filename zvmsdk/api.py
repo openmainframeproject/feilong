@@ -324,6 +324,26 @@ class SDKAPI(object):
             self._vmops.guest_deploy(userid, image_name,
                                      transportfiles, remotehost, vdev)
 
+    def guest_capture(self, userid, image_name, capture_type='netboot',
+                      compress_level=6):
+        """ Capture the guest to generate a image
+
+        :param userid: (str) the user id of the vm
+        :param image_name: (str) the unique image name after capture
+        :param capture_type: (str) the type of capture, the value can be:
+               netboot: indicate just root device will be captured
+               sysclone: indicate all the devices of the userid will be
+               captured
+        :param compress_level: the compression level of the image, default
+               is 6
+        """
+        action = ("capture guest '%(vm)s' to generate image '%(img)s'" %
+                  {'vm': userid, 'img': image_name})
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._vmops.guest_capture(userid, image_name,
+                                      capture_type=capture_type,
+                                      compress_level=compress_level)
+
     @zvmutils.check_input_types(_TUSERID, _TSTR_OR_NONE, _TSTR_OR_NONE,
                        _TSTR_OR_NONE, _TSTR_OR_NONE, bool)
     def guest_create_nic(self, userid, vdev=None, nic_id=None,
