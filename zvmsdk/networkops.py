@@ -223,3 +223,7 @@ class NetworkOPS(object):
             tar.add(file_name, arcname=file)
         tar.close()
         return network_doscript
+
+    def get_nic_info(self, userid=None, nic_id=None, vswitch=None):
+        return self._smutclient.get_nic_info(userid=userid, nic_id=nic_id,
+                                             vswitch=vswitch)
