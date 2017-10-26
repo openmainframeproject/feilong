@@ -13,7 +13,6 @@
 #    under the License.
 
 
-import re
 import six
 import time
 
@@ -45,17 +44,9 @@ class VMOps(object):
         self._dist_manager = dist.LinuxDistManager()
         self._pathutils = zvmutils.PathUtils()
 
-    def is_guest_exist(self, userid):
-        cmd = 'vmcp q %s' % userid
-        rc, output = zvmutils.execute(cmd)
-        if re.search('(^HCP\w\w\w003E)', output):
-            # userid not exist
-            return False
-        return True
-
     def get_power_state(self, userid):
         """Get power status of a z/VM instance."""
-        self._check_guest_exist(userid)
+        zvmutils.check_guest_exist(userid)
 
         return self._smutclient.get_power_state(userid)
 
@@ -113,22 +104,14 @@ class VMOps(object):
         """Reachable through IUCV communication channel."""
         return self._smutclient.get_guest_connection_status(userid)
 
-    def _check_guest_exist(self, userid):
-        if not self.is_guest_exist(userid):
-            msg = "Userid %s does not exist" % userid.upper()
-            LOG.warn(msg)
-            obj_desc = 'Userid %s' % userid.upper()
-            raise exception.SDKObjectNotExistError(obj_desc,
-                                                   modID='guest')
-
     def guest_start(self, userid):
         """"Power on z/VM instance."""
-        self._check_guest_exist(userid)
+        zvmutils.check_guest_exist(userid)
 
         self._smutclient.guest_start(userid)
 
     def guest_stop(self, userid, timeout, retry_interval):
-        self._check_guest_exist(userid)
+        zvmutils.check_guest_exist(userid)
 
         self._smutclient.guest_stop(userid)
 
@@ -148,24 +131,24 @@ class VMOps(object):
                          "seconds" % {'userid': userid, 'time': timeout})
 
     def guest_pause(self, userid):
-        self._check_guest_exist(userid)
+        zvmutils.check_guest_exist(userid)
 
         self._smutclient.guest_pause(userid)
 
     def guest_unpause(self, userid):
-        self._check_guest_exist(userid)
+        zvmutils.check_guest_exist(userid)
 
         self._smutclient.guest_unpause(userid)
 
     def guest_reboot(self, userid):
         """Reboot a guest vm."""
-        self._check_guest_exist(userid)
+        zvmutils.check_guest_exist(userid)
 
         self._smutclient.guest_reboot(userid)
 
     def guest_reset(self, userid):
         """Reset z/VM instance."""
-        self._check_guest_exist(userid)
+        zvmutils.check_guest_exist(userid)
 
         self._smutclient.guest_reset(userid)
 
@@ -219,7 +202,7 @@ class VMOps(object):
 
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
-        self._check_guest_exist(userid)
+        zvmutils.check_guest_exist(userid)
 
         LOG.debug("Begin to deploy image on vm %s", userid)
         self._smutclient.guest_deploy(userid, image_name,

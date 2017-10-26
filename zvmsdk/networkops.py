@@ -21,6 +21,7 @@ from zvmsdk import config
 from zvmsdk import dist
 from zvmsdk import log
 from zvmsdk import smutclient
+from zvmsdk import utils as zvmutils
 
 
 _NetworkOPS = None
@@ -57,11 +58,15 @@ class NetworkOPS(object):
 
     def couple_nic_to_vswitch(self, userid, nic_vdev,
                               vswitch_name, active=False):
+        zvmutils.check_guest_exist(userid)
+
         self._smutclient.couple_nic_to_vswitch(userid, nic_vdev,
                                                vswitch_name, active=active)
 
     def uncouple_nic_from_vswitch(self, userid, nic_vdev,
                                   active=False):
+        zvmutils.check_guest_exist(userid)
+
         self._smutclient.uncouple_nic_from_vswitch(userid,
                                                    nic_vdev,
                                                    active=active)
