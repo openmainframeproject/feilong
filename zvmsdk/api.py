@@ -1094,7 +1094,7 @@ class SDKAPI(object):
                                                    connection_info,
                                                    is_rollback_in_failure)
 
-    @zvmutils.check_input_types(_TUSERID, str, list, bool)
+    @zvmutils.check_input_types(_TUSERID, _TSTR, list, bool)
     def guest_create_network_interface(self, userid, os_version,
                                        guest_networks, active=False):
         """ Create network interface(s) for the guest inux system. It will
