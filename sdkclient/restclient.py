@@ -33,12 +33,10 @@ PARAM_IN_PATH = {
     'home': 0,
     'guest_create': 0,
     'guest_list': 0,
-    'guest_get_cpu_info': 0,
-    'guest_get_memory_info': 0,
-    'guest_get_vnics_info': 0,
+    'guest_inspect_stats': 1,
+    'guest_inspect_vnics': 1,
     'guest_delete': 1,
-    'guest_get': 1,
-    'guest_update': 1,
+    'guest_get_definition_info': 1,
     'guest_start': 1,
     'guest_stop': 1,
     'guest_pause': 1,
@@ -62,7 +60,7 @@ PARAM_IN_PATH = {
     'host_get_info': 0,
     'host_get_disk_info': 1,
     'image_create': 0,
-    'image_query': 0,
+    'image_query': 1,
     'image_delete': 1,
     'image_export': 1,
     'image_get_root_disk_size': 1,
@@ -78,12 +76,10 @@ API2URL = {
     'home': '/',
     'guest_create': '/guests',
     'guest_list': '/guests',
-    'guest_get_cpu_info': '/guests/cpuinfo',
-    'guest_get_memory_info': '/guests/meminfo',
-    'guest_get_vnics_info': '/guests/vnicsinfo',
+    'guest_inspect_stats': '/guests/stats?userid=%s',
+    'guest_inspect_vnics': '/guests/vnicsinfo?userid=%s',
     'guest_delete': '/guests/%s',
-    'guest_get': '/guests/%s',
-    'guest_update': '/guests/%s',
+    'guest_get_definition_info': '/guests/%s',
     'guest_start': '/guests/%s/action',
     'guest_stop': '/guests/%s/action',
     'guest_pause': '/guests/%s/action',
@@ -107,7 +103,7 @@ API2URL = {
     'host_get_info': '/host',
     'host_get_disk_info': '/host/disk/%s',
     'image_create': '/images',
-    'image_query': '/images',
+    'image_query': '/images?imagename=%s',
     'image_delete': '/images/%s',
     'image_export': '/images/%s',
     'image_get_root_disk_size': '/images/%s/root_disk_size',
@@ -123,12 +119,10 @@ API2METHOD = {
     'home': 'GET',
     'guest_create': 'POST',
     'guest_list': 'GET',
-    'guest_get_cpu_info': 'GET',
-    'guest_get_memory_info': 'GET',
-    'guest_get_vnics_info': 'GET',
+    'guest_inspect_stats': 'GET',
+    'guest_inspect_vnics': 'GET',
     'guest_delete': 'DELETE',
-    'guest_get': 'GET',
-    'guest_update': 'PUT',
+    'guest_get_definition_info': 'GET',
     'guest_start': 'POST',
     'guest_stop': 'POST',
     'guest_pause': 'POST',
@@ -168,12 +162,10 @@ API2BODY = {
     'home': None,
     'guest_create': 'body_guest_create',
     'guest_list': None,
-    'guest_get_cpu_info': None,
-    'guest_get_memory_info': None,
-    'guest_get_vnics_info': None,
+    'guest_inspect_stats': None,
+    'guest_inspect_vnics': None,
     'guest_delete': None,
-    'guest_get': None,
-    'guest_update': 'body_guest_update',
+    'guest_get_definition_info': None,
     'guest_start': 'body_guest_start',
     'guest_stop': 'body_guest_stop',
     'guest_pause': 'body_guest_pause',
@@ -209,17 +201,16 @@ API2BODY = {
 }
 
 
-def body_guest_update(start_index, *args, **kwargs):
-    return None
+def fill_kwargs_in_body(body, **kwargs):
+    for key in kwargs.keys():
+        body[key] = kwargs.get(key)
 
 
 def body_guest_create(start_index, *args, **kwargs):
     body = {'guest': {'userid': args[start_index],
                       'vcpus': args[start_index + 1],
-                      'memory': args[start_index + 2],
-                      'disk_list': kwargs.get('disk_list', None),
-                      'user_profile': kwargs.get('user_profile',
-                                                 CONF.zvm.user_profile)}}
+                      'memory': args[start_index + 2]}}
+    fill_kwargs_in_body(body['guest'], kwargs)
     return body
 
 
@@ -261,55 +252,52 @@ def body_guest_get_console_output(start_index, *args, **kwargs):
 
 def body_guest_deploy(start_index, *args, **kwargs):
     body = {'action': 'deploy',
-            'image': args[start_index],
-            'transportfiles': kwargs.get('transportfiles', None),
-            'remotehost': kwargs.get('remotehost', None),
-            'vdev': kwargs.get('vdev', None)}
+            'image': args[start_index]}
+    fill_kwargs_in_body(body, kwargs)
     return body
 
 
 def body_guest_create_nic(start_index, *args, **kwargs):
-    body = {'nic': {'vdev': kwargs.get('vdev', None),
-                    'nic_id': kwargs.get('nic_id', None),
-                    'mac_addr': kwargs.get('mac_addr', None),
-                    'ip_addr': kwargs.get('ip_addr', None),
-                    'active': kwargs.get('active', False)}}
+    body = {'nic': {}}
+    fill_kwargs_in_body(body['nic'], kwargs)
     return body
 
 
 def body_guest_delete_nic(start_index, *args, **kwargs):
-    body = {'active': kwargs.get('active', False)}
+    body = {}
+    fill_kwargs_in_body(body, kwargs)
     return body
 
 
 def body_guest_nic_couple_to_vswitch(start_index, *args, **kwargs):
     body = {'info': {'couple': True,
-                     'vswitch': args[start_index],
-                     'active': kwargs.get('active', False)}}
+                     'vswitch': args[start_index]}}
+    fill_kwargs_in_body(body['info'], kwargs)
     return body
 
 
 def body_guest_nic_uncouple_from_vswitch(start_index, *args, **kwargs):
-    body = {'info': {'couple': False,
-                     'vswitch': args[start_index],
-                     'active': kwargs.get('active', False)}}
+    body = {'info': {'couple': False}}
+    fill_kwargs_in_body(body['info'], kwargs)
     return body
 
 
 def body_guest_create_network_interface(start_index, *args, **kwargs):
     body = {'interface': {'os_version': args[start_index],
-                          'guest_networks': args[start_index + 1],
-                          'active': kwargs.get('active', False)}}
+                          'guest_networks': args[start_index + 1]}}
+    fill_kwargs_in_body(body['interface'], kwargs)
     return body
 
 
 def body_guest_create_disks(start_index, *args, **kwargs):
-    body = {'disk_info': {'disk_list': kwargs.get('disk_list', None)}}
+    body = {'disk_info': {}}
+    fill_kwargs_in_body(body['disk_info'], kwargs)
     return body
 
 
 def body_guest_delete_disks(start_index, *args, **kwargs):
-    body = {'vdev_info': {'vdev_list': kwargs.get('vdev_list', None)}}
+    body = {'vdev_info': {}}
+    fill_kwargs_in_body(body['vdev_info'], kwargs)
     return body
 
 
@@ -319,6 +307,7 @@ def body_volume_attach(start_index, *args, **kwargs):
                      'volume': args[start_index + 1],
                      'connection': args[start_index + 2],
                      'rollback': args[start_index + 3]}}
+    fill_kwargs_in_body(body['info'], kwargs)
     return body
 
 
@@ -328,41 +317,40 @@ def body_volume_detach(start_index, *args, **kwargs):
                      'volume': args[start_index + 1],
                      'connection': args[start_index + 2],
                      'rollback': args[start_index + 3]}}
+    fill_kwargs_in_body(body['info'], kwargs)
     return body
 
 
 def body_image_create(start_index, *args, **kwargs):
     body = {'image': {'image_name': args[start_index],
                       'url': args[start_index + 1],
-                      'image_meta': args[start_index + 2],
-                      'remotehost': kwargs.get('remotehost', None)}}
+                      'image_meta': args[start_index + 2]}}
+    fill_kwargs_in_body(body['image'], kwargs)
     return body
 
 
 def body_image_export(start_index, *args, **kwargs):
-    body = {'location': {'dest_url': args[start_index],
-                         'remotehost': kwargs.get('remotehost', None)}}
+    body = {'location': {'dest_url': args[start_index]}}
+    fill_kwargs_in_body(body['location'], kwargs)
     return body
 
 
 def body_vswitch_create(start_index, *args, **kwargs):
-    # TODO: just two elements in body?
-    body = {'vswitch': {'name': args[start_index],
-                        'rdev': kwargs.get('rdev', None)}}
+    body = {'vswitch': {'name': args[start_index]}}
+    fill_kwargs_in_body(body['vswitch'], kwargs)
     return body
 
 
 def body_vswitch_update(*args, **kwargs):
-    body = {'vswitch': {'grant_userid': kwargs.get('grant_userid', None),
-                        'revoke_userid': kwargs.get('revoke_userid', None),
-                        'user_vlan_id': kwargs.get('user_vlan_id', None)}}
+    body = {'vswitch': {}}
+    fill_kwargs_in_body(body['vswitch'], kwargs)
     return body
 
 
 class RESTClient(object):
 
-    def __init__(self, ip='127.0.0.1', port='8888', timeout=30):
-        self.base_url = "http://" + ip + ":" + port
+    def __init__(self, ip='127.0.0.1', port=8888, timeout=30):
+        self.base_url = "http://" + ip + ":" + str(port)
 
     def _tmp_token(self):
         expires = 30
@@ -393,7 +381,8 @@ class RESTClient(object):
 
     def _process_rest_response(self, response):
         res_dict = json.loads(response.content)
-        return res_dict.get('output', None)
+        # return res_dict.get('output', None)
+        return res_dict
 
     def request(self, url, method, body, headers=None):
         _headers = {'Content-Type': 'application/json'}
@@ -401,12 +390,10 @@ class RESTClient(object):
 
         # _headers['X-Auth-Token'] = self._get_token()
         _headers['X-Auth-Token'] = self._tmp_token()
-
         response = requests.request(method, url, data=body, headers=_headers)
         return response
 
     def api_request(self, url, method='GET', body=None):
-
         full_uri = '%s%s' % (self.base_url, url)
         return self.request(full_uri, method, body)
 
@@ -430,9 +417,12 @@ class RESTClient(object):
         method = API2METHOD[api_name]
         # generate body from args and kwargs
         body = self._get_body(api_name, count_params_in_path, *args, **kwargs)
-        body_json = json.dumps(body)
+        if body is None:
+            response = self.api_request(url, method)
+        else:
+            body = json.dumps(body)
+            response = self.api_request(url, method, body)
         # response with JSON format
-        response = self.api_request(url, method, body_json)
         # change response to SDK format
         results = self._process_rest_response(response)
         return results
