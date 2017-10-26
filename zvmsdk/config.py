@@ -326,18 +326,6 @@ password to access sdk http server.
 '''
         ),
     # Daemon server options
-    Opt('debug',
-        section='sdkserver',
-        opt_type='str',
-        default='False',
-        help='''
-Whether to enable debug log for SDK server
-
-Possible value: True or False
-If this is set to True, debug messages from SDK server would be printed
-to system log.
-'''
-        ),
     Opt('bind_addr',
         section='sdkserver',
         default='127.0.0.1',
