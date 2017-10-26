@@ -40,7 +40,7 @@ class VswitchAction(object):
         name = vsw['name']
         rdev = vsw['rdev']
 
-        info = self.client.send_request('vswitch_create', name, rdev)
+        info = self.client.send_request('vswitch_create', name, rdev=rdev)
         return info
 
     def delete(self, name):
