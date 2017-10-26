@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6313ba01_ac81d274",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 1220,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-10-26T06:07:13Z",
+      "side": 1,
+      "message": "please provide more info , especially we need the info to separate this function to guest_inspect_vnics",
+      "range": {
+        "startLine": 1220,
+        "startChar": 12,
+        "endLine": 1220,
+        "endChar": 37
+      },
+      "revId": "bed579bbb2bb40aeae94eefe9f977027e64cc5ce",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
