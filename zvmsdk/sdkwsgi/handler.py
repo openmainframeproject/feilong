@@ -42,6 +42,9 @@ ROUTE_LIST = (
     ('/guests/vnicsinfo', {
         'GET': guest.guest_get_vnics_info
     }),
+    ('/guests/nics', {
+        'GET': guest.guests_get_nic_info
+    }),
     ('/guests/{userid}', {
         'DELETE': guest.guest_delete,
         'GET': guest.guest_get,
