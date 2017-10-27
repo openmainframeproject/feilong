@@ -19,7 +19,7 @@ create = {
         'vswitch': {
             'type': 'object',
             'properties': {
-                'name': parameter_types.name,
+                'name': parameter_types.vswitch,
                 'rdev': parameter_types.rdev_list,
                 # FIXME: controller has its own conventions
                 'controller': parameter_types.controller,
