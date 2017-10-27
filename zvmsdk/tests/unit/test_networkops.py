@@ -126,3 +126,9 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         self.networkops.delete_nic("userid", "vdev", True)
         delete_nic.assert_called_with("userid", "vdev",
                                       active=True)
+
+    @mock.patch.object(networkops.get_networkops()._smutclient, 'get_nic_info')
+    def test_get_nic_info(self, get_nic_info):
+        self.networkops.get_nic_info(userid='testid', vswitch='VSWITCH')
+        get_nic_info.assert_called_with(userid='testid', nic_id=None,
+                                        vswitch='VSWITCH')

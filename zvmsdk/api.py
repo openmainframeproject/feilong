@@ -1214,3 +1214,30 @@ class SDKAPI(object):
                       userid)
             raise
         return guest_networks
+
+    @zvmutils.check_input_types(_TUSERID, _TSTR, _TSTR)
+    def guests_get_nic_info(self, userid=None, nic_id=None, vswitch=None):
+        """ Retrieve nic information in the network database according to
+            the requirements, the nic information will include the guest
+            name, nic device number, vswitch name that the nic is coupled
+            to, nic identifier and the comments.
+
+        :param str userid: the user id of the vm
+        :param str nic_id: nic identifier
+        :param str vswitch: the name of the vswitch
+
+        :returns: list describing nic information, format is
+                  [
+                  (userid, interface, vswitch, nic_id, comments),
+                  (userid, interface, vswitch, nic_id, comments)
+                  ], such as
+                  [
+                  ('VM01', '1000', 'xcatvsw2', '1111-2222', None),
+                  ('VM02', '2000', 'xcatvsw3', None, None)
+                  ]
+        :rtype: list
+        """
+        action = "get nic information"
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._networkops.get_nic_info(userid=userid, nic_id=nic_id,
+                                                 vswitch=vswitch)
