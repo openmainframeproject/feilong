@@ -98,6 +98,15 @@ class VMHandler(object):
                                         userid_list)
         return info
 
+    @validation.schema(guest.nic_DB_info)
+    def get_nic_DB_info(self, body=None):
+        userid = body.get('userid', None)
+        nic_id = body.get('nic_id', None)
+        vswitch = body.get('vswitch', None)
+        info = self.client.send_request('guests_get_nic_info', userid=userid,
+                                        nic_id=nic_id, vswitch=vswitch)
+        return info
+
     @validation.schema(guest.create_nic)
     def create_nic(self, userid, body=None):
         nic = body['nic']
@@ -523,6 +532,25 @@ def guest_get_vnics_info(req):
         return action.get_vnics_info(req, userid_list)
 
     info = _guest_get_vnics_info(req, userid_list)
+
+    info_json = json.dumps(info)
+    req.response.status = util.get_http_code_from_sdk_return(info,
+        additional_handler=util.handle_not_found)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def guests_get_nic_info(req):
+
+    def _guests_get_nic_DB_info(req):
+        action = get_handler()
+        body = util.extract_json(req.body)
+        return action.get_nic_DB_info(body=body)
+
+    info = _guests_get_nic_DB_info(req)
 
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,
