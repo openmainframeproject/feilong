@@ -136,8 +136,8 @@ class GuestHandlerNegativeTest(unittest.TestCase):
         self.assertRaises(webob.exc.HTTPMethodNotAllowed,
                           h, self.env, dummy)
 
-    def test_guest_meminfo_method_invalid(self):
-        self.env['PATH_INFO'] = '/guests/meminfo'
+    def test_guest_stats_method_invalid(self):
+        self.env['PATH_INFO'] = '/guests/stats'
         self.env['REQUEST_METHOD'] = 'PUT'
         h = handler.SdkHandler()
         self.assertRaises(webob.exc.HTTPMethodNotAllowed,
@@ -301,9 +301,9 @@ class GuestHandlerTest(unittest.TestCase):
             update_nic.assert_called_once_with('1', '1000', body={})
 
     @mock.patch.object(tokens, 'validate')
-    def test_guest_get_mem_info_empty_userid_list(self, mock_validate):
+    def test_guest_get_stats_empty_userid_list(self, mock_validate):
         self.env['wsgiorg.routing_args'] = ()
-        self.env['PATH_INFO'] = '/guests/meminfo'
+        self.env['PATH_INFO'] = '/guests/stats'
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = ''
         h = handler.SdkHandler()
@@ -312,12 +312,12 @@ class GuestHandlerTest(unittest.TestCase):
             get_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
-            get_info.assert_called_once_with('guest_inspect_mem', [])
+            get_info.assert_called_once_with('guest_inspect_stats', [])
 
     @mock.patch.object(tokens, 'validate')
-    def test_guest_get_mem_info_userid_list(self, mock_validate):
+    def test_guest_get_stats_userid_list(self, mock_validate):
         self.env['wsgiorg.routing_args'] = ()
-        self.env['PATH_INFO'] = '/guests/meminfo'
+        self.env['PATH_INFO'] = '/guests/stats'
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = 'userid=l1,l2'
         h = handler.SdkHandler()
@@ -326,13 +326,13 @@ class GuestHandlerTest(unittest.TestCase):
             get_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
-            get_info.assert_called_once_with('guest_inspect_mem',
+            get_info.assert_called_once_with('guest_inspect_stats',
                                              ['l1', 'l2'])
 
     @mock.patch.object(tokens, 'validate')
-    def test_guest_get_mem_info_invalid(self, mock_validate):
+    def test_guest_get_stats_invalid(self, mock_validate):
         self.env['wsgiorg.routing_args'] = ()
-        self.env['PATH_INFO'] = '/guests/meminfo'
+        self.env['PATH_INFO'] = '/guests/stats'
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = 'userid=l1,l2&userd=l3,l4'
         h = handler.SdkHandler()
@@ -375,45 +375,6 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['PATH_INFO'] = '/guests/vnicsinfo'
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = 'use=l1,l2'
-        h = handler.SdkHandler()
-        self.assertRaises(exception.ValidationError, h, self.env,
-                          dummy)
-
-    @mock.patch.object(tokens, 'validate')
-    def test_guest_get_cpu_info_empty_userid_list(self, mock_validate):
-        self.env['wsgiorg.routing_args'] = ()
-        self.env['PATH_INFO'] = '/guests/cpuinfo'
-        self.env['REQUEST_METHOD'] = 'GET'
-        self.env['QUERY_STRING'] = ''
-        h = handler.SdkHandler()
-        func = 'sdkclient.client.SDKClient.send_request'
-        with mock.patch(func) as get_info:
-            get_info.return_value = {'overallRC': 0}
-            h(self.env, dummy)
-
-            get_info.assert_called_once_with('guest_inspect_cpus', [])
-
-    @mock.patch.object(tokens, 'validate')
-    def test_guest_get_cpu_info_userid_list(self, mock_validate):
-        self.env['wsgiorg.routing_args'] = ()
-        self.env['PATH_INFO'] = '/guests/cpuinfo'
-        self.env['REQUEST_METHOD'] = 'GET'
-        self.env['QUERY_STRING'] = 'userid=l1,l2'
-        h = handler.SdkHandler()
-        func = 'sdkclient.client.SDKClient.send_request'
-        with mock.patch(func) as get_info:
-            get_info.return_value = {'overallRC': 0}
-            h(self.env, dummy)
-
-            get_info.assert_called_once_with('guest_inspect_cpus',
-                                             ['l1', 'l2'])
-
-    @mock.patch.object(tokens, 'validate')
-    def test_guest_get_cpu_info_multiple(self, mock_validate):
-        self.env['wsgiorg.routing_args'] = ()
-        self.env['PATH_INFO'] = '/guests/cpuinfo'
-        self.env['REQUEST_METHOD'] = 'GET'
-        self.env['QUERY_STRING'] = 'userid=l1,l2&userid=l3,l4'
         h = handler.SdkHandler()
         self.assertRaises(exception.ValidationError, h, self.env,
                           dummy)

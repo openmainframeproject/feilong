@@ -36,11 +36,8 @@ ROUTE_LIST = (
         'POST': guest.guest_create,
         'GET': guest.guest_list,
     }),
-    ('/guests/cpuinfo', {
-        'GET': guest.guest_get_cpu_info
-    }),
-    ('/guests/meminfo', {
-        'GET': guest.guest_get_memory_info
+    ('/guests/stats', {
+        'GET': guest.guest_get_stats
     }),
     ('/guests/vnicsinfo', {
         'GET': guest.guest_get_vnics_info
