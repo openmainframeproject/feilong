@@ -87,14 +87,8 @@ class VMHandler(object):
         return info
 
     @validation.query_schema(guest.userid_list_query)
-    def get_cpu_info(self, req, userid_list):
-        info = self.client.send_request('guest_inspect_cpus',
-                                        userid_list)
-        return info
-
-    @validation.query_schema(guest.userid_list_query)
-    def get_memory_info(self, req, userid_list):
-        info = self.client.send_request('guest_inspect_mem',
+    def get_stats(self, req, userid_list):
+        info = self.client.send_request('guest_inspect_stats',
                                         userid_list)
         return info
 
@@ -500,35 +494,15 @@ def _get_userid_list(req):
 
 @wsgi_wrapper.SdkWsgify
 @tokens.validate
-def guest_get_cpu_info(req):
+def guest_get_stats(req):
 
     userid_list = _get_userid_list(req)
 
-    def _guest_get_cpu_info(req, userid_list):
+    def _guest_get_stats(req, userid_list):
         action = get_handler()
-        return action.get_cpu_info(req, userid_list)
+        return action.get_stats(req, userid_list)
 
-    info = _guest_get_cpu_info(req, userid_list)
-
-    info_json = json.dumps(info)
-    req.response.status = util.get_http_code_from_sdk_return(info,
-        additional_handler=util.handle_not_found)
-    req.response.body = utils.to_utf8(info_json)
-    req.response.content_type = 'application/json'
-    return req.response
-
-
-@wsgi_wrapper.SdkWsgify
-@tokens.validate
-def guest_get_memory_info(req):
-
-    userid_list = _get_userid_list(req)
-
-    def _guest_get_memory_info(req, userid_list):
-        action = get_handler()
-        return action.get_memory_info(req, userid_list)
-
-    info = _guest_get_memory_info(req, userid_list)
+    info = _guest_get_stats(req, userid_list)
 
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,

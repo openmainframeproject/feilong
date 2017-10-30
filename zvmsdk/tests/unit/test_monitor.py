@@ -45,9 +45,7 @@ CPUMEM_SAMPLE2 = {
             'min_memory': '0 KB',
             'shared_memory': '5222190 KB',
             }
-CPU_KEYS = ['guest_cpus', 'used_cpu_time_us', 'elapsed_cpu_time_us',
-            'min_cpu_count', 'max_cpu_limit', 'samples_cpu_in_use',
-            'samples_cpu_delay']
+
 MEM_KEYS = ['used_mem_kb', 'max_mem_kb', 'min_mem_kb', 'shared_mem_kb']
 
 SMCLI_VSW_NIC_DATA = {'vswitches': [
@@ -327,36 +325,34 @@ class SDKMonitorTestCase(base.SDKTestCase):
         self._monitor._cache._cache['cpumem']['data'].keys(), [])
 
     @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
-    def test_inspect_cpus_single(self, _get_inspect_data):
+    def test_inspect_stats_single(self, _get_inspect_data):
         _get_inspect_data.return_value = {
             'USERID1': CPUMEM_SAMPLE1,
             'USERID2': CPUMEM_SAMPLE2
             }
-        rdata = self._monitor.inspect_cpus(['userid1'])
+        rdata = self._monitor.inspect_stats(['userid1'])
         _get_inspect_data.assert_called_once_with('cpumem', ['userid1'])
         self.assertEqual(sorted(rdata.keys()), sorted(['USERID1']))
-        self.assertEqual(sorted(rdata['USERID1'].keys()),
-                         sorted(CPU_KEYS)
-                         )
         self.assertEqual(rdata['USERID1']['guest_cpus'], 1)
         self.assertEqual(rdata['USERID1']['used_cpu_time_us'], 6185838)
         self.assertEqual(rdata['USERID1']['elapsed_cpu_time_us'], 35232895)
         self.assertEqual(rdata['USERID1']['min_cpu_count'], 2)
         self.assertEqual(rdata['USERID1']['max_cpu_limit'], 10000)
+        self.assertEqual(rdata['USERID1']['used_mem_kb'], 290232)
+        self.assertEqual(rdata['USERID1']['max_mem_kb'], 2097152)
+        self.assertEqual(rdata['USERID1']['min_mem_kb'], 0)
+        self.assertEqual(rdata['USERID1']['shared_mem_kb'], 5222192)
 
     @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
-    def test_inspect_cpus_multi(self, _get_inspect_data):
+    def test_inspect_stats_multi(self, _get_inspect_data):
         _get_inspect_data.return_value = {
             'USERID1': CPUMEM_SAMPLE1,
             'USERID2': CPUMEM_SAMPLE2
             }
-        rdata = self._monitor.inspect_cpus(['userid1', 'userid2'])
+        rdata = self._monitor.inspect_stats(['userid1', 'userid2'])
         _get_inspect_data.assert_called_once_with('cpumem',
                                                   ['userid1', 'userid2'])
         self.assertEqual(sorted(rdata.keys()), sorted(['USERID1', 'USERID2']))
-        self.assertEqual(sorted(rdata['USERID1'].keys()),
-                         sorted(CPU_KEYS)
-                         )
         self.assertEqual(rdata['USERID1']['guest_cpus'], 1)
         self.assertEqual(rdata['USERID1']['used_cpu_time_us'], 6185838)
         self.assertEqual(rdata['USERID1']['elapsed_cpu_time_us'], 35232895)
@@ -367,64 +363,6 @@ class SDKMonitorTestCase(base.SDKTestCase):
         self.assertEqual(rdata['USERID2']['elapsed_cpu_time_us'], 4868976371)
         self.assertEqual(rdata['USERID2']['min_cpu_count'], 3)
         self.assertEqual(rdata['USERID2']['max_cpu_limit'], 10000)
-
-    @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
-    def test_inspect_cpus_single_off_or_not_exist(self, _get_inspect_data):
-        _get_inspect_data.return_value = {
-            'USERID2': CPUMEM_SAMPLE2
-            }
-        rdata = self._monitor.inspect_cpus(['userid1'])
-        _get_inspect_data.assert_called_once_with('cpumem', ['userid1'])
-        self.assertEqual(rdata, {})
-
-    @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
-    def test_inspect_cpus_multi_off_or_not_exist(self, _get_inspect_data):
-        _get_inspect_data.return_value = {
-            'USERID1': CPUMEM_SAMPLE1
-            }
-        rdata = self._monitor.inspect_cpus(['userid1', 'userid2'])
-        _get_inspect_data.assert_called_once_with('cpumem',
-                                                  ['userid1', 'userid2'])
-        self.assertEqual(sorted(rdata.keys()), sorted(['USERID1']))
-        self.assertEqual(sorted(rdata['USERID1'].keys()),
-                         sorted(CPU_KEYS)
-                         )
-        self.assertEqual(rdata['USERID1']['guest_cpus'], 1)
-        self.assertEqual(rdata['USERID1']['used_cpu_time_us'], 6185838)
-        self.assertEqual(rdata['USERID1']['elapsed_cpu_time_us'], 35232895)
-        self.assertEqual(rdata['USERID1']['min_cpu_count'], 2)
-        self.assertEqual(rdata['USERID1']['max_cpu_limit'], 10000)
-
-    @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
-    def test_inspect_mem_single(self, _get_inspect_data):
-        _get_inspect_data.return_value = {
-            'USERID1': CPUMEM_SAMPLE1,
-            'USERID2': CPUMEM_SAMPLE2
-            }
-        rdata = self._monitor.inspect_mem(['userid1'])
-        _get_inspect_data.assert_called_once_with('cpumem', ['userid1'])
-        self.assertEqual(sorted(rdata.keys()), sorted(['USERID1']))
-        self.assertEqual(sorted(rdata['USERID1'].keys()),
-                         sorted(MEM_KEYS)
-                         )
-        self.assertEqual(rdata['USERID1']['used_mem_kb'], 290232)
-        self.assertEqual(rdata['USERID1']['max_mem_kb'], 2097152)
-        self.assertEqual(rdata['USERID1']['min_mem_kb'], 0)
-        self.assertEqual(rdata['USERID1']['shared_mem_kb'], 5222192)
-
-    @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
-    def test_inspect_mem_multi(self, _get_inspect_data):
-        _get_inspect_data.return_value = {
-            'USERID1': CPUMEM_SAMPLE1,
-            'USERID2': CPUMEM_SAMPLE2
-            }
-        rdata = self._monitor.inspect_mem(['userid1', 'userid2'])
-        _get_inspect_data.assert_called_once_with('cpumem',
-                                                  ['userid1', 'userid2'])
-        self.assertEqual(sorted(rdata.keys()), sorted(['USERID1', 'USERID2']))
-        self.assertEqual(sorted(rdata['USERID1'].keys()),
-                         sorted(MEM_KEYS)
-                         )
         self.assertEqual(rdata['USERID1']['used_mem_kb'], 290232)
         self.assertEqual(rdata['USERID1']['max_mem_kb'], 2097152)
         self.assertEqual(rdata['USERID1']['min_mem_kb'], 0)
@@ -435,26 +373,28 @@ class SDKMonitorTestCase(base.SDKTestCase):
         self.assertEqual(rdata['USERID2']['shared_mem_kb'], 5222190)
 
     @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
-    def test_inspect_mem_single_off_or_not_exist(self, _get_inspect_data):
+    def test_inspect_stats_single_off_or_not_exist(self, _get_inspect_data):
         _get_inspect_data.return_value = {
             'USERID2': CPUMEM_SAMPLE2
             }
-        rdata = self._monitor.inspect_mem(['userid1'])
+        rdata = self._monitor.inspect_stats(['userid1'])
         _get_inspect_data.assert_called_once_with('cpumem', ['userid1'])
         self.assertEqual(rdata, {})
 
     @mock.patch.object(monitor.ZVMMonitor, '_get_inspect_data')
-    def test_inspect_mem_multi_off_or_not_exist(self, _get_inspect_data):
+    def test_inspect_stats_multi_off_or_not_exist(self, _get_inspect_data):
         _get_inspect_data.return_value = {
             'USERID1': CPUMEM_SAMPLE1
             }
-        rdata = self._monitor.inspect_mem(['userid1', 'userid2'])
+        rdata = self._monitor.inspect_stats(['userid1', 'userid2'])
         _get_inspect_data.assert_called_once_with('cpumem',
                                                   ['userid1', 'userid2'])
         self.assertEqual(sorted(rdata.keys()), sorted(['USERID1']))
-        self.assertEqual(sorted(rdata['USERID1'].keys()),
-                         sorted(MEM_KEYS)
-                         )
+        self.assertEqual(rdata['USERID1']['guest_cpus'], 1)
+        self.assertEqual(rdata['USERID1']['used_cpu_time_us'], 6185838)
+        self.assertEqual(rdata['USERID1']['elapsed_cpu_time_us'], 35232895)
+        self.assertEqual(rdata['USERID1']['min_cpu_count'], 2)
+        self.assertEqual(rdata['USERID1']['max_cpu_limit'], 10000)
         self.assertEqual(rdata['USERID1']['used_mem_kb'], 290232)
         self.assertEqual(rdata['USERID1']['max_mem_kb'], 2097152)
         self.assertEqual(rdata['USERID1']['min_mem_kb'], 0)

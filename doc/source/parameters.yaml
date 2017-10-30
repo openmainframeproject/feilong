@@ -109,9 +109,9 @@ userid_list_guest:
   in: body
   required: true
   type: list
-cpu_info_guest:
+stats_guest:
   description: |
-    cpu statics of guest
+    cpu and memory statics of guest
   in: body
   required: true
   type: dict
