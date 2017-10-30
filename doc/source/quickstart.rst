@@ -48,9 +48,41 @@ z/VM zthin install
 zthin is a library written by c and mainly focus on socket connection
 from BYOL to z/VM SMAPI.
 
+SSH onto the BYOL as root user, and then follow the following steps:
+
 - Build zthin
+  - Clone python-zvm-sdk project from github
+
+    # git clone https://github.com/mfcloud/python-zvm-sdk.git
+
+  - Trigger the build tool
+
+    # cd python-zvm-sdk
+
+    # sh ./zthin-parts/buildzthingithub master
+
+    If this build finishes successfully, the result rpm will be generated
+    in the /root/zthin-build/RPMS/s390x/ directory named in the format
+    zthin-version-snapdate.s390x.rpm where "version" is the zthin version
+    number and "date" is the build date.
 
 - Install zthin
+  - Install the rpm generated in last step.
+  
+    # rpm -ivh /root/zthin-build/RPMS/s390x/zthin-3.1.0-snap201710300123.s390x.rpm
+
+    Be sure to replace the zthin-3.1.0-snap201710300123.s390x.rpm with your own
+    rpm name.
+
+  - Verify zthin can work.
+    # ll /usr/bin/smcli
+
+    lrwxrwxrwx 1 root root 20 Oct 30 01:29 /usr/bin/smcli -> /opt/zthin/bin/smcli
+
+    # smcli Image_Query_DM -T opncloud
+
+    If the zthin rpm is installed normally, the previous smcli command should be
+    able to return the directory entry of user OPNCLOUD.
 
 z/VM sdk install
 ----------------
@@ -63,6 +95,19 @@ z/VM sdk install
 * Through Code directly install
 
 - Install z/VM sdk
+
+  - Clone python-zvm-sdk project from github
+
+    If this has been done in the "z/VM zthin install" step, this step can be
+    obsoleted.
+
+    # git clone https://github.com/mfcloud/python-zvm-sdk.git
+
+  - Install z/VM sdk
+
+    # cd python-zvm-sdk
+
+    # python ./setup.py install
 
 =============
 Configuration
