@@ -40,10 +40,10 @@ class ZVMMonitor(object):
         self._cache = MeteringCache(self._TYPES)
         self._smutclient = smutclient.get_smutclient()
 
-    def inspect_cpus(self, uid_list):
+    def inspect_stats(self, uid_list):
         cpumem_data = self._get_inspect_data('cpumem', uid_list)
         # construct and return final result
-        cpu_data = {}
+        stats_data = {}
         for uid in uid_list:
             uid = uid.upper()
             if uid in cpumem_data:
@@ -54,42 +54,27 @@ class ZVMMonitor(object):
                     used_cpu_time = int(used_cpu_time.partition(' ')[0])
                     elapsed_cpu_time = int(
                         user_data['elapsed_cpu_time'].partition(' ')[0])
-
-                cpu_data[uid] = {
-                    'guest_cpus': guest_cpus,
-                    'used_cpu_time_us': used_cpu_time,
-                    'elapsed_cpu_time_us': elapsed_cpu_time,
-                    'min_cpu_count': int(user_data['min_cpu_count']),
-                    'max_cpu_limit': int(user_data['max_cpu_limit']),
-                    'samples_cpu_in_use': int(user_data['samples_cpu_in_use']),
-                    'samples_cpu_delay': int(user_data['samples_cpu_delay'])
-                    }
-
-        return cpu_data
-
-    def inspect_mem(self, uid_list):
-        cpumem_data = self._get_inspect_data('cpumem', uid_list)
-        # construct and return final result
-        mem_data = {}
-        for uid in uid_list:
-            uid = uid.upper()
-            if uid in cpumem_data:
-                with zvmutils.expect_invalid_resp_data():
-                    user_data = cpumem_data[uid]
                     used_mem = int(user_data['used_memory'].partition(' ')[0])
                     max_mem = int(user_data['max_memory'].partition(' ')[0])
                     min_mem = int(user_data['min_memory'].partition(' ')[0])
                     shared_mem = int(
                         user_data['shared_memory'].partition(' ')[0])
 
-                    mem_data[uid] = {
+                stats_data[uid] = {
+                    'guest_cpus': guest_cpus,
+                    'used_cpu_time_us': used_cpu_time,
+                    'elapsed_cpu_time_us': elapsed_cpu_time,
+                    'min_cpu_count': int(user_data['min_cpu_count']),
+                    'max_cpu_limit': int(user_data['max_cpu_limit']),
+                    'samples_cpu_in_use': int(user_data['samples_cpu_in_use']),
+                    'samples_cpu_delay': int(user_data['samples_cpu_delay']),
                     'used_mem_kb': used_mem,
                     'max_mem_kb': max_mem,
                     'min_mem_kb': min_mem,
                     'shared_mem_kb': shared_mem
                     }
 
-        return mem_data
+        return stats_data
 
     def inspect_vnics(self, uid_list):
         vnics = self._get_inspect_data('vnics', uid_list)

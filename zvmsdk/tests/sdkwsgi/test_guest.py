@@ -205,20 +205,11 @@ class GuestHandlerTestCase(unittest.TestCase):
         body = '{"action": "reset"}'
         return self._guest_action(body, userid=userid)
 
-    def _guest_cpuinfo(self, userid=None):
+    def _guest_stats(self, userid=None):
         if userid is None:
             userid = self.userid
 
-        url = '/guests/cpuinfo?userid=%s' % userid
-        resp = self.client.api_request(url=url,
-                                       method='GET')
-        return resp
-
-    def _guest_meminfo(self, userid=None):
-        if userid is None:
-            userid = self.userid
-
-        url = '/guests/meminfo?userid=%s' % userid
+        url = '/guests/stats?userid=%s' % userid
         resp = self.client.api_request(url=url,
                                        method='GET')
         return resp
@@ -319,10 +310,7 @@ class GuestHandlerTestCase(unittest.TestCase):
 
     def test_guest_inspect_not_exist(self):
         # following 200 is expected
-        resp = self._guest_cpuinfo('notexist')
-        self.assertEqual(200, resp.status_code)
-
-        resp = self._guest_meminfo('notexist')
+        resp = self._guest_stats('notexist')
         self.assertEqual(200, resp.status_code)
 
         resp = self._guest_vnicsinfo('notexist')
@@ -355,14 +343,9 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.apibase.verify_result('test_guest_get_power_state',
                                        resp.content)
 
-            resp = self._guest_cpuinfo()
+            resp = self._guest_stats()
             self.assertEqual(200, resp.status_code)
-            self.apibase.verify_result('test_guests_get_cpu_info',
-                                       resp.content)
-
-            resp = self._guest_meminfo()
-            self.assertEqual(200, resp.status_code)
-            self.apibase.verify_result('test_guests_get_memory_info',
+            self.apibase.verify_result('test_guests_get_stats',
                                        resp.content)
 
             resp = self._guest_vnicsinfo()

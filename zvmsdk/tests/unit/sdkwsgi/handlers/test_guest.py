@@ -447,20 +447,12 @@ class HandlersGuestTest(SDKWSGITest):
         guest.guest_get(self.req)
         mock_get.assert_called_once_with(FAKE_USERID)
 
-    @mock.patch.object(guest.VMHandler, 'get_cpu_info')
-    def test_guest_get_cpu_info(self, mock_get):
+    @mock.patch.object(guest.VMHandler, 'get_stats')
+    def test_guest_get_stats(self, mock_get):
         self.req.GET = FakeReqGet()
         mock_get.return_value = '{}'
 
-        guest.guest_get_cpu_info(self.req)
-        mock_get.assert_called_once_with(self.req, FAKE_USERID_LIST)
-
-    @mock.patch.object(guest.VMHandler, 'get_memory_info')
-    def test_guest_get_mem_info(self, mock_get):
-        self.req.GET = FakeReqGet()
-        mock_get.return_value = '{}'
-
-        guest.guest_get_memory_info(self.req)
+        guest.guest_get_stats(self.req)
         mock_get.assert_called_once_with(self.req, FAKE_USERID_LIST)
 
     @mock.patch.object(guest.VMHandler, 'get_vnics_info')
