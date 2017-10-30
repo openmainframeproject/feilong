@@ -121,10 +121,10 @@ Create Guest
 
   No Response
 
-Get Guests cpu info
+Get Guests stats including cpu and memory
 -------------------
 
-**GET /guests/cpuinfo**
+**GET /guests/stats**
 
 * Request:
 
@@ -140,37 +140,11 @@ Get Guests cpu info
 
 .. restapi_parameters:: parameters.yaml
 
-  - cpu: cpu_info_guest
+  - cpu: stats_guest
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_cpu_info.tpl
-   :language: javascript
-
-Get Guests memory info
-----------------------
-
-**GET /guests/meminfo**
-
-* Request:
-
-.. restapi_parameters:: parameters.yaml
-
-  - userid_list: userid_list_guest
-
-* Response code:
-
-  HTTP status code 200 on success.
-
-* Response contents:
-
-.. restapi_parameters:: parameters.yaml
-
-  - memory: guest_memory
-
-* Response sample:
-
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_memory_info.tpl
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_stats.tpl
    :language: javascript
 
 Get Guests vnics info

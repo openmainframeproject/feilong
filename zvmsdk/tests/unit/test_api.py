@@ -88,29 +88,17 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.guest_delete(userid)
         delete_vm.assert_called_once_with(userid)
 
-    @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_cpus")
-    def test_guest_inspect_cpus_list(self, inspect_cpus):
+    @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_stats")
+    def test_guest_inspect_cpus_list(self, inspect_stats):
         userid_list = ["userid1", "userid2"]
-        self.api.guest_inspect_cpus(userid_list)
-        inspect_cpus.assert_called_once_with(userid_list)
+        self.api.guest_inspect_stats(userid_list)
+        inspect_stats.assert_called_once_with(userid_list)
 
-    @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_cpus")
-    def test_guest_inspect_cpus_single(self, inspect_cpus):
+    @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_stats")
+    def test_guest_inspect_cpus_single(self, inspect_stats):
         userid_list = "userid1"
-        self.api.guest_inspect_cpus(userid_list)
-        inspect_cpus.assert_called_once_with(["userid1"])
-
-    @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_mem")
-    def test_guest_inspect_mem_list(self, inspect_mem):
-        userid_list = ["userid1", "userid2"]
-        self.api.guest_inspect_mem(userid_list)
-        inspect_mem.assert_called_once_with(userid_list)
-
-    @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_mem")
-    def test_guest_inspect_mem_single(self, inspect_mem):
-        userid_list = "userid1"
-        self.api.guest_inspect_mem(userid_list)
-        inspect_mem.assert_called_once_with(["userid1"])
+        self.api.guest_inspect_stats(userid_list)
+        inspect_stats.assert_called_once_with(["userid1"])
 
     @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_vnics")
     def test_guest_inspect_vnics_list(self, inspect_vnics):
