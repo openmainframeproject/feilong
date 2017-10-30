@@ -454,7 +454,10 @@ class SMUTClient(object):
         power_state = self.get_power_state(userid)
         # Power on the vm if it is inactive
         if power_state == 'off':
-            self.guest_start(userid)
+            msg = ('The vm %(vm)s is powered off, please start up it '
+                   'before capture' % userid)
+            raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                   msg=msg)
 
         # Make sure the iucv channel is ready for communication on source vm
         try:
