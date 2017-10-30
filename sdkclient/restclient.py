@@ -39,12 +39,20 @@ PARAM_IN_PATH = {
     'guest_delete': 1,
     'guest_get': 1,
     'guest_update': 1,
-    'guest_action': 1,
+    'guest_start': 1,
+    'guest_stop': 1,
+    'guest_pause': 1,
+    'guest_unpause': 1,
+    'guest_reboot': 1,
+    'guest_reset': 1,
+    'guest_get_console_output': 1,
+    'guest_deploy': 1,
     'guest_get_info': 1,
     'guest_get_nic_info': 1,
     'guest_create_nic': 1,
     'guest_delete_nic': 2,
-    'guest_couple_uncouple_nic': 2,
+    'guest_nic_couple_to_vswitch': 2,
+    'guest_nic_uncouple_from_vswitch': 2,
     'guest_create_network_interface': 1,
     'guest_get_power_state': 1,
     'guest_create_disks': 1,
@@ -76,12 +84,20 @@ API2URL = {
     'guest_delete': '/guests/%s',
     'guest_get': '/guests/%s',
     'guest_update': '/guests/%s',
-    'guest_action': '/guests/%s/action',
+    'guest_start': '/guests/%s/action',
+    'guest_stop': '/guests/%s/action',
+    'guest_pause': '/guests/%s/action',
+    'guest_unpause': '/guests/%s/action',
+    'guest_reboot': '/guests/%s/action',
+    'guest_reset': '/guests/%s/action',
+    'guest_get_console_output': '/guests/%s/action',
+    'guest_deploy': '/guests/%s/action',
     'guest_get_info': '/guests/%s/info',
     'guest_get_nic_info': '/guests/%s/nic',
     'guest_create_nic': '/guests/%s/nic',
     'guest_delete_nic': '/guests/%s/nic/%s',
-    'guest_couple_uncouple_nic': '/guests/%s/nic/%s',
+    'guest_nic_couple_to_vswitch': '/guests/%s/nic/%s',
+    'guest_nic_uncouple_from_vswitch': '/guests/%s/nic/%s',
     'guest_create_network_interface': '/guests/%s/interface',
     'guest_get_power_state': '/guests/%s/power_state',
     'guest_create_disks': '/guests/%s/disks',
@@ -113,12 +129,20 @@ API2METHOD = {
     'guest_delete': 'DELETE',
     'guest_get': 'GET',
     'guest_update': 'PUT',
-    'guest_action': 'POST',
+    'guest_start': 'POST',
+    'guest_stop': 'POST',
+    'guest_pause': 'POST',
+    'guest_unpause': 'POST',
+    'guest_reboot': 'POST',
+    'guest_reset': 'POST',
+    'guest_get_console_output': 'POST',
+    'guest_deploy': 'POST',
     'guest_get_info': 'GET',
     'guest_get_nic_info': 'GET',
     'guest_create_nic': 'POST',
     'guest_delete_nic': 'DELETE',
-    'guest_couple_uncouple_nic': 'PUT',
+    'guest_nic_couple_to_vswitch': 'PUT',
+    'guest_nic_uncouple_from_vswitch': 'PUT',
     'guest_create_network_interface': 'POST',
     'guest_get_power_state': 'GET',
     'guest_create_disks': 'POST',
@@ -150,12 +174,20 @@ API2BODY = {
     'guest_delete': None,
     'guest_get': None,
     'guest_update': 'body_guest_update',
-    'guest_action': 'body_guest_action',
+    'guest_start': 'body_guest_start',
+    'guest_stop': 'body_guest_stop',
+    'guest_pause': 'body_guest_pause',
+    'guest_unpause': 'body_guest_unpause',
+    'guest_reboot': 'body_guest_reboot',
+    'guest_reset': 'body_guest_reset',
+    'guest_get_console_output': 'body_guest_get_console_output',
+    'guest_deploy': 'body_guest_deploy',
     'guest_get_info': None,
     'guest_get_nic_info': None,
     'guest_create_nic': 'body_guest_create_nic',
     'guest_delete_nic': 'body_guest_delete_nic',
-    'guest_couple_uncouple_nic': 'body_guest_couple_uncouple_nic',
+    'guest_nic_couple_to_vswitch': 'body_guest_nic_couple_to_vswitch',
+    'guest_nic_uncouple_from_vswitch': 'body_guest_nic_uncouple_from_vswitch',
     'guest_create_network_interface': 'body_guest_create_network_interface',
     'guest_get_power_state': None,
     'guest_create_disks': 'body_guest_create_disks',
@@ -186,13 +218,53 @@ def body_guest_create(start_index, *args, **kwargs):
                       'vcpus': args[start_index + 1],
                       'memory': args[start_index + 2],
                       'disk_list': kwargs.get('disk_list', None),
-                      'user_profile': kwargs.get('user_profile', None)}}
+                      'user_profile': kwargs.get('user_profile',
+                                                 CONF.zvm.user_profile)}}
     return body
 
 
 # FIXME: the order of args need adjust
-def body_guest_action(start_index, *args, **kwargs):
-    body = {'action': args[start_index]}
+def body_guest_start(start_index, *args, **kwargs):
+    body = {'action': 'start'}
+    return body
+
+
+def body_guest_stop(start_index, *args, **kwargs):
+    body = {'action': 'stop'}
+    return body
+
+
+def body_guest_pause(start_index, *args, **kwargs):
+    body = {'action': 'pause'}
+    return body
+
+
+def body_guest_unpause(start_index, *args, **kwargs):
+    body = {'action': 'unpause'}
+    return body
+
+
+def body_guest_reboot(start_index, *args, **kwargs):
+    body = {'action': 'reboot'}
+    return body
+
+
+def body_guest_reset(start_index, *args, **kwargs):
+    body = {'action': 'reset'}
+    return body
+
+
+def body_guest_get_console_output(start_index, *args, **kwargs):
+    body = {'action': 'get_console_output'}
+    return body
+
+
+def body_guest_deploy(start_index, *args, **kwargs):
+    body = {'action': 'deploy',
+            'image': args[start_index],
+            'transportfiles': kwargs.get('transportfiles', None),
+            'remotehost': kwargs.get('remotehost', None),
+            'vdev': kwargs.get('vdev', None)}
     return body
 
 
@@ -210,9 +282,16 @@ def body_guest_delete_nic(start_index, *args, **kwargs):
     return body
 
 
-def body_guest_couple_uncouple_nic(start_index, *args, **kwargs):
-    body = {'info': {'couple': args[start_index],
-                     'vswitch': args[start_index + 1],
+def body_guest_nic_couple_to_vswitch(start_index, *args, **kwargs):
+    body = {'info': {'couple': True,
+                     'vswitch': args[start_index],
+                     'active': kwargs.get('active', False)}}
+    return body
+
+
+def body_guest_nic_uncouple_from_vswitch(start_index, *args, **kwargs):
+    body = {'info': {'couple': False,
+                     'vswitch': args[start_index],
                      'active': kwargs.get('active', False)}}
     return body
 
