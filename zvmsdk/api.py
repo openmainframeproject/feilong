@@ -708,8 +708,8 @@ class SDKAPI(object):
             return self._vmops.delete_vm(userid)
 
     @zvmutils.check_input_types(_TUSERID_OR_LIST)
-    def guest_inspect_cpus(self, userid_list):
-        """Get the cpu statistics of the guest virtual machines
+    def guest_inspect_stats(self, userid_list):
+        """Get the statistics including cpu and mem of the guests
 
         :param userid_list: a single userid string or a list of guest userids
         :returns: dictionary describing the cpu statistics of the vm
@@ -721,7 +721,11 @@ class SDKAPI(object):
                   'min_cpu_count': xx,
                   'max_cpu_limit': xx,
                   'samples_cpu_in_use': xx,
-                  'samples_cpu_delay': xx
+                  'samples_cpu_delay': xx,
+                  'used_mem_kb': xx,
+                  'max_mem_kb': xx,
+                  'min_mem_kb': xx,
+                  'shared_mem_kb': xx
                   },
                   'UID2':
                   {
@@ -731,33 +735,7 @@ class SDKAPI(object):
                   'min_cpu_count': xx,
                   'max_cpu_limit': xx,
                   'samples_cpu_in_use': xx,
-                  'samples_cpu_delay': xx
-                  }
-                  }
-                  for the guests that are shutdown or not exist, no data
-                  returned in the dictionary
-        """
-        if not isinstance(userid_list, list):
-            userid_list = [userid_list]
-        action = "get the cpu statistics of guest '%s'" % str(userid_list)
-        with zvmutils.log_and_reraise_sdkbase_error(action):
-            return self._monitor.inspect_cpus(userid_list)
-
-    @zvmutils.check_input_types(_TUSERID_OR_LIST)
-    def guest_inspect_mem(self, userid_list):
-        """Get the mem usage statistics of the guest virtual machines
-
-        :param userid_list: a single userid string or a list of guest userids
-        :returns: dictionary describing the mem statistics of the vm
-                  in the form {'UID1':
-                  {
-                  'used_mem_kb': xx,
-                  'max_mem_kb': xx,
-                  'min_mem_kb': xx,
-                  'shared_mem_kb': xx
-                  },
-                  'UID2':
-                  {
+                  'samples_cpu_delay': xx,
                   'used_mem_kb': xx,
                   'max_mem_kb': xx,
                   'min_mem_kb': xx,
@@ -769,9 +747,9 @@ class SDKAPI(object):
         """
         if not isinstance(userid_list, list):
             userid_list = [userid_list]
-        action = "get the memory statistics of guest '%s'" % str(userid_list)
+        action = "get the statistics of guest '%s'" % str(userid_list)
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            return self._monitor.inspect_mem(userid_list)
+            return self._monitor.inspect_stats(userid_list)
 
     @zvmutils.check_input_types(_TUSERID_OR_LIST)
     def guest_inspect_vnics(self, userid_list):
