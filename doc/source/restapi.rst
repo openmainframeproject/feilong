@@ -82,6 +82,10 @@ Get a valid token to perform further request by using user and password.
 
 * Response contents:
 
+.. restapi_parameters:: parameters.yaml
+
+  - X-Auth-Token: auth_token
+
 Guest(s)
 ========
 
@@ -350,8 +354,6 @@ Create a virtual nic on giving guest.
 
 * Response contents:
 
-  No response.
-
 Start guest
 -----------
 
@@ -363,12 +365,12 @@ Start a guest.
 
 .. restapi_parameters:: parameters.yaml
 
-  - guest: guest_userid
+  - userid: guest_userid
   - action: action_start_guest
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_create.tpl
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_create_req.tpl
    :language: javascript
 
 * Response code:
@@ -376,8 +378,6 @@ Start a guest.
   HTTP status code 200 on success.
 
 * Response contents:
-
-  No response.
 
 Stop guest
 ----------
@@ -390,12 +390,12 @@ Stop a guest.
 
 .. restapi_parameters:: parameters.yaml
 
-  - guest: guest_userid
+  - userid: guest_userid
   - action: action_stop_guest
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_stop.tpl
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_stop_req.tpl
    :language: javascript
 
 * Response code:
@@ -403,8 +403,6 @@ Stop a guest.
   HTTP status code 200 on success.
 
 * Response contents:
-
-  No response.
 
 Pause guest
 -----------
@@ -417,12 +415,12 @@ Pause a guest.
 
 .. restapi_parameters:: parameters.yaml
 
-  - guest: guest_userid
+  - userid: guest_userid
   - action: action_pause_guest
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_pause.tpl
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_pause_req.tpl
    :language: javascript
 
 * Response code:
@@ -430,8 +428,6 @@ Pause a guest.
   HTTP status code 200 on success.
 
 * Response contents:
-
-  No response.
 
 Unpause guest
 -------------
@@ -444,12 +440,12 @@ Unpause a guest.
 
 .. restapi_parameters:: parameters.yaml
 
-  - guest: guest_userid
+  - userid: guest_userid
   - action: action_unpause_guest
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_unpause.tpl
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_unpause_req.tpl
    :language: javascript
 
 * Response code:
@@ -457,8 +453,6 @@ Unpause a guest.
   HTTP status code 200 on success.
 
 * Response contents:
-
-  No response.
 
 Reboot guest
 ------------
@@ -472,12 +466,12 @@ given guest.
 
 .. restapi_parameters:: parameters.yaml
 
-  - guest: guest_userid
+  - userid: guest_userid
   - action: action_reboot_guest
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_reboot.tpl
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_reboot_req.tpl
    :language: javascript
 
 * Response code:
@@ -485,8 +479,6 @@ given guest.
   HTTP status code 200 on success.
 
 * Response contents:
-
-  No response.
 
 Reset guest
 -----------
@@ -500,12 +492,12 @@ z/VM it is running on, then log on the guest and IPL.
 
 .. restapi_parameters:: parameters.yaml
 
-  - guest: guest_userid
+  - userid: guest_userid
   - action: action_reset_guest
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_reset.tpl
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_reset_req.tpl
    :language: javascript
 
 * Response code:
@@ -513,8 +505,6 @@ z/VM it is running on, then log on the guest and IPL.
   HTTP status code 200 on success.
 
 * Response contents:
-
-  No response.
 
 Get guest console output
 ------------------------
@@ -527,12 +517,12 @@ Get console output of the guest.
 
 .. restapi_parameters:: parameters.yaml
 
-  - guest: guest_userid
+  - userid: guest_userid
   - action: action_get_console_guest
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get_console_output.tpl
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get_console_output_req.tpl
    :language: javascript
 
 * Response code:
@@ -541,7 +531,7 @@ Get console output of the guest.
 
 * Response contents:
 
-  `FIXME`: implement the output contents
+  - output: console_output
 
 Deploy guest
 ------------
@@ -559,7 +549,7 @@ After guest created, deploy image onto the guest.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_deploy.tpl
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_deploy_req.tpl
    :language: javascript
 
 * Response code:
@@ -567,8 +557,6 @@ After guest created, deploy image onto the guest.
   HTTP status code 200 on success.
 
 * Response contents:
-
-  No response.
 
 Capture guest
 -------------
@@ -584,7 +572,7 @@ Capture guest
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_capture.tpl
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_capture_req.tpl
    :language: javascript
 
 * Response code:
@@ -593,8 +581,6 @@ Capture guest
 
 * Response contents:
 
-  No response.
- 
 Get Guest power state
 ---------------------
 
