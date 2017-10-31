@@ -63,7 +63,7 @@ class VMHandler(object):
         info = self.client.send_request('guest_get_info', userid)
         return info
 
-    def get(self, userid):
+    def get_definition_info(self, userid):
         info = self.client.send_request('guest_get_definition_info', userid)
         return info
 
@@ -75,7 +75,7 @@ class VMHandler(object):
         info = self.client.send_request('guest_delete', userid)
         return info
 
-    def get_nic(self, userid):
+    def get_nic_vswitch_info(self, userid):
         info = self.client.send_request('guest_get_nic_vswitch_info', userid)
         return info
 
@@ -87,13 +87,13 @@ class VMHandler(object):
         return info
 
     @validation.query_schema(guest.userid_list_query)
-    def get_stats(self, req, userid_list):
+    def inspect_stats(self, req, userid_list):
         info = self.client.send_request('guest_inspect_stats',
                                         userid_list)
         return info
 
     @validation.query_schema(guest.userid_list_query)
-    def get_vnics_info(self, req, userid_list):
+    def inspect_vnics(self, req, userid_list):
         info = self.client.send_request('guest_inspect_vnics',
                                         userid_list)
         return info
@@ -144,8 +144,8 @@ class VMHandler(object):
 
         return info
 
-    @validation.schema(guest.couple_uncouple_nic)
-    def couple_uncouple_nic(self, userid, vdev, body):
+    @validation.schema(guest.nic_couple_uncouple)
+    def nic_couple_uncouple(self, userid, vdev, body):
         info = body['info']
 
         active = info.get('active', False)
@@ -259,7 +259,7 @@ def guest_get(req):
 
     def _guest_get(userid):
         action = get_handler()
-        return action.get(userid)
+        return action.get_definition_info(userid)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     info = _guest_get(userid)
@@ -386,7 +386,7 @@ def guest_get_nic_info(req):
 
     def _guest_get_nic_info(userid):
         action = get_handler()
-        return action.get_nic(userid)
+        return action.get_nic_vswitch_info(userid)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     info = _guest_get_nic_info(userid)
@@ -448,7 +448,7 @@ def guest_couple_uncouple_nic(req):
         action = get_handler()
         body = util.extract_json(req.body)
 
-        return action.couple_uncouple_nic(userid, vdev, body=body)
+        return action.nic_couple_uncouple(userid, vdev, body=body)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     vdev = util.wsgi_path_item(req.environ, 'vdev')
@@ -500,7 +500,7 @@ def guest_get_stats(req):
 
     def _guest_get_stats(req, userid_list):
         action = get_handler()
-        return action.get_stats(req, userid_list)
+        return action.inspect_stats(req, userid_list)
 
     info = _guest_get_stats(req, userid_list)
 
@@ -520,7 +520,7 @@ def guest_get_vnics_info(req):
 
     def _guest_get_vnics_info(req, userid_list):
         action = get_handler()
-        return action.get_vnics_info(req, userid_list)
+        return action.inspect_vnics(req, userid_list)
 
     info = _guest_get_vnics_info(req, userid_list)
 

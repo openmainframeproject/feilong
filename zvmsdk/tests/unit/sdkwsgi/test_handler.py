@@ -199,7 +199,7 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['PATH_INFO'] = '/guests/1'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
-        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get'
+        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_definition_info'
         with mock.patch(func) as get:
             get.return_value = {'overallRC': 0}
             h(self.env, dummy)
@@ -211,7 +211,7 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['PATH_INFO'] = '/guests/1/nic'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
-        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_nic'
+        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_nic_vswitch_info'
         with mock.patch(func) as get_nic_info:
             get_nic_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
@@ -293,7 +293,7 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['PATH_INFO'] = '/guests/1/nic/1000'
         self.env['REQUEST_METHOD'] = 'PUT'
         h = handler.SdkHandler()
-        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.couple_uncouple_nic'
+        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.nic_couple_uncouple'
         with mock.patch(func) as update_nic:
             update_nic.return_value = {'overallRC': 0}
             h(self.env, dummy)
@@ -538,7 +538,7 @@ class HostHandlerTest(unittest.TestCase):
         self.env['PATH_INFO'] = '/host/disk/disk1'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
-        function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.get_disk_info'
+        function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.diskpool_get_info'
         with mock.patch(function) as get_disk_info:
             get_disk_info.return_value = {'overallRC': 0}
             h(self.env, dummy)

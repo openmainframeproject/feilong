@@ -34,7 +34,7 @@ class HostAction(object):
         info = self.client.send_request('host_get_info')
         return info
 
-    def get_disk_info(self, diskname):
+    def diskpool_get_info(self, diskname):
         info = self.client.send_request('host_diskpool_get_info',
                                         disk_pool=diskname)
         return info
@@ -69,7 +69,7 @@ def host_get_disk_info(req):
 
     def _host_get_disk_info(diskname):
         action = get_action()
-        return action.get_disk_info(diskname)
+        return action.diskpool_get_info(diskname)
 
     diskname = util.wsgi_path_item(req.environ, 'disk')
 

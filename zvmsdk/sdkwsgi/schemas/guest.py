@@ -111,7 +111,7 @@ delete_disks = {
 }
 
 
-couple_uncouple_nic = {
+nic_couple_uncouple = {
     'type': 'object',
     'properties': {
         'info': {

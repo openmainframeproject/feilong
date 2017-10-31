@@ -53,7 +53,7 @@ class HandlersHostTest(unittest.TestCase):
         host.host_get_info(self.req)
         self.assertTrue(mock_get_info.called)
 
-    @mock.patch.object(host.HostAction, 'get_disk_info')
+    @mock.patch.object(host.HostAction, 'diskpool_get_info')
     def test_host_get_disk_info(self, mock_get_disk_info):
 
         mock_get_disk_info.return_value = ''
