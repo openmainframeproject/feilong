@@ -2,7 +2,23 @@
  REST API
 **********
 
-This is a reference for the cloudlib4zvm API.
+This is a reference for the zvm cloud connector (cloudlib4zvm) API.
+
+Common output
+=============
+
+zvm cloud connector returns following output as reference, in case
+encounter an error, those information will be helpful to report bug/issue.
+The following API reference document will only cover ``out`` part as
+it's different for each API.
+
+.. restapi_parameters:: parameters.yaml
+  - overallRC: ret_overallrc
+  - rc: ret_rc
+  - rs: ret_rs
+  - errmsg: ret_errmsg
+  - modID: ret_modID
+  - output: ret_output
 
 Version
 =======
@@ -140,7 +156,7 @@ Get Guests stats including cpu and memory
 
 .. restapi_parameters:: parameters.yaml
 
-  - cpu: stats_guest
+  - output: stats_guest
 
 * Response sample:
 
@@ -166,7 +182,7 @@ Get Guests vnics info
 
 .. restapi_parameters:: parameters.yaml
 
-  - vnics: guest_vnics
+  - output: guest_vnics
 
 * Response sample:
 
@@ -194,7 +210,7 @@ Display the user direct by the given userid.
 
 .. restapi_parameters:: parameters.yaml
 
-  - user_direct: user_direct_guest
+  - output: user_direct_guest
 
 * Response sample:
 
@@ -261,7 +277,7 @@ Get Guest info
 
 .. restapi_parameters:: parameters.yaml
 
-  - info: guest_info
+  - output: guest_info
   - max_mem_kb: guest_memory_kb
   - num_cpu: num_cpu_guest
   - cpu_time_us: cpu_time_us_guest
@@ -551,7 +567,7 @@ Get Guest power state
 
 .. restapi_parameters:: parameters.yaml
 
-  - power_state: power_status_guest
+  - output: power_status_guest
 
 * Response sample:
 
@@ -622,7 +638,7 @@ Get Host Info
 
 .. restapi_parameters:: parameters.yaml
 
-  - host: host_info
+  - output: host_info
 
 * Response sample:
 
@@ -648,7 +664,7 @@ Get Host disk pool info
 
 .. restapi_parameters:: parameters.yaml
 
-  - disk_info: disk_info_host
+  - output: disk_info_host
 
 * Response sample:
 
@@ -677,7 +693,7 @@ List images
 
 .. restapi_parameters:: parameters.yaml
 
-  - disk_info: disk_info_host
+  - output: disk_info_host
 
 * Response sample:
 
@@ -730,7 +746,7 @@ Get root disk size of image
 
 .. restapi_parameters:: parameters.yaml
 
-  - size: root_disk_size_image
+  - output: root_disk_size_image
 
 * Response sample:
 
@@ -851,7 +867,7 @@ List vswitchs
 
 .. restapi_parameters:: parameters.yaml
 
-  - vswlist: vswitch_list
+  - output: vswitch_list
 
 * Response sample:
 
