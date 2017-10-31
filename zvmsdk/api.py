@@ -324,15 +324,15 @@ class SDKAPI(object):
             self._vmops.guest_deploy(userid, image_name,
                                      transportfiles, remotehost, vdev)
 
-    def guest_capture(self, userid, image_name, capture_type='netboot',
+    def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):
         """ Capture the guest to generate a image
 
         :param userid: (str) the user id of the vm
         :param image_name: (str) the unique image name after capture
         :param capture_type: (str) the type of capture, the value can be:
-               netboot: indicate just root device will be captured
-               sysclone: indicate all the devices of the userid will be
+               rootonly: indicate just root device will be captured
+               alldisks: indicate all the devices of the userid will be
                captured
         :param compress_level: the compression level of the image, default
                is 6

@@ -1299,7 +1299,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         get_power_state.assert_called_with(userid)
         execcmd.assert_called_once_with(userid, 'pwd')
         get_os_version.assert_called_once_with(userid)
-        get_capture_devices.assert_called_once_with(userid, 'netboot')
+        get_capture_devices.assert_called_once_with(userid, 'rootonly')
         softstop.assert_called_once_with(userid)
 
         execute.assert_has_calls([mock.call(cmd1), mock.call(cmd2)])
