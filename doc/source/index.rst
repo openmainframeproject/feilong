@@ -21,8 +21,6 @@ Architecture
 
    architecture
 
-This is the 
-
 z/VM SDK api
 ============
 

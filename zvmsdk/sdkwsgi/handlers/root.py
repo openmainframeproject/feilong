@@ -28,8 +28,9 @@ def home(req):
         'max_version': max_version,
         'min_version': min_version,
     }
-    version_json = json.dumps({'versions': [version_data]})
-    req.response.body = utils.to_utf8(version_json)
+    info_json = json.dumps(version_data)
+    req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
+    req.response.status = 200
 
     return req.response
