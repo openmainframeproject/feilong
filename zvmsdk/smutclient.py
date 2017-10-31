@@ -448,7 +448,7 @@ class SMUTClient(object):
                 # remove the local temp config drive folder
                 self._pathutils.clean_temp_folder(tmp_trans_dir)
 
-    def guest_capture(self, userid, image_name, capture_type='netboot',
+    def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):
         # Get the vm status
         power_state = self.get_power_state(userid)
@@ -612,9 +612,9 @@ class SMUTClient(object):
             os_version = ''.join((distro, release_version))
             return os_version
 
-    def _get_capture_devices(self, userid, capture_type='netboot'):
+    def _get_capture_devices(self, userid, capture_type='rootonly'):
         capture_devices = []
-        if capture_type == 'netboot':
+        if capture_type == 'rootonly':
             # Parse the /proc/cmdline to get root devices
             proc_cmdline = self.execute_cmd(userid, 'cat /proc/cmdline '
                             '| tr " " "\\n" | grep -a "^root=" | cut -c6-')

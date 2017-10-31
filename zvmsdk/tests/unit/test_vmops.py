@@ -210,6 +210,16 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         ige.assert_called_with('fakevm')
         deploy_image_to_vm.assert_not_called()
 
+    @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_capture')
+    @mock.patch('zvmsdk.utils._is_guest_exist')
+    def test_guest_capture(self, ige, guest_capture):
+        ige.return_value = True
+        self.vmops.guest_capture('fakevm', 'fakeimg')
+        ige.assert_called_with('fakevm')
+        guest_capture.assert_called_once_with('fakevm', 'fakeimg',
+                                              capture_type = 'rootonly',
+                                              compress_level = 6)
+
     @mock.patch.object(vmops.get_vmops()._smutclient, 'get_user_direct')
     def test_get_definition_info(self, get_user_direct):
         get_user_direct.return_value = [

@@ -214,8 +214,9 @@ class VMOps(object):
         self._smutclient.guest_deploy(userid, image_name,
                                       transportfiles, remotehost, vdev)
 
-    def guest_capture(self, userid, image_name, capture_type='netboot',
+    def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):
+        zvmutils.check_guest_exist(userid)
         LOG.debug("Begin to capture vm %s", userid)
         self._smutclient.guest_capture(userid, image_name,
                                        capture_type=capture_type,
