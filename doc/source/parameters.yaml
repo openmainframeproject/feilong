@@ -175,6 +175,12 @@ action_deploy_guest:
   in: body
   required: true
   type: dict
+action_capture_guest:
+  description: |
+    take **capture** action on guest
+  in: body
+  required: true
+  type: dict
 action_get_console_guest:
   description: |
     take **get console output** action on guest

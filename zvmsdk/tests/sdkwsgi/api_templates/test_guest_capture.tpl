@@ -1,0 +1,4 @@
+{
+  "action": "capture",
+  "image": "capturedimage",
+}
