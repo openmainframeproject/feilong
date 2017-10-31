@@ -27,9 +27,15 @@ class HandlersRootTest(unittest.TestCase):
 
     def test_root(self):
         req = mock.Mock()
-        version = {"versions": [{"version": "1.0",
-                                 "max_version": "1.0",
-                                 "min_version": "1.0"}]}
+        version = {"rc": 0,
+                   "overallRC": 0,
+                   "errmsg": "",
+                   "modID": None,
+                   "output":
+                   {"min_version": "1.0",
+                    "version": "1.0",
+                    "max_version": "1.0"},
+                   "rs": 0}
         res = root.home(req)
         self.assertEqual('application/json', req.response.content_type)
         version_json = json.dumps(version)
