@@ -1,3 +1,9 @@
+auth_token:
+  description: |
+    The token returned to client if authorized.
+  in: header
+  required: true
+  type: string
 ret_rs:
   description: |
     The reason code for API request.
