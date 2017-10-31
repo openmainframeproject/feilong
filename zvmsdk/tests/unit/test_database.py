@@ -46,13 +46,13 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         self.db_op.__init__()
         create_table.assert_called_once_with()
 
-    def test_switch_add_record_for_nic(self):
+    def test_switch_add_record(self):
         userid = 'testuser'
         interface = '1000'
         port = None
 
         # insert a record without port
-        self.db_op.switch_add_record_for_nic(userid, interface, port)
+        self.db_op.switch_add_record(userid, interface, port)
 
         # query
         switch_record = self.db_op.switch_select_table()
@@ -64,7 +64,7 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
 
         port = 'testport'
         # insert a record with port
-        self.db_op.switch_add_record_for_nic(userid, interface, port)
+        self.db_op.switch_add_record(userid, interface, port)
 
         # query
         switch_record = self.db_op.switch_select_table()
@@ -96,7 +96,7 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         switch = 'testswitch'
 
         # insert a record first
-        self.db_op.switch_add_record_for_nic(userid, interface, port)
+        self.db_op.switch_add_record(userid, interface, port)
 
         # update record with switch info
         self.db_op.switch_update_record_with_switch(userid, interface, switch)
@@ -128,7 +128,7 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
                 ('id03', '1000', 'port_id03')]
         # insert multiple records
         for (userid, interface, port) in list:
-            self.db_op.switch_add_record_for_nic(userid, interface, port)
+            self.db_op.switch_add_record(userid, interface, port)
 
         # delete specific records
         userid = 'id01'
@@ -161,7 +161,7 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
                 ('id03', '1000', 'port_id03')]
         # insert multiple records
         for (userid, interface, port) in list:
-            self.db_op.switch_add_record_for_nic(userid, interface, port)
+            self.db_op.switch_add_record(userid, interface, port)
 
         # query: specific record in the table
         record = ('ID01', '1000', None, 'port_id01', None)
@@ -197,7 +197,7 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
                 ('id03', '1000', 'port_id03')]
         # insert multiple records
         for (userid, interface, port) in list:
-            self.db_op.switch_add_record_for_nic(userid, interface, port)
+            self.db_op.switch_add_record(userid, interface, port)
 
         # query: specific record in the table
         record = [('ID01', '1000', None, 'port_id01', None),
@@ -223,7 +223,7 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
                 ('id03', '1000', 'port_id03')]
         # insert multiple records
         for (userid, interface, port) in list:
-            self.db_op.switch_add_record_for_nic(userid, interface, port)
+            self.db_op.switch_add_record(userid, interface, port)
 
         # query: specific record in the table
         record = [('ID01', '1000', None, 'port_id01', None),
@@ -254,7 +254,7 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
 
         # insert multiple records
         for (userid, interface, port) in list:
-            self.db_op.switch_add_record_for_nic(userid, interface, port)
+            self.db_op.switch_add_record(userid, interface, port)
 
         # update record with switch info
         self.db_op.switch_update_record_with_switch('ID01', '1000', 'switch01')

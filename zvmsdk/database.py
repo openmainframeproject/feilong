@@ -164,24 +164,15 @@ class NetworkDbOperator(object):
             LOG.debug("Switch record for user %s with nic %s is removed from "
                       "switch table" % (userid.upper(), interface))
 
-    def switch_add_record_for_nic(self, userid, interface, port=None):
+    def switch_add_record(self, userid, interface, port=None,
+                          switch=None, comments=None):
         """Add userid and nic name address into switch table."""
-        if port is not None:
-            with get_network_conn() as conn:
-                conn.execute("INSERT INTO switch (userid, interface, port) "
-                             "VALUES (?, ?, ?)",
-                             (userid.upper(), interface, port))
-                LOG.debug("New record in the switch table: user %s, "
-                          "nic %s, port %s" %
-                          (userid.upper(), interface, port))
-        else:
-            with get_network_conn() as conn:
-                conn.execute("INSERT INTO switch (userid, interface) "
-                             "VALUES (?, ?)",
-                             (userid.upper(), interface))
-                LOG.debug("New record in the switch table: user %s, "
-                          "nic %s" %
-                          (userid.upper(), interface))
+        with get_network_conn() as conn:
+            conn.execute("INSERT INTO switch VALUES (?, ?, ?, ?, ?)",
+                         (userid.upper(), interface, switch, port, comments))
+            LOG.debug("New record in the switch table: user %s, "
+                      "nic %s, port %s" %
+                      (userid.upper(), interface, port))
 
     def switch_update_record_with_switch(self, userid, interface,
                                          switch=None):

@@ -1017,8 +1017,7 @@ class SMUTClient(object):
                                     nic=vdev, userid=userid,
                                     create_err=msg1, revoke_err=msg2)
 
-        self._NetDbOperator.switch_add_record_for_nic(userid, vdev,
-                                                      port=nic_id)
+        self._NetDbOperator.switch_add_record(userid, vdev, port=nic_id)
 
     def get_user_direct(self, userid):
         with zvmutils.log_and_reraise_smut_request_failed():
