@@ -680,7 +680,7 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         guests = self.db_op.get_guest_list()
         self.assertEqual(1, len(guests))
         self.assertListEqual([(u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
-                               u'FAKEUSER', u'fakemeta=1, fakemeta2=True',
+                               u'FAKEUSER', u'fakemeta=1, fakemeta2=True', 0,
                                u'')], guests)
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
@@ -732,7 +732,7 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         # get guest
         guest = self.db_op.get_guest_by_userid('FaKeuser')
         self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
-                          u'FAKEUSER', u'fakemeta=1, fakemeta2=True',
+                          u'FAKEUSER', u'fakemeta=1, fakemeta2=True', 0,
                           u''), guest)
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
@@ -750,7 +750,7 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         guest = self.db_op.get_guest_by_id(
             'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
         self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
-                          u'FAKEUSER', u'fakemeta=1, fakemeta2=True',
+                          u'FAKEUSER', u'fakemeta=1, fakemeta2=True', 0,
                           u''), guest)
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
@@ -768,11 +768,11 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         # Update
         self.db_op.update_guest_by_id(
             'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c', meta='newmeta',
-            comments='newcomment')
+            net_set='1', comments='newcomment')
         guest = self.db_op.get_guest_by_id(
             'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
         self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
-                          u'FAKEUSER', u'newmeta',
+                          u'FAKEUSER', u'newmeta', 1,
                           u'newcomment'), guest)
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
@@ -807,7 +807,7 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         guest = self.db_op.get_guest_by_id(
             'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
         self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
-                          u'FAKEUSER', u'', u''), guest)
+                          u'FAKEUSER', u'', 0, u''), guest)
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
     @mock.patch.object(uuid, 'uuid4')
@@ -818,10 +818,11 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         self.db_op.add_guest(userid, meta=meta)
         # Update
         self.db_op.update_guest_by_userid(
-            'Fakeuser', meta='newmetauserid', comments='newcommentuserid')
+            'Fakeuser', meta='newmetauserid', net_set='1',
+            comments='newcommentuserid')
         guest = self.db_op.get_guest_by_userid('Fakeuser')
         self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
-                          u'FAKEUSER', u'newmetauserid',
+                          u'FAKEUSER', u'newmetauserid', 1,
                           u'newcommentuserid'), guest)
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
@@ -854,7 +855,7 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
             'FaKeUser', meta='', comments='')
         guest = self.db_op.get_guest_by_userid('fakeuser')
         self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
-                          u'FAKEUSER', u'', u''), guest)
+                          u'FAKEUSER', u'', 0, u''), guest)
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
 
