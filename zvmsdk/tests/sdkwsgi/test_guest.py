@@ -189,6 +189,17 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         return self._guest_action(body, userid=userid)
 
+    def _guest_capture(self, userid=None, image=None, capturetype=None,
+                       compresslevel=None):
+        if capturetype is None:
+            capturetype = 'rootonly'
+
+        if compresslevel is None:
+            compresslevel = 6
+        body = """{"action": "capture",
+                   "image": "testimage"}"""
+        return self._guest_action(body, userid=userid)
+
     def _guest_pause(self, userid=None):
         body = '{"action": "pause"}'
         return self._guest_action(body, userid=userid)
@@ -253,6 +264,10 @@ class GuestHandlerTestCase(unittest.TestCase):
 
     def test_guest_deploy_image_not_exist(self):
         resp = self._guest_deploy(image='notexist')
+        self.assertEqual(404, resp.status_code)
+
+    def test_guest_capture_userid_not_exist(self):
+        resp = self._guest_capture(userid='notexist')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_pause_not_exist(self):
