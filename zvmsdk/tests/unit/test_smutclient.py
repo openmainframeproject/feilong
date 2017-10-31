@@ -795,7 +795,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                           self._smutclient.create_nic,
                           'fake_id', nic_id="nic_id", vdev='1004')
 
-    @mock.patch.object(database.NetworkDbOperator, 'switch_add_record_for_nic')
+    @mock.patch.object(database.NetworkDbOperator, 'switch_add_record')
     @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_private_create_nic_active(self, request, add_record):
         request.return_value = {'overallRC': 0}
