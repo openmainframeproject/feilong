@@ -390,20 +390,26 @@ queue_mem_vswitch:
   type: integer
 native_vid_vswitch:
   description: |
-    the native vlan id, 1-4094 or None.
+    The native vlan id, 1-4094 or None.
   in: body
   required: false
   type: integer
 persist_option_vswitch:
   description: |
-    whether create the vswitch in the permanent
+    Whether create the vswitch in the permanent
     configuration for the system.
   in: body
   required: false
   type: boolean
 vswitch_list:
   description: |
-    list of vswitches.
+    List of vswitches.
   in: body
   required: true
   type: list
+imagename:
+  description: |
+    The name to search on when list image.
+  in: path
+  required: false
+  type: string

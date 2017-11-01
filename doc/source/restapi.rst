@@ -724,7 +724,9 @@ List images.
 
 * Request:
 
-  No parameters needed.
+.. restapi_parameters:: parameters.yaml
+
+  - imagename: imagename
 
 * Response code:
 
