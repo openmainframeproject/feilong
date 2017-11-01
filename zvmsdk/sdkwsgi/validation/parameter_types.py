@@ -293,3 +293,13 @@ network_list = {
     },
     'additionalProperties': False
 }
+
+capture_type = {
+    'type': 'string',
+    'enum': ['rootonly', 'alldisks']
+}
+
+compress_level = {
+    'type': ['integer'],
+    'pattern': '^[0-9]$'
+}

@@ -219,6 +219,19 @@ class VMAction(object):
                                         vdev=vdev)
         return info
 
+    @validation.schema(guest.capture)
+    def capture(self, userid, body):
+        image_name = body['image']
+
+        capture_type = body.get('capturetype', None)
+        compress_level = body.get('compresslevel', None)
+
+        info = self.client.send_request('guest_capture', userid,
+                                        image_name,
+                                        capture_type=capture_type,
+                                    compress_level=compress_level)
+        return info
+
 
 def get_action():
     global _VMACTION

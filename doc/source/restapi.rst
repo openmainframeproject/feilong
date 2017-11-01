@@ -516,7 +516,7 @@ z/VM it is running on, then log on the guest and IPL.
 
   No response.
 
-Get guest console output 
+Get guest console output
 ------------------------
 
 **POST /guests/{userid}/action**
@@ -554,7 +554,7 @@ After guest created, deploy image onto the guest.
 
 .. restapi_parameters:: parameters.yaml
 
-  - guest: guest_userid
+  - userid: guest_userid
   - action: action_deploy_guest
 
 * Request sample:
@@ -570,6 +570,31 @@ After guest created, deploy image onto the guest.
 
   No response.
 
+Capture guest
+-------------
+
+**POST /guests/{userid}/action**
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - action: action_capture_guest
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_capture.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No response.
+ 
 Get Guest power state
 ---------------------
 

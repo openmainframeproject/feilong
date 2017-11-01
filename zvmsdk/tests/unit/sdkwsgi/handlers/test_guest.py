@@ -173,6 +173,56 @@ class GuestActionsTest(SDKWSGITest):
         self.assertRaises(webob.exc.HTTPBadRequest, guest.guest_action,
                           self.req)
 
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_capture_additional_param(self, mock_userid):
+        # Put wrong parameter compressionlevel, it should be compresslevel
+        self.req.body = """{"action": "capture",
+                            "image": "image1",
+                            "capturetype": "rootonly",
+                            "compressionlevel": "6"}"""
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_capture_invalid_capturetype(self, mock_userid):
+        # Put compresslevel to be invalid 10
+        self.req.body = """{"action": "capture",
+                            "image": "image1",
+                            "capturetype": "rootdisk",
+                            "compresslevel": "10"}"""
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_capture_invalid_compresslevel(self, mock_userid):
+        # Put capture type to be invalid value
+        self.req.body = """{"action": "capture",
+                            "image": "image1",
+                            "capturetype": "faketype",
+                            "compresslevel": 9}"""
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('sdkclient.client.SDKClient.send_request')
+    def test_guest_capture(self, mock_action, mock_userid):
+        self.req.body = """{"action": "capture",
+                            "image": "image1",
+                            "capturetype": "rootonly",
+                            "compresslevel": 6}"""
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with("guest_capture", FAKE_USERID,
+            "image1", capture_type="rootonly", compress_level=6)
+
 
 class HandlersGuestTest(SDKWSGITest):
 
