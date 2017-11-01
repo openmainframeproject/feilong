@@ -72,11 +72,11 @@ class VSwitchTestCase(unittest.TestCase):
             raise
         finally:
             resp = self._vswitch_delete()
-            self.assertEqual(204, resp.status_code)
+            self.assertEqual(200, resp.status_code)
 
             # Try to delete again, currently ignore not exist error
             resp = self._vswitch_delete()
-            self.assertEqual(204, resp.status_code)
+            self.assertEqual(200, resp.status_code)
 
             resp = self._vswitch_list()
             vswlist = json.loads(resp.content)['output']
@@ -96,12 +96,12 @@ class VSwitchTestCase(unittest.TestCase):
             raise
         finally:
             resp = self._vswitch_delete()
-            self.assertEqual(204, resp.status_code)
+            self.assertEqual(200, resp.status_code)
 
     def test_vswitch_delete_update_not_exist(self):
         resp = self.client.api_request(url='/vswitchs/notexist',
                                        method='DELETE')
-        self.assertEqual(204, resp.status_code)
+        self.assertEqual(200, resp.status_code)
 
         # Test update the vswitch not found
         body = '{"vswitch": {"grant_userid": "FVTUSER1"}}'

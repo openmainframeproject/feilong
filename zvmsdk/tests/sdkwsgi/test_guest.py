@@ -49,7 +49,7 @@ class GuestHandlerTestCase(unittest.TestCase):
     def _guest_delete(self):
         url = '/guests/%s' % self.userid
         resp = self.client.api_request(url=url, method='DELETE')
-        self.assertEqual(204, resp.status_code)
+        self.assertEqual(200, resp.status_code)
 
         return resp
 
@@ -402,7 +402,7 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertEqual(200, resp.status_code)
 
             resp = self._guest_nic_delete()
-            self.assertEqual(204, resp.status_code)
+            self.assertEqual(200, resp.status_code)
 
             resp = self._guest_stop()
             self.assertEqual(200, resp.status_code)
@@ -451,7 +451,7 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             # delete new disks
             resp = self._guest_disks_delete()
-            self.assertEqual(204, resp.status_code)
+            self.assertEqual(200, resp.status_code)
 
             resp_delete = self._guest_get()
             self.assertEqual(200, resp_delete.status_code)
@@ -505,7 +505,7 @@ class GuestHandlerTestCase(unittest.TestCase):
     def _vswitch_delete(self):
         resp = self.client.api_request(url='/vswitchs/restvsw1',
                                        method='DELETE')
-        self.assertEqual(204, resp.status_code)
+        self.assertEqual(200, resp.status_code)
 
     def _vswitch_couple(self, vswitch=None, userid=None):
         body = '{"info": {"couple": "True", "vswitch": "%s"}}' % vswitch
@@ -565,7 +565,7 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.apibase.verify_result('test_guest_get_nic', resp.content)
 
             resp = self._guest_nic_delete()
-            self.assertEqual(204, resp.status_code)
+            self.assertEqual(200, resp.status_code)
 
         except Exception as e:
             raise e

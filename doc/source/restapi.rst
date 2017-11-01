@@ -263,7 +263,7 @@ Delete a guest.
 
 * Response code:
 
-  HTTP status code 204 on success.
+  HTTP status code 200 on success.
 
 * Response contents:
 
@@ -659,7 +659,7 @@ Delete Guest nic
 
 * Response code:
 
-  HTTP status code 204 on success.
+  HTTP status code 200 on success.
 
 * Response contents:
   
@@ -827,7 +827,7 @@ Delete an image.
 
 * Response code:
 
-  HTTP status code 204 on success.
+  HTTP status code 200 on success.
 
 * Response contents:
 
@@ -851,7 +851,7 @@ Attach volume to Guest
 
 * Response:
 
-  HTTP status code 204 on Success.
+  HTTP status code 200 on Success.
 
 * Response contents
 
@@ -870,7 +870,7 @@ Detach volume from Guest
 
 * Response:
 
-  HTTP status code 204 on Success.
+  HTTP status code 200 on Success.
 
 * Response contents
 
@@ -980,7 +980,7 @@ Delete a vswitch by using given name.
 
 * Response code:
 
-  HTTP status code 204 on success.
+  HTTP status code 200 on success.
 
 * Response contents:
 
