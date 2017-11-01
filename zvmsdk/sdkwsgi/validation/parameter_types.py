@@ -212,6 +212,11 @@ userid = {
 }
 
 
+vswitch = {
+    'type': ['string'], 'minLength': 1, 'maxLength': 8
+}
+
+
 controller = {
     'type': ['string'],
     'anyOf': [

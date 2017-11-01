@@ -425,6 +425,68 @@ class HandlersGuestTest(SDKWSGITest):
             guest_networks=guest_networks,
             active=False)
 
+    @mock.patch('sdkclient.client.SDKClient.send_request')
+    def test_guests_get_nic_info(self, mock_interface):
+        bstr = '{}'
+        self.req.body = bstr
+        mock_interface.return_value = ''
+
+        guest.guests_get_nic_info(self.req)
+        mock_interface.assert_called_once_with(
+            'guests_get_nic_info',
+            userid=None, nic_id=None, vswitch=None)
+
+    @mock.patch('sdkclient.client.SDKClient.send_request')
+    def test_guests_get_nic_info_all(self, mock_interface):
+        userid = 'fakeid'
+        nic_id = 'fake_nic_id'
+        vswitch = 'vswitch'
+        bstr = """{"userid": "fakeid", "nic_id": "fake_nic_id",
+                   "vswitch": "vswitch"}"""
+        self.req.body = bstr
+        mock_interface.return_value = ''
+
+        guest.guests_get_nic_info(self.req)
+        mock_interface.assert_called_once_with(
+            'guests_get_nic_info',
+            userid=userid, nic_id=nic_id, vswitch=vswitch)
+
+    @mock.patch('sdkclient.client.SDKClient.send_request')
+    def test_guests_get_nic_info_with_userid(self, mock_interface):
+        userid = 'fakeid'
+        bstr = '{"userid": "fakeid"}'
+        self.req.body = bstr
+        mock_interface.return_value = ''
+
+        guest.guests_get_nic_info(self.req)
+        mock_interface.assert_called_once_with(
+            'guests_get_nic_info',
+            userid=userid, nic_id=None, vswitch=None)
+
+    @mock.patch('sdkclient.client.SDKClient.send_request')
+    def test_guests_get_nic_info_with_nicid(self, mock_interface):
+        nic_id = 'fake_nic_id'
+        bstr = '{"nic_id": "fake_nic_id"}'
+        self.req.body = bstr
+        mock_interface.return_value = ''
+
+        guest.guests_get_nic_info(self.req)
+        mock_interface.assert_called_once_with(
+            'guests_get_nic_info',
+            userid=None, nic_id=nic_id, vswitch=None)
+
+    @mock.patch('sdkclient.client.SDKClient.send_request')
+    def test_guests_get_nic_info_with_vswitch(self, mock_interface):
+        vswitch = 'vswitch'
+        bstr = '{"vswitch": "vswitch"}'
+        self.req.body = bstr
+        mock_interface.return_value = ''
+
+        guest.guests_get_nic_info(self.req)
+        mock_interface.assert_called_once_with(
+            'guests_get_nic_info',
+            userid=None, nic_id=None, vswitch=vswitch)
+
     # TODO: move this test to sdk layer instead of API layer
     # or we can use validation to validate cidr
     @unittest.skip("we use send_request now.....")
