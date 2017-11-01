@@ -218,6 +218,12 @@ action_capture_guest:
   in: body
   required: true
   type: dict
+action_guest_authorize_iucv_client:
+  description: |
+    take **authorize_iucv_client** action on guest
+  in: body
+  required: true
+  type: dict
 action_get_console_guest:
   description: |
     take **get console output** action on guest

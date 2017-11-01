@@ -200,6 +200,13 @@ class GuestHandlerTestCase(unittest.TestCase):
                    "image": "testimage"}"""
         return self._guest_action(body, userid=userid)
 
+    def _guest_authorize_iucv_client(self, userid=None, client=None):
+        if client is None:
+            client = 'opnstk1'
+        body = """{"action": "authorize_iucv_client",
+                   "client": "%s"}""" % client
+        return self._guest_action(body, userid=userid)
+
     def _guest_pause(self, userid=None):
         body = '{"action": "pause"}'
         return self._guest_action(body, userid=userid)
@@ -290,6 +297,10 @@ class GuestHandlerTestCase(unittest.TestCase):
 
     def test_guest_capture_userid_not_exist(self):
         resp = self._guest_capture(userid='notexist')
+        self.assertEqual(404, resp.status_code)
+
+    def test_guest_authorize_userid_not_exist(self):
+        resp = self._guest_authorize_iucv_client(userid='notexsit')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_pause_not_exist(self):
@@ -402,6 +413,9 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertEqual(200, resp.status_code)
 
             resp = self._guest_nic_delete()
+            self.assertEqual(200, resp.status_code)
+
+            resp = self._guest_authorize_iucv_client()
             self.assertEqual(200, resp.status_code)
 
             resp = self._guest_stop()

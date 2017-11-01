@@ -156,6 +156,13 @@ capture = {
     'additionalProperties': False,
 }
 
+authorize_iucv_client = {
+    'type': 'object',
+    'properties': {
+        'client': parameter_types.userid,
+    },
+    'additionalProperties': False,
+}
 
 userid_list_query = {
     'type': 'object',

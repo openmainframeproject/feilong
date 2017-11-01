@@ -223,6 +223,31 @@ class GuestActionsTest(SDKWSGITest):
         mock_action.assert_called_once_with("guest_capture", FAKE_USERID,
             "image1", capture_type="rootonly", compress_level=6)
 
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('sdkclient.client.SDKClient.send_request')
+    def test_guest_authorize_iucv_client(self, mock_action,
+                                         mock_userid):
+        self.req.body = """{"action": "authorize_iucv_client",
+                            "client": "testclnt"}"""
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_authorize_iucv_client',
+                                            FAKE_USERID, client='testclnt')
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('sdkclient.client.SDKClient.send_request')
+    def test_guest_authorize_iucv_client_invalid_client(self,
+                                                        mock_action,
+                                                        mock_userid):
+        self.req.body = """{"action": "authorize_iucv_client",
+                            "client": "testclntclnt"}"""
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
+
 
 class HandlersGuestTest(SDKWSGITest):
 

@@ -241,6 +241,14 @@ class VMAction(object):
                                     compress_level=compress_level)
         return info
 
+    @validation.schema(guest.authorize_iucv_client)
+    def authorize_iucv_client(self, userid, body):
+        iucv_client = body.get('client', None)
+        info = self.client.send_request('guest_authorize_iucv_client',
+                                        userid,
+                                        client=iucv_client)
+        return info
+
 
 def get_action():
     global _VMACTION

@@ -594,7 +594,32 @@ Capture guest
 * Response contents:
 
   No response.
- 
+
+Authorize guest
+---------------
+
+**POST /guests/{userid}/action**
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - action: action_guest_authorize_iucv_client
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_authorize_iucv_client.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No response.
+
 Get Guest power state
 ---------------------
 
