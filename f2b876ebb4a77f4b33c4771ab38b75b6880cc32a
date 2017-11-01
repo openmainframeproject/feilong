@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6f0381d0_b9522cb4",
+        "filename": "zvmsdk/sdkwsgi/handlers/guest.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-01T06:33:24Z",
+      "side": 1,
+      "message": "intent",
+      "range": {
+        "startLine": 232,
+        "startChar": 36,
+        "endLine": 232,
+        "endChar": 50
+      },
+      "revId": "f2b876ebb4a77f4b33c4771ab38b75b6880cc32a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
