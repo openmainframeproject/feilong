@@ -2,7 +2,24 @@
  REST API
 **********
 
-This is a reference for the cloudlib4zvm API.
+This is a reference for the zvm cloud connector (cloudlib4zvm) API.
+
+Common output
+=============
+
+zvm cloud connector returns following output as reference, in case
+encounter an error, those information will be helpful to report bug/issue.
+The following API reference document will only cover ``out`` part as
+it's different for each API.
+
+.. restapi_parameters:: parameters.yaml
+
+  - overallRC: ret_overallrc
+  - rc: ret_rc
+  - rs: ret_rs
+  - errmsg: ret_errmsg
+  - modID: ret_modID
+  - output: ret_output
 
 Version
 =======
@@ -27,6 +44,7 @@ Get SDK version
 
 .. restapi_parameters:: parameters.yaml
 
+  - output : ret_output
   - min_version: min_version_sdk
   - max_version: max_version_sdk
   - version: version_sdk
@@ -43,6 +61,8 @@ Create token
 ------------
 
 **POST /token**
+
+Get a valid token to perform further request by using user and password.
 
 * Request:
 
@@ -72,9 +92,11 @@ List Guests
 
 **GET /guests**
 
+List all guests managed by zvm cloud connecter on the host.
+
 * Request:
 
-  No parameters needed.
+  None
 
 * Response code:
 
@@ -82,11 +104,9 @@ List Guests
 
 * Response contents:
 
-  `FIXME`: should only list guests managed/created by SDK.
-
 .. restapi_parameters:: parameters.yaml
 
-  - guests: guest_list
+  - output: guest_list
 
 * Response sample:
 
@@ -97,6 +117,8 @@ Create Guest
 ------------
 
 **POST /guests**
+
+Create a new guest.
 
 * Request:
 
@@ -126,6 +148,8 @@ Get Guests stats including cpu and memory
 
 **GET /guests/stats**
 
+Get guests cpu, memory information.
+
 * Request:
 
 .. restapi_parameters:: parameters.yaml
@@ -140,7 +164,7 @@ Get Guests stats including cpu and memory
 
 .. restapi_parameters:: parameters.yaml
 
-  - cpu: stats_guest
+  - output: stats_guest
 
 * Response sample:
 
@@ -152,6 +176,8 @@ Get Guests vnics info
 
 **GET /guests/vnicsinfo**
 
+Get guests virtual nic information.
+
 * Request:
 
 .. restapi_parameters:: parameters.yaml
@@ -166,7 +192,7 @@ Get Guests vnics info
 
 .. restapi_parameters:: parameters.yaml
 
-  - vnics: guest_vnics
+  - output: guest_vnics
 
 * Response sample:
 
@@ -194,7 +220,7 @@ Display the user direct by the given userid.
 
 .. restapi_parameters:: parameters.yaml
 
-  - user_direct: user_direct_guest
+  - output: user_direct_guest
 
 * Response sample:
 
@@ -227,6 +253,8 @@ Delete Guest
 
 **DELETE /guests/{userid}**
 
+Delete a guest.
+
 * Request:
 
 .. restapi_parameters:: parameters.yaml
@@ -247,6 +275,8 @@ Get Guest info
 
 **GET /guests/{userid}/info**
 
+Get running information of guest.
+
 * Request:
 
 .. restapi_parameters:: parameters.yaml
@@ -261,7 +291,7 @@ Get Guest info
 
 .. restapi_parameters:: parameters.yaml
 
-  - info: guest_info
+  - output: guest_info
   - max_mem_kb: guest_memory_kb
   - num_cpu: num_cpu_guest
   - cpu_time_us: cpu_time_us_guest
@@ -292,6 +322,8 @@ Return the nic and vswitch pair for specified guest
 
 * Response contents:
 
+.. restapi_parameters:: parameters.yaml
+
   - nic: guest_nic_info
 
 * Response sample:
@@ -303,6 +335,8 @@ Create Guest nic
 ----------------
 
 **POST /guests/{userid}/nic**
+
+Create a virtual nic on giving guest.
 
 * Request:
 
@@ -487,6 +521,8 @@ Get guest console output
 
 **POST /guests/{userid}/action**
 
+Get console output of the guest.
+
 * Request:
 
 .. restapi_parameters:: parameters.yaml
@@ -511,6 +547,8 @@ Deploy guest
 ------------
 
 **POST /guests/{userid}/action**
+
+After guest created, deploy image onto the guest.
 
 * Request:
 
@@ -537,6 +575,8 @@ Get Guest power state
 
 **GET /guests/{userid}/power_state**
 
+Get power state of the guest.
+
 * Request:
 
 .. restapi_parameters:: parameters.yaml
@@ -551,7 +591,7 @@ Get Guest power state
 
 .. restapi_parameters:: parameters.yaml
 
-  - power_state: power_status_guest
+  - output: power_status_guest
 
 * Response sample:
 
@@ -563,7 +603,7 @@ Update Guest nic
 
 **PUT /guests/{userid}/nic/{vdev}**
 
-Couple nic to vswitch
+Couple nic to vswitch on the guest.
 
 * Request:
 
@@ -610,6 +650,8 @@ Get Host Info
 
 **GET /host/info**
 
+Get host information.
+
 * Request:
 
   No parameters needed. 
@@ -622,7 +664,7 @@ Get Host Info
 
 .. restapi_parameters:: parameters.yaml
 
-  - host: host_info
+  - output: host_info
 
 * Response sample:
 
@@ -633,6 +675,8 @@ Get Host disk pool info
 -----------------------
 
 **GET /host/disk_info/{disk}**
+
+Get disk pool information on the host.
 
 * Request:
 
@@ -648,7 +692,7 @@ Get Host disk pool info
 
 .. restapi_parameters:: parameters.yaml
 
-  - disk_info: disk_info_host
+  - output: disk_info_host
 
 * Response sample:
 
@@ -665,6 +709,8 @@ List images
 
 **GET /images**
 
+List images.
+
 * Request:
 
   No parameters needed.
@@ -677,7 +723,7 @@ List images
 
 .. restapi_parameters:: parameters.yaml
 
-  - disk_info: disk_info_host
+  - output: disk_info_host
 
 * Response sample:
 
@@ -688,6 +734,8 @@ Create image
 ------------
 
 **POST /images**
+
+Create a new image.
 
 * Request:
 
@@ -716,6 +764,8 @@ Get root disk size of image
 
 **GET /images/{name}/root_disk_size**
 
+Get the root disk size of the image.
+
 * Request:
 
 .. restapi_parameters:: parameters.yaml
@@ -730,7 +780,7 @@ Get root disk size of image
 
 .. restapi_parameters:: parameters.yaml
 
-  - size: root_disk_size_image
+  - output: root_disk_size_image
 
 * Response sample:
 
@@ -741,6 +791,8 @@ Delete image
 ------------
 
 **DELETE /images/{name}**
+
+Delete an image.
 
 * Request:
 
@@ -809,6 +861,8 @@ Create vswitch
 
 **POST /vswitchs**
 
+Create a new vswitch.
+
 * Request:
 
 .. restapi_parameters:: parameters.yaml
@@ -839,6 +893,8 @@ List vswitchs
 
 **GET /vswitchs**
 
+List vswitches.
+
 * Request:
 
   No parameter needed.
@@ -851,7 +907,7 @@ List vswitchs
 
 .. restapi_parameters:: parameters.yaml
 
-  - vswlist: vswitch_list
+  - output: vswitch_list
 
 * Response sample:
 
@@ -862,6 +918,8 @@ Update vswitch
 --------------
 
 **PUT /vswitchs/{name}**
+
+Update a vswitch.
 
 * Request:
 
@@ -886,6 +944,8 @@ Delete vswitch
 --------------
 
 **DELETE /vswitchs/{name}**
+
+Delete a vswitch by using given name.
 
 * Request:
 

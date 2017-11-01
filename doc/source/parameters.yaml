@@ -1,12 +1,49 @@
+ret_rs:
+  description: |
+    The reason code for API request.
+  in: body
+  required: true
+  type: integer
+ret_overallrc:
+  description: |
+    The overall return code for API request.
+  in: body
+  required: true
+  type: integer
+ret_rc:
+  description: |
+    The return code for API request.
+  in: body
+  required: true
+  type: integer
+ret_errmsg:
+  description: |
+    The error message returned for API request. It can be empty
+    if no error occur.
+  in: body
+  required: true
+  type: string
+ret_modID:
+  description: |
+    The module ID that causes the error to occur.
+  in: body
+  required: true
+  type: integer
+ret_output:
+  description: |
+    The return data from API request.
+  in: body
+  required: true
+  type: dict
 min_version_sdk:
   description: |
-    min version of SDK
+    Min version of SDK
   in: header
   required: true
   type: string
 max_version_sdk:
   description: |
-    max version of SDK
+    Max version of SDK
   in: header
   required: true
   type: string
