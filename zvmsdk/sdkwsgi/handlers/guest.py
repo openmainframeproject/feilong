@@ -375,7 +375,7 @@ def guest_delete(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = util.get_http_code_from_sdk_return(info, default=204)
+    req.response.status = util.get_http_code_from_sdk_return(info, default=200)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -415,7 +415,7 @@ def guest_delete_nic(req):
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
-    req.response.status = util.get_http_code_from_sdk_return(info, default=204)
+    req.response.status = util.get_http_code_from_sdk_return(info, default=200)
     req.response.content_type = 'application/json'
     return req.response
 
@@ -566,7 +566,7 @@ def guest_delete_disks(req):
     info = _guest_delete_disks(userid, req)
 
     info_json = json.dumps(info)
-    req.response.status = util.get_http_code_from_sdk_return(info, default=204)
+    req.response.status = util.get_http_code_from_sdk_return(info, default=200)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
