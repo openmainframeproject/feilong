@@ -157,13 +157,14 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request.assert_called_once_with(requestData)
         self.assertIs(os.path.exists('/tmp/FakeID'), False)
 
+    @mock.patch.object(smutclient.SMUTClient, 'guest_authorize_iucv_client')
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
     @mock.patch.object(tempfile, 'mkdtemp')
     @mock.patch.object(zvmutils, 'execute')
     @mock.patch.object(smutclient.SMUTClient, '_request')
     @mock.patch.object(smutclient.SMUTClient, '_get_image_path_by_name')
     def test_guest_deploy(self, get_image_path, request, execute, mkdtemp,
-                          cleantemp):
+                          cleantemp, guestauth):
         base.set_conf("zvm", "user_root_vdev", "0100")
         execute.side_effect = [(0, ""), (0, "")]
         mkdtemp.return_value = '/tmp/tmpdir'
@@ -183,6 +184,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
+        guestauth.assert_called_once_with(userid)
 
     @mock.patch.object(zvmutils, 'execute')
     @mock.patch.object(smutclient.SMUTClient, '_request')
