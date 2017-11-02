@@ -99,9 +99,6 @@ class SDKAPIRequestHandler(object):
     def image_export(self, *args, **kwargs):
         return self._call('image_export', *args, **kwargs)
 
-    def guest_authorize_iucv_client(self, *args, **kwargs):
-        return self._call('guest_authorize_iucv_client', *args, **kwargs)
-
     def guest_deploy(self, *args, **kwargs):
         return self._call('guest_deploy', *args, **kwargs)
 

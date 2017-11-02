@@ -289,22 +289,6 @@ class SDKAPI(object):
             LOG.error("Failed to export image '%s'" % image_name)
             raise
 
-    @zvmutils.check_input_types(_TUSERID, _TSTR_OR_NONE)
-    def guest_authorize_iucv_client(self, guest, client=None):
-        """Punch a script that used to set the authorized client userid in vm
-        If the guest is in log off status, the change will take effect when
-        the guest start up at first time.
-        If the guest is in active status, power off and power on are needed
-        for the change to take effect.
-
-        :param str guest: the user id of the vm
-        :param str client: the user id of the client that can communicate to
-               guest using IUCV
-        """
-        action = "authorize client to userid '%s'" % guest
-        with zvmutils.log_and_reraise_sdkbase_error(action):
-            self._vmops.guest_authorize_iucv_client(guest, client)
-
     @zvmutils.check_input_types(_TUSERID, _TSTR, _TSTR_OR_NONE, _TSTR_OR_NONE,
                                 _TSTR_OR_NONE)
     def guest_deploy(self, userid, image_name, transportfiles=None,
