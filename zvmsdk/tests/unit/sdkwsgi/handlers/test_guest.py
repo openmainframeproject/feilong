@@ -35,6 +35,15 @@ class FakeReqGet(object):
     def keys(self):
         return ['userid']
 
+    def set_nic_info(self, userid=None, nic_id=None, vswitch=None):
+        self.nic_info = {}
+        self.nic_info['userid'] = userid
+        self.nic_info['nic_id'] = nic_id
+        self.nic_info['vswitch'] = vswitch
+
+    def get_nic_info(self):
+        return self.nic_info
+
 
 class FakeResp(object):
     def __init__(self):
@@ -427,8 +436,8 @@ class HandlersGuestTest(SDKWSGITest):
 
     @mock.patch('sdkclient.client.SDKClient.send_request')
     def test_guests_get_nic_info(self, mock_interface):
-        bstr = '{}'
-        self.req.body = bstr
+        self.req.GET = FakeReqGet()
+        self.req.GET.set_nic_info()
         mock_interface.return_value = ''
 
         guest.guests_get_nic_info(self.req)
@@ -441,9 +450,10 @@ class HandlersGuestTest(SDKWSGITest):
         userid = 'fakeid'
         nic_id = 'fake_nic_id'
         vswitch = 'vswitch'
-        bstr = """{"userid": "fakeid", "nic_id": "fake_nic_id",
-                   "vswitch": "vswitch"}"""
-        self.req.body = bstr
+        self.req.GET = FakeReqGet()
+        self.req.GET.set_nic_info(userid=userid, nic_id=nic_id,
+                                  vswitch=vswitch)
+
         mock_interface.return_value = ''
 
         guest.guests_get_nic_info(self.req)
@@ -454,8 +464,9 @@ class HandlersGuestTest(SDKWSGITest):
     @mock.patch('sdkclient.client.SDKClient.send_request')
     def test_guests_get_nic_info_with_userid(self, mock_interface):
         userid = 'fakeid'
-        bstr = '{"userid": "fakeid"}'
-        self.req.body = bstr
+        self.req.GET = FakeReqGet()
+        self.req.GET.set_nic_info(userid=userid)
+
         mock_interface.return_value = ''
 
         guest.guests_get_nic_info(self.req)
@@ -466,8 +477,9 @@ class HandlersGuestTest(SDKWSGITest):
     @mock.patch('sdkclient.client.SDKClient.send_request')
     def test_guests_get_nic_info_with_nicid(self, mock_interface):
         nic_id = 'fake_nic_id'
-        bstr = '{"nic_id": "fake_nic_id"}'
-        self.req.body = bstr
+        self.req.GET = FakeReqGet()
+        self.req.GET.set_nic_info(nic_id=nic_id)
+
         mock_interface.return_value = ''
 
         guest.guests_get_nic_info(self.req)
@@ -478,8 +490,9 @@ class HandlersGuestTest(SDKWSGITest):
     @mock.patch('sdkclient.client.SDKClient.send_request')
     def test_guests_get_nic_info_with_vswitch(self, mock_interface):
         vswitch = 'vswitch'
-        bstr = '{"vswitch": "vswitch"}'
-        self.req.body = bstr
+        self.req.GET = FakeReqGet()
+        self.req.GET.set_nic_info(vswitch=vswitch)
+
         mock_interface.return_value = ''
 
         guest.guests_get_nic_info(self.req)
