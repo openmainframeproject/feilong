@@ -155,16 +155,63 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
         self.assertNotEqual(info_on['mem_kb'], 0)
 
     def test_guest_list(self):
-        pass
+	_list = []
+        _list = self.sdkapi.guest_list()
+        self.assertFalse(self.userid.upper() in _list)
+        self.sdkapi.guest_create(self.userid, 1, 1024)
+        _list = self.sdkapi.guest_list()
+        self.assertTrue(self.userid.upper() in _list)	
 
     def test_get_definition_info(self):
-        pass
+        self.sdkapi.guest_create(self.userid, 1, 1024)
+        info_list={}
+        info_list=self.sdkapi.guest_get_definition_info(self.userid)
+        self.assertTrue(info_list.has_key('user_direct'))
+        self.assertFalse('nic_coupled' in info_list.keys())
+        info_list2={}
+        info_list2=self.sdkapi.guest_get_definition_info(self.userid,nic_coupled=False)
+        self.assertTrue(info_list.has_key('user_direct'))
+        self.assertEquals(info_list2['nic_coupled'],False)
 
     def test_create_disks(self):
-        pass
+        disks = [
+            {'size': '3G',
+             'format': 'xfs',
+             'is_boot_disk': True,
+             'disk_pool': CONF.zvm.disk_pool}]
+        info_dist1=self.sdkapi.guest_get_definition_info('RHEL7160')
+        info_list1=info_dist1['user_direct']
+        len1=len(info_list1)
+        self.sdkapi.guest_create_disks('RHEL7160', disks)
+        info_dist2=self.sdkapi.guest_get_definition_info('RHEL7160')
+        info_list2=info_dist2['user_direct']
+        len2=len(info_list2)
+        info_list=info_list2[len1-1:]
+        self.assertTrue('MDISK' in info_list[0])
 
     def test_delete_disks(self):
-        pass
+        ####delete the last disk####
+        info_dist1=self.sdkapi.guest_get_definition_info('RHEL7160')
+        info_list1=info_dist1['user_direct']
+        len1=len(info_list1)
+        info_list=info_list1[len1-2:len1-1]
+        _list=[]
+        _list.append(info_list[0][6:10])
+        self.sdkapi.guest_delete_disks('RHEL7160',_list)
+        info_dist2=self.sdkapi.guest_get_definition_info('RHEL7160')
+        info_list2=info_dist2['user_direct']
+        len2=len(info_list2)
+        info_list2.insert(len2-1,info_list[0])
+        self.assertEquals(info_list1,info_list2)
+        ####delete one disk####
+        #info_dist1=self.sdkapi.guest_get_definition_info('RHEL7160')
+        #info_list1=info_dist1['user_direct']
+        #self.sdkapi.guest_delete_disks('RHEL7160',['0101'])
+        #info_dist2=self.sdkapi.guest_get_definition_info('RHEL7160')
+        #info_list2=info_dist2['user_direct']
+        #len2=len(info_list2)
+        #info_list2.insert(num,info_list1[num])
+        #self.assertEquals(info_list1,info_list2)
 
     def test_get_console_output(self):
         pass
