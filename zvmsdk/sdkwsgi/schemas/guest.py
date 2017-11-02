@@ -119,7 +119,7 @@ nic_couple_uncouple = {
             'properties': {
                 'couple': parameter_types.boolean,
                 'active': parameter_types.boolean,
-                'vswitch': parameter_types.vswitch,
+                'vswitch': parameter_types.vswitch_name,
             },
             # FIXME: vswitch should be required when it's couple
             'required': ['couple'],
@@ -170,7 +170,7 @@ nic_DB_info = {
     'properties': {
         'userid': parameter_types.userid,
         'nic_id': parameter_types.nic_id,
-        'vswitch': parameter_types.vswitch,
+        'vswitch': parameter_types.vswitch_name,
     },
     'additionalProperties': False,
 }

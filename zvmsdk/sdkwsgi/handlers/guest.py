@@ -98,11 +98,10 @@ class VMHandler(object):
                                         userid_list)
         return info
 
-    @validation.schema(guest.nic_DB_info)
-    def get_nic_DB_info(self, body=None):
-        userid = body.get('userid', None)
-        nic_id = body.get('nic_id', None)
-        vswitch = body.get('vswitch', None)
+    # @validation.query_schema(guest.nic_DB_info)
+    # FIXME: the above validation will fail with "'dict' object has no
+    # attribute 'dict_of_lists'"
+    def get_nic_DB_info(self, req, userid=None, nic_id=None, vswitch=None):
         info = self.client.send_request('guests_get_nic_info', userid=userid,
                                         nic_id=nic_id, vswitch=vswitch)
         return info
@@ -558,12 +557,16 @@ def guest_get_vnics_info(req):
 @tokens.validate
 def guests_get_nic_info(req):
 
-    def _guests_get_nic_DB_info(req):
+    def _guests_get_nic_DB_info(req, userid=None, nic_id=None, vswitch=None):
         action = get_handler()
-        body = util.extract_json(req.body)
-        return action.get_nic_DB_info(body=body)
+        return action.get_nic_DB_info(req, userid=userid, nic_id=nic_id,
+                                      vswitch=vswitch)
+    userid = req.GET.get('userid', None)
+    nic_id = req.GET.get('nic_id', None)
+    vswitch = req.GET.get('vswitch', None)
 
-    info = _guests_get_nic_DB_info(req)
+    info = _guests_get_nic_DB_info(req, userid=userid, nic_id=nic_id,
+                                   vswitch=vswitch)
 
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,

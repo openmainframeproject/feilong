@@ -203,6 +203,36 @@ Get guests virtual nic information.
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_vnics_info.tpl
    :language: javascript
 
+Get Guests nic info
+---------------------
+
+**GET /guests/nics**
+
+Get guests nic information, including userid, nic number, vswitch, nic id and comments.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid_opt
+  - nic_id: nic_id_opt
+  - vswitch: vswitch_name_opt
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: guests_nic_info
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_nic_info.tpl
+   :language: javascript
+
 Show Guest definition
 ---------------------
 
@@ -328,7 +358,7 @@ Return the nic and vswitch pair for specified guest
 
 .. restapi_parameters:: parameters.yaml
 
-  - nic: guest_nic_info
+  - output: guest_nic_info
 
 * Response sample:
 

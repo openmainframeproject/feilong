@@ -239,21 +239,19 @@ class GuestHandlerTestCase(unittest.TestCase):
         if ((userid is None) and
             (nic_id is None) and
             (vswitch is None)):
-            body = '{}'
+            append = ''
         else:
-            body = "{"
+            append = "?"
             if userid is not None:
-                body += '"userid": "%s", ' % userid
+                append += 'userid=%s&' % userid
             if nic_id is not None:
-                body += '"nic_id": "%s", ' % nic_id
+                append += 'nic_id=%s&' % nic_id
             if vswitch is not None:
-                body += '"vswitch": "%s", ' % vswitch
-            body = body.strip(', ')
-            body += "}"
-        url = '/guests/nics'
+                append += 'vswitch=%s&' % vswitch
+            append = append.strip('&')
+        url = '/guests/nics%s' % append
         resp = self.client.api_request(url=url,
-                                       method='GET',
-                                       body=body)
+                                       method='GET')
         return resp
 
     def test_guest_get_not_exist(self):
@@ -484,17 +482,34 @@ class GuestHandlerTestCase(unittest.TestCase):
     def test_guests_get_nic_info(self):
         resp = self._guest_get_nic_DB_info()
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_guest_get_power_state',
+                                   resp.content)
+
         resp = self._guest_get_nic_DB_info(userid='test')
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_guest_get_power_state',
+                                   resp.content)
+
         resp = self._guest_get_nic_DB_info(nic_id='testnic')
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_guest_get_power_state',
+                                   resp.content)
+
         resp = self._guest_get_nic_DB_info(vswitch='vswitch')
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_guest_get_power_state',
+                                   resp.content)
+
         resp = self._guest_get_nic_DB_info(userid='test', nic_id='testnic')
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_guest_get_power_state',
+                                   resp.content)
+
         resp = self._guest_get_nic_DB_info(userid='test', nic_id='testnic',
                                            vswitch='vswitch')
         self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_guest_get_power_state',
+                                   resp.content)
 
     def _vswitch_create(self):
         body = '{"vswitch": {"name": "RESTVSW1", "rdev": "FF00"}}'
