@@ -99,9 +99,6 @@ class SDKAPIRequestHandler(object):
     def image_export(self, *args, **kwargs):
         return self._call('image_export', *args, **kwargs)
 
-    def guest_authorize_iucv_client(self, *args, **kwargs):
-        return self._call('guest_authorize_iucv_client', *args, **kwargs)
-
     def guest_deploy(self, *args, **kwargs):
         return self._call('guest_deploy', *args, **kwargs)
 
@@ -303,10 +300,6 @@ class SDKAPITestUtils(object):
         self.sdkapi.guest_nic_couple_to_vswitch(userid, nic_vdev,
                                              CONF.tests.vswitch)
         self.sdkapi.vswitch_grant_user(CONF.tests.vswitch, userid)
-
-        # Grant IUCV access
-        smut_uid = zvmutils.get_smut_userid()
-        self.sdkapi.guest_authorize_iucv_client(userid, smut_uid)
 
         # Power on the vm, then put MN's public key into vm
         print("Power on userid %s ..." % userid)
