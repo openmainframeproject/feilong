@@ -407,3 +407,28 @@ vswitch_list:
   in: body
   required: true
   type: list
+guest_userid_opt:
+  description: |
+    guest userid.
+  in: body
+  required: False
+  type: string
+nic_id_opt:
+  description: |
+    nic identifier.
+  in: body
+  required: False
+  type: string
+vswitch_name_opt:
+  description: |
+    vswitch name.
+  in: body
+  required: False
+  type: string
+guests_nic_info:
+  description: |
+    nic information, including including userid, nic number,
+    vswitch, nic id and comments.
+  in: body
+  required: true
+  type: list
