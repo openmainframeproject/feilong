@@ -368,7 +368,16 @@ class SMUTClient(object):
             self._request(rd)
 
     def guest_authorize_iucv_client(self, userid, client=None):
-        """Punch a script to authorized the client on guest vm"""
+        """Punch a script that used to set the authorized client userid in vm
+        If the guest is in log off status, the change will take effect when
+        the guest start up at first time.
+        If the guest is in active status, power off and power on are needed
+        for the change to take effect.
+
+        :param str guest: the user id of the vm
+        :param str client: the user id of the client that can communicate to
+               guest using IUCV"""
+
         client = client or zvmutils.get_smut_userid()
 
         iucv_path = "/tmp/" + userid
@@ -447,6 +456,9 @@ class SMUTClient(object):
             finally:
                 # remove the local temp config drive folder
                 self._pathutils.clean_temp_folder(tmp_trans_dir)
+
+        # Authorize iucv client
+        self.guest_authorize_iucv_client(userid)
 
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):

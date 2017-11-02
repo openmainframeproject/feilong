@@ -201,12 +201,6 @@ class VMOps(object):
         """Execute commands on the guest vm."""
         return self._smutclient.execute_cmd(userid, cmdStr)
 
-    def guest_authorize_iucv_client(self, userid, client=None):
-        """Punch a script to authorized the client on guest vm"""
-        zvmutils.check_guest_exist(userid)
-
-        return self._smutclient.guest_authorize_iucv_client(userid, client)
-
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
         zvmutils.check_guest_exist(userid)
