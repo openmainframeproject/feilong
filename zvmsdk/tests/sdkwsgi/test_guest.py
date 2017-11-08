@@ -82,7 +82,7 @@ class GuestHandlerTestCase(unittest.TestCase):
         return resp
 
     def _guest_nic_delete(self, vdev="1000", userid=None):
-        body = '{"nic": {}}'
+        body = '{"active": "False"}'
         if userid is None:
             userid = self.userid
 

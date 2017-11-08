@@ -308,3 +308,16 @@ compress_level = {
     'type': ['integer'],
     'pattern': '^[0-9]$'
 }
+
+user_vlan_id = {
+    'type': 'object',
+    'properties': {
+        'userid': userid,
+        'vlanid': {'type': ['integer'],
+                   'minimum': 0,
+                   'maximum': 4094,
+                  }
+    },
+    'required': ['userid', "vlanid"],
+    'additionalProperties': False
+}
