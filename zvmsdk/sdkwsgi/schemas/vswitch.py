@@ -23,6 +23,7 @@ create = {
                 'rdev': parameter_types.rdev_list,
                 # FIXME: controller has its own conventions
                 'controller': parameter_types.controller,
+                'persist': parameter_types.boolean,
                 'connection': {
                     'type': ['integer'],
                     'minimum': 0,
@@ -86,7 +87,7 @@ update = {
             'type': 'object',
             'properties': {
                  'grant_userid': parameter_types.userid,
-                 'real_device_address': parameter_types.rdev,
+                 'user_vlan_id': parameter_types.user_vlan_id,
                  'revoke_userid': parameter_types.userid,
             },
             'additionalProperties': False,

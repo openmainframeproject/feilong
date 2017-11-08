@@ -158,7 +158,7 @@ Get guests cpu, memory information.
 
 .. restapi_parameters:: parameters.yaml
 
-  - userid_list: userid_list_guest
+  - userid: userid_list_guest
 
 * Response code:
 
@@ -186,7 +186,7 @@ Get guests virtual nic information.
 
 .. restapi_parameters:: parameters.yaml
 
-  - userid_list: userid_list_guest
+  - userid: userid_list_guest
 
 * Response code:
 
@@ -377,6 +377,17 @@ Create a virtual nic on giving guest.
 .. restapi_parameters:: parameters.yaml
 
   - userid: guest_userid
+  - nic: nic_set_info
+  - vdev: vdev_number
+  - nic_id: nic_identifier
+  - mac_addr: mac_address
+  - ip_addr: ip_address
+  - active: active_flag
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_create_nic.tpl
+   :language: javascript
 
 * Response code:
 
@@ -644,7 +655,7 @@ Update Guest nic
 
 **PUT /guests/{userid}/nic/{vdev}**
 
-Couple nic to vswitch on the guest.
+Couple or uncouple nic with vswitch on the guest.
 
 * Request:
 
@@ -652,13 +663,22 @@ Couple nic to vswitch on the guest.
 
   - userid: guest_userid
   - vdev: vdev_guest
+  - info: couple_info
+  - couple: couple_action
+  - active: active_flag
+  - vswitch: vswitch_name_body_opt
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_couple_uncouple_nic.tpl
+   :language: javascript
 
 * Response code:
 
   HTTP status code 200 on success.
 
 * Response contents:
-  
+
   No response.
 
 Delete Guest nic
@@ -672,13 +692,14 @@ Delete Guest nic
 
   - userid: guest_userid
   - vdev: vdev_guest
+  - active: active_flag
 
 * Response code:
 
   HTTP status code 200 on success.
 
 * Response contents:
-  
+
   No response.
 
 Host
@@ -922,6 +943,11 @@ Create a new vswitch.
   - queue_mem: queue_mem_vswitch
   - native_vid: native_vid_vswitch
   - persist: persist_option_vswitch
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_create.tpl
+   :language: javascript
 
 * Response code:
 

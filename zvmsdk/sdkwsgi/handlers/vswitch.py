@@ -40,7 +40,27 @@ class VswitchAction(object):
         name = vsw['name']
         rdev = vsw['rdev']
 
-        info = self.client.send_request('vswitch_create', name, rdev)
+        controller = vsw.get('controller', '*')
+        connection = vsw.get('connection', "CONNECT")
+        network_type = vsw.get('network_type', "IP")
+        router = vsw.get('router', "NONROUTER")
+        vid = vsw.get('vid', "UNAWARE")
+        port_type = vsw.get('port_type', "ACCESS")
+        gvrp = vsw.get('gvrp', "GVRP")
+        queue_mem = vsw.get('queue_mem', 8)
+        native_vid = vsw.get('native_vid', 1)
+        persist = vsw.get('persist', True)
+        persist = util.bool_from_string(persist, strict=True)
+
+        info = self.client.send_request('vswitch_create', name, rdev,
+                                        controller=controller,
+                                        connection=connection,
+                                        network_type=network_type,
+                                        router=router, vid=vid,
+                                        port_type=port_type, gvrp=gvrp,
+                                        queue_mem=queue_mem,
+                                        native_vid=native_vid,
+                                        persist=persist)
         return info
 
     def delete(self, name):
