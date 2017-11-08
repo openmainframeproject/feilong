@@ -4,5 +4,5 @@
     "modID": null,
     "rc": 0,
     "errmsg": "",
-    "output": ["USER1", "INCLUDE PROFILE"]
+    "output": {"user_direct": ['USER1', "INCLUDE PROFILE"]}
 }

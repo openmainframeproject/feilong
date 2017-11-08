@@ -80,7 +80,7 @@ class VMHandler(object):
         return info
 
     def delete_nic(self, userid, vdev, body):
-        active = body.get('vdev', False)
+        active = body.get('active', False)
 
         info = self.client.send_request('guest_delete_nic', userid, vdev,
                                         active=active)
