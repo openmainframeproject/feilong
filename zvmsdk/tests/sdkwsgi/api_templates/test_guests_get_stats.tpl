@@ -4,5 +4,5 @@
     "modID": null,
     "rc": 0,
     "errmsg": "",
-    "output": ""
-} 
+    "output": {}
+}

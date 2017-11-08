@@ -80,7 +80,8 @@ class VMHandler(object):
         return info
 
     def delete_nic(self, userid, vdev, body):
-        active = body.get('vdev', False)
+        active = body.get('active', False)
+        active = util.bool_from_string(active, strict=True)
 
         info = self.client.send_request('guest_delete_nic', userid, vdev,
                                         active=active)
@@ -115,6 +116,7 @@ class VMHandler(object):
         mac_addr = nic.get('mac_addr', None)
         ip_addr = nic.get('ip_addr', None)
         active = nic.get('active', False)
+        active = util.bool_from_string(active, strict=True)
 
         info = self.client.send_request('guest_create_nic', userid,
                                         vdev=vdev, nic_id=nic_id,
@@ -128,6 +130,7 @@ class VMHandler(object):
         version = interface['os_version']
         networks = interface.get('guest_networks', None)
         active = interface.get('active', False)
+        active = util.bool_from_string(active, strict=True)
         info = self.client.send_request('guest_create_network_interface',
                                         userid, os_version=version,
                                         guest_networks=networks,
