@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a1b3d7dc_6609e2ae",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1534,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-11-09T01:37:07Z",
+      "side": 1,
+      "message": "Remove tailing whitespace",
+      "range": {
+        "startLine": 1534,
+        "startChar": 0,
+        "endLine": 1534,
+        "endChar": 12
+      },
+      "revId": "7abd1dbe69b312373741bb5296d4b6701a31f17f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f8a5cf31_d6cf7550",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1536,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-11-09T01:37:07Z",
+      "side": 1,
+      "message": "Using standard comments format and string",
+      "range": {
+        "startLine": 1536,
+        "startChar": 9,
+        "endLine": 1536,
+        "endChar": 22
+      },
+      "revId": "7abd1dbe69b312373741bb5296d4b6701a31f17f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5e7401af_94804a00",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1539,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-11-09T01:37:07Z",
+      "side": 1,
+      "message": "aemod_handler is a common function, is not only for config minidisk. Suggest to use specific action in parms.",
+      "range": {
+        "startLine": 1539,
+        "startChar": 32,
+        "endLine": 1539,
+        "endChar": 38
+      },
+      "revId": "7abd1dbe69b312373741bb5296d4b6701a31f17f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
