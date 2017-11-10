@@ -1509,12 +1509,34 @@ class SMUTClient(object):
         else:
             return False
 
+    def _generate_disk_parmline(self, vdev, fmt, mntdir):
+        parms = [
+                'action=' + 'config mdisk to userid ',
+                'vaddr=' + vdev,
+                'filesys=' + fmt,
+                'mntdir=' + mntdir
+                ]
+        parmline = ' '.join(parms)
+        return parmline
+
     def process_additional_minidisks(self, userid, disk_info):
         '''Generate and punch the scripts used to process additional disk into
         target vm's reader.
         '''
-        # TODO: implement it
-        pass
+        for idx, disk in enumerate(disk_info):
+            vdev = disk.get('vdev') or self.generate_disk_vdev(
+                                                    offset = (idx + 1))
+            fmt = disk.get('format')
+            mount_dir = disk.get('mntdir') or ''.join(['/mnt/', str(vdev)])
+            disk_parms = self._generate_disk_parmline(vdev, fmt, mount_dir)
+            self.aemod_handler(userid, const.DISK_FUNC_NAME, disk_parms)
+
+    def aemod_handler(self, instance_name, func_name, parms):
+        rd = ' '.join(['changevm', instance_name, '--aemod', func_name,
+                       parms])
+        action = parms[0] + instance_name
+        with zvmutils.log_and_reraise_smut_request_failed(action):
+            self._request(rd)
 
     def get_user_console_output(self, userid):
         # get console into reader
