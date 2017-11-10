@@ -212,7 +212,7 @@ class PathUtils(object):
                                         dir=guest_folder)
         return tmp_inst_dir
 
-    def get_guest_path(self, userid, sub_dir):
+    def get_guest_path(self, userid):
         guest_folder = os.path.join(self._get_guest_path(), userid)
         self.mkdir_if_not_exist(guest_folder)
         return guest_folder
