@@ -210,7 +210,11 @@ class SDKGuestActionsTestCase(base.SDKAPIBaseTestCase):
             self.assertEquals(info_list1, info_list2)
 
     def test_get_console_output(self):
-        pass
+        _list = []
+        _list = self.sdkapi.guest_list()
+        if _list:
+            str = self.sdkapi.guest_get_console_output(_list[0])
+            self.assertNotEqual(str, '')
 
     def test_config_minidisks(self):
         pass
