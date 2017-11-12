@@ -22,6 +22,52 @@
       "revId": "156bcb12e5770144af25e6eff183d6f72270f6e7",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6d7c0fb1_c2682ba6",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1529,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-12T07:22:03Z",
+      "side": 1,
+      "message": "this can be removed",
+      "range": {
+        "startLine": 1529,
+        "startChar": 7,
+        "endLine": 1529,
+        "endChar": 28
+      },
+      "revId": "156bcb12e5770144af25e6eff183d6f72270f6e7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "775f7f6b_10633144",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1536,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-12T07:22:03Z",
+      "side": 1,
+      "message": "do you plan to add some unit test?",
+      "range": {
+        "startLine": 1530,
+        "startChar": 7,
+        "endLine": 1536,
+        "endChar": 72
+      },
+      "revId": "156bcb12e5770144af25e6eff183d6f72270f6e7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
