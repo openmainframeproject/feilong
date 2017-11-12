@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da027f93_9b5d20ff",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1513,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-12T07:20:52Z",
+      "side": 1,
+      "message": "why add this as global?",
+      "range": {
+        "startLine": 1512,
+        "startChar": 3,
+        "endLine": 1513,
+        "endChar": 57
+      },
+      "revId": "156bcb12e5770144af25e6eff183d6f72270f6e7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
