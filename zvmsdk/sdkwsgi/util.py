@@ -54,6 +54,7 @@ def check_accept(*types):
 
 def extract_json(body):
     try:
+        LOG.debug('Decoding body: %s', body)
         data = loads(body)
     except ValueError as exc:
         msg = ('Malformed JSON: %(error)s') % {'error': exc}
