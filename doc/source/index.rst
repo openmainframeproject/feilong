@@ -12,7 +12,6 @@ and simple verification process.
    :maxdepth: 1
 
    quickstart   
-   sample
 
 Architecture
 ============
