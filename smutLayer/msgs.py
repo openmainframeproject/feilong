@@ -671,7 +671,7 @@ msg = {
         # UserResp: Reinvoke the function for a relocation that is in
         #   progress.
     '0420': [{'overallRC': 99, 'rc': 99, 'rs': 420},     # dict is not used.
-            "ULT%s0420E An error occurred issuing a %s for userid %s.\n" +
+            "ULT%s0420E An error occurred issuing a %s for userid %s. " +
             "Please look up message(s): %s in the CP Messages book for " +
             "more information."],
         # Explain: The VMRELOCATE command returns a list of messages
