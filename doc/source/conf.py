@@ -35,6 +35,7 @@ sys.path.insert(0, os.path.abspath('./'))
 extensions = [
     'sphinx.ext.autodoc',
     'ext.restapi_parameters',
+    'ext.return_code',
 ]
 
 # -- General configuration ----------------------------------------------------

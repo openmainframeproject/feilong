@@ -45,6 +45,17 @@ http solutions like nginx, apache etc.
    setuphttpd
    restapi
 
+sdk rest api return codes&messages
+==================================
+
+This is a reference to z/VM Cloud Connector (CloudLib4zvm) API return codes
+and messages.
+
+.. toctree::
+   :maxdepth: 1
+
+   returncode
+
 configurations reference
 ========================
 
