@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a373e4d6_9fe963af",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 12
+      },
+      "lineNbr": 626,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-14T07:08:02Z",
+      "side": 1,
+      "message": "this makes me think it\u0027s a param of the function :)\nstill LGTM",
+      "range": {
+        "startLine": 625,
+        "startChar": 8,
+        "endLine": 626,
+        "endChar": 75
+      },
+      "revId": "ee682d53f2fcde0d1a5cb15b379577dc5f4c7419",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6e41384f_3f7170a0",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 12
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-14T07:08:02Z",
+      "side": 1,
+      "message": "this is a problem , we can\u0027t restart workload",
+      "range": {
+        "startLine": 302,
+        "startChar": 15,
+        "endLine": 302,
+        "endChar": 40
+      },
+      "revId": "ee682d53f2fcde0d1a5cb15b379577dc5f4c7419",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
