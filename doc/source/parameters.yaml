@@ -124,7 +124,7 @@ guest_info:
     status of guest
   in: body
   required: true
-  type: integer
+  type: dict
 user_profile_guest:
   description: |
     profile of guest
@@ -149,9 +149,9 @@ disk_list_guest:
 userid_list_guest:
   description: |
       a single userid string or a list of guest userids
-  in: body
+  in: path
   required: true
-  type: list
+  type: string, list
 stats_guest:
   description: |
     cpu and memory statics of guest
@@ -438,3 +438,57 @@ guests_nic_info:
   in: body
   required: true
   type: list
+nic_set_info:
+  description: |
+    the information which is used to set nic device number
+  in: body
+  required: true
+  type: dict
+vdev_number:
+  description: |
+    nic device number, 1- to 4- hexadecimal digits
+  in: body
+  required: false
+  type: string
+nic_identifier:
+  description: |
+    nic identifier
+  in: body
+  required: false
+  type: string
+mac_address:
+  description: |
+    mac address
+  in: body
+  required: false
+  type: string
+ip_address:
+  description: |
+    ip address
+  in: body
+  required: false
+  type: string
+active_flag:
+  description: |
+    whether the change will apply to the active guest
+  in: body
+  required: false
+  type: bool
+couple_info:
+  description: |
+    the info used to describe the couple/uncouple action
+  in: body
+  required: true
+  type: dict
+couple_action:
+  description: |
+    couple or uncouple action
+  in: body
+  required: true
+  type: bool
+vswitch_name_body_opt:
+  description: |
+    vswitch name
+  in: body
+  required: false
+  type: string
