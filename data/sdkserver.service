@@ -4,6 +4,8 @@ After=network.target syslog.target
 
 [Service]
 Type=simple
+User=zvmsdk
+Group=zvmsdk
 ExecStart=/usr/bin/sdkserver
 
 [Install]
