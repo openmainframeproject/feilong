@@ -581,6 +581,26 @@ def guests_get_nic_info(req):
 
 @wsgi_wrapper.SdkWsgify
 @tokens.validate
+def guest_config_minidisks(req):
+
+    def _guest_config_minidisks(userid, req):
+        action = get_handler()
+        body = util.extract_json(req.body)
+        return action.guest_config_minidisks(userid, body=body)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+
+    info = _guest_config_minidisks(userid, req)
+
+    info_json = json.disk_info(info)
+    req.response.status = util.get_http_code_from_sdk_return(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
 def guest_create_disks(req):
 
     def _guest_create_disks(userid, req):
