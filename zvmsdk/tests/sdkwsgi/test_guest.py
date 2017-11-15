@@ -119,6 +119,22 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         return resp
 
+    def _guest_config_minidisk(self, userid=None, disk=None):
+        if userid is None:
+            userid = self.userid
+
+        if disk is None:
+            disk = "0101"
+
+        body = """{"disk_info": {"disk_list": ["%s"]}}""" % disk
+
+        url = '/guests/%s/disks' % userid
+
+        resp = self.client.api_request(url=url,
+                                       method='PUT',
+                                       body=body)
+        return resp
+
     def _guest_disks_delete(self, userid=None, vdev=None):
         if userid is None:
             userid = self.userid
