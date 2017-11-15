@@ -533,6 +533,25 @@ class HandlersGuestTest(SDKWSGITest):
 
     @mock.patch('sdkclient.client.SDKClient.send_request')
     @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_guest_config_minidisks(self, mock_userid, mock_config):
+        disk_list = [{'vdev': '0101',
+                      'format': 'ext3',
+                      'mntdir': '/mnt/0101'}]
+        mock_config.return_value = ''
+        body_str = """{"disk_info": {"disk_list": [{'vdev': '0101',
+                                                    'format': 'ext3',
+                                                    'mntdir': '/mnt/0101'}
+                                                  ]}}"""
+        self.req.body = body_str
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_config_minidisks(self.req)
+        mock_config.assert_called_once_with('guest_config_minidisks',
+                                            FAKE_USERID,
+                                            disk_list)
+
+    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_delete_disks(self, mock_userid, mock_delete):
         vdev_list = ['0101']
         mock_delete.return_value = ''

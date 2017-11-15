@@ -145,6 +145,14 @@ class VMHandler(object):
                                         disk_list)
         return info
 
+    @validation.schema(guest.guest_config_minidisks)
+    def guest_config_minidisks(self, userid, body=None):
+        disk_info = body['disk_info']
+        disk_list = disk_info.get('disk_list', None)
+        info = self.client.send_request('guest_config_minidisks', userid,
+                                        disk_list)
+        return info
+
     @validation.schema(guest.delete_disks)
     def delete_disks(self, userid, body=None):
         vdev_info = body['vdev_info']
@@ -574,6 +582,26 @@ def guests_get_nic_info(req):
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,
         additional_handler=util.handle_not_found)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@wsgi_wrapper.SdkWsgify
+@tokens.validate
+def guest_config_minidisks(req):
+
+    def _guest_config_minidisks(userid, req):
+        action = get_handler()
+        body = util.extract_json(req.body)
+        return action.guest_config_minidisks(userid, body=body)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+
+    info = _guest_config_minidisks(userid, req)
+
+    info_json = json.disk_info(info)
+    req.response.status = util.get_http_code_from_sdk_return(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     return req.response
