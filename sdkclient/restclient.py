@@ -55,6 +55,7 @@ PARAM_IN_PATH = {
     'guest_get_power_state': 1,
     'guest_create_disks': 1,
     'guest_delete_disks': 1,
+    'guest_config_minidisks': 1,
     'volume_attach': 1,
     'volume_detach': 1,
     'host_get_info': 0,
@@ -98,6 +99,7 @@ API2URL = {
     'guest_get_power_state': '/guests/%s/power_state',
     'guest_create_disks': '/guests/%s/disks',
     'guest_delete_disks': '/guests/%s/disks',
+    'guest_config_minidisks': '/guests/%s/disks',
     'volume_attach': '/guests/%s/volumes',
     'volume_detach': '/guests/%s/volumes',
     'host_get_info': '/host',
@@ -141,6 +143,7 @@ API2METHOD = {
     'guest_get_power_state': 'GET',
     'guest_create_disks': 'POST',
     'guest_delete_disks': 'DELETE',
+    'guest_config_minidisks': 'PUT',
     'volume_attach': 'POST',
     'volume_detach': 'DELETE',
     'host_get_info': 'GET',
@@ -184,6 +187,7 @@ API2BODY = {
     'guest_get_power_state': None,
     'guest_create_disks': 'body_guest_create_disks',
     'guest_delete_disks': 'body_guest_delete_disks',
+    'guest_config_minidisks': 'body_guest_config_minidisks',
     'volume_attach': 'body_volume_attach',
     'volume_detach': 'body_volume_detach',
     'host_get_info': None,
@@ -210,7 +214,7 @@ def body_guest_create(start_index, *args, **kwargs):
     body = {'guest': {'userid': args[start_index],
                       'vcpus': args[start_index + 1],
                       'memory': args[start_index + 2]}}
-    fill_kwargs_in_body(body['guest'], kwargs)
+    fill_kwargs_in_body(body['guest'], **kwargs)
     return body
 
 
@@ -253,51 +257,57 @@ def body_guest_get_console_output(start_index, *args, **kwargs):
 def body_guest_deploy(start_index, *args, **kwargs):
     body = {'action': 'deploy',
             'image': args[start_index]}
-    fill_kwargs_in_body(body, kwargs)
+    fill_kwargs_in_body(body, **kwargs)
     return body
 
 
 def body_guest_create_nic(start_index, *args, **kwargs):
     body = {'nic': {}}
-    fill_kwargs_in_body(body['nic'], kwargs)
+    fill_kwargs_in_body(body['nic'], **kwargs)
     return body
 
 
 def body_guest_delete_nic(start_index, *args, **kwargs):
     body = {}
-    fill_kwargs_in_body(body, kwargs)
+    fill_kwargs_in_body(body, **kwargs)
     return body
 
 
 def body_guest_nic_couple_to_vswitch(start_index, *args, **kwargs):
     body = {'info': {'couple': True,
                      'vswitch': args[start_index]}}
-    fill_kwargs_in_body(body['info'], kwargs)
+    fill_kwargs_in_body(body['info'], **kwargs)
     return body
 
 
 def body_guest_nic_uncouple_from_vswitch(start_index, *args, **kwargs):
     body = {'info': {'couple': False}}
-    fill_kwargs_in_body(body['info'], kwargs)
+    fill_kwargs_in_body(body['info'], **kwargs)
     return body
 
 
 def body_guest_create_network_interface(start_index, *args, **kwargs):
     body = {'interface': {'os_version': args[start_index],
                           'guest_networks': args[start_index + 1]}}
-    fill_kwargs_in_body(body['interface'], kwargs)
+    fill_kwargs_in_body(body['interface'], **kwargs)
     return body
 
 
 def body_guest_create_disks(start_index, *args, **kwargs):
     body = {'disk_info': {}}
-    fill_kwargs_in_body(body['disk_info'], kwargs)
+    fill_kwargs_in_body(body['disk_info'], **kwargs)
     return body
 
 
 def body_guest_delete_disks(start_index, *args, **kwargs):
     body = {'vdev_info': {}}
-    fill_kwargs_in_body(body['vdev_info'], kwargs)
+    fill_kwargs_in_body(body['vdev_info'], **kwargs)
+    return body
+
+
+def body_guest_config_minidisks(start_index, *args, **kwargs):
+    body = {'disk_info': {'disk_list': args[start_index]}}
+    fill_kwargs_in_body(body['disk_info'], **kwargs)
     return body
 
 
@@ -307,7 +317,7 @@ def body_volume_attach(start_index, *args, **kwargs):
                      'volume': args[start_index + 1],
                      'connection': args[start_index + 2],
                      'rollback': args[start_index + 3]}}
-    fill_kwargs_in_body(body['info'], kwargs)
+    fill_kwargs_in_body(body['info'], **kwargs)
     return body
 
 
@@ -317,7 +327,7 @@ def body_volume_detach(start_index, *args, **kwargs):
                      'volume': args[start_index + 1],
                      'connection': args[start_index + 2],
                      'rollback': args[start_index + 3]}}
-    fill_kwargs_in_body(body['info'], kwargs)
+    fill_kwargs_in_body(body['info'], **kwargs)
     return body
 
 
@@ -325,25 +335,25 @@ def body_image_create(start_index, *args, **kwargs):
     body = {'image': {'image_name': args[start_index],
                       'url': args[start_index + 1],
                       'image_meta': args[start_index + 2]}}
-    fill_kwargs_in_body(body['image'], kwargs)
+    fill_kwargs_in_body(body['image'], **kwargs)
     return body
 
 
 def body_image_export(start_index, *args, **kwargs):
     body = {'location': {'dest_url': args[start_index]}}
-    fill_kwargs_in_body(body['location'], kwargs)
+    fill_kwargs_in_body(body['location'], **kwargs)
     return body
 
 
 def body_vswitch_create(start_index, *args, **kwargs):
     body = {'vswitch': {'name': args[start_index]}}
-    fill_kwargs_in_body(body['vswitch'], kwargs)
+    fill_kwargs_in_body(body['vswitch'], **kwargs)
     return body
 
 
 def body_vswitch_update(*args, **kwargs):
     body = {'vswitch': {}}
-    fill_kwargs_in_body(body['vswitch'], kwargs)
+    fill_kwargs_in_body(body['vswitch'], **kwargs)
     return body
 
 
