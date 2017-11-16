@@ -12,6 +12,19 @@
 #dir=/var/lib/zvmsdk/databases/
 
 
+[file]
+
+# 
+# Directory to store sdk imported or exported files.
+# 
+# SDK file repository to store the imported files and the files that will be
+# exported, the imported files will be put into <file_repository>/imported
+# the files to be exported will be put into <file_repository>/exported
+#     
+# This param is optional
+#file_repository=/var/lib/zvmsdk/files
+
+
 [guest]
 
 # 

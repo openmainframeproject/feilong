@@ -18,6 +18,7 @@ import webob
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk.sdkwsgi import util
+from zvmsdk.sdkwsgi.handlers import file
 from zvmsdk.sdkwsgi.handlers import guest
 from zvmsdk.sdkwsgi.handlers import host
 from zvmsdk.sdkwsgi.handlers import image
@@ -99,6 +100,10 @@ ROUTE_LIST = (
     }),
     ('/images/{name}/root_disk_size', {
         'GET': image.image_get_root_disk_size,
+    }),
+    ('/files', {
+        'PUT': file.file_import,
+        'POST': file.file_export,
     }),
     ('/token', {
         'POST': tokens.create,
