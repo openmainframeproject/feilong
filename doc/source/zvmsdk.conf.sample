@@ -138,27 +138,6 @@
 [sdkserver]
 
 # 
-# The IP address that the SDK server is listen on.
-# 
-# When the SDK server deamon starts, it will try to bind to
-# this address and port bind_port, and wait for the SDK client
-# connection to handle API request.
-# 
-# This param is optional
-#bind_addr=127.0.0.1
-
-
-# 
-# The port that the SDK server is listen on.
-# 
-# This will work as a pair with bind_addr when the SDK server daemon
-# starts, more info can be found in that configuration description.
-# 
-# This param is optional
-#bind_port=2000
-
-
-# 
 # The maximum number of worker thread in SDK server to handle client requests.
 # 
 # These worker threads would work concurrently to handle requests from client.
@@ -169,13 +148,13 @@
 
 
 # 
-# The connection type of the requests flowing into the sdkserver.
+# The port that the SDK server is listen on.
 # 
 # This will work as a pair with bind_addr when the SDK server daemon
 # starts, more info can be found in that configuration description.
 # 
 # This param is optional
-#connect_type=socket
+#bind_port=2000
 
 
 # 
@@ -190,19 +169,28 @@
 #request_queue_size=128
 
 
-[wsgi]
-
 # 
-# How long the token is valid.
+# The connection type of the requests flowing into the sdkserver.
 # 
-# If a token auth is used, the token return to user will be
-# expired after the period passed. This ensure an user who
-# get this token will not be authorized all the time, a new
-# token need to be recreated after certain time period.
+# This will work as a pair with bind_addr when the SDK server daemon
+# starts, more info can be found in that configuration description.
 # 
 # This param is optional
-#token_validation_period=30
+#connect_type=socket
 
+
+# 
+# The IP address that the SDK server is listen on.
+# 
+# When the SDK server deamon starts, it will try to bind to
+# this address and port bind_port, and wait for the SDK client
+# connection to handle API request.
+# 
+# This param is optional
+#bind_addr=127.0.0.1
+
+
+[wsgi]
 
 # 
 # Admin password to access sdk http server.
@@ -212,16 +200,6 @@
 # 
 # This param is optional
 #password=
-
-
-# 
-# Admin user to access sdk http server.
-# 
-# User in order to get a token from zvm sdk, and the token
-# will be used to validate request before token expire.
-# 
-# This param is optional
-#user=
 
 
 # 
@@ -242,26 +220,29 @@
 #auth=none
 
 
+# 
+# How long the token is valid.
+# 
+# If a token auth is used, the token return to user will be
+# expired after the period passed. This ensure an user who
+# get this token will not be authorized all the time, a new
+# token need to be recreated after certain time period.
+# 
+# This param is optional
+#token_validation_period=30
+
+
+# 
+# Admin user to access sdk http server.
+# 
+# User in order to get a token from zvm sdk, and the token
+# will be used to validate request before token expire.
+# 
+# This param is optional
+#user=
+
+
 [zvm]
-
-# This param is optional
-#user_default_password=
-
-
-# 
-# PROFILE name to use when creating a z/VM guest.
-# 
-# When SDK deploys an guest on z/VM, it can include some
-# common statements from a PROFILE definition.
-# This PROFILE must already be included in your z/VM user directory.
-# 
-# Possible values:
-#     An 8 character name of a PROFILE that is already defined in the z/VM
-#     user directory.
-#     
-# This param is optional
-#user_profile=
-
 
 # 
 # Default LOGONBY userid(s) for the cloud.
@@ -298,18 +279,38 @@
 
 
 # 
-# z/VM host name of this hypervisor.
+# PROFILE name to use when creating a z/VM guest.
 # 
-# This is the name of the hypervisor that is managed by the cloud,
-# The admin should refer to the z/VM system configuration file
-# SYSTEM_IDENTIFIER statement for the hypervisor name.
+# When SDK deploys an guest on z/VM, it can include some
+# common statements from a PROFILE definition.
+# This PROFILE must already be included in your z/VM user directory.
 # 
 # Possible values:
-#     A 1-8 character string, matching the z/VM system name this
-#     compute service is managing.
+#     An 8 character name of a PROFILE that is already defined in the z/VM
+#     user directory.
 #     
-# This param is required
-#host=
+# This param is optional
+#user_profile=
+
+
+# 
+# Virtual device number for root disk.
+# 
+# When SDK deploys an guest, it creates a root disk and potentially
+# several data disks. This value is the virtual device number of the root
+# disk.
+# 
+# Possible values:
+#     An integer value in hex format, between 0 and 65536 (x'FFFF').
+#     It should not conflict with other device numbers in the z/VM guest's
+#     configuration, for example device numbers of the NICs or ephemeral or
+#     persistent disks.
+# 
+# Sample root disk in user directory:
+#     MDISK 0100 <disktype> <start> <end> <volumelabel> <readwrite>
+# 
+# This param is optional
+#user_root_vdev=0100
 
 
 # 
@@ -334,23 +335,18 @@
 
 
 # 
-# Virtual device number for root disk.
+# z/VM host name of this hypervisor.
 # 
-# When SDK deploys an guest, it creates a root disk and potentially
-# several data disks. This value is the virtual device number of the root
-# disk.
+# This is the name of the hypervisor that is managed by the cloud,
+# The admin should refer to the z/VM system configuration file
+# SYSTEM_IDENTIFIER statement for the hypervisor name.
 # 
 # Possible values:
-#     An integer value in hex format, between 0 and 65536 (x'FFFF').
-#     It should not conflict with other device numbers in the z/VM guest's
-#     configuration, for example device numbers of the NICs or ephemeral or
-#     persistent disks.
-# 
-# Sample root disk in user directory:
-#     MDISK 0100 <disktype> <start> <end> <volumelabel> <readwrite>
-# 
-# This param is optional
-#user_root_vdev=0100
+#     A 1-8 character string, matching the z/VM system name this
+#     compute service is managing.
+#     
+# This param is required
+#host=
 
 
 # 
@@ -373,5 +369,9 @@
 #     
 # This param is required
 #disk_pool=
+
+
+# This param is optional
+#user_default_password=
 
 

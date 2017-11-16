@@ -145,26 +145,38 @@ Refer to z/VM SDK configuration guide for more information.
 
 Here's a sample configuration of z/VM SDK::
 
-  [default]
+  [database]
+  dir=/var/lib/zvmsdk/databases/
+
+  [image]
+  sdk_image_repository=/var/lib/zvmsdk/images
 
   [logging]
-  log_dir = /tmp
-  log_level = logging.INFO
-
-  [zvm]
-  host = opnstk1
-  client_type = xcat
-  diskpool_type = ECKD
-  diskpool = xcateckd
-  disk_pool = ECKD:xcateckd
-  user_default_password = password
-  default_ephemeral_mntdir = /mnt/ephemeral/
+  log_level=logging.INFO
+  log_dir=/var/log/zvmsdk/
 
   [network]
-  my_ip = 127.0.0.1
+  # IP address of the Linux machine which is running SDK on.
+  # This param is required
+  my_ip=127.0.0.1
 
-  [database]
-  path = /tmp/zvmsdkdb
+  [sdkserver]
+  bind_addr=127.0.0.1
+  bind_port=2000
+  max_worker_count=64
+  connect_type=socket
+
+  [wsgi]
+  auth=none
+
+  [zvm]
+  # z/VM host name of this hypervisor.
+  # This param is required
+  host=zvmhost
+
+  # zVM disk pool and type for root/ephemeral disks.
+  # This param is required
+  disk_pool=ECKD:eckdpool
 
 ============
 Verification

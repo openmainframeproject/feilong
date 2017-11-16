@@ -2,4 +2,4 @@
 Configuration Options
 =====================
 
-.. literalinclude:: ./configuration.ini
+.. literalinclude:: ./zvmsdk.conf.sample

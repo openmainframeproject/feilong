@@ -80,7 +80,7 @@ def generate(f):
 
 
 def main(args=None):
-    doc_file = './configuration.ini'
+    doc_file = './zvmsdk.conf.sample'
     with open(doc_file, 'w') as f:
         generate(f)
 

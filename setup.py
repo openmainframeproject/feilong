@@ -42,5 +42,6 @@ setuptools.setup(
         ]
     },
     scripts=['scripts/sdkserver'],
-    data_files=[('/usr/lib/systemd/system', ['data/sdkserver.service'])],
+    data_files=[('/usr/lib/systemd/system', ['data/sdkserver.service']),
+                ('/etc/zvmsdk', ['doc/source/zvmsdk.conf.sample'])],
 )
