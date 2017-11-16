@@ -224,6 +224,19 @@ class SDKAPI(object):
                       image_name)
             raise
 
+    def image_upload(self, image_name, image_fileobj, image_meta):
+        """Upload the image to image repository
+
+        :param image_name: the unique image name that will  
+        :param image_fileobj: file-like object
+        :param image_meta:  
+               a dictionary to describe the image info, such as md5sum,
+               os_version. For example:
+               {'os_version': 'rhel6.2',
+               'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5'}
+        """
+        self._imageops.image_upload(image_name, image_fileobj, image_meta)
+
     def image_import(self, image_name, url, image_meta, remote_host=None):
         """Import image to zvmsdk image repository
 

@@ -1769,6 +1769,76 @@ class SMUTClient(object):
         disk_size_units = image_info[0]['disk_size_units'].split(':')[0]
         return disk_size_units
 
+    def image_upload(self, image_id, image_fileobj, image_meta):
+        """Upload the image specified in url to SDK image repository, and
+        create a record in image db, the uploaded images are located in
+        image_repository/prov_method/os_version/image_name/, for example,
+        /opt/sdk/images/netboot/rhel7.2/90685d2b-167bimage/0100"""
+        image_info = []
+        # TODO: check how sdkwsgi handle the exception
+        try:
+            image_info = self._ImageDbOperator.image_query_record(image_name)
+        except exception.SDKObjectNotExistError:
+            msg = ("The image record %s doens't exist in SDK image datebase,"
+                   " will import the image and create record now")
+            LOG.info(msg)
+
+        # Ensure the specified image is not exist in image DB
+        if image_info:
+            msg = ("The image name %s has already exist in SDK image "
+                   "database, please check if they are same image or consider"
+                   " to use a different image name for import" % image_name)
+            LOG.error(msg)
+            raise exception.SDKImageOperationError(rs=13, img=image_name)
+
+        try:
+            image_os_version = image_meta['os_version'].lower()
+            target_folder = self._pathutils.create_import_image_repository(
+                image_os_version, const.IMAGE_TYPE['DEPLOY'],
+                image_name)
+        except Exception as err:
+            msg = ('Failed to create repository to store image %(img)s with '
+                   'error: %(err)s, please make sure there are enough space '
+                   'on zvmsdk server and proper permission to create the '
+                   'repository' % {'img': image_name,
+                                   'err': six.text_type(err)})
+            LOG.error(msg)
+            raise exception.SDKImageOperationError(rs=14, msg=msg)
+
+        # The following steps save the imgae file into image repository.
+        target_image_file = '/'.join([target_folder,
+                                       CONF.zvm.user_root_vdev])
+
+        checksum = hashlib.md5()
+        bytes_written = 0
+        try:
+            with open(target_image_file, 'wb') as f:
+                for buf in chunkreadable(image_fileobj, CHUNKSIZE):
+                    bytes_written += len(buf)
+                    checksum.update(buf)
+                    f.write(buf)
+
+        except IOError as e:
+            if e.errno != errno.EACCES:
+                delete_partial(target_image_file, image_id)
+            raise errors.get(e.errno, e)
+        except Exception:
+            #with excutils.save_and_reraise_exception():
+            delete_partial(target_image_file, image_id)
+
+        import pdb; pdb.set_trace()
+        checksum_hex = checksum.hexdigest()
+
+        LOG.debug(("Wrote %(bytes_written)d bytes to %(target_image_file)s with "
+                    "checksum %(checksum_hex)s"),
+                  {'bytes_written': bytes_written,
+                   'target_image_file': target_image_file,
+                   'checksum_hex': checksum_hex})
+
+        return ('file://%s' % target_image_file, bytes_written, checksum_hex)
+
+        # TODO: add image record into database
+
     def punch_file(self, userid, fn, fclass):
         rd = ("changevm %(uid)s punchfile %(file)s --class %(class)s" %
                       {'uid': userid, 'file': fn, 'class': fclass})
@@ -2165,3 +2235,39 @@ class MultiThreadDownloader(threading.Thread):
             i.join()
         LOG.info('Download %s success' % (self.name))
         self.fd.close()
+
+
+def delete_partial(filepath, image_id):
+    try:
+        os.unlink(filepath)
+    except Exception as err:
+        msg = ('Unable to remove partial image '
+               'data for image %(image)s with error: %(err)s' %
+                {'image': image_id,
+                 'err': err})
+        LOG.error(msg)
+
+def chunkreadable(iter, chunk_size=65536):
+    """
+    Wrap a readable iterator with a reader yielding chunks of
+    a preferred size, otherwise leave iterator unchanged.
+
+    :param iter: an iter which may also be readable
+    :param chunk_size: maximum size of chunk
+    """
+    return chunkiter(iter, chunk_size) if hasattr(iter, 'read') else iter
+
+
+def chunkiter(fp, chunk_size=65536):
+    """
+    Return an iterator to a file-like obj which yields fixed size chunks
+
+    :param fp: a file-like object
+    :param chunk_size: maximum size of chunk
+    """
+    while True:
+        chunk = fp.read(chunk_size)
+        if chunk:
+            yield chunk
+        else:
+            break
