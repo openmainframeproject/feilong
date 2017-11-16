@@ -10,11 +10,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 """Handler for the image of the sdk API."""
-
+import webob
+import six
 import json
+import hashlib
+import os
 
 from zvmconnector import connector
+from zvmsdk import api
 from zvmsdk import config
+from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import utils
 from zvmsdk.sdkwsgi.handlers import tokens
@@ -23,10 +28,17 @@ from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi import validation
 
 
+
 _IMAGEACTION = None
+_SDKAPI = None
 CONF = config.CONF
 LOG = log.LOG
 
+def get_sdkapi():
+    global _SDKAPI
+    if _SDKAPI is None:
+        _SDKAPI = api.SDKAPI()
+    return _SDKAPI
 
 class ImageAction(object):
 
@@ -34,6 +46,7 @@ class ImageAction(object):
         self.client = connector.ZVMConnector(connection_type='socket',
                                              ip_addr=CONF.sdkserver.bind_addr,
                                              port=CONF.sdkserver.bind_port)
+        self.sdkapi = get_sdkapi()
 
     @validation.schema(image.create)
     def create(self, body):
@@ -73,6 +86,22 @@ class ImageAction(object):
                                         dest_url, remotehost)
         return info
 
+    # If using sdkserver, the socket server will catch the exception and
+    # construct the result to socket client, here not use sdkserver, so need
+    # to construct the exception info here
+    def upload(self, image_name, image_file, image_meta):
+        try:
+            results = {}
+            self.sdkapi.image_upload(image_name, image_file, image_meta)
+        except exception.SDKBaseException as e:
+           LOG.error("Exception happened during image upload")
+           results = {'overallRC': e.results['overallRC'],
+                      'modID': e.results['modID'],
+                      'rc': e.results['rc'],
+                      'rs': e.results['rs'],
+                      'errmsg': e.format_message(),
+                      'output': ''}
+        return results
 
 def get_action():
     global _IMAGEACTION
@@ -175,3 +204,161 @@ def image_query(req):
         additional_handler=util.handle_not_found)
     req.response.content_type = 'application/json'
     return req.response
+
+@util.SdkWsgify
+@tokens.validate
+def image_upload(request):
+    def _upload(image_name, image_file, image_meta):
+        action = get_action()
+        return action.upload(image_name, image_file, image_meta)
+
+    # Check if the request content type is valid
+    if request.content_type not in ['application/octet-stream']:
+        msg = ('Invalid content type: %s for image upload, the supported '
+               'content type is application/octet-stream' %
+                request.content_type)
+        LOG.error(msg)
+        raise webob.exc.HTTPUnsupportedMediaType(explanation=msg)
+
+    image_name = util.wsgi_path_item(request.environ, 'name')
+    image_file = request.body_file
+    image_meta = {}
+    for key in ['os_version', 'md5sum']:
+        image_meta[key] = request.headers.get(key)
+
+    info = _upload(image_name, image_file, image_meta)
+
+    info_json = json.dumps(info)
+    request.response.body = utils.to_utf8(info_json)
+    request.response.status = util.get_http_code_from_sdk_return(info,
+        additional_handler=util.handle_already_exists)
+    request.response.content_type = 'application/json'
+    return request.response
+
+
+READ_CHUNKSIZE = 4096
+@util.SdkWsgify
+@tokens.validate
+def image_download_file(request):
+    image_id = util.wsgi_path_item(request.environ, 'name')
+    image_path = '/data/opt/images/testimage'
+    response = request.response
+#     response = webob.Response(request=request)
+    # Copy from ResponseSerializer download
+    offset, chunk_size = 0 , None
+    # Maybe not ture here
+    range_val = request.headers.get('Range')
+    image_size = os.path.getsize(image_path)
+ 
+    if range_val:
+        if isinstance(range_val, webob.byterange.Range):
+            response_end = image_size -1
+
+            if range_val.start >= 0:
+                offset = range_val.start
+            else:
+                if abs(range_val.start) < image_size:
+                    offset = image_size + range_val.start
+     
+            if range_val.end is not None and range_val.end < image_size:
+                chunk_size = range_val.end - offset
+                response_end = range_val.end -1
+            else:
+                # For the last chunk case
+                chunk_size = image_size - offset
+ 
+        elif isinstance(range_val, webob.byterange.ContentRange):
+            response_end = range_val.stop - 1
+            # NOTE(flaper87): if not present, both, start
+            # and stop, will be None.
+            offset = range_val.start
+            chunk_size = range_val.stop - offset
+         
+        response.status_int = 206
+
+    response.headers['Content-Type'] = 'application/octet-stream'
+
+ 
+    ## TODO change it
+    response.app_iter = iter(get_data(image_path,
+                                      offset=offset,
+                                      chunk_size=chunk_size))
+     
+             
+ 
+    if chunk_size is not None:
+        response.headers['Content-Range'] = 'bytes %s-%s/%s'\
+                                                % (offset,
+                                                   response_end,
+                                                   image_size)
+    else:
+        chunk_size = image_size
+# 
+#    if image.checksum:
+#         response.headers['Content-MD5'] = image.checksum
+    # NOTE(markwash): "response.app_iter = ..." also erroneously resets the
+    # content-length
+    image_checksum = '563ab5e31d8095815c6d2fd0326c637b'
+    if image_checksum:
+        response.headers['Content-MD5'] = image_checksum
+    response.headers['Content-Length'] = six.text_type(chunk_size)
+    return response
+ 
+def get_data(file_path, offset=0, chunk_size=None):
+    data = ChunkedFile(file_path,
+                          offset=offset,
+                          chunk_size=READ_CHUNKSIZE,
+                          partial_length=chunk_size)
+ 
+    return get_chunk_data_iterator(data)
+ 
+ 
+def get_chunk_data_iterator(data):
+    for chunk in data:
+        yield chunk
+
+ 
+class ChunkedFile(object):
+    """
+    We send something that can iterate over a large file
+    """
+    # Guess the Partial_length the left bytes that not been read? 
+ 
+    def __init__(self, filepath, offset=0, chunk_size=4096,
+                 partial_length=None):
+        self.filepath = filepath
+        self.chunk_size = chunk_size
+        self.partial_length = partial_length
+        self.partial = self.partial_length is not None
+        self.fp = open(self.filepath, 'rb')
+        if offset:
+            self.fp.seek(offset)
+ 
+    def __iter__(self):
+        """Return an iterator over the image file."""
+        try:
+            if self.fp:
+                while True:
+                    if self.partial:
+                        size = min(self.chunk_size, self.partial_length)
+                    else:
+                        size = self.chunk_size
+ 
+                    chunk = self.fp.read(size)
+                    if chunk:
+                        yield chunk
+ 
+                        if self.partial:
+                            self.partial_length -= len(chunk)
+                            if self.partial_length <= 0:
+                                break
+                    else:
+                        break
+        finally:
+            self.close()
+ 
+    def close(self):
+        """Close the internal file pointer"""
+        if self.fp:
+            self.fp.close()
+            self.fp = None
