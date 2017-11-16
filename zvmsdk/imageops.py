@@ -56,3 +56,9 @@ class ImageOps(object):
     def image_export(self, image_name, dest_url, remote_host=None):
         return self._smutclient.image_export(image_name, dest_url,
                                              remote_host)
+    
+    def image_upload(self, image_name, image_fileobj, image_meta):
+        return self._smutclient.image_upload(image_name, image_fileobj,
+                                             image_meta)
+    def image_download(self, image_name):
+        return self._smutclient.image_download(image_name)
