@@ -1886,6 +1886,116 @@ class SMUTClient(object):
         disk_size_units = image_info[0]['disk_size_units'].split(':')[0]
         return disk_size_units
 
+    def image_upload(self, image_name, image_fileobj, image_meta):
+        """Upload the image specified in url to SDK image repository, and
+        create a record in image db, the uploaded images are located in
+        image_repository/prov_method/os_version/image_name/, for example,
+        /opt/sdk/images/netboot/rhel7.2/90685d2b-167bimage/0100"""
+        image_info = []
+        # TODO: check how sdkwsgi handle the exception
+        try:
+            image_info = self._ImageDbOperator.image_query_record(image_name)
+        except exception.SDKObjectNotExistError:
+            msg = ("The image record %s doens't exist in SDK image datebase,"
+                   " will upload the image and create record now")
+            LOG.info(msg)
+
+        # Ensure the specified image is not exist in image DB
+        if image_info:
+            msg = ("The image name %s has already exist in SDK image "
+                   "database, please check if they are same image or consider"
+                   " to use a different image name for upload" % image_name)
+            LOG.error(msg)
+            raise exception.SDKImageOperationError(rs=13, img=image_name)
+
+        try:
+            image_os_version = image_meta['os_version'].lower()
+            target_folder = self._pathutils.create_import_image_repository(
+                image_os_version, const.IMAGE_TYPE['DEPLOY'],
+                image_name)
+        except Exception as err:
+            msg = ('Failed to create repository to store image %(img)s with '
+                   'error: %(err)s, please make sure there are enough space '
+                   'on zvmsdk server and proper permission to create the '
+                   'repository' % {'img': image_name,
+                                   'err': six.text_type(err)})
+            LOG.error(msg)
+            raise exception.SDKImageOperationError(rs=14, msg=msg)
+
+        # TODO: (nafei) use sub-function to check the image type
+        image_type = 'rootonly'
+        if image_type == 'rootonly':
+            target_image_file = '/'.join([target_folder,
+                                         CONF.zvm.user_root_vdev])
+
+        # The following steps save the imgae file into image repository.
+        checksum = hashlib.md5()
+        bytes_written = 0
+        try:
+            with open(target_image_file, 'wb') as f:
+                for buf in chunkreadable(image_fileobj, CHUNKSIZE):
+                    bytes_written += len(buf)
+                    checksum.update(buf)
+                    f.write(buf)
+
+            checksum_hex = checksum.hexdigest()
+
+            LOG.debug(("Wrote %(bytes_written)d bytes to %(target_image)s"
+                        " with checksum %(checksum_hex)s"),
+                      {'bytes_written': bytes_written,
+                       'target_image': target_image_file,
+                       'checksum_hex': checksum_hex})
+
+            # Check md5 after import to ensure import a correct image
+            # TODO change to use query image name in DB
+            expect_md5sum = image_meta.get('md5sum')
+            real_md5sum = checksum_hex
+            if expect_md5sum and expect_md5sum != real_md5sum:
+                msg = ("The md5sum after upload is not same as source image,"
+                        " the image has been broken")
+                LOG.error(msg)
+                raise exception.SDKImageOperationError(rs=4)
+
+            disk_size_units = self._get_disk_size_units(target_image_file)
+            image_size = self._get_image_size(target_image_file)
+            # TODO: update the real_md5sum field to include each disk image
+            self._ImageDbOperator.image_add_record(image_name,
+                                                    image_os_version,
+                                                    real_md5sum,
+                                                    disk_size_units,
+                                                    image_size,
+                                                    image_type)
+            LOG.info("Image %s is upload successfully" % image_name)
+
+        except Exception:
+            # Cleanup the image from image repository
+            self._pathutils.clean_temp_folder(target_folder)
+            raise
+
+    def image_download(self, image_name):
+        """Download the image from image repository"""
+        image_info = self._ImageDbOperator.image_query_record(image_name)
+        if not image_info:
+            msg = ("The image %s does not exist in image repository"
+                      % image_name)
+            LOG.error(msg)
+            raise exception.SDKImageOperationError(rs=20, img=image_name)
+
+        # Find the image path
+        image_file = '/'.join([self._get_image_path_by_name(
+                            image_name), CONF.zvm.user_root_vdev])
+        offset = 0
+        image_size = int(image_info[0]['image_size_in_bytes'])
+        import pdb; pdb.set_trace()
+        app_iter = iter(get_data(image_file,
+                                 offset=offset,
+                                 file_size=image_size))
+        import pdb; pdb.set_trace()
+        md5sum = image_info[0]['md5sum']
+
+        return (app_iter, md5sum, image_size)
+
+
     def punch_file(self, userid, fn, fclass):
         rd = ("changevm %(uid)s punchfile %(file)s --class %(class)s" %
                       {'uid': userid, 'file': fn, 'class': fclass})
@@ -2648,3 +2758,88 @@ class MultiThreadDownloader(threading.Thread):
             i.join()
         LOG.info('Download %s success' % (self.name))
         self.fd.close()
+
+
+def chunkreadable(iter, chunk_size=65536):
+    """
+    Wrap a readable iterator with a reader yielding chunks of
+    a preferred size, otherwise leave iterator unchanged.
+
+    :param iter: an iter which may also be readable
+    :param chunk_size: maximum size of chunk
+    """
+    return chunkiter(iter, chunk_size) if hasattr(iter, 'read') else iter
+
+
+def chunkiter(fp, chunk_size=65536):
+    """
+    Return an iterator to a file-like obj which yields fixed size chunks
+
+    :param fp: a file-like object
+    :param chunk_size: maximum size of chunk
+    """
+    while True:
+        chunk = fp.read(chunk_size)
+        if chunk:
+            yield chunk
+        else:
+            break
+
+def get_data(file_path, offset=0, file_size=None):
+    data = ChunkedFile(file_path,
+                       offset=offset,
+                       chunk_size=CHUNKSIZE,
+                       partial_length=file_size)
+ 
+    return get_chunk_data_iterator(data)
+ 
+ 
+def get_chunk_data_iterator(data):
+    for chunk in data:
+        yield chunk
+
+
+class ChunkedFile(object):
+    """
+    We send something that can iterate over a large file
+    """
+    # Guess the Partial_length the left bytes that not been read? 
+
+    def __init__(self, filepath, offset=0, chunk_size=4096,
+                 partial_length=None):
+        self.filepath = filepath
+        self.chunk_size = chunk_size
+        self.partial_length = partial_length
+        self.partial = self.partial_length is not None
+        self.fp = open(self.filepath, 'rb')
+        if offset:
+            self.fp.seek(offset)
+
+    def __iter__(self):
+        """Return an iterator over the image file."""
+        try:
+            if self.fp:
+                while True:
+                    if self.partial:
+                        size = min(self.chunk_size, self.partial_length)
+                    else:
+                        size = self.chunk_size
+ 
+                    chunk = self.fp.read(size)
+                    if chunk:
+                        yield chunk
+ 
+                        if self.partial:
+                            self.partial_length -= len(chunk)
+                            if self.partial_length <= 0:
+                                break
+                    else:
+                        break
+        finally:
+            self.close()
+ 
+    def close(self):
+        """Close the internal file pointer"""
+        if self.fp:
+            self.fp.close()
+            self.fp = None
