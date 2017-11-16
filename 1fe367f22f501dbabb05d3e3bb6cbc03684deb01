@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bddf2399_5a7ead33",
+        "filename": "doc/source/index.rst",
+        "patchSetId": 2
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-11-16T09:43:35Z",
+      "side": 1,
+      "message": "delete",
+      "range": {
+        "startLine": 14,
+        "startChar": 13,
+        "endLine": 14,
+        "endChar": 16
+      },
+      "revId": "1fe367f22f501dbabb05d3e3bb6cbc03684deb01",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "719e9b59_4ecfa427",
+        "filename": "doc/source/quickstart.rst",
+        "patchSetId": 2
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-11-16T09:43:35Z",
+      "side": 1,
+      "message": "delete",
+      "range": {
+        "startLine": 2,
+        "startChar": 17,
+        "endLine": 2,
+        "endChar": 18
+      },
+      "revId": "1fe367f22f501dbabb05d3e3bb6cbc03684deb01",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
