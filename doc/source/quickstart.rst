@@ -19,6 +19,40 @@ From now on, BYOL (Bring Your Own Linux) will be used to represent
 the Linux on which the z/VM Cloud Connector will be run.
 
 For the z/VM Cloud Connector to run, the BYOL must have enough free space (>100M).
+And besides that, the following updates need to be made to the BYOL.
+
+Preparation on BYOL
+-------------------
+
+* Authorize BYOL user for z/VM SMAPI call. 
+
+VSMWORK1 AUTHLIST need to be updated in order to make the BYOL
+machine be able to issue SMAPI call. Refer to z/VM Systems Management
+Application Programming for how to make it.
+
+* Update BYOL definition for spawning guests.
+
+Assume BYOL has its definition on z/VM, it needs to have following entry in
+its User Directory in order to link disk during stage of spawning guests::
+  
+  OPTION LNKNOPAS
+
+See z/VM Systems Management Application Programming for how to make it.
+
+* Enable punch device
+
+In order to spawn guest, BYOL needs to be able to punch files to spawned
+guests' reader, so the punch device on BYOL needs to be enabled.
+
+Use the following command on BYOL itself to achieve that::
+
+  [root@xxxx ~]# cio_ignore -r d
+  [root@xxxx ~]# chccwdev -e d
+  Setting device 0.0.000d online
+  Done
+
+If something like 'is already  online' is returned, it means punch already
+online and feel free to ignore the warning.
 
 ============
 Installation
@@ -106,45 +140,9 @@ obsoleted.)
     [root@xxxx ~]# cd python-zvm-sdk
     [root@xxxx ~]# python ./setup.py install
 
-=============
-Configuration
-=============
-
-Guest definition update
------------------------
-
-* Update VSMWORK1 AUTHLIST in SMAPI VMSYS:VSMWORK1. 
-
-VSMWORK1 AUTHLIST need to be updated in order to make the BYOL
-Linux guest machine be able to issue SMAPI call. See z/VM Systems Management
-Application Programming for how to make it.
-
-* Update User direct of BYOL
-
-Assume BYOL has its definition on z/VM, it need has following setting in
-its user directory in order to link disk during guest create stage::
-  
-  OPTION LNKNOPAS
-
-See See z/VM Systems Management Application Programming for how to make it.
-
-* Enable punch device
-
-In order to spawn guest, BYOL need punch files to spawned guests' reader,
-so device punch need to be enabled.
-
-use following command on BYOL itself to achieve that::
-
-  [root@xxxx ~]# cio_ignore -r d
-  [root@xxxx ~]# chccwdev -e d
-  Setting device 0.0.000d online
-  Done
-
-If something like 'is already  online' is returned, it means punch already
-online and feel free to ignore the warning.
-
-z/VM Cloud Connector configuration Sample
------------------------------------------
+====================
+Configuration Sample
+====================
 
 Refer to z/VM Cloud Connector Configuration options for more information.
 
