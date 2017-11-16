@@ -13,8 +13,8 @@
 #    under the License.
 
 """Handler for the image of the sdk API."""
-
 import json
+import os
 
 from zvmconnector import connector
 from zvmsdk import config
