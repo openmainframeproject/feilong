@@ -1190,7 +1190,8 @@ class SDKAPI(object):
 
         try:
             self._networkops.network_configuration(userid, os_version,
-                                                   guest_networks)
+                                                   guest_networks,
+                                                   active=active)
         except exception.SDKBaseException:
             LOG.error(('Failed to set network configuration file on vm %s') %
                       userid)
