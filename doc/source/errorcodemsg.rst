@@ -8,5 +8,5 @@ and messages.
 .. csv-table::
    :header: "overallRC", "modID", "rc", "rs", "errmsg"
    :delim: ;
-   :widths: auto
+   :widths: 20,5,5,5,65
    :file: errcode.csv
