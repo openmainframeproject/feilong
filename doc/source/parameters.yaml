@@ -136,7 +136,7 @@ user_direct_guest:
     user direct of guest
   in: body
   required: true
-  type: string
+  type: dict
 disk_list_guest:
   description: |
     disk list of guest
