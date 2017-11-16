@@ -98,6 +98,11 @@ ROUTE_LIST = (
     ('/images/{name}/root_disk_size', {
         'GET': image.image_get_root_disk_size,
     }),
+    # 
+    ('/images/{name}/file', {
+        'PUT': image.image_upload_sdkclient_file,
+        'GET': image.image_download_file,
+    }),
     ('/token', {
         'POST': tokens.create,
     }),

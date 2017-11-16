@@ -224,6 +224,14 @@ class SDKAPI(object):
                       image_name)
             raise
 
+    def image_upload(self, image_name, image_fileobj):
+        """Upload the image to image repository
+
+        :param image_name: the unique image name that will  
+        :param image_fileobj: file-like object
+        """
+        self._imageops.image_upload(image_name, image_fileobj)
+
     def image_import(self, image_name, url, image_meta, remote_host=None):
         """Import image to zvmsdk image repository
 

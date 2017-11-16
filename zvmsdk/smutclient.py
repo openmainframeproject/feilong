@@ -1769,6 +1769,54 @@ class SMUTClient(object):
         disk_size_units = image_info[0]['disk_size_units'].split(':')[0]
         return disk_size_units
 
+    def image_upload(self, image_id, image_fileobj):
+        LOG.info("image_name is %s" % image_name)
+        LOG.info("image_fileobj is %s" % image_fileobj)
+        IMAGE_REPO = '/data/opt/images'
+    #     READ_CHUNKSIZE = 64 * units.Ki
+        READ_CHUNKSIZE = 1024
+        WRITE_CHUNKSIZE = READ_CHUNKSIZE
+    
+        filepath = os.path.join(IMAGE_REPO, str(image_id))
+    
+        if os.path.exists(filepath):
+            msg = 'Duplicate image'
+            # todo TypeError: 'exceptions.Exception does not take keyword arguments'
+            raise Exception(message=msg)
+        import pdb; pdb.set_trace()
+        checksum = hashlib.md5()
+        bytes_written = 0
+        try:
+            with open(filepath, 'wb') as f:
+                for buf in chunkreadable(image_file,
+                                               WRITE_CHUNKSIZE):
+                    bytes_written += len(buf)
+                    checksum.update(buf)
+                    f.write(buf)
+    
+        except IOError as e:
+            if e.errno != errno.EACCES:
+                delete_partial(filepath, image_id)
+    #         errors = {errno.EFBIG: exceptions.StorageFull(),
+    #                   errno.ENOSPC: exceptions.StorageFull(),
+    #                   errno.EACCES: exceptions.StorageWriteDenied()}
+            raise errors.get(e.errno, e)
+        except Exception:
+            #with excutils.save_and_reraise_exception():
+            delete_partial(filepath, image_id)
+    
+        import pdb; pdb.set_trace()
+        checksum_hex = checksum.hexdigest()
+    
+        LOG.debug(("Wrote %(bytes_written)d bytes to %(filepath)s with "
+                    "checksum %(checksum_hex)s"),
+                  {'bytes_written': bytes_written,
+                   'filepath': filepath,
+                   'checksum_hex': checksum_hex})
+    
+        return ('file://%s' % filepath, bytes_written, checksum_hex)
+
+        
     def punch_file(self, userid, fn, fclass):
         rd = ("changevm %(uid)s punchfile %(file)s --class %(class)s" %
                       {'uid': userid, 'file': fn, 'class': fclass})
