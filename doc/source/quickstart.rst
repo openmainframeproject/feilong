@@ -102,7 +102,7 @@ number and *date* is the build date.
 
 - Install the rpm generated in last step::
 
-  [root@xxxx ~]# rpm -ivh /root/zthin-build/RPMS/s390x/*zthin-3.1.0-snap201710300123.s390x.rpm*
+  [root@xxxx ~]# rpm -ivh /root/zthin-build/RPMS/s390x/zthin-3.1.0-snap201710300123.s390x.rpm
 
 Be sure to replace the *zthin-3.1.0-snap201710300123.s390x.rpm* with your own
 rpm name.
@@ -144,9 +144,13 @@ obsoleted.)
 Configuration Sample
 ====================
 
-Refer to z/VM Cloud Connector Configuration options for more information.
+After z/VM SDK is installed, a file named 'zvmsdk.conf.sample' is generated
+under the /etc/zvmsdk/ folder. It contains all the supported configurations
+for z/VM SDK. You can refer to it to create your own configuration file which
+should be named as zvmsdk.conf.
 
-Here's a sample configuration::
+Here's a sample configuration in which several options marked as 'required'
+should be customized according to your environment::
 
   [database]
   dir=/var/lib/zvmsdk/databases/
@@ -180,6 +184,48 @@ Here's a sample configuration::
   # zVM disk pool and type for root/ephemeral disks.
   # This param is required
   disk_pool=ECKD:eckdpool
+
+=========================
+Setup for z/VM SDK Daemon
+=========================
+
+The z/VM Cloud Connector is designed to be run inside a daemon. The daemon server is bond to
+the configured socket for receiving requests and then call the requested SDK API.
+
+The daemon server would be run with user 'zvmsdk' and group 'zvmsdk', the following user and folder
+setup should be made on BYOL for the z/VM SDK daemon to run.
+
+- Create 'zvmsdk' user and group::
+
+  [root@xxxx ~]# useradd -d /var/lib/zvmsdk/ -m -U -p PASSWORD zvmsdk
+
+Replace the *PASSWORD* with your own password for the new created user.
+
+- Setup home directory::
+
+  [root@xxxx ~]# mkdir -p /var/lib/zvmsdk
+  [root@xxxx ~]# chown -R zvmsdk:zvmsdk /var/lib/zvmsdk
+  [root@xxxx ~]# chmod -R 755 /var/lib/zvmsdk
+
+- Setup log directory
+
+  The folder to which the z/VM SDK log would be written to can be configured with the 'log_dir'
+  option in 'default' section. By default, the log folder is '/var/log/zvmsdk'. If you have customized
+  the 'log_dir' value, you need to change the folder in following commands accordingly.::
+
+  [root@xxxx ~]# mkdir -p /var/log/zvmsdk
+  [root@xxxx ~]# chown -R zvmsdk:zvmsdk /var/log/zvmsdk
+  [root@xxxx ~]# chmod -R 755 /var/log/zvmsdk
+
+- Setup configuration directory::
+
+  [root@xxxx ~]# mkdir -p /etc/zvmsdk
+  [root@xxxx ~]# chown -R zvmsdk:zvmsdk /etc/zvmsdk
+  [root@xxxx ~]# chmod -R 755 /etc/zvmsdk
+  [root@xxxx ~]# ls -l /etc/zvmsdk
+
+A file named zvmsdk.conf should be found under /etc/zvmsdk folder and contains at least all the required
+options before the z/VM SDK daemon can be started.
 
 ============
 Verification
