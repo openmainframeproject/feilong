@@ -1,16 +1,15 @@
-**********
- REST API
-**********
+******************************
+ z/VM Cloud Connector REST API
+******************************
 
-This is a reference for the zvm cloud connector (cloudlib4zvm) API.
+This is a reference for the z/VM Cloud Connector RESTful API.
 
-Common output
-=============
+Response Data Definition
+========================
 
-zvm cloud connector returns following output as reference, in case
-encounter an error, those information will be helpful to report bug/issue.
-The following API reference document will only cover ``out`` part as
-it's different for each API.
+The following table gives a reference of general response data definition
+of each z/VM Cloud Connector RESTful API. In case of encountering an error,
+those information will be helpful to report bug/issue.
 
 .. restapi_parameters:: parameters.yaml
 
@@ -20,6 +19,11 @@ it's different for each API.
   - errmsg: ret_errmsg
   - modID: ret_modID
   - output: ret_output
+
+The following detail API description will only cover ``output`` part as
+it's different for each API.
+(This document is a beta version, if you find some API that is not clearly
+described, you can refer to the z/VM SDK API section for the API description.)
 
 Version
 =======

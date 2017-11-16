@@ -1,17 +1,17 @@
-================================
-Welcome to Cloudlib4zvm document
-================================
+============================================
+Welcome to the z/VM Cloud Connector Document
+============================================
 
-Quick start
+Quick Start
 ===========
 
-This is the quick start of z/VM SDK including install, configuration
-and simple verification process.
+This is the quick start of z/VM Cloud Connector including installation,
+configuration and simple verification process.
 
 .. toctree::
    :maxdepth: 1
 
-   quickstart   
+   quickstart
    sample
 
 Architecture
@@ -22,23 +22,24 @@ Architecture
 
    architecture
 
-z/VM SDK api
+z/VM SDK API
 ============
 
-This is the API document for z/VM SDK which can be used to manage z/VM.
-As the API is implemented in python, it's expected that the API will
-be 'imported' and directly embedded in infrastructure management.
+z/VM SDK is the layer that implements the management APIs through communicating
+with the under-layer z/VM management facilities.
+
+This section gives detail descriptions of each supported SDK API.
 
 .. toctree::
    :maxdepth: 1
 
    sdkapi
 
-sdk rest api
-============
+RESTful API
+=============================
 
-Different to z/VM SDK api, this rest api expected to be run on top of
-http solutions like nginx, apache etc.
+Each z/VM Cloud Connector API is exposed through a RESTful interface, higher level
+systems can manage z/VM by consuming these RESTful APIs directly.
 
 .. toctree::
    :maxdepth: 1
@@ -46,18 +47,17 @@ http solutions like nginx, apache etc.
    setuphttpd
    restapi
 
-sdk rest api error codes&messages
-==================================
+Error codes and messages
+======================================================
 
-This is a reference to z/VM Cloud Connector (CloudLib4zvm) API return codes
-and messages.
+This is a reference to z/VM Cloud Connector API return codes and messages.
 
 .. toctree::
    :maxdepth: 1
 
    errorcodemsg
 
-configurations reference
+Configurations reference
 ========================
 
 .. toctree::

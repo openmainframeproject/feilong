@@ -1,34 +1,34 @@
 *****************
-Quick start guide 
+Quick start guide
 *****************
 
-This is the document that describe the install, configuration
-and basic usage of zvm cloud connector (z/VM SDK).
+This is the document that describes the installation, configuration
+and basic usages of z/VM Cloud Connector.
 
-===============
-Prerequirements
-===============
+================
+Pre-requirements
+================
 
-z/VM SDK has to be installed inside a Linux running on z/VM.
-Currently, those are tested:
+z/VM Cloud Connector has to be installed inside a Linux running on z/VM.
+Currently, those distros are tested:
 
 - RHEL 6.x/7.x
 - SLES 11.x/12.x
 
-In order to utilize z/VM SDK, user need pre install a Linux
-with enough free space (>100M).
+From now on, BYOL (Bring Your Own Linux) will be used to represent
+the Linux on which the z/VM Cloud Connector will be run.
 
-From now on, BYOL (Bring your own linux) will be used to represent
-the Linux which running z/VM SDK on.
+For the z/VM Cloud Connector to run, the BYOL must have enough free space (>100M).
 
-=======
-Install
-=======
+============
+Installation
+============
 
 Dependency install
 ------------------
 
-Some dependency python packages need to be installed.
+The following python packages are depended by the z/VM Cloud Connector, they need to
+be firstly installed:
 
 - netaddr
 - jsonschema
@@ -45,8 +45,10 @@ user is able to install them by using following command::
 z/VM zthin install
 ------------------
 
-zthin is a library written by c and mainly focus on socket connection
-from BYOL to z/VM SMAPI.
+zthin is a library written by c working as part of the z/VM Cloud Connector.
+It mainly focuses on socket connection from BYOL to z/VM SMAPI(System Management API).
+z/VM Cloud Connector requires zthin as the backend to communicate with z/VM SMAPI,
+thus it needs to be installed defore installing z/VM Cloud Connector.
 
 SSH onto the BYOL as root user, and then follow the following steps:
 
@@ -78,8 +80,11 @@ rpm name.
 If the zthin rpm is installed normally, the previous smcli command should be
 able to return the directory entry of user OPNCLOUD.
 
-z/VM sdk install
+z/VM SDK install
 ----------------
+
+z/VM SDK is the upper transition layer of z/VM Cloud Connector. It implements the
+supported SDK APIs by communicating with the zthin backend.
 
 * Through RPM/DEB
 
@@ -138,12 +143,12 @@ use following command on BYOL itself to achieve that::
 If something like 'is already  online' is returned, it means punch already
 online and feel free to ignore the warning.
 
-z/VM SDK configuration
-----------------------
+z/VM Cloud Connector configuration Sample
+-----------------------------------------
 
-Refer to z/VM SDK configuration guide for more information.
+Refer to z/VM Cloud Connector Configuration options for more information.
 
-Here's a sample configuration of z/VM SDK::
+Here's a sample configuration::
 
   [database]
   dir=/var/lib/zvmsdk/databases/
