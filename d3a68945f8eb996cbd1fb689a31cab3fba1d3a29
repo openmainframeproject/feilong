@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f811d286_4cfe9bbf",
+        "filename": "doc/source/quickstart.rst",
+        "patchSetId": 3
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-11-17T01:25:52Z",
+      "side": 1,
+      "message": "Your example cmd is rhel or sles based, suggest to add a NOTE that commands maybe different for different Linux distros.",
+      "revId": "d3a68945f8eb996cbd1fb689a31cab3fba1d3a29",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
