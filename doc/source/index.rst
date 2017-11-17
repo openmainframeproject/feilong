@@ -9,7 +9,8 @@ This is the quick start of z/VM Cloud Connector including installation,
 configuration and simple verification process.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
+   :numbered:
 
    quickstart
    sample
