@@ -49,7 +49,7 @@ class RESTClientTestCase(unittest.TestCase):
 
         expired_elapse = datetime.timedelta(seconds=expires)
         expired_time = datetime.datetime.utcnow() + expired_elapse
-        payload = jwt.encode({'exp': expired_time}, CONF.wsgi.password)
+        payload = jwt.encode({'exp': expired_time}, 'password')
 
         return payload
 
