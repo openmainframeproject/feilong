@@ -180,7 +180,7 @@ class SDKServer(object):
                    "%s" % (addr[0], addr[1], repr(e)))
             results = self.construct_internal_error(msg)
         else:
-            if not return_data:
+            if return_data is None:
                 return_data = ''
             results = {'overallRC': 0, 'modID': None,
                        'rc': 0, 'rs': 0,
