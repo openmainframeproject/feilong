@@ -89,6 +89,32 @@ class GuestActionsTest(SDKWSGITest):
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('sdkclient.client.SDKClient.send_request')
+    def test_guest_stop_with_timeout(self, mock_action,
+                                     mock_userid):
+        self.req.body = '{"action": "stop", "timeout": 300}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_stop', FAKE_USERID,
+                                             timeout=300)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('sdkclient.client.SDKClient.send_request')
+    def test_guest_softstop_with_timeout_poll_interval(self, mock_action,
+                                                       mock_userid):
+        self.req.body = """{"action": "softstop", "timeout": 300,
+                            "poll_interval": 15}"""
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_softstop', FAKE_USERID,
+                                             timeout=300,
+                                             poll_interval=15)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('sdkclient.client.SDKClient.send_request')
     def test_guest_get_console_output(self, mock_action,
                         mock_userid):
         self.req.body = '{"action": "get_console_output"}'

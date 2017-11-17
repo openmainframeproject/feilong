@@ -247,30 +247,19 @@ class SDKVMOpsTestCase(base.SDKTestCase):
     def test_guest_stop(self, ige, gs):
         ige.return_value = True
         userid = 'userid'
-        self.vmops.guest_stop(userid, 0, 10)
+        self.vmops.guest_stop(userid)
         ige.assert_called_once_with(userid)
         gs.assert_called_once_with(userid)
 
-    @mock.patch.object(vmops.get_vmops()._smutclient, 'get_power_state')
     @mock.patch('zvmsdk.utils._is_guest_exist')
     @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_stop')
-    def test_guest_stop_with_retry(self, gs, ige, gps):
+    def test_guest_stop_with_timeout(self, gs, ige):
         userid = 'userid'
         ige.return_value = True
-        gps.return_value = u'off'
-        self.vmops.guest_stop(userid, 60, 10)
-        gs.assert_called_once_with(userid)
-        gps.assert_called_once_with(userid)
-
-    @mock.patch.object(vmops.get_vmops()._smutclient, 'get_power_state')
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    @mock.patch.object(vmops.get_vmops()._smutclient, 'guest_stop')
-    def test_guest_stop_timeout(self, gs, ige, gps):
-        userid = 'userid'
-        ige.return_value = True
-        gps.return_value = u'on'
-        self.vmops.guest_stop(userid, 1, 1)
-        gps.assert_called_once_with(userid)
+        gs.return_value = u'off'
+        self.vmops.guest_stop(userid, timeout=300, poll_interval=10)
+        ige.assert_called_once_with(userid)
+        gs.assert_called_once_with(userid, timeout=300, poll_interval=10)
 
     @mock.patch.object(vmops.get_vmops()._smutclient, 'get_vm_list')
     def test_guest_list(self, get_vm_list):

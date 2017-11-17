@@ -184,8 +184,41 @@ class VMAction(object):
 
         return info
 
+    @validation.schema(guest.stop)
     def stop(self, userid, body):
-        info = self.client.send_request('guest_stop', userid)
+        timeout = body.get('timeout', None)
+        poll_interval = body.get('poll_interval', None)
+
+        if timeout and poll_interval:
+            info = self.client.send_request('guest_stop', userid,
+                    timeout=timeout, poll_interval=poll_interval)
+        elif timeout:
+            info = self.client.send_request('guest_stop', userid,
+                    timeout=timeout)
+        elif poll_interval:
+            info = self.client.send_request('guest_stop', userid,
+                    poll_interval=poll_interval)
+        else:
+            info = self.client.send_request('guest_stop', userid)
+
+        return info
+
+    @validation.schema(guest.stop)
+    def softstop(self, userid, body):
+        timeout = body.get('timeout', None)
+        poll_interval = body.get('poll_interval', None)
+
+        if timeout and poll_interval:
+            info = self.client.send_request('guest_softstop', userid,
+                    timeout=timeout, poll_interval=poll_interval)
+        elif timeout:
+            info = self.client.send_request('guest_softstop', userid,
+                    timeout=timeout)
+        elif poll_interval:
+            info = self.client.send_request('guest_softstop', userid,
+                    poll_interval=poll_interval)
+        else:
+            info = self.client.send_request('guest_softstop', userid)
 
         return info
 
