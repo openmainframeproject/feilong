@@ -1,8 +1,7 @@
-**************************
- Error Codes and Messages
-**************************
+Error Codes and Messages
+************************
 
-This is a reference to z/VM Cloud Connector (CloudLib4zvm) API error codes
+This is a reference to z/VM Cloud Connector API error codes
 and messages.
 
 .. csv-table::

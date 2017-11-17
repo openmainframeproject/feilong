@@ -1,11 +1,12 @@
-******************************
-Env setup for SDK httpd server
-******************************
 
-This is the document that describe the setup of using http service
-of zvm sdk (zvm cloud connector).
+Setup for running RESTful API
+*****************************
 
-============
+Each z/VM Cloud Connector API is exposed through a RESTful interface, higher level
+systems can manage z/VM by consuming these RESTful APIs directly.
+
+This document describes how to setup httpd service for z/VM Cloud Connector RESTful API.
+
 httpd server
 ============
 
@@ -21,7 +22,6 @@ please refer to specific HTTP server document for more info.
 .. _apache: http://httpd.apache.org/
 .. _nginx: http://nginx.org/en/
 
-============
 uwsgi server
 ============
 
@@ -30,9 +30,8 @@ uwsgi_ via mod_proxy_uwsgi_ is recommended to be used
 .. _uwsgi: https://uwsgi-docs.readthedocs.io/
 .. _mod_proxy_uwsgi: http://uwsgi-docs.readthedocs.io/en/latest/Apache.html#mod-proxy-uwsgi
 
-==========================================================
-Sample configuration and steps based on apache http server
-==========================================================
+Sample configuration and steps based on Apache
+==============================================
 
 * make sure installed following items::
 

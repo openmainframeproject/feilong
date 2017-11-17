@@ -1,11 +1,10 @@
-*****************
+
 Quick start guide
 *****************
 
 This is the document that describes the installation, configuration
 and basic usages of z/VM Cloud Connector.
 
-================
 Pre-requirements
 ================
 
@@ -58,7 +57,6 @@ Use the following command on BYOL itself to achieve that::
 If something like 'is already  online' is returned, it means punch already
 online and feel free to ignore the warning.
 
-============
 Installation
 ============
 
@@ -144,7 +142,6 @@ obsoleted.)
     [root@xxxx ~]# cd python-zvm-sdk
     [root@xxxx ~]# python ./setup.py install
 
-====================
 Configuration Sample
 ====================
 
@@ -189,7 +186,6 @@ should be customized according to your environment::
   # This param is required
   disk_pool=ECKD:eckdpool
 
-=========================
 Setup for z/VM SDK Daemon
 =========================
 
@@ -231,7 +227,6 @@ Replace the *PASSWORD* with your own password for the new created user.
 A file named zvmsdk.conf should be found under /etc/zvmsdk folder and contains at least all the required
 options before the z/VM SDK daemon can be started.
 
-============
 Verification
 ============
 
