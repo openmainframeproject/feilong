@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a8c3a141_92c6fc6c",
+        "filename": "zvmsdk/sdkwsgi/schemas/guest.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-17T10:01:39Z",
+      "side": 1,
+      "message": "this name is incorrect",
+      "range": {
+        "startLine": 179,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 4
+      },
+      "revId": "3317aad160df3db44f06ef62d89f099a7b2a2717",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2354a4d0_5fead40c",
+        "filename": "zvmsdk/sdkwsgi/schemas/guest.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-17T10:01:39Z",
+      "side": 1,
+      "message": "which is required ?",
+      "revId": "3317aad160df3db44f06ef62d89f099a7b2a2717",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
