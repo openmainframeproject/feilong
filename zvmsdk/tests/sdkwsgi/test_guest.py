@@ -172,7 +172,7 @@ class GuestHandlerTestCase(unittest.TestCase):
         return self._guest_action(body, userid=userid)
 
     def _guest_stop(self, userid=None):
-        body = '{"action": "stop"}'
+        body = '{"action": "stop", "timeout": 300, "poll_interval": 15}'
         return self._guest_action(body, userid=userid)
 
     def _guest_deploy(self, userid=None, vdev=None, image=None):
