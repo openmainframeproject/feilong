@@ -96,14 +96,17 @@ SSH onto the BYOL as root user, and then follow the following steps:
 
    .. code-block:: text
 
-       [root@xxxx ~]# git clone https://github.com/mfcloud/python-zvm-sdk.git
+       # git clone https://github.com/mfcloud/python-zvm-sdk.git
 
 2. Trigger the build tool
 
+   The build tool depends on the following commands: *rpmbuild*, *gcc*, so you should make
+   sure these commands are usable on BYOL before running the following build.
+
    .. code-block:: text
 
-       [root@xxxx ~]# cd python-zvm-sdk
-       [root@xxxx ~]# sh ./zthin-parts/buildzthingithub master
+       # cd python-zvm-sdk
+       # sh ./zthin-parts/buildzthingithub master
 
    If this build finishes successfully, the result rpm will be generated
    in the /root/zthin-build/RPMS/s390x/ directory named in the format
@@ -114,7 +117,7 @@ SSH onto the BYOL as root user, and then follow the following steps:
 
    .. code-block:: text
 
-       [root@xxxx ~]# rpm -ivh /root/zthin-build/RPMS/s390x/zthin-3.1.0-snap201710300123.s390x.rpm
+       # rpm -ivh /root/zthin-build/RPMS/s390x/zthin-3.1.0-snap201710300123.s390x.rpm
 
    Be sure to replace the *zthin-3.1.0-snap201710300123.s390x.rpm* with your own
    rpm name.
@@ -123,10 +126,16 @@ SSH onto the BYOL as root user, and then follow the following steps:
 
    .. code-block:: text
 
-       [root@xxxx ~]# /opt/zthin/bin/smcli Image_Query_DM -T opncloud
+       # /opt/zthin/bin/smcli Image_Query_DM -T opncloud
 
-   If the zthin rpm is installed normally, the previous smcli command should be
+   If all things went well, this smcli command should be
    able to return the directory entry of user OPNCLOUD.
+
+   If this command failed, you need to check the following items:
+
+   * The BYOL user is successfully authorized to issue SMAPI call.
+   * The SMAPI server on this z/VM host is working normally.
+   * The zthin rpm is installed without any error.
 
 z/VM SDK install
 ----------------
@@ -145,7 +154,7 @@ supported SDK APIs by communicating with the zthin backend.
 
      .. code-block:: text
 
-         [root@xxxx ~]# git clone https://github.com/mfcloud/python-zvm-sdk.git
+         # git clone https://github.com/mfcloud/python-zvm-sdk.git
 
      (If this has been done in the "z/VM zthin install" step, this step can be
      obsoleted.)
@@ -154,8 +163,8 @@ supported SDK APIs by communicating with the zthin backend.
 
      .. code-block:: text
 
-         [root@xxxx ~]# cd python-zvm-sdk
-         [root@xxxx ~]# python ./setup.py install
+         # cd python-zvm-sdk
+         # python ./setup.py install
 
 Configuration Sample
 ====================
@@ -216,7 +225,7 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
 
   .. code-block:: text
 
-      [root@xxxx ~]# useradd -d /var/lib/zvmsdk/ -m -U -p PASSWORD zvmsdk
+      # useradd -d /var/lib/zvmsdk/ -m -U -p PASSWORD zvmsdk
 
   Replace the *PASSWORD* with your own password for the new created user.
 
@@ -224,9 +233,9 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
 
   .. code-block:: text
 
-      [root@xxxx ~]# mkdir -p /var/lib/zvmsdk
-      [root@xxxx ~]# chown -R zvmsdk:zvmsdk /var/lib/zvmsdk
-      [root@xxxx ~]# chmod -R 755 /var/lib/zvmsdk
+      # mkdir -p /var/lib/zvmsdk
+      # chown -R zvmsdk:zvmsdk /var/lib/zvmsdk
+      # chmod -R 755 /var/lib/zvmsdk
 
 * Setup log directory
 
@@ -236,18 +245,18 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
 
   .. code-block:: text
 
-      [root@xxxx ~]# mkdir -p /var/log/zvmsdk
-      [root@xxxx ~]# chown -R zvmsdk:zvmsdk /var/log/zvmsdk
-      [root@xxxx ~]# chmod -R 755 /var/log/zvmsdk
+      # mkdir -p /var/log/zvmsdk
+      # chown -R zvmsdk:zvmsdk /var/log/zvmsdk
+      # chmod -R 755 /var/log/zvmsdk
 
 * Setup configuration directory
 
   .. code-block:: text
 
-      [root@xxxx ~]# mkdir -p /etc/zvmsdk
-      [root@xxxx ~]# chown -R zvmsdk:zvmsdk /etc/zvmsdk
-      [root@xxxx ~]# chmod -R 755 /etc/zvmsdk
-      [root@xxxx ~]# ls -l /etc/zvmsdk
+      # mkdir -p /etc/zvmsdk
+      # chown -R zvmsdk:zvmsdk /etc/zvmsdk
+      # chmod -R 755 /etc/zvmsdk
+      # ls -l /etc/zvmsdk
 
   A file named zvmsdk.conf should be found under /etc/zvmsdk folder and contains at least all the required
   options before the z/VM SDK daemon can be started.
