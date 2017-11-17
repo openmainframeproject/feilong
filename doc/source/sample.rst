@@ -1,9 +1,9 @@
-====================
+
 Sample for using sdk
-====================
+********************
 
 Sample
-------
+======
 
 There's a sample file inside zvm sdk's source tree (tools/sample.py)
 A couple of configuration items need to be modified such as
