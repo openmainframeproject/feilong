@@ -17,10 +17,10 @@ import json
 import jwt
 import requests
 
-from zvmsdk import config
+# from zvmsdk import config
 
 
-CONF = config.CONF
+# CONF = config.CONF
 
 
 INVALID_API_ERROR = [{'overallRC': 400, 'modID': 110, 'rc': 400},
@@ -35,18 +35,21 @@ PARAM_IN_PATH = {
     'guest_list': 0,
     'guest_inspect_stats': 1,
     'guest_inspect_vnics': 1,
+    'guests_get_nic_info': 0,
     'guest_delete': 1,
     'guest_get_definition_info': 1,
     'guest_start': 1,
     'guest_stop': 1,
+    'guest_softstop': 1,
     'guest_pause': 1,
     'guest_unpause': 1,
     'guest_reboot': 1,
     'guest_reset': 1,
     'guest_get_console_output': 1,
+    'guest_capture': 1,
     'guest_deploy': 1,
     'guest_get_info': 1,
-    'guest_get_nic_info': 1,
+    'guest_get_nic_vswitch_info': 1,
     'guest_create_nic': 1,
     'guest_delete_nic': 2,
     'guest_nic_couple_to_vswitch': 2,
@@ -59,17 +62,19 @@ PARAM_IN_PATH = {
     'volume_attach': 1,
     'volume_detach': 1,
     'host_get_info': 0,
-    'host_get_disk_info': 1,
-    'image_create': 0,
+    'host_diskpool_get_info': 1,
+    'image_import': 0,
     'image_query': 1,
     'image_delete': 1,
     'image_export': 1,
     'image_get_root_disk_size': 1,
     'token_create': 0,
-    'vswitch_list': 0,
+    'vswitch_get_list': 0,
     'vswitch_create': 0,
     'vswitch_delete': 1,
-    'vswitch_update': 1,
+    'vswitch_grant_user': 1,
+    'vswitch_revoke_user': 1,
+    'vswitch_set_vlan_id_for_user': 1,
 }
 
 
@@ -79,18 +84,22 @@ API2URL = {
     'guest_list': '/guests',
     'guest_inspect_stats': '/guests/stats?userid=%s',
     'guest_inspect_vnics': '/guests/vnicsinfo?userid=%s',
+    # FIXME: url should be processed
+    'guests_get_nic_info': '/guests/nics',
     'guest_delete': '/guests/%s',
     'guest_get_definition_info': '/guests/%s',
     'guest_start': '/guests/%s/action',
     'guest_stop': '/guests/%s/action',
+    'guest_softstop': '/guests/%s/action',
     'guest_pause': '/guests/%s/action',
     'guest_unpause': '/guests/%s/action',
     'guest_reboot': '/guests/%s/action',
     'guest_reset': '/guests/%s/action',
     'guest_get_console_output': '/guests/%s/action',
+    'guest_capture': '/guests/%s/action',
     'guest_deploy': '/guests/%s/action',
     'guest_get_info': '/guests/%s/info',
-    'guest_get_nic_info': '/guests/%s/nic',
+    'guest_get_nic_vswitch_info': '/guests/%s/nic',
     'guest_create_nic': '/guests/%s/nic',
     'guest_delete_nic': '/guests/%s/nic/%s',
     'guest_nic_couple_to_vswitch': '/guests/%s/nic/%s',
@@ -103,17 +112,19 @@ API2URL = {
     'volume_attach': '/guests/%s/volumes',
     'volume_detach': '/guests/%s/volumes',
     'host_get_info': '/host',
-    'host_get_disk_info': '/host/disk/%s',
-    'image_create': '/images',
+    'host_diskpool_get_info': '/host/disk/%s',
+    'image_import': '/images',
     'image_query': '/images?imagename=%s',
     'image_delete': '/images/%s',
     'image_export': '/images/%s',
     'image_get_root_disk_size': '/images/%s/root_disk_size',
     'token_create': '/token',
-    'vswitch_list': '/vswitchs',
+    'vswitch_get_list': '/vswitchs',
     'vswitch_create': '/vswitchs',
     'vswitch_delete': '/vswitchs/%s',
-    'vswitch_update': '/vswitchs/%s',
+    'vswitch_grant_user': '/vswitchs/%s',
+    'vswitch_revoke_user': '/vswitchs/%s',
+    'vswitch_set_vlan_id_for_user': '/vswitchs/%s',
 }
 
 
@@ -123,18 +134,21 @@ API2METHOD = {
     'guest_list': 'GET',
     'guest_inspect_stats': 'GET',
     'guest_inspect_vnics': 'GET',
+    'guests_get_nic_info': 'GET',
     'guest_delete': 'DELETE',
     'guest_get_definition_info': 'GET',
     'guest_start': 'POST',
     'guest_stop': 'POST',
+    'guest_softstop': 'POST',
     'guest_pause': 'POST',
     'guest_unpause': 'POST',
     'guest_reboot': 'POST',
     'guest_reset': 'POST',
     'guest_get_console_output': 'POST',
+    'guest_capture': 'POST',
     'guest_deploy': 'POST',
     'guest_get_info': 'GET',
-    'guest_get_nic_info': 'GET',
+    'guest_get_nic_vswitch_info': 'GET',
     'guest_create_nic': 'POST',
     'guest_delete_nic': 'DELETE',
     'guest_nic_couple_to_vswitch': 'PUT',
@@ -147,17 +161,19 @@ API2METHOD = {
     'volume_attach': 'POST',
     'volume_detach': 'DELETE',
     'host_get_info': 'GET',
-    'host_get_disk_info': 'GET',
-    'image_create': 'POST',
+    'host_diskpool_get_info': 'GET',
+    'image_import': 'POST',
     'image_query': 'GET',
     'image_delete': 'DELETE',
     'image_export': 'PUT',
     'image_get_root_disk_size': 'GET',
     'token_create': 'POST',
-    'vswitch_list': 'GET',
+    'vswitch_get_list': 'GET',
     'vswitch_create': 'POST',
     'vswitch_delete': 'DELETE',
-    'vswitch_update': 'PUT',
+    'vswitch_grant_user': 'PUT',
+    'vswitch_revoke_user': 'PUT',
+    'vswitch_set_vlan_id_for_user': 'PUT',
 }
 
 
@@ -167,18 +183,21 @@ API2BODY = {
     'guest_list': None,
     'guest_inspect_stats': None,
     'guest_inspect_vnics': None,
+    'guests_get_nic_info': None,
     'guest_delete': None,
     'guest_get_definition_info': None,
     'guest_start': 'body_guest_start',
     'guest_stop': 'body_guest_stop',
+    'guest_softstop': 'body_guest_softstop',
     'guest_pause': 'body_guest_pause',
     'guest_unpause': 'body_guest_unpause',
     'guest_reboot': 'body_guest_reboot',
     'guest_reset': 'body_guest_reset',
     'guest_get_console_output': 'body_guest_get_console_output',
+    'guest_capture': 'body_guest_capture',
     'guest_deploy': 'body_guest_deploy',
     'guest_get_info': None,
-    'guest_get_nic_info': None,
+    'guest_get_nic_vswitch_info': None,
     'guest_create_nic': 'body_guest_create_nic',
     'guest_delete_nic': 'body_guest_delete_nic',
     'guest_nic_couple_to_vswitch': 'body_guest_nic_couple_to_vswitch',
@@ -191,17 +210,20 @@ API2BODY = {
     'volume_attach': 'body_volume_attach',
     'volume_detach': 'body_volume_detach',
     'host_get_info': None,
-    'host_get_disk_info': None,
-    'image_create': 'body_image_create',
+    'host_diskpool_get_info': None,
+    'image_import': 'body_image_import',
     'image_query': None,
     'image_delete': None,
     'image_export': 'body_image_export',
     'image_get_root_disk_size': None,
     'token_create': None,
-    'vswitch_list': None,
+    'vswitch_get_list': None,
     'vswitch_create': 'body_vswitch_create',
     'vswitch_delete': None,
-    'vswitch_update': 'body_vswitch_update',
+    'vswitch_grant_user': 'body_vswitch_grant_user',
+    'vswitch_revoke_user': 'body_vswitch_revoke_user',
+    'vswitch_set_vlan_id_for_user': 'body_vswitch_set_vlan_id_for_user',
+    'vswitch_set_vlan_id_for_user': 'body_vswitch_set_vlan_id_for_user',
 }
 
 
@@ -226,6 +248,13 @@ def body_guest_start(start_index, *args, **kwargs):
 
 def body_guest_stop(start_index, *args, **kwargs):
     body = {'action': 'stop'}
+    fill_kwargs_in_body(body, **kwargs)
+    return body
+
+
+def body_guest_softstop(start_index, *args, **kwargs):
+    body = {'action': 'softstop'}
+    fill_kwargs_in_body(body, **kwargs)
     return body
 
 
@@ -250,6 +279,11 @@ def body_guest_reset(start_index, *args, **kwargs):
 
 
 def body_guest_get_console_output(start_index, *args, **kwargs):
+    body = {'action': 'get_console_output'}
+    return body
+
+
+def body_guest_capture(start_index, *args, **kwargs):
     body = {'action': 'get_console_output'}
     return body
 
@@ -331,7 +365,7 @@ def body_volume_detach(start_index, *args, **kwargs):
     return body
 
 
-def body_image_create(start_index, *args, **kwargs):
+def body_image_import(start_index, *args, **kwargs):
     body = {'image': {'image_name': args[start_index],
                       'url': args[start_index + 1],
                       'image_meta': args[start_index + 2]}}
@@ -351,8 +385,21 @@ def body_vswitch_create(start_index, *args, **kwargs):
     return body
 
 
-def body_vswitch_update(*args, **kwargs):
-    body = {'vswitch': {}}
+def body_vswitch_grant_user(start_index, *args, **kwargs):
+    body = {'vswitch': {'grant_userd': args[start_index]}}
+    fill_kwargs_in_body(body['vswitch'], **kwargs)
+    return body
+
+
+def body_vswitch_revoke_user(start_index, *args, **kwargs):
+    body = {'vswitch': {'revoke_userid': args[start_index]}}
+    fill_kwargs_in_body(body['vswitch'], **kwargs)
+    return body
+
+
+def body_vswitch_set_vlan_id_for_user(start_index, *args, **kwargs):
+    body = {'vswitch': {'user_vlan_id': {'userid': args[start_index],
+                                         'vlanid': args[start_index + 1]}}}
     fill_kwargs_in_body(body['vswitch'], **kwargs)
     return body
 
@@ -367,14 +414,15 @@ class RESTClient(object):
 
         expired_elapse = datetime.timedelta(seconds=expires)
         expired_time = datetime.datetime.utcnow() + expired_elapse
-        payload = jwt.encode({'exp': expired_time}, CONF.wsgi.password)
+        # payload = jwt.encode({'exp': expired_time}, CONF.wsgi.password)
+        payload = jwt.encode({'exp': expired_time}, 'password')
 
         return payload
 
     def _get_token(self):
         _headers = {'Content-Type': 'application/json'}
-        _headers['X-Auth-User'] = CONF.wsgi.user
-        _headers['X-Auth-Password'] = CONF.wsgi.password
+        # _headers['X-Auth-User'] = CONF.wsgi.user
+        # _headers['X-Auth-Password'] = CONF.wsgi.password
 
         url = self.base_url + '/token'
         method = 'POST'
@@ -382,6 +430,13 @@ class RESTClient(object):
         token = response.headers['X-Auth-Token']
 
         return token
+
+    def _get_url(self, api_name, method, count, *args, **kwargs):
+        if count > 0:
+            base = API2URL[api_name] % tuple(args[0:count])
+        else:
+            base = API2URL[api_name]
+        return base
 
     def _get_body(self, api_name, start_index, *args, **kwargs):
         if API2BODY[api_name] is not None:
@@ -416,23 +471,21 @@ class RESTClient(object):
                             'errmsg': INVALID_API_ERROR[1][1] % strError,
                             'output': ''})
             return results
-        # get the amount of parameters in path
-        count_params_in_path = PARAM_IN_PATH[api_name]
-        # get url by api_name
-        if count_params_in_path > 0:
-            url = API2URL[api_name] % tuple(args[0:count_params_in_path])
-        else:
-            url = API2URL[api_name]
         # get method by api_name
         method = API2METHOD[api_name]
-        # generate body from args and kwargs
-        body = self._get_body(api_name, count_params_in_path, *args, **kwargs)
+        # get the amount of parameters in path
+        count_params_in_path = PARAM_IN_PATH[api_name]
+        # get url by api_name and method
+        url = self._get_url(api_name, method, count_params_in_path,
+                            *args, **kwargs)
+        # get body by api_name and argumensts
+        body = self._get_body(api_name, count_params_in_path,
+                              *args, **kwargs)
         if body is None:
             response = self.api_request(url, method)
         else:
             body = json.dumps(body)
             response = self.api_request(url, method, body)
-        # response with JSON format
         # change response to SDK format
         results = self._process_rest_response(response)
         return results
