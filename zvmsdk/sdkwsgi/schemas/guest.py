@@ -165,12 +165,34 @@ userid_list_query = {
     'additionalProperties': False
 }
 
+
 nic_DB_info = {
     'type': 'object',
     'properties': {
         'userid': parameter_types.userid,
         'nic_id': parameter_types.nic_id,
         'vswitch': parameter_types.vswitch_name,
+    },
+    'additionalProperties': False,
+}
+
+
+stop = {
+    'type': 'object',
+    'properties': {
+        'userid': parameter_types.userid,
+        'timeout': parameter_types.positive_integer,
+        'poll_interval': parameter_types.positive_integer,
+    },
+    'additionalProperties': False,
+}
+
+softstop = {
+    'type': 'object',
+    'properties': {
+        'userid': parameter_types.userid,
+        'timeout': parameter_types.positive_integer,
+        'poll_interval': parameter_types.positive_integer,
     },
     'additionalProperties': False,
 }

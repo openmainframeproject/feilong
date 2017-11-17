@@ -104,6 +104,19 @@ class GuestActionTest(unittest.TestCase):
             stop.assert_called_once_with('1', body={})
 
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    def test_guest_softstop(self, mock_json):
+        mock_json.return_value = {"action": "softstop"}
+        self.env['PATH_INFO'] = '/guests/1/action'
+        self.env['REQUEST_METHOD'] = 'POST'
+        h = handler.SdkHandler()
+        with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMAction.softstop') \
+            as stop:
+            stop.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+
+            stop.assert_called_once_with('1', body={})
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
     def test_guest_get_console_output(self, mock_json):
         mock_json.return_value = {"action": "get_console_output"}
         self.env['PATH_INFO'] = '/guests/1/action'
