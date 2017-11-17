@@ -65,7 +65,8 @@ class LinuxDist(object):
                  clean_cmd: if first is true, it is used to erase the previous
                            network interface configuration, will be put into
                            invokeScript file
-                 net_enable_cmd:
+                 net_enable_cmd: 'ip addr' and 'ip link' command to enable the
+                                 new network interface
         """
         cfg_files = []
         cmd_strings = ''
