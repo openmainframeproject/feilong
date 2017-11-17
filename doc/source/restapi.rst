@@ -1,6 +1,5 @@
-******************************
- z/VM Cloud Connector REST API
-******************************
+RESTful APIs
+************
 
 This is a reference for the z/VM Cloud Connector RESTful API.
 
