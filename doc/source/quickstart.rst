@@ -15,7 +15,7 @@ Currently, those distros are tested:
 - SLES 11.x/12.x
 - Ubuntu 16.04
 
-NOTE: This guide is based on RHEL 7, you may need to adjust the commands
+**NOTE**: This guide is based on RHEL 7, you may need to adjust the commands
 on other Linux distros.
 
 From now on, BYOL (Bring Your Own Linux) will be used to represent
@@ -27,39 +27,39 @@ And besides that, the following updates need to be made to the BYOL.
 Preparation on BYOL
 -------------------
 
-1. Authorize BYOL user for z/VM SMAPI call.
+1. **Authorize BYOL user for z/VM SMAPI call.**
 
    VSMWORK1 AUTHLIST need to be updated in order to make the BYOL
    machine be able to issue SMAPI call. Refer to z/VM Systems Management
    Application Programming for how to make it.
 
-2. Update BYOL definition for spawning guests.
+2. **Update BYOL definition for spawning guests.**
 
    Assume BYOL has its definition on z/VM, it needs to have following entry in
    its User Directory in order to link disk during stage of spawning guests.
 
-.. code-block:: text
+   .. code-block:: text
 
-    OPTION LNKNOPAS
+       OPTION LNKNOPAS
 
-See z/VM Systems Management Application Programming for how to make it.
+   See z/VM Systems Management Application Programming for how to make it.
 
-3. Enable punch device
+3. **Enable punch device**
 
    In order to spawn guest, BYOL needs to be able to punch files to spawned
    guests' reader, so the punch device on BYOL needs to be enabled.
 
    Use the following command on BYOL itself to achieve that:
 
-.. code-block:: text
+   .. code-block:: text
 
-    [root@xxxx ~]# cio_ignore -r d
-    [root@xxxx ~]# chccwdev -e d
-    Setting device 0.0.000d online
-    Done
+       [root@xxxx ~]# cio_ignore -r d
+       [root@xxxx ~]# chccwdev -e d
+       Setting device 0.0.000d online
+       Done
 
-If something like 'is already  online' is returned, it means punch already
-online and feel free to ignore the warning.
+   If something like 'is already  online' is returned, it means punch already
+   online and feel free to ignore the warning.
 
 Installation
 ============
