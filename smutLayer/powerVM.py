@@ -666,7 +666,7 @@ def showInvLines(rh):
     rh.printLn("N", "  python " + rh.cmdName +
         " PowerVM <userid>")
     rh.printLn("N", "                    [off | reboot | softoff] " +
-        "wait --maxwait <secs> --poll <secs>")
+        "--maxwait <secs> --poll <secs>")
     rh.printLn("N", "  python " + rh.cmdName + " PowerVM " +
         "<userid> wait")
     rh.printLn("N", "                    --state [down | on | off | up] " +

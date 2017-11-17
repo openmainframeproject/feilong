@@ -67,25 +67,48 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.guest_start(userid)
 
-    @zvmutils.check_input_types(_TUSERID, int, int)
-    def guest_stop(self, userid, timeout=0, retry_interval=10):
+    @zvmutils.check_input_types(_TUSERID, valid_keys=['timeout',
+                                                      'poll_interval'])
+    def guest_stop(self, userid, **kwargs):
         """Power off a virtual machine.
 
         :param str userid: the id of the virtual machine to be power off
-        :param int timeout: time to wait for GuestOS to shutdown
-        :param int retry_interval: How often to signal guest while
-                                   waiting for it to shutdown
+        :param dict kwargs:
+               - timeout=<value>:
+                 Integer, time to wait for vm to be deactivate, the
+                 recommended value is 300
+               - poll_interval=<value>
+                 Integer, how often to signal guest while waiting for it
+                 to be deactivate, the recommended value is 20
 
         :returns: None
         """
-        if retry_interval < 0:
-            LOG.error('Invalid input parameter - retry_interval, '
-                      'expect an integer > 0')
-            raise exception.SDKInvalidInputFormat('retry_interval')
 
         action = "stop guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            self._vmops.guest_stop(userid, timeout, retry_interval)
+            self._vmops.guest_stop(userid, **kwargs)
+
+    @zvmutils.check_input_types(_TUSERID, valid_keys=['timeout',
+                                                      'poll_interval'])
+    def guest_softstop(self, userid, **kwargs):
+        """Issue a shutdown command to shutdown the OS in a virtual
+        machine and then log the virtual machine off z/VM..
+
+        :param str userid: the id of the virtual machine to be power off
+        :param dict kwargs:
+               - timeout=<value>:
+                 Integer, time to wait for vm to be deactivate, the
+                 recommended value is 300
+               - poll_interval=<value>
+                 Integer, how often to signal guest while waiting for it
+                 to be deactivate, the recommended value is 20
+
+        :returns: None
+        """
+
+        action = "soft stop guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._vmops.guest_softstop(userid, **kwargs)
 
     @zvmutils.check_input_types(_TUSERID)
     def guest_reboot(self, userid):

@@ -14,10 +14,8 @@
 
 
 import six
-import time
 
 from zvmsdk import config
-from zvmsdk import constants
 from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import log
@@ -110,25 +108,13 @@ class VMOps(object):
 
         self._smutclient.guest_start(userid)
 
-    def guest_stop(self, userid, timeout, retry_interval):
+    def guest_stop(self, userid, **kwargs):
         zvmutils.check_guest_exist(userid)
+        self._smutclient.guest_stop(userid, **kwargs)
 
-        self._smutclient.guest_stop(userid)
-
-        # retry shutdown until timeout
-        if timeout > 0:
-            retry_count = timeout // retry_interval
-            while (retry_count > 0):
-                if self.get_power_state(userid) == constants.POWER_STATE_OFF:
-                    # In shutdown state already
-                    return
-                else:
-                    self._smutclient.guest_stop(userid)
-                    time.sleep(retry_interval)
-                    retry_count -= 1
-
-            LOG.warning("Failed to shutdown guest vm %(userid)s in %(time)d "
-                         "seconds" % {'userid': userid, 'time': timeout})
+    def guest_softstop(self, userid, **kwargs):
+        zvmutils.check_guest_exist(userid)
+        self._smutclient.guest_softstop(userid, **kwargs)
 
     def guest_pause(self, userid):
         zvmutils.check_guest_exist(userid)
