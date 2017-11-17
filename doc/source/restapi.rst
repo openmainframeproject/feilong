@@ -265,27 +265,6 @@ Display the user direct by the given userid.
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get.tpl
    :language: javascript
 
-Update Guest
-------------
-
-**PUT /guests/{userid}**
-
-Update given guest.
-
-* Request:
-
-.. restapi_parameters:: parameters.yaml
-
-  - userid: guest_userid
-
-* Response code:
-
-  HTTP status code 200 on success.
-
-* Response contents:
-
-  No Response
-
 Delete Guest
 ------------
 
