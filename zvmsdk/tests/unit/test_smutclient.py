@@ -77,6 +77,32 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request.assert_called_once_with(requestData)
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_guest_stop_with_timeout(self, request):
+        fake_userid = 'FakeID'
+        requestData = "PowerVM FakeID off --maxwait 300"
+        request.return_value = {'overallRC': 0}
+        self._smutclient.guest_stop(fake_userid, timeout=300)
+        request.assert_called_once_with(requestData)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_guest_stop_with_poll_interval(self, request):
+        fake_userid = 'FakeID'
+        rd = "PowerVM FakeID off --maxwait 300 --poll 10"
+        request.return_value = {'overallRC': 0}
+        self._smutclient.guest_stop(fake_userid, timeout=300,
+                                    poll_interval=10)
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_guest_softstop(self, request):
+        fake_userid = 'FakeID'
+        requestData = "PowerVM FakeID softoff --maxwait 300 --poll 10"
+        request.return_value = {'overallRC': 0}
+        self._smutclient.guest_softstop(fake_userid, timeout=300,
+                                        poll_interval=10)
+        request.assert_called_once_with(requestData)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_guest_pause(self, request):
         fake_userid = 'FakeID'
         requestData = "PowerVM FakeID pause"
