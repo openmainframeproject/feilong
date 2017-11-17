@@ -112,23 +112,35 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.guest_inspect_vnics(userid_list)
         inspect_vnics.assert_called_once_with(["userid1"])
 
+    @mock.patch("zvmsdk.vmops.VMOps.guest_stop")
+    def test_guest_stop(self, gs):
+        userid = 'fakeuser'
+        self.api.guest_stop(userid)
+        gs.assert_called_once_with(userid)
+
+    @mock.patch("zvmsdk.vmops.VMOps.guest_stop")
+    def test_guest_stop_with_timeout(self, gs):
+        userid = 'fakeuser'
+        self.api.guest_stop(userid, timeout=300)
+        gs.assert_called_once_with(userid, timeout=300)
+
+    @mock.patch("zvmsdk.vmops.VMOps.guest_softstop")
+    def test_guest_softstop(self, gss):
+        userid = 'fakeuser'
+        self.api.guest_softstop(userid, timeout=300)
+        gss.assert_called_once_with(userid, timeout=300)
+
     @mock.patch("zvmsdk.vmops.VMOps.guest_pause")
-    def test_guest_stop(self, gp):
+    def test_guest_pause(self, gp):
         userid = 'fakeuser'
         self.api.guest_pause(userid)
         gp.assert_called_once_with(userid)
 
     @mock.patch("zvmsdk.vmops.VMOps.guest_unpause")
-    def test_guest_pause(self, gup):
+    def test_guest_unpause(self, gup):
         userid = 'fakeuser'
         self.api.guest_unpause(userid)
         gup.assert_called_once_with(userid)
-
-    @mock.patch("zvmsdk.vmops.VMOps.guest_stop")
-    def test_guest_unpause(self, gs):
-        userid = 'fakeuser'
-        self.api.guest_stop(userid)
-        gs.assert_called_once_with(userid, 0, 10)
 
     @mock.patch("zvmsdk.vmops.VMOps.guest_config_minidisks")
     def test_guest_process_additional_disks(self, config_disks):
@@ -144,11 +156,6 @@ class SDKAPITestCase(base.SDKTestCase):
         zapi = api.SDKAPI(skip_input_check=True)
         zapi.guest_start(1)
         gs.assert_called_once_with(1)
-
-    @mock.patch("zvmsdk.vmops.VMOps.guest_stop")
-    def test_api_input_check_with_default_value(self, gs):
-        self.api.guest_stop('fakeuser', 60)
-        gs.assert_called_once_with('fakeuser', 60, 10)
 
     def test_api_input_check_failed(self):
         self.assertRaises(exception.SDKInvalidInputFormat,
