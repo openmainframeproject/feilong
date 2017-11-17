@@ -1,6 +1,6 @@
 
-Quick start guide
-*****************
+Quick Start
+***********
 
 This is the document that describes the installation, configuration
 and basic usages of z/VM Cloud Connector.
