@@ -11,11 +11,9 @@ Pre-requirements
 z/VM Cloud Connector has to be installed inside a Linux running on z/VM.
 Currently, those distros are tested:
 
-- RHEL 6.x/7.x
-- SLES 11.x/12.x
-- Ubuntu 16.04
+- RHEL 7.2
 
-**NOTE**: This guide is based on RHEL 7, you may need to adjust the commands
+**NOTE**: This guide is based on RHEL 7.2, you may need to adjust the commands
 on other Linux distros.
 
 From now on, BYOL (Bring Your Own Linux) will be used to represent
