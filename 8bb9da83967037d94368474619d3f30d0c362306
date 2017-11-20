@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "21ea5ab7_e0a47d3b",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-20T09:21:48Z",
+      "side": 1,
+      "message": "I don\u0027t understand the logic between this function and next one , why this has \u0027valid_keys\u0027 and next doesn\u0027t have?",
+      "range": {
+        "startLine": 70,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 71
+      },
+      "revId": "8bb9da83967037d94368474619d3f30d0c362306",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
