@@ -245,6 +245,31 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
   A file named zvmsdk.conf should be found under /etc/zvmsdk folder and contains at least all the required
   options before the z/VM SDK daemon can be started.
 
+Start z/VM SDK Daemon
+=====================
+
+The z/VM SDK Daemon can be started via the following command:
+
+.. code-block:: text
+
+    # systemctl start sdkserver
+
+And make sure the sdkserver service status is 'active (running)' as following:
+
+.. code-block:: text
+
+    # systemctl status sdkserver
+    ● sdkserver.service - zVM SDK API server
+       Loaded: loaded (/usr/lib/systemd/system/sdkserver.service; disabled; vendor preset: disabled)
+       Active: active (running) since Mon 2017-11-20 00:47:18 EST; 3s ago
+     Main PID: 5779 (sdkserver)
+       CGroup: /system.slice/sdkserver.service
+               └─5779 /usr/bin/python /usr/bin/sdkserver
+
+    Nov 20 00:47:18 0822rhel7 systemd[1]: Started zVM SDK API server.
+    Nov 20 00:47:18 0822rhel7 systemd[1]: Starting zVM SDK API server...
+    Nov 20 00:47:18 0822rhel7 sdkserver[5779]: INFO: [MainThread] SDK server now listening
+
 Verification
 ============
 
