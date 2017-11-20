@@ -62,24 +62,6 @@ Preparation on BYOL
 Installation
 ============
 
-Dependency install
-------------------
-
-The following python packages are depended by the z/VM Cloud Connector, they need to
-be firstly installed:
-
-* netaddr
-* jsonschema
-* pyjwt
-* six
-
-Those packages are located at pypi_. Usually
-user is able to install them by using following command::
-
-  pip install netaddr
-
-.. _pypi: http://pypi.python.org/
-
 z/VM zthin install
 ------------------
 
@@ -158,6 +140,10 @@ supported SDK APIs by communicating with the zthin backend.
      obsoleted.)
 
    * Install z/VM sdk
+
+     Please ensure to update your setuptools to the latest version before doing this step,
+     the following installation step would rely on it to automatically install the depended
+     python packages.
 
      .. code-block:: text
 
