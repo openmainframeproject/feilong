@@ -261,16 +261,27 @@ class SMUTClient(object):
         with zvmutils.log_and_reraise_smut_request_failed():
             self._request(requestData)
 
-    def guest_stop(self, userid):
+    def guest_stop(self, userid, **kwargs):
         """Power off VM."""
         requestData = "PowerVM " + userid + " off"
+
+        if 'timeout' in kwargs.keys() and kwargs['timeout']:
+            requestData += ' --maxwait ' + str(kwargs['timeout'])
+        if 'poll_interval' in kwargs.keys() and kwargs['poll_interval']:
+            requestData += ' --poll ' + str(kwargs['poll_interval'])
+
         with zvmutils.log_and_reraise_smut_request_failed():
             self._request(requestData)
 
-    def guest_softstop(self, userid):
-        """Power off VM gracefully, it will call shutdown then
-            deactivate it"""
+    def guest_softstop(self, userid, **kwargs):
+        """Power off VM gracefully, it will call shutdown os then
+            deactivate vm"""
         requestData = "PowerVM " + userid + " softoff"
+        if 'timeout' in kwargs.keys() and kwargs['timeout']:
+            requestData += ' --maxwait ' + str(kwargs['timeout'])
+        if 'poll_interval' in kwargs.keys() and kwargs['poll_interval']:
+            requestData += ' --poll ' + str(kwargs['poll_interval'])
+
         with zvmutils.log_and_reraise_smut_request_failed():
             self._request(requestData)
 

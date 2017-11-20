@@ -188,6 +188,12 @@ action_stop_guest:
   in: body
   required: true
   type: dict
+action_softstop_guest:
+  description: |
+    take **softstop** action on guest
+  in: body
+  required: true
+  type: dict
 action_pause_guest:
   description: |
     take **pause** action on guest

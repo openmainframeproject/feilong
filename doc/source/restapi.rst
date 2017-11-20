@@ -427,6 +427,31 @@ Stop a guest.
 
 * Response contents:
 
+Softstop guest
+--------------
+
+Stop a guest gracefully, it will firstly shutdown the os on vm, then stop the vm.
+
+**POST /guests/{userid}/action**
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - action: action_softstop_guest
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_softstop_req.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
 Pause guest
 -----------
 
