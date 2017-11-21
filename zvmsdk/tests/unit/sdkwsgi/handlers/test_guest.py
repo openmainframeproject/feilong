@@ -385,11 +385,9 @@ class HandlersGuestTest(SDKWSGITest):
         vdev = '1234'
         nic_id = "514fec03-0d96-4349-a670-d972805fb579"
         mac_addr = "02:00:00:11:22:33"
-        ip = "192.168.111.1"
         body_str = """{"nic": {"vdev": "1234",
                              "nic_id": "514fec03-0d96-4349-a670-d972805fb579",
-                             "mac_addr": "02:00:00:11:22:33",
-                             "ip_addr": "192.168.111.1"}
+                             "mac_addr": "02:00:00:11:22:33"}
                       }"""
         self.req.body = body_str
         mock_create.return_value = ''
@@ -399,7 +397,7 @@ class HandlersGuestTest(SDKWSGITest):
         guest.guest_create_nic(self.req)
         mock_create.assert_called_once_with('guest_create_nic',
                                             FAKE_USERID, active=False,
-                                            ip_addr=ip, mac_addr=mac_addr,
+                                            mac_addr=mac_addr,
                                             nic_id=nic_id, vdev=vdev)
 
     def test_guest_create_nic_invalid_vdev(self):
@@ -411,13 +409,6 @@ class HandlersGuestTest(SDKWSGITest):
 
     def test_guest_create_nic_invalid_mac_addr(self):
         body_str = '{"nic": {"mac_addr": "11:22:33:44:55:6s"}}'
-        self.req.body = body_str
-
-        self.assertRaises(exception.ValidationError, guest.guest_create_nic,
-                          self.req)
-
-    def test_guest_create_nic_invalid_nic_ip(self):
-        body_str = '{"nic": {"ip_addr": "dummy"}}'
         self.req.body = body_str
 
         self.assertRaises(exception.ValidationError, guest.guest_create_nic,

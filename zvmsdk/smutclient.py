@@ -942,7 +942,7 @@ class SMUTClient(object):
                 raise
 
     def create_nic(self, userid, vdev=None, nic_id=None,
-                   mac_addr=None, ip_addr=None, active=False):
+                   mac_addr=None, active=False):
         ports_info = self._NetDbOperator.switch_select_table()
         vdev_info = []
         for p in ports_info:
