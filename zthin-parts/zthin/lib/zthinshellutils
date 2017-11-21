@@ -618,7 +618,7 @@ function connectDisk {
   # Make sure device channel isn't black-listed..
   if [[ $rc -eq 0 ]]; then
     sleep 2
-    cio_ignore -r $alias &> /dev/null
+    sudo cio_ignore -r $alias &> /dev/null
     sleep 2
   fi
 
