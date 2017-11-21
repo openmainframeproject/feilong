@@ -278,7 +278,7 @@ If the two send_request command all returns 'overallRC' as 0, that means the z/V
 is setup and running normally.
 
 For use of the z/VM Cloud Connector RESTful-API, please continue to the section
-of :ref:`Setup for running RESTful API` for the additional setup.
+of :ref:`Setup web server for running RESTful API` for the additional setup.
 
 .. code-block:: python
 
