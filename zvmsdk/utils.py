@@ -470,7 +470,7 @@ def log_and_reraise_smut_request_failed(action=None):
 
 def get_smut_userid():
     """Get the userid of smut server"""
-    cmd = ["/sbin/vmcp", "query userid"]
+    cmd = ["sudo /sbin/vmcp", "query userid"]
     try:
         userid = subprocess.check_output(cmd,
                                          close_fds=True,
@@ -551,7 +551,7 @@ def acquire_lock(lock):
 
 
 def _is_guest_exist(userid):
-    cmd = 'vmcp q %s' % userid
+    cmd = 'sudo vmcp q %s' % userid
     rc, output = execute(cmd)
     if re.search('(^HCP\w\w\w003E)', output):
         # userid not exist

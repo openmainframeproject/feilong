@@ -200,7 +200,7 @@ class SDKAPITestUtils(object):
                 raise
 
     def is_guest_exist(self, userid):
-        cmd = 'vmcp q %s' % userid
+        cmd = 'sudo vmcp q %s' % userid
         rc, output = zvmutils.execute(cmd)
         if re.search('(^HCP\w\w\w003E)', output):
             # userid not exist

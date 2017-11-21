@@ -70,7 +70,7 @@ subs = {
 }
 
 # Add a substitution key for the userid of this system.
-cmd = ["/sbin/vmcp", "query userid"]
+cmd = ["sudo /sbin/vmcp", "query userid"]
 try:
     subs['<<<localUserid>>>'] = subprocess.check_output(
         cmd,
@@ -1321,7 +1321,7 @@ def purgeRdr(userid):
     subRC = 0
     userid = userid.upper()
     spoolList = []
-    queryCmd = ("/sbin/vmcp query rdr userid '*' | " +
+    queryCmd = ("sudo /sbin/vmcp query rdr userid '*' | " +
         "grep ^" + userid + " | awk '{print $2}'")
     try:
         qryRes = subprocess.check_output(
@@ -1336,7 +1336,7 @@ def purgeRdr(userid):
               ", exception: " + str(e))
         subRC = 1
 
-    purgeCmd = ['/sbin/vmcp', 'purge', 'reader', '0']
+    purgeCmd = ['sudo /sbin/vmcp', 'purge', 'reader', '0']
     for purgeCmd[3] in spoolList:
         try:
             subprocess.check_output(
@@ -1707,7 +1707,7 @@ if args.listAreas is True:
         print key + ": " + testSets[key]['description']
 else:
     # Initialize the environment.  Online the punch.
-    cmd = "/sbin/cio_ignore -r d; /sbin/chccwdev -e d"
+    cmd = "sudo /sbin/cio_ignore -r d; sudo /sbin/chccwdev -e d"
     try:
         subprocess.check_output(
             cmd,
