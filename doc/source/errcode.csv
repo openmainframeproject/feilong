@@ -13,6 +13,7 @@
 300;20;300;2;ZVMSDK network error: %(msg)s
 300;20;300;3;Failed to couple nic %(nic)s to vswitch %(vswitch)s on the active guest system, error: %(couple_err)s, and failed to revoke user direct's changes, error: %(revoke_err)s 
 300;20;300;4;Failed to create nic %(nic)s for %(userid)s on the active guest system, error: %(create_err)s, and failed to revoke user direct's changes, error: %(revoke_err)s 
+300;20;300;5;Failed to actively change network setting for user %(userid)s, error: %(msg)s
 **Operation on Volume failed**
 300;30;300;1;Database operation failed, error: %(msg)s
 300;30;300;3;Volume %(vol)s has already been attached on instance %(inst)s
