@@ -47,13 +47,19 @@ class restConnection(baseConnection):
 class SDKClient(object):
 
     def __init__(self, ip_addr=None, port=None, timeout=3600,
-                 connection_type=CONN_TYPE_SOCKET):
+                 connection_type=None):
         """
         :param str ip_addr:         IP address of SDK server
         :param int port:            Port of SDK server daemon
         :param int timeout:         Wait timeout if request no response
         :param str connection_type: The value should be 'socket' or 'rest'
         """
+        if connection_type is None:
+            if ((ip_addr is None) or
+                (ip_addr == '127.0.0.1')):
+                connection_type = CONN_TYPE_SOCKET
+            else:
+                connection_type = CONN_TYPE_REST
         self.conn = self._get_connection(ip_addr, port, timeout,
                                          connection_type)
 
