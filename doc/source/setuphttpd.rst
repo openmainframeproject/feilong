@@ -1,3 +1,4 @@
+.. _`Setup for running RESTful API`:
 
 Setup for running RESTful API
 *****************************
