@@ -201,7 +201,8 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         transportfiles = '/faketrans'
         self._smutclient.guest_deploy(userid, image_name, transportfiles)
         get_image_path.assert_called_once_with(image_name)
-        unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
+        unpack_cmd = ['sudo /opt/zthin/bin/unpackdiskimage', 'fakeuser',
+                      '0100',
                       '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
         cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrv']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
@@ -242,7 +243,8 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                            self._smutclient.guest_deploy, userid, image_name,
                            transportfiles)
         get_image_path.assert_called_once_with(image_name)
-        unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
+        unpack_cmd = ['sudo /opt/zthin/bin/unpackdiskimage', 'fakeuser',
+                      '0100',
                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
         execute.assert_called_once_with(unpack_cmd)
 
@@ -267,7 +269,8 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                            self._smutclient.guest_deploy, userid, image_name,
                            transportfiles)
         get_image_path.assert_called_once_with(image_name)
-        unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
+        unpack_cmd = ['sudo /opt/zthin/bin/unpackdiskimage', 'fakeuser',
+                      '0100',
                       '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
         cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrv']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
@@ -302,7 +305,8 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                            self._smutclient.guest_deploy, userid, image_name,
                            transportfiles, remote_host)
         get_image_path.assert_called_once_with(image_name)
-        unpack_cmd = ['/opt/zthin/bin/unpackdiskimage', 'fakeuser', '0100',
+        unpack_cmd = ['sudo /opt/zthin/bin/unpackdiskimage', 'fakeuser',
+                      '0100',
                       '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
         scp_cmd = ["/usr/bin/scp", "-B", 'user@1.1.1.1:/faketrans',
                   '/tmp/tmpdir/cfgdrv']
@@ -1315,7 +1319,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                    'rhel7.0',
                                    image_name])
         image_file_path = '/'.join((image_temp_dir, '0100.img'))
-        cmd1 = ['/opt/zthin/bin/creatediskimage', userid, '0100',
+        cmd1 = ['sudo /opt/zthin/bin/creatediskimage', userid, '0100',
                image_file_path]
         execute.side_effect = [(0, ''),
                                (0, '')]

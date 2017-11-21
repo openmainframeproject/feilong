@@ -100,7 +100,7 @@ int prepare_commands(char* buffer, int argc, char *argv[])
     int i = 0;
 
     bzero(buffer,BUFFER_SIZE);
-    FILE *fp = popen("vmcp q userid", "r");
+    FILE *fp = popen("sudo vmcp q userid", "r");
     if (fgets(user_buf,sizeof(user_buf),fp) != NULL)
     {
         strcpy(buffer, strtok(user_buf," "));
