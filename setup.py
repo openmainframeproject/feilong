@@ -41,7 +41,7 @@ setuptools.setup(
             'sdk_api = zvmsdk.sdkwsgi.wsgi:init_application',
         ]
     },
-    scripts=['scripts/sdkserver'],
+    scripts=['scripts/sdkserver', 'scripts/zvmsdk-wsgi'],
     data_files=[('/usr/lib/systemd/system', ['data/sdkserver.service']),
                 ('/etc/zvmsdk', ['doc/source/zvmsdk.conf.sample'])],
 )
