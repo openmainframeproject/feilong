@@ -1,28 +1,15 @@
 
-Sample for using sdk
-********************
+Basic Usage
+***********
 
-Sample
-======
+This section would introduce the basics of using z/VM Cloud Connector to manage z/VM host, some samples
+are given here.
 
-There's a sample file inside zvm sdk's source tree (tools/sample.py)
-A couple of configuration items need to be modified such as
-IP address, disk pool name etc, then use python to run
-the command like following to deploy a new guest::
+Workflow description
+====================
 
-   import sample
-   sample.run_guest()
-
-Here's the code:
-
-.. include:: ../../tools/sample.py
-   :literal:
-
-Sample flow in detail
-=====================
-
-Spawn a new virutal machine
----------------------------
+Spawning a virtual machine
+--------------------------
 
 .. image:: ./images/spawn_flow.jpg
 
@@ -36,9 +23,8 @@ Spawn a new virutal machine
 8) Start the VM 
 9) During power on of the VM (first time) , doing setup of the network and utilize the customerized files to update network, hostname etc (by default, using cloud-init)
 
-
-Create a Vswitch
-----------------
+Creating a vswitch
+------------------
 
 .. image:: ./images/create_vswitch_flow.jpg
 
@@ -47,3 +33,7 @@ Create a Vswitch
 3) In turn SMAPI was called and handle the VSWITCH cerate command, this will include persistent definition of Vswitch and define in z/VM CP
 4) CP was called to create vswitch on the fly
 
+Usage Sample
+============
+
+The sample would be added later about calling z/VM Cloud Connector RESTful API for managing z/VM host.
