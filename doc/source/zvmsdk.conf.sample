@@ -138,6 +138,16 @@
 [sdkserver]
 
 # 
+# The connection type of the requests flowing into the sdkserver.
+# 
+# This will work as a pair with bind_addr when the SDK server daemon
+# starts, more info can be found in that configuration description.
+# 
+# This param is optional
+#connect_type=socket
+
+
+# 
 # The maximum number of worker thread in SDK server to handle client requests.
 # 
 # These worker threads would work concurrently to handle requests from client.
@@ -170,16 +180,6 @@
 
 
 # 
-# The connection type of the requests flowing into the sdkserver.
-# 
-# This will work as a pair with bind_addr when the SDK server daemon
-# starts, more info can be found in that configuration description.
-# 
-# This param is optional
-#connect_type=socket
-
-
-# 
 # The IP address that the SDK server is listen on.
 # 
 # When the SDK server deamon starts, it will try to bind to
@@ -191,6 +191,28 @@
 
 
 [wsgi]
+
+# 
+# Admin user to access sdk http server.
+# 
+# User in order to get a token from zvm sdk, and the token
+# will be used to validate request before token expire.
+# 
+# This param is optional
+#user=
+
+
+# 
+# How long the token is valid.
+# 
+# If a token auth is used, the token return to user will be
+# expired after the period passed. This ensure an user who
+# get this token will not be authorized all the time, a new
+# token need to be recreated after certain time period.
+# 
+# This param is optional
+#token_validation_period=30
+
 
 # 
 # Admin password to access sdk http server.
@@ -220,29 +242,48 @@
 #auth=none
 
 
-# 
-# How long the token is valid.
-# 
-# If a token auth is used, the token return to user will be
-# expired after the period passed. This ensure an user who
-# get this token will not be authorized all the time, a new
-# token need to be recreated after certain time period.
-# 
-# This param is optional
-#token_validation_period=30
-
-
-# 
-# Admin user to access sdk http server.
-# 
-# User in order to get a token from zvm sdk, and the token
-# will be used to validate request before token expire.
-# 
-# This param is optional
-#user=
-
-
 [zvm]
+
+# 
+# z/VM host name of this hypervisor.
+# 
+# This is the name of the hypervisor that is managed by the cloud,
+# The admin should refer to the z/VM system configuration file
+# SYSTEM_IDENTIFIER statement for the hypervisor name.
+# 
+# Possible values:
+#     A 1-8 character string, matching the z/VM system name this
+#     compute service is managing.
+#     
+# This param is required
+#host=
+
+
+# 
+# zVM disk pool and type for root/ephemeral disks.
+# 
+# The option is combined by 2 parts and use : as separator.
+# 
+# First part is the volume group name from your directory manager
+# on your z/VM system, which will be used for ephemeral disks for
+# new guest. A dollar sign ($) is not allowed in the name.
+# 
+# Second part is type of the disk in the disk pool.
+# The disks in the disk pool must all be the same type (ECKD or FBA).
+# Possible values of the disk pool type:
+#     A string, either ECKD or FBA.
+# 
+# Sample configuration:
+#     diskpo1:ECKD
+#     testpool:FBA
+#     
+# This param is required
+#disk_pool=
+
+
+# This param is optional
+#user_default_password=
+
 
 # 
 # Default LOGONBY userid(s) for the cloud.
@@ -332,46 +373,5 @@
 #         
 # This param is optional
 #default_nic_vdev=1000
-
-
-# 
-# z/VM host name of this hypervisor.
-# 
-# This is the name of the hypervisor that is managed by the cloud,
-# The admin should refer to the z/VM system configuration file
-# SYSTEM_IDENTIFIER statement for the hypervisor name.
-# 
-# Possible values:
-#     A 1-8 character string, matching the z/VM system name this
-#     compute service is managing.
-#     
-# This param is required
-#host=
-
-
-# 
-# zVM disk pool and type for root/ephemeral disks.
-# 
-# The option is combined by 2 parts and use : as separator.
-# 
-# First part is the volume group name from your directory manager
-# on your z/VM system, which will be used for ephemeral disks for
-# new guest. A dollar sign ($) is not allowed in the name.
-# 
-# Second part is type of the disk in the disk pool.
-# The disks in the disk pool must all be the same type (ECKD or FBA).
-# Possible values of the disk pool type:
-#     A string, either ECKD or FBA.
-# 
-# Sample configuration:
-#     diskpo1:ECKD
-#     testpool:FBA
-#     
-# This param is required
-#disk_pool=
-
-
-# This param is optional
-#user_default_password=
 
 
