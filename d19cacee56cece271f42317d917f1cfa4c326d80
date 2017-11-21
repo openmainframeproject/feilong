@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "37f52c85_4ea6b05c",
+        "filename": "doc/source/zvmsdk.conf.sample",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-21T11:24:12Z",
+      "side": 1,
+      "message": "why modify this file?",
+      "revId": "d19cacee56cece271f42317d917f1cfa4c326d80",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
