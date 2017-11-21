@@ -364,7 +364,7 @@ PARAM_IN_PATH = {
     'home': 0,
     'guest_create': 0,
     'guest_list': 0,
-    'guest_inspect_stats': 0,
+    'guest_inspect_stats': 1,
     'guest_inspect_vnics': 1,
     'guests_get_nic_info': 0,
     'guest_delete': 1,
