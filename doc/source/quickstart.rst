@@ -273,17 +273,23 @@ And make sure the sdkserver service status is 'active (running)' as following:
 Verification
 ============
 
-Try following command in your zvmsdk tools folder,
-if you can get host info, that means z/VM sdk configuration done.
+Try the following python commands on BYOL.
+If the two send_request command all returns 'overallRC' as 0, that means the z/VM SDK daemon
+is setup and running normally.
+If you want to use the z/VM Cloud Connector through RESTful-API, you can continue to the section
+of :ref:`Setup for running RESTful API`.
 
 .. code-block:: python
 
-    [root@xxxx sdkclient]# python
-    Python 2.7.5 (default, Oct 11 2015, 17:46:32)
-    [GCC 4.8.3 20140911 (Red Hat 4.8.3-9)] on linux2
+    [root@OSPRUI python-zvm-sdk] # python
+    Python 2.7.5 (default, Aug 23 2017, 19:53:20)
+    [GCC 4.8.3 20140911 (IBM 4.8.3-9)] on linux2
     Type "help", "copyright", "credits" or "license" for more information.
     >>> import sdkclient.client
     >>> s = sdkclient.client.SDKClient()
     >>> s.send_request('host_get_info')
-    {u'rs': 0, u'overallRC': 0, u'modID': None, u'rc': 0, u'output': {u'disk_available': 3217, u'ipl_time': u'IPL at 10/08/17 21:14:04 EDT', u'vcpus_used': 6, u'hypervisor_type': u'zvm', u'vcpus': 6, u'zvm_host': u'OPNSTK1', u'memory_mb': 51200.0, u'cpu_info': {u'cec_model': u'2817', u'architecture': u's390x'}, u'disk_total': 3623, u'hypervisor_hostname': u'OPNSTK1', u'hypervisor_version': 640, u'disk_used': 406, u'memory_mb_used': 33894.4}, u'errmsg': u''}
+    {u'rs': 0, u'overallRC': 0, u'modID': None, u'rc': 0, u'output': {u'disk_available': 3171, u'ipl_time': u'IPL at 11/13/17 00:46:45 EST', u'vcpus_used': 6, u'hypervisor_type': u'zvm', u'vcpus': 6, u'zvm_host': u'OPNSTK1', u'memory_mb': 51200.0, u'cpu_info': {u'cec_model': u'2817', u'architecture': u's390x'}, u'disk_total': 3601, u'hypervisor_hostname': u'OPNSTK1', u'hypervisor_version': 640, u'disk_used': 430, u'memory_mb_used': 36761.6}, u'errmsg': u''}
+    >>> s.send_request('vswitch_get_list')
+    {u'rs': 0, u'overallRC': 0, u'modID': None, u'rc': 0, u'output': [u'DTCSMAPI', u'FVTVSW01', u'VSW1', u'VSW2', u'XCATVSW1', u'XCATVSW2'], u'errmsg': u''}
     >>>
+
