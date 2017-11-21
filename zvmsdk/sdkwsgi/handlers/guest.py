@@ -114,13 +114,12 @@ class VMHandler(object):
         vdev = nic.get('vdev', None)
         nic_id = nic.get('nic_id', None)
         mac_addr = nic.get('mac_addr', None)
-        ip_addr = nic.get('ip_addr', None)
         active = nic.get('active', False)
         active = util.bool_from_string(active, strict=True)
 
         info = self.client.send_request('guest_create_nic', userid,
                                         vdev=vdev, nic_id=nic_id,
-                                        mac_addr=mac_addr, ip_addr=ip_addr,
+                                        mac_addr=mac_addr,
                                         active=active)
         return info
 

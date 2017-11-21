@@ -363,7 +363,6 @@ Create a virtual nic on giving guest.
   - vdev: vdev_number
   - nic_id: nic_identifier
   - mac_addr: mac_address
-  - ip_addr: ip_address
   - active: active_flag
 
 * Request sample:

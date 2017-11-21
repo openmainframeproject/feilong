@@ -45,12 +45,11 @@ class NetworkOPS(object):
         self._dist_manager = dist.LinuxDistManager()
 
     def create_nic(self, userid, vdev=None, nic_id=None,
-                   mac_addr=None, ip_addr=None, active=False):
+                   mac_addr=None, active=False):
         zvmutils.check_guest_exist(userid)
 
         return self._smutclient.create_nic(userid, vdev=vdev, nic_id=nic_id,
-                                           mac_addr=mac_addr, ip_addr=ip_addr,
-                                           active=active)
+                                           mac_addr=mac_addr, active=active)
 
     def get_vm_nic_vswitch_info(self, userid):
         zvmutils.check_guest_exist(userid)
