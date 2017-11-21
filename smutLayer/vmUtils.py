@@ -60,7 +60,7 @@ def disableEnableDisk(rh, userid, vaddr, option):
     """
     for secs in [0.1, 0.4, 1, 1.5, 3, 7, 15, 32, 30, 30,
                 60, 60, 60, 60, 60]:
-        strCmd = "/sbin/chccwdev " + option + " " + vaddr + " 2>&1"
+        strCmd = "sudo /sbin/chccwdev " + option + " " + vaddr + " 2>&1"
         results = execCmdThruIUCV(rh, userid, strCmd)
         if results['overallRC'] == 0:
             break
@@ -301,7 +301,8 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
     diskAccessed = False
 
     # Get access to the disk.
-    cmd = ["/opt/zthin/bin/linkdiskandbringonline",
+    cmd = ["sudo",
+           "/opt/zthin/bin/linkdiskandbringonline",
            rh.userid,
            vaddr,
            mode]
@@ -349,7 +350,8 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
 
     if results['overallRC'] == 0 and diskType == "3390":
         # dasdfmt the disk
-        cmd = ["/sbin/dasdfmt",
+        cmd = ["sudo",
+            "/sbin/dasdfmt",
             "-y",
             "-b", "4096",
             "-d", "cdl",
@@ -399,7 +401,7 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
 
     if results['overallRC'] == 0 and diskType == "3390":
         # Prepare the partition with fdasd
-        cmd = ["/sbin/fdasd", "-a", device]
+        cmd = ["sudo", "/sbin/fdasd", "-a", device]
         strCmd = ' '.join(cmd)
         rh.printSysLog("Invoking: " + strCmd)
         try:
@@ -421,7 +423,7 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
     if results['overallRC'] == 0 and diskType == "9336":
         # Delete the existing partition in case the disk already
         # has a partition in it.
-        cmd = "/sbin/fdisk " + device + " << EOF\nd\nw\nEOF"
+        cmd = "sudo /sbin/fdisk " + device + " << EOF\nd\nw\nEOF"
         rh.printSysLog("Invoking: /sbin/fdsik " + device +
             " << EOF\\nd\\nw\\nEOF ")
         try:
@@ -444,8 +446,8 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
 
     if results['overallRC'] == 0 and diskType == "9336":
         # Prepare the partition with fdisk
-        cmd = "/sbin/fdisk " + device + " << EOF\nn\np\n1\n\n\nw\nEOF"
-        rh.printSysLog("Invoking: /sbin/fdisk " + device +
+        cmd = "sudo /sbin/fdisk " + device + " << EOF\nn\np\n1\n\n\nw\nEOF"
+        rh.printSysLog("Invoking: sudo /sbin/fdisk " + device +
             " << EOF\\nn\\np\\n1\\n\\n\\nw\\nEOF")
         try:
             out = subprocess.check_output(cmd,
@@ -495,9 +497,9 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
         device = device + "1"       # Point to first partition
         if fileSystem != 'swap':
             if fileSystem == 'xfs':
-                cmd = ["mkfs.xfs", "-f", device]
+                cmd = ["sudo", "mkfs.xfs", "-f", device]
             else:
-                cmd = ["mkfs", "-F", "-t", fileSystem, device]
+                cmd = ["sudo", "mkfs", "-F", "-t", fileSystem, device]
             strCmd = ' '.join(cmd)
             rh.printSysLog("Invoking: " + strCmd)
             try:
@@ -523,7 +525,7 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
 
     if diskAccessed:
         # Give up the disk.
-        cmd = ["/opt/zthin/bin/offlinediskanddetach",
+        cmd = ["sudo", "/opt/zthin/bin/offlinediskanddetach",
                rh.userid,
                vaddr]
         strCmd = ' '.join(cmd)
@@ -719,7 +721,7 @@ def isLoggedOn(rh, userid):
               'rs': 0,
              }
 
-    cmd = ["/sbin/vmcp", "query", "user", userid]
+    cmd = ["sudo", "/sbin/vmcp", "query", "user", userid]
     strCmd = ' '.join(cmd)
     rh.printSysLog("Invoking: " + strCmd)
     try:
@@ -772,7 +774,7 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
     results['rc'] = 9
 
     # Punch to the current user intially and then change the spool class.
-    cmd = ["vmur", "punch", "-r", fileLoc]
+    cmd = ["sudo", "vmur", "punch", "-r", fileLoc]
     strCmd = ' '.join(cmd)
     for secs in [1, 2, 3, 5, 10]:
         rh.printSysLog("Invoking: " + strCmd)
@@ -819,7 +821,8 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
     if rh.results['overallRC'] == 0:
         # On VMUR success change the class of the spool file
         spoolId = re.findall(r'\d+', str(results['response']))
-        cmd = ["vmcp", "change", "rdr", str(spoolId[0]), "class", spoolClass]
+        cmd = ["sudo", "vmcp", "change", "rdr", str(spoolId[0]), "class",
+               spoolClass]
         strCmd = " ".join(cmd)
         rh.printSysLog("Invoking: " + strCmd)
         try:
@@ -835,7 +838,7 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
             rh.updateResults(msgs.msg['0404'][0])
             # Class change failed
             # Delete the punched file from current userid
-            cmd = ["vmcp", "purge", "rdr", spoolId[0]]
+            cmd = ["sudo", "vmcp", "purge", "rdr", spoolId[0]]
             strCmd = " ".join(cmd)
             rh.printSysLog("Invoking: " + strCmd)
             try:
@@ -864,7 +867,7 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
 
     if rh.results['overallRC'] == 0:
         # Transfer the file from current user to specified user
-        cmd = ["vmcp", "transfer", "*", "rdr", str(spoolId[0]), "to",
+        cmd = ["sudo", "vmcp", "transfer", "*", "rdr", str(spoolId[0]), "to",
                 userid, "rdr"]
         strCmd = " ".join(cmd)
         rh.printSysLog("Invoking: " + strCmd)
@@ -881,7 +884,7 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
             rh.updateResults(msgs.msg['0424'][0])
 
             # Transfer failed so delete the punched file from current userid
-            cmd = ["vmcp", "purge", "rdr", spoolId[0]]
+            cmd = ["sudo", "vmcp", "purge", "rdr", spoolId[0]]
             strCmd = " ".join(cmd)
             rh.printSysLog("Invoking: " + strCmd)
             try:
@@ -1003,7 +1006,7 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
 
     results = {}
 
-    cmd = ["/sbin/vmcp", "query", "user", userid]
+    cmd = ["sudo", "/sbin/vmcp", "query", "user", userid]
     strCmd = " ".join(cmd)
     stateFnd = False
 

@@ -196,7 +196,7 @@ def getConsole(rh):
 
     # We should set class to *, otherwise we will get errors like:
     # vmur: Reader device class does not match spool file class
-    cmd = ["/sbin/vmcp", "spool reader class *"]
+    cmd = ["sudo", "/sbin/vmcp", "spool reader class *"]
     strCmd = ' '.join(cmd)
     rh.printSysLog("Invoking: " + strCmd)
     try:

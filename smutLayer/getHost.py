@@ -271,7 +271,7 @@ def getGeneralInfo(rh):
 
     # Get host using VMCP
     rh.results['overallRC'] = 0
-    cmd = ["/sbin/vmcp", "query userid"]
+    cmd = ["sudo", "/sbin/vmcp", "query userid"]
     strCmd = ' '.join(cmd)
     rh.printSysLog("Invoking: " + strCmd)
     try:
@@ -388,7 +388,7 @@ def getGeneralInfo(rh):
 
     # Get IPL Time
     ipl = ""
-    cmd = ["/sbin/vmcp", "query cplevel"]
+    cmd = ["sudo", "/sbin/vmcp", "query cplevel"]
     strCmd = ' '.join(cmd)
     rh.printSysLog("Invoking: " + strCmd)
     try:
