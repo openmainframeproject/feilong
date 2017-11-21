@@ -9,9 +9,9 @@ Welcome to the z/VM Cloud Connector Document
    generalinfo
    architecture
    quickstart
+   setuphttpd
    sample
    sdkapi
-   setuphttpd
    restapi
    errorcodemsg
    configuration
