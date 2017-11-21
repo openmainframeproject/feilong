@@ -416,7 +416,7 @@ class SMUTClient(object):
         image_file = self._get_image_path_by_name(image_name)
         # Unpack image file to root disk
         vdev = vdev or CONF.zvm.user_root_vdev
-        cmd = ['/opt/zthin/bin/unpackdiskimage', userid, vdev, image_file]
+        cmd = ['sudo /opt/zthin/bin/unpackdiskimage', userid, vdev, image_file]
         with zvmutils.expect_and_reraise_internal_error(modID='guest'):
             (rc, output) = zvmutils.execute(cmd)
         if rc != 0:
@@ -544,7 +544,7 @@ class SMUTClient(object):
         vdev = capture_devices[0]
         image_file_name = '.'.join((vdev, 'img'))
         image_file_path = '/'.join((image_temp_dir, image_file_name))
-        cmd = ['/opt/zthin/bin/creatediskimage', userid, vdev,
+        cmd = ['sudo /opt/zthin/bin/creatediskimage', userid, vdev,
                image_file_path]
         with zvmutils.expect_and_reraise_internal_error(modID='guest'):
             (rc, output) = zvmutils.execute(cmd)
@@ -1590,7 +1590,7 @@ class SMUTClient(object):
 
         # TODO: make sure reader device is online
         # via 'cat /sys/bus/ccw/drivers/vmur/0.0.000c/online'
-        #     '/sbin/cio_ignore -r 000c; /sbin/chccwdev -e 000c'
+        #     'sudo /sbin/cio_ignore -r 000c; sudo /sbin/chccwdev -e 000c'
         #     'which udevadm &> /dev/null && udevadm settle || udevsettle'
 
         logs = []

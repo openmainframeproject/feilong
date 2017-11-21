@@ -4007,7 +4007,7 @@ int imagePause(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
     }
 
     // Check that the image being paused is not this Linux image
-    fp = popen("/sbin/vmcp q userid", "r");
+    fp = popen("sudo /sbin/vmcp q userid", "r");
     if (fp == NULL) {
         printAndLogProcessingErrors(MY_API_NAME, PROCESSING_ERROR, vmapiContextP, "", 0);
         printf("ERROR: Failed to identify the user");
