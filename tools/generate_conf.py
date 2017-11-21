@@ -42,7 +42,7 @@ def _print_one_section(f, section, data):
 
     _print_one_line(f)
 
-    for k,v in data.items():
+    for k,v in sorted(data.items()):
         
         _print_one_line(f)
 
