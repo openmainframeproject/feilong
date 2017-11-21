@@ -759,7 +759,7 @@ def removeDisk(rh):
                 rh.updateResults(results)
 
     if results['overallRC'] == 0 and loggedOn:
-        strCmd = "/sbin/vmcp detach " + rh.parms['vaddr']
+        strCmd = "sudo /sbin/vmcp detach " + rh.parms['vaddr']
         results = execCmdThruIUCV(rh, rh.userid, strCmd)
         if results['overallRC'] != 0:
             if re.search('(^HCP\w\w\w040E)', results['response']):
