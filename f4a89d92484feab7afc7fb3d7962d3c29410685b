@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5bc41e9e_a76ceeb7",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 515,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-22T02:37:26Z",
+      "side": 1,
+      "message": "please remove this blank",
+      "revId": "f4a89d92484feab7afc7fb3d7962d3c29410685b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
