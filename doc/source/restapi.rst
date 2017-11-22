@@ -789,7 +789,7 @@ Get disk pool information on the host.
 
 .. restapi_parameters:: parameters.yaml
 
-  - output: disk_info_host
+  - output: image_info
 
 * Response sample:
 
@@ -857,6 +857,41 @@ Create a new image.
 * Response contents:
 
   No response.
+
+Export image
+------------
+
+**PUT /images**
+
+Export an image.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - imagename: image_name
+  - dest_url: image_url
+  - remotehost: remotehost_image
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_export_req.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: export_image_dict
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_export_res.tpl
+   :language: javascript
 
 Get root disk size of image
 ---------------------------
