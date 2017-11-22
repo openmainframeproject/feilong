@@ -746,7 +746,7 @@ Get info from host (hypervisor) running on.
 Get Host Info
 -------------
 
-**GET /host/info**
+**GET /host**
 
 Get host information.
 
@@ -772,7 +772,7 @@ Get host information.
 Get Host disk pool info
 -----------------------
 
-**GET /host/disk_info/{disk}**
+**GET /host/disk/{disk}**
 
 Get disk pool information on the host.
 
