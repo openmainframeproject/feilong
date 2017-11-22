@@ -260,6 +260,12 @@ disk_info_host:
   in: body
   required: true
   type: dict
+image_info:
+  description: |
+    the image info for specific image
+  in: body
+  required: true
+  type: list
 image_name:
   description: |
     the image name in image repository.
@@ -290,6 +296,12 @@ root_disk_size_image:
   in: body
   required: true
   type: integer
+export_image_dict:
+  description: |
+    dict contains image info after export
+  in: body
+  required: true
+  type: dict
 vswitch_name:
   description: |
     vswitch name
