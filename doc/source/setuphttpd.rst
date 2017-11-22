@@ -22,8 +22,10 @@ Installation
 The following packages need to be installed:
 
 * Apache httpd server
+* Apache modules: mod_proxy_uwsgi
 * uwsgi
-* Apache modules for wsgi: mod_wsgi
+* uwsgi plugin for python: uwsgi-plugin-python
+
 
 Configuration
 =============
@@ -46,7 +48,7 @@ so apache server can connect port 35000 and communicate with it
     add-header = Connection: close
     buffer-size = 65535
     thunder-lock = true
-    #plugins = python
+    plugins = python
     enable-threads = true
     exit-on-reload = true
     die-on-term = true
@@ -122,6 +124,20 @@ Start z/VM Cloud Connector in uwsgi
     # netstat -anp | grep 35000
     tcp        0      0 127.0.0.1:35000         0.0.0.0:*               LISTEN      7227/uwsgi
 
+    # curl -v http://127.0.0.1:35000/
+    * About to connect() to 127.0.0.1 port 35000 (#0)
+    *   Trying 127.0.0.1...
+    * Connected to 127.0.0.1 (127.0.0.1) port 35000 (#0)
+    > GET / HTTP/1.1
+    > User-Agent: curl/7.29.0
+    > Host: 127.0.0.1:35000
+    > Accept: */*
+    >
+    * Empty reply from server
+    * Connection #0 to host 127.0.0.1 left intact
+    curl: (52) Empty reply from server
+
+
 Configure Apache
 ----------------
 
@@ -135,13 +151,13 @@ at port 35000
 
 .. code-block:: text
 
+    LoadModule proxy_uwsgi_module modules/mod_proxy_uwsgi.so
+
     Listen 8080
 
     <VirtualHost *:8080>
        ProxyPass / uwsgi://127.0.0.1:35000/
     </VirtualHost>
-
-    ProxyPass / uwsgi://127.0.0.1:35000/
 
 SSL is strongly recommended for security considerations. Refer to the specific web server
 documentation on how to enable SSL.
@@ -162,5 +178,5 @@ http service is running well.
 
 .. code-block:: text
 
-    user@ubuntu1:~$curl localhost:8080
-    {"versions": [{"min_version": "1.0", "version": "1.0", "max_version": "1.0"}]}
+    # curl http://localhost:8080/
+    {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": {"min_version": "1.0", "version": "1.0", "max_version": "1.0"}, "errmsg": ""}
