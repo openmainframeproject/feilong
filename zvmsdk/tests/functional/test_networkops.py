@@ -377,31 +377,6 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
                           self.basevm, vdev='5003',
                           mac_addr='123456789012')
 
-        # Start test parameter ip_addr
-        print("Creating NIC with management IP.")
-        self.sdkapi.guest_create_nic(self.basevm, vdev='6000',
-                                     ip_addr='9.60.56.78')
-        # Check nic defined in user direct and vswitch table
-        nic_defined, vsw = self._check_nic('6000')
-        self.assertTrue(nic_defined)
-        self.assertEqual(vsw, "")
-        # Check the management IP is written into hosts table
-        ip_in_hosts_table = self.client._get_vm_mgt_ip(self.basevm)
-        self.assertEqual(ip_in_hosts_table, '9.60.56.78')
-
-        print("Creating NIC with IP, overwrite the current value in hosts.")
-        self.sdkapi.guest_create_nic(self.basevm, vdev='7000',
-                                     ip_addr='12.34.56.78')
-        # Check the management IP is overwritten to new value
-        ip_in_hosts_table = self.client._get_vm_mgt_ip(self.basevm)
-        self.assertEqual(ip_in_hosts_table, '12.34.56.78')
-
-        print("Creating NIC with invalid ip_addr.")
-        self.assertRaises(exception.SDKInvalidInputFormat,
-                          self.sdkapi.guest_create_nic,
-                          self.basevm, vdev='7003',
-                          ip_addr='110.120.255.256')
-
         # Start test parameter active
         print("Creating NIC to active guest when guest is in off status.")
         self.assertRaises(exception.SDKSMUTRequestFailed,

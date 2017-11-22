@@ -354,7 +354,7 @@ class SDKAPI(object):
     @zvmutils.check_input_types(_TUSERID, _TSTR_OR_NONE, _TSTR_OR_NONE,
                        _TSTR_OR_NONE, _TSTR_OR_NONE, bool)
     def guest_create_nic(self, userid, vdev=None, nic_id=None,
-                         mac_addr=None, ip_addr=None, active=False):
+                         mac_addr=None, active=False):
         """ Create the nic for the vm, add NICDEF record into the user direct.
 
         :param str userid: the user id of the vm
@@ -363,8 +363,6 @@ class SDKAPI(object):
         :param str mac_addr: mac address, it is only be used when changing
                the guest's user direct. Format should be xx:xx:xx:xx:xx:xx,
                and x is a hexadecimal digit
-        :param str ip_addr: the management IP address of the guest, it should
-               be the value between 0.0.0.0-255.255.255.255
         :param bool active: whether add a nic on active guest system
 
         :returns: nic device number, 1- to 4- hexadecimal digits
@@ -375,14 +373,8 @@ class SDKAPI(object):
                 raise exception.SDKInvalidInputFormat(
                     msg=("Invalid mac address, format should be "
                          "xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit"))
-        if ip_addr is not None:
-            if not netaddr.valid_ipv4(ip_addr):
-                raise exception.SDKInvalidInputFormat(
-                    msg=("Invalid management IP address, it should be the "
-                         "value between 0.0.0.0 and 255.255.255.255"))
         return self._networkops.create_nic(userid, vdev=vdev, nic_id=nic_id,
-                                           mac_addr=mac_addr, ip_addr=ip_addr,
-                                           active=active)
+                                           mac_addr=mac_addr, active=active)
 
     @zvmutils.check_input_types(_TUSERID, _TSTR, bool)
     def guest_delete_nic(self, userid, vdev, active=False):
@@ -1204,7 +1196,6 @@ class SDKAPI(object):
                 used_vdev = self._networkops.create_nic(userid, vdev=vdev,
                                                         nic_id=nic_id,
                                                         mac_addr=mac_addr,
-                                                        ip_addr=ip_addr,
                                                         active=active)
                 network['nic_vdev'] = used_vdev
             except exception.SDKBaseException:
