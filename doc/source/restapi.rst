@@ -377,6 +377,35 @@ Create a virtual nic on giving guest.
 
 * Response contents:
 
+Create network interface
+------------------------
+
+**POST /guests/{userid}/interface**
+
+Create one or more network interfaces on giving guest.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - interface: network_interface_info
+  - os_version: guest_os_version
+  - guest_networks: guest_networks_list
+  - active: active_flag
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_create_network_interface.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+
 Start guest
 -----------
 

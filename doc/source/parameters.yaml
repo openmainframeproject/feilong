@@ -439,7 +439,7 @@ vswitch_name_opt:
   type: string
 guests_nic_info:
   description: |
-    nic information, including including userid, nic number,
+    nic information, including userid, nic number,
     vswitch, nic id and comments.
   in: body
   required: true
@@ -498,3 +498,30 @@ vswitch_name_body_opt:
   in: body
   required: false
   type: string
+network_interface_info:
+  description: |
+    the information which is used to set network interface
+  in: body
+  required: true
+  type: dict
+guest_os_version:
+  description: |
+    guest operating system version
+  in: body
+  required: true
+  type: string
+guest_networks_list:
+  description: |
+    network info list of guest. It has one dictionary that contain some of the below 
+    keys for each interface. All the keys are optional.
+
+    - ``ip_addr``: the IP address of the interface
+    - ``dns_addr``: dns addresses list
+    - ``gateway_addr``: gateway address
+    - ``cidr``: cidr format
+    - ``nic_vdev``: nic device number, 1- to 4- hexadecimal digits
+    - ``mac_addr``: mac address
+    - ``nic_id``: nic identifier
+  in: body
+  required: true
+  type: list
