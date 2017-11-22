@@ -46,16 +46,17 @@ so apache server can connect port 35000 and communicate with it
     add-header = Connection: close
     buffer-size = 65535
     thunder-lock = true
-    plugins = python
+    #plugins = python
     enable-threads = true
     exit-on-reload = true
     die-on-term = true
     master = true
     processes = 2
     wsgi-file = /usr/bin/zvmsdk-wsgi
-    logger = file:/var/log/zvmsdk/zvmsdk-wsgi.log
     pidfile = /tmp/zvmsdk-wsgi.pid
     socket = /tmp/zvmsdk-wsgi.socket
+    uid = zvmsdk
+    gid = zvmsdk
 
 Start z/VM Cloud Connector in uwsgi
 -----------------------------------
@@ -85,6 +86,41 @@ Start z/VM Cloud Connector in uwsgi
 .. code-block:: text
 
     #systemctl start zvmsdk-wsgi.service
+
+* Verify zvmsdk uwsgi service status
+
+  Verify the zvmsdk uwsgi service is started normally and the status is active (running)
+  in the following command output.
+
+.. code-block:: text
+
+    [root@0822rhel7 ~]# systemctl status zvmsdk-wsgi.service
+    ● zvmsdk-wsgi.service - z/VM Cloud Connector uwsgi
+       Loaded: loaded (/usr/lib/systemd/system/zvmsdk-wsgi.service; disabled; vendor preset: disabled)
+       Active: active (running) since Tue 2017-11-21 21:58:06 EST; 13min ago
+     Main PID: 7227 (uwsgi)
+       CGroup: /system.slice/zvmsdk-wsgi.service
+               ├─7227 /usr/sbin/uwsgi --ini /etc/uwsgi.d/zvmsdk-wsgi.ini
+               ├─7229 /usr/sbin/uwsgi --ini /etc/uwsgi.d/zvmsdk-wsgi.ini
+               └─7230 /usr/sbin/uwsgi --ini /etc/uwsgi.d/zvmsdk-wsgi.ini
+    
+    Nov 21 21:58:06 0822rhel7 uwsgi[7227]: your server socket listen backlog is limited to 100 connections
+    Nov 21 21:58:06 0822rhel7 uwsgi[7227]: your mercy for graceful operations on workers is 60 seconds
+    Nov 21 21:58:06 0822rhel7 uwsgi[7227]: mapped 402621 bytes (393 KB) for 2 cores
+    Nov 21 21:58:06 0822rhel7 uwsgi[7227]: *** Operational MODE: preforking ***
+    Nov 21 21:58:06 0822rhel7 uwsgi[7227]: *** uWSGI is running in multiple interpreter mode ***
+    Nov 21 21:58:06 0822rhel7 uwsgi[7227]: spawned uWSGI master process (pid: 7227)
+    Nov 21 21:58:06 0822rhel7 uwsgi[7227]: spawned uWSGI worker 1 (pid: 7229, cores: 1)
+    Nov 21 21:58:06 0822rhel7 uwsgi[7227]: spawned uWSGI worker 2 (pid: 7230, cores: 1)
+    Nov 21 21:58:06 0822rhel7 uwsgi[7227]: *** no app loaded. going in full dynamic mode ***
+    Nov 21 21:58:06 0822rhel7 uwsgi[7227]: *** no app loaded. going in full dynamic mode ***
+
+  And the uwsgi process is listenning on port 35000:
+
+.. code-block:: text
+
+    # netstat -anp | grep 35000
+    tcp        0      0 127.0.0.1:35000         0.0.0.0:*               LISTEN      7227/uwsgi
 
 Configure Apache
 ----------------
