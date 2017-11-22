@@ -13,8 +13,10 @@
 #    under the License.
 
 import mock
+import shutil
 
 from zvmsdk.tests.unit import base
+from zvmsdk import dist
 from zvmsdk import networkops
 
 
@@ -130,3 +132,136 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         self.networkops.get_nic_info(userid='testid', vswitch='VSWITCH')
         get_nic_info.assert_called_with(userid='testid', nic_id=None,
                                         vswitch='VSWITCH')
+
+    @mock.patch.object(shutil, 'rmtree')
+    @mock.patch.object(networkops.get_networkops()._smutclient,
+                       'execute_cmd')
+    @mock.patch.object(networkops.get_networkops()._smutclient,
+                       'update_guestdb_with_net_set')
+    @mock.patch.object(networkops.get_networkops()._smutclient,
+                       'punch_file')
+    @mock.patch.object(networkops.get_networkops(),
+                       '_generate_network_doscript')
+    @mock.patch.object(networkops.get_networkops()._smutclient,
+                       'is_first_network_config')
+    @mock.patch.object(networkops.get_networkops()._smutclient,
+                       'get_guest_temp_path')
+    def test_network_configuration(self, temp_path, is_first, doscript, punch,
+                                   update_guestdb, execute_cmd, rmtree):
+        userid = 'fakeid'
+        os_version = 'rhel7.2'
+        network_info = []
+        network_file_path = '/tmp'
+        active_cmds = 'execute command'
+        network_doscript = 'file'
+
+        temp_path.return_value = network_file_path
+        is_first.return_value = True
+        doscript.return_value = (network_doscript, active_cmds)
+        rmtree.return_value = None
+
+        self.networkops.network_configuration(userid, os_version, network_info,
+                              active=True)
+        temp_path.assert_called_with(userid, 'network')
+        is_first.assert_called_with(userid)
+        doscript.assert_called_with(userid, os_version, network_info,
+                                    network_file_path, True, active=True)
+        punch.assert_called_with(userid, network_doscript, "X")
+        update_guestdb.assert_called_with(userid)
+        execute_cmd.assert_called_with(userid, active_cmds)
+
+    @mock.patch.object(networkops.get_networkops()._dist_manager,
+                       'get_linux_dist')
+    @mock.patch.object(dist.rhel7, 'create_network_configuration_files')
+    @mock.patch.object(networkops.get_networkops(), '_create_znetconfig')
+    @mock.patch.object(networkops.get_networkops(), '_add_file')
+    @mock.patch.object(networkops.get_networkops(), '_create_invokeScript')
+    @mock.patch.object(networkops.get_networkops(),
+                       '_create_network_doscript')
+    def test_generate_network_doscript_not_active(self, doscript, invokeScript,
+                                    add_file, znetconfig, config, linux_dist):
+        net_conf_files = [('target1', 'content1')]
+        net_cmd_file = [('target2', 'content2')]
+        net_conf_cmds = ''
+        clean_cmd = ''
+        net_enable = ''
+        userid = 'fakeid'
+        os_version = 'rhel7.2'
+        network_info = []
+        first = False
+        network_file_path = '/tmp'
+        files_and_cmds = net_conf_files, net_conf_cmds, clean_cmd, net_enable
+        files_map = []
+        files_map.append({'target_path': 'target1',
+                        'source_file': "0000"})
+        files_map.append({'target_path': 'target2',
+                        'source_file': "0001"})
+        linux_dist.return_value = dist.rhel7
+        config.return_value = files_and_cmds
+        znetconfig.return_value = net_cmd_file
+        add_file.return_value = None
+        invokeScript.return_value = None
+        doscript.return_value = 'result1'
+
+        r1, r2 = self.networkops._generate_network_doscript(userid,
+                                    os_version, network_info,
+                                    network_file_path, first, active=False)
+        linux_dist.assert_called_with(os_version)
+        config.assert_called_with(network_file_path, network_info,
+                                  first, active=False)
+        invokeScript.assert_called_with(network_file_path, clean_cmd,
+                                        files_map)
+        doscript.assert_called_with(network_file_path)
+
+        self.assertEqual(r1, 'result1')
+        self.assertEqual(r2, '')
+
+    @mock.patch.object(networkops.get_networkops()._dist_manager,
+                       'get_linux_dist')
+    @mock.patch.object(dist.rhel7, 'create_network_configuration_files')
+    @mock.patch.object(dist.rhel7, 'create_active_net_interf_cmd')
+    @mock.patch.object(networkops.get_networkops(), '_create_znetconfig')
+    @mock.patch.object(networkops.get_networkops(), '_add_file')
+    @mock.patch.object(networkops.get_networkops(), '_create_invokeScript')
+    @mock.patch.object(networkops.get_networkops(),
+                       '_create_network_doscript')
+    def test_generate_network_doscript_active(self, doscript, invokeScript,
+                                    add_file, znetconfig, active_cmd,
+                                    config, linux_dist):
+        net_conf_files = [('target1', 'content1')]
+        net_cmd_file = [('target2', 'content2')]
+        active_net_cmd = 'create_active_net_interf_cmd'
+        net_conf_cmds = ''
+        clean_cmd = ''
+        net_enable = ''
+        userid = 'fakeid'
+        os_version = 'rhel7.2'
+        network_info = []
+        first = False
+        network_file_path = '/tmp'
+        files_and_cmds = net_conf_files, net_conf_cmds, clean_cmd, net_enable
+        files_map = []
+        files_map.append({'target_path': 'target1',
+                        'source_file': "0000"})
+        files_map.append({'target_path': 'target2',
+                        'source_file': "0001"})
+        linux_dist.return_value = dist.rhel7
+        config.return_value = files_and_cmds
+        active_cmd.return_value = active_net_cmd
+        znetconfig.return_value = net_cmd_file
+        add_file.return_value = None
+        invokeScript.return_value = None
+        doscript.return_value = 'result1'
+
+        r1, r2 = self.networkops._generate_network_doscript(userid,
+                                    os_version, network_info,
+                                    network_file_path, first, active=True)
+        linux_dist.assert_called_with(os_version)
+        config.assert_called_with(network_file_path, network_info,
+                                  first, active=True)
+        invokeScript.assert_called_with(network_file_path, clean_cmd,
+                                        files_map)
+        doscript.assert_called_with(network_file_path)
+
+        self.assertEqual(r1, 'result1')
+        self.assertEqual(r2, active_net_cmd)

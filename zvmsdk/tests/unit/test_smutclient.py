@@ -955,15 +955,6 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request.assert_any_call(requestData1)
         request.assert_any_call(requestData2)
 
-    def get_vm_list(self):
-        """Get the list of guests that are created by SDK
-        return userid list"""
-        guests = self._GuestDbOperator.get_guest_list()
-        # guests is a list of tuple (uuid, userid, metadata, comments)
-        userid_list = []
-        for g in guests:
-            userid_list.append(g[1])
-
     @mock.patch.object(database.GuestDbOperator,
                        'get_guest_list')
     def test_get_vm_list(self, db_list):
@@ -1373,3 +1364,27 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         get_power_state.assert_called_once_with(userid)
         execcmd.assert_called_once_with(userid, 'pwd')
         get_os_version.assert_not_called()
+
+    @mock.patch.object(database.GuestDbOperator,
+                       'get_guest_by_userid')
+    def test_is_first_network_config_true(self, db_list):
+        db_list.return_value = [u'9a5c9689-d099-46bb-865f-0c01c384f58c',
+                                 u'TEST', u'', 0]
+        result = self._smutclient.is_first_network_config('TEST')
+        db_list.assert_called_once_with('TEST')
+        self.assertTrue(result)
+
+    @mock.patch.object(database.GuestDbOperator,
+                       'get_guest_by_userid')
+    def test_is_first_network_config_false(self, db_list):
+        db_list.return_value = [u'9a5c9689-d099-46bb-865f-0c01c384f58c',
+                                 u'TEST', u'', 1]
+        result = self._smutclient.is_first_network_config('TEST')
+        db_list.assert_called_once_with('TEST')
+        self.assertFalse(result)
+
+    @mock.patch.object(database.GuestDbOperator,
+                       'update_guest_by_userid')
+    def test_update_guestdb_with_net_set(self, update):
+        self._smutclient.update_guestdb_with_net_set('TEST')
+        update.assert_called_once_with('TEST', net_set='1')
