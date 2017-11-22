@@ -33,6 +33,8 @@ class SDKTestCase(unittest.TestCase):
         super(SDKTestCase, cls).setUpClass()
         cls.old_db_dir = CONF.database.dir
         set_conf('database', 'dir', '/tmp/')
+        set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        set_conf('image', 'sdk_image_repository', '/tmp/')
 
     @classmethod
     def tearDownClass(cls):
