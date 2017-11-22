@@ -1022,8 +1022,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         url = 'file:///tmp/testdummyimg'
         image_meta = {'os_version': 'rhel6.5',
                       'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
-        get_img_path.return_value = \
-            '/var/lib/zvmsdk/images/netboot/rhel6.5/testimage'
+        get_img_path.return_value = '/tmp//netboot/rhel6.5/testimage'
         target = self._smutclient._get_image_path_by_name(image_name)
         image_query.return_value = []
         get_md5sum.return_value = 'c73ce117eef8077c3420bfc8f473ac2f'
@@ -1341,7 +1340,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         execute.assert_has_calls([mock.call(cmd1), mock.call(cmd2)])
         mkdir.assert_has_calls([mock.call(image_temp_dir)],
                               [mock.call(image_final_dir)])
-#
+
         md5sum.assert_called_once_with(image_final_path)
         disk_size_units.assert_called_once_with(image_final_path)
         imagesize.assert_called_once_with(image_final_path)

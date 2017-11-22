@@ -23,7 +23,7 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
     def setUp(self):
         self.networkops = networkops.get_networkops()
 
-    @mock.patch.object(networkops.get_networkops()._smutclient, 'create_nic')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.create_nic')
     @mock.patch('zvmsdk.utils._is_guest_exist')
     def test_create_nic(self, ide, create_nic):
         ide.return_value = True
@@ -35,22 +35,19 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
                                       mac_addr=None, ip_addr="ipaddr",
                                       active=True)
 
-    @mock.patch.object(networkops.get_networkops()._smutclient,
-                       'get_vm_nic_vswitch_info')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.get_vm_nic_vswitch_info')
     @mock.patch('zvmsdk.utils._is_guest_exist')
     def test_get_vm_nic_vswitch_info(self, ide, get_nic_vswitch_info):
         ide.return_value = True
         self.networkops.get_vm_nic_vswitch_info("fakenode")
         get_nic_vswitch_info.assert_called_with("fakenode")
 
-    @mock.patch.object(networkops.get_networkops()._smutclient,
-                       'get_vswitch_list')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.get_vswitch_list')
     def test_get_vswitch_list(self, get_vswitch_list):
         self.networkops.get_vswitch_list()
         get_vswitch_list.assert_called_with()
 
-    @mock.patch.object(networkops.get_networkops()._smutclient,
-                       'couple_nic_to_vswitch')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.couple_nic_to_vswitch')
     @mock.patch('zvmsdk.utils._is_guest_exist')
     def test_couple_nic_to_vswitch(self, ige, couple_nic_to_vswitch):
         ige.return_value = True
@@ -62,8 +59,7 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
                                                  "fake_VS_name",
                                                  active=True)
 
-    @mock.patch.object(networkops.get_networkops()._smutclient,
-                       'uncouple_nic_from_vswitch')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.uncouple_nic_from_vswitch')
     @mock.patch('zvmsdk.utils._is_guest_exist')
     def test_uncouple_nic_from_vswitch(self, ige, uncouple_nic_from_vswitch):
         ige.return_value = True
@@ -74,7 +70,7 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
                                                      "nic_vdev",
                                                      active=True)
 
-    @mock.patch.object(networkops.get_networkops()._smutclient, 'add_vswitch')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.add_vswitch')
     def test_add_vswitch(self, add_vswitch):
         self.networkops.add_vswitch("fakename", "fakerdev",
                                     controller='*',
@@ -89,37 +85,33 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
                                        gvrp='GVRP', queue_mem=8,
                                        native_vid=2, persist=False)
 
-    @mock.patch.object(networkops.get_networkops()._smutclient,
-                       'grant_user_to_vswitch')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.grant_user_to_vswitch')
     def test_grant_user_to_vswitch(self, grant_user):
         self.networkops.grant_user_to_vswitch("vswitch_name", "userid")
         grant_user.assert_called_with("vswitch_name", "userid")
 
-    @mock.patch.object(networkops.get_networkops()._smutclient,
-                       'revoke_user_from_vswitch')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.revoke_user_from_vswitch')
     def test_revoke_user_from_vswitch(self, revoke_user):
         self.networkops.revoke_user_from_vswitch("vswitch_name", "userid")
         revoke_user.assert_called_with("vswitch_name", "userid")
 
-    @mock.patch.object(networkops.get_networkops()._smutclient,
-                       'set_vswitch_port_vlan_id')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.set_vswitch_port_vlan_id')
     def test_set_vswitch_port_vlan_id(self, set_vswitch):
         self.networkops.set_vswitch_port_vlan_id("vswitch_name",
                                                  "userid", "vlan_id")
         set_vswitch.assert_called_with("vswitch_name", "userid", "vlan_id")
 
-    @mock.patch.object(networkops.get_networkops()._smutclient, 'set_vswitch')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.set_vswitch')
     def test_set_vswitch(self, set_vswitch):
         self.networkops.set_vswitch("vswitch_name", grant_userid='fake_id')
         set_vswitch.assert_called_with("vswitch_name", grant_userid='fake_id')
 
-    @mock.patch.object(networkops.get_networkops()._smutclient,
-                       'delete_vswitch')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.delete_vswitch')
     def test_delete_vswitch(self, delete_vswitch):
         self.networkops.delete_vswitch("vswitch_name", True)
         delete_vswitch.assert_called_with("vswitch_name", True)
 
-    @mock.patch.object(networkops.get_networkops()._smutclient, 'delete_nic')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.delete_nic')
     @mock.patch('zvmsdk.utils._is_guest_exist')
     def test_delete_nic(self, ide, delete_nic):
         ide.return_value = True
@@ -127,7 +119,7 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         delete_nic.assert_called_with("userid", "vdev",
                                       active=True)
 
-    @mock.patch.object(networkops.get_networkops()._smutclient, 'get_nic_info')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.get_nic_info')
     def test_get_nic_info(self, get_nic_info):
         self.networkops.get_nic_info(userid='testid', vswitch='VSWITCH')
         get_nic_info.assert_called_with(userid='testid', nic_id=None,
