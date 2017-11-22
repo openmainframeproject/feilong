@@ -46,16 +46,17 @@ so apache server can connect port 35000 and communicate with it
     add-header = Connection: close
     buffer-size = 65535
     thunder-lock = true
-    plugins = python
+    #plugins = python
     enable-threads = true
     exit-on-reload = true
     die-on-term = true
     master = true
     processes = 2
     wsgi-file = /usr/bin/zvmsdk-wsgi
-    logger = file:/var/log/zvmsdk/zvmsdk-wsgi.log
     pidfile = /tmp/zvmsdk-wsgi.pid
     socket = /tmp/zvmsdk-wsgi.socket
+    uid = zvmsdk
+    gid = zvmsdk
 
 Start z/VM Cloud Connector in uwsgi
 -----------------------------------
