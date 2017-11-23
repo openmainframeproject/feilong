@@ -309,10 +309,10 @@ def check_input_types(*types, **validkeys):
     """
     def decorator(function):
         @functools.wraps(function)
-        def wrap_func(*args, **kwargs):
+        def wrap_func(*args, **abkwargs):
             if args[0]._skip_input_check:
                 # skip input check
-                return function(*args, **kwargs)
+                return function(*args, **abkwargs)
             # drop class object self
             inputs = args[1:]
             if (len(inputs) > len(types)):
@@ -365,14 +365,14 @@ def check_input_types(*types, **validkeys):
 
             valid_keys = validkeys.get('valid_keys')
             if valid_keys:
-                for k in kwargs.keys():
+                for k in abkwargs.keys():
                     if k not in valid_keys:
                         msg = ("Invalid keyword: %(key)s; "
                                "Expected keywords are: %(keys)s" %
                                {'key': k, 'keys': str(valid_keys)})
                         LOG.info(msg)
                         raise exception.SDKInvalidInputFormat(msg=msg)
-            return function(*args, **kwargs)
+            return function(*args, **abkwargs)
         return wrap_func
     return decorator
 
