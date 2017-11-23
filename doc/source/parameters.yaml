@@ -83,6 +83,12 @@ guest_list:
   in: body
   required: true
   type: list
+guest_dict:
+  description: |
+    guest dict
+  in: body
+  required: true
+  type: dict
 guest_userid:
   description: |
     guest userid
@@ -145,6 +151,33 @@ disk_list_guest:
     list.
   in: body
   required: false
+  type: list
+disk_info:
+  description: |
+    a dict to describe disk info
+  in: body
+  required: true
+  type: dict
+disk_list:
+  description: |
+    disk list of guest, it has one dictionary that contain some
+    of the below keys for each disk, the root disk should be the
+    first element in the list.
+  in: body
+  required: true
+  type: list
+vdev_info:
+  description: |
+    a dict to describe vdev list to be deleted
+  in: body
+  required: true
+  type: dict
+disk_vdev_list:
+  description: |
+    disk vdev list of guest
+    It has one list contains the vdev for delete, eg ['0101','0102']
+  in: body
+  required: true
   type: list
 userid_list_guest:
   description: |
@@ -256,7 +289,7 @@ disk_host:
   type: string
 disk_info_host:
   description: |
-    the object of disk information.
+    the object of disk information
   in: body
   required: true
   type: dict
@@ -266,15 +299,21 @@ image_info:
   in: body
   required: true
   type: list
+image_dict:
+  description: |
+    the image info dict
+  in: body
+  required: true
+  type: dict
 image_name:
   description: |
-    the image name in image repository.
+    the image name in image repository
   in: body
   required: true
   type: string
 image_url:
   description: |
-    the url to specify the location of image.
+    the url to specify the location of image
   in: body
   required: true
   type: string
