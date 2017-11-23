@@ -309,7 +309,7 @@ def check_input_types(*types, **validkeys):
     """
     def decorator(function):
         @functools.wraps(function)
-        def wrap_func(*args, **kwargs):
+        def wrap_func(self, *args, **kwargs):
             if args[0]._skip_input_check:
                 # skip input check
                 return function(*args, **kwargs)
