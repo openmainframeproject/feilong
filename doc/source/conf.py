@@ -34,13 +34,19 @@ sys.path.insert(0, os.path.abspath('./'))
 
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
     'ext.restapi_parameters',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.extlinks',
+    'sphinx.ext.ifconfig',
+    'sphinx.ext.viewcode',
 ]
 
 # -- General configuration ----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
+templates_path = ['_templates']
 
 # The suffix of source filenames.
 source_suffix = '.rst'
@@ -53,8 +59,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'sdk for z/VM'
+project = u'cloud connector for z/VM'
 copyright = u'2017 IBM'
+author = u'IBM z/VM cloud team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -94,19 +101,69 @@ release = version
 # for all documents.
 # default_role = None
 
+
+exclude_patterns = ["tests", ".tox", ".git", "attic", "dist",
+                    "build_doc", ".egg-info", ".eggs"]
+
 # If true, '()' will be appended to :func: etc. cross-reference text.
-# add_function_parentheses = True
+add_function_parentheses = True
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
-add_module_names = False
+# add_module_names = False
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
-show_authors = False
+# show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
+
+
+# Enable support for Google style docstrings. Defaults to True.
+napoleon_google_docstring = True
+
+# Enable support for NumPy style docstrings. Defaults to True.
+napoleon_numpy_docstring = False
+
+# Include private members (like _membername). False to fall back to Sphinxâ# default behavior. Defaults to False.
+napoleon_include_private_with_doc = False
+
+# Include special members (like __membername__). False to fall back to Sphinxâ# default behavior. Defaults to True.
+napoleon_include_special_with_doc = True
+
+# Use the .. admonition:: directive for the Example and Examples sections,
+# instead of the .. rubric:: directive. Defaults to False.
+napoleon_use_admonition_for_examples = False
+
+# Use the .. admonition:: directive for Notes sections, instead of the
+# .. rubric:: directive. Defaults to False.
+napoleon_use_admonition_for_notes = False
+
+# Use the .. admonition:: directive for References sections, instead of the
+# .. rubric:: directive. Defaults to False.
+napoleon_use_admonition_for_references = False
+
+# Use the :ivar: role for instance variables, instead of the .. attribute::
+# directive. Defaults to False.
+napoleon_use_ivar = True
+
+# Use a :param: role for each function parameter, instead of a single
+# :parameters: role for all the parameters. Defaults to True.
+napoleon_use_param = True
+
+# Use the :rtype: role for the return type, instead of inlining it with the
+# description. Defaults to True.
+napoleon_use_rtype = True
+
+
+# -- Options for viewcode extension ---------------------------------------
+
+# Follow alias objects that are imported from another module such as functions
+# classes and attributes. As side effects, this option ... ???
+# If false, ... ???.
+# The default is True.
+viewcode_import = True
 
 # -- Options for man page output ----------------------------------------------
 
@@ -194,6 +251,7 @@ except Exception:
 # If nonempty, this is the file name suffix for HTML files (e.g. ".xhtml").
 # html_file_suffix = ''
 
+
 # Output file base name for HTML help builder.
 
 
@@ -209,7 +267,7 @@ except Exception:
 # (source start file, target name, title, author, documentclass
 # [howto/manual]).
 latex_documents = [
-    ('index', 'sdk.tex', u'sdk for z/VM',
+    (master_doc, project+'.tex', u'cloud connector for z/VM',
      u'IBM', 'manual'),
 ]
 
@@ -229,3 +287,67 @@ latex_documents = [
 
 # If false, no module index is generated.
 # latex_use_modindex = True
+
+# -- Options for autodoc extension ----------------------------------------
+# For documentation, see
+# http://www.sphinx-doc.org/en/stable/ext/autodoc.html
+
+# Selects what content will be inserted into a class description.
+# The possible values are:
+#   "class" - Only the classâocstring is inserted. This is the default.
+#   "both"  - Both the classând the __init__ methodâdocstring are
+#             concatenated and inserted.
+#   "init"  - Only the __init__ methodâdocstring is inserted.
+# In all cases, the __init__ method is still independently rendered as a
+# special method, e.g. when the :special-members: option is set.
+autoclass_content = "both"
+
+# Selects if automatically documented members are sorted alphabetically
+# (value 'alphabetical'), by member type (value 'groupwise') or by source
+# order (value 'bysource'). The default is alphabetical.
+autodoc_member_order = "bysource"
+
+# This value is a list of autodoc directive flags that should be automatically
+# applied to all autodoc directives. The supported flags are:
+# 'members', 'undoc-members', 'private-members', 'special-members',
+# 'inherited-members' and 'show-inheritance'.
+# If you set one of these flags in this config value, you can use a negated
+# form, 'no-flag', in an autodoc directive, to disable it once.
+autodoc_default_flags = []
+
+# Functions imported from C modules cannot be introspected, and therefore the
+# signature for such functions cannot be automatically determined. However, it
+# is an often-used convention to put the signature into the first line of the
+# functionâdocstring.
+# If this boolean value is set to True (which is the default), autodoc will
+# look at the first line of the docstring for functions and methods, and if it
+# looks like a signature, use the line as the signature and remove it from the
+# docstring content.
+autodoc_docstring_signature = True
+
+# -- Options for intersphinx extension ------------------------------------
+# For documentation, see
+# http://www.sphinx-doc.org/en/stable/ext/intersphinx.html
+
+# Defines the prefixes for intersphinx links, and the targets they resolve to.
+# Example RST source for 'py2' prefix:
+#     :func:`py2:platform.dist`
+#
+# Note: The URLs apparently cannot be the same for two different IDs; otherwise
+#       the links for one of them are not being created. A small difference
+#       such as adding a trailing backslash is already sufficient to work
+#       around the problem.
+#
+# Note: This mapping does not control how links to datatypes of function
+#       parameters are generated.
+# TODO: Find out how the targeted Python version for auto-generated links
+#       to datatypes of function parameters can be controlled.
+#
+intersphinx_mapping = {
+  'py': ('https://docs.python.org/2/', None), # agnostic to Python version
+  'py2': ('https://docs.python.org/2', None), # specific to Python 2
+  'py3': ('https://docs.python.org/3', None), # specific to Python 3
+}
+
+intersphinx_cache_limit = 5
+
