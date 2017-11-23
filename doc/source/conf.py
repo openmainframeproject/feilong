@@ -53,8 +53,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'sdk for z/VM'
+project = u'cloud connector for z/VM'
 copyright = u'2017 IBM'
+author = u'IBM zVM cloud team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -209,7 +210,7 @@ except Exception:
 # (source start file, target name, title, author, documentclass
 # [howto/manual]).
 latex_documents = [
-    ('index', 'sdk.tex', u'sdk for z/VM',
+    (master_doc, project+'.tex', u'cloud connector for z/VM',
      u'IBM', 'manual'),
 ]
 
