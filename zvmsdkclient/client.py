@@ -13,8 +13,8 @@
 #    under the License.
 
 
-from sdkclient import socketclient
-from sdkclient import restclient
+from zvmsdkclient import socketclient
+from zvmsdkclient import restclient
 
 
 CONN_TYPE_SOCKET = 'socket'

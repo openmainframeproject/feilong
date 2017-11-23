@@ -14,7 +14,7 @@
 import json
 import webob.exc
 
-from sdkclient import client
+from zvmsdkclient import client
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import guest

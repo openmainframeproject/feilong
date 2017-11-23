@@ -17,8 +17,8 @@ import setuptools
 
 
 setuptools.setup(
-    name='CloudLib4zvm',
-    version='0.2.1',
+    name='zVMCloudConnector',
+    version='0.3.0',
     license='ASL 2.0',
     author='IBM',
     description='z/VM cloud management library in Python',

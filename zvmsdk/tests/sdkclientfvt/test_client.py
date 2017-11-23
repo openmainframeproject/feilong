@@ -12,7 +12,7 @@ import json
 import time
 import unittest
 
-from sdkclient import client
+from zvmsdkclient import client
 from zvmsdk import config
 from zvmsdk.tests.sdkwsgi import api_sample
 
