@@ -175,13 +175,14 @@ vdev_info:
 disk_vdev_list:
   description: |
     disk vdev list of guest
-    It has one list contains the vdev for delete, eg ['0101','0102']
+    It has one list contains the vdev for delete,
+    for example, ``['0101','0102']``
   in: body
   required: true
   type: list
 userid_list_guest:
   description: |
-      a single userid string or a list of guest userids
+      A single userid string or a list of guest userids
   in: path
   required: true
   type: string, list
@@ -403,8 +404,8 @@ router_vswitch:
   type: string
 vid_vswitch:
   description: |
-    the VLAN ID. This can be any of the following values:UNAWARE,
-    AWARE or 1-4094
+    the VLAN ID. This can be any of the following values:
+    ``UNAWARE``,  ``AWARE`` or ``1-4094``.
   in: body
   required: false
   type: string, integer
