@@ -150,6 +150,60 @@ Create a new guest.
 
   No Response
 
+Guest add disks
+---------------
+
+**POST /guests/{userid}/disks**
+
+Add disks for a guest
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - disk_list: disk_list_guest
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_add_disks.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No Response
+
+Guest delete disks
+------------------
+
+**DELETE /guests/{userid}/disks**
+
+Delete disks form a guest
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - disk_list: disk_vdev_list
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_delete_disks.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No Response
+
 Get Guests stats including cpu and memory
 -----------------------------------------
 
