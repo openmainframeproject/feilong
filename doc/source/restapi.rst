@@ -846,7 +846,7 @@ Get disk pool information on the host.
 
 .. restapi_parameters:: parameters.yaml
 
-  - output: image_info
+  - output: disk_info_host
 
 * Response sample:
 
@@ -863,7 +863,7 @@ List images
 
 **GET /images**
 
-List images.
+Get the list of image info in image repository.
 
 * Request:
 
@@ -879,7 +879,7 @@ List images.
 
 .. restapi_parameters:: parameters.yaml
 
-  - output: disk_info_host
+  - output: image_info
 
 * Response sample:
 
@@ -921,7 +921,7 @@ Export image
 
 **PUT /images**
 
-Export an image.
+Export the image to the specified location.
 
 * Request:
 
