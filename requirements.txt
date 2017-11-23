@@ -4,4 +4,3 @@ requests
 netaddr
 webob
 routes
-microversion-parse
