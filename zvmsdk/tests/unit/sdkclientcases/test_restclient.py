@@ -18,7 +18,7 @@ import requests
 import unittest
 
 
-from sdkclient import restclient
+from zvmsdkclient import restclient
 from zvmsdk import config
 
 

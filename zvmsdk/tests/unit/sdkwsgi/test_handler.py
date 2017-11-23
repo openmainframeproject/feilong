@@ -320,7 +320,7 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = ''
         h = handler.SdkHandler()
-        func = 'sdkclient.client.SDKClient.send_request'
+        func = 'zvmsdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
             get_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
@@ -334,7 +334,7 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = 'userid=l1,l2'
         h = handler.SdkHandler()
-        func = 'sdkclient.client.SDKClient.send_request'
+        func = 'zvmsdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
             get_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
@@ -359,7 +359,7 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = ''
         h = handler.SdkHandler()
-        func = 'sdkclient.client.SDKClient.send_request'
+        func = 'zvmsdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
             get_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
@@ -374,7 +374,7 @@ class GuestHandlerTest(unittest.TestCase):
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = 'userid=l1,l2'
         h = handler.SdkHandler()
-        func = 'sdkclient.client.SDKClient.send_request'
+        func = 'zvmsdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_info:
             get_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
@@ -453,7 +453,7 @@ class ImageHandlerTest(unittest.TestCase):
         self.env['PATH_INFO'] = '/images/image1/root_disk_size'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
-        func = 'sdkclient.client.SDKClient.send_request'
+        func = 'zvmsdkclient.client.SDKClient.send_request'
         with mock.patch(func) as get_size:
             get_size.return_value = {'overallRC': 0}
             h(self.env, dummy)
@@ -482,7 +482,7 @@ class ImageHandlerTest(unittest.TestCase):
         self.env['PATH_INFO'] = '/images/image1'
         self.env['REQUEST_METHOD'] = 'DELETE'
         h = handler.SdkHandler()
-        func = 'sdkclient.client.SDKClient.send_request'
+        func = 'zvmsdkclient.client.SDKClient.send_request'
         with mock.patch(func) as delete:
             delete.return_value = {'overallRC': 0}
             h(self.env, dummy)
@@ -494,7 +494,7 @@ class ImageHandlerTest(unittest.TestCase):
         self.env['PATH_INFO'] = '/images'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
-        func = 'sdkclient.client.SDKClient.send_request'
+        func = 'zvmsdkclient.client.SDKClient.send_request'
         with mock.patch(func) as query:
             query.return_value = {'overallRC': 0}
             h(self.env, dummy)

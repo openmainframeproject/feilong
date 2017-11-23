@@ -18,7 +18,7 @@ import re
 import time
 import unittest
 
-from sdkclient import client as sdkclient
+from zvmsdkclient import client as sdkclient
 
 from zvmsdk import api
 from zvmsdk import config
