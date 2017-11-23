@@ -17,16 +17,16 @@ from zvmsdk.sdkwsgi import wsgi_wrapper
 from zvmsdk import utils
 
 
-VERSION = '1.0'
+APIVERSION = '1.0'
 
 
 @wsgi_wrapper.SdkWsgify
 def home(req):
-    min_version = VERSION
-    max_version = VERSION
+    min_version = APIVERSION
+    max_version = APIVERSION
 
     version_data = {
-        'version': '%s' % VERSION,
+        'version': '%s' % APIVERSION,
         'max_version': max_version,
         'min_version': min_version,
     }
