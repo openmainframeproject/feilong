@@ -301,19 +301,21 @@ image_info:
   type: list
 image_dict:
   description: |
-    the image info dict
+    The image info dict.
   in: body
   required: true
   type: dict
 image_name:
   description: |
-    the image name in image repository
+    Image name that can be uniquely identify an image.
   in: body
   required: true
   type: string
 image_url:
   description: |
-    the url to specify the location of image
+    The location of exported image, eg.
+    file:///opt/images/export.img, now only support export to remote server
+    or local server's file system.
   in: body
   required: true
   type: string
@@ -325,7 +327,9 @@ image_metadata:
   type: dict
 remotehost_image:
   description: |
-    the remotehost to indicate where the image comes from.
+    The server that the image will be export to, if remote_host is None,
+    the image will be stored in the dest_path in local server,  the format
+    is username@IP, for example nova@9.x.x.x . 
   in: body
   required: false
   type: string
@@ -466,7 +470,8 @@ vswitch_list:
   type: list
 imagename:
   description: |
-    The name to search on when list image.
+      Retrieve the specified image information, if not specified,
+      when list image, all images information will be returned.
   in: path
   required: false
   type: string
