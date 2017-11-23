@@ -543,7 +543,7 @@ class SDKAPI(object):
     def guest_delete_disks(self, userid, disk_vdev_list):
         """Delete disks from an existing guest vm.
 
-        :param userid: (str) the userid of the vm to be created
+        :param userid: (str) the userid of the vm to be deleted
         :param disk_vdev_list: (list) the vdev list of disks to be deleted,
             for example: ['0101', '0102']
         """

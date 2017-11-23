@@ -146,6 +146,22 @@ disk_list_guest:
   in: body
   required: false
   type: list
+disk_info:
+  description: |
+    disk list of guest
+    It has one dictionary that contain some of the below keys for
+    each disk, the root disk should be the first element in the
+    list.
+  in: body
+  required: true
+  type: list
+disk_vdev_list:
+  description: |
+    disk vdev list of guest
+    It has one list contains the vdev for delete, eg ['0101','0102']
+  in: body
+  required: true
+  type: list
 userid_list_guest:
   description: |
       a single userid string or a list of guest userids
