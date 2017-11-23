@@ -51,8 +51,8 @@ class SDKAPIRequestHandler(object):
                     'errmsg': results['errmsg']})
             raise exception.SDKBaseException(msg, results)
 
-    def guest_start(self, *args, **kwargs):
-        return self._call('guest_start', *args, **kwargs)
+    def guest_start(self, *abcargs, **kwargs):
+        return self._call('guest_start', *abcargs, **kwargs)
 
     def guest_stop(self, *args, **kwargs):
         return self._call('guest_stop', *args, **kwargs)
