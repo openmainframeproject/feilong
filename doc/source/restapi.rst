@@ -1001,49 +1001,6 @@ Delete an image.
 
   No response.
 
-Volume(s)
-=========
-
-Lists, creates, shows details for, updates, and deletes volumes.
-
-Attach volume to Guest
-----------------------
-
-**POST /guests/{userid}/volumes**
-
-* Request:
-
-.. restapi_parameters:: parameters.yaml
-
-  - userid: guest_userid
-
-* Response:
-
-  HTTP status code 200 on Success.
-
-* Response contents
-
-  No response.
-
-Detach volume from Guest
-------------------------
-
-**DELETE /guests/{userid}/volumes**
-
-* Request:
-
-.. restapi_parameters:: parameters.yaml
-
-  - userid: guest_userid
-
-* Response:
-
-  HTTP status code 200 on Success.
-
-* Response contents
-
-  No response.
-
 VSwitch
 =======
 
