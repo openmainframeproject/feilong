@@ -2,7 +2,6 @@ mock
 python-subunit
 routes
 webob
-microversion_parse
 sphinx
 PyYAML
 netaddr
