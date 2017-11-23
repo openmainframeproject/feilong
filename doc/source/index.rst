@@ -15,3 +15,4 @@ Welcome to the z/VM Cloud Connector Document
    restapi
    errorcodemsg
    configuration
+   change
