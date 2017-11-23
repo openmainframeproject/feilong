@@ -55,13 +55,19 @@ class SDKAPI(object):
         self._volumeop = volumeop.get_volumeop()
         self._skip_input_check = kwargs.get('skip_input_check')
 
-    @zvmutils.check_input_types(_TUSERID)
+    #@zvmutils.check_input_types(_TUSERID)
     def guest_start(self, userid):
-        """Power on a virtual machine.
+        """
+        Power on a virtual machine.
 
-        :param str userid: the id of the virtual machine to be power on
+        Parameters:
 
-        :returns: None
+          userid (string):
+            the id of the virtual machine to be power on
+
+        Returns:
+
+          :None
         """
         action = "start guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
@@ -70,18 +76,24 @@ class SDKAPI(object):
     @zvmutils.check_input_types(_TUSERID, valid_keys=['timeout',
                                                       'poll_interval'])
     def guest_stop(self, userid, **kwargs):
-        """Power off a virtual machine.
+        """
+        Power off a virtual machine.
 
-        :param str userid: the id of the virtual machine to be power off
-        :param dict kwargs:
-               - timeout=<value>:
-                 Integer, time to wait for vm to be deactivate, the
+        Parameters:
+
+          userid (string):
+            the id of the virtual machine to be power off
+          kwargs (dict):
+               * 'timeout' (integer):
+                 Time to wait for vm to be deactivate, the
                  recommended value is 300
-               - poll_interval=<value>
-                 Integer, how often to signal guest while waiting for it
+               * 'poll_interval' (integer):
+                 How often to signal guest while waiting for it
                  to be deactivate, the recommended value is 20
 
-        :returns: None
+        Returns:
+
+          :None
         """
 
         action = "stop guest '%s'" % userid
