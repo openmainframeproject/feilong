@@ -101,3 +101,6 @@ cp -R $BUILD/SRPMS/* $BUILD/OUTPUT/$BRANCH
 
 # Erase build directories under /var/tmp
 rm -rf /var/tmp/zthin-*
+
+# Erase build directory /opt/zthin/bin/smcli
+rmdir $SMCLIOPTDIR
