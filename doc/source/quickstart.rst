@@ -208,6 +208,34 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
 
   Replace the *PASSWORD* with your own password for the new created user.
 
+* Configure sudo access for 'zvmsdk' user
+
+  The z/VM SDK Daemon relies on some privileged commands for the management of the z/VM host, so you
+  need to grant the 'zvmsdk' user to run following commands with sudo without password:
+
+  * /usr/sbin/vmcp
+  * /usr/sbin/chccwdev
+  * /usr/sbin/cio_ignore
+  * /usr/sbin/fdasd
+  * /usr/sbin/fdisk
+  * /usr/sbin/vmur
+  * /usr/bin/mount
+  * /usr/bin/umount
+  * /usr/sbin/mkfs
+  * /usr/sbin/mkfs.xfs
+  * /usr/sbin/dasdfmt
+  * /opt/zthin/bin/unpackdiskimage
+  * /opt/zthin/bin/creatediskimage
+  * /opt/zthin/bin/linkdiskandbringonline
+  * /opt/zthin/bin/offlinediskanddetach
+
+  A sample is given in the following block as a file named as /etc/sudoers.d/zvmsdk:
+
+  .. code-block:: text
+
+      # cat /etc/sudoers.d/zvmsdk
+      zvmsdk ALL = (ALL) NOPASSWD:/usr/sbin/vmcp, /usr/sbin/chccwdev, /usr/sbin/cio_ignore, /usr/sbin/fdasd, /usr/sbin/fdisk, /usr/sbin/vmur, /usr/bin/mount, /usr/bin/umount, /usr/sbin/mkfs, /usr/sbin/mkfs.xfs, /usr/sbin/dasdfmt, /opt/zthin/bin/unpackdiskimage, /opt/zthin/bin/creatediskimage, /opt/zthin/bin/linkdiskandbringonline, /opt/zthin/bin/offlinediskanddetach
+
 * Setup home directory
 
   .. code-block:: text
