@@ -72,20 +72,6 @@ logging.DEBUG: All log level (ERROR, WARNING, INFO, DEBUG)
                will be written to log file.
     '''),
     # zvm options
-    Opt('host',
-        section='zvm',
-        required=True,
-        help='''
-z/VM host name of this hypervisor.
-
-This is the name of the hypervisor that is managed by the cloud,
-The admin should refer to the z/VM system configuration file
-SYSTEM_IDENTIFIER statement for the hypervisor name.
-
-Possible values:
-    A 1-8 character string, matching the z/VM system name this
-    compute service is managing.
-    '''),
     Opt('default_nic_vdev',
         section='zvm',
         default='1000',
@@ -358,7 +344,7 @@ starts, more info can be found in that configuration description.
     Opt('connect_type',
         section='sdkserver',
         opt_type='str',
-        default='socket',
+        default='rest',
         help='''
 The connection type of the requests flowing into the sdkserver.
 
