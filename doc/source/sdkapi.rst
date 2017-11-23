@@ -8,6 +8,7 @@ with the under-layer z/VM management facilities.
 This section gives detail descriptions of each supported SDK API.
 
 .. automodule:: zvmsdk.api
+
+.. autoclass:: zvmsdk.api.SDKAPI
    :members:
-   :undoc-members:
-   :show-inheritance:
+   :special-members: __str__

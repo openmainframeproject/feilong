@@ -57,11 +57,21 @@ class SDKAPI(object):
 
     @zvmutils.check_input_types(_TUSERID)
     def guest_start(self, userid):
-        """Power on a virtual machine.
+        """
+        Power on a virtual machine.
 
-        :param str userid: the id of the virtual machine to be power on
+        Parameters:
 
-        :returns: None
+          userid (string)::
+            the id of the virtual machine to be power on
+
+        Returns:
+
+          :None
+
+        Raises:
+
+          :None        
         """
         action = "start guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
