@@ -170,7 +170,7 @@ should be customized according to your environment.
     sdk_image_repository=/var/lib/zvmsdk/images
 
     [logging]
-    log_level=logging.INFO
+    log_level=INFO
     log_dir=/var/log/zvmsdk/
 
     [network]
@@ -182,16 +182,11 @@ should be customized according to your environment.
     bind_addr=127.0.0.1
     bind_port=2000
     max_worker_count=64
-    connect_type=socket
 
     [wsgi]
     auth=none
 
     [zvm]
-    # z/VM host name of this hypervisor.
-    # This param is required
-    host=zvmhost
-
     # zVM disk pool and type for root/ephemeral disks.
     # This param is required
     disk_pool=ECKD:eckdpool

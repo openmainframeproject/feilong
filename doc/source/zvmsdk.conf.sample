@@ -321,21 +321,6 @@
 #disk_pool=
 
 
-# 
-# z/VM host name of this hypervisor.
-# 
-# This is the name of the hypervisor that is managed by the cloud,
-# The admin should refer to the z/VM system configuration file
-# SYSTEM_IDENTIFIER statement for the hypervisor name.
-# 
-# Possible values:
-#     A 1-8 character string, matching the z/VM system name this
-#     compute service is managing.
-#     
-# This param is required
-#host=
-
-
 # This param is optional
 #user_default_password=
 
