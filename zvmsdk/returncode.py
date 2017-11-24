@@ -34,6 +34,7 @@ Each error corresponds to a dictionary contains: 'overallRC', 'modID', 'rc',
     MONITOR    50
     SDKSERVER  100
     SDKCLIENT  110
+    SDKWSGI    120
     SDKGENERAL 400
 
 -- 'rc' is used together with rs to indicate the specific error. If 'rs' is
@@ -68,6 +69,8 @@ Other Module Error 300    MODRC   300   x    The module-specific error during
 
 Invalid API name   400    MODRC   400   x    The SDK server received a invalid
                                              API name.
+
+REST API Req Err   400    MODRC   400   X    The SDKWSGI detects an exception
 
 Object Not Exist   404    MODRC   404   1    The operated object does not
                                              exist, eg, the guest/vswitch/
@@ -104,6 +107,7 @@ ModRCs = {
     'monitor': 50,
     'sdkserver': 100,
     'sdkclient': 110,
+    'sdkwsgi': 120,
     # The 'zvmsdk' is used as the default module if module is not specified
     # when raising exception
     'zvmsdk': 400
@@ -212,6 +216,12 @@ errors = {
             {1: "Invalid API name, '%(msg)s'"},
             "Invalid API name"
             ],
+# REST API Request error (Only used by sdkwsgi)
+# 'modID' would be set to ModRC['sdkwsgi']
+    'RESTAPI': [{'overallRC': 400, 'modID': ModRCs['sdkwsgi'], 'rc': 400},
+                {},
+                "REST API Request error"
+                ],
 # Object not exist
 # Used when the operated object does not exist.
 # 'modID' would be set to each module rc when raise the exception

@@ -27,6 +27,7 @@ SDK_ERR_KEYS = (
     'image',
     'monitor',
     'API',
+    'RESTAPI',
     'notExist',
     'conflict',
     'deleted',
