@@ -134,7 +134,7 @@ class GuestActionsTest(SDKWSGITest):
         self.req.body = """{"action": "deploy",
                             "image": "image1",
                             "transportfiles": "file1",
-                            "remotehost": "host1",
+                            "remotehost": "test@host1.x.y",
                             "vdev": "1000"}"""
         mock_action.return_value = ''
         mock_userid.return_value = FAKE_USERID
@@ -147,7 +147,7 @@ class GuestActionsTest(SDKWSGITest):
     def test_guest_deploy_missing_param(self, mock_userid):
         self.req.body = """{"action": "deploy",
                             "transportfiles": "file1",
-                            "remotehost": "host1",
+                            "remotehost": "test@host1.x.y",
                             "vdev": "1000"}"""
         mock_userid.return_value = FAKE_USERID
 
