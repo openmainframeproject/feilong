@@ -1552,13 +1552,14 @@ class SMUTClient(object):
 
     def _generate_disk_parmline(self, vdev, fmt, mntdir):
         parms = [
-                'action=' + 'config mdisk to userid ',
+                'action=' + 'addMdisk',
                 'vaddr=' + vdev,
                 'filesys=' + fmt,
                 'mntdir=' + mntdir
                 ]
         parmline = ' '.join(parms)
-        return parmline
+        parmstr = "'" + parmline + "'"
+        return parmstr
 
     def process_additional_minidisks(self, userid, disk_info):
         '''Generate and punch the scripts used to process additional disk into
@@ -1573,8 +1574,8 @@ class SMUTClient(object):
             self.aemod_handler(userid, const.DISK_FUNC_NAME, disk_parms)
 
     def aemod_handler(self, instance_name, func_name, parms):
-        rd = ' '.join(['changevm', instance_name, '--aemod', func_name,
-                       parms])
+        rd = ' '.join(['changevm', instance_name, 'aemod', func_name,
+                       '--invparms', parms])
         action = parms[0] + instance_name
         with zvmutils.log_and_reraise_smut_request_failed(action):
             self._request(rd)
