@@ -119,6 +119,22 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         return resp
 
+    def _guest_config_minidisk(self, userid=None, disk=None):
+        if userid is None:
+            userid = self.userid
+
+        if disk is None:
+            disk = "0101"
+
+        body = """{"disk_info": {"disk_list": ["%s"]}}""" % disk
+
+        url = '/guests/%s/disks' % userid
+
+        resp = self.client.api_request(url=url,
+                                       method='PUT',
+                                       body=body)
+        return resp
+
     def _guest_disks_delete(self, userid=None, vdev=None):
         if userid is None:
             userid = self.userid
@@ -462,6 +478,29 @@ class GuestHandlerTestCase(unittest.TestCase):
         finally:
             self._guest_delete()
             self._vswitch_delete()
+
+    def test_guest_disks_config(self):
+        resp = self._guest_create()
+        self.assertEqual(200, resp.status_code)
+        # give chance to make disk online
+        time.sleep(15)
+
+        try:
+            resp = self._guest_deploy()
+            self.assertEqual(200, resp.status_code)
+            # create new disks
+            resp = self._guest_disks_create()
+            self.assertEqual(200, resp.status_code)
+            resp_create = self._guest_get()
+            self.assertEqual(200, resp_create.status_code)
+            self.assertTrue('MDISK 0101' in resp_create.content)
+            # config 'MDISK 0101'
+            resp_config = self._guest_config_minidisk()
+            self.assertEqual(200, resp_config.status_code)
+        except Exception as e:
+            raise e
+        finally:
+            self._guest_delete()
 
     def test_guest_create_network_interface(self):
         resp = self._guest_create()
