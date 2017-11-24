@@ -134,20 +134,21 @@ class GuestActionsTest(SDKWSGITest):
         self.req.body = """{"action": "deploy",
                             "image": "image1",
                             "transportfiles": "file1",
-                            "remotehost": "host1",
+                            "remotehost": "test@host1.x.y",
                             "vdev": "1000"}"""
         mock_action.return_value = ''
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
         mock_action.assert_called_once_with('guest_deploy', FAKE_USERID,
-            'image1', remotehost='host1', transportfiles='file1', vdev='1000')
+            'image1', remotehost='test@host1.x.y', transportfiles='file1',
+            vdev='1000')
 
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_deploy_missing_param(self, mock_userid):
         self.req.body = """{"action": "deploy",
                             "transportfiles": "file1",
-                            "remotehost": "host1",
+                            "remotehost": "test@host1.x.y",
                             "vdev": "1000"}"""
         mock_userid.return_value = FAKE_USERID
 
@@ -160,7 +161,7 @@ class GuestActionsTest(SDKWSGITest):
         self.req.body = """{"action": "deploy",
                             "image": "image1",
                             "transportfiles": "file1",
-                            "remotehost": "host1",
+                            "remotehost": "test@host.com.cn",
                             "vdev": 1000}"""
         mock_userid.return_value = FAKE_USERID
 
@@ -185,7 +186,7 @@ class GuestActionsTest(SDKWSGITest):
         self.req.body = """{"action": "deploy",
                             "image": "image1",
                             "transportfiless": "file1",
-                            "remotehost": "host1",
+                            "remotehost": "test@192.168.99.1",
                             "vdev": "1000"}"""
         mock_userid.return_value = FAKE_USERID
 
