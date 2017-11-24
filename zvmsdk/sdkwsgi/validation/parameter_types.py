@@ -267,6 +267,21 @@ disk_list = {
 }
 
 
+disk_conf = {
+    'type': 'array',
+    'items': {
+        'type': 'object',
+        'properties': {
+            'vdev': vdev,
+            'format': file_type,
+            'mntdir': {'type': 'string'}
+        },
+        'required': ['vdev', 'format', 'mntdir'],
+        'additionalProperties': False
+    }
+}
+
+
 image_meta = {
     'type': 'object',
     'properties': {
