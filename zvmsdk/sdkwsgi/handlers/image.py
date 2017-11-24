@@ -36,7 +36,7 @@ class ImageAction(object):
         image = body['image']
         image_name = image['image_name']
         url = image['url']
-        remote_host = image.get('remotehost', None)
+        remote_host = image.get('remote_host', None)
         image_meta = image['image_meta']
 
         info = self.client.send_request('image_import', image_name,
@@ -62,7 +62,7 @@ class ImageAction(object):
     def export(self, name, body):
         location = body['location']
         dest_url = location['dest_url']
-        remotehost = location.get('remotehost', None)
+        remotehost = location.get('remote_host', None)
         info = self.client.send_request('image_export', name,
                                         dest_url, remotehost)
         return info
