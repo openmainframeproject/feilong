@@ -597,6 +597,7 @@ def invokeSMCLI(rh, api, parms, hideInLog=[]):
              }
 
     cmd = []
+    cmd.append('sudo')
     cmd.append('/opt/zthin/bin/smcli')
     cmd.append(api)
     cmd.append('--addRCheader')
