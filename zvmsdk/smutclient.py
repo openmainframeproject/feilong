@@ -1573,8 +1573,8 @@ class SMUTClient(object):
             self.aemod_handler(userid, const.DISK_FUNC_NAME, disk_parms)
 
     def aemod_handler(self, instance_name, func_name, parms):
-        rd = ' '.join(['changevm', instance_name, '--aemod', func_name,
-                       parms])
+        rd = ' '.join(['changevm', instance_name, 'aemod', func_name,
+                       '--invparms', parms])
         action = parms[0] + instance_name
         with zvmutils.log_and_reraise_smut_request_failed(action):
             self._request(rd)
