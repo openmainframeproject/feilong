@@ -31,13 +31,13 @@ ret_errmsg:
   type: string
 ret_modID:
   description: |
-    The module ID that causes the error to occur.
+    The module ID that causes the error to occur
   in: body
   required: true
   type: integer
 ret_output:
   description: |
-    The return data from API request.
+    The return data from API request
   in: body
   required: true
   type: dict
@@ -71,9 +71,9 @@ token_password:
   in: body
   required: true
   type: string
-userid_body:
+userid_create:
   description: |
-    guests userid
+    the userid of the guest to be created
   in: body
   required: true
   type: string
@@ -109,7 +109,13 @@ guest_memory:
   type: integer
 guest_memory_kb:
   description: |
-    size of memory in KB
+    the memory in KBytes used by the guest
+  in: body
+  required: true
+  type: integer
+guest_memory_kb_max:
+  description: |
+    the maximum memory in KBytes allocated for this guest
   in: body
   required: true
   type: integer
@@ -139,33 +145,54 @@ user_profile_guest:
   type: string
 user_direct_guest:
   description: |
-    user direct of guest
+    dictionary describing user direct and check info result
   in: body
   required: true
   type: dict
 disk_list_guest:
   description: |
-    disk list of guest
+    a list of disks info for the guest
     It has one dictionary that contain some of the below keys for
     each disk, the root disk should be the first element in the
     list.
   in: body
   required: false
   type: list
+size_disk:
+  description: |
+      size of disk, case insensitive, the unit can be in Megabytes (M),
+      Gigabytes (G), or number of cylinders/blocks, for example, please
+      use ``512M``, ``1g`` or just ``2000``.
+  in: body
+  required: true
+  type: string
+format_disk:
+  description: |
+    format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``xfs``.
+  in: body
+  required: true
+  type: string
+is_boot_disk:
+  description: |
+    is boot disk or not. For the root disk, this key must be set to
+    indicate the image that will be deployed on this disk.
+  in: body
+  required: true
+  type: bool
+disk_pool_guest:
+  description: |
+      disk pool, if not specified, the disk will be created by using
+      the value from configure file, the format is
+      ECKD:eckdpoolname or FBA:fbapoolname.
+  in: body
+  required: false
+  type: string
 disk_info:
   description: |
     a dict to describe disk info
   in: body
   required: true
   type: dict
-disk_list:
-  description: |
-    disk list of guest, it has one dictionary that contain some
-    of the below keys for each disk, the root disk should be the
-    first element in the list.
-  in: body
-  required: true
-  type: list
 vdev_info:
   description: |
     a dict to describe vdev list to be deleted
@@ -194,79 +221,79 @@ stats_guest:
   type: dict
 power_status_guest:
   description: |
-    power status of guest, **on** or **off**
+    power status of guest, ``on`` or ``off``.
   in: body
   required: true
   type: string
 cpu_time_us_guest:
   description: |
-    cpu time used in microseconds
+    the CPU time used in microseconds
   in: body
   required: true
   type: integer
 num_cpu_guest:
   description: |
-    the number of virtual CPUs of guest
+    the number of virtual CPUs for the guest
   in: body
   required: true
   type: integer
 action_start_guest:
   description: |
-    take **start** action on guest
+    take ``start`` action on guest
   in: body
   required: true
   type: dict
 action_stop_guest:
   description: |
-    take **stop** action on guest
+    take ``stop`` action on guest
   in: body
   required: true
   type: dict
 action_softstop_guest:
   description: |
-    take **softstop** action on guest
+    take ``softstop`` action on guest
   in: body
   required: true
   type: dict
 action_pause_guest:
   description: |
-    take **pause** action on guest
+    take ``pause`` action on guest
   in: body
   required: true
   type: dict
 action_unpause_guest:
   description: |
-    take **unpause** action on guest
+    take ``unpause`` action on guest
   in: body
   required: true
   type: dict
 action_reboot_guest:
   description: |
-    take **reboot** action on guest
+    take ``reboot`` action on guest
   in: body
   required: true
   type: dict
 action_reset_guest:
   description: |
-    take **reset** action on guest
+    take ``reset`` action on guest
   in: body
   required: true
   type: dict
 action_deploy_guest:
   description: |
-    take **deploy** action on guest
+    take ``deploy`` action on guest
   in: body
   required: true
   type: dict
 action_capture_guest:
   description: |
-    take **capture** action on guest
+    take ``capture`` action on guest
   in: body
   required: true
   type: dict
 action_get_console_guest:
   description: |
-    take **get console output** action on guest
+    take ``get_console_output`` action on guest
   in: body
   required: true
   type: dict
@@ -284,7 +311,7 @@ host_info:
   type: dict
 disk_host:
   description: |
-    the disk name to get pool information from.
+    the disk name to get pool information from
   in: body
   required: true
   type: string
@@ -322,7 +349,7 @@ image_url:
   type: string
 image_metadata:
   description: |
-    the metadata to describe image.
+    the metadata to describe image
   in: body
   required: true
   type: dict
@@ -373,7 +400,7 @@ controller_vswitch:
   type: string
 connection_vswitch:
   description: |
-    Connection type option:
+    Connection type option \:
 
     - ``CONnect``: Activate the real device connection.
     - ``DISCONnect``: Do not active the real device connection.
@@ -390,7 +417,7 @@ network_type_vswitch:
   type: string
 router_vswitch:
   description: |
-    Connection type option.
+    Connection type option \:
 
     - ``NONrouter``: The OSA-Express device identified in
       real_device_address= will not act as a router to the vswitch.
@@ -411,7 +438,7 @@ vid_vswitch:
   type: string, integer
 port_type_vswitch:
   description: |
-    port type.
+    port type \:
 
     - ``ACCESS``: The default porttype attribute for
       guests authorized for the virtual switch.
@@ -429,7 +456,7 @@ port_type_vswitch:
   type: string
 gvrp_vswitch:
   description: |
-    gvrp.
+    gvrp \:
 
     - ``GVRP``: Indicates that the VLAN IDs in use on the virtual
       switch should be registered with GVRP-aware switches on the
@@ -496,7 +523,7 @@ vswitch_name_opt:
   type: string
 guests_nic_info:
   description: |
-    nic information, including userid, nic number,
+    list describing nic information, including userid, nic number,
     vswitch, nic id and comments.
   in: body
   required: true
@@ -509,7 +536,7 @@ nic_set_info:
   type: dict
 vdev_number:
   description: |
-    nic device number, 1- to 4- hexadecimal digits
+    nic device number, 1- to 4- hexadecimal digits.
   in: body
   required: false
   type: string
@@ -521,7 +548,8 @@ nic_identifier:
   type: string
 mac_address:
   description: |
-    mac address
+    mac address, it is only used when changing the guest's user direct.
+    Format should be xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit.
   in: body
   required: false
   type: string
@@ -569,8 +597,8 @@ guest_os_version:
   type: string
 guest_networks_list:
   description: |
-    network info list of guest. It has one dictionary that contain some of the below 
-    keys for each interface. All the keys are optional.
+    network info list of guest. It has one dictionary that contain some of the below
+    keys for each interface. All the keys are optional \:
 
     - ``ip_addr``: the IP address of the interface
     - ``dns_addr``: dns addresses list

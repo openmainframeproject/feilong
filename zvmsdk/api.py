@@ -438,7 +438,8 @@ class SDKAPI(object):
                Megabytes (M), Gigabytes (G), or number of cylinders/blocks, eg
                512M, 1g or just 2000.
                'format': can be ext2, ext3, ext4, xfs.
-               'is_boot_disk': only root disk need to set this key.
+               'is_boot_disk': For root disk, this key must be set to indicate
+               the image that will be deployed on this disk.
                'disk_pool': optional, if not specified, the disk will be
                created by using the value from configure file,the format is
                ECKD:eckdpoolname or FBA:fbapoolname.
@@ -511,7 +512,8 @@ class SDKAPI(object):
                512M, 1g or just 2000.
                'format': optional, can be ext2, ext3, ext4, xfs, if not
                specified, the disk will not be formatted.
-               'is_boot_disk': only root disk need to set this key.
+               'is_boot_disk': For root disk, this key must be set to indicate
+               the image that will be deployed on this disk.
                'disk_pool': optional, if not specified, the disk will be
                created by using the value from configure file,the format is
                ECKD:eckdpoolname or FBA:fbapoolname.

@@ -99,7 +99,7 @@ List Guests
 
 **GET /guests**
 
-List all guests managed by zvm cloud connecter on the host.
+List names of all the VMs on this host
 
 * Request:
 
@@ -125,18 +125,23 @@ Create Guest
 
 **POST /guests**
 
-Create a new guest.
+Create a vm in z/VM
 
 * Request:
 
 .. restapi_parameters:: parameters.yaml
 
   - guest: guest_dict
-  - userid: userid_body
+  - userid: userid_create
   - vcpus: guest_vcpus
   - memory: guest_memory
   - user_profile: user_profile_guest
   - disk_list: disk_list_guest
+  - size: size_disk
+  - format: format_disk
+  - is_boot_disk: is_boot_disk
+  - disk_pool: disk_pool_guest
+    
 
 * Request sample:
 
@@ -164,7 +169,11 @@ Add disks for a guest
 
   - userid: guest_userid
   - disk_info: disk_info
-  - disk_list: disk_list
+  - disk_list: disk_list_guest
+  - size: size_disk
+  - format: format_disk
+  - is_boot_disk: is_boot_disk
+  - disk_pool: disk_pool_guest
 
 * Request sample:
 
@@ -365,7 +374,7 @@ Get running information of guest.
 .. restapi_parameters:: parameters.yaml
 
   - output: guest_info
-  - max_mem_kb: guest_memory_kb
+  - max_mem_kb: guest_memory_kb_max
   - num_cpu: num_cpu_guest
   - cpu_time_us: cpu_time_us_guest
   - power_state: power_status_guest
