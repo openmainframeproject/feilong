@@ -76,6 +76,23 @@ create_network_interface = {
 }
 
 
+config_minidisks = {
+    'type': 'object',
+    'properties': {
+        'disk_info': {
+            'type': 'object',
+            'properties': {
+                'disk_list': parameter_types.disk_conf,
+            },
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
+    },
+    'required': ['disk_info'],
+    'additionalProperties': False,
+}
+
+
 create_disks = {
     'type': 'object',
     'properties': {
