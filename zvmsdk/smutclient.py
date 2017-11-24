@@ -1571,7 +1571,8 @@ class SMUTClient(object):
             fmt = disk.get('format')
             mount_dir = disk.get('mntdir') or ''.join(['/mnt/', str(vdev)])
             disk_parms = self._generate_disk_parmline(vdev, fmt, mount_dir)
-            self.aemod_handler(userid, const.DISK_FUNC_NAME, disk_parms)
+            func_name = '/var/lib/zvmsdk/setupDisk'
+            self.aemod_handler(userid, func_name, disk_parms)
 
     def aemod_handler(self, instance_name, func_name, parms):
         rd = ' '.join(['changevm', instance_name, 'aemod', func_name,
