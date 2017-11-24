@@ -22,6 +22,7 @@ from zvmsdk.sdkwsgi import util
 
 
 LOG = log.LOG
+SDKWSGI_MODID = 120
 
 
 class SdkWsgify(wsgify):
@@ -35,12 +36,14 @@ class SdkWsgify(wsgify):
             LOG.debug(msg)
             exc.json_formatter = util.json_error_formatter
             code = exc.status_int
-            fault_name = "SDKFailure"
             explanation = six.text_type(exc)
 
             fault_data = {
-                fault_name: {
-                    'code': code,
-                    'message': explanation}}
+                'overallRC': 400,
+                'rc': 400,
+                'rs': code,
+                'modID': SDKWSGI_MODID,
+                'output': '',
+                'errmsg': explanation}
             exc.text = six.text_type(json.dumps(fault_data))
             return exc
