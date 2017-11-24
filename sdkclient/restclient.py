@@ -288,7 +288,14 @@ def req_image_import(start_index, *args, **kwargs):
 
 
 def req_image_query(start_index, *args, **kwargs):
-    url = '/images?imagename=%s'
+    url = '/images'
+    image_name = kwargs.get('imagename', None)
+    if image_name is None:
+        append = ''
+    else:
+        append = "?"
+        append += "imagename=%s" % image_name
+    url += append
     body = None
     return url, body
 
@@ -339,7 +346,7 @@ def req_vswitch_delete(start_index, *args, **kwargs):
 
 def req_vswitch_grant_user(start_index, *args, **kwargs):
     url = '/vswitchs/%s'
-    body = {'vswitch': {'grant_userd': args[start_index]}}
+    body = {'vswitch': {'grant_userid': args[start_index]}}
     fill_kwargs_in_body(body['vswitch'], **kwargs)
     return url, body
 
