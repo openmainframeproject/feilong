@@ -1004,12 +1004,12 @@ Delete an image.
 VSwitch
 =======
 
-Lists, creates, shows details for, updates, and deletes vswitch.
+Lists, creates, updates, and deletes vswitch.
 
 Create vswitch
 --------------
 
-**POST /vswitchs**
+**POST /vswitches**
 
 Create a new vswitch.
 
@@ -1043,12 +1043,12 @@ Create a new vswitch.
 
   No response.
 
-List vswitchs
--------------
+List vswitches
+--------------
 
-**GET /vswitchs**
+**GET /vswitches**
 
-List vswitches.
+Get the list of vswitch name on the host
 
 * Request:
 
@@ -1069,18 +1069,20 @@ List vswitches.
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_get.tpl
    :language: javascript
 
-Update vswitch
---------------
+Grant user to vswitch
+---------------------
 
-**PUT /vswitchs/{name}**
+**PUT /vswitches/{name}**
 
-Update a vswitch.
+Grant an user to access vswitch
 
 * Request:
 
 .. restapi_parameters:: parameters.yaml
 
   - name: vswitch_name
+  - vswitch: vswitch_info
+  - grant_userid: userid_body
 
 * Request sample:
 
@@ -1095,10 +1097,68 @@ Update a vswitch.
 
   No response.
 
+Revoke user from vswitch
+------------------------
+
+**PUT /vswitches/{name}**
+
+Revoke the user access from vswitch
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - name: vswitch_name
+  - vswitch: vswitch_info
+  - revoke_userid: userid_body
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_update_revoke.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No response.
+
+Set user VLANID to vswitch
+--------------------------
+
+**PUT /vswitches/{name}**
+
+Set vlan id for user when connecting to the vswitch
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - name: vswitch_name
+  - vswitch: vswitch_info
+  - user_vlan_id: user_vlan_id
+  - userid: userid_body
+  - vlanid: vlan_id
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_set_vlan.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No response.
+
 Delete vswitch
 --------------
 
-**DELETE /vswitchs/{name}**
+**DELETE /vswitches/{name}**
 
 Delete a vswitch by using given name.
 

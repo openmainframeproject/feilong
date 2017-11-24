@@ -30,7 +30,7 @@ class GuestHandlerTestCase(unittest.TestCase):
         url = '/guests/%s' % self.userid
         self.client.api_request(url=url, method='DELETE')
 
-        self.client.api_request(url='/vswitchs/restvsw1',
+        self.client.api_request(url='/vswitches/restvsw1',
                                 method='DELETE')
 
     def setUp(self):
@@ -555,12 +555,12 @@ class GuestHandlerTestCase(unittest.TestCase):
 
     def _vswitch_create(self):
         body = '{"vswitch": {"name": "RESTVSW1", "rdev": "FF00"}}'
-        resp = self.client.api_request(url='/vswitchs', method='POST',
+        resp = self.client.api_request(url='/vswitches', method='POST',
                                        body=body)
         return resp
 
     def _vswitch_delete(self):
-        resp = self.client.api_request(url='/vswitchs/restvsw1',
+        resp = self.client.api_request(url='/vswitches/restvsw1',
                                        method='DELETE')
         self.assertEqual(200, resp.status_code)
 

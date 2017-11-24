@@ -98,11 +98,11 @@ ROUTE_LIST = (
     ('/token', {
         'POST': tokens.create,
     }),
-    ('/vswitchs', {
+    ('/vswitches', {
         'GET': vswitch.vswitch_list,
         'POST': vswitch.vswitch_create,
     }),
-    ('/vswitchs/{name}', {
+    ('/vswitches/{name}', {
         'DELETE': vswitch.vswitch_delete,
         'PUT': vswitch.vswitch_update,
     }),

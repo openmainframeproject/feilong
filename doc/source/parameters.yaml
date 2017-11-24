@@ -582,3 +582,21 @@ guest_networks_list:
   in: body
   required: true
   type: list
+vswitch_info:
+  description: |
+    The vswitch update info.
+  in: body
+  required: true
+  type: dict
+user_vlan_id:
+  description: |
+    A dict to describe guest userid and vlanid.
+  in: body
+  required: true
+  type: dict
+vlan_id:
+  description: |
+    the VLAN ID. This can be any of the value between 1-4094.
+  in: body
+  required: true
+  type: integer
