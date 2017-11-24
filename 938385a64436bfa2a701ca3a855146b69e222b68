@@ -22,6 +22,30 @@
       "revId": "938385a64436bfa2a701ca3a855146b69e222b68",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c05a8a18_6720f2ec",
+        "filename": "doc/source/quickstart.rst",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2017-11-24T03:10:19Z",
+      "side": 1,
+      "message": "Confirmed with Nafei, these commands should be in same place for all distros.\n\nThe sdk code also used absolute path, so this place keeps consistent with sdk code. \nIf we found any path difference for distros during test, we need to correct both sdk code and this doc.",
+      "parentUuid": "6a468587_1ad0f254",
+      "range": {
+        "startLine": 216,
+        "startChar": 4,
+        "endLine": 230,
+        "endChar": 39
+      },
+      "revId": "938385a64436bfa2a701ca3a855146b69e222b68",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
