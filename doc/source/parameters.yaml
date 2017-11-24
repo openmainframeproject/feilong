@@ -71,9 +71,9 @@ token_password:
   in: body
   required: true
   type: string
-userid_body:
+userid_create:
   description: |
-    guests userid
+    the userid of the vm to be created
   in: body
   required: true
   type: string
@@ -109,7 +109,13 @@ guest_memory:
   type: integer
 guest_memory_kb:
   description: |
-    size of memory in KB
+    the memory in KBytes used by the instance
+  in: body
+  required: true
+  type: integer
+guest_memory_kb_max:
+  description: |
+    the maximum memory in KBytes allowed
   in: body
   required: true
   type: integer
@@ -139,33 +145,53 @@ user_profile_guest:
   type: string
 user_direct_guest:
   description: |
-    user direct of guest
+    dictionary describing user direct and check info result
   in: body
   required: true
   type: dict
 disk_list_guest:
   description: |
-    disk list of guest
+    a list of disks info for the guest
     It has one dictionary that contain some of the below keys for
     each disk, the root disk should be the first element in the
     list.
   in: body
   required: false
   type: list
+size_disk:
+  description: |
+      size of disk, case insensitive, the unit can be in Megabytes (M),
+      Gigabytes (G), or number of cylinders/blocks, eg 512M, 1g or just 2000.
+  in: body
+  required: true
+  type: string
+format_disk:
+  description: |
+    format of disk,can be **ext2**, **ext3**, **ext4**, **xfs**.
+  in: body
+  required: true
+  type: string
+is_boot_disk:
+  description: |
+    is boot disk or not. For the root disk, this key must be set to
+    indicate the image that will be deployed on this disk.
+  in: body
+  required: true
+  type: bool
+disk_pool_guest:
+  description: |
+      disk pool, optional, if not specified, the disk will be
+      created by using the value from configure file,the format is
+      ECKD:eckdpoolname or FBA:fbapoolname.
+  in: body
+  required: false
+  type: string
 disk_info:
   description: |
     a dict to describe disk info
   in: body
   required: true
   type: dict
-disk_list:
-  description: |
-    disk list of guest, it has one dictionary that contain some
-    of the below keys for each disk, the root disk should be the
-    first element in the list.
-  in: body
-  required: true
-  type: list
 vdev_info:
   description: |
     a dict to describe vdev list to be deleted
@@ -199,13 +225,13 @@ power_status_guest:
   type: string
 cpu_time_us_guest:
   description: |
-    cpu time used in microseconds
+    the CPU time used in microseconds
   in: body
   required: true
   type: integer
 num_cpu_guest:
   description: |
-    the number of virtual CPUs of guest
+    the number of virtual CPUs for the guest
   in: body
   required: true
   type: integer
@@ -490,7 +516,7 @@ vswitch_name_opt:
   type: string
 guests_nic_info:
   description: |
-    nic information, including userid, nic number,
+    list describing nic information, including userid, nic number,
     vswitch, nic id and comments.
   in: body
   required: true
@@ -515,7 +541,9 @@ nic_identifier:
   type: string
 mac_address:
   description: |
-    mac address
+    mac address, it is only be used when changing
+    the guest's user direct. Format should be xx:xx:xx:xx:xx:xx,
+    and x is a hexadecimal digit
   in: body
   required: false
   type: string
