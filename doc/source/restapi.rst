@@ -901,7 +901,7 @@ Create a new image.
   - image_name: image_name
   - url: image_url
   - image_meta: image_metadata
-  - remotehost: remotehost_image
+  - remote_host: remotehost_image
 
 * Request sample:
 
@@ -930,7 +930,7 @@ Export an image.
   - image: image_dict
   - image_name: image_name
   - dest_url: image_url
-  - remotehost: remotehost_image
+  - remote_host: remotehost_image
 
 * Request sample:
 

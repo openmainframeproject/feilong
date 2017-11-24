@@ -22,7 +22,7 @@ create = {
                 'image_name': parameter_types.name,
                 'url': parameter_types.url,
                 'image_meta': parameter_types.image_meta,
-                'remotehost': parameter_types.remotehost
+                'remote_host': parameter_types.remotehost
             },
             'required': ['image_name', 'url', 'image_meta'],
             'additionalProperties': False
@@ -41,7 +41,7 @@ export = {
             'type': 'object',
             'properties': {
                 'dest_url': parameter_types.url,
-                'remotehost': parameter_types.remotehost
+                'remote_host': parameter_types.remotehost
             },
             'required': ['dest_url'],
             'additionalProperties': False
