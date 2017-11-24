@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6a468587_1ad0f254",
+        "filename": "doc/source/quickstart.rst",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-24T01:08:20Z",
+      "side": 1,
+      "message": "I assume all those commands are in same place for all \ndist, right? e.g RHEL , SLES or this is RHEL7.2 doc so only works on RHEL7.2?",
+      "range": {
+        "startLine": 216,
+        "startChar": 4,
+        "endLine": 230,
+        "endChar": 39
+      },
+      "revId": "938385a64436bfa2a701ca3a855146b69e222b68",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
