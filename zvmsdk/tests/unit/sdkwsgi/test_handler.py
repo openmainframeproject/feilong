@@ -565,7 +565,7 @@ class VswitchHandlerNegativeTest(unittest.TestCase):
         self.env = env
 
     def test_vswitch_put_method_invalid(self):
-        self.env['PATH_INFO'] = '/vswitchs'
+        self.env['PATH_INFO'] = '/vswitches'
         self.env['REQUEST_METHOD'] = 'PUT'
         h = handler.SdkHandler()
         self.assertRaises(webob.exc.HTTPMethodNotAllowed,
@@ -578,7 +578,7 @@ class VswitchHandlerTest(unittest.TestCase):
 
     @mock.patch.object(tokens, 'validate')
     def test_vswitch_list(self, mock_validate):
-        self.env['PATH_INFO'] = '/vswitchs'
+        self.env['PATH_INFO'] = '/vswitches'
         self.env['REQUEST_METHOD'] = 'GET'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.list'
@@ -592,7 +592,7 @@ class VswitchHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_vswitch_create(self, mock_validate, mock_json):
         mock_json.return_value = {}
-        self.env['PATH_INFO'] = '/vswitchs'
+        self.env['PATH_INFO'] = '/vswitches'
         self.env['REQUEST_METHOD'] = 'POST'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.create'
@@ -604,7 +604,7 @@ class VswitchHandlerTest(unittest.TestCase):
 
     @mock.patch.object(tokens, 'validate')
     def test_vswitch_delete(self, mock_validate):
-        self.env['PATH_INFO'] = '/vswitchs/vsw1'
+        self.env['PATH_INFO'] = '/vswitches/vsw1'
         self.env['REQUEST_METHOD'] = 'DELETE'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.delete'
@@ -618,7 +618,7 @@ class VswitchHandlerTest(unittest.TestCase):
     @mock.patch.object(tokens, 'validate')
     def test_vswitch_update(self, mock_validate, mock_json):
         mock_json.return_value = {}
-        self.env['PATH_INFO'] = '/vswitchs/vsw1'
+        self.env['PATH_INFO'] = '/vswitches/vsw1'
         self.env['REQUEST_METHOD'] = 'PUT'
         h = handler.SdkHandler()
         function = 'zvmsdk.sdkwsgi.handlers.vswitch.VswitchAction.update'

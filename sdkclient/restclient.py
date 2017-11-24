@@ -326,40 +326,40 @@ def req_token_create(start_index, *args, **kwargs):
 
 
 def req_vswitch_get_list(start_index, *args, **kwargs):
-    url = '/vswitchs'
+    url = '/vswitches'
     body = None
     return url, body
 
 
 def req_vswitch_create(start_index, *args, **kwargs):
-    url = '/vswitchs'
+    url = '/vswitches'
     body = {'vswitch': {'name': args[start_index]}}
     fill_kwargs_in_body(body['vswitch'], **kwargs)
     return url, body
 
 
 def req_vswitch_delete(start_index, *args, **kwargs):
-    url = '/vswitchs'
+    url = '/vswitches'
     body = None
     return url, body
 
 
 def req_vswitch_grant_user(start_index, *args, **kwargs):
-    url = '/vswitchs/%s'
+    url = '/vswitches/%s'
     body = {'vswitch': {'grant_userid': args[start_index]}}
     fill_kwargs_in_body(body['vswitch'], **kwargs)
     return url, body
 
 
 def req_vswitch_revoke_user(start_index, *args, **kwargs):
-    url = '/vswitchs/%s'
+    url = '/vswitches/%s'
     body = {'vswitch': {'revoke_userid': args[start_index]}}
     fill_kwargs_in_body(body['vswitch'], **kwargs)
     return url, body
 
 
 def req_vswitch_set_vlan_id_for_user(start_index, *args, **kwargs):
-    url = '/vswitchs/%s'
+    url = '/vswitches/%s'
     body = {'vswitch': {'user_vlan_id': {'userid': args[start_index],
                                          'vlanid': args[start_index + 1]}}}
     fill_kwargs_in_body(body['vswitch'], **kwargs)
