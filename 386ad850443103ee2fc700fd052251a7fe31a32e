@@ -1,0 +1,170 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c8f07b4c_e1a78da3",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 587,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T04:09:00Z",
+      "side": 1,
+      "message": "add a . at the end",
+      "revId": "386ad850443103ee2fc700fd052251a7fe31a32e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a46cf06c_49b33472",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 593,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T04:09:00Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "386ad850443103ee2fc700fd052251a7fe31a32e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9c04a726_ce6ef379",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 599,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T04:09:00Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "386ad850443103ee2fc700fd052251a7fe31a32e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d284171a_28bcff63",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 1077,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T04:09:00Z",
+      "side": 1,
+      "message": "an",
+      "range": {
+        "startLine": 1077,
+        "startChar": 6,
+        "endLine": 1077,
+        "endChar": 7
+      },
+      "revId": "386ad850443103ee2fc700fd052251a7fe31a32e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "25dedf9c_bcd10ec3",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 1098,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T04:09:00Z",
+      "side": 1,
+      "message": "do we have a \u0027overallrc ,rc ,rs ....\u0027 output here?",
+      "range": {
+        "startLine": 1098,
+        "startChar": 2,
+        "endLine": 1098,
+        "endChar": 14
+      },
+      "revId": "386ad850443103ee2fc700fd052251a7fe31a32e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9cc011fe_2f781706",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 1126,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T04:09:00Z",
+      "side": 1,
+      "message": "ditto,\ndo we have a \u0027overallrc ,rc ,rs ....\u0027 output here?",
+      "range": {
+        "startLine": 1125,
+        "startChar": 0,
+        "endLine": 1126,
+        "endChar": 14
+      },
+      "revId": "386ad850443103ee2fc700fd052251a7fe31a32e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "712c521e_3a6883cb",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 1156,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T04:09:00Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 1156,
+        "startChar": 0,
+        "endLine": 1156,
+        "endChar": 14
+      },
+      "revId": "386ad850443103ee2fc700fd052251a7fe31a32e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1783147a_11cb502a",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 1177,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T04:09:00Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 1177,
+        "startChar": 0,
+        "endLine": 1177,
+        "endChar": 14
+      },
+      "revId": "386ad850443103ee2fc700fd052251a7fe31a32e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
