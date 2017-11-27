@@ -134,20 +134,21 @@ class GuestActionsTest(SDKWSGITest):
         self.req.body = """{"action": "deploy",
                             "image": "image1",
                             "transportfiles": "file1",
-                            "remotehost": "host1",
+                            "remotehost": "test@host1.x.y",
                             "vdev": "1000"}"""
         mock_action.return_value = ''
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
         mock_action.assert_called_once_with('guest_deploy', FAKE_USERID,
-            'image1', remotehost='host1', transportfiles='file1', vdev='1000')
+            'image1', remotehost='test@host1.x.y', transportfiles='file1',
+            vdev='1000')
 
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_deploy_missing_param(self, mock_userid):
         self.req.body = """{"action": "deploy",
                             "transportfiles": "file1",
-                            "remotehost": "host1",
+                            "remotehost": "test@host1.x.y",
                             "vdev": "1000"}"""
         mock_userid.return_value = FAKE_USERID
 
@@ -160,7 +161,7 @@ class GuestActionsTest(SDKWSGITest):
         self.req.body = """{"action": "deploy",
                             "image": "image1",
                             "transportfiles": "file1",
-                            "remotehost": "host1",
+                            "remotehost": "test@host.com.cn",
                             "vdev": 1000}"""
         mock_userid.return_value = FAKE_USERID
 
@@ -180,12 +181,63 @@ class GuestActionsTest(SDKWSGITest):
                           self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('sdkclient.client.SDKClient.send_request')
+    def test_guest_deploy_with_ip_in_remotehost(self, mock_action,
+                                                mock_userid):
+        self.req.body = """{"action": "deploy",
+                            "image": "image1",
+                            "transportfiles": "file1",
+                            "remotehost": "test@192.168.99.99",
+                            "vdev": "1000"}"""
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_deploy', FAKE_USERID,
+            'image1', remotehost='test@192.168.99.99',
+            transportfiles='file1', vdev='1000')
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('sdkclient.client.SDKClient.send_request')
+    def test_guest_deploy_with_fqdn_in_remotehost(self, mock_action,
+                                                  mock_userid):
+        # remote host with Hostname + DomainName in it
+        self.req.body = """{"action": "deploy",
+                            "image": "image1",
+                            "transportfiles": "file1",
+                            "remotehost": "test123@test.xyz.com",
+                            "vdev": "1000"}"""
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_deploy', FAKE_USERID,
+            'image1', remotehost='test123@test.xyz.com',
+            transportfiles='file1', vdev='1000')
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    def test_guest_deploy_without_username_in_remotehost(self,
+                                                      mock_userid):
+        # remote host without username in it
+        self.req.body = """{"action": "deploy",
+                            "image": "image1",
+                            "transportfiles": "file1",
+                            "remotehost": "@test.xyz.com",
+                            "vdev": "1000"}"""
+
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError,
+                          guest.guest_action,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_deploy_additional_param(self, mock_userid):
         # A typo in the transportfiles
         self.req.body = """{"action": "deploy",
                             "image": "image1",
                             "transportfiless": "file1",
-                            "remotehost": "host1",
+                            "remotehost": "test@192.168.99.1",
                             "vdev": "1000"}"""
         mock_userid.return_value = FAKE_USERID
 

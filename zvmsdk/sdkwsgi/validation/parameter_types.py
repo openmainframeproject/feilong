@@ -203,7 +203,8 @@ mac_address = {
 
 remotehost = {
     'type': ['string'],
-    'format': 'hostname'
+    'pattern': '^[a-zA-Z0-9\-]+\@([0-9]{1,3}(.[0-9]{1,3}){3}$|'
+    '[a-zA-Z0-9\-]+(.[a-zA-Z0-9\-]){1,}$)'
 }
 
 
