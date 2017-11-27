@@ -24,6 +24,7 @@ from zvmsdk.sdkwsgi import requestlog
 
 LOG = log.LOG
 NAME = "sdk"
+SDKWSGI_MODID = 120
 
 
 def walk_class_hierarchy(clazz, encountered=None):
@@ -52,19 +53,21 @@ class Fault(webob.exc.HTTPException):
     def __call__(self, req):
 
         code = self.wrapped_exc.status_int
-        fault_name = "SDKFailure"
         explanation = self.wrapped_exc.explanation
         LOG.debug("Returning %(code)s to user: %(explanation)s",
                   {'code': code, 'explanation': explanation})
 
         fault_data = {
-            fault_name: {
-                'code': code,
-                'message': explanation}}
+                'overallRC': 400,
+                'rc': 400,
+                'rs': code,
+                'modID': SDKWSGI_MODID,
+                'output': '',
+                'errmsg': explanation}
         if code == 413 or code == 429:
             retry = self.wrapped_exc.headers.get('Retry-After', None)
             if retry:
-                fault_data[fault_name]['retryAfter'] = retry
+                fault_data['retryAfter'] = retry
 
         self.wrapped_exc.content_type = 'application/json'
         self.wrapped_exc.charset = 'UTF-8'
