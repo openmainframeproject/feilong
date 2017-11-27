@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "30d3f619_1adcc118",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T01:13:23Z",
+      "side": 1,
+      "message": "you can make it as \n`ext2`, `ext3` ... to highlight it in the output",
+      "range": {
+        "startLine": 170,
+        "startChar": 26,
+        "endLine": 170,
+        "endChar": 48
+      },
+      "revId": "db2a8834620bc086e2c3146e5f58785e3f5593c7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ee81ba90_c50a946a",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T01:13:23Z",
+      "side": 1,
+      "message": "please talk to Fay, I think this sentence need enhance",
+      "range": {
+        "startLine": 176,
+        "startChar": 4,
+        "endLine": 176,
+        "endChar": 60
+      },
+      "revId": "db2a8834620bc086e2c3146e5f58785e3f5593c7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f2f48bb6_53f2f815",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T01:13:23Z",
+      "side": 1,
+      "message": "this says optional, and line 186 says it\u0027s required....",
+      "range": {
+        "startLine": 182,
+        "startChar": 17,
+        "endLine": 182,
+        "endChar": 25
+      },
+      "revId": "db2a8834620bc086e2c3146e5f58785e3f5593c7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ec07a36d_4fa59977",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T01:13:23Z",
+      "side": 1,
+      "message": "guest",
+      "range": {
+        "startLine": 233,
+        "startChar": 39,
+        "endLine": 233,
+        "endChar": 47
+      },
+      "revId": "db2a8834620bc086e2c3146e5f58785e3f5593c7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c46146eb_d37aff61",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T01:13:23Z",
+      "side": 1,
+      "message": "why you change from guest to vm?",
+      "range": {
+        "startLine": 102,
+        "startChar": 22,
+        "endLine": 102,
+        "endChar": 25
+      },
+      "revId": "db2a8834620bc086e2c3146e5f58785e3f5593c7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "40980c1a_47d38448",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T01:13:23Z",
+      "side": 1,
+      "message": "blank",
+      "range": {
+        "startLine": 144,
+        "startChar": 0,
+        "endLine": 144,
+        "endChar": 4
+      },
+      "revId": "db2a8834620bc086e2c3146e5f58785e3f5593c7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
