@@ -39,7 +39,7 @@ class SDKClientTestCase(unittest.TestCase):
         api_name = 'guest_create'
         vcpus = 1
         memory = 1024
-        disks = [{'size': '3g'}]
+        disks = [{'size': '3g', 'is_boot_disk': True}]
         if conn_type == CONN_REST:
             userid = self.userid_rest
             res = self.restclient.send_request(api_name, userid, vcpus,
@@ -101,7 +101,7 @@ class SDKClientTestCase(unittest.TestCase):
         image_fpath = CONF.tests.image_path
         url = "file://" + image_fpath
         image_meta = {"os_version": "rhel6.7"}
-        api_name = 'image_create'
+        api_name = 'image_import'
         if conn_type == CONN_REST:
             res = self.restclient.send_request(api_name, image_fname, url,
                                                image_meta)
@@ -268,14 +268,12 @@ class SDKClientTestCase(unittest.TestCase):
 
             resp_rest = self._guest_inspect_stats(CONN_REST)
             resp_sock = self._guest_inspect_stats(CONN_SOCKET)
-            self.assertEqual(resp_rest, resp_sock)
             resp = json.dumps(resp_sock)
             self.apibase.verify_result('test_guests_get_stats',
                                        resp)
 
             resp_rest = self._guest_get_vnics_info(CONN_REST)
             resp_sock = self._guest_get_vnics_info(CONN_SOCKET)
-            self.assertEqual(resp_rest, resp_sock)
             resp = json.dumps(resp_sock)
             self.apibase.verify_result('test_guests_get_vnics_info',
                                        resp)
