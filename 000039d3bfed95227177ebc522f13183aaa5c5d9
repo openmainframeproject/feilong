@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d357a5ec_20cb5e2b",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T01:09:30Z",
+      "side": 1,
+      "message": "we are lack of unit test for this pattern, I\u0027d like to add more test cases to make sure this is correct",
+      "range": {
+        "startLine": 206,
+        "startChar": 4,
+        "endLine": 207,
+        "endChar": 42
+      },
+      "revId": "000039d3bfed95227177ebc522f13183aaa5c5d9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
