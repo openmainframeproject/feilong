@@ -3,7 +3,7 @@
   {
       "name": "vs_name",
       "rdev": "FF00",
-      "controller": '*',
+      "controller": "*",
       "connection": "CONNECT",
       "network_type": "IP",
       "router": "NONROUTER",

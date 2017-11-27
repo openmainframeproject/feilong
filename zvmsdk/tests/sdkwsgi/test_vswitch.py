@@ -35,7 +35,7 @@ class VSwitchTestCase(unittest.TestCase):
         pass
 
     def _vswitch_list(self):
-        resp = self.client.api_request(url='/vswitchs', method='GET')
+        resp = self.client.api_request(url='/vswitches', method='GET')
         self.assertEqual(200, resp.status_code)
 
         return resp
@@ -46,12 +46,12 @@ class VSwitchTestCase(unittest.TestCase):
 
     def _vswitch_create(self):
         body = '{"vswitch": {"name": "RESTVSW1", "rdev": "FF00"}}'
-        resp = self.client.api_request(url='/vswitchs', method='POST',
+        resp = self.client.api_request(url='/vswitches', method='POST',
                                        body=body)
         return resp
 
     def _vswitch_delete(self):
-        resp = self.client.api_request(url='/vswitchs/restvsw1',
+        resp = self.client.api_request(url='/vswitches/restvsw1',
                                        method='DELETE')
         return resp
 
@@ -89,7 +89,7 @@ class VSwitchTestCase(unittest.TestCase):
 
         try:
             body = '{"vswitch": {"grant_userid": "FVTUSER1"}}'
-            resp = self.client.api_request(url='/vswitchs/RESTVSW1',
+            resp = self.client.api_request(url='/vswitches/RESTVSW1',
                                            method='PUT', body=body)
             self.assertEqual(200, resp.status_code)
         except Exception:
@@ -99,22 +99,22 @@ class VSwitchTestCase(unittest.TestCase):
             self.assertEqual(200, resp.status_code)
 
     def test_vswitch_delete_update_not_exist(self):
-        resp = self.client.api_request(url='/vswitchs/notexist',
+        resp = self.client.api_request(url='/vswitches/notexist',
                                        method='DELETE')
         self.assertEqual(200, resp.status_code)
 
         # Test update the vswitch not found
         body = '{"vswitch": {"grant_userid": "FVTUSER1"}}'
-        resp = self.client.api_request(url='/vswitchs/notexist',
+        resp = self.client.api_request(url='/vswitches/notexist',
                                        method='PUT', body=body)
         self.assertEqual(404, resp.status_code)
 
     def test_vswitch_create_invalid_body(self):
         body = '{"vswitch": {"v1": "v1"}}'
-        resp = self.client.api_request(url='/vswitchs', method='POST',
+        resp = self.client.api_request(url='/vswitches', method='POST',
                                        body=body)
         self.assertEqual(400, resp.status_code)
 
     def test_vswitch_create_nobody(self):
-        resp = self.client.api_request(url='/vswitchs', method='POST')
+        resp = self.client.api_request(url='/vswitches', method='POST')
         self.assertEqual(400, resp.status_code)
