@@ -5,7 +5,7 @@ Sample code that invokes SDKAPI.
 import os
 import time
 
-from zvmsdk import api
+from sdkclient import client
 
 
 # Guest properties
@@ -21,13 +21,13 @@ IMAGE_PATH = '/root/smuttest/rhel67eckd_small_1100cyl.img'
 IMAGE_OS_VERSION = 'rhel6.7'
 
 # Network properties
-GUEST_IP_ADDR = '192.168.95.200'
-GATEWAY = '192.168.95.1'
-CIDR = '192.168.95.0/24'
+GUEST_IP_ADDR = '192.168.127.200'
+GATEWAY = '192.168.127.1'
+CIDR = '192.168.127.0/24'
 VSWITCH_NAME = 'xcatvsw2'
 
 
-sdkapi = api.SDKAPI()
+sdk_client = client.SDKClient()
 
 
 def terminate_guest(userid):
@@ -36,7 +36,7 @@ def terminate_guest(userid):
     Input parameters:
     :userid:   USERID of the guest, last 8 if length > 8
     """
-    sdkapi.guest_delete(userid)
+    sdk_client.send_request('guest_delete', userid)
 
 
 def describe_guest(userid):
@@ -46,7 +46,7 @@ def describe_guest(userid):
     :userid:   USERID of the guest, last 8 if length > 8
     """
 
-    inst_info = sdkapi.guest_get_info(userid)
+    inst_info = sdk_client.send_request('guest_get_info', userid)
     return inst_info
 
 
@@ -56,7 +56,7 @@ def start_guest(userid):
     Input parameters:
     :userid:   USERID of the guest, last 8 if length > 8
     """
-    sdkapi.guest_start(userid)
+    sdk_client.send_request('guest_start', userid)
 
 
 def stop_guest(userid):
@@ -65,7 +65,7 @@ def stop_guest(userid):
     Input parameters:
     :userid:   USERID of the guest, last 8 if length > 8
     """
-    sdkapi.guest_start(userid)
+    sdk_client.send_request('guest_start', userid)
 
 
 def capture_guest(userid):
@@ -75,12 +75,21 @@ def capture_guest(userid):
     :userid:   USERID of the guest, last 8 if length > 8
 
     Output parameters:
-    :image_name:      Image name that defined in xCAT image repo
+    :image_name:      Image name that captured
     """
-    # TODO: check power state ,if down ,start
+    # check power state, if down, start it
+    ret = sdk_client.send_request('guest_get_power_state', userid)
+    power_status = ret['output']
+    if power_status == 'off':
+        sdkclient.send_request('guest_start', userid)
+        # TODO: how much time?
+        time.sleep(1)
 
     # do capture
-    pass
+    image_name = 'image_captured_%03d' % (time.time() % 1000)
+    sdk_client.send_request('guest_capture', userid, image_name,
+                            capture_type='rootonly', compress_level=6)
+    return image_name
 
 
 def import_image(image_path, os_version):
@@ -93,11 +102,12 @@ def import_image(image_path, os_version):
     image_name = os.path.basename(image_path)
     print("Checking if image %s exists or not, import it if not exists" %
           image_name)
-    image_info = sdkapi.image_query(image_name)
+    image_info = sdk_client.send_request('image_query', image_name)
     if not image_info:
         print("Importing image %s ..." % image_name)
         url = 'file://' + image_path
-        sdkapi.image_import(image_name, url, {'os_version': os_version})
+        sdk_client.send_request('image_import', image_name, url,
+                                {'os_version': os_version})
     else:
         print("Image %s already exists" % image_name)
 
@@ -108,7 +118,7 @@ def delete_image(image_name):
     Input parameters:
     :image_name:      Image name that defined in xCAT image repo
     """
-    pass
+    sdk_client.send_request('image_delete', image_name)
 
 
 def _run_guest(userid, image_path, os_version, profile,
@@ -140,27 +150,27 @@ def _run_guest(userid, image_path, os_version, profile,
 
     # Create userid
     print("Creating userid %s ..." % userid)
-    sdkapi.guest_create(userid, cpu, memory, disks_list, profile)
+    sdk_client.send_request('guest_create', userid, cpu,
+                            memory, disks_list, profile)
 
     # Deploy image to root disk
     image_name = os.path.basename(image_path)
     print("Deploying %s to %s ..." % (image_name, userid))
-    sdkapi.guest_deploy(userid, image_name)
+    sdk_client.send_request('guest_deploy', userid, image_name)
 
     # Create network device and configure network interface
     print("Configuring network interface for %s ..." % userid)
-    sdkapi.guest_create_network_interface(userid, os_version, [network_info])
-    sdkapi.guest_nic_couple_to_vswitch(userid, '1000',
-                                       network_info['vswitch_name'])
-    sdkapi.vswitch_grant_user(network_info['vswitch_name'], userid)
-
-    # Setup IUCV channel
-    print("Configuring IUCV channel for %s ..." % userid)
-    sdkapi.guest_authorize_iucv_client(userid)
+    sdk_client.send_request('guest_create_network_interface', userid,
+                            os_version, [network_info])
+    sdk_client.send_request('guest_nic_couple_to_vswitch', userid,
+                            '1000', network_info['vswitch_name'])
+    sdk_client.send_request('vswitch_grant_user',
+                            network_info['vswitch_name'],
+                            userid)
 
     # Power on the vm
     print("Starting guest %s" % userid)
-    sdkapi.guest_start(userid)
+    sdk_client.send_request('guest_start', userid)
 
     # End time
     spawn_time = time.time() - spawn_start
