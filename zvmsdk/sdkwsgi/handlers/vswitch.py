@@ -13,7 +13,7 @@
 
 import json
 
-from sdkclient import client
+from zvmconnector import connector
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import vswitch
@@ -29,7 +29,7 @@ LOG = log.LOG
 
 class VswitchAction(object):
     def __init__(self):
-        self.client = client.SDKClient()
+        self.client = connector.ZVMConnector()
 
     def list(self):
         return self.client.send_request('vswitch_get_list')

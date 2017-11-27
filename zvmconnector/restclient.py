@@ -16,16 +16,16 @@ import datetime
 import json
 import jwt
 import requests
-
-# from zvmsdk import config
-
-
-# CONF = config.CONF
+import six
 
 
+REST_REQUEST_ERROR = [{'overallRC': 101, 'modID': 110, 'rc': 101},
+                      {1: "Request to zVM Cloud Connector failed:: %(error)s"},
+                       "zVM Cloud Connector request failed",
+                       ]
 INVALID_API_ERROR = [{'overallRC': 400, 'modID': 110, 'rc': 400},
                      {1: "Invalid API name, '%(msg)s'"},
-                     "Invalid API name"
+                     "Invalid API name",
                      ]
 
 
@@ -582,11 +582,17 @@ class RESTClient(object):
         method = API2METHOD[api_name]
         # get url,body with api_name and method
         url, body = self._get_url_body(api_name, method, *args, **kwargs)
-        if body is None:
-            response = self.api_request(url, method)
-        else:
-            body = json.dumps(body)
-            response = self.api_request(url, method, body)
-        # change response to SDK format
-        results = self._process_rest_response(response)
+        try:
+            if body is None:
+                response = self.api_request(url, method)
+            else:
+                body = json.dumps(body)
+                response = self.api_request(url, method, body)
+            # change response to SDK format
+            results = self._process_rest_response(response)
+        except Exception as err:
+            errmsg = REST_REQUEST_ERROR[1][1] % {'error': six.text_type(err)}
+            results = REST_REQUEST_ERROR[0]
+            results.update({'rs': 1, 'errmsg': errmsg, 'output': ''})
+
         return results

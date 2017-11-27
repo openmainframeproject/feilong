@@ -18,8 +18,7 @@ import re
 import time
 import unittest
 
-from sdkclient import client as sdkclient
-
+from zvmconnector import connector
 from zvmsdk import api
 from zvmsdk import config
 from zvmsdk import exception
@@ -38,7 +37,7 @@ def set_conf(section, opt, value):
 class SDKAPIRequestHandler(object):
 
     def __init__(self):
-        self.client = sdkclient.SDKClient(CONF.sdkserver.bind_addr)
+        self.client = connector.ZVMConnector(CONF.sdkserver.bind_addr)
 
     def _call(self, func_name, *args, **kwargs):
         results = self.client.send_request(func_name, *args, **kwargs)

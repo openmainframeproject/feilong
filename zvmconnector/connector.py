@@ -13,8 +13,8 @@
 #    under the License.
 
 
-from sdkclient import socketclient
-from sdkclient import restclient
+from zvmconnector import socketclient
+from zvmconnector import restclient
 
 
 CONN_TYPE_SOCKET = 'socket'
@@ -28,7 +28,7 @@ class baseConnection(object):
 
 class socketConnection(baseConnection):
 
-    def __init__(self, ip_addr='127.0.0.1', port=2012, timeout=3600):
+    def __init__(self, ip_addr='127.0.0.1', port=2000, timeout=3600):
         self.client = socketclient.SDKSocketClient(ip_addr, port, timeout)
 
     def request(self, api_name, *api_args, **api_kwargs):
@@ -37,14 +37,14 @@ class socketConnection(baseConnection):
 
 class restConnection(baseConnection):
 
-    def __init__(self, ip_addr='127.0.0.1', port=2012, timeout=3600):
+    def __init__(self, ip_addr='127.0.0.1', port=8080, timeout=3600):
         self.client = restclient.RESTClient(ip_addr, port, timeout)
 
     def request(self, api_name, *api_args, **api_kwargs):
         return self.client.call(api_name, *api_args, **api_kwargs)
 
 
-class SDKClient(object):
+class ZVMConnector(object):
 
     def __init__(self, ip_addr=None, port=None, timeout=3600,
                  connection_type=None):

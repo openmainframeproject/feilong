@@ -65,7 +65,7 @@ class SDKWSGITest(unittest.TestCase):
 
 class GuestActionsTest(SDKWSGITest):
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_start(self, mock_action,
                         mock_userid):
         self.req.body = '{"action": "start"}'
@@ -77,7 +77,7 @@ class GuestActionsTest(SDKWSGITest):
         mock_action.assert_called_once_with('guest_start', FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_stop(self, mock_action,
                         mock_userid):
         self.req.body = '{"action": "stop"}'
@@ -89,7 +89,7 @@ class GuestActionsTest(SDKWSGITest):
                                             timeout=None, poll_interval=None)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_stop_with_timeout(self, mock_action,
                                      mock_userid):
         self.req.body = '{"action": "stop", "timeout": 300}'
@@ -102,7 +102,7 @@ class GuestActionsTest(SDKWSGITest):
                                              poll_interval=None)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_softstop_with_timeout_poll_interval(self, mock_action,
                                                        mock_userid):
         self.req.body = """{"action": "softstop", "timeout": 300,
@@ -116,7 +116,7 @@ class GuestActionsTest(SDKWSGITest):
                                              poll_interval=15)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_get_console_output(self, mock_action,
                         mock_userid):
         self.req.body = '{"action": "get_console_output"}'
@@ -128,7 +128,7 @@ class GuestActionsTest(SDKWSGITest):
                                             FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_deploy(self, mock_action,
                           mock_userid):
         self.req.body = """{"action": "deploy",
@@ -181,7 +181,7 @@ class GuestActionsTest(SDKWSGITest):
                           self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_deploy_with_ip_in_remotehost(self, mock_action,
                                                 mock_userid):
         self.req.body = """{"action": "deploy",
@@ -198,7 +198,7 @@ class GuestActionsTest(SDKWSGITest):
             transportfiles='file1', vdev='1000')
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_deploy_with_fqdn_in_remotehost(self, mock_action,
                                                   mock_userid):
         # remote host with Hostname + DomainName in it
@@ -290,7 +290,7 @@ class GuestActionsTest(SDKWSGITest):
                           self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_capture(self, mock_action, mock_userid):
         self.req.body = """{"action": "capture",
                             "image": "image1",
@@ -306,7 +306,7 @@ class GuestActionsTest(SDKWSGITest):
 
 class HandlersGuestTest(SDKWSGITest):
 
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_create(self, mock_create):
         body_str = '{"guest": {"userid": "name1", "vcpus": 1, "memory": 1}}'
         self.req.body = body_str
@@ -323,7 +323,7 @@ class HandlersGuestTest(SDKWSGITest):
         self.assertRaises(exception.ValidationError, guest.guest_create,
                           self.req)
 
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_create_with_disk_list(self, mock_create):
         body_str = """{"guest": {"userid": "name1", "vcpus": 1, "memory": 1,
                                  "disk_list": [{"size": "1g",
@@ -348,7 +348,7 @@ class HandlersGuestTest(SDKWSGITest):
         self.assertRaises(exception.ValidationError, guest.guest_create,
                           self.req)
 
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_create_with_invalid_format(self, mock_create):
         body_str = """{"guest": {"userid": "name1", "vcpus": 1, "memory": 1,
                                  "disk_list": [{"size": "1g",
@@ -432,7 +432,7 @@ class HandlersGuestTest(SDKWSGITest):
         mock_delete.assert_called_once_with(FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_create_nic(self, mock_create, mock_userid):
         vdev = '1234'
         nic_id = "514fec03-0d96-4349-a670-d972805fb579"
@@ -467,7 +467,7 @@ class HandlersGuestTest(SDKWSGITest):
                           self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_create_network_interface(self, mock_interface, mock_userid):
         os_version = 'rhel6'
         guest_networks = [{'ip_addr': '192.168.12.34',
@@ -496,7 +496,7 @@ class HandlersGuestTest(SDKWSGITest):
             guest_networks=guest_networks,
             active=False)
 
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guests_get_nic_info(self, mock_interface):
         self.req.GET = {}
         mock_interface.return_value = ''
@@ -506,7 +506,7 @@ class HandlersGuestTest(SDKWSGITest):
             'guests_get_nic_info',
             userid=None, nic_id=None, vswitch=None)
 
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guests_get_nic_info_all(self, mock_interface):
         userid = 'fakeid'
         nic_id = 'fake_nic_id'
@@ -523,7 +523,7 @@ class HandlersGuestTest(SDKWSGITest):
             'guests_get_nic_info',
             userid=userid, nic_id=nic_id, vswitch=vswitch)
 
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guests_get_nic_info_with_userid(self, mock_interface):
         userid = 'fakeid'
         self.req.GET = {}
@@ -536,7 +536,7 @@ class HandlersGuestTest(SDKWSGITest):
             'guests_get_nic_info',
             userid=userid, nic_id=None, vswitch=None)
 
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guests_get_nic_info_with_nicid(self, mock_interface):
         nic_id = 'fake_nic_id'
         self.req.GET = {}
@@ -549,7 +549,7 @@ class HandlersGuestTest(SDKWSGITest):
             'guests_get_nic_info',
             userid=None, nic_id=nic_id, vswitch=None)
 
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guests_get_nic_info_with_vswitch(self, mock_interface):
         vswitch = 'vswitch'
         self.req.GET = {}
@@ -586,7 +586,7 @@ class HandlersGuestTest(SDKWSGITest):
                           self.req)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_create_disks(self, mock_create, mock_userid):
         disk_list = [{u'size': u'1g',
                      'disk_pool': 'ECKD:poolname'}]
@@ -602,7 +602,7 @@ class HandlersGuestTest(SDKWSGITest):
                                             FAKE_USERID,
                                             disk_list)
 
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_config_minidisks(self, mock_userid, mock_config):
         disk_list = [{'vdev': '0101',
@@ -621,7 +621,7 @@ class HandlersGuestTest(SDKWSGITest):
                                             FAKE_USERID,
                                             disk_list)
 
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_delete_disks(self, mock_userid, mock_delete):
         vdev_list = ['0101']
@@ -675,7 +675,7 @@ class HandlersGuestTest(SDKWSGITest):
         else:
             return '1000'
 
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     @mock.patch.object(util, 'wsgi_path_item')
     def test_delete_nic(self, mock_userid, mock_delete):
         body_str = '{"info": {}}'
@@ -689,7 +689,7 @@ class HandlersGuestTest(SDKWSGITest):
                                             FAKE_USERID, "1000",
                                             active=False)
 
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_couple_nic(self, mock_userid, mock_couple):
         body_str = '{"info": {"couple": "true", "vswitch": "vsw1"}}'
@@ -703,7 +703,7 @@ class HandlersGuestTest(SDKWSGITest):
                                             FAKE_USERID, "1000", "vsw1",
                                             active=False)
 
-    @mock.patch('sdkclient.client.SDKClient.send_request')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_uncouple_nic(self, mock_userid, mock_uncouple):
 
