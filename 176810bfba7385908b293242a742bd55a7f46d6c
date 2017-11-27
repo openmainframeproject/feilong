@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "27d52eb1_97e1eb68",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1574,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-27T01:17:48Z",
+      "side": 1,
+      "message": "please update this defintion\nI think it\u0027s much better to update it instead of combine here",
+      "range": {
+        "startLine": 1574,
+        "startChar": 51,
+        "endLine": 1574,
+        "endChar": 65
+      },
+      "revId": "176810bfba7385908b293242a742bd55a7f46d6c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
