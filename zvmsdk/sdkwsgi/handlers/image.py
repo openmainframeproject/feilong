@@ -13,7 +13,7 @@
 
 import json
 
-from sdkclient import client
+from zvmconnector import connector
 from zvmsdk import log
 from zvmsdk import utils
 from zvmsdk.sdkwsgi.handlers import tokens
@@ -29,7 +29,7 @@ LOG = log.LOG
 class ImageAction(object):
 
     def __init__(self):
-        self.client = client.SDKClient()
+        self.client = connector.ZVMConnector()
 
     @validation.schema(image.create)
     def create(self, body):

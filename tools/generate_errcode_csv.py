@@ -26,7 +26,6 @@ SDK_ERR_KEYS = (
     'volume',
     'image',
     'monitor',
-    'API',
     'RESTAPI',
     'notExist',
     'conflict',

@@ -12,7 +12,7 @@ import json
 import time
 import unittest
 
-from sdkclient import client
+from zvmconnector import connector
 from zvmsdk import config
 from zvmsdk.tests.sdkwsgi import api_sample
 
@@ -22,13 +22,13 @@ CONN_REST = 'rest'
 CONN_SOCKET = 'socket'
 
 
-class SDKClientTestCase(unittest.TestCase):
+class ZVMConnectorTestCase(unittest.TestCase):
     def __init__(self, methodName='runTest'):
-        super(SDKClientTestCase, self).__init__(methodName)
+        super(ZVMConnectorTestCase, self).__init__(methodName)
         self.apibase = api_sample.APITestBase()
-        self.restclient = client.SDKClient(connection_type=CONN_REST,
-                                           port=8888)
-        self.sockclient = client.SDKClient(connection_type=CONN_SOCKET)
+        self.restclient = connector.ZVMConnector(connection_type=CONN_REST,
+                                                 port=8888)
+        self.sockclient = connector.ZVMConnector(connection_type=CONN_SOCKET)
         self.userid_rest = 'RESTT%03d' % (time.time() % 1000)
         self.userid_sock = 'SOCKT%03d' % (time.time() % 1000)
 

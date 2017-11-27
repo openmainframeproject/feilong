@@ -13,8 +13,8 @@
 #    under the License.
 
 
-from sdkclient import socketclient
-from sdkclient import restclient
+from zvmconnector import socketclient
+from zvmconnector import restclient
 
 
 CONN_TYPE_SOCKET = 'socket'
@@ -44,7 +44,7 @@ class restConnection(baseConnection):
         return self.client.call(api_name, *api_args, **api_kwargs)
 
 
-class SDKClient(object):
+class ZVMConnector(object):
 
     def __init__(self, ip_addr=None, port=None, timeout=3600,
                  connection_type=None):

@@ -1091,7 +1091,7 @@ Grant an user to access vswitch
 
   - name: vswitch_name
   - vswitch: vswitch_info
-  - grant_userid: userid_body
+  - grant_userid: guest_userid
 
 * Request sample:
 
@@ -1119,7 +1119,7 @@ Revoke the user access from vswitch
 
   - name: vswitch_name
   - vswitch: vswitch_info
-  - revoke_userid: userid_body
+  - revoke_userid: guest_userid
 
 * Request sample:
 
@@ -1148,7 +1148,7 @@ Set vlan id for user when connecting to the vswitch
   - name: vswitch_name
   - vswitch: vswitch_info
   - user_vlan_id: user_vlan_id
-  - userid: userid_body
+  - userid: guest_userid
   - vlanid: vlan_id
 
 * Request sample:

@@ -33,7 +33,6 @@ Each error corresponds to a dictionary contains: 'overallRC', 'modID', 'rc',
     IMAGE      40
     MONITOR    50
     SDKSERVER  100
-    SDKCLIENT  110
     SDKWSGI    120
     SDKGENERAL 400
 
@@ -106,7 +105,6 @@ ModRCs = {
     'image': 40,
     'monitor': 50,
     'sdkserver': 100,
-    'sdkclient': 110,
     'sdkwsgi': 120,
     # The 'zvmsdk' is used as the default module if module is not specified
     # when raising exception
@@ -209,13 +207,6 @@ errors = {
                  },
                 "Operation on Monitor failed"
                 ],
-# Invalid API name (Only used by sdk client/server)
-# 'modID' would be set to ModRC['sdkserver'] or ModRC['sdkclient']
-# 'rs' would also be set when get this error.
-    'API': [{'overallRC': 400, 'modID': None, 'rc': 400},
-            {1: "Invalid API name, '%(msg)s'"},
-            "Invalid API name"
-            ],
 # REST API Request error (Only used by sdkwsgi)
 # 'modID' would be set to ModRC['sdkwsgi']
     'RESTAPI': [{'overallRC': 400, 'modID': ModRCs['sdkwsgi'], 'rc': 400},
