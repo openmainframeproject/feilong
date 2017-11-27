@@ -339,7 +339,7 @@ def req_vswitch_create(start_index, *args, **kwargs):
 
 
 def req_vswitch_delete(start_index, *args, **kwargs):
-    url = '/vswitchs'
+    url = '/vswitchs/%s'
     body = None
     return url, body
 
