@@ -87,6 +87,7 @@ class ValidationError(SDKBaseException):
 
 
 class ZVMUnauthorized(SDKBaseException):
+    msg_fmt = 'Not authorized to execute'
     code = 401
 
 
