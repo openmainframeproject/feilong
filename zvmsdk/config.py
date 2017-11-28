@@ -44,12 +44,12 @@ zvm_opts = [
         help='''
 Directory where log file to be put into.
 
-SDK has a set of logs to help administrator to debug
-and aduit actions performed through SDK. Edit this option
+z/VM cloud connector has a set of logs to help administrator to debug
+and aduit actions performed through zvm cloud connector. Edit this option
 if you want to put logs into specified place.
 
 Please ensure the service running on the consume which
-consumes SDK has the authorization to write to the path.
+consumes z/VM cloud connector has the authorization to write to the path.
     '''),
     Opt('log_level',
         section='logging',
@@ -57,7 +57,7 @@ consumes SDK has the authorization to write to the path.
         help='''
 Level of the log.
 
-SDK utilize python logging package to help admin debug
+z/VM cloud connector utilize python logging package to help admin debug
 or analyze issues. it's recommend to set this value
 to logging.DEBUG to get more detailed logs and set it to
 logging.INFO(default) in normal situation.
@@ -99,10 +99,10 @@ Sample NIC definitions in the z/VM user directory:
 Default LOGONBY userid(s) for the cloud.
 
 This is a set of z/VM userid(s) which are allowed to logon using the LOGONBY
-keyword to the guests created by the z/VM SDK solution, compatible with
-the LBYONLY keyword of the user directory statement. This value is only used
-when a guest is created. If you change this value, existing guests' directory
-entries are not automatically updated with the new value.
+keyword to the guests created by the z/VM cloud connector solution, compatible
+with the LBYONLY keyword of the user directory statement. This value is only
+used when a guest is created. If you change this value, existing guests'
+directory entries are not automatically updated with the new value.
 When an ESM is installed, this parameter only governs when the ESM
 defers to CP's processing.
 
@@ -154,7 +154,7 @@ Sample configuration:
         help='''
 PROFILE name to use when creating a z/VM guest.
 
-When SDK deploys an guest on z/VM, it can include some
+When z/VM cloud connector deploys an guest on z/VM, it can include some
 common statements from a PROFILE definition.
 This PROFILE must already be included in your z/VM user directory.
 
@@ -168,9 +168,9 @@ Possible values:
         help='''
 Virtual device number for root disk.
 
-When SDK deploys an guest, it creates a root disk and potentially
-several data disks. This value is the virtual device number of the root
-disk.
+When z/VM cloud connector deploys an guest, it creates a root disk and
+potentially several data disks. This value is the virtual device number of the
+root disk.
 
 Possible values:
     An integer value in hex format, between 0 and 65536 (x'FFFF').
@@ -189,9 +189,9 @@ Sample root disk in user directory:
 Temp path to store image temp information.
 
 During guest creation, image transferred from upper layer need to be
-create some temp files, this option is used to tell SDK where
-to store the temp files, make sure the process running SDK is able to
-read write the directory.
+create some temp files, this option is used to tell z/VM cloud connector where
+to store the temp files, make sure the process running z/VM cloud connector
+is able to read write the directory.
     '''),
     # image options
     Opt('sdk_image_repository',
@@ -200,9 +200,10 @@ read write the directory.
         help='''
 Directory to store sdk images.
 
-SDK image repository to store the imported images and the staging images that
-is in snapshotting. Once snapshot finished, the image will be removed to the
-netboot directory accordingly. Two kinds of image repository looks like:
+z/VM cloud connector image repository to store the imported images and the
+staging images that is in snapshotting. Once snapshot finished, the image
+will be removed to the netboot directory accordingly. Two kinds of image
+repository looks like:
 /var/lib/zvmsdk/images/netboot/<image_osversion>/<imagename>
 /var/lib/zvmsdk/images/staging/<image_osversion>/<imagename>
     '''),
@@ -211,11 +212,11 @@ netboot directory accordingly. Two kinds of image repository looks like:
         section='network',
         required=True,
         help='''
-IP address of the Linux machine which is running SDK on.
+IP address of the Linux machine which is running z/VM cloud connector on.
 
 Some remote copy operations need to be performed during guest creation,
-this option tell the SDK the host ip which can be used to perform copy
-from and copy to operations.
+this option tell the z/VM cloud connector the host ip which can be used
+to perform copy from and copy to operations.
     '''),
     # guest options
     Opt('temp_path',
@@ -225,9 +226,9 @@ from and copy to operations.
 Temp path to store guest temp information.
 
 During guest creation, some temp data need to be stored in order to
-be provided to guest later, this option is used to tell SDK where
-to store the temp files, make sure the process running SDK is able to
-read write the directory.
+be provided to guest later, this option is used to tell z/VM cloud connector
+where to store the temp files, make sure the process running z/VM cloud
+connector is able to read write the directory.
     '''),
     Opt('console_log_size',
         section='guest',
@@ -249,10 +250,10 @@ to transfer large consoles, which may not be desirable for performance reasons.
 Cached monitor data update interval
 
 This is used to prevent excessive effort spent retrieving the
-monitor data by calling the SDK backend utilities. When this cache
-is enabled, a inspect call will only call the SDK backend utilities
-when the inspected guest's info does not exist in the cache or
-when the cache data is expired. And when an cache update is needed,
+monitor data by calling the z/VM cloud connector backend utilities. When this
+cache is enabled, a inspect call will only call the z/VM cloud connector
+backend utilities when the inspected guest's info does not exist in the cache
+or when the cache data is expired. And when an cache update is needed,
 all the existing guests' data will be retrieved in a single call to
 the backend.
 
@@ -323,10 +324,10 @@ will be used to validate request before token expire.
         default='127.0.0.1',
         opt_type='str',
         help='''
-The IP address that the SDK server is listen on.
+The IP address that the z/VM cloud connector server is listen on.
 
-When the SDK server deamon starts, it will try to bind to
-this address and port bind_port, and wait for the SDK client
+When the z/VM cloud connector server deamon starts, it will try to bind to
+this address and port bind_port, and wait for the z/VM cloud connector client
 connection to handle API request.
 '''
         ),
@@ -335,10 +336,11 @@ connection to handle API request.
         opt_type='int',
         default=2000,
         help='''
-The port that the SDK server is listen on.
+The port that the z/VM cloud connector server is listen on.
 
-This will work as a pair with bind_addr when the SDK server daemon
-starts, more info can be found in that configuration description.
+This will work as a pair with bind_addr when the z/VM cloud connector
+server daemon starts, more info can be found in that
+configuration description.
 '''
         ),
     Opt('connect_type',
@@ -348,8 +350,8 @@ starts, more info can be found in that configuration description.
         help='''
 The connection type of the requests flowing into the sdkserver.
 
-This will work as a pair with bind_addr when the SDK server daemon
-starts, more info can be found in that configuration description.
+This will work as a pair with bind_addr when the z/VM cloud connector
+server daemon starts, more info can be found in that configuration description.
 '''
         ),
     Opt('request_queue_size',
@@ -357,11 +359,12 @@ starts, more info can be found in that configuration description.
         opt_type='int',
         default=128,
         help='''
-The size of request queue in SDK server.
+The size of request queue in z/VM cloud connector server.
 
-SDK server maintains a queue to keep all the accepted but not handled requests,
-and the SDK server workers fetch requests from this queue.
-To some extend, this queue size decides the max socket opened in SDK server.
+z/VM cloud connector server maintains a queue to keep all the accepted but
+not handled requests, and the z/VM cloud connector server workers fetch
+requests from this queue. To some extend, this queue size decides the max
+socket opened in server. 
 This value should be adjusted according to the system resource.
 '''
         ),
@@ -370,7 +373,8 @@ This value should be adjusted according to the system resource.
         opt_type='int',
         default=64,
         help='''
-The maximum number of worker thread in SDK server to handle client requests.
+The maximum number of worker thread in z/VM cloud connector server to
+handle client requests.
 
 These worker threads would work concurrently to handle requests from client.
 This value should be adjusted according to the system resource and workload.
@@ -384,10 +388,11 @@ This value should be adjusted according to the system resource and workload.
         help='''
 Directory to store database.
 
-SDK databases are used to store a set of tables which contain the
-information of network, volume, image, etc. This option is used to
-tell SDK where to store the database files, make sure the process
-running SDK is able to read write and execute the directory.
+z/VM cloud connector databases are used to store a set of tables which contain
+the information of network, volume, image, etc. This option is used to
+tell z/VM cloud connector where to store the database files, make sure the
+process running z/VM cloud connector is able to read write and
+execute the directory.
 '''
         ),
     # tests options
