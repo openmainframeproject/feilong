@@ -25,9 +25,6 @@ from zvmsdk import log
 LOG = log.LOG
 
 
-SDKWSGI_MODID = 120
-
-
 def loads(s, **kwargs):
     return json.loads(s, **kwargs)
 
@@ -174,7 +171,8 @@ def expected_errors(errors):
                 LOG.exception("Unexpected exception in API method")
                 msg = ('Unexpected API Error. Please report this at '
                     'https://bugs.launchpad.net/python-zvm-sdk/+bugs '
-                    'and attach the sdk API log if possible.\n%s') % type(exc)
+                    'and attach the zvm cloud connector log if'
+                    'possible\n%s') % type(exc)
                 raise webob.exc.HTTPInternalServerError(explanation=msg)
 
         return wrapped
@@ -298,7 +296,7 @@ class SdkWsgify(wsgify):
                 'overallRC': 400,
                 'rc': 400,
                 'rs': code,
-                'modID': SDKWSGI_MODID,
+                'modID': util.SDKWSGI_MODID,
                 'output': '',
                 'errmsg': explanation}
             exc.text = six.text_type(json.dumps(fault_data))
