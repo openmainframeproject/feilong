@@ -900,7 +900,7 @@ Create image
 
 **POST /images**
 
-Create a new image.
+Import an image into image repository
 
 * Request:
 
@@ -908,9 +908,9 @@ Create a new image.
 
   - image: image_dict
   - image_name: image_name
-  - url: image_url
+  - url: image_import_url
   - image_meta: image_metadata
-  - remote_host: remotehost_image
+  - remote_host: remotehost_image_import
 
 * Request sample:
 
@@ -938,8 +938,8 @@ Export the image to the specified location.
 
   - image: image_dict
   - image_name: image_name
-  - dest_url: image_url
-  - remote_host: remotehost_image
+  - dest_url: image_export_url
+  - remote_host: remotehost_image_export
 
 * Request sample:
 
