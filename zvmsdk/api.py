@@ -254,7 +254,7 @@ class SDKAPI(object):
                https://netloc/path/to/file.tar.gz.0
                file:///path/to/file.tar.gz.0
         :param dict image_meta:
-               a dictionary to describe the image info. such as md5sum,
+               a dictionary to describe the image info, such as md5sum,
                os_version. For example:
                {'os_version': 'rhel6.2',
                'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5'}
