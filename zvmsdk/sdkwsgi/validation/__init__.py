@@ -96,9 +96,6 @@ class _SchemaValidator(object):
                 detail = ex.cause.format_message()
             elif len(ex.path) > 0:
                 if self.is_body:
-                    # NOTE: For whole OpenStack message consistency, this error
-                    #       message has been written as the similar format of
-                    #       WSME.
                     detail = ("Invalid input for field/attribute %(path)s. "
                               "Value: %(value)s. %(message)s")
                 else:
@@ -112,8 +109,6 @@ class _SchemaValidator(object):
                 detail = ex.message
             raise exception.ValidationError(detail=detail)
         except TypeError as ex:
-            # NOTE: If passing non string value to patternProperties parameter,
-            #       TypeError happens. Here is for catching the TypeError.
             detail = six.text_type(ex)
             raise exception.ValidationError(detail=detail)
 

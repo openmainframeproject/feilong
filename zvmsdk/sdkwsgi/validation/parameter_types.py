@@ -33,14 +33,6 @@ class ValidationRegex(object):
 
 
 def _is_printable(char):
-    """determine if a unicode code point is printable.
-
-    This checks if the character is either "other" (mostly control
-    codes), or a non-horizontal space. All characters that don't match
-    those criteria are considered printable; that is: letters;
-    combining marks; numbers; punctuation; symbols; (horizontal) space
-    separators.
-    """
     category = unicodedata.category(char)
     return (not category.startswith("C") and
             (not category.startswith("Z") or category == "Zs"))
@@ -52,30 +44,11 @@ def _get_all_chars():
 
 
 def _build_regex_range(ws=True, invert=False, exclude=None):
-    """Build a range regex for a set of characters in utf8.
-
-    This builds a valid range regex for characters in utf8 by
-    iterating the entire space and building up a set of x-y ranges for
-    all the characters we find which are valid.
-
-    :param ws: should we include whitespace in this range.
-    :param exclude: any characters we want to exclude
-    :param invert: invert the logic
-
-    The inversion is useful when we want to generate a set of ranges
-    which is everything that's not a certain class. For instance,
-    produce all all the non printable characters as a set of ranges.
-    """
     if exclude is None:
         exclude = []
     regex = ""
-    # are we currently in a range
     in_range = False
-    # last character we found, for closing ranges
     last = None
-    # last character we added to the regex, this lets us know that we
-    # already have B in the range, which means we don't need to close
-    # it out with B-B. While the later seems to work, it's kind of bad form.
     last_added = None
 
     def valid_char(char):

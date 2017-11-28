@@ -763,7 +763,3 @@ class HandlersGuestTest(SDKWSGITest):
 
         self.assertRaises(webob.exc.HTTPBadRequest,
                           guest.guest_create, self.req)
-
-        mock_create.side_effect = Exception
-        self.assertRaises(webob.exc.HTTPInternalServerError,
-                          guest.guest_create, self.req)

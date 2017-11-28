@@ -19,8 +19,8 @@ from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi.handlers import guest
 from zvmsdk.sdkwsgi.handlers import host
 from zvmsdk.sdkwsgi.handlers import image
-from zvmsdk.sdkwsgi.handlers import root
 from zvmsdk.sdkwsgi.handlers import tokens
+from zvmsdk.sdkwsgi.handlers import version
 from zvmsdk.sdkwsgi.handlers import volume
 from zvmsdk.sdkwsgi.handlers import vswitch
 
@@ -32,7 +32,7 @@ LOG = log.LOG
 # you need add code in handlers/ folder to handle the request
 ROUTE_LIST = (
     ('/', {
-        'GET': root.home,
+        'GET': version.version,
     }),
     ('/guests', {
         'POST': guest.guest_create,
