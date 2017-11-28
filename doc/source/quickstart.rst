@@ -117,11 +117,11 @@ SSH onto the BYOL as root user, and then follow the following steps:
    * The SMAPI server on this z/VM host is working normally.
    * The zthin rpm is installed without any error.
 
-z/VM SDK install
-----------------
+z/VM cloud connector install
+----------------------------
 
-z/VM SDK is the upper transition layer of z/VM Cloud Connector. It implements the
-supported SDK APIs by communicating with the zthin backend.
+z/VM cloud connector is the upper transition layer of z/VM Cloud Connector. It implements the
+supported cloud connector APIs by communicating with the zthin backend.
 
 1. **Through RPM/DEB**
 
@@ -153,9 +153,9 @@ supported SDK APIs by communicating with the zthin backend.
 Configuration Sample
 ====================
 
-After z/VM SDK is installed, a file named 'zvmsdk.conf.sample' is generated
+After z/VM cloud connector is installed, a file named 'zvmsdk.conf.sample' is generated
 under the /etc/zvmsdk/ folder. It contains all the supported configurations
-for z/VM SDK. You can refer to it to create your own configuration file which
+for z/VM cloud connector. You can refer to it to create your own configuration file which
 should be named as zvmsdk.conf.
 
 Here's a sample configuration in which several options marked as 'required'
@@ -191,14 +191,14 @@ should be customized according to your environment.
     # This param is required
     disk_pool=ECKD:eckdpool
 
-Setup for z/VM SDK Daemon
-=========================
+Setup for z/VM cloud connector Daemon
+=====================================
 
 The z/VM Cloud Connector is designed to be run inside a daemon. The daemon server is bond to
-the configured socket for receiving requests and then call the requested SDK API.
+the configured socket for receiving requests and then call the requested cloud connector API.
 
 The daemon server would be run with user 'zvmsdk' and group 'zvmsdk', the following user and folder
-setup should be made on BYOL for the z/VM SDK daemon to run.
+setup should be made on BYOL for the z/VM cloud connector daemon to run.
 
 * Create 'zvmsdk' user and group
 
@@ -210,7 +210,7 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
 
 * Configure sudo access for 'zvmsdk' user
 
-  The z/VM SDK Daemon relies on some privileged commands for the management of the z/VM host, so you
+  The z/VM cloud connector Daemon relies on some privileged commands for the management of the z/VM host, so you
   need to grant the 'zvmsdk' user to run following commands with sudo without password:
 
   * /usr/sbin/vmcp
@@ -247,7 +247,7 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
 
 * Setup log directory
 
-  The folder to which the z/VM SDK log would be written to can be configured with the 'log_dir'
+  The folder to which the z/VM cloud connector log would be written to can be configured with the 'log_dir'
   option in 'default' section. By default, the log folder is '/var/log/zvmsdk'. If you have customized
   the 'log_dir' value, you need to change the folder in following commands accordingly.
 
@@ -267,12 +267,12 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
       # ls -l /etc/zvmsdk
 
   A file named zvmsdk.conf should be found under /etc/zvmsdk folder and contains at least all the required
-  options before the z/VM SDK daemon can be started.
+  options before the z/VM cloud connector daemon can be started.
 
-Start z/VM SDK Daemon
-=====================
+Start z/VM cloud connector Daemon
+=================================
 
-The z/VM SDK Daemon can be started via the following command:
+The z/VM cloud connector Daemon can be started via the following command:
 
 .. code-block:: text
 
@@ -298,7 +298,7 @@ Verification
 ============
 
 Try the following python commands on BYOL.
-If the two send_request command all returns 'overallRC' as 0, that means the z/VM SDK daemon
+If the two send_request command all returns 'overallRC' as 0, that means the z/VM cloud connector daemon
 is setup and running normally.
 
 For use of the z/VM Cloud Connector RESTful-API, please continue to the section
