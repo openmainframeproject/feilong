@@ -56,7 +56,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Cloud Connector for z/VM'
+project = u'Cloud Connector for zVM'
 copyright = u'2017 IBM'
 author = u'IBM z/VM cloud team'
 
@@ -264,7 +264,7 @@ except Exception:
 # (source start file, target name, title, author, documentclass
 # [howto/manual]).
 latex_documents = [
-    (master_doc, project+'.tex', u'Cloud Connector for z/VM',
+    (master_doc, project+'.tex', u'Cloud Connector for zVM',
      u'IBM', 'manual'),
 ]
 
