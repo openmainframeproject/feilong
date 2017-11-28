@@ -118,6 +118,8 @@ def dispatch(environ, start_response, mapper):
     """
     result = mapper.match(environ=environ)
     if result is None:
+        info = environ.get('PATH_INFO', '')
+        LOG.debug('The route for %s can not be found', info)
         raise webob.exc.HTTPNotFound(
             json_formatter=util.json_error_formatter)
 
