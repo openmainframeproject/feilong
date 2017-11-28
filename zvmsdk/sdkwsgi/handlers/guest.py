@@ -20,7 +20,6 @@ from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import guest
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi import validation
-from zvmsdk.sdkwsgi import wsgi_wrapper
 from zvmsdk import utils
 
 
@@ -282,7 +281,7 @@ def get_handler():
     return _VMHANDLER
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_get_info(req):
 
@@ -301,7 +300,7 @@ def guest_get_info(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_get(req):
 
@@ -323,7 +322,7 @@ def guest_get(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_get_power_state(req):
 
@@ -342,7 +341,7 @@ def guest_get_power_state(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @util.expected_errors(400)
 @tokens.validate
 def guest_create(req):
@@ -363,7 +362,7 @@ def guest_create(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_list(req):
     def _guest_list():
@@ -378,7 +377,7 @@ def guest_list(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_action(req):
 
@@ -410,7 +409,7 @@ def guest_action(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_delete(req):
 
@@ -428,7 +427,7 @@ def guest_delete(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_get_nic_info(req):
 
@@ -447,7 +446,7 @@ def guest_get_nic_info(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_delete_nic(req):
     def _guest_delete_nic(userid, vdev, req):
@@ -468,7 +467,7 @@ def guest_delete_nic(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_create_nic(req):
 
@@ -488,7 +487,7 @@ def guest_create_nic(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_couple_uncouple_nic(req):
 
@@ -510,7 +509,7 @@ def guest_couple_uncouple_nic(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_create_network_interface(req):
 
@@ -540,7 +539,7 @@ def _get_userid_list(req):
     return userids
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_get_stats(req):
 
@@ -560,7 +559,7 @@ def guest_get_stats(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_get_vnics_info(req):
 
@@ -580,7 +579,7 @@ def guest_get_vnics_info(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guests_get_nic_info(req):
 
@@ -603,7 +602,7 @@ def guests_get_nic_info(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_config_disks(req):
 
@@ -623,7 +622,7 @@ def guest_config_disks(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_create_disks(req):
 
@@ -643,7 +642,7 @@ def guest_create_disks(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def guest_delete_disks(req):
 

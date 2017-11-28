@@ -187,13 +187,7 @@ class SdkHandler(object):
         try:
             return dispatch(environ, start_response, self._map)
         except exception.NotFound as exc:
-            info = environ.get('PATH_INFO', '')
-            LOG.debug('The route for %s can not be found1', info)
             raise webob.exc.HTTPNotFound(
                 exc, json_formatter=util.json_error_formatter)
-        except webob.exc.HTTPNotFound:
-            info = environ.get('PATH_INFO', '')
-            LOG.debug('The route for %s can not be found2', info)
-            raise
         except Exception as exc:
             raise
