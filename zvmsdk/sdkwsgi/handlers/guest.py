@@ -342,7 +342,6 @@ def guest_get_power_state(req):
 
 
 @util.SdkWsgify
-@util.expected_errors(400)
 @tokens.validate
 def guest_create(req):
 
