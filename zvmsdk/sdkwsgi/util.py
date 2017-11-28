@@ -16,12 +16,17 @@ import json
 import six
 
 import webob
+from webob.dec import wsgify
 
 from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk.sdkwsgi import util
 
 
 LOG = log.LOG
+
+
+SDKWSGI_MODID = 120
 
 
 def loads(s, **kwargs):
@@ -275,3 +280,27 @@ def handle_already_exists(msg):
 
     # not handle it well, go to default
     return 0
+
+
+class SdkWsgify(wsgify):
+
+    def call_func(self, req, *args, **kwargs):
+        """Add json_error_formatter to any webob HTTPExceptions."""
+        try:
+            super(SdkWsgify, self).call_func(req, *args, **kwargs)
+        except webob.exc.HTTPException as exc:
+            msg = ('encounter %(error)s error') % {'error': exc}
+            LOG.debug(msg)
+            exc.json_formatter = util.json_error_formatter
+            code = exc.status_int
+            explanation = six.text_type(exc)
+
+            fault_data = {
+                'overallRC': 400,
+                'rc': 400,
+                'rs': code,
+                'modID': SDKWSGI_MODID,
+                'output': '',
+                'errmsg': explanation}
+            exc.text = six.text_type(json.dumps(fault_data))
+            return exc

@@ -20,7 +20,7 @@ from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import image
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi import validation
-from zvmsdk.sdkwsgi import wsgi_wrapper
+
 
 _IMAGEACTION = None
 LOG = log.LOG
@@ -75,7 +75,7 @@ def get_action():
     return _IMAGEACTION
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def image_create(req):
 
@@ -94,7 +94,7 @@ def image_create(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def image_get_root_disk_size(req):
 
@@ -112,7 +112,7 @@ def image_get_root_disk_size(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def image_delete(req):
 
@@ -130,7 +130,7 @@ def image_delete(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def image_export(req):
 
@@ -150,7 +150,7 @@ def image_export(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def image_query(req):
 
