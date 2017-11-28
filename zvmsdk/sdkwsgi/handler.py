@@ -28,6 +28,8 @@ from zvmsdk.sdkwsgi.handlers import vswitch
 LOG = log.LOG
 
 
+# This is the route of zvm sdk REST API, in order to add or modify
+# you need add code in handlers/ folder to handle the request
 ROUTE_LIST = (
     ('/', {
         'GET': root.home,
@@ -112,9 +114,9 @@ ROUTE_LIST = (
 def dispatch(environ, start_response, mapper):
     """Find a matching route for the current request.
 
-    If no match is found, raise a 404 response.
-    If there is a matching route, but no matching handler
-    for the given method, raise a 405.
+    :raises: 404(not found) if no match request
+             405(method not allowed) if route exist but
+                method not provided.
     """
     result = mapper.match(environ=environ)
     if result is None:
@@ -129,7 +131,7 @@ def dispatch(environ, start_response, mapper):
     return handler(environ, start_response)
 
 
-def handle_405(environ, start_response):
+def handle_not_allowed(environ, start_response):
     """Return a 405 response when method is not allowed.
 
     If _methods are in routing_args, send an allow header listing
@@ -138,10 +140,6 @@ def handle_405(environ, start_response):
     _methods = util.wsgi_path_item(environ, '_methods')
     headers = {}
     if _methods:
-        # Ensure allow header is a python 2 or 3 native string (thus
-        # not unicode in python 2 but stay a string in python 3)
-        # In the process done by Routes to save the allowed methods
-        # to its routing table they become unicode in py2.
         headers['allow'] = str(_methods)
     raise webob.exc.HTTPMethodNotAllowed(
         ('The method specified is not allowed for this resource.'),
@@ -158,14 +156,15 @@ def make_map(declarations):
                            conditions=dict(method=[method]))
             allowed_methods.append(method)
         allowed_methods = ', '.join(allowed_methods)
-        mapper.connect(route, action=handle_405, _methods=allowed_methods)
+        mapper.connect(route, action=handle_not_allowed,
+                       _methods=allowed_methods)
     return mapper
 
 
 class SdkHandler(object):
-    """Serve sdk API.
+    """Serve zvm sdk request
 
-    Dispatch to handlers defined in ROUTE_DECLARATIONS.
+    Dispatch to handlers defined in ROUTE_LIST.
     """
 
     def __init__(self, **local_config):

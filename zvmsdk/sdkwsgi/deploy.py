@@ -20,11 +20,11 @@ import webob
 from zvmsdk import log
 from zvmsdk.sdkwsgi import handler
 from zvmsdk.sdkwsgi import requestlog
+from zvmsdk.sdkwsgi import util
 
 
 LOG = log.LOG
-NAME = "sdk"
-SDKWSGI_MODID = 120
+NAME = "zvm-cloud-connector"
 
 
 def walk_class_hierarchy(clazz, encountered=None):
@@ -61,7 +61,7 @@ class Fault(webob.exc.HTTPException):
                 'overallRC': 400,
                 'rc': 400,
                 'rs': code,
-                'modID': SDKWSGI_MODID,
+                'modID': util.SDKWSGI_MODID,
                 'output': '',
                 'errmsg': explanation}
         if code == 413 or code == 429:
@@ -123,7 +123,7 @@ class FaultWrapper(object):
             return self._error(ex, req)
 
 
-class HeaderAddOn(object):
+class HeaderControl(object):
 
     def __init__(self, application):
         self.application = application
@@ -139,12 +139,12 @@ class HeaderAddOn(object):
 def deploy(project_name):
     """Assemble the middleware pipeline leading to the placement app."""
     request_log = requestlog.RequestLog
-    header_addon = HeaderAddOn
-    fault_wrap = FaultWrapper
+    header_addon = HeaderControl
+    fault_wrapper = FaultWrapper
     application = handler.SdkHandler()
 
     for middleware in (header_addon,
-                       fault_wrap,
+                       fault_wrapper,
                        request_log,
                        ):
         if middleware:

@@ -11,7 +11,6 @@ Welcome to the z/VM Cloud Connector Document
    quickstart
    setuphttpd
    sample
-   sdkapi
    restapi
    errorcodemsg
    configuration
