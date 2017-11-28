@@ -339,25 +339,47 @@ image_name:
   in: body
   required: true
   type: string
-image_url:
+image_import_url:
   description: |
-    The location of exported image, for example
-    ``file:///opt/images/export.img``. Currently, only support export to remote
-    server or local server's file system.
+    The location of the image to be imported, support import image from 3
+    types location, local file system: eg. ``file:///opt/images/import.img``.
+    http server: eg. ``http://192.168.2.1/path/to/import.img``
+    file system on remote host: in this case both url and remote_host parameter
+    should be specified
+  in: body
+  required: true
+  type: string
+image_export_url:
+  description: |
+    The location of the exported image, support export to 2 types location,
+    local file system: eg. ``file:///opt/images/export.img``
+    file system on remote host: in this case both dest_url and remote_host
+    parameter should be specified
   in: body
   required: true
   type: string
 image_metadata:
   description: |
-    the metadata to describe image
+    the metadata to describe image, such as os_version, md5sum, os_version is 
+    required key
   in: body
   required: true
   type: dict
-remotehost_image:
+remotehost_image_import:
+  description: |
+    The server from where the image will be import, if remote_host is None,
+    the image will be import from the url in local server, otherwise,
+    the format is username@ip, for example, ``nova@9.x.x.x`` or
+    username@hostname eg.``test@test.ibm.com``
+  in: body
+  required: false
+  type: string
+remotehost_image_export:
   description: |
     The server that the image will be export to, if remote_host is None,
-    the image will be stored in the dest_path in local server,  the format
-    is username@IP, for example, ``nova@9.x.x.x``.
+    the image will be stored in the dest_path in local server, otherwise,
+    the format is username@ip, for example, ``nova@9.x.x.x`` or
+    username@hostname eg.``test@test.ibm.com``
   in: body
   required: false
   type: string
