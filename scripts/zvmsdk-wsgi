@@ -3,7 +3,7 @@
 
 import threading
 
-from zvmsdk.sdkwsgi.wsgi import init_application
+from zvmsdk.sdkwsgi.deploy import init_application
 
 if __name__ == "__main__":
     import argparse
