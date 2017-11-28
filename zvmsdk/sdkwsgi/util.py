@@ -26,38 +26,10 @@ LOG = log.LOG
 SDKWSGI_MODID = 120
 
 
-def loads(s, **kwargs):
-    return json.loads(s, **kwargs)
-
-
-def check_accept(*types):
-    """If accept is set explicitly, try to follow it.
-
-    If there is no match for the incoming accept header
-    send a 406 response code.
-
-    If accept is not set send our usual content-type in
-    response.
-    """
-    def decorator(f):
-        @functools.wraps(f)
-        def decorated_function(req):
-            if req.accept:
-                best_match = req.accept.best_match(types)
-                if not best_match:
-                    type_string = ', '.join(types)
-                    raise webob.exc.HTTPNotAcceptable(
-                        ('Only %(type)s is provided') % {'type': type_string},
-                        json_formatter=json_error_formatter)
-            return f(req)
-        return decorated_function
-    return decorator
-
-
 def extract_json(body):
     try:
         LOG.debug('Decoding body: %s', body)
-        data = loads(body)
+        data = json.loads(body)
     except ValueError as exc:
         msg = ('Malformed JSON: %(error)s') % {'error': exc}
         LOG.debug(msg)
@@ -68,45 +40,14 @@ def extract_json(body):
 
 def json_error_formatter(body, status, title, environ):
     """A json_formatter for webob exceptions."""
-    # Clear out the html that webob sneaks in.
     body = webob.exc.strip_tags(body)
-    # Get status code out of status message. webob's error formatter
-    # only passes entire status string.
     status_code = int(status.split(None, 1)[0])
     error_dict = {
         'status': status_code,
         'title': title,
         'detail': body
     }
-    # If the request id middleware has had a chance to add an id,
-    # put it in the error response.
-
     return {'errors': [error_dict]}
-
-
-def require_content(content_type):
-    """Decorator to require a content type in a handler."""
-    def decorator(f):
-        @functools.wraps(f)
-        def decorated_function(req):
-            if req.content_type != content_type:
-                # webob's unset content_type is the empty string so
-                # set it the error message content to 'None' to make
-                # a useful message in that case. This also avoids a
-                # KeyError raised when webob.exc eagerly fills in a
-                # Template for output we will never use.
-                if not req.content_type:
-                    req.content_type = 'None'
-                raise webob.exc.HTTPUnsupportedMediaType(
-                    ('The media type %(bad_type)s is not supported, '
-                      'use %(good_type)s') %
-                    {'bad_type': req.content_type,
-                     'good_type': content_type},
-                    json_formatter=json_error_formatter)
-            else:
-                return f(req)
-        return decorated_function
-    return decorator
 
 
 def wsgi_path_item(environ, name):
@@ -114,9 +55,6 @@ def wsgi_path_item(environ, name):
 
     Return None if the name is not present or there are no path items.
     """
-    # NOTE(cdent): For the time being we don't need to urldecode
-    # the value as the entire placement API has paths that accept no
-    # encoded values.
     try:
         return environ['wsgiorg.routing_args'][1][name]
     except (KeyError, IndexError):
@@ -148,37 +86,6 @@ def bool_from_string(subject, strict=False, default=False):
         raise ValueError(msg)
     else:
         return default
-
-
-def expected_errors(errors):
-    def decorator(f):
-        @functools.wraps(f)
-        def wrapped(*args, **kwargs):
-            try:
-                return f(*args, **kwargs)
-            except Exception as exc:
-                if isinstance(exc, webob.exc.WSGIHTTPException):
-                    if isinstance(errors, int):
-                        t_errors = (errors,)
-                    else:
-                        t_errors = errors
-                    if exc.code in t_errors:
-                        raise
-                elif isinstance(exc, webob.exc.HTTPUnauthorized):
-                    raise
-                elif isinstance(exc, exception.ValidationError):
-                    raise
-
-                LOG.exception("Unexpected exception in API method")
-                msg = ('Unexpected API Error. Please report this at '
-                    'https://bugs.launchpad.net/python-zvm-sdk/+bugs '
-                    'and attach the zvm cloud connector log if'
-                    'possible\n%s') % type(exc)
-                raise webob.exc.HTTPInternalServerError(explanation=msg)
-
-        return wrapped
-
-    return decorator
 
 
 def get_request_uri(environ):
