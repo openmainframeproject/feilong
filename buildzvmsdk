@@ -1,0 +1,44 @@
+# This is the build script that automatically build zvm cloud
+# connector (python-zvm-sdk)
+
+BUILD=~/rpmbuild
+REPO=https://github.com/mfcloud/python-zvm-sdk.git
+REPOTOP=python-zvm-sdk
+SDK=python-zvm-sdk
+
+rm -rf $BUILD/variable 2>/dev/null
+mkdir -p $BUILD/variable 2>/dev/null
+echo "%_topdir $BUILD" > $BUILD/variable/.rpmmacros
+cp $BUILD/variable/.rpmmacros $HOME 2>/dev/null
+
+# Create build directories
+cd $BUILD/ 2>/dev/null
+rm -rf $BUILD/BUILD 2>/dev/null
+rm -rf $BUILD/RPMS 2>/dev/null
+rm -rf $BUILD/SRPMS 2>/dev/null
+mkdir -p $BUILD 2>/dev/null
+mkdir -p $BUILD/BUILD 2>/dev/null
+mkdir -p $BUILD/RPMS 2>/dev/null
+mkdir -p $BUILD/SOURCES 2>/dev/null
+mkdir -p $BUILD/SPECS 2>/dev/null
+mkdir -p $BUILD/SRPMS 2>/dev/null
+mkdir -p $BUILD/OUTPUT 2>/dev/null
+mkdir -p $SMCLIOPTDIR 2>/dev/null
+
+
+cd - 2>/dev/null
+echo "===>compress sdk sourcefiles to $BUILD/SOURCES/python-zvm-sdk.tar.gz"
+pwd
+
+# Assume we are in the zvmsdk source code tree
+tar czf $BUILD/SOURCES/python-zvm-sdk.tar.gz --exclude .git --exclude "zthin-parts" ./
+
+# copy specs
+cp ./zvmsdk.spec $BUILD/SPECS
+
+# start the build process
+echo "===>Switch back to python-zvm-sdk, do: rpmbuild -ba -v $BUILD/SPECS/python-zvm-sdk.spec"
+cd $BUILD/$REPOTOP/$SDK 2>/dev/null
+pwd
+rpmbuild -ba -v $BUILD/SPECS/zvmsdk.spec
+
