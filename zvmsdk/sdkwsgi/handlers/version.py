@@ -21,7 +21,7 @@ APIVERSION = '1.0'
 
 
 @util.SdkWsgify
-def home(req):
+def version(req):
     min_version = APIVERSION
     max_version = APIVERSION
 

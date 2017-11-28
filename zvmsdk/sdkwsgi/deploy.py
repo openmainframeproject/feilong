@@ -27,15 +27,13 @@ LOG = log.LOG
 NAME = "zvm-cloud-connector"
 
 
-def walk_class_hierarchy(clazz, encountered=None):
-    """Walk class hierarchy, yielding most derived classes first."""
+def _find_fault(clazz, encountered=None):
     if not encountered:
         encountered = []
     for subclass in clazz.__subclasses__():
         if subclass not in encountered:
             encountered.append(subclass)
-            # drill down to leaves first
-            for subsubclass in walk_class_hierarchy(subclass, encountered):
+            for subsubclass in _find_fault(subclass, encountered):
                 yield subsubclass
             yield subclass
 
@@ -43,7 +41,6 @@ def walk_class_hierarchy(clazz, encountered=None):
 class Fault(webob.exc.HTTPException):
 
     def __init__(self, exception):
-        """Create a Fault for the given webob.exc.exception."""
         self.wrapped_exc = exception
         for key, value in list(self.wrapped_exc.headers.items()):
             self.wrapped_exc.headers[key] = str(value)
@@ -87,7 +84,7 @@ class FaultWrapper(object):
     @staticmethod
     def status_to_type(status):
         if not FaultWrapper._status_to_type:
-            for clazz in walk_class_hierarchy(webob.exc.HTTPError):
+            for clazz in _find_fault(webob.exc.HTTPError):
                 FaultWrapper._status_to_type[clazz.code] = clazz
         return FaultWrapper._status_to_type.get(
                                   status, webob.exc.HTTPInternalServerError)()
@@ -137,12 +134,13 @@ class HeaderControl(object):
 
 
 def deploy(project_name):
-    """Assemble the middleware pipeline leading to the placement app."""
+    """Assemble the middleware pipeline"""
     request_log = requestlog.RequestLog
     header_addon = HeaderControl
     fault_wrapper = FaultWrapper
     application = handler.SdkHandler()
 
+    # currently we have 3 middleware
     for middleware in (header_addon,
                        fault_wrapper,
                        request_log,
