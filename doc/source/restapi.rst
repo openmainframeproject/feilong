@@ -21,15 +21,14 @@ those information will be helpful to report bug/issue.
 
 The following detail API description will only cover ``output`` part as
 it's different for each API.
-(This document is a beta version, if you find some API that is not clearly
-described, you can refer to the z/VM SDK API section for the API description.)
+(This document is a beta version now)
 
 Version
 =======
 Lists version of this API.
 
-Get SDK version
----------------
+Get zvm cloud connect version
+-----------------------------
 
 **GET /**
 
@@ -43,7 +42,7 @@ Get SDK version
 
 * Response contents:
 
-  Return the version of the SDK API.
+  Return the version of the zvm cloud connect API.
 
 .. restapi_parameters:: parameters.yaml
 
