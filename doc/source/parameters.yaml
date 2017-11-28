@@ -31,31 +31,31 @@ ret_errmsg:
   type: string
 ret_modID:
   description: |
-    The module ID that causes the error to occur
+    The module ID that causes the error to occur.
   in: body
   required: true
   type: integer
 ret_output:
   description: |
-    The return data from API request
+    The return data from API request.
   in: body
   required: true
   type: dict
 min_version_sdk:
   description: |
-    Min version of SDK
+    Min version of zvm cloud connector. 
   in: header
   required: true
   type: string
 max_version_sdk:
   description: |
-    Max version of SDK
+    Max version of zvm cloud connector.
   in: header
   required: true
   type: string
 version_sdk:
   description: |
-    version of SDK
+    version of zvm cloud connector.
   in: header
   required: true
   type: string
@@ -73,85 +73,85 @@ token_password:
   type: string
 userid_create:
   description: |
-    the userid of the guest to be created
+    The userid of the guest to be created
   in: body
   required: true
   type: string
 guest_list:
   description: |
-    guests list
+    Guests list
   in: body
   required: true
   type: list
 guest_dict:
   description: |
-    guest dict
+    Guest dict
   in: body
   required: true
   type: dict
 guest_userid:
   description: |
-    guest userid
+    Guest userid
   in: path
   required: true
   type: string
 guest_vcpus:
   description: |
-    amount of vcpus
+    vcpus count.
   in: body
   required: true
   type: integer
 guest_memory:
   description: |
-    size of memory in MB
+    Memory size of the guest, in MBytes.
   in: body
   required: true
   type: integer
 guest_memory_kb:
   description: |
-    the memory in KBytes used by the guest
+    Meemory size used by the guest, in KBytes.
   in: body
   required: true
   type: integer
 guest_memory_kb_max:
   description: |
-    the maximum memory in KBytes allocated for this guest
+    The maximum memory in KBytes can be allocated for this guest.
   in: body
   required: true
   type: integer
 guest_vnics:
   description: |
-    vNICs statistics of one guest
+    vNICs statistics of one guest.
   in: body
   required: true
   type: dict
 guest_nic_info:
   description: |
-    vNIC and vswitch pair of guest
+    vNIC and vswitch pair of guest.
   in: body
   required: true
   type: dict
 guest_info:
   description: |
-    status of guest
+    Status of guest.
   in: body
   required: true
   type: dict
 user_profile_guest:
   description: |
-    profile of guest
+    Profile of guest.
   in: body
   required: false
   type: string
 user_direct_guest:
   description: |
-    dictionary describing user direct and check info result
+    Dictionary describing user direct and check info result
   in: body
   required: true
   type: dict
 disk_list_guest:
   description: |
-    a list of disks info for the guest
+    A list of disks info for the guest
     It has one dictionary that contain some of the below keys for
     each disk, the root disk should be the first element in the
     list.
@@ -160,15 +160,15 @@ disk_list_guest:
   type: list
 size_disk:
   description: |
-      size of disk, case insensitive, the unit can be in Megabytes (M),
-      Gigabytes (G), or number of cylinders/blocks, for example, please
-      use ``512M``, ``1g`` or just ``2000``.
+    size of disk, case insensitive, the unit can be in Megabytes (M),
+    Gigabytes (G), or number of cylinders/blocks, for example, please
+    use ``512M``, ``1g`` or just ``2000``.
   in: body
   required: true
   type: string
 format_disk:
   description: |
-    format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``xfs``.
+    Format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``xfs``.
   in: body
   required: true
   type: string
@@ -181,27 +181,27 @@ is_boot_disk:
   type: bool
 disk_pool_guest:
   description: |
-      disk pool, if not specified, the disk will be created by using
-      the value from configure file, the format is
-      ECKD:eckdpoolname or FBA:fbapoolname.
+    disk pool, if not specified, the disk will be created by using
+    the value from configure file, the format is
+    ``ECKD:eckdpoolname`` or ``FBA:fbapoolname``.
   in: body
   required: false
   type: string
 disk_info:
   description: |
-    a dict to describe disk info
+    A dict to describe disk info.
   in: body
   required: true
   type: dict
 vdev_info:
   description: |
-    a dict to describe vdev list to be deleted
+    A dict to describe vdev list to be deleted.
   in: body
   required: true
   type: dict
 disk_vdev_list:
   description: |
-    disk vdev list of guest
+    Disk vdev list of guest
     It has one list contains the vdev for delete,
     for example, ``['0101','0102']``
   in: body
@@ -209,7 +209,7 @@ disk_vdev_list:
   type: list
 userid_list_guest:
   description: |
-      A single userid string or a list of guest userids
+    A single userid string or a list of guest userids
   in: path
   required: true
   type: string, list
@@ -221,109 +221,109 @@ stats_guest:
   type: dict
 power_status_guest:
   description: |
-    power status of guest, ``on`` or ``off``.
+    Power status of guest, can be either ``on`` or ``off``.
   in: body
   required: true
   type: string
 cpu_time_us_guest:
   description: |
-    the CPU time used in microseconds
+    The CPU time used in microseconds.
   in: body
   required: true
   type: integer
 num_cpu_guest:
   description: |
-    the number of virtual CPUs for the guest
+    The count of virtual CPUs for the guest.
   in: body
   required: true
   type: integer
 action_start_guest:
   description: |
-    take ``start`` action on guest
+    Take ``start`` action on guest.
   in: body
   required: true
   type: dict
 action_stop_guest:
   description: |
-    take ``stop`` action on guest
+    Take ``stop`` action on guest.
   in: body
   required: true
   type: dict
 action_softstop_guest:
   description: |
-    take ``softstop`` action on guest
+    Take ``softstop`` action on guest.
   in: body
   required: true
   type: dict
 action_pause_guest:
   description: |
-    take ``pause`` action on guest
+    Take ``pause`` action on guest.
   in: body
   required: true
   type: dict
 action_unpause_guest:
   description: |
-    take ``unpause`` action on guest
+    Take ``unpause`` action on guest.
   in: body
   required: true
   type: dict
 action_reboot_guest:
   description: |
-    take ``reboot`` action on guest
+    Take ``reboot`` action on guest.
   in: body
   required: true
   type: dict
 action_reset_guest:
   description: |
-    take ``reset`` action on guest
+    Take ``reset`` action on guest.
   in: body
   required: true
   type: dict
 action_deploy_guest:
   description: |
-    take ``deploy`` action on guest
+    Take ``deploy`` action on guest.
   in: body
   required: true
   type: dict
 action_capture_guest:
   description: |
-    take ``capture`` action on guest
+    Take ``capture`` action on guest.
   in: body
   required: true
   type: dict
 action_get_console_guest:
   description: |
-    take ``get_console_output`` action on guest
+    Take ``get_console_output`` action on guest.
   in: body
   required: true
   type: dict
 vdev_guest:
   description: |
-    nic device number, 1- to 4- hexadecimal digits
+    nic device number, 1- to 4- hexadecimal digits.
   in: path
   required: true
   type: string
 host_info:
   description: |
-    the object of host information.
+    The dict of host information.
   in: body
   required: true
   type: dict
 disk_host:
   description: |
-    the disk name to get pool information from
+    The disk name to get pool information from
   in: body
   required: true
   type: string
 disk_info_host:
   description: |
-    the object of disk information
+    The dict of disk information.
   in: body
   required: true
   type: dict
 image_info:
   description: |
-    the image info for specific image
+    The image info for specific image.
   in: body
   required: true
   type: list
@@ -360,8 +360,8 @@ image_export_url:
   type: string
 image_metadata:
   description: |
-    the metadata to describe image, the valid keys are os_version and md5sum,
-    os_version is required key
+    The metadata which describes image, the valid keys are os_version and md5sum,
+    os_version is required key.
   in: body
   required: true
   type: dict
@@ -379,43 +379,43 @@ remotehost_image_export:
     The server that the image will be export to, if remote_host is None,
     the image will be stored in the dest_path in local server, otherwise,
     the format is username@ip, for example, ``nova@9.x.x.x`` or
-    username@hostname eg.``test@test.ibm.com``
+    username@hostname eg.``test@test.ibm.com``.
   in: body
   required: false
   type: string
 root_disk_size_image:
   description: |
-    root disk size in units CYL or BLK of image
+    root disk size in units CYL or BLK of image.
   in: body
   required: true
   type: string
 export_image_dict:
   description: |
-    dict contains image info after export
+    The dict contains image info after export.
   in: body
   required: true
   type: dict
 vswitch_name:
   description: |
-    vswitch name
+    vswitch name.
   in: path
   required: true
   type: string
 vswitch_name_body:
   description: |
-    vswitch name
+    vswitch name.
   in: body
   required: true
   type: string
 rdev_vswitch:
   description: |
-    the real device number, a maximum of three devices.
+    The real device number, a maximum of three devices.
   in: body
   required: true
   type: string
 controller_vswitch:
   description: |
-    the vswitch's controller. It could be userid or "*" to
+    The vswitch's controller. It could be userid or "*" to
     specifies any available controller.
   in: body
   required: false
@@ -453,14 +453,14 @@ router_vswitch:
   type: string
 vid_vswitch:
   description: |
-    the VLAN ID. This can be any of the following values:
+    The VLAN ID. This can be any of the following values:
     ``UNAWARE``,  ``AWARE`` or ``1-4094``.
   in: body
   required: false
   type: string, integer
 port_type_vswitch:
   description: |
-    port type \:
+    Port type \:
 
     - ``ACCESS``: The default porttype attribute for
       guests authorized for the virtual switch.
@@ -520,14 +520,14 @@ vswitch_list:
   type: list
 imagename:
   description: |
-      Retrieve the specified image information, if not specified,
-      when list image, all images information will be returned.
+    Retrieve the specified image information, if not specified,
+    when list image, all images information will be returned.
   in: path
   required: false
   type: string
 guest_userid_opt:
   description: |
-    guest userid.
+    Guest userid.
   in: path
   required: False
   type: string
@@ -545,14 +545,14 @@ vswitch_name_opt:
   type: string
 guests_nic_info:
   description: |
-    list describing nic information, including userid, nic number,
+    List describing nic information, including userid, nic number,
     vswitch, nic id and comments.
   in: body
   required: true
   type: list
 nic_set_info:
   description: |
-    the information which is used to set nic device number
+    The information which is used to set nic device number
   in: body
   required: true
   type: dict
@@ -570,56 +570,56 @@ nic_identifier:
   type: string
 mac_address:
   description: |
-    mac address, it is only used when changing the guest's user direct.
+    Mac address, it is only used when changing the guest's user direct.
     Format should be xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit.
   in: body
   required: false
   type: string
 ip_address:
   description: |
-    ip address
+    ip address.
   in: body
   required: false
   type: string
 active_flag:
   description: |
-    whether the change will apply to the active guest
+    Whether the change will apply to the active guest.
   in: body
   required: false
   type: bool
 couple_info:
   description: |
-    the info used to describe the couple/uncouple action
+    The info used to describe the couple/uncouple action.
   in: body
   required: true
   type: dict
 couple_action:
   description: |
-    couple or uncouple action
+    couple or uncouple action.
   in: body
   required: true
   type: bool
 vswitch_name_body_opt:
   description: |
-    vswitch name
+    vswitch name.
   in: body
   required: false
   type: string
 network_interface_info:
   description: |
-    the information which is used to set network interface
+    The information which is used to set network interface.
   in: body
   required: true
   type: dict
 guest_os_version:
   description: |
-    guest operating system version
+    guest operating system version.
   in: body
   required: true
   type: string
 guest_networks_list:
   description: |
-    network info list of guest. It has one dictionary that contain some of the below
+    Network info list of guest. It has one dictionary that contain some of the below
     keys for each interface. All the keys are optional \:
 
     - ``ip_addr``: the IP address of the interface
@@ -646,7 +646,7 @@ user_vlan_id:
   type: dict
 vlan_id:
   description: |
-    the VLAN ID. This can be any of the value between 1-4094.
+    The VLAN ID. This can be any of the value between 1-4094.
   in: body
   required: true
   type: integer
