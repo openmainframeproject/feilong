@@ -19,7 +19,6 @@ from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import vswitch
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi import validation
-from zvmsdk.sdkwsgi import wsgi_wrapper
 from zvmsdk import utils
 
 
@@ -99,7 +98,7 @@ def get_action():
     return _VSWITCHACTION
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def vswitch_list(req):
     def _vswitch_list(req):
@@ -114,7 +113,7 @@ def vswitch_list(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def vswitch_create(req):
 
@@ -134,7 +133,7 @@ def vswitch_create(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def vswitch_delete(req):
 
@@ -153,7 +152,7 @@ def vswitch_delete(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def vswitch_update(req):
 

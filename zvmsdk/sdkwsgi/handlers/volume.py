@@ -19,7 +19,6 @@ from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import vswitch
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi import validation
-from zvmsdk.sdkwsgi import wsgi_wrapper
 from zvmsdk import utils
 
 
@@ -68,7 +67,7 @@ def get_action():
     return _VOLUMEACTION
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def volume_attach(req):
 
@@ -87,7 +86,7 @@ def volume_attach(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def volume_detach(req):
 

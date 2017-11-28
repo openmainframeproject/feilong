@@ -13,14 +13,14 @@
 
 import json
 
-from zvmsdk.sdkwsgi import wsgi_wrapper
+from zvmsdk.sdkwsgi import util
 from zvmsdk import utils
 
 
 APIVERSION = '1.0'
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 def home(req):
     min_version = APIVERSION
     max_version = APIVERSION

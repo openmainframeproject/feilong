@@ -18,7 +18,7 @@ import jwt
 from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import log
-from zvmsdk.sdkwsgi import wsgi_wrapper
+from zvmsdk.sdkwsgi import util
 
 
 CONF = config.CONF
@@ -27,7 +27,7 @@ LOG = log.LOG
 DEFAULT_TOKEN_VALIDATION_PERIOD = 30
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 def create(req):
     if 'X-Auth-User' not in req.headers:
         LOG.debug('no X-Auth-User given in reqeust header')

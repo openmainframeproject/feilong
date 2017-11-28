@@ -17,7 +17,6 @@ from zvmconnector import connector
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi import util
-from zvmsdk.sdkwsgi import wsgi_wrapper
 from zvmsdk import utils
 
 
@@ -47,7 +46,7 @@ def get_action():
     return _HOSTACTION
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def host_get_info(req):
 
@@ -63,7 +62,7 @@ def host_get_info(req):
     return req.response
 
 
-@wsgi_wrapper.SdkWsgify
+@util.SdkWsgify
 @tokens.validate
 def host_get_disk_info(req):
 
