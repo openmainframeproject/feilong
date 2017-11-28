@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7ee58b5a_e965b8ce",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-28T03:42:32Z",
+      "side": 1,
+      "message": "remove it",
+      "range": {
+        "startLine": 363,
+        "startChar": 77,
+        "endLine": 363,
+        "endChar": 78
+      },
+      "revId": "7cc740dc874449b10e753853bd5935a8e312bda3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0ad4bdc8_df516227",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-11-28T03:42:32Z",
+      "side": 1,
+      "message": "we don\u0027t need this..",
+      "range": {
+        "startLine": 363,
+        "startChar": 36,
+        "endLine": 363,
+        "endChar": 74
+      },
+      "revId": "7cc740dc874449b10e753853bd5935a8e312bda3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
