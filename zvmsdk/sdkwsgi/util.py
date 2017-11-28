@@ -178,6 +178,15 @@ def expected_errors(errors):
     return decorator
 
 
+def get_request_uri(environ):
+    name = environ.get('SCRIPT_NAME', '')
+    info = environ.get('PATH_INFO', '')
+    req_uri = name + info
+    if environ.get('QUERY_STRING'):
+        req_uri += '?' + environ['QUERY_STRING']
+    return req_uri
+
+
 def get_http_code_from_sdk_return(msg, additional_handler=None, default=200):
     LOG.debug("Get msg to handle: %s", msg)
 

@@ -26,3 +26,7 @@ class VersionTestCase(unittest.TestCase):
         resp = self.client.api_request(url='/')
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_version', resp.content)
+
+    def test_not_found(self):
+        resp = self.client.api_request(url='/notfound')
+        self.assertEqual(404, resp.status_code)
