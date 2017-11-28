@@ -156,3 +156,8 @@ def deploy(project_name):
 def loadapp(project_name=NAME):
     application = deploy(project_name)
     return application
+
+
+def init_application():
+    # build and return WSGI app
+    return loadapp()
