@@ -1,0 +1,87 @@
+#!/bin/sh
+# Copyright 2017 IBM Corp.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+#
+
+if [[ -z "$1" ]]; then
+   {
+   echo "A branch must be specified"
+   exit 1
+   }
+fi
+
+BRANCH=$1
+BUILD=~/rpmbuild
+REPO=https://github.com/mfcloud/python-zvm-sdk.git
+REPOTOP=python-zvm-sdk
+SDK=python-zvm-sdk
+
+EXISTS=$(git ls-remote -h $REPO | grep "$BRANCH"$ | wc -l )
+if [ "$EXISTS" == 0 ] ; then
+{
+  echo "Branch $BRANCH does not exist on /mfcloud/python-zvm-sdk"
+  echo "Try choosing one of the following branches:  "
+  git ls-remote --heads $REPO | awk -F "heads/" '{print $2}'
+  exit 1
+  }
+fi
+
+# Checkout the branch
+echo "===>Erasing old $REPOTOP, then cloning: $REPO -b $BRANCH"
+rm -rf ./$REPOTOP
+git clone $REPO -b $BRANCH
+
+cd $REPOTOP 2>/dev/null
+
+# Prepare environment
+rm -rf $BUILD/variable 2>/dev/null
+
+mkdir -p $BUILD/variable 2>/dev/null
+echo "%_topdir $BUILD" > $BUILD/variable/.rpmmacros
+cp $BUILD/variable/.rpmmacros $HOME 2>/dev/null
+
+# Create build directories
+cd $BUILD/ 2>/dev/null
+rm -rf $BUILD/BUILD 2>/dev/null
+rm -rf $BUILD/RPMS 2>/dev/null
+rm -rf $BUILD/SRPMS 2>/dev/null
+mkdir -p $BUILD 2>/dev/null
+mkdir -p $BUILD/BUILD 2>/dev/null
+mkdir -p $BUILD/RPMS 2>/dev/null
+mkdir -p $BUILD/SOURCES 2>/dev/null
+mkdir -p $BUILD/SPECS 2>/dev/null
+mkdir -p $BUILD/SRPMS 2>/dev/null
+mkdir -p $BUILD/OUTPUT 2>/dev/null
+mkdir -p $SMCLIOPTDIR 2>/dev/null
+
+# Checkout the branch
+# echo "===>Erasing old $REPOTOP, then cloning: $REPO -b $BRANCH"
+# rm -rf ./$REPOTOP
+# git clone $REPO -b $BRANCH
+
+# Move to the sdk directory
+cd - 2>/dev/null
+
+echo "===>compress sdk sourcefiles to $BUILD/SOURCES/python-zvm-sdk.tar.gz"
+pwd
+# Compress zThin source
+tar czf $BUILD/SOURCES/python-zvm-sdk.tar.gz --exclude .git --exclude "zthin-parts" ./
+
+cp ./zvmsdk.spec $BUILD/SPECS
+
+echo "===>Switch back to python-zvm-sdk, do: rpmbuild -ba -v $BUILD/SPECS/python-zvm-sdk.spec"
+cd $BUILD/$REPOTOP/$SDK 2>/dev/null
+pwd
+rpmbuild -ba -v $BUILD/SPECS/zvmsdk.spec
+
