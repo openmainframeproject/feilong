@@ -80,7 +80,7 @@ tar czf $BUILD/SOURCES/python-zvm-sdk.tar.gz --exclude .git --exclude "zthin-par
 
 cp ./zvmsdk.spec $BUILD/SPECS
 
-echo "===>Switch back to python-zvm-sdk, do: rpmbuild -ba -v $BUILD/SPECS/python-zvm-sdk.spec"
+echo "===>Switch back to python-zvm-sdk, do: rpmbuild -ba -v $BUILD/SPECS/zvmsdk.spec"
 cd $BUILD/$REPOTOP/$SDK 2>/dev/null
 pwd
 rpmbuild -ba -v $BUILD/SPECS/zvmsdk.spec

@@ -17,28 +17,19 @@ by external
 %define builddate %(date)
 
 %prep
-# if user zvmsdk not exist, add zvmsdk user
-/usr/bin/getent passwd zvmsdk || /usr/sbin/useradd -r -d /var/lib/zvmsdk -m -U zvmsdk
-
 tar -zxvf ../SOURCES/python-zvm-sdk.tar.gz -C ../BUILD/ --strip 1
 
 %build
 python setup.py build
 
 %install
-python setup.py install --single-version-externally-managed -O1 --root=%{buildroot} --record=INSTALLED_FILES
 
-mkdir -p /var/lib/zvmsdk
-chown -R zvmsdk:zvmsdk /var/lib/zvmsdk
-chmod -R 755 /var/lib/zvmsdk
+mkdir -p %{buildroot}/etc/zvmsdk
+mkdir -p %{buildroot}/var/log/zvmsdk
+mkdir -p %{buildroot}/var/lib/zvmsdk
 
-mkdir -p /var/log/zvmsdk
-chown -R zvmsdk:zvmsdk /var/log/zvmsdk
-chmod -R 755 /var/log/zvmsdk
-
-mkdir -p /etc/zvmsdk
-chown -R zvmsdk:zvmsdk /etc/zvmsdk
-chmod -R 755 /etc/zvmsdk
+python setup.py install --single-version-externally-managed -O1 --root=%{buildroot} --record=INSTALLED_FILES --prefix=
+# python setup.py install  --root=%{buildroot} --record=INSTALLED_FILES
 
 
 %clean
@@ -46,5 +37,19 @@ rm -rf %{buildroot}
 %files -f INSTALLED_FILES
 %defattr(-,root,root)
 
+%attr(644, zvmsdk, zvmsdk) /etc/zvmsdk
+%attr(644, zvmsdk, zvmsdk) /var/log/zvmsdk
+%attr(755, zvmsdk, zvmsdk) /var/lib/zvmsdk
+
+%pre
+# if user zvmsdk not exist, add zvmsdk user
+/usr/bin/getent passwd zvmsdk || /usr/sbin/useradd -r -d /var/lib/zvmsdk -m -U zvmsdk
+
 %postun
+/usr/sbin/userdel zvmsdk
+
+rm -fr /var/lib/zvmsdk
+rm -fr /var/log/zvmsdk
+rm -fr /etc/zvmsdk
+rm -fr /etc/zvmsdk
 
