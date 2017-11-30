@@ -12,9 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import types
-
-
 HYPERVISOR_TYPE = 'zvm'
 ARCHITECTURE = 's390x'
 ALLOWED_VM_TYPE = 'zLinux'
@@ -68,17 +65,6 @@ DATABASE_VOLUME = 'sdk_volume.sqlite'
 DATABASE_NETWORK = 'sdk_network.sqlite'
 DATABASE_GUEST = 'sdk_guest.sqlite'
 DATABASE_IMAGE = 'sdk_image.sqlite'
-
-_TSTR = types.StringTypes
-_TNONE = types.NoneType
-_TSTR_OR_NONE = (types.StringType, types.UnicodeType, types.NoneType)
-_TSTR_OR_TUNI = (types.StringType, types.UnicodeType)
-_INT_OR_NONE = (int, types.NoneType)
-_INT_OR_TSTR = (int, types.StringType, types.UnicodeType)
-_TUSERID = 'TYPE_USERID'
-# Vswitch name has same rule with userid
-_TVSWNAME = _TUSERID
-_TUSERID_OR_LIST = (_TUSERID, list)
 
 IMAGE_TYPE = {
     'DEPLOY': 'netboot',

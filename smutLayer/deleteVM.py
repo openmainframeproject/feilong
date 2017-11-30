@@ -14,9 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import generalUtils
-import msgs
-from vmUtils import invokeSMCLI, isLoggedOn
+from smutLayer import generalUtils
+from smutLayer import msgs
+from smutLayer.vmUtils import invokeSMCLI, isLoggedOn
 
 modId = "DVM"
 version = "1.0.0"

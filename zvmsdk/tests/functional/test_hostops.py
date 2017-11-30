@@ -12,12 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-import types
+import six
 
 from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk.tests.functional import base
+from __builtin__ import isinstance
 
 
 CONF = config.CONF
@@ -30,12 +30,12 @@ class SDKAPIHostTestCase(base.SDKAPIBaseTestCase):
         host_info = self.sdkapi.host_get_info()
         self.assertTrue(isinstance(host_info.get('disk_available'), int))
         self.assertTrue(isinstance(host_info.get('ipl_time'),
-                                   types.StringTypes))
+                                   six.string_types))
         self.assertTrue(isinstance(host_info.get('vcpus_used'), int))
         self.assertEqual(host_info.get('hypervisor_type'), 'zvm')
         self.assertTrue(isinstance(host_info.get('disk_total'), int))
         self.assertTrue(isinstance(host_info.get('hypervisor_hostname'),
-                                   types.StringTypes))
+                                   six.string_types))
         self.assertTrue(isinstance(host_info.get('memory_mb'), float))
         self.assertTrue(isinstance(host_info.get('cpu_info'), dict))
         self.assertTrue(isinstance(host_info.get('vcpus'), int))
