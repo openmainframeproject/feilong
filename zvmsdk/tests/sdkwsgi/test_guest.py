@@ -24,7 +24,7 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         # every time, we need to random generate userid
         self.userid = 'RESTT%03d' % (time.time() % 1000)
-        self._cleanup()
+        # self._cleanup()
 
     def _cleanup(self):
         url = '/guests/%s' % self.userid
