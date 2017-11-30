@@ -14,6 +14,7 @@
 import datetime
 import functools
 import jwt
+import os
 
 from zvmsdk import config
 from zvmsdk import exception
@@ -27,15 +28,24 @@ LOG = log.LOG
 DEFAULT_TOKEN_VALIDATION_PERIOD = 30
 
 
+def get_admin_token(path):
+    if os.path.exists(path):
+        with open(path, 'r') as fd:
+            token = fd.read().strip()
+    else:
+        token = 'abcdefg'
+    return token
+
+
 @util.SdkWsgify
 def create(req):
-    if 'X-Auth-User' not in req.headers:
-        LOG.debug('no X-Auth-User given in reqeust header')
+    if 'X-Admin-Token' not in req.headers:
+        LOG.debug('no X-Admin-Token given in reqeust header')
         raise exception.ZVMUnauthorized()
-
-    if (req.headers['X-Auth-User'] != CONF.wsgi.user or
-        req.headers['X-Auth-Password'] != CONF.wsgi.password):
-        LOG.debug('X-Auth-User or X-Auth-Password incorrect')
+    token_file_path = CONF.wsgi.token_path
+    admin_token = get_admin_token(token_file_path)
+    if (req.headers['X-Admin-Token'] != admin_token):
+        LOG.debug('X-Admin-Token incorrect')
         raise exception.ZVMUnauthorized()
 
     expires = CONF.wsgi.token_validation_period
@@ -44,9 +54,10 @@ def create(req):
 
     expired_elapse = datetime.timedelta(seconds=expires)
     expired_time = datetime.datetime.utcnow() + expired_elapse
-    payload = jwt.encode({'exp': expired_time}, CONF.wsgi.password)
+    payload = {'exp': expired_time}
+    user_token = jwt.encode(payload, admin_token)
 
-    req.response.headers.add('X-Auth-Token', payload)
+    req.response.headers.add('X-Auth-Token', user_token)
 
     return req.response
 
@@ -66,8 +77,10 @@ def validate(function):
             LOG.debug('no X-Auth-Token given in reqeust header')
             raise exception.ZVMUnauthorized()
 
+        token_file_path = CONF.wsgi.token_path
+        admin_token = get_admin_token(token_file_path)
         try:
-            jwt.decode(req.headers['X-Auth-Token'], CONF.wsgi.password)
+            jwt.decode(req.headers['X-Auth-Token'], admin_token)
         except jwt.ExpiredSignatureError:
             LOG.debug('token validation failed because it is expired')
             raise exception.ZVMUnauthorized()
