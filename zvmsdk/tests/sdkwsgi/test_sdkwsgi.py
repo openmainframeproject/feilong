@@ -23,8 +23,7 @@ class TestSDKClient(object):
 
     def _get_token(self):
         _headers = {'Content-Type': 'application/json'}
-        _headers['X-Auth-User'] = CONF.wsgi.user
-        _headers['X-Auth-Password'] = CONF.wsgi.password
+        _headers['X-Admin-Token'] = 'abcdefg'
 
         url = self.base_url + '/token'
         method = 'POST'
