@@ -28,7 +28,6 @@ import sys
 import tempfile
 import time
 import traceback
-import types
 
 from zvmsdk import config
 from zvmsdk import constants
@@ -244,7 +243,7 @@ def to_utf8(text):
 
 
 def valid_userid(userid):
-    if type(userid) not in types.StringTypes:
+    if not isinstance(userid, six.string_types):
         return False
     if ((userid == '') or
         (userid.find(' ') != -1)):
@@ -256,7 +255,7 @@ def valid_userid(userid):
 
 def valid_mac_addr(addr):
     ''' Validates a mac address'''
-    if type(addr) not in types.StringTypes:
+    if not isinstance(addr, six.string_types):
         return False
     valid = re.compile(r'''
                       (^([0-9A-F]{2}[:]){5}([0-9A-F]{2})$)
@@ -266,7 +265,7 @@ def valid_mac_addr(addr):
 
 
 def valid_cidr(cidr):
-    if type(cidr) not in types.StringTypes:
+    if not isinstance(cidr, six.string_types):
         return False
     try:
         netaddr.IPNetwork(cidr)
@@ -562,7 +561,7 @@ def _is_guest_exist(userid):
 def check_guest_exist(userid):
     if not _is_guest_exist(userid):
         msg = "Userid %s does not exist" % userid.upper()
-        LOG.warn(msg)
+        LOG.warning(msg)
         obj_desc = 'Userid %s' % userid.upper()
         raise exception.SDKObjectNotExistError(obj_desc,
                                                modID='guest')

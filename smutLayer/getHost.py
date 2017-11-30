@@ -15,12 +15,12 @@
 #    under the License.
 
 import os
-import types
+import six
 import subprocess
 
-import generalUtils
-import msgs
-from vmUtils import invokeSMCLI
+from smutLayer import generalUtils
+from smutLayer import msgs
+from smutLayer.vmUtils import invokeSMCLI
 
 modId = 'GHO'
 version = "1.0.0"

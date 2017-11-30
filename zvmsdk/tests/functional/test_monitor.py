@@ -12,11 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-import types
+import six
 
 from zvmsdk import exception
 from zvmsdk.tests.functional import base
+from zvmsdk import utils as zvmutils
 
 
 class SDKAPIMonitorTestCase(base.SDKAPIBaseTestCase):
@@ -115,10 +115,10 @@ class SDKAPIMonitorTestCase(base.SDKAPIBaseTestCase):
         result = self.sdkapi.guest_inspect_vnics(guest_list)
         self.assertTrue(isinstance(result, dict))
         self.assertEqual(len(result), 2)
-        self.assertTrue(isinstance(
-                result[test_id][0].get('vswitch_name'), types.StringTypes))
-        self.assertTrue(isinstance(
-                result[test_id][0].get('nic_vdev'), types.StringTypes))
+        self.assertTrue(isinstance(result[test_id][0].get('vswitch_name'),
+                                   six.string_types))
+        self.assertTrue(isinstance(result[test_id][0].get('nic_vdev'),
+                                   six.string_types))
         self.assertTrue(isinstance(
                 result[test_id][0].get('nic_fr_rx'), int))
         self.assertTrue(isinstance(

@@ -12,10 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import commands
 import functools
 import hashlib
-import urlparse
 import requests
 import threading
 import os
@@ -25,7 +23,7 @@ import six
 import string
 import tempfile
 
-
+import six.moves.urllib.parse as urlparse
 from smutLayer import smut
 
 from zvmsdk import config
@@ -835,7 +833,7 @@ class SMUTClient(object):
                 return []
             else:
                 data = '\n'.join([s for s in result['response']
-                                  if isinstance(s, const._TSTR_OR_TUNI)])
+                                  if isinstance(s, six.string_types)])
                 output = re.findall('VSWITCH:  Name: (.*)', data)
                 return output
 
@@ -1412,7 +1410,7 @@ class SMUTClient(object):
         """Return a string to indicate disk units in format 3390:CYL or 408200:
         BLK"""
         command = 'hexdump -n 48 -C %s' % image_path
-        (rc, output) = commands.getstatusoutput(command)
+        (rc, output) = zvmutils.execute.getstatusoutput(command)
         LOG.debug("hexdump result is %s" % output)
         if rc:
             msg = ("Error happened when executing command hexdump with"
@@ -1440,7 +1438,7 @@ class SMUTClient(object):
     def _get_image_size(self, image_path):
         """Return disk size in bytes"""
         command = 'du -b %s' % image_path
-        (rc, output) = commands.getstatusoutput(command)
+        (rc, output) = zvmutils.execute.getstatusoutput(command)
         if rc:
             msg = ("Error happened when executing command du -b with"
                    "reason: %s" % output)
@@ -1767,7 +1765,7 @@ class FilesystemBackend(object):
                 source_path = ':'.join([kwargs['remote_host'], source])
                 command = ' '.join(['/usr/bin/scp -r ', source_path,
                                     target])
-                (rc, output) = commands.getstatusoutput(command)
+                (rc, output) = zvmutils.execute.getstatusoutput(command)
                 if rc:
                     msg = ("Copying image file from remote filesystem failed"
                            " with reason: %s" % output)
@@ -1797,7 +1795,7 @@ class FilesystemBackend(object):
         if kwargs['remote_host']:
             target_path = ':'.join([kwargs['remote_host'], dest_path])
             command = ' '.join(['/usr/bin/scp -r ', source_path, target_path])
-            (rc, output) = commands.getstatusoutput(command)
+            (rc, output) = zvmutils.execute.getstatusoutput(command)
             if rc:
                 msg = ("Error happened when copying image file to remote "
                        "host with reason: %s" % output)

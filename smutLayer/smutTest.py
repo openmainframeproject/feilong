@@ -24,8 +24,8 @@ import subprocess
 from subprocess import CalledProcessError
 from tempfile import NamedTemporaryFile
 
-from smut import SMUT
-from ReqHandle import ReqHandle
+from smutLayer.smut import SMUT
+from smutLayer.ReqHandle import ReqHandle
 
 version = '1.0.0'         # Version of this script
 
