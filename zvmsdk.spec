@@ -29,7 +29,6 @@ mkdir -p %{buildroot}/var/log/zvmsdk
 mkdir -p %{buildroot}/var/lib/zvmsdk
 
 python setup.py install --single-version-externally-managed -O1 --root=%{buildroot} --record=INSTALLED_FILES --prefix=
-# python setup.py install  --root=%{buildroot} --record=INSTALLED_FILES
 
 
 %clean
