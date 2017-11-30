@@ -211,13 +211,13 @@
 
 
 # 
-# Admin password to access sdk http server.
+# file path that contains admin-token to access sdk http server.
 # 
-# Password in order to get a token from zvm sdk, and the token
-# will be used to validate request before token expire.
+# Admin-token in order to get a user-token from zvm sdk, and the user-token
+# will be used to validate request before user-token expire.
 # 
 # This param is optional
-#password=
+#token_path=/etc/zvmsdk/token.dat
 
 
 # 
@@ -230,16 +230,6 @@
 # 
 # This param is optional
 #token_validation_period=30
-
-
-# 
-# Admin user to access sdk http server.
-# 
-# User in order to get a token from zvm sdk, and the token
-# will be used to validate request before token expire.
-# 
-# This param is optional
-#user=
 
 
 [zvm]

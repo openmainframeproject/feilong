@@ -296,24 +296,15 @@ get this token will not be authorized all the time, a new
 token need to be recreated after certain time period.
 ''',
         ),
-    Opt('user',
+    Opt('token_path',
         section='wsgi',
+        default='/etc/zvmsdk/token.dat',
         opt_type='str',
         help='''
-Admin user to access sdk http server.
+file path that contains admin-token to access sdk http server.
 
-User in order to get a token from zvm sdk, and the token
-will be used to validate request before token expire.
-'''
-        ),
-    Opt('password',
-        section='wsgi',
-        opt_type='str',
-        help='''
-Admin password to access sdk http server.
-
-Password in order to get a token from zvm sdk, and the token
-will be used to validate request before token expire.
+Admin-token in order to get a user-token from zvm sdk, and the user-token
+will be used to validate request before user-token expire.
 '''
         ),
     # Daemon server options
