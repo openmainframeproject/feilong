@@ -17,10 +17,17 @@ import jwt
 import mock
 import unittest
 
+from zvmsdk import config
 from zvmsdk.sdkwsgi.handlers import volume
 
 
+CONF = config.CONF
+
 FAKE_UUID = '00000000-0000-0000-0000-000000000000'
+
+
+def set_conf(section, opt, value):
+    CONF[section][opt] = value
 
 
 class FakeResp(object):
@@ -42,6 +49,7 @@ class FakeReq(object):
 class HandlersVolumeTest(unittest.TestCase):
 
     def setUp(self):
+        set_conf('wsgi', 'auth', 'none')
         expired_elapse = datetime.timedelta(seconds=100)
         expired_time = datetime.datetime.utcnow() + expired_elapse
         payload = jwt.encode({'exp': expired_time}, 'username')

@@ -180,3 +180,20 @@ http service is running well.
 
     # curl http://localhost:8080/
     {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": {"min_version": "1.0", "version": "1.0", "max_version": "1.0"}, "errmsg": ""}
+
+Token Usage
+============
+
+When you sending requests, you need a token to get access to the service.
+The owner has an admin_token stored in the file. The permission of this is set that only owner can operate on it. And the path of this file represented by token_file_path can be configured in wsgi section .
+First, you should request for a token by putting the admin_token into the headers of request object:
+
+.. code-block:: text
+
+    # curl http://localhost:8080/token -H 'Accept: application/json' -H 'X-Admin-Token:1a9e33ea2c8ac70fe5f69fc33014cee70f21ba87'
+
+Then, you can send request using the token in response.headers['x-Auth-Token'].
+
+.. code-block:: text
+
+    # curl http://localhost:8080/ -H 'Accept: application/json' -H 'X-Auth-Token:12345678901234567890123456789012345678901234567890'
