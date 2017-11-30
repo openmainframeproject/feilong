@@ -151,38 +151,6 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.guest_config_minidisks(userid, disk_list)
         config_disks.assert_called_once_with(userid, disk_list)
 
-    @mock.patch("zvmsdk.vmops.VMOps.guest_start")
-    def test_skip_api_input_check(self, gs):
-        zapi = api.SDKAPI(skip_input_check=True)
-        zapi.guest_start(1)
-        gs.assert_called_once_with(1)
-
-    def test_api_input_check_failed(self):
-        self.assertRaises(exception.SDKInvalidInputFormat,
-                          self.api.guest_start, 1)
-
-    @mock.patch("zvmsdk.vmops.VMOps.get_definition_info")
-    def test_api_input_check_with_keyword(self, gdi):
-        self.api.guest_get_definition_info('uid', nic_coupled='1000')
-        gdi.assert_called_once_with('uid', nic_coupled='1000')
-
-    @mock.patch("zvmsdk.vmops.VMOps.get_definition_info")
-    def test_api_input_check_with_invalid_keyword(self, gdi):
-        self.assertRaises(exception.SDKInvalidInputFormat,
-                          self.api.guest_get_definition_info, 'uid',
-                          invalid='1000')
-
-    @mock.patch("zvmsdk.vmops.VMOps.guest_start")
-    def test_check_input_userid_length(self, gs):
-        self.assertRaises(exception.SDKInvalidInputFormat,
-                          self.api.guest_start, '123456789')
-
-    @mock.patch("zvmsdk.vmops.VMOps.guest_start")
-    def test_check_input_too_many_parameters(self, gs):
-        self.assertRaises(exception.SDKInvalidInputNumber,
-                          self.api.guest_start,
-                          'fakeuser', '12345678')
-
     @mock.patch("zvmsdk.imageops.ImageOps.image_delete")
     def test_image_delete(self, image_delete):
         image_name = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'

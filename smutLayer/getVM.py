@@ -17,10 +17,10 @@
 import re
 import subprocess
 
-import generalUtils
-import msgs
-from vmUtils import execCmdThruIUCV, getPerfInfo, invokeSMCLI
-from vmUtils import isLoggedOn
+from smutLayer import generalUtils
+from smutLayer import msgs
+from smutLayer.vmUtils import execCmdThruIUCV, getPerfInfo, invokeSMCLI
+from smutLayer.vmUtils import isLoggedOn
 
 modId = 'GVM'
 version = "1.0.0"
