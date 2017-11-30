@@ -22,7 +22,7 @@ setuptools.setup(
     license='ASL 2.0',
     author='IBM',
     description='z/VM cloud management library in Python',
-    long_description=open('README.md').read(),
+    long_description=open('README.rst').read(),
     url='https://github.com/mfcloud/python-zvm-sdk',
     keywords='zvm cloud library',
     install_requires=open('requirements.txt').read(),
