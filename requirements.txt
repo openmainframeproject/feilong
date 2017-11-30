@@ -4,3 +4,4 @@ requests
 netaddr
 webob
 routes
+six

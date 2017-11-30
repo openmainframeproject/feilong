@@ -31,7 +31,7 @@ CONF = config.CONF
 LOG = log.LOG
 
 
-_DIR_MODE = 0755
+_DIR_MODE = 0o755
 _VOLUME_CONN = None
 _NETWORK_CONN = None
 _IMAGE_CONN = None

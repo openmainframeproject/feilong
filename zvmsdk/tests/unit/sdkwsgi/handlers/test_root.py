@@ -17,7 +17,6 @@ import mock
 import unittest
 
 from zvmsdk.sdkwsgi.handlers import root
-from zvmsdk import utils
 
 
 class HandlersRootTest(unittest.TestCase):
@@ -38,7 +37,8 @@ class HandlersRootTest(unittest.TestCase):
                    "rs": 0}
         res = root.home(req)
         self.assertEqual('application/json', req.response.content_type)
-        version_json = json.dumps(version)
-        version_str = utils.to_utf8(version_json)
-        self.assertEqual(version_str, req.response.body)
+#         version_json = json.dumps(version)
+#         version_str = utils.to_utf8(version_json)
+        version_res = json.loads(req.response.body.decode('utf-8'))
+        self.assertEqual(version, version_res)
         self.assertEqual('application/json', res.content_type)
