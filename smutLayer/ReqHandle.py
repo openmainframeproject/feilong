@@ -16,19 +16,19 @@
 
 import logging
 import logging.handlers
-import smapi
 import shlex
 import types
 
-import changeVM
-import cmdVM
-import deleteVM
-import getHost
-import getVM
-import makeVM
-import migrateVM
-import msgs
-import powerVM
+from smutLayer import changeVM
+from smutLayer import cmdVM
+from smutLayer import deleteVM
+from smutLayer import getHost
+from smutLayer import getVM
+from smutLayer import makeVM
+from smutLayer import migrateVM
+from smutLayer import msgs
+from smutLayer import smapi
+from smutLayer import powerVM
 
 from zvmsdk import log as zvmsdklog
 

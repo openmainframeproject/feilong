@@ -19,7 +19,7 @@ import subprocess
 from subprocess import CalledProcessError
 import time
 
-import msgs
+from smutLayer import msgs
 
 modId = 'VMU'
 version = '1.0.0'         # Version of this script

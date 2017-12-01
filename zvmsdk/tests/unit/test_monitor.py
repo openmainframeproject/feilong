@@ -152,8 +152,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
                                                        get_ps, cache_get):
         cache_get.return_value = CPUMEM_SAMPLE1
         rdata = self._monitor._get_inspect_data('cpumem', ['userid1'])
-        self.assertEqual(rdata.keys(), ['USERID1'])
-        self.assertEqual(sorted(rdata['USERID1'].keys()),
+        self.assertEqual(list(rdata.keys()), ['USERID1'])
+        self.assertEqual(sorted(list(rdata['USERID1'].keys())),
                          sorted(CPUMEM_SAMPLE1.keys()))
         self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
         self.assertEqual(rdata['USERID1']['used_cpu_time'], '6185838 uS')
@@ -313,14 +313,14 @@ class SDKMonitorTestCase(base.SDKTestCase):
         rdata = self._monitor._update_cpumem_data(['userid1'])
         get_vm_list.assert_not_called()
         image_perform_query.assert_called_once_with(['userid1'])
-        self.assertEqual(rdata.keys(), ['USERID1'])
+        self.assertEqual(list(rdata.keys()), ['USERID1'])
         self.assertEqual(sorted(rdata['USERID1'].keys()),
                          sorted(CPUMEM_SAMPLE1.keys()))
         self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
         self.assertEqual(rdata['USERID1']['used_cpu_time'], '6185838 uS')
         self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
         self.assertEqual(
-        self._monitor._cache._cache['cpumem']['data'].keys(), [])
+            list(self._monitor._cache._cache['cpumem']['data'].keys()), [])
 
     @mock.patch("zvmsdk.monitor.ZVMMonitor._get_inspect_data")
     def test_inspect_stats_single(self, _get_inspect_data):

@@ -12,9 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-import ConfigParser
 import os
+from six.moves import configparser
 
 
 class ZVMSDKConfigFileNotFound(Exception):
@@ -445,7 +444,7 @@ class ConfigOpts(object):
         configs = self.get_config_dicts_default(opts)
         read_file = self.find_config_file(project="zvmsdk") or ''
         if read_file:
-            cf = ConfigParser.ConfigParser()
+            cf = configparser.ConfigParser()
             cf.read(read_file)
             # return all sections in a list
             secs = cf.sections()

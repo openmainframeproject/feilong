@@ -16,11 +16,11 @@
 
 import time
 
-import generalUtils
-import msgs
-from vmUtils import execCmdThruIUCV, invokeSMCLI
-from vmUtils import isLoggedOn
-from vmUtils import waitForOSState, waitForVMState
+from smutLayer import generalUtils
+from smutLayer import msgs
+from smutLayer.vmUtils import execCmdThruIUCV, invokeSMCLI
+from smutLayer.vmUtils import isLoggedOn
+from smutLayer.vmUtils import waitForOSState, waitForVMState
 
 modId = 'PVM'
 vmOSUpStates = ['on', 'up']
