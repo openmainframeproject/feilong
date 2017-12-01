@@ -1285,24 +1285,24 @@ def localize(localFile, subs, testSets):
     if len(smutTestLocal.localSubs) > 0:
         print("Localizing localSubs dictionary.")
         for key in smutTestLocal.localSubs:
-            print "Localizing " + key + ": " + smutTestLocal.localSubs[key]
+            print("Localizing " + key + ": " + smutTestLocal.localSubs[key])
             subs[key] = smutTestLocal.localSubs[key]
     else:
         print("No local overrides exist for the subs dictionary.")
 
     # Apply local overrides to the testSets dictionary.
     if len(smutTestLocal.localTestSets) > 0:
-        print "Localizing the test sets."
+        print("Localizing the test sets.")
         if 'clear:testSets' in smutTestLocal.localTestSets:
             print("Removing all original test sets.")
             testSets.clear()
         for key in smutTestLocal.localTestSets:
             if key == 'clear:testSets':
                 continue
-            print "Localizing test set: " + key
+            print("Localizing test set: " + key)
             testSets[key] = smutTestLocal.localTestSets[key]
     else:
-        print "No local test sets exist."
+        print("No local test sets exist.")
 
     return 0
 
@@ -1704,7 +1704,7 @@ f.close()
 
 if args.listAreas is True:
     for key in sorted(testSets):
-        print key + ": " + testSets[key]['description']
+        print(key + ": " + testSets[key]['description'])
 else:
     # Initialize the environment.  Online the punch.
     cmd = "sudo /sbin/cio_ignore -r d; sudo /sbin/chccwdev -e d"
