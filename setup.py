@@ -18,7 +18,7 @@ import setuptools
 
 setuptools.setup(
     name='zVMCloudConnector',
-    version='0.3.0',
+    version='0.3.1',
     license='ASL 2.0',
     author='IBM',
     description='z/VM cloud management library in Python',
@@ -42,8 +42,8 @@ setuptools.setup(
         ]
     },
     scripts=['scripts/sdkserver', 'scripts/zvmsdk-wsgi'],
-    data_files=[('/usr/lib/systemd/system', ['data/sdkserver.service']),
-                ('/var/lib/zvmsdk', ['data/setupDisk']),
-                ('/etc/zvmsdk', ['data/uwsgi-zvmsdk.conf']),
-                ('/etc/zvmsdk', ['doc/source/zvmsdk.conf.sample'])],
+    data_files=[('usr/lib/systemd/system', ['data/sdkserver.service']),
+                ('var/lib/zvmsdk', ['data/setupDisk']),
+                ('etc/zvmsdk', ['data/uwsgi-zvmsdk.conf']),
+                ('etc/zvmsdk', ['doc/source/zvmsdk.conf.sample'])],
 )
