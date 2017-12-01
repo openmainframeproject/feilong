@@ -1,7 +1,7 @@
-pyjwt
-jsonschema
-requests
-netaddr
-webob
-routes
-six
+jsonschema>=2.6.0 # MIT
+netaddr>=0.7.18 # BSD
+PyJWT>=1.0.1 # MIT
+requests>=2.14.2 # Apache-2.0
+Routes>=2.3.1 # MIT
+six>=1.10.0 # MIT
+WebOb>=1.7.1 # MIT
