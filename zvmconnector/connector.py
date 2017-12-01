@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
 
 from zvmconnector import socketclient
 from zvmconnector import restclient
@@ -19,6 +20,16 @@ from zvmconnector import restclient
 
 CONN_TYPE_SOCKET = 'socket'
 CONN_TYPE_REST = 'rest'
+
+
+class zVMConnectorRequestFailed(Exception):
+
+    def __init__(self, results=None):
+        self.results = results or {'rs': 0, 'overallRC': 1, 'modID': 0,
+                                   'rc': 0, 'output': '', 'errmsg': ''}
+        self.message = ('z/VM Cloud Connector request failed: %s' %
+                        six.text_type(self.results))
+        super(zVMConnectorRequestFailed, self).__init__(self.message)
 
 
 class baseConnection(object):
@@ -78,4 +89,15 @@ class ZVMConnector(object):
         :param *api_args:      SDK API sequence parameters
         :param **api_kwargs:   SDK API keyword parameters
         """
-        return self.conn.request(api_name, *api_args, **api_kwargs)
+        results = {'rs': 0, 'overallRC': 1, 'modID': 0,
+                   'rc': 0, 'output': '', 'errmsg': ''}
+        try:
+            results = self.conn.request(api_name, *api_args, **api_kwargs)
+        except Exception as err:
+            results['errmsg'] = six.text_type(err)
+            raise zVMConnectorRequestFailed(results)
+
+        if results['overallRC'] == 0:
+            return results['output']
+        else:
+            raise zVMConnectorRequestFailed(results)
