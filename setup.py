@@ -42,8 +42,8 @@ setuptools.setup(
         ]
     },
     scripts=['scripts/sdkserver', 'scripts/zvmsdk-wsgi'],
-    data_files=[('usr/lib/systemd/system', ['data/sdkserver.service']),
-                ('var/lib/zvmsdk', ['data/setupDisk']),
-                ('etc/zvmsdk', ['data/uwsgi-zvmsdk.conf']),
-                ('etc/zvmsdk', ['doc/source/zvmsdk.conf.sample'])],
+    data_files=[('/usr/lib/systemd/system', ['data/sdkserver.service']),
+                ('/var/lib/zvmsdk', ['data/setupDisk']),
+                ('/etc/zvmsdk', ['data/uwsgi-zvmsdk.conf']),
+                ('/etc/zvmsdk', ['doc/source/zvmsdk.conf.sample'])],
 )
