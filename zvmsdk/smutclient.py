@@ -14,6 +14,14 @@
 
 import functools
 import hashlib
+# On SLES12, we found that if you import urllib.parse later
+# than requests, you will find a error like 'not able to load
+# urllib.parse, this is because urllib will be in sys.modules
+# when first import requests
+# as workaround here, we first import urllib then import requests
+# later, we need consider to use urllib.request to replace
+# requests if that's possible to avoid this kind of issue
+import six.moves.urllib.parse as urlparse # noqa
 import requests
 import threading
 import os
@@ -23,7 +31,6 @@ import six
 import string
 import tempfile
 
-import six.moves.urllib.parse as urlparse
 from smutLayer import smut
 
 from zvmsdk import config
