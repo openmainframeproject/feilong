@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "374f744e_802f0ccf",
+        "filename": "zvmsdk/tests/sdkwsgi/test_sdkwsgi.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-03T05:20:14Z",
+      "side": 1,
+      "message": "this will not work, have you updated the REST API test server or jenkins job?",
+      "range": {
+        "startLine": 26,
+        "startChar": 36,
+        "endLine": 26,
+        "endChar": 45
+      },
+      "revId": "bc97041c131274fbcc290d5053a1f3cb6fce2d50",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
