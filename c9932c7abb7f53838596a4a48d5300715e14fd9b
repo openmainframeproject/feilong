@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e9fdd806_7f3b9b42",
+        "filename": "zvmsdk/sdkwsgi/handlers/tokens.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-04T05:57:56Z",
+      "side": 1,
+      "message": "this logic is incorrect",
+      "range": {
+        "startLine": 50,
+        "startChar": 4,
+        "endLine": 52,
+        "endChar": 51
+      },
+      "revId": "c9932c7abb7f53838596a4a48d5300715e14fd9b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
