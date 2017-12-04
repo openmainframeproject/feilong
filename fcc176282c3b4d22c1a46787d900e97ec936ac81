@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "848de076_7688e5c3",
+        "filename": "zvmsdk/sdkwsgi/handlers/tokens.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-04T03:31:13Z",
+      "side": 1,
+      "message": "please help to make it configurable as well.. thanks",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 28,
+        "endChar": 36
+      },
+      "revId": "fcc176282c3b4d22c1a46787d900e97ec936ac81",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
