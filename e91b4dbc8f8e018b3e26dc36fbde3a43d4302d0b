@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "33646e6f_a24e5e31",
+        "filename": "doc/source/setuphttpd.rst",
+        "patchSetId": 9
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-05T11:40:07Z",
+      "side": 1,
+      "message": "this need some more work ,but I won\u0027t block this patch",
+      "range": {
+        "startLine": 187,
+        "startChar": 0,
+        "endLine": 199,
+        "endChar": 132
+      },
+      "revId": "e91b4dbc8f8e018b3e26dc36fbde3a43d4302d0b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "81fe5bc3_f2b3991a",
+        "filename": "zvmsdk/sdkwsgi/handlers/tokens.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-05T11:40:07Z",
+      "side": 1,
+      "message": "I think you can raise Unauthorized here...\nwe should not expose internal error to outside",
+      "range": {
+        "startLine": 37,
+        "startChar": 8,
+        "endLine": 37,
+        "endChar": 34
+      },
+      "revId": "e91b4dbc8f8e018b3e26dc36fbde3a43d4302d0b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
