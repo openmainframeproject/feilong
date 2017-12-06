@@ -54,7 +54,8 @@ class ImageAction(object):
         info = self.client.send_request('image_delete', name)
         return info
 
-    def query(self, name):
+    @validation.query_schema(image.query)
+    def query(self, req, name):
         info = self.client.send_request('image_query', name)
         return info
 
@@ -154,14 +155,14 @@ def image_export(req):
 @tokens.validate
 def image_query(req):
 
-    def _image_query(imagename):
+    def _image_query(imagename, req):
         action = get_action()
-        return action.query(imagename)
+        return action.query(req, imagename)
 
     imagename = None
     if 'imagename' in req.GET:
         imagename = req.GET['imagename']
-    info = _image_query(imagename)
+    info = _image_query(imagename, req)
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
