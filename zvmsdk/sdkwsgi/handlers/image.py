@@ -54,6 +54,7 @@ class ImageAction(object):
         info = self.client.send_request('image_delete', name)
         return info
 
+    @validation.query_schema(image.query)
     def query(self, name):
         info = self.client.send_request('image_query', name)
         return info
