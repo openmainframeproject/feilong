@@ -441,7 +441,7 @@ class SMUTClient(object):
             # Copy transport file to local
             try:
                 tmp_trans_dir = tempfile.mkdtemp()
-                local_trans = tmp_trans_dir + '/cfgdrv'
+                local_trans = tmp_trans_dir + '/cfgdrive.tgz'
                 if remotehost:
                     cmd = ["/usr/bin/scp", "-B",
                            ("%s:%s" % (remotehost, transportfiles)),

@@ -204,10 +204,11 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
                       '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
-        cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrv']
+        cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrive.tgz']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
-        punch_rd = "changevm fakeuser punchfile /tmp/tmpdir/cfgdrv --class X"
+        punch_rd = ("changevm fakeuser punchfile "
+                    "/tmp/tmpdir/cfgdrive.tgz --class X")
         request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
@@ -272,7 +273,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
                       '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
-        cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrv']
+        cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrive.tgz']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
         request.assert_called_once_with(purge_rd)
@@ -309,10 +310,11 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                       '0100',
                       '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
         scp_cmd = ["/usr/bin/scp", "-B", 'user@1.1.1.1:/faketrans',
-                  '/tmp/tmpdir/cfgdrv']
+                  '/tmp/tmpdir/cfgdrive.tgz']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(scp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
-        punch_rd = "changevm fakeuser punchfile /tmp/tmpdir/cfgdrv --class X"
+        punch_rd = ("changevm fakeuser punchfile "
+                    "/tmp/tmpdir/cfgdrive.tgz --class X")
         request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
