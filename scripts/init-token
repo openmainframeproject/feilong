@@ -1,0 +1,19 @@
+#!/bin/python
+import os
+import stat
+
+
+def init_token_config(file_path):
+    #if file not exits, create it
+    if not os.path.exists(file_path):
+        os.mknod(file_path)
+        # write default value
+        default_token = '12345678901234567890123456789012'
+        with open(file_path, 'w') as fp:
+            fp.write(default_token)
+    # change mode to 400
+    os.chmod(file_path, stat.S_IRUSR)
+
+
+file_token = '/etc/zvmsdk/token.dat'
+init_token_config(file_token)

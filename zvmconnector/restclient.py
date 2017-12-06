@@ -12,21 +12,32 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import datetime
 import json
-import jwt
+import os
 import requests
 import six
 
+# TODO:set up configuration file only for RESTClient and configure this value
+TOKEN_PATH = '/etc/zvmsdk/token.dat'
+
 
 REST_REQUEST_ERROR = [{'overallRC': 101, 'modID': 110, 'rc': 101},
-                      {1: "Request to zVM Cloud Connector failed:: %(error)s"},
+                      {1: "Request to zVM Cloud Connector failed:: %(error)s",
+                       2: "Get Token failed:: %(error)s"},
                        "zVM Cloud Connector request failed",
                        ]
 INVALID_API_ERROR = [{'overallRC': 400, 'modID': 110, 'rc': 400},
                      {1: "Invalid API name, '%(msg)s'"},
                      "Invalid API name",
                      ]
+
+
+class TokenNotFound(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return repr(self.msg)
 
 
 def fill_kwargs_in_body(body, **kwargs):
@@ -519,20 +530,18 @@ class RESTClient(object):
     def __init__(self, ip='127.0.0.1', port=8888, timeout=30):
         self.base_url = "http://" + ip + ":" + str(port)
 
-    def _tmp_token(self):
-        expires = 30
-
-        expired_elapse = datetime.timedelta(seconds=expires)
-        expired_time = datetime.datetime.utcnow() + expired_elapse
-        # payload = jwt.encode({'exp': expired_time}, CONF.wsgi.password)
-        payload = jwt.encode({'exp': expired_time}, 'password')
-
-        return payload
+    def _get_admin_token(self, path):
+        if os.path.exists(path):
+            with open(path, 'r') as fd:
+                token = fd.read().strip()
+        else:
+            raise TokenNotFound('token file not found.')
+        return token
 
     def _get_token(self):
         _headers = {'Content-Type': 'application/json'}
-        # _headers['X-Auth-User'] = CONF.wsgi.user
-        # _headers['X-Auth-Password'] = CONF.wsgi.password
+        admin_token = self._get_admin_token(TOKEN_PATH)
+        _headers['X-Admin-Token'] = admin_token
 
         url = self.base_url + '/token'
         method = 'POST'
@@ -560,8 +569,7 @@ class RESTClient(object):
         _headers = {'Content-Type': 'application/json'}
         _headers.update(headers or {})
 
-        # _headers['X-Auth-Token'] = self._get_token()
-        _headers['X-Auth-Token'] = self._tmp_token()
+        _headers['X-Auth-Token'] = self._get_token()
         response = requests.request(method, url, data=body, headers=_headers)
         return response
 
@@ -590,6 +598,10 @@ class RESTClient(object):
                 response = self.api_request(url, method, body)
             # change response to SDK format
             results = self._process_rest_response(response)
+        except TokenNotFound as err:
+            errmsg = REST_REQUEST_ERROR[1][2] % {'error': err.msg}
+            results = REST_REQUEST_ERROR[0]
+            results.update({'rs': 1, 'errmsg': errmsg, 'output': ''})
         except Exception as err:
             errmsg = REST_REQUEST_ERROR[1][1] % {'error': six.text_type(err)}
             results = REST_REQUEST_ERROR[0]
