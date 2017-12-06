@@ -51,3 +51,14 @@ export = {
     'required': ['location'],
     'additionalProperties': False
 }
+
+
+query = {
+    'type': 'object',
+    'properties': {
+        'image_name': parameter_types.single_param(parameter_types.name),
+        'userid': parameter_types.userid,
+    },
+    'required': ['image_name'],
+    'additionalProperties': False
+}
