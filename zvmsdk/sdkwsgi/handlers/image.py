@@ -43,7 +43,8 @@ class ImageAction(object):
                                         url, image_meta, remote_host)
         return info
 
-    def get_root_disk_size(self, name):
+    @validation.query_schema(image.query)
+    def get_root_disk_size(self, req, name):
         # FIXME: this param need combined image nameg, e.g the profile
         # name, not the given image name from customer side
         info = self.client.send_request('image_get_root_disk_size',
@@ -99,12 +100,12 @@ def image_create(req):
 @tokens.validate
 def image_get_root_disk_size(req):
 
-    def _image_get_root_disk_size(name):
+    def _image_get_root_disk_size(req, name):
         action = get_action()
-        return action.get_root_disk_size(name)
+        return action.get_root_disk_size(req, name)
 
     name = util.wsgi_path_item(req.environ, 'name')
-    info = _image_get_root_disk_size(name)
+    info = _image_get_root_disk_size(req, name)
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
