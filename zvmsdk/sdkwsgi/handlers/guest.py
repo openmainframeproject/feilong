@@ -62,7 +62,8 @@ class VMHandler(object):
         info = self.client.send_request('guest_get_info', userid)
         return info
 
-    def get_definition_info(self, userid):
+    @validation.query_schema(guest.userid_list_query)
+    def get_definition_info(self, req, userid):
         info = self.client.send_request('guest_get_definition_info', userid)
         return info
 
@@ -304,12 +305,12 @@ def guest_get_info(req):
 @tokens.validate
 def guest_get(req):
 
-    def _guest_get(userid):
+    def _guest_get(req, userid):
         action = get_handler()
-        return action.get_definition_info(userid)
+        return action.get_definition_info(req, userid)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
-    info = _guest_get(userid)
+    info = _guest_get(req, userid)
 
     # info we got looks like:
     # {'user_direct': [u'USER RESTT305 PASSW0RD 1024m 1024m G',

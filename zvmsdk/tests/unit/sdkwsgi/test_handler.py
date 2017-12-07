@@ -217,7 +217,7 @@ class GuestHandlerTest(unittest.TestCase):
             get.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
-            get.assert_called_once_with('1')
+            get.assert_called_once_with(self.req, '1')
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_nic_info(self, mock_validate):

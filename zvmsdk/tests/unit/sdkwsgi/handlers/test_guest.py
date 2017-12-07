@@ -651,7 +651,7 @@ class HandlersGuestTest(SDKWSGITest):
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_get(self.req)
-        mock_get.assert_called_once_with(FAKE_USERID)
+        mock_get.assert_called_once_with(self.req, FAKE_USERID)
 
     @mock.patch.object(guest.VMHandler, 'inspect_stats')
     def test_guest_get_stats(self, mock_get):
