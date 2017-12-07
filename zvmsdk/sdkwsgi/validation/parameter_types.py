@@ -199,6 +199,7 @@ image_list = {
     'type': 'array'
 }
 
+
 url = {
     'type': ['string'],
     'pattern': '^https?:/{2}|^file:/{3}\w.+$'
@@ -260,6 +261,10 @@ file_type = {
     'enum': ['ext2', 'ext3', 'ext4', 'xfs']
 }
 
+disk_pool = {
+    'type': 'string',
+    'pattern': '^\w+:\w+$'
+}
 
 disk_list = {
     'type': 'array',
