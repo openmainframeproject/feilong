@@ -199,6 +199,15 @@ image_list = {
     'type': 'array'
 }
 
+userid_list_query = {
+    'maxItems': 1,
+    'items': {
+        'format': 'userid',
+        'type': 'string'
+    },
+    'type': 'array'
+}
+
 url = {
     'type': ['string'],
     'pattern': '^https?:/{2}|^file:/{3}\w.+$'
