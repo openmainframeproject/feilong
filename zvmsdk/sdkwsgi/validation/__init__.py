@@ -149,10 +149,16 @@ def query_schema(query_params_schema, min_version=None,
             else:
                 req = args[1]
 
-            if _schema_validation_helper(query_params_schema,
-                                         req.GET.dict_of_lists(),
-                                         args, kwargs, is_body=False):
-                _remove_unexpected_query_parameters(query_params_schema, req)
+            if req.environ['wsgiorg.routing_args'][1]:
+                if _schema_validation_helper(query_params_schema,
+                                            req.environ['wsgiorg.routing_args'][1],
+                                            args, kwargs, is_body=False):
+                    _remove_unexpected_query_parameters(query_params_schema, req)
+            else
+                if _schema_validation_helper(query_params_schema,
+                                            req.GET.dict_of_lists(),
+                                            args, kwargs, is_body=False):
+                    _remove_unexpected_query_parameters(query_params_schema, req)
             return func(*args, **kwargs)
         return wrapper
 
