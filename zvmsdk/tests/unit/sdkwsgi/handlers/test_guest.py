@@ -411,7 +411,7 @@ class HandlersGuestTest(SDKWSGITest):
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_get_info(self.req)
-        mock_get.assert_called_once_with(FAKE_USERID)
+        mock_get.assert_called_once_with(self.req, FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get_power_state')
@@ -420,7 +420,7 @@ class HandlersGuestTest(SDKWSGITest):
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_get_power_state(self.req)
-        mock_get.assert_called_once_with(FAKE_USERID)
+        mock_get.assert_called_once_with(self.req, FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'delete')
@@ -642,7 +642,7 @@ class HandlersGuestTest(SDKWSGITest):
         mock_get.return_value = ''
 
         guest.guest_get_nic_info(self.req)
-        mock_get.assert_called_once_with(FAKE_USERID)
+        mock_get.assert_called_once_with(self.req, FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get_definition_info')
@@ -651,7 +651,7 @@ class HandlersGuestTest(SDKWSGITest):
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_get(self.req)
-        mock_get.assert_called_once_with(FAKE_USERID)
+        mock_get.assert_called_once_with(self.req, FAKE_USERID)
 
     @mock.patch.object(guest.VMHandler, 'inspect_stats')
     def test_guest_get_stats(self, mock_get):
