@@ -254,12 +254,23 @@ userid_list = {
     'pattern': '^(\w{,8})(,\w{,8}){0,}$'
 }
 
+userid_list_array = {
+    'items': {
+        'format': 'userid',
+        'type': 'string'
+    },
+    'type': 'array'
+}
 
 file_type = {
     'type': 'string',
     'enum': ['ext2', 'ext3', 'ext4', 'xfs']
 }
 
+disk_pool = {
+    'type': 'string',
+    'pattern': '^\w+:\w+$'
+}
 
 disk_list = {
     'type': 'array',

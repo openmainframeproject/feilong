@@ -176,11 +176,18 @@ capture = {
 userid_list_query = {
     'type': 'object',
     'properties': {
-        'userid': parameter_types.single_param(parameter_types.userid_list),
+        'userid': parameter_types.userid_list,
     },
     'additionalProperties': False
 }
 
+userid_list_array_query = {
+    'type': 'object',
+    'properties': {
+        'userid': parameter_types.userid_list_array,
+    },
+    'additionalProperties': False
+}
 
 nic_DB_info = {
     'type': 'object',
