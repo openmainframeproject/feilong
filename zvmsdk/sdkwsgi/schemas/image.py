@@ -60,3 +60,11 @@ query = {
     },
     'additionalProperties': True
 }
+
+diskname = {
+    'type': 'object',
+    'properties': {
+        'disk': parameter_types.disk_pool
+    },
+    'additionalProperties': False
+}
