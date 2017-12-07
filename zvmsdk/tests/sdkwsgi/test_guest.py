@@ -277,13 +277,25 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_get('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_get_incorrect(self):
+        resp = self._guest_get('@@@@@')
+        self.assertEqual(400, resp.status_code)
+
     def test_guest_get_info_not_exist(self):
         resp = self._guest_get_info('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_get_info_incorrect(self):
+        resp = self._guest_get_info('@@@@@')
+        self.assertEqual(400, resp.status_code)
+
     def test_guest_get_power_state_not_exist(self):
         resp = self._guest_get_power_state('notexist')
         self.assertEqual(404, resp.status_code)
+
+    def test_guest_get_power_state_incorrect(self):
+        resp = self._guest_get_power_state('@@@@@')
+        self.assertEqual(400, resp.status_code)
 
     def test_guest_get_start_not_exist(self):
         resp = self._guest_start('notexist')
@@ -369,6 +381,13 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         resp = self._guest_vnicsinfo('notexist')
         self.assertEqual(200, resp.status_code)
+
+    def test_guest_inspect_incorrect(self):
+        resp = self._guest_stats('@@@@@')
+        self.assertEqual(400, resp.status_code)
+
+        resp = self._guest_vnicsinfo('@@@@@')
+        self.assertEqual(400, resp.status_code)
 
     def test_guest_create_delete(self):
         resp = self._guest_create()
