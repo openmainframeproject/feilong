@@ -62,6 +62,7 @@ class VMHandler(object):
         info = self.client.send_request('guest_get_info', userid)
         return info
 
+    @validation.query_schema(guest.userid_list_query)
     def get_definition_info(self, userid):
         info = self.client.send_request('guest_get_definition_info', userid)
         return info
