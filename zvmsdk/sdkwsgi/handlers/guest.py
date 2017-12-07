@@ -58,15 +58,18 @@ class VMHandler(object):
         info = self.client.send_request('guest_list')
         return info
 
-    def get_info(self, userid):
+    @validation.query_schema(guest.userid_list_query)
+    def get_info(self, req, userid):
         info = self.client.send_request('guest_get_info', userid)
         return info
 
-    def get_definition_info(self, userid):
+    @validation.query_schema(guest.userid_list_query)
+    def get_definition_info(self, req, userid):
         info = self.client.send_request('guest_get_definition_info', userid)
         return info
 
-    def get_power_state(self, userid):
+    @validation.query_schema(guest.userid_list_query)
+    def get_power_state(self, req, userid):
         info = self.client.send_request('guest_get_power_state', userid)
         return info
 
@@ -74,7 +77,8 @@ class VMHandler(object):
         info = self.client.send_request('guest_delete', userid)
         return info
 
-    def get_nic_vswitch_info(self, userid):
+    @validation.query_schema(guest.userid_list_query)
+    def get_nic_vswitch_info(self, req, userid):
         info = self.client.send_request('guest_get_nic_vswitch_info', userid)
         return info
 
@@ -86,13 +90,13 @@ class VMHandler(object):
                                         active=active)
         return info
 
-    @validation.query_schema(guest.userid_list_query)
+    @validation.query_schema(guest.userid_list_array_query)
     def inspect_stats(self, req, userid_list):
         info = self.client.send_request('guest_inspect_stats',
                                         userid_list)
         return info
 
-    @validation.query_schema(guest.userid_list_query)
+    @validation.query_schema(guest.userid_list_array_query)
     def inspect_vnics(self, req, userid_list):
         info = self.client.send_request('guest_inspect_vnics',
                                         userid_list)
@@ -285,12 +289,12 @@ def get_handler():
 @tokens.validate
 def guest_get_info(req):
 
-    def _guest_get_info(userid):
+    def _guest_get_info(req, userid):
         action = get_handler()
-        return action.get_info(userid)
+        return action.get_info(req, userid)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
-    info = _guest_get_info(userid)
+    info = _guest_get_info(req, userid)
 
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,
@@ -304,12 +308,12 @@ def guest_get_info(req):
 @tokens.validate
 def guest_get(req):
 
-    def _guest_get(userid):
+    def _guest_get(req, userid):
         action = get_handler()
-        return action.get_definition_info(userid)
+        return action.get_definition_info(req, userid)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
-    info = _guest_get(userid)
+    info = _guest_get(req, userid)
 
     # info we got looks like:
     # {'user_direct': [u'USER RESTT305 PASSW0RD 1024m 1024m G',
@@ -326,12 +330,12 @@ def guest_get(req):
 @tokens.validate
 def guest_get_power_state(req):
 
-    def _guest_get_power_state(userid):
+    def _guest_get_power_state(req, userid):
         action = get_handler()
-        return action.get_power_state(userid)
+        return action.get_power_state(req, userid)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
-    info = _guest_get_power_state(userid)
+    info = _guest_get_power_state(req, userid)
 
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,
@@ -431,12 +435,12 @@ def guest_delete(req):
 @tokens.validate
 def guest_get_nic_info(req):
 
-    def _guest_get_nic_info(userid):
+    def _guest_get_nic_info(req, userid):
         action = get_handler()
-        return action.get_nic_vswitch_info(userid)
+        return action.get_nic_vswitch_info(req, userid)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
-    info = _guest_get_nic_info(userid)
+    info = _guest_get_nic_info(req, userid)
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
