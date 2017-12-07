@@ -33,7 +33,8 @@ class HostAction(object):
         info = self.client.send_request('host_get_info')
         return info
 
-    def diskpool_get_info(self, diskname):
+    @validation.query_schema(image.diskname)
+    def diskpool_get_info(self, req, diskname):
         info = self.client.send_request('host_diskpool_get_info',
                                         disk_pool=diskname)
         return info
@@ -66,13 +67,13 @@ def host_get_info(req):
 @tokens.validate
 def host_get_disk_info(req):
 
-    def _host_get_disk_info(diskname):
+    def _host_get_disk_info(req, diskname):
         action = get_action()
-        return action.diskpool_get_info(diskname)
+        return action.diskpool_get_info(req, diskname)
 
     diskname = util.wsgi_path_item(req.environ, 'disk')
 
-    info = _host_get_disk_info(diskname)
+    info = _host_get_disk_info(req, diskname)
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,
         additional_handler=util.handle_not_found)
