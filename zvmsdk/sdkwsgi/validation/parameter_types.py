@@ -199,6 +199,7 @@ image_list = {
     'type': 'array'
 }
 
+
 url = {
     'type': ['string'],
     'pattern': '^https?:/{2}|^file:/{3}\w.+$'
