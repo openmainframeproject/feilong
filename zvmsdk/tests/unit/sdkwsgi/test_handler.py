@@ -205,7 +205,7 @@ class GuestHandlerTest(unittest.TestCase):
             get_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
-            get_info.assert_called_once_with('1')
+            get_info.assert_called_once_with(mock.ANY, '1')
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get(self, mock_validate):
@@ -217,7 +217,7 @@ class GuestHandlerTest(unittest.TestCase):
             get.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
-            get.assert_called_once_with('1')
+            get.assert_called_once_with(mock.ANY, '1')
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_nic_info(self, mock_validate):
@@ -229,7 +229,7 @@ class GuestHandlerTest(unittest.TestCase):
             get_nic_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
-            get_nic_info.assert_called_once_with('1')
+            get_nic_info.assert_called_once_with(mock.ANY, '1')
 
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
     @mock.patch.object(tokens, 'validate')
@@ -256,7 +256,7 @@ class GuestHandlerTest(unittest.TestCase):
             get_power.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
-            get_power.assert_called_once_with('1')
+            get_power.assert_called_once_with(mock.ANY, '1')
 
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
     @mock.patch.object(tokens, 'validate')
@@ -556,7 +556,7 @@ class HostHandlerTest(unittest.TestCase):
             get_disk_info.return_value = {'overallRC': 0}
             h(self.env, dummy)
 
-            get_disk_info.assert_called_once_with('disk1')
+            get_disk_info.assert_called_once_with(mock.ANY, 'disk1')
 
 
 class VswitchHandlerNegativeTest(unittest.TestCase):

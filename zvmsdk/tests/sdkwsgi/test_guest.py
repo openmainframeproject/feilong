@@ -388,6 +388,8 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertEqual(200, resp.status_code)
             self.apibase.verify_result('test_guest_get', resp.content)
 
+            resp_error = self._guest_get_info('1234567890')
+            self.assertEqual(404, resp_error.status_code)
             resp = self._guest_get_info()
             self.assertEqual(200, resp.status_code)
             self.apibase.verify_result('test_guest_get_info', resp.content)
