@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6dcd010c_d014d97b",
+        "filename": "zvmsdk/sdkwsgi/handlers/tokens.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-11T08:14:29Z",
+      "side": 1,
+      "message": "I know it\u0027s better to lock, who is going to write to it inside our code?",
+      "range": {
+        "startLine": 35,
+        "startChar": 8,
+        "endLine": 35,
+        "endChar": 37
+      },
+      "revId": "2cb2d0f977d5a3771a357c120263fa727d20d504",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
