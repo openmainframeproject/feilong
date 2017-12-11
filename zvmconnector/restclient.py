@@ -16,10 +16,11 @@ import json
 import os
 import requests
 import six
+import threading
 
 # TODO:set up configuration file only for RESTClient and configure this value
 TOKEN_PATH = '/etc/zvmsdk/token.dat'
-
+TOKEN_LOCK = threading.Lock()
 
 REST_REQUEST_ERROR = [{'overallRC': 101, 'modID': 110, 'rc': 101},
                       {1: "Request to zVM Cloud Connector failed:: %(error)s",
@@ -532,8 +533,10 @@ class RESTClient(object):
 
     def _get_admin_token(self, path):
         if os.path.exists(path):
-            with open(path, 'r') as fd:
-                token = fd.read().strip()
+            if TOKEN_LOCK.acquire():
+                with open(path, 'r') as fd:
+                    token = fd.read().strip()
+                TOKEN_LOCK.release()
         else:
             raise TokenNotFound('token file not found.')
         return token
@@ -601,7 +604,7 @@ class RESTClient(object):
         except TokenNotFound as err:
             errmsg = REST_REQUEST_ERROR[1][2] % {'error': err.msg}
             results = REST_REQUEST_ERROR[0]
-            results.update({'rs': 1, 'errmsg': errmsg, 'output': ''})
+            results.update({'rs': 2, 'errmsg': errmsg, 'output': ''})
         except Exception as err:
             errmsg = REST_REQUEST_ERROR[1][1] % {'error': six.text_type(err)}
             results = REST_REQUEST_ERROR[0]
