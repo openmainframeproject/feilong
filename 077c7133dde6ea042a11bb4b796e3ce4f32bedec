@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b81035dd_804e0917",
+        "filename": "doc/source/quickstart.rst",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-11T06:06:45Z",
+      "side": 1,
+      "message": "I knew we have python 3, is it python 3.5 or 3.6?",
+      "range": {
+        "startLine": 83,
+        "startChar": 0,
+        "endLine": 83,
+        "endChar": 12
+      },
+      "revId": "077c7133dde6ea042a11bb4b796e3ce4f32bedec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
