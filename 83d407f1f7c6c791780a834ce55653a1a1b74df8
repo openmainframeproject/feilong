@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a6fe3b70_01d93eab",
+        "filename": "doc/source/zvmsdk.conf.sample",
+        "patchSetId": 1
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-11T09:47:08Z",
+      "side": 1,
+      "message": "thanks, I forget to ask na fei to update this file",
+      "range": {
+        "startLine": 329,
+        "startChar": 16,
+        "endLine": 329,
+        "endChar": 24
+      },
+      "revId": "83d407f1f7c6c791780a834ce55653a1a1b74df8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
