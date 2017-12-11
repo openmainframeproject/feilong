@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b1801fd4_f9e72e99",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 21
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-11T07:41:54Z",
+      "side": 1,
+      "message": "just to confirm my understanding\n@@@@ is incorrect value to query on ,right?",
+      "range": {
+        "startLine": 280,
+        "startChar": 22,
+        "endLine": 280,
+        "endChar": 31
+      },
+      "revId": "8a753c4a9292ac7caceaeb03cc159da1714fbd31",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
