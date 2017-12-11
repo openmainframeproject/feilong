@@ -22,14 +22,20 @@ TOKEN_PATH = '/etc/zvmsdk/token.dat'
 
 
 REST_REQUEST_ERROR = [{'overallRC': 101, 'modID': 110, 'rc': 101},
-                      {1: "Request to zVM Cloud Connector failed:: %(error)s",
-                       2: "Get Token failed:: %(error)s"},
+                      {1: "Request to zVM Cloud Connector failed: %(error)s",
+                       2: "Get Token failed: %(error)s",
+                       3: "Request %(url)s failed: %s(error"},
                        "zVM Cloud Connector request failed",
                        ]
 INVALID_API_ERROR = [{'overallRC': 400, 'modID': 110, 'rc': 400},
                      {1: "Invalid API name, '%(msg)s'"},
                      "Invalid API name",
                      ]
+
+
+class HTTPerror(Exception):
+    def __init__(self, resp):
+        self.resp = resp
 
 
 class TokenNotFound(Exception):
@@ -561,9 +567,12 @@ class RESTClient(object):
         return full_url, body
 
     def _process_rest_response(self, response):
-        res_dict = json.loads(response.content)
-        # return res_dict.get('output', None)
-        return res_dict
+        if response.header['Content-Type'] == 'application/json':
+            res_dict = json.loads(response.content)
+            # return res_dict.get('output', None)
+            return res_dict
+        else:
+            raise HTTPerror(response)
 
     def request(self, url, method, body, headers=None):
         _headers = {'Content-Type': 'application/json'}
@@ -598,10 +607,19 @@ class RESTClient(object):
                 response = self.api_request(url, method, body)
             # change response to SDK format
             results = self._process_rest_response(response)
+
+        except HTTPerror as err:
+            results = {}
+            errmsg = REST_REQUEST_ERROR[1][3] % ({'url': err.resp.url,
+                                                  'error': err.resp.reason})
+            results['overallRC'] = err.resp.status_code
+            results['rc'] = err.resp.status_code
+            results['modID'] = 110
+            results.update({'rs': 3, 'errmsg': errmsg, 'output': ''})
         except TokenNotFound as err:
             errmsg = REST_REQUEST_ERROR[1][2] % {'error': err.msg}
             results = REST_REQUEST_ERROR[0]
-            results.update({'rs': 1, 'errmsg': errmsg, 'output': ''})
+            results.update({'rs': 2, 'errmsg': errmsg, 'output': ''})
         except Exception as err:
             errmsg = REST_REQUEST_ERROR[1][1] % {'error': six.text_type(err)}
             results = REST_REQUEST_ERROR[0]
