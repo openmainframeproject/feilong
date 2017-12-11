@@ -9,9 +9,12 @@ Pre-requirements
 ================
 
 z/VM Cloud Connector has to be installed inside a Linux running on z/VM.
-Currently, those distros are tested:
+Currently planned to be supported distros include current supported versions
+of:
 
-- RHEL 7.2
+- SUSE Linux Enterprise Server
+- Red Hat Enterprise Linux
+- Ubuntu 16.04 LTS
 
 **NOTE**: This guide is based on RHEL 7.2, you may need to adjust the commands
 on other Linux distros.
@@ -70,6 +73,15 @@ Preparation on BYOL
 
    If something like 'is already  online' is returned, it means punch already
    online and feel free to ignore the warning.
+
+Installation Requirements
+-------------------------
+
+The supported Python version includes:
+
+- Python 2.7
+- Python 3.5
+
 
 Installation
 ============
