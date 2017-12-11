@@ -22,6 +22,30 @@
       "revId": "77301a16baf185e00d301154c7fd907b39133a27",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5e5d2ee6_17b94670",
+        "filename": "zvmconnector/restclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 570,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2017-12-11T10:17:50Z",
+      "side": 1,
+      "message": "Yes, when there is timeout response, it is send by HTTP server, not by the function in sdkwsgi.",
+      "parentUuid": "3fd82071_9a2d500e",
+      "range": {
+        "startLine": 570,
+        "startChar": 46,
+        "endLine": 570,
+        "endChar": 64
+      },
+      "revId": "77301a16baf185e00d301154c7fd907b39133a27",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
