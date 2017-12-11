@@ -22,6 +22,30 @@
       "revId": "077c7133dde6ea042a11bb4b796e3ce4f32bedec",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "66633cb3_2922d3cd",
+        "filename": "doc/source/quickstart.rst",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2017-12-11T06:53:58Z",
+      "side": 1,
+      "message": "python3.5 .\nWe may consider to support python2.6, as rhel6 and sles11 using it",
+      "parentUuid": "b81035dd_804e0917",
+      "range": {
+        "startLine": 83,
+        "startChar": 0,
+        "endLine": 83,
+        "endChar": 12
+      },
+      "revId": "077c7133dde6ea042a11bb4b796e3ce4f32bedec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
