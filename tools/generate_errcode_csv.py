@@ -85,7 +85,7 @@ def generate_errcode():
             _mid = '1'
             _rc = _msg[0].get('rc')
             _rs = _msg[0].get('rs')
-            _err = _msg[1]
+            _err = _msg[1].replace('%i', '%s') % _msg[2]
             _line = ';'.join((
                     six.text_type(_orc),
                     six.text_type(_mid),

@@ -326,7 +326,7 @@
 #     An 8 character name of a PROFILE that is already defined in the z/VM
 #     user directory.
 #     
-# This param is optional
+# This param is required
 #user_profile=
 
 
