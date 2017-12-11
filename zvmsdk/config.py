@@ -150,6 +150,7 @@ Sample configuration:
     '''),
     Opt('user_profile',
         section='zvm',
+        required=True,
         help='''
 PROFILE name to use when creating a z/VM guest.
 
