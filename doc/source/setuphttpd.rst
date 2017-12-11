@@ -185,8 +185,11 @@ Token Usage
 ============
 
 When you sending requests, you need a token to get access to the service.
-The owner has an admin_token stored in the file. The permission of this is set that only owner can operate on it. And the path of this file represented by token_file_path can be configured in wsgi section .
-First, you should request for a token by putting the admin_token into the headers of request object:
+To get the token, you should get an admin-token from administrator.
+The owner has an admin_token stored in the file. The permission of this is set that only owner can operate on it.
+And the path of this file represented by token_file_path can be configured in wsgi section of configuration file.
+To request for a token, you can put the admin_token into the headers of request object and send a request to the server.
+For example:
 
 .. code-block:: text
 
@@ -199,7 +202,7 @@ First, you should request for a token by putting the admin_token into the header
     X-Auth-Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTI1NDQyODJ9.TVlcQb_QuUPJ37cRyzZqroR6kLZ-5zH2-tliIkhsQ1A
     cache-control: no-cache
 
-Then, you can send request using the token in response.headers['x-Auth-Token'].
+Then, you can send normal RESTful requests using the token in response.headers['x-Auth-Token']. For example:
 
 .. code-block:: text
 
