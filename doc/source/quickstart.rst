@@ -42,7 +42,19 @@ Preparation on BYOL
 
    See z/VM Systems Management Application Programming for how to make it.
 
-3. Enable punch device
+3. Update BYOL definition about IUCV
+
+   Assume BYOL has its definition on z/VM, it needs to have following entry in
+   its User Directory in order to communicate with the managed guests by IUCV
+   channel
+
+   .. code-block:: text
+
+       IUCV ANY
+
+   See z/VM Systems Management Application Programming for how to make it.
+
+4. Enable punch device
 
    In order to spawn guest, BYOL needs to be able to punch files to spawned
    guests' reader, so the punch device on BYOL needs to be enabled.
