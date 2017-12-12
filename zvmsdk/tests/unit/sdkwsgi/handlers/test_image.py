@@ -135,7 +135,7 @@ class HandlersImageTest(unittest.TestCase):
         mock_name.return_value = 'dummy'
         mock_get.return_value = '100'
         image.image_get_root_disk_size(self.req)
-        mock_get.assert_called_once_with('dummy')
+        mock_get.assert_called_once_with(self.req, 'dummy')
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(image.ImageAction, 'delete')
