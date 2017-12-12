@@ -1187,3 +1187,16 @@ class SDKAPI(object):
         action = "get virtual switch information"
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._networkops.vswitch_query(vswitch_name)
+
+    def guest_delete_network_interface(self, userid, os_version,
+                                       vdev, active=False):
+        """ delete the nic and network configuration for the vm
+
+        :param str userid: the user id of the guest
+        :param str os_version: operating system version of the guest
+        :param str vdev: nic device number, 1- to 4- hexadecimal digits
+        :param bool active: whether delete a nic on active guest system
+        """
+        self._networkops.delete_nic(userid, vdev, active=active)
+        self._networkops.delete_network_configuration(userid, os_version,
+                                                      vdev, active=active)
