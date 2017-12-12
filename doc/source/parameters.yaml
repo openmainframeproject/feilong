@@ -323,7 +323,8 @@ disk_info_host:
   type: dict
 image_info:
   description: |
-    The image info for specific image.
+    The image info for specific image or all images, each image has one dict
+    to indicate its info
   in: body
   required: true
   type: list
@@ -336,6 +337,12 @@ image_dict:
 image_name:
   description: |
     Image name that can be uniquely identify an image.
+  in: body
+  required: true
+  type: string
+image_md5sum:
+  description: |
+    md5sum for the specific image.
   in: body
   required: true
   type: string
@@ -385,7 +392,25 @@ remotehost_image_export:
   type: string
 root_disk_size_image:
   description: |
-    root disk size in units CYL or BLK of image.
+    The image's root disk size in units CYL or BLK, eg 3338:CYL or 614200:BLK.
+  in: body
+  required: true
+  type: string
+physical_disk_size_image:
+  description: |
+    Physical image size in bytes eg 5120000
+  in: body
+  required: true
+  type: string
+image_type:
+  description: |
+    How the image is generated, if it captured from root disk the type is netboot.
+  in: body
+  required: true
+  type: string
+image_comments:
+  description: |
+    the comments for the image
   in: body
   required: true
   type: string
@@ -613,7 +638,7 @@ network_interface_info:
   type: dict
 guest_os_version:
   description: |
-    guest operating system version.
+    operating system version.
   in: body
   required: true
   type: string

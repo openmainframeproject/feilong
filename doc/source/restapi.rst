@@ -888,6 +888,13 @@ Get the list of image info in image repository.
 .. restapi_parameters:: parameters.yaml
 
   - output: image_info
+  - imagename: image_name
+  - imageosdistro: guest_os_version
+  - md5sum: image_md5sum
+  - disk_size_units: root_disk_size_image
+  - image_size_in_bytes: physical_disk_size_image
+  - type: image_type
+  - comments: image_comments
 
 * Response sample:
 
