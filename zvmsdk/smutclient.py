@@ -1456,8 +1456,8 @@ class SMUTClient(object):
             raise exception.SDKImageOperationError(rs=20, img=image_name)
 
         image_path = '/'.join([CONF.image.sdk_image_repository,
-                               target_info[0][5],
-                               target_info[0][1],
+                               target_info[0]['type'],
+                               target_info[0]['imageosdistro'],
                                image_name])
         return image_path
 
@@ -1524,7 +1524,7 @@ class SMUTClient(object):
         image_info = self.image_query(image_name)
         if not image_info:
             raise exception.SDKImageOperationError(rs=20, img=image_name)
-        disk_size_units = image_info[0][3].split(':')[0]
+        disk_size_units = image_info[0]['disk_size_units'].split(':')[0]
         return disk_size_units
 
     def punch_file(self, userid, fn, fclass):
