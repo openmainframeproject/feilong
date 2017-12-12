@@ -43,13 +43,13 @@ class SMUT(object):
         self.reqCnt = 0           # Number of requests so far
 
         # Set up SysLog handling
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.DEBUG)
-        self.handler = logging.handlers.SysLogHandler(address = '/dev/log')
-        self.formatter = (
-            logging.Formatter('%(module)s.%(funcName)s: %(message)s'))
-        self.handler.setFormatter(self.formatter)
-        self.logger.addHandler(self.handler)
+#         self.logger = logging.getLogger(__name__)
+#         self.logger.setLevel(logging.DEBUG)
+#         self.handler = logging.handlers.SysLogHandler(address = '/dev/log')
+#         self.formatter = (
+#             logging.Formatter('%(module)s.%(funcName)s: %(message)s'))
+#         self.handler.setFormatter(self.formatter)
+#         self.logger.addHandler(self.handler)
 
         # Initialize the command name associated with this SMUT instance.
         if 'cmdName' in kwArgs.keys():

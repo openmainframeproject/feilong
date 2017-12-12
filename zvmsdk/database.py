@@ -606,7 +606,17 @@ class ImageDbOperator(object):
             obj_desc = "Image with name: %s" % imagename
             raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
                                                    modID=self._module_id)
-        return image_list
+        # Map each image record to be a dict, with the key is the field name in
+        # image DB
+        image_keys_list = ['imagename', 'imageosdistro', 'md5sum',
+                      'disk_size_units', 'image_size_in_bytes', 'type',
+                      'comments']
+
+        image_result = []
+        for item in image_list:
+            image_item = dict(zip(image_keys_list, item))
+            image_result.append(image_item)
+        return image_result
 
     def image_delete_record(self, imagename):
         """Delete the record of specified imagename from image table"""
