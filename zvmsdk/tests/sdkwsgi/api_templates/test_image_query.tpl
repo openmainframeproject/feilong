@@ -3,7 +3,12 @@
     "overallRC": 0,
     "modID": null,
     "rc": 0,
-    "output": [["test", "rhel7", "c73ce117eef8077c3420bfc8f473ac2f", "0:CYL", "512", "netboot", null],
-               ["test2", "rhel7.3", "658c1858d2eb87dadcea6063be7b142e", "3338:CYL", "465313545", "netboot", null]],
+    "output": [{"image_size_in_bytes": "55",
+                "disk_size_units": "0:CYL",
+                "md5sum": "52014cd658cea6ed4005fb25885e30e2",
+                "comments": null,
+                "imagename": "image1",
+                "imageosdistro": "rhel7.2",
+                "type": "netboot"}],
     "errmsg": ""
 }
