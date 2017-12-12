@@ -22,6 +22,30 @@
       "revId": "246749924cac699bc9fde0c2ffaffa3e14e8df55",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4cf77c46_8f9795f5",
+        "filename": "doc/source/quickstart.rst",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2017-12-12T02:07:04Z",
+      "side": 1,
+      "message": "1) Before step 1, already says \" For example, if you want to import/export image from/to nova compute server\" \n2) A tool like IVP can helps to do these checks, maybe it\u0027s low priority now, after the octet stream is supported, we can remove the constriction of ssh key authentication.",
+      "parentUuid": "1f654a8e_bf5a74c1",
+      "range": {
+        "startLine": 77,
+        "startChar": 3,
+        "endLine": 132,
+        "endChar": 56
+      },
+      "revId": "246749924cac699bc9fde0c2ffaffa3e14e8df55",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
