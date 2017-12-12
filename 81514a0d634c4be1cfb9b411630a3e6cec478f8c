@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "20faaf76_56ee5407",
+        "filename": "zvmsdk/sdkwsgi/handlers/host.py",
+        "patchSetId": 22
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-12T01:20:46Z",
+      "side": 1,
+      "message": "I think we have positive case for it, do we have negative test cases for it?",
+      "range": {
+        "startLine": 38,
+        "startChar": 4,
+        "endLine": 38,
+        "endChar": 44
+      },
+      "revId": "81514a0d634c4be1cfb9b411630a3e6cec478f8c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "88487e52_31285d7e",
+        "filename": "zvmsdk/sdkwsgi/handlers/image.py",
+        "patchSetId": 22
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-12T01:20:46Z",
+      "side": 1,
+      "message": "I think we have positive case for it, do we have negative test cases for it?",
+      "range": {
+        "startLine": 46,
+        "startChar": 28,
+        "endLine": 46,
+        "endChar": 29
+      },
+      "revId": "81514a0d634c4be1cfb9b411630a3e6cec478f8c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
