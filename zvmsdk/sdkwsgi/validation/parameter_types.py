@@ -161,6 +161,16 @@ vdev_list = {
     'uniqueItems': True
 }
 
+image_list = {
+    'maxItems': 1,
+    'items': {
+        'format': 'name',
+        'maxLength': 255,
+        'minLength': 1,
+        'type': 'string'
+    },
+    'type': 'array'
+}
 
 url = {
     'type': ['string'],

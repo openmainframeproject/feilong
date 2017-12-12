@@ -152,7 +152,7 @@ class HandlersImageTest(unittest.TestCase):
         self.req.GET = {}
         self.req.GET['imagename'] = 'image1'
         image.image_query(self.req)
-        mock_query.assert_called_once_with('image1')
+        mock_query.assert_called_once_with(self.req, 'image1')
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(image.ImageAction, 'export')
