@@ -5,9 +5,7 @@
 Change log
 ==========
 
-Version 0.3.0
+Version 0.3.2
 ^^^^^^^^^^^^^
 
-Released: not yet
-
-This is the first 'beta' version.
+Beta release since Dec 4, 2017
