@@ -887,9 +887,13 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
         image_record = self.db_op.image_query_record(imagename)
         self.assertEqual(1, len(image_record))
         self.assertListEqual(
-            [(u'test', u'rhel6.5', u'c73ce117eef8077c3420bfc8f473ac2f',
-              u'3338:CYL', u'5120000', u'netboot', None)],
-            image_record)
+            [{'imagename': u'test',
+              'imageosdistro': u'rhel6.5',
+              'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
+              'disk_size_units': u'3338:CYL',
+              'image_size_in_bytes': u'5120000',
+              'type': u'netboot',
+              'comments': None}], image_record)
 
         # Delete it
         self.db_op.image_delete_record(imagename)
@@ -936,11 +940,20 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
         image_records = self.db_op.image_query_record()
         self.assertEqual(2, len(image_records))
         self.assertListEqual(
-            [(u'testimage1', u'rhel6.5', u'c73ce117eef8077c3420bfc8f473ac2f',
-              u'3338:CYL', u'5120000', u'netboot', None),
-             (u'testimage2', u'rhel6.5', u'c73ce117eef8077c3420bfc8f473ac2f',
-              u'3338:CYL', u'5120000', u'netboot', None)],
-            image_records)
+            [{'imagename': u'testimage1',
+              'imageosdistro': u'rhel6.5',
+              'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
+              'disk_size_units': u'3338:CYL',
+              'image_size_in_bytes': u'5120000',
+              'type': u'netboot',
+              'comments': None},
+             {'imagename': u'testimage2',
+              'imageosdistro': u'rhel6.5',
+              'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
+              'disk_size_units': u'3338:CYL',
+              'image_size_in_bytes': u'5120000',
+              'type': u'netboot',
+              'comments': None}], image_records)
         # Clean up the images
         self.db_op.image_delete_record(imagename1)
         self.db_op.image_delete_record(imagename2)
