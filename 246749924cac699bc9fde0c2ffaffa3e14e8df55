@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1f654a8e_bf5a74c1",
+        "filename": "doc/source/quickstart.rst",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-12T01:17:36Z",
+      "side": 1,
+      "message": "some comments: \n1) we can consider to say \u0027take openstack as example\u0027 , as zvmsdk is not only used by openstack\n2) do we have a chance to take this into a script so someone can get it during install process and execute with params?",
+      "range": {
+        "startLine": 77,
+        "startChar": 3,
+        "endLine": 132,
+        "endChar": 56
+      },
+      "revId": "246749924cac699bc9fde0c2ffaffa3e14e8df55",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
