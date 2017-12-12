@@ -48,65 +48,65 @@
 **ZVM SDK Internal Error**
 500;None;500;1;Unexpected internal error in ZVM SDK, error: %(msg)s
 **smut errors**
-2;1;2;99;ULT%s0311E On %s, command sent through IUCV failed, rc in response string is not an integer. cmd: %s, rc: %s, out: %s
-2;1;2;99;ULT%s0312E On %s, command sent through IUCV failed, reason code in response string is not an integer. cmd: %s, rc: %s, rs: %s, out: %s
-2;1;1;None;ULT%s0313E On %s, command sent through IUCV was not authorized or a generic Linux error occurred. cmd: %s, rc: %s, rs: %s, out: %s
-2;1;2;None;ULT%s0314E IUCV client parameter error sending command to %s. cmd: %s, rc: %s, rs: %s, out: %s
-2;1;4;None;ULT%s0315E IUCV socket error sending command to %s. cmd: %s, rc: %s, rs: %s, out: %s
-2;1;8;None;ULT%s0316E On %s, command sent through IUCV failed. cmd: %s, rc: %s, rs: %s, out: %s
-2;1;16;None;ULT%s0317E File transport failure while processing command for %s. cmd: %s, rc: %s, rs: %s, out: %s
-2;1;32;None;ULT%s0318E On %s, IUCV server file was not found. cmd: %s, rc: %s, rs: %s, out: %s
-2;1;None;None;ULT%s0319E Unrecognized IUCV client error encountered while sending a command through IUCV to $s. cmd: %s, rc: %s, rs: %s, out: %s
-3;1;415;None;ULT%s0415E Command failed: '%s', rc: %i out: %s
-4;1;4;1;ULT%s0001E %s %s subfunction's operand at position %i (%s) is not an integer: %s
-4;1;4;2;ULT%s0002E %s's %s subfunction is missing positional operand (%s) at position %i.
-4;1;4;3;ULT%s0003E %s's %s subfunction %s keyword operand is missing a value.
-4;1;4;4;ULT%s0004E %s's %s subfunction %s keyword operand is not an integer: %s
-4;1;4;5;ULT%s0005E %s's %s subfunction does not recognize keyword: %s
-4;1;4;6;ULT%s0006E %s's %s subfunction encountered an unknown operand: %s
-4;1;4;7;ULT%s0007E Unrecognized function: %s
-4;1;4;8;ULT%s0008E Specified function is not 'HELP' or 'VERSION': %s
-4;1;4;9;ULT%s0009E Too few arguments specified.
-4;1;4;10;ULT%s0010E Userid is missing
-4;1;4;11;ULT%s0011E Subfunction is missing. It should be one of the following: %s
-4;1;4;12;ULT%s0012E The request data is not one of the supported types of list or string: %s
-4;1;4;13;ULT%s0010E The desired state was: %s. Valid states are: %s
-4;1;4;14;ULT%s0014E The option %s was specified but the option %s was not specified.  These options must both be specified.
-4;1;4;15;ULT%s0015E The file system was not 'ext2', 'ext3', 'ext4', 'xfs' or 'swap': %s
-4;1;4;16;ULT%s0016E The scp Data Type was not 'hex', 'ebcdic', or 'delete': %s
-4;1;4;17;ULT%s0017W The maxwait time %i sec is not evenly divisible by the poll interval %i sec.  Maximum wait time will be %i sec or %i poll intervals.
-4;1;4;200;ULT%s0200E The size of the disk is not valid: %s
-4;1;4;201;ULT%s0201E Failed to convert %s to a number of blocks.
-4;1;4;202;ULT%s0202E %s is not an integer size of blocks.
-4;1;4;203;ULT%s0203E Failed to convert %s to a number of cylinders.
-4;1;4;204;ULT%s0204E %s is not an integer size of cylinders.
-4;1;4;400;ULT%s0400E The worker script %s does not exist.
-4;1;7;401;ULT%s0401E Failed to punch %s file to guest: %s, out: %s
-4;1;5;402;ULT%s0402E No information was found for the specified pool(s): %s
-4;1;99;403;ULT%s0403E  Failed to purge reader file %s, out: %s
-4;1;8;404;ULT%s0404E Failed to spool the punch to the specified class %s, out:%s 
-4;1;6;405;ULT%s0405E Unable to obtain information related to: %s. Command used was: %s. Output was: %s
-4;1;9;406;ULT%s0406E Failed to punch %s because of VMUR timeout 
-4;1;4;407;ULT%s0407W Unable to spool reader to all classes, it is possible that there may be additional console files available that are not listed in the response. Response from %s is %s
-4;1;4;408;ULT%s0408E Error getting list of files in the reader to search for logs from user %s. Response from %s is %s
-4;1;4;409;ULT%s0409E Unable to get console log for user %s. The userid is either: not logged on, not spooling its console, or has not created any console output. Error rc=rs=8 returned from Image_Console_Get.
-4;1;4;410;ULT%s0410E Unable to get console log for user %s no spool files were found in our reader from this user, it is possible another process has already received them.
-4;1;4;411;ULT%s0411E Unable to receive console output file. Reader not online.  /sys/bus/ccw/drivers/vmur/0.0.000c/online = 0
-4;1;4;412;ULT%s0412E Malformed reply from SMAPI, unable to fill in performance information, exception: %s, details: %s, Response: %s
-4;1;4;423;ULT%s0423W Unable to spool reader to all classes, it is possible that there may be additional console files available that are not listed in the response. Command: %s, exception %s, details %s.  Will attempt to continue processing.
-4;1;4;424;ULT%s0424E Failed to transfer %s file to guest: %s, out: %s
-8;1;None;None;ULT%s0300E SMAPI API failed: %s, overall rc: %s, rc: %s, rs: %s, errno: %s, cmd: %s, out: %s
-25;1;301;0;ULT%s0301E SMAPI API failed: %s, response header does not have the expected 3 values before the (details) string. cmd: %s, response header: %s, out: %s
-25;1;302;0;ULT%s0302E SMAPI API failed: %s, word 1 in the response header is not an integer or in the range of expected values. word 1: %s, cmd: %s, response header: %s, out: %s
-25;1;303;0;ULT%s0303E SMAPI API failed: %s, word 2 in the response header is not an integer. word 2: %s, cmd: %s, response header: %s, out: %s
-25;1;304;0;ULT%s0304E SMAPI API failed: %s, word 3 in the response header is not an integer. word 3: %s, cmd: %s, response header: %s, out: %s
-99;1;305;0;ULT%s0305E Exception received on an attempt to communicate with SMAPI, cmd: %s, exception: %s, details: %s
-99;1;99;413;ULT%s0413E Userid '%s' did not enter the expected operating system state of '%s' in %i seconds.
-99;1;99;414;ULT%s0414E Userid '%s' did not enter the expected virtual machine state of '%s' in %i seconds.
-99;1;99;416;ULT%s0416E Command returned a response containing '%s' but did not have at least %i words following it. cmd: '%s', out: '%s'
-99;1;99;417;ULT%s0417E Command did not return the expected response containing '%s', cmd: '%s', out: '%s'
-99;1;99;418;ULT%s0418E Userid %s is not logged on to this system.
-99;1;99;419;ULT%s0419E A relocation is not in progress for userid %s.
-99;1;99;420;ULT%s0420E An error occurred issuing a %s for userid %s. Please look up message(s): %s in the CP Messages book for more information.
-99;1;421;0;ULT%s0421E Exception received on an attempt to execute a cmd: %s, exception: %s, details: %s
-99;1;422;0;ULT%s0422W Exception received on an attempt to execute a cmd: %s, exception: %s, details: %s. Will attempt to continue processing.
+2;1;2;99;ULTSMP0311E On USERID, command sent through IUCV failed, rc in response string is not an integer. cmd: CMD, rc: RC, out: OUTPUT
+2;1;2;99;ULTSMP0312E On USERID, command sent through IUCV failed, reason code in response string is not an integer. cmd: CMD, rc: RC, rs: RS, out: OUTPUT
+2;1;1;None;ULTSMP0313E On USERID, command sent through IUCV was not authorized or a generic Linux error occurred. cmd: CMD, rc: RC, rs: RS, out: OUTPUT
+2;1;2;None;ULTSMP0314E IUCV client parameter error sending command to USERID. cmd: CMD, rc: RC, rs: RS, out: OUTPUT
+2;1;4;None;ULTSMP0315E IUCV socket error sending command to USERID. cmd: CMD, rc: RC, rs: RS, out: OUTPUT
+2;1;8;None;ULTSMP0316E On USERID, command sent through IUCV failed. cmd: CMD, rc: RC, rs: RS, out: OUTPUT
+2;1;16;None;ULTSMP0317E File transport failure while processing command for USERID. cmd: CMD, rc: RC, rs: RS, out: OUTPUT
+2;1;32;None;ULTSMP0318E On USERID, IUCV server file was not found. cmd: CMD, rc: RC, rs: RS, out: OUTPUT
+2;1;None;None;ULTSMP0319E Unrecognized IUCV client error encountered while sending a command through IUCV to USERID. cmd: CMD, rc: RC, rs: RS, out: OUTPUT
+3;1;415;None;ULTGUT0415E Command failed: 'CMD', rc: RC out: OUTPUT
+4;1;4;1;ULTRQH0001E FUNCTION_NAME SUBFUNCTION_NAME subfunction's operand at position OPERAND_POSITION (OPERAND) is not an integer: OPERAND_VALUE
+4;1;4;2;ULTRQH0002E FUNCTION_NAME's SUBFUNCTION_NAME subfunction is missing positional operand (OPERAND) at position OPERAND_POSITION.
+4;1;4;3;ULTRQH0003E FUNCTION_NAME's SUBFUNCTION_NAME subfunction KEYWORD keyword operand is missing a value.
+4;1;4;4;ULTRQH0004E FUNCTION_NAME's SUBFUNCTION_NAME subfunction KEYWORD keyword operand is not an integer: KEYWORD_VALUE
+4;1;4;5;ULTRQH0005E FUNCTION_NAME's SUBFUNCTION_NAME subfunction does not recognize keyword: KEYWORD
+4;1;4;6;ULTRQH0006E FUNCTION_NAME's SUBFUNCTION_NAME subfunction encountered an unknown operand: OPERAND
+4;1;4;7;ULTRQH0007E Unrecognized function: FUNCTION_NAME
+4;1;4;8;ULTRQH0008E Specified function is not 'HELP' or 'VERSION': SPECIFIED_FUNCTION
+4;1;4;9;ULTRQH0009E Too few arguments specified.
+4;1;4;10;ULTRQH0010E Userid is missing
+4;1;4;11;ULTRQH0011E Subfunction is missing. It should be one of the following: VALID_SUBFUNCTIONS
+4;1;4;12;ULTRQH0012E The request data is not one of the supported types of list or string: REQUEST_DATA_TYPE
+4;1;4;13;ULTRQH0010E The desired state was: DESIRED_STATS. Valid states are: VALID_STATS
+4;1;4;14;ULTRQH0014E The option OPTION1 was specified but the option OPTION2 was not specified.  These options must both be specified.
+4;1;4;15;ULTRQH0015E The file system was not 'ext2', 'ext3', 'ext4', 'xfs' or 'swap': FILE_SYSTEM
+4;1;4;16;ULTRQH0016E The scp Data Type was not 'hex', 'ebcdic', or 'delete': DATA_TYPE
+4;1;4;17;ULTRQH0017W The maxwait time MAX_WAIT sec is not evenly divisible by the poll interval POLL_INTERVAL sec.  Maximum wait time will be RECOMMEND_MAX_WAIT sec or RECOMMEND_POLL_INTERVAL poll intervals.
+4;1;4;200;ULTGUT0200E The size of the disk is not valid: DISK_SIZE
+4;1;4;201;ULTGUT0201E Failed to convert DISK_SIZE to a number of blocks.
+4;1;4;202;ULTGUT0202E NUM_BLOCKS is not an integer size of blocks.
+4;1;4;203;ULTGUT0203E Failed to convert DISK_SIZE to a number of cylinders.
+4;1;4;204;ULTGUT0204E DISK_SIZE is not an integer size of cylinders.
+4;1;4;400;ULTGUT0400E The worker script SCRIPT_NAME does not exist.
+4;1;7;401;ULTGUT0401E Failed to punch FILE_LOCATION file to guest: USERID, out: OUTPUT
+4;1;5;402;ULTGUT0402E No information was found for the specified pool(s): DISK_POOL
+4;1;99;403;ULTGUT0403E  Failed to purge reader file SPOOL_ID, out: OUTPUT
+4;1;8;404;ULTGUT0404E Failed to spool the punch to the specified class SPOOL_CLASS, out:OUTPUT 
+4;1;6;405;ULTGUT0405E Unable to obtain information related to: KEYWORD. Command used was: CMD. Output was: OUTPUT
+4;1;9;406;ULTGUT0406E Failed to punch FILE_LOCATION because of VMUR timeout 
+4;1;4;407;ULTGUT0407W Unable to spool reader to all classes, it is possible that there may be additional console files available that are not listed in the response. Response from CMD is OUTPUT
+4;1;4;408;ULTGUT0408E Error getting list of files in the reader to search for logs from user USERID. Response from CMD is OUTPUT
+4;1;4;409;ULTGUT0409E Unable to get console log for user USERID. The userid is either: not logged on, not spooling its console, or has not created any console output. Error rc=rs=8 returned from Image_Console_Get.
+4;1;4;410;ULTGUT0410E Unable to get console log for user USERID no spool files were found in our reader from this user, it is possible another process has already received them.
+4;1;4;411;ULTGUT0411E Unable to receive console output file. Reader not online.  /sys/bus/ccw/drivers/vmur/0.0.000c/online = 0
+4;1;4;412;ULTGUT0412E Malformed reply from SMAPI, unable to fill in performance information, exception: EXCEPTION, details: EXCEPTION_DETAILS, Response: OUTPUT
+4;1;4;423;ULTGUT0423W Unable to spool reader to all classes, it is possible that there may be additional console files available that are not listed in the response. Command: CMD, exception EXCEPTION, details EXCEPTION_DETAILS.  Will attempt to continue processing.
+4;1;4;424;ULTGUT0424E Failed to transfer FILE_LOCATION file to guest: USERID, out: OUTPUT
+8;1;None;None;ULTSMP0300E SMAPI API failed: API_NAME, overall rc: OVERALLRC, rc: RC, rs: RS, errno: ERRNO, cmd: CMD, out: OUTPUT
+25;1;301;0;ULTSMP0301E SMAPI API failed: API_NAME, response header does not have the expected 3 values before the (details) string. cmd: CMD, response header: HEADER, out: OUTPUT
+25;1;302;0;ULTSMP0302E SMAPI API failed: API_NAME, word 1 in the response header is not an integer or in the range of expected values. word 1: WORD1, cmd: CMD, response header: HEADER, out: OUTPUT
+25;1;303;0;ULTSMP0303E SMAPI API failed: API_NAME, word 2 in the response header is not an integer. word 2: WORD2, cmd: CMD, response header: HEADER, out: OUTPUT
+25;1;304;0;ULTSMP0304E SMAPI API failed: API_NAME, word 3 in the response header is not an integer. word 3: WORD3, cmd: CMD, response header: HEADER, out: OUTPUT
+99;1;305;0;ULTSMP0305E Exception received on an attempt to communicate with SMAPI, cmd: CMD, exception: EXCEPTION, details: EXCEPTION_DETAILS
+99;1;99;413;ULTGUT0413E Userid 'USERID' did not enter the expected operating system state of 'DESIRED_STATE' in MAX_WAIT seconds.
+99;1;99;414;ULTGUT0414E Userid 'USERID' did not enter the expected virtual machine state of 'DESIRED_STATE' in MAX_WAIT seconds.
+99;1;99;416;ULTGUT0416E Command returned a response containing 'KEYWORD' but did not have at least NUM words following it. cmd: 'CMD', out: 'OUTPUT'
+99;1;99;417;ULTGUT0417E Command did not return the expected response containing 'KEYWORD', cmd: 'CMD', out: 'OUTPUT'
+99;1;99;418;ULTGUT0418E Userid USERID is not logged on to this system.
+99;1;99;419;ULTGUT0419E A relocation is not in progress for userid USERID.
+99;1;99;420;ULTGUT0420E An error occurred issuing a CMD for userid USERID. Please look up message(s): ERROR_CODE in the CP Messages book for more information.
+99;1;421;0;ULTGUT0421E Exception received on an attempt to execute a cmd: CMD, exception: EXCEPTION, details: EXCEPTION_DETAILS
+99;1;422;0;ULTGUT0422W Exception received on an attempt to execute a cmd: CMD, exception: EXCEPTION, details: EXCEPTION_DETAILS. Will attempt to continue processing.
