@@ -119,6 +119,8 @@ class ImageTestCase(unittest.TestCase):
 
         try:
             resp = self._image_query()
+            print "resp for image_query is:" + str(resp)
+            print "resp.content for image_query is" + str(resp.content)
             self.assertEqual(200, resp.status_code)
             self.apibase.verify_result('test_image_query', resp.content)
 

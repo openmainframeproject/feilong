@@ -86,6 +86,8 @@ class APITestBase(object):
         try:
             expected_json = make_json(expected)
             result_json = make_json(result)
+            print "expected_json is:" + expected_json
+            print "result_json is:" + result_json
 
             self._compare(expected_json, result_json)
         except NotMatch:
