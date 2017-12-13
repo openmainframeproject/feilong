@@ -153,11 +153,11 @@ thus it needs to be installed defore installing z/VM Cloud Connector.
 
 SSH onto the BYOL as root user, and then follow the following steps:
 
-1. Clone python-zvm-sdk project from github
+1. Clone z/VM Cloud Connector build project from github
 
    .. code-block:: text
 
-       # git clone https://github.com/mfcloud/python-zvm-sdk.git
+       # git clone https://github.com/mfcloud/build-zvmsdk.git
 
 2. Trigger the build tool
 
@@ -166,8 +166,8 @@ SSH onto the BYOL as root user, and then follow the following steps:
 
    .. code-block:: text
 
-       # cd python-zvm-sdk
-       # sh ./zthin-parts/buildzthingithub master
+       # cd build-zvmsdk
+       # /usr/bin/bash buildzthinrpm master
 
    If this build finishes successfully, the result rpm will be generated
    in the /root/zthin-build/RPMS/s390x/ directory named in the format
@@ -391,11 +391,10 @@ of :ref:`Setup web server for running RESTful API` for the additional setup.
     Python 2.7.5 (default, Aug 23 2017, 19:53:20)
     [GCC 4.8.3 20140911 (Red Hat 4.8.3-9)] on linux2
     Type "help", "copyright", "credits" or "license" for more information.
-    >>> import sdkclient.client
-    >>> s = sdkclient.client.SDKClient()
-    >>> s.send_request('host_get_info')
+    >>> from zvmconnector import connector
+    >>> c = connector.ZVMConnector('127.0.0.1', 2000)
+    >>> c.send_request('host_get_info')
     {u'rs': 0, u'overallRC': 0, u'modID': None, u'rc': 0, u'output': {u'disk_available': 3171, u'ipl_time': u'IPL at 11/13/17 00:46:45 EST', u'vcpus_used': 6, u'hypervisor_type': u'zvm', u'vcpus': 6, u'zvm_host': u'OPNSTK1', u'memory_mb': 51200.0, u'cpu_info': {u'cec_model': u'2817', u'architecture': u's390x'}, u'disk_total': 3601, u'hypervisor_hostname': u'OPNSTK1', u'hypervisor_version': 640, u'disk_used': 430, u'memory_mb_used': 36761.6}, u'errmsg': u''}
-    >>> s.send_request('vswitch_get_list')
+    >>> c.send_request('vswitch_get_list')
     {u'rs': 0, u'overallRC': 0, u'modID': None, u'rc': 0, u'output': [u'DTCSMAPI', u'FVTVSW01', u'VSW1', u'VSW2', u'XCATVSW1', u'XCATVSW2'], u'errmsg': u''}
     >>>
-

@@ -26,4 +26,4 @@ _PYTHON_N = sys.version_info[1]
 if _PYTHON_M == 2 and _PYTHON_N < 7:
     raise RuntimeError('On Python 2, zvm sdk requires Python 2.7')
 elif _PYTHON_M == 3 and _PYTHON_N > 5:
-    raise RuntimeError('On Python 3, zhm sdk supports to Python 3.5')
+    raise RuntimeError('On Python 3, zvm sdk supports to Python 3.5')
