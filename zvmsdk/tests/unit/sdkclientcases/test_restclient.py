@@ -14,6 +14,7 @@
 import mock
 import requests
 import unittest
+import urlparse
 
 
 from zvmconnector import restclient
