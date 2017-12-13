@@ -15,6 +15,7 @@ import datetime
 import functools
 import jwt
 import os
+import threading
 
 from zvmsdk import config
 from zvmsdk import exception
@@ -26,12 +27,15 @@ CONF = config.CONF
 LOG = log.LOG
 
 DEFAULT_TOKEN_VALIDATION_PERIOD = 3600
+TOKEN_LOCK = threading.Lock()
 
 
 def get_admin_token(path):
     if os.path.exists(path):
-        with open(path, 'r') as fd:
-            token = fd.read().strip()
+        if TOKEN_LOCK.acquire():
+            with open(path, 'r') as fd:
+                token = fd.read().strip()
+            TOKEN_LOCK.release()
     else:
         LOG.debug('token configuration file not found.')
         raise exception.ZVMUnauthorized()
