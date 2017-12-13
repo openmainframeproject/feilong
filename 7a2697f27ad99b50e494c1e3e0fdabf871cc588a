@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fd51ba72_03ff907b",
+        "filename": "zvmsdk/sdkwsgi/handlers/tokens.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-13T05:29:45Z",
+      "side": 1,
+      "message": "just curious, if we can\u0027t get a lock here, what\u0027s the side effect?",
+      "range": {
+        "startLine": 35,
+        "startChar": 7,
+        "endLine": 35,
+        "endChar": 32
+      },
+      "revId": "7a2697f27ad99b50e494c1e3e0fdabf871cc588a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
