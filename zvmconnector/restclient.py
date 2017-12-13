@@ -12,15 +12,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+import errno
+import hashlib
 import json
 import os
 import requests
 import six
 import threading
+import logging
+import urlparse
 
 # TODO:set up configuration file only for RESTClient and configure this value
 TOKEN_PATH = '/etc/zvmsdk/token.dat'
 TOKEN_LOCK = threading.Lock()
+CHUNKSIZE = 4096
+
 
 REST_REQUEST_ERROR = [{'overallRC': 101, 'modID': 110, 'rc': 101},
                       {1: "Request to zVM Cloud Connector failed: %(error)s",
@@ -38,6 +45,42 @@ INVALID_API_ERROR = [{'overallRC': 400, 'modID': 110, 'rc': 400},
 class UnexpedtedResponse(Exception):
     def __init__(self, resp):
         self.resp = resp
+
+
+class UnexpectedResponse(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+
+class Logger():
+    def __init__(self, logger, log_dir='/var/log/restclient',
+                 log_file_name='restclient.log', level=logging.INFO):
+        # make sure target directory exists
+        if not os.path.exists(log_dir):
+            if os.access(log_dir, os.W_OK):
+                os.makedirs(log_dir)
+            else:
+                log_dir = '/tmp/'
+
+        # create a logger
+        self.logger = logging.getLogger(logger)
+        self.logger.setLevel(level)
+
+        # create a handler for the file
+        log_file = os.path.join(log_dir, log_file_name)
+        fh = logging.FileHandler(log_file)
+        fh.setLevel(level)
+
+        # set the format of the handler
+        formatter = logging.Formatter(
+            '[%(asctime)s] [%(levelname)s] %(message)s', '%Y-%m-%d %H:%M:%S')
+        fh.setFormatter(formatter)
+
+        # add handler in the logger
+        self.logger.addHandler(fh)
+
+    def getlog(self):
+        return self.logger
 
 
 class TokenNotFound(Exception):
@@ -351,6 +394,21 @@ def req_image_get_root_disk_size(start_index, *args, **kwargs):
     return url, body
 
 
+def req_image_upload(start_index, *args, **kwargs):
+    url = '/images/%s/file'
+    image_spath = urlparse.urlparse(args[start_index]).path
+    body = get_data_file(image_spath)
+    return url, body
+
+
+# image_download(imagename, dest_url)
+def req_image_download(start_index, *args, **kwargs):
+    url = '/images/%s/file'
+    body = None
+
+    return url, body
+
+
 def req_token_create(start_index, *args, **kwargs):
     url = '/token'
     body = None
@@ -398,6 +456,35 @@ def req_vswitch_set_vlan_id_for_user(start_index, *args, **kwargs):
     return url, body
 
 
+def get_data_file(fpath):
+    if fpath:
+        return open(fpath, 'rb')
+
+
+def get_file_size(file_obj):
+    """Analyze file-like object and attempt to determine its size.
+    :param file_obj: file-like object.
+    :retval: The file's size or None if it cannot be determined.
+    """
+    if (hasattr(file_obj, 'seek') and hasattr(file_obj, 'tell') and
+            (six.PY2 or six.PY3 and file_obj.seekable())):
+        try:
+            curr = file_obj.tell()
+            file_obj.seek(0, os.SEEK_END)
+            size = file_obj.tell()
+            file_obj.seek(curr)
+            return size
+        except IOError as e:
+            if e.errno == errno.ESPIPE:
+                msg = ('Failed to get the size of specific file object with '
+                'reason: the file object may be a pipe, or is empty, or the'
+                ' file object itself does not support seek/tell')
+                LOG.error(msg)
+                return None
+            else:
+                raise
+
+
 # parameters amount in path
 PARAM_IN_PATH = {
     'home': 0,
@@ -438,6 +525,8 @@ PARAM_IN_PATH = {
     'image_delete': 1,
     'image_export': 1,
     'image_get_root_disk_size': 1,
+    'image_upload': 1,
+    'image_download': 1,
     'token_create': 0,
     'vswitch_get_list': 0,
     'vswitch_create': 0,
@@ -487,6 +576,8 @@ API2METHOD = {
     'image_delete': 'DELETE',
     'image_export': 'PUT',
     'image_get_root_disk_size': 'GET',
+    'image_upload': 'PUT',
+    'image_download': 'GET',
     'token_create': 'POST',
     'vswitch_get_list': 'GET',
     'vswitch_create': 'POST',
@@ -536,6 +627,8 @@ API2REQ = {
     'image_delete': req_image_delete,
     'image_export': req_image_export,
     'image_get_root_disk_size': req_image_get_root_disk_size,
+    'image_upload': req_image_upload,
+    'image_download': req_image_download,
     'token_create': req_token_create,
     'vswitch_get_list': req_vswitch_get_list,
     'vswitch_create': req_vswitch_create,
@@ -544,6 +637,9 @@ API2REQ = {
     'vswitch_revoke_user': req_vswitch_revoke_user,
     'vswitch_set_vlan_id_for_user': req_vswitch_set_vlan_id_for_user,
 }
+
+LOG = Logger(log_dir='/var/log/restclient', logger='restclient',
+             log_file_name='restclient.log', level=logging.DEBUG).getlog()
 
 
 class RESTClient(object):
@@ -589,45 +685,92 @@ class RESTClient(object):
 
         return token
 
-    def _get_url_body(self, api_name, method, *args, **kwargs):
+    def _get_url_body_headers(self, api_name, *args, **kwargs):
+        headers = {}
+        headers['Content-Type'] = 'application/json'
         count_params_in_path = PARAM_IN_PATH[api_name]
         func = API2REQ[api_name]
         url, body = func(count_params_in_path, *args, **kwargs)
+
+        # For image upload, the api is image_upload(image_name, source_url,
+        # image_meta), valid keys for image_meta are os_version, md5sum,
+        # also put the image size in request headers.
+        if api_name in ['image_upload', 'image_download']:
+            headers['Content-Type'] = 'application/octet-stream'
+
+        if api_name == 'image-upload':
+            additional_headers = args[count_params_in_path + 1]
+            headers.update(additional_headers)
+
         if count_params_in_path > 0:
-            full_url = url % tuple(args[0:count_params_in_path])
-        else:
-            full_url = url
-        return full_url, body
+            url = url % tuple(args[0:count_params_in_path])
+
+        full_url = '%s%s' % (self.base_url, url)
+        return full_url, body, headers
 
     def _process_rest_response(self, response):
-        if response.headers['Content-Type'] == 'application/json':
-            res_dict = json.loads(response.content)
-            # return res_dict.get('output', None)
-            return res_dict
-        else:
+        content_type = response.headers.get('Content-Type')
+        if content_type not in ['application/json',
+                                'application/octet-stream']:
+            LOG.error("Request returned failure status %s.",
+                       response.status_code)
             # Currently, all the response content from zvmsdk wsgi are
-            # 'application/json' type. If it is not, the response may be
-            # sent by HTTP server due to internal server error or time out,
+            # 'application/json' or application/octet-stream type.
+            # If it is not, the response may be sent by HTTP server due
+            # to internal server error or time out,
             # it is an unexpected response to the rest client.
             # If new content-type is added to the response by sdkwsgi, the
             # parsing function here is also required to change.
             raise UnexpedtedResponse(response)
 
-    def request(self, url, method, body, headers=None):
-        _headers = {'Content-Type': 'application/json'}
+        # Read body into string if it isn't obviously image data
+        if content_type == 'application/octet-stream':
+            # Do not read all response in memory when downloading an image.
+            body_iter = self._close_after_stream(response, CHUNKSIZE)
+        else:
+            # TODO check if response.text is same with response.content
+            content = response.text
+            if content_type and content_type.startswith('application/json'):
+                # Let's use requests json method, it should take care of
+                # response encoding
+                body_iter = response.json()
+            else:
+                body_iter = six.StringIO(content)
+                try:
+                    body_iter = json.loads(''.join([c for c in body_iter]))
+                except ValueError:
+                    body_iter = None
+
+        return response, body_iter
+
+    def api_request(self, url, method='GET', body=None, headers=None,
+                    **kwargs):
+
+        _headers = {}
         _headers.update(headers or {})
-
+        if body is not None and not isinstance(body, six.string_types):
+            try:
+                body = json.dumps(body)
+            except TypeError:
+                # if data is a file-like object
+                body = body
         _headers['X-Auth-Token'] = self._get_token()
-        response = requests.request(method, url, data=body, headers=_headers,
-                                    verify=self.verify)
-        return response
 
-    def api_request(self, url, method='GET', body=None):
-        full_uri = '%s%s' % (self.base_url, url)
-        return self.request(full_uri, method, body)
+        content_type = headers['Content-Type']
+        kwargs['stream'] = content_type == 'application/octet-stream'
+
+        # log what is send to server
+        self.log_curl_request(method, url, headers, body, kwargs)
+
+        response = requests.request(method, url, data=body,
+                                    headers=_headers,
+                                    verify=self.verify,
+                                    **kwargs)
+        return response
 
     def call(self, api_name, *args, **kwargs):
         # check api_name exist or not
+        LOG.info("beging testing")
         if api_name not in API2METHOD.keys():
             strError = {'msg': 'API name for RESTClient not exist.'}
             results = INVALID_API_ERROR[0]
@@ -637,17 +780,38 @@ class RESTClient(object):
             return results
         # get method by api_name
         method = API2METHOD[api_name]
-        # get url,body with api_name and method
-        url, body = self._get_url_body(api_name, method, *args, **kwargs)
-        try:
-            if body is None:
-                response = self.api_request(url, method)
-            else:
-                body = json.dumps(body)
-                response = self.api_request(url, method, body)
-            # change response to SDK format
-            results = self._process_rest_response(response)
 
+        # get url,body with api_name and method
+        url, body, headers = self._get_url_body_headers(api_name,
+                                                        *args, **kwargs)
+        try:
+            response = self.api_request(url, method, body=body,
+                                        headers=headers)
+            # change response to SDK format
+            resp, body_iter = self._process_rest_response(response)
+
+            # return res_dict.get('output', None)
+            if api_name == 'image_export':
+                # resp is the response, body is the iterator
+                # TODO check the status codes
+                if resp.status_code == '204':
+                    return None, resp
+
+                checksum = resp.headers.get('content-md5', None)
+
+                # Response header may contains content-md5, here it is the
+                # whole image's checksum
+                if checksum is not None:
+                    body = self.integrity_iter(body_iter, checksum)
+                # Call add
+                if body is None:
+                    msg = ('Image has no data.')
+                    LOG.warning(msg)
+                    # TODO throw exception, change the target
+                target_file = '/tmp/target'
+                self.save_image(body_iter, target_file)
+                # TODO: return a dict to indicate the success.
+            results = json.loads(resp.content)
         except TokenFileOpenError as err:
             errmsg = REST_REQUEST_ERROR[1][4] % {'error': err.msg}
             results = REST_REQUEST_ERROR[0]
@@ -670,3 +834,58 @@ class RESTClient(object):
             results.update({'rs': 1, 'errmsg': errmsg, 'output': ''})
 
         return results
+
+    def log_curl_request(self, method, url, headers, data, kwargs):
+        curl = ['curl -g -i -X %s' % method]
+
+        headers = copy.deepcopy(headers)
+
+        for (key, value) in headers.items():
+            header = '-H \'%s: %s\'' % (key, value)
+            curl.append(header)
+
+        if data and isinstance(data, six.string_types):
+            curl.append('-d \'%s\'' % data)
+
+        curl.append(url)
+
+        msg = ' '.join([item for item in curl])
+        LOG.debug(msg)
+        LOG.debug("The send request is: %s" % msg)
+
+    def _close_after_stream(self, response, chunk_size):
+        """Iterate over the content and ensure the response is closed after."""
+        # Yield each chunk in the response body
+        for chunk in response.iter_content(chunk_size=chunk_size):
+            yield chunk
+        # Once we're done streaming the body, ensure everything is closed.
+        # This will return the connection to the HTTPConnectionPool in urllib3
+        # and ideally reduce the number of HTTPConnectionPool full warnings.
+        response.close()
+
+    def integrity_iter(iter, checksum):
+        """Check image data integrity.
+        :param iter: iterator of image file
+        :param checksum: the checksum of the image
+        :raises: IOError
+        """
+        md5sum = hashlib.md5()
+        for chunk in iter:
+            yield chunk
+            if isinstance(chunk, six.string_types):
+                chunk = six.b(chunk)
+            md5sum.update(chunk)
+        md5sum = md5sum.hexdigest()
+        if md5sum != checksum:
+            raise IOError(errno.EPIPE,
+                'Corrupt image download. Checksum was %s expected %s' %
+                (md5sum, checksum))
+
+    def save_image(self, data, path):
+        """Save an image to the specified path.
+        :param data: binary data of the image
+        :param path: path to save the image to
+        """
+        with open(path, 'wb') as image:
+            for chunk in data:
+                image.write(chunk)
