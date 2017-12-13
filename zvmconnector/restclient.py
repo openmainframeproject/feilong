@@ -533,10 +533,10 @@ class RESTClient(object):
 
     def _get_admin_token(self, path):
         if os.path.exists(path):
-            if TOKEN_LOCK.acquire():
-                with open(path, 'r') as fd:
-                    token = fd.read().strip()
-                TOKEN_LOCK.release()
+            TOKEN_LOCK.acquire()
+            with open(path, 'r') as fd:
+                token = fd.read().strip()
+            TOKEN_LOCK.release()
         else:
             raise TokenNotFound('token file not found.')
         return token
