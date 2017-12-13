@@ -16,10 +16,14 @@ import json
 import os
 import requests
 import six
+import tempfile
 import threading
+import uuid
 
 # TODO:set up configuration file only for RESTClient and configure this value
 TOKEN_LOCK = threading.Lock()
+CHUNKSIZE = 4096
+
 
 REST_REQUEST_ERROR = [{'overallRC': 101, 'modID': 110, 'rc': 101},
                       {1: "Request to zVM Cloud Connector failed: %(error)s",
@@ -398,6 +402,20 @@ def req_image_get_root_disk_size(start_index, *args, **kwargs):
     return url, body
 
 
+def req_file_import(start_index, *args, **kwargs):
+    url = '/files'
+    file_spath = args[start_index]
+    body = get_data_file(file_spath)
+    return url, body
+
+
+def req_file_export(start_index, *args, **kwargs):
+    url = '/files'
+    body = args[start_index]
+
+    return url, body
+
+
 def req_token_create(start_index, *args, **kwargs):
     url = '/token'
     body = None
@@ -658,6 +676,16 @@ DATABASE = {
         'args_required': 1,
         'params_path': 1,
         'request': req_image_get_root_disk_size},
+    'file_import': {
+        'method': 'PUT',
+        'args_required': 1,
+        'params_path': 0,
+        'request': req_file_import},
+    'file_export': {
+        'method': 'POST',
+        'args_required': 1,
+        'params_path': 0,
+        'request': req_file_export},
     'token_create': {
         'method': 'POST',
         'args_required': 0,
@@ -699,6 +727,11 @@ DATABASE = {
         'params_path': 1,
         'request': req_vswitch_set_vlan_id_for_user},
 }
+
+
+def get_data_file(fpath):
+    if fpath:
+        return open(fpath, 'rb')
 
 
 class RESTClient(object):
@@ -767,42 +800,69 @@ class RESTClient(object):
 
         return token
 
-    def _get_url_body(self, api_name, method, *args, **kwargs):
+    def _get_url_body_headers(self, api_name, *args, **kwargs):
+        headers = {}
+        headers['Content-Type'] = 'application/json'
         count_params_in_path = DATABASE[api_name]['params_path']
         func = DATABASE[api_name]['request']
         url, body = func(count_params_in_path, *args, **kwargs)
+
+        if api_name in ['file_import', 'file_export']:
+            headers['Content-Type'] = 'application/octet-stream'
+
         if count_params_in_path > 0:
-            full_url = url % tuple(args[0:count_params_in_path])
-        else:
-            full_url = url
-        return full_url, body
+            url = url % tuple(args[0:count_params_in_path])
+
+        full_url = '%s%s' % (self.base_url, url)
+        return full_url, body, headers
 
     def _process_rest_response(self, response):
-        if 'application/json' in response.headers['Content-Type']:
-            res_dict = json.loads(response.content)
-            # return res_dict.get('output', None)
-            return res_dict
-        else:
+        content_type = response.headers.get('Content-Type')
+        if content_type not in ['application/json',
+                                'application/octet-stream']:
             # Currently, all the response content from zvmsdk wsgi are
-            # 'application/json' type. If it is not, the response may be
-            # sent by HTTP server due to internal server error or time out,
+            # 'application/json' or application/octet-stream type.
+            # If it is not, the response may be sent by HTTP server due
+            # to internal server error or time out,
             # it is an unexpected response to the rest client.
             # If new content-type is added to the response by sdkwsgi, the
             # parsing function here is also required to change.
             raise UnexpectedResponse(response)
 
-    def request(self, url, method, body, headers=None):
-        _headers = {'Content-Type': 'application/json'}
-        _headers.update(headers or {})
+        # Read body into string if it isn't obviously image data
+        if content_type == 'application/octet-stream':
+            # Do not read all response in memory when downloading an file
+            body_iter = self._close_after_stream(response, CHUNKSIZE)
+        else:
+            body_iter = None
 
+        return response, body_iter
+
+    def api_request(self, url, method='GET', body=None, headers=None,
+                    **kwargs):
+
+        _headers = {}
+        _headers.update(headers or {})
+        if body is not None and not isinstance(body, six.string_types):
+            try:
+                body = json.dumps(body)
+            except TypeError:
+                # if data is a file-like object
+                body = body
         _headers['X-Auth-Token'] = self._get_token()
-        response = requests.request(method, url, data=body, headers=_headers,
+
+        content_type = headers['Content-Type']
+        stream = content_type == 'application/octet-stream'
+        if stream:
+            response = requests.request(method, url, data=body,
+                                    headers=_headers,
+                                    verify=self.verify,
+                                    stream=stream)
+        else:
+            response = requests.request(method, url, data=body,
+                                    headers=_headers,
                                     verify=self.verify)
         return response
-
-    def api_request(self, url, method='GET', body=None):
-        full_uri = '%s%s' % (self.base_url, url)
-        return self.request(full_uri, method, body)
 
     def call(self, api_name, *args, **kwargs):
         try:
@@ -810,16 +870,21 @@ class RESTClient(object):
             self._check_arguments(api_name, *args, **kwargs)
             # get method by api_name
             method = DATABASE[api_name]['method']
-            # get url,body with api_name and method
-            url, body = self._get_url_body(api_name, method, *args, **kwargs)
-            if body is None:
-                response = self.api_request(url, method)
-            else:
-                body = json.dumps(body)
-                response = self.api_request(url, method, body)
-            # change response to SDK format
-            results = self._process_rest_response(response)
 
+            # get url,body with api_name and method
+            url, body, headers = self._get_url_body_headers(api_name,
+                                                        *args, **kwargs)
+            response = self.api_request(url, method, body=body,
+                                        headers=headers)
+
+            # change response to SDK format
+            resp, body_iter = self._process_rest_response(response)
+
+            if api_name == 'file_export' and resp.status_code == 200:
+                # Save the file in an temporary path
+                return self._save_exported_file(body_iter)
+
+            results = json.loads(resp.content)
         except TokenFileOpenError as err:
             errmsg = REST_REQUEST_ERROR[1][4] % {'error': err.msg}
             results = REST_REQUEST_ERROR[0]
@@ -845,3 +910,33 @@ class RESTClient(object):
             results.update({'rs': 1, 'errmsg': errmsg, 'output': ''})
 
         return results
+
+    def _save_exported_file(self, body_iter):
+        fname = str(uuid.uuid1())
+        tempDir = tempfile.mkdtemp()
+        os.chmod(tempDir, 0o777)
+        target_file = '/'.join([tempDir, fname])
+        self._save_file(body_iter, target_file)
+        file_size = os.path.getsize(target_file)
+        output = {'filesize_in_bytes': file_size,
+                  'dest_url': target_file}
+        results = {'overallRC': 0, 'modID': None, 'rc': 0,
+                    'output': output, 'rs': 0, 'errmsg': ''}
+        return results
+
+    def _close_after_stream(self, response, chunk_size):
+        """Iterate over the content and ensure the response is closed after."""
+        # Yield each chunk in the response body
+        for chunk in response.iter_content(chunk_size=chunk_size):
+            yield chunk
+        # Once we're done streaming the body, ensure everything is closed.
+        response.close()
+
+    def _save_file(self, data, path):
+        """Save an file to the specified path.
+        :param data: binary data of the file
+        :param path: path to save the file to
+        """
+        with open(path, 'wb') as tfile:
+            for chunk in data:
+                tfile.write(chunk)
