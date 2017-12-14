@@ -721,6 +721,11 @@ class ubuntu(LinuxDist):
                                                  network_config_file_name))
         return cfg_files, cmd_strings, clean_cmd, net_enable_cmd
 
+    def get_simple_znetconfig_contents(self):
+        return '\n'.join(('cio_ignore -R',
+                          'znetconf -A',
+                          'cio_ignore -u'))
+
     def _get_network_file(self):
         return '/etc/network/interfaces'
 
