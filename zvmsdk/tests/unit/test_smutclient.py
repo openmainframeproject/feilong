@@ -1097,9 +1097,14 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         image_name = u'testimage'
         dest_url = 'file:///path/to/exported/image'
         remote_host = 'nova@9.x.x.x'
-        image_query.return_value = [(u'testimage', u'rhel6.5',
-            u'c73ce117eef8077c3420bfc8f473ac2f',
-            u'3338:CYL', u'5120000', u'netboot', None)]
+        image_query.return_value = [
+            {'imagename': u'testimage',
+             'imageosdistro': u'rhel6.5',
+             'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
+             'disk_size_units': u'3338:CYL',
+             'image_size_in_bytes': u'5120000',
+             'type': u'netboot',
+             'comments': None}]
         expect_return = {
             'image_name': u'testimage',
             'image_path': u'file:///path/to/exported/image',
