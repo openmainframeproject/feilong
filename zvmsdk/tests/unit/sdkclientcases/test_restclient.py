@@ -33,7 +33,7 @@ class RESTClientTestCase(unittest.TestCase):
     def setUp(self):
         self.client = restclient.RESTClient()
         self.fake_userid = 'userid01'
-        self.base_url = 'http://127.0.0.1:8888'
+        self.base_url = 'https://127.0.0.1:8888'
         self.headers = {'Content-Type': 'application/json'}
         self.headers.update(self.headers or {})
         self.headers['X-Auth-Token'] = self._tmp_token()
@@ -59,4 +59,5 @@ class RESTClientTestCase(unittest.TestCase):
 
         self.client.call("guest_get_info", self.fake_userid)
         request.assert_called_with(method, full_uri,
-                                   data=body, headers=header)
+                                   data=body, headers=header,
+                                   verify=False)
