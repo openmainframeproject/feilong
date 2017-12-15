@@ -10,9 +10,16 @@
 
 import time
 import unittest
+import json
+import os
 
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
+from zvmsdk import config
+from zvmsdk import utils
+from zvmsdk import smutclient
+
+CONF = config.CONF
 
 
 class GuestHandlerTestCase(unittest.TestCase):
@@ -21,6 +28,8 @@ class GuestHandlerTestCase(unittest.TestCase):
         self.apibase = api_sample.APITestBase()
 
         self.client = test_sdkwsgi.TestSDKClient()
+
+        self._smutclient = smutclient.get_smutclient()
 
         # every time, we need to random generate userid
         self.userid = 'RESTT%03d' % (time.time() % 1000)
@@ -42,6 +51,17 @@ class GuestHandlerTestCase(unittest.TestCase):
                              "disk_list": [{"size": "3g",
                                             "is_boot_disk": "True"}]}}"""
         body = body % self.userid
+        resp = self.client.api_request(url='/guests', method='POST',
+                                       body=body)
+
+        return resp
+
+    def _guest_create_with_profile(self):
+        body = """{"guest": {"userid": "%s", "vcpus": 1,
+                             "memory": 1024,
+                             "user_profile": "%s",
+                             "disk_list": [{"size": "3g"}]}}"""
+        body = body % (self.userid, CONF.zvm.user_profile)
         resp = self.client.api_request(url='/guests', method='POST',
                                        body=body)
 
@@ -207,6 +227,48 @@ class GuestHandlerTestCase(unittest.TestCase):
         body = '{"action": "stop", "timeout": 300, "poll_interval": 15}'
         return self._guest_action(body, userid=userid)
 
+    def _guest_deploy_with_transport_file(self, userid=None, vdev=None,
+                                          image=None, transportfiles=None):
+        if image is None:
+            image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
+
+        if vdev is None:
+            vdev = "100"
+
+        if transportfiles is None:
+            transportfiles = "/tmp/sdktest.txt"
+
+        body = """{"action": "deploy",
+                   "image": "%s",
+                   "vdev": "%s",
+                   "transportfiles": "%s"}""" % (image, vdev, transportfiles)
+
+        return self._guest_action(body, userid=userid)
+
+    def _guest_deploy_with_remote_host(self, userid=None, vdev=None,
+                                       image=None, transportfiles=None,
+                                       remotehost=None):
+        if image is None:
+            image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
+
+        if vdev is None:
+            vdev = "100"
+
+        if transportfiles is None:
+            transportfiles = "/tmp/sdktest.txt"
+
+        if remotehost is None:
+            remotehost = utils.get_host()
+
+        body = """{"action": "deploy",
+                   "image": "%s",
+                   "vdev": "%s",
+                   "transportfiles": "%s",
+                   "remotehost": "%s"}""" % (image, vdev, transportfiles,
+                                             remotehost)
+
+        return self._guest_action(body, userid=userid)
+
     def _guest_deploy(self, userid=None, vdev=None, image=None):
         if image is None:
             image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
@@ -318,6 +380,88 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_stop('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def _make_transport_file(self):
+        os.mkdir('openstack')
+        os.mkdir('openstack/latest')
+        transport_file = "openstack/latest/meta_data.json"
+        transport_file1 = "openstack/latest/network_data.json"
+        transport_file2 = "openstack/latest/vendor_data.json"
+        transport_file3 = "openstack/latest/vendor_data2.json"
+        with open(transport_file, 'w') as f:
+            f.write('{"admin_pass": "sMcTNh8b65dM", "random_seed": "Q2UzyJ+6ITjY4STr/sSkDeoP4Wy\
+                      Nz62TlTiwc09NbkOEnunHn8v15DHdGsiLOJw0skclGC3ERWpl6WVdyqK7Y6RB9PmttJF2w9MV\
+                      kSZGIdhuyPa2b+tlIRxHBQTrXGIGoEKWq6KY9tg0fY+GqmPOT/DnEB3Iz3AISdAk8dYsYG4KR\
+                      xbQHsgshX1J56hMRwehhZ4EbdggD0lr3otnNssteZYFGVnFq0CHE8gDfUZCsdPaVJrFmbe5Ae\
+                      ElJzDCoPBF71e+FSpJtcxbBH18x6yhFbzC+lbj1A+KOf3+IaWP+kTr4oxoMV3Ho9w0woxi4cK\
+                      zx6yBuzd+7TOr+8P+LJovQ93pPNJ/OWdaLNKd2mdcU85x7zSngotQwnhHau0eihQjvHTmFHpe\
+                      LXEjfLNdmYFJMBAVfI6qlUgTNk+lRfRhXpA7CAb0C0r31r1ofzgYB4mM7i+rbK8GdY7wB2NoM\
+                      jE9zMwTHHoq9zfhLissEIGf/6Rl2BTGa8BBUaWg5kf+C5zSK0ehxHX8FW0oRqWoSCEEucaB+S\
+                      EAckXoDDLdm83maBaMi7Q67GbRkfA6D1+UOk5qWQey6z2/1jYWS8hmlByfelawEtJ674NWs84\
+                      VT2kuLFuGByXS/ToJ23V2+I4cn2ihzf4B7ITc+4O3LrQu1GOY1+JyC146EW951tsW0bKWigM=",\
+                      "uuid": "d93b1ef2-5ca7-459f-beaf-eedea6b6ee43",\
+                      "availability_zone": "nova",\
+                      "hostname": "deploy_tests",\
+                      "launch_index": 0,\
+                      "devices"    : [],\
+                      "project_id": "6e3ab252b982424c859fa83ff281e8ab",\
+                      "name": "transport_tests"}')
+        with open(transport_file1, 'w') as f:
+            f.write('{}')
+        with open(transport_file2, 'w') as f:
+            f.write('{}')
+        with open(transport_file3, 'w') as f:
+            f.write('{}')
+        os.system('tar -czvf cfgdrive.tgz openstack')
+        os.system('cp cfgdrive.tgz /var/lib/zvmsdk/cfgdrive.tgz')
+        os.system('rm -rf openstack')
+        os.system('rm cfgdrive.tgz')
+        os.system('chown -R zvmsdk:zvmsdk /var/lib/zvmsdk/cfgdrive.tgz')
+        os.system('chmod -R 755 /var/lib/zvmsdk/cfgdrive.tgz')
+
+    def test_guest_deploy_with_transport_file(self):
+        self._make_transport_file()
+        transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
+        resp = self._guest_create()
+        self.assertEqual(200, resp.status_code)
+        time.sleep(10)
+        try:
+            resp = self._guest_deploy_with_transport_file(
+                                    transportfiles=transport_file)
+            self.assertEqual(200, resp.status_code)
+            resp = self._guest_start()
+            self.assertEqual(200, resp.status_code)
+            time.sleep(15)
+            result = self._smutclient.execute_cmd(self.userid, 'hostname')
+            self.assertEqual('deploy_tests', result[0])
+        except Exception as e:
+            raise e
+        finally:
+            os.system('rm /var/lib/zvmsdk/cfgdrive.tgz')
+            self._guest_delete()
+
+    def test_guest_deploy_with_remote_host(self):
+        remote_host = utils.get_host()
+        self._make_transport_file()
+        transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
+        resp = self._guest_create()
+        self.assertEqual(200, resp.status_code)
+        time.sleep(10)
+        try:
+            resp = self._guest_deploy_with_remote_host(
+                                    transportfiles=transport_file,
+                                    remotehost=remote_host)
+            self.assertEqual(200, resp.status_code)
+            resp = self._guest_start()
+            self.assertEqual(200, resp.status_code)
+            time.sleep(15)
+            result = self._smutclient.execute_cmd(self.userid, 'hostname')
+            self.assertEqual('deploy_tests', result[0])
+        except Exception as e:
+            raise e
+        finally:
+            os.system('rm /var/lib/zvmsdk/cfgdrive.tgz')
+            self._guest_delete()
+
     def test_guest_deploy_userid_not_exist(self):
         resp = self._guest_deploy(userid='notexist')
         self.assertEqual(404, resp.status_code)
@@ -402,6 +546,23 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_vnicsinfo('@@@@@123456789')
         self.assertEqual(400, resp.status_code)
 
+    def test_guest_create_with_profile(self):
+        resp = self._guest_create_with_profile()
+        self.assertEqual(200, resp.status_code)
+        self._guest_delete()
+
+    def test_guest_create_with_duplicate_userid(self):
+        resp = self._guest_create()
+        self.assertEqual(200, resp.status_code)
+
+        try:
+            resp = self._guest_create()
+        except Exception as e:
+            self.assertEqual(400, resp.status_code)
+            raise e
+        finally:
+            self._guest_delete()
+
     def test_guest_create_delete(self):
         resp = self._guest_create()
         self.assertEqual(200, resp.status_code)
@@ -455,14 +616,28 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             resp = self._guest_stop()
             self.assertEqual(200, resp.status_code)
+            time.sleep(10)
+            resp_state = self._guest_get_power_state()
+            self.assertEqual(200, resp_state.status_code)
+            resp_content = json.loads(resp_state.content)
+            self.assertEqual('off', resp_content['output'])
 
-            # FIXME need further enhancement to test start
-            # the action is supported, but need add IPL param etc
-            # self._guest_start()
+            resp = self._guest_start()
+            self.assertEqual(200, resp.status_code)
+            time.sleep(10)
+            resp_info = self._guest_get_info()
+            self.assertEqual(200, resp_info.status_code)
+            resp_content = json.loads(resp_info.content)
+            info_off = resp_content['output']
+            self.assertEqual('on', info_off['power_state'])
+            self.assertNotEqual(info_off['cpu_time_us'], 0)
+            self.assertNotEqual(info_off['mem_kb'], 0)
 
-            # self._guest_pause()
-            # self._guest_unpause()
+            resp = self._guest_pause()
+            self.assertEqual(200, resp.status_code)
 
+            resp = self._guest_unpause()
+            self.assertEqual(200, resp.status_code)
         except Exception as e:
             raise e
         finally:
