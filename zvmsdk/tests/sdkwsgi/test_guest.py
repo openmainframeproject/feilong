@@ -10,9 +10,14 @@
 
 import time
 import unittest
+import json
+import os
 
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
+from zvmsdk import config
+
+CONF = config.CONF
 
 
 class GuestHandlerTestCase(unittest.TestCase):
@@ -39,8 +44,20 @@ class GuestHandlerTestCase(unittest.TestCase):
     def _guest_create(self):
         body = """{"guest": {"userid": "%s", "vcpus": 1,
                              "memory": 1024,
-                             "disk_list": [{"size": "3g"}]}}"""
+                             "disk_list": [{"size": "3g",
+                                            "is_boot_disk": "True"}]}}"""
         body = body % self.userid
+        resp = self.client.api_request(url='/guests', method='POST',
+                                       body=body)
+
+        return resp
+
+    def _guest_create_with_profile(self):
+        body = """{"guest": {"userid": "%s", "vcpus": 1,
+                             "memory": 1024,
+                             "user_profile": "%s",
+                             "disk_list": [{"size": "3g"}]}}"""
+        body = body % (self.userid, CONF.zvm.user_profile)
         resp = self.client.api_request(url='/guests', method='POST',
                                        body=body)
 
@@ -194,6 +211,23 @@ class GuestHandlerTestCase(unittest.TestCase):
         body = '{"action": "stop", "timeout": 300, "poll_interval": 15}'
         return self._guest_action(body, userid=userid)
 
+    def _guest_deploy_with_transport_file(self, userid=None, vdev=None, image=None, transportfiles=None):
+        if image is None:
+            image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
+
+        if vdev is None:
+            vdev = "100"
+
+        if transportfiles is None:
+            transportfiles = "/tmp/sdktest.txt"
+
+        body = """{"action": "deploy",
+                   "image": "%s",
+                   "vdev": "%s",
+                   "transportfiles": "%s"}""" %(image, vdev, transportfiles)
+
+        return self._guest_action(body, userid=userid)
+
     def _guest_deploy(self, userid=None, vdev=None, image=None):
         if image is None:
             image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
@@ -305,6 +339,35 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_stop('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_deploy_with_vdev(self):
+        """Deploy guest with root vdev."""
+        pass
+
+    def test_deploy_with_remote_host(self):
+        pass
+
+    def _make_transport_file(self):
+        transport_file = "/tmp/sdktest.txt"
+        with open(transport_file, 'w') as f:
+            f.write('A quick brown fox jump over the lazy dog.\n')
+        self.addCleanup(os.remove, transport_file)
+        return transport_file
+
+    def test_deploy_with_transport_file(self):
+        transport_file = self._make_transport_file()
+        resp = self._guest_create()
+        self.assertEqual(200, resp.status_code)
+        time.sleep(10)
+        try:
+            resp = self._guest_deploy_with_transport_file(transportfiles=transport_file)
+            self.assertEqual(200, resp.status_code)
+            resp = self._guest_start()
+            self.assertEqual(200, resp.status_code)
+        except Exception as e:
+            raise e
+        finally:
+            self._guest_delete()
+
     def test_guest_deploy_userid_not_exist(self):
         resp = self._guest_deploy(userid='notexist')
         self.assertEqual(404, resp.status_code)
@@ -389,6 +452,23 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_vnicsinfo('@@@@@123456789')
         self.assertEqual(400, resp.status_code)
 
+    def test_guest_create_with_profile(self):
+        resp = self._guest_create_with_profile()
+        self.assertEqual(200, resp.status_code)
+        self._guest_delete()
+
+    def test_guest_create_with_duplicate_userid(self):
+        resp = self._guest_create()
+        self.assertEqual(200, resp.status_code)
+
+        try:
+            resp = self._guest_create()
+        except Exception as e:
+            self.assertEqual(400, resp.status_code)
+            raise e
+        finally:
+            self._guest_delete()
+
     def test_guest_create_delete(self):
         resp = self._guest_create()
         self.assertEqual(200, resp.status_code)
@@ -442,14 +522,28 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             resp = self._guest_stop()
             self.assertEqual(200, resp.status_code)
+            time.sleep(10)
+            resp_state = self._guest_get_power_state()
+            self.assertEqual(200, resp_state.status_code)
+            resp_content = json.loads(resp_state.content)
+            self.assertEqual('off', resp_content['output'])
 
-            # FIXME need further enhancement to test start
-            # the action is supported, but need add IPL param etc
-            # self._guest_start()
+            resp = self._guest_start()
+            self.assertEqual(200, resp.status_code)
+            time.sleep(10)
+            resp_info = self._guest_get_info()
+            self.assertEqual(200, resp_info.status_code)
+            resp_content = json.loads(resp_info.content)
+            info_off = resp_content['output']
+            self.assertEqual('on', info_off['power_state'])
+            self.assertNotEqual(info_off['cpu_time_us'], 0)
+            self.assertNotEqual(info_off['mem_kb'], 0)
 
-            # self._guest_pause()
-            # self._guest_unpause()
+            resp = self._guest_pause()
+            self.assertEqual(200, resp.status_code)
 
+            resp = self._guest_unpause()
+            self.assertEqual(200, resp.status_code)
         except Exception as e:
             raise e
         finally:
