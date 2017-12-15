@@ -10,9 +10,13 @@
 
 import time
 import unittest
+import json
 
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
+from zvmsdk import config
+
+CONF = config.CONF
 
 
 class GuestHandlerTestCase(unittest.TestCase):
@@ -39,8 +43,20 @@ class GuestHandlerTestCase(unittest.TestCase):
     def _guest_create(self):
         body = """{"guest": {"userid": "%s", "vcpus": 1,
                              "memory": 1024,
-                             "disk_list": [{"size": "3g"}]}}"""
+                             "disk_list": [{"size": "3g",
+                                            "is_boot_disk": "True"}]}}"""
         body = body % self.userid
+        resp = self.client.api_request(url='/guests', method='POST',
+                                       body=body)
+
+        return resp
+
+    def _guest_create_with_profile(self):
+        body = """{"guest": {"userid": "%s", "vcpus": 1,
+                             "memory": 1024,
+                             "user_profile": "%s",
+                             "disk_list": [{"size": "3g"}]}}"""
+        body = body % (self.userid, CONF.zvm.user_profile)
         resp = self.client.api_request(url='/guests', method='POST',
                                        body=body)
 
@@ -305,6 +321,43 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_stop('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_deploy_with_vdev(self):
+        """Deploy guest with root vdev."""
+        # back up user_root_vdev value in config file
+        def _restore_conf(root_vdev_back):
+            CONF.zvm.user_root_vdev = root_vdev_back
+        root_vdev_back = CONF.zvm.user_root_vdev
+        self.addCleanup(_restore_conf, root_vdev_back)
+
+        new_root = '123'
+        CONF.zvm.user_root_vdev = new_root
+        disks = [
+            {'size': '3G',
+             'format': 'xfs',
+             'is_boot_disk': True,
+             'disk_pool': CONF.zvm.disk_pool},
+             {'size': '200M',
+             'format': 'ext3',
+             'is_boot_disk': False,
+             'disk_pool': 'ECKD:xcateckd'}]
+
+        resp = self._guest_create()
+        self.assertEqual(200, resp.status_code)
+
+        time.sleep(15)
+        try:
+            resp = self._guest_deploy(vdev=new_root)
+            self.assertEqual(200, resp.status_code)
+            resp = self._guest_get()
+
+
+        except Exception as e:
+            raise
+        else:
+            pass
+        finally:
+            pass
+
     def test_guest_deploy_userid_not_exist(self):
         resp = self._guest_deploy(userid='notexist')
         self.assertEqual(404, resp.status_code)
@@ -389,6 +442,23 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_vnicsinfo('@@@@@123456789')
         self.assertEqual(400, resp.status_code)
 
+    def test_guest_create_with_profile(self):
+        resp = self._guest_create_with_profile()
+        self.assertEqual(200, resp.status_code)
+        self._guest_delete()
+
+    def test_guest_create_with_duplicate_userid(self):
+        resp = self._guest_create()
+        self.assertEqual(200, resp.status_code)
+
+        try:
+            resp = self._guest_create()
+        except Exception as e:
+            self.assertEqual(400, resp.status_code)
+            raise e
+        finally:
+            self._guest_delete()
+
     def test_guest_create_delete(self):
         resp = self._guest_create()
         self.assertEqual(200, resp.status_code)
@@ -442,13 +512,29 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             resp = self._guest_stop()
             self.assertEqual(200, resp.status_code)
+            time.sleep(10)
+            resp_state = self._guest_get_power_state()
+            self.assertEqual(200, resp_state.status_code)
+            resp_content = json.loads(resp_state.content)
+            self.assertEqual('off', resp_content['output'])
 
-            # FIXME need further enhancement to test start
-            # the action is supported, but need add IPL param etc
-            # self._guest_start()
+            resp = self._guest_start()
+            self.assertEqual(200, resp.status_code)
+            time.sleep(10)
+            resp_info = self._guest_get_info()
+            self.assertEqual(200, resp_info.status_code)
+            resp_content = json.loads(resp_info.content)
+            info_off = resp_content['output']
+            self.assertEqual('on', info_off['power_state'])
+            self.assertNotEqual(info_off['cpu_time_us'], 0)
+            self.assertNotEqual(info_off['mem_kb'], 0)
 
-            # self._guest_pause()
-            # self._guest_unpause()
+            resp = self._guest_pause()
+            self.assertEqual(200, resp.status_code)
+
+            resp = self._guest_unpause()
+            self.assertEqual(200, resp.status_code)
+
 
         except Exception as e:
             raise e
