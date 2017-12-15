@@ -13,6 +13,9 @@ import unittest
 
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
+from zvmsdk import config
+
+CONF = config.CONF
 
 
 class GuestHandlerTestCase(unittest.TestCase):
@@ -41,6 +44,17 @@ class GuestHandlerTestCase(unittest.TestCase):
                              "memory": 1024,
                              "disk_list": [{"size": "3g"}]}}"""
         body = body % self.userid
+        resp = self.client.api_request(url='/guests', method='POST',
+                                       body=body)
+
+        return resp
+
+    def _guest_create_with_profile(self):
+        body = """{"guest": {"userid": "%s", "vcpus": 1,
+                             "memory": 1024,
+                             "user_profile": "%s",
+                             "disk_list": [{"size": "3g"}]}}"""
+        body = body % (self.userid, CONF.zvm.user_profile)
         resp = self.client.api_request(url='/guests', method='POST',
                                        body=body)
 
@@ -305,6 +319,9 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_stop('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_deploy_with_vdev(self):
+        pass
+
     def test_guest_deploy_userid_not_exist(self):
         resp = self._guest_deploy(userid='notexist')
         self.assertEqual(404, resp.status_code)
@@ -388,6 +405,23 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         resp = self._guest_vnicsinfo('@@@@@123456789')
         self.assertEqual(400, resp.status_code)
+
+    def test_guest_create_with_profile(self):
+        resp = self._guest_create_with_profile()
+        self.assertEqual(200, resp.status_code)
+        self._guest_delete()
+
+    def test_guest_create_with_duplicate_userid(self):
+        resp = self._guest_create()
+        self.assertEqual(200, resp.status_code)
+
+        try:
+            resp = self._guest_create()
+        except Exception as e:
+            self.assertEqual(400, resp.status_code)
+            raise e
+        finally:
+            self._guest_delete()
 
     def test_guest_create_delete(self):
         resp = self._guest_create()
