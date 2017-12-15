@@ -53,6 +53,14 @@ class TokenFileOpenError(Exception):
         self.msg = msg
 
 
+class CACertNotFound(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return repr(self.msg)
+
+
 def fill_kwargs_in_body(body, **kwargs):
     for key in kwargs.keys():
         body[key] = kwargs.get(key)
@@ -540,8 +548,19 @@ API2REQ = {
 
 class RESTClient(object):
 
-    def __init__(self, ip='127.0.0.1', port=8888, timeout=30):
-        self.base_url = "http://" + ip + ":" + str(port)
+    def __init__(self, ip='127.0.0.1', port=8888,
+                 ssl_enabled=False, verify=False):
+        # SSL enable or not
+        if ssl_enabled:
+            self.base_url = "https://" + ip + ":" + str(port)
+        else:
+            self.base_url = "http://" + ip + ":" + str(port)
+        # if value of verify is str, means its value is
+        # the path of CA certificate
+        if type(verify) == str:
+            if not os.path.exists(verify):
+                raise CACertNotFound('CA certificate file not found.')
+        self.verify = verify
 
     def _get_admin_token(self, path):
         if os.path.exists(path):
@@ -564,7 +583,8 @@ class RESTClient(object):
 
         url = self.base_url + '/token'
         method = 'POST'
-        response = requests.request(method, url, headers=_headers)
+        response = requests.request(method, url, headers=_headers,
+                                    verify=self.verify)
         token = response.headers['X-Auth-Token']
 
         return token
@@ -580,7 +600,7 @@ class RESTClient(object):
         return full_url, body
 
     def _process_rest_response(self, response):
-        if response.header['Content-Type'] == 'application/json':
+        if response.headers['Content-Type'] == 'application/json':
             res_dict = json.loads(response.content)
             # return res_dict.get('output', None)
             return res_dict
@@ -598,7 +618,8 @@ class RESTClient(object):
         _headers.update(headers or {})
 
         _headers['X-Auth-Token'] = self._get_token()
-        response = requests.request(method, url, data=body, headers=_headers)
+        response = requests.request(method, url, data=body, headers=_headers,
+                                    verify=self.verify)
         return response
 
     def api_request(self, url, method='GET', body=None):

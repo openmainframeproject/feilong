@@ -37,8 +37,9 @@ class socketConnection(baseConnection):
 
 class restConnection(baseConnection):
 
-    def __init__(self, ip_addr='127.0.0.1', port=8080, timeout=3600):
-        self.client = restclient.RESTClient(ip_addr, port, timeout)
+    def __init__(self, ip_addr='127.0.0.1', port=8080, ssl_enabled=False,
+                 verify=False):
+        self.client = restclient.RESTClient(ip_addr, port, ssl_enabled, verify)
 
     def request(self, api_name, *api_args, **api_kwargs):
         return self.client.call(api_name, *api_args, **api_kwargs)
@@ -47,12 +48,17 @@ class restConnection(baseConnection):
 class ZVMConnector(object):
 
     def __init__(self, ip_addr=None, port=None, timeout=3600,
-                 connection_type=None):
+                 connection_type=None, ssl_enabled=False, verify=False):
         """
         :param str ip_addr:         IP address of SDK server
         :param int port:            Port of SDK server daemon
         :param int timeout:         Wait timeout if request no response
         :param str connection_type: The value should be 'socket' or 'rest'
+        :param boolean/str verify:  Either a boolean, in which case it
+                                    controls whether we verify the server's
+                                    TLS certificate, or a string, in which
+                                    case it must be a path to a CA bundle
+                                    to use. Default to False.
         """
         if connection_type is None:
             if ((ip_addr is None) or
@@ -61,15 +67,16 @@ class ZVMConnector(object):
             else:
                 connection_type = CONN_TYPE_REST
         self.conn = self._get_connection(ip_addr, port, timeout,
-                                         connection_type)
+                                         connection_type, ssl_enabled, verify)
 
-    def _get_connection(self, ip_addr, port, timeout, connection_type):
+    def _get_connection(self, ip_addr, port, timeout,
+                        connection_type, ssl_enabled, verify):
         if connection_type == CONN_TYPE_SOCKET:
             return socketConnection(ip_addr or '127.0.0.1', port or 2000,
                                     timeout)
         else:
             return restConnection(ip_addr or '127.0.0.1', port or 2000,
-                                    timeout)
+                                  ssl_enabled=ssl_enabled, verify=verify)
 
     def send_request(self, api_name, *api_args, **api_kwargs):
         """Refer to SDK API documentation.
