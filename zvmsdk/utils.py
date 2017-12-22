@@ -219,17 +219,19 @@ class PathUtils(object):
     def get_console_log_path(self, userid):
         return os.path.join(self.get_guest_path(userid), "console.log")
 
-    def create_import_image_repository(self, image_osdistro, type):
+    def create_import_image_repository(self, image_osdistro, type,
+                                       image_name):
         zvmsdk_image_import_repo = os.path.join(
                                     CONF.image.sdk_image_repository,
                                     type,
-                                    image_osdistro)
+                                    image_osdistro,
+                                    image_name)
 
         if not os.path.exists(zvmsdk_image_import_repo):
             LOG.debug('Creating image repository %s for image import',
                       zvmsdk_image_import_repo)
             os.makedirs(zvmsdk_image_import_repo)
-        return
+        return zvmsdk_image_import_repo
 
 
 def to_utf8(text):
