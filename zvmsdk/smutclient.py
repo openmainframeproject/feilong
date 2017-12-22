@@ -417,8 +417,9 @@ class SMUTClient(object):
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
         """ Deploy image and punch config driver to target """
-        # Get image location (TODO: update this image location)
-        image_file = self._get_image_path_by_name(image_name)
+        # (TODO: add the support of multiple disks deploy)
+        image_file = '/'.join([self._get_image_path_by_name(image_name),
+                               CONF.zvm.user_root_vdev])
         # Unpack image file to root disk
         vdev = vdev or CONF.zvm.user_root_vdev
         cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', userid, vdev,
@@ -1322,8 +1323,8 @@ class SMUTClient(object):
     def image_import(self, image_name, url, image_meta, remote_host=None):
         """Import the image specified in url to SDK image repository, and
         create a record in image db, the imported images are located in
-        image_repository/prov_method/os_version/, for example,
-        /opt/sdk/images/netboot/rhel7.2/90685d2b-167b.img"""
+        image_repository/prov_method/os_version/image_name/, for example,
+        /opt/sdk/images/netboot/rhel7.2/90685d2b-167bimage/0100"""
         image_info = []
         try:
             image_info = self._ImageDbOperator.image_query_record(image_name)
@@ -1341,37 +1342,57 @@ class SMUTClient(object):
             raise exception.SDKImageOperationError(rs=13, img=image_name)
 
         try:
-            target = '/'.join([CONF.image.sdk_image_repository,
-                           const.IMAGE_TYPE['DEPLOY'],
-                           image_meta['os_version'],
-                           image_name])
-            self._pathutils.create_import_image_repository(
-                image_meta['os_version'], const.IMAGE_TYPE['DEPLOY'])
+            target_folder = self._pathutils.create_import_image_repository(
+                image_meta['os_version'], const.IMAGE_TYPE['DEPLOY'],
+                image_name)
+            import_image_fn = urlparse.urlparse(url).path.split('/')[-1]
+            import_image_fpath = '/'.join([target_folder, import_image_fn])
             self._scheme2backend(urlparse.urlparse(url).scheme).image_import(
                                                     image_name, url,
-                                                    image_meta,
+                                                    import_image_fpath,
                                                     remote_host=remote_host)
+
             # Check md5 after import to ensure import a correct image
             # TODO change to use query image name in DB
             expect_md5sum = image_meta.get('md5sum')
-            real_md5sum = self._get_md5sum(target)
+            real_md5sum = self._get_md5sum(import_image_fpath)
             if expect_md5sum and expect_md5sum != real_md5sum:
                 msg = ("The md5sum after import is not same as source image,"
                        " the image has been broken")
                 LOG.error(msg)
                 raise exception.SDKImageOperationError(rs=4)
-            disk_size_units = self._get_disk_size_units(target)
-            image_size = self._get_image_size(target)
+
+            # After import to image repository, figure out the image type is
+            # single disk image or multiple-disk image,if multiple disks image,
+            # extract it,  if it's single image, rename its name to be same as
+            # specific vdev
+            # TODO: (nafei) use sub-function to check the image type
+            image_type = 'rootonly'
+            if image_type == 'rootonly':
+                final_image_fpath = '/'.join([target_folder,
+                                              CONF.zvm.user_root_vdev])
+                os.rename(import_image_fpath, final_image_fpath)
+            elif image_type == 'alldisks':
+                # For multiple disks image, extract it, after extract, the
+                # content under image folder is like: 0100, 0101, 0102
+                # and remove the image file 0100-0101-0102.tgz
+                pass
+
+            # TODO: put multiple disk image into consideration, update the
+            # disk_size_units and image_size db field
+            disk_size_units = self._get_disk_size_units(final_image_fpath)
+            image_size = self._get_image_size(final_image_fpath)
+            # TODO: update the real_md5sum field to include each disk image
             self._ImageDbOperator.image_add_record(image_name,
-                                         image_meta['os_version'],
-                                         real_md5sum,
-                                         disk_size_units,
-                                         image_size,
-                                         const.IMAGE_TYPE['DEPLOY'])
+                                                   image_meta['os_version'],
+                                                   real_md5sum,
+                                                   disk_size_units,
+                                                   image_size,
+                                                   image_type)
             LOG.info("Image %s is import successfully" % image_name)
         except Exception:
             # Cleanup the image from image repository
-            self._pathutils.remove_file(target)
+            self._pathutils.remove_file(target_folder)
             raise
 
     def image_export(self, image_name, dest_url, remote_host=None):
@@ -1397,15 +1418,26 @@ class SMUTClient(object):
                       % image_name)
             LOG.error(msg)
             raise exception.SDKImageOperationError(rs=20, img=image_name)
-        source_path = '/'.join([CONF.image.sdk_image_repository,
-                               image_info[0]['type'],
+
+        image_type = image_info[0]['type']
+        # TODO: (nafei) according to image_type, detect image exported path
+        # For multiple disk image, make the tgz firstly, the specify the
+        # source_path to be something like: 0100-0101-0102.tgz
+        if image_type == 'rootonly':
+            source_path = '/'.join([CONF.image.sdk_image_repository,
+                               const.IMAGE_TYPE['DEPLOY'],
                                image_info[0]['imageosdistro'],
-                               image_name])
+                               image_name,
+                               CONF.zvm.user_root_vdev])
+        else:
+            pass
 
         self._scheme2backend(urlparse.urlparse(dest_url).scheme).image_export(
                                                     source_path, dest_url,
                                                     remote_host=remote_host)
 
+        # TODO: (nafei) for multiple disks image, update the expect_dict
+        # to be the tgz's md5sum
         export_dict = {'image_name': image_name,
                        'image_path': dest_url,
                        'os_version': image_info[0]['imageosdistro'],
@@ -1413,9 +1445,16 @@ class SMUTClient(object):
         LOG.info("Image %s export successfully" % image_name)
         return export_dict
 
+    def _get_image_disk_size_units(self, image_path):
+        """ Return a comma separated string to indicate the image disk size
+            and units for each image disk file under image_path
+            For single disk image , it looks like: 0100=3338:CYL
+            For multiple disk image, it looks like:
+            0100=3338:CYL,0101=4194200:BLK, 0102=4370:CYL"""
+        pass
+
     def _get_disk_size_units(self, image_path):
-        """Return a string to indicate disk units in format 3390:CYL or 408200:
-        BLK"""
+
         command = 'hexdump -n 48 -C %s' % image_path
         (rc, output) = zvmutils.execute(command)
         LOG.debug("hexdump result is %s" % output)
@@ -1462,8 +1501,9 @@ class SMUTClient(object):
             LOG.error(msg)
             raise exception.SDKImageOperationError(rs=20, img=image_name)
 
+        # TODO: (nafei) Handle multiple disks image deploy
         image_path = '/'.join([CONF.image.sdk_image_repository,
-                               target_info[0]['type'],
+                               const.IMAGE_TYPE['DEPLOY'],
                                target_info[0]['imageosdistro'],
                                image_name])
         return image_path
@@ -1518,7 +1558,7 @@ class SMUTClient(object):
 
     def _delete_image_file(self, image_name):
         image_path = self._get_image_path_by_name(image_name)
-        self._pathutils.remove_file(image_path)
+        self._pathutils.clean_temp_folder(image_path)
 
     def image_query(self, imagename=None):
         return self._ImageDbOperator.image_query_record(imagename)
@@ -1756,17 +1796,12 @@ class SMUTClient(object):
 
 class FilesystemBackend(object):
     @classmethod
-    def image_import(cls, image_name, url, image_meta, **kwargs):
+    def image_import(cls, image_name, url, target, **kwargs):
         """Import image from remote host to local image repository using scp.
         If remote_host not specified, it means the source file exist in local
         file system, just copy the image to image repository
         """
-
         source = urlparse.urlparse(url).path
-        target = '/'.join([CONF.image.sdk_image_repository,
-                          const.IMAGE_TYPE['DEPLOY'],
-                          image_meta['os_version'],
-                          image_name])
         if kwargs['remote_host']:
             if '@' in kwargs['remote_host']:
                 source_path = ':'.join([kwargs['remote_host'], source])
@@ -1826,26 +1861,22 @@ class FilesystemBackend(object):
 
 class HTTPBackend(object):
     @classmethod
-    def image_import(cls, image_name, url, image_meta, **kwargs):
-        import_image = MultiThreadDownloader(image_name, url, image_meta)
+    def image_import(cls, image_name, url, target, **kwargs):
+        import_image = MultiThreadDownloader(image_name, url,
+                                             target)
         import_image.run()
 
 
 class MultiThreadDownloader(threading.Thread):
-
-    def __init__(self, image_name, url, image_meta):
+    def __init__(self, image_name, url, target):
         super(MultiThreadDownloader, self).__init__()
         self.url = url
         # Set thread number
         self.threadnum = 8
-        self.name = image_name
-        self.image_osdistro = image_meta['os_version']
         r = requests.head(self.url)
         # Get the size of the download resource
         self.totalsize = int(r.headers['Content-Length'])
-        self.target = '/'.join([CONF.image.sdk_image_repository, 'netboot',
-                                self.image_osdistro,
-                                self.name])
+        self.target = target
 
     def handle_download_errors(func):
         @functools.wraps(func)
