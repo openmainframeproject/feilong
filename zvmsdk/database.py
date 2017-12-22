@@ -560,9 +560,9 @@ class ImageDbOperator(object):
                 'CREATE TABLE IF NOT EXISTS image (',
                 'imagename                varchar(128) PRIMARY KEY,',
                 'imageosdistro            varchar(16),',
-                'md5sum                   varchar(32),',
-                'disk_size_units          varchar(16),',
-                'image_size_in_bytes      varchar(32),',
+                'md5sum                   varchar(512),',
+                'disk_size_units          varchar(512),',
+                'image_size_in_bytes      varchar(512),',
                 'type                     varchar(16),',
                 'comments                 varchar(128))'))
         with get_image_conn() as conn:
