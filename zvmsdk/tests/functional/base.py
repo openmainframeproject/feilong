@@ -240,10 +240,12 @@ class SDKAPITestUtils(object):
 
         print("Checking if image %s exists or not, import it if not exists" %
               image_name)
-        image_info = self.sdkapi.image_query(image_name)
-        print("Image query result is %s" % str(image_info))
-
-        if not image_info:
+        try:
+            self.sdkapi.image_query(image_name)
+        except exception.SDKBaseException as err:
+            errmsg = err.format_message()
+            print('WARNING: image not exist, image_query failed with '
+                  'reason : %s, will import image now' % errmsg)
             print("Importing image %s ..." % image_name)
             self.sdkapi.image_import(image_name, url,
                         {'os_version': os_version})

@@ -203,7 +203,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         get_image_path.assert_called_once_with(image_name)
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
-                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
+                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
         cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrive.tgz']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
@@ -246,7 +246,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         get_image_path.assert_called_once_with(image_name)
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
-                     '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
+                     '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
         execute.assert_called_once_with(unpack_cmd)
 
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
@@ -272,7 +272,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         get_image_path.assert_called_once_with(image_name)
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
-                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
+                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
         cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrive.tgz']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
@@ -308,7 +308,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         get_image_path.assert_called_once_with(image_name)
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
-                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
+                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
         scp_cmd = ["/usr/bin/scp", "-B", 'user@1.1.1.1:/faketrans',
                   '/tmp/tmpdir/cfgdrive.tgz']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(scp_cmd)])
@@ -1005,39 +1005,44 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                           self._smutclient.delete_userid, 'fuser1')
         request.assert_called_once_with(rd)
 
+    @mock.patch.object(zvmutils.PathUtils, 'remove_file')
+    @mock.patch.object(os, 'rename')
     @mock.patch.object(database.ImageDbOperator, 'image_add_record')
     @mock.patch.object(smutclient.SMUTClient, '_get_image_size')
     @mock.patch.object(smutclient.SMUTClient, '_get_disk_size_units')
     @mock.patch.object(smutclient.SMUTClient, '_get_md5sum')
     @mock.patch.object(smutclient.FilesystemBackend, 'image_import')
-    @mock.patch.object(smutclient.SMUTClient, '_get_image_path_by_name')
+    @mock.patch.object(zvmutils.PathUtils,
+                       'create_import_image_repository')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
-    def test_image_import(self, image_query, get_img_path, image_import,
+    def test_image_import(self, image_query, create_path, image_import,
                           get_md5sum, disk_size_units, image_size,
-                          image_add_record):
+                          image_add_record, rename, remove_file):
         image_name = 'testimage'
         url = 'file:///tmp/testdummyimg'
         image_meta = {'os_version': 'rhel6.5',
                       'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
-        get_img_path.return_value = '/tmp//netboot/rhel6.5/testimage'
-        target = self._smutclient._get_image_path_by_name(image_name)
+        import_image_fpath = '/home/netboot/rhel6.5/testimage/testdummyimg'
+        final_image_fpath = '/home/netboot/rhel6.5/testimage/0100'
         image_query.return_value = []
+        create_path.return_value = '/home/netboot/rhel6.5/testimage'
         get_md5sum.return_value = 'c73ce117eef8077c3420bfc8f473ac2f'
         disk_size_units.return_value = '3338:CYL'
         image_size.return_value = '512000'
         self._smutclient.image_import(image_name, url, image_meta)
         image_query.assert_called_once_with(image_name)
-        image_import.assert_called_once_with(image_name, url, image_meta,
+        image_import.assert_called_once_with(image_name, url,
+                                             import_image_fpath,
                                              remote_host=None)
-        get_md5sum.assert_called_once_with(target)
-        disk_size_units.assert_called_once_with(target)
-        image_size.assert_called_once_with(target)
+        get_md5sum.assert_called_once_with(import_image_fpath)
+        disk_size_units.assert_called_once_with(final_image_fpath)
+        image_size.assert_called_once_with(final_image_fpath)
         image_add_record.assert_called_once_with(image_name,
                                     'rhel6.5',
                                     'c73ce117eef8077c3420bfc8f473ac2f',
                                     '3338:CYL',
                                     '512000',
-                                    'netboot')
+                                    'rootonly')
 
     @mock.patch.object(smutclient.SMUTClient, '_get_image_path_by_name')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
@@ -1056,11 +1061,12 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         image_query.assert_called_once_with(image_name)
         get_image_path.assert_not_called()
 
+    @mock.patch.object(zvmutils.PathUtils, 'remove_file')
     @mock.patch.object(smutclient.SMUTClient, '_get_md5sum')
     @mock.patch.object(smutclient.FilesystemBackend, 'image_import')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_image_import_invalid_md5sum(self, image_query, image_import,
-                                         get_md5sum):
+                                         get_md5sum, remove_file):
         image_name = 'testimage'
         url = 'file:///tmp/testdummyimg'
         image_meta = {'os_version': 'rhel6.5',
@@ -1103,7 +1109,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
              'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
              'disk_size_units': u'3338:CYL',
              'image_size_in_bytes': u'5120000',
-             'type': u'netboot',
+             'type': u'rootonly',
              'comments': None}]
         expect_return = {
             'image_name': u'testimage',
