@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "00fae076_c35c7cd8",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 565,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-22T12:05:38Z",
+      "side": 1,
+      "message": "from commit message I think this will be something like:\n0100\u003dxx, 0101\u003dxxx, 0102\u003dxxx\n\ncan we create a image table and a disk table \n\nso we can store the id of disk(s) in image and they can query the image info through the disk table?",
+      "range": {
+        "startLine": 563,
+        "startChar": 0,
+        "endLine": 565,
+        "endChar": 57
+      },
+      "revId": "1e997460ded0126cdc933e4ac09fceb6ca800187",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "deb382b0_647715a9",
+        "filename": "zvmsdk/tests/functional/base.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-22T12:05:38Z",
+      "side": 1,
+      "message": "do we have any specific exception other than base exception?",
+      "range": {
+        "startLine": 245,
+        "startChar": 8,
+        "endLine": 245,
+        "endChar": 49
+      },
+      "revId": "1e997460ded0126cdc933e4ac09fceb6ca800187",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
