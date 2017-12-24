@@ -31,8 +31,8 @@ Preparation on BYOL
 1. Authorize BYOL user for z/VM SMAPI call.
 
    VSMWORK1 AUTHLIST needs to be updated in order to make the BYOL
-   machine be able to issue SMAPI call. Refer to z/VM Systems Management
-   Application Programming for how to make it.
+   machine be able to issue SMAPI call. Refer to `z/VM Systems Management
+   Application Programming`_ for how to make it.
 
 2. Update BYOL definition for spawning guests.
 
@@ -43,7 +43,7 @@ Preparation on BYOL
 
        OPTION LNKNOPAS
 
-   See z/VM Systems Management Application Programming for how to make it.
+   See `z/VM Systems Management Application Programming`_ for how to make it.
 
 3. Update BYOL definition about IUCV
 
@@ -55,7 +55,9 @@ Preparation on BYOL
 
        IUCV ANY
 
-   See z/VM Systems Management Application Programming for how to make it.
+   See `z/VM Systems Management Application Programming`_ for how to make it.
+
+.. _z/VM Systems Management Application Programming: https://www.ibm.com/support/knowledgecenter/SSB27U_6.4.0/com.ibm.zvm.v640.dmse6/toc.htm
 
 4. Enable punch device
 
