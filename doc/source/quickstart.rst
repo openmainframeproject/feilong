@@ -2,15 +2,15 @@
 Quick Start
 ***********
 
-This is the document that describes the installation, configuration
+This is the document that describes the installation, configuration,
 and basic usages of z/VM Cloud Connector.
 
 Pre-requirements
 ================
 
 z/VM Cloud Connector has to be installed inside a Linux running on z/VM.
-Currently planned to be supported distros include current supported versions
-of:
+Currently planned to be supported distros include the most current
+supported versions:
 
 - SUSE Linux Enterprise Server
 - Red Hat Enterprise Linux
@@ -22,7 +22,7 @@ on other Linux distros.
 From now on, BYOL (Bring Your Own Linux) will be used to represent
 the Linux on which the z/VM Cloud Connector will be run.
 
-For the z/VM Cloud Connector to run, the BYOL must have enough free space (>100M).
+For the z/VM Cloud Connector to run, the BYOL must have enough free disk space (>100M).
 And besides that, the following updates need to be made to the BYOL.
 
 Preparation on BYOL
@@ -30,13 +30,13 @@ Preparation on BYOL
 
 1. Authorize BYOL user for z/VM SMAPI call.
 
-   VSMWORK1 AUTHLIST need to be updated in order to make the BYOL
+   VSMWORK1 AUTHLIST needs to be updated in order to make the BYOL
    machine be able to issue SMAPI call. Refer to z/VM Systems Management
    Application Programming for how to make it.
 
 2. Update BYOL definition for spawning guests.
 
-   Assume BYOL has its definition on z/VM, it needs to have following entry in
+   Assume BYOL has its definition on z/VM, it needs to have following statement in
    its User Directory in order to link disk during stage of spawning guests.
 
    .. code-block:: text
@@ -48,7 +48,7 @@ Preparation on BYOL
 3. Update BYOL definition about IUCV
 
    Assume BYOL has its definition on z/VM, it needs to have following entry in
-   its User Directory in order to communicate with the managed guests by IUCV
+   its User Directory in order to communicate with the managed guests by the IUCV
    channel
 
    .. code-block:: text
@@ -154,10 +154,10 @@ Installation
 z/VM zthin install
 ------------------
 
-zthin is a library written by c working as part of the z/VM Cloud Connector.
+zthin is a library written in C that works as part of the z/VM Cloud Connectorworking.
 It mainly focuses on socket connection from BYOL to z/VM SMAPI(System Management API).
 z/VM Cloud Connector requires zthin as the backend to communicate with z/VM SMAPI,
-thus it needs to be installed defore installing z/VM Cloud Connector.
+thus it needs to be installed before installing z/VM Cloud Connector.
 
 SSH onto the BYOL as root user, and then follow the following steps:
 
@@ -387,7 +387,7 @@ Verification
 ============
 
 Try the following python commands on BYOL.
-If the two send_request command all returns 'overallRC' as 0, that means the z/VM SDK daemon
+If the two send_request commands all returns 'overallRC' as 0, that means the z/VM SDK daemon
 is setup and running normally.
 
 For use of the z/VM Cloud Connector RESTful-API, please continue to the section
