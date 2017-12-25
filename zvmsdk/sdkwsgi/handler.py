@@ -21,7 +21,7 @@ from zvmsdk.sdkwsgi.handlers import host
 from zvmsdk.sdkwsgi.handlers import image
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.handlers import version
-from zvmsdk.sdkwsgi.handlers import volume
+# from zvmsdk.sdkwsgi.handlers import volume
 from zvmsdk.sdkwsgi.handlers import vswitch
 
 
@@ -77,10 +77,10 @@ ROUTE_LIST = (
         'DELETE': guest.guest_delete_disks,
         'PUT': guest.guest_config_disks,
     }),
-    ('/guests/{userid}/volumes', {
-        'POST': volume.volume_attach,
-        'DELETE': volume.volume_detach,
-    }),
+    # ('/guests/{userid}/volumes', {
+    #   'POST': volume.volume_attach,
+    #    'DELETE': volume.volume_detach,
+    # }),
     ('/host', {
         'GET': host.host_get_info,
     }),
