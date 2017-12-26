@@ -54,6 +54,65 @@ SET_VSWITCH_KEYWORDS = ["grant_userid", "user_vlan_id",
                         "iptimeout", "port_isolation", "promiscuous",
                         "MAC_protect", "VLAN_counters"]
 
+DEV_STATUS = {'0': 'Device is not active.',
+              '1': 'Device is active.',
+              '2': 'Device is a backup device'}
+
+DEV_ERROR = {'0': 'No error.',
+             '1': 'Port name conflict.',
+             '2': 'No layer 2 support.',
+             '3': 'Real device does not exist.',
+             '4': 'Real device is attached elsewhere.',
+             '5': 'Real device is not compatible type.',
+             '6': 'Initialization error.',
+             '7': 'Stalled OSA.',
+             '8': 'Stalled controller.',
+             '9': 'Controller connection severed.',
+             '10': 'Primary or secondary routing conflict.',
+             '11': 'Device is offline.',
+             '12': 'Device was detached.',
+             '13': 'IP/Ethernet type mismatch.',
+             '14': 'Insufficient memory in controller '
+                   'virtual machine.',
+             '15': 'TCP/IP configuration conflict.',
+             '16': 'No link aggregation support.',
+             '17': 'OSA-E attribute mismatch.',
+             '18': 'Reserved for future use.',
+             '19': 'OSA-E is not ready.',
+             '20': 'Reserved for future use.',
+             '21': 'Attempting restart for device.',
+             '22': 'Exclusive user error.',
+             '23': 'Device state is invalid.',
+             '24': 'Port number is invalid for device.',
+             '25': 'No OSA connection isolation.',
+             '26': 'EQID mismatch.',
+             '27': 'Incompatible controller.',
+             '28': 'BACKUP detached.',
+             '29': 'BACKUP not ready.',
+             '30': 'BACKUP attempting restart.',
+             '31': 'EQID mismatch.',
+             '32': 'No HiperSockets bridge support.',
+             '33': 'HiperSockets bridge error.'}
+
+SWITCH_STATUS = {'1': 'Virtual switch defined.',
+                 '2': 'Controller not available.',
+                 '3': 'Operator intervention required.',
+                 '4': 'Disconnected.',
+                 '5': 'Virtual devices attached to controller. '
+                      'Normally a transient state.',
+                 '6': 'OSA initialization in progress. '
+                      'Normally a transient state.',
+                 '7': 'OSA device not ready',
+                 '8': 'OSA device ready.',
+                 '9': 'OSA devices being detached. '
+                      'Normally a transient state.',
+                 '10': 'Virtual switch delete pending. '
+                       'Normally a transient state.',
+                 '11': 'Virtual switch failover recovering. '
+                       'Normally a transient state.',
+                 '12': 'Autorestart in progress. '
+                       'Normally a transient state.'}
+
 ZVM_VOLUMES_FILE = 'zvm_volumes'
 ZVM_VOLUME_STATUS = ['free', 'in-use']
 VOLUME_MULTI_PASS = 'MULTI'

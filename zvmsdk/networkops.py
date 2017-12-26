@@ -268,3 +268,6 @@ class NetworkOPS(object):
     def get_nic_info(self, userid=None, nic_id=None, vswitch=None):
         return self._smutclient.get_nic_info(userid=userid, nic_id=nic_id,
                                              vswitch=vswitch)
+
+    def vswitch_query(self, vswitch_name):
+        return self._smutclient.query_vswitch(vswitch_name)
