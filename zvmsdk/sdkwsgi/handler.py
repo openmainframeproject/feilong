@@ -105,6 +105,7 @@ ROUTE_LIST = (
         'POST': vswitch.vswitch_create,
     }),
     ('/vswitches/{name}', {
+        'GET': vswitch.vswitch_query,
         'DELETE': vswitch.vswitch_delete,
         'PUT': vswitch.vswitch_update,
     }),

@@ -55,7 +55,12 @@ class VSwitchTestCase(unittest.TestCase):
                                        method='DELETE')
         return resp
 
-    def test_vswitch_create_delete(self):
+    def _vswitch_query(self):
+        resp = self.client.api_request(url='/vswitches/restvsw1',
+                                       method='GET')
+        return resp
+
+    def test_vswitch_create_query_delete(self):
         resp = self._vswitch_create()
         self.assertEqual(200, resp.status_code)
 
@@ -68,6 +73,11 @@ class VSwitchTestCase(unittest.TestCase):
             vswlist = json.loads(resp.content)['output']
             inlist = 'RESTVSW1' in vswlist
             self.assertTrue(inlist)
+
+            resp = self._vswitch_query()
+            vswinfo = json.loads(resp.content)['output']
+            switch_name = vswinfo['switch_name']
+            self.assertEqual(switch_name, 'RESTVSW1')
         except Exception:
             raise
         finally:
@@ -98,7 +108,7 @@ class VSwitchTestCase(unittest.TestCase):
             resp = self._vswitch_delete()
             self.assertEqual(200, resp.status_code)
 
-    def test_vswitch_delete_update_not_exist(self):
+    def test_vswitch_delete_update_query_not_exist(self):
         resp = self.client.api_request(url='/vswitches/notexist',
                                        method='DELETE')
         self.assertEqual(200, resp.status_code)
@@ -107,6 +117,10 @@ class VSwitchTestCase(unittest.TestCase):
         body = '{"vswitch": {"grant_userid": "FVTUSER1"}}'
         resp = self.client.api_request(url='/vswitches/notexist',
                                        method='PUT', body=body)
+        self.assertEqual(404, resp.status_code)
+
+        resp = self.client.api_request(url='/vswitches/notexist',
+                                       method='GET')
         self.assertEqual(404, resp.status_code)
 
     def test_vswitch_create_invalid_body(self):

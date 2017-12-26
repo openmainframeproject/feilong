@@ -376,6 +376,12 @@ def req_vswitch_delete(start_index, *args, **kwargs):
     return url, body
 
 
+def req_vswitch_query(start_index, *args, **kwargs):
+    url = '/vswitches/%s'
+    body = None
+    return url, body
+
+
 def req_vswitch_grant_user(start_index, *args, **kwargs):
     url = '/vswitches/%s'
     body = {'vswitch': {'grant_userid': args[start_index]}}
@@ -443,6 +449,7 @@ PARAM_IN_PATH = {
     'vswitch_create': 0,
     'vswitch_delete': 1,
     'vswitch_grant_user': 1,
+    'vswitch_query': 1,
     'vswitch_revoke_user': 1,
     'vswitch_set_vlan_id_for_user': 1,
 }
@@ -492,6 +499,7 @@ API2METHOD = {
     'vswitch_create': 'POST',
     'vswitch_delete': 'DELETE',
     'vswitch_grant_user': 'PUT',
+    'vswitch_query': 'GET',
     'vswitch_revoke_user': 'PUT',
     'vswitch_set_vlan_id_for_user': 'PUT',
 }
@@ -541,6 +549,7 @@ API2REQ = {
     'vswitch_create': req_vswitch_create,
     'vswitch_delete': req_vswitch_delete,
     'vswitch_grant_user': req_vswitch_grant_user,
+    'vswitch_query': req_vswitch_query,
     'vswitch_revoke_user': req_vswitch_revoke_user,
     'vswitch_set_vlan_id_for_user': req_vswitch_set_vlan_id_for_user,
 }

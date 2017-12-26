@@ -1085,6 +1085,34 @@ Get the list of vswitch name on the host
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_get.tpl
    :language: javascript
 
+GET vswitch details
+-------------------
+
+**GET /vswitches/{name}**
+
+Get the details of a vswitch
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - name: vswitch_name
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: vswitch_details
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_query.tpl
+   :language: javascript
+
 Grant user to vswitch
 ---------------------
 

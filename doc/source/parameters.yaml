@@ -707,3 +707,9 @@ vlan_id:
   in: body
   required: true
   type: integer
+vswitch_details:
+  description: |
+    The vswitch info for specific vswitch
+  in: body
+  required: true
+  type: dict
