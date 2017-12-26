@@ -732,3 +732,9 @@ nic_interface:
   in: body
   required: true
   type: string
+vswitch_details:
+  description: |
+    The vswitch info for specific vswitch
+  in: body
+  required: true
+  type: dict

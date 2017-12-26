@@ -66,6 +66,10 @@ class VswitchAction(object):
         info = self.client.send_request('vswitch_delete', name)
         return info
 
+    def query(self, name):
+        info = self.client.send_request('vswitch_query', name)
+        return info
+
     @validation.schema(vswitch.update)
     def update(self, name, body):
         vsw = body['vswitch']
@@ -165,6 +169,26 @@ def vswitch_update(req):
     name = util.wsgi_path_item(req.environ, 'name')
 
     info = _vswitch_update(name, req)
+
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.status = util.get_http_code_from_sdk_return(info,
+        additional_handler=util.handle_not_found)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def vswitch_query(req):
+
+    def _vswitch_query(name):
+        action = get_action()
+        return action.query(name)
+
+    name = util.wsgi_path_item(req.environ, 'name')
+
+    info = _vswitch_query(name)
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
