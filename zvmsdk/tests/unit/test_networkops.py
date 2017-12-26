@@ -247,3 +247,8 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
 
         self.assertEqual(r1, 'result1')
         self.assertEqual(r2, active_net_cmd)
+
+    @mock.patch('zvmsdk.smutclient.SMUTClient.query_vswitch')
+    def test_vswitch_query(self, query_vswitch):
+        self.networkops.vswitch_query("vswitch_name")
+        query_vswitch.assert_called_with("vswitch_name")
