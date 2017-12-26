@@ -1404,3 +1404,21 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_update_guestdb_with_net_set(self, update):
         self._smutclient.update_guestdb_with_net_set('TEST')
         update.assert_called_once_with('TEST', net_set='1')
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_query_vswitch_NotExist(self, req, get_id):
+        get_id.return_value = "SMUTUSER"
+        req.side_effect = exception.SDKSMUTRequestFailed(
+                                        {'rc': 212, 'rs': 40}, '')
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self._smutclient.query_vswitch, 'testvs')
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_query_vswitch_RequestFailed(self, req, get_id):
+        get_id.return_value = "SMUTUSER"
+        req.side_effect = exception.SDKSMUTRequestFailed(
+                                        {'rc': 1, 'rs': 1}, '')
+        self.assertRaises(exception.SDKSMUTRequestFailed,
+                          self._smutclient.query_vswitch, 'testvs')

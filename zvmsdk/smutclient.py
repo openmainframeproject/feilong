@@ -1658,10 +1658,23 @@ class SMUTClient(object):
             "--operands",
             '-k switch_name=%s' % switch_name
             ))
-        action = "query vswitch details info"
-        with zvmutils.log_and_reraise_smut_request_failed(action):
+
+        try:
             results = self._request(rd)
             rd_list = results['response']
+        except exception.SDKSMUTRequestFailed as err:
+            if ((err.results['rc'] == 212) and (err.results['rs'] == 40)):
+                msg = 'Vswitch %s does not exist' % switch_name
+                LOG.error(msg)
+                obj_desc = "Vswitch %s" % switch_name
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID='network')
+            else:
+                action = "query vswitch details info"
+                msg = "Failed to %s. " % action
+                msg += "SMUT error: %s" % err.format_message()
+                LOG.error(msg)
+                raise exception.SDKSMUTRequestFailed(err.results, msg)
 
         vsw_info = {}
         with zvmutils.expect_invalid_resp_data():
@@ -1691,6 +1704,56 @@ class SMUTClient(object):
                     value = 'NONE'
                 return idx + offset, value
 
+            def _parse_dev_status(value):
+                mapping = {'0': 'Device is not active.',
+                           '1': 'Device is active.',
+                           '2': 'Device is a backup device'}
+                if value in mapping.keys():
+                    return mapping[value]
+                else:
+                    return 'Unknown'
+
+            def _parse_dev_err(value):
+                mapping = {'0': 'No error.',
+                           '1': 'Port name conflict.',
+                           '2': 'No layer 2 support.',
+                           '3': 'Real device does not exist.',
+                           '4': 'Real device is attached elsewhere.',
+                           '5': 'Real device is not compatible type.',
+                           '6': 'Initialization error.',
+                           '7': 'Stalled OSA.',
+                           '8': 'Stalled controller.',
+                           '9': 'Controller connection severed.',
+                           '10': 'Primary or secondary routing conflict.',
+                           '11': 'Device is offline.',
+                           '12': 'Device was detached.',
+                           '13': 'IP/Ethernet type mismatch.',
+                           '14': 'Insufficient memory in controller '
+                                 'virtual machine.',
+                           '15': 'TCP/IP configuration conflict.',
+                           '16': 'No link aggregation support.',
+                           '17': 'OSA-E attribute mismatch.',
+                           '18': 'Reserved for future use.',
+                           '19': 'OSA-E is not ready.',
+                           '20': 'Reserved for future use.',
+                           '21': 'Attempting restart for device.',
+                           '22': 'Exclusive user error.',
+                           '23': 'Device state is invalid.',
+                           '24': 'Port number is invalid for device.',
+                           '25': 'No OSA connection isolation.',
+                           '26': 'EQID mismatch.',
+                           '27': 'Incompatible controller.',
+                           '28': 'BACKUP detached.',
+                           '29': 'BACKUP not ready.',
+                           '30': 'BACKUP attempting restart.',
+                           '31': 'EQID mismatch.',
+                           '32': 'No HiperSockets bridge support.',
+                           '33': 'HiperSockets bridge error.'}
+                if value in mapping.keys():
+                    return mapping[value]
+                else:
+                    return 'Unknown'
+
             # Start to analyse the real devices info
             vsw_info['real_devices'] = {}
             while((idx < idx_end) and
@@ -1710,8 +1773,11 @@ class SMUTClient(object):
                 vsw_info['real_devices'][rdev_addr] = {'vdev': vdev_addr,
                                                 'controller': controller,
                                                 'port_name': port_name,
-                                                'dev_status': dev_status,
-                                                'dev_err': dev_err
+                                                'dev_status':
+                                                        _parse_dev_status(
+                                                                dev_status),
+                                                'dev_err': _parse_dev_err(
+                                                                    dev_err)
                                                 }
                 # Under some case there would be an error line in the output
                 # "Error controller_name is NULL!!", skip this line
@@ -1770,6 +1836,33 @@ class SMUTClient(object):
                     'type': type
                     }
             # Todo: analyze and add the uplink NIC info and global member info
+
+        def _parse_switch_status(value):
+            mapping = {'1': 'Virtual switch defined.',
+                       '2': 'Controller not available.',
+                       '3': 'Operator intervention required.',
+                       '4': 'Disconnected.',
+                       '5': 'Virtual devices attached to controller. '
+                            'Normally a transient state.',
+                       '6': 'OSA initialization in progress. '
+                            'Normally a transient state.',
+                       '7': 'OSA device not ready',
+                       '8': 'OSA device ready.',
+                       '9': 'OSA devices being detached. '
+                            'Normally a transient state.',
+                       '10': 'Virtual switch delete pending. '
+                             'Normally a transient state.',
+                       '11': 'Virtual switch failover recovering. '
+                             'Normally a transient state.',
+                       '12': 'Autorestart in progress. '
+                             'Normally a transient state.'}
+            if value in mapping.keys():
+                return mapping[value]
+            else:
+                return 'Unknown'
+        if 'switch_status' in vsw_info.keys():
+            vsw_info['switch_status'] = _parse_switch_status(
+                                                vsw_info['switch_status'])
 
         return vsw_info
 
