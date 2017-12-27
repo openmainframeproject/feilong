@@ -66,7 +66,7 @@ def fill_kwargs_in_body(body, **kwargs):
         body[key] = kwargs.get(key)
 
 
-def req_home(start_index, *args, **kwargs):
+def req_version(start_index, *args, **kwargs):
     url = '/'
     body = None
     return url, body
@@ -400,7 +400,7 @@ def req_vswitch_set_vlan_id_for_user(start_index, *args, **kwargs):
 
 # parameters amount in path
 PARAM_IN_PATH = {
-    'home': 0,
+    'version': 0,
     'guest_create': 0,
     'guest_list': 0,
     'guest_inspect_stats': 1,
@@ -449,7 +449,7 @@ PARAM_IN_PATH = {
 
 
 API2METHOD = {
-    'home': 'GET',
+    'version': 'GET',
     'guest_create': 'POST',
     'guest_list': 'GET',
     'guest_inspect_stats': 'GET',
@@ -498,7 +498,7 @@ API2METHOD = {
 
 
 API2REQ = {
-    'home': req_home,
+    'version': req_version,
     'guest_create': req_guest_create,
     'guest_list': req_guest_list,
     'guest_inspect_stats': req_guest_inspect_stats,
