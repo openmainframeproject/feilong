@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "57730ea8_41fd142e",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-27T04:49:41Z",
+      "side": 1,
+      "message": "can you add some description for it? or let user refer to somewhere ? otherwise admin-token is really not helpful",
+      "range": {
+        "startLine": 64,
+        "startChar": 4,
+        "endLine": 64,
+        "endChar": 15
+      },
+      "revId": "fc8b3fed01ef37f149b4e1271959959904221888",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
