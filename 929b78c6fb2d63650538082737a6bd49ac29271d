@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7b292fb8_2d2015e2",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1395,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2017-12-27T04:45:35Z",
+      "side": 1,
+      "message": "I am ok with the patch\n\ndo we have functional test for this kind of cleanup ?",
+      "range": {
+        "startLine": 1395,
+        "startChar": 12,
+        "endLine": 1395,
+        "endChar": 60
+      },
+      "revId": "929b78c6fb2d63650538082737a6bd49ac29271d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
