@@ -4,5 +4,9 @@
     "modID": null,
     "rc": 0,
     "errmsg": "",
-    "output": [("id0001", "1000", "vsw01", "1111-2222", None)]
+    "output": [{"userid": "id0001",
+                "interface": "1000",
+                "switch": "vsw01",
+                "port": "1111-2222",
+                "comments": None}]
 }
