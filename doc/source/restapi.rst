@@ -289,6 +289,11 @@ Get guests nic information, including userid, nic number, vswitch, nic id and co
 .. restapi_parameters:: parameters.yaml
 
   - output: guests_nic_info
+  - userid: nic_userid
+  - interface: nic_interface
+  - switch: vswitch_name_body
+  - port: nic_port
+  - comments: nic_comments
 
 * Response sample:
 

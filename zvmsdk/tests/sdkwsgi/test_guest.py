@@ -543,33 +543,33 @@ class GuestHandlerTestCase(unittest.TestCase):
     def test_guests_get_nic_info(self):
         resp = self._guest_get_nic_DB_info()
         self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_guest_get_power_state',
+        self.apibase.verify_result('test_guests_get_nic_info',
                                    resp.content)
 
         resp = self._guest_get_nic_DB_info(userid='test')
         self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_guest_get_power_state',
+        self.apibase.verify_result('test_guests_get_nic_info',
                                    resp.content)
 
         resp = self._guest_get_nic_DB_info(nic_id='testnic')
         self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_guest_get_power_state',
+        self.apibase.verify_result('test_guests_get_nic_info',
                                    resp.content)
 
         resp = self._guest_get_nic_DB_info(vswitch='vswitch')
         self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_guest_get_power_state',
+        self.apibase.verify_result('test_guests_get_nic_info',
                                    resp.content)
 
         resp = self._guest_get_nic_DB_info(userid='test', nic_id='testnic')
         self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_guest_get_power_state',
+        self.apibase.verify_result('test_guests_get_nic_info',
                                    resp.content)
 
         resp = self._guest_get_nic_DB_info(userid='test', nic_id='testnic',
                                            vswitch='vswitch')
         self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_guest_get_power_state',
+        self.apibase.verify_result('test_guests_get_nic_info',
                                    resp.content)
 
     def _vswitch_create(self):
