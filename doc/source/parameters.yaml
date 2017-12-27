@@ -59,16 +59,10 @@ version_sdk:
   in: header
   required: true
   type: string
-token_user:
+token_admin:
   description: |
-    user
-  in: body
-  required: true
-  type: string
-token_password:
-  description: |
-    password
-  in: body
+    admin-token
+  in: header
   required: true
   type: string
 userid_create:

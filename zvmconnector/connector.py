@@ -54,6 +54,9 @@ class ZVMConnector(object):
         :param int port:            Port of SDK server daemon
         :param int timeout:         Wait timeout if request no response
         :param str connection_type: The value should be 'socket' or 'rest'
+        :param boolean ssl_enabled: Whether SSL enabled or not. If enabled,
+                                    use HTTPS instead of HTTP. The httpd
+                                    server should enable SSL to support this.
         :param boolean/str verify:  Either a boolean, in which case it
                                     controls whether we verify the server's
                                     TLS certificate, or a string, in which

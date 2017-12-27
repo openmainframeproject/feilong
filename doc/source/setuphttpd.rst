@@ -185,15 +185,20 @@ Token Usage
 ============
 
 When you sending requests, you need a token to get access to the service.
-To get the token, you should get an admin-token from administrator.
-The owner has an admin_token stored in the file. The permission of this is set that only owner can operate on it.
-And the path of this file represented by token_file_path can be configured in wsgi section of configuration file.
-To request for a token, you can put the admin_token into the headers of request object and send a request to the server.
-For example:
+To get the token, you need to get an admin-token from administrator which is stored in admin-token-file.
+
+As an administrator, you are responsible for creating admin-token-file. The path of this file represented by ``token_path`` should be
+configured in wsgi section of zvmsdk.conf and ``auth`` item in the same section should also be set to ``token``, just like auth=token.
+And if you want to disable authentication, just set ``auth`` to value ``none``.
+
+As a client, you can get the admin-token stored in the admin-token-file and request for a token by putting the admin_token into the
+``X-Admin-Token`` field in headers of request object.
+
+An example to request for a token:
 
 .. code-block:: text
 
-    # curl http://localhost:8888/token -X POST -i -H "Content-Type:application/json" -H "X-Admin-Token:1234567890123456789012345678901234567890"
+    # curl http://localhost:8080/token -X POST -i -H "Content-Type:application/json" -H "X-Admin-Token:1234567890123456789012345678901234567890"
     HTTP/1.0 200 OK
     Date: Wed, 06 Dec 2017 06:11:22 GMT
     Server: WSGIServer/0.1 Python/2.7.5
@@ -202,9 +207,21 @@ For example:
     X-Auth-Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTI1NDQyODJ9.TVlcQb_QuUPJ37cRyzZqroR6kLZ-5zH2-tliIkhsQ1A
     cache-control: no-cache
 
-Then, you can send normal RESTful requests using the token in response.headers['x-Auth-Token']. For example:
+Then, you can send normal RESTful requests using the return X-Auth-Token field. For example:
 
 .. code-block:: text
 
-    # curl http://localhost:8888/ -H "Content-Type:application/json" -H 'X-Auth-Token:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTI1NDQyODJ9.TVlcQb_QuUPJ37cRyzZqroR6kLZ-5zH2-tliIkhsQ1A'
+    # curl http://localhost:8080/ -H "Content-Type:application/json" -H 'X-Auth-Token:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTI1NDQyODJ9.TVlcQb_QuUPJ37cRyzZqroR6kLZ-5zH2-tliIkhsQ1A'
     {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": {"min_version": "1.0", "version": "1.0", "max_version": "1.0"}, "errmsg": ""}
+
+If you use ZVMCONNECTOR as a client, you can save admin-token-file as /etc/zvmsdk/token.dat and change this file's owner to user zvmsdk.
+Now, you have a easier way to use token now:
+
+.. code-block:: text
+
+    >>> from zvmconnector import connector
+    >>> conn = connector.ZVMConnector(port=8080)
+    >>> conn.send_request('guest_list')
+    {u'rs': 0, u'overallRC': 0, u'modID': None, u'rc': 0, u'output': [u'NAME1', u'NAME2'], u'errmsg': u'}
+
+As you can see, you do not need to use them explicitly now.
