@@ -145,6 +145,14 @@ Use the following sample as a start for apache to proxy requests to z/VM Cloud C
 wsgi service, copy the content to  /etc/httpd/conf.d/zvmsdk.conf and update the file to match
 your system and requirements.
 
+.. note::
+    Sometimes the REST API call will takes some time to complete while the default timeout
+    is not enough to complete the handle of the request, for example, `Apache Timeout`_
+    shows the default timeout value of Apache httpd server is 60, administrator need to
+    set a bigger value (for example 3600) to avoid time out error.
+
+.. _Apache Timeout: https://httpd.apache.org/docs/2.4/mod/core.html#timeout
+
 Under this sample's configuration settings, the httpd server will listen on port 8080
 and any incoming request on it will be redirected to zvmsdk wsgi which is listening
 at port 35000
