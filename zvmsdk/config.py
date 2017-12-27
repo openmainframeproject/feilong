@@ -332,17 +332,6 @@ This will work as a pair with bind_addr when the SDK server daemon
 starts, more info can be found in that configuration description.
 '''
         ),
-    Opt('connect_type',
-        section='sdkserver',
-        opt_type='str',
-        default='rest',
-        help='''
-The connection type of the requests flowing into the sdkserver.
-
-This will work as a pair with bind_addr when the SDK server daemon
-starts, more info can be found in that configuration description.
-'''
-        ),
     Opt('request_queue_size',
         section='sdkserver',
         opt_type='int',
