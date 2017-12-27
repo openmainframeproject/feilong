@@ -177,7 +177,7 @@ SSH onto the BYOL as root user, and then follow the following steps:
    .. code-block:: text
 
        # cd build-zvmsdk
-       # /usr/bin/bash buildzthinrpm master
+       # /usr/bin/bash buildzthinrpm_rhel master
 
    If this build finishes successfully, the result rpm will be generated
    in the /root/zthin-build/RPMS/s390x/ directory named in the format
