@@ -14,6 +14,7 @@
 import json
 
 from zvmsdk.sdkwsgi import util
+from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk import utils
 
 
@@ -21,6 +22,7 @@ APIVERSION = '1.0'
 
 
 @util.SdkWsgify
+@tokens.validate
 def version(req):
     min_version = APIVERSION
     max_version = APIVERSION
