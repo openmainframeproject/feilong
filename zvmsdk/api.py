@@ -174,8 +174,8 @@ class SDKAPI(object):
     def host_diskpool_get_info(self, disk_pool=CONF.zvm.disk_pool):
         """ Retrieve diskpool information.
         :param str disk_pool: the disk pool info. It use ':' to separate
-        disk pool type and name, eg "ECKD:eckdpool" or "FBA:fbapool"
-        :returns: Dictionary describing diskpool usage info
+        disk pool type and pool name, eg "ECKD:eckdpool" or "FBA:fbapool"
+        :returns: Dictionary describing disk pool usage info
         """
         if ':' not in disk_pool:
             msg = ('Invalid input parameter disk_pool, expect ":" in'

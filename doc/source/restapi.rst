@@ -681,6 +681,10 @@ After guest created, deploy image onto the guest.
 
   - userid: guest_userid
   - action: action_deploy_guest
+  - image: image_name
+  - transportfiles: transportfiles
+  - remotehost: remotehost_transportfiles
+  - vdev: deploy_vdev
 
 * Request sample:
 
@@ -704,6 +708,9 @@ Capture guest
 
   - userid: guest_userid
   - action: action_capture_guest
+  - image: image_name
+  - capturetype: capture_type
+  - compresslevel: compress_level
 
 * Request sample:
 

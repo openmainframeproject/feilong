@@ -373,7 +373,7 @@ remotehost_image_import:
     The server from where the image will be import, if remote_host is None,
     the image will be import from the url in local server, otherwise,
     the format is username@ip, for example, ``nova@9.x.x.x`` or
-    username@hostname eg.``test@test.ibm.com``
+    username@hostname, for example, ``test@test.ibm.com``
   in: body
   required: false
   type: string
@@ -416,6 +416,42 @@ export_image_dict:
   in: body
   required: true
   type: dict
+transportfiles:
+  description: |
+    The files path that used to customize the vm.
+  in: body
+  required: false
+  type: string
+remotehost_transportfiles:
+  description: |
+    The server that the transportfiles located, if remotehost is not
+    specified, will deploy with the transport file in local server,
+    otherwise, the format is username@ip, for example, ``nova@9.x.x.x``
+    or username@hostname eg.``test@test.ibm.com``
+  in: body
+  required: false
+  type: string
+deploy_vdev:
+  description: |
+    Device number to which the image will be deployed, 1- to 4- hexadecimal digits.
+  in: body
+  required: false
+  type: string
+capture_type:
+  description: |
+    The type of capture\:
+
+    - ``rootonly``: indicate just root device will be captured, this is the default one
+    - ``alldisks``: indicate all the devices of the userid will be captured
+  in: body 
+  required: false
+  type: string
+compress_level:
+  description: |
+    The compression level of the image, default value is 6
+  in: body 
+  required: false
+  type: integer
 vswitch_name:
   description: |
     vswitch name.
