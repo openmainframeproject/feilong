@@ -28,6 +28,7 @@ from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import returncode
+from zvmsdk import utils
 
 
 CONF = config.CONF
@@ -38,16 +39,10 @@ class SDKServer(object):
     def __init__(self):
         syslog.openlog(logoption=syslog.LOG_PID)
         # Initailize SDK API
-        connect_type = CONF.sdkserver.connect_type.lower()
-        if connect_type not in ('socket', 'rest'):
-            self.log_error("Unrecognized sdkserver connection type: %s, "
-                           "acceptable value is 'socket', 'rest'" %
-                           connect_type)
-            sys.exit(1)
-        if connect_type == 'rest':
-            self.sdkapi = api.SDKAPI(skip_input_check=True)
-        else:
-            self.sdkapi = api.SDKAPI()
+        utils.validate_options(self.log_error)
+
+        self.sdkapi = api.SDKAPI()
+
         self.server_socket = None
         self.request_queue = Queue.Queue(maxsize=
                                          CONF.sdkserver.request_queue_size)
