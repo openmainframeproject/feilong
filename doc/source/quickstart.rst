@@ -147,7 +147,6 @@ Installation Requirements
 The supported Python version includes:
 
 - Python 2.7
-- Python 3.5
 
 
 Installation
