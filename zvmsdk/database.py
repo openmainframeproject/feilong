@@ -597,15 +597,15 @@ class ImageDbOperator(object):
                 result = conn.execute("SELECT * FROM image WHERE "
                                       "imagename=?", (imagename,))
                 image_list = result.fetchall()
+            if not image_list:
+                obj_desc = "Image with name: %s" % imagename
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                   modID=self._module_id)
         else:
             with get_image_conn() as conn:
                 result = conn.execute("SELECT * FROM image")
                 image_list = result.fetchall()
 
-        if not image_list:
-            obj_desc = "Image with name: %s" % imagename
-            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
-                                                   modID=self._module_id)
         # Map each image record to be a dict, with the key is the field name in
         # image DB
         image_keys_list = ['imagename', 'imageosdistro', 'md5sum',
