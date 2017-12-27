@@ -36,6 +36,8 @@ class SDKAPI(object):
     """Compute action interfaces."""
 
     def __init__(self, **kwargs):
+        zvmutils.validate_options()
+
         self._vmops = vmops.get_vmops()
         self._hostops = hostops.get_hostops()
         self._networkops = networkops.get_networkops()

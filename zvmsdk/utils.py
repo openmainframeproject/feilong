@@ -567,3 +567,27 @@ def check_guest_exist(userid):
         obj_desc = 'Userid %s' % userid.upper()
         raise exception.SDKObjectNotExistError(obj_desc,
                                                modID='guest')
+
+
+def validate_options(logfunc=None):
+
+    validate = True
+
+    connect_type = CONF.sdkserver.connect_type.lower()
+    if connect_type not in ('socket', 'rest'):
+        if logfunc:
+            logfunc("Unrecognized sdkserver connection type: %s, "
+                    "acceptable value is 'socket', 'rest'" %
+                    connect_type)
+        validate = False
+
+    try:
+        CONF.zvm.disk_pool.split(':')[1]
+    except Exception:
+        if logfunc:
+            logfunc("Validate CONF.zvm.disk_pool failed, "
+                    "it is %s and not in supported format" %
+                    CONF.zvm.disk_pool)
+        validate = False
+
+    return validate
