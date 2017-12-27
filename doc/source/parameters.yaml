@@ -59,16 +59,12 @@ version_sdk:
   in: header
   required: true
   type: string
-token_user:
+token_admin:
   description: |
-    user
-  in: body
-  required: true
-  type: string
-token_password:
-  description: |
-    password
-  in: body
+    Admin-token, which is stored in /etc/zvmsdk/token.dat. 
+    You need put this into header to request for a auth-token.
+    Then you can send a request with this auth-token.
+  in: header
   required: true
   type: string
 userid_create:

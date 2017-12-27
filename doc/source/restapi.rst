@@ -56,7 +56,7 @@ Get zvm cloud connect version
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_version.tpl
    :language: javascript
 
-token
+Token
 =====
 
 Create token
@@ -70,13 +70,7 @@ Get a valid token to perform further request by using user and password.
 
 .. restapi_parameters:: parameters.yaml
 
-  - user: token_user
-  - password: token_password
-
-* Request sample:
-
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_token_create.tpl
-   :language: javascript
+  - X-Admin-Token: token_admin
 
 * Response code:
 
