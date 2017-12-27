@@ -1392,7 +1392,7 @@ class SMUTClient(object):
             LOG.info("Image %s is import successfully" % image_name)
         except Exception:
             # Cleanup the image from image repository
-            self._pathutils.remove_file(target_folder)
+            self._pathutils.clean_temp_folder(target_folder)
             raise
 
     def image_export(self, image_name, dest_url, remote_host=None):
