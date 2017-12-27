@@ -602,8 +602,9 @@ vswitch_name_opt:
   type: string
 guests_nic_info:
   description: |
-    List describing nic information, including userid, nic number,
-    vswitch, nic id and comments.
+    List describing nic information, each nic has one dict
+    to indicate its info, including userid, interface,
+    switch, port id and comments.
   in: body
   required: true
   type: list
@@ -707,3 +708,27 @@ vlan_id:
   in: body
   required: true
   type: integer
+nic_comments:
+  description: |
+    the comments for the nic.
+  in: body
+  required: true
+  type: string
+nic_port:
+  description: |
+    nic identyifier.
+  in: body
+  required: true
+  type: string
+nic_userid:
+  description: |
+    the userid of the nic.
+  in: body
+  required: true
+  type: string
+nic_interface:
+  description: |
+    the device number of the nic.
+  in: body
+  required: true
+  type: string
