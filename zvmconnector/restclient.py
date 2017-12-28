@@ -188,7 +188,9 @@ def req_guest_get_console_output(start_index, *args, **kwargs):
 
 def req_guest_capture(start_index, *args, **kwargs):
     url = '/guests/%s/action'
-    body = {'action': 'capture'}
+    body = {'action': 'capture',
+            'image': args[start_index]}
+    fill_kwargs_in_body(body, **kwargs)
     return url, body
 
 
