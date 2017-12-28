@@ -1176,3 +1176,14 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._networkops.get_nic_info(userid=userid, nic_id=nic_id,
                                                  vswitch=vswitch)
+
+    def vswitch_query(self, vswitch_name):
+        """Check the virtual switch status
+
+        :param str vswitch_name: the name of the virtual switch
+        :returns: Dictionary describing virtual switch info
+        :rtype: dict
+        """
+        action = "get virtual switch information"
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._networkops.vswitch_query(vswitch_name)

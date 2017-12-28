@@ -1658,10 +1658,23 @@ class SMUTClient(object):
             "--operands",
             '-k switch_name=%s' % switch_name
             ))
-        action = "query vswitch details info"
-        with zvmutils.log_and_reraise_smut_request_failed(action):
+
+        try:
             results = self._request(rd)
             rd_list = results['response']
+        except exception.SDKSMUTRequestFailed as err:
+            if ((err.results['rc'] == 212) and (err.results['rs'] == 40)):
+                msg = 'Vswitch %s does not exist' % switch_name
+                LOG.error(msg)
+                obj_desc = "Vswitch %s" % switch_name
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID='network')
+            else:
+                action = "query vswitch details info"
+                msg = "Failed to %s. " % action
+                msg += "SMUT error: %s" % err.format_message()
+                LOG.error(msg)
+                raise exception.SDKSMUTRequestFailed(err.results, msg)
 
         vsw_info = {}
         with zvmutils.expect_invalid_resp_data():
@@ -1691,6 +1704,18 @@ class SMUTClient(object):
                     value = 'NONE'
                 return idx + offset, value
 
+            def _parse_dev_status(value):
+                if value in const.DEV_STATUS.keys():
+                    return const.DEV_STATUS[value]
+                else:
+                    return 'Unknown'
+
+            def _parse_dev_err(value):
+                if value in const.DEV_ERROR.keys():
+                    return const.DEV_ERROR[value]
+                else:
+                    return 'Unknown'
+
             # Start to analyse the real devices info
             vsw_info['real_devices'] = {}
             while((idx < idx_end) and
@@ -1710,8 +1735,11 @@ class SMUTClient(object):
                 vsw_info['real_devices'][rdev_addr] = {'vdev': vdev_addr,
                                                 'controller': controller,
                                                 'port_name': port_name,
-                                                'dev_status': dev_status,
-                                                'dev_err': dev_err
+                                                'dev_status':
+                                                        _parse_dev_status(
+                                                                dev_status),
+                                                'dev_err': _parse_dev_err(
+                                                                    dev_err)
                                                 }
                 # Under some case there would be an error line in the output
                 # "Error controller_name is NULL!!", skip this line
@@ -1770,6 +1798,15 @@ class SMUTClient(object):
                     'type': type
                     }
             # Todo: analyze and add the uplink NIC info and global member info
+
+        def _parse_switch_status(value):
+            if value in const.SWITCH_STATUS.keys():
+                return const.SWITCH_STATUS[value]
+            else:
+                return 'Unknown'
+        if 'switch_status' in vsw_info.keys():
+            vsw_info['switch_status'] = _parse_switch_status(
+                                                vsw_info['switch_status'])
 
         return vsw_info
 
