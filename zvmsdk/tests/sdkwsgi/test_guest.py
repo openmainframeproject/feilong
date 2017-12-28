@@ -39,7 +39,8 @@ class GuestHandlerTestCase(unittest.TestCase):
     def _guest_create(self):
         body = """{"guest": {"userid": "%s", "vcpus": 1,
                              "memory": 1024,
-                             "disk_list": [{"size": "3g"}]}}"""
+                             "disk_list": [{"size": "3g",
+                                            "is_boot_disk": True}]}}"""
         body = body % self.userid
         resp = self.client.api_request(url='/guests', method='POST',
                                        body=body)
