@@ -1321,7 +1321,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                    'staging',
                                    'rhel7.0',
                                    image_name])
-        image_file_path = '/'.join((image_temp_dir, '0100.img'))
+        image_file_path = '/'.join((image_temp_dir, '0100'))
         cmd1 = ['sudo', '/opt/zthin/bin/creatediskimage', userid, '0100',
                image_file_path]
         execute.side_effect = [(0, ''),
@@ -1331,7 +1331,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                     'rhel7.0',
                                     image_name))
         image_final_path = '/'.join((image_final_dir,
-                                     '0100.img'))
+                                     '0100'))
         cmd2 = ['mv', image_file_path, image_final_path]
         md5sum.return_value = '547396211b558490d31e0de8e15eef0c'
         disk_size_units.return_value = '1000:CYL'
@@ -1354,7 +1354,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         imagesize.assert_called_once_with(image_final_path)
         image_add_record.assert_called_once_with(image_name, 'rhel7.0',
             '547396211b558490d31e0de8e15eef0c', '1000:CYL', '1024000',
-            'netboot')
+            'rootonly')
 
     @mock.patch.object(smutclient.SMUTClient, '_guest_get_os_version')
     @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')

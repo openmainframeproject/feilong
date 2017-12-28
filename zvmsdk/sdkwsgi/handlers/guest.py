@@ -261,8 +261,8 @@ class VMAction(object):
     def capture(self, userid, body):
         image_name = body['image']
 
-        capture_type = body.get('capturetype', None)
-        compress_level = body.get('compresslevel', None)
+        capture_type = body.get('capturetype', 'rootonly')
+        compress_level = body.get('compresslevel', 6)
 
         info = self.client.send_request('guest_capture', userid,
                                         image_name,

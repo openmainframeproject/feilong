@@ -483,7 +483,7 @@ class SMUTClient(object):
         power_state = self.get_power_state(userid)
         # Power on the vm if it is inactive
         if power_state == 'off':
-            msg = ('The vm %(vm)s is powered off, please start up it '
+            msg = ('The vm %s is powered off, please start up it '
                    'before capture' % userid)
             raise exception.SDKGuestOperationError(rs=5, userid=userid,
                                                    msg=msg)
@@ -549,7 +549,7 @@ class SMUTClient(object):
         # Call creatediskimage to capture a vm to generate an image
         # TODO:(nafei) to support multiple disk capture
         vdev = capture_devices[0]
-        image_file_name = '.'.join((vdev, 'img'))
+        image_file_name = vdev
         image_file_path = '/'.join((image_temp_dir, image_file_name))
         cmd = ['sudo', '/opt/zthin/bin/creatediskimage', userid, vdev,
                image_file_path]
@@ -594,7 +594,7 @@ class SMUTClient(object):
         # Create the image record in image database
         self._ImageDbOperator.image_add_record(image_name, os_version,
             real_md5sum, disk_size_units, image_size,
-            const.IMAGE_TYPE['DEPLOY'])
+            capture_type)
         LOG.info("Image %s is import successfully" % image_name)
 
     def _guest_get_os_version(self, userid):
@@ -619,7 +619,6 @@ class SMUTClient(object):
                 version = eval(version)
             os_version = '%s%s' % (distro, version)
             return os_version
-
         elif '/etc/redhat-release' in release_file:
             # The output looks like:
             # "Red Hat Enterprise Linux Server release 6.7 (Santiago)"
@@ -639,6 +638,15 @@ class SMUTClient(object):
             release_version = '.'.join((release_info[1].split('=')[1].strip(),
                                      release_info[2].split('=')[1].strip()))
             os_version = ''.join((distro, release_version))
+            return os_version
+        elif '/etc/system-release' in release_file:
+            # For some rhel6.7 system, it only have system-release file and
+            # the output looks like:
+            # "Red Hat Enterprise Linux Server release 6.7 (Santiago)"
+            distro = 'rhel'
+            release_info = self.execute_cmd(userid, 'cat /etc/system-release')
+            distro_version = release_info[0].split()[6]
+            os_version = ''.join((distro, distro_version))
             return os_version
 
     def _get_capture_devices(self, userid, capture_type='rootonly'):
