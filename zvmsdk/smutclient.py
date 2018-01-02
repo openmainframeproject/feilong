@@ -321,7 +321,8 @@ class SMUTClient(object):
         if CONF.zvm.default_admin_userid:
             rd += (' --logonby "%s"' % CONF.zvm.default_admin_userid)
 
-        if disk_list and 'is_boot_disk' in disk_list[0]:
+        if (disk_list and 'is_boot_disk' in disk_list[0] and
+            disk_list[0]['is_boot_disk']):
             ipl_disk = CONF.zvm.user_root_vdev
             rd += (' --ipl %s' % ipl_disk)
 
