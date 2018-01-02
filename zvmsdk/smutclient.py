@@ -792,7 +792,7 @@ class SMUTClient(object):
                                                                     vm_id)
         switch_dict = {}
         for item in switch_info:
-            switch_dict[item[1]] = item[2]
+            switch_dict[item['interface']] = item['switch']
 
         LOG.debug("Switch info the %(vm_id)s is %(switch_dict)s",
                   {"vm_id": vm_id, "switch_dict": switch_dict})
@@ -962,8 +962,8 @@ class SMUTClient(object):
         ports_info = self._NetDbOperator.switch_select_table()
         vdev_info = []
         for p in ports_info:
-            if p[0] == userid.upper():
-                vdev_info.append(p[1])
+            if p['userid'] == userid.upper():
+                vdev_info.append(p['interface'])
 
         if len(vdev_info) == 0:
             # no nic defined for the guest
@@ -1300,7 +1300,7 @@ class SMUTClient(object):
                                                                        userid)
             switch_list = set()
             for item in switch_info:
-                switch_list.add(item[2])
+                switch_list.add(item['switch'])
 
             for item in switch_list:
                 if item is not None:

@@ -202,18 +202,30 @@ class NetworkDbOperator(object):
                           "in switch table" %
                           (userid.upper(), interface))
 
+    def _parse_switch_record(self, switch_list):
+        # Map each switch record to be a dict, with the key is the field name
+        # in switch DB
+        switch_keys_list = ['userid', 'interface', 'switch',
+                            'port', 'comments']
+
+        switch_result = []
+        for item in switch_list:
+            switch_item = dict(zip(switch_keys_list, item))
+            switch_result.append(switch_item)
+        return switch_result
+
     def switch_select_table(self):
         with get_network_conn() as conn:
             result = conn.execute("SELECT * FROM switch")
             nic_settings = result.fetchall()
-        return nic_settings
+        return self._parse_switch_record(nic_settings)
 
     def switch_select_record_for_userid(self, userid):
         with get_network_conn() as conn:
             result = conn.execute("SELECT * FROM switch "
                                   "WHERE userid=?", (userid.upper(),))
             switch_info = result.fetchall()
-        return switch_info
+        return self._parse_switch_record(switch_info)
 
     def switch_select_record(self, userid=None, nic_id=None, vswitch=None):
         if ((userid is None) and
@@ -238,7 +250,9 @@ class NetworkDbOperator(object):
 
         with get_network_conn() as conn:
             result = conn.execute(sql_cmd, sql_var)
-            return result.fetchall()
+            switch_list = result.fetchall()
+
+        return self._parse_switch_record(switch_list)
 
 
 class VolumeDbOperator(object):
