@@ -119,7 +119,7 @@
 # utilities to get the inspected guest's monitor data.
 #         
 # This param is optional
-#cache_interval=600
+#cache_interval=300
 
 
 [network]
