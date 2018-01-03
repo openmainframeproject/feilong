@@ -271,3 +271,30 @@ class NetworkOPS(object):
 
     def vswitch_query(self, vswitch_name):
         return self._smutclient.query_vswitch(vswitch_name)
+
+    def delete_network_configuration(self, userid, os_version, vdev,
+                                     active=False):
+        network_file_path = self._smutclient.get_guest_temp_path(userid,
+                                                                 'network')
+        linuxdist = self._dist_manager.get_linux_dist(os_version)()
+        file = linuxdist.get_network_configuration_files(vdev)
+        cmd = 'rm -f %s\n' % file
+        cmd += linuxdist.delete_vdev_info(vdev)
+
+        net_cmd_file = self._create_znetconfig(cmd, linuxdist, '',
+                                               active=active)
+        del_file = 'DEL%s.sh' % str(vdev).zfill(4)
+        file_name = os.path.join(network_file_path, del_file)
+        file_content = net_cmd_file[0][1]
+        self._add_file(file_name, file_content)
+
+        fileClass = "X"
+        try:
+            self._smutclient.punch_file(userid, file_name, fileClass)
+        finally:
+            LOG.debug('Removing the folder %s ', network_file_path)
+            shutil.rmtree(network_file_path)
+
+        if active:
+            active_cmds = linuxdist.create_active_net_interf_cmd()
+            self._smutclient.execute_cmd(userid, active_cmds)
