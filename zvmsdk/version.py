@@ -17,7 +17,7 @@ import sys
 
 
 __all__ = ['__version__']
-__version__ = '0.3.2'
+__version__ = '1.0.0'
 
 
 # Check supported Python versions
