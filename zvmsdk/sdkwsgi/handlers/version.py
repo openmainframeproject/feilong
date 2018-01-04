@@ -16,6 +16,7 @@ import json
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk import utils
+from zvmsdk import version as sdk_version
 
 
 APIVERSION = '1.0'
@@ -28,7 +29,8 @@ def version(req):
     max_version = APIVERSION
 
     version_data = {
-        'version': '%s' % APIVERSION,
+        'version': sdk_version.__version__,
+        'api_version': '%s' % APIVERSION,
         'max_version': max_version,
         'min_version': min_version,
     }
