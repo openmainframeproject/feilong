@@ -177,6 +177,13 @@ class GuestHandlerNegativeTest(unittest.TestCase):
         self.assertRaises(webob.exc.HTTPMethodNotAllowed,
                           h, self.env, dummy)
 
+    def test_guest_network_interface_invalid_method(self):
+        self.env['PATH_INFO'] = '/guests/1/interface'
+        self.env['REQUEST_METHOD'] = 'PUT'
+        h = handler.SdkHandler()
+        self.assertRaises(webob.exc.HTTPMethodNotAllowed,
+                          h, self.env, dummy)
+
 
 class GuestHandlerTest(unittest.TestCase):
 
@@ -421,6 +428,21 @@ class GuestHandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             detach.assert_called_once_with('1', {})
+
+    @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
+    @mock.patch.object(tokens, 'validate')
+    def test_guest_delete_network_interface(self, mock_validate, mock_json):
+        mock_json.return_value = {}
+        self.env['PATH_INFO'] = '/guests/1/interface'
+        self.env['REQUEST_METHOD'] = 'DELETE'
+        h = handler.SdkHandler()
+        func = ('zvmsdk.sdkwsgi.handlers.guest.VMHandler.'
+                'delete_network_interface')
+        with mock.patch(func) as delete_network_interface:
+            delete_network_interface.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+
+            delete_network_interface.assert_called_once_with('1', body={})
 
 
 class ImageHandlerNegativeTest(unittest.TestCase):

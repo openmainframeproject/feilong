@@ -468,6 +468,33 @@ Create one or more network interfaces on giving guest.
 
 * Response contents:
 
+Delete network interface
+------------------------
+
+**DELETE /guests/{userid}/interface**
+
+Delete one network interface on giving guest.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - interface: network_interface_info
+  - os_version: guest_os_version
+  - vdev: nic_interface
+  - active: active_flag
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_delete_network_interface.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
 
 Start guest
 -----------

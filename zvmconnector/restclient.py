@@ -251,6 +251,14 @@ def req_guest_create_network_interface(start_index, *args, **kwargs):
     return url, body
 
 
+def req_guest_delete_network_interface(start_index, *args, **kwargs):
+    url = '/guests/%s/interface'
+    body = {'interface': {'os_version': args[start_index],
+                          'vdev': args[start_index + 1]}}
+    fill_kwargs_in_body(body['interface'], **kwargs)
+    return url, body
+
+
 def req_guest_get_power_state(start_index, *args, **kwargs):
     url = '/guests/%s/power_state'
     body = None
@@ -433,6 +441,7 @@ PARAM_IN_PATH = {
     'guest_nic_couple_to_vswitch': 2,
     'guest_nic_uncouple_from_vswitch': 2,
     'guest_create_network_interface': 1,
+    'guest_delete_network_interface': 1,
     'guest_get_power_state': 1,
     'guest_create_disks': 1,
     'guest_delete_disks': 1,
@@ -483,6 +492,7 @@ API2METHOD = {
     'guest_nic_couple_to_vswitch': 'PUT',
     'guest_nic_uncouple_from_vswitch': 'PUT',
     'guest_create_network_interface': 'POST',
+    'guest_delete_network_interface': 'DELETE',
     'guest_get_power_state': 'GET',
     'guest_create_disks': 'POST',
     'guest_delete_disks': 'DELETE',
@@ -533,6 +543,7 @@ API2REQ = {
     'guest_nic_couple_to_vswitch': req_guest_nic_couple_to_vswitch,
     'guest_nic_uncouple_from_vswitch': req_guest_nic_uncouple_from_vswitch,
     'guest_create_network_interface': req_guest_create_network_interface,
+    'guest_delete_network_interface': req_guest_delete_network_interface,
     'guest_get_power_state': req_guest_get_power_state,
     'guest_create_disks': req_guest_create_disks,
     'guest_delete_disks': req_guest_delete_disks,
