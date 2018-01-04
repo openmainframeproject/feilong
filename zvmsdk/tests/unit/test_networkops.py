@@ -252,3 +252,46 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
     def test_vswitch_query(self, query_vswitch):
         self.networkops.vswitch_query("vswitch_name")
         query_vswitch.assert_called_with("vswitch_name")
+
+    @mock.patch.object(shutil, 'rmtree')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.execute_cmd')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.punch_file')
+    @mock.patch('zvmsdk.networkops.NetworkOPS._add_file')
+    @mock.patch('zvmsdk.networkops.NetworkOPS._create_znetconfig')
+    @mock.patch.object(dist.rhel7, 'get_network_configuration_files')
+    @mock.patch.object(dist.rhel7, 'delete_vdev_info')
+    @mock.patch.object(dist.rhel7, 'create_active_net_interf_cmd')
+    @mock.patch('zvmsdk.dist.LinuxDistManager.get_linux_dist')
+    @mock.patch('zvmsdk.smutclient.SMUTClient.get_guest_temp_path')
+    def test_delete_network_configuration(self, temp_path, linux_dist,
+                                          active_cmd, delete_vdev,
+                                          get_netconf_files, znetconfig,
+                                          add_file, punch, execute_cmd,
+                                          rmtree):
+        userid = 'fakeid'
+        os_version = 'rhel7.2'
+        vdev = '1000'
+
+        net_cmd_file = [('target', 'content')]
+        active_net_cmd = 'create_active_net_interf_cmd'
+        delete_vdev_info = 'delete_vdev_info'
+        get_network_configuration_files = 'network_conf_file'
+        network_file_path = '/tmp'
+
+        temp_path.return_value = network_file_path
+        linux_dist.return_value = dist.rhel7
+        active_cmd.return_value = active_net_cmd
+        delete_vdev.return_value = delete_vdev_info
+        get_netconf_files.return_value = get_network_configuration_files
+        znetconfig.return_value = net_cmd_file
+        add_file.return_value = None
+        rmtree.return_value = None
+
+        self.networkops.delete_network_configuration(userid, os_version, vdev,
+                              active=True)
+        temp_path.assert_called_with(userid, 'network')
+        linux_dist.assert_called_with(os_version)
+        get_netconf_files.assert_called_with(vdev)
+        delete_vdev.assert_called_with(vdev)
+        punch.assert_called_with(userid, '/tmp/DEL1000.sh', "X")
+        execute_cmd.assert_called_with(userid, active_net_cmd)

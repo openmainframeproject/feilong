@@ -496,6 +496,25 @@ class HandlersGuestTest(SDKWSGITest):
             guest_networks=guest_networks,
             active=False)
 
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_delete_network_interface(self, mock_interface, mock_userid):
+        os_version = 'rhel6'
+        vdev = '1000'
+        bstr = """{"interface": {"os_version": "rhel6",
+                                 "vdev": "1000"}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        guest.guest_delete_network_interface(self.req)
+        mock_interface.assert_called_once_with(
+            'guest_delete_network_interface',
+            FAKE_USERID,
+            os_version,
+            vdev,
+            active=False)
+
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guests_get_nic_info(self, mock_interface):
         self.req.GET = {}
