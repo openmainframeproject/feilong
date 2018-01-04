@@ -83,6 +83,18 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         return resp
 
+    def _guest_delete_network_interface(self, userid=None):
+        body = """{"interface": {"os_version": "rhel6",
+                                 "vdev": "1000",
+                                 "active": "False"}}"""
+        if userid is None:
+            userid = self.userid
+        url = '/guests/%s/interface' % userid
+        resp = self.client.api_request(url=url,
+                                       method='DELETE',
+                                       body=body)
+        return resp
+
     def _guest_nic_delete(self, vdev="1000", userid=None):
         body = '{"active": "False"}'
         if userid is None:
@@ -524,7 +536,7 @@ class GuestHandlerTestCase(unittest.TestCase):
         finally:
             self._guest_delete()
 
-    def test_guest_create_network_interface(self):
+    def test_guest_create_delete_network_interface(self):
         resp = self._guest_create()
         self.assertEqual(200, resp.status_code)
 
@@ -533,6 +545,8 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertEqual(200, resp.status_code)
 
             resp = self._guest_create_network_interface()
+            self.assertEqual(200, resp.status_code)
+            resp = self._guest_delete_network_interface()
             self.assertEqual(200, resp.status_code)
 
         except Exception as e:
