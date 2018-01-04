@@ -27,8 +27,8 @@ Version
 =======
 Lists version of this API.
 
-Get zvm cloud connect version
------------------------------
+Get zvm cloud connector version
+-------------------------------
 
 **GET /**
 
@@ -47,6 +47,7 @@ Get zvm cloud connect version
 .. restapi_parameters:: parameters.yaml
 
   - output : ret_output
+  - api_version: api_version_sdk
   - min_version: min_version_sdk
   - max_version: max_version_sdk
   - version: version_sdk

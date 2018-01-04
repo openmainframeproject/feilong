@@ -53,9 +53,15 @@ max_version_sdk:
   in: header
   required: true
   type: string
+api_version_sdk:
+  description: |
+    API version of zvm cloud connector.
+  in: header
+  required: true
+  type: string
 version_sdk:
   description: |
-    version of zvm cloud connector.
+    Version of zvm cloud connector.
   in: header
   required: true
   type: string
