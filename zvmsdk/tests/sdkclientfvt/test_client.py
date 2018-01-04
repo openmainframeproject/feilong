@@ -237,6 +237,19 @@ class ZVMConnectorTestCase(unittest.TestCase):
             res = self.sockclient.send_request(api_name, vswitch_name)
         return res
 
+    def _vswitch_query(self, conn_type, vsw_name=None):
+        api_name = 'vswitch_query'
+        vswitch_name = vsw_name
+        if conn_type == CONN_REST:
+            if vsw_name is None:
+                vswitch_name = 'RESTVSW1'
+            res = self.sockclient.send_request(api_name, vswitch_name)
+        else:
+            if vsw_name is None:
+                vswitch_name = 'SOCKVSW1'
+            res = self.sockclient.send_request(api_name, vswitch_name)
+        return res
+
     def _vswitch_couple(self, conn_type, vsw=None, vdev="2000"):
         api_name = 'guest_nic_couple_to_vswitch'
         if conn_type == CONN_REST:
@@ -324,6 +337,10 @@ class ZVMConnectorTestCase(unittest.TestCase):
 
             resp_rest = self._vswitch_create(CONN_REST)
             resp_sock = self._vswitch_create(CONN_SOCKET)
+            self.assertEqual(resp_rest, resp_sock)
+
+            resp_rest = self._vswitch_query(CONN_REST)
+            resp_sock = self._vswitch_query(CONN_SOCKET)
             self.assertEqual(resp_rest, resp_sock)
 
             resp_rest = self._vswitch_couple(CONN_REST)
