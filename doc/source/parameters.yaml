@@ -671,7 +671,7 @@ vswitch_name_body_opt:
   type: string
 network_interface_info:
   description: |
-    The information which is used to set network interface.
+    The information which is used to describe network interface.
   in: body
   required: true
   type: dict

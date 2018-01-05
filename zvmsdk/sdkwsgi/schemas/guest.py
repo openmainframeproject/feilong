@@ -76,6 +76,26 @@ create_network_interface = {
 }
 
 
+delete_network_interface = {
+    'type': 'object',
+    'properties': {
+        'interface': {
+            'type': 'object',
+            'properties': {
+                'os_version': {'type': 'string'},
+                'vdev': parameter_types.vdev,
+                'active': parameter_types.boolean,
+            },
+            'required': ['os_version', 'vdev'],
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
+    },
+    'required': ['interface'],
+    'additionalProperties': False,
+}
+
+
 config_minidisks = {
     'type': 'object',
     'properties': {
