@@ -371,6 +371,11 @@ void printRCheaderHelp() {
     printf("                                       and brief explanation.\n");
     printf("    24 0 0 (details) Input error    -> input syntax error, keyword missing or incorrect.\n");
     printf("    25 rc errno (details) message   -> smcli processing error code, errno(or 0 if none) and error message.\n\n");
+
+    // Add socket timeout option help messages
+    printf("  Adding the --timeout keyword to any smcli call will change the SMAPI socket timeout value:\n");
+    printf("    --timeout    Specify the SMAPI socket timeout value in seconds. Example:\n");
+    printf("                   --timeout 600\n\n");
 }
 
 

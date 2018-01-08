@@ -226,6 +226,7 @@ typedef struct _smMessageCollector {
 #define CACHE_SMAPI_LEVEL_FILE "/var/opt/zthin/smapi.level"
 
 #define RETURN_CODE_HEADER_KEYWORD "--addRCheader"
+#define SOCKET_TIMEOUT_KEYWORD "--timeout"
 
 #define FREE_MEMORY(_mempointer_) \
   if (_mempointer_) \
@@ -292,6 +293,7 @@ typedef struct _vmApiInternalContext {
     int resolveHostName;
     int errnoSaved;
     int addRcHeader;
+    unsigned long socketTimeout;
 } vmApiInternalContext;
 
 #define DOES_CALLER_WANT_RC_HEADER_ALLOK(_globalcontextptr_) \
