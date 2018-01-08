@@ -271,15 +271,23 @@ int smSocketWrite(struct _vmApiInternalContext* vmapiContextP, int sockId, char 
     struct timeval timeoutValue;
     int onValue = 1;
     int saveErrno, saveCloseErrno;
+    unsigned long ulTimeoutSeconds;
 
     TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_SOCKET);
     TRACE_START(vmapiContextP, TRACEAREA_SOCKET, TRACELEVEL_BUFFER_OUT);
         dumpArea(vmapiContextP, data, dataLen);
     TRACE_END;
 
+    if (vmapiContextP->socketTimeout == -1) {
+        // no valid timeout value passed
+        ulTimeoutSeconds = Socket_Timeout;
+    } else {
+        ulTimeoutSeconds = vmapiContextP->socketTimeout;
+    }
+
     // Set the send socket timeout value
     timeoutValue.tv_usec = 0;
-    timeoutValue.tv_sec = Socket_Timeout;
+    timeoutValue.tv_sec = ulTimeoutSeconds;
     retValue = setsockopt(sockId, SOL_SOCKET, SO_SNDTIMEO, (struct timeval *) &timeoutValue, sizeof(struct timeval));
     if (retValue < 0) {
         vmapiContextP->errnoSaved = errno;
@@ -351,6 +359,7 @@ int smSocketRead(struct _vmApiInternalContext* vmapiContextP, int sockId, char *
     TRACE_ENTRY_FLOW(vmapiContextP, TRACEAREA_SOCKET);
     buffPtr = (void *) buff;
     buffLength = len;
+
     ulTimeoutSeconds = Socket_Timeout;
 
     /* Oobtain read timeout environment variable */
@@ -363,6 +372,13 @@ int smSocketRead(struct _vmApiInternalContext* vmapiContextP, int sockId, char *
                 sprintf(line, "Socket read timeout set from enviromentVariable. %lu seconds.\n", ulTimeoutSeconds);
             TRACE_END_DEBUG(vmapiContextP, line);
         }
+    }
+
+    // overwrite timeout value if specified --timeout option
+    if (vmapiContextP->socketTimeout == -1) {
+        // no valid timeout value passed, nothing to do
+    } else {
+        ulTimeoutSeconds = vmapiContextP->socketTimeout;
     }
 
     // Set the read socket timeout value
