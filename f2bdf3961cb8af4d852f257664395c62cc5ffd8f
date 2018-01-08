@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3aadb352_80d2d60e",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 26
+      },
+      "lineNbr": 590,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-01-08T04:35:09Z",
+      "side": 1,
+      "message": "why we need check those?",
+      "range": {
+        "startLine": 589,
+        "startChar": 12,
+        "endLine": 590,
+        "endChar": 54
+      },
+      "revId": "f2bdf3961cb8af4d852f257664395c62cc5ffd8f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
