@@ -1354,6 +1354,16 @@ class SMUTClient(object):
             target_folder = self._pathutils.create_import_image_repository(
                 image_meta['os_version'], const.IMAGE_TYPE['DEPLOY'],
                 image_name)
+        except Exception as err:
+            msg = ('Failed to create repository to store image %(img)s with '
+                   'error: %(err)s, please make sure there are enough space '
+                   'on zvmsdk server and proper permission to create the '
+                   'repository' % {'img': image_name,
+                                   'err': six.text_type(err)})
+            LOG.error(msg)
+            raise exception.SDKImageOperationError(rs=14, msg=msg)
+
+        try:
             import_image_fn = urlparse.urlparse(url).path.split('/')[-1]
             import_image_fpath = '/'.join([target_folder, import_image_fn])
             self._scheme2backend(urlparse.urlparse(url).scheme).image_import(

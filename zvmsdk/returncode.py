@@ -185,6 +185,7 @@ errors = {
                    " %(err)s",
                13: "Image import error: image name %(img)s already exist in "
                    "image database",
+               14: "Image import error: %(msg)s",
                20: "The image record of %(img)s does not exist",
                21: "Image Export error: Failed to copy image file to remote "
                    "host with reason: %(msg)s",
