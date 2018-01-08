@@ -19,7 +19,6 @@ import six
 import threading
 
 # TODO:set up configuration file only for RESTClient and configure this value
-TOKEN_PATH = '/etc/zvmsdk/token.dat'
 TOKEN_LOCK = threading.Lock()
 
 REST_REQUEST_ERROR = [{'overallRC': 101, 'modID': 110, 'rc': 101},
@@ -571,7 +570,8 @@ API2REQ = {
 class RESTClient(object):
 
     def __init__(self, ip='127.0.0.1', port=8888,
-                 ssl_enabled=False, verify=False):
+                 ssl_enabled=False, verify=False,
+                 token_path='/etc/zvmsdk/token.dat'):
         # SSL enable or not
         if ssl_enabled:
             self.base_url = "https://" + ip + ":" + str(port)
@@ -583,6 +583,7 @@ class RESTClient(object):
             if not os.path.exists(verify):
                 raise CACertNotFound('CA certificate file not found.')
         self.verify = verify
+        self.token_path = token_path
 
     def _get_admin_token(self, path):
         if os.path.exists(path):
@@ -600,7 +601,7 @@ class RESTClient(object):
 
     def _get_token(self):
         _headers = {'Content-Type': 'application/json'}
-        admin_token = self._get_admin_token(TOKEN_PATH)
+        admin_token = self._get_admin_token(self.token_path)
         _headers['X-Admin-Token'] = admin_token
 
         url = self.base_url + '/token'
