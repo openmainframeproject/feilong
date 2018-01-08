@@ -570,6 +570,46 @@ static const char * APIS_640[APIS_640_COUNT] = {
         }
     }
 
+    /*  Set a global flag if the caller specify --timeout */
+    vmapiContext.socketTimeout = -1; // -1 means no timeout value specified
+    for (j = 0; j < argC; j++) {
+        if (!strcmp(argV[j], SOCKET_TIMEOUT_KEYWORD)) {
+            // check --timeout has a value followed
+            if (j == (argC-1)) {
+                // --timeout is the last argument, timeout value missed
+                // nothing to do
+            } else {
+                vmapiContext.socketTimeout = atol(argv[j+1])
+            }
+
+            // Now we need to adjust the arguments to not have timeout
+            saveCount = argC;
+            if (j == (argC-1)) {
+                // --timeout is the last input argument, timeout value missed,
+                argC--;
+            } else {
+                argC = argC -2;
+                if (saveCount == (j+2)) {
+                    // nothing to do, these are last two arguments.
+                } else {
+                    // move following arguments ahead
+                    for (k = j+2; k < saveCount; k++) {
+                        argV[k-2] = argV[k];
+                    }
+                }
+            }
+
+            if (argC < 2) {
+                displayHelpInfo(smapiLevel);
+                rc = 0;
+                TRACE_EXIT_FLOW(&vmapiContext, TRACEAREA_ZTHIN_GENERAL, rc);
+                /* Clean up for memory context */
+                FREE_CONTEXT_MEMORY(&vmapiContext);
+                return rc;
+            }
+        }
+    }
+
     if (!strcmp(argV[1], "Asynchronous_Notification_Disable_DM")) {
         rc = asynchronousNotificationDisableDM(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "Asynchronous_Notification_Enable_DM")) {
