@@ -22,6 +22,30 @@
       "revId": "f2bdf3961cb8af4d852f257664395c62cc5ffd8f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4bf40bdd_05b6cd04",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 26
+      },
+      "lineNbr": 590,
+      "author": {
+        "id": 1012771
+      },
+      "writtenOn": "2018-01-09T11:58:52Z",
+      "side": 1,
+      "message": "To make sure the ops is \u0027start\u0027 but not \u0027power_on\u0027.",
+      "parentUuid": "3aadb352_80d2d60e",
+      "range": {
+        "startLine": 589,
+        "startChar": 12,
+        "endLine": 590,
+        "endChar": 54
+      },
+      "revId": "f2bdf3961cb8af4d852f257664395c62cc5ffd8f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
