@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#PBR Generated from u'wsgi_scripts'
+# PBR Generated from u'wsgi_scripts'
 
 import threading
 
