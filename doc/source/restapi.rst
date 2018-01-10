@@ -182,6 +182,37 @@ Add disks for a guest
 
   No Response
 
+Guest configure disks
+---------------------
+
+**PUT /guests/{userid}/disks**
+
+Configure additional disks for a guest
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - disk_info: disk_info
+  - disk_list: additional_disk_guest
+  - vdev: disk_vdev
+  - format: format_disk
+  - mntdir: disk_mountpoint
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_config_disks.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No Response
+
 Guest delete disks
 ------------------
 
