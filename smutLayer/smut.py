@@ -13,12 +13,13 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
 import logging
-import logging.handlers
+
 from time import time
 
 from smutLayer.ReqHandle import ReqHandle
+from zvmsdk import log
+
 
 version = '1.0.0'         # Version of this function.
 
@@ -42,14 +43,8 @@ class SMUT(object):
         self.reqIdPrefix = int(time() * 100)
         self.reqCnt = 0           # Number of requests so far
 
-        # Set up SysLog handling
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.DEBUG)
-        self.handler = logging.handlers.SysLogHandler(address = '/dev/log')
-        self.formatter = (
-            logging.Formatter('%(module)s.%(funcName)s: %(message)s'))
-        self.handler.setFormatter(self.formatter)
-        self.logger.addHandler(self.handler)
+        self.logger = log.Logger(logger='SMUT', log_file_name='smut.log',
+                                 level=logging.DEBUG).getlog()
 
         # Initialize the command name associated with this SMUT instance.
         if 'cmdName' in kwArgs.keys():

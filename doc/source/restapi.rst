@@ -27,8 +27,8 @@ Version
 =======
 Lists version of this API.
 
-Get zvm cloud connect version
------------------------------
+Get zvm cloud connector version
+-------------------------------
 
 **GET /**
 
@@ -47,6 +47,7 @@ Get zvm cloud connect version
 .. restapi_parameters:: parameters.yaml
 
   - output : ret_output
+  - api_version: api_version_sdk
   - min_version: min_version_sdk
   - max_version: max_version_sdk
   - version: version_sdk
@@ -56,7 +57,7 @@ Get zvm cloud connect version
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_version.tpl
    :language: javascript
 
-token
+Token
 =====
 
 Create token
@@ -70,13 +71,7 @@ Get a valid token to perform further request by using user and password.
 
 .. restapi_parameters:: parameters.yaml
 
-  - user: token_user
-  - password: token_password
-
-* Request sample:
-
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_token_create.tpl
-   :language: javascript
+  - X-Admin-Token: token_admin
 
 * Response code:
 
@@ -295,6 +290,11 @@ Get guests nic information, including userid, nic number, vswitch, nic id and co
 .. restapi_parameters:: parameters.yaml
 
   - output: guests_nic_info
+  - userid: nic_userid
+  - interface: nic_interface
+  - switch: vswitch_name_body
+  - port: nic_port
+  - comments: nic_comments
 
 * Response sample:
 
@@ -469,6 +469,33 @@ Create one or more network interfaces on giving guest.
 
 * Response contents:
 
+Delete network interface
+------------------------
+
+**DELETE /guests/{userid}/interface**
+
+Delete one network interface on giving guest.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - interface: network_interface_info
+  - os_version: guest_os_version
+  - vdev: nic_interface
+  - active: active_flag
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_delete_network_interface.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
 
 Start guest
 -----------
@@ -687,6 +714,10 @@ After guest created, deploy image onto the guest.
 
   - userid: guest_userid
   - action: action_deploy_guest
+  - image: image_name
+  - transportfiles: transportfiles
+  - remotehost: remotehost_transportfiles
+  - vdev: deploy_vdev
 
 * Request sample:
 
@@ -710,6 +741,9 @@ Capture guest
 
   - userid: guest_userid
   - action: action_capture_guest
+  - image: image_name
+  - capturetype: capture_type
+  - compresslevel: compress_level
 
 * Request sample:
 
@@ -888,6 +922,13 @@ Get the list of image info in image repository.
 .. restapi_parameters:: parameters.yaml
 
   - output: image_info
+  - imagename: image_name
+  - imageosdistro: guest_os_version
+  - md5sum: image_md5sum
+  - disk_size_units: root_disk_size_image
+  - image_size_in_bytes: physical_disk_size_image
+  - type: image_type
+  - comments: image_comments
 
 * Response sample:
 
@@ -1075,6 +1116,34 @@ Get the list of vswitch name on the host
 * Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_get.tpl
+   :language: javascript
+
+GET vswitch details
+-------------------
+
+**GET /vswitches/{name}**
+
+Get the details of a vswitch
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - name: vswitch_name
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: vswitch_details
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_query.tpl
    :language: javascript
 
 Grant user to vswitch

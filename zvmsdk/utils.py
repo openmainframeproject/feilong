@@ -184,10 +184,10 @@ class PathUtils(object):
             os.makedirs(snapshot_time_path)
         return snapshot_time_path
 
-    def clean_temp_folder(self, tmp_file_fn):
-        if os.path.isdir(tmp_file_fn):
-            LOG.debug('Removing existing folder %s ', tmp_file_fn)
-            shutil.rmtree(tmp_file_fn)
+    def clean_temp_folder(self, tmp_folder):
+        if os.path.isdir(tmp_folder):
+            LOG.debug('Removing existing folder %s ', tmp_folder)
+            shutil.rmtree(tmp_folder)
 
     def remove_file(self, fpath):
         if os.path.exists(fpath):
@@ -219,17 +219,19 @@ class PathUtils(object):
     def get_console_log_path(self, userid):
         return os.path.join(self.get_guest_path(userid), "console.log")
 
-    def create_import_image_repository(self, image_osdistro, type):
+    def create_import_image_repository(self, image_osdistro, type,
+                                       image_name):
         zvmsdk_image_import_repo = os.path.join(
                                     CONF.image.sdk_image_repository,
                                     type,
-                                    image_osdistro)
+                                    image_osdistro,
+                                    image_name)
 
         if not os.path.exists(zvmsdk_image_import_repo):
             LOG.debug('Creating image repository %s for image import',
                       zvmsdk_image_import_repo)
             os.makedirs(zvmsdk_image_import_repo)
-        return
+        return zvmsdk_image_import_repo
 
 
 def to_utf8(text):

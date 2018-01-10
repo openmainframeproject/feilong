@@ -404,6 +404,13 @@ class HandlersGuestTest(SDKWSGITest):
         self.assertRaises(exception.ValidationError, guest.guest_create,
                           self.req)
 
+    @mock.patch.object(guest.VMHandler, 'list')
+    def test_guest_list(self, mock_list):
+        mock_list.return_value = ''
+
+        guest.guest_list(self.req)
+        mock_list.assert_called_once_with()
+
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get_info')
     def test_guest_get_info(self, mock_get, mock_userid):
@@ -430,6 +437,13 @@ class HandlersGuestTest(SDKWSGITest):
 
         guest.guest_delete(self.req)
         mock_delete.assert_called_once_with(FAKE_USERID)
+
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_list(self, mock_interface):
+        mock_interface.return_value = ''
+
+        guest.guest_list(self.req)
+        mock_interface.assert_called_once_with('guest_list')
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
@@ -494,6 +508,25 @@ class HandlersGuestTest(SDKWSGITest):
             FAKE_USERID,
             os_version=os_version,
             guest_networks=guest_networks,
+            active=False)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_delete_network_interface(self, mock_interface, mock_userid):
+        os_version = 'rhel6'
+        vdev = '1000'
+        bstr = """{"interface": {"os_version": "rhel6",
+                                 "vdev": "1000"}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        guest.guest_delete_network_interface(self.req)
+        mock_interface.assert_called_once_with(
+            'guest_delete_network_interface',
+            FAKE_USERID,
+            os_version,
+            vdev,
             active=False)
 
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')

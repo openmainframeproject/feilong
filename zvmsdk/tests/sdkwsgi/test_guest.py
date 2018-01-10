@@ -103,6 +103,18 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         return resp
 
+    def _guest_delete_network_interface(self, userid=None):
+        body = """{"interface": {"os_version": "rhel6",
+                                 "vdev": "1000",
+                                 "active": "False"}}"""
+        if userid is None:
+            userid = self.userid
+        url = '/guests/%s/interface' % userid
+        resp = self.client.api_request(url=url,
+                                       method='DELETE',
+                                       body=body)
+        return resp
+
     def _guest_nic_delete(self, vdev="1000", userid=None):
         body = '{"active": "False"}'
         if userid is None:
@@ -709,7 +721,7 @@ class GuestHandlerTestCase(unittest.TestCase):
         finally:
             self._guest_delete()
 
-    def test_guest_create_network_interface(self):
+    def test_guest_create_delete_network_interface(self):
         resp = self._guest_create()
         self.assertEqual(200, resp.status_code)
 
@@ -718,6 +730,8 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertEqual(200, resp.status_code)
 
             resp = self._guest_create_network_interface()
+            self.assertEqual(200, resp.status_code)
+            resp = self._guest_delete_network_interface()
             self.assertEqual(200, resp.status_code)
 
         except Exception as e:
@@ -729,33 +743,33 @@ class GuestHandlerTestCase(unittest.TestCase):
     def test_guests_get_nic_info(self):
         resp = self._guest_get_nic_DB_info()
         self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_guest_get_power_state',
+        self.apibase.verify_result('test_guests_get_nic_info',
                                    resp.content)
 
         resp = self._guest_get_nic_DB_info(userid='test')
         self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_guest_get_power_state',
+        self.apibase.verify_result('test_guests_get_nic_info',
                                    resp.content)
 
         resp = self._guest_get_nic_DB_info(nic_id='testnic')
         self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_guest_get_power_state',
+        self.apibase.verify_result('test_guests_get_nic_info',
                                    resp.content)
 
         resp = self._guest_get_nic_DB_info(vswitch='vswitch')
         self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_guest_get_power_state',
+        self.apibase.verify_result('test_guests_get_nic_info',
                                    resp.content)
 
         resp = self._guest_get_nic_DB_info(userid='test', nic_id='testnic')
         self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_guest_get_power_state',
+        self.apibase.verify_result('test_guests_get_nic_info',
                                    resp.content)
 
         resp = self._guest_get_nic_DB_info(userid='test', nic_id='testnic',
                                            vswitch='vswitch')
         self.assertEqual(200, resp.status_code)
-        self.apibase.verify_result('test_guest_get_power_state',
+        self.apibase.verify_result('test_guests_get_nic_info',
                                    resp.content)
 
     def _vswitch_create(self):

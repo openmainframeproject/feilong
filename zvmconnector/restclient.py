@@ -19,12 +19,13 @@ import six
 import threading
 
 # TODO:set up configuration file only for RESTClient and configure this value
-TOKEN_PATH = '/etc/zvmsdk/token.dat'
 TOKEN_LOCK = threading.Lock()
 
 REST_REQUEST_ERROR = [{'overallRC': 101, 'modID': 110, 'rc': 101},
-                      {1: "Request to zVM Cloud Connector failed:: %(error)s",
-                       2: "Get Token failed:: %(error)s"},
+                      {1: "Request to zVM Cloud Connector failed: %(error)s",
+                       2: "Get Token failed: %(error)s",
+                       3: "Request %(url)s failed: %(error)s",
+                       4: "Get Token failed: %(error)s"},
                        "zVM Cloud Connector request failed",
                        ]
 INVALID_API_ERROR = [{'overallRC': 400, 'modID': 110, 'rc': 400},
@@ -33,7 +34,25 @@ INVALID_API_ERROR = [{'overallRC': 400, 'modID': 110, 'rc': 400},
                      ]
 
 
+class UnexpedtedResponse(Exception):
+    def __init__(self, resp):
+        self.resp = resp
+
+
 class TokenNotFound(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return repr(self.msg)
+
+
+class TokenFileOpenError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+
+class CACertNotFound(Exception):
     def __init__(self, msg):
         self.msg = msg
 
@@ -46,7 +65,7 @@ def fill_kwargs_in_body(body, **kwargs):
         body[key] = kwargs.get(key)
 
 
-def req_home(start_index, *args, **kwargs):
+def req_version(start_index, *args, **kwargs):
     url = '/'
     body = None
     return url, body
@@ -168,7 +187,9 @@ def req_guest_get_console_output(start_index, *args, **kwargs):
 
 def req_guest_capture(start_index, *args, **kwargs):
     url = '/guests/%s/action'
-    body = {'action': 'capture'}
+    body = {'action': 'capture',
+            'image': args[start_index]}
+    fill_kwargs_in_body(body, **kwargs)
     return url, body
 
 
@@ -225,6 +246,14 @@ def req_guest_create_network_interface(start_index, *args, **kwargs):
     url = '/guests/%s/interface'
     body = {'interface': {'os_version': args[start_index],
                           'guest_networks': args[start_index + 1]}}
+    fill_kwargs_in_body(body['interface'], **kwargs)
+    return url, body
+
+
+def req_guest_delete_network_interface(start_index, *args, **kwargs):
+    url = '/guests/%s/interface'
+    body = {'interface': {'os_version': args[start_index],
+                          'vdev': args[start_index + 1]}}
     fill_kwargs_in_body(body['interface'], **kwargs)
     return url, body
 
@@ -356,6 +385,12 @@ def req_vswitch_delete(start_index, *args, **kwargs):
     return url, body
 
 
+def req_vswitch_query(start_index, *args, **kwargs):
+    url = '/vswitches/%s'
+    body = None
+    return url, body
+
+
 def req_vswitch_grant_user(start_index, *args, **kwargs):
     url = '/vswitches/%s'
     body = {'vswitch': {'grant_userid': args[start_index]}}
@@ -380,7 +415,7 @@ def req_vswitch_set_vlan_id_for_user(start_index, *args, **kwargs):
 
 # parameters amount in path
 PARAM_IN_PATH = {
-    'home': 0,
+    'version': 0,
     'guest_create': 0,
     'guest_list': 0,
     'guest_inspect_stats': 1,
@@ -405,6 +440,7 @@ PARAM_IN_PATH = {
     'guest_nic_couple_to_vswitch': 2,
     'guest_nic_uncouple_from_vswitch': 2,
     'guest_create_network_interface': 1,
+    'guest_delete_network_interface': 1,
     'guest_get_power_state': 1,
     'guest_create_disks': 1,
     'guest_delete_disks': 1,
@@ -423,13 +459,14 @@ PARAM_IN_PATH = {
     'vswitch_create': 0,
     'vswitch_delete': 1,
     'vswitch_grant_user': 1,
+    'vswitch_query': 1,
     'vswitch_revoke_user': 1,
     'vswitch_set_vlan_id_for_user': 1,
 }
 
 
 API2METHOD = {
-    'home': 'GET',
+    'version': 'GET',
     'guest_create': 'POST',
     'guest_list': 'GET',
     'guest_inspect_stats': 'GET',
@@ -454,6 +491,7 @@ API2METHOD = {
     'guest_nic_couple_to_vswitch': 'PUT',
     'guest_nic_uncouple_from_vswitch': 'PUT',
     'guest_create_network_interface': 'POST',
+    'guest_delete_network_interface': 'DELETE',
     'guest_get_power_state': 'GET',
     'guest_create_disks': 'POST',
     'guest_delete_disks': 'DELETE',
@@ -472,13 +510,14 @@ API2METHOD = {
     'vswitch_create': 'POST',
     'vswitch_delete': 'DELETE',
     'vswitch_grant_user': 'PUT',
+    'vswitch_query': 'GET',
     'vswitch_revoke_user': 'PUT',
     'vswitch_set_vlan_id_for_user': 'PUT',
 }
 
 
 API2REQ = {
-    'home': req_home,
+    'version': req_version,
     'guest_create': req_guest_create,
     'guest_list': req_guest_list,
     'guest_inspect_stats': req_guest_inspect_stats,
@@ -503,6 +542,7 @@ API2REQ = {
     'guest_nic_couple_to_vswitch': req_guest_nic_couple_to_vswitch,
     'guest_nic_uncouple_from_vswitch': req_guest_nic_uncouple_from_vswitch,
     'guest_create_network_interface': req_guest_create_network_interface,
+    'guest_delete_network_interface': req_guest_delete_network_interface,
     'guest_get_power_state': req_guest_get_power_state,
     'guest_create_disks': req_guest_create_disks,
     'guest_delete_disks': req_guest_delete_disks,
@@ -521,6 +561,7 @@ API2REQ = {
     'vswitch_create': req_vswitch_create,
     'vswitch_delete': req_vswitch_delete,
     'vswitch_grant_user': req_vswitch_grant_user,
+    'vswitch_query': req_vswitch_query,
     'vswitch_revoke_user': req_vswitch_revoke_user,
     'vswitch_set_vlan_id_for_user': req_vswitch_set_vlan_id_for_user,
 }
@@ -528,14 +569,31 @@ API2REQ = {
 
 class RESTClient(object):
 
-    def __init__(self, ip='127.0.0.1', port=8888, timeout=30):
-        self.base_url = "http://" + ip + ":" + str(port)
+    def __init__(self, ip='127.0.0.1', port=8888,
+                 ssl_enabled=False, verify=False,
+                 token_path='/etc/zvmsdk/token.dat'):
+        # SSL enable or not
+        if ssl_enabled:
+            self.base_url = "https://" + ip + ":" + str(port)
+        else:
+            self.base_url = "http://" + ip + ":" + str(port)
+        # if value of verify is str, means its value is
+        # the path of CA certificate
+        if type(verify) == str:
+            if not os.path.exists(verify):
+                raise CACertNotFound('CA certificate file not found.')
+        self.verify = verify
+        self.token_path = token_path
 
     def _get_admin_token(self, path):
         if os.path.exists(path):
-            if TOKEN_LOCK.acquire():
+            TOKEN_LOCK.acquire()
+            try:
                 with open(path, 'r') as fd:
                     token = fd.read().strip()
+            except Exception:
+                raise TokenFileOpenError('token file open failed.')
+            finally:
                 TOKEN_LOCK.release()
         else:
             raise TokenNotFound('token file not found.')
@@ -543,12 +601,13 @@ class RESTClient(object):
 
     def _get_token(self):
         _headers = {'Content-Type': 'application/json'}
-        admin_token = self._get_admin_token(TOKEN_PATH)
+        admin_token = self._get_admin_token(self.token_path)
         _headers['X-Admin-Token'] = admin_token
 
         url = self.base_url + '/token'
         method = 'POST'
-        response = requests.request(method, url, headers=_headers)
+        response = requests.request(method, url, headers=_headers,
+                                    verify=self.verify)
         token = response.headers['X-Auth-Token']
 
         return token
@@ -564,16 +623,26 @@ class RESTClient(object):
         return full_url, body
 
     def _process_rest_response(self, response):
-        res_dict = json.loads(response.content)
-        # return res_dict.get('output', None)
-        return res_dict
+        if response.headers['Content-Type'] == 'application/json':
+            res_dict = json.loads(response.content)
+            # return res_dict.get('output', None)
+            return res_dict
+        else:
+            # Currently, all the response content from zvmsdk wsgi are
+            # 'application/json' type. If it is not, the response may be
+            # sent by HTTP server due to internal server error or time out,
+            # it is an unexpected response to the rest client.
+            # If new content-type is added to the response by sdkwsgi, the
+            # parsing function here is also required to change.
+            raise UnexpedtedResponse(response)
 
     def request(self, url, method, body, headers=None):
         _headers = {'Content-Type': 'application/json'}
         _headers.update(headers or {})
 
         _headers['X-Auth-Token'] = self._get_token()
-        response = requests.request(method, url, data=body, headers=_headers)
+        response = requests.request(method, url, data=body, headers=_headers,
+                                    verify=self.verify)
         return response
 
     def api_request(self, url, method='GET', body=None):
@@ -601,6 +670,19 @@ class RESTClient(object):
                 response = self.api_request(url, method, body)
             # change response to SDK format
             results = self._process_rest_response(response)
+
+        except TokenFileOpenError as err:
+            errmsg = REST_REQUEST_ERROR[1][4] % {'error': err.msg}
+            results = REST_REQUEST_ERROR[0]
+            results.update({'rs': 4, 'errmsg': errmsg, 'output': ''})
+        except UnexpedtedResponse as err:
+            results = {}
+            errmsg = REST_REQUEST_ERROR[1][3] % ({'url': err.resp.url,
+                                                  'error': err.resp.reason})
+            results['overallRC'] = err.resp.status_code
+            results['rc'] = err.resp.status_code
+            results['modID'] = 110
+            results.update({'rs': 3, 'errmsg': errmsg, 'output': ''})
         except TokenNotFound as err:
             errmsg = REST_REQUEST_ERROR[1][2] % {'error': err.msg}
             results = REST_REQUEST_ERROR[0]

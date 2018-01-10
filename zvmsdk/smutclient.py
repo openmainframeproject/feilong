@@ -14,6 +14,14 @@
 
 import functools
 import hashlib
+# On SLES12, we found that if you import urllib.parse later
+# than requests, you will find a error like 'not able to load
+# urllib.parse, this is because urllib will be in sys.modules
+# when first import requests
+# as workaround here, we first import urllib then import requests
+# later, we need consider to use urllib.request to replace
+# requests if that's possible to avoid this kind of issue
+import six.moves.urllib.parse as urlparse # noqa
 import requests
 import threading
 import os
@@ -23,7 +31,6 @@ import six
 import string
 import tempfile
 
-import six.moves.urllib.parse as urlparse
 from smutLayer import smut
 
 from zvmsdk import config
@@ -314,7 +321,8 @@ class SMUTClient(object):
         if CONF.zvm.default_admin_userid:
             rd += (' --logonby "%s"' % CONF.zvm.default_admin_userid)
 
-        if disk_list and 'is_boot_disk' in disk_list[0]:
+        if (disk_list and 'is_boot_disk' in disk_list[0] and
+            disk_list[0]['is_boot_disk']):
             ipl_disk = CONF.zvm.user_root_vdev
             rd += (' --ipl %s' % ipl_disk)
 
@@ -410,8 +418,9 @@ class SMUTClient(object):
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
         """ Deploy image and punch config driver to target """
-        # Get image location (TODO: update this image location)
-        image_file = self._get_image_path_by_name(image_name)
+        # (TODO: add the support of multiple disks deploy)
+        image_file = '/'.join([self._get_image_path_by_name(image_name),
+                               CONF.zvm.user_root_vdev])
         # Unpack image file to root disk
         vdev = vdev or CONF.zvm.user_root_vdev
         cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', userid, vdev,
@@ -475,7 +484,7 @@ class SMUTClient(object):
         power_state = self.get_power_state(userid)
         # Power on the vm if it is inactive
         if power_state == 'off':
-            msg = ('The vm %(vm)s is powered off, please start up it '
+            msg = ('The vm %s is powered off, please start up it '
                    'before capture' % userid)
             raise exception.SDKGuestOperationError(rs=5, userid=userid,
                                                    msg=msg)
@@ -541,7 +550,7 @@ class SMUTClient(object):
         # Call creatediskimage to capture a vm to generate an image
         # TODO:(nafei) to support multiple disk capture
         vdev = capture_devices[0]
-        image_file_name = '.'.join((vdev, 'img'))
+        image_file_name = vdev
         image_file_path = '/'.join((image_temp_dir, image_file_name))
         cmd = ['sudo', '/opt/zthin/bin/creatediskimage', userid, vdev,
                image_file_path]
@@ -586,7 +595,7 @@ class SMUTClient(object):
         # Create the image record in image database
         self._ImageDbOperator.image_add_record(image_name, os_version,
             real_md5sum, disk_size_units, image_size,
-            const.IMAGE_TYPE['DEPLOY'])
+            capture_type)
         LOG.info("Image %s is import successfully" % image_name)
 
     def _guest_get_os_version(self, userid):
@@ -611,7 +620,6 @@ class SMUTClient(object):
                 version = eval(version)
             os_version = '%s%s' % (distro, version)
             return os_version
-
         elif '/etc/redhat-release' in release_file:
             # The output looks like:
             # "Red Hat Enterprise Linux Server release 6.7 (Santiago)"
@@ -631,6 +639,15 @@ class SMUTClient(object):
             release_version = '.'.join((release_info[1].split('=')[1].strip(),
                                      release_info[2].split('=')[1].strip()))
             os_version = ''.join((distro, release_version))
+            return os_version
+        elif '/etc/system-release' in release_file:
+            # For some rhel6.7 system, it only have system-release file and
+            # the output looks like:
+            # "Red Hat Enterprise Linux Server release 6.7 (Santiago)"
+            distro = 'rhel'
+            release_info = self.execute_cmd(userid, 'cat /etc/system-release')
+            distro_version = release_info[0].split()[6]
+            os_version = ''.join((distro, distro_version))
             return os_version
 
     def _get_capture_devices(self, userid, capture_type='rootonly'):
@@ -775,7 +792,7 @@ class SMUTClient(object):
                                                                     vm_id)
         switch_dict = {}
         for item in switch_info:
-            switch_dict[item[1]] = item[2]
+            switch_dict[item['interface']] = item['switch']
 
         LOG.debug("Switch info the %(vm_id)s is %(switch_dict)s",
                   {"vm_id": vm_id, "switch_dict": switch_dict})
@@ -945,8 +962,8 @@ class SMUTClient(object):
         ports_info = self._NetDbOperator.switch_select_table()
         vdev_info = []
         for p in ports_info:
-            if p[0] == userid.upper():
-                vdev_info.append(p[1])
+            if p['userid'] == userid.upper():
+                vdev_info.append(p['interface'])
 
         if len(vdev_info) == 0:
             # no nic defined for the guest
@@ -1283,7 +1300,7 @@ class SMUTClient(object):
                                                                        userid)
             switch_list = set()
             for item in switch_info:
-                switch_list.add(item[2])
+                switch_list.add(item['switch'])
 
             for item in switch_list:
                 if item is not None:
@@ -1315,8 +1332,8 @@ class SMUTClient(object):
     def image_import(self, image_name, url, image_meta, remote_host=None):
         """Import the image specified in url to SDK image repository, and
         create a record in image db, the imported images are located in
-        image_repository/prov_method/os_version/, for example,
-        /opt/sdk/images/netboot/rhel7.2/90685d2b-167b.img"""
+        image_repository/prov_method/os_version/image_name/, for example,
+        /opt/sdk/images/netboot/rhel7.2/90685d2b-167bimage/0100"""
         image_info = []
         try:
             image_info = self._ImageDbOperator.image_query_record(image_name)
@@ -1334,37 +1351,67 @@ class SMUTClient(object):
             raise exception.SDKImageOperationError(rs=13, img=image_name)
 
         try:
-            target = '/'.join([CONF.image.sdk_image_repository,
-                           const.IMAGE_TYPE['DEPLOY'],
-                           image_meta['os_version'],
-                           image_name])
-            self._pathutils.create_import_image_repository(
-                image_meta['os_version'], const.IMAGE_TYPE['DEPLOY'])
+            target_folder = self._pathutils.create_import_image_repository(
+                image_meta['os_version'], const.IMAGE_TYPE['DEPLOY'],
+                image_name)
+        except Exception as err:
+            msg = ('Failed to create repository to store image %(img)s with '
+                   'error: %(err)s, please make sure there are enough space '
+                   'on zvmsdk server and proper permission to create the '
+                   'repository' % {'img': image_name,
+                                   'err': six.text_type(err)})
+            LOG.error(msg)
+            raise exception.SDKImageOperationError(rs=14, msg=msg)
+
+        try:
+            import_image_fn = urlparse.urlparse(url).path.split('/')[-1]
+            import_image_fpath = '/'.join([target_folder, import_image_fn])
             self._scheme2backend(urlparse.urlparse(url).scheme).image_import(
                                                     image_name, url,
-                                                    image_meta,
+                                                    import_image_fpath,
                                                     remote_host=remote_host)
+
             # Check md5 after import to ensure import a correct image
             # TODO change to use query image name in DB
             expect_md5sum = image_meta.get('md5sum')
-            real_md5sum = self._get_md5sum(target)
+            real_md5sum = self._get_md5sum(import_image_fpath)
             if expect_md5sum and expect_md5sum != real_md5sum:
                 msg = ("The md5sum after import is not same as source image,"
                        " the image has been broken")
                 LOG.error(msg)
                 raise exception.SDKImageOperationError(rs=4)
-            disk_size_units = self._get_disk_size_units(target)
-            image_size = self._get_image_size(target)
+
+            # After import to image repository, figure out the image type is
+            # single disk image or multiple-disk image,if multiple disks image,
+            # extract it,  if it's single image, rename its name to be same as
+            # specific vdev
+            # TODO: (nafei) use sub-function to check the image type
+            image_type = 'rootonly'
+            if image_type == 'rootonly':
+                final_image_fpath = '/'.join([target_folder,
+                                              CONF.zvm.user_root_vdev])
+                os.rename(import_image_fpath, final_image_fpath)
+            elif image_type == 'alldisks':
+                # For multiple disks image, extract it, after extract, the
+                # content under image folder is like: 0100, 0101, 0102
+                # and remove the image file 0100-0101-0102.tgz
+                pass
+
+            # TODO: put multiple disk image into consideration, update the
+            # disk_size_units and image_size db field
+            disk_size_units = self._get_disk_size_units(final_image_fpath)
+            image_size = self._get_image_size(final_image_fpath)
+            # TODO: update the real_md5sum field to include each disk image
             self._ImageDbOperator.image_add_record(image_name,
-                                         image_meta['os_version'],
-                                         real_md5sum,
-                                         disk_size_units,
-                                         image_size,
-                                         const.IMAGE_TYPE['DEPLOY'])
+                                                   image_meta['os_version'],
+                                                   real_md5sum,
+                                                   disk_size_units,
+                                                   image_size,
+                                                   image_type)
             LOG.info("Image %s is import successfully" % image_name)
         except Exception:
             # Cleanup the image from image repository
-            self._pathutils.remove_file(target)
+            self._pathutils.clean_temp_folder(target_folder)
             raise
 
     def image_export(self, image_name, dest_url, remote_host=None):
@@ -1390,25 +1437,43 @@ class SMUTClient(object):
                       % image_name)
             LOG.error(msg)
             raise exception.SDKImageOperationError(rs=20, img=image_name)
-        source_path = '/'.join([CONF.image.sdk_image_repository,
-                               image_info[0][5],
-                               image_info[0][1],
-                               image_name])
+
+        image_type = image_info[0]['type']
+        # TODO: (nafei) according to image_type, detect image exported path
+        # For multiple disk image, make the tgz firstly, the specify the
+        # source_path to be something like: 0100-0101-0102.tgz
+        if image_type == 'rootonly':
+            source_path = '/'.join([CONF.image.sdk_image_repository,
+                               const.IMAGE_TYPE['DEPLOY'],
+                               image_info[0]['imageosdistro'],
+                               image_name,
+                               CONF.zvm.user_root_vdev])
+        else:
+            pass
 
         self._scheme2backend(urlparse.urlparse(dest_url).scheme).image_export(
                                                     source_path, dest_url,
                                                     remote_host=remote_host)
 
+        # TODO: (nafei) for multiple disks image, update the expect_dict
+        # to be the tgz's md5sum
         export_dict = {'image_name': image_name,
                        'image_path': dest_url,
-                       'os_version': image_info[0][1],
-                       'md5sum': image_info[0][2]}
+                       'os_version': image_info[0]['imageosdistro'],
+                       'md5sum': image_info[0]['md5sum']}
         LOG.info("Image %s export successfully" % image_name)
         return export_dict
 
+    def _get_image_disk_size_units(self, image_path):
+        """ Return a comma separated string to indicate the image disk size
+            and units for each image disk file under image_path
+            For single disk image , it looks like: 0100=3338:CYL
+            For multiple disk image, it looks like:
+            0100=3338:CYL,0101=4194200:BLK, 0102=4370:CYL"""
+        pass
+
     def _get_disk_size_units(self, image_path):
-        """Return a string to indicate disk units in format 3390:CYL or 408200:
-        BLK"""
+
         command = 'hexdump -n 48 -C %s' % image_path
         (rc, output) = zvmutils.execute(command)
         LOG.debug("hexdump result is %s" % output)
@@ -1455,9 +1520,10 @@ class SMUTClient(object):
             LOG.error(msg)
             raise exception.SDKImageOperationError(rs=20, img=image_name)
 
+        # TODO: (nafei) Handle multiple disks image deploy
         image_path = '/'.join([CONF.image.sdk_image_repository,
-                               target_info[0][5],
-                               target_info[0][1],
+                               const.IMAGE_TYPE['DEPLOY'],
+                               target_info[0]['imageosdistro'],
                                image_name])
         return image_path
 
@@ -1511,7 +1577,7 @@ class SMUTClient(object):
 
     def _delete_image_file(self, image_name):
         image_path = self._get_image_path_by_name(image_name)
-        self._pathutils.remove_file(image_path)
+        self._pathutils.clean_temp_folder(image_path)
 
     def image_query(self, imagename=None):
         return self._ImageDbOperator.image_query_record(imagename)
@@ -1524,7 +1590,7 @@ class SMUTClient(object):
         image_info = self.image_query(image_name)
         if not image_info:
             raise exception.SDKImageOperationError(rs=20, img=image_name)
-        disk_size_units = image_info[0][3].split(':')[0]
+        disk_size_units = image_info[0]['disk_size_units'].split(':')[0]
         return disk_size_units
 
     def punch_file(self, userid, fn, fclass):
@@ -1611,10 +1677,23 @@ class SMUTClient(object):
             "--operands",
             '-k switch_name=%s' % switch_name
             ))
-        action = "query vswitch details info"
-        with zvmutils.log_and_reraise_smut_request_failed(action):
+
+        try:
             results = self._request(rd)
             rd_list = results['response']
+        except exception.SDKSMUTRequestFailed as err:
+            if ((err.results['rc'] == 212) and (err.results['rs'] == 40)):
+                msg = 'Vswitch %s does not exist' % switch_name
+                LOG.error(msg)
+                obj_desc = "Vswitch %s" % switch_name
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID='network')
+            else:
+                action = "query vswitch details info"
+                msg = "Failed to %s. " % action
+                msg += "SMUT error: %s" % err.format_message()
+                LOG.error(msg)
+                raise exception.SDKSMUTRequestFailed(err.results, msg)
 
         vsw_info = {}
         with zvmutils.expect_invalid_resp_data():
@@ -1644,6 +1723,18 @@ class SMUTClient(object):
                     value = 'NONE'
                 return idx + offset, value
 
+            def _parse_dev_status(value):
+                if value in const.DEV_STATUS.keys():
+                    return const.DEV_STATUS[value]
+                else:
+                    return 'Unknown'
+
+            def _parse_dev_err(value):
+                if value in const.DEV_ERROR.keys():
+                    return const.DEV_ERROR[value]
+                else:
+                    return 'Unknown'
+
             # Start to analyse the real devices info
             vsw_info['real_devices'] = {}
             while((idx < idx_end) and
@@ -1663,8 +1754,11 @@ class SMUTClient(object):
                 vsw_info['real_devices'][rdev_addr] = {'vdev': vdev_addr,
                                                 'controller': controller,
                                                 'port_name': port_name,
-                                                'dev_status': dev_status,
-                                                'dev_err': dev_err
+                                                'dev_status':
+                                                        _parse_dev_status(
+                                                                dev_status),
+                                                'dev_err': _parse_dev_err(
+                                                                    dev_err)
                                                 }
                 # Under some case there would be an error line in the output
                 # "Error controller_name is NULL!!", skip this line
@@ -1724,6 +1818,15 @@ class SMUTClient(object):
                     }
             # Todo: analyze and add the uplink NIC info and global member info
 
+        def _parse_switch_status(value):
+            if value in const.SWITCH_STATUS.keys():
+                return const.SWITCH_STATUS[value]
+            else:
+                return 'Unknown'
+        if 'switch_status' in vsw_info.keys():
+            vsw_info['switch_status'] = _parse_switch_status(
+                                                vsw_info['switch_status'])
+
         return vsw_info
 
     def get_nic_info(self, userid=None, nic_id=None, vswitch=None):
@@ -1749,17 +1852,12 @@ class SMUTClient(object):
 
 class FilesystemBackend(object):
     @classmethod
-    def image_import(cls, image_name, url, image_meta, **kwargs):
+    def image_import(cls, image_name, url, target, **kwargs):
         """Import image from remote host to local image repository using scp.
         If remote_host not specified, it means the source file exist in local
         file system, just copy the image to image repository
         """
-
         source = urlparse.urlparse(url).path
-        target = '/'.join([CONF.image.sdk_image_repository,
-                          const.IMAGE_TYPE['DEPLOY'],
-                          image_meta['os_version'],
-                          image_name])
         if kwargs['remote_host']:
             if '@' in kwargs['remote_host']:
                 source_path = ':'.join([kwargs['remote_host'], source])
@@ -1819,26 +1917,22 @@ class FilesystemBackend(object):
 
 class HTTPBackend(object):
     @classmethod
-    def image_import(cls, image_name, url, image_meta, **kwargs):
-        import_image = MultiThreadDownloader(image_name, url, image_meta)
+    def image_import(cls, image_name, url, target, **kwargs):
+        import_image = MultiThreadDownloader(image_name, url,
+                                             target)
         import_image.run()
 
 
 class MultiThreadDownloader(threading.Thread):
-
-    def __init__(self, image_name, url, image_meta):
+    def __init__(self, image_name, url, target):
         super(MultiThreadDownloader, self).__init__()
         self.url = url
         # Set thread number
         self.threadnum = 8
-        self.name = image_name
-        self.image_osdistro = image_meta['os_version']
         r = requests.head(self.url)
         # Get the size of the download resource
         self.totalsize = int(r.headers['Content-Length'])
-        self.target = '/'.join([CONF.image.sdk_image_repository, 'netboot',
-                                self.image_osdistro,
-                                self.name])
+        self.target = target
 
     def handle_download_errors(func):
         @functools.wraps(func)

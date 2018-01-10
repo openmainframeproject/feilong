@@ -67,6 +67,7 @@ ROUTE_LIST = (
     }),
     ('/guests/{userid}/interface', {
         'POST': guest.guest_create_network_interface,
+        'DELETE': guest.guest_delete_network_interface,
     }),
     ('/guests/{userid}/power_state', {
         'GET': guest.guest_get_power_state,
@@ -105,6 +106,7 @@ ROUTE_LIST = (
         'POST': vswitch.vswitch_create,
     }),
     ('/vswitches/{name}', {
+        'GET': vswitch.vswitch_query,
         'DELETE': vswitch.vswitch_delete,
         'PUT': vswitch.vswitch_update,
     }),

@@ -139,6 +139,18 @@ class VMHandler(object):
                                         active=active)
         return info
 
+    @validation.schema(guest.delete_network_interface)
+    def delete_network_interface(self, userid, body=None):
+        interface = body['interface']
+        version = interface['os_version']
+        vdev = interface['vdev']
+        active = interface.get('active', False)
+        active = util.bool_from_string(active, strict=True)
+        info = self.client.send_request('guest_delete_network_interface',
+                                        userid, version, vdev,
+                                        active=active)
+        return info
+
     @validation.schema(guest.create_disks)
     def create_disks(self, userid, body=None):
         disk_info = body['disk_info']
@@ -261,8 +273,8 @@ class VMAction(object):
     def capture(self, userid, body):
         image_name = body['image']
 
-        capture_type = body.get('capturetype', None)
-        compress_level = body.get('compresslevel', None)
+        capture_type = body.get('capturetype', 'rootonly')
+        compress_level = body.get('compresslevel', 6)
 
         info = self.client.send_request('guest_capture', userid,
                                         image_name,
@@ -524,6 +536,26 @@ def guest_create_network_interface(req):
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     info = _guest_create_network_interface(userid, req)
+
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.status = util.get_http_code_from_sdk_return(info)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def guest_delete_network_interface(req):
+
+    def _guest_delete_network_interface(userid, req):
+        action = get_handler()
+        body = util.extract_json(req.body)
+
+        return action.delete_network_interface(userid, body=body)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _guest_delete_network_interface(userid, req)
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)

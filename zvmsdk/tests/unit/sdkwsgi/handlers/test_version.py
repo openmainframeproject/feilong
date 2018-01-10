@@ -17,6 +17,7 @@ import mock
 import unittest
 
 from zvmsdk.sdkwsgi.handlers import version
+from zvmsdk import version as sdk_version
 
 
 class HandlersRootTest(unittest.TestCase):
@@ -31,9 +32,11 @@ class HandlersRootTest(unittest.TestCase):
                    "errmsg": "",
                    "modID": None,
                    "output":
-                   {"min_version": "1.0",
-                    "version": "1.0",
-                    "max_version": "1.0"},
+                   {"api_version": version.APIVERSION,
+                    "min_version": version.APIVERSION,
+                    "version": sdk_version.__version__,
+                    "max_version": version.APIVERSION,
+                    },
                    "rs": 0}
         res = version.version(req)
         self.assertEqual('application/json', req.response.content_type)

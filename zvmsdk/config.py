@@ -243,7 +243,7 @@ to transfer large consoles, which may not be desirable for performance reasons.
     # monitor options
     Opt('cache_interval',
         section='monitor',
-        default=600,
+        default=300,
         opt_type='int',
         help='''
 Cached monitor data update interval

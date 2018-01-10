@@ -170,6 +170,17 @@ class LinuxDist(object):
     def get_device_name(self, vdev):
         return self._get_device_name(vdev)
 
+    def get_network_configuration_files(self, vdev):
+        vdev = vdev.lower()
+        file_path = self._get_network_file_path()
+        device = self._get_device_filename(vdev)
+        target_net_conf_file_name = os.path.join(file_path, device)
+        return target_net_conf_file_name
+
+    def delete_vdev_info(self, vdev):
+        cmd = self._delete_vdev_info(vdev)
+        return cmd
+
     @abc.abstractmethod
     def _get_network_file_path(self):
         """Get network file configuration path."""
@@ -264,6 +275,11 @@ class LinuxDist(object):
         """construct active command which will initialize and configure vm."""
         pass
 
+    @abc.abstractmethod
+    def _delete_vdev_info(self, vdev):
+        """delete udev rules file."""
+        pass
+
 
 class rhel(LinuxDist):
     def _get_network_file_path(self):
@@ -316,6 +332,9 @@ class rhel(LinuxDist):
         pass
 
     def _enable_network_interface(self, device, ip, broadcast):
+        return ''
+
+    def _delete_vdev_info(self, vdev):
         return ''
 
 
@@ -601,6 +620,19 @@ class sles(LinuxDist):
         cmd += '> /boot/zipl/active_devices.txt\n'
         return cmd
 
+    def _delete_vdev_info(self, vdev):
+        """handle udev rules file."""
+        vdev = vdev.lower()
+        rules_file_name = '/etc/udev/rules.d/51-qeth-0.0.%s.rules' % vdev
+        cmd = 'rm -f %s\n' % rules_file_name
+
+        address = '0.0.%s' % str(vdev).zfill(4)
+        udev_file_name = '/etc/udev/rules.d/70-persistent-net.rules'
+        cmd += "sed -i '/%s/d' %s\n" % (address, udev_file_name)
+        cmd += "sed -i '/%s/d' %s\n" % (address,
+                                        '/boot/zipl/active_devices.txt')
+        return cmd
+
 
 class sles11(sles):
     def get_znetconfig_contents(self):
@@ -720,6 +752,34 @@ class ubuntu(LinuxDist):
             cmd_strings = ('echo "%s" >>%s\n' % (network_cfg_str,
                                                  network_config_file_name))
         return cfg_files, cmd_strings, clean_cmd, net_enable_cmd
+
+    def get_network_configuration_files(self, vdev):
+        vdev = vdev.lower()
+        network_hw_config_fname = self._get_device_filename(vdev)
+        return network_hw_config_fname
+
+    def delete_vdev_info(self, vdev):
+        cmd = self._delete_vdev_info(vdev)
+        return cmd
+
+    def _delete_vdev_info(self, vdev):
+        """handle vdev related info."""
+        vdev = vdev.lower()
+        network_config_file_name = self._get_network_file()
+        device = self._get_device_name(vdev)
+        cmd = '\n'.join(("num=$(sed -n '/auto %s/=' %s)" % (device,
+                                                    network_config_file_name),
+                        "dns=$(awk 'NR==(\"\'$num\'\"+6)&&"
+                        "/dns-nameservers/' %s)" %
+                                                    network_config_file_name,
+                        "if [[ -n $dns ]]; then",
+                        "  sed -i '/auto %s/,+6d' %s" % (device,
+                                                    network_config_file_name),
+                        "else",
+                        "  sed -i '/auto %s/,+5d' %s" % (device,
+                                                    network_config_file_name),
+                        "fi"))
+        return cmd
 
     def _get_network_file(self):
         return '/etc/network/interfaces'

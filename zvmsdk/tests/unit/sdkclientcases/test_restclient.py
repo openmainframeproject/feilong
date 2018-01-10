@@ -31,13 +31,16 @@ class FakeResp(object):
 class RESTClientTestCase(unittest.TestCase):
     """Testcases for RESTClient."""
     def setUp(self):
-        self.client = restclient.RESTClient()
+        self.client = restclient.RESTClient(ssl_enabled=False)
         self.fake_userid = 'userid01'
         self.base_url = 'http://127.0.0.1:8888'
         self.headers = {'Content-Type': 'application/json'}
         self.headers.update(self.headers or {})
         self.headers['X-Auth-Token'] = self._tmp_token()
         self.response = FakeResp()
+
+        self.client_ssl = restclient.RESTClient(ssl_enabled=True)
+        self.base_url_ssl = 'https://127.0.0.1:8888'
 
     def test_init_ComputeAPI(self):
         self.assertTrue(isinstance(self.client, restclient.RESTClient))
@@ -59,4 +62,21 @@ class RESTClientTestCase(unittest.TestCase):
 
         self.client.call("guest_get_info", self.fake_userid)
         request.assert_called_with(method, full_uri,
-                                   data=body, headers=header)
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_get_info_ssl(self, get_token, request):
+        method = 'GET'
+        url = '/guests/%s/info' % self.fake_userid
+        body = None
+        header = self.headers
+        full_uri = self.base_url_ssl + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client_ssl.call("guest_get_info", self.fake_userid)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)

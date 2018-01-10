@@ -115,6 +115,15 @@ class HandlersGuestTest(unittest.TestCase):
         vswitch.vswitch_delete(self.req)
         mock_delete.assert_called_once_with('vsw1')
 
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(vswitch.VswitchAction, 'query')
+    def test_vswitch_query(self, mock_query, mock_name):
+        mock_query.return_value = {}
+        mock_name.return_value = 'vsw1'
+
+        vswitch.vswitch_query(self.req)
+        mock_query.assert_called_once_with('vsw1')
+
     def test_vswitch_create_invalid_connection(self):
         body_str = """{"vswitch": {"name": "name1",
                                    "rdev": "1234",

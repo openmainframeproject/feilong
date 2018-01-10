@@ -56,7 +56,8 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
 
         # query
         switch_record = self.db_op.switch_select_table()
-        expected = [(userid.upper(), interface, None, port, None)]
+        expected = [{'userid': userid.upper(), 'interface': interface,
+                     'switch': None, 'port': port, 'comments': None}]
         self.assertEqual(expected, switch_record)
 
         # clean test switch
@@ -68,7 +69,8 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
 
         # query
         switch_record = self.db_op.switch_select_table()
-        expected = [(userid.upper(), interface, None, port, None)]
+        expected = [{'userid': userid.upper(), 'interface': interface,
+                     'switch': None, 'port': port, 'comments': None}]
         self.assertEqual(expected, switch_record)
 
         # clean test switch
@@ -103,7 +105,8 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
 
         # query
         switch_record = self.db_op.switch_select_table()
-        expected = [(userid.upper(), interface, switch, port, None)]
+        expected = [{'userid': userid.upper(), 'interface': interface,
+                     'switch': switch, 'port': port, 'comments': None}]
         self.assertEqual(expected, switch_record)
 
         switch = None
@@ -112,7 +115,9 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
 
         # query
         switch_record = self.db_op.switch_select_table()
-        expected = [(userid.upper(), interface, switch, port, None)]
+        expected = [{'userid': userid.upper(), 'interface': interface,
+                     'switch': switch, 'port': port, 'comments': None}]
+
         self.assertEqual(expected, switch_record)
 
         # clean test switch
@@ -141,10 +146,13 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
 
         # query: the other records still exist
         switch_record = self.db_op.switch_select_record_for_userid('id02')
-        expected = [('ID02', '1000', None, 'port_id02', None)]
+        expected = [{'userid': 'ID02', 'interface': '1000',
+                     'switch': None, 'port': 'port_id02', 'comments': None}]
+
         self.assertEqual(expected, switch_record)
         switch_record = self.db_op.switch_select_record_for_userid('id03')
-        expected = [('ID03', '1000', None, 'port_id03', None)]
+        expected = [{'userid': 'ID03', 'interface': '1000',
+                     'switch': None, 'port': 'port_id03', 'comments': None}]
         self.assertEqual(expected, switch_record)
 
         # clean test switch and check
@@ -164,7 +172,8 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
             self.db_op.switch_add_record(userid, interface, port)
 
         # query: specific record in the table
-        record = ('ID01', '1000', None, 'port_id01', None)
+        record = {'userid': 'ID01', 'interface': '1000',
+                  'switch': None, 'port': 'port_id01', 'comments': None}
         switch_record = self.db_op.switch_select_table()
         self.assertEqual(record in switch_record, True)
 
@@ -200,10 +209,14 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
             self.db_op.switch_add_record(userid, interface, port)
 
         # query: specific record in the table
-        record = [('ID01', '1000', None, 'port_id01', None),
-                  ('ID01', '2000', None, 'port_id02', None),
-                  ('ID02', '1000', None, 'port_id02', None),
-                  ('ID03', '1000', None, 'port_id03', None)]
+        record = [{'userid': 'ID01', 'interface': '1000',
+                   'switch': None, 'port': 'port_id01', 'comments': None},
+                  {'userid': 'ID01', 'interface': '2000',
+                   'switch': None, 'port': 'port_id02', 'comments': None},
+                  {'userid': 'ID02', 'interface': '1000',
+                   'switch': None, 'port': 'port_id02', 'comments': None},
+                  {'userid': 'ID03', 'interface': '1000',
+                   'switch': None, 'port': 'port_id03', 'comments': None}]
 
         switch_record = self.db_op.switch_select_table()
         self.assertEqual(record, switch_record)
@@ -226,8 +239,10 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
             self.db_op.switch_add_record(userid, interface, port)
 
         # query: specific record in the table
-        record = [('ID01', '1000', None, 'port_id01', None),
-                  ('ID01', '2000', None, 'port_id02', None)]
+        record = [{'userid': 'ID01', 'interface': '1000',
+                   'switch': None, 'port': 'port_id01', 'comments': None},
+                  {'userid': 'ID01', 'interface': '2000',
+                   'switch': None, 'port': 'port_id02', 'comments': None}]
 
         switch_record = self.db_op.switch_select_record_for_userid('id01')
         self.assertEqual(record, switch_record)
@@ -247,10 +262,18 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
                 ('id03', '1000', 'port_id03')]
 
         # all record
-        record = [('ID01', '1000', 'switch01', 'port_id01', None),
-                  ('ID01', '2000', 'switch01', 'port_id02', None),
-                  ('ID02', '1000', 'switch02', 'port_id02', None),
-                  ('ID03', '1000', 'switch02', 'port_id03', None)]
+        record = [{'userid': 'ID01', 'interface': '1000',
+                   'switch': 'switch01', 'port': 'port_id01',
+                   'comments': None},
+                  {'userid': 'ID01', 'interface': '2000',
+                   'switch': 'switch01', 'port': 'port_id02',
+                   'comments': None},
+                  {'userid': 'ID02', 'interface': '1000',
+                   'switch': 'switch02', 'port': 'port_id02',
+                   'comments': None},
+                  {'userid': 'ID03', 'interface': '1000',
+                   'switch': 'switch02', 'port': 'port_id03',
+                   'comments': None}]
 
         # insert multiple records
         for (userid, interface, port) in list:
@@ -887,9 +910,13 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
         image_record = self.db_op.image_query_record(imagename)
         self.assertEqual(1, len(image_record))
         self.assertListEqual(
-            [(u'test', u'rhel6.5', u'c73ce117eef8077c3420bfc8f473ac2f',
-              u'3338:CYL', u'5120000', u'netboot', None)],
-            image_record)
+            [{'imagename': u'test',
+              'imageosdistro': u'rhel6.5',
+              'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
+              'disk_size_units': u'3338:CYL',
+              'image_size_in_bytes': u'5120000',
+              'type': u'netboot',
+              'comments': None}], image_record)
 
         # Delete it
         self.db_op.image_delete_record(imagename)
@@ -936,11 +963,20 @@ class ImageDbOperatorTestCase(base.SDKTestCase):
         image_records = self.db_op.image_query_record()
         self.assertEqual(2, len(image_records))
         self.assertListEqual(
-            [(u'testimage1', u'rhel6.5', u'c73ce117eef8077c3420bfc8f473ac2f',
-              u'3338:CYL', u'5120000', u'netboot', None),
-             (u'testimage2', u'rhel6.5', u'c73ce117eef8077c3420bfc8f473ac2f',
-              u'3338:CYL', u'5120000', u'netboot', None)],
-            image_records)
+            [{'imagename': u'testimage1',
+              'imageosdistro': u'rhel6.5',
+              'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
+              'disk_size_units': u'3338:CYL',
+              'image_size_in_bytes': u'5120000',
+              'type': u'netboot',
+              'comments': None},
+             {'imagename': u'testimage2',
+              'imageosdistro': u'rhel6.5',
+              'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
+              'disk_size_units': u'3338:CYL',
+              'image_size_in_bytes': u'5120000',
+              'type': u'netboot',
+              'comments': None}], image_records)
         # Clean up the images
         self.db_op.image_delete_record(imagename1)
         self.db_op.image_delete_record(imagename2)

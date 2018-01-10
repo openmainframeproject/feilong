@@ -174,8 +174,8 @@ class SDKAPI(object):
     def host_diskpool_get_info(self, disk_pool=CONF.zvm.disk_pool):
         """ Retrieve diskpool information.
         :param str disk_pool: the disk pool info. It use ':' to separate
-        disk pool type and name, eg "ECKD:eckdpool" or "FBA:fbapool"
-        :returns: Dictionary describing diskpool usage info
+        disk pool type and pool name, eg "ECKD:eckdpool" or "FBA:fbapool"
+        :returns: Dictionary describing disk pool usage info
         """
         if ':' not in disk_pool:
             msg = ('Invalid input parameter disk_pool, expect ":" in'
@@ -1176,3 +1176,27 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._networkops.get_nic_info(userid=userid, nic_id=nic_id,
                                                  vswitch=vswitch)
+
+    def vswitch_query(self, vswitch_name):
+        """Check the virtual switch status
+
+        :param str vswitch_name: the name of the virtual switch
+        :returns: Dictionary describing virtual switch info
+        :rtype: dict
+        """
+        action = "get virtual switch information"
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._networkops.vswitch_query(vswitch_name)
+
+    def guest_delete_network_interface(self, userid, os_version,
+                                       vdev, active=False):
+        """ delete the nic and network configuration for the vm
+
+        :param str userid: the user id of the guest
+        :param str os_version: operating system version of the guest
+        :param str vdev: nic device number, 1- to 4- hexadecimal digits
+        :param bool active: whether delete a nic on active guest system
+        """
+        self._networkops.delete_nic(userid, vdev, active=active)
+        self._networkops.delete_network_configuration(userid, os_version,
+                                                      vdev, active=active)

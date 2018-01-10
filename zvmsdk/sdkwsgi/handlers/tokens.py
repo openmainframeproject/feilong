@@ -32,9 +32,14 @@ TOKEN_LOCK = threading.Lock()
 
 def get_admin_token(path):
     if os.path.exists(path):
-        if TOKEN_LOCK.acquire():
+        TOKEN_LOCK.acquire()
+        try:
             with open(path, 'r') as fd:
                 token = fd.read().strip()
+        except Exception:
+            LOG.debug('token file open failed.')
+            raise exception.ZVMUnauthorized()
+        finally:
             TOKEN_LOCK.release()
     else:
         LOG.debug('token configuration file not found.')

@@ -203,7 +203,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         get_image_path.assert_called_once_with(image_name)
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
-                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
+                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
         cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrive.tgz']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
@@ -246,7 +246,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         get_image_path.assert_called_once_with(image_name)
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
-                     '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
+                     '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
         execute.assert_called_once_with(unpack_cmd)
 
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
@@ -272,7 +272,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         get_image_path.assert_called_once_with(image_name)
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
-                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
+                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
         cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrive.tgz']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
@@ -308,7 +308,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         get_image_path.assert_called_once_with(image_name)
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
-                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg']
+                      '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
         scp_cmd = ["/usr/bin/scp", "-B", 'user@1.1.1.1:/faketrans',
                   '/tmp/tmpdir/cfgdrive.tgz']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(scp_cmd)])
@@ -690,8 +690,12 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         """
         Get NIC and switch mapping for the specified virtual machine.
         """
-        select.return_value = [('FakeID', '1000', 'testvs1', None, None),
-                               ('FakeID', '2000', 'testvs2', None, None)]
+        select.return_value = [{'userid': 'FakeID', 'interface': '1000',
+                                'switch': 'testvs1', 'port': None,
+                                'comments': None},
+                               {'userid': 'FakeID', 'interface': '2000',
+                                'switch': 'testvs2', 'port': None,
+                                'comments': None}]
         expect = {'1000': 'testvs1', '2000': 'testvs2'}
         switch_dict = self._smutclient.get_vm_nic_vswitch_info('FakeID')
         select.assert_called_once_with('FakeID')
@@ -803,8 +807,11 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smutclient.SMUTClient, '_create_nic')
     def test_create_nic(self, create_nic, switch_select_table):
         userid = 'fake_id'
-        switch_select_table.return_value = [("fake_id", "1003"),
-                                            ("fake_id", "1006")]
+        switch_select_table.return_value = [
+                    {'userid': 'fake_id', 'interface': '1003',
+                     'switch': None, 'port': None, 'comments': None},
+                    {'userid': 'fake_id', 'interface': '1006',
+                     'switch': None, 'port': None, 'comments': None}]
         self._smutclient.create_nic(userid, vdev='1009', nic_id='nic_id')
         create_nic.assert_called_with(userid, '1009', nic_id="nic_id",
                                       mac_addr=None, active=False)
@@ -814,8 +821,11 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smutclient.SMUTClient, '_create_nic')
     def test_create_nic_without_vdev(self, create_nic, switch_select_table):
         userid = 'fake_id'
-        switch_select_table.return_value = [("FAKE_ID", "1003"),
-                                            ("FAKE_ID", "2003")]
+        switch_select_table.return_value = [
+                    {'userid': 'FAKE_ID', 'interface': '1003',
+                     'switch': None, 'port': None, 'comments': None},
+                    {'userid': 'FAKE_ID', 'interface': '2003',
+                     'switch': None, 'port': None, 'comments': None}]
         self._smutclient.create_nic(userid, nic_id='nic_id')
         create_nic.assert_called_with(userid, '2006', nic_id='nic_id',
                                       mac_addr=None, active=False)
@@ -823,8 +833,11 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(database.NetworkDbOperator, 'switch_select_table')
     def test_create_nic_with_used_vdev(self, switch_select_table):
-        switch_select_table.return_value = [("FAKE_ID", "1003"),
-                                            ("FAKE_ID", "1006")]
+        switch_select_table.return_value = [
+                    {'userid': 'FAKE_ID', 'interface': '1003',
+                     'switch': None, 'port': None, 'comments': None},
+                    {'userid': 'FAKE_ID', 'interface': '1006',
+                     'switch': None, 'port': None, 'comments': None}]
         self.assertRaises(exception.SDKInvalidInputFormat,
                           self._smutclient.create_nic,
                           'fake_id', nic_id="nic_id", vdev='1004')
@@ -1005,39 +1018,44 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                           self._smutclient.delete_userid, 'fuser1')
         request.assert_called_once_with(rd)
 
+    @mock.patch.object(zvmutils.PathUtils, 'remove_file')
+    @mock.patch.object(os, 'rename')
     @mock.patch.object(database.ImageDbOperator, 'image_add_record')
     @mock.patch.object(smutclient.SMUTClient, '_get_image_size')
     @mock.patch.object(smutclient.SMUTClient, '_get_disk_size_units')
     @mock.patch.object(smutclient.SMUTClient, '_get_md5sum')
     @mock.patch.object(smutclient.FilesystemBackend, 'image_import')
-    @mock.patch.object(smutclient.SMUTClient, '_get_image_path_by_name')
+    @mock.patch.object(zvmutils.PathUtils,
+                       'create_import_image_repository')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
-    def test_image_import(self, image_query, get_img_path, image_import,
+    def test_image_import(self, image_query, create_path, image_import,
                           get_md5sum, disk_size_units, image_size,
-                          image_add_record):
+                          image_add_record, rename, remove_file):
         image_name = 'testimage'
         url = 'file:///tmp/testdummyimg'
         image_meta = {'os_version': 'rhel6.5',
                       'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
-        get_img_path.return_value = '/tmp//netboot/rhel6.5/testimage'
-        target = self._smutclient._get_image_path_by_name(image_name)
+        import_image_fpath = '/home/netboot/rhel6.5/testimage/testdummyimg'
+        final_image_fpath = '/home/netboot/rhel6.5/testimage/0100'
         image_query.return_value = []
+        create_path.return_value = '/home/netboot/rhel6.5/testimage'
         get_md5sum.return_value = 'c73ce117eef8077c3420bfc8f473ac2f'
         disk_size_units.return_value = '3338:CYL'
         image_size.return_value = '512000'
         self._smutclient.image_import(image_name, url, image_meta)
         image_query.assert_called_once_with(image_name)
-        image_import.assert_called_once_with(image_name, url, image_meta,
+        image_import.assert_called_once_with(image_name, url,
+                                             import_image_fpath,
                                              remote_host=None)
-        get_md5sum.assert_called_once_with(target)
-        disk_size_units.assert_called_once_with(target)
-        image_size.assert_called_once_with(target)
+        get_md5sum.assert_called_once_with(import_image_fpath)
+        disk_size_units.assert_called_once_with(final_image_fpath)
+        image_size.assert_called_once_with(final_image_fpath)
         image_add_record.assert_called_once_with(image_name,
                                     'rhel6.5',
                                     'c73ce117eef8077c3420bfc8f473ac2f',
                                     '3338:CYL',
                                     '512000',
-                                    'netboot')
+                                    'rootonly')
 
     @mock.patch.object(smutclient.SMUTClient, '_get_image_path_by_name')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
@@ -1056,11 +1074,12 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         image_query.assert_called_once_with(image_name)
         get_image_path.assert_not_called()
 
+    @mock.patch.object(zvmutils.PathUtils, 'remove_file')
     @mock.patch.object(smutclient.SMUTClient, '_get_md5sum')
     @mock.patch.object(smutclient.FilesystemBackend, 'image_import')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_image_import_invalid_md5sum(self, image_query, image_import,
-                                         get_md5sum):
+                                         get_md5sum, remove_file):
         image_name = 'testimage'
         url = 'file:///tmp/testdummyimg'
         image_meta = {'os_version': 'rhel6.5',
@@ -1097,9 +1116,14 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         image_name = u'testimage'
         dest_url = 'file:///path/to/exported/image'
         remote_host = 'nova@9.x.x.x'
-        image_query.return_value = [(u'testimage', u'rhel6.5',
-            u'c73ce117eef8077c3420bfc8f473ac2f',
-            u'3338:CYL', u'5120000', u'netboot', None)]
+        image_query.return_value = [
+            {'imagename': u'testimage',
+             'imageosdistro': u'rhel6.5',
+             'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
+             'disk_size_units': u'3338:CYL',
+             'image_size_in_bytes': u'5120000',
+             'type': u'rootonly',
+             'comments': None}]
         expect_return = {
             'image_name': u'testimage',
             'image_path': u'file:///path/to/exported/image',
@@ -1310,7 +1334,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                    'staging',
                                    'rhel7.0',
                                    image_name])
-        image_file_path = '/'.join((image_temp_dir, '0100.img'))
+        image_file_path = '/'.join((image_temp_dir, '0100'))
         cmd1 = ['sudo', '/opt/zthin/bin/creatediskimage', userid, '0100',
                image_file_path]
         execute.side_effect = [(0, ''),
@@ -1320,7 +1344,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                     'rhel7.0',
                                     image_name))
         image_final_path = '/'.join((image_final_dir,
-                                     '0100.img'))
+                                     '0100'))
         cmd2 = ['mv', image_file_path, image_final_path]
         md5sum.return_value = '547396211b558490d31e0de8e15eef0c'
         disk_size_units.return_value = '1000:CYL'
@@ -1343,7 +1367,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         imagesize.assert_called_once_with(image_final_path)
         image_add_record.assert_called_once_with(image_name, 'rhel7.0',
             '547396211b558490d31e0de8e15eef0c', '1000:CYL', '1024000',
-            'netboot')
+            'rootonly')
 
     @mock.patch.object(smutclient.SMUTClient, '_guest_get_os_version')
     @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
@@ -1393,3 +1417,21 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_update_guestdb_with_net_set(self, update):
         self._smutclient.update_guestdb_with_net_set('TEST')
         update.assert_called_once_with('TEST', net_set='1')
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_query_vswitch_NotExist(self, req, get_id):
+        get_id.return_value = "SMUTUSER"
+        req.side_effect = exception.SDKSMUTRequestFailed(
+                                        {'rc': 212, 'rs': 40}, '')
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self._smutclient.query_vswitch, 'testvs')
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_query_vswitch_RequestFailed(self, req, get_id):
+        get_id.return_value = "SMUTUSER"
+        req.side_effect = exception.SDKSMUTRequestFailed(
+                                        {'rc': 1, 'rs': 1}, '')
+        self.assertRaises(exception.SDKSMUTRequestFailed,
+                          self._smutclient.query_vswitch, 'testvs')

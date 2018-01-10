@@ -56,11 +56,11 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         self.sdkapi.vswitch_create(vswitch_name, '1111')
         # grant and check
         self.sdkapi.vswitch_grant_user(vswitch_name, self.basevm)
-        vsw_info = self.client.query_vswitch(vswitch_name)
+        vsw_info = self.sdkapi.vswitch_query(vswitch_name)
         self.assertIn(self.basevm.upper(), vsw_info['authorized_users'])
         # revoke and check
         self.sdkapi.vswitch_revoke_user(vswitch_name, self.basevm)
-        vsw_info = self.client.query_vswitch(vswitch_name)
+        vsw_info = self.sdkapi.vswitch_query(vswitch_name)
         self.assertNotIn(self.basevm.upper(), vsw_info['authorized_users'])
 
     def test_vswitch_grant_not_exist(self):
@@ -94,7 +94,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         self.sdkapi.vswitch_set_vlan_id_for_user(vswitch_name,
                                                  self.basevm, 1000)
         # Check authorized user and vlanid
-        vsw = self.client.query_vswitch(vswitch_name)
+        vsw = self.sdkapi.vswitch_query(vswitch_name)
         self.assertIn(self.basevm.upper(), vsw['authorized_users'])
         self.assertEqual(
             vsw['authorized_users'][self.basevm.upper()]['vlan_count'], '1')
@@ -143,7 +143,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
                                    vid='UNAWARE', port_type='ACCESS',
                                    gvrp='NOGVRP', queue_mem=3, native_vid=1,
                                    persist=False)
-        vsw = self.client.query_vswitch(vswitch_name)
+        vsw = self.sdkapi.vswitch_query(vswitch_name)
         self.assertEqual(vsw['switch_name'], vswitch_name)
         self.assertEqual(vsw['transport_type'], 'IP')
         self.assertEqual(vsw['port_type'], 'NONE')
@@ -165,7 +165,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
                                    vid=1000, port_type='TRUNK',
                                    gvrp='GVRP', queue_mem=5, native_vid=1,
                                    persist=True)
-        vsw = self.client.query_vswitch(vswitch_name)
+        vsw = self.sdkapi.vswitch_query(vswitch_name)
         self.assertEqual(vsw['switch_name'], vswitch_name)
         self.assertEqual(vsw['transport_type'], 'ETHERNET')
         self.assertEqual(vsw['port_type'], 'TRUNK')
@@ -194,7 +194,7 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
         # bypass the rdev assert
         # The error is caused by SMAPI Virtual_Network_Vswitch_Query_Extended
         # will uncomment the code after bug fix
-        # vsw = self.client.query_vswitch(vswitch_name)
+        # vsw = self.sdkapi.vswitch_query(vswitch_name)
         # self.assertListEqual(sorted(['1111', '0022', '0033']),
         #                      sorted(vsw['real_devices'].keys()))
 
@@ -237,6 +237,16 @@ class SDKVswitchTestCase(base.SDKAPIBaseTestCase):
                           self.sdkapi.vswitch_create,
                           vswitch_name, '1111',
                           queue_mem=10)
+
+    def test_vswitch_query_not_exist(self):
+        """ Error case of vswitch_query: vswitch not exist """
+        # Setup test env
+        vswitch_name = self.vswitch
+        self.assertNotIn(vswitch_name, self.sdkapi.vswitch_get_list())
+        # Test
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.sdkapi.vswitch_query,
+                          vswitch_name)
 
     def test_vswitch_delete(self):
         """ Positive case of vswitch_delete """
