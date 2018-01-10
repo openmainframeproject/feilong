@@ -236,7 +236,7 @@ class GuestHandlerTestCase(unittest.TestCase):
             vdev = "100"
 
         if transportfiles is None:
-            transportfiles = "/tmp/sdktest.txt"
+            transportfiles = "/var/lib/zvmsdk/cfgdrive.tgz"
 
         body = """{"action": "deploy",
                    "image": "%s",
@@ -245,8 +245,9 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         return self._guest_action(body, userid=userid)
 
-    def _guest_deploy_with_remote_host(self, userid=None, vdev=None,
-                                       image=None, transportfiles=None,
+    def _guest_deploy_with_transprot_file_and_remote_host(self, userid=None,
+                                       vdev=None, image=None,
+                                       transportfiles=None,
                                        remotehost=None):
         if image is None:
             image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
@@ -255,7 +256,7 @@ class GuestHandlerTestCase(unittest.TestCase):
             vdev = "100"
 
         if transportfiles is None:
-            transportfiles = "/tmp/sdktest.txt"
+            transportfiles = "/var/lib/zvmsdk/cfgdrive.tgz"
 
         if remotehost is None:
             remotehost = utils.get_host()
