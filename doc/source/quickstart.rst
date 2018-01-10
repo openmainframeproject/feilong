@@ -129,7 +129,15 @@ Preparation on BYOL
 
    where:
    nova_home：is the home directory for the nova user on the nova compute server.
-   Note: You can obtain nova_home by issuing: echo ~nova
+   You can obtain nova_home by issuing: echo ~nova
+ 
+   Please note that: If the host key of nova-compute server changed, please run
+   the following command on zvmsdk server to clean the cached host key of
+   nova-compute server from zvmsdk server's known_hosts file
+
+   .. code-block:: text
+
+       ssh-keygen -R nova-compute-ip
 
 Installation Requirements
 -------------------------

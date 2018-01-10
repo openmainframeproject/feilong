@@ -780,7 +780,7 @@ class SDKAPI(object):
         """Punch the script that used to process additional disks to vm
 
         :param str userid: the user id of the vm
-        :param dict disk_info: a list contains disks info for the guest. It
+        :param disk_info: a list contains disks info for the guest. It
                has one dictionary that describes the disk info for each disk.
                For example,
                [{'vdev': '0101',
