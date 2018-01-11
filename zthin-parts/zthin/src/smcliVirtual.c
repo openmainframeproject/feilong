@@ -3848,6 +3848,9 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
     int smapiLevel = 0;
     char * targetIdentifier = NULL;
     char * entryArray[maxArrayCount];
+    int vepaStatusFlag = 0;
+    char * VEPA_STATUS_YES = "vepa_status=YES";
+
     // vswitch_attr_info_structure
     char switch_name[8 + 1];
     char transport_type[8 + 1];
@@ -3936,6 +3939,9 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
                 }
 
                 if (entryCount < maxArrayCount) {
+                    if (!strcmp(optarg, VEPA_STATUS_YES)) {
+                        vepaStatusFlag = 1;
+                    }
                     entryArray[entryCount] = optarg;
                     entryCount++;
                 } else {
@@ -4221,7 +4227,7 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
                     goto end;
                 }
             } else {
-                token = strtok_r(NULL, " \0", &buffer);
+                token = strtok_r(NULL, blank, &buffer);
                 if (token != NULL) {
                     strcpy(VLAN_counters, token);
                 } else {
@@ -4232,19 +4238,20 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
                     goto end;
                 }
 
+                strcpy(vepa_status, "");
                 strcpy(spg_scope, "");
-
-                // vepa status may not appear in output,
-                token = strtok_r(NULL, " \0", &buffer);
-                if (token != NULL) {
-                    strcpy(vepa_status, token);
-                    // spg scope will only appear if vespa does
+                if (vepaStatusFlag == 1) {
+                    // get vepa status
                     token = strtok_r(NULL, " \0", &buffer);
                     if (token != NULL) {
-                        strcpy(spg_scope, token);
+                        strcpy(vepa_status, token);
+                        // spg scope will only appear if vespa does
+                        token = strtok_r(NULL, " \0", &buffer);
+                        if (token != NULL) {
+                            strcpy(spg_scope, token);
+                        }
                     }
-                } else strcpy(vepa_status, "");
-
+                }
             }
             snprintf(strMsg, sizeof(strMsg),
                    " switch_name: %s\n"
