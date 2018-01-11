@@ -362,6 +362,12 @@ image_name:
   in: body
   required: true
   type: string
+image_name_path:
+  description: |
+    Image name that can be uniquely identify an image.
+  in: path
+  required: true
+  type: string
 image_md5sum:
   description: |
     md5sum for the specific image.

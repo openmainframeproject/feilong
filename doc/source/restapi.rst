@@ -1043,7 +1043,7 @@ Get the root disk size of the image.
 
 .. restapi_parameters:: parameters.yaml
 
-  - name: image_name
+  - name: image_name_path
 
 * Response code:
 
@@ -1071,7 +1071,7 @@ Delete an image.
 
 .. restapi_parameters:: parameters.yaml
 
-  - name: image_name
+  - name: image_name_path
 
 * Response code:
 
