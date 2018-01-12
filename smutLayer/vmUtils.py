@@ -121,7 +121,8 @@ def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[]):
               'response': [],
              }
 
-    cmd = [iucvpath + "iucvclnt",
+    cmd = ['sudo',
+           iucvpath + "iucvclnt",
            userid,
            strCmd]
     try:
