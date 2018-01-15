@@ -623,7 +623,7 @@ class RESTClient(object):
         return full_url, body
 
     def _process_rest_response(self, response):
-        if response.headers['Content-Type'] == 'application/json':
+        if 'application/json' in response.headers['Content-Type']:
             res_dict = json.loads(response.content)
             # return res_dict.get('output', None)
             return res_dict
