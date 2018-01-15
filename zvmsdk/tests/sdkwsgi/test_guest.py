@@ -236,7 +236,7 @@ class GuestHandlerTestCase(unittest.TestCase):
             vdev = "100"
 
         if transportfiles is None:
-            transportfiles = "/tmp/sdktest.txt"
+            transportfiles = "/var/lib/zvmsdk/cfgdrive.tgz"
 
         body = """{"action": "deploy",
                    "image": "%s",
@@ -245,8 +245,9 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         return self._guest_action(body, userid=userid)
 
-    def _guest_deploy_with_remote_host(self, userid=None, vdev=None,
-                                       image=None, transportfiles=None,
+    def _guest_deploy_with_transprot_file_and_remote_host(self, userid=None,
+                                       vdev=None, image=None,
+                                       transportfiles=None,
                                        remotehost=None):
         if image is None:
             image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
@@ -255,7 +256,7 @@ class GuestHandlerTestCase(unittest.TestCase):
             vdev = "100"
 
         if transportfiles is None:
-            transportfiles = "/tmp/sdktest.txt"
+            transportfiles = "/var/lib/zvmsdk/cfgdrive.tgz"
 
         if remotehost is None:
             remotehost = utils.get_host()
@@ -291,7 +292,7 @@ class GuestHandlerTestCase(unittest.TestCase):
         if compresslevel is None:
             compresslevel = 6
         body = """{"action": "capture",
-                   "image": "testimage"}"""
+                   "image": "test_capture_image1"}"""
         return self._guest_action(body, userid=userid)
 
     def _guest_pause(self, userid=None):
@@ -346,6 +347,19 @@ class GuestHandlerTestCase(unittest.TestCase):
         url = '/guests/nics%s' % append
         resp = self.client.api_request(url=url,
                                        method='GET')
+        return resp
+
+    def _image_query(self, image_name='image1'):
+        url = '/images?imagename=%s' % image_name
+        resp = self.client.api_request(url=url,
+                                       method='GET')
+        return resp
+
+    def _image_delete(self):
+        url = '/images/test_capture_image1'
+        resp = self.client.api_request(url=url,
+                                       method='DELETE')
+        self.assertEqual(200, resp.status_code)
         return resp
 
     def test_guest_get_not_exist(self):
@@ -427,50 +441,6 @@ class GuestHandlerTestCase(unittest.TestCase):
         os.system('rm cfgdrive.tgz')
         os.system('chown -R zvmsdk:zvmsdk /var/lib/zvmsdk/cfgdrive.tgz')
         os.system('chmod -R 755 /var/lib/zvmsdk/cfgdrive.tgz')
-
-    def test_guest_deploy_with_transport_file(self):
-        self._make_transport_file()
-        transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
-        resp = self._guest_create()
-        self.assertEqual(200, resp.status_code)
-        time.sleep(10)
-        try:
-            resp = self._guest_deploy_with_transport_file(
-                                    transportfiles=transport_file)
-            self.assertEqual(200, resp.status_code)
-            resp = self._guest_start()
-            self.assertEqual(200, resp.status_code)
-            time.sleep(15)
-            result = self._smutclient.execute_cmd(self.userid, 'hostname')
-            self.assertEqual('deploy_tests', result[0])
-        except Exception as e:
-            raise e
-        finally:
-            os.system('rm /var/lib/zvmsdk/cfgdrive.tgz')
-            self._guest_delete()
-
-    def test_guest_deploy_with_remote_host(self):
-        remote_host = utils.get_host()
-        self._make_transport_file()
-        transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
-        resp = self._guest_create()
-        self.assertEqual(200, resp.status_code)
-        time.sleep(10)
-        try:
-            resp = self._guest_deploy_with_remote_host(
-                                    transportfiles=transport_file,
-                                    remotehost=remote_host)
-            self.assertEqual(200, resp.status_code)
-            resp = self._guest_start()
-            self.assertEqual(200, resp.status_code)
-            time.sleep(15)
-            result = self._smutclient.execute_cmd(self.userid, 'hostname')
-            self.assertEqual('deploy_tests', result[0])
-        except Exception as e:
-            raise e
-        finally:
-            os.system('rm /var/lib/zvmsdk/cfgdrive.tgz')
-            self._guest_delete()
 
     def test_guest_deploy_userid_not_exist(self):
         resp = self._guest_deploy(userid='notexist')
@@ -561,18 +531,6 @@ class GuestHandlerTestCase(unittest.TestCase):
         self.assertEqual(200, resp.status_code)
         self._guest_delete()
 
-    def test_guest_create_with_duplicate_userid(self):
-        resp = self._guest_create()
-        self.assertEqual(200, resp.status_code)
-
-        try:
-            resp = self._guest_create()
-        except Exception as e:
-            self.assertEqual(400, resp.status_code)
-            raise e
-        finally:
-            self._guest_delete()
-
     def test_guest_create_delete(self):
         resp = self._guest_create()
         self.assertEqual(200, resp.status_code)
@@ -580,9 +538,20 @@ class GuestHandlerTestCase(unittest.TestCase):
         # give chance to make disk online
         time.sleep(15)
 
+        remote_host = utils.get_host()
+        self._make_transport_file()
+        transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
+
         try:
-            resp = self._guest_deploy()
+            resp = self._guest_deploy_with_transprot_file_and_remote_host(
+                                           transportfiles=transport_file,
+                                           remotehost=remote_host)
             self.assertEqual(200, resp.status_code)
+            resp = self._guest_start()
+            self.assertEqual(200, resp.status_code)
+            time.sleep(15)
+            result = self._smutclient.execute_cmd(self.userid, 'hostname')
+            self.assertEqual('deploy_tests', result[0])
 
             resp = self._guest_nic_create()
             self.assertEqual(200, resp.status_code)
@@ -598,11 +567,6 @@ class GuestHandlerTestCase(unittest.TestCase):
             resp = self._guest_get_power_state()
             self.assertEqual(200, resp.status_code)
             self.apibase.verify_result('test_guest_get_power_state',
-                                       resp.content)
-
-            resp = self._guest_stats()
-            self.assertEqual(200, resp.status_code)
-            self.apibase.verify_result('test_guests_get_stats',
                                        resp.content)
 
             resp = self._guest_vnicsinfo()
@@ -624,6 +588,12 @@ class GuestHandlerTestCase(unittest.TestCase):
             resp = self._guest_nic_delete()
             self.assertEqual(200, resp.status_code)
 
+            resp = self._guest_pause()
+            self.assertEqual(200, resp.status_code)
+
+            resp = self._guest_unpause()
+            self.assertEqual(200, resp.status_code)
+
             resp = self._guest_stop()
             self.assertEqual(200, resp.status_code)
             time.sleep(10)
@@ -631,6 +601,11 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertEqual(200, resp_state.status_code)
             resp_content = json.loads(resp_state.content)
             self.assertEqual('off', resp_content['output'])
+
+            resp = self._guest_stats()
+            self.assertEqual(200, resp.status_code)
+            self.apibase.verify_result('test_guests_get_stats',
+                                       resp.content)
 
             resp = self._guest_start()
             self.assertEqual(200, resp.status_code)
@@ -643,16 +618,22 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertNotEqual(info_off['cpu_time_us'], 0)
             self.assertNotEqual(info_off['mem_kb'], 0)
 
-            resp = self._guest_pause()
+            resp = self._guest_capture()
             self.assertEqual(200, resp.status_code)
-
-            resp = self._guest_unpause()
+            time.sleep(15)
+            resp = self._image_query(image_name='test_capture_image1')
             self.assertEqual(200, resp.status_code)
+            resp_state = self._guest_get_power_state()
+            self.assertEqual(200, resp_state.status_code)
+            resp_content = json.loads(resp_state.content)
+            self.assertEqual('off', resp_content['output'])
         except Exception as e:
             raise e
         finally:
+            os.system('rm /var/lib/zvmsdk/cfgdrive.tgz')
             self._guest_delete()
             self._vswitch_delete()
+            self._image_delete()
 
     def test_guest_list(self):
         resp = self.client.api_request(url='/guests')
