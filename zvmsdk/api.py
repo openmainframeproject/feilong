@@ -493,7 +493,7 @@ class SDKAPI(object):
                directory, and it will create 0101 with 200000 blocks from
                FBA disk pool fbapool1, and formated with ext3.
         """
-        if disk_list == []:
+        if disk_list == [] or disk_list is None:
             # nothing to do
             LOG.debug("No disk specified when calling guest_create_disks, "
                       "nothing happened")
