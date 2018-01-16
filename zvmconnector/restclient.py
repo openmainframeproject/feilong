@@ -266,15 +266,13 @@ def req_guest_get_power_state(start_index, *args, **kwargs):
 
 def req_guest_create_disks(start_index, *args, **kwargs):
     url = '/guests/%s/disks'
-    body = {'disk_info': {}}
-    fill_kwargs_in_body(body['disk_info'], **kwargs)
+    body = {'disk_info': {'disk_list': args[start_index]}}
     return url, body
 
 
 def req_guest_delete_disks(start_index, *args, **kwargs):
     url = '/guests/%s/disks'
-    body = {'vdev_info': {}}
-    fill_kwargs_in_body(body['vdev_info'], **kwargs)
+    body = {'vdev_info': {'vdev_list': args[start_index]}}
     return url, body
 
 
