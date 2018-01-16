@@ -81,13 +81,13 @@ function onlineDevice {
   # @Code:
   device=$1
   local funcName="onlineDevice"
-  rc=$(sudo /sbin/chccwdev -e $device > /dev/null; echo $?)
+  rc=$(/sbin/chccwdev -e $device > /dev/null; echo $?)
   if (( rc != 0 )); then
     if [[ -e /sbin/cio_ignore ]]; then
-      rc=$(sudo /sbin/cio_ignore -r 0.0.$device > /dev/null; echo $?)
+      rc=$(/sbin/cio_ignore -r 0.0.$device > /dev/null; echo $?)
       which udevadm &> /dev/null && udevadm settle || udevsettle
     fi
-    rc=$(sudo /sbin/chccwdev -e $device > /dev/null; echo $?)
+    rc=$(/sbin/chccwdev -e $device > /dev/null; echo $?)
     if (( rc != 0 )); then
       echo "$funcName (Error) Could not activate the virtual device $device"
       return 1
@@ -569,11 +569,11 @@ function setupDisk {
       echo "/dev/disk/by-path/ccw-0.0.${xcat_vaddr}-part1 $xcat_mntdir $xcat_filesys defaults 0 0" >> /etc/fstab
     fi
 
-    out=`sudo mount -a 2>&1`
+    out=`mount -a 2>&1`
     if [[ "$out" ]]; then
       echo "Fail to mount the disk $xcat_vaddr with reason $out"
       mv /etc/fstab.bak /etc/fstab
-     sudo mount -a
+     mount -a
     else
       echo "The disk $xcat_vaddr has been mounted to $xcat_mntdir in format $xcat_filesys successfully"
     fi
