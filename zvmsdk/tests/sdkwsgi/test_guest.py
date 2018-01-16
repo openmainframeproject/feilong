@@ -135,6 +135,24 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        method='GET')
         return resp
 
+    def _guest_disks_create_additional(self, userid=None, disk=None):
+        if userid is None:
+            userid = self.userid
+
+        if disk is None:
+            disk = "ECKD:xcateckd"
+
+        body = """{"disk_info": {"disk_list":
+                                    [{"size": "1g",
+                                      "format": "ext3",
+                                      "disk_pool": "%s"}]}}""" % disk
+        url = '/guests/%s/disks' % userid
+
+        resp = self.client.api_request(url=url,
+                                       method='POST',
+                                       body=body)
+        return resp
+
     def _guest_disks_create(self, userid=None, disk=None):
         if userid is None:
             userid = self.userid
@@ -650,6 +668,7 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         # give chance to make disk online
         time.sleep(15)
+        flag = False
 
         try:
             resp = self._guest_deploy()
@@ -673,23 +692,9 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             self.assertTrue('MDISK 0101' in resp_create.content)
             self.assertTrue('MDISK 0101' not in resp_delete.content)
-        except Exception as e:
-            raise e
-        finally:
-            self._guest_delete()
-            self._vswitch_delete()
 
-    def test_guest_disks_config(self):
-        resp = self._guest_create()
-        self.assertEqual(200, resp.status_code)
-        # give chance to make disk online
-        time.sleep(15)
-
-        try:
-            resp = self._guest_deploy()
-            self.assertEqual(200, resp.status_code)
             # create new disks
-            resp = self._guest_disks_create()
+            resp = self._guest_disks_create_additional()
             self.assertEqual(200, resp.status_code)
             resp_create = self._guest_get()
             self.assertEqual(200, resp_create.status_code)
@@ -697,10 +702,21 @@ class GuestHandlerTestCase(unittest.TestCase):
             # config 'MDISK 0101'
             resp_config = self._guest_config_minidisk()
             self.assertEqual(200, resp_config.status_code)
+
+            resp = self._guest_start()
+            self.assertEqual(200, resp.status_code)
+            time.sleep(15)
+            result = self._smutclient.execute_cmd(self.userid, 'df -h')
+            result_list = result
+            for element in result_list:
+              if '/mnt/0101' in element:
+                flag = True
+            self.assertTrue(True, flag)
         except Exception as e:
             raise e
         finally:
             self._guest_delete()
+            self._vswitch_delete()
 
     def test_guest_create_delete_network_interface(self):
         resp = self._guest_create()
