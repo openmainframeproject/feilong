@@ -60,8 +60,24 @@ class GuestHandlerTestCase(unittest.TestCase):
         body = """{"guest": {"userid": "%s", "vcpus": 1,
                              "memory": 1024,
                              "user_profile": "%s",
-                             "disk_list": [{"size": "3g"}]}}"""
+                             "disk_list": [{"size": "3g",
+                                            "is_boot_disk": "True"},
+                                            {"size": "3g"}]}}"""
         body = body % (self.userid, CONF.zvm.user_profile)
+        resp = self.client.api_request(url='/guests', method='POST',
+                                       body=body)
+
+        return resp
+
+    def _guest_create_with_profile_notexit(self):
+        body = """{"guest": {"userid": "%s", "vcpus": 1,
+                             "memory": 1024,
+                             "user_profile": "%s",
+                             "disk_list": [{"size": "3g",
+                                            "is_boot_disk": "True"},
+                                            {"size": "3g"}]}}"""
+        user_profile = 'notexist'
+        body = body % (self.userid, user_profile)
         resp = self.client.api_request(url='/guests', method='POST',
                                        body=body)
 
@@ -544,10 +560,26 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_vnicsinfo('@@@@@123456789')
         self.assertEqual(400, resp.status_code)
 
+    def test_guest_creat_with_profile_notexit(self):
+        resp = self._guest_create_with_profile_notexit()
+        self.assertEqual(404, resp.status_code)
+
     def test_guest_create_with_profile(self):
         resp = self._guest_create_with_profile()
         self.assertEqual(200, resp.status_code)
-        self._guest_delete()
+        time.sleep(20)
+
+        try:
+            resp = self._guest_deploy()
+            self.assertEqual(200, resp.status_code)
+            resp_create = self._guest_get()
+            self.assertEqual(200, resp_create.status_code)
+            self.assertTrue('MDISK 0100' in resp_create.content)
+            self.assertTrue('MDISK 0101' in resp_create.content)
+        except Exception as e:
+            raise e
+        finally:
+            self._guest_delete()
 
     def test_guest_create_delete(self):
         resp = self._guest_create()
