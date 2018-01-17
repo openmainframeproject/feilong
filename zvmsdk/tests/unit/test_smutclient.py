@@ -139,15 +139,15 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                       'is_boot_disk': True,
                       'disk_pool': 'ECKD:eckdpool1',
                       'format': 'ext3'}]
-        profile = 'dfltprof'
+        profile = 'osdflt'
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
-              '--profile dfltprof --logonby "lbyuser1 lbyuser2" --ipl 0100')
+              '--profile osdflt --logonby "lbyuser1 lbyuser2" --ipl 0100')
         self._smutclient.create_vm(user_id, cpu, memory, disk_list, profile)
-        request.assert_called_once_with(rd)
-        add_mdisks.assert_called_once_with(user_id, disk_list)
-        add_guest.assert_called_once_with(user_id)
+        request.assert_called_with(rd)
+        add_mdisks.assert_called_with(user_id, disk_list)
+        add_guest.assert_called_with(user_id)
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_add_mdisk(self, request):
