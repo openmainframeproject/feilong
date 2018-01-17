@@ -1,6 +1,6 @@
 {
   "action": "capture",
   "image": "capturedimage",
-  "capturetype": "rootonly",
-  "compresslevel": 6
+  "capture_type": "rootonly",
+  "compress_level": 6
 }
