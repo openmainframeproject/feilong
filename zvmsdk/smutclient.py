@@ -327,8 +327,21 @@ class SMUTClient(object):
             rd += (' --ipl %s' % ipl_disk)
 
         action = "create userid '%s'" % userid
-        with zvmutils.log_and_reraise_smut_request_failed(action):
+
+        try:
             self._request(rd)
+        except exception.SDKSMUTRequestFailed as err:
+            if ((err.results['rc'] == 436) and (err.results['rs'] == 4)):
+                result = "Profile '%s'" % profile
+                raise exception.SDKObjectNotExistError(obj_desc=result,
+                                                       modID='guest')
+            else:
+                msg = ''
+                if action is not None:
+                    msg = "Failed to %s. " % action
+                msg += "SMUT error: %s" % err.format_message()
+                LOG.error(msg)
+                raise exception.SDKSMUTRequestFailed(err.results, msg)
 
         # Add the guest to db immediately after user created
         action = "add guest '%s' to database" % userid
