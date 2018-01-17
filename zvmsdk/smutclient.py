@@ -311,6 +311,11 @@ class SMUTClient(object):
             self._request(requestData)
 
     def create_vm(self, userid, cpu, memory, disk_list, profile):
+        """check whether profile exists"""
+        if not os.path.exists(profile):
+            obj_desc = "Profile with name: %s" % profile
+            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                   modID='guest')
         """ Create VM and add disks if specified. """
         rd = ('makevm %(uid)s directory LBYONLY %(mem)im %(pri)s '
               '--cpus %(cpu)i --profile %(prof)s' %
