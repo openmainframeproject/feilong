@@ -60,8 +60,24 @@ class GuestHandlerTestCase(unittest.TestCase):
         body = """{"guest": {"userid": "%s", "vcpus": 1,
                              "memory": 1024,
                              "user_profile": "%s",
-                             "disk_list": [{"size": "3g"}]}}"""
+                             "disk_list": [{"size": "3g",
+                                            "is_boot_disk": "True"},
+                                            {"size": "3g"}]}}"""
         body = body % (self.userid, CONF.zvm.user_profile)
+        resp = self.client.api_request(url='/guests', method='POST',
+                                       body=body)
+
+        return resp
+
+    def _guest_create_with_profile_notexit(self):
+        body = """{"guest": {"userid": "%s", "vcpus": 1,
+                             "memory": 1024,
+                             "user_profile": "%s",
+                             "disk_list": [{"size": "3g",
+                                            "is_boot_disk": "True"},
+                                            {"size": "3g"}]}}"""
+        user_profile = 'notexist'
+        body = body % (self.userid, user_profile)
         resp = self.client.api_request(url='/guests', method='POST',
                                        body=body)
 
@@ -241,6 +257,10 @@ class GuestHandlerTestCase(unittest.TestCase):
         body = '{"action": "start"}'
         return self._guest_action(body, userid=userid)
 
+    def _guest_softstop(self, userid=None):
+        body = '{"action": "softstop", "timeout": 300, "poll_interval": 20}'
+        return self._guest_action(body, userid=userid)
+
     def _guest_stop(self, userid=None):
         body = '{"action": "stop", "timeout": 300, "poll_interval": 15}'
         return self._guest_action(body, userid=userid)
@@ -408,6 +428,10 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_start('notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_softstop_not_exist(self):
+        resp = self._guest_softstop('notexist')
+        self.assertEqual(404, resp.status_code)
+
     def test_guest_stop_not_exist(self):
         resp = self._guest_stop('notexist')
         self.assertEqual(404, resp.status_code)
@@ -544,10 +568,26 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_vnicsinfo('@@@@@123456789')
         self.assertEqual(400, resp.status_code)
 
+    def test_guest_creat_with_profile_notexit(self):
+        resp = self._guest_create_with_profile_notexit()
+        self.assertEqual(404, resp.status_code)
+
     def test_guest_create_with_profile(self):
         resp = self._guest_create_with_profile()
         self.assertEqual(200, resp.status_code)
-        self._guest_delete()
+        time.sleep(20)
+
+        try:
+            resp = self._guest_deploy()
+            self.assertEqual(200, resp.status_code)
+            resp_create = self._guest_get()
+            self.assertEqual(200, resp_create.status_code)
+            self.assertTrue('MDISK 0100' in resp_create.content)
+            self.assertTrue('MDISK 0101' in resp_create.content)
+        except Exception as e:
+            raise e
+        finally:
+            self._guest_delete()
 
     def test_guest_create_delete(self):
         resp = self._guest_create()
@@ -712,6 +752,14 @@ class GuestHandlerTestCase(unittest.TestCase):
                 if '/mnt/0101' in element:
                     flag = True
             self.assertTrue(True, flag)
+
+            resp = self._guest_softstop()
+            self.assertEqual(200, resp.status_code)
+            time.sleep(10)
+            resp_state = self._guest_get_power_state()
+            self.assertEqual(200, resp_state.status_code)
+            resp_content = json.loads(resp_state.content)
+            self.assertEqual('off', resp_content['output'])
         except Exception as e:
             raise e
         finally:
