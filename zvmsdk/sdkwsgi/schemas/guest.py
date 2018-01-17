@@ -185,8 +185,8 @@ capture = {
     'type': 'object',
     'properties': {
         'image': parameter_types.name,
-        'capturetype': parameter_types.capture_type,
-        'compresslevel': parameter_types.compress_level,
+        'capture_type': parameter_types.capture_type,
+        'compress_level': parameter_types.compress_level,
     },
     'required': ['image'],
     'additionalProperties': False,

@@ -48,7 +48,7 @@ class GuestHandlerTestCase(unittest.TestCase):
     def _guest_create(self):
         body = """{"guest": {"userid": "%s", "vcpus": 1,
                              "memory": 1024,
-                             "disk_list": [{"size": "3g",
+                             "disk_list": [{"size": "1100",
                                             "is_boot_disk": "True"}]}}"""
         body = body % self.userid
         resp = self.client.api_request(url='/guests', method='POST',
@@ -302,13 +302,13 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         return self._guest_action(body, userid=userid)
 
-    def _guest_capture(self, userid=None, image=None, capturetype=None,
-                       compresslevel=None):
-        if capturetype is None:
-            capturetype = 'rootonly'
+    def _guest_capture(self, userid=None, image=None, capture_type=None,
+                       compress_level=None):
+        if capture_type is None:
+            capture_type = 'rootonly'
 
-        if compresslevel is None:
-            compresslevel = 6
+        if compress_level is None:
+            compress_level = 6
         body = """{"action": "capture",
                    "image": "test_capture_image1"}"""
         return self._guest_action(body, userid=userid)
@@ -565,8 +565,10 @@ class GuestHandlerTestCase(unittest.TestCase):
                                            transportfiles=transport_file,
                                            remotehost=remote_host)
             self.assertEqual(200, resp.status_code)
+
             resp = self._guest_start()
             self.assertEqual(200, resp.status_code)
+
             time.sleep(15)
             result = self._smutclient.execute_cmd(self.userid, 'hostname')
             self.assertEqual('deploy_tests', result[0])
@@ -614,6 +616,7 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             resp = self._guest_stop()
             self.assertEqual(200, resp.status_code)
+
             time.sleep(10)
             resp_state = self._guest_get_power_state()
             self.assertEqual(200, resp_state.status_code)
@@ -625,8 +628,13 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.apibase.verify_result('test_guests_get_stats',
                                        resp.content)
 
+            # Capture a powered off instance will lead to error
+            resp = self._guest_capture()
+            self.assertEqual(500, resp.status_code)
+
             resp = self._guest_start()
             self.assertEqual(200, resp.status_code)
+
             time.sleep(10)
             resp_info = self._guest_get_info()
             self.assertEqual(200, resp_info.status_code)
@@ -636,11 +644,16 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertNotEqual(info_off['cpu_time_us'], 0)
             self.assertNotEqual(info_off['mem_kb'], 0)
 
+            resp = self._guest_capture(capture_type='alldisks')
+            self.assertEqual(500, resp.status_code)
+
             resp = self._guest_capture()
             self.assertEqual(200, resp.status_code)
+
             time.sleep(15)
             resp = self._image_query(image_name='test_capture_image1')
             self.assertEqual(200, resp.status_code)
+
             resp_state = self._guest_get_power_state()
             self.assertEqual(200, resp_state.status_code)
             resp_content = json.loads(resp_state.content)
