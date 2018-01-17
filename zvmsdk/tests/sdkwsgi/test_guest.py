@@ -16,7 +16,6 @@ import os
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
 from zvmsdk import config
-from zvmsdk import utils
 from zvmsdk import smutclient
 
 CONF = config.CONF
@@ -48,7 +47,7 @@ class GuestHandlerTestCase(unittest.TestCase):
     def _guest_create(self):
         body = """{"guest": {"userid": "%s", "vcpus": 1,
                              "memory": 1024,
-                             "disk_list": [{"size": "3g",
+                             "disk_list": [{"size": "1100",
                                             "is_boot_disk": "True"}]}}"""
         body = body % self.userid
         resp = self.client.api_request(url='/guests', method='POST',
@@ -263,10 +262,9 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         return self._guest_action(body, userid=userid)
 
-    def _guest_deploy_with_transprot_file_and_remote_host(self, userid=None,
+    def _guest_deploy_with_transprot_file(self, userid=None,
                                        vdev=None, image=None,
-                                       transportfiles=None,
-                                       remotehost=None):
+                                       transportfiles=None):
         if image is None:
             image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
 
@@ -276,15 +274,10 @@ class GuestHandlerTestCase(unittest.TestCase):
         if transportfiles is None:
             transportfiles = "/var/lib/zvmsdk/cfgdrive.tgz"
 
-        if remotehost is None:
-            remotehost = utils.get_host()
-
         body = """{"action": "deploy",
                    "image": "%s",
                    "vdev": "%s",
-                   "transportfiles": "%s",
-                   "remotehost": "%s"}""" % (image, vdev, transportfiles,
-                                             remotehost)
+                   "transportfiles": "%s"}""" % (image, vdev, transportfiles)
 
         return self._guest_action(body, userid=userid)
 
@@ -302,15 +295,18 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         return self._guest_action(body, userid=userid)
 
-    def _guest_capture(self, userid=None, image=None, capturetype=None,
-                       compresslevel=None):
-        if capturetype is None:
-            capturetype = 'rootonly'
+    def _guest_capture(self, userid=None, image=None, capture_type=None,
+                       compress_level=None):
+        if capture_type is None:
+            capture_type = 'rootonly'
 
-        if compresslevel is None:
-            compresslevel = 6
+        if compress_level is None:
+            compress_level = 6
         body = """{"action": "capture",
-                   "image": "test_capture_image1"}"""
+                   "image": "test_capture_image1",
+                   "capture_type": "%s",
+                   "compress_level": %d}""" % (capture_type,
+                                               compress_level)
         return self._guest_action(body, userid=userid)
 
     def _guest_pause(self, userid=None):
@@ -556,17 +552,17 @@ class GuestHandlerTestCase(unittest.TestCase):
         # give chance to make disk online
         time.sleep(15)
 
-        remote_host = utils.get_host()
         self._make_transport_file()
         transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
 
         try:
-            resp = self._guest_deploy_with_transprot_file_and_remote_host(
-                                           transportfiles=transport_file,
-                                           remotehost=remote_host)
+            resp = self._guest_deploy_with_transprot_file(
+                                           transportfiles=transport_file)
             self.assertEqual(200, resp.status_code)
+
             resp = self._guest_start()
             self.assertEqual(200, resp.status_code)
+
             time.sleep(15)
             result = self._smutclient.execute_cmd(self.userid, 'hostname')
             self.assertEqual('deploy_tests', result[0])
@@ -614,6 +610,7 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             resp = self._guest_stop()
             self.assertEqual(200, resp.status_code)
+
             time.sleep(10)
             resp_state = self._guest_get_power_state()
             self.assertEqual(200, resp_state.status_code)
@@ -625,8 +622,13 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.apibase.verify_result('test_guests_get_stats',
                                        resp.content)
 
+            # Capture a powered off instance will lead to error
+            resp = self._guest_capture()
+            self.assertEqual(500, resp.status_code)
+
             resp = self._guest_start()
             self.assertEqual(200, resp.status_code)
+
             time.sleep(10)
             resp_info = self._guest_get_info()
             self.assertEqual(200, resp_info.status_code)
@@ -636,11 +638,16 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertNotEqual(info_off['cpu_time_us'], 0)
             self.assertNotEqual(info_off['mem_kb'], 0)
 
+            resp = self._guest_capture(capture_type='alldisks')
+            self.assertEqual(500, resp.status_code)
+
             resp = self._guest_capture()
             self.assertEqual(200, resp.status_code)
-            time.sleep(15)
+
+            PURGE_IMG = 1
             resp = self._image_query(image_name='test_capture_image1')
             self.assertEqual(200, resp.status_code)
+
             resp_state = self._guest_get_power_state()
             self.assertEqual(200, resp_state.status_code)
             resp_content = json.loads(resp_state.content)
