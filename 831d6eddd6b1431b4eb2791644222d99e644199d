@@ -22,6 +22,30 @@
       "revId": "831d6eddd6b1431b4eb2791644222d99e644199d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a622f7dd_84e96aca",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 486,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-01-17T07:51:51Z",
+      "side": 1,
+      "message": "Add the case in api testing",
+      "parentUuid": "8fbbbb7f_84a9bf5e",
+      "range": {
+        "startLine": 483,
+        "startChar": 7,
+        "endLine": 486,
+        "endChar": 59
+      },
+      "revId": "831d6eddd6b1431b4eb2791644222d99e644199d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
