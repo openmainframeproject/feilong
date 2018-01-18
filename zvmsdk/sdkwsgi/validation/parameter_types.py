@@ -330,10 +330,49 @@ user_vlan_id = {
     'properties': {
         'userid': userid,
         'vlanid': {'type': ['integer'],
-                   'minimum': 0,
+                   'minimum': 1,
                    'maximum': 4094,
                   }
     },
     'required': ['userid', "vlanid"],
     'additionalProperties': False
+}
+
+connection_type = {
+    'type': 'string',
+    'enum': ['CONnect', 'DISCONnect', 'NOUPLINK']
+}
+
+router_type = {
+    'type': 'string',
+    'enum': ['NONrouter', 'PRIrouter']
+}
+
+network_type = {
+    'type': 'string',
+    'enum': ['IP', 'ETHernet']
+}
+
+vid_type = {
+    'oneOf': [
+        {'type': 'string', 'enum': ['UNAWARE', 'AWARE']},
+        {'type': 'integer', 'minimum': 1, 'maximum': 4094}
+    ]
+}
+
+port_type = {
+    'type': 'string',
+    'enum': ['ACCESS', 'TRUNK']
+}
+
+gvrp_type = {
+    'type': 'string',
+    'enum': ['GVRP', 'NOGVRP']
+}
+
+native_vid_type = {
+    'oneOf': [
+        {'type': 'string', 'enum': ['None']},
+        {'type': 'integer', 'minimum': 1, 'maximum': 4094}
+    ]
 }
