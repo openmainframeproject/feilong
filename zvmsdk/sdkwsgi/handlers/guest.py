@@ -12,11 +12,15 @@
 """Handler for the root of the sdk API."""
 
 import json
+import six
+import threading
 import webob.exc
 
+from zvmsdk import config
 from zvmconnector import connector
 from zvmsdk import config
 from zvmsdk import log
+from zvmsdk import returncode
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import guest
 from zvmsdk.sdkwsgi import util
@@ -28,6 +32,7 @@ _VMACTION = None
 _VMHANDLER = None
 CONF = config.CONF
 LOG = log.LOG
+CONF = config.CONF
 
 
 class VMHandler(object):
@@ -202,10 +207,13 @@ class VMHandler(object):
 
 
 class VMAction(object):
+
     def __init__(self):
         self.client = connector.ZVMConnector(connection_type='socket',
                                              ip_addr=CONF.sdkserver.bind_addr,
                                              port=CONF.sdkserver.bind_port)
+        self.dd_semaphore = threading.BoundedSemaphore(
+            value=CONF.wsgi.max_concurrent_deploy_capture)
 
     def start(self, userid, body):
         info = self.client.send_request('guest_start', userid)
@@ -268,11 +276,43 @@ class VMAction(object):
         remotehost = body.get('remotehost', None)
         vdev = body.get('vdev', None)
 
-        info = self.client.send_request('guest_deploy', userid,
-                                        image_name,
-                                        transportfiles=transportfiles,
-                                        remotehost=remotehost,
-                                        vdev=vdev)
+        request_info = ("userid: %(userid)s,"
+                        "transportfiles: %(trans)s, remotehost: %(remote)s,"
+                        "vdev: %(vdev)s" %
+                        {'userid': userid, 'trans': transportfiles,
+                         'remote': remotehost, 'vdev': vdev
+                         })
+
+        info = None
+        dd_allowed = self.dd_semaphore.acquire(blocking=False)
+        if not dd_allowed:
+            err_msg = ("Max concurrent deploy/capture received,"
+                       " deploy request rejected. %s" % request_info)
+            LOG.error(err_msg)
+            info = {'overallRC': 503, 'modID': returncode.ModRCs['sdkwsgi'],
+                    'rc': 503, 'rs': 1, 'errmsg': err_msg,
+                    'output': ''
+                    }
+            return info
+
+        try:
+            LOG.debug("WSGI sending deploy requests. %s" % request_info)
+            info = self.client.send_request('guest_deploy', userid,
+                                            image_name,
+                                            transportfiles=transportfiles,
+                                            remotehost=remotehost,
+                                            vdev=vdev)
+        finally:
+            try:
+                self.dd_semaphore.release()
+                LOG.debug("WSGI deploy request finished, %s."
+                          "Resource released." % request_info)
+            except Exception as err:
+                err_msg = ("Failed to release deploy resource in WSGI."
+                           "Error: %s, request info: %s" %
+                           (six.text_type(err), request_info))
+                LOG.error(err_msg)
+
         return info
 
     @validation.schema(guest.capture)
@@ -282,10 +322,41 @@ class VMAction(object):
         capture_type = body.get('capture_type', 'rootonly')
         compress_level = body.get('compress_level', 6)
 
-        info = self.client.send_request('guest_capture', userid,
-                                        image_name,
-                                        capture_type=capture_type,
-                                    compress_level=compress_level)
+        request_info = ("userid: %(userid)s,"
+                        "image name: %(image)s, capture type: %(cap)s,"
+                        "compress level: %(level)s" %
+                        {'userid': userid, 'image': image_name,
+                         'cap': capture_type, 'level': compress_level
+                         })
+        info = None
+        capture_allowed = self.dd_semaphore.acquire(blocking=False)
+        if not capture_allowed:
+            err_msg = ("Max concurrent deploy/capture received,"
+                       " capture request rejected. %s" % request_info)
+            LOG.error(err_msg)
+            info = {'overallRC': 503, 'modID': returncode.ModRCs['sdkwsgi'],
+                    'rc': 503, 'rs': 1, 'errmsg': err_msg,
+                    'output': ''
+                    }
+            return info
+
+        try:
+            LOG.debug("WSGI sending capture requests. %s" % request_info)
+            info = self.client.send_request('guest_capture', userid,
+                                            image_name,
+                                            capture_type=capture_type,
+                                            compress_level=compress_level)
+        finally:
+            try:
+                self.dd_semaphore.release()
+                LOG.debug("WSGI capture request finished, %s."
+                          "Resource released." % request_info)
+            except Exception as err:
+                err_msg = ("Failed to release capture resource in WSGI."
+                           "Error: %s, request info: %s" %
+                           (six.text_type(err), request_info))
+                LOG.error(err_msg)
+
         return info
 
 
