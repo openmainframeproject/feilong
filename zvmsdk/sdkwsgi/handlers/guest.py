@@ -15,6 +15,7 @@ import json
 import webob.exc
 
 from zvmconnector import connector
+from zvmsdk import config
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import guest
@@ -25,12 +26,14 @@ from zvmsdk import utils
 
 _VMACTION = None
 _VMHANDLER = None
+CONF = config.CONF
 LOG = log.LOG
 
 
 class VMHandler(object):
     def __init__(self):
-        self.client = connector.ZVMConnector()
+        self.client = connector.ZVMConnector(connection_type='socket',
+                                             port=CONF.sdkserver.bind_port)
 
     @validation.schema(guest.create)
     def create(self, body):
@@ -199,7 +202,8 @@ class VMHandler(object):
 
 class VMAction(object):
     def __init__(self):
-        self.client = connector.ZVMConnector()
+        self.client = connector.ZVMConnector(connection_type='socket',
+                                             port=CONF.sdkserver.bind_port)
 
     def start(self, userid, body):
         info = self.client.send_request('guest_start', userid)
