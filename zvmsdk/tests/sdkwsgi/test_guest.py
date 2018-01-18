@@ -21,10 +21,17 @@ from zvmsdk import smutclient
 CONF = config.CONF
 
 
+def set_conf(section, opt, value):
+    CONF[section][opt] = value
+
+
 class GuestHandlerTestCase(unittest.TestCase):
     def __init__(self, methodName='runTest'):
         super(GuestHandlerTestCase, self).__init__(methodName)
         self.apibase = api_sample.APITestBase()
+
+        # test change bind_port
+        set_conf('sdkserver', 'bind_port', 3000)
 
         self.client = test_sdkwsgi.TestSDKClient()
 
