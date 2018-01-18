@@ -78,8 +78,6 @@ class VSwitchTestCase(unittest.TestCase):
             vswinfo = json.loads(resp.content)['output']
             switch_name = vswinfo['switch_name']
             self.assertEqual(switch_name, 'RESTVSW1')
-        except Exception:
-            raise
         finally:
             resp = self._vswitch_delete()
             self.assertEqual(200, resp.status_code)
@@ -102,8 +100,6 @@ class VSwitchTestCase(unittest.TestCase):
             resp = self.client.api_request(url='/vswitches/RESTVSW1',
                                            method='PUT', body=body)
             self.assertEqual(200, resp.status_code)
-        except Exception:
-            raise
         finally:
             resp = self._vswitch_delete()
             self.assertEqual(200, resp.status_code)
