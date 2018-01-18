@@ -50,6 +50,12 @@ class VSwitchTestCase(unittest.TestCase):
                                        body=body)
         return resp
 
+    def _vswitch_create_aware(self):
+        body = '{"vswitch": {"name": "RESTVSW1", "rdev": "FF00", "vid": 1}}'
+        resp = self.client.api_request(url='/vswitches', method='POST',
+                                       body=body)
+        return resp
+
     def _vswitch_delete(self):
         resp = self.client.api_request(url='/vswitches/restvsw1',
                                        method='DELETE')
@@ -91,7 +97,10 @@ class VSwitchTestCase(unittest.TestCase):
             inlist = 'RESTVSW1' in vswlist
             self.assertFalse(inlist)
 
-    def test_vswitch_update(self):
+            resp = self._vswitch_query()
+            self.assertEqual(404, resp.status_code)
+
+    def test_vswitch_grant_revoke(self):
         resp = self._vswitch_create()
         self.assertEqual(200, resp.status_code)
 
@@ -100,6 +109,25 @@ class VSwitchTestCase(unittest.TestCase):
             resp = self.client.api_request(url='/vswitches/RESTVSW1',
                                            method='PUT', body=body)
             self.assertEqual(200, resp.status_code)
+
+            resp = self._vswitch_query()
+            self.assertEqual(200, resp.status_code)
+            vswinfo = json.loads(resp.content)['output']
+            inlist = 'FVTUSER1' in vswinfo['authorized_users']
+            self.assertTrue(inlist)
+
+            body = '{"vswitch": {"revoke_userid": "FVTUSER1"}}'
+            resp = self.client.api_request(url='/vswitches/RESTVSW1',
+                                           method='PUT', body=body)
+            self.assertEqual(200, resp.status_code)
+
+            resp = self._vswitch_query()
+            self.assertEqual(200, resp.status_code)
+            vswinfo = json.loads(resp.content)['output']
+            inlist = 'FVTUSER1' in vswinfo['authorized_users']
+            self.assertFalse(inlist)
+        except Exception:
+            raise
         finally:
             resp = self._vswitch_delete()
             self.assertEqual(200, resp.status_code)
@@ -115,6 +143,18 @@ class VSwitchTestCase(unittest.TestCase):
                                        method='PUT', body=body)
         self.assertEqual(404, resp.status_code)
 
+        body = '{"vswitch": {"revoke_userid": "FVTUSER1"}}'
+        resp = self.client.api_request(url='/vswitches/notexist',
+                                       method='PUT', body=body)
+        self.assertEqual(404, resp.status_code)
+
+        content = {"vswitch": {"user_vlan_id":
+                                 {"userid": "FVTUSER1", "vlanid": 10}}}
+        body = json.dumps(content)
+        resp = self.client.api_request(url='/vswitches/notexist',
+                                           method='PUT', body=body)
+        self.assertEqual(404, resp.status_code)
+
         resp = self.client.api_request(url='/vswitches/notexist',
                                        method='GET')
         self.assertEqual(404, resp.status_code)
@@ -127,4 +167,160 @@ class VSwitchTestCase(unittest.TestCase):
 
     def test_vswitch_create_nobody(self):
         resp = self.client.api_request(url='/vswitches', method='POST')
+        self.assertEqual(400, resp.status_code)
+
+    def test_vswitch_set_port_vlanid(self):
+        resp = self._vswitch_create_aware()
+        self.assertEqual(200, resp.status_code)
+
+        try:
+            content = {"vswitch": {"user_vlan_id":
+                               {"userid": "FVTUSER1", "vlanid": 10}}}
+            body = json.dumps(content)
+            resp = self.client.api_request(url='/vswitches/RESTVSW1',
+                                           method='PUT', body=body)
+            self.assertEqual(200, resp.status_code)
+
+            resp = self._vswitch_query()
+            self.assertEqual(200, resp.status_code)
+            vswinfo = json.loads(resp.content)['output']
+            inlist = 'FVTUSER1' in vswinfo['authorized_users']
+            self.assertTrue(inlist)
+            self.assertEqual('1',
+                        vswinfo['authorized_users']['FVTUSER1']['vlan_count'])
+            self.assertListEqual(['10'],
+                        vswinfo['authorized_users']['FVTUSER1']['vlan_ids'])
+        except Exception:
+            raise
+        finally:
+            resp = self._vswitch_delete()
+            self.assertEqual(200, resp.status_code)
+
+    def test_vswitch_set_port_invalid_vlanid(self):
+        resp = self._vswitch_create_aware()
+        self.assertEqual(200, resp.status_code)
+        try:
+            content = {"vswitch": {"user_vlan_id":
+                               {"userid": "FVTUSER1", "vlanid": 0}}}
+            body = json.dumps(content)
+            resp = self.client.api_request(url='/vswitches/RESTVSW1',
+                                           method='PUT', body=body)
+            self.assertEqual(400, resp.status_code)
+
+            content = {"vswitch": {"user_vlan_id":
+                               {"userid": "FVTUSER1", "vlanid": 4095}}}
+            body = json.dumps(content)
+            resp = self.client.api_request(url='/vswitches/RESTVSW1',
+                                           method='PUT', body=body)
+            self.assertEqual(400, resp.status_code)
+
+            content = {"vswitch": {"user_vlan_id":
+                               {"userid": "FVTUSER1", "vlanid": "BADAWARE"}}}
+            body = json.dumps(content)
+            resp = self.client.api_request(url='/vswitches/RESTVSW1',
+                                           method='PUT', body=body)
+            self.assertEqual(400, resp.status_code)
+        except Exception:
+            raise
+        finally:
+            resp = self._vswitch_delete()
+            self.assertEqual(200, resp.status_code)
+
+    def test_vswitch_set_port_vlanid_vswitch_unaware(self):
+        resp = self._vswitch_create()
+        self.assertEqual(200, resp.status_code)
+        try:
+            content = {"vswitch": {"user_vlan_id":
+                               {"userid": "FVTUSER1", "vlanid": 1}}}
+            body = json.dumps(content)
+            resp = self.client.api_request(url='/vswitches/RESTVSW1',
+                                       method='PUT',
+                                       body=body)
+            self.assertEqual(500, resp.status_code)
+        except Exception:
+            raise
+        finally:
+            resp = self._vswitch_delete()
+            self.assertEqual(200, resp.status_code)
+
+    def test_vswitch_create_vlan_unaware(self):
+        content = {"vswitch": {"name": "RESTVSW1", "rdev": "FF00",
+                               "controller": "FAKEVMID",
+                               "connection": "CONnect",
+                               "network_type": "IP", "router": "NONrouter",
+                               "vid": "UNAWARE", "port_type": "ACCESS",
+                               "gvrp": "NOGVRP", "queue_mem": 3,
+                               "native_vid": 1, "persist": False}}
+        body = json.dumps(content)
+        resp = self.client.api_request(url='/vswitches', method='POST',
+                                       body=body)
+        self.assertEqual(200, resp.status_code)
+        try:
+            resp = self._vswitch_query()
+            self.assertEqual(200, resp.status_code)
+            vswinfo = json.loads(resp.content)['output']
+            switch_name = vswinfo['switch_name']
+            self.assertEqual('RESTVSW1', switch_name)
+            self.assertEqual('IP', vswinfo['transport_type'])
+            self.assertEqual('NONE', vswinfo['port_type'])
+            self.assertEqual('3', vswinfo['queue_memory_limit'])
+            self.assertEqual('UNAWARE', vswinfo['vlan_awareness'])
+            self.assertEqual('NONROUTER', vswinfo['routing_value'])
+            self.assertEqual('NOGVRP', vswinfo['gvrp_request_attribute'])
+            self.assertEqual('USERBASED', vswinfo['user_port_based'])
+            self.assertDictEqual({}, vswinfo['authorized_users'])
+            self.assertTrue('FF00' in vswinfo['real_devices'])
+        except Exception:
+            raise
+        finally:
+            resp = self._vswitch_delete()
+            self.assertEqual(200, resp.status_code)
+
+    def test_vswitch_create_vlan_aware(self):
+        content = {"vswitch": {"name": "RESTVSW1", "rdev": "1111 2222",
+                               "controller": "FAKEVMID",
+                               "connection": "DISCONnect",
+                               "network_type": "ETHernet",
+                               "router": "PRIrouter",
+                               "vid": 1000, "port_type": "TRUNK",
+                               "gvrp": "GVRP", "queue_mem": 5,
+                               "native_vid": 10, "persist": True}}
+        body = json.dumps(content)
+        resp = self.client.api_request(url='/vswitches', method='POST',
+                                       body=body)
+        self.assertEqual(200, resp.status_code)
+        try:
+            resp = self._vswitch_query()
+            self.assertEqual(200, resp.status_code)
+            vswinfo = json.loads(resp.content)['output']
+            switch_name = vswinfo['switch_name']
+            self.assertEqual('RESTVSW1', switch_name)
+            self.assertEqual('ETHERNET', vswinfo['transport_type'])
+            self.assertEqual('TRUNK', vswinfo['port_type'])
+            self.assertEqual('5', vswinfo['queue_memory_limit'])
+            self.assertEqual('AWARE', vswinfo['vlan_awareness'])
+            self.assertEqual('GVRP', vswinfo['gvrp_request_attribute'])
+            self.assertEqual('USERBASED', vswinfo['user_port_based'])
+            self.assertDictEqual({}, vswinfo['authorized_users'])
+            self.assertEqual('1000', vswinfo['vlan_id'])
+            self.assertEqual('0010', vswinfo['native_vlan_id'])
+            self.assertEqual('NA', vswinfo['routing_value'])
+            self.assertTrue(sorted(['1111', '2222']),
+                            sorted(vswinfo['real_devices'].keys()))
+        except Exception:
+            raise
+        finally:
+            resp = self._vswitch_delete()
+            self.assertEqual(200, resp.status_code)
+
+    def test_vswitch_create_long_name(self):
+        body = '{"vswitch": {"name": "LONGVSWITCHNAME", "rdev": "FF00"}}'
+        resp = self.client.api_request(url='/vswitches', method='POST',
+                                       body=body)
+        self.assertEqual(400, resp.status_code)
+
+    def test_vswitch_create_invalid_rdev(self):
+        body = '{"vswitch": {"name": "RESTVSW1", "rdev": "11 22 33 44"}}'
+        resp = self.client.api_request(url='/vswitches', method='POST',
+                                       body=body)
         self.assertEqual(400, resp.status_code)

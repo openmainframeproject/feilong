@@ -24,51 +24,18 @@ create = {
                 # FIXME: controller has its own conventions
                 'controller': parameter_types.controller,
                 'persist': parameter_types.boolean,
-                'connection': {
-                    'type': ['integer'],
-                    'minimum': 0,
-                    'maximum': 2,
-                },
+                'connection': parameter_types.connection_type,
                 'queue_mem': {
                     'type': ['integer'],
                     'minimum': 1,
                     'maximum': 8,
                 },
-                'router': {
-                    'type': ['integer'],
-                    'minimum': 0,
-                    'maximum': 2,
-                },
-                'network_type': {
-                    'type': ['integer'],
-                    'minimum': 0,
-                    'maximum': 2,
-                },
-                'vid': {
-                    'type': ['integer'],
-                    'minimum': 0,
-                    'maximum': 4094,
-                },
-                'port_type': {
-                    'type': ['integer'],
-                    'minimum': 0,
-                    'maximum': 2,
-                },
-                'update': {
-                    'type': ['integer'],
-                    'minimum': 0,
-                    'maximum': 3,
-                },
-                'gvrp': {
-                    'type': ['integer'],
-                    'minimum': 0,
-                    'maximum': 2,
-                },
-                'native_vid': {
-                    'type': ['integer'],
-                    'minimum': 0,
-                    'maximum': 4094,
-                },
+                'router': parameter_types.router_type,
+                'network_type': parameter_types.network_type,
+                'vid': parameter_types.vid_type,
+                'port_type': parameter_types.port_type,
+                'gvrp': parameter_types.gvrp_type,
+                'native_vid': parameter_types.native_vid_type,
             },
             'required': ['name', 'rdev'],
             'additionalProperties': False,
