@@ -11,6 +11,7 @@
 import json
 import unittest
 
+from zvmsdk import config
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
 
@@ -18,6 +19,11 @@ from zvmsdk import log
 
 
 LOG = log.LOG
+CONF = config.CONF
+
+
+def set_conf(section, opt, value):
+    CONF[section][opt] = value
 
 
 class VSwitchTestCase(unittest.TestCase):
@@ -25,6 +31,8 @@ class VSwitchTestCase(unittest.TestCase):
         super(VSwitchTestCase, self).__init__(methodName)
         self.apibase = api_sample.APITestBase()
 
+        # test change bind_port
+        set_conf('sdkserver', 'bind_port', 3000)
         self.client = test_sdkwsgi.TestSDKClient()
         self._cleanup()
 
