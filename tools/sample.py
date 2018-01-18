@@ -9,7 +9,7 @@ from zvmconnector import connector
 
 
 # Guest properties
-GUEST_USERID = 'SDKSAMP1'
+GUEST_USERID = 'RESTT001'
 GUEST_PROFILE = 'osdflt'
 GUEST_VCPUS = 1
 GUEST_MEMORY = 1024         # in megabytes
@@ -17,17 +17,17 @@ GUEST_ROOT_DISK_SIZE = 1    # in gigabytes
 DISK_POOL = 'ECKD:xcateckd'
 
 # Image properties
-IMAGE_PATH = '/root/smuttest/rhel67eckd_small_1100cyl.img'
-IMAGE_OS_VERSION = 'rhel6.7'
+IMAGE_PATH = '/root/images/0100'
+IMAGE_OS_VERSION = 'rhel7'
 
 # Network properties
-GUEST_IP_ADDR = '192.168.127.200'
+GUEST_IP_ADDR = '192.168.127.110'
 GATEWAY = '192.168.127.1'
 CIDR = '192.168.127.0/24'
 VSWITCH_NAME = 'xcatvsw2'
 
 
-sdk_client = connector.ZVMConnector(connection_type='rest', port='8888')
+sdk_client = connector.ZVMConnector(connection_type='rest', port=8080)
 
 
 def terminate_guest(userid):
@@ -103,10 +103,10 @@ def import_image(image_path, os_version):
     print("Checking if image %s exists or not, import it if not exists" %
           image_name)
     image_info = sdk_client.send_request('image_query', imagename=image_name)
-    if not image_info:
+    if 'overallRC' in image_info and image_info['overallRC']:
         print("Importing image %s ..." % image_name)
         url = 'file://' + image_path
-        sdk_client.send_request('image_import', image_name, url,
+        ret = sdk_client.send_request('image_import', image_name, url,
                                 {'os_version': os_version})
     else:
         print("Image %s already exists" % image_name)
@@ -147,31 +147,50 @@ def _run_guest(userid, image_path, os_version, profile,
 
     # Start time
     spawn_start = time.time()
-
     # Create userid
     print("Creating userid %s ..." % userid)
-    sdk_client.send_request('guest_create', userid, cpu, memory,
+    ret = sdk_client.send_request('guest_create', userid, cpu, memory,
                             disk_list=disks_list,
                             user_profile=profile)
+    if ret['overallRC']:
+        print 'guest_create error:%s' % ret
+        return -1
 
     # Deploy image to root disk
     image_name = os.path.basename(image_path)
     print("Deploying %s to %s ..." % (image_name, userid))
-    sdk_client.send_request('guest_deploy', userid, image_name)
+    ret = sdk_client.send_request('guest_deploy', userid, image_name)
+    if ret['overallRC']:
+        print 'guest_deploy error:%s' % ret
+        return -2
 
     # Create network device and configure network interface
     print("Configuring network interface for %s ..." % userid)
-    sdk_client.send_request('guest_create_network_interface', userid,
+    ret = sdk_client.send_request('guest_create_network_interface', userid,
                             os_version, [network_info])
-    sdk_client.send_request('guest_nic_couple_to_vswitch', userid,
+    if ret['overallRC']:
+        print 'guest_create_network error:%s' % ret
+        return -3
+    # Couple to vswitch
+    ret = sdk_client.send_request('guest_nic_couple_to_vswitch', userid,
                             '1000', network_info['vswitch_name'])
-    sdk_client.send_request('vswitch_grant_user',
+    if ret['overallRC']:
+        print 'guest_nic_couple error:%s' % ret
+        return -4
+    # Grant user
+    ret = sdk_client.send_request('vswitch_grant_user',
                             network_info['vswitch_name'],
                             userid)
+    if ret['overallRC']:
+        print 'vswitch_grant_user error:%s' % ret
+        return -5
 
     # Power on the vm
     print("Starting guest %s" % userid)
-    sdk_client.send_request('guest_start', userid)
+    ret = sdk_client.send_request('guest_start', userid)
+    if ret['overallRC']:
+        print 'guest_start error:%s' % ret
+        return -6
 
     # End time
     spawn_time = time.time() - spawn_start
