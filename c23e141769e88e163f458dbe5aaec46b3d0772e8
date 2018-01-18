@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2862546c_6001dce2",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 576,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-01-18T07:00:36Z",
+      "side": 1,
+      "message": "we can remove it directly, without deprecate it \nbecause we are not release yet",
+      "parentUuid": "3f261d5c_e6678b33",
+      "range": {
+        "startLine": 576,
+        "startChar": 19,
+        "endLine": 576,
+        "endChar": 46
+      },
+      "revId": "c23e141769e88e163f458dbe5aaec46b3d0772e8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b0bb664c_fc3397a8",
         "filename": "zvmsdk/utils.py",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2018-01-18T06:29:41Z",
       "side": 1,
       "message": "I validated connect_type here because it is used here. It is strange to validate all options here.\n\nsuggest not to validate conf value here.  This is schema check, other options may also need. Also sdkserver is about to be removed in next release. IMHO, it is more reasonable to do this in the conf.py if we want to do this.\n\nAnother point is, also need to check the part before : is ECKD or FBA.",
+      "range": {
+        "startLine": 585,
+        "startChar": 8,
+        "endLine": 585,
+        "endChar": 40
+      },
+      "revId": "c23e141769e88e163f458dbe5aaec46b3d0772e8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "71b92bd1_912b351e",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 585,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-01-18T07:00:36Z",
+      "side": 1,
+      "message": "ok, maybe it\u0027s a good point but I still think we should have a valid disk pool, or we will keep having 500 error when someone start to use skd to do disk related action, we want to avoid 500 as much as we can",
+      "parentUuid": "b0bb664c_fc3397a8",
       "range": {
         "startLine": 585,
         "startChar": 8,
