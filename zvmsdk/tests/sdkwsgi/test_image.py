@@ -25,6 +25,9 @@ class ImageTestCase(unittest.TestCase):
 
         self.apibase = api_sample.APITestBase()
 
+        # make sure image temp path exists
+        utils.PathUtils()._get_image_tmp_path()
+
     def setUp(self):
         self.client = test_sdkwsgi.TestSDKClient()
 
@@ -69,7 +72,7 @@ class ImageTestCase(unittest.TestCase):
 
     def _image_export(self, image_name='image1'):
         url = '/images/%s' % image_name
-        dest_url = 'file:///tmp/images/%s' % image_name
+        dest_url = ''.join(['file://', CONF.image.temp_path, image_name])
         body = """{"location": {"dest_url": "%s"}}""" % (dest_url)
 
         resp = self.client.api_request(url=url,
