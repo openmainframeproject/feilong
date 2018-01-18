@@ -4239,18 +4239,18 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
                 }
 
                 strcpy(vepa_status, "");
-                strcpy(spg_scope, "");
                 if (vepaStatusFlag == 1) {
                     // get vepa status
-                    token = strtok_r(NULL, " \0", &buffer);
+                    token = strtok_r(NULL, blank, &buffer);
                     if (token != NULL) {
-                        strcpy(vepa_status, token);
-                        // spg scope will only appear if vespa does
-                        token = strtok_r(NULL, " \0", &buffer);
-                        if (token != NULL) {
-                            strcpy(spg_scope, token);
-                        }
+                    	strcpy(vepa_status, token);
                     }
+                }
+
+                strcpy(spg_scope, "");
+                token = strtok_r(NULL, "\0", &buffer);
+                if (token != NULL) {
+                    strcpy(spg_scope, token);
                 }
             }
             snprintf(strMsg, sizeof(strMsg),
