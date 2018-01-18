@@ -24,9 +24,10 @@ class ImageTestCase(unittest.TestCase):
         super(ImageTestCase, self).__init__(methodName)
 
         self.apibase = api_sample.APITestBase()
-
-    def setUp(self):
         self.client = test_sdkwsgi.TestSDKClient()
+
+        # make sure image temp path exists
+        utils.PathUtils()._get_image_tmp_path()
 
     def _image_create(self):
         image_fname = "image1"
@@ -69,7 +70,7 @@ class ImageTestCase(unittest.TestCase):
 
     def _image_export(self, image_name='image1'):
         url = '/images/%s' % image_name
-        dest_url = 'file:///tmp/images/%s' % image_name
+        dest_url = ''.join(['file://', CONF.image.temp_path, image_name])
         body = """{"location": {"dest_url": "%s"}}""" % (dest_url)
 
         resp = self.client.api_request(url=url,
@@ -112,6 +113,14 @@ class ImageTestCase(unittest.TestCase):
 
     def test_image_query_not_exist(self):
         resp = self._image_query(image_name='dummy')
+        self.assertEqual(404, resp.status_code)
+
+    def test_image_delete_not_exist(self):
+        resp = self._image_delete(image_name='dummy')
+        self.assertEqual(404, resp.status_code)
+
+    def test_image_get_root_disk_size_not_exist(self):
+        resp = self.test_image_get_root_disk_size_not_exist(image_name='dummy')
         self.assertEqual(404, resp.status_code)
 
     def test_image_create_delete(self):
