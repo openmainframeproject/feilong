@@ -357,9 +357,6 @@ class ZVMConnectorTestCase(unittest.TestCase):
 
             self._guest_stop(CONN_REST)
             self._guest_stop(CONN_SOCKET)
-
-        except Exception as e:
-            raise e
         finally:
             self._guest_delete(CONN_REST)
             self._guest_delete(CONN_SOCKET)
