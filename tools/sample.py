@@ -103,7 +103,7 @@ def import_image(image_path, os_version):
     print("Checking if image %s exists or not, import it if not exists" %
           image_name)
     image_info = sdk_client.send_request('image_query', imagename=image_name)
-    if not image_info:
+    if 'overallRC' in image_info and image_info['overallRC']:
         print("Importing image %s ..." % image_name)
         url = 'file://' + image_path
         sdk_client.send_request('image_import', image_name, url,
