@@ -4,7 +4,7 @@
       "name": "vs_name",
       "rdev": "FF00",
       "controller": "*",
-      "connection": "CONNECT",
+      "connection": "CONnect",
       "network_type": "IP",
       "router": "NONROUTER",
       "vid": "UNAWARE",
