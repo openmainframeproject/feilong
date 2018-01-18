@@ -308,6 +308,20 @@ Admin-token in order to get a user-token from zvm sdk, and the user-token
 will be used to validate request before user-token expire.
 '''
         ),
+    Opt('max_concurrent_deploy_capture',
+        section='wsgi',
+        default=10,
+        opt_type='int',
+        help='''
+The max total number of concurrent deploy and capture requests allowed in a
+single z/VM Cloud Connector process.
+
+If more requests than this value are revieved concurrently, the z/VM Cloud
+Connector would reject the requests and return error to avoid resource
+exhaustion.
+.
+'''
+        ),
     # Daemon server options
     Opt('bind_addr',
         section='sdkserver',

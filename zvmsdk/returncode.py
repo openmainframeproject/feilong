@@ -93,6 +93,10 @@ Internal error     500    MODRC   500   1    The SDK module got unexpected
                                              bug report, SDK code should avoid
                                              using this return code.
 
+REST API Reject    503    MODRC   503   1    The SDK REST reject deploy/capture
+                                             requests because of the concurrent
+                                             capture/deploy running exceeds the
+                                             maximum number.
 """
 # -----------------------------------------------------------------------------
 # Detail Module RC definition of each error
