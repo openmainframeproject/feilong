@@ -14,6 +14,7 @@
 import json
 
 from zvmconnector import connector
+from zvmsdk import config
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import vswitch
@@ -23,12 +24,15 @@ from zvmsdk import utils
 
 
 _VOLUMEACTION = None
+CONF = config.CONF
 LOG = log.LOG
 
 
 class VolumeAction(object):
     def __init__(self):
-        self.client = connector.ZVMConnector()
+        self.client = connector.ZVMConnector(connection_type='socket',
+                                             ip_addr=CONF.sdkserver.bind_addr,
+                                             port=CONF.sdkserver.bind_port)
 
     def attach(self, userid, body):
         info = body['info']

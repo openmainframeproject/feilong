@@ -14,6 +14,7 @@
 import json
 
 from zvmconnector import connector
+from zvmsdk import config
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.schemas import vswitch
@@ -23,12 +24,15 @@ from zvmsdk import utils
 
 
 _VSWITCHACTION = None
+CONF = config.CONF
 LOG = log.LOG
 
 
 class VswitchAction(object):
     def __init__(self):
-        self.client = connector.ZVMConnector()
+        self.client = connector.ZVMConnector(connection_type='socket',
+                                             ip_addr=CONF.sdkserver.bind_addr,
+                                             port=CONF.sdkserver.bind_port)
 
     def list(self):
         return self.client.send_request('vswitch_get_list')
