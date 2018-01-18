@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6a86e99f_adb9ddbe",
+        "filename": "zthin-parts/zthin/src/smcliVirtual.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4246,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2018-01-18T12:17:12Z",
+      "side": 1,
+      "message": "Looks like a tab in here instead of spaces.",
+      "revId": "eb6a59f61a56a0119ba1bb629b5f6cc98ff547ae",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
