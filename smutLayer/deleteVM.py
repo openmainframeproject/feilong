@@ -16,7 +16,7 @@
 
 from smutLayer import generalUtils
 from smutLayer import msgs
-from smutLayer.vmUtils import invokeSMCLI, isLoggedOn
+from smutLayer.vmUtils import invokeSMCLI, isLoggedOn, purgeReader
 
 modId = "DVM"
 version = "1.0.0"
@@ -107,6 +107,13 @@ def deleteMachine(rh):
             # SMAPI API failed.
             rh.printLn("ES", results['response'])
             rh.updateResults(results)  # Use results returned by invokeSMCLI
+
+    # Clean up the reader before delete
+    if results['overallRC'] == 0:
+        result = purgeReader(rh)
+        if result['overallRC'] != 0:
+            # Tolerable the purge failure error
+            rh.updateResults({}, reset=1)
 
     if results['overallRC'] == 0:
         parms = ["-T", rh.userid, "-e", "0"]
