@@ -100,8 +100,19 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         return resp
 
-    def _guest_nic_create(self, vdev="1000", userid=None):
-        body = '{"nic": {"vdev": "%s"}}' % vdev
+    def _guest_nic_create(self, vdev="1000", userid=None, nic_id=None,
+                          mac_addr=None, active=False):
+        content = {"nic": {"vdev": vdev}}
+        if active:
+            content["nic"]["active"] = "True"
+        else:
+            content["nic"]["active"] = "False"
+        if nic_id is not None:
+            content["nic"]["nic_id"] = nic_id
+
+        if mac_addr is not None:
+            content["nic"]["mac_addr"] = mac_addr
+        body = json.dumps(content)
         if userid is None:
             userid = self.userid
 
@@ -141,8 +152,11 @@ class GuestHandlerTestCase(unittest.TestCase):
                                        body=body)
         return resp
 
-    def _guest_nic_delete(self, vdev="1000", userid=None):
-        body = '{"active": "False"}'
+    def _guest_nic_delete(self, vdev="1000", userid=None, active=False):
+        if active:
+            body = '{"active": "True"}'
+        else:
+            body = '{"active": "False"}'
         if userid is None:
             userid = self.userid
 
@@ -430,6 +444,35 @@ class GuestHandlerTestCase(unittest.TestCase):
         self.assertEqual(200, resp.status_code)
         return resp
 
+    def _check_nic(self, vdev, mac=None, vsw=None, devices=3):
+        """ Check nic status.
+        Returns a bool value to indicate whether the nic is defined in user and
+        a string value of the vswitch that the nic is attached to.
+        """
+        nic_entry = 'NICDEF %s TYPE QDIO' % vdev
+        if vsw is not None:
+            nic_entry += (" LAN SYSTEM %s") % vsw
+        nic_entry += (" DEVICES %d") % devices
+        if mac is not None:
+            nic_entry += (" MACID %s") % mac
+
+        resp_nic = self._guest_get()
+        self.assertEqual(200, resp_nic.status_code)
+
+        # Check definition
+        if nic_entry not in resp_nic.content:
+            return False, ""
+        else:
+            # Continue to check the nic info defined in vswitch table
+            resp = self._guest_nic_query()
+            nic_info = json.loads(resp.content)['output']
+            if vdev not in nic_info.keys():
+                # NIC defined in user direct, but not in switch table
+                return False, ""
+            else:
+                # NIC defined and added in switch table
+                return True, nic_info[vdev]
+
     def test_guest_get_not_exist(self):
         resp = self._guest_get('notexist')
         self.assertEqual(404, resp.status_code)
@@ -648,13 +691,73 @@ class GuestHandlerTestCase(unittest.TestCase):
                                            transportfiles=transport_file)
             self.assertEqual(200, resp.status_code)
 
+            # Creating NIC, not active.
+            resp = self._guest_nic_create()
+            self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("1000")
+            self.assertTrue(nic_defined)
+            self.assertEqual(None, vsw)
+
+            # Creating another NIC with fixed vdev.
+            resp = self._guest_nic_create("1003")
+            self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("1003")
+            self.assertTrue(nic_defined)
+            self.assertEqual(None, vsw)
+
+            # Creating NIC with vdev conflict with defined NIC."
+            resp = self._guest_nic_create("1004")
+            self.assertEqual(400, resp.status_code)
+
+            # Creating NIC with nic_id.
+            resp = self._guest_nic_create("1006", nic_id='123456')
+            self.assertEqual(200, resp.status_code)
+            resp = self._guest_get_nic_DB_info(nic_id='123456')
+            self.assertEqual(200, resp.status_code)
+            nic_info = json.loads(resp.content)['output']
+            self.assertEqual("1006", nic_info[0]["interface"])
+            self.assertEqual("123456", nic_info[0]["port"])
+
+            # Creating NIC with mac_addr
+            resp = self._guest_nic_create("1009",
+                                          mac_addr='02:00:00:12:34:56')
+            self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("1009", mac='123456')
+            self.assertTrue(nic_defined)
+            self.assertEqual(None, vsw)
+
+            # Creating NIC to active guest when guest is in off status.
+            resp = self._guest_nic_create("1100", active=True)
+            self.assertEqual(500, resp.status_code)
+
+            # Deleting NIC to active guest when guest is in off status.
+            resp = self._guest_nic_delete("1009", active=True)
+            self.assertEqual(500, resp.status_code)
+            nic_defined, vsw = self._check_nic("1009")
+            self.assertTrue(nic_defined)
+            self.assertEqual(None, vsw)
+
+            # Deleting NIC
+            resp = self._guest_nic_delete("1009")
+            self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("1009")
+            self.assertFalse(nic_defined)
+
+            # Deleting NIC not existed
+            resp = self._guest_nic_delete("1009")
+            self.assertEqual(200, resp.status_code)
+
             resp = self._guest_start()
             self.assertEqual(200, resp.status_code)
             self.assertTrue(self._wait_until(True, self.is_reachable,
                                              self.userid))
 
-            resp = self._guest_nic_create()
+            # Creating nic to the active guest
+            resp = self._guest_nic_create("1100", active=True)
             self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("1100")
+            self.assertTrue(nic_defined)
+            self.assertEqual(None, vsw)
 
             resp = self._guest_get()
             self.assertEqual(200, resp.status_code)
@@ -674,20 +777,32 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.apibase.verify_result('test_guests_get_vnics_info',
                                        resp.content)
 
-            resp = self._guest_nic_create("2000")
+            # Creating NIC
+            resp = self._guest_nic_create("2000", active=True)
             self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("2000")
+            self.assertTrue(nic_defined)
+            self.assertEqual(None, vsw)
 
             self._vswitch_create()
             PURGE_VSW = 1
 
             resp = self._vswitch_couple()
             self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("2000", vsw="RESTVSW1")
+            self.assertTrue(nic_defined)
+            self.assertEqual("RESTVSW1", vsw)
 
             resp = self._vswitch_uncouple()
             self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("2000")
+            self.assertTrue(nic_defined)
+            self.assertEqual(None, vsw)
 
-            resp = self._guest_nic_delete()
+            resp = self._guest_nic_delete(vdev="2000", active=True)
             self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("2000")
+            self.assertFalse(nic_defined)
 
             resp = self._guest_pause()
             self.assertEqual(200, resp.status_code)
@@ -854,37 +969,52 @@ class GuestHandlerTestCase(unittest.TestCase):
         self.apibase.verify_result('test_guests_get_nic_info',
                                    resp.content)
 
-    def _vswitch_create(self):
-        body = '{"vswitch": {"name": "RESTVSW1", "rdev": "FF00"}}'
+    def _vswitch_create(self, vswitch=None):
+        if not vswitch:
+            body = '{"vswitch": {"name": "RESTVSW1", "rdev": "FF00"}}'
+        else:
+            content = {"vswitch": {"name": vswitch, "rdev": "FF10"}}
+            body = json.dumps(content)
         resp = self.client.api_request(url='/vswitches', method='POST',
                                        body=body)
         return resp
 
-    def _vswitch_delete(self):
-        resp = self.client.api_request(url='/vswitches/restvsw1',
+    def _vswitch_delete(self, vswitch="restvsw1"):
+        url = '/vswitches/%s' % vswitch
+        resp = self.client.api_request(url=url,
                                        method='DELETE')
         self.assertEqual(200, resp.status_code)
 
-    def _vswitch_couple(self, vswitch=None, userid=None):
-        body = '{"info": {"couple": "True", "vswitch": "%s"}}' % vswitch
+    def _vswitch_couple(self, vswitch=None, userid=None, vdev="2000",
+                        active=False):
+        if not vswitch:
+            vswitch = "RESTVSW1"
+        if active:
+            content = {"info": {"couple": "True",
+                                "vswitch": vswitch, "active": "True"}}
+            body = json.dumps(content)
+        else:
+            content = {"info": {"couple": "True",
+                                "vswitch": vswitch, "active": "False"}}
+            body = json.dumps(content)
         if not userid:
             userid = self.userid
 
-        if not vswitch:
-            vswitch = "RESTVSW1"
-
-        url = '/guests/%s/nic/2000' % userid
+        url = '/guests/%s/nic/%s' % (userid, vdev)
         resp = self.client.api_request(url=url,
                                        method='PUT',
                                        body=body)
         return resp
 
-    def _vswitch_uncouple(self, userid=None):
-        body = '{"info": {"couple": "False"}}'
+    def _vswitch_uncouple(self, userid=None, vdev="2000", active=False):
+        if active:
+            body = '{"info": {"couple": "False", "active": "True"}}'
+        else:
+            body = '{"info": {"couple": "False", "active": "False"}}'
         if not userid:
             userid = self.userid
 
-        url = '/guests/%s/nic/2000' % userid
+        url = '/guests/%s/nic/%s' % (userid, vdev)
         resp = self.client.api_request(url=url,
                                        method='PUT',
                                        body=body)
@@ -906,27 +1036,158 @@ class GuestHandlerTestCase(unittest.TestCase):
         self.assertEqual(200, resp.status_code)
 
         try:
-            resp = self._guest_nic_create("2000")
+            resp = self._guest_deploy()
             self.assertEqual(200, resp.status_code)
 
             resp = self._vswitch_create()
             self.assertEqual(200, resp.status_code)
 
-            resp = self._vswitch_couple()
+            resp = self._guest_nic_create("1000")
+            self.assertEqual(200, resp.status_code)
+            # Check nic defined in user direct and not coupled to vswitch
+            nic_defined, vsw = self._check_nic("1000")
+            self.assertTrue(nic_defined)
+            self.assertEqual(None, vsw)
+
+            # Coupling with active=True on an off-state VM
+            # The active should fail and rollback the user direct
+            resp = self._vswitch_couple(vdev="1000", active=True)
+            self.assertEqual(500, resp.status_code)
+            nic_defined, vsw = self._check_nic("1000")
+            self.assertTrue(nic_defined)
+            self.assertEqual(None, vsw)
+
+            # Coupling NIC to VSWITCH.
+            resp = self._vswitch_couple(vdev="1000")
+            self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1")
+            self.assertTrue(nic_defined)
+            self.assertEqual("RESTVSW1", vsw)
+
+            # Coupling NIC to VSWITCH second time, same vswitch, supported.
+            resp = self._vswitch_couple(vdev="1000")
+            self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1")
+            self.assertTrue(nic_defined)
+            self.assertEqual("RESTVSW1", vsw)
+
+            # Coupling NIC to VSWITCH, to different vswitch, not supported
+            # Should still be coupled to original vswitch
+            resp = self._vswitch_create(vswitch="RESTVSW2")
+            self.assertEqual(200, resp.status_code)
+            resp = self._vswitch_couple(vdev="1000", vswitch="RESTVSW2")
+            self.assertEqual(500, resp.status_code)
+            nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1")
+            self.assertTrue(nic_defined)
+            self.assertEqual("RESTVSW1", vsw)
+
+            # Uncoupling with active=True on an off-state VM.
+            # The NIC shoule not uncoupled in user direct and switch table
+            resp = self._vswitch_uncouple(vdev="1000", active=True)
+            self.assertEqual(500, resp.status_code)
+            nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1")
+            self.assertTrue(nic_defined)
+            self.assertEqual("RESTVSW1", vsw)
+
+            # Uncoupling NIC from VSWITCH the second time.
+            resp = self._vswitch_uncouple(vdev="1000")
+            self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("1000")
+            self.assertTrue(nic_defined)
+            self.assertEqual(None, vsw)
+
+            # Deleting NIC
+            resp = self._guest_nic_delete()
+            self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic('1000')
+            self.assertFalse(nic_defined)
+
+            # Deleting NIC not existed
+            resp = self._guest_nic_delete()
             self.assertEqual(200, resp.status_code)
 
-            resp = self._vswitch_uncouple()
+            # Activating the VM
+            resp = self._guest_start()
             self.assertEqual(200, resp.status_code)
+            time.sleep(10)
+
+            # Creating NIC with active=True
+            resp = self._guest_nic_create(vdev="2000", active=True)
+            self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("2000")
+            self.assertTrue(nic_defined)
+            self.assertEqual(None, vsw)
+
+            # Unauthorized to couple NIC in active mode.
+            resp = self._vswitch_couple(vdev="2000", active=True)
+            self.assertEqual(500, resp.status_code)
+            nic_defined, vsw = self._check_nic("2000")
+            self.assertTrue(nic_defined)
+            self.assertEqual(None, vsw)
+
+            # Authorizing VM to couple to vswitch.
+            body = '{"vswitch": {"grant_userid": "%s"}}' % self.userid
+            resp = self.client.api_request(url='/vswitches/RESTVSW1',
+                                           method='PUT', body=body)
+            self.assertEqual(200, resp.status_code)
+
+            # Coupling NIC to an unexisted vswitch.
+            resp = self._vswitch_couple(vdev="2000", vswitch="VSWNONE",
+                                        active=True)
+            self.assertEqual(500, resp.status_code)
+            nic_defined, vsw = self._check_nic("2000")
+            self.assertTrue(nic_defined)
+            self.assertEqual(None, vsw)
+            time.sleep(10)
+
+            # Coupling NIC to VSWITCH.
+            resp = self._vswitch_couple(vdev="2000", active=True)
+            self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("2000", vsw="RESTVSW1")
+            self.assertTrue(nic_defined)
+            self.assertEqual("RESTVSW1", vsw)
+
+            # Coupling NIC to VSWITCH second time, same vswitch, supported
+            resp = self._vswitch_couple(vdev="2000", active=True)
+            self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("2000", vsw="RESTVSW1")
+            self.assertTrue(nic_defined)
+            self.assertEqual("RESTVSW1", vsw)
+
+            # Coupling NIC to VSWITCH, to different vswitch, not supported.
+            # Should still be coupled to original vswitch
+            resp = self._vswitch_couple(vdev="2000", vswitch="RESTVSW2",
+                                        active=True)
+            self.assertEqual(500, resp.status_code)
+            nic_defined, vsw = self._check_nic("2000", vsw="RESTVSW1")
+            self.assertTrue(nic_defined)
+            self.assertEqual("RESTVSW1", vsw)
+
+            # Uncoupling NIC from VSWITCH.
+            resp = self._vswitch_uncouple(vdev="2000", active=True)
+            self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("2000")
+            self.assertTrue(nic_defined)
+            self.assertEqual(None, vsw)
+
+            # Uncoupling NIC from VSWITCH the second time.
+            resp = self._vswitch_uncouple(vdev="2000", active=True)
+            self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("2000")
+            self.assertTrue(nic_defined)
+            self.assertEqual(None, vsw)
 
             resp = self._guest_nic_query()
             self.assertEqual(200, resp.status_code)
             self.apibase.verify_result('test_guest_get_nic', resp.content)
 
-            resp = self._guest_nic_delete()
+            resp = self._guest_nic_delete(vdev="2000")
             self.assertEqual(200, resp.status_code)
+
         finally:
             self._guest_delete()
             self._vswitch_delete()
+            self._vswitch_delete(vswitch="RESTVSW2")
 
 
 class GuestActionTestCase(unittest.TestCase):
