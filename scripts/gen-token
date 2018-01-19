@@ -1,0 +1,104 @@
+#!/bin/python
+import getopt
+import os
+import random
+import stat
+import string
+import sys
+
+
+DEFAULT_TOKEN_PATH = '/etc/zvmsdk/token.dat'
+
+
+def usage():
+    print ("Usage: gen-token [-h|-u|-i] [--help|--update|--init] <path_of_toke_file>...")
+    print ("Generate and update token file for sdkserver.")
+    print("")
+    print ("-h, --help\t\tdisplay help usage.")
+    print ("-i, --init\t\tinit token file and generate a random admin token in file.")
+    print ("-u, --update\t\tthe admin token to be updated into token file.")
+
+
+def random_token():
+    # random token only include upper cases and digits
+    token_random = ''.join(
+            random.choice(string.ascii_uppercase +\
+                          string.ascii_lowercase +\
+                          string.digits)
+            for _ in range(42))
+    return token_random
+
+
+def create_token_file(file_path):
+    #if file not exits, create it
+    if os.path.exists(file_path):
+        print('Token File Already Existed!')
+        print('')
+        sys.exit(2)
+    # create token file
+    os.mknod(file_path)
+    # generate random token
+    token = random_token()
+    # write token data
+    with open(file_path, 'w') as fp:
+        fp.write(token)
+    # change file mode to 400
+    os.chmod(file_path, stat.S_IRUSR)
+
+
+def update_token_file(file_path, token):
+    #if file not exits, raise exception
+    if not os.path.exists(file_path):
+        print('Token File Not Exist!\n')
+        print('')
+        sys.exit(3)
+    # write token data
+    with open(file_path, 'w') as fp:
+        fp.write(token)
+
+
+def main(argv):
+    try:
+        opts, args = getopt.getopt(argv, 'hiu:', ["help", "init", "update"])
+        # print opts, args
+
+        # get file path
+        if args == []:
+            file_path = DEFAULT_TOKEN_PATH
+        else:
+            file_path = args[0]
+
+        # process options
+        if opts == []:
+            print('No Options Found!')
+            print('')
+            usage()
+            sys.exit(1)
+        for o, a in opts:
+            # print help message
+            if o in ('-h', '--help'):
+                usage()
+                sys.exit(0)
+            # initialize one token file
+            if o in ('-i', '--init'):
+                create_token_file(file_path)
+            # update token file
+            if o in ('-u', '--update'):
+                update_token_file(file_path, a)
+                msg = "token updated, please remeber" +\
+                      "to update the token data on client side!"
+                print msg
+    except getopt.GetoptError:
+        print('syntax ERROR!')
+        usage()
+        sys.exit(1)
+
+
+# exist code:
+# 0: success
+# 1: sytax error
+# 2: file not exist
+# 3: file already existed
+if "__main__" == __name__:
+    main(sys.argv[1:])
+    sys.exit(0)
