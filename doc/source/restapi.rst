@@ -773,8 +773,8 @@ Capture guest
   - userid: guest_userid
   - action: action_capture_guest
   - image: image_name
-  - capturetype: capture_type
-  - compresslevel: compress_level
+  - capture_type: capture_type
+  - compress_level: compress_level
 
 * Request sample:
 

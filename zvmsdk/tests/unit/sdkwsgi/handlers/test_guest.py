@@ -258,8 +258,8 @@ class GuestActionsTest(SDKWSGITest):
         # Put wrong parameter compressionlevel, it should be compresslevel
         self.req.body = """{"action": "capture",
                             "image": "image1",
-                            "capturetype": "rootonly",
-                            "compressionlevel": "6"}"""
+                            "capture_type": "rootonly",
+                            "compression_level": "6"}"""
         mock_userid.return_value = FAKE_USERID
 
         self.assertRaises(exception.ValidationError, guest.guest_action,
@@ -270,8 +270,8 @@ class GuestActionsTest(SDKWSGITest):
         # Put compresslevel to be invalid 10
         self.req.body = """{"action": "capture",
                             "image": "image1",
-                            "capturetype": "rootdisk",
-                            "compresslevel": "10"}"""
+                            "capture_type": "rootdisk",
+                            "compress_level": "10"}"""
         mock_userid.return_value = FAKE_USERID
 
         self.assertRaises(exception.ValidationError, guest.guest_action,
@@ -282,8 +282,8 @@ class GuestActionsTest(SDKWSGITest):
         # Put capture type to be invalid value
         self.req.body = """{"action": "capture",
                             "image": "image1",
-                            "capturetype": "faketype",
-                            "compresslevel": 9}"""
+                            "capture_type": "faketype",
+                            "compress_level": 9}"""
         mock_userid.return_value = FAKE_USERID
 
         self.assertRaises(exception.ValidationError, guest.guest_action,
@@ -294,8 +294,8 @@ class GuestActionsTest(SDKWSGITest):
     def test_guest_capture(self, mock_action, mock_userid):
         self.req.body = """{"action": "capture",
                             "image": "image1",
-                            "capturetype": "rootonly",
-                            "compresslevel": 6}"""
+                            "capture_type": "rootonly",
+                            "compress_level": 6}"""
         mock_action.return_value = ''
         mock_userid.return_value = FAKE_USERID
 
