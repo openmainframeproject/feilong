@@ -476,6 +476,35 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
                 # NIC defined and added in switch table
                 return True, nic_info[vdev]
 
+    def _check_nic(self, vdev, mac=None, vsw=None, devices=3):
+        """ Check nic status.
+        Returns a bool value to indicate whether the nic is defined in user and
+        a string value of the vswitch that the nic is attached to.
+        """
+        nic_entry = 'NICDEF %s TYPE QDIO' % vdev
+        if vsw is not None:
+            nic_entry += (" LAN SYSTEM %s") % vsw
+        nic_entry += (" DEVICES %d") % devices
+        if mac is not None:
+            nic_entry += (" MACID %s") % mac
+
+        resp_nic = self._guest_get()
+        self.assertEqual(200, resp_nic.status_code)
+
+        # Check definition
+        if nic_entry not in resp_nic.content:
+            return False, ""
+        else:
+            # Continue to check the nic info defined in vswitch table
+            resp = self._guest_nic_query()
+            nic_info = json.loads(resp.content)['output']
+            if vdev not in nic_info.keys():
+                # NIC defined in user direct, but not in switch table
+                return False, ""
+            else:
+                # NIC defined and added in switch table
+                return True, nic_info[vdev]
+
     def test_guest_get_not_exist(self):
         resp = self._guest_get('notexist')
         self.assertEqual(404, resp.status_code)
