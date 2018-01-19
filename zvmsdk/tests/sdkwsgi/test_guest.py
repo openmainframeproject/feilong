@@ -550,8 +550,10 @@ class GuestHandlerTestCase(unittest.TestCase):
         self._guest_delete()
 
     def test_guest_create_delete(self):
+        PURGE_GUEST = PURGE_VSW = PURGE_IMG = 0
         resp = self._guest_create()
         self.assertEqual(200, resp.status_code)
+        PURGE_GUEST = 1
 
         # give chance to make disk online
         time.sleep(15)
@@ -596,6 +598,7 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertEqual(200, resp.status_code)
 
             self._vswitch_create()
+            PURGE_VSW = 1
 
             resp = self._vswitch_couple()
             self.assertEqual(200, resp.status_code)
@@ -638,7 +641,7 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             resp = self._guest_capture()
             self.assertEqual(200, resp.status_code)
-            time.sleep(15)
+            PURGE_IMG = 1
             resp = self._image_query(image_name='test_capture_image1')
             self.assertEqual(200, resp.status_code)
             resp_state = self._guest_get_power_state()
@@ -649,9 +652,12 @@ class GuestHandlerTestCase(unittest.TestCase):
             raise e
         finally:
             os.system('rm /var/lib/zvmsdk/cfgdrive.tgz')
-            self._guest_delete()
-            self._vswitch_delete()
-            self._image_delete()
+            if PURGE_GUEST:
+                self._guest_delete()
+            if PURGE_VSW:
+                self._vswitch_delete()
+            if PURGE_IMG:
+                self._image_delete()
 
     def test_guest_list(self):
         resp = self.client.api_request(url='/guests')
