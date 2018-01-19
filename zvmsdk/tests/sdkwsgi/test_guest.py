@@ -161,7 +161,10 @@ class GuestHandlerTestCase(unittest.TestCase):
         body = """{"disk_info": {"disk_list":
                                     [{"size": "1g",
                                       "format": "ext3",
-                                      "disk_pool": "%s"}]}}""" % disk
+                                      "disk_pool": "%s"},
+                                      {"size": "1g",
+                                      "format": "ext3",
+                                      "disk_pool": "%s"}]}}""" % (disk, disk)
         url = '/guests/%s/disks' % userid
 
         resp = self.client.api_request(url=url,
@@ -201,6 +204,18 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         resp = self.client.api_request(url=url,
                                        method='PUT',
+                                       body=body)
+        return resp
+
+    def _guest_mutidisks_delete(self, userid=None, vdev=None):
+        if userid is None:
+            userid = self.userid
+
+        body = """{"vdev_info": {"vdev_list": ['0101', '0102']}}"""
+        url = '/guests/%s/disks' % userid
+
+        resp = self.client.api_request(url=url,
+                                       method='DELETE',
                                        body=body)
         return resp
 
@@ -714,7 +729,8 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         # give chance to make disk online
         time.sleep(15)
-        flag = False
+        flag1 = False
+        flag2 = False
 
         try:
             resp = self._guest_deploy()
@@ -745,6 +761,7 @@ class GuestHandlerTestCase(unittest.TestCase):
             resp_create = self._guest_get()
             self.assertEqual(200, resp_create.status_code)
             self.assertTrue('MDISK 0101' in resp_create.content)
+            self.assertTrue('MDISK 0102' in resp_create.content)
             # config 'MDISK 0101'
             resp_config = self._guest_config_minidisk()
             self.assertEqual(200, resp_config.status_code)
@@ -756,8 +773,18 @@ class GuestHandlerTestCase(unittest.TestCase):
             result_list = result
             for element in result_list:
                 if '/mnt/0101' in element:
-                    flag = True
-            self.assertTrue(True, flag)
+                    flag1 = True
+                if '/mnt/0102' in element:
+                    flag2 = True
+            self.assertEqual(True, flag1)
+            self.assertEqual(True, flag2)
+
+            resp = self._guest_mutidisks_delete()
+            self.assertEqual(200, resp.status_code)
+            resp_delete = self._guest_get()
+            self.assertEqual(200, resp_delete.status_code)
+            self.assertTrue('MDISK 0101' not in resp_delete.content)
+            self.assertTrue('MDISK 0102' not in resp_delete.content)
 
             resp = self._guest_softstop()
             self.assertEqual(200, resp.status_code)
