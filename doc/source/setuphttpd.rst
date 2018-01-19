@@ -187,8 +187,15 @@ Token Usage
 When you sending requests, you need a token to get access to the service.
 To get the token, you need to get an admin-token from administrator which is stored in admin-token-file.
 
-As an administrator, you are responsible for creating admin-token-file. The path of this file represented by ``token_path`` should be
-configured in wsgi section of zvmsdk.conf and ``auth`` item in the same section should also be set to ``token``, just like auth=token.
+As an administrator, you are responsible for creating admin-token-file. You can use gen-token tools provided by ZVMConnector:
+
+.. code-block:: text
+
+    # /usr/bin/gen-token -i /etc/zvmsdk/token.dat
+
+The command above will initialize a token file as /etc/zvmsdk/token.dat and write a random admin-token into it.
+After that, the path of token file represented by ``token_path`` should be configured in wsgi section of zvmsdk.conf
+and ``auth`` item in the same section should also be set to ``token``, just like auth=token.
 And if you want to disable authentication, just set ``auth`` to value ``none``.
 
 As a client, you can get the admin-token stored in the admin-token-file and request for a token by putting the admin_token into the
@@ -214,7 +221,7 @@ Then, you can send normal RESTful requests using the return X-Auth-Token field. 
     # curl http://localhost:8080/ -H "Content-Type:application/json" -H 'X-Auth-Token:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTI1NDQyODJ9.TVlcQb_QuUPJ37cRyzZqroR6kLZ-5zH2-tliIkhsQ1A'
     {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": {"min_version": "1.0", "version": "1.0", "max_version": "1.0"}, "errmsg": ""}
 
-If you use ZVMCONNECTOR as a client, you can save admin-token-file as /etc/zvmsdk/token.dat and change this file's owner to user zvmsdk.
+If you use ZVMConnector as a client, you can save admin-token-file as /etc/zvmsdk/token.dat and change this file's owner to user zvmsdk.
 Now, you have a easier way to use token now:
 
 .. code-block:: text
@@ -224,4 +231,10 @@ Now, you have a easier way to use token now:
     >>> conn.send_request('guest_list')
     {u'rs': 0, u'overallRC': 0, u'modID': None, u'rc': 0, u'output': [u'NAME1', u'NAME2'], u'errmsg': u'}
 
-As you can see, you do not need to use them explicitly now.
+As you can see, you do not need to use them explicitly now because ZVMConnector use /etc/zvmsdk/token.dat as the default path.
+You can specify your own token file path by this way:
+
+.. code-block:: text
+
+    >>> from zvmconnector import connector
+    >>> conn = connector.ZVMConnector(port=8080, token_path='/your/own/path/token.dat')
