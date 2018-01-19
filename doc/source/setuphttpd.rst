@@ -250,7 +250,7 @@ Then, you can send normal RESTful requests using the return X-Auth-Token field. 
     # curl http://localhost:8080/ -H "Content-Type:application/json" -H 'X-Auth-Token:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTI1NDQyODJ9.TVlcQb_QuUPJ37cRyzZqroR6kLZ-5zH2-tliIkhsQ1A'
     {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": {"min_version": "1.0", "version": "1.0", "max_version": "1.0"}, "errmsg": ""}
 
-If you use ZVMCONNECTOR as a client, you can save admin-token-file as /etc/zvmsdk/token.dat and change this file's owner to user zvmsdk.
+If you use ZVMConnector as a client, you can save admin-token-file as /etc/zvmsdk/token.dat and change this file's owner to user zvmsdk.
 Now, you have a easier way to use token now:
 
 .. code-block:: text
@@ -260,4 +260,10 @@ Now, you have a easier way to use token now:
     >>> conn.send_request('guest_list')
     {u'rs': 0, u'overallRC': 0, u'modID': None, u'rc': 0, u'output': [u'NAME1', u'NAME2'], u'errmsg': u'}
 
-As you can see, you do not need to use them explicitly now.
+As you can see, you do not need to use them explicitly now because ZVMConnector use /etc/zvmsdk/token.dat as the default path.
+You can specify your own token file path by this way:
+
+.. code-block:: text
+
+    >>> from zvmconnector import connector
+    >>> conn = connector.ZVMConnector(port=8080, token_path='/your/own/path/token.dat')
