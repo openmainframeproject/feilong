@@ -3849,7 +3849,7 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
     char * targetIdentifier = NULL;
     char * entryArray[maxArrayCount];
     int vepaStatusFlag = 0;
-    char * VEPA_STATUS_YES = "vepa_status=YES";
+    char * VEPA_STATUS_YES = "VEPA_STATUS=YES";
 
     // vswitch_attr_info_structure
     char switch_name[8 + 1];
@@ -3939,11 +3939,16 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
                 }
 
                 if (entryCount < maxArrayCount) {
+                    entryArray[entryCount] = optarg;
+                    entryCount++;
+
+                    // turn to upper case
+                    for (i=0; i<strlen(optarg); i++) {
+                        optarg[i] = toupper(optarg[i]);
+                    }
                     if (!strcmp(optarg, VEPA_STATUS_YES)) {
                         vepaStatusFlag = 1;
                     }
-                    entryArray[entryCount] = optarg;
-                    entryCount++;
                 } else {
                     DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
                     printf("ERROR: Too many -k values entered.\n");
