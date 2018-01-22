@@ -1,4 +1,5 @@
 #!/bin/python
+import argparse
 import getopt
 import os
 import random
@@ -11,12 +12,18 @@ DEFAULT_TOKEN_PATH = '/etc/zvmsdk/token.dat'
 
 
 def usage():
-    print ("Usage: gen-token [-h|-u|-i] [--help|--update|--init] <path_of_toke_file>...")
-    print ("Generate and update token file for sdkserver.")
-    print("")
-    print ("-h, --help\t\tdisplay help usage.")
-    print ("-i, --init\t\tinit token file and generate a random admin token in file.")
-    print ("-u, --update\t\tthe admin token to be updated into token file.")
+    parser = argparse.ArgumentParser(
+            description='Tool to Generate and Update Token.')
+    parser.add_argument(
+            '-p', '--path', nargs=1, metavar='TOKEN_PATH',
+            help='specify the path of admin token file')
+    parser.add_argument(
+            '-u', '--update', type=str, nargs='?',
+            default=DEFAULT_TOKEN_PATH, metavar='TOKEN_PATH',
+            help='generate a random token and update into file.'+\
+                 'if path not assigned, use default' +\
+                 '/etc/zvmsdk/token.dat')
+    parser.print_help()
 
 
 def random_token():
@@ -46,12 +53,13 @@ def create_token_file(file_path):
     os.chmod(file_path, stat.S_IRUSR)
 
 
-def update_token_file(file_path, token):
+def update_token_file(file_path):
     #if file not exits, raise exception
     if not os.path.exists(file_path):
         print('Token File Not Exist!\n')
         print('')
         sys.exit(3)
+    token = random_token()
     # write token data
     with open(file_path, 'w') as fp:
         fp.write(token)
@@ -59,32 +67,35 @@ def update_token_file(file_path, token):
 
 def main(argv):
     try:
-        opts, args = getopt.getopt(argv, 'hiu:', ["help", "init", "update"])
-        # print opts, args
+        opts, args = getopt.gnu_getopt(argv, 'hp:u', ["help", "path", "update"])
+        # if none arguments and options means initialization
+        if opts == [] and args == []:
+            create_token_file(DEFAULT_TOKEN_PATH)
+            sys.exit(0)
 
-        # get file path
-        if args == []:
-            file_path = DEFAULT_TOKEN_PATH
-        else:
-            file_path = args[0]
-
-        # process options
-        if opts == []:
-            print('No Options Found!')
+        if args != [] and opts == []:
+            print('Missing Options!!')
             print('')
             usage()
             sys.exit(1)
+        # process options
         for o, a in opts:
             # print help message
             if o in ('-h', '--help'):
                 usage()
                 sys.exit(0)
             # initialize one token file
-            if o in ('-i', '--init'):
+            if o in ('-p', '--path'):
+                # get file path
+                file_path = a
                 create_token_file(file_path)
             # update token file
             if o in ('-u', '--update'):
-                update_token_file(file_path, a)
+                if args == []:
+                    file_path = DEFAULT_TOKEN_PATH
+                else:
+                    file_path = args[0]
+                update_token_file(file_path)
                 msg = "token updated, please remeber" +\
                       "to update the token data on client side!"
                 print msg

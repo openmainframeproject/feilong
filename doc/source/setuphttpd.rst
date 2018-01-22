@@ -200,7 +200,7 @@ Fox example, initialize one token file:
 
 .. code-block:: text
 
-    # /usr/bin/gen-token -i
+    # /usr/bin/gen-token
 
 Gen-tool user **/etc/zvmsdk/token.dat** as default path of token file.
 So the command above will initialize a token file as /etc/zvmsdk/token.dat and write a random admin-token into it.
@@ -208,13 +208,14 @@ This tool can also help you update the content of token file:
 
 .. code-block:: text
 
-    # /usr/bin/gen-token -u newtoken1234567890
+    # /usr/bin/gen-token -u
 
-Or you can do these in one step:
+Or you can use self-defined file path:
 
 .. code-block:: text
 
-    # /usr/bin/gen-token -i -u newtoken1234567890 /new/path/of/token/file
+    # /usr/bin/gen-token -p /new/path/of/token/file
+    # /usr/bin/gen-token -u /new/path/of/token/file
 
 After that, the path of token file represented by ``token_path`` should be configured in wsgi section of zvmsdk.conf
 and ``auth`` item in the same section should also be set to ``token``, just like auth=token.
