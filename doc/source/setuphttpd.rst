@@ -196,8 +196,35 @@ Token Usage
 When you sending requests, you need a token to get access to the service.
 To get the token, you need to get an admin-token from administrator which is stored in admin-token-file.
 
-As an administrator, you are responsible for creating admin-token-file. The path of this file represented by ``token_path`` should be
-configured in wsgi section of zvmsdk.conf and ``auth`` item in the same section should also be set to ``token``, just like auth=token.
+As an administrator, you are responsible for creating admin-token-file. You can use gen-token tool provided by ZVMConnector.
+Fox example, initialize one token file:
+
+.. code-block:: text
+
+    # /usr/bin/gen-token
+
+Gen-tool use **/etc/zvmsdk/token.dat** as default path of token file. You can also specify your own token file path:
+
+.. code-block:: text
+
+    # /usr/bin/gen-token /new/path/of/token/file
+
+So, the commands above will initialize one token file and write a random admin-token into it.
+This tool can also help you update the content of token file:
+
+.. code-block:: text
+
+    # /usr/bin/gen-token -u
+
+If you don't assign a file path, gen-token will update the content of default token path.
+You can update specified file by this way:
+
+.. code-block:: text
+
+    # /usr/bin/gen-token -u /new/path/of/token/file
+
+After that, the path of token file represented by ``token_path`` should be configured in wsgi section of zvmsdk.conf
+and ``auth`` item in the same section should also be set to ``token``, just like auth=token.
 And if you want to disable authentication, just set ``auth`` to value ``none``.
 
 As a client, you can get the admin-token stored in the admin-token-file and request for a token by putting the admin_token into the
