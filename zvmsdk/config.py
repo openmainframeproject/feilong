@@ -459,8 +459,6 @@ class ConfigOpts(object):
             con[k1] = r_con
 
         con = self.toDict(con)
-
-        self._check_format(con)
         return con
 
     def _check_required(self, conf):
@@ -469,32 +467,6 @@ class ConfigOpts(object):
             for k2, v2 in v1.items():
                 if v2.required and (v2.default is None):
                     raise RequiredOptMissingError(k1, k2)
-
-    def _check_zvm_disk_pool(self, value):
-        validate = True
-        try:
-            disks = value.split(':')
-
-            if not disks[0].upper() in ['FBA', 'ECKD']:
-                validate = False
-
-            if len(disks[1]) == 0:
-                validate = False
-
-        except Exception:
-            validate = False
-
-        if not validate:
-            raise OptFormatError("zvm", "disk_pool", value)
-
-        return validate
-
-    def _check_format(self, conf):
-        for k1, v1 in conf.items():
-            if k1 == "zvm":
-                for k2, v2 in v1.items():
-                    if k2 == "disk_pool":
-                        self._check_zvm_disk_pool(v2)
 
     def _check_type(self, conf):
         for v1 in conf.values():
@@ -643,20 +615,6 @@ class RequiredOptMissingError(Exception):
     def __str__(self):
         return "value required for option %s - %s" % (self.grp_name,
                                                       self.opt_name)
-
-
-class OptFormatError(Exception):
-    """Raised if an option is required but no value is supplied by the user."""
-
-    def __init__(self, grp_name, opt_name, value):
-        self.grp_name = grp_name
-        self.opt_name = opt_name
-        self.value = value
-
-    def __str__(self):
-        return "value %s for option  %s - %s is invalid" % (self.value,
-                                                            self.grp_name,
-                                                            self.opt_name)
 
 
 CONF = ConfigOpts()
