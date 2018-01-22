@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a6e11e90_4ffb6c9f",
+        "filename": "scripts/gen-token",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-01-22T06:15:53Z",
+      "side": 1,
+      "message": "need blank",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 22
+      },
+      "revId": "89725ebc35a1481a12914db7446b55e7750ca508",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b5ad84e4_a2e7f28a",
+        "filename": "scripts/gen-token",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-01-22T06:15:53Z",
+      "side": 1,
+      "message": "this should be 0",
+      "range": {
+        "startLine": 58,
+        "startChar": 16,
+        "endLine": 58,
+        "endChar": 27
+      },
+      "revId": "89725ebc35a1481a12914db7446b55e7750ca508",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8858a4ca_05572331",
+        "filename": "scripts/gen-token",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-01-22T06:15:53Z",
+      "side": 1,
+      "message": "this should be 0",
+      "range": {
+        "startLine": 65,
+        "startChar": 16,
+        "endLine": 65,
+        "endChar": 27
+      },
+      "revId": "89725ebc35a1481a12914db7446b55e7750ca508",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
