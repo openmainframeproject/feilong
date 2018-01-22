@@ -11,12 +11,14 @@ DEFAULT_TOKEN_PATH = '/etc/zvmsdk/token.dat'
 
 
 def usage():
-    print ("Usage: gen-token [-h|-u|-i] [--help|--update|--init] <path_of_toke_file>...")
-    print ("Generate and update token file for sdkserver.")
-    print("")
-    print ("-h, --help\t\tdisplay help usage.")
-    print ("-i, --init\t\tinit token file and generate a random admin token in file.")
-    print ("-u, --update\t\tthe admin token to be updated into token file.")
+    print('Usage: gen-token [-h] [-u] [token file path]')
+    print('')
+    print('Tool to Generate and Update Token')
+    print('')
+    print('Optional aruments:')
+    print('    -h, --help\t\tshow this help message and exit')
+    print('    -u, --update\tgenerate a random token and update into file')
+    print('    \t\t\tif path not assigned, use default /etc/zvmsdk/token.dat.')
 
 
 def random_token():
@@ -46,12 +48,13 @@ def create_token_file(file_path):
     os.chmod(file_path, stat.S_IRUSR)
 
 
-def update_token_file(file_path, token):
+def update_token_file(file_path):
     #if file not exits, raise exception
     if not os.path.exists(file_path):
         print('Token File Not Exist!\n')
         print('')
         sys.exit(3)
+    token = random_token()
     # write token data
     with open(file_path, 'w') as fp:
         fp.write(token)
@@ -59,32 +62,31 @@ def update_token_file(file_path, token):
 
 def main(argv):
     try:
-        opts, args = getopt.getopt(argv, 'hiu:', ["help", "init", "update"])
-        # print opts, args
+        opts, args = getopt.gnu_getopt(argv, 'hu', ["help", "update"])
+        # if none arguments and options means initialization
+        if opts == [] and args == []:
+            create_token_file(DEFAULT_TOKEN_PATH)
+            sys.exit(0)
 
-        # get file path
-        if args == []:
-            file_path = DEFAULT_TOKEN_PATH
-        else:
-            file_path = args[0]
+        if args != [] and opts == []:
+            create_token_file(args[0])
+            sys.exit(0)
 
-        # process options
-        if opts == []:
-            print('No Options Found!')
-            print('')
-            usage()
-            sys.exit(1)
+        # print help first and exit
         for o, a in opts:
             # print help message
             if o in ('-h', '--help'):
                 usage()
                 sys.exit(0)
-            # initialize one token file
-            if o in ('-i', '--init'):
-                create_token_file(file_path)
+        # process options
+        for o, a in opts:
             # update token file
             if o in ('-u', '--update'):
-                update_token_file(file_path, a)
+                if args == []:
+                    file_path = DEFAULT_TOKEN_PATH
+                else:
+                    file_path = args[0]
+                update_token_file(file_path)
                 msg = "token updated, please remeber" +\
                       "to update the token data on client side!"
                 print msg
