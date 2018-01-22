@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "386e6ad2_487bd8ef",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 313,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-01-22T08:49:22Z",
+      "side": 1,
+      "message": "suggest 20",
+      "range": {
+        "startLine": 313,
+        "startChar": 16,
+        "endLine": 313,
+        "endChar": 19
+      },
+      "revId": "25813731311935363f43a45d838b43b6b38c8f7d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3d406a44_04911cca",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-01-22T08:49:22Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 322,
+        "startChar": 0,
+        "endLine": 322,
+        "endChar": 1
+      },
+      "revId": "25813731311935363f43a45d838b43b6b38c8f7d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fd933b2a_9081cd15",
+        "filename": "zvmsdk/sdkwsgi/handlers/guest.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-01-22T08:49:22Z",
+      "side": 1,
+      "message": "if not dd_allowed",
+      "range": {
+        "startLine": 281,
+        "startChar": 9,
+        "endLine": 281,
+        "endChar": 31
+      },
+      "revId": "25813731311935363f43a45d838b43b6b38c8f7d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
