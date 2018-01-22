@@ -159,16 +159,6 @@
 
 
 # 
-# The connection type of the requests flowing into the sdkserver.
-# 
-# This will work as a pair with bind_addr when the SDK server daemon
-# starts, more info can be found in that configuration description.
-# 
-# This param is optional
-#connect_type=rest
-
-
-# 
 # The maximum number of worker thread in SDK server to handle client requests.
 # 
 # These worker threads would work concurrently to handle requests from client.
