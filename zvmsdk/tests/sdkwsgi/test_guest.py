@@ -580,8 +580,6 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertEqual(200, resp_create.status_code)
             self.assertTrue('MDISK 0100' in resp_create.content)
             self.assertTrue('MDISK 0101' in resp_create.content)
-        except Exception as e:
-            raise e
         finally:
             self._guest_delete()
 
@@ -696,8 +694,6 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertEqual(200, resp_state.status_code)
             resp_content = json.loads(resp_state.content)
             self.assertEqual('off', resp_content['output'])
-        except Exception as e:
-            raise e
         finally:
             os.system('rm /var/lib/zvmsdk/cfgdrive.tgz')
             if PURGE_GUEST:
@@ -774,8 +770,6 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertEqual(200, resp_state.status_code)
             resp_content = json.loads(resp_state.content)
             self.assertEqual('off', resp_content['output'])
-        except Exception as e:
-            raise e
         finally:
             self._guest_delete()
             self._vswitch_delete()
@@ -792,9 +786,6 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertEqual(200, resp.status_code)
             resp = self._guest_delete_network_interface()
             self.assertEqual(200, resp.status_code)
-
-        except Exception as e:
-            raise e
         finally:
             self._guest_delete()
             self._vswitch_delete()
@@ -901,9 +892,6 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             resp = self._guest_nic_delete()
             self.assertEqual(200, resp.status_code)
-
-        except Exception as e:
-            raise e
         finally:
             self._guest_delete()
             self._vswitch_delete()
