@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "809a4979_b03545ef",
+        "filename": "zthin-parts/zthin/src/smcliVirtual.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 3948,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2018-01-22T14:26:54Z",
+      "side": 1,
+      "message": "It would be safer to use strcasecmp to do a case insensitive compare of the strings. Modifying the storage from the caller might cause problems?",
+      "revId": "21eb9d5dfeaebaa26fa15914279a1c2adeefdd14",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
