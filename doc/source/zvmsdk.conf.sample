@@ -132,7 +132,7 @@
 # from and copy to operations.
 #     
 # This param is required
-#my_ip=
+#my_ip=None
 
 
 [sdkserver]
@@ -255,7 +255,7 @@
 #          'o1 o2 o3 o4 o5 o6 o7 o8 o9' is NOT a valid value.
 #     
 # This param is optional
-#default_admin_userid=
+#default_admin_userid=None
 
 
 # 
@@ -298,11 +298,11 @@
 #     testpool:FBA
 #     
 # This param is required
-#disk_pool=
+#disk_pool=None
 
 
 # This param is optional
-#user_default_password=
+#user_default_password=None
 
 
 # 
@@ -317,7 +317,7 @@
 #     user directory.
 #     
 # This param is required
-#user_profile=
+#user_profile=None
 
 
 # 

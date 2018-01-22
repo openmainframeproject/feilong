@@ -26,7 +26,7 @@ class ZVMSDKConfigFileNotFound(Exception):
 class Opt(object):
     def __init__(self, opt_name, section='default',
                  opt_type='str', help='',
-                 default='', required=False):
+                 default=None, required=False):
         self.name = opt_name
         self.section = section
         self.opt_type = opt_type
