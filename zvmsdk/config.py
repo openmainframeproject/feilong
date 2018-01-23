@@ -423,10 +423,8 @@ class ConfigOpts(object):
 
     def register(self, opts):
         configs = self.get_config_dicts_default(opts)
-        read_file = self.find_config_file(project="zvmsdk")
-        if read_file is None:
-            raise ConfFileMissingError()
-        else:
+        read_file = self.find_config_file(project="zvmsdk") or ''
+        if read_file:
             cf = configparser.ConfigParser()
             cf.read(read_file)
             # return all sections in a list
@@ -556,12 +554,13 @@ class ConfigOpts(object):
         :param extension: the file extension, for example '.conf'
         :returns: the path to a matching file, or None
         """
+        path = ''
         for d in dirs:
             path = os.path.join(d, '%s%s' % (basename, extension))
             if os.path.exists(path):
                 return path
 
-        return None
+        return path
 
     def find_config_file(self, project=None, extension='.conf'):
         """Return the config file.
@@ -605,14 +604,6 @@ class RequiredOptMissingError(Exception):
     def __str__(self):
         return "value required for option %s - %s" % (self.grp_name,
                                                       self.opt_name)
-
-
-class ConfFileMissingError(Exception):
-    """Raised if the configuration file zvmsdk.conf cann't be found."""
-
-    def __init__(self):
-        message = "zvmsdk.conf is not found."
-        super(ConfFileMissingError, self).__init__(message)
 
 
 CONF = ConfigOpts()
