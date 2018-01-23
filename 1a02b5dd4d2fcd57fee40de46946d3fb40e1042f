@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "65f7679d_b76d6e49",
+        "filename": "tools/sample.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-01-23T10:05:24Z",
+      "side": 1,
+      "message": "what\u0027s this?",
+      "range": {
+        "startLine": 150,
+        "startChar": 4,
+        "endLine": 150,
+        "endChar": 30
+      },
+      "revId": "1a02b5dd4d2fcd57fee40de46946d3fb40e1042f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
