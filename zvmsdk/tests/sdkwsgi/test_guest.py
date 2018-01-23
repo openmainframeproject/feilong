@@ -31,7 +31,7 @@ class GuestHandlerTestCase(unittest.TestCase):
         self._smutclient = smutclient.get_smutclient()
 
         # every time, we need to random generate userid
-        self.userid = 'RESTT%03d' % (time.time() % 1000)
+        self.userid = CONF.tests.userid_prefix + '%03d' % (time.time() % 1000)
         self._cleanup()
 
     def _cleanup(self):
@@ -359,6 +359,29 @@ class GuestHandlerTestCase(unittest.TestCase):
         body = '{"action": "reboot"}'
         return self._guest_action(body, userid=userid)
 
+    def is_reachable(self, userid):
+        """Reachable through IUCV communication channel."""
+        return self._smutclient.get_guest_connection_status(userid)
+
+    def _wait_until(self, expect_state, func, *args, **kwargs):
+        """Looping call func until get expected state, otherwise 1 min timeout.
+
+        :param expect_state:    expected state
+        :param func:            function or method to be called
+        :param *args, **kwargs: parameters for the function
+        """
+        _inc_slp = [1, 2, 2, 5, 10, 20, 20]
+        # sleep intervals, total timeout 60 seconds
+        for _slp in _inc_slp:
+            real_state = func(*args, **kwargs)
+            if real_state == expect_state:
+                return True
+            else:
+                time.sleep(_slp)
+
+        # timeout
+        return False
+
     def _guest_reset(self, userid=None):
         body = '{"action": "reset"}'
         return self._guest_action(body, userid=userid)
@@ -598,6 +621,19 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertEqual(200, resp_create.status_code)
             self.assertTrue('MDISK 0100' in resp_create.content)
             self.assertTrue('MDISK 0101' in resp_create.content)
+            resp = self._guest_start()
+            self.assertEqual(200, resp.status_code)
+            time.sleep(10)
+            resp_state = self._guest_get_power_state()
+            self.assertEqual(200, resp_state.status_code)
+            resp_content = json.loads(resp_state.content)
+            self.assertEqual('on', resp_content['output'])
+            resp = self._guest_reboot()
+            self.assertEqual(200, resp.status_code)
+            self.assertTrue(self._wait_until(False, self.is_reachable,
+                                             self.userid))
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                             self.userid))
         finally:
             self._guest_delete()
 
@@ -743,25 +779,6 @@ class GuestHandlerTestCase(unittest.TestCase):
             resp = self._guest_deploy()
             self.assertEqual(200, resp.status_code)
 
-            resp = self._guest_nic_create()
-            self.assertEqual(200, resp.status_code)
-            # create new disks
-            resp = self._guest_disks_create()
-            self.assertEqual(200, resp.status_code)
-
-            resp_create = self._guest_get()
-            self.assertEqual(200, resp_create.status_code)
-
-            # delete new disks
-            resp = self._guest_disks_delete()
-            self.assertEqual(200, resp.status_code)
-
-            resp_delete = self._guest_get()
-            self.assertEqual(200, resp_delete.status_code)
-
-            self.assertTrue('MDISK 0101' in resp_create.content)
-            self.assertTrue('MDISK 0101' not in resp_delete.content)
-
             # create new disks
             resp = self._guest_disks_create_additional()
             self.assertEqual(200, resp.status_code)
@@ -794,6 +811,7 @@ class GuestHandlerTestCase(unittest.TestCase):
             resp_content = json.loads(resp_state.content)
             self.assertEqual('off', resp_content['output'])
 
+            # delete new disks
             resp = self._guest_mutidisks_delete()
             self.assertEqual(200, resp.status_code)
             resp_delete = self._guest_get()
@@ -802,7 +820,6 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertTrue('MDISK 0102' not in resp_delete.content)
         finally:
             self._guest_delete()
-            self._vswitch_delete()
 
     def test_guest_create_delete_network_interface(self):
         resp = self._guest_create()
