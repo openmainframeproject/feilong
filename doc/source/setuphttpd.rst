@@ -59,6 +59,7 @@ so apache server can connect port 35000 and communicate with it
     socket = /tmp/zvmsdk-wsgi.socket
     uid = zvmsdk
     gid = zvmsdk
+    threads = 16
 
 Start z/VM Cloud Connector in uwsgi
 -----------------------------------
