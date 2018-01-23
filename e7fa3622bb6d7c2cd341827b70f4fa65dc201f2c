@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "98e5006c_acd62cca",
+        "filename": "zvmsdk/sdkwsgi/handlers/guest.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-01-23T07:14:21Z",
+      "side": 1,
+      "message": "do we really need this ? I was told we don\u0027t need it anymore .....",
+      "range": {
+        "startLine": 35,
+        "startChar": 45,
+        "endLine": 35,
+        "endChar": 70
+      },
+      "revId": "e7fa3622bb6d7c2cd341827b70f4fa65dc201f2c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
