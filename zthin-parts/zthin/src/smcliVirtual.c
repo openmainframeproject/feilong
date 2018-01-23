@@ -3942,11 +3942,7 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
                     entryArray[entryCount] = optarg;
                     entryCount++;
 
-                    // turn to upper case
-                    for (i=0; i<strlen(optarg); i++) {
-                        optarg[i] = toupper(optarg[i]);
-                    }
-                    if (!strcmp(optarg, VEPA_STATUS_YES)) {
+                    if (!strcasecmp(optarg, VEPA_STATUS_YES)) {
                         vepaStatusFlag = 1;
                     }
                 } else {
