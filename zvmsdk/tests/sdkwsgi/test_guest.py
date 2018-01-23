@@ -47,7 +47,7 @@ class GuestHandlerTestCase(unittest.TestCase):
     def _guest_create(self):
         body = """{"guest": {"userid": "%s", "vcpus": 1,
                              "memory": 1024,
-                             "disk_list": [{"size": "1100",
+                             "disk_list": [{"size": "3g",
                                             "is_boot_disk": "True"}]}}"""
         body = body % self.userid
         resp = self.client.api_request(url='/guests', method='POST',
@@ -282,25 +282,7 @@ class GuestHandlerTestCase(unittest.TestCase):
         body = '{"action": "stop", "timeout": 300, "poll_interval": 15}'
         return self._guest_action(body, userid=userid)
 
-    def _guest_deploy_with_transport_file(self, userid=None, vdev=None,
-                                          image=None, transportfiles=None):
-        if image is None:
-            image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
-
-        if vdev is None:
-            vdev = "100"
-
-        if transportfiles is None:
-            transportfiles = "/var/lib/zvmsdk/cfgdrive.tgz"
-
-        body = """{"action": "deploy",
-                   "image": "%s",
-                   "vdev": "%s",
-                   "transportfiles": "%s"}""" % (image, vdev, transportfiles)
-
-        return self._guest_action(body, userid=userid)
-
-    def _guest_deploy_with_transprot_file(self, userid=None,
+    def _guest_deploy_with_transport_file(self, userid=None,
                                        vdev=None, image=None,
                                        transportfiles=None):
         if image is None:
@@ -612,7 +594,6 @@ class GuestHandlerTestCase(unittest.TestCase):
     def test_guest_create_with_profile(self):
         resp = self._guest_create_with_profile()
         self.assertEqual(200, resp.status_code)
-        time.sleep(20)
 
         try:
             resp = self._guest_deploy()
@@ -634,6 +615,12 @@ class GuestHandlerTestCase(unittest.TestCase):
                                              self.userid))
             self.assertTrue(self._wait_until(True, self.is_reachable,
                                              self.userid))
+            resp = self._guest_reset()
+            self.assertEqual(200, resp.status_code)
+            self.assertTrue(self._wait_until(False, self.is_reachable,
+                                             self.userid))
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                             self.userid))
         finally:
             self._guest_delete()
 
@@ -643,21 +630,19 @@ class GuestHandlerTestCase(unittest.TestCase):
         self.assertEqual(200, resp.status_code)
         PURGE_GUEST = 1
 
-        # give chance to make disk online
-        time.sleep(15)
-
         self._make_transport_file()
         transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
 
         try:
-            resp = self._guest_deploy_with_transprot_file(
+            resp = self._guest_deploy_with_transport_file(
                                            transportfiles=transport_file)
             self.assertEqual(200, resp.status_code)
 
             resp = self._guest_start()
             self.assertEqual(200, resp.status_code)
 
-            time.sleep(15)
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                             self.userid))
             result = self._smutclient.execute_cmd(self.userid, 'hostname')
             self.assertEqual('deploy_tests', result[0])
 
@@ -770,8 +755,6 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_create()
         self.assertEqual(409, resp.status_code)
 
-        # give chance to make disk online
-        time.sleep(15)
         flag1 = False
         flag2 = False
 
@@ -792,24 +775,22 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             resp = self._guest_start()
             self.assertEqual(200, resp.status_code)
-            time.sleep(15)
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                             self.userid))
             result = self._smutclient.execute_cmd(self.userid, 'df -h')
             result_list = result
             for element in result_list:
                 if '/mnt/0101' in element:
                     flag1 = True
-                if '/mnt/0102' in element:
+                elif '/mnt/0102' in element:
                     flag2 = True
             self.assertEqual(True, flag1)
             self.assertEqual(True, flag2)
 
             resp = self._guest_softstop()
             self.assertEqual(200, resp.status_code)
-            time.sleep(15)
-            resp_state = self._guest_get_power_state()
-            self.assertEqual(200, resp_state.status_code)
-            resp_content = json.loads(resp_state.content)
-            self.assertEqual('off', resp_content['output'])
+            self.assertTrue(self._wait_until(False, self.is_reachable,
+                                             self.userid))
 
             # delete new disks
             resp = self._guest_mutidisks_delete()
