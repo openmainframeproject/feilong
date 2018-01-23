@@ -612,7 +612,6 @@ class GuestHandlerTestCase(unittest.TestCase):
     def test_guest_create_with_profile(self):
         resp = self._guest_create_with_profile()
         self.assertEqual(200, resp.status_code)
-        time.sleep(20)
 
         try:
             resp = self._guest_deploy()
@@ -642,10 +641,6 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_create()
         self.assertEqual(200, resp.status_code)
         PURGE_GUEST = 1
-
-        # give chance to make disk online
-        time.sleep(15)
-
         self._make_transport_file()
         transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
 
@@ -657,7 +652,8 @@ class GuestHandlerTestCase(unittest.TestCase):
             resp = self._guest_start()
             self.assertEqual(200, resp.status_code)
 
-            time.sleep(15)
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                             self.userid))
             result = self._smutclient.execute_cmd(self.userid, 'hostname')
             self.assertEqual('deploy_tests', result[0])
 
@@ -770,8 +766,6 @@ class GuestHandlerTestCase(unittest.TestCase):
         resp = self._guest_create()
         self.assertEqual(409, resp.status_code)
 
-        # give chance to make disk online
-        time.sleep(15)
         flag1 = False
         flag2 = False
 
@@ -792,7 +786,8 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             resp = self._guest_start()
             self.assertEqual(200, resp.status_code)
-            time.sleep(15)
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                             self.userid))
             result = self._smutclient.execute_cmd(self.userid, 'df -h')
             result_list = result
             for element in result_list:
