@@ -26,14 +26,17 @@ class TestSDKClient(object):
         self.base_url = "http://127.0.0.1:8888"
 
     def _get_token(self):
-        _headers = {'Content-Type': 'application/json'}
-        default_admin_token = '12345678901234567890123456789012'
-        _headers['X-Admin-Token'] = default_admin_token
+        if CONF.wsgi.auth == 'none':
+            token = "none"
+        else:
+            _headers = {'Content-Type': 'application/json'}
+            default_admin_token = '12345678901234567890123456789012'
+            _headers['X-Admin-Token'] = default_admin_token
 
-        url = self.base_url + '/token'
-        method = 'POST'
-        response = requests.request(method, url, headers=_headers)
-        token = response.headers['X-Auth-Token']
+            url = self.base_url + '/token'
+            method = 'POST'
+            response = requests.request(method, url, headers=_headers)
+            token = response.headers['X-Auth-Token']
 
         return token
 
