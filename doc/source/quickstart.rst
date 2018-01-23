@@ -34,6 +34,11 @@ Preparation on BYOL
    machine be able to issue SMAPI call. Refer to `z/VM Systems Management
    Application Programming`_ for how to make it.
 
+.. note::
+   It is recommend to consider increase the SMAPI long call server and DIRMAINT
+   DATAMOVE machine if heavy concurrent workload is going to be run through z/VM
+   Cloud connector. See `z/VM Systems Management Application Programming`_ for how to make it.
+
 2. Update BYOL definition for spawning guests.
 
    Assume BYOL has its definition on z/VM, it needs to have following statement in
