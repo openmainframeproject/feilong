@@ -40,7 +40,9 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
 
         # every time, we need to random generate userid
         self.userid = CONF.tests.userid_prefix + '%03d' % (time.time() % 1000)
-        self._cleanup()
+
+        # Temply disable cleanup
+        # self._cleanup()
 
     def _cleanup(self):
         url = '/guests/%s' % self.userid

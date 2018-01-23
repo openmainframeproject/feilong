@@ -34,7 +34,9 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
         # test change bind_port
         self.set_conf('sdkserver', 'bind_port', 3000)
         self.client = test_sdkwsgi.TestSDKClient()
-        self._cleanup()
+
+        # Temply disable cleanup
+        # self._cleanup()
 
     def _cleanup(self):
         self._vswitch_delete()
