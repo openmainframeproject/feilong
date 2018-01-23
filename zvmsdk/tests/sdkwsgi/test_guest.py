@@ -282,29 +282,11 @@ class GuestHandlerTestCase(unittest.TestCase):
         body = '{"action": "stop", "timeout": 300, "poll_interval": 15}'
         return self._guest_action(body, userid=userid)
 
-    def _guest_deploy_with_transport_file(self, userid=None, vdev=None,
-                                          image=None, transportfiles=None):
-        if image is None:
-            image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
-
-        if vdev is None:
-            vdev = "100"
-
-        if transportfiles is None:
-            transportfiles = "/var/lib/zvmsdk/cfgdrive.tgz"
-
-        body = """{"action": "deploy",
-                   "image": "%s",
-                   "vdev": "%s",
-                   "transportfiles": "%s"}""" % (image, vdev, transportfiles)
-
-        return self._guest_action(body, userid=userid)
-
-    def _guest_deploy_with_transprot_file(self, userid=None,
+    def _guest_deploy_with_transport_file(self, userid=None,
                                        vdev=None, image=None,
                                        transportfiles=None):
         if image is None:
-            image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
+            image = CONF.tests.image_path
 
         if vdev is None:
             vdev = "100"
@@ -321,7 +303,7 @@ class GuestHandlerTestCase(unittest.TestCase):
 
     def _guest_deploy(self, userid=None, vdev=None, image=None):
         if image is None:
-            image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
+            image = CONF.tests.image_path
 
         if vdev is None:
             vdev = "100"
@@ -612,7 +594,6 @@ class GuestHandlerTestCase(unittest.TestCase):
     def test_guest_create_with_profile(self):
         resp = self._guest_create_with_profile()
         self.assertEqual(200, resp.status_code)
-        time.sleep(20)
 
         try:
             resp = self._guest_deploy()
@@ -650,14 +631,15 @@ class GuestHandlerTestCase(unittest.TestCase):
         transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
 
         try:
-            resp = self._guest_deploy_with_transprot_file(
+            resp = self._guest_deploy_with_transport_file(
                                            transportfiles=transport_file)
             self.assertEqual(200, resp.status_code)
 
             resp = self._guest_start()
             self.assertEqual(200, resp.status_code)
 
-            time.sleep(15)
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                             self.userid))
             result = self._smutclient.execute_cmd(self.userid, 'hostname')
             self.assertEqual('deploy_tests', result[0])
 
@@ -772,6 +754,7 @@ class GuestHandlerTestCase(unittest.TestCase):
 
         # give chance to make disk online
         time.sleep(15)
+
         flag1 = False
         flag2 = False
 
@@ -792,7 +775,8 @@ class GuestHandlerTestCase(unittest.TestCase):
 
             resp = self._guest_start()
             self.assertEqual(200, resp.status_code)
-            time.sleep(15)
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                             self.userid))
             result = self._smutclient.execute_cmd(self.userid, 'df -h')
             result_list = result
             for element in result_list:
