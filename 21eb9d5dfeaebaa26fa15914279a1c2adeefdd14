@@ -16,6 +16,24 @@
       "revId": "21eb9d5dfeaebaa26fa15914279a1c2adeefdd14",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5fec1e2b_17840d28",
+        "filename": "zthin-parts/zthin/src/smcliVirtual.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 3948,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-01-23T10:26:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "809a4979_b03545ef",
+      "revId": "21eb9d5dfeaebaa26fa15914279a1c2adeefdd14",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
