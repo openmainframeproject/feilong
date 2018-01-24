@@ -1369,8 +1369,9 @@ class SMUTClient(object):
             raise exception.SDKImageOperationError(rs=13, img=image_name)
 
         try:
+            image_os_version = image_meta['os_version']
             target_folder = self._pathutils.create_import_image_repository(
-                image_meta['os_version'], const.IMAGE_TYPE['DEPLOY'],
+                image_os_version, const.IMAGE_TYPE['DEPLOY'],
                 image_name)
         except Exception as err:
             msg = ('Failed to create repository to store image %(img)s with '
@@ -1421,7 +1422,7 @@ class SMUTClient(object):
             image_size = self._get_image_size(final_image_fpath)
             # TODO: update the real_md5sum field to include each disk image
             self._ImageDbOperator.image_add_record(image_name,
-                                                   image_meta['os_version'],
+                                                   image_os_version,
                                                    real_md5sum,
                                                    disk_size_units,
                                                    image_size,
