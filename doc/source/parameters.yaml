@@ -396,7 +396,9 @@ image_export_url:
 image_metadata:
   description: |
     The metadata which describes image, the valid keys are os_version and md5sum,
-    os_version is required key.
+    os_version is required key, the valid os_version values are: rhel6.x, rhel7.x,
+    sles11.x, sles12.x, ubuntu16.x, all case insensitive, please contact with your cloud administrator
+    if you don't know the image's os version
   in: body
   required: true
   type: dict
@@ -703,7 +705,11 @@ network_interface_info:
   type: dict
 guest_os_version:
   description: |
-    operating system version.
+    Operating system version, case insensitive, the valid values\:
+
+    - ``rhelX.Y``: where X can be 6 or 7, Y can be 0 to 9
+    - ``slesX.Y``: Where X can be 11 or 12, Y can be 0 to 9
+    - ``ubuntuX.Y``: Where X is 16, Y is 01 to 09 eg. ubuntu16.04
   in: body
   required: true
   type: string
