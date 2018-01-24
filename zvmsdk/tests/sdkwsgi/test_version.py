@@ -12,13 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import unittest
-
+from zvmsdk.tests.sdkwsgi import base
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
 
 
-class VersionTestCase(unittest.TestCase):
+class VersionTestCase(base.ZVMConnectorBaseTestCase):
     def __init__(self, methodName='runTest'):
         super(VersionTestCase, self).__init__(methodName)
         self.apibase = api_sample.APITestBase()
