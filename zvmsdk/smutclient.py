@@ -1019,7 +1019,7 @@ class SMUTClient(object):
             # Get the vm status
             power_state = self.get_power_state(userid)
             if power_state == 'off':
-                msg = ('The vm %(vm)s is powered off' % userid)
+                msg = ('The vm %s is powered off' % userid)
                 raise exception.SDKNetworkOperationError(rs=5, userid=userid,
                                                          msg=msg)
 
@@ -1093,7 +1093,7 @@ class SMUTClient(object):
             # Get the vm status
             power_state = self.get_power_state(userid)
             if power_state == 'off':
-                msg = ('The vm %(vm)s is powered off' % userid)
+                msg = ('The vm %s is powered off' % userid)
                 raise exception.SDKNetworkOperationError(rs=5, userid=userid,
                                                          msg=msg)
         rd = ' '.join((
@@ -1145,7 +1145,7 @@ class SMUTClient(object):
             # Get the vm status
             power_state = self.get_power_state(userid)
             if power_state == 'off':
-                msg = ('The vm %(vm)s is powered off' % userid)
+                msg = ('The vm %s is powered off' % userid)
                 raise exception.SDKNetworkOperationError(rs=5, userid=userid,
                                                          msg=msg)
         requestData = ' '.join((
@@ -1231,7 +1231,7 @@ class SMUTClient(object):
             # Get the vm status
             power_state = self.get_power_state(userid)
             if power_state == 'off':
-                msg = ('The vm %(vm)s is powered off' % userid)
+                msg = ('The vm %s is powered off' % userid)
                 raise exception.SDKNetworkOperationError(rs=5, userid=userid,
                                                          msg=msg)
         requestData = ' '.join((
