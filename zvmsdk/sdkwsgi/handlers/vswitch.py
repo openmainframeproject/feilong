@@ -39,7 +39,6 @@ class VswitchAction(object):
 
     @validation.schema(vswitch.create)
     def create(self, body):
-        LOG.info('vswitch_create body %s' % body)
         vsw = body['vswitch']
         name = vsw['name']
         rdev = vsw['rdev']
