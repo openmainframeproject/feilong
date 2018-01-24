@@ -12,8 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import unittest
-
+from zvmsdk.tests.sdkwsgi import base
 from zvmsdk import config
 from zvmsdk import utils
 from zvmsdk.tests.sdkwsgi import api_sample
@@ -23,17 +22,13 @@ from zvmsdk.tests.sdkwsgi import test_sdkwsgi
 CONF = config.CONF
 
 
-def set_conf(section, opt, value):
-    CONF[section][opt] = value
-
-
-class ImageTestCase(unittest.TestCase):
+class ImageTestCase(base.ZVMConnectorBaseTestCase):
     def __init__(self, methodName='runTest'):
         super(ImageTestCase, self).__init__(methodName)
 
         self.apibase = api_sample.APITestBase()
         # test change bind_port
-        set_conf('sdkserver', 'bind_port', 3001)
+        self.set_conf('sdkserver', 'bind_port', 3001)
         self.client = test_sdkwsgi.TestSDKClient()
 
         # make sure image temp path exists

@@ -26,7 +26,7 @@ class ZVMSDKConfigFileNotFound(Exception):
 class Opt(object):
     def __init__(self, opt_name, section='default',
                  opt_type='str', help='',
-                 default='', required=False):
+                 default=None, required=False):
         self.name = opt_name
         self.section = section
         self.opt_type = opt_type
@@ -426,76 +426,74 @@ class ConfigOpts(object):
         return _dict
 
     def register(self, opts):
-        configs = self.get_config_dicts_default(opts)
-        read_file = self.find_config_file(project="zvmsdk") or ''
-        if read_file:
+        self.dicts = self.get_config_dicts_default(opts)
+        return self.clear_and_to_dict()
+
+    def config(self):
+        # read config file
+        override_dicts = self.read_config_file_to_dicts()
+        # overwrite default value
+        try:
+            self.dicts = self.merge(self.dicts, override_dicts)
+        except ImportError:
+            pass
+        # Check config value
+        self._check_required(self.dicts)
+        self._check_type(self.dicts)
+        # Clear unused attributes of each option, and parse to our defined dict
+        return self.clear_and_to_dict()
+
+    def read_config_file_to_dicts(self):
+        configs = {}
+        read_file = self.find_config_file(project="zvmsdk")
+        if read_file is None:
+            raise ConfFileMissingError()
+        else:
             cf = configparser.ConfigParser()
             cf.read(read_file)
-            # return all sections in a list
+            # read each section and option to dict
             secs = cf.sections()
-            config_dicts_override = self.config_ini_to_dicts(secs, cf)
+            for sec in secs:
+                configs[sec] = {}
+                # get all options of the section in a list
+                opts = cf.options(sec)
+                for opt in opts:
+                    val = cf.get(sec, opt)
+                    configs[sec][opt] = val
+            return configs
 
-            try:
-                configs = self.merge(configs, config_dicts_override)
-            except ImportError:
-                pass
-
-        con = self._config_fill_option(configs)
-        con = self.toDict(con)
-        self._check_required(con)
-        self._check_type(con)
-
-        for k1, v1 in con.items():
+    def clear_and_to_dict(self):
+        # This function would clear the dict to remove the unused keys
+        # ('required', 'default', 'type', 'help'), set the opt value to
+        # the final value merged in 'default'.
+        # And then, convert the python dict to our defined Dict object
+        clear_dict = {}
+        pydict = self.dicts
+        for k1, v1 in pydict.items():
             r_con = {}
             for k2, v2 in v1.items():
-                r_con[k2] = v2.default
-            con[k1] = r_con
+                r_con[k2] = v2['default']
+            clear_dict[k1] = r_con
 
-        con = self.toDict(con)
-        return con
+        return self.toDict(clear_dict)
 
     def _check_required(self, conf):
         '''Check that all opts marked as required have values specified.'''
         for k1, v1 in conf.items():
             for k2, v2 in v1.items():
-                if v2.required and (v2.default is None):
+                if v2['required'] and (v2['default'] is None):
                     raise RequiredOptMissingError(k1, k2)
 
     def _check_type(self, conf):
         for v1 in conf.values():
             for k2, v2 in v1.items():
-                if v2.type == 'int':
-                    v2.default = int(v2.default)
-
-    def _config_fill_option(self, conf):
-        for k, v in conf.items():
-            confs = {}
-            for dk, dv in v.items():
-                if isinstance(dv, dict):
-                    dv.setdefault('type', None)
-                    dv.setdefault('required', False)
-                    dv.setdefault('default', None)
-                    confs[dk] = dv
-                else:
-                    dv = {}
-                    dv['type'] = None
-                    dv['required'] = False
-                    dv['default'] = v[dk]
-                    confs[dk] = dv
-            conf[k] = confs
-        return conf
-
-    def config_ini_to_dicts(self, secs, cf):
-        for sec in secs:
-            self.dicts[sec] = {}
-            # get all options of the section in a list
-            opts = cf.options(sec)
-            for opt in opts:
-                val = cf.get(sec, opt)
-                self.dicts[sec][opt] = val
-        return self.dicts
+                if v2['type'] == 'int':
+                    v2['default'] = int(v2['default'])
 
     def merge(self, defaults, override):
+        # merge the defaults and overridden
+        # The overridden options would only have 'default' set in the
+        # resulted dicts
         r = {}
         for k, v in defaults.items():
             if k in override:
@@ -508,10 +506,6 @@ class ConfigOpts(object):
                 else:
                     r[k] = override[k]
             else:
-                r[k] = v
-
-        for k, v in override.items():
-            if k not in defaults:
                 r[k] = v
         return r
 
@@ -558,13 +552,12 @@ class ConfigOpts(object):
         :param extension: the file extension, for example '.conf'
         :returns: the path to a matching file, or None
         """
-        path = ''
         for d in dirs:
             path = os.path.join(d, '%s%s' % (basename, extension))
             if os.path.exists(path):
                 return path
 
-        return path
+        return None
 
     def find_config_file(self, project=None, extension='.conf'):
         """Return the config file.
@@ -610,5 +603,18 @@ class RequiredOptMissingError(Exception):
                                                       self.opt_name)
 
 
-CONF = ConfigOpts()
-CONF = CONF.register(zvm_opts)
+class ConfFileMissingError(Exception):
+    """Raised if the configuration file zvmsdk.conf cann't be found."""
+
+    def __init__(self):
+        message = "zvmsdk.conf is not found."
+        super(ConfFileMissingError, self).__init__(message)
+
+
+CONFOPTS = ConfigOpts()
+CONF = CONFOPTS.register(zvm_opts)
+
+
+def load_config():
+    global CONF
+    CONF = CONFOPTS.config()
