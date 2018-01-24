@@ -84,6 +84,19 @@ class ImageTestCase(unittest.TestCase):
                                        body=body)
         self.assertEqual(400, resp.status_code)
 
+    def test_image_create_invalid_os_version(self):
+        image_fname = "image1"
+        image_fpath = ''.join([CONF.image.temp_path, image_fname])
+        url = "file://" + image_fpath
+        image_meta = '''{"os_version": "rhel8.2"}'''
+        body = """{"image": {"image_name": "%s",
+                             "url": "%s",
+                             "image_meta": %s}}""" % (image_fname, url,
+                                                      image_meta)
+        resp = self.client.api_request(url='/images', method='POST',
+                                       body=body)
+        self.assertEqual(400, resp.status_code)
+
     def test_image_get_not_valid_resource(self):
         resp = self.client.api_request(url='/images/image1/root')
         self.assertEqual(404, resp.status_code)

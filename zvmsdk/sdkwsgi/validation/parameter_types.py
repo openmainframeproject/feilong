@@ -282,10 +282,20 @@ disk_conf = {
 }
 
 
+os_version = {
+    'oneOf': [
+        {'type': 'string',
+         'pattern': '^(rhel|redhat)(6|7){1}([.][0-9])?$'},
+        {'type': 'string',
+         'pattern': '^(sles|suse)(11|12){1}(([.]|(sp))[0-9])?$'},
+        {'type': 'string',
+         'pattern': '^(ubuntu)(16){1}[.][0-9]{2}([.][0-9])?$'}]
+}
+
 image_meta = {
     'type': 'object',
     'properties': {
-        'os_version': {'type': 'string'},
+        'os_version': os_version,
         # md5 shoule be 32 hexadeciaml numbers
         'md5sum': {'type': 'string', 'pattern': '^[0-9a-fA-F]{32}$'}
     },
