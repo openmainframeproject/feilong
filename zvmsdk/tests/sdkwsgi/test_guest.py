@@ -13,29 +13,26 @@
 #    under the License.
 
 import time
-import unittest
 import json
 import os
 
+from zvmsdk.tests.sdkwsgi import base
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
 from zvmsdk import config
 from zvmsdk import smutclient
 
+
 CONF = config.CONF
 
 
-def set_conf(section, opt, value):
-    CONF[section][opt] = value
-
-
-class GuestHandlerTestCase(unittest.TestCase):
+class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
     def __init__(self, methodName='runTest'):
         super(GuestHandlerTestCase, self).__init__(methodName)
         self.apibase = api_sample.APITestBase()
 
         # test change bind_port
-        set_conf('sdkserver', 'bind_port', 3000)
+        self.set_conf('sdkserver', 'bind_port', 3000)
 
         self.client = test_sdkwsgi.TestSDKClient()
 
@@ -929,7 +926,7 @@ class GuestHandlerTestCase(unittest.TestCase):
             self._vswitch_delete()
 
 
-class GuestActionTestCase(unittest.TestCase):
+class GuestActionTestCase(base.ZVMConnectorBaseTestCase):
     def __init__(self, methodName='runTest'):
         super(GuestActionTestCase, self).__init__(methodName)
 

@@ -3,7 +3,8 @@
 
 import threading
 
-from zvmsdk.sdkwsgi.deploy import init_application
+from zvmsdk import config
+
 
 if __name__ == "__main__":
     import argparse
@@ -11,6 +12,11 @@ if __name__ == "__main__":
     import sys
     import wsgiref.simple_server as wss
 
+    config.load_config()
+    from zvmsdk import log
+    log.setup_log()
+
+    from zvmsdk.sdkwsgi.deploy import init_application
     my_ip = socket.gethostbyname(socket.gethostname())
     parser = argparse.ArgumentParser(
         description=init_application.__doc__,
@@ -33,6 +39,7 @@ if __name__ == "__main__":
     sys.argv[1:] = args.args
     server = wss.make_server('', args.port, init_application())
 
+
     print("*" * 80)
     print("STARTING test server zvmsdk.sdkwsgi.wsgi.init_application")
     url = "http://%s:%d/" % (my_ip, server.server_port)
@@ -48,4 +55,8 @@ else:
 
     with app_lock:
         if application is None:
+            config.load_config()
+            from zvmsdk import log
+            log.setup_log()
+            from zvmsdk.sdkwsgi.deploy import init_application
             application = init_application()

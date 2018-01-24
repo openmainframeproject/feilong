@@ -13,11 +13,11 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import logging
 
 from time import time
 
 from smutLayer.ReqHandle import ReqHandle
+from zvmsdk import config
 from zvmsdk import log
 
 
@@ -43,8 +43,11 @@ class SMUT(object):
         self.reqIdPrefix = int(time() * 100)
         self.reqCnt = 0           # Number of requests so far
 
-        self.logger = log.Logger(logger='SMUT', log_file_name='smut.log',
-                                 level=logging.DEBUG).getlog()
+        logger = log.Logger('SMUT')
+        logger.setup(log_dir=config.CONF.logging.log_dir,
+                          log_level='logging.DEBUG',
+                          log_file_name='smut.log')
+        self.logger = logger.getlog()
 
         # Initialize the command name associated with this SMUT instance.
         if 'cmdName' in kwArgs.keys():
