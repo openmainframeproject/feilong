@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # Copyright 2017 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -12,13 +11,25 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import unittest
 
 from zvmsdk import config
-from zvmsdk import log
 
 
-if __name__ == '__main__':
-    config.load_config()
-    log.setup_log()
-    from zvmsdk import sdkserver
-    sdkserver.start_daemon()
+config.load_config()
+CONF = config.CONF
+
+
+def set_conf(section, opt, value):
+    CONF[section][opt] = value
+
+
+class ZVMConnectorBaseTestCase(unittest.TestCase):
+
+    def __init__(self, methodName='runTest'):
+        super(ZVMConnectorBaseTestCase, self).__init__(methodName)
+
+    def set_conf(self, section, opt, value):
+        old_value = CONF[section][opt]
+        CONF[section][opt] = value
+        self.addCleanup(set_conf, section, opt, old_value)
