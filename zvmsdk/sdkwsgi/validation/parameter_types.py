@@ -340,34 +340,37 @@ user_vlan_id = {
 
 connection_type = {
     'type': 'string',
-    'enum': ['CONnect', 'DISCONnect', 'NOUPLINK']
+    'enum': ['CONnect', 'CONNECT', 'connect', 'CON', 'con',
+             'DISCONnect', 'DISCONNECT', 'disconnect', 'DISCON', 'discon',
+             'NOUPLINK', 'nouplink']
 }
 
 router_type = {
     'type': 'string',
-    'enum': ['NONrouter', 'PRIrouter']
+    'enum': ['NONrouter', 'NONROUTER', 'nonrouter', 'NON', 'non',
+             'PRIrouter', 'PRIROUTER', 'prirouter', 'PRI', 'pri']
 }
 
 network_type = {
     'type': 'string',
-    'enum': ['IP', 'ETHernet']
+    'enum': ['IP', 'ip', 'ETHernet', 'ethernet', 'eth', 'ETH']
 }
 
 vid_type = {
     'oneOf': [
-        {'type': 'string', 'enum': ['UNAWARE', 'AWARE']},
+        {'type': 'string', 'enum': ['UNAWARE', 'unaware', 'AWARE', 'aware']},
         {'type': 'integer', 'minimum': 1, 'maximum': 4094}
     ]
 }
 
 port_type = {
     'type': 'string',
-    'enum': ['ACCESS', 'TRUNK']
+    'enum': ['ACCESS', 'access', 'TRUNK', 'trunk']
 }
 
 gvrp_type = {
     'type': 'string',
-    'enum': ['GVRP', 'NOGVRP']
+    'enum': ['GVRP', 'gvrp', 'NOGVRP', 'nogvrp']
 }
 
 native_vid_type = {
