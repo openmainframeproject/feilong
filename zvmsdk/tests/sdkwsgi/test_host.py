@@ -10,16 +10,24 @@
 
 import unittest
 
+from zvmsdk import config
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
+
+
+CONF = config.CONF
+
+
+def set_conf(section, opt, value):
+    CONF[section][opt] = value
 
 
 class HostTestCase(unittest.TestCase):
     def __init__(self, methodName='runTest'):
         super(HostTestCase, self).__init__(methodName)
         self.apibase = api_sample.APITestBase()
-
-    def setUp(self):
+        # test change bind_port
+        set_conf('sdkserver', 'bind_port', 3123)
         self.client = test_sdkwsgi.TestSDKClient()
 
     def test_host_info(self):
