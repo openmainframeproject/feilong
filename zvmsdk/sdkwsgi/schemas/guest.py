@@ -62,7 +62,7 @@ create_network_interface = {
         'interface': {
             'type': 'object',
             'properties': {
-                'os_version': {'type': 'string'},
+                'os_version': parameter_types.os_version,
                 'guest_networks': parameter_types.network_list,
                 'active': parameter_types.boolean,
             },
@@ -82,7 +82,7 @@ delete_network_interface = {
         'interface': {
             'type': 'object',
             'properties': {
-                'os_version': {'type': 'string'},
+                'os_version': parameter_types.os_version,
                 'vdev': parameter_types.vdev,
                 'active': parameter_types.boolean,
             },
