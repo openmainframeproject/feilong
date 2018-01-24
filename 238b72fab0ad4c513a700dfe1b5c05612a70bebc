@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a119eed_14443776",
+        "filename": "zvmsdk/sdkserver.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-01-24T10:35:55Z",
+      "side": 1,
+      "message": "no longer needed? Since no main function in this module",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "238b72fab0ad4c513a700dfe1b5c05612a70bebc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "163cb7e1_9a269a46",
+        "filename": "zvmsdk/tests/sdkwsgi/base.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-01-24T10:35:55Z",
+      "side": 1,
+      "message": "missed some lines at the beginning",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 23
+      },
+      "revId": "238b72fab0ad4c513a700dfe1b5c05612a70bebc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
