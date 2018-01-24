@@ -1699,7 +1699,6 @@ class SMUTClient(object):
         try:
             results = self._request(rd)
             rd_list = results['response']
-            LOG.info('vswitch_query result %s' % rd_list)
         except exception.SDKSMUTRequestFailed as err:
             if ((err.results['rc'] == 212) and (err.results['rs'] == 40)):
                 msg = 'Vswitch %s does not exist' % switch_name
