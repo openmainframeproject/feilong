@@ -48,6 +48,8 @@
 410;None;410;;The operated object is deleted
 **ZVM SDK Internal Error**
 500;None;500;1;Unexpected internal error in ZVM SDK, error: %(msg)s
+**z/VM Cloud Connector service is unavailable**
+503;120;503;1;Max concurrent deploy/capture requests received, request is rejected. %(req)s
 **smut errors**
 2;1;2;99;ULTSMP0311E On USERID, command sent through IUCV failed, rc in response string is not an integer. cmd: CMD, rc: RC, out: OUTPUT
 2;1;2;99;ULTSMP0312E On USERID, command sent through IUCV failed, reason code in response string is not an integer. cmd: CMD, rc: RC, rs: RS, out: OUTPUT
