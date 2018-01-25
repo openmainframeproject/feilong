@@ -83,9 +83,9 @@ class GuestHandlerTestCase(unittest.TestCase):
         body = """{"guest": {"userid": "%s", "vcpus": 1,
                              "memory": 1024,
                              "user_profile": "%s",
-                             "disk_list": [{"size": "3g",
+                             "disk_list": [{"size": "1100",
                                             "is_boot_disk": "True"},
-                                            {"size": "3g"}]}}"""
+                                            {"size": "1100"}]}}"""
         user_profile = 'notexist'
         body = body % (self.userid, user_profile)
         resp = self.client.api_request(url='/guests', method='POST',
@@ -283,6 +283,10 @@ class GuestHandlerTestCase(unittest.TestCase):
 
     def _guest_start(self, userid=None):
         body = '{"action": "start"}'
+        return self._guest_action(body, userid=userid)
+
+    def _guest_get_console_output(self, userid=None):
+        body = '{"action": "get_console_output"}'
         return self._guest_action(body, userid=userid)
 
     def _guest_softstop(self, userid=None):
@@ -615,11 +619,15 @@ class GuestHandlerTestCase(unittest.TestCase):
             self.assertTrue('MDISK 0101' in resp_create.content)
             resp = self._guest_start()
             self.assertEqual(200, resp.status_code)
-            time.sleep(10)
-            resp_state = self._guest_get_power_state()
-            self.assertEqual(200, resp_state.status_code)
-            resp_content = json.loads(resp_state.content)
-            self.assertEqual('on', resp_content['output'])
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                            self.userid))
+
+            resp = self._guest_get_console_output()
+            self.assertEqual(200, resp.status_code)
+            resp_content = json.loads(resp.content)
+            info = resp_content['output']
+            self.assertNotEqual(info, '')
+
             resp = self._guest_reboot()
             self.assertEqual(200, resp.status_code)
             self.assertTrue(self._wait_until(False, self.is_reachable,
