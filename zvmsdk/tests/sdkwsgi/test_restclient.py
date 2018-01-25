@@ -341,7 +341,7 @@ class ZVMConnectorTestCase(unittest.TestCase):
 
             resp_rest = self._vswitch_query(CONN_REST)
             resp_sock = self._vswitch_query(CONN_SOCKET)
-            self.assertEqual(resp_rest, resp_sock)
+            self.assertEqual(resp_rest['overallRC'], resp_sock['overallRC'])
 
             resp_rest = self._vswitch_couple(CONN_REST)
             resp_sock = self._vswitch_couple(CONN_SOCKET)
