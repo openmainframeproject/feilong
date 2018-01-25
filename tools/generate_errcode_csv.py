@@ -16,6 +16,8 @@
 import six
 
 from smutLayer import msgs
+from zvmconnector import restclient
+from zvmconnector import socketclient
 from zvmsdk import returncode
 
 
@@ -95,6 +97,39 @@ def generate_errcode():
                     ))
             _line += '\n'
             _lines.append(_line)
+
+    # add client error codes and messages
+    _lines.append('**' + "client errors" + '**\n')
+    # add restclient errors
+    for rs, errmsg in restclient.REST_REQUEST_ERROR[1].items():
+        _line = ';'.join((
+            six.text_type(restclient.REST_REQUEST_ERROR[0]['overallRC']),
+            six.text_type(restclient.REST_REQUEST_ERROR[0]['modID']),
+            six.text_type(restclient.REST_REQUEST_ERROR[0]['rc']),
+            six.text_type(rs),
+            errmsg,
+            ))
+        _line += '\n'
+        _lines.append(_line)
+    # add socketclient errors
+    for rs, errmsg in socketclient.SOCKET_ERROR[1].items():
+        _line = ';'.join((
+            six.text_type(socketclient.SOCKET_ERROR[0]['overallRC']),
+            six.text_type(socketclient.SOCKET_ERROR[0]['modID']),
+            six.text_type(socketclient.SOCKET_ERROR[0]['rc']),
+            six.text_type(rs),
+            errmsg,
+            ))
+        _line += '\n'
+        _lines.append(_line)
+    # add invalid api client errors
+    _lines.append(';'.join((
+        six.text_type(restclient.INVALID_API_ERROR[0]['overallRC']),
+        six.text_type(restclient.INVALID_API_ERROR[0]['modID']),
+        six.text_type(restclient.INVALID_API_ERROR[0]['rc']),
+        '1',
+        six.text_type(restclient.INVALID_API_ERROR[1][1]),
+        )) + '\n')
 
     return _lines
 

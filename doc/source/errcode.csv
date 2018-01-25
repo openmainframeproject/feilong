@@ -111,3 +111,15 @@
 99;1;99;420;ULTGUT0420E An error occurred issuing a CMD for userid USERID. Please look up message(s): ERROR_CODE in the CP Messages book for more information.
 99;1;421;0;ULTGUT0421E Exception received on an attempt to execute a cmd: CMD, exception: EXCEPTION, details: EXCEPTION_DETAILS
 99;1;422;0;ULTGUT0422W Exception received on an attempt to execute a cmd: CMD, exception: EXCEPTION, details: EXCEPTION_DETAILS. Will attempt to continue processing.
+**client errors**
+101;110;101;1;Request to zVM Cloud Connector failed: %(error)s
+101;110;101;2;Get Token failed: %(error)s
+101;110;101;3;Request %(url)s failed: %(error)s
+101;110;101;4;Get Token failed: %(error)s
+101;110;101;1;Failed to create client socket, error: %(error)s
+101;110;101;2;Failed to connect SDK server %(addr)s:%(port)s, error: %(error)s
+101;110;101;3;Failed to send all API call data to SDK server, only %(sent)d bytes sent. API call: %(api)s
+101;110;101;4;Client receive empty data from SDK server
+101;110;101;5;Client got socket error when sending API call to SDK server, error: %(error)s
+101;110;101;6;Client got socket error when receiving response from SDK server, error: %(error)s
+400;110;400;1;Invalid API name, '%(msg)s'
