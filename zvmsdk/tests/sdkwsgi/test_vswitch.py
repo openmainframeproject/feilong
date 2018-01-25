@@ -38,7 +38,9 @@ class VSwitchTestCase(unittest.TestCase):
         # test change bind_port
         set_conf('sdkserver', 'bind_port', 3000)
         self.client = test_sdkwsgi.TestSDKClient()
-        self._cleanup()
+
+        # Temply disable cleanup
+        # self._cleanup()
 
     def _cleanup(self):
         self._vswitch_delete()
