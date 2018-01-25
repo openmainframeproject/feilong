@@ -27,7 +27,7 @@ class ZVMConnectorTestCase(unittest.TestCase):
         super(ZVMConnectorTestCase, self).__init__(methodName)
         self.apibase = api_sample.APITestBase()
         self.restclient = connector.ZVMConnector(connection_type=CONN_REST,
-                                                 port=8888)
+                                                 port=8080)
         self.sockclient = connector.ZVMConnector(connection_type=CONN_SOCKET)
         self.userid_rest = 'RESTT%03d' % (time.time() % 1000)
         self.userid_sock = 'SOCKT%03d' % (time.time() % 1000)
@@ -341,7 +341,7 @@ class ZVMConnectorTestCase(unittest.TestCase):
 
             resp_rest = self._vswitch_query(CONN_REST)
             resp_sock = self._vswitch_query(CONN_SOCKET)
-            self.assertEqual(resp_rest, resp_sock)
+            self.assertEqual(resp_rest['overallRC'], resp_sock['overallRC'])
 
             resp_rest = self._vswitch_couple(CONN_REST)
             resp_sock = self._vswitch_couple(CONN_SOCKET)
