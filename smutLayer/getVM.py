@@ -221,7 +221,7 @@ def getConsole(rh):
             type(e).__name__, str(e))
 
     # List the spool files in the reader
-    cmd = ["/usr/sbin/vmur", "list"]
+    cmd = ["sudo", "/usr/sbin/vmur", "list"]
     strCmd = ' '.join(cmd)
     rh.printSysLog("Invoking: " + strCmd)
     try:
