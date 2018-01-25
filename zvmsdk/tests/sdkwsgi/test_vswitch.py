@@ -13,8 +13,8 @@
 #    under the License.
 
 import json
-import unittest
 
+from zvmsdk.tests.sdkwsgi import base
 from zvmsdk import config
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
@@ -26,17 +26,13 @@ LOG = log.LOG
 CONF = config.CONF
 
 
-def set_conf(section, opt, value):
-    CONF[section][opt] = value
-
-
-class VSwitchTestCase(unittest.TestCase):
+class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
     def __init__(self, methodName='runTest'):
         super(VSwitchTestCase, self).__init__(methodName)
         self.apibase = api_sample.APITestBase()
 
         # test change bind_port
-        set_conf('sdkserver', 'bind_port', 3000)
+        self.set_conf('sdkserver', 'bind_port', 3000)
         self.client = test_sdkwsgi.TestSDKClient()
 
         # Temply disable cleanup
