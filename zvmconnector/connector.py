@@ -83,7 +83,7 @@ class ZVMConnector(object):
             return socketConnection(ip_addr or '127.0.0.1', port or 2000,
                                     timeout)
         else:
-            return restConnection(ip_addr or '127.0.0.1', port or 2000,
+            return restConnection(ip_addr or '127.0.0.1', port or 8080,
                                   ssl_enabled=ssl_enabled, verify=verify,
                                   token_path=token_path)
 
