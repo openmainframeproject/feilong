@@ -115,7 +115,7 @@
 99;1;422;0;ULTGUT0422W Exception received on an attempt to execute a cmd: CMD, exception: EXCEPTION, details: EXCEPTION_DETAILS. Will attempt to continue processing.
 **client errors**
 101;110;101;1;Request to zVM Cloud Connector failed: %(error)s
-101;110;101;2;Get Token failed: %(error)s
+101;110;101;2;Token file not found: %(error)s
 101;110;101;3;Request to url: %(url)s got unexpected response: status_code: %(status)s, reason: %(reason)s, text: %(text)s
 101;110;101;4;Get Token failed: %(error)s
 101;110;101;1;Failed to create client socket, error: %(error)s
