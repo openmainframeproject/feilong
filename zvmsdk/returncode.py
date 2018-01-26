@@ -84,6 +84,9 @@ Object Deleted     410    MODRC   410   1    The operated object has been
                                              This can be used for some module
                                              that support deleted=1 in DB.
 
+Object is Locked   423    MODRC   423   1    The operated object is locked
+                                             eg, the guest/guest device
+
 Internal error     500    MODRC   500   1    The SDK module got unexpected
                                              error, eg, typeerror, keyerror,
                                              etc. SDK  server would take all
@@ -131,7 +134,8 @@ errors = {
                    " while %(provided)d provided."),
                2: ("Invalid API arg type, API: %(api)s, expected types: "
                    "'%(expected)s', input types: '%(inputtypes)s'"),
-               3: ("Invalid API arg format, error: %(msg)s")
+               3: ("Invalid API arg format, error: %(msg)s"),
+               4: ("Invalid API, error: %(msg)s")
                },
               "Invalid API Input",
              ],
@@ -241,6 +245,14 @@ errors = {
                 {},
                 "The operated object is deleted"
                 ],
+# Object locked
+# Used when the operated object is locked.
+# 'modID' would be set to each module rc when raise the exception
+# 'rs' is always 1
+    'isLocked': [{'overallRC': 423, 'modID': None, 'rc': 423},
+                 {1: "%(obj_desc)s is locked."},
+                 "The operated object is locked"
+                 ],
 # Internal error
 # Module Internal error, rc is not defined here, it will be set when raising
 # exception. when module id is not specified, the 'zvmsdk' module rc will be

@@ -774,11 +774,11 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
 
             # Creating NIC to active guest when guest is in off status.
             resp = self._guest_nic_create("1100", active=True)
-            self.assertEqual(500, resp.status_code)
+            self.assertEqual(400, resp.status_code)
 
             # Deleting NIC to active guest when guest is in off status.
             resp = self._guest_nic_delete("1009", active=True)
-            self.assertEqual(500, resp.status_code)
+            self.assertEqual(400, resp.status_code)
             nic_defined, vsw = self._check_nic("1009")
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
@@ -1148,7 +1148,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             # Coupling with active=True on an off-state VM
             # The active should fail and rollback the user direct
             resp = self._vswitch_couple(vdev="1000", active=True)
-            self.assertEqual(500, resp.status_code)
+            self.assertEqual(400, resp.status_code)
             nic_defined, vsw = self._check_nic("1000")
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
@@ -1172,7 +1172,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             resp = self._vswitch_create(vswitch="RESTVSW2")
             self.assertEqual(200, resp.status_code)
             resp = self._vswitch_couple(vdev="1000", vswitch="RESTVSW2")
-            self.assertEqual(500, resp.status_code)
+            self.assertEqual(400, resp.status_code)
             nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1")
             self.assertTrue(nic_defined)
             self.assertEqual("RESTVSW1", vsw)
@@ -1180,7 +1180,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             # Uncoupling with active=True on an off-state VM.
             # The NIC shoule not uncoupled in user direct and switch table
             resp = self._vswitch_uncouple(vdev="1000", active=True)
-            self.assertEqual(500, resp.status_code)
+            self.assertEqual(400, resp.status_code)
             nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1")
             self.assertTrue(nic_defined)
             self.assertEqual("RESTVSW1", vsw)
@@ -1214,12 +1214,14 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
 
+            # Bypass the following case due to Lineitem RN
+            # (NICDEF Security COntrols)
             # Unauthorized to couple NIC in active mode.
-            resp = self._vswitch_couple(vdev="2000", active=True)
-            self.assertEqual(500, resp.status_code)
-            nic_defined, vsw = self._check_nic("2000")
-            self.assertTrue(nic_defined)
-            self.assertEqual(None, vsw)
+            # resp = self._vswitch_couple(vdev="2000", active=True)
+            # self.assertEqual(400, resp.status_code)
+            # nic_defined, vsw = self._check_nic("2000")
+            # self.assertTrue(nic_defined)
+            # self.assertEqual(None, vsw)
 
             # Authorizing VM to couple to vswitch.
             body = '{"vswitch": {"grant_userid": "%s"}}' % self.userid
@@ -1230,7 +1232,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             # Coupling NIC to an unexisted vswitch.
             resp = self._vswitch_couple(vdev="2000", vswitch="VSWNONE",
                                         active=True)
-            self.assertEqual(500, resp.status_code)
+            self.assertEqual(404, resp.status_code)
             nic_defined, vsw = self._check_nic("2000")
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
@@ -1254,7 +1256,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             # Should still be coupled to original vswitch
             resp = self._vswitch_couple(vdev="2000", vswitch="RESTVSW2",
                                         active=True)
-            self.assertEqual(500, resp.status_code)
+            self.assertEqual(400, resp.status_code)
             nic_defined, vsw = self._check_nic("2000", vsw="RESTVSW1")
             self.assertTrue(nic_defined)
             self.assertEqual("RESTVSW1", vsw)
