@@ -116,7 +116,7 @@
 **client errors**
 101;110;101;1;Request to zVM Cloud Connector failed: %(error)s
 101;110;101;2;Get Token failed: %(error)s
-101;110;101;3;Request %(url)s failed: %(error)s
+101;110;101;3;Request to url: %(url)s got unexpected response: status_code: %(status)s, reason: %(reason)s, text: %(text)s
 101;110;101;4;Get Token failed: %(error)s
 101;110;101;1;Failed to create client socket, error: %(error)s
 101;110;101;2;Failed to connect SDK server %(addr)s:%(port)s, error: %(error)s
@@ -125,3 +125,4 @@
 101;110;101;5;Client got socket error when sending API call to SDK server, error: %(error)s
 101;110;101;6;Client got socket error when receiving response from SDK server, error: %(error)s
 400;110;400;1;Invalid API name, '%(msg)s'
+503;110;503;2;Service is unavailable. reason: %(reason)s, text: %(text)s
