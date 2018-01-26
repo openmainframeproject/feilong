@@ -113,6 +113,8 @@ def get_http_code_from_sdk_return(msg, additional_handler=None, default=200):
             if ret in [503]:
                 return 503
 
+            if ret in [501]:
+                return 501
             # Add a special handle for smut return
             if additional_handler:
                 ret = additional_handler(msg)
