@@ -16,13 +16,6 @@ import os
 from six.moves import configparser
 
 
-class ZVMSDKConfigFileNotFound(Exception):
-    """Config file not found exception."""
-    def __init__(self, message):
-        self.message = message
-        super(ZVMSDKConfigFileNotFound, self).__init__(message)
-
-
 class Opt(object):
     def __init__(self, opt_name, section='default',
                  opt_type='str', help='',
@@ -454,8 +447,7 @@ class ConfigOpts(object):
         except ImportError:
             pass
         # Check config value
-        self._check_required(self.dicts)
-        self._check_type(self.dicts)
+        self._check_value(self.dicts)
         # Clear unused attributes of each option, and parse to our defined dict
         return self.clear_and_to_dict()
 
@@ -478,34 +470,6 @@ class ConfigOpts(object):
                     configs[sec][opt] = val
             return configs
 
-    def clear_and_to_dict(self):
-        # This function would clear the dict to remove the unused keys
-        # ('required', 'default', 'type', 'help'), set the opt value to
-        # the final value merged in 'default'.
-        # And then, convert the python dict to our defined Dict object
-        clear_dict = {}
-        pydict = self.dicts
-        for k1, v1 in pydict.items():
-            r_con = {}
-            for k2, v2 in v1.items():
-                r_con[k2] = v2['default']
-            clear_dict[k1] = r_con
-
-        return self.toDict(clear_dict)
-
-    def _check_required(self, conf):
-        '''Check that all opts marked as required have values specified.'''
-        for k1, v1 in conf.items():
-            for k2, v2 in v1.items():
-                if v2['required'] and (v2['default'] is None):
-                    raise RequiredOptMissingError(k1, k2)
-
-    def _check_type(self, conf):
-        for v1 in conf.values():
-            for k2, v2 in v1.items():
-                if v2['type'] == 'int':
-                    v2['default'] = int(v2['default'])
-
     def merge(self, defaults, override):
         # merge the defaults and overridden
         # The overridden options would only have 'default' set in the
@@ -524,6 +488,39 @@ class ConfigOpts(object):
             else:
                 r[k] = v
         return r
+
+    def clear_and_to_dict(self):
+        # This function would clear the dict to remove the unused keys
+        # ('required', 'default', 'type', 'help'), set the opt value to
+        # the final value merged in 'default'.
+        # And then, convert the python dict to our defined Dict object
+        clear_dict = {}
+        pydict = self.dicts
+        for k1, v1 in pydict.items():
+            r_con = {}
+            for k2, v2 in v1.items():
+                r_con[k2] = v2['default']
+            clear_dict[k1] = r_con
+
+        return self.toDict(clear_dict)
+
+    def _check_value(self, conf):
+        for k1, v1 in conf.items():
+            for k2, v2 in v1.items():
+                # Check required options
+                if v2['required'] and (v2['default'] is None):
+                    raise RequiredOptMissingError(k1, k2)
+                # Convert type
+                if v2['type'] == 'int':
+                    v2['default'] = int(v2['default'])
+                # Check format
+                if (k2 == "disk_pool") and (v2['default'] is not None):
+                    self._check_zvm_disk_pool(v2['default'])
+
+    def _check_zvm_disk_pool(self, value):
+        disks = value.split(':')
+        if (len(disks) != 2) or (disks[0].upper() not in ['FBA', 'ECKD']):
+            raise OptFormatError("zvm", "disk_pool", value)
 
     def toDict(self, d):
         D = Dict()
@@ -625,6 +622,20 @@ class ConfFileMissingError(Exception):
     def __init__(self):
         message = "zvmsdk.conf is not found."
         super(ConfFileMissingError, self).__init__(message)
+
+
+class OptFormatError(Exception):
+    """Raised if an option is required but no value is supplied by the user."""
+
+    def __init__(self, grp_name, opt_name, value):
+        self.grp_name = grp_name
+        self.opt_name = opt_name
+        self.value = value
+
+    def __str__(self):
+        return "value %s for option  %s - %s is invalid" % (self.value,
+                                                            self.grp_name,
+                                                            self.opt_name)
 
 
 CONFOPTS = ConfigOpts()
