@@ -23,7 +23,7 @@ TOKEN_LOCK = threading.Lock()
 
 REST_REQUEST_ERROR = [{'overallRC': 101, 'modID': 110, 'rc': 101},
                       {1: "Request to zVM Cloud Connector failed: %(error)s",
-                       2: "Get Token failed: %(error)s",
+                       2: "Token file not found: %(error)s",
                        3: "Request %(url)s failed: %(error)s",
                        4: "Get Token failed: %(error)s"},
                        "zVM Cloud Connector request failed",
@@ -53,6 +53,22 @@ class TokenFileOpenError(Exception):
 
 
 class CACertNotFound(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return repr(self.msg)
+
+
+class APINameNotFound(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return repr(self.msg)
+
+
+class ArgsFormatError(Exception):
     def __init__(self, msg):
         self.msg = msg
 
@@ -411,7 +427,60 @@ def req_vswitch_set_vlan_id_for_user(start_index, *args, **kwargs):
     return url, body
 
 
-# parameters amount in path
+# arguments in args are required, record the count here
+# if len(args) not equal to this number, raise exception
+COUNT_ARGS_REQUIRED = {
+    'version': 0,
+    'guest_create': 3,
+    'guest_list': 0,
+    'guest_inspect_stats': 1,
+    'guest_inspect_vnics': 1,
+    'guests_get_nic_info': 0,
+    'guest_delete': 1,
+    'guest_get_definition_info': 1,
+    'guest_start': 1,
+    'guest_stop': 1,
+    'guest_softstop': 1,
+    'guest_pause': 1,
+    'guest_unpause': 1,
+    'guest_reboot': 1,
+    'guest_reset': 1,
+    'guest_get_console_output': 1,
+    'guest_capture': 1,
+    'guest_deploy': 1,
+    'guest_get_info': 1,
+    'guest_get_nic_vswitch_info': 1,
+    'guest_create_nic': 1,
+    'guest_delete_nic': 2,
+    'guest_nic_couple_to_vswitch': 2,
+    'guest_nic_uncouple_from_vswitch': 2,
+    'guest_create_network_interface': 3,
+    'guest_delete_network_interface': 3,
+    'guest_get_power_state': 1,
+    'guest_create_disks': 2,
+    'guest_delete_disks': 2,
+    'guest_config_minidisks': 2,
+    'volume_attach': 3,
+    'volume_detach': 3,
+    'host_get_info': 0,
+    'host_diskpool_get_info': 0,
+    'image_import': 3,
+    'image_query': 0,
+    'image_delete': 1,
+    'image_export': 2,
+    'image_get_root_disk_size': 1,
+    'token_create': 0,
+    'vswitch_get_list': 0,
+    'vswitch_create': 1,
+    'vswitch_delete': 1,
+    'vswitch_grant_user': 2,
+    'vswitch_query': 1,
+    'vswitch_revoke_user': 2,
+    'vswitch_set_vlan_id_for_user': 3,
+}
+
+
+# parameters amount in url path
 PARAM_IN_PATH = {
     'version': 0,
     'guest_create': 0,
@@ -583,6 +652,20 @@ class RESTClient(object):
         self.verify = verify
         self.token_path = token_path
 
+    def _check_arguments(self, api_name, *args, **kwargs):
+        # check api_name exist or not
+        if api_name not in API2METHOD.keys():
+            msg = "API name %s not exist." % api_name
+            raise APINameNotFound(msg)
+        # check args count is valid
+        count = COUNT_ARGS_REQUIRED[api_name]
+        if len(args) < count:
+            msg = "Missing some args,please check:%s." % args
+            raise ArgsFormatError(msg)
+        if len(args) > count:
+            msg = "Too many args,please check:%s." % args
+            raise ArgsFormatError(msg)
+
     def _get_admin_token(self, path):
         if os.path.exists(path):
             TOKEN_LOCK.acquire()
@@ -648,19 +731,14 @@ class RESTClient(object):
         return self.request(full_uri, method, body)
 
     def call(self, api_name, *args, **kwargs):
-        # check api_name exist or not
-        if api_name not in API2METHOD.keys():
-            strError = {'msg': 'API name for RESTClient not exist.'}
-            results = INVALID_API_ERROR[0]
-            results.update({'rs': 1,
-                            'errmsg': INVALID_API_ERROR[1][1] % strError,
-                            'output': ''})
-            return results
-        # get method by api_name
-        method = API2METHOD[api_name]
-        # get url,body with api_name and method
-        url, body = self._get_url_body(api_name, method, *args, **kwargs)
         try:
+            # check validation of arguments
+            self._check_arguments(api_name, *args, **kwargs)
+            # get method by api_name
+            method = API2METHOD[api_name]
+            # get url,body with api_name and method
+            url, body = self._get_url_body(api_name, method, *args, **kwargs)
+
             if body is None:
                 response = self.api_request(url, method)
             else:
