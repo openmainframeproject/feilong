@@ -275,7 +275,7 @@ class VMAction(object):
         remotehost = body.get('remotehost', None)
         vdev = body.get('vdev', None)
 
-        request_info = ("userid: %(userid)s,"
+        request_info = ("action: 'deploy', userid: %(userid)s,"
                         "transportfiles: %(trans)s, remotehost: %(remote)s,"
                         "vdev: %(vdev)s" %
                         {'userid': userid, 'trans': transportfiles,
@@ -285,13 +285,13 @@ class VMAction(object):
         info = None
         dd_allowed = self.dd_semaphore.acquire(blocking=False)
         if not dd_allowed:
-            err_msg = ("Max concurrent deploy/capture received,"
-                       " deploy request rejected. %s" % request_info)
+            error_def = returncode.errors['serviceUnavail']
+            info = error_def[0]
+            err_msg = error_def[1][1] % {'req': request_info}
+            info.update({'rs': 1,
+                         'errmsg': err_msg,
+                         'output': ''})
             LOG.error(err_msg)
-            info = {'overallRC': 503, 'modID': returncode.ModRCs['sdkwsgi'],
-                    'rc': 503, 'rs': 1, 'errmsg': err_msg,
-                    'output': ''
-                    }
             return info
 
         try:
@@ -321,7 +321,7 @@ class VMAction(object):
         capture_type = body.get('capture_type', 'rootonly')
         compress_level = body.get('compress_level', 6)
 
-        request_info = ("userid: %(userid)s,"
+        request_info = ("action: 'capture', userid: %(userid)s,"
                         "image name: %(image)s, capture type: %(cap)s,"
                         "compress level: %(level)s" %
                         {'userid': userid, 'image': image_name,
@@ -330,13 +330,13 @@ class VMAction(object):
         info = None
         capture_allowed = self.dd_semaphore.acquire(blocking=False)
         if not capture_allowed:
-            err_msg = ("Max concurrent deploy/capture received,"
-                       " capture request rejected. %s" % request_info)
+            error_def = returncode.errors['serviceUnavail']
+            info = error_def[0]
+            err_msg = error_def[1][1] % {'req': request_info}
+            info.update({'rs': 1,
+                         'errmsg': err_msg,
+                         'output': ''})
             LOG.error(err_msg)
-            info = {'overallRC': 503, 'modID': returncode.ModRCs['sdkwsgi'],
-                    'rc': 503, 'rs': 1, 'errmsg': err_msg,
-                    'output': ''
-                    }
             return info
 
         try:

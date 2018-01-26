@@ -93,7 +93,7 @@ Internal error     500    MODRC   500   1    The SDK module got unexpected
                                              bug report, SDK code should avoid
                                              using this return code.
 
-REST API Reject    503    MODRC   503   1    The SDK REST reject deploy/capture
+Service Unavailable 503   MODRC   503   1   The SDK REST reject deploy/capture
                                              requests because of the concurrent
                                              capture/deploy running exceeds the
                                              maximum number.
@@ -246,6 +246,16 @@ errors = {
                  {1: "Unexpected internal error in ZVM SDK, error: %(msg)s"},
                  "ZVM SDK Internal Error"
                  ],
+# Service Unavailable
+# The SDK REST reject deploy/capture requests because of the concurrent
+# capture/deploy running exceeds the maximum number.
+    'serviceUnavail': [{'overallRC': 503, 'modID': ModRCs['sdkwsgi'],
+                        'rc': 503},
+                       {1: "Max concurrent deploy/capture requests received, "
+                        "request is rejected. %(req)s",
+                        },
+                       "z/VM Cloud Connector service is unavailable"
+                       ],
     }
 
 # smut internal error

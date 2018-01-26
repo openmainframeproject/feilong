@@ -33,6 +33,7 @@ SDK_ERR_KEYS = (
     'conflict',
     'deleted',
     'internal',
+    'serviceUnavail',
 )
 
 
