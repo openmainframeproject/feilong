@@ -841,7 +841,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             self.assertNotEqual(info_off['mem_kb'], 0)
 
             resp = self._guest_capture(capture_type='alldisks')
-            self.assertEqual(500, resp.status_code)
+            self.assertEqual(501, resp.status_code)
 
             resp = self._guest_capture()
             self.assertEqual(200, resp.status_code)
