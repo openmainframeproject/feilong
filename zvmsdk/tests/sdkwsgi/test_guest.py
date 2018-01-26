@@ -132,16 +132,36 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
                                        body=body)
         return resp
 
-    def _guest_create_network_interface(self, userid=None):
-        body = """{"interface": {"os_version": "rhel6",
+    def _check_interface(self, userid=None, ip="192.168.95.123"):
+        """ Check network interface.
+        Returns a bool value to indicate whether the network interface is
+        defined
+        """
+        if userid is None:
+            userid = self.userid
+        result_list = self._smutclient.execute_cmd(userid, 'ifconfig')
+
+        for element in result_list:
+            if ip in element:
+                return True
+        return False
+
+    def _guest_create_network_interface(self, userid=None, vdev='1000',
+                                        ip="192.168.95.123",
+                                        active=False):
+        content = {"interface": {"os_version": "rhel6.7",
                                  "guest_networks":
-                                    [{"ip_addr": "192.168.98.123",
+                                    [{"ip_addr": ip,
                                      "dns_addr": ["9.0.3.1"],
-                                     "gateway_addr": "192.168.98.1",
-                                     "cidr": "192.168.98.0/24",
-                                     "nic_vdev": "1000",
-                                     "mac_addr": "02:00:00:12:34:56"}],
-                                 "active": "False"}}"""
+                                     "gateway_addr": "192.168.95.1",
+                                     "cidr": "192.168.95.0/24",
+                                     "nic_vdev": vdev}]}}
+        if active:
+            content["interface"]["active"] = "True"
+        else:
+            content["interface"]["active"] = "False"
+        body = json.dumps(content)
+
         if userid is None:
             userid = self.userid
         url = '/guests/%s/interface' % userid
@@ -150,10 +170,16 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
                                        body=body)
         return resp
 
-    def _guest_delete_network_interface(self, userid=None):
-        body = """{"interface": {"os_version": "rhel6",
-                                 "vdev": "1000",
-                                 "active": "False"}}"""
+    def _guest_delete_network_interface(self, userid=None, vdev='1000',
+                                        active=False):
+        content = {"interface": {"os_version": "rhel6.7",
+                                 "vdev": vdev}}
+        if active:
+            content["interface"]["active"] = "True"
+        else:
+            content["interface"]["active"] = "False"
+        body = json.dumps(content)
+
         if userid is None:
             userid = self.userid
         url = '/guests/%s/interface' % userid
@@ -611,6 +637,10 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         resp = self._guest_create_network_interface(userid='notexist')
         self.assertEqual(404, resp.status_code)
 
+    def test_guest_vic_delete_not_exist(self):
+        resp = self._guest_delete_network_interface(userid='notexist')
+        self.assertEqual(404, resp.status_code)
+
     def test_guest_nic_query_not_exist(self):
         resp = self._guest_nic_query(userid='notexist')
         self.assertEqual(404, resp.status_code)
@@ -939,18 +969,68 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
     def test_guest_create_delete_network_interface(self):
         resp = self._guest_create()
         self.assertEqual(200, resp.status_code)
+        self._make_transport_file()
+        transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
 
         try:
-            resp = self._guest_deploy()
+            resp = self._guest_deploy_with_transport_file(
+                                           transportfiles=transport_file)
             self.assertEqual(200, resp.status_code)
 
-            resp = self._guest_create_network_interface()
+            resp = self._guest_create_network_interface(vdev="2000")
             self.assertEqual(200, resp.status_code)
-            resp = self._guest_delete_network_interface()
+
+            # Authorizing VM to couple to vswitch.
+            body = '{"vswitch": {"grant_userid": "%s"}}' % self.userid
+            resp = self.client.api_request(url='/vswitches/XCATVSW2',
+                                           method='PUT', body=body)
             self.assertEqual(200, resp.status_code)
+
+            # Coupling NIC to the vswitch.
+            resp = self._vswitch_couple(vdev="2000", vswitch="XCATVSW2")
+            self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("2000", vsw="XCATVSW2")
+            self.assertTrue(nic_defined)
+            self.assertEqual("XCATVSW2", vsw)
+
+            resp = self._guest_start()
+            self.assertEqual(200, resp.status_code)
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                             self.userid))
+            time.sleep(20)
+            ip_set = self._check_interface()
+            self.assertTrue(ip_set)
+
+            resp = self._guest_delete_network_interface(vdev="2000",
+                                                        active=True)
+            self.assertEqual(200, resp.status_code)
+            ip_set = self._check_interface()
+            self.assertFalse(ip_set)
+
+            resp = self._guest_create_network_interface(vdev="2000",
+                                                        active=True)
+            self.assertEqual(200, resp.status_code)
+
+            resp = self._vswitch_couple(vdev="2000", vswitch="XCATVSW2",
+                                        active=True)
+            self.assertEqual(200, resp.status_code)
+            ip_set = self._check_interface()
+            self.assertTrue(ip_set)
+            nic_defined, vsw = self._check_nic("2000", vsw='XCATVSW2')
+            self.assertTrue(nic_defined)
+            self.assertEqual("XCATVSW2", vsw)
+
+            resp = self._guest_delete_network_interface(vdev="2000",
+                                                        active=False)
+            self.assertEqual(200, resp.status_code)
+            ip_set = self._check_interface()
+            self.assertTrue(ip_set)
+            nic_defined, vsw = self._check_nic("2000")
+            self.assertFalse(nic_defined)
+            self.assertEqual("", vsw)
         finally:
+            os.system('rm /var/lib/zvmsdk/cfgdrive.tgz')
             self._guest_delete()
-            self._vswitch_delete()
 
     def test_guests_get_nic_info(self):
         resp = self._guest_get_nic_DB_info()
