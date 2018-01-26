@@ -725,7 +725,31 @@ class SMUTClient(object):
         except exception.SDKSMUTRequestFailed as err:
             LOG.error("Failed to grant user %s to vswitch %s, error: %s"
                       % (userid, vswitch_name, err.format_message()))
-            raise
+            self._set_vswitch_exception(err, vswitch_name)
+
+    def _set_vswitch_exception(self, error, switch_name):
+        if (error.results['rc'] == 8):
+            errmsg = error.format_message()
+            raise exception.SDKInvalidInput(msg=errmsg)
+        elif ((error.results['rc'] == 212) and (error.results['rs'] == 40)):
+            obj_desc = "Vswitch %s" % switch_name
+            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                   modID='network')
+        elif ((error.results['rc'] == 396) and (error.results['rs'] == 2846)):
+            errmsg = ("Operation is not allowed for a "
+                      "VLAN UNAWARE vswitch" % switch_name)
+            raise exception.SDKInvalidInput(msg=errmsg)
+        elif ((error.results['rc'] == 396) and
+              ((error.results['rs'] == 2838) or
+               (error.results['rs'] == 2853) or
+               (error.results['rs'] == 2856) or
+               (error.results['rs'] == 2858) or
+               (error.results['rs'] == 3022) or
+               (error.results['rs'] == 3033))):
+            errmsg = error.format_message()
+            raise exception.SDKInvalidInput(msg=errmsg)
+        else:
+            raise error
 
     def revoke_user_from_vswitch(self, vswitch_name, userid):
         """Revoke user for vswitch."""
@@ -742,7 +766,7 @@ class SMUTClient(object):
         except exception.SDKSMUTRequestFailed as err:
             LOG.error("Failed to revoke user %s from vswitch %s, error: %s"
                       % (userid, vswitch_name, err.format_message()))
-            raise
+            self._set_vswitch_exception(err, vswitch_name)
 
     def image_performance_query(self, uid_list):
         """Call Image_Performance_Query to get guest current status.
@@ -889,7 +913,7 @@ class SMUTClient(object):
             LOG.error("Failed to set VLAN ID %s on vswitch %s for user %s, "
                       "error: %s" %
                       (vlan_id, vswitch_name, userid, err.format_message()))
-            raise
+            self._set_vswitch_exception(err, vswitch_name)
 
     def add_vswitch(self, name, rdev=None, controller='*',
                     connection='CONNECT', network_type='IP',
@@ -951,7 +975,7 @@ class SMUTClient(object):
         except exception.SDKSMUTRequestFailed as err:
             LOG.error("Failed to set vswitch %s, error: %s" %
                       (switch_name, err.format_message()))
-            raise
+            self._set_vswitch_exception(err, switch_name)
 
     def delete_vswitch(self, switch_name, persist=True):
         smut_userid = zvmutils.get_smut_userid()
@@ -1002,8 +1026,8 @@ class SMUTClient(object):
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
         if len(nic_vdev) > 4:
             errmsg = ("Virtual device number %s is not valid" % nic_vdev)
-            raise exception.SDKNetworkOperationError(rs=2,
-                                                     msg=errmsg)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
         LOG.debug('Nic attributes: vdev is %(vdev)s, '
                   'ID is %(id)s, address is %(address)s',
                   {'vdev': nic_vdev,
@@ -1013,15 +1037,43 @@ class SMUTClient(object):
                          mac_addr=mac_addr, active=active)
         return nic_vdev
 
+    def _create_nic_inactive_exception(self, error, vdev):
+        if (((error.results['rc'] == 400) and (error.results['rs'] == 12)) or
+            ((error.results['rc'] == 404) and (error.results['rs'] == 12))):
+            errmsg = error.format_message()
+            raise exception.SDKInvalidInput(msg=errmsg)
+        elif ((error.results['rc'] == 404) and (error.results['rs'] == 4)):
+            obj_desc = "Image device %s" % vdev
+            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                   modID='network')
+        else:
+            raise error
+
+    def _create_nic_active_exception(self, error, vdev):
+        if ((error.results['rc'] == 204) and (error.results['rs'] == 28)):
+            errmsg = error.format_message()
+            raise exception.SDKInvalidInput(msg=errmsg)
+        elif ((error.results['rc'] == 204) and (error.results['rs'] == 4)):
+            obj_desc = "Image device %s" % vdev
+            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                   modID='network')
+        elif ((error.results['rc'] == 396) and
+              ((error.results['rs'] == 2794)) or
+              ((error.results['rs'] == 2797))):
+            errmsg = error.format_message()
+            raise exception.SDKInvalidInput(msg=errmsg)
+        else:
+            raise error
+
     def _create_nic(self, userid, vdev, nic_id=None, mac_addr=None,
                     active=False):
         if active:
             # Get the vm status
             power_state = self.get_power_state(userid)
             if power_state == 'off':
-                msg = ('The vm %s is powered off' % userid)
-                raise exception.SDKNetworkOperationError(rs=5, userid=userid,
-                                                         msg=msg)
+                errmsg = ('The vm %s is powered off, '
+                          'active operation is not allowed' % userid)
+                raise exception.SDKInvalidInput(msg=errmsg)
 
         requestData = ' '.join((
             'SMAPI %s API Virtual_Network_Adapter_Create_Extended_DM' %
@@ -1040,7 +1092,7 @@ class SMUTClient(object):
             LOG.error("Failed to create nic %s for user %s in "
                       "the guest's user direct,, error: %s" %
                       (vdev, userid, err.format_message()))
-            raise
+            self._create_nic_inactive_exception(err, vdev)
 
         if active:
             if mac_addr is not None:
@@ -1075,7 +1127,7 @@ class SMUTClient(object):
                     else:
                         persist_OK = False
                 if persist_OK:
-                    raise err1
+                    self._create_nic_active_exception(err1, vdev)
                 else:
                     raise exception.SDKNetworkOperationError(rs=4,
                                     nic=vdev, userid=userid,
@@ -1093,9 +1145,9 @@ class SMUTClient(object):
             # Get the vm status
             power_state = self.get_power_state(userid)
             if power_state == 'off':
-                msg = ('The vm %s is powered off' % userid)
-                raise exception.SDKNetworkOperationError(rs=5, userid=userid,
-                                                         msg=msg)
+                errmsg = ('The vm %s is powered off, '
+                          'active operation is not allowed' % userid)
+                raise exception.SDKInvalidInput(msg=errmsg)
         rd = ' '.join((
             "SMAPI %s API Virtual_Network_Adapter_Delete_DM" %
             userid,
@@ -1138,6 +1190,40 @@ class SMUTClient(object):
                               (vdev, userid, emsg))
                     raise
 
+    def _couple_active_exception(self, error, vdev, vswitch):
+        if ((error.results['rc'] == 212) and
+            ((error.results['rs'] == 8) or
+             (error.results['rs'] == 28))):
+            errmsg = error.format_message()
+            raise exception.SDKInvalidInput(msg=errmsg)
+        elif ((error.results['rc'] == 212) and (error.results['rs'] == 40)):
+            obj_desc = "Vswitch %s" % vswitch
+            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                   modID='network')
+        elif ((error.results['rc'] == 204) and (error.results['rs'] == 8)):
+            obj_desc = "Image device %s" % vdev
+            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                   modID='network')
+        elif ((error.results['rc'] == 396) and
+              (error.results['rs'] == 2788)):
+            errmsg = error.format_message()
+            raise exception.SDKInvalidInput(msg=errmsg)
+        else:
+            raise error
+
+    def _couple_inactive_exception(self, error, vdev):
+        if (((error.results['rc'] == 412) and (error.results['rs'] == 28)) or
+            ((error.results['rc'] == 400) and (error.results['rs'] == 12)) or
+            ((error.results['rc'] == 404) and (error.results['rs'] == 12))):
+            errmsg = error.format_message()
+            raise exception.SDKInvalidInput(msg=errmsg)
+        elif ((error.results['rc'] == 404) and (error.results['rs'] == 8)):
+            obj_desc = "Image device %s" % vdev
+            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                   modID='network')
+        else:
+            raise error
+
     def _couple_nic(self, userid, vdev, vswitch_name,
                     active=False):
         """Couple NIC to vswitch by adding vswitch into user direct."""
@@ -1145,9 +1231,9 @@ class SMUTClient(object):
             # Get the vm status
             power_state = self.get_power_state(userid)
             if power_state == 'off':
-                msg = ('The vm %s is powered off' % userid)
-                raise exception.SDKNetworkOperationError(rs=5, userid=userid,
-                                                         msg=msg)
+                errmsg = ('The vm %s is powered off, '
+                          'active operation is not allowed' % userid)
+                raise exception.SDKInvalidInput(msg=errmsg)
         requestData = ' '.join((
             'SMAPI %s' % userid,
             "API Virtual_Network_Adapter_Connect_Vswitch_DM",
@@ -1161,7 +1247,7 @@ class SMUTClient(object):
             LOG.error("Failed to couple nic %s to vswitch %s for user %s "
                       "in the guest's user direct, error: %s" %
                       (vdev, vswitch_name, userid, err.format_message()))
-            raise
+            self._couple_inactive_exception(err, vdev)
 
         # the inst must be active, or this call will failed
         if active:
@@ -1203,7 +1289,8 @@ class SMUTClient(object):
                         else:
                             persist_OK = False
                     if persist_OK:
-                        raise err1
+                        self._couple_active_exception(err1, vdev,
+                                                      vswitch_name)
                     else:
                         raise exception.SDKNetworkOperationError(rs=3,
                                     nic=vdev, vswitch=vswitch_name,
@@ -1225,15 +1312,37 @@ class SMUTClient(object):
                   nic_vdev, vswitch_name, msg)
         self._couple_nic(userid, nic_vdev, vswitch_name, active=active)
 
+    def _uncouple_active_exception(self, error, vdev):
+        if ((error.results['rc'] == 204) and (error.results['rs'] == 8)):
+            obj_desc = "Image device %s" % vdev
+            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                   modID='network')
+        elif ((error.results['rc'] == 204) and (error.results['rs'] == 28)):
+            errmsg = error.format_message()
+            raise exception.SDKInvalidInput(msg=errmsg)
+        else:
+            raise error
+
+    def _uncouple_inactive_exception(self, error, vdev):
+        if ((error.results['rc'] == 404) and (error.results['rs'] == 8)):
+            obj_desc = "Image device %s" % vdev
+            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                   modID='network')
+        elif ((error.results['rc'] == 400) and (error.results['rs'] == 12)):
+            errmsg = error.format_message()
+            raise exception.SDKInvalidInput(msg=errmsg)
+        else:
+            raise error
+
     def _uncouple_nic(self, userid, vdev, active=False):
         """Uncouple NIC from vswitch"""
         if active:
             # Get the vm status
             power_state = self.get_power_state(userid)
             if power_state == 'off':
-                msg = ('The vm %s is powered off' % userid)
-                raise exception.SDKNetworkOperationError(rs=5, userid=userid,
-                                                         msg=msg)
+                errmsg = ('The vm %s is powered off, '
+                          'active operation is not allowed' % userid)
+                raise exception.SDKInvalidInput(msg=errmsg)
         requestData = ' '.join((
             'SMAPI %s' % userid,
             "API Virtual_Network_Adapter_Disconnect_DM",
@@ -1254,7 +1363,7 @@ class SMUTClient(object):
             else:
                 LOG.error("Failed to uncouple nic %s in the guest's user "
                           "direct, error: %s" % (vdev, emsg))
-                raise
+                self._uncouple_inactive_exception(err, vdev)
 
         """Update information in switch table."""
         self._NetDbOperator.switch_update_record_with_switch(userid, vdev,
@@ -1282,7 +1391,7 @@ class SMUTClient(object):
                 else:
                     LOG.error("Failed to uncouple nic %s on the active "
                               "guest system, error: %s" % (vdev, emsg))
-                    raise
+                    self._uncouple_active_exception(err, vdev)
 
     def uncouple_nic_from_vswitch(self, userid, nic_vdev,
                                   active=False):

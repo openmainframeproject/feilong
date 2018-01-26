@@ -128,7 +128,8 @@ errors = {
                    " while %(provided)d provided."),
                2: ("Invalid API arg type, API: %(api)s, expected types: "
                    "'%(expected)s', input types: '%(inputtypes)s'"),
-               3: ("Invalid API arg format, error: %(msg)s")
+               3: ("Invalid API arg format, error: %(msg)s"),
+               4: ("Invalid API, error: %(msg)s")
                },
               "Invalid API Input",
              ],
