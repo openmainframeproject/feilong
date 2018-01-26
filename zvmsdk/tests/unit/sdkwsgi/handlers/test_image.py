@@ -96,6 +96,21 @@ class HandlersImageTest(unittest.TestCase):
         self.assertRaises(exception.ValidationError, image.image_create,
                           self.req)
 
+    def test_image_create_invalid_os_version(self):
+        body_str = """{"image": {"image_name": "46a4aea3-54b6-4b1c",
+                         "url": "file:///tmp/test.img",
+                         "image_meta": {
+                         "os_version": "rhel2.2",
+                         "md5sum": "12345678912345678912345678912345"
+                         },
+                         "remotehost": "hostname"
+                        }
+              }"""
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, image.image_create,
+                          self.req)
+
     def test_image_create_invalid_url(self):
         # FIXME: need url format validation
         pass
