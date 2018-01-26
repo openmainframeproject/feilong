@@ -24,10 +24,18 @@ TOKEN_LOCK = threading.Lock()
 REST_REQUEST_ERROR = [{'overallRC': 101, 'modID': 110, 'rc': 101},
                       {1: "Request to zVM Cloud Connector failed: %(error)s",
                        2: "Get Token failed: %(error)s",
-                       3: "Request %(url)s failed: %(error)s",
-                       4: "Get Token failed: %(error)s"},
+                       3: "Request to url: %(url)s got unexpected response: "
+                       "status_code: %(status)s, reason: %(reason)s, "
+                       "text: %(text)s",
+                       4: "Get Token failed: %(error)s"
+                       },
                        "zVM Cloud Connector request failed",
                        ]
+SERVICE_UNAVAILABLE_ERROR = [{'overallRC': 503, 'modID': 110, 'rc': 503},
+                             {2: "Service is unavailable. reason: %(reason)s,"
+                              " text: %(text)s"},
+                             "Service is unavailable",
+                             ]
 INVALID_API_ERROR = [{'overallRC': 400, 'modID': 110, 'rc': 400},
                      {1: "Invalid API name, '%(msg)s'"},
                      "Invalid API name",
@@ -35,6 +43,11 @@ INVALID_API_ERROR = [{'overallRC': 400, 'modID': 110, 'rc': 400},
 
 
 class UnexpedtedResponse(Exception):
+    def __init__(self, resp):
+        self.resp = resp
+
+
+class ServiceUnavailable(Exception):
     def __init__(self, resp):
         self.resp = resp
 
@@ -606,7 +619,15 @@ class RESTClient(object):
         method = 'POST'
         response = requests.request(method, url, headers=_headers,
                                     verify=self.verify)
-        token = response.headers['X-Auth-Token']
+        if ('status_code' in response) and (
+            response['status_code'] == 503):
+            # service unavailable
+            raise ServiceUnavailable(response)
+        elif ('headers' not in response) or (
+            'X-Auth-Token' not in response.headers):
+            raise UnexpedtedResponse(response)
+        else:
+            token = response.headers['X-Auth-Token']
 
         return token
 
@@ -673,17 +694,20 @@ class RESTClient(object):
             errmsg = REST_REQUEST_ERROR[1][4] % {'error': err.msg}
             results = REST_REQUEST_ERROR[0]
             results.update({'rs': 4, 'errmsg': errmsg, 'output': ''})
-        except UnexpedtedResponse as err:
-            results = {}
-            errmsg = REST_REQUEST_ERROR[1][3] % ({'url': err.resp.url,
-                                                  'error': err.resp.reason})
-            results['overallRC'] = err.resp.status_code
-            results['rc'] = err.resp.status_code
-            results['modID'] = 110
-            results.update({'rs': 3, 'errmsg': errmsg, 'output': ''})
         except TokenNotFound as err:
             errmsg = REST_REQUEST_ERROR[1][2] % {'error': err.msg}
             results = REST_REQUEST_ERROR[0]
+            results.update({'rs': 2, 'errmsg': errmsg, 'output': ''})
+        except UnexpedtedResponse as err:
+            results = {}
+            errmsg = REST_REQUEST_ERROR[1][3] % ({
+                'url': err.resp.url, 'status': err.resp.status_code,
+                'reason': err.resp.reason, 'text': err.resp.text})
+            results.update({'rs': 3, 'errmsg': errmsg, 'output': ''})
+        except ServiceUnavailable as err:
+            errmsg = SERVICE_UNAVAILABLE_ERROR[1][2] % {
+                'reason': err.resp.reason, 'text': err.resp.text}
+            results = SERVICE_UNAVAILABLE_ERROR[0]
             results.update({'rs': 2, 'errmsg': errmsg, 'output': ''})
         except Exception as err:
             errmsg = REST_REQUEST_ERROR[1][1] % {'error': six.text_type(err)}
