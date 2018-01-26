@@ -32,6 +32,7 @@ SDK_ERR_KEYS = (
     'notExist',
     'conflict',
     'deleted',
+    'isLocked',
     'internal',
     'serviceUnavail',
 )
