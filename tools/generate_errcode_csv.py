@@ -131,6 +131,14 @@ def generate_errcode():
         '1',
         six.text_type(restclient.INVALID_API_ERROR[1][1]),
         )) + '\n')
+    # add service unavailable error
+    _lines.append(';'.join((
+        six.text_type(restclient.SERVICE_UNAVAILABLE_ERROR[0]['overallRC']),
+        six.text_type(restclient.SERVICE_UNAVAILABLE_ERROR[0]['modID']),
+        six.text_type(restclient.SERVICE_UNAVAILABLE_ERROR[0]['rc']),
+        '2',
+        six.text_type(restclient.SERVICE_UNAVAILABLE_ERROR[1][2]),
+        )) + '\n')
 
     return _lines
 
