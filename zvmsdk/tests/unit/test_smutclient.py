@@ -1336,7 +1336,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                    image_name])
         image_file_path = '/'.join((image_temp_dir, '0100'))
         cmd1 = ['sudo', '/opt/zthin/bin/creatediskimage', userid, '0100',
-               image_file_path]
+               image_file_path, '--compression', '6']
         execute.side_effect = [(0, ''),
                                (0, '')]
         image_final_dir = '/'.join((CONF.image.sdk_image_repository,
