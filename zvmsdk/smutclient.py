@@ -571,7 +571,7 @@ class SMUTClient(object):
         image_file_name = vdev
         image_file_path = '/'.join((image_temp_dir, image_file_name))
         cmd = ['sudo', '/opt/zthin/bin/creatediskimage', userid, vdev,
-               image_file_path]
+               image_file_path, '--compression', str(compress_level)]
         with zvmutils.expect_and_reraise_internal_error(modID='guest'):
             (rc, output) = zvmutils.execute(cmd)
         if rc != 0:
