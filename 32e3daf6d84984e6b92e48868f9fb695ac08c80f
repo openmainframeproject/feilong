@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0df4a501_bb057da3",
+        "filename": "zvmsdk/sdkwsgi/util.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-01-29T06:59:36Z",
+      "side": 1,
+      "message": "why not add change here:\nif ret in [400, 404, 409, 501, 503]:\n    return ret",
+      "range": {
+        "startLine": 105,
+        "startChar": 0,
+        "endLine": 106,
+        "endChar": 26
+      },
+      "revId": "32e3daf6d84984e6b92e48868f9fb695ac08c80f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
