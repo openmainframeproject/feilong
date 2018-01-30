@@ -84,7 +84,7 @@ ROUTE_LIST = (
     ('/host', {
         'GET': host.host_get_info,
     }),
-    ('/host/disk/{disk}', {
+    ('/host/disk', {
         'GET': host.host_get_disk_info,
     }),
     ('/images', {

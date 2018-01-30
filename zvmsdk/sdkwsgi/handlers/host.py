@@ -40,9 +40,9 @@ class HostAction(object):
         return info
 
     @validation.query_schema(image.diskname)
-    def diskpool_get_info(self, req, diskname):
+    def diskpool_get_info(self, req, diskpool):
         info = self.client.send_request('host_diskpool_get_info',
-                                        disk_pool=diskname)
+                                        disk_pool=diskpool)
         return info
 
 
@@ -73,13 +73,14 @@ def host_get_info(req):
 @tokens.validate
 def host_get_disk_info(req):
 
-    def _host_get_disk_info(req, diskname):
+    def _host_get_disk_info(req, diskpool):
         action = get_action()
-        return action.diskpool_get_info(req, diskname)
+        return action.diskpool_get_info(req, diskpool)
 
-    diskname = util.wsgi_path_item(req.environ, 'disk')
-
-    info = _host_get_disk_info(req, diskname)
+    diskpool = CONF.zvm.disk_pool
+    if 'diskpool' in req.GET:
+        diskpool = req.GET['diskpool']
+    info = _host_get_disk_info(req, diskpool)
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,
         additional_handler=util.handle_not_found)
