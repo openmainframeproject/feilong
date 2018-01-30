@@ -217,3 +217,17 @@ class SDKVolumeOperationError(SDKBaseException):
         results['strError'] = errormsg
         super(SDKVolumeOperationError, self).__init__(results=results,
                                                       message=errormsg)
+
+
+class SDKFunctionNotImplementError(SDKBaseException):
+    def __init__(self, func, modID='guest'):
+        # kwargs can be used to contain different keyword for constructing
+        # the rs error msg
+        rc = returncode.errors['serviceNotSupport']
+        results = rc[0]
+        results['modID'] = modID
+        results['rs'] = 1
+        errormsg = rc[1][1] % {'func': func}
+        results['strError'] = errormsg
+        super(SDKFunctionNotImplementError, self).__init__(results=results,
+                                                      message=errormsg)

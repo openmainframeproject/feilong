@@ -494,9 +494,11 @@ class SMUTClient(object):
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):
         if capture_type == "alldisks":
-            msg = ('Capture all disks is not supported in current release')
-            raise exception.SDKGuestOperationError(rs=5, userid=userid,
-                                                   msg=msg)
+            func = ('Capture guest with type: %s' % capture_type)
+            msg = ('%s is not supported in current release' % func)
+            LOG.error(msg)
+            raise exception.SDKFunctionNotImplementError(func=func,
+                                                         modID='guest')
 
         # Get the vm status
         power_state = self.get_power_state(userid)

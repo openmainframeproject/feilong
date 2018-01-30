@@ -102,16 +102,13 @@ def get_http_code_from_sdk_return(msg, additional_handler=None, default=200):
 
         if ret != 0:
             # same definition to sdk layer
-            if ret in [400, 404, 409]:
+            if ret in [400, 404, 409, 501, 503]:
                 return ret
 
             # 100 mean validation error in sdk layer and
             # lead to a 400 badrequest
             if ret in [100]:
                 return 400
-
-            if ret in [503]:
-                return 503
 
             # Add a special handle for smut return
             if additional_handler:
