@@ -9,7 +9,7 @@ from zvmconnector import connector
 
 
 # Guest properties
-GUEST_USERID = 'RESTT001'
+GUEST_USERID = 'SAMPLE02'
 GUEST_PROFILE = 'osdflt'
 GUEST_VCPUS = 1
 GUEST_MEMORY = 1024         # in megabytes
@@ -17,11 +17,11 @@ GUEST_ROOT_DISK_SIZE = 1    # in gigabytes
 DISK_POOL = 'ECKD:xcateckd'
 
 # Image properties
-IMAGE_PATH = '/root/images/0100'
+IMAGE_PATH = '/root/images/0100.img'
 IMAGE_OS_VERSION = 'rhel7'
 
 # Network properties
-GUEST_IP_ADDR = '192.168.127.110'
+GUEST_IP_ADDR = '192.168.127.112'
 GATEWAY = '192.168.127.1'
 CIDR = '192.168.127.0/24'
 VSWITCH_NAME = 'xcatvsw2'

@@ -23,12 +23,11 @@ TOKEN_LOCK = threading.Lock()
 
 REST_REQUEST_ERROR = [{'overallRC': 101, 'modID': 110, 'rc': 101},
                       {1: "Request to zVM Cloud Connector failed: %(error)s",
-                       2: "Get Token failed: %(error)s",
+                       2: "Token file not found: %(error)s",
                        3: "Request to url: %(url)s got unexpected response: "
                        "status_code: %(status)s, reason: %(reason)s, "
                        "text: %(text)s",
-                       4: "Get Token failed: %(error)s"
-                       },
+                       4: "Get Token failed: %(error)s"},
                        "zVM Cloud Connector request failed",
                        ]
 SERVICE_UNAVAILABLE_ERROR = [{'overallRC': 503, 'modID': 110, 'rc': 503},
@@ -66,6 +65,22 @@ class TokenFileOpenError(Exception):
 
 
 class CACertNotFound(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return repr(self.msg)
+
+
+class APINameNotFound(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return repr(self.msg)
+
+
+class ArgsFormatError(Exception):
     def __init__(self, msg):
         self.msg = msg
 
@@ -424,157 +439,248 @@ def req_vswitch_set_vlan_id_for_user(start_index, *args, **kwargs):
     return url, body
 
 
-# parameters amount in path
-PARAM_IN_PATH = {
-    'version': 0,
-    'guest_create': 0,
-    'guest_list': 0,
-    'guest_inspect_stats': 1,
-    'guest_inspect_vnics': 1,
-    'guests_get_nic_info': 0,
-    'guest_delete': 1,
-    'guest_get_definition_info': 1,
-    'guest_start': 1,
-    'guest_stop': 1,
-    'guest_softstop': 1,
-    'guest_pause': 1,
-    'guest_unpause': 1,
-    'guest_reboot': 1,
-    'guest_reset': 1,
-    'guest_get_console_output': 1,
-    'guest_capture': 1,
-    'guest_deploy': 1,
-    'guest_get_info': 1,
-    'guest_get_nic_vswitch_info': 1,
-    'guest_create_nic': 1,
-    'guest_delete_nic': 2,
-    'guest_nic_couple_to_vswitch': 2,
-    'guest_nic_uncouple_from_vswitch': 2,
-    'guest_create_network_interface': 1,
-    'guest_delete_network_interface': 1,
-    'guest_get_power_state': 1,
-    'guest_create_disks': 1,
-    'guest_delete_disks': 1,
-    'guest_config_minidisks': 1,
-    'volume_attach': 1,
-    'volume_detach': 1,
-    'host_get_info': 0,
-    'host_diskpool_get_info': 1,
-    'image_import': 0,
-    'image_query': 1,
-    'image_delete': 1,
-    'image_export': 1,
-    'image_get_root_disk_size': 1,
-    'token_create': 0,
-    'vswitch_get_list': 0,
-    'vswitch_create': 0,
-    'vswitch_delete': 1,
-    'vswitch_grant_user': 1,
-    'vswitch_query': 1,
-    'vswitch_revoke_user': 1,
-    'vswitch_set_vlan_id_for_user': 1,
-}
-
-
-API2METHOD = {
-    'version': 'GET',
-    'guest_create': 'POST',
-    'guest_list': 'GET',
-    'guest_inspect_stats': 'GET',
-    'guest_inspect_vnics': 'GET',
-    'guests_get_nic_info': 'GET',
-    'guest_delete': 'DELETE',
-    'guest_get_definition_info': 'GET',
-    'guest_start': 'POST',
-    'guest_stop': 'POST',
-    'guest_softstop': 'POST',
-    'guest_pause': 'POST',
-    'guest_unpause': 'POST',
-    'guest_reboot': 'POST',
-    'guest_reset': 'POST',
-    'guest_get_console_output': 'POST',
-    'guest_capture': 'POST',
-    'guest_deploy': 'POST',
-    'guest_get_info': 'GET',
-    'guest_get_nic_vswitch_info': 'GET',
-    'guest_create_nic': 'POST',
-    'guest_delete_nic': 'DELETE',
-    'guest_nic_couple_to_vswitch': 'PUT',
-    'guest_nic_uncouple_from_vswitch': 'PUT',
-    'guest_create_network_interface': 'POST',
-    'guest_delete_network_interface': 'DELETE',
-    'guest_get_power_state': 'GET',
-    'guest_create_disks': 'POST',
-    'guest_delete_disks': 'DELETE',
-    'guest_config_minidisks': 'PUT',
-    'volume_attach': 'POST',
-    'volume_detach': 'DELETE',
-    'host_get_info': 'GET',
-    'host_diskpool_get_info': 'GET',
-    'image_import': 'POST',
-    'image_query': 'GET',
-    'image_delete': 'DELETE',
-    'image_export': 'PUT',
-    'image_get_root_disk_size': 'GET',
-    'token_create': 'POST',
-    'vswitch_get_list': 'GET',
-    'vswitch_create': 'POST',
-    'vswitch_delete': 'DELETE',
-    'vswitch_grant_user': 'PUT',
-    'vswitch_query': 'GET',
-    'vswitch_revoke_user': 'PUT',
-    'vswitch_set_vlan_id_for_user': 'PUT',
-}
-
-
-API2REQ = {
-    'version': req_version,
-    'guest_create': req_guest_create,
-    'guest_list': req_guest_list,
-    'guest_inspect_stats': req_guest_inspect_stats,
-    'guest_inspect_vnics': req_guest_inspect_vnics,
-    'guests_get_nic_info': req_guests_get_nic_info,
-    'guest_delete': req_guest_delete,
-    'guest_get_definition_info': req_guest_get_definition_info,
-    'guest_start': req_guest_start,
-    'guest_stop': req_guest_stop,
-    'guest_softstop': req_guest_softstop,
-    'guest_pause': req_guest_pause,
-    'guest_unpause': req_guest_unpause,
-    'guest_reboot': req_guest_reboot,
-    'guest_reset': req_guest_reset,
-    'guest_get_console_output': req_guest_get_console_output,
-    'guest_capture': req_guest_capture,
-    'guest_deploy': req_guest_deploy,
-    'guest_get_info': req_guest_get_info,
-    'guest_get_nic_vswitch_info': req_guest_get_nic_vswitch_info,
-    'guest_create_nic': req_guest_create_nic,
-    'guest_delete_nic': req_guest_delete_nic,
-    'guest_nic_couple_to_vswitch': req_guest_nic_couple_to_vswitch,
-    'guest_nic_uncouple_from_vswitch': req_guest_nic_uncouple_from_vswitch,
-    'guest_create_network_interface': req_guest_create_network_interface,
-    'guest_delete_network_interface': req_guest_delete_network_interface,
-    'guest_get_power_state': req_guest_get_power_state,
-    'guest_create_disks': req_guest_create_disks,
-    'guest_delete_disks': req_guest_delete_disks,
-    'guest_config_minidisks': req_guest_config_minidisks,
-    'volume_attach': req_volume_attach,
-    'volume_detach': req_volume_detach,
-    'host_get_info': req_host_get_info,
-    'host_diskpool_get_info': req_host_diskpool_get_info,
-    'image_import': req_image_import,
-    'image_query': req_image_query,
-    'image_delete': req_image_delete,
-    'image_export': req_image_export,
-    'image_get_root_disk_size': req_image_get_root_disk_size,
-    'token_create': req_token_create,
-    'vswitch_get_list': req_vswitch_get_list,
-    'vswitch_create': req_vswitch_create,
-    'vswitch_delete': req_vswitch_delete,
-    'vswitch_grant_user': req_vswitch_grant_user,
-    'vswitch_query': req_vswitch_query,
-    'vswitch_revoke_user': req_vswitch_revoke_user,
-    'vswitch_set_vlan_id_for_user': req_vswitch_set_vlan_id_for_user,
+# Save data used for comprsing RESTful request
+# method: request type
+# args_required: arguments in args are required, record the count here.
+#                if len(args) not equal to this number, raise exception
+# params_path: parameters amount in url path
+# request: function that provide url and body for comprosing a request
+DATABASE = {
+    'version': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_version},
+    'guest_create': {
+        'method': 'POST',
+        'args_required': 3,
+        'params_path': 0,
+        'request': req_guest_create},
+    'guest_list': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_guest_list},
+    'guest_inspect_stats': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_inspect_stats},
+    'guest_inspect_vnics': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_inspect_vnics},
+    'guests_get_nic_info': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_guests_get_nic_info},
+    'guest_delete': {
+        'method': 'DELETE',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_delete},
+    'guest_get_definition_info': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_get_definition_info},
+    'guest_start': {
+        'method': 'POST',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_start},
+    'guest_stop': {
+        'method': 'POST',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_stop},
+    'guest_softstop': {
+        'method': 'POST',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_softstop},
+    'guest_pause': {
+        'method': 'POST',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_pause},
+    'guest_unpause': {
+        'method': 'POST',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_unpause},
+    'guest_reboot': {
+        'method': 'POST',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_reboot},
+    'guest_reset': {
+        'method': 'POST',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_reset},
+    'guest_get_console_output': {
+        'method': 'POST',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_get_console_output},
+    'guest_capture': {
+        'method': 'POST',
+        'args_required': 2,
+        'params_path': 1,
+        'request': req_guest_capture},
+    'guest_deploy': {
+        'method': 'POST',
+        'args_required': 2,
+        'params_path': 1,
+        'request': req_guest_deploy},
+    'guest_get_info': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_get_info},
+    'guest_get_nic_vswitch_info': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_get_nic_vswitch_info},
+    'guest_create_nic': {
+        'method': 'POST',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_create_nic},
+    'guest_delete_nic': {
+        'method': 'DELETE',
+        'args_required': 2,
+        'params_path': 2,
+        'request': req_guest_delete_nic},
+    'guest_nic_couple_to_vswitch': {
+        'method': 'PUT',
+        'args_required': 3,
+        'params_path': 2,
+        'request': req_guest_nic_couple_to_vswitch},
+    'guest_nic_uncouple_from_vswitch': {
+        'method': 'PUT',
+        'args_required': 2,
+        'params_path': 2,
+        'request': req_guest_nic_uncouple_from_vswitch},
+    'guest_create_network_interface': {
+        'method': 'POST',
+        'args_required': 3,
+        'params_path': 1,
+        'request': req_guest_create_network_interface},
+    'guest_delete_network_interface': {
+        'method': 'DELETE',
+        'args_required': 3,
+        'params_path': 1,
+        'request': req_guest_delete_network_interface},
+    'guest_get_power_state': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_get_power_state},
+    'guest_create_disks': {
+        'method': 'POST',
+        'args_required': 2,
+        'params_path': 1,
+        'request': req_guest_create_disks},
+    'guest_delete_disks': {
+        'method': 'DELETE',
+        'args_required': 2,
+        'params_path': 1,
+        'request': req_guest_delete_disks},
+    'guest_config_minidisks': {
+        'method': 'PUT',
+        'args_required': 2,
+        'params_path': 1,
+        'request': req_guest_config_minidisks},
+    'volume_attach': {
+        'method': 'POST',
+        'args_required': 3,
+        'params_path': 1,
+        'request': req_volume_attach},
+    'volume_detach': {
+        'method': 'DELETE',
+        'args_required': 3,
+        'params_path': 1,
+        'request': req_volume_detach},
+    'host_get_info': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_host_get_info},
+    'host_diskpool_get_info': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_host_diskpool_get_info},
+    'image_import': {
+        'method': 'POST',
+        'args_required': 3,
+        'params_path': 0,
+        'request': req_image_import},
+    'image_query': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_image_query},
+    'image_delete': {
+        'method': 'DELETE',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_image_delete},
+    'image_export': {
+        'method': 'PUT',
+        'args_required': 2,
+        'params_path': 1,
+        'request': req_image_export},
+    'image_get_root_disk_size': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_image_get_root_disk_size},
+    'token_create': {
+        'method': 'POST',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_token_create},
+    'vswitch_get_list': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_vswitch_get_list},
+    'vswitch_create': {
+        'method': 'POST',
+        'args_required': 1,
+        'params_path': 0,
+        'request': req_vswitch_create},
+    'vswitch_delete': {
+        'method': 'DELETE',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_vswitch_delete},
+    'vswitch_grant_user': {
+        'method': 'PUT',
+        'args_required': 2,
+        'params_path': 1,
+        'request': req_vswitch_grant_user},
+    'vswitch_query': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_vswitch_query},
+    'vswitch_revoke_user': {
+        'method': 'PUT',
+        'args_required': 2,
+        'params_path': 1,
+        'request': req_vswitch_revoke_user},
+    'vswitch_set_vlan_id_for_user': {
+        'method': 'PUT',
+        'args_required': 3,
+        'params_path': 1,
+        'request': req_vswitch_set_vlan_id_for_user},
 }
 
 
@@ -595,6 +701,20 @@ class RESTClient(object):
                 raise CACertNotFound('CA certificate file not found.')
         self.verify = verify
         self.token_path = token_path
+
+    def _check_arguments(self, api_name, *args, **kwargs):
+        # check api_name exist or not
+        if api_name not in DATABASE.keys():
+            msg = "API name %s not exist." % api_name
+            raise APINameNotFound(msg)
+        # check args count is valid
+        count = DATABASE[api_name]['args_required']
+        if len(args) < count:
+            msg = "Missing some args,please check:%s." % args
+            raise ArgsFormatError(msg)
+        if len(args) > count:
+            msg = "Too many args,please check:%s." % args
+            raise ArgsFormatError(msg)
 
     def _get_admin_token(self, path):
         if os.path.exists(path):
@@ -622,6 +742,8 @@ class RESTClient(object):
         if response.status_code == 503:
             # service unavailable
             raise ServiceUnavailable(response)
+        elif ('X-Auth-Token' not in response.headers.keys()):
+            raise UnexpedtedResponse(response)
         else:
             try:
                 token = response.headers['X-Auth-Token']
@@ -631,8 +753,8 @@ class RESTClient(object):
         return token
 
     def _get_url_body(self, api_name, method, *args, **kwargs):
-        count_params_in_path = PARAM_IN_PATH[api_name]
-        func = API2REQ[api_name]
+        count_params_in_path = DATABASE[api_name]['params_path']
+        func = DATABASE[api_name]['request']
         url, body = func(count_params_in_path, *args, **kwargs)
         if count_params_in_path > 0:
             full_url = url % tuple(args[0:count_params_in_path])
@@ -668,19 +790,13 @@ class RESTClient(object):
         return self.request(full_uri, method, body)
 
     def call(self, api_name, *args, **kwargs):
-        # check api_name exist or not
-        if api_name not in API2METHOD.keys():
-            strError = {'msg': 'API name for RESTClient not exist.'}
-            results = INVALID_API_ERROR[0]
-            results.update({'rs': 1,
-                            'errmsg': INVALID_API_ERROR[1][1] % strError,
-                            'output': ''})
-            return results
-        # get method by api_name
-        method = API2METHOD[api_name]
-        # get url,body with api_name and method
-        url, body = self._get_url_body(api_name, method, *args, **kwargs)
         try:
+            # check validation of arguments
+            self._check_arguments(api_name, *args, **kwargs)
+            # get method by api_name
+            method = DATABASE[api_name]['method']
+            # get url,body with api_name and method
+            url, body = self._get_url_body(api_name, method, *args, **kwargs)
             if body is None:
                 response = self.api_request(url, method)
             else:
