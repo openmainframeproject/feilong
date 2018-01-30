@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "620c30bd_9a098eb2",
+        "filename": "zvmconnector/restclient.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 346,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-01-30T14:03:08Z",
+      "side": 1,
+      "message": "this line is useless, you can write like:\n\nif poolname is not None:\n      append \u003d xxx\n      url +\u003d append",
+      "range": {
+        "startLine": 346,
+        "startChar": 8,
+        "endLine": 346,
+        "endChar": 19
+      },
+      "revId": "e4c890e348bded2d8a1903c58e5a81bcf3e04868",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a4f76370_7b9cac17",
+        "filename": "zvmsdk/sdkwsgi/handlers/host.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-01-30T14:03:08Z",
+      "side": 1,
+      "message": "I suggest you rewrite api/host_diskpool_get_info function\n\n\n 174     def host_diskpool_get_info(self, disk_pool\u003dNone):\n            \n\n         if disk_pool is None:\n              disk_pool \u003d CONF.zvm.disk_pool\n\nthen you will be able to write \n\ninfo \u003d self.client.send_request(host_diskpool_get_info\u0027,disk_pool\u003dpoolname )  here even poolname is None",
+      "range": {
+        "startLine": 45,
+        "startChar": 7,
+        "endLine": 48,
+        "endChar": 63
+      },
+      "revId": "e4c890e348bded2d8a1903c58e5a81bcf3e04868",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
