@@ -340,7 +340,11 @@ def req_host_get_info(start_index, *args, **kwargs):
 
 
 def req_host_diskpool_get_info(start_index, *args, **kwargs):
-    url = '/host/disk/%s'
+    url = '/host/diskpool'
+    poolname = kwargs.get('disk_pool', None)
+    if poolname is not None:
+        append = "?poolname=%s" % poolname
+    url += append
     body = None
     return url, body
 

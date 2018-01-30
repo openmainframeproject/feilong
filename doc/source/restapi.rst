@@ -901,7 +901,7 @@ Get host information.
 Get Host disk pool info
 -----------------------
 
-**GET /host/disk/{disk}**
+**GET /host/diskpool**
 
 Get disk pool information on the host.
 
@@ -909,7 +909,7 @@ Get disk pool information on the host.
 
 .. restapi_parameters:: parameters.yaml
 
-  - disk: disk_host
+  - poolname: disk_pool
 
 * Response code:
 
