@@ -27,40 +27,51 @@ CONF = config.CONF
 
 
 class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
-    def __init__(self, methodName='runTest'):
-        super(GuestHandlerTestCase, self).__init__(methodName)
-        self.apibase = api_sample.APITestBase()
+
+    @classmethod
+    def setUpClass(cls):
+        super(GuestHandlerTestCase, cls).setUpClass()
+        cls.apibase = api_sample.APITestBase()
 
         # test change bind_port
-        self.set_conf('sdkserver', 'bind_port', 3000)
+        base.set_conf('sdkserver', 'bind_port', 3000)
 
-        self.client = test_sdkwsgi.TestSDKClient()
-
-        self._smutclient = smutclient.get_smutclient()
+        cls.client = test_sdkwsgi.TestSDKClient()
+        cls._smutclient = smutclient.get_smutclient()
 
         # every time, we need to random generate userid
-        self.userid = CONF.tests.userid_prefix + '%03d' % (time.time() % 1000)
+        # the userid is used in most testcases that assume exists
+        cls.userid = CONF.tests.userid_prefix + '%03d' % (time.time() % 1000)
 
-        # Temply disable cleanup
-        # self._cleanup()
+        cls.userid_exists = CONF.tests.userid_prefix + '%03d' % (
+                                                (time.time() * 10) % 1000)
+        cls._guest_create(cls.userid_exists)
 
-    def _cleanup(self):
-        url = '/guests/%s' % self.userid
-        self.client.api_request(url=url, method='DELETE')
+    @classmethod
+    def tearDownClass(cls):
+        super(GuestHandlerTestCase, cls).tearDownClass()
+        cls._cleanup()
 
-        self.client.api_request(url='/vswitches/restvsw1',
+    @classmethod
+    def _cleanup(cls):
+        url = '/guests/%s' % cls.userid_exists
+        cls.client.api_request(url=url, method='DELETE')
+
+        cls.client.api_request(url='/vswitches/restvsw1',
                                 method='DELETE')
 
     def setUp(self):
         pass
 
-    def _guest_create(self):
+    @classmethod
+    def _guest_create(cls, userid=None):
         body = """{"guest": {"userid": "%s", "vcpus": 1,
                              "memory": 1024,
                              "disk_list": [{"size": "1100",
                                             "is_boot_disk": "True"}]}}"""
-        body = body % self.userid
-        resp = self.client.api_request(url='/guests', method='POST',
+        userid = userid or cls.userid
+        body = body % userid
+        resp = cls.client.api_request(url='/guests', method='POST',
                                        body=body)
 
         return resp
