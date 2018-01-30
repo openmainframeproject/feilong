@@ -331,9 +331,9 @@ host_info:
   in: body
   required: true
   type: dict
-disk_host:
+disk_pool:
   description: |
-    The disk name to get pool information from
+    The pool name to get pool information from
   in: body
   required: true
   type: string
