@@ -68,3 +68,11 @@ diskname = {
     },
     'additionalProperties': False
 }
+
+diskpool = {
+    'type': 'object',
+    'properties': {
+        'poolname': parameter_types.disk_pool_list
+    },
+    'additionalProperties': False
+}
