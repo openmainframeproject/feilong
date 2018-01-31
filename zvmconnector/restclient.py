@@ -747,8 +747,6 @@ class RESTClient(object):
         if response.status_code == 503:
             # service unavailable
             raise ServiceUnavailable(response)
-        elif ('X-Auth-Token' not in response.headers.keys()):
-            raise UnexpedtedResponse(response)
         else:
             try:
                 token = response.headers['X-Auth-Token']
