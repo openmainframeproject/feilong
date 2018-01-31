@@ -251,6 +251,15 @@ disk_pool = {
     'pattern': '^\w+:\w+$'
 }
 
+disk_pool_list = {
+    'maxItems': 1,
+    'items': {
+        'type': 'string',
+        'pattern': '^\w+:\w+$',
+    },
+    'type': 'array'
+}
+
 disk_list = {
     'type': 'array',
     'items': {

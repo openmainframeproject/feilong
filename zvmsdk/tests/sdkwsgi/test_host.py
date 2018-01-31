@@ -35,19 +35,23 @@ class HostTestCase(base.ZVMConnectorBaseTestCase):
         self.apibase.verify_result('test_host_info', resp.content)
 
     def test_host_disk_info(self):
-        resp = self.client.api_request(url='/host/disk/ECKD:xcateckd')
+        url = '/host/diskpool?poolname=%s' % 'ECKD:xcateckd'
+        resp = self.client.api_request(url)
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_host_disk_info', resp.content)
 
     def test_host_disk_info_incorrect(self):
         # disk pool not found
-        resp = self.client.api_request(url='/host/disk/ECKD:dummy')
+        url = '/host/diskpool?poolname=%s' % 'ECKD:dummy'
+        resp = self.client.api_request(url)
         self.assertEqual(404, resp.status_code)
 
         # disk format not correct
-        resp = self.client.api_request(url='/host/disk/ECKD')
+        url = '/host/diskpool?poolname=%s' % 'ECKD'
+        resp = self.client.api_request(url)
         self.assertEqual(400, resp.status_code)
 
         # disk type not correct
-        resp = self.client.api_request(url='/host/disk/xxxx:dummy')
+        url = '/host/diskpool?poolname=%s' % 'xxxx:dummy'
+        resp = self.client.api_request(url)
         self.assertEqual(400, resp.status_code)

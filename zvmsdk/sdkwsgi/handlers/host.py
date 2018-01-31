@@ -39,7 +39,7 @@ class HostAction(object):
         info = self.client.send_request('host_get_info')
         return info
 
-    @validation.query_schema(image.diskname)
+    @validation.query_schema(image.diskpool)
     def diskpool_get_info(self, req, poolname):
         info = self.client.send_request('host_diskpool_get_info',
                                         disk_pool=poolname)
