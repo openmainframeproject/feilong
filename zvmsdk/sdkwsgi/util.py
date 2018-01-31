@@ -157,6 +157,14 @@ def handle_not_found(msg):
             LOG.debug('guest not exist, change ret to 404')
             return 404
 
+        # overall rc: 300, rc:300, rs: 3, error message contains
+        # "not linked; not in CP directory" means target vdev not exist
+        if (msg['overallRC'] == 300 and msg['rc'] == 300 and
+            msg['rs'] == 3 and 'not linked; not in CP directory' in
+            msg['errmsg']):
+            LOG.debug('deploy target vdev not exist,'
+                      ' change ret to 404')
+            return 404
     return 0
 
 
