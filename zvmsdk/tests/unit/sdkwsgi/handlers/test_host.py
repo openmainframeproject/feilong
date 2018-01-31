@@ -57,5 +57,7 @@ class HandlersHostTest(unittest.TestCase):
     def test_host_get_disk_info(self, mock_get_disk_info):
 
         mock_get_disk_info.return_value = ''
+        self.req.GET = {}
+        self.req.GET['poolname'] = 'disk1'
         host.host_get_disk_info(self.req)
         self.assertTrue(mock_get_disk_info.called)

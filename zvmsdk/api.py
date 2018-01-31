@@ -171,12 +171,18 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._hostops.get_info()
 
-    def host_diskpool_get_info(self, disk_pool=CONF.zvm.disk_pool):
+    def host_diskpool_get_info(self, disk_pool=None):
         """ Retrieve diskpool information.
         :param str disk_pool: the disk pool info. It use ':' to separate
         disk pool type and pool name, eg "ECKD:eckdpool" or "FBA:fbapool"
         :returns: Dictionary describing disk pool usage info
         """
+        # disk_pool must be assigned. disk_pool default to None because
+        # it is more convenient for users to just type function name when
+        # they want to get the disk pool info of CONF.zvm.disk_pool
+        if disk_pool is None:
+            disk_pool = CONF.zvm.disk_pool
+
         if ':' not in disk_pool:
             msg = ('Invalid input parameter disk_pool, expect ":" in'
                    'disk_pool, eg. ECKD:eckdpool')
