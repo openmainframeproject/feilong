@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "460f768d_5d67729b",
+        "filename": "doc/source/errcode.csv",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-01-31T03:31:05Z",
+      "side": 1,
+      "message": "not related change?",
+      "range": {
+        "startLine": 118,
+        "startChar": 14,
+        "endLine": 118,
+        "endChar": 36
+      },
+      "revId": "4af94dca20b51497aea022702edf9b6f99029e36",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
