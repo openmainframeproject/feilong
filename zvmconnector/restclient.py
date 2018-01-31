@@ -41,7 +41,7 @@ INVALID_API_ERROR = [{'overallRC': 400, 'modID': 110, 'rc': 400},
                      ]
 
 
-class UnexpedtedResponse(Exception):
+class UnexpectedResponse(Exception):
     def __init__(self, resp):
         self.resp = resp
 
@@ -747,13 +747,11 @@ class RESTClient(object):
         if response.status_code == 503:
             # service unavailable
             raise ServiceUnavailable(response)
-        elif ('X-Auth-Token' not in response.headers.keys()):
-            raise UnexpedtedResponse(response)
         else:
             try:
                 token = response.headers['X-Auth-Token']
             except KeyError:
-                raise UnexpedtedResponse(response)
+                raise UnexpectedResponse(response)
 
         return token
 
@@ -779,7 +777,7 @@ class RESTClient(object):
             # it is an unexpected response to the rest client.
             # If new content-type is added to the response by sdkwsgi, the
             # parsing function here is also required to change.
-            raise UnexpedtedResponse(response)
+            raise UnexpectedResponse(response)
 
     def request(self, url, method, body, headers=None):
         _headers = {'Content-Type': 'application/json'}
@@ -818,7 +816,7 @@ class RESTClient(object):
             errmsg = REST_REQUEST_ERROR[1][2] % {'error': err.msg}
             results = REST_REQUEST_ERROR[0]
             results.update({'rs': 2, 'errmsg': errmsg, 'output': ''})
-        except UnexpedtedResponse as err:
+        except UnexpectedResponse as err:
             errmsg = REST_REQUEST_ERROR[1][3] % ({
                 'url': err.resp.url, 'status': err.resp.status_code,
                 'reason': err.resp.reason, 'text': err.resp.text})
