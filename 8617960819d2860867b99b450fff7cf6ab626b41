@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d61dc3d0_113e5f58",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 642,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-02-02T13:43:20Z",
+      "side": 1,
+      "message": "originally 404 passed because of guest not exist?",
+      "range": {
+        "startLine": 642,
+        "startChar": 8,
+        "endLine": 642,
+        "endChar": 47
+      },
+      "revId": "8617960819d2860867b99b450fff7cf6ab626b41",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
