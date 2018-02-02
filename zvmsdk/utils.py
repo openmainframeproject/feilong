@@ -204,15 +204,39 @@ class PathUtils(object):
             LOG.debug("Creating the guest path %s", folder)
             os.makedirs(folder)
 
+    # This is for temp info for guests
+    # by default it's /tmp/zvmsdk/guests/xxxx
+    def remove_guest_temp_path(self, userid):
+        userid_path = userid.upper()
+        guest_folder = os.path.join(self._get_guest_temp_path(), userid_path)
+        try:
+            shutil.rmtree(guest_folder)
+        except Exception:
+            # Ignore any exception for delete temp folder
+            pass
+
+    # This is for persistent info for guests
+    # by default it's /var/lib/zvmsdk/guests/xxxx
+    def remove_guest_path(self, userid):
+        userid_path = userid.upper()
+        guest_folder = os.path.join(self._get_guest_path(), userid_path)
+        try:
+            shutil.rmtree(guest_folder)
+        except Exception:
+            # Ignore any exception for delete temp folder
+            pass
+
     def get_guest_temp_path(self, userid, module):
-        guest_folder = os.path.join(self._get_guest_temp_path(), userid)
+        userid_path = userid.upper()
+        guest_folder = os.path.join(self._get_guest_temp_path(), userid_path)
         self.mkdir_if_not_exist(guest_folder)
         tmp_inst_dir = tempfile.mkdtemp(prefix=module,
                                         dir=guest_folder)
         return tmp_inst_dir
 
     def get_guest_path(self, userid):
-        guest_folder = os.path.join(self._get_guest_path(), userid)
+        userid_path = userid.upper()
+        guest_folder = os.path.join(self._get_guest_path(), userid_path)
         self.mkdir_if_not_exist(guest_folder)
         return guest_folder
 
