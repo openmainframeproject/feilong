@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3fab0e46_6adf72bb",
+        "filename": "zvmsdk/tests/sdkwsgi/test_utils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-02-02T13:48:46Z",
+      "side": 1,
+      "message": "you are testing Util functions ? my understanding is FVT/BVT is focus on API usage , this functional test on util function instead of our API?",
+      "range": {
+        "startLine": 174,
+        "startChar": 6,
+        "endLine": 174,
+        "endChar": 36
+      },
+      "revId": "85e91449b7d104f052232291167c48c98d103fa4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
