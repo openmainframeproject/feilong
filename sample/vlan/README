@@ -1,0 +1,10 @@
+This is a demo on how to deploy 4 VMs with VLAN ID.
+
+createvm_vlan_v1s1.py will create a VM with name DEMOV1S1, and the other scripts
+with createvm_vlan prefix will do similar thin, create VM with prefix DEMO with
+suffix get from the script file.
+
+so after all 4 VMs created, DEMOV1S1 and DEMOV1S2 will have VLANID 100,
+DEMOV2S1 and DEMOV2S2 will have VLANID 200.
+
+del_vlan_v1s1.py will delete DEMOV1S1 and the others are similar.
