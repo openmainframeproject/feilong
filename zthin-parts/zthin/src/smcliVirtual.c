@@ -4425,16 +4425,6 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
                 }
 
                 vlanCount = atoi(vlan_count);
-                char vlan_info[vlanCount * 9];
-                token = strtok_r(NULL, "\0", &buffer);
-                if (token != NULL) {
-                    strcpy(vlan_info, token);
-                } else {
-                    if (0 == (rc = addMessageToBuffer(&saveMsgs, "Error vlan_info is NULL!!\n"))) {
-                        rc = OUTPUT_ERRORS_FOUND;
-                    }
-                    goto end;
-                }
 
                 snprintf(strMsg, sizeof(strMsg),
                        "port_num: %s\n"
@@ -4447,20 +4437,7 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
                     goto end;
                 }
 
-                token = strtok_r(vlan_info, blank, &buffer);
-                if (token != NULL) {
-                    strcpy(user_vlan_id, token);
-                } else {
-                    if (0 == (rc = addMessageToBuffer(&saveMsgs, "Error user_vlan_id is NULL!!\n"))) {
-                        rc = OUTPUT_ERRORS_FOUND;
-                    }
-                    goto end;
-                }
-                snprintf(strMsg, sizeof(strMsg), "user_vlan_id: %s\n", user_vlan_id);
-                if (0 != (rc = addMessageToBuffer(&saveMsgs, strMsg))) {
-                    goto end;
-                }
-                for (k =1; k < vlanCount; k++) {
+                for (k =0; k < vlanCount; k++) {
                     token = strtok_r(NULL, blank, &buffer);
                     if (token != NULL) {
                         strcpy(user_vlan_id, token);
