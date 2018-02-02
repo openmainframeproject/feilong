@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3c9786aa_da66973d",
+        "filename": "zthin-parts/zthin/src/smcliVirtual.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4427,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2018-02-02T13:01:47Z",
+      "side": 1,
+      "message": "You will need to keep this code to attempt to get the vlan info null terminated string. The data, if there is obtained in two parts. 1) get a null term string() 2) break up that string by blank delimiter. I would think if the code just tries to get blank delimited tokens, it may have a problem with the last token since it is null terminated? What do you think? Did you try it out?\nchar vlan_info[vlanCount * 9];\n                token \u003d strtok_r(NULL, \"\\0\", \u0026buffer);\n                if (token !\u003d NULL) {\n                    strcpy(vlan_info, token);\n                }",
+      "revId": "dc2d8c975e714e6691bc16bd27f139ca618b9bf6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
