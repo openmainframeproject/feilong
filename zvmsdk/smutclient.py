@@ -1334,6 +1334,9 @@ class SMUTClient(object):
         # TODO: cleanup db record from volume table
         pass
 
+        # cleanup temp folder
+        self._pathutils.remove_guest_temp_path(userid)
+
         # cleanup db record from guest table
         action = "delete guest %s from database" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
