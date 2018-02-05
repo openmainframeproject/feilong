@@ -16,6 +16,24 @@
       "revId": "dc2d8c975e714e6691bc16bd27f139ca618b9bf6",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f89d9bb5_b6eed5f3",
+        "filename": "zthin-parts/zthin/src/smcliVirtual.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4427,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-02-05T05:21:58Z",
+      "side": 1,
+      "message": "I compiled zthin with this change and tried. The change works fine. The reason: smapi NULL is \"\\0\", which has meaning of end of string. So we can parse user_vlan_id from the rest of autherized_user structure(NULL(\"\\0\") terminated) as parsing from a string. So the code can deal with last token with a tailing \u0027\\0\u0027.\n\nIf you don\u0027t like the change, I can update the code to another version that explicitly parse the vlan_info via \"\\0\" at first, then parse user_vlan_id from vlan_info. The change will be:\n                snprintf(strMsg, sizeof(strMsg),\n                       \"port_num: %s\\n\"\n                       \"grant_userid: %s\\n\"\n                       \"promiscuous_mode: %s\\n\"\n                       \"osd_sim: %s\\n\"\n                       \"vlan_count: %s\\n\",\n                       port_num, grant_userid, promiscuous_mode, osd_sim, vlan_count );\n                if (0 !\u003d (rc \u003d addMessageToBuffer(\u0026saveMsgs, strMsg))) {\n                    goto end;\n                }\n\n                char vlan_info[vlanCount * 9];\n                token \u003d strtok_r(NULL, \"\\0\", \u0026buffer);\n                if (token !\u003d NULL) {\n                    strcpy(vlan_info, token);\n                    token \u003d strtok_r(vlan_info, blank, \u0026buffer);\n                    if (token !\u003d NULL) {\n                        strcpy(user_vlan_id, token);\n                        snprintf(strMsg, sizeof(strMsg), \"user_vlan_id: %s\\n\", user_vlan_id);\n                    }\n                    if (0 !\u003d (rc \u003d addMessageToBuffer(\u0026saveMsgs, strMsg))) {\n                        goto end;\n                    }\n                    for (k \u003d1; k \u003c vlanCount; k++) {\n                        token \u003d strtok_r(NULL, blank, \u0026buffer);\n                        if (token !\u003d NULL) {\n                            strcpy(user_vlan_id, token);\n                        } else {\n                            if (0 \u003d\u003d (rc \u003d addMessageToBuffer(\u0026saveMsgs, \"Error user_vlan_id is NULL!!\\n\"))) {\n                                rc \u003d OUTPUT_ERRORS_FOUND;\n                            }\n                            goto end;\n                        }\n                        snprintf(strMsg, sizeof(strMsg), \"user_vlan_id: %s\\n\", user_vlan_id);\n                        if (0 !\u003d (rc \u003d addMessageToBuffer(\u0026saveMsgs, strMsg))) {\n                            goto end;\n                        }\n                    } // end of k \u003c vlanCount\n                }\n\nYou can see, in this change, have to strtok_r(vlan_info, blank, \u0026buffer) at first, then start the loop with strtok_r(NULL, blank, \u0026buffer) from k\u003d1.\n\nLet me know your further comment on this change, thanks.",
+      "parentUuid": "3c9786aa_da66973d",
+      "revId": "dc2d8c975e714e6691bc16bd27f139ca618b9bf6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
