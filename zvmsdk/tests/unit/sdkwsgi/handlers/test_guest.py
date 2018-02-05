@@ -35,6 +35,9 @@ class FakeReqGet(object):
     def keys(self):
         return ['userid']
 
+    def values(self):
+        return FAKE_USERID_LIST
+
 
 class FakeResp(object):
     def __init__(self):
