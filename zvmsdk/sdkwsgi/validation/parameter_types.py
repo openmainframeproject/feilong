@@ -237,15 +237,14 @@ cidr = {
 userid_list = {
     'type': ['string'],
     # TODO:validate userid_list in inspect APIs
-    'pattern': '^(\w{,8})(,\w{,8}){0,}$'
+    'pattern': '^(\s*\w{1,8}\s*)(,\s*\w{1,8}\s*){0,}$'
 }
 
 userid_list_array = {
     'items': {
         'type': ['string'],
         'minLength': 1,
-        'maxLength': 8,
-        'pattern': '^(\w{,8})(,\w{,8}){0,}$'
+        'pattern': '^(\s*\w{1,8}\s*)(,\s*\w{1,8}\s*){0,}$'
 
     },
     'type': 'array'
