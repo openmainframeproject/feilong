@@ -206,15 +206,17 @@ class ZVMConnectorTestUtils(object):
         ip_list = CONF.tests.ip_addr_list.split(' ')
         for uid in userid_list:
             if self.is_guest_exist(uid):
-                try:
-                    self._reqh.guest_delete(uid)
-                except exception.SDKBaseException as e:
-                    print("WARNING: Delete guest failed: %s" %
-                          e.format_message())
+                #try:
+                    #self._reqh.guest_delete(uid)
+                #except exception.SDKBaseException as e:
+                    #print("WARNING: Delete guest failed: %s" %
+                          #e.format_message())
                 continue
             else:
                 idx = userid_list.index(uid)
                 return uid, ip_list[idx]
+        print ("No available userid to use.")
+        raise
 
     def _get_next_userid_ipaddr(self, userid):
         userids = CONF.tests.userid_list.split(' ')
