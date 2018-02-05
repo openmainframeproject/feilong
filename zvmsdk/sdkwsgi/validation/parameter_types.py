@@ -238,7 +238,6 @@ userid_list_array = {
     'items': {
         'type': ['string'],
         'minLength': 1,
-        'maxLength': 8,
         'pattern': '^(\w{,8})(,\w{,8}){0,}$'
 
     },
