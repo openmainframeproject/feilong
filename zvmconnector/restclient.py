@@ -127,14 +127,24 @@ def req_guest_create(start_index, *args, **kwargs):
 
 
 def req_guest_inspect_stats(start_index, *args, **kwargs):
-    url = '/guests/stats?userid=%s'
+    if type(args[start_index]) is str:
+        url = '/guests/stats?userid=%s' % args[start_index]
+    else:
+        userids = ','.join(args[start_index])
+        url = '/guests/stats?userid=%s' % userids
     body = None
+
     return url, body
 
 
 def req_guest_inspect_vnics(start_index, *args, **kwargs):
-    url = '/guests/vnicsinfo?userid=%s'
+    if type(args[start_index]) is str:
+        url = '/guests/vnicsinfo?userid=%s' % args[start_index]
+    else:
+        userids = ','.join(args[start_index])
+        url = '/guests/vnicsinfo?userid=%s' % userids
     body = None
+
     return url, body
 
 
@@ -469,12 +479,12 @@ DATABASE = {
     'guest_inspect_stats': {
         'method': 'GET',
         'args_required': 1,
-        'params_path': 1,
+        'params_path': 0,
         'request': req_guest_inspect_stats},
     'guest_inspect_vnics': {
         'method': 'GET',
         'args_required': 1,
-        'params_path': 1,
+        'params_path': 0,
         'request': req_guest_inspect_vnics},
     'guests_get_nic_info': {
         'method': 'GET',
