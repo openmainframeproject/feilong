@@ -47,13 +47,13 @@ function onlineDevice {
   # @Code:
   device=$1
   local funcName="onlineDevice"
-  rc=$(sudo /sbin/chccwdev -e $device > /dev/null; echo $?)
+  rc=$(/sbin/chccwdev -e $device > /dev/null; echo $?)
   if (( rc != 0 )); then
     if [[ -e /sbin/cio_ignore ]]; then
-      rc=$(sudo /sbin/cio_ignore -r 0.0.$device > /dev/null; echo $?)
+      rc=$(/sbin/cio_ignore -r 0.0.$device > /dev/null; echo $?)
       which udevadm &> /dev/null && udevadm settle || udevsettle
     fi
-    rc=$(sudo /sbin/chccwdev -e $device > /dev/null; echo $?)
+    rc=$(/sbin/chccwdev -e $device > /dev/null; echo $?)
     if (( rc != 0 )); then
       echo "zvmguestconfigure $funcName (Error) Could not activate the virtual device $device"
       return 1
@@ -123,25 +123,25 @@ function pullReader {
 
     if [[ $type == "txt" ]]; then
       # Receiving text
-      rc=$(sudo /usr/sbin/vmur re -f $spoolid $file)
+      rc=$(/usr/sbin/vmur re -f $spoolid $file)
     elif [[ $type == "sh" ]]; then
       # Receiving shell
-      rc=$(sudo /usr/sbin/vmur re -f $spoolid $file)
+      rc=$(/usr/sbin/vmur re -f $spoolid $file)
       /bin/bash $file
       rm $file
     elif [[ $type == "tgz" ]]; then
-      rc=$(sudo /usr/sbin/vmur re $spoolid $file)
+      rc=$(/usr/sbin/vmur re $spoolid $file)
       /bin/tar xzf $file -C $transportdir
       rm $file
       injectFiles
     elif [[ $type == "doscript" ]]; then
-      rc=$(sudo /usr/sbin/vmur re $spoolid $file)
+      rc=$(/usr/sbin/vmur re $spoolid $file)
       /bin/tar xf $file -C $transportdir
       rm $file
-      sudo /bin/bash invokeScript.sh
+      /bin/bash invokeScript.sh
     else
       # Receive block
-      rc=$(sudo /usr/sbin/vmur re $spoolid $file)
+      rc=$(/usr/sbin/vmur re $spoolid $file)
     fi
 
     if (( rc != 0 )); then
