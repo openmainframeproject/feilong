@@ -349,7 +349,7 @@ class GuestHandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             get_info.assert_called_once_with('guest_inspect_stats',
-                                             ['l1', 'l2'])
+                                             ['l1,l2'])
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_stats_invalid(self, mock_validate):
@@ -389,7 +389,7 @@ class GuestHandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             get_info.assert_called_once_with('guest_inspect_vnics',
-                                             ['l1', 'l2'])
+                                             ['l1,l2'])
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_vnics_info_invalid(self, mock_validate):

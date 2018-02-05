@@ -643,9 +643,7 @@ def guest_delete_network_interface(req):
 def _get_userid_list(req):
     userids = []
     if 'userid' in req.GET.keys():
-        userid = req.GET.get('userid')
-
-        userids = userid.split(',')
+        userids = req.GET.values()
 
     return userids
 
