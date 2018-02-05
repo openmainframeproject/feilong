@@ -252,7 +252,7 @@ disk_mountpoint:
   type: string
 userid_list_guest:
   description: |
-    A single userid string
+      A string that contains userids delimited by comma, like ``/guests/stats?userid='id1, id2, id3'``
   in: path
   required: true
   type: string
