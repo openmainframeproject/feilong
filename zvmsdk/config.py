@@ -410,6 +410,8 @@ running SDK is able to read write and execute the directory.
         section='tests'),
     Opt('gateway_v4',
         section='tests'),
+    Opt('cidr',
+        section='tests'),
     Opt('netmask_v4',
         section='tests'),
     ]
