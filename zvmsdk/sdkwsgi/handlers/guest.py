@@ -666,8 +666,8 @@ def _get_userid_list(req):
     userids = []
     if 'userid' in req.GET.keys():
         userid = req.GET.get('userid')
-
-        userids = userid.split(',')
+        userid = userid.replace(' ', '')
+        userids.extend(userid.split(','))
 
     return userids
 

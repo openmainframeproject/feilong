@@ -107,6 +107,22 @@ class RESTClientTestCase(unittest.TestCase):
                                    data=body, headers=header,
                                    verify=False)
 
+        fake_userid_list = ['userid1', 'userid2, userid3', 'userid4']
+        url = '/guests/stats?userid=userid1,userid2, userid3,userid4'
+        full_uri = self.base_url + url
+        self.client.call("guest_inspect_stats", fake_userid_list)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+        fake_userid_string = 'userid1, userid2, userid3,userid4'
+        url = '/guests/stats?userid=%s' % fake_userid_string
+        full_uri = self.base_url + url
+        self.client.call("guest_inspect_stats", fake_userid_string)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
     def test_guest_inspect_vnics(self, get_token, request):
@@ -119,6 +135,21 @@ class RESTClientTestCase(unittest.TestCase):
         get_token.return_value = self._tmp_token()
 
         self.client.call("guest_inspect_vnics", self.fake_userid)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+        fake_userid_list = ['userid1', 'userid2, userid3', 'userid4']
+        url = '/guests/vnicsinfo?userid=userid1,userid2, userid3,userid4'
+        full_uri = self.base_url + url
+        self.client.call("guest_inspect_vnics", fake_userid_list)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+        fake_userid_string = 'userid1, userid2, userid3,userid4'
+        url = '/guests/vnicsinfo?userid=%s' % fake_userid_string
+        full_uri = self.base_url + url
+        self.client.call("guest_inspect_vnics", fake_userid_string)
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)
