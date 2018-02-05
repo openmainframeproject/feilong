@@ -22,6 +22,30 @@
       "revId": "85e91449b7d104f052232291167c48c98d103fa4",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ecab567b_77afc617",
+        "filename": "zvmsdk/tests/sdkwsgi/test_utils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-02-05T09:00:52Z",
+      "side": 1,
+      "message": "no, this file\u0027s purpose is not to test util functions.\n\nIt is just for the convinience of test case writing, several test case requires a function to deploy a guest, this can be shared by test cases.",
+      "parentUuid": "3fab0e46_6adf72bb",
+      "range": {
+        "startLine": 174,
+        "startChar": 6,
+        "endLine": 174,
+        "endChar": 36
+      },
+      "revId": "85e91449b7d104f052232291167c48c98d103fa4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
