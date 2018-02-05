@@ -819,6 +819,12 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         resp = self._guest_interface_stats('@@@@@123456789')
         self.assertEqual(400, resp.status_code)
 
+        resp = self._guest_stats('abc, @@@@@123456789')
+        self.assertEqual(400, resp.status_code)
+
+        resp = self._guest_vnicsinfo('abc, @@@@@123456789')
+        self.assertEqual(400, resp.status_code)
+
     def test_guest_creat_with_profile_notexit(self):
         resp = self._guest_create_with_profile_notexit()
         self.assertEqual(404, resp.status_code)
