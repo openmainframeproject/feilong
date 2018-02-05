@@ -16,8 +16,8 @@ import time
 import json
 import os
 
-from zvmsdk.tests.sdkwsgi import base
 from zvmsdk.tests.sdkwsgi import api_sample
+from zvmsdk.tests.sdkwsgi import base
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
 from zvmsdk import config
 from zvmsdk import smutclient
@@ -658,7 +658,8 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         self.assertEqual(404, resp.status_code)
 
     def test_guest_disk_pool_create_not_exist(self):
-        resp = self._guest_disks_create(disk="ECKD:notexist")
+        resp = self._guest_disks_create(userid=self.userid_exists,
+                                        disk="ECKD:notexist")
         self.assertEqual(404, resp.status_code)
 
     def test_guest_disk_delete_not_exist(self):
@@ -667,8 +668,8 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
 
     def test_guest_disk_device_delete_not_exist(self):
         # disk not exist
-        resp = self._guest_disks_delete(vdev="FFFF")
-        self.assertEqual(404, resp.status_code)
+        resp = self._guest_disks_delete(userid=self.userid_exists, vdev="FFFF")
+        self.assertEqual(200, resp.status_code)
 
     def test_guest_inspect_not_exist(self):
         # following 200 is expected
