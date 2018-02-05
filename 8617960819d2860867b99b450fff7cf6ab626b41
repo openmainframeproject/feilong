@@ -22,6 +22,30 @@
       "revId": "8617960819d2860867b99b450fff7cf6ab626b41",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7ad35e4b_352c173d",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 642,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-02-05T08:32:33Z",
+      "side": 1,
+      "message": "correct. And, per na fei\u0027s investigation, no smapi error returned if deleting a non-exist mini disk",
+      "parentUuid": "d61dc3d0_113e5f58",
+      "range": {
+        "startLine": 642,
+        "startChar": 8,
+        "endLine": 642,
+        "endChar": 47
+      },
+      "revId": "8617960819d2860867b99b450fff7cf6ab626b41",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
