@@ -231,10 +231,10 @@ disk_mountpoint:
   type: string
 userid_list_guest:
   description: |
-    A single userid string or a list of guest userids
+    A single userid string
   in: path
   required: true
-  type: string, list
+  type: string
 stats_guest:
   description: |
     cpu and memory statics of guest
