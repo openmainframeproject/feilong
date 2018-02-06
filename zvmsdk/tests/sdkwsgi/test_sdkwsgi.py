@@ -13,6 +13,7 @@
 #    under the License.
 
 import requests
+import os
 
 from zvmsdk import config
 
@@ -25,9 +26,17 @@ class TestSDKClient(object):
     def __init__(self):
         self.base_url = "http://127.0.0.1:8888"
 
+    def _get_admin_token(self, path):
+        token = ''
+        if os.path.exists(path):
+            with open(path, 'r') as fd:
+                token = fd.read().strip()
+        return token
+
     def _get_token(self):
         _headers = {'Content-Type': 'application/json'}
-        default_admin_token = '12345678901234567890123456789012'
+        path = '/etc/zvmsdk/token.dat'
+        default_admin_token = self._get_admin_token(path)
         _headers['X-Admin-Token'] = default_admin_token
 
         url = self.base_url + '/token'
