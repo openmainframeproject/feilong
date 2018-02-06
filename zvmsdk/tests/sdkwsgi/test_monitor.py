@@ -14,7 +14,6 @@
 
 import json
 import six
-import threading
 import time
 
 from zvmsdk.tests.sdkwsgi import base
@@ -206,32 +205,34 @@ class MeteringCacheTestCase(base.ZVMConnectorBaseTestCase):
     def setUp(self):
         self.set_conf('monitor', 'cache_interval', 1000)
         self.mc = monitor.MeteringCache(('typeA', 'typeB'))
-        self.addCleanup(self.mc._reset(('typeA', 'typeB')))
+        self.mc.refresh('typeA', {})
+        self.mc.refresh('typeB', {})
 
     def test_init(self):
-        self.assertListEqual(self.mc._cache.keys(), ['typeA', 'typeB'])
-        self.assertEqual(self.mc._cache['typeA'].keys(),
-                         ['expiration', 'data'])
-        self.assertEqual(self.mc._cache['typeB'].keys(),
-                         ['expiration', 'data'])
+        self.assertListEqual(sorted(self.mc._cache.keys()),
+                             sorted(['typeA', 'typeB']))
+        self.assertListEqual(sorted(self.mc._cache['typeA'].keys()),
+                             sorted(['expiration', 'data']))
+        self.assertListEqual(sorted(self.mc._cache['typeB'].keys()),
+                             sorted(['expiration', 'data']))
         self.assertEqual(self.mc._cache['typeA']['data'], {})
         self.assertEqual(self.mc._cache['typeB']['data'], {})
-        self.assertIsInstance(self.mc._lock, threading.RLock)
-        self.assertListEqual(self.mc._types, ['typeA', 'typeB'])
+        self.assertListEqual(sorted(self.mc._types),
+                             sorted(['typeA', 'typeB']))
 
     def test_set_get_delete(self):
         self.mc.set('typeA', 'data1', 'value1')
         self.mc.set('typeA', 'data2', 'value2')
         self.mc.set('typeB', 'data1', 'value1')
         self.mc.set('typeB', 'data2', 'value2')
-        self.assertListEqual(self.mc._cache['typeA']['data'].keys(),
-                         ['data1', 'data2'])
-        self.assertListEqual(self.mc._cache['typeB']['data'].keys(),
-                         ['data1', 'data2'])
-        self.assertListEqual(self.mc._cache['typeA']['data']['data1'],
-                             'value1')
-        self.assertListEqual(self.mc._cache['typeB']['data']['data1'],
-                             'value1')
+        self.assertListEqual(sorted(self.mc._cache['typeA']['data'].keys()),
+                             sorted(['data1', 'data2']))
+        self.assertListEqual(sorted(self.mc._cache['typeB']['data'].keys()),
+                             sorted(['data1', 'data2']))
+        self.assertEqual(self.mc._cache['typeA']['data']['data1'],
+                         'value1')
+        self.assertEqual(self.mc._cache['typeB']['data']['data1'],
+                         'value1')
         # Test get
         self.assertEqual(self.mc.get('typeA', 'data1'), 'value1')
         self.assertEqual(self.mc.get('typeA', 'data2'), 'value2')
