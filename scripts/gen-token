@@ -45,7 +45,7 @@ def create_token_file(file_path):
     with open(file_path, 'w') as fp:
         fp.write(token)
     # change file mode to 400
-    os.chmod(file_path, stat.S_IRUSR)
+    os.chmod(file_path, stat.S_IRUSR|stat.S_IWUSR)
 
 
 def update_token_file(file_path):
