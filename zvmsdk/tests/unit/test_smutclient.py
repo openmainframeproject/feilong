@@ -1206,7 +1206,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_get_user_console_output_request_failed(self, req):
-        req.side_effect = exception.SDKSMUTRequestFailed({}, '')
+        req.side_effect = exception.SDKSMUTRequestFailed({}, 'err')
         self.assertRaises(exception.SDKSMUTRequestFailed,
                           self._smutclient.get_user_console_output, 'fakeuser')
 
@@ -1386,7 +1386,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                ' socket:', 'Network is unreachable', 'Return'
                                ' code 4, Reason code 101.']}
 
-        execcmd.side_effect = exception.SDKSMUTRequestFailed(result, '')
+        execcmd.side_effect = exception.SDKSMUTRequestFailed(result, 'err')
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smutclient.guest_capture, userid,
                           image_name)
@@ -1423,7 +1423,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_query_vswitch_NotExist(self, req, get_id):
         get_id.return_value = "SMUTUSER"
         req.side_effect = exception.SDKSMUTRequestFailed(
-                                        {'rc': 212, 'rs': 40}, '')
+                                        {'rc': 212, 'rs': 40}, 'err')
         self.assertRaises(exception.SDKObjectNotExistError,
                           self._smutclient.query_vswitch, 'testvs')
 
@@ -1432,6 +1432,6 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_query_vswitch_RequestFailed(self, req, get_id):
         get_id.return_value = "SMUTUSER"
         req.side_effect = exception.SDKSMUTRequestFailed(
-                                        {'rc': 1, 'rs': 1}, '')
+                                        {'rc': 1, 'rs': 1}, 'err')
         self.assertRaises(exception.SDKSMUTRequestFailed,
                           self._smutclient.query_vswitch, 'testvs')
