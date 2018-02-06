@@ -47,6 +47,8 @@
 409;None;409;;The operated object status conflict
 **The operated object is deleted**
 410;None;410;;The operated object is deleted
+**The operated object is locked**
+423;None;423;1;%(obj_desc)s is locked.
 **ZVM SDK Internal Error**
 500;None;500;1;Unexpected internal error in ZVM SDK, error: %(msg)s
 **z/VM Cloud Connector service is unavailable**

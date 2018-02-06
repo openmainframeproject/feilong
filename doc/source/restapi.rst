@@ -732,6 +732,12 @@ Get console output of the guest.
 
   - output: console_output
 
+.. note::
+
+   In order to retrieve the console log from guest vm, you must add user direct
+   statment "COMMAND SP CONS * START" to the profile that used to deploy guest
+   vm, otherwise no console log collected for the guest vm.
+
 Deploy guest
 ------------
 
