@@ -120,24 +120,22 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
                                            method='PUT', body=body)
             self.assertEqual(200, resp.status_code)
 
-            # FIXME: uncomment it after "Error vlan_info is NULL!!" fixed
-            # resp = self._vswitch_query()
-            # self.assertEqual(200, resp.status_code)
-            # vswinfo = json.loads(resp.content)['output']
-            # inlist = 'FVTUSER1' in vswinfo['authorized_users']
-            # self.assertTrue(inlist)
+            resp = self._vswitch_query()
+            self.assertEqual(200, resp.status_code)
+            vswinfo = json.loads(resp.content)['output']
+            inlist = 'FVTUSER1' in vswinfo['authorized_users']
+            self.assertTrue(inlist)
 
             body = '{"vswitch": {"revoke_userid": "FVTUSER1"}}'
             resp = self.client.api_request(url='/vswitches/RESTVSW1',
                                            method='PUT', body=body)
             self.assertEqual(200, resp.status_code)
 
-            # FIXME: uncomment it after "Error vlan_info is NULL!!" fixed
-            # resp = self._vswitch_query()
-            # self.assertEqual(200, resp.status_code)
-            # vswinfo = json.loads(resp.content)['output']
-            # inlist = 'FVTUSER1' in vswinfo['authorized_users']
-            # self.assertFalse(inlist)
+            resp = self._vswitch_query()
+            self.assertEqual(200, resp.status_code)
+            vswinfo = json.loads(resp.content)['output']
+            inlist = 'FVTUSER1' in vswinfo['authorized_users']
+            self.assertFalse(inlist)
         except Exception:
             raise
         finally:
