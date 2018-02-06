@@ -1,0 +1,4 @@
+This is a demo on how to deploy and capture then destory the VM through z/VM cloud connector
+
+createvm.py contains functions to spawn a virtual machine then start it.
+cap_del.py contanis functions to capture the spawned virtual machine to an image the delete the vm.
