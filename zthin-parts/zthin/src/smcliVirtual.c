@@ -4855,6 +4855,7 @@ int virtualNetworkVswitchQueryStats(int argC, char* argV[], struct _vmApiInterna
                 }
 
                 snprintf(strMsg, sizeof(strMsg),
+                         "segmentData number %d\n"
                          "seg_vlanid            = %s\n"
                          "seg_rx                = %s\n"
                          "seg_rx_disc           = %s\n"
