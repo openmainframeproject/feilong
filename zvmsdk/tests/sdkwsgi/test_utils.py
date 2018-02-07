@@ -14,7 +14,9 @@
 
 
 import os
+import random
 import re
+import six
 import time
 
 from zvmconnector import connector
@@ -25,6 +27,20 @@ from zvmsdk import utils as zvmutils
 
 
 CONF = config.CONF
+
+
+def generate_test_userid():
+    '''Generate an userid base on time line.'''
+    prefix = six.text_type(CONF.tests.userid_prefix)[-3:].rjust(3, 't')
+    userid = prefix + '%05d' % ((time.time() * 10) % 100000)
+    time.sleep(1)
+    return userid
+
+
+def generate_test_ip():
+    '''Generate test IP address.'''
+    ip_list = CONF.tests.ip_addr_list.split(' ')
+    return ip_list[random.randint(0, len(ip_list) - 1)]
 
 
 class ZVMConnectorRequestHandler(object):
@@ -195,33 +211,11 @@ class ZVMConnectorTestUtils(object):
 
     def is_guest_exist(self, userid):
         cmd = 'sudo vmcp q %s' % userid
-        rc, output = zvmutils.execute(cmd)
+        output = zvmutils.execute(cmd)[1]
         if re.search('(^HCP\w\w\w003E)', output):
             # userid not exist
             return False
         return True
-
-    def get_available_userid_ipaddr(self):
-        userid_list = CONF.tests.userid_list.split(' ')
-        ip_list = CONF.tests.ip_addr_list.split(' ')
-        for uid in userid_list:
-            if self.is_guest_exist(uid):
-                continue
-            else:
-                idx = userid_list.index(uid)
-                return uid, ip_list[idx]
-        print("No available userid to use.")
-        raise
-
-    def _get_next_userid_ipaddr(self, userid):
-        userids = CONF.tests.userid_list.split(' ')
-        ip_list = CONF.tests.ip_addr_list.split(' ')
-        idx = userids.index(userid)
-        if (idx + 1) == len(userids):
-            # the userid is the last one in userids, return the first one
-            return userids[0], ip_list[0]
-        else:
-            return userids[idx + 1], ip_list[idx + 1]
 
     def guest_deploy(self, userid=None, cpu=1, memory=1024,
                      image_path=None,
@@ -241,11 +235,8 @@ class ZVMConnectorTestUtils(object):
         print("Using image %s ..." % image)
 
         # Get available userid and ip from conf if not specified.
-        if userid is None:
-            conf_userid, conf_ip = self.get_available_userid_ipaddr()
-            userid = conf_userid
-            if ip_addr is None:
-                ip_addr = conf_ip
+        userid = userid or generate_test_userid()
+        ip_addr = ip_addr or generate_test_ip()
         print("Using userid %s and IP addr %s ..." % (userid, ip_addr))
 
         # Create vm in zVM
@@ -267,7 +258,8 @@ class ZVMConnectorTestUtils(object):
             if err.results['rc'] == 400 and err.results['rs'] == 8:
                 print("userid %s still exist" % userid)
                 # switch to new userid
-                userid, ip_addr = self._get_next_userid_ipaddr(userid)
+                userid = userid or generate_test_userid()
+                ip_addr = ip_addr or generate_test_ip()
                 print("turn to use new userid %s and IP addr 5s" %
                       (userid, ip_addr))
                 self._reqh.guest_create(userid, cpu, memory,
