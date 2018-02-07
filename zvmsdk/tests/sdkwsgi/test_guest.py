@@ -12,13 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import time
+
 import json
 import os
+import time
+import unittest
 
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import base
 from zvmsdk.tests.sdkwsgi import test_sdkwsgi
+from zvmsdk.tests.sdkwsgi import test_utils
 from zvmsdk import config
 from zvmsdk import smutclient
 
@@ -41,10 +44,9 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
 
         # every time, we need to random generate userid
         # the userid is used in most testcases that assume exists
-        cls.userid = CONF.tests.userid_prefix + '%03d' % (time.time() % 1000)
+        cls.userid = test_utils.generate_test_userid()
 
-        cls.userid_exists = CONF.tests.userid_prefix + '%03d' % (
-                                                (time.time() * 10) % 1000)
+        cls.userid_exists = test_utils.generate_test_userid()
         cls._guest_create(cls.userid_exists)
 
     @classmethod
@@ -103,8 +105,10 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
 
         return resp
 
-    def _guest_delete(self):
-        url = '/guests/%s' % self.userid
+    def _guest_delete(self, userid=None):
+        if userid is None:
+            userid = self.userid
+        url = '/guests/%s' % userid
         resp = self.client.api_request(url=url, method='DELETE')
         self.assertEqual(200, resp.status_code)
 
@@ -422,6 +426,8 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         for _slp in _inc_slp:
             real_state = func(*args, **kwargs)
             if real_state == expect_state:
+                # sleep another 5 seconds to make sure at expected state
+                time.sleep(5)
                 return True
             else:
                 time.sleep(_slp)
@@ -484,7 +490,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         self.assertEqual(200, resp.status_code)
         return resp
 
-    def _check_nic(self, vdev, mac=None, vsw=None, devices=3):
+    def _check_nic(self, vdev, userid=None, mac=None, vsw=None, devices=3):
         """ Check nic status.
         Returns a bool value to indicate whether the nic is defined in user and
         a string value of the vswitch that the nic is attached to.
@@ -496,7 +502,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         if mac is not None:
             nic_entry += (" MACID %s") % mac
 
-        resp_nic = self._guest_get()
+        resp_nic = self._guest_get(userid=userid)
         self.assertEqual(200, resp_nic.status_code)
 
         # Check definition
@@ -504,7 +510,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             return False, ""
         else:
             # Continue to check the nic info defined in vswitch table
-            resp = self._guest_nic_query()
+            resp = self._guest_nic_query(userid)
             nic_info = json.loads(resp.content)['output']
             if vdev not in nic_info.keys():
                 # NIC defined in user direct, but not in switch table
@@ -657,6 +663,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         resp = self._guest_disks_create(userid='notexist')
         self.assertEqual(404, resp.status_code)
 
+    @unittest.skip("Skip until bug/1747591 fixed")
     def test_guest_disk_pool_create_not_exist(self):
         resp = self._guest_disks_create(userid=self.userid_exists,
                                         disk="ECKD:notexist")
@@ -726,155 +733,168 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
 
     def test_guest_create_delete(self):
         PURGE_GUEST = PURGE_VSW = PURGE_IMG = 0
-        resp = self._guest_create()
+        userid = test_utils.generate_test_userid()
+        resp = self._guest_create(userid)
         self.assertEqual(200, resp.status_code)
         PURGE_GUEST = 1
+
+        # sleep 5 seconds to make sure create userid completed
+        time.sleep(5)
+
         self._make_transport_file()
         transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
 
         try:
-            resp = self._guest_deploy_with_transport_file(
+            resp = self._guest_deploy_with_transport_file(userid=userid,
                                            transportfiles=transport_file)
             self.assertEqual(200, resp.status_code)
 
             # Creating NIC, not active.
-            resp = self._guest_nic_create()
+            resp = self._guest_nic_create(userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("1000")
+            nic_defined, vsw = self._check_nic("1000", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
 
             # Creating another NIC with fixed vdev.
-            resp = self._guest_nic_create("1003")
+            resp = self._guest_nic_create("1003", userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("1003")
+            nic_defined, vsw = self._check_nic("1003", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
 
             # Creating NIC with vdev conflict with defined NIC."
-            resp = self._guest_nic_create("1004")
+            resp = self._guest_nic_create(vdev="1004", userid=userid)
             self.assertEqual(400, resp.status_code)
 
             # Creating NIC with nic_id.
-            resp = self._guest_nic_create("1006", nic_id='123456')
+            resp = self._guest_nic_create(vdev="1006", nic_id='123456',
+                                          userid=userid)
             self.assertEqual(200, resp.status_code)
-            resp = self._guest_get_nic_DB_info(nic_id='123456')
+            resp = self._guest_get_nic_DB_info(nic_id='123456', userid=userid)
             self.assertEqual(200, resp.status_code)
             nic_info = json.loads(resp.content)['output']
             self.assertEqual("1006", nic_info[0]["interface"])
             self.assertEqual("123456", nic_info[0]["port"])
 
             # Creating NIC with mac_addr
-            resp = self._guest_nic_create("1009",
+            resp = self._guest_nic_create(vdev="1009",
+                                          userid=userid,
                                           mac_addr='02:00:00:12:34:56')
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("1009", mac='123456')
+            nic_defined, vsw = self._check_nic("1009", mac='123456',
+                                               userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
 
             # Creating NIC to active guest when guest is in off status.
-            resp = self._guest_nic_create("1100", active=True)
+            resp = self._guest_nic_create(vdev="1100", active=True,
+                                          userid=userid)
             self.assertEqual(400, resp.status_code)
 
             # Deleting NIC to active guest when guest is in off status.
-            resp = self._guest_nic_delete("1009", active=True)
+            resp = self._guest_nic_delete(vdev="1009", active=True,
+                                          userid=userid)
             self.assertEqual(400, resp.status_code)
-            nic_defined, vsw = self._check_nic("1009")
+            nic_defined, vsw = self._check_nic("1009", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
 
             # Deleting NIC
-            resp = self._guest_nic_delete("1009")
+            resp = self._guest_nic_delete(vdev="1009", userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("1009")
+            nic_defined, vsw = self._check_nic("1009", userid=userid)
             self.assertFalse(nic_defined)
 
             # Deleting NIC not existed
-            resp = self._guest_nic_delete("1009")
+            resp = self._guest_nic_delete(vdev="1009", userid=userid)
             self.assertEqual(200, resp.status_code)
 
-            resp = self._guest_start()
+            resp = self._guest_start(userid)
             self.assertEqual(200, resp.status_code)
-            self.assertTrue(self._wait_until(True, self.is_reachable,
-                                             self.userid))
+            self.assertTrue(self._wait_until(True, self.is_reachable, userid))
 
             # Creating nic to the active guest
-            resp = self._guest_nic_create("1100", active=True)
+            resp = self._guest_nic_create(vdev="1100", active=True,
+                                          userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("1100")
+            nic_defined, vsw = self._check_nic("1100", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
 
-            resp = self._guest_get()
+            resp = self._guest_get(userid=userid)
             self.assertEqual(200, resp.status_code)
             self.apibase.verify_result('test_guest_get', resp.content)
 
-            resp = self._guest_get_info()
+            resp = self._guest_get_info(userid=userid)
             self.assertEqual(200, resp.status_code)
             self.apibase.verify_result('test_guest_get_info', resp.content)
 
-            resp = self._guest_get_power_state()
+            resp = self._guest_get_power_state(userid=userid)
             self.assertEqual(200, resp.status_code)
             self.apibase.verify_result('test_guest_get_power_state',
                                        resp.content)
 
-            resp = self._guest_vnicsinfo()
+            resp = self._guest_vnicsinfo(userid=userid)
             self.assertEqual(200, resp.status_code)
             self.apibase.verify_result('test_guests_get_vnics_info',
                                        resp.content)
 
             # Creating NIC
-            resp = self._guest_nic_create("2000", active=True)
+            resp = self._guest_nic_create(vdev="2000", active=True,
+                                          userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("2000")
+            nic_defined, vsw = self._check_nic("2000", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
 
             self._vswitch_create()
             PURGE_VSW = 1
 
-            resp = self._vswitch_couple()
+            resp = self._vswitch_couple(userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("2000", vsw="RESTVSW1")
+            nic_defined, vsw = self._check_nic("2000", vsw="RESTVSW1",
+                                               userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual("RESTVSW1", vsw)
 
-            resp = self._vswitch_uncouple()
+            resp = self._vswitch_uncouple(userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("2000")
+            nic_defined, vsw = self._check_nic("2000", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
 
-            resp = self._guest_nic_delete(vdev="2000", active=True)
+            resp = self._guest_nic_delete(vdev="2000", active=True,
+                                          userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("2000")
+            nic_defined, vsw = self._check_nic("2000", userid=userid)
             self.assertFalse(nic_defined)
 
-            resp = self._guest_pause()
+            resp = self._guest_pause(userid=userid)
             self.assertEqual(200, resp.status_code)
 
-            resp = self._guest_unpause()
+            resp = self._guest_unpause(userid=userid)
             self.assertEqual(200, resp.status_code)
 
-            resp = self._guest_stop()
+            resp = self._guest_stop(userid=userid)
             self.assertEqual(200, resp.status_code)
             self.assertTrue(self._wait_until(False, self.is_reachable,
-                                             self.userid))
+                                             userid))
 
-            resp = self._guest_stats()
+            resp = self._guest_stats(userid=userid)
             self.assertEqual(200, resp.status_code)
             self.apibase.verify_result('test_guests_get_stats',
                                        resp.content)
 
             # Capture a powered off instance will lead to error
-            resp = self._guest_capture()
+            resp = self._guest_capture(userid=userid)
             self.assertEqual(500, resp.status_code)
 
-            resp = self._guest_start()
+            resp = self._guest_start(userid=userid)
             self.assertEqual(200, resp.status_code)
 
             time.sleep(10)
-            resp_info = self._guest_get_info()
+            resp_info = self._guest_get_info(userid=userid)
             self.assertEqual(200, resp_info.status_code)
             resp_content = json.loads(resp_info.content)
             info_off = resp_content['output']
@@ -882,10 +902,10 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             self.assertNotEqual(info_off['cpu_time_us'], 0)
             self.assertNotEqual(info_off['mem_kb'], 0)
 
-            resp = self._guest_capture(capture_type='alldisks')
+            resp = self._guest_capture(capture_type='alldisks', userid=userid)
             self.assertEqual(501, resp.status_code)
 
-            resp = self._guest_capture()
+            resp = self._guest_capture(userid=userid)
             self.assertEqual(200, resp.status_code)
 
             PURGE_IMG = 1
@@ -893,14 +913,14 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             resp = self._image_query(image_name='test_capture_image1')
             self.assertEqual(200, resp.status_code)
 
-            resp_state = self._guest_get_power_state()
+            resp_state = self._guest_get_power_state(userid=userid)
             self.assertEqual(200, resp_state.status_code)
             resp_content = json.loads(resp_state.content)
             self.assertEqual('off', resp_content['output'])
         finally:
             os.system('rm /var/lib/zvmsdk/cfgdrive.tgz')
             if PURGE_GUEST:
-                self._guest_delete()
+                self._guest_delete(userid)
             if PURGE_VSW:
                 self._vswitch_delete()
             if PURGE_IMG:
@@ -912,36 +932,38 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         self.apibase.verify_result('test_guests_list', resp.content)
 
     def test_guest_disks_create_delete(self):
-        resp = self._guest_create()
+        userid = test_utils.generate_test_userid()
+        resp = self._guest_create(userid=userid)
         self.assertEqual(200, resp.status_code)
 
         # another create, to test when we report create duplication error
-        resp = self._guest_create()
+        resp = self._guest_create(userid=userid)
         self.assertEqual(409, resp.status_code)
 
         flag1 = False
         flag2 = False
 
         try:
-            resp = self._guest_deploy()
+            resp = self._guest_deploy(userid=userid)
             self.assertEqual(200, resp.status_code)
 
             # create new disks
-            resp = self._guest_disks_create_additional()
+            resp = self._guest_disks_create_additional(userid=userid)
             self.assertEqual(200, resp.status_code)
-            resp_create = self._guest_get()
+            resp_create = self._guest_get(userid=userid)
             self.assertEqual(200, resp_create.status_code)
             self.assertTrue('MDISK 0101' in resp_create.content)
             self.assertTrue('MDISK 0102' in resp_create.content)
             # config 'MDISK 0101'
-            resp_config = self._guest_config_minidisk()
+            resp_config = self._guest_config_minidisk(userid=userid)
             self.assertEqual(200, resp_config.status_code)
 
-            resp = self._guest_start()
+            resp = self._guest_start(userid=userid)
             self.assertEqual(200, resp.status_code)
             self.assertTrue(self._wait_until(True, self.is_reachable,
-                                             self.userid))
-            result = self._smutclient.execute_cmd(self.userid, 'df -h')
+                                             userid))
+            time.sleep(10)
+            result = self._smutclient.execute_cmd(userid, 'df -h')
             result_list = result
 
             for element in result_list:
@@ -952,33 +974,35 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             self.assertEqual(True, flag1)
             self.assertEqual(True, flag2)
 
-            resp = self._guest_softstop()
+            resp = self._guest_softstop(userid=userid)
             self.assertEqual(200, resp.status_code)
             self.assertTrue(self._wait_until(False, self.is_reachable,
                                              self.userid))
 
             # delete new disks
-            resp = self._guest_mutidisks_delete()
+            resp = self._guest_mutidisks_delete(userid=userid)
             self.assertEqual(200, resp.status_code)
-            resp_delete = self._guest_get()
+            resp_delete = self._guest_get(userid=userid)
             self.assertEqual(200, resp_delete.status_code)
             self.assertTrue('MDISK 0101' not in resp_delete.content)
             self.assertTrue('MDISK 0102' not in resp_delete.content)
         finally:
-            self._guest_delete()
+            self._guest_delete(userid=userid)
 
     def test_guest_create_delete_network_interface(self):
-        resp = self._guest_create()
+        userid = test_utils.generate_test_userid()
+        resp = self._guest_create(userid=userid)
         self.assertEqual(200, resp.status_code)
         self._make_transport_file()
         transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
 
         try:
-            resp = self._guest_deploy_with_transport_file(
+            resp = self._guest_deploy_with_transport_file(userid=userid,
                                            transportfiles=transport_file)
             self.assertEqual(200, resp.status_code)
 
-            resp = self._guest_create_network_interface(vdev="2000")
+            resp = self._guest_create_network_interface(vdev="2000",
+                                                        userid=userid)
             self.assertEqual(200, resp.status_code)
 
             # Authorizing VM to couple to vswitch.
@@ -988,50 +1012,56 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             self.assertEqual(200, resp.status_code)
 
             # Coupling NIC to the vswitch.
-            resp = self._vswitch_couple(vdev="2000", vswitch="XCATVSW2")
+            resp = self._vswitch_couple(vdev="2000", vswitch="XCATVSW2",
+                                        userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("2000", vsw="XCATVSW2")
+            nic_defined, vsw = self._check_nic("2000", vsw="XCATVSW2",
+                                               userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual("XCATVSW2", vsw)
 
-            resp = self._guest_start()
+            resp = self._guest_start(userid=userid)
             self.assertEqual(200, resp.status_code)
             self.assertTrue(self._wait_until(True, self.is_reachable,
-                                             self.userid))
+                                             userid))
             time.sleep(20)
-            ip_set = self._check_interface()
+            ip_set = self._check_interface(userid=userid)
             self.assertTrue(ip_set)
 
             resp = self._guest_delete_network_interface(vdev="2000",
-                                                        active=True)
+                                                        active=True,
+                                                        userid=userid)
             self.assertEqual(200, resp.status_code)
-            ip_set = self._check_interface()
+            ip_set = self._check_interface(userid=userid)
             self.assertFalse(ip_set)
 
             resp = self._guest_create_network_interface(vdev="2000",
-                                                        active=True)
+                                                        active=True,
+                                                        userid=userid)
             self.assertEqual(200, resp.status_code)
 
             resp = self._vswitch_couple(vdev="2000", vswitch="XCATVSW2",
-                                        active=True)
+                                        active=True, userid=userid)
             self.assertEqual(200, resp.status_code)
-            ip_set = self._check_interface()
+            ip_set = self._check_interface(userid=userid)
             self.assertTrue(ip_set)
-            nic_defined, vsw = self._check_nic("2000", vsw='XCATVSW2')
+            nic_defined, vsw = self._check_nic("2000", vsw='XCATVSW2',
+                                               userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual("XCATVSW2", vsw)
 
             resp = self._guest_delete_network_interface(vdev="2000",
-                                                        active=False)
+                                                        active=False,
+                                                        userid=userid)
             self.assertEqual(200, resp.status_code)
-            ip_set = self._check_interface()
+            ip_set = self._check_interface(userid=userid)
             self.assertTrue(ip_set)
-            nic_defined, vsw = self._check_nic("2000")
+            nic_defined, vsw = self._check_nic("2000", userid=userid)
             self.assertFalse(nic_defined)
             self.assertEqual("", vsw)
         finally:
             os.system('rm /var/lib/zvmsdk/cfgdrive.tgz')
-            self._guest_delete()
+            self._guest_delete(userid=userid)
 
     def test_guests_get_nic_info(self):
         resp = self._guest_get_nic_DB_info()
@@ -1128,42 +1158,46 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         self.assertEqual(404, resp.status_code)
 
     def test_guest_vswitch_couple_uncouple(self):
-        resp = self._guest_create()
+        userid = test_utils.generate_test_userid()
+        resp = self._guest_create(userid=userid)
         self.assertEqual(200, resp.status_code)
 
         try:
-            resp = self._guest_deploy()
+            resp = self._guest_deploy(userid=userid)
             self.assertEqual(200, resp.status_code)
 
             resp = self._vswitch_create()
             self.assertEqual(200, resp.status_code)
 
-            resp = self._guest_nic_create("1000")
+            resp = self._guest_nic_create("1000", userid=userid)
             self.assertEqual(200, resp.status_code)
             # Check nic defined in user direct and not coupled to vswitch
-            nic_defined, vsw = self._check_nic("1000")
+            nic_defined, vsw = self._check_nic("1000", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
 
             # Coupling with active=True on an off-state VM
             # The active should fail and rollback the user direct
-            resp = self._vswitch_couple(vdev="1000", active=True)
+            resp = self._vswitch_couple(vdev="1000", active=True,
+                                        userid=userid)
             self.assertEqual(400, resp.status_code)
-            nic_defined, vsw = self._check_nic("1000")
+            nic_defined, vsw = self._check_nic("1000", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
 
             # Coupling NIC to VSWITCH.
-            resp = self._vswitch_couple(vdev="1000")
+            resp = self._vswitch_couple(vdev="1000", userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1")
+            nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1",
+                                               userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual("RESTVSW1", vsw)
 
             # Coupling NIC to VSWITCH second time, same vswitch, supported.
-            resp = self._vswitch_couple(vdev="1000")
+            resp = self._vswitch_couple(vdev="1000", userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1")
+            nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1",
+                                               userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual("RESTVSW1", vsw)
 
@@ -1171,46 +1205,51 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             # Should still be coupled to original vswitch
             resp = self._vswitch_create(vswitch="RESTVSW2")
             self.assertEqual(200, resp.status_code)
-            resp = self._vswitch_couple(vdev="1000", vswitch="RESTVSW2")
+            resp = self._vswitch_couple(vdev="1000", vswitch="RESTVSW2",
+                                        userid=userid)
             self.assertEqual(400, resp.status_code)
-            nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1")
+            nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1",
+                                               userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual("RESTVSW1", vsw)
 
             # Uncoupling with active=True on an off-state VM.
             # The NIC shoule not uncoupled in user direct and switch table
-            resp = self._vswitch_uncouple(vdev="1000", active=True)
+            resp = self._vswitch_uncouple(vdev="1000", active=True,
+                                          userid=userid)
             self.assertEqual(400, resp.status_code)
-            nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1")
+            nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1",
+                                               userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual("RESTVSW1", vsw)
 
             # Uncoupling NIC from VSWITCH the second time.
-            resp = self._vswitch_uncouple(vdev="1000")
+            resp = self._vswitch_uncouple(vdev="1000", userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("1000")
+            nic_defined, vsw = self._check_nic("1000", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
 
             # Deleting NIC
-            resp = self._guest_nic_delete()
+            resp = self._guest_nic_delete(userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic('1000')
+            nic_defined, vsw = self._check_nic('1000', userid=userid)
             self.assertFalse(nic_defined)
 
             # Deleting NIC not existed
-            resp = self._guest_nic_delete()
+            resp = self._guest_nic_delete(userid=userid)
             self.assertEqual(200, resp.status_code)
 
             # Activating the VM
-            resp = self._guest_start()
+            resp = self._guest_start(userid=userid)
             self.assertEqual(200, resp.status_code)
             time.sleep(10)
 
             # Creating NIC with active=True
-            resp = self._guest_nic_create(vdev="2000", active=True)
+            resp = self._guest_nic_create(vdev="2000", active=True,
+                                          userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("2000")
+            nic_defined, vsw = self._check_nic("2000", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
 
@@ -1231,59 +1270,66 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
 
             # Coupling NIC to an unexisted vswitch.
             resp = self._vswitch_couple(vdev="2000", vswitch="VSWNONE",
-                                        active=True)
+                                        active=True, userid=userid)
             self.assertEqual(404, resp.status_code)
-            nic_defined, vsw = self._check_nic("2000")
+            nic_defined, vsw = self._check_nic("2000", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
             time.sleep(10)
 
             # Coupling NIC to VSWITCH.
-            resp = self._vswitch_couple(vdev="2000", active=True)
+            resp = self._vswitch_couple(vdev="2000", active=True,
+                                        userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("2000", vsw="RESTVSW1")
+            nic_defined, vsw = self._check_nic("2000", vsw="RESTVSW1",
+                                               userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual("RESTVSW1", vsw)
 
             # Coupling NIC to VSWITCH second time, same vswitch, supported
-            resp = self._vswitch_couple(vdev="2000", active=True)
+            resp = self._vswitch_couple(vdev="2000", active=True,
+                                        userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("2000", vsw="RESTVSW1")
+            nic_defined, vsw = self._check_nic("2000", vsw="RESTVSW1",
+                                               userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual("RESTVSW1", vsw)
 
             # Coupling NIC to VSWITCH, to different vswitch, not supported.
             # Should still be coupled to original vswitch
             resp = self._vswitch_couple(vdev="2000", vswitch="RESTVSW2",
-                                        active=True)
+                                        active=True, userid=userid)
             self.assertEqual(400, resp.status_code)
-            nic_defined, vsw = self._check_nic("2000", vsw="RESTVSW1")
+            nic_defined, vsw = self._check_nic("2000", vsw="RESTVSW1",
+                                               userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual("RESTVSW1", vsw)
 
             # Uncoupling NIC from VSWITCH.
-            resp = self._vswitch_uncouple(vdev="2000", active=True)
+            resp = self._vswitch_uncouple(vdev="2000", active=True,
+                                          userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("2000")
+            nic_defined, vsw = self._check_nic("2000", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
 
             # Uncoupling NIC from VSWITCH the second time.
-            resp = self._vswitch_uncouple(vdev="2000", active=True)
+            resp = self._vswitch_uncouple(vdev="2000", active=True,
+                                          userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("2000")
+            nic_defined, vsw = self._check_nic("2000", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
 
-            resp = self._guest_nic_query()
+            resp = self._guest_nic_query(userid=userid)
             self.assertEqual(200, resp.status_code)
             self.apibase.verify_result('test_guest_get_nic', resp.content)
 
-            resp = self._guest_nic_delete(vdev="2000")
+            resp = self._guest_nic_delete(vdev="2000", userid=userid)
             self.assertEqual(200, resp.status_code)
 
         finally:
-            self._guest_delete()
+            self._guest_delete(userid=userid)
             self._vswitch_delete()
             self._vswitch_delete(vswitch="RESTVSW2")
 
