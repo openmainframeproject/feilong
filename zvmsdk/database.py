@@ -292,8 +292,7 @@ class FCPDbOperator(object):
             fcp_list = result.fetchall()
             if len(fcp_list) == 0:
                 LOG.info("no more fcp to be allocated")
-                # FIXME:
-                raise Exception
+                return None
 
             # allocate first fcp found
             fcp = fcp_list[0][0]
