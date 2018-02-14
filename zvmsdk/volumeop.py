@@ -1,4 +1,4 @@
-# Copyright 2017 IBM Corp.
+#    Copyright 2017 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -18,6 +18,7 @@ import re
 import six
 
 from zvmsdk import config
+from zvmsdk import database
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import vmops
@@ -178,6 +179,218 @@ class _Configurator_Ubuntu16(_BaseConfigurator):
         pass
 
     def config_attach_inactive(self, instance, volume, connection_info):
+        pass
+
+
+class FCP(object):
+    def __init__(self, init_info):
+        self._dev_no = None
+        self._npiv_port = None
+        self._chpid = None
+        self._physical_port = None
+        self._assigned_id = None
+
+        self._parse(init_info)
+
+    @staticmethod
+    def _get_wwpn_from_line(info_line):
+        wwpn = info_line.split(':')[-1].strip().lower()
+        return wwpn if (wwpn and wwpn.upper() != 'NONE') else None
+
+    @staticmethod
+    def _get_dev_number_from_line(info_line):
+        dev_no = info_line.split(':')[-1].strip().lower()
+        return dev_no if dev_no else None
+
+    @staticmethod
+    def _get_chpid_from_line(info_line):
+        chpid = info_line.split(':')[-1].strip().upper()
+        return chpid if chpid else None
+
+    def _parse(self, init_info):
+        """Initialize a FCP device object from several lines of string
+           describing properties of the FCP device.
+           Here is a sample:
+               opnstk1: FCP device number: B83D
+               opnstk1:   Status: Free
+               opnstk1:   NPIV world wide port number: NONE
+               opnstk1:   Channel path ID: 59
+               opnstk1:   Physical world wide port number: 20076D8500005181
+           The format comes from the response of xCAT, do not support
+           arbitrary format.
+        """
+        if isinstance(init_info, list) and (len(init_info) == 5):
+            self._dev_no = self._get_dev_number_from_line(init_info[0])
+            self._npiv_port = self._get_wwpn_from_line(init_info[2])
+            self._chpid = self._get_chpid_from_line(init_info[3])
+            self._physical_port = self._get_wwpn_from_line(init_info[4])
+
+    def get_dev_no(self):
+        return self._dev_no
+
+    def is_valid(self):
+        # FIXME: add validation later
+        return True
+
+
+class FCPManager(object):
+
+    def __init__(self):
+        self._fcp_pool = {}
+        self.db = database.FCPDbOperator()
+
+    def _init_fcp_pool(self, fcp_list):
+        """The FCP infomation got from smut(zthin) looks like :
+           host: FCP device number: xxxx
+           host:   Status: Active
+           host:   NPIV world wide port number: xxxxxxxx
+           host:   Channel path ID: xx
+           host:   Physical world wide port number: xxxxxxxx
+           ......
+           host: FCP device number: xxxx
+           host:   Status: Active
+           host:   NPIV world wide port number: xxxxxxxx
+           host:   Channel path ID: xx
+           host:   Physical world wide port number: xxxxxxxx
+
+        """
+        complete_fcp_set = self._expand_fcp_list(fcp_list)
+        fcp_info = self._get_all_fcp_info()
+        lines_per_item = 5
+
+        num_fcps = len(fcp_info) // lines_per_item
+        for n in range(0, num_fcps):
+            fcp_init_info = fcp_info[(5 * n):(5 * (n + 1))]
+            fcp = FCP(fcp_init_info)
+            dev_no = fcp.get_dev_no()
+            if dev_no in complete_fcp_set:
+                if fcp.is_valid():
+                    self._fcp_pool[dev_no] = fcp
+                else:
+                    errmsg = ("Find an invalid FCP device with properties {"
+                              "dev_no: %(dev_no)s, "
+                              "NPIV_port: %(NPIV_port)s, "
+                              "CHPID: %(CHPID)s, "
+                              "physical_port: %(physical_port)s} !") % {
+                               'dev_no': fcp.get_dev_no(),
+                               'NPIV_port': fcp.get_npiv_port(),
+                               'CHPID': fcp.get_chpid(),
+                               'physical_port': fcp.get_physical_port()}
+                    LOG.warning(errmsg)
+            else:
+                # normal, FCP not used by cloud connector at all
+                msg = "Found a fcp %s not in fcp_list" % dev_no
+                LOG.debug(msg)
+
+    @staticmethod
+    def _expand_fcp_list(fcp_list):
+        """Expand fcp list string into a python list object which contains
+        each fcp devices in the list string. A fcp list is composed of fcp
+        device addresses, range indicator '-', and split indicator ';'.
+
+        For example, if fcp_list is
+        "0011-0013;0015;0017-0018", expand_fcp_list(fcp_list) will return
+        [0011, 0012, 0013, 0015, 0017, 0018].
+
+        """
+
+        LOG.debug("Expand FCP list %s" % fcp_list)
+
+        if not fcp_list:
+            return set()
+
+        range_pattern = '[0-9a-fA-F]{1,4}(-[0-9a-fA-F]{1,4})?'
+        match_pattern = "^(%(range)s)(;%(range)s)*$" % {'range': range_pattern}
+        if not re.match(match_pattern, fcp_list):
+            errmsg = ("Invalid FCP address %s") % fcp_list
+            raise exception.SDKInternalError(msg=errmsg)
+
+        fcp_devices = set()
+        for _range in fcp_list.split(';'):
+            if '-' not in _range:
+                # single device
+                fcp_addr = int(_range, 16)
+                fcp_devices.add("%04x" % fcp_addr)
+            else:
+                # a range of address
+                (_min, _max) = _range.split('-')
+                _min = int(_min, 16)
+                _max = int(_max, 16)
+                for fcp_addr in range(_min, _max + 1):
+                    fcp_devices.add("%04x" % fcp_addr)
+
+        # remove duplicate entries
+        return fcp_devices
+
+    def _report_orphan_fcp(self, fcp):
+        """check there is record in db but not in FCP configuration"""
+        LOG.warning("WARNING: fcp %s found in db but not in "
+                    "CONF.volume.fcp_list which is %s" %
+                    (fcp, CONF.volume.fcp_list))
+
+    def _add_fcp(self, fcp):
+        """add fcp to db if it's not in db but in fcp list and init it"""
+        try:
+            LOG.info("fcp %s found in CONF.volume.fcp_list, add it to db" %
+                     fcp)
+            self.db.new(fcp)
+        except Exception:
+            LOG.info("failed to add fcp %s into db", fcp)
+
+    def _sync_db_fcp_list(self):
+        """sync db records from given fcp list, for example, you need
+        warn if some FCP already removed while it's still in use,
+        or info about the new FCP added"""
+        fcp_db_list = self.db.get_all()
+
+        for fcp_rec in fcp_db_list:
+            if not fcp_rec[0].lower() in self._fcp_pool:
+                self._report_orphan_fcp(fcp_rec[0])
+
+        for fcp_conf_rec, v in self._fcp_pool.items():
+            res = self.db.get_from_fcp(fcp_conf_rec)
+
+            # if not found this record, a [] will be returned
+            if len(res) == 0:
+                self._add_fcp(fcp_conf_rec)
+
+    def _get_all_fcp_info(self):
+        fcp_info = []
+        free_fcp_info = self._list_fcp_details('free')
+        active_fcp_info = self._list_fcp_details('active')
+
+        if free_fcp_info:
+            fcp_info.extend(free_fcp_info)
+
+        if active_fcp_info:
+            fcp_info.extend(active_fcp_info)
+
+        return fcp_info
+
+    def init_fcp(self, host_stats):
+        """init_fcp to init the FCP managed by this host"""
+        # TODO master_fcp_list (zvm_zhcp_fcp_list) really need?
+        fcp_list = CONF.volume.fcp_list
+        if fcp_list is None:
+            errmsg = ("because CONF.volume.fcp_list is empty, "
+                      "no volume functions available")
+            LOG.Info(errmsg)
+            return
+
+        self._fcp_info = self._init_fcp_pool(fcp_list)
+
+    def find_and_reserve_fcp(self):
+        """reserve a FCP, note we assume upper layer will reserve a
+        FCP first then allocate it because some consumer such as openstack
+        need this kind of functions"""
+        fcp = self.db.find_and_reserve()
+        return fcp
+
+    def allocate_fcp(self, fcp):
+        """allocate the fcp to user or increase fcp usage"""
+        pass
+
+    def deallocate_fcp(self, userid):
         pass
 
 
