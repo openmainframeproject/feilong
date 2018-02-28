@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4c6d0294_d694911a",
+        "filename": "doc/source/architecture.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-02-28T10:42:59Z",
+      "side": 1,
+      "message": "I have concern on the naming here....\nwhy open source need IBM as prefix is a question to me.",
+      "range": {
+        "startLine": 5,
+        "startChar": 8,
+        "endLine": 5,
+        "endChar": 32
+      },
+      "revId": "c46bdbb46cdec78ca0f9df69b081fb198f5af386",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
