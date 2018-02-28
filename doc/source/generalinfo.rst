@@ -5,7 +5,7 @@ General info
 Content of this package
 ========================
 
-The zvm cloud connector package (also known as zvm sdk) is a client library
+The IBM z/VM Cloud Connector package (also known as zvm sdk) is a client library
 written in pure Python that interacts with `z/VM`_ SMAPI (System management API)
 of `IBM Z`_ or `LinuxONE`_ machines. The goal of this package is to make the
 z/VM SMAPI easy to be consumed by upper layer programmers and provide a set
@@ -23,10 +23,10 @@ CPU, memory, virtual switches, Storage, and more.
 Version
 =======
 
-This documentation applies to version |release| of the zvm cloud connector package.
-You can also see that version in the top left corner of this page.
+This documentation applies to version |release| of the IBM z/VM Cloud Connector
+package. You can also see that version in the top left corner of this page.
 
-The zvm cloud connector package uses the rules of `Semantic Versioning 2.0.0`_ for 
+The IBM z/VM Cloud Connector package uses the rules of `Semantic Versioning 2.0.0`_ for 
 its version.
 
 .. _Semantic Versioning 2.0.0: http://semver.org/spec/v2.0.0.html

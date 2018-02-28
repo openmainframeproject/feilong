@@ -1,6 +1,6 @@
-============================================
-Welcome to the z/VM Cloud Connector Document
-============================================
+=======================================
+Welcome to the IBM z/VM Cloud Connector
+=======================================
 
 .. toctree::
    :maxdepth: 2

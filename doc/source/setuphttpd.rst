@@ -3,12 +3,12 @@
 Setup web server for running RESTful API
 ****************************************
 
-Each z/VM Cloud Connector API is exposed through a RESTful interface, higher level
+Each IBM z/VM Cloud Connector API is exposed through a RESTful interface, higher level
 systems can manage z/VM by consuming these RESTful APIs directly.
 
-This document describes how to setup web server for hosting the z/VM Cloud Connector RESTful APIs.
+This document describes how to setup web server for hosting the IBM z/VM Cloud Connector RESTful APIs.
 
-The recommended deployment for z/VM Cloud Connector is to have a real web server such as
+The recommended deployment for IBM z/VM Cloud Connector is to have a real web server such as
 Apache HTTPD or nginx handle the HTTP connections and proxy requests to the independent
 z/VM SDK server running under a wsgi container such as uwsgi. 
 
@@ -61,18 +61,18 @@ so apache server can connect port 35000 and communicate with it
     gid = zvmsdk
     threads = 16
 
-Start z/VM Cloud Connector in uwsgi
------------------------------------
+Start IBM z/VM Cloud Connector in uwsgi
+---------------------------------------
 
 * Create a uwsgi service
 
-  Use following sample to create a uwsgi service for running the z/VM Cloud Connector.
+  Use following sample to create a uwsgi service for running the IBM z/VM Cloud Connector.
   For RHEL7.2, put this file as /usr/lib/systemd/system/zvmsdk-wsgi.service.
 
   .. code-block:: text
 
       [Unit]
-      Description=z/VM Cloud Connector uwsgi
+      Description=IBM z/VM Cloud Connector uwsgi
       After=syslog.target network.target httpd.service
 
       [Service]
@@ -98,7 +98,7 @@ Start z/VM Cloud Connector in uwsgi
   .. code-block:: text
 
       [root@0822rhel7 ~]# systemctl status zvmsdk-wsgi.service
-      ● zvmsdk-wsgi.service - z/VM Cloud Connector uwsgi
+      ● zvmsdk-wsgi.service - IBM z/VM Cloud Connector uwsgi
          Loaded: loaded (/usr/lib/systemd/system/zvmsdk-wsgi.service; disabled; vendor preset: disabled)
          Active: active (running) since Tue 2017-11-21 21:58:06 EST; 13min ago
        Main PID: 7227 (uwsgi)
@@ -142,7 +142,7 @@ Start z/VM Cloud Connector in uwsgi
 Configure Apache
 ----------------
 
-Use the following sample as a start for apache to proxy requests to z/VM Cloud Connector
+Use the following sample as a start for apache to proxy requests to IBM z/VM Cloud Connector
 wsgi service, copy the content to  /etc/httpd/conf.d/zvmsdk.conf and update the file to match
 your system and requirements.
 

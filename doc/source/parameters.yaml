@@ -43,25 +43,25 @@ ret_output:
   type: dict
 min_version_sdk:
   description: |
-    Min version of zvm cloud connector. 
+    Min version of IBM z/VM Cloud Connector. 
   in: header
   required: true
   type: string
 max_version_sdk:
   description: |
-    Max version of zvm cloud connector.
+    Max version of IBM z/VM Cloud Connector.
   in: header
   required: true
   type: string
 api_version_sdk:
   description: |
-    API version of zvm cloud connector.
+    API version of IBM z/VM Cloud Connector.
   in: header
   required: true
   type: string
 version_sdk:
   description: |
-    Version of zvm cloud connector.
+    Version of IBM z/VM Cloud Connector.
   in: header
   required: true
   type: string

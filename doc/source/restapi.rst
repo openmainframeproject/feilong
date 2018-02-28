@@ -1,13 +1,13 @@
 RESTful APIs
 ************
 
-This is a reference for the z/VM Cloud Connector RESTful API.
+This is a reference for the IBM z/VM Cloud Connector RESTful API.
 
 Response Data Definition
 ========================
 
 The following table gives a reference of general response data definition
-of each z/VM Cloud Connector RESTful API. In case of encountering an error,
+of each IBM z/VM Cloud Connector RESTful API. In case of encountering an error,
 those information will be helpful to report bug/issue.
 
 .. restapi_parameters:: parameters.yaml
@@ -27,8 +27,8 @@ Version
 =======
 Lists version of this API.
 
-Get zvm cloud connector version
--------------------------------
+Get IBM z/VM Cloud Connector version
+------------------------------------
 
 **GET /**
 

@@ -3,12 +3,12 @@ Quick Start
 ***********
 
 This is the document that describes the installation, configuration,
-and basic usages of z/VM Cloud Connector.
+and basic usages of IBM z/VM Cloud Connector.
 
 Pre-requirements
 ================
 
-z/VM Cloud Connector has to be installed inside a Linux running on z/VM.
+IBM z/VM Cloud Connector has to be installed inside a Linux running on z/VM.
 Currently planned to be supported distros include the most current
 supported versions:
 
@@ -20,9 +20,9 @@ supported versions:
 on other Linux distros.
 
 From now on, BYOL (Bring Your Own Linux) will be used to represent
-the Linux on which the z/VM Cloud Connector will be run.
+the Linux on which the IBM z/VM Cloud Connector will be run.
 
-For the z/VM Cloud Connector to run, the BYOL must have enough free disk space (>100M).
+For the IBM z/VM Cloud Connector to run, the BYOL must have enough free disk space (>100M).
 And besides that, the following updates need to be made to the BYOL.
 
 Preparation on BYOL
@@ -36,8 +36,9 @@ Preparation on BYOL
 
 .. note::
    It is recommend to consider increase the SMAPI long call server and DIRMAINT
-   DATAMOVE machine if heavy concurrent workload is going to be run through z/VM
-   Cloud connector. See `z/VM Systems Management Application Programming`_ for how to make it.
+   DATAMOVE machine if heavy concurrent workload is going to be run through IBM
+   z/VM Cloud Connector. See `z/VM Systems Management Application Programming`_
+   for how to make it.
 
 2. Update BYOL definition for spawning guests.
 
@@ -161,14 +162,14 @@ Installation
 z/VM zthin install
 ------------------
 
-zthin is a library written in C that works as part of the z/VM Cloud Connectorworking.
+zthin is a library written in C that works as part of the IBM z/VM Cloud Connectorworking.
 It mainly focuses on socket connection from BYOL to z/VM SMAPI(System Management API).
-z/VM Cloud Connector requires zthin as the backend to communicate with z/VM SMAPI,
-thus it needs to be installed before installing z/VM Cloud Connector.
+IBM z/VM Cloud Connector requires zthin as the backend to communicate with z/VM SMAPI,
+thus it needs to be installed before installing IBM z/VM Cloud Connector.
 
 SSH onto the BYOL as root user, and then follow the following steps:
 
-1. Clone z/VM Cloud Connector build project from github
+1. Clone IBM z/VM Cloud Connector build project from github
 
    .. code-block:: text
 
@@ -216,7 +217,7 @@ SSH onto the BYOL as root user, and then follow the following steps:
 z/VM SDK install
 ----------------
 
-z/VM SDK is the upper transition layer of z/VM Cloud Connector. It implements the
+z/VM SDK is the upper transition layer of IBM z/VM Cloud Connector. It implements the
 supported SDK APIs by communicating with the zthin backend.
 
 1. **Through RPM/DEB**
@@ -290,7 +291,7 @@ should be customized according to your environment.
 Setup for z/VM SDK Daemon
 =========================
 
-The z/VM Cloud Connector is designed to be run inside a daemon. The daemon server is bond to
+The IBM z/VM Cloud Connector is designed to be run inside a daemon. The daemon server is bond to
 the configured socket for receiving requests and then call the requested SDK API.
 
 The daemon server would be run with user 'zvmsdk' and group 'zvmsdk', the following user and folder
@@ -397,7 +398,7 @@ Try the following python commands on BYOL.
 If the two send_request commands all returns 'overallRC' as 0, that means the z/VM SDK daemon
 is setup and running normally.
 
-For use of the z/VM Cloud Connector RESTful-API, please continue to the section
+For use of the IBM z/VM Cloud Connector RESTful-API, please continue to the section
 of :ref:`Setup web server for running RESTful API` for the additional setup.
 
 .. code-block:: python
