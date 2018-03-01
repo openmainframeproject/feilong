@@ -1003,32 +1003,7 @@ class SMUTClient(object):
 
     def create_nic(self, userid, vdev=None, nic_id=None,
                    mac_addr=None, active=False):
-        ports_info = self._NetDbOperator.switch_select_table()
-        vdev_info = []
-        for p in ports_info:
-            if p['userid'] == userid.upper():
-                vdev_info.append(p['interface'])
-
-        if len(vdev_info) == 0:
-            # no nic defined for the guest
-            if vdev is None:
-                nic_vdev = CONF.zvm.default_nic_vdev
-            else:
-                nic_vdev = vdev
-        else:
-            if vdev is None:
-                used_vdev = max(vdev_info)
-                nic_vdev = str(hex(int(used_vdev, 16) + 3))[2:]
-            else:
-                if self._is_vdev_valid(vdev, vdev_info):
-                    nic_vdev = vdev
-                else:
-                    errmsg = ("The specified virtual device number %s "
-                              "has already been used." % vdev)
-                    raise exception.SDKInvalidInputFormat(msg=errmsg)
-        if len(nic_vdev) > 4:
-            errmsg = ("Virtual device number %s is not valid" % nic_vdev)
-            raise exception.SDKInvalidInputFormat(msg=errmsg)
+        nic_vdev = self._get_available_vdev(userid, vdev=vdev)
 
         LOG.debug('Nic attributes: vdev is %(vdev)s, '
                   'ID is %(id)s, address is %(address)s',
@@ -1074,15 +1049,18 @@ class SMUTClient(object):
         else:
             raise error
 
+    def _is_active(self, userid):
+        # Get the vm status
+        power_state = self.get_power_state(userid)
+        if power_state == 'off':
+            errmsg = ('The vm %s is powered off, '
+                      'active operation is not allowed' % userid)
+            raise exception.SDKInvalidInput(msg=errmsg)
+
     def _create_nic(self, userid, vdev, nic_id=None, mac_addr=None,
                     active=False):
         if active:
-            # Get the vm status
-            power_state = self.get_power_state(userid)
-            if power_state == 'off':
-                errmsg = ('The vm %s is powered off, '
-                          'active operation is not allowed' % userid)
-                raise exception.SDKInvalidInput(msg=errmsg)
+            self._is_active(userid)
 
         requestData = ' '.join((
             'SMAPI %s API Virtual_Network_Adapter_Create_Extended_DM' %
@@ -1099,7 +1077,7 @@ class SMUTClient(object):
             self._request(requestData)
         except exception.SDKSMUTRequestFailed as err:
             LOG.error("Failed to create nic %s for user %s in "
-                      "the guest's user direct,, error: %s" %
+                      "the guest's user direct, error: %s" %
                       (vdev, userid, err.format_message()))
             self._create_nic_inactive_exception(err, vdev)
 
@@ -1166,12 +1144,24 @@ class SMUTClient(object):
 
     def delete_nic(self, userid, vdev, active=False):
         if active:
-            # Get the vm status
-            power_state = self.get_power_state(userid)
-            if power_state == 'off':
-                errmsg = ('The vm %s is powered off, '
-                          'active operation is not allowed' % userid)
-                raise exception.SDKInvalidInput(msg=errmsg)
+            self._is_active(userid)
+
+        vdev_exist = False
+        nic_list = self._NetDbOperator.switch_select_record_for_userid(userid)
+        for p in nic_list:
+            if (int(p['interface'], 16) == int(vdev, 16)):
+                vdev_exist = True
+                vdev_info = p
+                break
+        if not vdev_exist:
+            LOG.warning("Virtual device %s does not exist in the switch table",
+                        vdev)
+        else:
+            if ((vdev_info["comments"] is not None) and
+                (vdev_info["comments"].__contains__('OSA='))):
+                self._undedicate_nic(userid, vdev, active=active)
+                return
+
         rd = ' '.join((
             "SMAPI %s API Virtual_Network_Adapter_Delete_DM" %
             userid,
@@ -1265,12 +1255,7 @@ class SMUTClient(object):
                     active=False):
         """Couple NIC to vswitch by adding vswitch into user direct."""
         if active:
-            # Get the vm status
-            power_state = self.get_power_state(userid)
-            if power_state == 'off':
-                errmsg = ('The vm %s is powered off, '
-                          'active operation is not allowed' % userid)
-                raise exception.SDKInvalidInput(msg=errmsg)
+            self._is_active(userid)
         requestData = ' '.join((
             'SMAPI %s' % userid,
             "API Virtual_Network_Adapter_Connect_Vswitch_DM",
@@ -1379,12 +1364,7 @@ class SMUTClient(object):
     def _uncouple_nic(self, userid, vdev, active=False):
         """Uncouple NIC from vswitch"""
         if active:
-            # Get the vm status
-            power_state = self.get_power_state(userid)
-            if power_state == 'off':
-                errmsg = ('The vm %s is powered off, '
-                          'active operation is not allowed' % userid)
-                raise exception.SDKInvalidInput(msg=errmsg)
+            self._is_active(userid)
         requestData = ' '.join((
             'SMAPI %s' % userid,
             "API Virtual_Network_Adapter_Disconnect_DM",
@@ -2099,6 +2079,266 @@ class SMUTClient(object):
                     OSA_info[osa_type][osa_status].append(osa_addr)
 
         return OSA_info
+
+    def _get_available_vdev(self, userid, vdev=None):
+        ports_info = self._NetDbOperator.switch_select_table()
+        vdev_info = []
+        for p in ports_info:
+            if p['userid'] == userid.upper():
+                vdev_info.append(p['interface'])
+
+        if len(vdev_info) == 0:
+            # no nic defined for the guest
+            if vdev is None:
+                nic_vdev = CONF.zvm.default_nic_vdev
+            else:
+                nic_vdev = vdev
+        else:
+            if vdev is None:
+                used_vdev = max(vdev_info)
+                nic_vdev = str(hex(int(used_vdev, 16) + 3))[2:]
+            else:
+                if self._is_vdev_valid(vdev, vdev_info):
+                    nic_vdev = vdev
+                else:
+                    errmsg = ("The specified virtual device number %s "
+                              "has already been used." % vdev)
+                    raise exception.SDKInvalidInputFormat(msg=errmsg)
+        if ((len(nic_vdev) > 4) or
+            (len(str(hex(int(nic_vdev, 16) + 2))[2:]) > 4)):
+            errmsg = ("Virtual device number %s is not valid" % nic_vdev)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
+        return nic_vdev
+
+    def dedicate_OSA(self, userid, OSA_device, vdev=None, active=False):
+        nic_vdev = self._get_available_vdev(userid, vdev=vdev)
+
+        if not self._is_OSA_free(OSA_device):
+            errmsg = ("The specified OSA device number %s "
+                      "is not valid" % OSA_device)
+            raise exception.SDKInvalidInput(msg=errmsg)
+
+        LOG.debug('Nic attributes: vdev is %(vdev)s, '
+                  'dedicated OSA device is %(osa)s',
+                  {'vdev': nic_vdev,
+                   'osa': OSA_device})
+        self._dedicate_OSA(userid, OSA_device, nic_vdev, active=active)
+        return nic_vdev
+
+    def _dedicate_OSA_inactive_exception(self, error, userid, vdev):
+        if ((error.results['rc'] == 400) and (error.results['rs'] == 12)):
+            obj_desc = "Guest %s" % userid
+            raise exception.SDKObjectIsLockedError(obj_desc=obj_desc,
+                                                   modID='network')
+        elif ((error.results['rc'] == 404) and (error.results['rs'] == 12)):
+            obj_desc = "Guest device %s" % vdev
+            raise exception.SDKObjectIsLockedError(obj_desc=obj_desc,
+                                                   modID='network')
+        elif ((error.results['rc'] == 404) and (error.results['rs'] == 4)):
+            errmsg = error.format_message()
+            raise exception.SDKInvalidInput(msg=errmsg)
+        else:
+            raise error
+
+    def _dedicate_OSA_active_exception(self, error, vdev):
+        if (((error.results['rc'] == 204) and (error.results['rs'] == 4)) or
+            ((error.results['rc'] == 204) and (error.results['rs'] == 8)) or
+            ((error.results['rc'] == 204) and (error.results['rs'] == 16))):
+            errmsg = error.format_message()
+            raise exception.SDKInvalidInput(msg=errmsg)
+        else:
+            raise error
+
+    def _dedicate_OSA(self, userid, OSA_device, vdev, active=False):
+        if active:
+            self._is_active(userid)
+
+        def_vdev = vdev
+        att_OSA_device = OSA_device
+        for i in range(3):
+            requestData = ' '.join((
+                'SMAPI %s API Image_Device_Dedicate_DM' %
+                userid,
+                "--operands",
+                "-v %s" % def_vdev,
+                "-r %s" % att_OSA_device))
+
+            try:
+                self._request(requestData)
+            except (exception.SDKSMUTRequestFailed,
+                    exception.SDKInternalError) as err:
+                LOG.error("Failed to dedicate OSA %s to nic %s for user %s "
+                          "in the guest's user direct, error: %s" %
+                          (att_OSA_device, def_vdev, userid,
+                          err.format_message()))
+                # TODO revoke the dedicated OSA in user direct
+                while (int(def_vdev, 16) != int(vdev, 16)):
+                    def_vdev = str(hex(int(def_vdev, 16) - 1))[2:]
+                    requestData = ' '.join((
+                        'SMAPI %s API Image_Device_Undedicate_DM' %
+                        userid,
+                        "--operands",
+                        "-v %s" % def_vdev))
+                    try:
+                        self._request(requestData)
+                    except (exception.SDKSMUTRequestFailed,
+                            exception.SDKInternalError) as err2:
+                        if ((err2.results['rc'] == 404) and
+                            (err2.results['rs'] == 8)):
+                            pass
+                        else:
+                            LOG.error("Failed to Undedicate nic %s for user"
+                                      " %s in the guest's user direct, "
+                                      "error: %s" %
+                                      (def_vdev, userid,
+                                       err2.format_message()))
+                        pass
+                self._dedicate_OSA_inactive_exception(err, userid, vdev)
+
+            def_vdev = str(hex(int(def_vdev, 16) + 1))[2:]
+            att_OSA_device = str(hex(int(att_OSA_device, 16) + 1))[2:]
+
+        if active:
+            def_vdev = vdev
+            att_OSA_device = OSA_device
+            for i in range(3):
+                requestData = ' '.join((
+                    'SMAPI %s API Image_Device_Dedicate' %
+                    userid,
+                    "--operands",
+                    "-v %s" % def_vdev,
+                    "-r %s" % att_OSA_device))
+
+                try:
+                    self._request(requestData)
+                except (exception.SDKSMUTRequestFailed,
+                        exception.SDKInternalError) as err:
+                    LOG.error("Failed to dedicate OSA %s to nic %s for user "
+                              "%s on the active guest system, error: %s" %
+                              (att_OSA_device, def_vdev, userid,
+                              err.format_message()))
+                    # TODO revoke the dedicated OSA in user direct and active
+                    detach_vdev = vdev
+                    for j in range(3):
+                        requestData = ' '.join((
+                            'SMAPI %s API Image_Device_Undedicate_DM' %
+                            userid,
+                            "--operands",
+                            "-v %s" % detach_vdev))
+                        try:
+                            self._request(requestData)
+                        except (exception.SDKSMUTRequestFailed,
+                                exception.SDKInternalError) as err2:
+                            if ((err2.results['rc'] == 404) and
+                                (err2.results['rs'] == 8)):
+                                pass
+                            else:
+                                LOG.error("Failed to Undedicate nic %s for "
+                                          "user %s in the guest's user "
+                                          "direct, error: %s" %
+                                          (def_vdev, userid,
+                                           err2.format_message()))
+                            pass
+                        detach_vdev = str(hex(int(detach_vdev, 16) + 1))[2:]
+
+                    while (int(def_vdev, 16) != int(vdev, 16)):
+                        def_vdev = str(hex(int(def_vdev, 16) - 1))[2:]
+                        requestData = ' '.join((
+                            'SMAPI %s API Image_Device_Undedicate' %
+                            userid,
+                            "--operands",
+                            "-v %s" % def_vdev))
+                        try:
+                            self._request(requestData)
+                        except (exception.SDKSMUTRequestFailed,
+                                exception.SDKInternalError) as err3:
+                            if ((err3.results['rc'] == 204) and
+                                (err3.results['rs'] == 8)):
+                                pass
+                            else:
+                                LOG.error("Failed to Undedicate nic %s for "
+                                          "user %s on the active guest "
+                                          "system, error: %s" %
+                                          (def_vdev, userid,
+                                           err3.format_message()))
+                            pass
+                    self._dedicate_OSA_active_exception(err, vdev)
+
+                def_vdev = str(hex(int(def_vdev, 16) + 1))[2:]
+                att_OSA_device = str(hex(int(att_OSA_device, 16) + 1))[2:]
+
+        OSA_desc = 'OSA=%s' % OSA_device
+        self._NetDbOperator.switch_add_record(userid, vdev, comments=OSA_desc)
+
+    def _undedicate_nic_active_exception(self, error):
+        if ((error.results['rc'] == 204) and (error.results['rs'] == 44)):
+            errmsg = error.format_message()
+            raise exception.SDKInvalidInput(msg=errmsg)
+        else:
+            raise error
+
+    def _undedicate_nic_inactive_exception(self, error, userid):
+        if ((error.results['rc'] == 400) and (error.results['rs'] == 12)):
+            obj_desc = "Guest %s" % userid
+            raise exception.SDKObjectIsLockedError(obj_desc=obj_desc,
+                                                   modID='network')
+        else:
+            raise error
+
+    def _undedicate_nic(self, userid, vdev, active=False):
+        if active:
+            self._is_active(userid)
+
+        def_vdev = vdev
+        for i in range(3):
+            requestData = ' '.join((
+                'SMAPI %s API Image_Device_Undedicate_DM' %
+                userid,
+                "--operands",
+                "-v %s" % def_vdev))
+
+            try:
+                self._request(requestData)
+            except (exception.SDKSMUTRequestFailed,
+                    exception.SDKInternalError) as err:
+                results = err.results
+                emsg = err.format_message()
+                if ((results['rc'] == 404) and
+                    (results['rs'] == 8)):
+                    LOG.warning("Virtual device %s does not exist in "
+                                "the guest's user direct", vdev)
+                else:
+                    LOG.error("Failed to undedicate nic %s for %s in "
+                              "the guest's user direct, error: %s" %
+                              (vdev, userid, emsg))
+                self._undedicate_nic_inactive_exception(err, userid)
+            def_vdev = str(hex(int(def_vdev, 16) + 1))[2:]
+
+        self._NetDbOperator.switch_delete_record_for_nic(userid, vdev)
+
+        if active:
+            def_vdev = vdev
+            for i in range(3):
+                rd = ' '.join((
+                    "SMAPI %s API Image_Device_Undedicate" %
+                    userid,
+                    "--operands",
+                    '-v %s' % def_vdev))
+                try:
+                    self._request(rd)
+                except exception.SDKSMUTRequestFailed as err:
+                    results = err.results
+                    emsg = err.format_message()
+                    if ((results['rc'] == 204) and
+                        (results['rs'] == 8)):
+                        LOG.warning("Virtual device %s does not exist on "
+                                    "the active guest system", vdev)
+                    else:
+                        LOG.error("Failed to undedicate nic %s for %s on "
+                                  "the active guest system, error: %s" %
+                                  (vdev, userid, emsg))
+                        self._undedicate_nic_active_exception(err)
+                def_vdev = str(hex(int(def_vdev, 16) + 1))[2:]
 
 
 class FilesystemBackend(object):

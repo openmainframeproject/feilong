@@ -804,40 +804,61 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request.assert_called_once_with(rd)
 
     @mock.patch.object(database.NetworkDbOperator, 'switch_select_table')
-    @mock.patch.object(smutclient.SMUTClient, '_create_nic')
-    def test_create_nic(self, create_nic, switch_select_table):
-        userid = 'fake_id'
+    def test_get_available_vdev(self, switch_select_table):
         switch_select_table.return_value = [
                     {'userid': 'fake_id', 'interface': '1003',
                      'switch': None, 'port': None, 'comments': None},
                     {'userid': 'fake_id', 'interface': '1006',
                      'switch': None, 'port': None, 'comments': None}]
-        self._smutclient.create_nic(userid, vdev='1009', nic_id='nic_id')
-        create_nic.assert_called_with(userid, '1009', nic_id="nic_id",
-                                      mac_addr=None, active=False)
+        result = self._smutclient._get_available_vdev('fake_id', vdev='1009')
         switch_select_table.assert_called_with()
+        self.assertEqual(result, '1009')
 
     @mock.patch.object(database.NetworkDbOperator, 'switch_select_table')
-    @mock.patch.object(smutclient.SMUTClient, '_create_nic')
-    def test_create_nic_without_vdev(self, create_nic, switch_select_table):
-        userid = 'fake_id'
+    def test_get_available_vdev_without_vdev(self, switch_select_table):
         switch_select_table.return_value = [
                     {'userid': 'FAKE_ID', 'interface': '1003',
                      'switch': None, 'port': None, 'comments': None},
                     {'userid': 'FAKE_ID', 'interface': '2003',
                      'switch': None, 'port': None, 'comments': None}]
-        self._smutclient.create_nic(userid, nic_id='nic_id')
-        create_nic.assert_called_with(userid, '2006', nic_id='nic_id',
-                                      mac_addr=None, active=False)
+        result = self._smutclient._get_available_vdev('fake_id', vdev=None)
         switch_select_table.assert_called_with()
+        self.assertEqual(result, '2006')
 
     @mock.patch.object(database.NetworkDbOperator, 'switch_select_table')
-    def test_create_nic_with_used_vdev(self, switch_select_table):
+    def test_get_available_vdev_with_used_vdev(self, switch_select_table):
         switch_select_table.return_value = [
                     {'userid': 'FAKE_ID', 'interface': '1003',
                      'switch': None, 'port': None, 'comments': None},
                     {'userid': 'FAKE_ID', 'interface': '1006',
                      'switch': None, 'port': None, 'comments': None}]
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self._smutclient._get_available_vdev,
+                          'fake_id', vdev='1004')
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_vdev')
+    @mock.patch.object(smutclient.SMUTClient, '_create_nic')
+    def test_create_nic(self, create_nic, get_vdev):
+        userid = 'fake_id'
+        get_vdev.return_value = '1009'
+        self._smutclient.create_nic(userid, vdev='1009', nic_id='nic_id')
+        create_nic.assert_called_with(userid, '1009', nic_id="nic_id",
+                                      mac_addr=None, active=False)
+        get_vdev.assert_called_with(userid, vdev='1009')
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_vdev')
+    @mock.patch.object(smutclient.SMUTClient, '_create_nic')
+    def test_create_nic_without_vdev(self, create_nic, get_vdev):
+        userid = 'fake_id'
+        get_vdev.return_value = '2006'
+        self._smutclient.create_nic(userid, nic_id='nic_id')
+        create_nic.assert_called_with(userid, '2006', nic_id='nic_id',
+                                      mac_addr=None, active=False)
+        get_vdev.assert_called_with(userid, vdev=None)
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_vdev')
+    def test_create_nic_with_used_vdev(self, get_vdev):
+        get_vdev.side_effect = exception.SDKInvalidInputFormat('error')
         self.assertRaises(exception.SDKInvalidInputFormat,
                           self._smutclient.create_nic,
                           'fake_id', nic_id="nic_id", vdev='1004')
@@ -880,22 +901,39 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                        'switch_delete_record_for_nic')
     @mock.patch.object(smutclient.SMUTClient, '_request')
     @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
-    def test_delete_nic(self, power_state, request, delete_nic):
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_select_record_for_userid')
+    def test_delete_nic(self, select_rec, power_state, request, delete_nic):
+        select_rec.return_value = [{"interface": "1000",
+                                    "comments": None}]
         power_state.return_value = 'on'
         userid = 'FakeID'
-        vdev = 'FakeVdev'
+        vdev = '1000'
         rd1 = ' '.join((
             "SMAPI FakeID API Virtual_Network_Adapter_Delete_DM",
             "--operands",
-            '-v FakeVdev'))
+            '-v 1000'))
         rd2 = ' '.join((
             "SMAPI FakeID API Virtual_Network_Adapter_Delete",
             "--operands",
-            '-v FakeVdev'))
+            '-v 1000'))
         self._smutclient.delete_nic(userid, vdev, True)
         request.assert_any_call(rd1)
         request.assert_any_call(rd2)
         delete_nic.assert_called_with(userid, vdev)
+
+    @mock.patch.object(smutclient.SMUTClient, '_undedicate_nic')
+    @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
+    @mock.patch.object(database.NetworkDbOperator,
+                       'switch_select_record_for_userid')
+    def test_delete_nic_OSA(self, select_rec, power_state, undedicate_nic):
+        select_rec.return_value = [{"interface": "1000",
+                                    "comments": "OSA=F000"}]
+        power_state.return_value = 'on'
+        userid = 'FakeID'
+        vdev = '1000'
+        self._smutclient.delete_nic(userid, vdev, True)
+        undedicate_nic.assert_called_with(userid, vdev, active=True)
 
     @mock.patch.object(smutclient.SMUTClient, '_couple_nic')
     def test_couple_nic_to_vswitch(self, couple_nic):
@@ -1523,3 +1561,199 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         result = self._smutclient._is_OSA_free('0100')
         query_osa.assert_called_once_with()
         self.assertTrue(result)
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_vdev')
+    @mock.patch.object(smutclient.SMUTClient, '_is_OSA_free')
+    @mock.patch.object(smutclient.SMUTClient, '_dedicate_OSA')
+    def test_dedicate_OSA(self, attach_osa, OSA_free, get_vdev):
+        OSA_free.return_value = True
+        get_vdev.return_value = '1000'
+        result = self._smutclient.dedicate_OSA('userid', 'OSA_device',
+                             vdev='nic_vdev', active=True)
+        get_vdev.assert_called_once_with('userid', vdev='nic_vdev')
+        OSA_free.assert_called_once_with('OSA_device')
+        attach_osa.assert_called_once_with('userid', 'OSA_device',
+                                           '1000', active=True)
+        self.assertEqual(result, '1000')
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_vdev')
+    @mock.patch.object(smutclient.SMUTClient, '_is_OSA_free')
+    def test_dedicate_OSA_notFree(self, OSA_free, get_vdev):
+        OSA_free.return_value = False
+        get_vdev.return_value = '1000'
+        self.assertRaises(exception.SDKInvalidInput,
+                          self._smutclient.dedicate_OSA,
+                          'userid', 'OSA_device', 'nic_vdev', active=True)
+
+    @mock.patch.object(database.NetworkDbOperator, 'switch_add_record')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_private_dedicate_OSA_notActive(self, request, add_rec):
+        request_response = ['', '', '', '', '', '']
+        request.side_effect = request_response
+        self._smutclient._dedicate_OSA('userid', 'f000',
+                                       '1000', active=False)
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1000 -r f000")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1001 -r f001")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1002 -r f002")
+        add_rec.assert_called_once_with('userid', '1000', comments='OSA=f000')
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_private_dedicate_OSA_notActive_Fail_Input(self, request):
+        request_response = ['', '']
+        request_response.append(exception.SDKSMUTRequestFailed(
+                                            {'rc': 404, 'rs': 4}, 'err'))
+        request_response.append(exception.SDKSMUTRequestFailed(
+                                            {'rc': 1, 'rs': 1}, 'err'))
+        request_response.append(exception.SDKSMUTRequestFailed(
+                                            {'rc': 404, 'rs': 8}, 'err'))
+        request.side_effect = request_response
+        self.assertRaises(exception.SDKInvalidInput,
+                          self._smutclient._dedicate_OSA,
+                          'userid', 'f000', '1000', active=False)
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1000 -r f000")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1001 -r f001")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1002 -r f002")
+        request.assert_any_call('SMAPI userid API Image_Device_Undedicate_DM '
+                                "--operands -v 1001")
+        request.assert_any_call('SMAPI userid API Image_Device_Undedicate_DM '
+                                "--operands -v 1000")
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_private_dedicate_OSA_notActive_Fail_Lock(self, request):
+        request_response = ['', '']
+        request_response.append(exception.SDKSMUTRequestFailed(
+                                            {'rc': 404, 'rs': 12}, 'err'))
+        request_response.append(exception.SDKSMUTRequestFailed(
+                                            {'rc': 1, 'rs': 1}, 'err'))
+        request_response.append('')
+        request.side_effect = request_response
+        self.assertRaises(exception.SDKObjectIsLockedError,
+                          self._smutclient._dedicate_OSA,
+                          'userid', 'f000', '1000', active=False)
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1000 -r f000")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1001 -r f001")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1002 -r f002")
+        request.assert_any_call('SMAPI userid API Image_Device_Undedicate_DM '
+                                "--operands -v 1001")
+        request.assert_any_call('SMAPI userid API Image_Device_Undedicate_DM '
+                                "--operands -v 1000")
+
+    @mock.patch.object(database.NetworkDbOperator, 'switch_add_record')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
+    def test_private_dedicate_OSA_Active(self, power_state, request, add_rec):
+        power_state.return_value = 'on'
+        request_response = ['', '', '', '', '', '']
+        request.side_effect = request_response
+        self._smutclient._dedicate_OSA('userid', 'f000',
+                                       '1000', active=True)
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1000 -r f000")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1001 -r f001")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1002 -r f002")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate '
+                                "--operands -v 1000 -r f000")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate '
+                                "--operands -v 1001 -r f001")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate '
+                                "--operands -v 1002 -r f002")
+        add_rec.assert_called_once_with('userid', '1000', comments='OSA=f000')
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
+    def test_private_dedicate_OSA_Active_Fail(self, power_state, request):
+        power_state.return_value = 'on'
+        request_response = ['', '', '', '', '']
+        request_response.append(exception.SDKSMUTRequestFailed(
+                                            {'rc': 300, 'rs': 0}, 'err'))
+        request_response.append(exception.SDKSMUTRequestFailed(
+                                            {'rc': 404, 'rs': 8}, 'err'))
+        request_response.append(exception.SDKSMUTRequestFailed(
+                                            {'rc': 400, 'rs': 8}, 'err'))
+        request_response.append('')
+        request_response.append(exception.SDKSMUTRequestFailed(
+                                            {'rc': 204, 'rs': 8}, 'err'))
+        request_response.append(exception.SDKSMUTRequestFailed(
+                                            {'rc': 200, 'rs': 8}, 'err'))
+        request.side_effect = request_response
+        self.assertRaises(exception.SDKSMUTRequestFailed,
+                          self._smutclient._dedicate_OSA,
+                          'userid', 'f000', '1000', active=True)
+
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1000 -r f000")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1001 -r f001")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1002 -r f002")
+        request.assert_any_call('SMAPI userid API Image_Device_Undedicate_DM '
+                                "--operands -v 1000")
+        request.assert_any_call('SMAPI userid API Image_Device_Undedicate_DM '
+                                "--operands -v 1001")
+        request.assert_any_call('SMAPI userid API Image_Device_Undedicate_DM '
+                                "--operands -v 1002")
+
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate '
+                                "--operands -v 1000 -r f000")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate '
+                                "--operands -v 1001 -r f001")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate '
+                                "--operands -v 1002 -r f002")
+        request.assert_any_call('SMAPI userid API Image_Device_Undedicate '
+                                "--operands -v 1000")
+        request.assert_any_call('SMAPI userid API Image_Device_Undedicate '
+                                "--operands -v 1001")
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    @mock.patch.object(smutclient.SMUTClient, 'get_power_state')
+    def test_private_dedicate_OSA_Active_Fail_Input(self, power, request):
+        power.return_value = 'on'
+        request_response = ['', '', '', '', '']
+        request_response.append(exception.SDKSMUTRequestFailed(
+                                            {'rc': 204, 'rs': 8}, 'err'))
+        request_response.append('')
+        request_response.append('')
+        request_response.append('')
+        request_response.append(exception.SDKSMUTRequestFailed(
+                                            {'rc': 204, 'rs': 8}, 'err'))
+        request_response.append(exception.SDKSMUTRequestFailed(
+                                            {'rc': 200, 'rs': 8}, 'err'))
+        request.side_effect = request_response
+        self.assertRaises(exception.SDKInvalidInput,
+                          self._smutclient._dedicate_OSA,
+                          'userid', 'f000', '1000', active=True)
+
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1000 -r f000")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1001 -r f001")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
+                                "--operands -v 1002 -r f002")
+        request.assert_any_call('SMAPI userid API Image_Device_Undedicate_DM '
+                                "--operands -v 1000")
+        request.assert_any_call('SMAPI userid API Image_Device_Undedicate_DM '
+                                "--operands -v 1001")
+        request.assert_any_call('SMAPI userid API Image_Device_Undedicate_DM '
+                                "--operands -v 1002")
+
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate '
+                                "--operands -v 1000 -r f000")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate '
+                                "--operands -v 1001 -r f001")
+        request.assert_any_call('SMAPI userid API Image_Device_Dedicate '
+                                "--operands -v 1002 -r f002")
+        request.assert_any_call('SMAPI userid API Image_Device_Undedicate '
+                                "--operands -v 1000")
+        request.assert_any_call('SMAPI userid API Image_Device_Undedicate '
+                                "--operands -v 1001")

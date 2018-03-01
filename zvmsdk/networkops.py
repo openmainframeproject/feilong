@@ -298,3 +298,9 @@ class NetworkOPS(object):
         if active:
             active_cmds = linuxdist.create_active_net_interf_cmd()
             self._smutclient.execute_cmd(userid, active_cmds)
+
+    def dedicate_OSA(self, userid, OSA_device, vdev=None, active=False):
+        zvmutils.check_guest_exist(userid)
+
+        return self._smutclient.dedicate_OSA(userid, OSA_device, vdev=vdev,
+                                             active=active)

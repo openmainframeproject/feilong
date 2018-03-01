@@ -735,6 +735,7 @@ guest_networks_list:
     - ``nic_vdev``: nic device number, 1- to 4- hexadecimal digits
     - ``mac_addr``: mac address
     - ``nic_id``: nic identifier
+    - ``osa_device``: OSA device number, 1- to 4- hexadecimal digits
   in: body
   required: true
   type: list

@@ -353,6 +353,7 @@ network_list = {
             'cidr': cidr,
             'nic_vdev': vdev,
             'nic_id': {'type': 'string'}},
+            'osa_device': vdev,
     },
     'additionalProperties': False
 }

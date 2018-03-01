@@ -1058,7 +1058,8 @@ class SDKAPI(object):
                'nic_id': (str) nic identifier or None,
                'mac_addr': (str) mac address or None, it is only be used when
                changing the guest's user direct. Format should be
-               xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit}
+               xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit
+               'osa_device': (str) OSA address or None}
 
                Example for guest_networks:
                [{'ip_addr': '192.168.95.10',
@@ -1082,9 +1083,11 @@ class SDKAPI(object):
             raise exception.SDKInvalidInputFormat(msg=errmsg)
 
         for network in guest_networks:
-            vdev = nic_id = mac_addr = ip_addr = None
+            vdev = nic_id = mac_addr = ip_addr = OSA = None
             if 'nic_vdev' in network.keys():
                 vdev = network['nic_vdev']
+            if 'osa_device' in network.keys():
+                OSA = network['osa_device']
             if 'nic_id' in network.keys():
                 nic_id = network['nic_id']
 
@@ -1138,10 +1141,15 @@ class SDKAPI(object):
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
 
             try:
-                used_vdev = self._networkops.create_nic(userid, vdev=vdev,
-                                                        nic_id=nic_id,
-                                                        mac_addr=mac_addr,
-                                                        active=active)
+                if OSA is None:
+                    used_vdev = self._networkops.create_nic(userid, vdev=vdev,
+                                                            nic_id=nic_id,
+                                                            mac_addr=mac_addr,
+                                                            active=active)
+                else:
+                    used_vdev = self._networkops.dedicate_OSA(userid, OSA,
+                                                              vdev=vdev,
+                                                              active=active)
                 network['nic_vdev'] = used_vdev
             except exception.SDKBaseException:
                 LOG.error(('Failed to create nic on vm %s') % userid)
