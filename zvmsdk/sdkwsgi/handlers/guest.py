@@ -144,10 +144,11 @@ class VMHandler(object):
         networks = interface.get('guest_networks', None)
         active = interface.get('active', False)
         active = util.bool_from_string(active, strict=True)
+        OSA = interface.get('OSA', None)
         info = self.client.send_request('guest_create_network_interface',
                                         userid, os_version=version,
                                         guest_networks=networks,
-                                        active=active)
+                                        active=active, OSA=OSA)
         return info
 
     @validation.schema(guest.delete_network_interface)

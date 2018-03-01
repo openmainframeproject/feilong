@@ -503,6 +503,7 @@ Create one or more network interfaces on giving guest.
   - os_version: guest_os_version
   - guest_networks: guest_networks_list
   - active: active_flag
+  - OSA: osa_dev
 
 * Request sample:
 

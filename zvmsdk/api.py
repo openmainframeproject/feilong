@@ -1038,7 +1038,7 @@ class SDKAPI(object):
                                                    is_rollback_in_failure)
 
     def guest_create_network_interface(self, userid, os_version,
-                                       guest_networks, active=False):
+                                       guest_networks, active=False, OSA=None):
         """ Create network interface(s) for the guest inux system. It will
             create the nic for the guest, add NICDEF record into the user
             direct. It will also construct network interface configuration
@@ -1138,10 +1138,15 @@ class SDKAPI(object):
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
 
             try:
-                used_vdev = self._networkops.create_nic(userid, vdev=vdev,
-                                                        nic_id=nic_id,
-                                                        mac_addr=mac_addr,
-                                                        active=active)
+                if OSA is None:
+                    used_vdev = self._networkops.create_nic(userid, vdev=vdev,
+                                                            nic_id=nic_id,
+                                                            mac_addr=mac_addr,
+                                                            active=active)
+                else:
+                    used_vdev = self._networkops.dedicate_OSA(userid, OSA,
+                                                              vdev=vdev,
+                                                              active=active)
                 network['nic_vdev'] = used_vdev
             except exception.SDKBaseException:
                 LOG.error(('Failed to create nic on vm %s') % userid)

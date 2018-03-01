@@ -295,3 +295,12 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
         delete_vdev.assert_called_with(vdev)
         punch.assert_called_with(userid, '/tmp/DEL1000.sh', "X")
         execute_cmd.assert_called_with(userid, active_net_cmd)
+
+    @mock.patch('zvmsdk.smutclient.SMUTClient.dedicate_OSA')
+    @mock.patch('zvmsdk.utils._is_guest_exist')
+    def test_dedicate_OSA(self, ide, dedicate_OSA):
+        ide.return_value = True
+        self.networkops.dedicate_OSA("fakeid", 'F000', vdev='1000',
+                                     active=True)
+        dedicate_OSA.assert_called_with("fakeid", 'F000', vdev='1000',
+                                        active=True)

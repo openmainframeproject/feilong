@@ -421,3 +421,11 @@ native_vid_type = {
         {'type': 'integer', 'minimum': 1, 'maximum': 4094}
     ]
 }
+
+osa_info = {
+    'oneOf': [
+        {'type': 'null'},
+        {'type': 'string', 'minLength': 1, 'maxLength': 4,
+         'pattern': '^[0-9a-fA-F]{,4}$'}
+    ]
+}

@@ -679,6 +679,12 @@ active_flag:
   in: body
   required: false
   type: bool
+osa_dev:
+  description: |
+    The OSA device number which will be dedicated to guest, should be free
+  in: body
+  required: false
+  type: string
 couple_info:
   description: |
     The info used to describe the couple/uncouple action.

@@ -67,6 +67,7 @@ create_network_interface = {
                 'os_version': parameter_types.os_version,
                 'guest_networks': parameter_types.network_list,
                 'active': parameter_types.boolean,
+                'OSA': parameter_types.osa_info,
             },
             'required': ['os_version', 'guest_networks'],
             'additionalProperties': False,
