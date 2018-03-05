@@ -307,8 +307,8 @@
 #     A string, either ECKD or FBA.
 # 
 # Sample configuration:
-#     diskpo1:ECKD
-#     testpool:FBA
+#     ECKD:diskpo1
+#     FBA:testpool
 #     
 # This param is required
 #disk_pool=None
