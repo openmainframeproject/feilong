@@ -138,8 +138,8 @@ Possible values of the disk pool type:
     A string, either ECKD or FBA.
 
 Sample configuration:
-    diskpo1:ECKD
-    testpool:FBA
+    ECKD:diskpo1
+    FBA:testpool
     '''),
     Opt('user_profile',
         section='zvm',
