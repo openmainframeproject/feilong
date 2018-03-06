@@ -17,7 +17,6 @@ import re
 from docutils import nodes
 from docutils.parsers.rst.directives.tables import Table
 from docutils.statemachine import ViewList
-from sphinx.util.compat import Directive
 from sphinx.util.osutil import copyfile
 import yaml
 
