@@ -252,8 +252,8 @@
 #     The default is an empty string (''). When the string is empty, you can't
 #     log on to your instances using the 3270 protocol; When a
 #     non-empty string is provided, blank chars will be used as delimiter,
-#     you can use LOGONBY xxx command to log on the
-#     OpenStack created guest using the corresponding admin userid's password.
+#     you can use LOGONBY xxx command to log on the guest using the corresponding
+#     admin userid's password.
 # 
 #     For example, when you set this value to 'oper1 oper2 oper3 jones', it means
 #     you can use any one of 'oper1', 'oper2', 'oper3', 'jones' as an admin user.
