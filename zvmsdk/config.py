@@ -128,18 +128,18 @@ zVM disk pool and type for root/ephemeral disks.
 
 The option is combined by 2 parts and use : as separator.
 
-First part is the volume group name from your directory manager
-on your z/VM system, which will be used for ephemeral disks for
-new guest. A dollar sign ($) is not allowed in the name.
-
-Second part is type of the disk in the disk pool.
-The disks in the disk pool must all be the same type (ECKD or FBA).
+The first part is the type of disks in the disk pool.
+The disks in one disk pool must in same type (ECKD or FBA).
 Possible values of the disk pool type:
     A string, either ECKD or FBA.
 
-Sample configuration:
-    diskpo1:ECKD
-    testpool:FBA
+The second part is the volume group name defined in your directory manager
+on your z/VM system, which will be used for allocating disks for
+new guest. A dollar sign ($) is not allowed in the name.
+
+Sample disk_pool values:
+    ECKD:diskpo1
+    FBA:testpool
     '''),
     Opt('user_profile',
         section='zvm',
