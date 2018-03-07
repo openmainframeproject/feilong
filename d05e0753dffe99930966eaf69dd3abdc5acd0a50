@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f90869c3_d12836b9",
+        "filename": "doc/source/setuphttpd.rst",
+        "patchSetId": 3
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-03-07T02:05:54Z",
+      "side": 1,
+      "message": "should be authentication?",
+      "range": {
+        "startLine": 243,
+        "startChar": 69,
+        "endLine": 243,
+        "endChar": 80
+      },
+      "revId": "d05e0753dffe99930966eaf69dd3abdc5acd0a50",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b2c125ec_0385c783",
+        "filename": "doc/source/setuphttpd.rst",
+        "patchSetId": 3
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-03-07T02:05:54Z",
+      "side": 1,
+      "message": "Make it more clearly here",
+      "range": {
+        "startLine": 252,
+        "startChar": 72,
+        "endLine": 252,
+        "endChar": 76
+      },
+      "revId": "d05e0753dffe99930966eaf69dd3abdc5acd0a50",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "690a9faf_bd036c80",
+        "filename": "doc/source/setuphttpd.rst",
+        "patchSetId": 3
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-03-07T02:05:54Z",
+      "side": 1,
+      "message": "No :",
+      "range": {
+        "startLine": 291,
+        "startChar": 114,
+        "endLine": 291,
+        "endChar": 120
+      },
+      "revId": "d05e0753dffe99930966eaf69dd3abdc5acd0a50",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
