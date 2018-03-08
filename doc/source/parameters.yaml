@@ -339,7 +339,10 @@ disk_pool:
   type: string
 disk_info_host:
   description: |
-    The dict of disk information.
+    The dict of disk information. ``disk_total`` means the total size of the
+    pool in Gigabytes (G), ``disk_available`` means the total available size
+    of the disks, ``disk_used`` means the size of used disks in the pool. Both
+    ``disk_available`` and ``disk_used`` are in Gigabytes(G).
   in: body
   required: true
   type: dict
