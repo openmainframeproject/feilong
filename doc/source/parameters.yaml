@@ -337,12 +337,24 @@ disk_pool:
   in: body
   required: true
   type: string
-disk_info_host:
+disk_info_total:
   description: |
-    The dict of disk information.
+    The total size of the pool in Gigabytes (G).
   in: body
   required: true
-  type: dict
+  type: int
+disk_info_available:
+  description: |
+    The total available size of the disks in the pool in Gigabytes(G).
+  in: body
+  required: true
+  type: int
+disk_info_used:
+  description: |
+    The size of used disks in the pool in Gigabytes(G).
+  in: body
+  required: true
+  type: int
 image_info:
   description: |
     The image info for specific image or all images, each image has one dict
