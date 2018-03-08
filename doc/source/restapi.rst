@@ -940,7 +940,9 @@ Get disk pool information on the host.
 
 .. restapi_parameters:: parameters.yaml
 
-  - output: disk_info_host
+  - disk_available: disk_info_available
+  - disk_total: disk_info_total
+  - disk_used: disk_info_used
 
 * Response sample:
 
