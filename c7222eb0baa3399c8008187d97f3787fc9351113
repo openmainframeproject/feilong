@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b3e0d9ce_8d907e7d",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-03-12T06:36:42Z",
+      "side": 1,
+      "message": "please consider to add parameter one by one, \nwe have a set of samples in the document can be refered",
+      "range": {
+        "startLine": 342,
+        "startChar": 34,
+        "endLine": 345,
+        "endChar": 61
+      },
+      "revId": "c7222eb0baa3399c8008187d97f3787fc9351113",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
