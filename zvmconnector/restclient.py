@@ -18,6 +18,8 @@ import requests
 import six
 import threading
 
+from collections import OrderedDict
+
 # TODO:set up configuration file only for RESTClient and configure this value
 TOKEN_LOCK = threading.Lock()
 
@@ -803,7 +805,7 @@ class RESTClient(object):
             if body is None:
                 response = self.api_request(url, method)
             else:
-                body = json.dumps(body)
+                body = json.dumps(OrderedDict(body))
                 response = self.api_request(url, method, body)
             # change response to SDK format
             results = self._process_rest_response(response)

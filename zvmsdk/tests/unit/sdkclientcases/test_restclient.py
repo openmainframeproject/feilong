@@ -17,6 +17,7 @@ import requests
 import unittest
 
 
+from collections import OrderedDict
 from zvmconnector import restclient
 from zvmsdk import config
 
@@ -318,7 +319,7 @@ class RESTClientTestCase(unittest.TestCase):
         url = '/guests/%s/action' % self.fake_userid
         body = {'action': 'capture',
                 'image': 'image_captured'}
-        body = json.dumps(body)
+        body = json.dumps(OrderedDict(body))
         header = self.headers
         full_uri = self.base_url + url
         request.return_value = self.response
@@ -337,7 +338,7 @@ class RESTClientTestCase(unittest.TestCase):
         url = '/guests/%s/action' % self.fake_userid
         body = {'action': 'capture',
                 'image': 'image_captured'}
-        body = json.dumps(body)
+        body = json.dumps(OrderedDict(body))
         header = self.headers
         full_uri = self.base_url + url
         request.return_value = self.response
@@ -400,14 +401,14 @@ class RESTClientTestCase(unittest.TestCase):
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
     def test_guest_create_nic(self, get_token, request):
-        # method = 'POST'
-        # url = '/guests/%s/nic' % self.fake_userid
+        method = 'POST'
+        url = '/guests/%s/nic' % self.fake_userid
         body = {'nic': {'vdev': '123', 'nic_id': '1234',
                         'mac_addr': 'xx:xx:xx:xx:xx:xx',
                         'active': False}}
-        body = json.dumps(body)
-        # header = self.headers
-        # full_uri = self.base_url + url
+        body = json.dumps(OrderedDict(body))
+        header = self.headers
+        full_uri = self.base_url + url
         request.return_value = self.response
         get_token.return_value = self._tmp_token()
 
@@ -416,9 +417,9 @@ class RESTClientTestCase(unittest.TestCase):
                          mac_addr='xx:xx:xx:xx:xx:xx',
                          active=False)
         request.assert_called_once()
-        # request.assert_called_with(method, full_uri,
-        #                            data=body, headers=header,
-        #                            verify=False)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
@@ -446,7 +447,7 @@ class RESTClientTestCase(unittest.TestCase):
         body = {'info': {'couple': True,
                          'vswitch': 'vswitch1',
                          'active': False}}
-        body = json.dumps(body)
+        body = json.dumps(OrderedDict(body))
         header = self.headers
         full_uri = self.base_url + url
         request.return_value = self.response
@@ -465,7 +466,7 @@ class RESTClientTestCase(unittest.TestCase):
         url = '/guests/%s/nic/%s' % (self.fake_userid, '123')
         body = {'info': {'couple': False,
                          'active': False}}
-        body = json.dumps(body)
+        body = json.dumps(OrderedDict(body))
         header = self.headers
         full_uri = self.base_url + url
         request.return_value = self.response
@@ -486,7 +487,7 @@ class RESTClientTestCase(unittest.TestCase):
         body = {'interface': {'os_version': 'rhel7.2',
                               'guest_networks': networks,
                               'active': False}}
-        body = json.dumps(body)
+        body = json.dumps(OrderedDict(body))
         header = self.headers
         full_uri = self.base_url + url
         request.return_value = self.response
@@ -506,7 +507,7 @@ class RESTClientTestCase(unittest.TestCase):
         body = {'interface': {'os_version': 'rhel7.2',
                               'vdev': '123',
                               'active': False}}
-        body = json.dumps(body)
+        body = json.dumps(OrderedDict(body))
         header = self.headers
         full_uri = self.base_url + url
         request.return_value = self.response
@@ -620,7 +621,7 @@ class RESTClientTestCase(unittest.TestCase):
         body = {'image': {'image_name': '100.img',
                           'url': image_uri,
                           'image_meta': image_meta}}
-        body = json.dumps(body)
+        body = json.dumps(OrderedDict(body))
         header = self.headers
         full_uri = self.base_url + url
         request.return_value = self.response
@@ -789,7 +790,7 @@ class RESTClientTestCase(unittest.TestCase):
         url = '/vswitches/%s' % 'dummy'
         body = {'vswitch': {'user_vlan_id': {'userid': self.fake_userid,
                                              'vlanid': 'vlan_id'}}}
-        body = json.dumps(body)
+        body = json.dumps(OrderedDict(body))
         header = self.headers
         full_uri = self.base_url + url
         request.return_value = self.response
