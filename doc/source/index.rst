@@ -10,6 +10,7 @@ Welcome to the z/VM Cloud Connector Document
    architecture
    quickstart
    setuphttpd
+   makeimage
    sample
    restapi
    errorcodemsg
