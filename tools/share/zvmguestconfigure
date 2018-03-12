@@ -34,7 +34,7 @@
 # If nothing is specified then this function will not process any
 # configuration files in the reader.
 ###############################################################################
-version=3.0
+version=1.0
 authorizedSenders=''
 
 function onlineDevice {
