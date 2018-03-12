@@ -95,71 +95,73 @@ Preparation on BYOL
    If something like 'is already  online' is returned, it means punch already
    online and feel free to ignore the warning.
 
-5. SSH key authentication between consumer and BYOL server
+.. _`ssh_key`:
 
-   For image import/export function, BYOL's running user(eg zvmsdk) needs to
-   authorized by the user of the consumer (eg nova-compute) if they are not in
-   same host. For example, if you want to import/export image from/to nova
-   compute server，please make ensure you can ssh nova@nova-compute-ip without
-   password from zvmsdk user on BYOL server. Refer to the following steps to
-   configure it:
+SSH key authentication between consumer and BYOL server
+-------------------------------------------------------
 
-   Logon to the nova-compute server and change the nova user’s right to be
-   able to log in, and make sure port 22 is open.
+For image import/export function, BYOL's running user(eg zvmsdk) needs to
+authorized by the user of the consumer (eg nova-compute) if they are not in
+same host. For example, if you want to import/export image from/to nova
+compute server，please make ensure you can ssh nova@nova-compute-ip without
+password from zvmsdk user on BYOL server. Refer to the following steps to
+configure it:
 
-   .. code-block:: text
+Logon to the nova-compute server and change the nova user’s right to be
+able to log in, and make sure port 22 is open.
 
-       ssh root@nova-compute-ip
-       usermod -s /bin/bash nova
+.. code-block:: text
 
-   where:
-   nova-compute-ip: is the IP address of the nova compute node.
+    ssh root@nova-compute-ip
+    usermod -s /bin/bash nova
 
-   Change to nova user and inject the zvmsdk server's public key into it.
+where:
+nova-compute-ip: is the IP address of the nova compute node.
 
-   .. code-block:: text
+Change to nova user and inject the zvmsdk server's public key into it.
 
-       su - nova
-       scp zvmsdk@zvmsdk-ip:/var/lib/zvmsdk/.ssh/id_rsa.pub $HOME mkdir -p $HOME/.ssh
-       mv $HOME/id_rsa.pub $HOME/.ssh/authorized_keys
+.. code-block:: text
 
-   where:
-   zvmsdk: is running user the of BYOL server.
-   zvmsdk-ip: is the IP address of the BYOL server
-   Note: If the $HOME/.ssh/authorized_keys file already exists,
-   you just need to append the BYOL’s public key to it.
+    su - nova
+    scp zvmsdk@zvmsdk-ip:/var/lib/zvmsdk/.ssh/id_rsa.pub $HOME mkdir -p $HOME/.ssh
+    mv $HOME/id_rsa.pub $HOME/.ssh/authorized_keys
 
-   Ensure that the file mode under the $HOME/.ssh folder is 644.
+where:
+zvmsdk: is running user the of BYOL server.
+zvmsdk-ip: is the IP address of the BYOL server
+Note: If the $HOME/.ssh/authorized_keys file already exists,
+you just need to append the BYOL’s public key to it.
 
-   .. code-block:: text
+Ensure that the file mode under the $HOME/.ssh folder is 644.
 
-       chmod -R 644 $HOME/.ssh/*
+.. code-block:: text
 
-   Issue the following command to determine if SELinux is enabled on the system.
+    chmod -R 644 $HOME/.ssh/*
 
-   .. code-block:: text
+Issue the following command to determine if SELinux is enabled on the system.
 
-       getenforce
+.. code-block:: text
 
-   If SELinux is enabled then set SELinux contexts on the nova home directory.
+    getenforce
 
-   .. code-block:: text
+If SELinux is enabled then set SELinux contexts on the nova home directory.
 
-       su -
-       chcon -R -t ssh_home_t nova_home
+.. code-block:: text
 
-   where:
-   nova_home：is the home directory for the nova user on the nova compute server.
-   You can obtain nova_home by issuing: echo ~nova
- 
-.. note::
-   If the host key of nova-compute server changed, please run
-   the following command on zvmsdk server to clean the cached host key of
-   nova-compute server from zvmsdk server's known_hosts file
+    su -
+    chcon -R -t ssh_home_t nova_home
 
-   .. code-block:: text
+where:
+nova_home：is the home directory for the nova user on the nova compute server.
+You can obtain nova_home by issuing: echo ~nova
 
-       ssh-keygen -R nova-compute-ip
+**NOTE:** If the host key of nova-compute server changed, please run
+the following command on zvmsdk server to clean the cached host key of
+nova-compute server from zvmsdk server's known_hosts file
+
+.. code-block:: text
+
+    ssh-keygen -R nova-compute-ip
 
 Installation Requirements
 -------------------------
