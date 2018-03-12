@@ -153,6 +153,7 @@ Start z/VM Cloud Connector in uwsgi
       * Connection #0 to host 127.0.0.1 left intact
       curl: (52) Empty reply from server
 
+.. _`Configure Apache`:
 
 Configure Apache
 ----------------
