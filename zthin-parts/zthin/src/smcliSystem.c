@@ -1130,6 +1130,135 @@ int systemFCPFreeQuery(int argC, char* argV[], struct _vmApiInternalContext* vma
     return rc;
 }
 
+int systemImagePerformanceQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP) {
+    const char * MY_API_NAME = "System_Image_Performance_Query";
+    int rc;
+    int option;
+    int count = 0;
+    int arrayOfVirtualServerIdsSize;
+    int i = 0;
+    int returnCode = 0;
+    int reasonCode = 0;
+    int ret0reas0 = 0;
+    int ret4reas4 = 0;
+    int ret4reas10 = 0;
+    int ret900reas12 = 0;
+    char * image = NULL;
+    char *token = NULL;
+    char * buffer;  // Character pointer whose value is preserved between successive related calls to strtok_r
+    char * blank = " ";
+    char tempUserId[9];
+    char userid[9] = "";
+    vmApiImageStatusQueryOutput* output;
+
+    opterr = 0; // 0 =>Tell getopt to not display a mesage
+    const char * argumentsRequired = "Tc";
+    char tempStr[1];
+    char strMsg[250];
+
+    vmApiSystemImagePerformanceQueryOutput* output2;
+
+    // Options that have arguments are followed by a : character
+    while ((option = getopt(argC, argV, "T:h?")) != -1)
+        switch (option) {
+            case 'T':
+                image = optarg;
+                break;
+            case 'h':
+                DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
+                printf("NAME\n"
+                    "  System_Image_Performance_Query\n\n"
+                    "SYNOPSIS\n"
+                    "  smcli System_Image_Performance_Query [-T] virtualServerName \n\n"
+                    "DESCRIPTION\n"
+                    "  Use System_Image_Performance_Query to get performance data for active virtual\n"
+                    "  servers.\n\n"
+                    "  The following options are required:\n"
+                    "    -T    The name of the virtual server, or the name of a list containing names\n"
+                    "          of virtual servers to be queried.\n");
+                printRCheaderHelp();
+                return 0;
+
+            case '?':
+                DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                if (isprint (optopt)) {
+                    sprintf(tempStr,"%c", optopt);
+                    if (strstr(argumentsRequired, tempStr)) {
+                        printf("This option requires an argument: -%c\n", optopt);
+                    } else {
+                        printf("Unknown option -%c\n", optopt);
+                    }
+                } else {
+                    printf("Unknown option character \\x%x\n", optopt);
+                }
+                return 1;
+
+            default:
+                DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                return 1;
+        }
+
+    if (!image) {
+        DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+        printf("ERROR: Missing required options\n");
+        return 1;
+    }
+
+    rc = smSystem_Image_Performance_Query(vmapiContextP, "", 0, "",  // Authorizing user, password length, password.
+            image, &output2);
+
+
+    if (rc) {
+        printAndLogProcessingErrors("System_Image_Performance_Query", rc, vmapiContextP, strMsg, 0);
+    }
+    returnCode = output2->common.returnCode;
+    reasonCode = output2->common.reasonCode;
+    ret0reas0 = (returnCode == 0) && (reasonCode == 0);
+    ret4reas4 = (returnCode == 4) && (reasonCode == 4);
+    ret4reas10 = (returnCode == 4) && (reasonCode == 10);
+    ret900reas12 = (returnCode == 900) && (reasonCode == 12);
+
+    if (ret900reas12) {
+        printAndLogProcessingErrors("System_Image_Performance_Query", PROCESSING_ERROR, vmapiContextP, strMsg, 0);
+        printf("System_Image_Performance_Query() is not supported for this level of zVM\n");
+    } else if (!(ret0reas0 || ret4reas4 || ret4reas10)) {
+        // Handle SMAPI return code and reason code
+        rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_Image_Performance_Query", output2->common.returnCode,
+                output2->common.reasonCode, vmapiContextP, strMsg);
+
+    } else {
+        DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
+        for (i =0; i < output2->performanceRecordCount; i++) {
+            // Convert the userid to asscii from it's EBCDIC
+            convertEBCDICtoASCII(vmapiContextP, output2->performanceRecords[i].guestName, userid);
+            printf("Virtual server ID: %s\n", userid);
+            printf("Record version: \"%u\"\n", output2->performanceRecords[i].recordVersion);
+            printf("Guest flags: \"%u\"\n", output2->performanceRecords[i].guestFlags);
+            printf("Used CPU time: \"%llu uS\"\n", output2->performanceRecords[i].usedCPUTime);
+            printf("Elapsed time: \"%llu uS\"\n", output2->performanceRecords[i].elapsedTime);
+            printf("Minimum memory: \"%llu KB\"\n", output2->performanceRecords[i].minMemory);
+            printf("Max memory: \"%llu KB\"\n", output2->performanceRecords[i].maxMemory);
+            printf("Shared memory: \"%llu KB\"\n", output2->performanceRecords[i].sharedMemory);
+            printf("Used memory: \"%llu KB\"\n", output2->performanceRecords[i].usedMemory);
+            printf("Active CPUs in CEC: \"%u\"\n", output2->performanceRecords[i].activeCPUsInCEC);
+            printf("Logical CPUs in VM: \"%u\"\n", output2->performanceRecords[i].logicalCPUsInVM);
+            printf("Guest CPUs: \"%u\"\n", output2->performanceRecords[i].guestCPUs);
+            printf("Minimum CPU count: \"%u\"\n", output2->performanceRecords[i].minCPUCount);
+            printf("Max CPU limit: \"%u\"\n", output2->performanceRecords[i].maxCPULimit);
+            printf("Processor share: \"%u\"\n", output2->performanceRecords[i].processorShare);
+            printf("Samples CPU in use: \"%u\"\n", output2->performanceRecords[i].samplesCPUInUse);
+            printf("Samples CPU delay: \"%u\"\n", output2->performanceRecords[i].samplesCPUDelay);
+            printf("Samples page wait: \"%u\"\n", output2->performanceRecords[i].samplesPageWait);
+            printf("Samples idle: \"%u\"\n", output2->performanceRecords[i].samplesIdle);
+            printf("Samples other: \"%u\"\n", output2->performanceRecords[i].samplesOther);
+            printf("Samples total: \"%u\"\n", output2->performanceRecords[i].samplesTotal);
+            printf("Guest name: \"%s\"\n", userid);
+            printf("\n");
+        }
+    }
+    return rc;
+}
+
 int systemInformationQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP) {
     const char * MY_API_NAME = "System_Information_Query";
     // Parse the command-line arguments
