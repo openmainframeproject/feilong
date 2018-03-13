@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0c2acc60_266fa7a4",
+        "filename": "zthin-parts/zthin/src/smcliSystem.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1303,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2018-03-13T14:54:50Z",
+      "side": 1,
+      "message": "In the path where the userids are passed in, you put them into \nthe arrayOfuserids[], however the call to System_Image_Performance_Query is passed virtualServerIds...",
+      "revId": "daa568dbc4c50c56160c1fef2d105cf23fc64b1e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
