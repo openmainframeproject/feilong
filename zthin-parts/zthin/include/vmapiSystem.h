@@ -179,6 +179,73 @@ static  tableLayout System_FCP_Free_Query_Layout = {
 int smSystem_FCP_Free_Query(struct _vmApiInternalContext* vmapiContextP, char * userid, int passwordLength, char * password,
         char * targetIdentifier, int keyValueCount, char ** keyValueArray, vmApiSystemFCPFreeQueryOutput ** outData);
 
+/* System_Image_Performance_Query */
+typedef struct _vmApiSystemImagePerformanceRecord {
+    unsigned int        recordVersion;
+    unsigned int        guestFlags;
+    unsigned long long  usedCPUTime;
+    unsigned long long  elapsedTime;
+    unsigned long long  minMemory;
+    unsigned long long  maxMemory;
+    unsigned long long  sharedMemory;
+    unsigned long long  usedMemory;
+    unsigned int        activeCPUsInCEC;
+    unsigned int        logicalCPUsInVM;
+    unsigned int        guestCPUs;
+    unsigned int        minCPUCount;
+    unsigned int        maxCPULimit;
+    unsigned int        processorShare;
+    unsigned int        samplesCPUInUse;
+    unsigned int        samplesCPUDelay;
+    unsigned int        samplesPageWait;
+    unsigned int        samplesIdle;
+    unsigned int        samplesOther;
+    unsigned int        samplesTotal;
+    char*               guestName;
+} vmApiSystemImagePerformanceRecord;
+
+typedef struct _vmApiSystemImagePerformanceQuery {
+    commonOutputFields common;
+    int performanceRecordCount;
+    vmApiSystemImagePerformanceRecord* performanceRecords;
+} vmApiSystemImagePerformanceQueryOutput;
+
+/* Parser table for Image_Performance_Query */
+static tableLayout System_Image_Performance_Query_Layout = {
+    { APITYPE_BASE_STRUCT_LEN,    4, 4, STRUCT_INDX_0, NEST_LEVEL_0, sizeof(vmApiSystemImagePerformanceQueryOutput) },
+    { APITYPE_INT4,               4, 4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemImagePerformanceQueryOutput, common.requestId) },
+    { APITYPE_RC_INT4,            4, 4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemImagePerformanceQueryOutput, common.returnCode) },
+    { APITYPE_RS_INT4,            4, 4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemImagePerformanceQueryOutput, common.reasonCode) },
+    { APITYPE_ARRAY_COUNT,        4, 4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemImagePerformanceQueryOutput, performanceRecords) },
+    { APITYPE_ARRAY_STRUCT_COUNT, 4, 4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemImagePerformanceQueryOutput, performanceRecordCount) },
+    { APITYPE_STRUCT_LEN,         4, 4, STRUCT_INDX_1, NEST_LEVEL_1, sizeof(vmApiSystemImagePerformanceRecord) },
+    { APITYPE_INT4,               4, 4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, recordVersion) },
+    { APITYPE_INT4,               4, 4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, guestFlags) },
+    { APITYPE_INT8,               8, 8, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, usedCPUTime) },
+    { APITYPE_INT8,               8, 8, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, elapsedTime) },
+    { APITYPE_INT8,               8, 8, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, minMemory) },
+    { APITYPE_INT8,               8, 8, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, maxMemory) },
+    { APITYPE_INT8,               8, 8, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, sharedMemory) },
+    { APITYPE_INT8,               8, 8, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, usedMemory) },
+    { APITYPE_INT4,               4, 4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, activeCPUsInCEC) },
+    { APITYPE_INT4,               4, 4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, logicalCPUsInVM) },
+    { APITYPE_INT4,               4, 4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, guestCPUs) },
+    { APITYPE_INT4,               4, 4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, minCPUCount) },
+    { APITYPE_INT4,               4, 4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, maxCPULimit) },
+    { APITYPE_INT4,               4, 4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, processorShare) },
+    { APITYPE_INT4,               4, 4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, samplesCPUInUse) },
+    { APITYPE_INT4,               4, 4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, samplesCPUDelay) },
+    { APITYPE_INT4,               4, 4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, samplesPageWait) },
+    { APITYPE_INT4,               4, 4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, samplesIdle) },
+    { APITYPE_INT4,               4, 4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, samplesOther) },
+    { APITYPE_INT4,               4, 4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, samplesTotal) },
+    { APITYPE_FIXED_STR_PTR,      8, 8, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiSystemImagePerformanceRecord, guestName) },
+    { APITYPE_END_OF_TABLE, 0, 0, 0, 0 }
+};
+
+int smSystem_Image_Performance_Query(struct _vmApiInternalContext* vmapiContextP, char* userid, int passwordLength, char* password,
+        char* targetIdentifier, vmApiSystemImagePerformanceQueryOutput** outData);
+
 /* System_Information_Query */
 typedef struct _vmApiSystemInformationQueryOutput {
     commonOutputFields common;
