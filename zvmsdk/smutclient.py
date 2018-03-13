@@ -2025,6 +2025,81 @@ class SMUTClient(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._GuestDbOperator.update_guest_by_userid(userid, net_set='1')
 
+    def _is_OSA_free(self, OSA_device):
+        osa_info = self._query_OSA()
+        if 'OSA' not in osa_info.keys():
+            return False
+        elif len(osa_info['OSA']['FREE']) == 0:
+            return False
+        else:
+            dev1 = str(OSA_device).zfill(4)
+            dev2 = str(str(hex(int(OSA_device, 16) + 1))[2:]).zfill(4)
+            dev3 = str(str(hex(int(OSA_device, 16) + 2))[2:]).zfill(4)
+            if ((dev1 in osa_info['OSA']['FREE']) and
+                (dev2 in osa_info['OSA']['FREE']) and
+                (dev3 in osa_info['OSA']['FREE'])):
+                return True
+            else:
+                return False
+
+    def _query_OSA(self):
+        smut_userid = zvmutils.get_smut_userid()
+        rd = "SMAPI %s API Virtual_Network_OSA_Query" % smut_userid
+        OSA_info = {}
+
+        try:
+            results = self._request(rd)
+            rd_list = results['response']
+        except exception.SDKSMUTRequestFailed as err:
+            if ((err.results['rc'] == 4) and (err.results['rs'] == 4)):
+                msg = 'No OSAs on system'
+                LOG.info(msg)
+                return OSA_info
+            else:
+                action = "query OSA details info"
+                msg = "Failed to %s. " % action
+                msg += "SMUT error: %s" % err.format_message()
+                LOG.error(msg)
+                raise exception.SDKSMUTRequestFailed(err.results, msg)
+
+        with zvmutils.expect_invalid_resp_data():
+            idx_end = len(rd_list)
+            idx = 0
+
+            def _parse_value(data_list, idx, keyword, offset=1):
+                value = data_list[idx].rpartition(keyword)[2].strip()
+                return idx + offset, value
+
+            # Start to analyse the osa devices info
+            while((idx < idx_end) and
+                  rd_list[idx].__contains__('OSA Address')):
+                idx, osa_addr = _parse_value(rd_list, idx,
+                                              'OSA Address: ')
+                idx, osa_status = _parse_value(rd_list, idx,
+                                              'OSA Status: ')
+                idx, osa_type = _parse_value(rd_list, idx,
+                                              'OSA Type: ')
+                if osa_type != 'UNKNOWN':
+                    idx, CHPID_addr = _parse_value(rd_list, idx,
+                                                   'CHPID Address: ')
+                    idx, Agent_status = _parse_value(rd_list, idx,
+                                                     'Agent Status: ')
+                if osa_type not in OSA_info.keys():
+                    OSA_info[osa_type] = {}
+                    OSA_info[osa_type]['FREE'] = []
+                    OSA_info[osa_type]['BOXED'] = []
+                    OSA_info[osa_type]['OFFLINE'] = []
+                    OSA_info[osa_type]['ATTACHED'] = []
+
+                if osa_status.__contains__('ATT'):
+                    id = osa_status.split()[1]
+                    item = (id, osa_addr)
+                    OSA_info[osa_type]['ATTACHED'].append(item)
+                else:
+                    OSA_info[osa_type][osa_status].append(osa_addr)
+
+        return OSA_info
+
 
 class FilesystemBackend(object):
     @classmethod
