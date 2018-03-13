@@ -25,6 +25,7 @@ int systemDiskIOQuery(int argC, char* argV[], struct _vmApiInternalContext* vmap
 int systemDiskQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemEQIDQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemFCPFreeQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
+int systemImagePerformanceQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemInformationQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemPageUtilizationQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemPerformanceInformationQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
