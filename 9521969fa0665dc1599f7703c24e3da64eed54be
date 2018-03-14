@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "245fa963_c9ee9ee4",
+        "filename": "doc/source/makeimage.rst",
+        "patchSetId": 12
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-03-14T02:47:30Z",
+      "side": 1,
+      "message": "via z/VM Cloud Connector",
+      "range": {
+        "startLine": 33,
+        "startChar": 16,
+        "endLine": 33,
+        "endChar": 25
+      },
+      "revId": "9521969fa0665dc1599f7703c24e3da64eed54be",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "160241dc_725717e0",
+        "filename": "doc/source/makeimage.rst",
+        "patchSetId": 12
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-03-14T02:47:30Z",
+      "side": 1,
+      "message": "use \".. note::\"?",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 42
+      },
+      "revId": "9521969fa0665dc1599f7703c24e3da64eed54be",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e3e22bea_e84f35c7",
+        "filename": "doc/source/makeimage.rst",
+        "patchSetId": 12
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-03-14T02:47:30Z",
+      "side": 1,
+      "message": "indent the a, b, c, d ...",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 36
+      },
+      "revId": "9521969fa0665dc1599f7703c24e3da64eed54be",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d0645339_0e632182",
+        "filename": "doc/source/makeimage.rst",
+        "patchSetId": 12
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-03-14T02:47:30Z",
+      "side": 1,
+      "message": "manages",
+      "range": {
+        "startLine": 94,
+        "startChar": 20,
+        "endLine": 94,
+        "endChar": 26
+      },
+      "revId": "9521969fa0665dc1599f7703c24e3da64eed54be",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4994c50f_93db58a9",
+        "filename": "doc/source/makeimage.rst",
+        "patchSetId": 12
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-03-14T02:47:30Z",
+      "side": 1,
+      "message": "explain what\u0027s BYOL at the first time it appears",
+      "range": {
+        "startLine": 98,
+        "startChar": 14,
+        "endLine": 98,
+        "endChar": 18
+      },
+      "revId": "9521969fa0665dc1599f7703c24e3da64eed54be",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9d3ebc31_39f4a1e5",
+        "filename": "doc/source/makeimage.rst",
+        "patchSetId": 12
+      },
+      "lineNbr": 909,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-03-14T02:47:30Z",
+      "side": 1,
+      "message": "remove this section",
+      "range": {
+        "startLine": 909,
+        "startChar": 0,
+        "endLine": 909,
+        "endChar": 40
+      },
+      "revId": "9521969fa0665dc1599f7703c24e3da64eed54be",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
