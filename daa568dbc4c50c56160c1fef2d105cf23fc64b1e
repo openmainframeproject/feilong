@@ -16,6 +16,24 @@
       "revId": "daa568dbc4c50c56160c1fef2d105cf23fc64b1e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "40ba8641_82b5b0c0",
+        "filename": "zthin-parts/zthin/src/smcliSystem.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1303,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-03-14T06:51:39Z",
+      "side": 1,
+      "message": "Thanks for review. Yes, this input parameter really puzzled me ...\n\nI\u0027ll make an update to correct this",
+      "parentUuid": "0c2acc60_266fa7a4",
+      "revId": "daa568dbc4c50c56160c1fef2d105cf23fc64b1e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
