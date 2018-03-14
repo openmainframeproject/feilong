@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "4023fce8_efa39a28",
+        "filename": "doc/source/makeimage.rst",
+        "patchSetId": 12
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-03-14T03:35:27Z",
+      "side": 1,
+      "message": "minor",
+      "range": {
+        "startLine": 24,
+        "startChar": 24,
+        "endLine": 24,
+        "endChar": 30
+      },
+      "revId": "9521969fa0665dc1599f7703c24e3da64eed54be",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "245fa963_c9ee9ee4",
         "filename": "doc/source/makeimage.rst",
         "patchSetId": 12
@@ -38,6 +61,29 @@
       "message": "use \".. note::\"?",
       "range": {
         "startLine": 31,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 42
+      },
+      "revId": "9521969fa0665dc1599f7703c24e3da64eed54be",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d5f09713_b5eafc9d",
+        "filename": "doc/source/makeimage.rst",
+        "patchSetId": 12
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-03-14T03:35:27Z",
+      "side": 1,
+      "message": "we didn\u0027t test this kind of action before\n\nnot sure whether it has any side effect ,e.g previously created instance can still be managed and can be LGR/resize etc?",
+      "range": {
+        "startLine": 34,
         "startChar": 0,
         "endLine": 35,
         "endChar": 42
@@ -94,6 +140,29 @@
     },
     {
       "key": {
+        "uuid": "e005d9a2_6a008160",
+        "filename": "doc/source/makeimage.rst",
+        "patchSetId": 12
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-03-14T03:35:27Z",
+      "side": 1,
+      "message": "VM",
+      "range": {
+        "startLine": 94,
+        "startChar": 40,
+        "endLine": 94,
+        "endChar": 42
+      },
+      "revId": "9521969fa0665dc1599f7703c24e3da64eed54be",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4994c50f_93db58a9",
         "filename": "doc/source/makeimage.rst",
         "patchSetId": 12
@@ -110,6 +179,29 @@
         "startChar": 14,
         "endLine": 98,
         "endChar": 18
+      },
+      "revId": "9521969fa0665dc1599f7703c24e3da64eed54be",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "35c0f368_1befa255",
+        "filename": "doc/source/makeimage.rst",
+        "patchSetId": 12
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-03-14T03:35:27Z",
+      "side": 1,
+      "message": "we only tested cloud-init\nI suggest remove this and only mention cloud-init here",
+      "range": {
+        "startLine": 151,
+        "startChar": 0,
+        "endLine": 151,
+        "endChar": 14
       },
       "revId": "9521969fa0665dc1599f7703c24e3da64eed54be",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
