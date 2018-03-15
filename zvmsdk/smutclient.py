@@ -156,6 +156,48 @@ class SMUTClient(object):
         for vdev in vdev_list:
             self._remove_mdisk(userid, vdev)
 
+    def get_fcp_info_by_status(self, userid, status):
+
+        """get fcp information by the status.
+
+        :userid: The name of the image to query fcp info
+        :status: The status of target fcps. eg:'active', 'free' or 'offline'.
+        """
+        results = self._get_fcp_info_by_status(userid, status)
+        return results
+
+    def _get_fcp_info_by_status(self, userid, status):
+        action = 'fcpinfo'
+        rd = ' '.join(['getvm', userid, action, status])
+        action = "query fcp info of '%s'" % userid
+        with zvmutils.log_and_reraise_smut_request_failed(action):
+            results = self._request(rd)
+
+        return results['response']
+
+    def dedicate_device(self, userid, vaddr, raddr, mode):
+        """dedicate device
+
+        :userid: The name of the image obtaining a dedicated device
+        :vaddr: The virtual device number of the device
+        :raddr: A real device number to be dedicated or attached
+                to the specified image
+        :mode: Specify a 1 if the virtual device is to be in read-only mode.
+               Otherwise, specify a 0.
+        """
+        # dedicate device to directory entry
+        self._dedicate_device(userid, vaddr, raddr, mode)
+
+    def _dedicate_device(self, userid, vaddr, raddr, mode):
+        """dedicate device."""
+        action = 'dedicate'
+        rd = ('changevm %(uid)s %(act)s %(va)s %(ra)s %(mod)i' %
+              {'uid': userid, 'act': action,
+               'va': vaddr, 'ra': raddr, 'mod': mode})
+        action = "dedicate device to userid '%s'" % userid
+        with zvmutils.log_and_reraise_smut_request_failed(action):
+            self._request(rd)
+
     def get_image_performance_info(self, userid):
         """Get CPU and memory usage information.
 
