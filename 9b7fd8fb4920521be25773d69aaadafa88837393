@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8f333dd3_bf2c6532",
+        "filename": "zthin-parts/zthin/src/smcliSystem.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 1178,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2018-03-16T14:50:14Z",
+      "side": 1,
+      "message": "I would add to the help that the list which contains the userid list by default is named:\nVSMWORK1 NAMELIST\nsee DMSSICNF COPY key: NameListFileIdAny\nThe list has to be accessible to the SMAPI server machine.",
+      "revId": "9b7fd8fb4920521be25773d69aaadafa88837393",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
