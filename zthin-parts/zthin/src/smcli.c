@@ -356,6 +356,9 @@ int displayHelpInfo(int smapiLevel) {
         printf("  Virtual_Network_Vswitch_Delete_Extended\n");
     }
     printf("  Virtual_Network_Vswitch_Query\n");
+    if (smapiLevel >= 640) {
+        printf("  Virtual_Network_Vswitch_Query_Byte_Stats\n");
+    }
     if (smapiLevel >= 620) {
         printf("  Virtual_Network_Vswitch_Query_Extended\n");
     }
@@ -966,6 +969,8 @@ static const char * APIS_640[APIS_640_COUNT] = {
         rc = virtualNetworkVswitchDeleteExtended(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "Virtual_Network_Vswitch_Query")) {
         rc = virtualNetworkVswitchQuery(argC, argV, &vmapiContext);
+    } else if (!strcmp(argV[1], "Virtual_Network_Vswitch_Query_Byte_Stats")) {
+        rc = virtualNetworkVswitchQueryByteStats(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "Virtual_Network_Vswitch_Query_Extended")) {
         rc = virtualNetworkVswitchQueryExtended(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "Virtual_Network_Vswitch_Query_IUO_Stats")) {

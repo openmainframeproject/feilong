@@ -3836,6 +3836,166 @@ int virtualNetworkVswitchQuery(int argC, char* argV[], struct _vmApiInternalCont
     return rc;
 }
 
+int virtualNetworkVswitchQueryByteStats(int argC, char* argV[],
+        struct _vmApiInternalContext* vmapiContextP) {
+    const char * MY_API_NAME = "Virtual_Network_Vswitch_Query_Byte_Stats";
+    int rc;
+    int i;
+    int j;
+    int k;
+
+    int entryCount = 0;
+    int maxKeyValueArrayCount = 1;
+    int option;
+    char * targetIdentifier = NULL;
+    char * entryArray[maxKeyValueArrayCount];
+    vmApiVirtualNetworkVswitchQueryByteStatsOutput * output;
+
+    opterr = 0; // 0 =>Tell getopt to not display a mesage
+    const char * argumentsRequired = "Tk";
+    char tempStr[1];
+
+    int vswitchCount;
+    int uplinkCount;
+    int nicCount;
+    int vlanCount;
+
+    // Options that have arguments are followed by a : character
+    while ((option = getopt(argC, argV, "T:k:h?")) != -1)
+        switch (option) {
+            case 'T':
+                targetIdentifier = optarg;
+                break;
+
+            case 'k':
+                if (!optarg) {
+                    DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                    return INVALID_DATA;
+                }
+
+                if (entryCount < maxKeyValueArrayCount) {
+                    entryArray[entryCount] = optarg;
+                    entryCount++;
+                } else {
+                    DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                    printf("ERROR: Too many -k values entered.\n");
+                    return INVALID_DATA;
+                }
+                break;
+
+            case 'h':
+                DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
+                printf("NAME\n"
+                    "  Virtual_Network_Vswitch_Query_Byte_Stats\n\n"
+                    "SYNOPSIS\n"
+                    "  smcli Virtual_Network_Vswitch_Query_Byte_Stats [-T] targetIdentifier [-k] entry\n\n"
+                    "DESCRIPTION\n"
+                    "  Use Virtual_Network_Vswitch_Query_Byte_Stats to query a virtual switch's\n"
+                    "  byte information statistics.\n\n"
+                    "  The following options are required:\n"
+                    "    -T    Used strictly for authorization, i.e. the authenticated user must have\n"
+                    "          authorization to perform this function for this target.\n"
+                    "    -k    A keyword=value item to be created in the directory.\n\n"
+                    "            switch_name: The name of the virtual switch segment\n\n");
+                printRCheaderHelp();
+                return 0;
+
+            case '?':
+                DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                if (isprint (optopt)) {
+                    sprintf(tempStr,"%c", optopt);
+                    if (strstr(argumentsRequired, tempStr)) {
+                        printf("This option requires an argument: -%c\n", optopt);
+                    } else {
+                        printf("Unknown option -%c\n", optopt);
+                    }
+                } else {
+                    printf("Unknown option character \\x%x\n", optopt);
+                }
+                return 1;
+
+            default:
+                DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                return 1;
+        }
+
+    if (!targetIdentifier ||  entryCount < 1)  {
+        DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+        printf("\nERROR: Missing required options\n");
+        return 1;
+    }
+    rc = smVirtual_Network_Vswitch_Query_Byte_Stats(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
+
+    if (rc) {
+        printAndLogProcessingErrors("Virtual_Network_Vswitch_Query_Byte_Stats", rc, vmapiContextP, "", 0);
+    } else if (output->common.returnCode || output->common.reasonCode) {
+        // Handle SMAPI return code and reason code
+        rc = printAndLogSmapiReturnCodeReasonCodeDescription("Virtual_Network_Vswitch_Query_Byte_Stats",
+                output->common.returnCode, output->common.reasonCode, vmapiContextP, "");
+    } else {
+        DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
+        i = 0;
+        // deal with vswitch array
+        vswitchCount = atoi(output->stringList[i++].vmapiString);
+        printf("vswitch count: %d\n\n", vswitchCount);
+        for (j = 0; j < vswitchCount; j++) {
+            printf("vswitch number: %d\n", j + 1);
+            printf("vswitch name: %s\n", output->stringList[i++].vmapiString);
+
+            // deal with uplink array
+            uplinkCount = atoi(output->stringList[i++].vmapiString);
+            printf("uplink count: %d\n", uplinkCount);
+            for (k = 0; k < uplinkCount; k++) {
+                printf("uplink_conn: %s\n", output->stringList[i++].vmapiString);
+                printf("uplink_fr_rx:     %s\n", output->stringList[i++].vmapiString);
+                printf("uplink_fr_rx_dsc: %s\n", output->stringList[i++].vmapiString);
+                printf("uplink_fr_rx_err: %s\n", output->stringList[i++].vmapiString);
+                printf("uplink_fr_tx:     %s\n", output->stringList[i++].vmapiString);
+                printf("uplink_fr_tx_dsc: %s\n", output->stringList[i++].vmapiString);
+                printf("uplink_fr_tx_err: %s\n", output->stringList[i++].vmapiString);
+                printf("uplink_rx:        %s\n", output->stringList[i++].vmapiString);
+                printf("uplink_tx:        %s\n", output->stringList[i++].vmapiString);
+            }
+
+            printf("bridge_fr_rx:     %s\n", output->stringList[i++].vmapiString);
+            printf("bridge_fr_rx_dsc: %s\n", output->stringList[i++].vmapiString);
+            printf("bridge_fr_rx_err: %s\n", output->stringList[i++].vmapiString);
+            printf("bridge_fr_tx:     %s\n", output->stringList[i++].vmapiString);
+            printf("bridge_fr_tx_dsc: %s\n", output->stringList[i++].vmapiString);
+            printf("bridge_fr_tx_err: %s\n", output->stringList[i++].vmapiString);
+            printf("bridge_rx:        %s\n", output->stringList[i++].vmapiString);
+            printf("bridge_tx:        %s\n", output->stringList[i++].vmapiString);
+
+            // deal with nic array
+            nicCount = atoi(output->stringList[i++].vmapiString);
+            printf("nic count: %d\n", nicCount);
+            for (k = 0; k < nicCount; k++) {
+                printf("nic_id: %s\n", output->stringList[i++].vmapiString);
+                printf("nic_fr_rx:        %s\n", output->stringList[i++].vmapiString);
+                printf("nic_fr_rx_dsc:    %s\n", output->stringList[i++].vmapiString);
+                printf("nic_fr_rx_err:    %s\n", output->stringList[i++].vmapiString);
+                printf("nic_fr_tx:        %s\n", output->stringList[i++].vmapiString);
+                printf("nic_fr_tx_dsc:    %s\n", output->stringList[i++].vmapiString);
+                printf("nic_fr_tx_err:    %s\n", output->stringList[i++].vmapiString);
+                printf("nic_rx:           %s\n", output->stringList[i++].vmapiString);
+                printf("nic_tx:           %s\n", output->stringList[i++].vmapiString);
+            }
+
+            // deal with vlan array
+            vlanCount = atoi(output->stringList[i++].vmapiString);
+            printf("vlan count: %d\n", vlanCount);
+            for (k = 0; k < vlanCount; k++) {
+                printf("vlan_id: %s\n", output->stringList[i++].vmapiString);
+                printf("vlan_rx:          %s\n", output->stringList[i++].vmapiString);
+                printf("vlan_tx:          %s\n", output->stringList[i++].vmapiString);
+            }
+            printf("\n");
+        }
+
+    }
+    return rc;
+}
+
 int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP) {
     const char * MY_API_NAME = "Virtual_Network_Vswitch_Query_Extended";
     int rc;
