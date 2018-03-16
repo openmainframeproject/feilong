@@ -67,12 +67,13 @@ Deprecations
 Deprecated functionality is marked accordingly in this documentation and in the
 :ref:`Change log`
 
-Bug reporting
-=============
+Bug reporting and questions
+===========================
 If you encounter any problem with this package, please open a bug against
-`cloud connector issue tracker`_
+`cloud connector issue tracker`_ or ask question `cloud connector question`_
 
 .. _cloud connector issue tracker: https://bugs.launchpad.net/python-zvm-sdk/+bug
+.. _cloud connector question: https://answers.launchpad.net/python-zvm-sdk/
 
 License
 =======
