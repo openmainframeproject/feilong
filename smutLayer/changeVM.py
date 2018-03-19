@@ -39,6 +39,7 @@ Each subfunction contains a list that has:
 subfuncHandler = {
     'ADD3390': ['add3390', lambda rh: add3390(rh)],
     'ADD9336': ['add9336', lambda rh: add9336(rh)],
+    'UNDEDICATE': ['undedicate', lambda rh: undedicate(rh)],
     'AEMOD': ['addAEMOD', lambda rh: addAEMOD(rh)],
     'IPL': ['addIPL', lambda rh: addIPL(rh)],
     'LOADDEV': ['addLOADDEV', lambda rh: addLOADDEV(rh)],
@@ -68,6 +69,8 @@ posOpsList = {
         ['Disk pool name', 'diskPool', True, 2],
         ['Virtual address', 'vaddr', True, 2],
         ['Disk size', 'diskSize', True, 2]],
+    'UNDEDICATE': [
+        ['Virtual device address', 'vaddr', True, 2]],
     'AEMOD': [
         ['Activation Engine Modification Script',
          'aeScript', True, 2]],
@@ -323,6 +326,60 @@ def add9336(rh):
                 rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit changeVM.add9336, rc: " +
+                   str(rh.results['overallRC']))
+    return rh.results['overallRC']
+
+
+def undedicate(rh):
+    """
+    Dedicate device.
+
+    Input:
+       Request Handle with the following properties:
+          function    - 'CHANGEVM'
+          subfunction - 'UNDEDICATE'
+          userid      - userid of the virtual machine
+          parms['vaddr']      - Virtual address
+
+    Output:
+       Request Handle updated with the results.
+       Return code - 0: ok, non-zero: error
+    """
+    rh.printSysLog("Enter changeVM.undedicate")
+
+    parms = [
+        "-T", rh.userid,
+        "-v", rh.parms['vaddr']]
+
+    hideList = []
+    results = invokeSMCLI(rh,
+                          "Image_Device_Undedicate_DM",
+                          parms,
+                          hideInLog=hideList)
+
+    if results['overallRC'] != 0:
+        # SMAPI API failed.
+        rh.printLn("ES", results['response'])
+        rh.updateResults(results)    # Use results from invokeSMCLI
+
+    if results['overallRC'] == 0:
+        results = isLoggedOn(rh, rh.userid)
+        if (results['overallRC'] == 0 and results['rs'] == 0):
+            # Dedicate device to active configuration.
+            parms = [
+                "-T", rh.userid,
+                "-v", rh.parms['vaddr']]
+
+            results = invokeSMCLI(rh, "Image_Device_Undedicate", parms)
+            if results['overallRC'] == 0:
+                rh.printLn("N", "Dedicated device " + rh.parms['vaddr'] +
+                    " to the active configuration.")
+            else:
+                # SMAPI API failed.
+                rh.printLn("ES", results['response'])
+                rh.updateResults(results)    # Use results from invokeSMCLI
+
+    rh.printSysLog("Exit changeVM.undedicate, rc: " +
                    str(rh.results['overallRC']))
     return rh.results['overallRC']
 
