@@ -38,5 +38,6 @@ int systemServiceQuery(int argC, char* argV[], struct _vmApiInternalContext* vma
 int systemShutdown(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemSpoolUtilizationQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemWWPNQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
+int systemRDRFileManage(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 
 #endif /* SMCLISYSTEM_H_ */

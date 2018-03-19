@@ -3122,3 +3122,107 @@ int systemWWPNQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
     FREE_MEMORY_CLEAR_POINTER(entryArray);
     return rc;
 }
+
+
+/* ======Following added by nafei ========*/
+int systemRDRFileManage(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP) {
+    const char * MY_API_NAME = "System_RDR_File_Manage";
+    int rc;
+    int maxEntryCount = 2;
+    int minNeeded = 1;
+    int entryCount = 0;
+    int option;
+    char * targetIdentifier = NULL;
+    char * entryArray[maxEntryCount];
+    vmApiSystemRDRFileManageOutput * output;
+
+    opterr = 0; // 0 =>Tell getopt to not display a mesage
+    const char * argumentsRequired = "Tk";
+    char tempStr[1];
+    char strMsg[250];
+
+    // Options that have arguments are followed by a : character
+    while ((option = getopt(argC, argV, "T:k:h?")) != -1)
+        switch (option) {
+            case 'T':
+                targetIdentifier = optarg;
+                break;
+
+            case 'k':
+                if (!optarg) {
+                    return INVALID_DATA;
+                }
+                if (entryCount < maxEntryCount) {
+                    entryArray[entryCount] = optarg;
+                    entryCount++;
+                } else {
+                    printf(" Error Too many -k values entered.\n");
+                    return INVALID_DATA;
+                }
+
+                break;
+
+            case 'h':
+                DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
+                printf("NAME\n"
+                    "  System_SCSI_Disk_Add\n\n"
+                    "SYNOPSIS\n"
+                    "  smcli System_RDR_File_Manage [-T] targetIdentifier\n"
+                        "    [-k] entry1 [-k] entry2\n\n"
+                    "DESCRIPTION\n"
+                    "  Use System_RDR_File_Manage to PURGE, ORDER, TRANSFER the rdr files of target image.\n\n"
+                    "  The following option are required:\n"
+                    "    -T    The name of the target virtual image.\n"
+
+                    "    -k    A keyword=value item to specify the target rdr files and action for it.\n"
+                    "          Possible keywords are:\n"
+                    "          spoolids: (Required) The spoolids that are to be manipulated. Multiple spoolids are to\n"
+                    "                    be separated with a blank. The value can be ALL, this indicates all of the target's\n "
+                    "                    rdr files\n\n"
+                    "          action:   (Optional) The action against spoolids, value can be one\n"
+                    "                    of the following:\n"
+                    "                    PURGE - Purge the specified rdr files. This is the default if unspecified.\n"
+                    "                    ORDER - Order the rdr files in target image with sequence specified in spoolids.\n"
+                    "                    TRANFER - Transfer the specified rdr files to the authenticated user virtual machine.\n");
+                    printRCheaderHelp();
+                    return 0;
+
+            case '?':
+                DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                if (isprint (optopt)) {
+                    sprintf(tempStr,"%c", optopt);
+                    if (strstr(argumentsRequired, tempStr)) {
+                        printf("This option requires an argument: -%c\n", optopt);
+                    } else {
+                        printf("Unknown option -%c\n", optopt);
+                    }
+                } else {
+                    printf("Unknown option character \\x%x\n", optopt);
+                }
+                return 1;
+
+            default:
+                DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                return 1;
+        }
+
+    if (!targetIdentifier ||  entryCount < minNeeded)  {
+        DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+        printf("\nERROR: Missing required options\n");
+        return 1;
+    }
+
+
+    rc = smSystem_RDR_File_Manage(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
+
+    if (rc) {
+        printAndLogProcessingErrors("System_RDR_File_Manage", rc, vmapiContextP, strMsg, 0);
+    } else {
+        // Handle SMAPI return code and reason code
+        rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_RDR_File_Manage", output->common.returnCode,
+                output->common.reasonCode, vmapiContextP, strMsg);
+    }
+    return rc;
+}
+
+
