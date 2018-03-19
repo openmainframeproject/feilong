@@ -198,6 +198,25 @@ class SMUTClient(object):
 
         return results['response']
 
+    def undedicate_device(self, userid, vaddr):
+        """undedicate device
+
+        :userid: The name of the image obtaining a dedicated device
+        :vaddr: The virtual device number of the device
+        """
+        # undedicate device to directory entry
+        self._undedicate_device(userid, vaddr)
+
+    def _undedicate_device(self, userid, vaddr):
+        """undedicate device."""
+        action = 'undedicate'
+        rd = ('changevm %(uid)s %(act)s %(va)s' %
+              {'uid': userid, 'act': action,
+               'va': vaddr})
+        action = "undedicate device from userid '%s'" % userid
+        with zvmutils.log_and_reraise_smut_request_failed(action):
+            self._request(rd)
+
     def get_image_performance_info(self, userid):
         """Get CPU and memory usage information.
 
