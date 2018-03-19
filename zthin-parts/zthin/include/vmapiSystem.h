@@ -359,6 +359,22 @@ static tableLayout System_Performance_Threshold_Enable_Layout = {
 int smSystem_Performance_Threshold_Enable(struct _vmApiInternalContext* vmapiContextP, char * userid, int passwordLength,
         char * password, char* targetIdentifier, char * eventType, vmApiSystemPerformanceThresholdEnableOutput** outData);
 
+/* System_RDR_File_Manage */
+typedef struct _vmApiSystemRDRFileManageOutput {
+    commonOutputFields common;
+} vmApiSystemRDRFileManageOutput;
+
+/* Parser table for System_RDR_File_Manage */
+static tableLayout System_RDR_File_Manage_Layout = {
+    { APITYPE_BASE_STRUCT_LEN, 4, 4, STRUCT_INDX_0, NEST_LEVEL_0, sizeof(vmApiSystemRDRFileManageOutput) },
+    { APITYPE_INT4,            4, 4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemRDRFileManageOutput, common.requestId) },
+    { APITYPE_RC_INT4,         4, 4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemRDRFileManageOutput, common.returnCode) },
+    { APITYPE_RS_INT4,         4, 4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiSystemRDRFileManageOutput, common.reasonCode) },
+    { APITYPE_END_OF_TABLE, 0, 0, 0, 0}
+};
+
+int smSystem_RDR_File_Manage(struct _vmApiInternalContext* vmapiContextP, char * userid, int passwordLength, char * password,
+        char * targetIdentifier, int keyValueCount, char ** keyValueArray, vmApiSystemRDRFileManageOutput** outData);
 
 /* System_SCSI_Disk_Add */
 typedef struct _vmApiSystemSCSIDiskAddOutput {
