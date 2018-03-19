@@ -1936,6 +1936,132 @@ int systemPerformanceThresholdEnable(int argC, char* argV[], struct _vmApiIntern
     return rc;
 }
 
+int systemRDRFileManage(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP) {
+    const char * MY_API_NAME = "System_RDR_File_Manage";
+    int rc;
+    int maxEntryCount = 2;
+    int minNeeded = 1;
+    int entryCount = 0;
+    int option;
+    char * targetIdentifier = NULL;
+    char * entryArray[maxEntryCount];
+    int action = 0; // Means transfer action, should do special check
+    char * destIdentifier = NULL;
+    vmApiSystemRDRFileManageOutput * output;
+
+    opterr = 0; // 0 =>Tell getopt to not display a mesage
+    const char * argumentsRequired = "Tk";
+    char tempStr[1];
+    char strMsg[250];
+
+    // Options that have arguments are followed by a : character
+    while ((option = getopt(argC, argV, "T:k:d:h?")) != -1)
+        switch (option) {
+            case 'T':
+                targetIdentifier = optarg;
+                break;
+
+            case 'k':
+                if (!optarg) {
+                    DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                    printf("Error: Missing required options\n");
+                    return 1;
+                }
+                if (entryCount < maxEntryCount) {
+                    entryArray[entryCount] = optarg;
+                    entryCount++;
+                    if(!strcasecmp(optarg, "action=transfer")){
+                        action = 3;
+                    }
+                } else {
+                    DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                    printf(" Error Too many -k values entered.\n");
+                    return 1;
+                }
+                break;
+
+            case 'd':
+                destIdentifier = optarg;
+                break;
+
+            case 'h':
+                DOES_CALLER_WANT_RC_HEADER_ALLOK(vmapiContextP);
+                printf("NAME\n"
+                    "  System_RDR_File_Manage\n\n"
+                    "SYNOPSIS\n"
+                    "  smcli System_RDR_File_Manage [-T] targetIdentifier\n"
+                        "    [-k] entry1 [-k] entry2 [-d] destIdentifier\n\n"
+                    "DESCRIPTION\n"
+                    "  Use System_RDR_File_Manage to PURGE, ORDER, TRANSFER the rdr files of target image.\n\n"
+                    "  The following option are required:\n"
+                    "    -T    The name of the target virtual image.\n"
+
+                    "    -k    A keyword=value item to specify the target rdr files and action for it.\n"
+                    "          Possible keywords are:\n"
+                    "          spoolids: (Required) The spoolids that are to be manipulated. Multiple spoolids are to\n"
+                    "                    be separated with a blank, eg. spoolids='0003 0005' The value can be ALL, this\n"
+                    "                    indicates all of the target's rdr files\n\n"
+                    "          action:   (Optional) The action against spoolids, value can be one of the following:\n"
+                    "                    PURGE - Purge the specified rdr files. This is the default if unspecified.\n"
+                    "                    ORDER - Order the rdr files in target image.\n"
+                    "                    TRANSFER - Transfer the specified rdr files to the authenticated virtual machine.\n"
+
+                    "    -d    The user id to which the rdr files will be transferred, it's optional, only needed when action\n"
+                    "          is TRANSFER, the user id specified here must be authenticated by SMAPI server.\n");
+                    printRCheaderHelp();
+                    return 0;
+
+            case '?':
+                DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                if (isprint (optopt)) {
+                    sprintf(tempStr,"%c", optopt);
+                    if (strstr(argumentsRequired, tempStr)) {
+                        printf("This option requires an argument: -%c\n", optopt);
+                    } else {
+                        printf("Unknown option -%c\n", optopt);
+                    }
+                } else {
+                    printf("Unknown option character \\x%x\n", optopt);
+                }
+                return 1;
+
+            default:
+                DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+                return 1;
+        }
+
+    if (!targetIdentifier ||  entryCount < minNeeded)  {
+        DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+        printf("\nERROR: Missing required options\n");
+        return 1;
+    }
+
+    if ( action == 3 && !destIdentifier ) {
+        DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
+        printf("\nERROR: Destination identifier must be specified for TRANSFER action\n");
+        return 1;
+    }
+
+    // If they want special output header as first output, then we need to pass this
+    // string on RC call so it is handled correctly for both cases.
+    snprintf(strMsg, sizeof(strMsg), "Purge, order, transfer RDR files on target z/VM guest... ");
+
+    if ( destIdentifier) {
+        rc = smSystem_RDR_File_Manage(vmapiContextP, destIdentifier, 0, "", targetIdentifier, entryCount, entryArray, &output);
+    } else {
+        rc = smSystem_RDR_File_Manage(vmapiContextP, "", 0, "", targetIdentifier, entryCount, entryArray, &output);
+    }
+
+    if (rc) {
+        printAndLogProcessingErrors("System_RDR_File_Manage", rc, vmapiContextP, strMsg, 0);
+    } else {
+        // Handle SMAPI return code and reason code
+        rc = printAndLogSmapiReturnCodeReasonCodeDescription("System_RDR_File_Manage", output->common.returnCode,
+                output->common.reasonCode, vmapiContextP, strMsg);
+    }
+    return rc;
+}
+
 int systemSCSIDiskAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP) {
     const char * MY_API_NAME = "System_SCSI_Disk_Add";
     int rc;
