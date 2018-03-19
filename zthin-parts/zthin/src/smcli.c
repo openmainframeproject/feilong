@@ -382,6 +382,9 @@ int displayHelpInfo(int smapiLevel) {
     if (smapiLevel >= 630) {
         printf("  xCAT_Commands_IUO\n");
     }
+    if (smapiLevel >= 640) {
+        printf("  System_RDR_File_Manage\n");
+    }
     printRCheaderHelp();
 }
 
@@ -497,7 +500,7 @@ static const char * APIS_630[APIS_630_COUNT] = {
     "System_Shutdown",
     "System_Spool_Utilization_Query",
     "Virtual_Network_Adapter_Query_Extended",
-    "xCAT_Commands_IUO",
+    "xCAT_Commands_IUO"
 };
 
 
@@ -585,7 +588,7 @@ static const char * APIS_640[APIS_640_COUNT] = {
             // Now we need to adjust the arguments to not have timeout
             saveCount = argC;
             if (j == (argC-1)) {
-                // --timeout is the last input argument, timeout value missed,
+                // --timeout is the last input, argument, timeout value missed,
                 argC--;
             } else {
                 argC = argC -2;
@@ -992,6 +995,8 @@ static const char * APIS_640[APIS_640_COUNT] = {
         rc = vmrmMeasurementQuery(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "xCAT_Commands_IUO")) {
         rc = xCATCommandsIUO(argC, argV, &vmapiContext);
+    } else if (!strcmp(argV[1], "System_RDR_File_Manage")) {
+            rc = systemRDRFileManage(argC, argV, &vmapiContext);
     } else {
         printf("ERROR: Unsupported API function name\n");
         rc = 1;

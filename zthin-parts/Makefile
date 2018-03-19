@@ -215,6 +215,7 @@ VMAPI_OBJECTS += vmapiVmrmConfigurationQuery.o
 VMAPI_OBJECTS += vmapiVmrmConfigurationUpdate.o
 VMAPI_OBJECTS += vmapiVmrmMeasurementQuery.o
 VMAPI_OBJECTS += vmapiXcatCommandsIUO.o
+VMAPI_OBJECTS += vmapiSystemRDRFileManage.o
 
 #-----------------------------------------------------------------------
 # Objects for smcli
@@ -871,6 +872,8 @@ vmapiVmrmMeasurementQuery.o : $(SRC_DIR)vmapiVmrmMeasurementQuery.c $(INCLUDE_DI
 vmapiXcatCommandsIUO.o : $(SRC_DIR)vmapiXcatCommandsIUO.c
 	gcc -c $(CFLAGS) $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)vmapiXcatCommandsIUO.c
 
+vmapiSystemRDRFileManage.o : $(SRC_DIR)vmapiSystemRDRFileManage.c
+	gcc -c $(CFLAGS) $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)vmapiSystemRDRFileManage.c
 #------------------------------------------------------------------------------------------------------------------------------------------------------
 # smcli object files
 #------------------------------------------------------------------------------------------------------------------------------------------------------
