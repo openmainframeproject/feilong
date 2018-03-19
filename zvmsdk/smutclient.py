@@ -156,6 +156,25 @@ class SMUTClient(object):
         for vdev in vdev_list:
             self._remove_mdisk(userid, vdev)
 
+    def get_fcp_info_by_status(self, userid, status):
+
+        """get fcp information by the status.
+
+        :userid: The name of the image to query fcp info
+        :status: The status of target fcps. eg:'active', 'free' or 'offline'.
+        """
+        results = self._get_fcp_info_by_status(userid, status)
+        return results
+
+    def _get_fcp_info_by_status(self, userid, status):
+        action = 'fcpinfo'
+        rd = ' '.join(['getvm', userid, action, status])
+        action = "query fcp info of '%s'" % userid
+        with zvmutils.log_and_reraise_smut_request_failed(action):
+            results = self._request(rd)
+
+        return results['response']
+
     def get_image_performance_info(self, userid):
         """Get CPU and memory usage information.
 
