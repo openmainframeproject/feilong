@@ -154,6 +154,7 @@ VMAPI_OBJECTS += vmapiSystemDiskIoQuery.o
 VMAPI_OBJECTS += vmapiSystemDiskQuery.o
 VMAPI_OBJECTS += vmapiSystemEQIDQuery.o
 VMAPI_OBJECTS += vmapiSystemFCPFreeQuery.o
+VMAPI_OBJECTS += vmapiSystemImagePerformanceQuery.o
 VMAPI_OBJECTS += vmapiSystemInfoQuery.o
 VMAPI_OBJECTS += vmapiSystemInformationQuery.o
 VMAPI_OBJECTS += vmapiSystemIoQuery.o
@@ -687,6 +688,9 @@ vmapiSystemEQIDQuery.o : $(SRC_DIR)vmapiSystemEQIDQuery.c
 
 vmapiSystemFCPFreeQuery.o : $(SRC_DIR)vmapiSystemFCPFreeQuery.c
 	gcc -c $(CFLAGS) $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)vmapiSystemFCPFreeQuery.c
+
+vmapiSystemImagePerformanceQuery.o : $(SRC_DIR)vmapiSystemImagePerformanceQuery.c
+	gcc -c $(CFLAGS) $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)vmapiSystemImagePerformanceQuery.c
 
 vmapiSystemInfoQuery.o : $(SRC_DIR)vmapiSystemInfoQuery.c
 	gcc -c $(CFLAGS) $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)vmapiSystemInfoQuery.c
