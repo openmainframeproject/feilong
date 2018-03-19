@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5783bbc8_b195ce5a",
+        "filename": "zthin-parts/zthin/src/smcliSystem.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 3152,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2018-03-19T13:37:07Z",
+      "side": 1,
+      "message": "Would you check something for me? I think this and a few other cases (I must of missed when converting the code)did not have the RC header macro before the error return. The header should be returned for the python to handle the error condition correctly. \nExample:\n...\nif (!optarg) {\n                    DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);\n                    return INVALID_DATA;\n                }\n\nSee: smcliSystem.c around line 1159-1170",
+      "revId": "60098eed1f8a29c414e84253524c69931b14a568",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1617b4bf_da7ed529",
+        "filename": "zthin-parts/zthin/src/smcliSystem.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 3159,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2018-03-19T13:37:07Z",
+      "side": 1,
+      "message": "...\nDOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);\n                    printf(\"ERROR: Too many -k values entered\\n\");\n                    return INVALID_DATA;\n\nSee: smcliSystem.c around line 1159-1170",
+      "revId": "60098eed1f8a29c414e84253524c69931b14a568",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bd60b016_62bad8da",
+        "filename": "zthin-parts/zthin/src/smcliSystem.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 3168,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2018-03-19T13:37:07Z",
+      "side": 1,
+      "message": "API name is wrong",
+      "revId": "60098eed1f8a29c414e84253524c69931b14a568",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
