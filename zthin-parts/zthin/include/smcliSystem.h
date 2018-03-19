@@ -30,6 +30,7 @@ int systemPageUtilizationQuery(int argC, char* argV[], struct _vmApiInternalCont
 int systemPerformanceInformationQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemPerformanceThresholdDisable(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemPerformanceThresholdEnable(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
+int systemRDRFileManage(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemSCSIDiskAdd(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemSCSIDiskDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int systemSCSIDiskQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);

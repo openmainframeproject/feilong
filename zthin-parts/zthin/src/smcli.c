@@ -292,6 +292,9 @@ int displayHelpInfo(int smapiLevel) {
         printf("  System_Performance_Threshold_Disable\n"
                "  System_Performance_Threshold_Enable\n");
     }
+    if (smapiLevel >= 640) {
+        printf("  System_RDR_File_Manage\n");
+    }
     if (smapiLevel >= 611) {
         printf("  System_SCSI_Disk_Add\n");
     }
@@ -497,7 +500,7 @@ static const char * APIS_630[APIS_630_COUNT] = {
     "System_Shutdown",
     "System_Spool_Utilization_Query",
     "Virtual_Network_Adapter_Query_Extended",
-    "xCAT_Commands_IUO",
+    "xCAT_Commands_IUO"
 };
 
 
@@ -886,6 +889,8 @@ static const char * APIS_640[APIS_640_COUNT] = {
         rc = systemPerformanceThresholdDisable(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "System_Performance_Threshold_Enable")) {
         rc = systemPerformanceThresholdEnable(argC, argV, &vmapiContext);
+    } else if (!strcmp(argV[1], "System_RDR_File_Manage")) {
+            rc = systemRDRFileManage(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "System_SCSI_Disk_Add")) {
         rc = systemSCSIDiskAdd(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "System_SCSI_Disk_Delete")) {

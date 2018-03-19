@@ -162,6 +162,7 @@ VMAPI_OBJECTS += vmapiSystemPerformanceInfoQuery.o
 VMAPI_OBJECTS += vmapiSystemPerformanceInformationQuery.o
 VMAPI_OBJECTS += vmapiSystemPerformanceThresholdDisable.o
 VMAPI_OBJECTS += vmapiSystemPerformanceThresholdEnable.o
+VMAPI_OBJECTS += vmapiSystemRDRFileManage.o
 VMAPI_OBJECTS += vmapiSystemSCSIDiskAdd.o
 VMAPI_OBJECTS += vmapiSystemSCSIDiskDelete.o
 VMAPI_OBJECTS += vmapiSystemSCSIDiskQuery.o
@@ -711,6 +712,9 @@ vmapiSystemPerformanceThresholdDisable.o : $(SRC_DIR)vmapiSystemPerformanceThres
 
 vmapiSystemPerformanceThresholdEnable.o : $(SRC_DIR)vmapiSystemPerformanceThresholdEnable.c
 	gcc -c $(CFLAGS) $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)vmapiSystemPerformanceThresholdEnable.c
+
+vmapiSystemRDRFileManage.o : $(SRC_DIR)vmapiSystemRDRFileManage.c
+	gcc -c $(CFLAGS) $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)vmapiSystemRDRFileManage.c
 
 vmapiSystemSCSIDiskAdd.o : $(SRC_DIR)vmapiSystemSCSIDiskAdd.c
 	gcc -c $(CFLAGS) $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)vmapiSystemSCSIDiskAdd.c
