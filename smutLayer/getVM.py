@@ -38,6 +38,7 @@ subfuncHandler = {
     'ISREACHABLE': ['checkIsReachable', lambda rh: checkIsReachable(rh)],
     'STATUS': ['getStatus', lambda rh: getStatus(rh)],
     'VERSION': ['getVersion', lambda rh: getVersion(rh)],
+    'FCPINFO': ['fcpinfo', lambda rh: fcpinfo(rh)],
     }
 
 """
@@ -49,7 +50,10 @@ information for the positional operands:
   - Is it required (True) or optional (False),
   - Type of data (1: int, 2: string).
 """
-posOpsList = {}
+posOpsList = {
+    'FCPINFO': [
+        ['Status filter', 'status', True, 2],
+        ]}
 
 """
 List of additional operands/options supported by the various subfunctions.
@@ -530,3 +534,85 @@ def showOperandLines(rh):
     rh.printLn("N", "                      information.")
 
     return
+
+
+def extract_fcp_data(raw_data, status):
+    """
+    extract data from smcli System_WWPN_Query output.
+    Input:
+        raw data returned from smcli
+    Output:
+        data extracted would be like:
+    'status:Free \n
+     fcp_dev_no:1D2F\n
+     physical_wwpn:C05076E9928051D1\n
+     channel_path_id:8B\n
+     npiv_wwpn': 'NONE'\n
+
+     status:Free\n
+     fcp_dev_no:1D29\n
+     physical_wwpn:C05076E9928051D1\n
+     channel_path_id:8B\n
+     npiv_wwpn:NONE
+    """
+    raw_data = raw_data.split('\n')
+
+    # clear blank lines
+    data = []
+    for i in raw_data:
+        i = i.strip(' \n')
+        if i == '':
+            continue
+        else:
+            data.append(i)
+    # process data into one list of dicts
+    results = []
+    for i in range(0, len(data), 5):
+        temp = data[i + 1].split(':')[-1].strip()
+        # only return results match the status
+        if temp.lower() == status.lower():
+            results.extend(data[i:i + 5])
+
+    return '\n'.join(results)
+
+
+def fcpinfo(rh):
+    """
+    Get fcp info and filter by the status.
+
+    Input:
+       Request Handle with the following properties:
+          function    - 'GETVM'
+          subfunction - 'FCPINFO'
+          userid      - userid of the virtual machine
+          parms['status']       - The status for filter results.
+
+    Output:
+       Request Handle updated with the results.
+       Return code - 0: ok, non-zero: error
+    """
+    rh.printSysLog("Enter changeVM.dedicate")
+
+    parms = ["-T", rh.userid]
+
+    hideList = []
+    results = invokeSMCLI(rh,
+                          "System_WWPN_Query",
+                          parms,
+                          hideInLog=hideList)
+
+    if results['overallRC'] != 0:
+        # SMAPI API failed.
+        rh.printLn("ES", results['response'])
+        rh.updateResults(results)    # Use results from invokeSMCLI
+
+    if results['overallRC'] == 0:
+        # extract data from smcli return
+        ret = extract_fcp_data(results['response'], rh.parms['status'])
+        # write the ret into results['response']
+        rh.printLn("N", ret)
+    else:
+        rh.printLn("ES", results['response'])
+        rh.updateResults(results)    # Use results from invokeSMCLI
+
+    return rh.results['overallRC']
