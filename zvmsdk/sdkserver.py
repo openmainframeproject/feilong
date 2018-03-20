@@ -58,7 +58,7 @@ class SDKServer(object):
         syslog.syslog(syslog.LOG_WARNING, msg)
 
     def log_debug(self, msg):
-        if log.log_level <= logging.DEBUG:
+        if log.LOGGER.getloglevel() <= logging.DEBUG:
             thread = threading.current_thread().name
             msg = ("DEBUG: [%s] %s" % (thread, msg))
             syslog.syslog(syslog.LOG_DEBUG, msg)

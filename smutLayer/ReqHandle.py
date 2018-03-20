@@ -304,7 +304,7 @@ class ReqHandle(object):
            Strings to be logged.
         """
 
-        if zvmsdklog.log_level <= logging.DEBUG:
+        if zvmsdklog.LOGGER.getloglevel() <= logging.DEBUG:
             # print log only when debug is enabled
             if self.daemon == '':
                 self.logger.debug(self.requestId + ": " + logString)
