@@ -62,6 +62,10 @@ Preparation on BYOL
 
        OPTION LNKNOPAS
 
+.. note::
+   Please note when under RACF (ESM of z/VM) is used, additional setup is needed
+   to make the BYOL able to link to the disk.
+
    See `z/VM Systems Management Application Programming`_ for how to make it.
 
 3. Update BYOL definition about IUCV
