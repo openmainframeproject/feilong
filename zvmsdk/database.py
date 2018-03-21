@@ -328,6 +328,7 @@ class FCPDbOperator(object):
 
             conn.execute("UPDATE fcp SET connections=? "
                          "WHERE fcp_id=?", (connections, fcp))
+            return connections
 
     def decrease_usage(self, fcp):
         with get_fcp_conn() as conn:
@@ -345,6 +346,7 @@ class FCPDbOperator(object):
             conn.execute("UPDATE fcp SET connections=? "
                          "WHERE fcp_id=?",
                          (connections, fcp))
+            return connections
 
     def get_from_assigner(self, assigner_id):
         with get_fcp_conn() as conn:
