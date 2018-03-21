@@ -41,7 +41,7 @@ class SDKAPI(object):
         self._networkops = networkops.get_networkops()
         self._imageops = imageops.get_imageops()
         self._monitor = monitor.get_monitor()
-        self._volumeop = volumeop.get_volumeop()
+        self._volumeops = volumeop.get_volumeop()
 
     def guest_start(self, userid):
         """Power on a virtual machine.
@@ -943,6 +943,11 @@ class SDKAPI(object):
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
 
+    def volume_get_connector(self, guest):
+        """Get a volume connector in order to proceed further action"""
+
+        return self._volumeops.get_volume_connector(guest)
+
     def volume_attach(self, guest, volume, connection_info,
                       is_rollback_in_failure=False):
         """ Attach a volume to a guest. It's prerequisite to active multipath
@@ -988,10 +993,9 @@ class SDKAPI(object):
                 It's not guaranteed that the roll back operation must be
                 successful.
         """
-        self._volumeop.attach_volume_to_instance(guest,
-                                                 volume,
-                                                 connection_info,
-                                                 is_rollback_in_failure)
+        self._volumeops.attach_volume_to_instance(guest,
+                                                  volume,
+                                                  connection_info)
 
     def volume_detach(self, guest, volume, connection_info,
                       is_rollback_in_failure=False):
@@ -1032,10 +1036,9 @@ class SDKAPI(object):
                It's not guaranteed that the roll back operation must be
                successful.
         """
-        self._volumeop.detach_volume_from_instance(guest,
-                                                   volume,
-                                                   connection_info,
-                                                   is_rollback_in_failure)
+        self._volumeops.detach_volume_from_instance(guest,
+                                                    volume,
+                                                    connection_info)
 
     def guest_create_network_interface(self, userid, os_version,
                                        guest_networks, active=False):
