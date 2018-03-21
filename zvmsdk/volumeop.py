@@ -45,7 +45,7 @@ DEDICATE = 'dedicate'
 
 def get_volumeop():
     global _VolumeOP
-    #if not _VolumeOP:
+    # if not _VolumeOP:
     #   _VolumeOP = VolumeOperator()
     return _VolumeOP
 
@@ -420,3 +420,55 @@ class FCPManager(object):
     def unreserve_fcp(self, fcp, assigner_id=None):
         # TODO: check assigner_id to make sure on the correct fcp record
         self.db.unreserve(fcp)
+
+
+# volume manager for FCP protocol
+class FCPVolumeManager(object):
+    def __init__(self):
+        self.fcp_mgr = FCPManager()
+
+    def _attach(self, assigner_id, fcp, target_wwpn, target_lun):
+        """Attach a volume
+
+        First, we need translate fcp into local wwpn, then
+        dedicate fcp to the user if it's needed, after that
+        call smut layer to call linux command
+        """
+        pass
+
+    def attach(self, connection_info):
+        """Attach a volume to a guest
+
+        connection_info contains info from host and storage side
+        this mostly includes
+        host side FCP: this can get host side wwpn
+        storage side wwpn
+        storage side lun
+
+        all the above assume the storage side info is given by caller
+        """
+        fcp = connection_info['zvm_fcp']
+        target_wwpn = connection_info['target_wwpn']
+        target_lun = connection_info['target_lun']
+        assigner_id = connection_info['assigner_id']
+
+        self._attach(assigner_id, fcp, target_wwpn, target_lun)
+
+    def _detach(self, assigner_id, fcp, target_wwpn, target_lun):
+        pass
+
+    def detach(self, connection_info):
+        """Detach a volume from a guest
+        """
+        fcp = connection_info['zvm_fcp']
+        target_wwpn = connection_info['target_wwpn']
+        target_lun = connection_info['target_lun']
+        assigner_id = connection_info['assigner_id']
+
+        self._detach(assigner_id, fcp, target_wwpn, target_lun)
+
+    def get_volume_connector(self, assigner_id):
+        """Get volume connector, mainly get a fcp
+
+        """
+        return self.fcp_mgr.find_and_reserve_fcp(assigner_id)

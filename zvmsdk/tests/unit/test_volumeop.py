@@ -230,7 +230,6 @@ class TestFCPManager(base.SDKTestCase):
             db_op.delete('b83d')
 
     def test_find_and_reserve_fcp_exception(self):
-        db_op = database.FCPDbOperator()
         # no FCP at all
 
         # find FCP for user and FCP not exist, should alloca
