@@ -18,6 +18,7 @@ import re
 import six
 
 from zvmsdk import config
+from zvmsdk import constants
 from zvmsdk import database
 from zvmsdk import exception
 from zvmsdk import log
@@ -45,7 +46,7 @@ DEDICATE = 'dedicate'
 
 def get_volumeop():
     global _VolumeOP
-    #if not _VolumeOP:
+    # if not _VolumeOP:
     #   _VolumeOP = VolumeOperator()
     return _VolumeOP
 
@@ -406,17 +407,126 @@ class FCPManager(object):
             return old_fcp
 
     def increase_fcp_usage(self, fcp, assigner_id=None):
+        """Incrase fcp usage of given fcp
+
+        Returns True if it's a new fcp, otherwise return False
+        """
         # TODO: check assigner_id to make sure on the correct fcp record
         fcp_list = self.db.get_from_assigner(assigner_id)
+        new = False
+
         if not fcp_list:
             self.db.assign(fcp, assigner_id)
+            new = True
         else:
             self.db.increase_usage(fcp)
 
+        return new
+
     def decrease_fcp_usage(self, fcp, assigner_id=None):
         # TODO: check assigner_id to make sure on the correct fcp record
-        self.db.decrease_usage(fcp)
+        connections = self.db.decrease_usage(fcp)
+
+        return connections
 
     def unreserve_fcp(self, fcp, assigner_id=None):
         # TODO: check assigner_id to make sure on the correct fcp record
         self.db.unreserve(fcp)
+
+
+# volume manager for FCP protocol
+class FCPVolumeManager(object):
+    def __init__(self):
+        self.fcp_mgr = FCPManager()
+
+    def _dedicate_fcp(self, fcp, assigner_id):
+        pass
+
+    def _add_disk(self, fcp, assinger_id, target_wwpn, target_lun,
+                  multipath, os_version):
+        pass
+
+    def _attach(self, fcp, assigner_id, target_wwpn, target_lun,
+                multipath, os_version):
+        """Attach a volume
+
+        First, we need translate fcp into local wwpn, then
+        dedicate fcp to the user if it's needed, after that
+        call smut layer to call linux command
+        """
+        new = self.fcp_mgr.increase_fcp_usage(fcp, assigner_id)
+
+        if new:
+            self._dedicate_fcp(fcp, assigner_id)
+
+        self._add_disk(fcp, assigner_id, target_wwpn, target_lun,
+                       multipath, os_version)
+
+    def attach(self, connection_info):
+        """Attach a volume to a guest
+
+        connection_info contains info from host and storage side
+        this mostly includes
+        host side FCP: this can get host side wwpn
+        storage side wwpn
+        storage side lun
+
+        all the above assume the storage side info is given by caller
+        """
+        fcp = connection_info['zvm_fcp']
+        target_wwpn = connection_info['target_wwpn']
+        target_lun = connection_info['target_lun']
+        assigner_id = connection_info['assigner_id']
+        multipath = connection_info['multipath']
+        os_version = connection_info['os_version']
+
+        self._attach(fcp, assigner_id, target_wwpn, target_lun,
+                     multipath, os_version)
+
+    def _undedicate_fcp(self, fcp, assigner_id):
+        pass
+
+    def _remove_disk(self, fcp, assinger_id, target_wwpn, target_lun,
+                     multipath, os_version):
+        pass
+
+    def _detach(self, fcp, assigner_id, target_wwpn, target_lun,
+                multipath, os_version):
+        """Detach a volume from a guest"""
+        connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
+
+        self._remove_disk(fcp, assigner_id, target_wwpn, target_lun,
+                          multipath, os_version)
+
+        if not connections:
+            self._undedicate_fcp(fcp, assigner_id)
+
+    def detach(self, connection_info):
+        """Detach a volume from a guest
+        """
+        fcp = connection_info['zvm_fcp']
+        target_wwpn = connection_info['target_wwpn']
+        target_lun = connection_info['target_lun']
+        assigner_id = connection_info['assigner_id']
+        multipath = connection_info['multipath']
+        os_version = connection_info['os_version']
+
+        self._detach(fcp, assigner_id, target_wwpn, target_lun, multipath,
+                     os_version)
+
+    def get_volume_connector(self, assigner_id):
+        """Get volume connector, mainly get a fcp
+
+        """
+        fcp = self.fcp_mgr.find_and_reserve_fcp(assigner_id)
+        res = {'platform': constants.ARCHITECTURE,
+               'ip': CONF.network.my_ip,
+               'do_local_attach': False,
+               'os_type': 'linux',
+               # FIXME:
+               'os_version': '',
+               'multipath': True,
+               'fcp': fcp}
+        LOG.debug('get_volume_connector returns %s for %s' %
+                  (fcp, assigner_id))
+        return res

@@ -230,9 +230,134 @@ class TestFCPManager(base.SDKTestCase):
             db_op.delete('b83d')
 
     def test_find_and_reserve_fcp_exception(self):
-        db_op = database.FCPDbOperator()
         # no FCP at all
 
         # find FCP for user and FCP not exist, should alloca
         fcp = self.fcpops.find_and_reserve_fcp('user1')
         self.assertIsNone(fcp)
+
+
+class TestFCPVolumeManager(base.SDKTestCase):
+
+    def setUp(self):
+        self.volumeops = volumeop.FCPVolumeManager()
+
+    def test_get_volume_connector(self):
+        db_op = database.FCPDbOperator()
+        base.set_conf('network', 'my_ip', '1.2.3.4')
+        # create 1 FCP
+        db_op.new('b83c')
+
+        try:
+            connections = self.volumeops.get_volume_connector('dummy')
+            expected = {'multipath': True,
+                        'platform': 's390x',
+                        'do_local_attach': False,
+                        'fcp': u'b83c',
+                        'os_version': '',
+                        'os_type': 'linux',
+                        'ip': '1.2.3.4'}
+            self.assertEqual(expected, connections)
+
+            fcp_list = db_op.get_from_fcp('b83c')
+            expected = [(u'b83c', u'', 0, 1, u'')]
+            self.assertEqual(expected, fcp_list)
+        finally:
+            db_op.delete('b83c')
+
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disk")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
+    def test_attach(self, mock_dedicate, mock_add_disk):
+
+        connection_info = {'platform': 'x86_64',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': False,
+                           'target_wwpn': '1111',
+                           'target_lun': '2222',
+                           'zvm_fcp': 'b83c',
+                           'assigner_id': 'user1'}
+        db_op = database.FCPDbOperator()
+        db_op.new('b83c')
+
+        try:
+            self.volumeops.attach(connection_info)
+            mock_dedicate.assert_called_once_with('b83c', 'user1')
+            mock_add_disk.assert_called_once_with('b83c', 'user1', '1111',
+                                                  '2222', False, 'rhel7')
+        finally:
+            db_op.delete('b83c')
+
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disk")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
+    def test_attach_no_dedicate(self, mock_dedicate, mock_add_disk):
+
+        connection_info = {'platform': 'x86_64',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': False,
+                           'target_wwpn': '1111',
+                           'target_lun': '2222',
+                           'zvm_fcp': 'b83c',
+                           'assigner_id': 'user1'}
+        db_op = database.FCPDbOperator()
+        db_op.new('b83c')
+        db_op.assign('b83c', 'user1')
+        db_op.increase_usage('b83c')
+
+        try:
+            self.volumeops.attach(connection_info)
+            self.assertFalse(mock_dedicate.called)
+            mock_add_disk.assert_called_once_with('b83c', 'user1', '1111',
+                                                  '2222', False, 'rhel7')
+        finally:
+            db_op.delete('b83c')
+
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disk")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
+    def test_detach(self, mock_undedicate, mock_remove_disk):
+
+        connection_info = {'platform': 'x86_64',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': False,
+                           'target_wwpn': '1111',
+                           'target_lun': '2222',
+                           'zvm_fcp': 'b83c',
+                           'assigner_id': 'user1'}
+        db_op = database.FCPDbOperator()
+        db_op.new('b83c')
+        db_op.assign('b83c', 'user1')
+
+        try:
+            self.volumeops.detach(connection_info)
+            mock_remove_disk.assert_called_once_with('b83c', 'user1', '1111',
+                                                     '2222', False, 'rhel7')
+            mock_undedicate.assert_called_once_with('b83c', 'user1')
+        finally:
+            db_op.delete('b83c')
+
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disk")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
+    def test_detach_no_undedicate(self, mock_undedicate, mock_remove_disk):
+
+        connection_info = {'platform': 'x86_64',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': False,
+                           'target_wwpn': '1111',
+                           'target_lun': '2222',
+                           'zvm_fcp': 'b83c',
+                           'assigner_id': 'user1'}
+        db_op = database.FCPDbOperator()
+        db_op.new('b83c')
+        db_op.assign('b83c', 'user1')
+        db_op.increase_usage('b83c')
+
+        try:
+            self.volumeops.detach(connection_info)
+            self.assertFalse(mock_undedicate.called)
+            mock_remove_disk.assert_called_once_with('b83c', 'user1', '1111',
+                                                     '2222', False, 'rhel7')
+        finally:
+            db_op.delete('b83c')
