@@ -420,3 +420,30 @@ class FCPManager(object):
     def unreserve_fcp(self, fcp, assigner_id=None):
         # TODO: check assigner_id to make sure on the correct fcp record
         self.db.unreserve(fcp)
+
+
+# volume manager for FCP protocol
+class FCPVolumeManager(object):
+    def __init__(self):
+        pass
+
+    def attach(self, connection_info):
+        """Attach a volume to a guest
+
+        connection_info contains info from host and storage side
+        this mostly includes
+        host side FCP: this can get host side wwpn
+        storage side wwpn
+        storage side lun
+
+        all the above assume the storage side info is given by caller
+        """
+        pass
+
+    def detach(self):
+        pass
+
+    def get_volume_connector(self):
+        pass
+
+
