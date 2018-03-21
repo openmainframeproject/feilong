@@ -41,7 +41,7 @@ class SDKAPI(object):
         self._networkops = networkops.get_networkops()
         self._imageops = imageops.get_imageops()
         self._monitor = monitor.get_monitor()
-        self._volumeop = volumeop.get_volumeop()
+        self._volumeops = volumeop.get_volumeop()
 
     def guest_start(self, userid):
         """Power on a virtual machine.
@@ -943,28 +943,15 @@ class SDKAPI(object):
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
 
-    def volume_attach(self, guest, volume, connection_info,
-                      is_rollback_in_failure=False):
+    def volume_get_connector(self, guest):
+        """Get a volume connector in order to proceed further action"""
+
+        return self._volumeops.get_volume_connector(guest)
+
+    def volume_attach(self, connection_info):
         """ Attach a volume to a guest. It's prerequisite to active multipath
             feature on the guest before utilizing persistent volumes.
 
-        :param dict guest:
-                - name:
-                    The type is string, it's the node name of the guest
-                    instance in database.
-                - os_type:
-                    The type is string, it's the OS running on the guest.
-                    Currently supported are RHEL7, SLES12 and their
-                    sub-versions, i.e. 'rhel7', 'rhel7.2', 'sles12',
-                    'sles12sp1'.
-        :param dict volume:
-                - size: of type string. The capacity size of the volume, in
-                    unit of Megabytes or Gigabytes.
-                - type: of type string. The device type of the volume. The only
-                    one supported now is 'fc' which implies FibreChannel.
-                - lun: of type string. The LUN value of the volume, excluding
-                    prefixing '0x'. It's required if the type is 'fc' which
-                    implies FibreChannel.
         :param dict connection_info:
                 - alias: of type string. A constant valid alias of the volume
                     after it being attached onto the guest, i.e. '/dev/vda'.
@@ -983,35 +970,13 @@ class SDKAPI(object):
                     will be dedicated to the guest before accessing the volume.
                     They should belong to different channel path IDs in order
                     to work properly.
-        :param bool is_rollback_in_failure:
-                Whether to roll back in failure.
-                It's not guaranteed that the roll back operation must be
-                successful.
         """
-        self._volumeop.attach_volume_to_instance(guest,
-                                                 volume,
-                                                 connection_info,
-                                                 is_rollback_in_failure)
+        self._volumeops.attach(connection_info)
 
-    def volume_detach(self, guest, volume, connection_info,
-                      is_rollback_in_failure=False):
+    def volume_detach(self, connection_info):
         """ Detach a volume from a guest. It's prerequisite to active multipath
             feature on the guest before utilizing persistent volumes.
 
-        :param dict guest: A dict comprised of a list of properties of a guest,
-               including:
-               - name: of type string. The node name of the guest instance in
-               database.
-               - os_type: of type string. The OS running on the guest.
-               Currently supported are RHEL7, SLES12 and their sub-versions,
-               i.e. 'rhel7', 'rhel7.2', 'sles12', 'sles12sp1'.
-        :param dict volume: A dict comprised of a list of properties of a
-               volume, including:
-               - type: of type string. The device type of the volume. The only
-               one supported now is 'fc' which implies FibreChannel.
-               - lun: of type string. The LUN value of the volume, excluding
-               prefixing '0x'. It's required if the type is 'fc' which implies
-               FibreChannel.
         :param dict connection_info: A dict comprised of a list of information
                used to establish host-volume connection, including:
                - alias: of type string. A constant valid alias of the volume
@@ -1028,14 +993,8 @@ class SDKAPI(object):
                can be accessed, excluding prefixing '0x'.
                - dedicate: of type list. The address of the FCP devices which
                will be undedicated from the guest after removing the volume.
-        :param bool is_rollback_in_failure: Whether to roll back in failure.
-               It's not guaranteed that the roll back operation must be
-               successful.
         """
-        self._volumeop.detach_volume_from_instance(guest,
-                                                   volume,
-                                                   connection_info,
-                                                   is_rollback_in_failure)
+        self._volumeops.detach(connection_info)
 
     def guest_create_network_interface(self, userid, os_version,
                                        guest_networks, active=False):

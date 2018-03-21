@@ -20,9 +20,8 @@ from zvmconnector import connector
 from zvmsdk import config
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
-from zvmsdk.sdkwsgi.schemas import vswitch
 from zvmsdk.sdkwsgi import util
-from zvmsdk.sdkwsgi import validation
+# from zvmsdk.sdkwsgi import validation
 from zvmsdk import utils
 
 
@@ -37,32 +36,27 @@ class VolumeAction(object):
                                              ip_addr=CONF.sdkserver.bind_addr,
                                              port=CONF.sdkserver.bind_port)
 
+    # TODO: add validation here
     def attach(self, userid, body):
         info = body['info']
         guest = {'guest': {'os_type': info['os_type'],
                            'name': userid}}
         volume = info['volume']
         connection = info['connection']
-        rollback = info['rollback']
 
         info = self.client.send_request('volume_attach', guest, volume,
-                                        connection,
-                                        is_rollback_in_failure=rollback)
-
+                                        connection)
         return info
 
-    @validation.schema(vswitch.create)
     def detach(self, userid, body):
         info = body['info']
         guest = {'guest': {'os_type': info['os_type'],
                            'name': userid}}
         volume = info['volume']
         connection = info['connection']
-        rollback = info['rollback']
 
         info = self.client.send_request('volume_detach', guest, volume,
-                                        connection,
-                                        is_rollback_in_failure=rollback)
+                                        connection)
 
         return info
 

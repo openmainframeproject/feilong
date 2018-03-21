@@ -18,12 +18,13 @@ import webob
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk.sdkwsgi import util
+from zvmsdk.sdkwsgi.handlers import fcp
 from zvmsdk.sdkwsgi.handlers import guest
 from zvmsdk.sdkwsgi.handlers import host
 from zvmsdk.sdkwsgi.handlers import image
 from zvmsdk.sdkwsgi.handlers import tokens
 from zvmsdk.sdkwsgi.handlers import version
-# from zvmsdk.sdkwsgi.handlers import volume
+from zvmsdk.sdkwsgi.handlers import volume
 from zvmsdk.sdkwsgi.handlers import vswitch
 
 
@@ -35,6 +36,9 @@ LOG = log.LOG
 ROUTE_LIST = (
     ('/', {
         'GET': version.version,
+    }),
+    ('/fcp', {
+        'POST': fcp.get_connector,
     }),
     ('/guests', {
         'POST': guest.guest_create,
@@ -79,10 +83,10 @@ ROUTE_LIST = (
         'DELETE': guest.guest_delete_disks,
         'PUT': guest.guest_config_disks,
     }),
-    # ('/guests/{userid}/volumes', {
-    #   'POST': volume.volume_attach,
-    #    'DELETE': volume.volume_detach,
-    # }),
+    ('/guests/{userid}/volumes', {
+        'DELETE': volume.volume_detach,
+        'POST': volume.volume_attach,
+    }),
     ('/host', {
         'GET': host.host_get_info,
     }),
