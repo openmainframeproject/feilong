@@ -133,7 +133,6 @@ function pullReader {
       rc=$(/usr/sbin/vmur re $spoolid $file)
       /bin/tar xzf $file -C $transportdir
       rm $file
-      injectFiles
     elif [[ $type == "doscript" ]]; then
       rc=$(/usr/sbin/vmur re $spoolid $file)
       /bin/tar xf $file -C $transportdir
@@ -185,42 +184,6 @@ function setupIso {
   fi
 }
 
-function injectFiles {
-  # @Description:
-  #   Inject network files and scripts
-  # @Input:
-  #   None
-  # @Output:
-  #   None
-  # @Code:
-  local funcName="injectFiles"
-
-  if [[ ! -e $transportdir/sdk/latest/meta_data.json ]]; then
-    echo "Can not inject files, because no meta_data.json"
-    return
-  fi
-
-  echo "File injecting ...."
-  awk '{
-    #get inject files info
-    split($0 ,res1,/"files": \[/)
-    split(res1[2], res2, /\]/)
-    n=split(res2[1], res, /}, /)
-
-    for(m=1;m<=n;m++)
-    {
-      split(res[m], temp1, /{"path": "/)
-      k=split(temp1[2], temp2, /", "content_path": "/)
-      sub(/"}*$/, "", temp2[2])
-      #print temp2[1] " : " temp2[2]
-      des = dir "/sdk" temp2[2]
-      cmd = "cp " des " " temp2[1]
-      #print cmd
-      system(cmd)
-    }
-  }' dir=$transportdir <$transportdir/sdk/latest/meta_data.json
-  return
-}
 
 ############################################################################
 # Main Code Section
