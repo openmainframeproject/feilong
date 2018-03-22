@@ -77,8 +77,8 @@ class HOSTOps(object):
                         n1 += 1
                     dp_info[k] = n1
                 elif s.endswith('M'):
-                    n_mb = int(s[:-1])
-                    n_gb, n_ad = n_mb / 1024, n_mb % 1024
+                    n_mb = int(s[:-3])
+                    n_gb, n_ad = n_mb // 1024, n_mb % 1024
                     if n_ad >= 512:
                         n_gb += 1
                     dp_info[k] = n_gb
