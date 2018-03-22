@@ -1435,3 +1435,91 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                         {'rc': 1, 'rs': 1}, 'err')
         self.assertRaises(exception.SDKSMUTRequestFailed,
                           self._smutclient.query_vswitch, 'testvs')
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_query_OSA_RequestFailed(self, req, get_id):
+        get_id.return_value = "SMUTUSER"
+        req.side_effect = exception.SDKSMUTRequestFailed(
+                                        {'rc': 1, 'rs': 1}, 'err')
+        self.assertRaises(exception.SDKSMUTRequestFailed,
+                          self._smutclient._query_OSA)
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_query_OSA_NoOSA(self, req, get_id):
+        get_id.return_value = "SMUTUSER"
+        req.side_effect = exception.SDKSMUTRequestFailed(
+                                        {'rc': 4, 'rs': 4}, 'err')
+        result = self._smutclient._query_OSA()
+        get_id.assert_called_once_with()
+        self.assertEqual(result, {})
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_query_OSA(self, req, get_id):
+        get_id.return_value = "SMUTUSER"
+        osa_info = [
+                    "OSA Address: 0440",
+                    "OSA Status: FREE",
+                    "OSA Type: OSA",
+                    "CHPID Address: 10",
+                    "Agent Status: NO",
+                    "OSA Address: 0441",
+                    "OSA Status: FREE",
+                    "OSA Type: OSA",
+                    "CHPID Address: 10",
+                    "Agent Status: NO",
+                    "OSA Address: 4000",
+                    "OSA Status: ATTACHED TCPIP",
+                    "OSA Type: OSA",
+                    "CHPID Address: 3B",
+                    "Agent Status: NO",
+                    "OSA Address: FB1D",
+                    "OSA Status: FREE",
+                    "OSA Type: HIPER",
+                    "CHPID Address: FB",
+                    "Agent Status: NO",
+                ]
+        req.return_value = {'response': osa_info}
+        expected = {'OSA': {'FREE': ['0440', '0441'],
+                            'BOXED': [],
+                            'OFFLINE': [],
+                            'ATTACHED': [('TCPIP', '4000')]},
+                    'HIPER': {'FREE': ['FB1D'],
+                              'BOXED': [],
+                              'OFFLINE': [],
+                              'ATTACHED': []}}
+        result = self._smutclient._query_OSA()
+        get_id.assert_called_once_with()
+        self.assertEqual(result.keys(), expected.keys())
+        self.assertEqual(result['OSA'], expected['OSA'])
+        self.assertEqual(result['HIPER'], expected['HIPER'])
+
+    @mock.patch.object(smutclient.SMUTClient, '_query_OSA')
+    def test_is_OSA_free_noOSA(self, query_osa):
+        query_osa.return_value = {'HIPER': {}}
+        result = self._smutclient._is_OSA_free('0100')
+        query_osa.assert_called_once_with()
+        self.assertFalse(result)
+
+    @mock.patch.object(smutclient.SMUTClient, '_query_OSA')
+    def test_is_OSA_free_noFree(self, query_osa):
+        query_osa.return_value = {'OSA': {'FREE': []}}
+        result = self._smutclient._is_OSA_free('0100')
+        query_osa.assert_called_once_with()
+        self.assertFalse(result)
+
+    @mock.patch.object(smutclient.SMUTClient, '_query_OSA')
+    def test_is_OSA_free_notallFree(self, query_osa):
+        query_osa.return_value = {'OSA': {'FREE': ['0100', '0101']}}
+        result = self._smutclient._is_OSA_free('0100')
+        query_osa.assert_called_once_with()
+        self.assertFalse(result)
+
+    @mock.patch.object(smutclient.SMUTClient, '_query_OSA')
+    def test_is_OSA_free_OK(self, query_osa):
+        query_osa.return_value = {'OSA': {'FREE': ['0100', '0101', '0102']}}
+        result = self._smutclient._is_OSA_free('0100')
+        query_osa.assert_called_once_with()
+        self.assertTrue(result)
