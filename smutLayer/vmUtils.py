@@ -1089,9 +1089,9 @@ def purgeReader(rh):
                'response': []}
     # Temporarily use this SMAPI to purge the reader
     # We've asked for a new one to do this
-    parms = ['-T', rh.userid, '-c', 'cmd=PURGE %s RDR ALL' % rh.userid]
+    parms = ['-T', rh.userid, '-k', 'spoolids=all']
 
-    results = invokeSMCLI(rh, "xCAT_Commands_IUO", parms)
+    results = invokeSMCLI(rh, "System_RDR_File_Manage", parms)
 
     if results['overallRC'] != 0:
         rh.printLn("ES", results['response'])
