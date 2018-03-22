@@ -54,27 +54,8 @@ Usually the configuration can be placed at /etc/uwsgi.d/ folder, for example, na
 The sample below indicated the uwsgi service will be running at port 35000
 so apache server can connect port 35000 and communicate with it
 
-.. code-block:: text
+.. literalinclude:: ../../data/uwsgi-zvmsdk.conf
 
-    [uwsgi]
-    chmod-socket = 666
-    uwsgi-socket = 127.0.0.1:35000
-    lazy-apps = true
-    add-header = Connection: close
-    buffer-size = 65535
-    thunder-lock = true
-    plugins = python
-    enable-threads = true
-    exit-on-reload = true
-    die-on-term = true
-    master = true
-    processes = 2
-    wsgi-file = /usr/bin/zvmsdk-wsgi
-    pidfile = /tmp/zvmsdk-wsgi.pid
-    socket = /tmp/zvmsdk-wsgi.socket
-    uid = zvmsdk
-    gid = zvmsdk
-    threads = 16
 
 Start z/VM Cloud Connector in uwsgi
 -----------------------------------
