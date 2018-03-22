@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "17f27446_5797c5ea",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1091,
+      "author": {
+        "id": 1008725
+      },
+      "writtenOn": "2018-03-22T14:26:52Z",
+      "side": 1,
+      "message": "I think you want to remove this comment because you are\nswitching to the new official API  with this change.\nDo you agree ?",
+      "range": {
+        "startLine": 1090,
+        "startChar": 0,
+        "endLine": 1091,
+        "endChar": 42
+      },
+      "revId": "1a3285c6b7a154bfc69e7ba68f87196a4075582d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
