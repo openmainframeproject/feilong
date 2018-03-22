@@ -204,6 +204,7 @@ VMAPI_OBJECTS += vmapiVirtualNetworkVswitchCreateExtended.o
 VMAPI_OBJECTS += vmapiVirtualNetworkVswitchDelete.o
 VMAPI_OBJECTS += vmapiVirtualNetworkVswitchDeleteExtended.o
 VMAPI_OBJECTS += vmapiVirtualNetworkVswitchQuery.o
+VMAPI_OBJECTS += vmapiVirtualNetworkVswitchQueryByteStats.o
 VMAPI_OBJECTS += vmapiVirtualNetworkVswitchQueryExtended.o
 VMAPI_OBJECTS += vmapiVirtualNetworkVswitchQueryIUOStats.o
 VMAPI_OBJECTS += vmapiVirtualNetworkVswitchQueryStats.o
@@ -839,6 +840,9 @@ vmapiVirtualNetworkVswitchDeleteExtended.o : $(SRC_DIR)vmapiVirtualNetworkVswitc
 
 vmapiVirtualNetworkVswitchQuery.o : $(SRC_DIR)vmapiVirtualNetworkVswitchQuery.c
 	gcc -c $(CFLAGS) $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)vmapiVirtualNetworkVswitchQuery.c
+
+vmapiVirtualNetworkVswitchQueryByteStats.o : $(SRC_DIR)vmapiVirtualNetworkVswitchQueryByteStats.c
+	gcc -c $(CFLAGS) $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)vmapiVirtualNetworkVswitchQueryByteStats.c
 
 vmapiVirtualNetworkVswitchQueryExtended.o : $(SRC_DIR)vmapiVirtualNetworkVswitchQueryExtended.c
 	gcc -c $(CFLAGS) $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)vmapiVirtualNetworkVswitchQueryExtended.c

@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 IBM Corporation
+ * Copyright 2017,2018 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -736,6 +736,32 @@ static  tableLayout Virtual_Network_Vswitch_Query_Layout = {
 
 int smVirtual_Network_Vswitch_Query(struct _vmApiInternalContext* vmapiContextP, char * userid, int passwordLength, char * password,
         char * targetIdentifier, char * switchName, vmApiVirtualNetworkVswitchQueryOutput ** outData);
+
+/* Virtual_Network_Vswitch_Query_Byte_Stats */
+typedef struct _vmApiVirtualNetworkVswitchQueryByteStatsOutput {
+    commonOutputFields common;
+    int stringCount;
+    vmApiCStringInfo * stringList;
+} vmApiVirtualNetworkVswitchQueryByteStatsOutput;
+
+/* Parser table for Virtual_Network_VSwitch_Query_Byte_Stats */
+static tableLayout Virtual_Network_Vswitch_Query_Byte_Stats_Layout = {
+    { APITYPE_BASE_STRUCT_LEN,     4,   4, STRUCT_INDX_0, NEST_LEVEL_0, sizeof(vmApiVirtualNetworkVswitchQueryByteStatsOutput) },
+    { APITYPE_INT4,                4,   4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiVirtualNetworkVswitchQueryByteStatsOutput, common.requestId) },
+    { APITYPE_RC_INT4,             4,   4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiVirtualNetworkVswitchQueryByteStatsOutput, common.returnCode) },
+    { APITYPE_RS_INT4,             4,   4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiVirtualNetworkVswitchQueryByteStatsOutput, common.reasonCode) },
+    { APITYPE_C_STR_ARRAY_PTR,     4,   4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiVirtualNetworkVswitchQueryByteStatsOutput, stringList) },
+    { APITYPE_C_STR_ARRAY_COUNT,   4,   4, STRUCT_INDX_0, NEST_LEVEL_0, offsetof(vmApiVirtualNetworkVswitchQueryByteStatsOutput, stringCount) },
+    { APITYPE_C_STR_STRUCT_LEN,    4,   4, STRUCT_INDX_1, NEST_LEVEL_1, sizeof(vmApiCStringInfo) },
+    { APITYPE_C_STR_PTR,           4,   4, STRUCT_INDX_1, NEST_LEVEL_1, offsetof(vmApiCStringInfo, vmapiString) },
+    { APITYPE_END_OF_TABLE, 0, 0, 0, 0 }
+};
+
+int smVirtual_Network_Vswitch_Query_Byte_Stats(
+        struct _vmApiInternalContext* vmapiContextP, char * userid,
+        int passwordLength, char * password, char * targetIdentifier,
+        int keyValueCount, char ** keyValueArray,
+        vmApiVirtualNetworkVswitchQueryByteStatsOutput ** outData);
 
 /* Virtual_Network_Vswitch_Query_Extended */
 typedef struct _real_device_info_struct {
