@@ -190,77 +190,114 @@ http service is running well.
 Token Usage
 ============
 
-When you sending requests, you need a token to get access to the service.
-To get the token, you need to get an admin-token from administrator which is stored in admin-token-file.
+When you sending requests, you can use token authenticaion to enhance security of the connection between client and server.
+z/VM Cloud Connector use admin-token to authicate the safety of the connection instead of username&password.
 
-As an administrator, you are responsible for creating admin-token-file. You can use gen-token tool provided by ZVMConnector.
-Fox example, initialize one token file:
+On client side, users should use this admin-token to request for a temporary token first. Then users can use
+this temporary token to send requests.
 
-.. code-block:: text
+On server side, admninistrators are responsible for creating admin-token file. The admin-token will be stored
+in this file. Users can get admin-token by contacting administrator.
 
-    # /usr/bin/gen-token
+Setup Server Side
+-----------------
 
-Gen-tool use **/etc/zvmsdk/token.dat** as default path of token file. You can also specify your own token file path:
+* Create admin-token file
 
-.. code-block:: text
+  Administrators can use gen-token tool to create admin-token file.
 
-    # /usr/bin/gen-token /new/path/of/token/file
+  Fox example, initialize one token file:
 
-So, the commands above will initialize one token file and write a random admin-token into it.
-This tool can also help you update the content of token file:
+  .. code-block:: text
 
-.. code-block:: text
+     # /usr/bin/gen-token
 
-    # /usr/bin/gen-token -u
+  Gen-token use **/etc/zvmsdk/token.dat** as default path of token file. You can also specify your own token file path:
 
-If you don't assign a file path, gen-token will update the content of default token path.
-You can update specified file by this way:
+  .. code-block:: text
 
-.. code-block:: text
+     # /usr/bin/gen-token /new/path/of/token/file
 
-    # /usr/bin/gen-token -u /new/path/of/token/file
+  The commands above will initialize one token file and write a random admin-token into it.
 
-After that, the path of token file represented by ``token_path`` should be configured in wsgi section of zvmsdk.conf
-and ``auth`` item in the same section should also be set to ``token``, just like auth=token.
-And if you want to disable authentication, just set ``auth`` to value ``none``.
+  This tool can also help you update the content of token file:
 
-As a client, you can get the admin-token stored in the admin-token-file and request for a token by putting the admin_token into the
-``X-Admin-Token`` field in headers of request object.
+  .. code-block:: text
 
-An example to request for a token:
+     # /usr/bin/gen-token -u
 
-.. code-block:: text
+  If you don't assign a file path, gen-token will update the file of default token path. You can update specified
+  file by this way:
 
-    # curl http://localhost:8080/token -X POST -i -H "Content-Type:application/json" -H "X-Admin-Token:1234567890123456789012345678901234567890"
-    HTTP/1.0 200 OK
-    Date: Wed, 06 Dec 2017 06:11:22 GMT
-    Server: WSGIServer/0.1 Python/2.7.5
-    Content-Type: text/html; charset=UTF-8
-    Content-Length: 0
-    X-Auth-Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTI1NDQyODJ9.TVlcQb_QuUPJ37cRyzZqroR6kLZ-5zH2-tliIkhsQ1A
-    cache-control: no-cache
+  .. code-block:: text
 
-Then, you can send normal RESTful requests using the return X-Auth-Token field. For example:
+     # /usr/bin/gen-token -u /new/path/of/token/file
 
-.. code-block:: text
+* Update Configuration file
 
-    # curl http://localhost:8080/ -H "Content-Type:application/json" -H 'X-Auth-Token:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTI1NDQyODJ9.TVlcQb_QuUPJ37cRyzZqroR6kLZ-5zH2-tliIkhsQ1A'
-    {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": {"min_version": "1.0", "version": "1.0", "max_version": "1.0"}, "errmsg": ""}
+  After creating admin-token file, configuration should be updated to let the server know the path of token file.
 
-If you use ZVMConnector as a client, you can save admin-token-file as /etc/zvmsdk/token.dat and change this file's owner to user zvmsdk.
-Now, you have a easier way to use token now:
+  In configuration file, you can assign token file path by change the value of ``token_path`` which is in wsgi section.
 
-.. code-block:: text
+  What's more, you should let server know we have changed the way of authentication by setting value of ``auth`` item
+  in the wsgi section to ``token``, just like ``auth=token``.
 
-    >>> from zvmconnector import connector
-    >>> conn = connector.ZVMConnector(port=8080)
-    >>> conn.send_request('guest_list')
-    {u'rs': 0, u'overallRC': 0, u'modID': None, u'rc': 0, u'output': [u'NAME1', u'NAME2'], u'errmsg': u'}
+  If you want to disable token authentication, just change ``auth`` to value ``none``.
 
-As you can see, you do not need to use them explicitly now because ZVMConnector use /etc/zvmsdk/token.dat as the default path.
-You can specify your own token file path by this way:
+Setup Client Side
+-----------------
 
-.. code-block:: text
+* Send requests using admin-token
 
-    >>> from zvmconnector import connector
-    >>> conn = connector.ZVMConnector(port=8080, token_path='/your/own/path/token.dat')
+  On client side, you need to get the admin-token stored in the admin-token file. Just As what we have talked above,
+  admin-token file is generated on server side. Users should contact the administrator for admin-token before sending
+  requests. Then users can put the admin_token into the ``X-Admin-Token`` field in headers of request object for
+  passing the authentication.
+
+  An example to request for a token:
+
+  .. code-block:: text
+
+     # curl http://localhost:8080/token -X POST -i -H "Content-Type:application/json" -H "X-Admin-Token:1234567890123456789012345678901234567890"
+     HTTP/1.0 200 OK
+     Date: Wed, 06 Dec 2017 06:11:22 GMT
+     Server: WSGIServer/0.1 Python/2.7.5
+     Content-Type: text/html; charset=UTF-8
+     Content-Length: 0
+     X-Auth-Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTI1NDQyODJ9.TVlcQb_QuUPJ37cRyzZqroR6kLZ-5zH2-tliIkhsQ1A
+     cache-control: no-cache
+
+  You can see the temporary token is in the ``X-Auth-Token`` field.
+
+  Then you can send normal RESTful requests using this temporary token to pass the authentication. 
+
+  For example:
+
+  .. code-block:: text
+
+     # curl http://localhost:8080/ -H "Content-Type:application/json" -H 'X-Auth-Token:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTI1NDQyODJ9.TVlcQb_QuUPJ37cRyzZqroR6kLZ-5zH2-tliIkhsQ1A'
+     {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": {"min_version": "1.0", "version": "1.0", "max_version": "1.0"}, "errmsg": ""}
+
+* Send requests using ZVMConnector
+
+  If you use ZVMConnector on client side, you can save admin-token file as /etc/zvmsdk/token.dat.
+  And please remember to change this file's owner to user **zvmsdk**.
+
+  Now, you have a easier way to use token now:
+
+  .. code-block:: text
+
+     >>> from zvmconnector import connector
+     >>> conn = connector.ZVMConnector(port=8080)
+     >>> conn.send_request('guest_list')
+     {u'rs': 0, u'overallRC': 0, u'modID': None, u'rc': 0, u'output': [u'NAME1', u'NAME2'], u'errmsg': u'}
+
+  As you can see, you do not need to use them explicitly now because ZVMConnector use the default
+  token file /etc/zvmsdk/token.dat.
+
+  You can specify your own token file path by this way:
+
+  .. code-block:: text
+
+     >>> from zvmconnector import connector
+     >>> conn = connector.ZVMConnector(port=8080, token_path='/your/own/path/token.dat')
