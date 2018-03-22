@@ -275,6 +275,9 @@ int displayHelpInfo(int smapiLevel) {
     if (smapiLevel >= 620) {
         printf("  System_FCP_Free_Query\n");
     }
+    if (smapiLevel >= 640) {
+                printf("  System_Image_Performance_Query\n");
+    }
     printf("  System_Info_Query\n");
     if (smapiLevel >= 630) {
                 printf("  System_Information_Query\n");
@@ -873,6 +876,8 @@ static const char * APIS_640[APIS_640_COUNT] = {
         rc = systemEQIDQuery(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "System_FCP_Free_Query")) {
         rc = systemFCPFreeQuery(argC, argV, &vmapiContext);
+    } else if (!strcmp(argV[1], "System_Image_Performance_Query")) {
+        rc = systemImagePerformanceQuery(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "System_Info_Query")) {
         rc = systemInfoQuery(argC, argV, &vmapiContext);
     } else if (!strcmp(argV[1], "System_Information_Query")) {
