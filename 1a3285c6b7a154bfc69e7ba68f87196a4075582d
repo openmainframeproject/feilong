@@ -22,6 +22,30 @@
       "revId": "1a3285c6b7a154bfc69e7ba68f87196a4075582d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "912896ae_f13ff192",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1091,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-03-26T03:06:09Z",
+      "side": 1,
+      "message": "Hi Steve, thanks for your comments, I agree to remove it and will submit the change in another patch and Rui will help to merge it.",
+      "parentUuid": "17f27446_5797c5ea",
+      "range": {
+        "startLine": 1090,
+        "startChar": 0,
+        "endLine": 1091,
+        "endChar": 42
+      },
+      "revId": "1a3285c6b7a154bfc69e7ba68f87196a4075582d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
