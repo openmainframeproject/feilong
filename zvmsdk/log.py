@@ -84,4 +84,3 @@ def setup_log():
 
 LOGGER = Logger('ZVMSDK')
 LOG = LOGGER.getlog()
-log_level = LOGGER.getloglevel()
