@@ -552,6 +552,11 @@ class SMUTClient(object):
                 self._pathutils.clean_temp_folder(tmp_trans_dir)
         # Authorize iucv client
         self.guest_authorize_iucv_client(userid)
+        # Update os version in guest metadata
+        # TODO: may should append to old metadata, not replace
+        image_info = self._ImageDbOperator.image_query_record(image_name)
+        metadata = 'os_version=%s' % image_info[0]['imageosdistro']
+        self._GuestDbOperator.update_guest_by_userid(userid, meta=metadata)
 
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):
