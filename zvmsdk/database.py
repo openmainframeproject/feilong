@@ -611,6 +611,41 @@ class GuestDbOperator(object):
             guests = res.fetchall()
         return guests
 
+    def get_metadata_by_userid(self, userid):
+        """get metadata record.
+        output should be like: "a=1,b=2,c=3"
+        """
+        userid = userid.upper()
+        with get_guest_conn() as conn:
+            res = conn.execute("SELECT * FROM guests "
+                               "WHERE userid=?", (userid,))
+            guest = res.fetchall()
+
+        if len(guest) == 1:
+            return guest[0][2]
+        elif len(guest) == 0:
+            LOG.debug("Guest with userid: %s not found from DB!" % userid)
+            return ''
+        else:
+            LOG.debug("Guest with userid: %s have multiple records!" % userid)
+            ret = ''
+            for i in guest:
+                ret += i['metadata']
+            return ret
+
+    def transfer_metadata_to_str(self, meta):
+        """transfer str to dict.
+        output should be like: {'a':1, 'b':2, 'c':3}
+        """
+        dic = {}
+        arr = meta.strip(' ,').split(',')
+        for i in arr:
+            temp = arr.split('=')
+            key = temp[0].strip()
+            value = temp[1].strip()
+            dic[key] = value
+        return dic
+
     def get_guest_by_id(self, guest_id):
         with get_guest_conn() as conn:
             res = conn.execute("SELECT * FROM guests "
