@@ -1081,8 +1081,8 @@ class SDKAPI(object):
                       "Network information is required but not provided")
             raise exception.SDKInvalidInputFormat(msg=errmsg)
 
-        vdev = nic_id = mac_addr = ip_addr = None
         for network in guest_networks:
+            vdev = nic_id = mac_addr = ip_addr = None
             if 'nic_vdev' in network.keys():
                 vdev = network['nic_vdev']
             if 'nic_id' in network.keys():
