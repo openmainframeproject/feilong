@@ -1087,8 +1087,7 @@ def purgeReader(rh):
                'rc': 0,
                'rs': 0,
                'response': []}
-    # Temporarily use this SMAPI to purge the reader
-    # We've asked for a new one to do this
+
     parms = ['-T', rh.userid, '-k', 'spoolids=all']
 
     results = invokeSMCLI(rh, "System_RDR_File_Manage", parms)
