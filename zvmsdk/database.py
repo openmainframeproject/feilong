@@ -13,7 +13,6 @@
 #    under the License.
 
 
-from datetime import datetime
 import contextlib
 import os
 import six
@@ -36,26 +35,12 @@ _VOLUME_CONN = None
 _NETWORK_CONN = None
 _IMAGE_CONN = None
 _GUEST_CONN = None
+_FCP_CONN = None
 _DBLOCK_VOLUME = threading.RLock()
 _DBLOCK_NETWORK = threading.RLock()
 _DBLOCK_IMAGE = threading.RLock()
 _DBLOCK_GUEST = threading.RLock()
-
-
-@contextlib.contextmanager
-def get_volume_conn():
-    global _VOLUME_CONN, _DBLOCK_VOLUME
-    if not _VOLUME_CONN:
-        _VOLUME_CONN = _init_db_conn(const.DATABASE_VOLUME)
-
-    _DBLOCK_VOLUME.acquire()
-    try:
-        yield _VOLUME_CONN
-    except Exception as err:
-        LOG.error("Execute SQL statements error: %s", six.text_type(err))
-        raise exception.SDKDatabaseException(msg=err)
-    finally:
-        _DBLOCK_VOLUME.release()
+_DBLOCK_FCP = threading.RLock()
 
 
 @contextlib.contextmanager
@@ -106,6 +91,23 @@ def get_guest_conn():
         raise exception.SDKGuestOperationError(rs=1, msg=msg)
     finally:
         _DBLOCK_GUEST.release()
+
+
+@contextlib.contextmanager
+def get_fcp_conn():
+    global _FCP_CONN, _DBLOCK_FCP
+    if not _FCP_CONN:
+        _FCP_CONN = _init_db_conn(const.DATABASE_FCP)
+
+    _DBLOCK_FCP.acquire()
+    try:
+        yield _FCP_CONN
+    except Exception as err:
+        msg = "Execute SQL statements error: %s" % six.text_type(err)
+        LOG.error(msg)
+        raise exception.SDKGuestOperationError(rs=1, msg=msg)
+    finally:
+        _DBLOCK_FCP.release()
 
 
 def _init_db_conn(db_file):
@@ -255,312 +257,129 @@ class NetworkDbOperator(object):
         return self._parse_switch_record(switch_list)
 
 
-class VolumeDbOperator(object):
+class FCPDbOperator(object):
 
     def __init__(self):
-        self._initialize_table_volumes()
-        self._initialize_table_volume_attachments()
-        self._VOLUME_STATUS_FREE = 'free'
-        self._VOLUME_STATUS_IN_USE = 'in-use'
-        self._mod_id = "volume"
+        self._initialize_table()
 
-    def _initialize_table_volumes(self):
-        # The snapshots table doesn't exist by now, but it must be there when
-        # we decide to support copy volumes. So leave 'snapshot-id' there as a
-        # placeholder, since it's hard to migrate a database table in future.
+    def _initialize_table(self):
         sql = ' '.join((
-            'CREATE TABLE IF NOT EXISTS volumes(',
-            'id             char(36)      PRIMARY KEY,',
-            'protocol_type  varchar(8)    NOT NULL,',
-            'size           varchar(8)    NOT NULL,',
-            'status         varchar(32),',
-            'image_id       char(36),',
-            'snapshot_id    char(36),',
-            'deleted        smallint      DEFAULT 0,',
-            'deleted_at     char(26),',
+            'CREATE TABLE IF NOT EXISTS fcp(',
+            'fcp_id         char(4)      PRIMARY KEY,',
+            'assigner_id    varchar(8),'  # foreign key of a VM
+            'connections    integer,'  # 0 means no assigner
+            'reserved       integer,'  # 0 for not reserved
             'comment        varchar(128))'))
-        with get_volume_conn() as conn:
+        with get_fcp_conn() as conn:
             conn.execute(sql)
 
-    def _initialize_table_volume_attachments(self):
-        sql = ' '.join((
-            'CREATE TABLE IF NOT EXISTS volume_attachments(',
-            'id               char(36)      PRIMARY KEY,',
-            'volume_id        char(36)      NOT NULL,',
-            'instance_id      char(36)      NOT NULL,',
-            'connection_info  varchar(256)  NOT NULL,',
-            'mountpoint       varchar(32),',
-            'deleted          smallint      DEFAULT 0,',
-            'deleted_at       char(26),',
-            'comment          varchar(128))'))
-        with get_volume_conn() as conn:
-            conn.execute(sql)
+    def _update_reserve(self, fcp, reserved):
+        with get_fcp_conn() as conn:
+            conn.execute("UPDATE fcp SET reserved=? "
+                         "WHERE fcp_id=?",
+                         (reserved, fcp))
 
-    def get_volume_by_id(self, volume_id):
-        """Query a volume from  database by its id.
-        The id must be a 36-character string.
-        """
-        if not volume_id:
-            msg = "Volume id must be specified!"
-            raise exception.SDKInvalidInputFormat(msg)
+    def unreserve(self, fcp):
+        self._update_reserve(fcp, 0)
 
-        with get_volume_conn() as conn:
-            result_list = conn.execute(
-                "SELECT * FROM volumes WHERE id=? AND deleted=0", (volume_id,)
-                ).fetchall()
+    def reserve(self, fcp):
+        self._update_reserve(fcp, 1)
 
-        if len(result_list) == 1:
-            return result_list[0]
-        elif len(result_list) == 0:
-            LOG.debug("Volume %s is not found!" % volume_id)
-            return None
+    def find_and_reserve(self):
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT * FROM fcp where connections=0 "
+                                  "and reserved=0")
+            fcp_list = result.fetchall()
+            if len(fcp_list) == 0:
+                LOG.info("no more fcp to be allocated")
+                # FIXME:
+                raise Exception
 
-    def insert_volume(self, volume):
-        """Insert a volume into database.
-        The volume is represented by a dict of all volume properties:
-        id: volume id, auto generated and can not be specified.
-        protocol_type: protocol type to access the volume, like 'fc' or
-                      'iscsi', must be specified.
-        size: volume size in Terabytes, Gigabytes or Megabytes, must be
-              specified.
-        status: volume status, auto generated and can not be specified.
-        image_id: source image id when boot-from-volume, optional.
-        snapshot_id: snapshot id when a volume comes from a snapshot, optional.
-        deleted: if deleted, auto generated and can not be specified.
-        deleted_at: auto generated and can not be specified.
-        comment: any comment, optional.
-        """
-        if not (isinstance(volume, dict) and
-                'protocol_type' in volume.keys() and
-                'size' in volume.keys()):
-            msg = "Invalid volume database entry %s !" % volume
-            raise exception.SDKInvalidInputFormat(msg)
+            # allocate first fcp found
+            fcp = fcp_list[0][0]
+            self._update_reserve(fcp, 1)
 
-        volume_id = str(uuid.uuid4())
-        protocol_type = volume['protocol_type']
-        size = volume['size']
-        status = self._VOLUME_STATUS_FREE
-        image_id = volume.get('image_id', None)
-        snapshot_id = volume.get('snapshot_id', None)
-        deleted = '0'
-        deleted_at = None
-        comment = volume.get('comment', None)
+            return fcp
 
-        with get_volume_conn() as conn:
-            conn.execute(
-                "INSERT INTO volumes VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (volume_id, protocol_type, size, status, image_id, snapshot_id,
-                 deleted, deleted_at, comment))
+    def new(self, fcp):
+        with get_fcp_conn() as conn:
+            conn.execute("INSERT INTO fcp (fcp_id, assigner_id, "
+                         "connections, reserved, comment) VALUES "
+                         "(?, ?, ?, ?, ?)",
+                         (fcp, '', 0, 0, ''))
 
-        return volume_id
+    def assign(self, fcp, assigner_id):
+        with get_fcp_conn() as conn:
+            conn.execute("UPDATE fcp SET assigner_id=?, connections=? "
+                         "WHERE fcp_id=?",
+                         (assigner_id, 1, fcp))
 
-    def update_volume(self, volume):
-        """Update a volume in database.
-        The volume is represented by a dict of all volume properties:
-        id: volume id, must be specified.
-        protocol_type: protocol type to access the volume, like 'fc' or
-                      'iscsi', can not update, don't set.
-        size: volume size in Terabytes, Gigabytes or Megabytes, optional.
-        status: volume status, optional.
-        image_id: source image id when boot-from-volume, optional.
-        snapshot_id: snapshot id when a volume comes from a snapshot, optional.
-        deleted: if deleted, can not be updated, use delete_volume() to delete.
-        deleted_at: auto generated and can not be specified.
-        comment: any comment, optional.
-        """
-        if not (isinstance(volume, dict) and
-                'id' in volume.keys()):
-            msg = "Invalid volume database entry %s !" % volume
-            raise exception.SDKInvalidInputFormat(msg)
+    def delete(self, fcp):
+        with get_fcp_conn() as conn:
+            conn.execute("DELETE FROM fcp "
+                         "WHERE fcp_id=?", (fcp,))
 
-        # get current volume properties
-        volume_id = volume['id']
-        old_volume = self.get_volume_by_id(volume_id)
-        if not old_volume:
-            obj_desc = "Volume %s" % volume_id
-            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
-                                                   modID=self._mod_id)
-        else:
-            (_, _, size, status, image_id, snapshot_id, _, _, comment
-             ) = old_volume
+    def increase_usage(self, fcp):
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT * FROM fcp WHERE "
+                                  "fcp_id=?", (fcp,))
+            fcp_list = result.fetchall()
+            connections = fcp_list[0][2]
+            connections += 1
 
-        size = volume.get('size', size)
-        status = volume.get('status', status)
-        image_id = volume.get('image_id', image_id)
-        snapshot_id = volume.get('snapshot_id', snapshot_id)
-        comment = volume.get('comment', comment)
+            conn.execute("UPDATE fcp SET connections=? "
+                         "WHERE fcp_id=?", (connections, fcp))
 
-        with get_volume_conn() as conn:
-            conn.execute(' '.join((
-                "UPDATE volumes",
-                "SET size=?, status=?, image_id=?, snapshot_id=?, comment=?"
-                "WHERE id=?")),
-                (size, status, image_id, snapshot_id, comment, volume_id))
+    def decrease_usage(self, fcp):
+        with get_fcp_conn() as conn:
 
-    def delete_volume(self, volume_id):
-        """Delete a volume from database."""
-        if not volume_id:
-            msg = "Volume id must be specified!"
-            raise exception.SDKInvalidInputFormat(msg)
+            result = conn.execute("SELECT * FROM fcp WHERE "
+                                  "fcp_id=?", (fcp,))
+            fcp_list = result.fetchall()
+            connections = fcp_list[0][2]
+            connections -= 1
+            if connections < 0:
+                connections = 0
+                LOG.warning("Warning: connections of fcp is negative",
+                            fcp)
 
-        volume = self.get_volume_by_id(volume_id)
-        if not volume:
-            obj_desc = "Volume %s" % volume_id
-            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
-                                                   modID=self._mod_id)
+            conn.execute("UPDATE fcp SET connections=? "
+                         "WHERE fcp_id=?",
+                         (connections, fcp))
 
-        time = str(datetime.now())
-        with get_volume_conn() as conn:
-            conn.execute(' '.join((
-                "UPDATE volumes",
-                "SET deleted=1, deleted_at=?",
-                "WHERE id=?")),
-                (time, volume_id))
+    def get_from_assigner(self, assigner_id):
+        with get_fcp_conn() as conn:
 
-    def get_attachment_by_volume_id(self, volume_id):
-        """Query a volume-instance attachment map from database by volume id.
-        The id must be a 36-character string.
-        """
-        if not volume_id:
-            msg = "Volume id must be specified!"
-            raise exception.SDKInvalidInputFormat(msg)
+            result = conn.execute("SELECT * FROM fcp WHERE "
+                                  "assigner_id=?", (assigner_id,))
+            fcp_list = result.fetchall()
 
-        with get_volume_conn() as conn:
-            result_list = conn.execute(' '.join((
-                "SELECT * FROM volume_attachments",
-                "WHERE volume_id=? AND deleted=0")),
-                (volume_id,)
-                ).fetchall()
+        return fcp_list
 
-        if len(result_list) == 1:
-            return result_list[0]
-        elif len(result_list) == 0:
-            LOG.debug("Attachment info of volume %s is not found!" % volume_id)
-            return None
+    def get_all(self):
+        with get_fcp_conn() as conn:
 
-    def get_attachments_by_instance_id(self, instance_id):
-        """Query a volume-instance attachment map database by instance id.
-        The id must be a 36-character string.
-        """
-        if not instance_id:
-            msg = "Instance id must be specified!"
-            raise exception.SDKInvalidInputFormat(msg)
+            result = conn.execute("SELECT * FROM fcp")
+            fcp_list = result.fetchall()
 
-        with get_volume_conn() as conn:
-            result_list = conn.execute(' '.join((
-                "SELECT * FROM volume_attachments",
-                "WHERE instance_id=? AND deleted=0")),
-                (instance_id,)
-                ).fetchall()
+        return fcp_list
 
-        if len(result_list) > 0:
-            return result_list
-        else:
-            LOG.debug(
-                "Attachments info of instance %s is not found!" % instance_id)
-            return None
+    def get_from_fcp(self, fcp):
+        with get_fcp_conn() as conn:
 
-    def insert_volume_attachment(self, volume_attachment):
-        """Insert a volume-instance attachment map into database.
-        The volume-instance attachment map is represented by a dict of
-        following properties:
-        id: unique id of this attachment map. Auto generated and can not be
-        specified.
-        volume_id, volume id, must be specified.
-        instance_id, instance id, must be specified.
-        connection_info: all connection information about this attachment,
-        represented by a dict defined by specific implementations. Must be
-        specified.
-        mountpoint: the mount point on which the volume will be attached on,
-        optional.
-        deleted: if deleted, auto generated and can not be specified.
-        deleted_at: auto generated and can not be specified.
-        comment: any comment, optional.
-        """
-        if not (isinstance(volume_attachment, dict) and
-                'volume_id' in volume_attachment.keys() and
-                'instance_id' in volume_attachment.keys() and
-                'connection_info' in volume_attachment.keys()):
-            msg = ("Invalid volume_attachment database entry %s !"
-                   ) % volume_attachment
-            raise exception.SDKInvalidInputFormat(msg)
+            result = conn.execute("SELECT * FROM fcp where fcp_id=?", (fcp,))
+            fcp_list = result.fetchall()
 
-        # TOOD  volume and instance must exist
-        volume_id = volume_attachment['volume_id']
-        if not self.get_volume_by_id(volume_id):
-            obj_desc = "Volume %s" % volume_id
-            raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
-                                                   modID=self._mod_id)
-        instance_id = volume_attachment['instance_id']
-        # FIXME  need to use get_instance function by Dong Yan
+        return fcp_list
 
-        # attachment must not exist
-        with get_volume_conn() as conn:
-            count = conn.execute(' '.join((
-                "SELECT COUNT(*) FROM volume_attachments",
-                "WHERE volume_id=? AND instance_id=? AND deleted=0")),
-                (volume_id, instance_id)
-                ).fetchone()[0]
-        if count > 0:
-            raise exception.SDKVolumeOperationError(
-                rs=3, vol=volume_id, inst=instance_id)
+    def get_all_free_unreserved(self):
+        with get_fcp_conn() as conn:
 
-        attachment_id = str(uuid.uuid4())
-        connection_info = str(volume_attachment['connection_info'])
-        mountpoint = volume_attachment.get('mountpoint', None)
-        deleted = '0'
-        deleted_at = None
-        comment = volume_attachment.get('comment', None)
+            result = conn.execute("SELECT * FROM fcp where connections=0 "
+                                  "and reserved=0")
+            fcp_list = result.fetchall()
 
-        with get_volume_conn() as conn:
-            conn.execute(' '.join((
-                "INSERT INTO volume_attachments",
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)")),
-                (attachment_id, volume_id, instance_id, connection_info,
-                 mountpoint, deleted, deleted_at, comment))
-
-    def delete_volume_attachment(self, volume_id, instance_id):
-        """Update a volume in database.
-        The volume is represented by a dict of all volume properties:
-        id: volume id, must be specified.
-        protocol_type: protocol type to access the volume, like 'fc' or
-                      'iscsi', can not update, don't set.
-        size: volume size in Terabytes, Gigabytes or Megabytes, optional.
-        status: volume status, optional.
-        image_id: source image id when boot-from-volume, optional.
-        snapshot_id: snapshot id when a volume comes from a snapshot, optional.
-        deleted: if deleted, can not be updated, use delete_volume() to delete.
-        deleted_at: auto generated and can not be specified.
-        comment: any comment, optional.
-        """
-        if not volume_id or not instance_id:
-            msg = "Volume id and instance id must be specified!"
-            raise exception.SDKInvalidInputFormat(msg)
-
-        # if volume-instance attachment exists in the database
-        with get_volume_conn() as conn:
-            count = conn.execute(' '.join((
-                "SELECT COUNT(*) FROM volume_attachments",
-                "WHERE volume_id=? AND instance_id=? AND deleted=0")),
-                (volume_id, instance_id)
-                ).fetchone()[0]
-
-        if count == 0:
-            raise exception.SDKVolumeOperationError(
-                rs=4, vol=volume_id, inst=instance_id)
-        elif count > 1:
-            msg = ("Duplicated records found in volume_attachment with "
-                   "volume_id %s and instance_id %s !"
-                   ) % (volume_id, instance_id)
-            raise exception.SDKDatabaseException(msg=msg)
-
-        time = str(datetime.now())
-        with get_volume_conn() as conn:
-            conn.execute(' '.join((
-                "UPDATE volume_attachments",
-                "SET deleted=1, deleted_at=?",
-                "WHERE volume_id=? AND instance_id=?")),
-                (time, volume_id, instance_id))
+        return fcp_list
 
 
 class ImageDbOperator(object):
