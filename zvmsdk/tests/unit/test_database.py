@@ -556,6 +556,17 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
                           u''), guest)
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
+    @mock.patch.object(uuid, 'uuid4')
+    def test_get_metadata_by_userid(self, get_uuid):
+        userid = 'fake01'
+        meta = 'fakemeta=1, fakemeta2=True'
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77d'
+        self.db_op.add_guest(userid, meta=meta)
+        # get metadata
+        metadata = self.db_op.get_metadata_by_userid('fake01')
+        self.assertEqual(meta, metadata)
+        self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77d')
+
     def test_get_guest_by_userid_not_exist(self):
         guest = self.db_op.get_guest_by_userid('FaKeuser')
         self.assertEqual(None, guest)
