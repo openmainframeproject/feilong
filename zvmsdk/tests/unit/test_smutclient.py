@@ -187,6 +187,10 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request.assert_called_once_with(requestData)
         self.assertIs(os.path.exists('/tmp/FakeID'), False)
 
+    @mock.patch.object(database.GuestDbOperator,
+                       'update_guest_by_userid')
+    @mock.patch.object(database.ImageDbOperator,
+                       'image_query_record')
     @mock.patch.object(smutclient.SMUTClient, 'guest_authorize_iucv_client')
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
     @mock.patch.object(tempfile, 'mkdtemp')
@@ -194,10 +198,11 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smutclient.SMUTClient, '_request')
     @mock.patch.object(smutclient.SMUTClient, '_get_image_path_by_name')
     def test_guest_deploy(self, get_image_path, request, execute, mkdtemp,
-                          cleantemp, guestauth):
+                          cleantemp, guestauth, image_query, guest_update):
         base.set_conf("zvm", "user_root_vdev", "0100")
         execute.side_effect = [(0, ""), (0, "")]
         mkdtemp.return_value = '/tmp/tmpdir'
+        image_query.return_value = [{'imageosdistro': 'fakeos'}]
         userid = 'fakeuser'
         image_name = 'fakeimg'
         get_image_path.return_value = \
@@ -217,6 +222,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
         guestauth.assert_called_once_with(userid)
+        guest_update.assert_called_once_with(userid, meta='os_version=fakeos')
 
     @mock.patch.object(zvmutils, 'execute')
     @mock.patch.object(smutclient.SMUTClient, '_request')
