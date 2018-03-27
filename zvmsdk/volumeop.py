@@ -1,4 +1,4 @@
-# Copyright 2017 IBM Corp.
+#    Copyright 2017 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -18,6 +18,8 @@ import re
 import six
 
 from zvmsdk import config
+from zvmsdk import constants
+from zvmsdk import database
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import vmops
@@ -44,8 +46,8 @@ DEDICATE = 'dedicate'
 
 def get_volumeop():
     global _VolumeOP
-    if not _VolumeOP:
-        _VolumeOP = VolumeOperator()
+    # if not _VolumeOP:
+    #   _VolumeOP = VolumeOperator()
     return _VolumeOP
 
 
@@ -181,196 +183,350 @@ class _Configurator_Ubuntu16(_BaseConfigurator):
         pass
 
 
-class VolumeOperator(VolumeOperatorAPI):
+class FCP(object):
+    def __init__(self, init_info):
+        self._dev_no = None
+        self._npiv_port = None
+        self._chpid = None
+        self._physical_port = None
+        self._assigned_id = None
 
-    __singleton = None
+        self._parse(init_info)
 
-    _PATTERN_RHEL7 = '^rhel7(\.[0-9])?$'
-    _PATTERN_SLES12 = '^sles12(sp[1-9])?$'
-    _PATTERN_UBUNTU16 = '^ubuntu16(\.[0-9][0-9])?$'
+    @staticmethod
+    def _get_wwpn_from_line(info_line):
+        wwpn = info_line.split(':')[-1].strip().lower()
+        return wwpn if (wwpn and wwpn.upper() != 'NONE') else None
 
-    def __new__(cls, *args, **kwargs):
-        if not cls.__singleton:
-            cls.__singleton = super(VolumeOperator, cls
-                                    ).__new__(cls, *args, **kwargs)
-        return cls.__singleton
+    @staticmethod
+    def _get_dev_number_from_line(info_line):
+        dev_no = info_line.split(':')[-1].strip().lower()
+        return dev_no if dev_no else None
 
-    def attach_volume_to_instance(self,
-                                  instance,
-                                  volume,
-                                  connection_info,
-                                  is_rollback_in_failure=False):
-        LOG.debug("Enter VolumeOperator.attach_volume_to_instance, attach "
-                  "volume %(vol)s to instance %(inst)s by connection_info "
-                  "%(conn_info)s.")
+    @staticmethod
+    def _get_chpid_from_line(info_line):
+        chpid = info_line.split(':')[-1].strip().upper()
+        return chpid if chpid else None
 
-        self._validate_instance(instance)
-        self._validate_volume(volume)
-        self._validate_connection_info(connection_info)
+    def _parse(self, init_info):
+        """Initialize a FCP device object from several lines of string
+           describing properties of the FCP device.
+           Here is a sample:
+               opnstk1: FCP device number: B83D
+               opnstk1:   Status: Free
+               opnstk1:   NPIV world wide port number: NONE
+               opnstk1:   Channel path ID: 59
+               opnstk1:   Physical world wide port number: 20076D8500005181
+           The format comes from the response of xCAT, do not support
+           arbitrary format.
+        """
+        if isinstance(init_info, list) and (len(init_info) == 5):
+            self._dev_no = self._get_dev_number_from_line(init_info[0])
+            self._npiv_port = self._get_wwpn_from_line(init_info[2])
+            self._chpid = self._get_chpid_from_line(init_info[3])
+            self._physical_port = self._get_wwpn_from_line(init_info[4])
 
-        configurator = self._get_configurator(instance)
-        configurator.config_attach(instance, volume, connection_info)
+    def get_dev_no(self):
+        return self._dev_no
 
-        LOG.debug("Exit VolumeOperator.attach_volume_to_instance.")
+    def is_valid(self):
+        # FIXME: add validation later
+        return True
 
-    def detach_volume_from_instance(self,
-                                    instance,
-                                    volume,
-                                    connection_info,
-                                    is_rollback_in_failure=False):
-        LOG.debug("Enter VolumeOperator.detach_volume_from_instance, detach "
-                  "volume %(vol)s from instance %(inst)s by connection_info "
-                  "%(conn_info)s.")
 
-        self._validate_instance(instance)
-        self._validate_volume(volume)
-        self._validate_connection_info(connection_info)
+class FCPManager(object):
 
-        configurator = self._get_configurator(instance)
-        configurator.config_detach(instance, volume, connection_info)
+    def __init__(self):
+        self._fcp_pool = {}
+        self.db = database.FCPDbOperator()
 
-        LOG.debug("Exit VolumeOperator.detach_volume_from_instance.")
+    def init_fcp(self, host_stats):
+        """init_fcp to init the FCP managed by this host"""
+        # TODO master_fcp_list (zvm_zhcp_fcp_list) really need?
+        fcp_list = CONF.volume.fcp_list
+        if fcp_list is None:
+            errmsg = ("because CONF.volume.fcp_list is empty, "
+                      "no volume functions available")
+            LOG.Info(errmsg)
+            return
 
-    def _validate_instance(self, instance):
-        # arg type checks are done in API level
+        self._fcp_info = self._init_fcp_pool(fcp_list)
 
-        if OS_TYPE not in instance.keys():
-            raise exception.SDKInvalidInputFormat(
-                "instance os_type is not passed in!")
+    def _init_fcp_pool(self, fcp_list):
+        """The FCP infomation got from smut(zthin) looks like :
+           host: FCP device number: xxxx
+           host:   Status: Active
+           host:   NPIV world wide port number: xxxxxxxx
+           host:   Channel path ID: xx
+           host:   Physical world wide port number: xxxxxxxx
+           ......
+           host: FCP device number: xxxx
+           host:   Status: Active
+           host:   NPIV world wide port number: xxxxxxxx
+           host:   Channel path ID: xx
+           host:   Physical world wide port number: xxxxxxxx
 
-        if NAME not in instance.keys():
-            raise exception.SDKInvalidInputFormat(
-                "instance name is not passed in!")
+        """
+        complete_fcp_set = self._expand_fcp_list(fcp_list)
+        fcp_info = self._get_all_fcp_info()
+        lines_per_item = 5
 
-        # os_type patterns for rhel7, sles12 and ubuntu 16, i.e.
-        # rhel7: rhel7, rhel7.2
-        # sles12: sles12, sles12sp2
-        # ubuntu16: ubuntu16, ubuntu16.04
-        os_type_pattern = (self._PATTERN_RHEL7 +
-                           '|' + self._PATTERN_SLES12 +
-                           '|' + self._PATTERN_UBUNTU16)
-        if not re.match(os_type_pattern, instance[OS_TYPE]):
-            msg = ("unknown instance os_type: %s . It must be one of set "
-                   "'rhel7, sles12, or ubuntu16'." % instance[OS_TYPE])
-            raise exception.SDKInvalidInputFormat(msg)
+        num_fcps = len(fcp_info) // lines_per_item
+        for n in range(0, num_fcps):
+            fcp_init_info = fcp_info[(5 * n):(5 * (n + 1))]
+            fcp = FCP(fcp_init_info)
+            dev_no = fcp.get_dev_no()
+            if dev_no in complete_fcp_set:
+                if fcp.is_valid():
+                    self._fcp_pool[dev_no] = fcp
+                else:
+                    errmsg = ("Find an invalid FCP device with properties {"
+                              "dev_no: %(dev_no)s, "
+                              "NPIV_port: %(NPIV_port)s, "
+                              "CHPID: %(CHPID)s, "
+                              "physical_port: %(physical_port)s} !") % {
+                               'dev_no': fcp.get_dev_no(),
+                               'NPIV_port': fcp.get_npiv_port(),
+                               'CHPID': fcp.get_chpid(),
+                               'physical_port': fcp.get_physical_port()}
+                    LOG.warning(errmsg)
+            else:
+                # normal, FCP not used by cloud connector at all
+                msg = "Found a fcp %s not in fcp_list" % dev_no
+                LOG.debug(msg)
 
-    def _is_16bit_hex(self, value):
-        pattern = '^[0-9a-f]{16}$'
+    @staticmethod
+    def _expand_fcp_list(fcp_list):
+        """Expand fcp list string into a python list object which contains
+        each fcp devices in the list string. A fcp list is composed of fcp
+        device addresses, range indicator '-', and split indicator ';'.
+
+        For example, if fcp_list is
+        "0011-0013;0015;0017-0018", expand_fcp_list(fcp_list) will return
+        [0011, 0012, 0013, 0015, 0017, 0018].
+
+        """
+
+        LOG.debug("Expand FCP list %s" % fcp_list)
+
+        if not fcp_list:
+            return set()
+
+        range_pattern = '[0-9a-fA-F]{1,4}(-[0-9a-fA-F]{1,4})?'
+        match_pattern = "^(%(range)s)(;%(range)s)*$" % {'range': range_pattern}
+        if not re.match(match_pattern, fcp_list):
+            errmsg = ("Invalid FCP address %s") % fcp_list
+            raise exception.SDKInternalError(msg=errmsg)
+
+        fcp_devices = set()
+        for _range in fcp_list.split(';'):
+            if '-' not in _range:
+                # single device
+                fcp_addr = int(_range, 16)
+                fcp_devices.add("%04x" % fcp_addr)
+            else:
+                # a range of address
+                (_min, _max) = _range.split('-')
+                _min = int(_min, 16)
+                _max = int(_max, 16)
+                for fcp_addr in range(_min, _max + 1):
+                    fcp_devices.add("%04x" % fcp_addr)
+
+        # remove duplicate entries
+        return fcp_devices
+
+    def _report_orphan_fcp(self, fcp):
+        """check there is record in db but not in FCP configuration"""
+        LOG.warning("WARNING: fcp %s found in db but not in "
+                    "CONF.volume.fcp_list which is %s" %
+                    (fcp, CONF.volume.fcp_list))
+
+    def _add_fcp(self, fcp):
+        """add fcp to db if it's not in db but in fcp list and init it"""
         try:
-            return re.match(pattern, value)
+            LOG.info("fcp %s found in CONF.volume.fcp_list, add it to db" %
+                     fcp)
+            self.db.new(fcp)
         except Exception:
-            return False
+            LOG.info("failed to add fcp %s into db", fcp)
 
-    def _validate_volume(self, volume):
-        # arg type checks are done in API level
+    def _sync_db_fcp_list(self):
+        """sync db records from given fcp list, for example, you need
+        warn if some FCP already removed while it's still in use,
+        or info about the new FCP added"""
+        fcp_db_list = self.db.get_all()
 
-        if TYPE not in volume.keys():
-            raise exception.SDKInvalidInputFormat(
-                "volume type is not passed in!")
+        for fcp_rec in fcp_db_list:
+            if not fcp_rec[0].lower() in self._fcp_pool:
+                self._report_orphan_fcp(fcp_rec[0])
 
-        # support only FiberChannel volumes at this moment
-        if volume[TYPE] != 'fc':
-            msg = ("volume type: %s is illegal!" % volume[TYPE])
-            raise exception.SDKInvalidInputFormat(msg)
-        self._validate_fc_volume(volume)
+        for fcp_conf_rec, v in self._fcp_pool.items():
+            res = self.db.get_from_fcp(fcp_conf_rec)
 
-    def _validate_fc_volume(self, volume):
-        # exclusively entering from _validate_volume at this moment, so will
-        # not check volume object again. Modify it if necessary in the future
-        if LUN not in volume.keys():
-            raise exception.SDKInvalidInputFormat(
-                "volume LUN is not passed in!")
+            # if not found this record, a [] will be returned
+            if len(res) == 0:
+                self._add_fcp(fcp_conf_rec)
 
-        volume[LUN] = volume[LUN].lower()
-        if not self._is_16bit_hex(volume[LUN]):
-            msg = ("volume LUN value: %s is illegal!" % volume[LUN])
-            raise exception.SDKInvalidInputFormat(msg)
+    def _get_all_fcp_info(self):
+        fcp_info = []
+        free_fcp_info = self._list_fcp_details('free')
+        active_fcp_info = self._list_fcp_details('active')
 
-    def _validate_connection_info(self, connection_info):
-        # arg type checks are done in API level
+        if free_fcp_info:
+            fcp_info.extend(free_fcp_info)
 
-        if ALIAS not in connection_info.keys():
-            raise exception.SDKInvalidInputFormat(
-                "device alias is not passed in!")
+        if active_fcp_info:
+            fcp_info.extend(active_fcp_info)
 
-        if PROTOCOL not in connection_info.keys():
-            raise exception.SDKInvalidInputFormat(
-                "connection protocol is not passed in!")
+        return fcp_info
 
-        # support only FiberChannel volumes at this moment
-        if connection_info[PROTOCOL] != 'fc':
-            raise exception.SDKInvalidInputFormat(
-                "connection protocol: %s is illegal!" %
-                connection_info[PROTOCOL])
-        self._validate_fc_connection_info(connection_info)
+    def find_and_reserve_fcp(self, assigner_id):
+        """reserve the fcp to assigner_id
 
-    def _validate_fc_connection_info(self, connection_info):
-        # exclusively entering from _validate_connection_info at this moment,
-        # so will not check connection_info object again. Modify it if
-        # necessary in the future
-        if DEDICATE in connection_info.keys():
-            if not isinstance(connection_info[DEDICATE], list):
-                msg = ("dedicate devices in connection info must be of type "
-                       "list, however the object passed in is: %s !"
-                       % connection_info[DEDICATE])
-                raise exception.SDKInvalidInputFormat(msg)
-            for i in range(len(connection_info[DEDICATE])):
-                connection_info[DEDICATE][i] = (
-                        connection_info[DEDICATE][i].lower())
+        The function to reserve a fcp for user
+        1. Check whether assigner_id has a fcp already
+           if yes, make the reserve of that record to 1
+        2. No fcp, then find a fcp and reserve it
 
-        if FCPS not in connection_info.keys():
-            raise exception.SDKInvalidInputFormat(
-                "fcp devices are not passed in!")
+        fcp will be returned, or None indicate no fcp
+        """
+        fcp_list = self.db.get_from_assigner(assigner_id)
+        if not fcp_list:
+            new_fcp = self.db.find_and_reserve()
+            if new_fcp is None:
+                LOG.info("no more fcp to be allocated")
+                return None
 
-        if not isinstance(connection_info[FCPS], list):
-            msg = ("fcp devices in connection info must be of type list, "
-                   "however the object passed in is: %s !"
-                   % connection_info[FCPS])
-            raise exception.SDKInvalidInputFormat(msg)
-
-        if WWPNS not in connection_info.keys():
-            raise exception.SDKInvalidInputFormat("WWPNS are not passed in!")
-
-        if not isinstance(connection_info[WWPNS], list):
-            msg = ("wwpns in connection info must be of type list, however "
-                   "the object passed in is: %s !" % connection_info[WWPNS])
-            raise exception.SDKInvalidInputFormat(msg)
-
-        for i in range(len(connection_info[FCPS])):
-            connection_info[FCPS][i] = connection_info[FCPS][i].lower()
-        for fcp in connection_info[FCPS]:
-            self._validate_fcp(fcp)
-
-        for i in range(len(connection_info[WWPNS])):
-            connection_info[WWPNS][i] = connection_info[WWPNS][i].lower()
-        for wwpn in connection_info[WWPNS]:
-            if not self._is_16bit_hex(wwpn):
-                msg = ("WWPN value: %s is illegal!" % wwpn)
-                raise exception.SDKInvalidInputFormat(msg)
-
-    def _validate_fcp(self, fcp):
-        # exclusively entering from _validate_fc_connection_info at this
-        # moment, so will not check fcp object again. Modify it if necessary
-        # in the future
-        pattern = '^[0-9a-f]{1,4}$'
-        try:
-            if not re.match(pattern, fcp):
-                raise exception.SDKInvalidInputFormat(
-                    "fcp value: %s is illegal!" % fcp)
-        except Exception:
-            msg = ("fcp object must be of type string, "
-                   "however the object passed in is: %s !" % fcp)
-            raise exception.SDKInvalidInputFormat(msg)
-
-    def _get_configurator(self, instance):
-        # all input object should have been validated by _validate_xxx method
-        # before being passed in
-        if re.match(self._PATTERN_RHEL7, instance[OS_TYPE]):
-            return _Configurator_RHEL7()
-        elif re.match(self._PATTERN_SLES12, instance[OS_TYPE]):
-            return _Configurator_SLES12()
-        elif re.match(self._PATTERN_UBUNTU16, instance[OS_TYPE]):
-            return _Configurator_Ubuntu16()
+            LOG.debug("allocated %s fcp for %s assigner" %
+                      (new_fcp, assigner_id))
+            return new_fcp
         else:
-            raise exception.SDKInvalidInputFormat(
-                "unknown instance os: %s!" % instance[OS_TYPE])
+            # we got it from db, let's reuse it
+            old_fcp = fcp_list[0][0]
+            self.db.reserve(fcp_list[0][0])
+            return old_fcp
+
+    def increase_fcp_usage(self, fcp, assigner_id=None):
+        """Incrase fcp usage of given fcp
+
+        Returns True if it's a new fcp, otherwise return False
+        """
+        # TODO: check assigner_id to make sure on the correct fcp record
+        fcp_list = self.db.get_from_assigner(assigner_id)
+        new = False
+
+        if not fcp_list:
+            self.db.assign(fcp, assigner_id)
+            new = True
+        else:
+            self.db.increase_usage(fcp)
+
+        return new
+
+    def decrease_fcp_usage(self, fcp, assigner_id=None):
+        # TODO: check assigner_id to make sure on the correct fcp record
+        connections = self.db.decrease_usage(fcp)
+
+        return connections
+
+    def unreserve_fcp(self, fcp, assigner_id=None):
+        # TODO: check assigner_id to make sure on the correct fcp record
+        self.db.unreserve(fcp)
+
+
+# volume manager for FCP protocol
+class FCPVolumeManager(object):
+    def __init__(self):
+        self.fcp_mgr = FCPManager()
+
+    def _dedicate_fcp(self, fcp, assigner_id):
+        pass
+
+    def _add_disk(self, fcp, assinger_id, target_wwpn, target_lun,
+                  multipath, os_version):
+        pass
+
+    def _attach(self, fcp, assigner_id, target_wwpn, target_lun,
+                multipath, os_version):
+        """Attach a volume
+
+        First, we need translate fcp into local wwpn, then
+        dedicate fcp to the user if it's needed, after that
+        call smut layer to call linux command
+        """
+        new = self.fcp_mgr.increase_fcp_usage(fcp, assigner_id)
+
+        if new:
+            self._dedicate_fcp(fcp, assigner_id)
+
+        self._add_disk(fcp, assigner_id, target_wwpn, target_lun,
+                       multipath, os_version)
+
+    def attach(self, connection_info):
+        """Attach a volume to a guest
+
+        connection_info contains info from host and storage side
+        this mostly includes
+        host side FCP: this can get host side wwpn
+        storage side wwpn
+        storage side lun
+
+        all the above assume the storage side info is given by caller
+        """
+        fcp = connection_info['zvm_fcp']
+        target_wwpn = connection_info['target_wwpn']
+        target_lun = connection_info['target_lun']
+        assigner_id = connection_info['assigner_id']
+        multipath = connection_info['multipath']
+        os_version = connection_info['os_version']
+
+        self._attach(fcp, assigner_id, target_wwpn, target_lun,
+                     multipath, os_version)
+
+    def _undedicate_fcp(self, fcp, assigner_id):
+        pass
+
+    def _remove_disk(self, fcp, assinger_id, target_wwpn, target_lun,
+                     multipath, os_version):
+        pass
+
+    def _detach(self, fcp, assigner_id, target_wwpn, target_lun,
+                multipath, os_version):
+        """Detach a volume from a guest"""
+        connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
+
+        self._remove_disk(fcp, assigner_id, target_wwpn, target_lun,
+                          multipath, os_version)
+
+        if not connections:
+            self._undedicate_fcp(fcp, assigner_id)
+
+    def detach(self, connection_info):
+        """Detach a volume from a guest
+        """
+        fcp = connection_info['zvm_fcp']
+        target_wwpn = connection_info['target_wwpn']
+        target_lun = connection_info['target_lun']
+        assigner_id = connection_info['assigner_id']
+        multipath = connection_info['multipath']
+        os_version = connection_info['os_version']
+
+        self._detach(fcp, assigner_id, target_wwpn, target_lun, multipath,
+                     os_version)
+
+    def get_volume_connector(self, assigner_id):
+        """Get volume connector, mainly get a fcp
+
+        """
+        fcp = self.fcp_mgr.find_and_reserve_fcp(assigner_id)
+        res = {'platform': constants.ARCHITECTURE,
+               'ip': CONF.network.my_ip,
+               'do_local_attach': False,
+               'os_type': 'linux',
+               # FIXME:
+               'os_version': '',
+               'multipath': True,
+               'fcp': fcp}
+        LOG.debug('get_volume_connector returns %s for %s' %
+                  (fcp, assigner_id))
+        return res

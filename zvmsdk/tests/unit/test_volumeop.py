@@ -15,298 +15,349 @@
 
 import mock
 
-from zvmsdk import vmops
+from zvmsdk import database
 from zvmsdk import volumeop
-from zvmsdk.exception import SDKInvalidInputFormat as err
 from zvmsdk.tests.unit import base
 
-# instance parameters:
-from zvmsdk.volumeop import NAME as NAME
-from zvmsdk.volumeop import OS_TYPE as OS_TYPE
-# volume parameters:
-from zvmsdk.volumeop import SIZE as SIZE
-from zvmsdk.volumeop import TYPE as TYPE
-from zvmsdk.volumeop import LUN as LUN
-# connection_info parameters:
-from zvmsdk.volumeop import ALIAS as ALIAS
-from zvmsdk.volumeop import PROTOCOL as PROTOCOL
-from zvmsdk.volumeop import FCPS as FCPS
-from zvmsdk.volumeop import WWPNS as WWPNS
-from zvmsdk.volumeop import DEDICATE as DEDICATE
+
+class TestFCP(base.SDKTestCase):
+
+    def test_parse_normal(self):
+        info = ['opnstk1: FCP device number: B83D',
+                'opnstk1:   Status: Free',
+                'opnstk1:   NPIV world wide port number: NONE',
+                'opnstk1:   Channel path ID: 59',
+                'opnstk1:   Physical world wide port number: 20076D8500005181']
+        fcp = volumeop.FCP(info)
+        self.assertEqual('B83D', fcp._dev_no.upper())
+        self.assertIsNone(fcp._npiv_port)
+        self.assertEqual('59', fcp._chpid.upper())
+        self.assertEqual('20076D8500005181', fcp._physical_port.upper())
+
+    def test_parse_npiv(self):
+        info = ['opnstk1: FCP device number: B83D',
+                'opnstk1:   Status: Free',
+                'opnstk1:   NPIV world wide port number: 20076D8500005182',
+                'opnstk1:   Channel path ID: 59',
+                'opnstk1:   Physical world wide port number: 20076D8500005181']
+        fcp = volumeop.FCP(info)
+        self.assertEqual('B83D', fcp._dev_no.upper())
+        self.assertEqual('20076D8500005182', fcp._npiv_port.upper())
+        self.assertEqual('59', fcp._chpid.upper())
+        self.assertEqual('20076D8500005181', fcp._physical_port.upper())
 
 
-class _BaseConfiguratorTestCase(base.SDKTestCase):
+class TestFCPManager(base.SDKTestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        super(_BaseConfiguratorTestCase, cls).setUpClass()
-        cls._base_cnf = volumeop._BaseConfigurator()
+    def setUp(self):
+        self.fcpops = volumeop.FCPManager()
 
-    @mock.patch.object(volumeop._BaseConfigurator, 'config_attach_inactive')
-    @mock.patch.object(volumeop._BaseConfigurator, 'config_attach_active')
-    @mock.patch.object(vmops.VMOps, 'is_reachable')
-    def test_config_attach(self, is_reachable,
-                           config_attach_active,
-                           config_attach_inactive):
-        inst = {NAME: 'inst1'}
-        (volume, conn_info) = ({}, {})
+    def test_expand_fcp_list_normal(self):
+        fcp_list = "1f10;1f11;1f12;1f13;1f14"
+        expected = set(['1f10', '1f11', '1f12', '1f13', '1f14'])
+        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
+        self.assertEqual(expected, fcp_info)
 
-        is_reachable.return_value = True
-        config_attach_active.return_value = None
-        self._base_cnf.config_attach(inst, volume, conn_info)
-        config_attach_active.assert_called_once_with(inst, volume, conn_info)
+    def test_expand_fcp_list_with_dash(self):
+        fcp_list = "1f10-1f14"
+        expected = set(['1f10', '1f11', '1f12', '1f13', '1f14'])
+        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
+        self.assertEqual(expected, fcp_info)
 
-        is_reachable.return_value = False
-        config_attach_inactive.return_value = None
-        self._base_cnf.config_attach(inst, volume, conn_info)
-        config_attach_inactive.assert_called_once_with(inst, volume, conn_info)
+    def test_expand_fcp_list_with_normal_plus_dash(self):
+        fcp_list = "1f10;1f11-1f13;1f17"
+        expected = set(['1f10', '1f11', '1f12', '1f13', '1f17'])
+        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
+        self.assertEqual(expected, fcp_info)
+
+    def test_expand_fcp_list_with_normal_plus_2dash(self):
+        fcp_list = "1f10;1f11-1f13;1f17-1f1a;1f02"
+        expected = set(['1f10', '1f11', '1f12', '1f13', '1f17',
+                        '1f18', '1f19', '1f1a', '1f02'])
+        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
+        self.assertEqual(expected, fcp_info)
+
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    def test_init_fcp_pool(self, mock_get):
+        fcp_list = ['opnstk1: FCP device number: B83D',
+            'opnstk1:   Status: Free',
+            'opnstk1:   NPIV world wide port number: 20076D8500005182',
+            'opnstk1:   Channel path ID: 59',
+            'opnstk1:   Physical world wide port number: 20076D8500005181',
+            'opnstk1: FCP device number: B83E',
+            'opnstk1:   Status: Active',
+            'opnstk1:   NPIV world wide port number: 20076D8500005183',
+            'opnstk1:   Channel path ID: 50',
+            'opnstk1:   Physical world wide port number: 20076D8500005185']
+
+        mock_get.return_value = fcp_list
+
+        self.fcpops._init_fcp_pool('b83d-b83f')
+        self.assertEqual(2, len(self.fcpops._fcp_pool))
+        self.assertTrue('b83d' in self.fcpops._fcp_pool)
+        self.assertTrue('b83e' in self.fcpops._fcp_pool)
+        # note b83f is not in fcp_list
+        self.assertFalse('b83f' in self.fcpops._fcp_pool)
+
+        npiv = self.fcpops._fcp_pool['b83d']._npiv_port.upper()
+        physical = self.fcpops._fcp_pool['b83d']._physical_port.upper()
+        self.assertEqual('20076D8500005182', npiv)
+        self.assertEqual('20076D8500005181', physical)
+        self.assertEqual('59', self.fcpops._fcp_pool['b83d']._chpid.upper())
+
+        npiv = self.fcpops._fcp_pool['b83e']._npiv_port.upper()
+        physical = self.fcpops._fcp_pool['b83e']._physical_port.upper()
+        self.assertEqual('20076D8500005183', npiv)
+        self.assertEqual('20076D8500005185', physical)
+        self.assertEqual('50', self.fcpops._fcp_pool['b83e']._chpid.upper())
+
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    @mock.patch("zvmsdk.volumeop.FCPManager._report_orphan_fcp")
+    @mock.patch("zvmsdk.volumeop.FCPManager._add_fcp")
+    def test_sync_db_fcp_list(self, mock_add, mock_report, mock_get):
+
+        fcp_list = ['opnstk1: FCP device number: B83D',
+            'opnstk1:   Status: Free',
+            'opnstk1:   NPIV world wide port number: 20076D8500005182',
+            'opnstk1:   Channel path ID: 59',
+            'opnstk1:   Physical world wide port number: 20076D8500005181',
+            'opnstk1: FCP device number: B83E',
+            'opnstk1:   Status: Active',
+            'opnstk1:   NPIV world wide port number: 20076D8500005183',
+            'opnstk1:   Channel path ID: 50',
+            'opnstk1:   Physical world wide port number: 20076D8500005185',
+            'opnstk1: FCP device number: B83F',
+            'opnstk1:   Status: Active',
+            'opnstk1:   NPIV world wide port number: 20076D8500005187',
+            'opnstk1:   Channel path ID: 50',
+            'opnstk1:   Physical world wide port number: 20076D8500005188']
+
+        mock_get.return_value = fcp_list
+
+        self.fcpops._init_fcp_pool('b83d-b83f')
+
+        db_op = database.FCPDbOperator()
+        db_op.new('b83c')
+        db_op.new('b83d')
+        db_op.new('b83e')
+
+        try:
+            self.fcpops._sync_db_fcp_list()
+            mock_add.assert_called_once_with('b83f')
+            mock_report.assert_called_once_with('b83c')
+        finally:
+            db_op.delete('b83d')
+            db_op.delete('b83e')
+            db_op.delete('b83f')
+            db_op.delete('b83c')
+
+    def test_find_and_reserve_fcp_new(self):
+        db_op = database.FCPDbOperator()
+        # create 2 FCP
+        db_op.new('b83c')
+        db_op.new('b83d')
+
+        # find FCP for user and FCP not exist, should allocate them
+        try:
+            fcp1 = self.fcpops.find_and_reserve_fcp('dummy1')
+            fcp2 = self.fcpops.find_and_reserve_fcp('dummy2')
+
+            self.assertEqual('b83c', fcp1)
+            self.assertEqual('b83d', fcp2)
+
+            fcp_list = db_op.get_from_fcp('b83c')
+            expected = [(u'b83c', u'', 0, 1, u'')]
+            self.assertEqual(expected, fcp_list)
+
+            fcp_list = db_op.get_from_fcp('b83d')
+            expected = [(u'b83d', u'', 0, 1, u'')]
+            self.assertEqual(expected, fcp_list)
+        finally:
+            db_op.delete('b83c')
+            db_op.delete('b83d')
+
+    def test_find_and_reserve_fcp_old(self):
+        db_op = database.FCPDbOperator()
+        # create 2 FCP
+        db_op.new('b83c')
+        db_op.new('b83d')
+
+        # find FCP for user and FCP not exist, should allocate them
+        try:
+            fcp1 = self.fcpops.find_and_reserve_fcp('user1')
+            self.assertEqual('b83c', fcp1)
+            self.fcpops.increase_fcp_usage('b83c', 'user1')
+
+            fcp_list = db_op.get_from_fcp('b83c')
+            expected = [(u'b83c', u'user1', 1, 1, u'')]
+            self.assertEqual(expected, fcp_list)
+
+            # After usage, we need find b83d now
+            fcp2 = self.fcpops.find_and_reserve_fcp('user2')
+            self.assertEqual('b83d', fcp2)
+            fcp_list = db_op.get_from_fcp('b83d')
+            expected = [(u'b83d', u'', 0, 1, u'')]
+            self.assertEqual(expected, fcp_list)
+
+            self.fcpops.increase_fcp_usage('b83c', 'user1')
+            fcp_list = db_op.get_from_fcp('b83c')
+            expected = [(u'b83c', u'user1', 2, 1, u'')]
+            self.assertEqual(expected, fcp_list)
+
+            self.fcpops.decrease_fcp_usage('b83c', 'user1')
+            fcp_list = db_op.get_from_fcp('b83c')
+            expected = [(u'b83c', u'user1', 1, 1, u'')]
+            self.assertEqual(expected, fcp_list)
+
+            self.fcpops.decrease_fcp_usage('b83c')
+            fcp_list = db_op.get_from_fcp('b83c')
+            expected = [(u'b83c', u'user1', 0, 1, u'')]
+            self.assertEqual(expected, fcp_list)
+
+            # unreserve makes this fcp free
+            self.fcpops.unreserve_fcp('b83c')
+            fcp_list = db_op.get_from_fcp('b83c')
+            expected = [(u'b83c', u'user1', 0, 0, u'')]
+            self.assertEqual(expected, fcp_list)
+
+            fcp3 = self.fcpops.find_and_reserve_fcp('user3')
+            self.assertEqual('b83c', fcp3)
+            fcp_list = db_op.get_from_fcp('b83c')
+            expected = [(u'b83c', u'user1', 0, 1, u'')]
+            self.assertEqual(expected, fcp_list)
+        finally:
+            db_op.delete('b83c')
+            db_op.delete('b83d')
+
+    def test_find_and_reserve_fcp_exception(self):
+        # no FCP at all
+
+        # find FCP for user and FCP not exist, should alloca
+        fcp = self.fcpops.find_and_reserve_fcp('user1')
+        self.assertIsNone(fcp)
 
 
-class VolumeOpTestCase(base.SDKTestCase):
+class TestFCPVolumeManager(base.SDKTestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        super(VolumeOpTestCase, cls).setUpClass()
-        cls._vol_op = volumeop.VolumeOperator()
+    def setUp(self):
+        self.volumeops = volumeop.FCPVolumeManager()
 
-    @mock.patch.object(volumeop.VolumeOperator, '_get_configurator')
-    @mock.patch.object(volumeop.VolumeOperator, '_validate_connection_info')
-    @mock.patch.object(volumeop.VolumeOperator, '_validate_volume')
-    @mock.patch.object(volumeop.VolumeOperator, '_validate_instance')
-    def test_attach_volume_to_instance_SLES12(self,
-                                              _validate_instance,
-                                              _validate_volume,
-                                              _validate_connection_info,
-                                              _get_configurator):
-        inst = {NAME: 'inst1', OS_TYPE: 'sles12sp2'}
-        volume = {TYPE: 'fc',
-                  LUN: 'abCDEF0987654321'}
-        fcps = ['1faa', '1fBB']
-        wwpns = ['1234567890abcdea', '1234567890abCDEB',
-                 '1234567890abcdec', '1234567890abCDED',
-                 '1234567890abcdee', '1234567890abCDEF']
-        conn_info = {PROTOCOL: 'fc',
-                     FCPS: fcps,
-                     WWPNS: wwpns,
-                     ALIAS: 'vda'}
+    def test_get_volume_connector(self):
+        db_op = database.FCPDbOperator()
+        base.set_conf('network', 'my_ip', '1.2.3.4')
+        # create 1 FCP
+        db_op.new('b83c')
 
-        configurator = volumeop._Configurator_SLES12()
-        _get_configurator.return_value = configurator
-        configurator.config_attach = mock.MagicMock()
+        try:
+            connections = self.volumeops.get_volume_connector('dummy')
+            expected = {'multipath': True,
+                        'platform': 's390x',
+                        'do_local_attach': False,
+                        'fcp': u'b83c',
+                        'os_version': '',
+                        'os_type': 'linux',
+                        'ip': '1.2.3.4'}
+            self.assertEqual(expected, connections)
 
-        self._vol_op.attach_volume_to_instance(inst, volume, conn_info)
-        _validate_instance.assert_called_once_with(inst)
-        _validate_volume.assert_called_once_with(volume)
-        _validate_connection_info.assert_called_once_with(conn_info)
-        _get_configurator.assert_called_once_with(inst)
-        configurator.config_attach.assert_called_once_with(inst,
-                                                           volume,
-                                                           conn_info)
+            fcp_list = db_op.get_from_fcp('b83c')
+            expected = [(u'b83c', u'', 0, 1, u'')]
+            self.assertEqual(expected, fcp_list)
+        finally:
+            db_op.delete('b83c')
 
-    @mock.patch.object(volumeop.VolumeOperator, '_get_configurator')
-    @mock.patch.object(volumeop.VolumeOperator, '_validate_connection_info')
-    @mock.patch.object(volumeop.VolumeOperator, '_validate_volume')
-    @mock.patch.object(volumeop.VolumeOperator, '_validate_instance')
-    def test_detach_volume_from_instance(self,
-                                         _validate_instance,
-                                         _validate_volume,
-                                         _validate_connection_info,
-                                         _get_configurator):
-        inst = {NAME: 'inst1', OS_TYPE: 'sles12sp2'}
-        volume = {TYPE: 'fc',
-                  LUN: 'abCDEF0987654321'}
-        fcps = ['1faa', '1fBB']
-        wwpns = ['1234567890abcdea', '1234567890abCDEB',
-                 '1234567890abcdec', '1234567890abCDED',
-                 '1234567890abcdee', '1234567890abCDEF']
-        conn_info = {PROTOCOL: 'fc',
-                     FCPS: fcps,
-                     WWPNS: wwpns,
-                     ALIAS: 'vda'}
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disk")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
+    def test_attach(self, mock_dedicate, mock_add_disk):
 
-        configurator = volumeop._Configurator_SLES12()
-        _get_configurator.return_value = configurator
-        configurator.config_detach = mock.MagicMock()
+        connection_info = {'platform': 'x86_64',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': False,
+                           'target_wwpn': '1111',
+                           'target_lun': '2222',
+                           'zvm_fcp': 'b83c',
+                           'assigner_id': 'user1'}
+        db_op = database.FCPDbOperator()
+        db_op.new('b83c')
 
-        self._vol_op.detach_volume_from_instance(inst, volume, conn_info)
-        _validate_instance.assert_called_once_with(inst)
-        _validate_volume.assert_called_once_with(volume)
-        _validate_connection_info.assert_called_once_with(conn_info)
-        _get_configurator.assert_called_once_with(inst)
-        configurator.config_detach.assert_called_once_with(inst,
-                                                           volume,
-                                                           conn_info)
+        try:
+            self.volumeops.attach(connection_info)
+            mock_dedicate.assert_called_once_with('b83c', 'user1')
+            mock_add_disk.assert_called_once_with('b83c', 'user1', '1111',
+                                                  '2222', False, 'rhel7')
+        finally:
+            db_op.delete('b83c')
 
-    def test_validate_instance(self):
-        inst = {NAME: 'inst1'}
-        self.assertRaises(err, self._vol_op._validate_instance, inst)
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disk")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
+    def test_attach_no_dedicate(self, mock_dedicate, mock_add_disk):
 
-        inst = {OS_TYPE: 'sles12'}
-        self.assertRaises(err, self._vol_op._validate_instance, inst)
+        connection_info = {'platform': 'x86_64',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': False,
+                           'target_wwpn': '1111',
+                           'target_lun': '2222',
+                           'zvm_fcp': 'b83c',
+                           'assigner_id': 'user1'}
+        db_op = database.FCPDbOperator()
+        db_op.new('b83c')
+        db_op.assign('b83c', 'user1')
+        db_op.increase_usage('b83c')
 
-        inst = {NAME: 'inst1', OS_TYPE: 'centos'}
-        self.assertRaises(err, self._vol_op._validate_instance, inst)
+        try:
+            self.volumeops.attach(connection_info)
+            self.assertFalse(mock_dedicate.called)
+            mock_add_disk.assert_called_once_with('b83c', 'user1', '1111',
+                                                  '2222', False, 'rhel7')
+        finally:
+            db_op.delete('b83c')
 
-        inst = {NAME: 'inst1', OS_TYPE: 'rhel7.2'}
-        self._vol_op._validate_instance(inst)
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disk")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
+    def test_detach(self, mock_undedicate, mock_remove_disk):
 
-        inst = {NAME: 'inst1', OS_TYPE: 'sles12sp2'}
-        self._vol_op._validate_instance(inst)
+        connection_info = {'platform': 'x86_64',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': False,
+                           'target_wwpn': '1111',
+                           'target_lun': '2222',
+                           'zvm_fcp': 'b83c',
+                           'assigner_id': 'user1'}
+        db_op = database.FCPDbOperator()
+        db_op.new('b83c')
+        db_op.assign('b83c', 'user1')
 
-        inst = {NAME: 'inst1', OS_TYPE: 'ubuntu16.10'}
-        self._vol_op._validate_instance(inst)
+        try:
+            self.volumeops.detach(connection_info)
+            mock_remove_disk.assert_called_once_with('b83c', 'user1', '1111',
+                                                     '2222', False, 'rhel7')
+            mock_undedicate.assert_called_once_with('b83c', 'user1')
+        finally:
+            db_op.delete('b83c')
 
-    @mock.patch.object(volumeop.VolumeOperator, '_validate_fc_volume')
-    def test_validate_volume(self, _validate_fc_volume):
-        volume = {LUN: 'abCDEF0987654321', SIZE: '1G'}
-        self.assertRaises(err, self._vol_op._validate_volume, volume)
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disk")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
+    def test_detach_no_undedicate(self, mock_undedicate, mock_remove_disk):
 
-        volume = {TYPE: 'unknown',
-                  LUN: 'abCDEF0987654321',
-                  SIZE: '1G'}
-        self.assertRaises(err, self._vol_op._validate_volume, volume)
+        connection_info = {'platform': 'x86_64',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': False,
+                           'target_wwpn': '1111',
+                           'target_lun': '2222',
+                           'zvm_fcp': 'b83c',
+                           'assigner_id': 'user1'}
+        db_op = database.FCPDbOperator()
+        db_op.new('b83c')
+        db_op.assign('b83c', 'user1')
+        db_op.increase_usage('b83c')
 
-        volume = {LUN: 'abCDEF0987654321', TYPE: 'fc'}
-        self._vol_op._validate_volume(volume)
-        _validate_fc_volume.assert_called_once_with(volume)
-        _validate_fc_volume.reset_mock()
-
-        volume = {TYPE: 'fc',
-                  LUN: 'abCDEF0987654321',
-                  SIZE: '1G'}
-        self._vol_op._validate_volume(volume)
-        _validate_fc_volume.assert_called_once_with(volume)
-
-    def test_is_16bit_hex(self):
-        self.assertFalse(self._vol_op._is_16bit_hex(None))
-        self.assertFalse(self._vol_op._is_16bit_hex('1234'))
-        self.assertFalse(self._vol_op._is_16bit_hex('1234567890abcdefg'))
-        self.assertFalse(self._vol_op._is_16bit_hex('1234567890abcdeg'))
-        self.assertTrue(self._vol_op._is_16bit_hex('1234567890abcdef'))
-
-    def test_validate_fc_volume(self):
-        volume = {TYPE: 'fc'}
-        self.assertRaises(err, self._vol_op._validate_fc_volume, volume)
-
-        volume = {TYPE: 'fc',
-                  LUN: 'abcdef0987654321f'}
-        self.assertRaises(err, self._vol_op._validate_fc_volume, volume)
-
-        volume = {TYPE: 'fc',
-                  LUN: 'abcdef0987654321'}
-        self._vol_op._validate_fc_volume(volume)
-
-    @mock.patch.object(volumeop.VolumeOperator, '_validate_fc_connection_info')
-    def _validate_connection_info(self, _validate_fc_connection_info):
-        self.assertRaises(err, self._vol_op._validate_connection_info, None)
-
-        fcps = ['1faa', '1fBB']
-        wwpns = ['1234567890abcdea', '1234567890abCDEB',
-                 '1234567890abcdec', '1234567890abCDED',
-                 '1234567890abcdee', '1234567890abCDEF']
-        conn_info = ['fc', fcps, wwpns, 'vda']
-        self.assertRaises(err,
-                          self._vol_op._validate_connection_info,
-                          conn_info)
-
-        conn_info = {PROTOCOL: 'fc',
-                     FCPS: fcps,
-                     WWPNS: wwpns}
-        self.assertRaises(err,
-                          self._vol_op._validate_connection_info,
-                          conn_info)
-
-        conn_info = {FCPS: fcps,
-                     WWPNS: wwpns,
-                     ALIAS: 'vda'}
-        self.assertRaises(err,
-                          self._vol_op._validate_connection_info,
-                          conn_info)
-
-        conn_info = {PROTOCOL: 'unknown',
-                     WWPNS: wwpns,
-                     ALIAS: 'vda'}
-        self.assertRaises(err,
-                          self._vol_op._validate_connection_info,
-                          conn_info)
-
-        conn_info = {PROTOCOL: 'fc',
-                     FCPS: fcps,
-                     WWPNS: wwpns,
-                     ALIAS: 'vda'}
-        self._vol_op._validate_connection_info(conn_info)
-        _validate_fc_connection_info.assert_called_once_with(conn_info)
-
-    @mock.patch.object(volumeop.VolumeOperator, '_is_16bit_hex')
-    @mock.patch.object(volumeop.VolumeOperator, '_validate_fcp')
-    def test_validate_fc_connection_info(self, _validate_fcp, _is_16bit_hex):
-        fcps = ['1faa', '1fBB']
-        wwpns = ['1234567890abcdea', '1234567890abCDEB',
-                 '1234567890abcdec', '1234567890abCDED',
-                 '1234567890abcdee', '1234567890abCDEF']
-        conn_info = {PROTOCOL: 'fc',
-                     DEDICATE: '1faa, 1fBB',
-                     FCPS: fcps,
-                     WWPNS: wwpns,
-                     ALIAS: 'vda'}
-        self.assertRaises(err,
-                          self._vol_op._validate_fc_connection_info,
-                          conn_info)
-
-        conn_info = {PROTOCOL: 'fc',
-                     WWPNS: wwpns,
-                     ALIAS: 'vda'}
-        self.assertRaises(err,
-                          self._vol_op._validate_fc_connection_info,
-                          conn_info)
-
-        conn_info = {PROTOCOL: 'fc',
-                     FCPS: '1faa, 1fBB',
-                     WWPNS: wwpns,
-                     ALIAS: 'vda'}
-        self.assertRaises(err,
-                          self._vol_op._validate_fc_connection_info,
-                          conn_info)
-
-        conn_info = {PROTOCOL: 'fc',
-                     FCPS: fcps,
-                     ALIAS: 'vda'}
-        self.assertRaises(err,
-                          self._vol_op._validate_connection_info,
-                          conn_info)
-
-        conn_info = {PROTOCOL: 'fc',
-                     FCPS: fcps,
-                     WWPNS: '1234567890abcdea',
-                     ALIAS: 'vda'}
-        self.assertRaises(err,
-                          self._vol_op._validate_fc_connection_info,
-                          conn_info)
-
-        conn_info = {PROTOCOL: 'fc',
-                     DEDICATE: fcps,
-                     FCPS: fcps,
-                     WWPNS: wwpns,
-                     ALIAS: 'vda'}
-        self._vol_op._validate_fc_connection_info(conn_info)
-        _validate_fcp.assert_called_with(conn_info[FCPS][-1])
-        _is_16bit_hex.assert_called_with(conn_info[WWPNS][-1])
-
-    def test_validate_fcp(self):
-        self.assertRaises(err, self._vol_op._validate_fcp, None)
-        self.assertRaises(err, self._vol_op._validate_fcp, 'absd')
-        self.assertRaises(err, self._vol_op._validate_fcp, '12345')
-        self._vol_op._validate_fcp('09af')
-
-    def test_get_configurator(self):
-        instance = {OS_TYPE: 'rhel7'}
-        self.assertIsInstance(self._vol_op._get_configurator(instance),
-                              volumeop._Configurator_RHEL7)
-        instance = {OS_TYPE: 'sles12'}
-        self.assertIsInstance(self._vol_op._get_configurator(instance),
-                              volumeop._Configurator_SLES12)
-        instance = {OS_TYPE: 'ubuntu16'}
-        self.assertIsInstance(self._vol_op._get_configurator(instance),
-                              volumeop._Configurator_Ubuntu16)
-        instance = {OS_TYPE: 'centos'}
-        self.assertRaises(err, self._vol_op._get_configurator, instance)
+        try:
+            self.volumeops.detach(connection_info)
+            self.assertFalse(mock_undedicate.called)
+            mock_remove_disk.assert_called_once_with('b83c', 'user1', '1111',
+                                                     '2222', False, 'rhel7')
+        finally:
+            db_op.delete('b83c')

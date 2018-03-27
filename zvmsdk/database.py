@@ -292,8 +292,7 @@ class FCPDbOperator(object):
             fcp_list = result.fetchall()
             if len(fcp_list) == 0:
                 LOG.info("no more fcp to be allocated")
-                # FIXME:
-                raise Exception
+                return None
 
             # allocate first fcp found
             fcp = fcp_list[0][0]
@@ -329,6 +328,7 @@ class FCPDbOperator(object):
 
             conn.execute("UPDATE fcp SET connections=? "
                          "WHERE fcp_id=?", (connections, fcp))
+            return connections
 
     def decrease_usage(self, fcp):
         with get_fcp_conn() as conn:
@@ -346,6 +346,7 @@ class FCPDbOperator(object):
             conn.execute("UPDATE fcp SET connections=? "
                          "WHERE fcp_id=?",
                          (connections, fcp))
+            return connections
 
     def get_from_assigner(self, assigner_id):
         with get_fcp_conn() as conn:
