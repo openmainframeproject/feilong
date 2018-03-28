@@ -2363,6 +2363,32 @@ class SMUTClient(object):
                         self._undedicate_nic_active_exception(err)
                 def_vdev = str(hex(int(def_vdev, 16) + 1))[2:]
 
+    def namelist_add(self, namelist, userid):
+        rd = ''.join(("SMAPI %s API Name_List_Add " % namelist,
+                      "--operands -n %s" % userid))
+        action = "add userid to name list '%s'" % namelist
+        with zvmutils.log_and_reraise_smut_request_failed(action):
+            self._request(rd)
+
+    def namelist_remove(self, namelist, userid):
+        rd = ''.join(("SMAPI %s API Name_List_Remove " % namelist,
+                      "--operands -n %s" % userid))
+        action = "remove userid from name list '%s'" % namelist
+        with zvmutils.log_and_reraise_smut_request_failed(action):
+            self._request(rd)
+
+    def namelist_query(self, namelist):
+        rd = "SMAPI %s API Name_List_Query" % namelist
+        action = "query name list '%s'" % namelist
+        with zvmutils.log_and_reraise_smut_request_failed(action):
+            return self._request(rd)['response']
+
+    def namelist_destroy(self, namelist):
+        rd = "SMAPI %s API Name_List_Destroy" % namelist
+        action = "destroy name list '%s'" % namelist
+        with zvmutils.log_and_reraise_smut_request_failed(action):
+            self._request(rd)
+
 
 class FilesystemBackend(object):
     @classmethod
