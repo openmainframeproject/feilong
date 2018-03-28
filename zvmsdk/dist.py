@@ -21,6 +21,7 @@ import six
 from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk import smutclient
 
 
 CONF = config.CONF
@@ -34,6 +35,11 @@ class LinuxDist(object):
     Due to we need to interact with linux dist and inject different files
     according to the dist version. Currently only RHEL and SLES are supported
     """
+    def __init__(self):
+        self._smutclient = smutclient.get_smutclient()
+
+    def execute_cmd(self, assigner_id, cmd_str):
+        return self._smutclient.execute_cmd(assigner_id, cmd_str)
 
     def create_network_configuration_files(self, file_path, guest_networks,
                                            first, active=False):
@@ -387,6 +393,50 @@ class rhel6(rhel):
                              self._get_all_device_filename())
         return '\nrm -f %s\n' % files
 
+    def config_volume_attach_active(self, fcp, assigner_id, target_wwpn,
+                                    target_lun, multipath):
+        """config rhel6"""
+        # modprobe zfcp module
+        modprobe = 'modprobe zfcp'
+        self.execute_cmd(assigner_id, modprobe)
+        # check module installed
+        ret = self.execute_cmd(assigner_id, 'lsmod|grep zfcp')
+        if 'zfcp' in ret[0]:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("modprobe zfcp error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+        # cio_ignore
+        cio_ignore = 'cio_ignore -r %s' % fcp
+        self.execute_cmd(assigner_id, cio_ignore)
+        # set the fcp online
+        online_dev = 'chccwdev -e %s' % fcp
+        ret = self.execute_cmd(assigner_id, online_dev)
+        if 'Done' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("chccwdev error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+        # add port
+        device = '0.0.%s' % fcp
+        port_add = 'echo %s > ' % target_wwpn
+        port_add += '/sys/bus/ccw/drivers/zfcp/%s/port_add' % device
+        self.execute_cmd(assigner_id, port_add)
+        # add unit
+        unit_add = 'echo %s > ' % target_lun
+        unit_add += '/sys/bus/ccw/drivers/zfcp/%(device)s/%(wwpn)s/unit_add'\
+                    % {'device': device, 'wwpn': target_wwpn}
+        self.execute_cmd(assigner_id, unit_add)
+        # TODO: multipath?
+        # update multipath configuration
+        conf_file = '#blacklist {\n'
+        conf_file += '#\tdevnode "*"\n'
+        conf_file += '#}\n'
+        cmd = 'echo -e %s > /etc/multipath.conf' % conf_file
+        self.execute_cmd(assigner_id, cmd)
+
 
 class rhel7(rhel):
     def get_znetconfig_contents(self):
@@ -447,6 +497,44 @@ class rhel7(rhel):
         files = os.path.join(self._get_network_file_path(),
                              self._get_all_device_filename())
         return '\nrm -f %s\n' % files
+
+    def config_volume_attach_active(self, fcp, assigner_id, target_wwpn,
+                                    target_lun, multipath):
+        """config rhel7"""
+        # modprobe zfcp module
+        modprobe = 'modprobe zfcp'
+        self.execute_cmd(assigner_id, modprobe)
+        # check module installed
+        ret = self.execute_cmd(assigner_id, 'lsmod|grep zfcp')
+        if 'zfcp' in ret[0]:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("modprobe zfcp error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+        # cio_ignore
+        cio_ignore = 'cio_ignore -r %s' % fcp
+        self.execute_cmd(assigner_id, cio_ignore)
+        # set the fcp online
+        online_dev = 'chccwdev -e %s' % fcp
+        ret = self.execute_cmd(assigner_id, online_dev)
+        if 'Done' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("chccwdev error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+        # set zfcp confiuration file
+        device = '0.0.%s' % fcp
+        set_zfcp_conf = 'echo %(device)s %(wwpn)s %(lun)s >> /etc/zfcp.conf'\
+                        % {'device': device, 'wwpn': target_wwpn,
+                           'lun': target_lun}
+        self.execute_cmd(assigner_id, set_zfcp_conf)
+        # add fcp
+        add_fcp = 'echo add >> /sys/bus/ccw/devices/%s/uevent' % device
+        self.execute_cmd(assigner_id, add_fcp)
+        # TODO: multipath?
+        pass
 
 
 class sles(LinuxDist):
@@ -632,6 +720,47 @@ class sles(LinuxDist):
         cmd += "sed -i '/%s/d' %s\n" % (address,
                                         '/boot/zipl/active_devices.txt')
         return cmd
+
+    def config_volume_attach_active(self, fcp, assigner_id, target_wwpn,
+                             target_lun, multipath):
+        """
+        operation is same for SLES11 and SLES12?
+        """
+        # modprobe zfcp module
+        modprobe = 'modprobe zfcp'
+        self.execute_cmd(assigner_id, modprobe)
+        # check module installed
+        ret = self.execute_cmd(assigner_id, 'lsmod|grep zfcp')
+        if 'zfcp' in ret[0]:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("modprobe zfcp error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+        # cio_ignore
+        cio_ignore = 'cio_ignore -r %s' % fcp
+        self.execute_cmd(assigner_id, cio_ignore)
+        # set the fcp online
+        online_dev = 'chccwdev -e %s' % fcp
+        ret = self.execute_cmd(assigner_id, online_dev)
+        if 'Done' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("chccwdev error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+        device = '0.0.%s' % fcp
+        # host config
+        host_config = '/sbin/zfcp_host_configure %s 1' % device
+        self.execute_cmd(assigner_id, host_config)
+        # disk config
+        disk_config = '/sbin/zfcp_disk_configure ' +\
+                      '%(device)s %(wwpn)s %(lun)s 1' %\
+                      {'device': device, 'wwpn': target_wwpn,
+                       'lun': target_lun}
+        self.execute_cmd(assigner_id, disk_config)
+        # TODO: multipath??
+        pass
 
 
 class sles11(sles):
@@ -889,6 +1018,32 @@ class ubuntu(LinuxDist):
         files = self._get_device_filename('*')
         cmd = '\nrm -f %s\n' % files
         return cmd
+
+    def config_volume_attach_active(self, fcp, assigner_id, target_wwpn,
+                             target_lun, multipath):
+        """config ubuntu"""
+        # modprobe zfcp module
+        modprobe = 'modprobe zfcp'
+        self.execute_cmd(assigner_id, modprobe)
+        # check module installed
+        ret = self.execute_cmd(assigner_id, 'lsmod|grep zfcp')
+        if 'zfcp' in ret[0]:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("modprobe zfcp error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+        device = '0.0.%s' % fcp
+        host_config = '/sbin/chzdev zfcp-host %(fcp)s ' +\
+                      '-e FCP device %(device)s configured' %\
+                      {'fcp': fcp, 'device': device}
+        self.execute_cmd(assigner_id, host_config)
+        target = '%s:%s:%s' % (device, target_wwpn, target_lun)
+        disk_config = '/sbin/chzdev zfcp-lun %s -e zFCP LUN %s configured' %\
+                      (target, target)
+        self.execute_cmd(assigner_id, disk_config)
+        # TODO: multipath
+        pass
 
 
 class ubuntu16(ubuntu):
