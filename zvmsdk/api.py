@@ -43,6 +43,8 @@ class SDKAPI(object):
         self._monitor = monitor.get_monitor()
         self._volumeop = volumeop.get_volumeop()
 
+        self._namelist = zvmutils.get_namelist()
+
     def guest_start(self, userid):
         """Power on a virtual machine.
 
