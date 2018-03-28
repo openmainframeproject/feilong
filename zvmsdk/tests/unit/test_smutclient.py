@@ -496,6 +496,92 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(zvmutils, 'get_smut_userid')
     @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_system_image_performance_query(self, smut_req, get_smut_userid):
+        get_smut_userid.return_value = "SMUTUSER"
+        response_list = ['Virtual server ID: fakevm',
+                         'Record version: "1"',
+                         'Guest flags: "0"',
+                         'Used CPU time: "652337849 uS"',
+                         'Elapsed time: "602181110336 uS"',
+                         'Minimum memory: "0 KB"',
+                         'Max memory: "2097152 KB"',
+                         'Shared memory: "302336 KB"',
+                         'Used memory: "302336 KB"',
+                         'Active CPUs in CEC: "44"',
+                         'Logical CPUs in VM: "6"',
+                         'Guest CPUs: "2"',
+                         'Minimum CPU count: "2"',
+                         'Max CPU limit: "10000"',
+                         'Processor share: "100"',
+                         'Samples CPU in use: "375"',
+                         ',Samples CPU delay: "116"',
+                         'Samples page wait: "0"',
+                         'Samples idle: "601671"',
+                         'Samples other: "12"',
+                         'Samples total: "602174"',
+                         'Guest name: "FAKEVM  "',
+                         '',
+                         'Virtual server ID: fakevm2',
+                         'Record version: "1"',
+                         'Guest flags: "0"',
+                         'Used CPU time: "3995650268844 uS"',
+                         'Elapsed time: "3377790094595 uS"',
+                         'Minimum memory: "0 KB"',
+                         'Max memory: "8388608 KB"',
+                         'Shared memory: "8383048 KB"',
+                         'Used memory: "8383048 KB"',
+                         'Active CPUs in CEC: "44"',
+                         'Logical CPUs in VM: "6"',
+                         'Guest CPUs: "4"',
+                         'Minimum CPU count: "4"',
+                         'Max CPU limit: "10000"',
+                         'Processor share: "100"',
+                         'Samples CPU in use: "1966323"',
+                         ',Samples CPU delay: "111704"',
+                         'Samples page wait: "0"',
+                         'Samples idle: "4001258"',
+                         'Samples other: "8855"',
+                         'Samples total: "6088140"',
+                         'Guest name: "FAKEVM2 "',
+                         '']
+
+        smut_req.return_value = {'rs': 0, 'errno': 0, 'strError': '',
+                                     'overallRC': 0, 'logEntries': [], 'rc': 0,
+                                     'response': response_list
+                                     }
+
+        pi_info = self._smutclient.system_image_performance_query(['fakevm',
+                                                            'fakevm2'])
+        self.assertEqual(pi_info['FAKEVM']['used_memory'], "302336 KB")
+        self.assertEqual(pi_info['FAKEVM']['used_cpu_time'], "652337849 uS")
+        self.assertEqual(pi_info['FAKEVM']['elapsed_cpu_time'],
+                         "602181110336 uS")
+        self.assertEqual(pi_info['FAKEVM']['min_cpu_count'], "2")
+        self.assertEqual(pi_info['FAKEVM']['max_cpu_limit'], "10000")
+        self.assertEqual(pi_info['FAKEVM']['samples_cpu_in_use'], "375")
+        self.assertEqual(pi_info['FAKEVM']['samples_cpu_delay'], "116")
+        self.assertEqual(pi_info['FAKEVM']['guest_cpus'], "2")
+        self.assertEqual(pi_info['FAKEVM']['userid'], "FAKEVM")
+        self.assertEqual(pi_info['FAKEVM']['max_memory'], "2097152 KB")
+        self.assertEqual(pi_info['FAKEVM']['min_memory'], "0 KB")
+        self.assertEqual(pi_info['FAKEVM']['shared_memory'], "302336 KB")
+        self.assertEqual(pi_info['FAKEVM2']['used_memory'], "8383048 KB")
+        self.assertEqual(pi_info['FAKEVM2']['used_cpu_time'],
+                         "3995650268844 uS")
+        self.assertEqual(pi_info['FAKEVM2']['elapsed_cpu_time'],
+                         "3377790094595 uS")
+        self.assertEqual(pi_info['FAKEVM2']['min_cpu_count'], "4")
+        self.assertEqual(pi_info['FAKEVM2']['max_cpu_limit'], "10000")
+        self.assertEqual(pi_info['FAKEVM2']['samples_cpu_in_use'], "1966323")
+        self.assertEqual(pi_info['FAKEVM2']['samples_cpu_delay'], "111704")
+        self.assertEqual(pi_info['FAKEVM2']['guest_cpus'], "4")
+        self.assertEqual(pi_info['FAKEVM2']['userid'], "FAKEVM2")
+        self.assertEqual(pi_info['FAKEVM2']['max_memory'], "8388608 KB")
+        self.assertEqual(pi_info['FAKEVM2']['min_memory'], "0 KB")
+        self.assertEqual(pi_info['FAKEVM2']['shared_memory'], "8383048 KB")
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_virtual_network_vswitch_query_iuo_stats(self, smut_req,
                                                      get_smut_userid):
         get_smut_userid.return_value = "SMUTUSER"
