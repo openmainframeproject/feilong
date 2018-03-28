@@ -52,6 +52,12 @@ def get_admin_token(path):
 
 @util.SdkWsgify
 def create(req):
+    # Check if token validation closed
+    if CONF.wsgi.auth.lower() == 'none':
+        user_token = 'server-auth-closed'
+        req.response.headers.add('X-Auth-Token', user_token)
+        return req.response
+    # Validation is open, so start to validate the admin-token
     if 'X-Admin-Token' not in req.headers:
         LOG.debug('no X-Admin-Token given in reqeust header')
         raise exception.ZVMUnauthorized()
@@ -82,7 +88,7 @@ def validate(function):
     def wrap_func(req, *args, **kwargs):
 
         # by default, no token validation used
-        if CONF.wsgi.auth == 'none':
+        if CONF.wsgi.auth.lower() == 'none':
             return function(req, *args, **kwargs)
 
         # so, this is for token validation
