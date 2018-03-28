@@ -93,8 +93,9 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                           self.vmops.guest_unpause, 'fakeid')
         ige.assert_called_with('fakeid')
 
+    @mock.patch("zvmsdk.smutclient.SMUTClient.namelist_add")
     @mock.patch("zvmsdk.smutclient.SMUTClient.create_vm")
-    def test_create_vm(self, create_vm):
+    def test_create_vm(self, create_vm, namelistadd):
         userid = 'fakeuser'
         cpu = 2
         memory = '2g'
@@ -103,6 +104,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.create_vm(userid, cpu, memory, disk_list, user_profile)
         create_vm.assert_called_once_with(userid, cpu, memory, disk_list,
                                           user_profile)
+        namelistadd.assert_called_once_with('TSTNLIST', userid)
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.process_additional_minidisks")
     @mock.patch('zvmsdk.utils._is_guest_exist')
@@ -223,11 +225,13 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.get_definition_info("fake_user_id", nic_coupled='1000')
         get_user_direct.assert_called_with("fake_user_id")
 
+    @mock.patch("zvmsdk.smutclient.SMUTClient.namelist_remove")
     @mock.patch("zvmsdk.smutclient.SMUTClient.delete_vm")
-    def test_delete_vm(self, delete_vm):
+    def test_delete_vm(self, delete_vm, namelistremove):
         userid = 'userid'
         self.vmops.delete_vm(userid)
         delete_vm.assert_called_once_with(userid)
+        namelistremove.assert_called_once_with('TSTNLIST', userid)
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.execute_cmd")
     def test_execute_cmd(self, execute_cmd):
