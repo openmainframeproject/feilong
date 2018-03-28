@@ -890,7 +890,7 @@ class SMUTClient(object):
         return pi_dict
 
     def system_image_performance_query(self, namelist):
-        """Call Image_Performance_Query to get guest current status.
+        """Call System_Image_Performance_Query to get guest current status.
 
         :namelist: A namelist that defined in smapi namelist file.
         """

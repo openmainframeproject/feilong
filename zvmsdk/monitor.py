@@ -121,13 +121,26 @@ class ZVMMonitor(object):
         return rdata
 
     def _update_cpumem_data(self, uid_list):
+        # translate userids to upper case
+        for i in range(len(uid_list)):
+            uid_list[i] = uid_list[i].upper()
+
+        namelist_uids = self._smutclient.namelist_query(self._namelist)
+        sdk_managed_uids = self._smutclient.get_vm_list()
+        mis_uids = list((set(uid_list) -
+                     set(namelist_uids)).intersection(set(sdk_managed_uids)))
+
+        for muid in mis_uids:
+            self._smutclient.namelist_add(self._namelist, muid)
+
         rdata = {}
         if self._cache_enabled():
-            rdata = self._smutclient.image_performance_query(
-                self._smutclient.get_vm_list())
+            rdata = self._smutclient.system_image_performance_query(
+                self._namelist)
             self._cache.refresh('cpumem', rdata)
         else:
-            rdata = self._smutclient.image_performance_query(uid_list)
+            rdata = self._smutclient.system_image_performance_query(
+                self._namelist)
 
         return rdata
 
