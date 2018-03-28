@@ -20,6 +20,7 @@ import six
 from zvmsdk import config
 from zvmsdk import constants
 from zvmsdk import database
+from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import vmops
@@ -87,100 +88,53 @@ class VolumeConfiguratorAPI(object):
     The reason to design these APIs is to hide the details among
     different Linux distributions and releases.
     """
-
-    @abc.abstractmethod
-    def config_attach(self, instance, volume, connection_info):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def config_force_attach(self, instance, volume, connection_info):
-        # roll back when detaching fails
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def config_detach(self, instance, volume, connection_info):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def config_force_detach(self, instance, volume, connection_info):
-        # roll back when attaching fails
-        raise NotImplementedError
-
-
-class _BaseConfigurator(VolumeConfiguratorAPI):
-    """Contain common code for all distros."""
-
     def __init__(self):
         self._vmop = vmops.get_vmops()
+        self._dist_manager = dist.LinuxDistManager()
 
-    def config_attach(self, instance, volume, connection_info):
-        if self._vmop.is_reachable(instance[NAME]):
-            self.config_attach_active(instance, volume, connection_info)
+    def config_attach(self, fcp, assigner_id, target_wwpn, target_lun,
+                      multipath, os_version):
+        if self._vmop.is_reachable(assigner_id):
+            self.config_attach_active(fcp, assigner_id, target_wwpn,
+                                      target_lun, multipath, os_version)
         else:
-            self.config_attach_inactive(instance, volume, connection_info)
+            self.config_attach_inactive(fcp, assigner_id, target_wwpn,
+                                        target_lun, multipath, os_version)
 
-    def config_force_attach(self, instance, volume, connection_info):
+    def config_force_attach(self, fcp, assigner_id, target_wwpn, target_lun,
+                            multipath, os_version):
         pass
 
-    def config_detach(self, instance, volume, connection_info):
-        if self._vmop.is_reachable(instance[NAME]):
-            self.config_detach_active(instance, volume, connection_info)
+    def config_detach(self, fcp, assigner_id, target_wwpn, target_lun,
+                      multipath, os_version):
+        if self._vmop.is_reachable(assigner_id):
+            self.config_detach_active(fcp, assigner_id, target_wwpn,
+                                      target_lun, multipath, os_version)
         else:
-            self.config_detach_inactive(instance, volume, connection_info)
+            self.config_detach_inactive(fcp, assigner_id, target_wwpn,
+                                        target_lun, multipath, os_version)
 
-    def config_force_detach(self, instance, volume, connection_info):
+    def config_force_detach(self, fcp, assigner_id, target_wwpn, target_lun,
+                            multipath, os_version):
         pass
 
-    def config_attach_active(self, instance, volume, connection_info):
+    def config_attach_active(self, fcp, assigner_id, target_wwpn,
+                             target_lun, multipath, os_version):
+        linuxdist = self._dist_manager.get_linux_dist(os_version)()
+        linuxdist.config_volume_attach_active(fcp, assigner_id, target_wwpn,
+                                              target_lun, multipath)
+
+    def config_attach_inactive(self, fcp, assigner_id, target_wwpn,
+                               target_lun, multipath, os_version):
         raise NotImplementedError
 
-    def config_attach_inactive(self, instance, volume, connection_info):
+    def config_detach_active(self, fcp, assigner_id, target_wwpn,
+                             target_lun, multipath, os_version):
         raise NotImplementedError
 
-    def config_detach_active(self, instance, volume, connection_info):
+    def config_detach_inactive(self, fcp, assigner_id, target_wwpn,
+                               target_lun, multipath, os_version):
         raise NotImplementedError
-
-    def config_detach_inactive(self, instance, volume, connection_info):
-        raise NotImplementedError
-
-
-class _Configurator_RHEL7(_BaseConfigurator):
-
-    def config_attach_active(self, instance, volume, connection_info):
-        pass
-
-    def config_attach_inactive(self, instance, volume, connection_info):
-        pass
-
-    def config_detach_active(self, instance, volume, connection_info):
-        pass
-
-    def config_detach_inactive(self, instance, volume, connection_info):
-        pass
-
-
-class _Configurator_SLES12(_BaseConfigurator):
-
-    def config_attach_active(self, instance, volume, connection_info):
-        pass
-
-    def config_attach_inactive(self, instance, volume, connection_info):
-        pass
-
-    def config_detach_active(self, instance, volume, connection_info):
-        pass
-
-    def config_detach_inactive(self, instance, volume, connection_info):
-        pass
-
-
-class _Configurator_Ubuntu16(_BaseConfigurator):
-
-    def config_attach_active(self, instance, volume, connection_info):
-        pass
-
-    def config_attach_inactive(self, instance, volume, connection_info):
-        pass
 
 
 class FCP(object):
@@ -438,13 +392,15 @@ class FCPManager(object):
 class FCPVolumeManager(object):
     def __init__(self):
         self.fcp_mgr = FCPManager()
+        self.config_api = VolumeConfiguratorAPI()
 
     def _dedicate_fcp(self, fcp, assigner_id):
         pass
 
-    def _add_disk(self, fcp, assinger_id, target_wwpn, target_lun,
+    def _add_disk(self, fcp, assigner_id, target_wwpn, target_lun,
                   multipath, os_version):
-        pass
+        self.config_api.config_attach(fcp, assigner_id, target_wwpn,
+                                      target_lun, multipath, os_version)
 
     def _attach(self, fcp, assigner_id, target_wwpn, target_lun,
                 multipath, os_version):
