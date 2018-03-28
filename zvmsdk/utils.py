@@ -508,6 +508,20 @@ def get_smut_userid():
         raise exception.SDKInternalError(msg=msg)
 
 
+def get_namelist():
+    """Generate namelist.
+
+    Either through set CONF.zvm.namelist, or by generate based on smut userid.
+    """
+    if CONF.zvm.namelist is not None:
+        # namelist length limit should be 64, but there's bug limit to 8
+        # will change the limit to 8 once the bug fixed
+        if len(CONF.zvm.namelist) <= 8:
+            return CONF.zvm.namelist
+
+    return ''.join((get_smut_userid(), 'NAMELIST'))[:8]
+
+
 def generate_iucv_authfile(fn, client):
     """Generate the iucv_authorized_userid file"""
     lines = ['#!/bin/bash\n',

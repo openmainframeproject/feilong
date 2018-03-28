@@ -35,6 +35,7 @@ class SDKTestCase(unittest.TestCase):
         set_conf('database', 'dir', '/tmp/')
         set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         set_conf('image', 'sdk_image_repository', '/tmp/')
+        set_conf('zvm', 'namelist', 'TSTNLIST')
 
     @classmethod
     def tearDownClass(cls):

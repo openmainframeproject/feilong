@@ -314,6 +314,18 @@
 #disk_pool=None
 
 
+# 
+# The name of a list containing names of virtual servers to be queried. The list
+# which contains the userid list by default is named: VSMWORK1 NAMELIST, see
+# DMSSICNF COPY key: NameListFileIdAny. The list has to be accessible to the
+# SMAPI servers.
+# 
+# The length of namelist must no longer than 64.
+# 
+# This param is optional
+#namelist=None
+
+
 # This param is optional
 #user_default_password=None
 
