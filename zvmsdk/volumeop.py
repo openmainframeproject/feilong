@@ -22,6 +22,7 @@ from zvmsdk import constants
 from zvmsdk import database
 from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk import smutclient
 from zvmsdk import vmops
 
 
@@ -89,20 +90,24 @@ class VolumeConfiguratorAPI(object):
     """
 
     @abc.abstractmethod
-    def config_attach(self, instance, volume, connection_info):
+    def config_attach(self, fcp, assigner_id, target_wwpn, target_lun,
+                      multipath, os_version):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def config_force_attach(self, instance, volume, connection_info):
+    def config_force_attach(self, fcp, assigner_id, target_wwpn, target_lun,
+                            multipath, os_version):
         # roll back when detaching fails
         raise NotImplementedError
 
     @abc.abstractmethod
-    def config_detach(self, instance, volume, connection_info):
+    def config_detach(self, fcp, assigner_id, target_wwpn, target_lun,
+                      multipath, os_version):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def config_force_detach(self, instance, volume, connection_info):
+    def config_force_detach(self, fcp, assigner_id, target_wwpn, target_lun,
+                            multipath, os_version):
         # roll back when attaching fails
         raise NotImplementedError
 
@@ -112,74 +117,238 @@ class _BaseConfigurator(VolumeConfiguratorAPI):
 
     def __init__(self):
         self._vmop = vmops.get_vmops()
+        self._smutclient = smutclient.get_smutclient()
 
-    def config_attach(self, instance, volume, connection_info):
-        if self._vmop.is_reachable(instance[NAME]):
-            self.config_attach_active(instance, volume, connection_info)
+    def execute_cmd(self, assigner_id, cmd_str):
+        self._smutclient.execute_cmd(assigner_id, cmd_str)
+
+    def config_attach(self, fcp, assigner_id, target_wwpn, target_lun,
+                      multipath, os_version):
+        if self._vmop.is_reachable(assigner_id):
+            self.config_attach_active(fcp, assigner_id, target_wwpn,
+                                      target_lun, multipath, os_version)
         else:
-            self.config_attach_inactive(instance, volume, connection_info)
+            self.config_attach_inactive(fcp, assigner_id, target_wwpn,
+                                        target_lun, multipath, os_version)
 
-    def config_force_attach(self, instance, volume, connection_info):
+    def config_force_attach(self, fcp, assigner_id, target_wwpn, target_lun,
+                            multipath, os_version):
         pass
 
-    def config_detach(self, instance, volume, connection_info):
-        if self._vmop.is_reachable(instance[NAME]):
-            self.config_detach_active(instance, volume, connection_info)
+    def config_detach(self, fcp, assigner_id, target_wwpn, target_lun,
+                      multipath, os_version):
+        if self._vmop.is_reachable(assigner_id):
+            self.config_detach_active(fcp, assigner_id, target_wwpn,
+                                      target_lun, multipath, os_version)
         else:
-            self.config_detach_inactive(instance, volume, connection_info)
+            self.config_detach_inactive(fcp, assigner_id, target_wwpn,
+                                        target_lun, multipath, os_version)
 
-    def config_force_detach(self, instance, volume, connection_info):
+    def config_force_detach(self, fcp, assigner_id, target_wwpn, target_lun,
+                            multipath, os_version):
         pass
 
-    def config_attach_active(self, instance, volume, connection_info):
+    def config_attach_active(self, fcp, assigner_id, target_wwpn,
+                             target_lun, multipath, os_version):
         raise NotImplementedError
 
-    def config_attach_inactive(self, instance, volume, connection_info):
+    def config_attach_inactive(self, fcp, assigner_id, target_wwpn,
+                               target_lun, multipath, os_version):
         raise NotImplementedError
 
-    def config_detach_active(self, instance, volume, connection_info):
+    def config_detach_active(self, fcp, assigner_id, target_wwpn,
+                             target_lun, multipath, os_version):
         raise NotImplementedError
 
-    def config_detach_inactive(self, instance, volume, connection_info):
+    def config_detach_inactive(self, fcp, assigner_id, target_wwpn,
+                               target_lun, multipath, os_version):
         raise NotImplementedError
+
+
+class _Configurator_RHEL6(_BaseConfigurator):
+
+    def config_attach_active(self, fcp, assigner_id, target_wwpn,
+                             target_lun, multipath, os_version):
+        # modprobe zfcp module
+        modprobe = 'modprobe zfcp'
+        self.execute_cmd(assigner_id, modprobe)
+        # check module installed
+        ret = self.execute_cmd(assigner_id, 'lsmod|grep zfcp')
+        if 'zfcp' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("modprobe zfcp error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+        # cio_ignore
+        cio_ignore = 'cio_ignore -r %s' % fcp
+        self.execute_cmd(assigner_id, cio_ignore)
+        # set the fcp online
+        online_dev = 'chccwdev -e %s' % fcp
+        ret = self.execute_cmd(assigner_id, online_dev)
+        if 'Done' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("chccwdev error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+        # add port
+        device = '0.0.%s' % fcp
+        port_add = 'echo %s > ' % target_wwpn
+        port_add += '/sys/bus/ccw/drivers/zfcp/%s/port_add' % device
+        self.execute_cmd(assigner_id, port_add)
+        # add unit
+        unit_add = 'echo %s > ' % target_lun
+        unit_add += '/sys/bus/ccw/drivers/zfcp/%(device)s/%(wwpn)s/unit_add'\
+                    % {'device': device, 'wwpn': target_wwpn}
+        self.execute_cmd(assigner_id, unit_add)
+        # TODO: multipath?
+        # update multipath configuration
+        conf_file = '#blacklist {\n'
+        conf_file += '#\tdevnode "*"\n'
+        conf_file += '#}\n'
+        cmd = 'echo -e %s > /etc/multipath.conf' % conf_file
+        self.execute_cmd(assigner_id, cmd)
+
+    def config_attach_inactive(self, fcp, assigner_id, target_wwpn,
+                               target_lun, multipath, os_version):
+        pass
+
+    def config_detach_active(self, fcp, assigner_id, target_wwpn,
+                             target_lun, multipath, os_version):
+        pass
+
+    def config_detach_inactive(self, fcp, assigner_id, target_wwpn,
+                               target_lun, multipath, os_version):
+        pass
 
 
 class _Configurator_RHEL7(_BaseConfigurator):
 
-    def config_attach_active(self, instance, volume, connection_info):
+    def config_attach_active(self, fcp, assigner_id, target_wwpn,
+                             target_lun, multipath, os_version):
+        # modprobe zfcp module
+        modprobe = 'modprobe zfcp'
+        self.execute_cmd(assigner_id, modprobe)
+        # check module installed
+        ret = self.execute_cmd(assigner_id, 'lsmod|grep zfcp')
+        if 'zfcp' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("modprobe zfcp error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+        # cio_ignore
+        cio_ignore = 'cio_ignore -r %s' % fcp
+        self.execute_cmd(assigner_id, cio_ignore)
+        # set the fcp online
+        online_dev = 'chccwdev -e %s' % fcp
+        ret = self.execute_cmd(assigner_id, online_dev)
+        if 'Done' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("chccwdev error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+        # set zfcp confiuration file
+        device = '0.0.%s' % fcp
+        set_zfcp_conf = 'echo %(device)s %(wwpn)s %(lun)s >> /etc/zfcp.conf'\
+                        % {'device': device, 'wwpn': target_wwpn,
+                           'lun': target_lun}
+        self.execute_cmd(assigner_id, set_zfcp_conf)
+        # add fcp
+        add_fcp = 'echo add >> /sys/bus/ccw/devices/%s/uevent' % device
+        self.execute_cmd(assigner_id, add_fcp)
+        # TODO: multipath?
         pass
 
-    def config_attach_inactive(self, instance, volume, connection_info):
+    def config_attach_inactive(self, fcp, assigner_id, target_wwpn,
+                               target_lun, multipath, os_version):
         pass
 
-    def config_detach_active(self, instance, volume, connection_info):
+    def config_detach_active(self, fcp, assigner_id, target_wwpn,
+                             target_lun, multipath, os_version):
         pass
 
-    def config_detach_inactive(self, instance, volume, connection_info):
+    def config_detach_inactive(self, fcp, assigner_id, target_wwpn,
+                               target_lun, multipath, os_version):
         pass
 
 
-class _Configurator_SLES12(_BaseConfigurator):
+class _Configurator_SLES(_BaseConfigurator):
 
-    def config_attach_active(self, instance, volume, connection_info):
+    def config_attach_active(self, fcp, assigner_id, target_wwpn,
+                             target_lun, multipath, os_version):
+        """
+        operation is same for SLES11 and SLES12?
+        """
+        # modprobe zfcp module
+        modprobe = 'modprobe zfcp'
+        self.execute_cmd(assigner_id, modprobe)
+        # check module installed
+        ret = self.execute_cmd(assigner_id, 'lsmod|grep zfcp')
+        if 'zfcp' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("modprobe zfcp error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+
+        device = '0.0.%s' % fcp
+        # host config
+        host_config = '/sbin/zfcp_host_configure %s 1' % device
+        self.execute_cmd(assigner_id, host_config)
+        # disk config
+        disk_config = '/sbin/zfcp_disk_configure ' +\
+                      '%(device)s %(wwpn)s %(lun)s 1' %\
+                      {'device': device, 'wwpn': target_wwpn,
+                       'lun': target_lun}
+        self.execute_cmd(assigner_id, disk_config)
+        # TODO: multipath??
         pass
 
-    def config_attach_inactive(self, instance, volume, connection_info):
+    def config_attach_inactive(self, fcp, assigner_id, target_wwpn,
+                               target_lun, multipath, os_version):
         pass
 
-    def config_detach_active(self, instance, volume, connection_info):
+    def config_detach_active(self, fcp, assigner_id, target_wwpn,
+                             target_lun, multipath, os_version):
         pass
 
-    def config_detach_inactive(self, instance, volume, connection_info):
+    def config_detach_inactive(self, fcp, assigner_id, target_wwpn,
+                               target_lun, multipath, os_version):
         pass
 
 
 class _Configurator_Ubuntu16(_BaseConfigurator):
 
-    def config_attach_active(self, instance, volume, connection_info):
+    def config_attach_active(self, fcp, assigner_id, target_wwpn,
+                             target_lun, multipath, os_version):
+        # modprobe zfcp module
+        modprobe = 'modprobe zfcp'
+        self.execute_cmd(assigner_id, modprobe)
+        # check module installed
+        ret = self.execute_cmd(assigner_id, 'lsmod|grep zfcp')
+        if 'zfcp' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("modprobe zfcp error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+        device = '0.0.%s' % fcp
+        host_config = '/sbin/chzdev zfcp-host %(fcp)s ' +\
+                      '-e FCP device %(device)s configured' %\
+                      {'fcp': fcp, 'device': device}
+        self.execute_cmd(assigner_id, host_config)
+        target = '%s:%s:%s' % (device, target_wwpn, target_lun)
+        disk_config = '/sbin/chzdev zfcp-lun %s -e zFCP LUN %s configured' %\
+                      (target, target)
+        self.execute_cmd(assigner_id, disk_config)
+        # TODO: multipath
         pass
 
-    def config_attach_inactive(self, instance, volume, connection_info):
+    def config_attach_inactive(self, fcp, assigner_id, target_wwpn,
+                               target_lun, multipath, os_version):
         pass
 
 
@@ -438,13 +607,15 @@ class FCPManager(object):
 class FCPVolumeManager(object):
     def __init__(self):
         self.fcp_mgr = FCPManager()
+        self.config_api = VolumeConfiguratorAPI()
 
     def _dedicate_fcp(self, fcp, assigner_id):
         pass
 
-    def _add_disk(self, fcp, assinger_id, target_wwpn, target_lun,
+    def _add_disk(self, fcp, assigner_id, target_wwpn, target_lun,
                   multipath, os_version):
-        pass
+        self.config_api.config_attach(fcp, assigner_id, target_wwpn,
+                                      target_lun, multipath, os_version)
 
     def _attach(self, fcp, assigner_id, target_wwpn, target_lun,
                 multipath, os_version):
