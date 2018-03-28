@@ -2025,6 +2025,36 @@ class SMUTClient(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._GuestDbOperator.update_guest_by_userid(userid, net_set='1')
 
+    def _request_with_error_ignored(self, rd):
+        """Send smut request, log and ignore any errors."""
+        try:
+            return self._request(rd)
+        except Exception as err:
+            # log as warning and ignore namelist operation failures
+            LOG.warn(six.text_type(err))
+
+    def namelist_add(self, namelist, userid):
+        rd = ''.join(("SMAPI %s API Name_List_Add " % namelist,
+                      "--operands -n %s" % userid))
+        self._request_with_error_ignored(rd)
+
+    def namelist_remove(self, namelist, userid):
+        rd = ''.join(("SMAPI %s API Name_List_Remove " % namelist,
+                      "--operands -n %s" % userid))
+        self._request_with_error_ignored(rd)
+
+    def namelist_query(self, namelist):
+        rd = "SMAPI %s API Name_List_Query" % namelist
+        resp = self._request_with_error_ignored(rd)
+        if resp is not None:
+            return resp['response']
+        else:
+            return []
+
+    def namelist_destroy(self, namelist):
+        rd = "SMAPI %s API Name_List_Destroy" % namelist
+        self._request_with_error_ignored(rd)
+
 
 class FilesystemBackend(object):
     @classmethod

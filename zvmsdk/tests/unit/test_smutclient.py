@@ -1435,3 +1435,37 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                         {'rc': 1, 'rs': 1}, 'err')
         self.assertRaises(exception.SDKSMUTRequestFailed,
                           self._smutclient.query_vswitch, 'testvs')
+
+    @mock.patch.object(smutclient.SMUTClient, '_request_with_error_ignored')
+    def test_namelist_add(self, req):
+        self._smutclient.namelist_add('tnlist', 'testid')
+        rd = "SMAPI tnlist API Name_List_Add --operands -n testid"
+        req.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request_with_error_ignored')
+    def test_namelist_remove(self, req):
+        self._smutclient.namelist_remove('tnlist', 'testid')
+        rd = "SMAPI tnlist API Name_List_Remove --operands -n testid"
+        req.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request_with_error_ignored')
+    def test_namelist_query(self, req):
+        req.return_value = {'response': ['t1', 't2']}
+        resp = self._smutclient.namelist_query('tnlist')
+        rd = "SMAPI tnlist API Name_List_Query"
+        req.assert_called_once_with(rd)
+        self.assertEqual(['t1', 't2'], resp)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_namelist_query_err(self, req):
+        req.side_effect = exception.SDKSMUTRequestFailed({}, 'err')
+        resp = self._smutclient.namelist_query('tnlist')
+        rd = "SMAPI tnlist API Name_List_Query"
+        req.assert_called_once_with(rd)
+        self.assertEqual([], resp)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request_with_error_ignored')
+    def test_namelist_destroy(self, req):
+        self._smutclient.namelist_destroy('tnlist')
+        rd = "SMAPI tnlist API Name_List_Destroy"
+        req.assert_called_once_with(rd)
