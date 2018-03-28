@@ -828,6 +828,56 @@ class SMUTClient(object):
 
         return pi_dict
 
+    def system_image_performance_query(self, namelist):
+        """Call Image_Performance_Query to get guest current status.
+
+        :namelist: A namelist that defined in smapi namelist file.
+        """
+        smut_userid = zvmutils.get_smut_userid()
+        rd = ' '.join((
+            "SMAPI %s API System_Image_Performance_Query" % smut_userid,
+            "--operands -T %s" % namelist))
+        action = "get performance info of namelist '%s'" % namelist
+        with zvmutils.log_and_reraise_smut_request_failed(action):
+            results = self._request(rd)
+
+        ipq_kws = {
+            'userid': "Guest name:",
+            'guest_cpus': "Guest CPUs:",
+            'used_cpu_time': "Used CPU time:",
+            'elapsed_cpu_time': "Elapsed time:",
+            'min_cpu_count': "Minimum CPU count:",
+            'max_cpu_limit': "Max CPU limit:",
+            'samples_cpu_in_use': "Samples CPU in use:",
+            'samples_cpu_delay': "Samples CPU delay:",
+            'used_memory': "Used memory:",
+            'max_memory': "Max memory:",
+            'min_memory': "Minimum memory:",
+            'shared_memory': "Shared memory:",
+        }
+
+        pi_dict = {}
+        pi = {}
+        rpi_list = ('\n'.join(results['response'])).split("\n\n")
+        for rpi in rpi_list:
+            try:
+                pi = zvmutils.translate_response_to_dict(rpi, ipq_kws)
+            except exception.SDKInternalError as err:
+                emsg = err.format_message()
+                # when there is only one userid queried and this userid is
+                # in 'off'state, the smcli will only returns the queried
+                # userid number, no valid performance info returned.
+                if(emsg.__contains__("No value matched with keywords.")):
+                    continue
+                else:
+                    raise err
+            for k, v in pi.items():
+                pi[k] = v.strip('" ')
+            if pi.get('userid') is not None:
+                pi_dict[pi['userid']] = pi
+
+        return pi_dict
+
     def get_vm_nic_vswitch_info(self, vm_id):
         """
         Get NIC and switch mapping for the specified virtual machine.
