@@ -1192,6 +1192,15 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         add_mdisk.assert_any_call(userid, disk_list[0], '0100')
         add_mdisk.assert_any_call(userid, disk_list[1], '0101')
 
+    @mock.patch.object(smutclient.SMUTClient, '_dedicate_device')
+    def test_dedicate_device(self, add_mdisk):
+        userid = 'fakeuser'
+        vaddr = 'vaddr'
+        raddr = 'raddr'
+        mode = 1
+        self._smutclient.dedicate_device(userid, vaddr, raddr, mode)
+        add_mdisk.assert_any_call(userid, vaddr, raddr, mode)
+
     @mock.patch.object(smutclient.SMUTClient, '_remove_mdisk')
     def test_remove_mdisks(self, remove_mdisk):
         userid = 'fakeuser'
