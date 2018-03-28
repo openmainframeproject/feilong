@@ -174,6 +174,16 @@ Possible values:
 Sample root disk in user directory:
     MDISK 0100 <disktype> <start> <end> <volumelabel> <readwrite>
 '''),
+    Opt('namelist',
+        section='zvm',
+        help='''
+The name of a list containing names of virtual servers to be queried. The list
+which contains the userid list by default is named: VSMWORK1 NAMELIST, see
+DMSSICNF COPY key: NameListFileIdAny. The list has to be accessible to the
+SMAPI servers.
+
+The length of namelist must no longer than 64.
+'''),
     # image options
     Opt('temp_path',
         section='image',

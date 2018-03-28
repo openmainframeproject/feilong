@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
+
 import zvmsdk.utils as zvmutils
 from zvmsdk.tests.unit import base
 
@@ -21,3 +23,10 @@ class ZVMUtilsTestCases(base.SDKTestCase):
         self.assertEqual(2355.2, zvmutils.convert_to_mb('2.3G'))
         self.assertEqual(20, zvmutils.convert_to_mb('20M'))
         self.assertEqual(1153433.6, zvmutils.convert_to_mb('1.1T'))
+
+    @mock.patch.object(zvmutils, 'get_smut_userid')
+    def test_get_namelist(self, gsu):
+        gsu.return_value = 'TUID'
+        self.assertEqual('TSTNLIST', zvmutils.get_namelist())
+        base.set_conf('zvm', 'namelist', None)
+        self.assertEqual('TUIDNAME', zvmutils.get_namelist())
