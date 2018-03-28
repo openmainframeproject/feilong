@@ -277,20 +277,24 @@ class SDKMonitorTestCase(base.SDKTestCase):
                                  'USERID2': INST_NICS_SAMPLE2
                                  })
 
-    @mock.patch("zvmsdk.smutclient.SMUTClient.image_performance_query")
-    @mock.patch("zvmsdk.smutclient.SMUTClient.get_vm_list")
+    @mock.patch("zvmsdk.smutclient.SMUTClient.system_image_performance_query")
     @mock.patch("zvmsdk.monitor.ZVMMonitor._cache_enabled")
-    def test_private_update_cpumem_data_cache_enabled(self, cache_enabled,
+    @mock.patch("zvmsdk.smutclient.SMUTClient.get_vm_list")
+    @mock.patch("zvmsdk.smutclient.SMUTClient.namelist_query")
+    def test_private_update_cpumem_data_cache_enabled(self, namelist_query,
                                                get_vm_list,
+                                               cache_enabled,
                                                image_performance_query):
         cache_enabled.return_value = True
-        get_vm_list.return_value = ['userid1', 'userid2']
+        namelist_query.return_value = ['USERID1', 'USERID2']
+        get_vm_list.return_value = ['USERID1', 'USERID2']
         image_performance_query.return_value = {
             'USERID1': CPUMEM_SAMPLE1,
             'USERID2': CPUMEM_SAMPLE2
             }
         rdata = self._monitor._update_cpumem_data(['userid1'])
-        image_performance_query.assert_called_once_with(['userid1', 'userid2'])
+        image_performance_query.assert_called_once_with('TSTNLIST')
+        namelist_query.assert_called_once_with('TSTNLIST')
         get_vm_list.assert_called_once_with()
         self.assertEqual(sorted(rdata.keys()), sorted(['USERID1', 'USERID2']))
         self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
@@ -300,19 +304,51 @@ class SDKMonitorTestCase(base.SDKTestCase):
         self._monitor._cache._cache['cpumem']['data']['USERID2']['guest_cpus'],
         '3')
 
-    @mock.patch("zvmsdk.monitor.ZVMMonitor._cache_enabled")
-    @mock.patch("zvmsdk.smutclient.SMUTClient.image_performance_query")
+    @mock.patch("zvmsdk.smutclient.SMUTClient.system_image_performance_query")
+    @mock.patch("zvmsdk.smutclient.SMUTClient.namelist_add")
     @mock.patch("zvmsdk.smutclient.SMUTClient.get_vm_list")
-    def test_private_update_cpumem_data_cache_disabled(self, get_vm_list,
+    @mock.patch("zvmsdk.smutclient.SMUTClient.namelist_query")
+    @mock.patch("zvmsdk.monitor.ZVMMonitor._cache_enabled")
+    def test_private_update_cpumem_data_cache_not_in_namelist(self,
+                                cache_enabled, namelist_query, get_vm_list,
+                                namelist_add, image_performance_query):
+        cache_enabled.return_value = True
+        namelist_query.return_value = ['USERID1']
+        get_vm_list.return_value = ['USERID1', 'USERID2']
+        image_performance_query.return_value = {
+            'USERID1': CPUMEM_SAMPLE1,
+            'USERID2': CPUMEM_SAMPLE2,
+            }
+        rdata = self._monitor._update_cpumem_data(['userid1', 'userid2'])
+        image_performance_query.assert_called_once_with('TSTNLIST')
+        namelist_query.assert_called_once_with('TSTNLIST')
+        get_vm_list.assert_called_once_with()
+        namelist_add.assert_called_once_with('TSTNLIST', 'USERID2')
+        self.assertEqual(sorted(rdata.keys()), sorted(['USERID1', 'USERID2']))
+        self.assertEqual(rdata['USERID1']['guest_cpus'], '1')
+        self.assertEqual(rdata['USERID1']['used_cpu_time'], '6185838 uS')
+        self.assertEqual(rdata['USERID1']['used_memory'], '290232 KB')
+        self.assertEqual(
+        self._monitor._cache._cache['cpumem']['data']['USERID2']['guest_cpus'],
+        '3')
+
+    @mock.patch("zvmsdk.smutclient.SMUTClient.get_vm_list")
+    @mock.patch("zvmsdk.monitor.ZVMMonitor._cache_enabled")
+    @mock.patch("zvmsdk.smutclient.SMUTClient.system_image_performance_query")
+    @mock.patch("zvmsdk.smutclient.SMUTClient.namelist_query")
+    def test_private_update_cpumem_data_cache_disabled(self, namelist_query,
                                                 image_perform_query,
-                                                cache_enabled):
+                                                cache_enabled, get_vm_list):
+        namelist_query.return_value = ['USERID1', 'USERID2']
         cache_enabled.return_value = False
         image_perform_query.return_value = {
             'USERID1': CPUMEM_SAMPLE1
             }
+        get_vm_list.return_value = ['USERID1', 'USERID2']
         rdata = self._monitor._update_cpumem_data(['userid1'])
-        get_vm_list.assert_not_called()
-        image_perform_query.assert_called_once_with(['userid1'])
+        namelist_query.assert_called_once_with('TSTNLIST')
+        get_vm_list.assert_called_once_with()
+        image_perform_query.assert_called_once_with('TSTNLIST')
         self.assertEqual(list(rdata.keys()), ['USERID1'])
         self.assertEqual(sorted(rdata['USERID1'].keys()),
                          sorted(CPUMEM_SAMPLE1.keys()))
