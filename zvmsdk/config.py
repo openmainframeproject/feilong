@@ -387,6 +387,14 @@ tell SDK where to store the database files, make sure the process
 running SDK is able to read write and execute the directory.
 '''
         ),
+    # volume options
+    Opt('fcp_list',
+        section='volume',
+        default='1fc2-1fc6',
+        opt_type='str',
+        help='''
+volume fcp list
+'''),
     # tests options
     Opt('image_path',
         section='tests',
