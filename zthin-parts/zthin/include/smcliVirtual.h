@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 IBM Corporation
+ * Copyright 2017,2018 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ int virtualNetworkVswitchCreateExtended(int argC, char* argV[], struct _vmApiInt
 int virtualNetworkVswitchDelete(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int virtualNetworkVswitchDeleteExtended(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int virtualNetworkVswitchQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
+int virtualNetworkVswitchQueryByteStats(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int virtualNetworkVswitchQueryStats(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
 int virtualNetworkVswitchSet(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP);
