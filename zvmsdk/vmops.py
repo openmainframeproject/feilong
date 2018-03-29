@@ -148,6 +148,9 @@ class VMOps(object):
         self._smutclient.create_vm(userid, cpu, memory,
                                    disk_list, user_profile)
 
+        # add userid into smapi namelist
+        self._smutclient.namelist_add(self._namelist, userid)
+
     def create_disks(self, userid, disk_list):
         zvmutils.check_guest_exist(userid)
 
@@ -183,6 +186,9 @@ class VMOps(object):
     def delete_vm(self, userid):
         """Delete z/VM userid for the instance."""
         self._smutclient.delete_vm(userid)
+
+        # remove userid from smapi namelist
+        self._smutclient.namelist_remove(self._namelist, userid)
 
     def execute_cmd(self, userid, cmdStr):
         """Execute commands on the guest vm."""
