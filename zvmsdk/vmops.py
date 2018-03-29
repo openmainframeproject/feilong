@@ -41,6 +41,7 @@ class VMOps(object):
         self._smutclient = smutclient.get_smutclient()
         self._dist_manager = dist.LinuxDistManager()
         self._pathutils = zvmutils.PathUtils()
+        self._namelist = zvmutils.get_namelist()
 
     def get_power_state(self, userid):
         """Get power status of a z/VM instance."""

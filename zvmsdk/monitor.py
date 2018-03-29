@@ -39,6 +39,7 @@ class ZVMMonitor(object):
     def __init__(self):
         self._cache = MeteringCache(self._TYPES)
         self._smutclient = smutclient.get_smutclient()
+        self._namelist = zvmutils.get_namelist()
 
     def inspect_stats(self, uid_list):
         cpumem_data = self._get_inspect_data('cpumem', uid_list)
