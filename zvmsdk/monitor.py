@@ -132,7 +132,7 @@ class ZVMMonitor(object):
 
     def _update_nic_data(self):
         nics = {}
-        vsw_dict = self._smutclient.virtual_network_vswitch_query_iuo_stats()
+        vsw_dict = self._smutclient.virtual_network_vswitch_query_byte_stats()
         with zvmutils.expect_invalid_resp_data():
             for vsw in vsw_dict['vswitches']:
                 for nic in vsw['nics']:

@@ -226,7 +226,7 @@ class SMUTClient(object):
         return pi_dict.get(userid.upper(), None)
 
     def _parse_vswitch_inspect_data(self, rd_list):
-        """ Parse the Virtual_Network_Vswitch_Query_IUO_Stats data to get
+        """ Parse the Virtual_Network_Vswitch_Query_Byte_Stats data to get
         inspect data.
         """
         def _parse_value(data_list, idx, keyword, offset):
@@ -903,10 +903,10 @@ class SMUTClient(object):
                   {"vm_id": vm_id, "switch_dict": switch_dict})
         return switch_dict
 
-    def virtual_network_vswitch_query_iuo_stats(self):
+    def virtual_network_vswitch_query_byte_stats(self):
         smut_userid = zvmutils.get_smut_userid()
         rd = ' '.join((
-            "SMAPI %s API Virtual_Network_Vswitch_Query_IUO_Stats" %
+            "SMAPI %s API Virtual_Network_Vswitch_Query_Byte_Stats" %
             smut_userid,
             "--operands",
             '-T "%s"' % smut_userid,

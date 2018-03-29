@@ -496,7 +496,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(zvmutils, 'get_smut_userid')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_virtual_network_vswitch_query_iuo_stats(self, smut_req,
+    def test_virtual_network_vswitch_query_byte_stats(self, smut_req,
                                                      get_smut_userid):
         get_smut_userid.return_value = "SMUTUSER"
         vsw_data = ['vswitch count: 2',
@@ -588,7 +588,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                  'overallRC': 0, 'logEntries': [],
                                  'rc': 0, 'response': vsw_data
                                  }
-        vsw_dict = self._smutclient.virtual_network_vswitch_query_iuo_stats()
+        vsw_dict = self._smutclient.virtual_network_vswitch_query_byte_stats()
         self.assertEqual(2, len(vsw_dict['vswitches']))
         self.assertEqual(2, len(vsw_dict['vswitches'][1]['nics']))
         self.assertEqual('INST1',
