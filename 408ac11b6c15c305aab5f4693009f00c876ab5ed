@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "685b8a4e_d4ecf3c7",
+        "filename": "zvmsdk/monitor.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-03-29T02:23:05Z",
+      "side": 1,
+      "message": "For the missing uids queried, I think you cann\u0027t just simply add them into the namelist. For example, there may be some case that user queried a userid that is not in our control (not managed by ZCC), we shouldn\u0027t monitor such userid.\n\nSo, for the missing userid, I would suggest to first query our guest db, if exists in the db, log a warning(because such case should not happen normally) and then add the userid to namelist and continue.",
+      "range": {
+        "startLine": 132,
+        "startChar": 29,
+        "endLine": 132,
+        "endChar": 41
+      },
+      "revId": "408ac11b6c15c305aab5f4693009f00c876ab5ed",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
