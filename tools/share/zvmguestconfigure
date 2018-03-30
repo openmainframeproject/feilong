@@ -87,7 +87,7 @@ function pullReader {
   fi
 
   # Grab the spool Id, class file name, and file type
-  eval records=($(/usr/sbin/vmur li | tail -n +2 | cut -c 1-72 | awk '{print $1":"$2":"$3":"$10":"$11"\n"}' ))
+  eval records=($(/usr/sbin/vmur li | tail -n +2 | cut -c 1-80 | awk '{print $1":"$2":"$3":"$10":"$11"\n"}' ))
 
   # Process each spool file that is class "x"
   for record in "${records[@]}"
