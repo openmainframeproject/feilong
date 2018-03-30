@@ -3677,7 +3677,8 @@ int virtualNetworkVswitchQuery(int argC, char* argV[], struct _vmApiInternalCont
             char * deviceStatus;
             char * deviceErrorStatus;
             char * vlanIds;
-            char * vlanId;
+            char vlanId[8];
+            char nativeVlanId[8];
             for (i = 0; i < count; i++) {
                 if (output->vswitchList[i].transportType == 1) {
                     transportType = "IP";
@@ -3701,6 +3702,17 @@ int virtualNetworkVswitchQuery(int argC, char* argV[], struct _vmApiInternalCont
                     routingValue = "The device will act as a router";
                 } else {
                     routingValue = "";
+                }
+
+                if (output->vswitchList[i].vlanId == 32768) {
+                    strcpy(vlanId, "NONE");
+                } else {
+                    sprintf(vlanId, "%d", output->vswitchList[i].vlanId);
+                }
+                if (output->vswitchList[i].nativeVlanId == 32768) {
+                    strcpy(nativeVlanId, "NONE");
+                } else {
+                    sprintf(nativeVlanId, "%d", output->vswitchList[i].nativeVlanId);
                 }
 
                 if (output->vswitchList[i].grvpRequestAttribute == 1) {
@@ -3753,15 +3765,14 @@ int virtualNetworkVswitchQuery(int argC, char* argV[], struct _vmApiInternalCont
                        "  Port type: %s\n"
                        "  Queue memory limit: %d\n"
                        "  Routing value: %s\n"
-                       "  VLAN ID: %d\n"
-                       "  Native VLAN ID: %d\n"
+                       "  VLAN ID: %s\n"
+                       "  Native VLAN ID: %s\n"
                        "  MAC ID: %012llX\n"
                        "  GVRP request attributes: %s\n"
                        "  GVRP enabled attributes: %s\n"
                        "  Switch status: %s\n", output->vswitchList[i].switchName, transportType, portType,
-                       output->vswitchList[i].queueMemoryLimit, routingValue, output->vswitchList[i].vlanId,
-                       output->vswitchList[i].nativeVlanId, output->vswitchList[i].macId, gvrpRequest,
-                       gvrpEnabled, switchStatus);
+                       output->vswitchList[i].queueMemoryLimit, routingValue, vlanId, nativeVlanId,
+                       output->vswitchList[i].macId, gvrpRequest, gvrpEnabled, switchStatus);
 
                 printf("  Devices:\n");
                 for (j = 0; j < output->vswitchList[i].realDeviceCount; j++) {
@@ -4083,6 +4094,10 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
     char msgBuff[MESSAGE_BUFFER_SIZE];
     INIT_MESSAGE_BUFFER(&saveMsgs, MESSAGE_BUFFER_SIZE, msgBuff) ;
 
+    // vlan id translation
+    int vlan_id_int;
+    int native_vlan_id_int;
+    int user_vlan_id_int;
 
     rc = getSmapiLevel(vmapiContextP, " ", &smapiLevel);
     // Options that have arguments are followed by a : character
@@ -4240,6 +4255,12 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
             token = strtok_r(NULL, blank, &buffer);
             if (token != NULL) {
                 strcpy(vlan_id, token);
+                if (!strcmp(vlan_id, "32768")){
+                    strcpy(vlan_id, "NONE");
+                } else {
+                    vlan_id_int = atoi(vlan_id);
+                    sprintf(vlan_id, "%d", vlan_id_int);
+                }
             } else {
                 if (0 == (rc = addMessageToBuffer(&saveMsgs, "Error vlan_id is NULL!!\n"))) {
                     rc = OUTPUT_ERRORS_FOUND;
@@ -4250,6 +4271,12 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
             token = strtok_r(NULL, blank, &buffer);
             if (token != NULL) {
                 strcpy(native_vlan_id, token);
+                if (!strcmp(native_vlan_id, "32768")){
+                    strcpy(native_vlan_id, "NONE");
+                } else {
+                    native_vlan_id_int = atoi(native_vlan_id);
+                    sprintf(native_vlan_id, "%d", native_vlan_id_int);
+                }
             } else {
                 if (0 == (rc = addMessageToBuffer(&saveMsgs, "Error native_vlan_id is NULL!!\n"))) {
                     rc = OUTPUT_ERRORS_FOUND;
@@ -4601,6 +4628,8 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
                     token = strtok_r(NULL, blank, &buffer);
                     if (token != NULL) {
                         strcpy(user_vlan_id, token);
+                        user_vlan_id_int = atoi(user_vlan_id);
+                        sprintf(user_vlan_id, "%d", user_vlan_id_int);
                     } else {
                         if (0 == (rc = addMessageToBuffer(&saveMsgs, "Error user_vlan_id is NULL!!\n"))) {
                             rc = OUTPUT_ERRORS_FOUND;
