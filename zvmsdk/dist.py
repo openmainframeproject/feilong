@@ -213,8 +213,16 @@ class LinuxDist(object):
         self._set_zfcp_config_files(assigner_id, fcp, target_wwpn, target_lun)
         self._set_zfcp_multipath(assigner_id, multipath)
 
+    def config_volume_detach_active(self, fcp, assigner_id, target_wwpn,
+                                    target_lun, multipath):
+        self._offline_fcp_device(assigner_id, fcp)
+
     @abc.abstractmethod
     def _online_fcp_device(self, assigner_id, fcp):
+        pass
+
+    @abc.abstractmethod
+    def _offline_fcp_device(self, assigner_id, fcp):
         pass
 
     @abc.abstractmethod
@@ -224,6 +232,10 @@ class LinuxDist(object):
 
     @abc.abstractmethod
     def _set_zfcp_multipath(self, assigner_id, multipath):
+        pass
+
+    @abc.abstractmethod
+    def _config_to_persistent(self, assigner_id, multipath):
         pass
 
     @abc.abstractmethod
@@ -385,6 +397,17 @@ class rhel(LinuxDist):
             errmsg = ("chccwdev error on userid: %s") % assigner_id
             raise exception.SDKInternalError(msg=errmsg)
 
+    def _offline_fcp_device(self, assigner_id, fcp):
+        """rhel offline zfcp. sampe to all rhel distro."""
+        offline_dev = 'chccwdev -d %s' % fcp
+        ret = self.execute_cmd(assigner_id, offline_dev)
+        if 'Done' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("offline error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+
     def _set_zfcp_multipath(self, assigner_id, multipath):
         """sampe to all rhel distro ???"""
         # TODO: multipath?
@@ -394,6 +417,25 @@ class rhel(LinuxDist):
         conf_file += '#}\n'
         cmd = 'echo -e %s > /etc/multipath.conf' % conf_file
         self.execute_cmd(assigner_id, cmd)
+
+    def _config_to_persistent(self, assigner_id):
+        """rhel"""
+        pass
+
+    def _set_zfcp_config_files(self, assigner_id, fcp, target_wwpn,
+                               target_lun):
+        """rhel set WWPN and LUN in configuration files"""
+        device = '0.0.%s' % fcp
+        # add unit
+        unit_add = 'echo %s > ' % target_lun
+        unit_add += '/sys/bus/ccw/drivers/zfcp/%(device)s/%(wwpn)s/unit_add'\
+                    % {'device': device, 'wwpn': target_wwpn}
+        self.execute_cmd(assigner_id, unit_add)
+        # set zfcp confiuration file
+        set_zfcp_conf = 'echo %(device)s %(wwpn)s %(lun)s >> /etc/zfcp.conf'\
+                        % {'device': device, 'wwpn': target_wwpn,
+                           'lun': target_lun}
+        self.execute_cmd(assigner_id, set_zfcp_conf)
 
 
 class rhel6(rhel):
@@ -448,16 +490,12 @@ class rhel6(rhel):
     def _set_zfcp_config_files(self, assigner_id, fcp, target_wwpn,
                                target_lun):
         """rhel6 zfcp configuration"""
-        # add port
+        super(rhel6, self)._set_zfcp_config_files(assigner_id, fcp,
+                                                  target_wwpn, target_lun)
         device = '0.0.%s' % fcp
-        port_add = 'echo %s > ' % target_wwpn
-        port_add += '/sys/bus/ccw/drivers/zfcp/%s/port_add' % device
-        self.execute_cmd(assigner_id, port_add)
-        # add unit
-        unit_add = 'echo %s > ' % target_lun
-        unit_add += '/sys/bus/ccw/drivers/zfcp/%(device)s/%(wwpn)s/unit_add'\
-                    % {'device': device, 'wwpn': target_wwpn}
-        self.execute_cmd(assigner_id, unit_add)
+        # add fcp
+        add_fcp = 'echo add >> /sys/bus/ccw/devices/%s/uevent' % device
+        self.execute_cmd(assigner_id, add_fcp)
 
 
 class rhel7(rhel):
@@ -519,19 +557,6 @@ class rhel7(rhel):
         files = os.path.join(self._get_network_file_path(),
                              self._get_all_device_filename())
         return '\nrm -f %s\n' % files
-
-    def _set_zfcp_config_files(self, assigner_id, fcp, target_wwpn,
-                               target_lun):
-        """rhel7 zfcp configuration"""
-        # set zfcp confiuration file
-        device = '0.0.%s' % fcp
-        set_zfcp_conf = 'echo %(device)s %(wwpn)s %(lun)s >> /etc/zfcp.conf'\
-                        % {'device': device, 'wwpn': target_wwpn,
-                           'lun': target_lun}
-        self.execute_cmd(assigner_id, set_zfcp_conf)
-        # add fcp
-        add_fcp = 'echo add >> /sys/bus/ccw/devices/%s/uevent' % device
-        self.execute_cmd(assigner_id, add_fcp)
 
 
 class sles(LinuxDist):
@@ -750,6 +775,17 @@ class sles(LinuxDist):
     def _set_zfcp_multipath(assigner_id, multipath):
         """sles"""
         pass
+
+    def _offline_fcp_device(self, assigner_id, fcp):
+        """sles offline zfcp. sampe to all rhel distro."""
+        offline_dev = 'chccwdev -d %s' % fcp
+        ret = self.execute_cmd(assigner_id, offline_dev)
+        if 'Done' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("offline error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
 
 
 class sles11(sles):
@@ -1028,6 +1064,17 @@ class ubuntu(LinuxDist):
     def _set_zfcp_multipath(assigner_id, multipath):
         """ubuntu"""
         pass
+
+    def _offline_fcp_device(self, assigner_id, fcp):
+        """ubuntu offline zfcp. sampe to all rhel distro."""
+        offline_dev = 'chccwdev -d %s' % fcp
+        ret = self.execute_cmd(assigner_id, offline_dev)
+        if 'Done' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("offline error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
 
 
 class ubuntu16(ubuntu):
