@@ -198,7 +198,7 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
             self.assertTrue(inlist)
             self.assertEqual('1',
                         vswinfo['authorized_users']['FVTUSER1']['vlan_count'])
-            self.assertListEqual(['0010'],
+            self.assertListEqual(['10'],
                         vswinfo['authorized_users']['FVTUSER1']['vlan_ids'])
         except Exception:
             raise
@@ -313,7 +313,7 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
             self.assertEqual('USERBASED', vswinfo['user_port_based'])
             self.assertDictEqual({}, vswinfo['authorized_users'])
             self.assertEqual('1000', vswinfo['vlan_id'])
-            self.assertEqual('0010', vswinfo['native_vlan_id'])
+            self.assertEqual('10', vswinfo['native_vlan_id'])
             self.assertEqual('NA', vswinfo['routing_value'])
             self.assertTrue(sorted(['1111', '2222']),
                             sorted(vswinfo['real_devices'].keys()))
