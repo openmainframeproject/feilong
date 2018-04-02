@@ -89,10 +89,11 @@ class TestFCPManager(base.SDKTestCase):
             'opnstk1:   NPIV world wide port number: 20076D8500005183',
             'opnstk1:   Channel path ID: 50',
             'opnstk1:   Physical world wide port number: 20076D8500005185']
+        fake_userid = 'fakeid'
 
         mock_get.return_value = fcp_list
 
-        self.fcpops._init_fcp_pool('b83d-b83f')
+        self.fcpops._init_fcp_pool('b83d-b83f', fake_userid)
         self.assertEqual(2, len(self.fcpops._fcp_pool))
         self.assertTrue('b83d' in self.fcpops._fcp_pool)
         self.assertTrue('b83e' in self.fcpops._fcp_pool)
@@ -131,10 +132,11 @@ class TestFCPManager(base.SDKTestCase):
             'opnstk1:   NPIV world wide port number: 20076D8500005187',
             'opnstk1:   Channel path ID: 50',
             'opnstk1:   Physical world wide port number: 20076D8500005188']
+        fake_userid = 'fakeid'
 
         mock_get.return_value = fcp_list
 
-        self.fcpops._init_fcp_pool('b83d-b83f')
+        self.fcpops._init_fcp_pool('b83d-b83f', fake_userid)
 
         db_op = database.FCPDbOperator()
         db_op.new('b83c')
