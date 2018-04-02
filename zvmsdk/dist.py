@@ -437,6 +437,18 @@ class rhel6(rhel):
         cmd = 'echo -e %s > /etc/multipath.conf' % conf_file
         self.execute_cmd(assigner_id, cmd)
 
+    def config_volume_detach_active(self, fcp, assigner_id, target_wwpn,
+                                    target_lun, multipath):
+        "config rhel6 detach"
+        offline_dev = 'chccwdev -d %s' % fcp
+        ret = self.execute_cmd(assigner_id, offline_dev)
+        if 'Done' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("offline error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+
 
 class rhel7(rhel):
     def get_znetconfig_contents(self):
@@ -535,6 +547,18 @@ class rhel7(rhel):
         self.execute_cmd(assigner_id, add_fcp)
         # TODO: multipath?
         pass
+
+    def config_volume_detach_active(self, fcp, assigner_id, target_wwpn,
+                                    target_lun, multipath):
+        "config rhel7 detach"
+        offline_dev = 'chccwdev -d %s' % fcp
+        ret = self.execute_cmd(assigner_id, offline_dev)
+        if 'Done' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("offline error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
 
 
 class sles(LinuxDist):
@@ -761,6 +785,18 @@ class sles(LinuxDist):
         self.execute_cmd(assigner_id, disk_config)
         # TODO: multipath??
         pass
+
+    def config_volume_detach_active(self, fcp, assigner_id, target_wwpn,
+                                    target_lun, multipath):
+        "config SLES detach"
+        offline_dev = 'chccwdev -d %s' % fcp
+        ret = self.execute_cmd(assigner_id, offline_dev)
+        if 'Done' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("offline error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
 
 
 class sles11(sles):
@@ -1044,6 +1080,18 @@ class ubuntu(LinuxDist):
         self.execute_cmd(assigner_id, disk_config)
         # TODO: multipath
         pass
+
+    def config_volume_detach_active(self, fcp, assigner_id, target_wwpn,
+                                    target_lun, multipath):
+        "config ubuntu detach"
+        offline_dev = 'chccwdev -d %s' % fcp
+        ret = self.execute_cmd(assigner_id, offline_dev)
+        if 'Done' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("offline error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
 
 
 class ubuntu16(ubuntu):
