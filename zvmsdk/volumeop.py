@@ -23,6 +23,7 @@ from zvmsdk import database
 from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk import smutclient
 from zvmsdk import vmops
 
 
@@ -47,8 +48,8 @@ DEDICATE = 'dedicate'
 
 def get_volumeop():
     global _VolumeOP
-    # if not _VolumeOP:
-    #   _VolumeOP = VolumeOperator()
+    if not _VolumeOP:
+        _VolumeOP = VolumeOperatorAPI()
     return _VolumeOP
 
 
@@ -130,7 +131,9 @@ class VolumeConfiguratorAPI(object):
 
     def config_detach_active(self, fcp, assigner_id, target_wwpn,
                              target_lun, multipath, os_version):
-        raise NotImplementedError
+        linuxdist = self._dist_manager.get_linux_dist(os_version)()
+        linuxdist.config_volume_detach_active(fcp, assigner_id, target_wwpn,
+                                              target_lun, multipath)
 
     def config_detach_inactive(self, fcp, assigner_id, target_wwpn,
                                target_lun, multipath, os_version):
@@ -393,9 +396,10 @@ class FCPVolumeManager(object):
     def __init__(self):
         self.fcp_mgr = FCPManager()
         self.config_api = VolumeConfiguratorAPI()
+        self._smutclient = smutclient.get_smutclient()
 
     def _dedicate_fcp(self, fcp, assigner_id):
-        pass
+        self._smutclient.dedicate_device(assigner_id, fcp, fcp, 0)
 
     def _add_disk(self, fcp, assigner_id, target_wwpn, target_lun,
                   multipath, os_version):
@@ -440,11 +444,12 @@ class FCPVolumeManager(object):
                      multipath, os_version)
 
     def _undedicate_fcp(self, fcp, assigner_id):
-        pass
+        self._smutclient.undedicate_device(assigner_id, fcp)
 
-    def _remove_disk(self, fcp, assinger_id, target_wwpn, target_lun,
+    def _remove_disk(self, fcp, assigner_id, target_wwpn, target_lun,
                      multipath, os_version):
-        pass
+        self.config_api.config_detach(fcp, assigner_id, target_wwpn,
+                                      target_lun, multipath, os_version)
 
     def _detach(self, fcp, assigner_id, target_wwpn, target_lun,
                 multipath, os_version):
