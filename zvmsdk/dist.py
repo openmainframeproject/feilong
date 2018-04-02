@@ -213,8 +213,16 @@ class LinuxDist(object):
         self._set_zfcp_config_files(assigner_id, fcp, target_wwpn, target_lun)
         self._set_zfcp_multipath(assigner_id, multipath)
 
+    def config_volume_detach_active(self, fcp, assigner_id, target_wwpn,
+                                    target_lun, multipath):
+        self._offline_fcp_device(assigner_id, fcp)
+
     @abc.abstractmethod
     def _online_fcp_device(self, assigner_id, fcp):
+        pass
+
+    @abc.abstractmethod
+    def _offline_fcp_device(self, assigner_id, fcp):
         pass
 
     @abc.abstractmethod
@@ -383,6 +391,17 @@ class rhel(LinuxDist):
             pass
         else:
             errmsg = ("chccwdev error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+
+    def _offline_fcp_device(self, assigner_id, fcp):
+        """rhel offline zfcp. sampe to all rhel distro."""
+        offline_dev = 'chccwdev -d %s' % fcp
+        ret = self.execute_cmd(assigner_id, offline_dev)
+        if 'Done' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("offline error on userid: %s") % assigner_id
             raise exception.SDKInternalError(msg=errmsg)
 
     def _set_zfcp_multipath(self, assigner_id, multipath):
@@ -751,6 +770,17 @@ class sles(LinuxDist):
         """sles"""
         pass
 
+    def _offline_fcp_device(self, assigner_id, fcp):
+        """sles offline zfcp. sampe to all rhel distro."""
+        offline_dev = 'chccwdev -d %s' % fcp
+        ret = self.execute_cmd(assigner_id, offline_dev)
+        if 'Done' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("offline error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
+
 
 class sles11(sles):
     def get_znetconfig_contents(self):
@@ -1028,6 +1058,17 @@ class ubuntu(LinuxDist):
     def _set_zfcp_multipath(assigner_id, multipath):
         """ubuntu"""
         pass
+
+    def _offline_fcp_device(self, assigner_id, fcp):
+        """ubuntu offline zfcp. sampe to all rhel distro."""
+        offline_dev = 'chccwdev -d %s' % fcp
+        ret = self.execute_cmd(assigner_id, offline_dev)
+        if 'Done' in ret:
+            pass
+        else:
+            # TODO: define exception for this
+            errmsg = ("offline error on userid: %s") % assigner_id
+            raise exception.SDKInternalError(msg=errmsg)
 
 
 class ubuntu16(ubuntu):
