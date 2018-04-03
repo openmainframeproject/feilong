@@ -15,10 +15,12 @@
 
 import setuptools
 
+from zvmsdk import version as sdkversion
+
 
 setuptools.setup(
     name='zVMCloudConnector',
-    version='1.0.0',
+    version=sdkversion.__version__,
     license='ASL 2.0',
     author='IBM',
     description='z/VM cloud management library in Python',
