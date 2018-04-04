@@ -152,14 +152,15 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
 
     def _guest_create_network_interface(self, userid=None, vdev='1000',
                                         ip="192.168.95.123",
-                                        active=False):
+                                        active=False, OSA=None):
         content = {"interface": {"os_version": "rhel6.7",
                                  "guest_networks":
                                     [{"ip_addr": ip,
                                      "dns_addr": ["9.0.3.1"],
                                      "gateway_addr": "192.168.95.1",
                                      "cidr": "192.168.95.0/24",
-                                     "nic_vdev": vdev}]}}
+                                     "nic_vdev": vdev,
+                                     "osa_device": OSA}]}}
         if active:
             content["interface"]["active"] = "True"
         else:
@@ -1059,6 +1060,25 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             nic_defined, vsw = self._check_nic("2000", userid=userid)
             self.assertFalse(nic_defined)
             self.assertEqual("", vsw)
+        finally:
+            os.system('rm /var/lib/zvmsdk/cfgdrive.tgz')
+            self._guest_delete(userid=userid)
+
+    def test_guest_create_delete_network_interface_OSA(self):
+        userid = test_utils.generate_test_userid()
+        resp = self._guest_create(userid=userid)
+        self.assertEqual(200, resp.status_code)
+        self._make_transport_file()
+        transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
+
+        try:
+            resp = self._guest_deploy_with_transport_file(userid=userid,
+                                           transportfiles=transport_file)
+            self.assertEqual(200, resp.status_code)
+
+            resp = self._guest_create_network_interface(userid=userid,
+                                                        OSA="FFFF")
+            self.assertEqual(400, resp.status_code)
         finally:
             os.system('rm /var/lib/zvmsdk/cfgdrive.tgz')
             self._guest_delete(userid=userid)
