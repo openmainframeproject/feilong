@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "48c527d7_a7c1184d",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-04-04T07:20:12Z",
+      "side": 1,
+      "message": "we need be as detail as we can on this",
+      "range": {
+        "startLine": 396,
+        "startChar": 0,
+        "endLine": 396,
+        "endChar": 15
+      },
+      "revId": "088c1336963cdaea58f584c03ec3d6dfc666dfbf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "71379b9b_f3cdf9d4",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 442,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-04-04T07:20:12Z",
+      "side": 1,
+      "message": "comments? \n\nplease use \"\"\"xxx\"\"\"",
+      "range": {
+        "startLine": 442,
+        "startChar": 8,
+        "endLine": 442,
+        "endChar": 29
+      },
+      "revId": "088c1336963cdaea58f584c03ec3d6dfc666dfbf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "efc865c1_8fe6e7ab",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 446,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-04-04T07:20:12Z",
+      "side": 1,
+      "message": "we should avoid \u0027Done\u0027 check\nwe need check return code and reason code instead",
+      "range": {
+        "startLine": 445,
+        "startChar": 8,
+        "endLine": 446,
+        "endChar": 16
+      },
+      "revId": "088c1336963cdaea58f584c03ec3d6dfc666dfbf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
