@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c2fffeb8_e10c80b4",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 405,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-04-04T07:22:25Z",
+      "side": 1,
+      "message": "I\u0027d prefer to avoid this kind of check, pleaes",
+      "range": {
+        "startLine": 403,
+        "startChar": 2,
+        "endLine": 405,
+        "endChar": 16
+      },
+      "revId": "caa3b1b67403186325b80240aabdccf49ea1f158",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f4c4e81d_c352a4d0",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 520,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-04-04T07:22:25Z",
+      "side": 1,
+      "message": "this kind of check is common used? why you write for each dist?",
+      "range": {
+        "startLine": 507,
+        "startChar": 2,
+        "endLine": 520,
+        "endChar": 55
+      },
+      "revId": "caa3b1b67403186325b80240aabdccf49ea1f158",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
