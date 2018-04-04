@@ -519,7 +519,7 @@ def get_namelist():
         if len(CONF.zvm.namelist) <= 8:
             return CONF.zvm.namelist
 
-    return ''.join((get_smut_userid(), 'NAMELIST'))[:8]
+    return ''.join(('NL', get_smut_userid().rjust(6, '0')[-6:]))
 
 
 def generate_iucv_authfile(fn, client):
