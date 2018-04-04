@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "94cf5ce9_3e25e1d0",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1072,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-04-04T07:14:00Z",
+      "side": 1,
+      "message": "later let\u0027s make this as \nself._transport_file \u003d \u0027/var/lib/zvmsdk/cfgdrive.tgz\u0027\nin setUp function\nthen use here directly..\n\nmaybe a question to Fay",
+      "range": {
+        "startLine": 1072,
+        "startChar": 8,
+        "endLine": 1072,
+        "endChar": 55
+      },
+      "revId": "42355b44b6f277505837493d5884189502e48dd8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "50083784_82a5bb23",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1081,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-04-04T07:14:00Z",
+      "side": 1,
+      "message": "this test means FFFF can\u0027t be dedicated so lead to 400 error?\n\nBTW, do we have document for this dedicated API ?",
+      "range": {
+        "startLine": 1079,
+        "startChar": 1,
+        "endLine": 1081,
+        "endChar": 51
+      },
+      "revId": "42355b44b6f277505837493d5884189502e48dd8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
