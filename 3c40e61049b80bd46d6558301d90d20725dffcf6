@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7374044a_10224076",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 522,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-04-04T07:17:32Z",
+      "side": 1,
+      "message": "I think we need log a warning if namelist is set but it\u0027s \u003e 8 for now...\n\ncurrently the doc says 8 and before the bug fix, we need make code consistent to doc",
+      "range": {
+        "startLine": 516,
+        "startChar": 4,
+        "endLine": 522,
+        "endChar": 64
+      },
+      "revId": "3c40e61049b80bd46d6558301d90d20725dffcf6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
