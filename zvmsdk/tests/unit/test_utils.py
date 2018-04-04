@@ -29,4 +29,7 @@ class ZVMUtilsTestCases(base.SDKTestCase):
         gsu.return_value = 'TUID'
         self.assertEqual('TSTNLIST', zvmutils.get_namelist())
         base.set_conf('zvm', 'namelist', None)
-        self.assertEqual('TUIDNAME', zvmutils.get_namelist())
+        self.assertEqual('NL00TUID', zvmutils.get_namelist())
+        gsu.return_value = 'TESTUSER'
+        self.assertEqual('NLSTUSER', zvmutils.get_namelist())
+        base.set_conf('zvm', 'namelist', 'TSTNLIST')
