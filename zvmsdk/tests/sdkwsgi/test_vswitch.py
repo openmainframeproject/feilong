@@ -42,7 +42,8 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
         self._vswitch_delete()
 
     def setUp(self):
-        pass
+        super(VSwitchTestCase, self).setUp()
+        self.record_logfile_position()
 
     def _vswitch_list(self):
         resp = self.client.api_request(url='/vswitches', method='GET')
@@ -122,6 +123,7 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
 
             resp = self._vswitch_query()
             self.assertEqual(200, resp.status_code)
+
             vswinfo = json.loads(resp.content)['output']
             inlist = 'FVTUSER1' in vswinfo['authorized_users']
             self.assertTrue(inlist)
@@ -283,7 +285,6 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
         except Exception:
             raise
         finally:
-            resp = self._vswitch_delete()
             self.assertEqual(200, resp.status_code)
 
     def test_vswitch_create_vlan_aware(self):
