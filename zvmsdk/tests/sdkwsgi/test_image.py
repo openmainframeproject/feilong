@@ -134,6 +134,7 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
         self.assertEqual(404, resp.status_code)
 
     def test_image_create_delete(self):
+        self.record_logfile_position()
         self._image_create()
 
         try:
@@ -141,11 +142,13 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
             self.assertEqual(200, resp.status_code)
             self.apibase.verify_result('test_image_query', resp.content)
 
+            self.record_logfile_position()
             resp = self._image_get_root_disk_size()
             self.assertEqual(200, resp.status_code)
             self.apibase.verify_result('test_image_get_root_disk_size',
                                        resp.content)
 
+            self.record_logfile_position()
             resp = self._image_export()
             self.assertEqual(200, resp.status_code)
             self.apibase.verify_result('test_image_export', resp.content)
