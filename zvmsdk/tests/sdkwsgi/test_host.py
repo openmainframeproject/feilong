@@ -29,6 +29,10 @@ class HostTestCase(base.ZVMConnectorBaseTestCase):
         self.set_conf('sdkserver', 'bind_port', 3123)
         self.client = test_sdkwsgi.TestSDKClient()
 
+    def setUp(self):
+        super(HostTestCase, self).setUp()
+        self.record_logfile_position()
+
     def test_host_info(self):
         resp = self.client.api_request(url='/host')
         self.assertEqual(200, resp.status_code)
