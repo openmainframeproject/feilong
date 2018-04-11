@@ -63,7 +63,8 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
                                 method='DELETE')
 
     def setUp(self):
-        pass
+        super(GuestHandlerTestCase, self).setUp()
+        self.record_logfile_position()
 
     @classmethod
     def _guest_create(cls, userid=None):
@@ -771,6 +772,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             resp = self._guest_nic_create(vdev="1006", nic_id='123456',
                                           userid=userid)
             self.assertEqual(200, resp.status_code)
+
             resp = self._guest_get_nic_DB_info(nic_id='123456', userid=userid)
             self.assertEqual(200, resp.status_code)
             nic_info = json.loads(resp.content)['output']
@@ -1339,7 +1341,9 @@ class GuestActionTestCase(base.ZVMConnectorBaseTestCase):
         super(GuestActionTestCase, self).__init__(methodName)
 
     def setUp(self):
+        super(GuestActionTestCase, self).setUp()
         self.client = test_sdkwsgi.TestSDKClient()
+        self.record_logfile_position()
 
     def test_guest_action_invalid_body(self):
         body = '{"dummy": "none"}'

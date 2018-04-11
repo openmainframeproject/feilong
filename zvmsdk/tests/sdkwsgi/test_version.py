@@ -23,7 +23,9 @@ class VersionTestCase(base.ZVMConnectorBaseTestCase):
         self.apibase = api_sample.APITestBase()
 
     def setUp(self):
+        super(VersionTestCase, self).setUp()
         self.client = test_sdkwsgi.TestSDKClient()
+        self.record_logfile_position()
 
     def test_version(self):
         resp = self.client.api_request(url='/')

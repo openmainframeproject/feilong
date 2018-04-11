@@ -37,7 +37,8 @@ class ZVMConnectorTestCase(unittest.TestCase):
         self.userid_sock = 'SOCKT%03d' % (time.time() % 1000)
 
     def setUp(self):
-        pass
+        super(ZVMConnectorTestCase, self).setUp()
+        self.record_logfile_position()
 
     def _guest_create(self, conn_type):
         api_name = 'guest_create'
