@@ -77,6 +77,7 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
         return resp
 
     def test_vswitch_create_query_delete(self):
+        self.record_logfile_position()
         resp = self._vswitch_create()
         self.assertEqual(200, resp.status_code)
 
@@ -95,42 +96,53 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
             switch_name = vswinfo['switch_name']
             self.assertEqual(switch_name, 'RESTVSW1')
         finally:
+            self.record_logfile_position()
             resp = self._vswitch_delete()
             self.assertEqual(200, resp.status_code)
 
             # Try to delete again, currently ignore not exist error
+            self.record_logfile_position()
             resp = self._vswitch_delete()
             self.assertEqual(200, resp.status_code)
 
+            self.record_logfile_position()
             resp = self._vswitch_list()
             vswlist = json.loads(resp.content)['output']
             inlist = 'RESTVSW1' in vswlist
             self.assertFalse(inlist)
 
+            self.record_logfile_position()
             resp = self._vswitch_query()
             self.assertEqual(404, resp.status_code)
 
     def test_vswitch_grant_revoke(self):
+        self.record_logfile_position()
         resp = self._vswitch_create()
         self.assertEqual(200, resp.status_code)
 
         try:
+            self.record_logfile_position()
             body = '{"vswitch": {"grant_userid": "FVTUSER1"}}'
             resp = self.client.api_request(url='/vswitches/RESTVSW1',
                                            method='PUT', body=body)
             self.assertEqual(200, resp.status_code)
 
+            self.record_logfile_position()
             resp = self._vswitch_query()
             self.assertEqual(200, resp.status_code)
+
+            self.record_logfile_position()
             vswinfo = json.loads(resp.content)['output']
             inlist = 'FVTUSER1' in vswinfo['authorized_users']
             self.assertTrue(inlist)
 
+            self.record_logfile_position()
             body = '{"vswitch": {"revoke_userid": "FVTUSER1"}}'
             resp = self.client.api_request(url='/vswitches/RESTVSW1',
                                            method='PUT', body=body)
             self.assertEqual(200, resp.status_code)
 
+            self.record_logfile_position()
             resp = self._vswitch_query()
             self.assertEqual(200, resp.status_code)
             vswinfo = json.loads(resp.content)['output']
@@ -139,10 +151,12 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
         except Exception:
             raise
         finally:
+            self.record_logfile_position()
             resp = self._vswitch_delete()
             self.assertEqual(200, resp.status_code)
 
     def test_vswitch_delete_update_query_not_exist(self):
+        self.record_logfile_position()
         resp = self.client.api_request(url='/vswitches/notexist',
                                        method='DELETE')
         self.assertEqual(200, resp.status_code)
@@ -180,6 +194,7 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
         self.assertEqual(400, resp.status_code)
 
     def test_vswitch_set_port_vlanid(self):
+        self.record_logfile_position()
         resp = self._vswitch_create_aware()
         self.assertEqual(200, resp.status_code)
 
@@ -187,10 +202,12 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
             content = {"vswitch": {"user_vlan_id":
                                {"userid": "FVTUSER1", "vlanid": 10}}}
             body = json.dumps(content)
+            self.record_logfile_position()
             resp = self.client.api_request(url='/vswitches/RESTVSW1',
                                            method='PUT', body=body)
             self.assertEqual(200, resp.status_code)
 
+            self.record_logfile_position()
             resp = self._vswitch_query()
             self.assertEqual(200, resp.status_code)
             vswinfo = json.loads(resp.content)['output']
@@ -203,10 +220,12 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
         except Exception:
             raise
         finally:
+            self.record_logfile_position()
             resp = self._vswitch_delete()
             self.assertEqual(200, resp.status_code)
 
     def test_vswitch_set_port_invalid_vlanid(self):
+        self.record_logfile_position()
         resp = self._vswitch_create_aware()
         self.assertEqual(200, resp.status_code)
         try:
@@ -233,10 +252,12 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
         except Exception:
             raise
         finally:
+            self.record_logfile_position()
             resp = self._vswitch_delete()
             self.assertEqual(200, resp.status_code)
 
     def test_vswitch_set_port_vlanid_vswitch_unaware(self):
+        self.record_logfile_position()
         resp = self._vswitch_create()
         self.assertEqual(200, resp.status_code)
         try:
@@ -250,6 +271,7 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
         except Exception:
             raise
         finally:
+            self.record_logfile_position()
             resp = self._vswitch_delete()
             self.assertEqual(200, resp.status_code)
 
@@ -262,10 +284,12 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
                                "gvrp": "NOGVRP", "queue_mem": 3,
                                "native_vid": 1, "persist": False}}
         body = json.dumps(content)
+        self.record_logfile_position()
         resp = self.client.api_request(url='/vswitches', method='POST',
                                        body=body)
         self.assertEqual(200, resp.status_code)
         try:
+            self.record_logfile_position()
             resp = self._vswitch_query()
             self.assertEqual(200, resp.status_code)
             vswinfo = json.loads(resp.content)['output']
@@ -283,6 +307,7 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
         except Exception:
             raise
         finally:
+            self.record_logfile_position()
             resp = self._vswitch_delete()
             self.assertEqual(200, resp.status_code)
 
@@ -296,10 +321,12 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
                                "gvrp": "GVRP", "queue_mem": 5,
                                "native_vid": 10, "persist": True}}
         body = json.dumps(content)
+        self.record_logfile_position()
         resp = self.client.api_request(url='/vswitches', method='POST',
                                        body=body)
         self.assertEqual(200, resp.status_code)
         try:
+            self.record_logfile_position()
             resp = self._vswitch_query()
             self.assertEqual(200, resp.status_code)
             vswinfo = json.loads(resp.content)['output']
@@ -320,6 +347,7 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
         except Exception:
             raise
         finally:
+            self.record_logfile_position()
             resp = self._vswitch_delete()
             self.assertEqual(200, resp.status_code)
 
