@@ -1730,6 +1730,12 @@ class SMUTClient(object):
         ret = results['response']
         return ret
 
+    def execute_cmd_direct(self, userid, cmdStr):
+        """"cmdVM."""
+        requestData = 'cmdVM ' + userid + ' CMD \'' + cmdStr + '\''
+        results = self._request(requestData)
+        return results
+
     def image_import(self, image_name, url, image_meta, remote_host=None):
         """Import the image specified in url to SDK image repository, and
         create a record in image db, the imported images are located in
