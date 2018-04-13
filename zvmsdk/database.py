@@ -266,9 +266,9 @@ class FCPDbOperator(object):
         sql = ' '.join((
             'CREATE TABLE IF NOT EXISTS fcp(',
             'fcp_id         char(4)      PRIMARY KEY,',
-            'assigner_id    varchar(8),'  # foreign key of a VM
-            'connections    integer,'  # 0 means no assigner
-            'reserved       integer,'  # 0 for not reserved
+            'assigner_id    varchar(8),',   # foreign key of a VM
+            'connections    integer,',      # 0 means no assigner
+            'reserved       integer,',      # 0 for not reserved
             'comment        varchar(128))'))
         with get_fcp_conn() as conn:
             conn.execute(sql)
@@ -347,6 +347,19 @@ class FCPDbOperator(object):
                          "WHERE fcp_id=?",
                          (connections, fcp))
             return connections
+
+    def get_connections_from_assigner(self, assigner_id):
+        connections = 0
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT * FROM fcp WHERE "
+                                  "assigner_id=? COLLATE NOCASE",
+                                  (assigner_id,))
+            fcp_list = result.fetchall()
+            if not fcp_list:
+                connections = 0
+            else:
+                connections = fcp_list[0][2]
+        return connections
 
     def get_from_assigner(self, assigner_id):
         with get_fcp_conn() as conn:
