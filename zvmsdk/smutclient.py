@@ -371,16 +371,13 @@ class SMUTClient(object):
         with zvmutils.log_and_reraise_smut_request_failed():
             self._request(requestData)
 
-    def create_vm(self, userid, cpu, memory, disk_list, profile,
-                  max_cpu, max_mem):
+    def create_vm(self, userid, cpu, memory, disk_list, profile):
         """ Create VM and add disks if specified. """
         rd = ('makevm %(uid)s directory LBYONLY %(mem)im %(pri)s '
-              '--cpus %(cpu)i --profile %(prof)s --maxCPU %(max_cpu)i '
-              '--maxMemSize %(max_mem)s --setReservedMem' %
+              '--cpus %(cpu)i --profile %(prof)s' %
               {'uid': userid, 'mem': memory,
                'pri': const.ZVM_USER_DEFAULT_PRIVILEGE,
-               'cpu': cpu, 'prof': profile,
-               'max_cpu': max_cpu, 'max_mem': max_mem})
+               'cpu': cpu, 'prof': profile})
 
         if CONF.zvm.default_admin_userid:
             rd += (' --logonby "%s"' % CONF.zvm.default_admin_userid)
@@ -562,11 +559,6 @@ class SMUTClient(object):
                 self._pathutils.clean_temp_folder(tmp_trans_dir)
         # Authorize iucv client
         self.guest_authorize_iucv_client(userid)
-        # Update os version in guest metadata
-        # TODO: may should append to old metadata, not replace
-        image_info = self._ImageDbOperator.image_query_record(image_name)
-        metadata = 'os_version=%s' % image_info[0]['imageosdistro']
-        self._GuestDbOperator.update_guest_by_userid(userid, meta=metadata)
 
         msg = ('Deploy image %(img)s to guest %(vm)s disk %(vdev)s'
                ' successfully' % {'img': image_name, 'vm': userid,
@@ -1048,11 +1040,6 @@ class SMUTClient(object):
 
     def set_vswitch_port_vlan_id(self, vswitch_name, userid, vlan_id):
         smut_userid = zvmutils.get_smut_userid()
-        msg = ('Start to set VLAN ID %(vid)s on vswitch %(vsw)s '
-               'for guest %(vm)s'
-                % {'vid': vlan_id, 'vsw': vswitch_name, 'vm': userid})
-        LOG.info(msg)
-
         rd = ' '.join((
             "SMAPI %s API Virtual_Network_Vswitch_Set_Extended" %
             smut_userid,
@@ -1069,10 +1056,6 @@ class SMUTClient(object):
                       "error: %s" %
                       (vlan_id, vswitch_name, userid, err.format_message()))
             self._set_vswitch_exception(err, vswitch_name)
-        msg = ('Set VLAN ID %(vid)s on vswitch %(vsw)s '
-               'for guest %(vm)s successfully'
-                % {'vid': vlan_id, 'vsw': vswitch_name, 'vm': userid})
-        LOG.info(msg)
 
     def add_vswitch(self, name, rdev=None, controller='*',
                     connection='CONNECT', network_type='IP',
@@ -1080,8 +1063,6 @@ class SMUTClient(object):
                     gvrp='GVRP', queue_mem=8, native_vid=1, persist=True):
 
         smut_userid = zvmutils.get_smut_userid()
-        msg = ('Start to create vswitch %s' % name)
-        LOG.info(msg)
         rd = ' '.join((
             "SMAPI %s API Virtual_Network_Vswitch_Create_Extended" %
             smut_userid,
@@ -1110,16 +1091,12 @@ class SMUTClient(object):
         if router is not None:
             rd += " -k routing_value=%s" % router
 
-        msg = ('Start to create vswitch %s' % name)
-        LOG.info(msg)
         try:
             self._request(rd)
         except exception.SDKSMUTRequestFailed as err:
             LOG.error("Failed to create vswitch %s, error: %s" %
                       (name, err.format_message()))
             raise
-        msg = ('Create vswitch %s successfully' % name)
-        LOG.info(msg)
 
     def set_vswitch(self, switch_name, **kwargs):
         """Set vswitch"""
@@ -1144,8 +1121,6 @@ class SMUTClient(object):
 
     def delete_vswitch(self, switch_name, persist=True):
         smut_userid = zvmutils.get_smut_userid()
-        msg = ('Start to delete vswitch %s' % switch_name)
-        LOG.info(msg)
         rd = ' '.join((
             "SMAPI %s API Virtual_Network_Vswitch_Delete_Extended" %
             smut_userid,
@@ -1165,8 +1140,6 @@ class SMUTClient(object):
                 LOG.error("Failed to delete vswitch %s, error: %s" %
                       (switch_name, err.format_message()))
                 raise
-        msg = ('Delete vswitch %s successfully' % switch_name)
-        LOG.info(msg)
 
     def create_nic(self, userid, vdev=None, nic_id=None,
                    mac_addr=None, active=False):
@@ -1228,9 +1201,6 @@ class SMUTClient(object):
                     active=False):
         if active:
             self._is_active(userid)
-        msg = ('Start to create nic device %(vdev)s for guest %(vm)s'
-                % {'vdev': vdev, 'vm': userid})
-        LOG.info(msg)
 
         requestData = ' '.join((
             'SMAPI %s API Virtual_Network_Adapter_Create_Extended_DM' %
@@ -1291,9 +1261,6 @@ class SMUTClient(object):
                                     create_err=msg1, revoke_err=msg2)
 
         self._NetDbOperator.switch_add_record(userid, vdev, port=nic_id)
-        msg = ('Create nic device %(vdev)s for guest %(vm)s successfully'
-                % {'vdev': vdev, 'vm': userid})
-        LOG.info(msg)
 
     def get_user_direct(self, userid):
         with zvmutils.log_and_reraise_smut_request_failed():
@@ -1334,9 +1301,6 @@ class SMUTClient(object):
                 (vdev_info["comments"].__contains__('OSA='))):
                 self._undedicate_nic(userid, vdev, active=active)
                 return
-        msg = ('Start to delete nic device %(vdev)s for guest %(vm)s'
-                % {'vdev': vdev, 'vm': userid})
-        LOG.info(msg)
 
         rd = ' '.join((
             "SMAPI %s API Virtual_Network_Adapter_Delete_DM" %
@@ -1379,9 +1343,6 @@ class SMUTClient(object):
                               "the active guest system, error: %s" %
                               (vdev, userid, emsg))
                     self._delete_nic_active_exception(err)
-        msg = ('Delete nic device %(vdev)s for guest %(vm)s successfully'
-                % {'vdev': vdev, 'vm': userid})
-        LOG.info(msg)
 
     def _couple_active_exception(self, error, vdev, vswitch):
         if ((error.results['rc'] == 212) and
@@ -1435,11 +1396,6 @@ class SMUTClient(object):
         """Couple NIC to vswitch by adding vswitch into user direct."""
         if active:
             self._is_active(userid)
-
-        msg = ('Start to couple nic device %(vdev)s of guest %(vm)s '
-               'with vswitch %(vsw)s'
-                % {'vdev': vdev, 'vm': userid, 'vsw': vswitch_name})
-        LOG.info(msg)
         requestData = ' '.join((
             'SMAPI %s' % userid,
             "API Virtual_Network_Adapter_Connect_Vswitch_DM",
@@ -1505,10 +1461,6 @@ class SMUTClient(object):
         """Update information in switch table."""
         self._NetDbOperator.switch_update_record_with_switch(userid, vdev,
                                                              vswitch_name)
-        msg = ('Couple nic device %(vdev)s of guest %(vm)s '
-               'with vswitch %(vsw)s successfully'
-                % {'vdev': vdev, 'vm': userid, 'vsw': vswitch_name})
-        LOG.info(msg)
 
     def couple_nic_to_vswitch(self, userid, nic_vdev,
                               vswitch_name, active=False):
@@ -1553,10 +1505,6 @@ class SMUTClient(object):
         """Uncouple NIC from vswitch"""
         if active:
             self._is_active(userid)
-        msg = ('Start to uncouple nic device %(vdev)s of guest %(vm)s'
-                % {'vdev': vdev, 'vm': userid})
-        LOG.info(msg)
-
         requestData = ' '.join((
             'SMAPI %s' % userid,
             "API Virtual_Network_Adapter_Disconnect_DM",
@@ -1606,9 +1554,6 @@ class SMUTClient(object):
                     LOG.error("Failed to uncouple nic %s on the active "
                               "guest system, error: %s" % (vdev, emsg))
                     self._uncouple_active_exception(err, vdev)
-        msg = ('Uncouple nic device %(vdev)s of guest %(vm)s successfully'
-                % {'vdev': vdev, 'vm': userid})
-        LOG.info(msg)
 
     def uncouple_nic_from_vswitch(self, userid, nic_vdev,
                                   active=False):
@@ -1667,7 +1612,7 @@ class SMUTClient(object):
             self._GuestDbOperator.delete_guest_by_userid(userid)
 
     def execute_cmd(self, userid, cmdStr):
-        """"cmdVM."""
+        """"cmdVM and return response in results."""
         requestData = 'cmdVM ' + userid + ' CMD \'' + cmdStr + '\''
         with zvmutils.log_and_reraise_smut_request_failed(action='execute '
         'command on vm via iucv channel'):
@@ -1675,6 +1620,12 @@ class SMUTClient(object):
 
         ret = results['response']
         return ret
+
+    def execute_cmd_direct(self, userid, cmdStr):
+        """"cmdVM."""
+        requestData = 'cmdVM ' + userid + ' CMD \'' + cmdStr + '\''
+        results = self._request(requestData)
+        return results
 
     def image_import(self, image_name, url, image_meta, remote_host=None):
         """Import the image specified in url to SDK image repository, and
@@ -2346,11 +2297,6 @@ class SMUTClient(object):
         if active:
             self._is_active(userid)
 
-        msg = ('Start to dedicate nic device %(vdev)s of guest %(vm)s '
-               'to OSA device %(osa)s'
-                % {'vdev': vdev, 'vm': userid, 'osa': OSA_device})
-        LOG.info(msg)
-
         def_vdev = vdev
         att_OSA_device = OSA_device
         for i in range(3):
@@ -2467,10 +2413,6 @@ class SMUTClient(object):
 
         OSA_desc = 'OSA=%s' % OSA_device
         self._NetDbOperator.switch_add_record(userid, vdev, comments=OSA_desc)
-        msg = ('Dedicate nic device %(vdev)s of guest %(vm)s '
-               'to OSA device %(osa)s successfully'
-                % {'vdev': vdev, 'vm': userid, 'osa': OSA_device})
-        LOG.info(msg)
 
     def _undedicate_nic_active_exception(self, error):
         if ((error.results['rc'] == 204) and (error.results['rs'] == 44)):
@@ -2490,10 +2432,6 @@ class SMUTClient(object):
     def _undedicate_nic(self, userid, vdev, active=False):
         if active:
             self._is_active(userid)
-
-        msg = ('Start to undedicate nic device %(vdev)s of guest %(vm)s'
-                % {'vdev': vdev, 'vm': userid})
-        LOG.info(msg)
 
         def_vdev = vdev
         for i in range(3):
@@ -2545,9 +2483,6 @@ class SMUTClient(object):
                                   (vdev, userid, emsg))
                         self._undedicate_nic_active_exception(err)
                 def_vdev = str(hex(int(def_vdev, 16) + 1))[2:]
-        msg = ('Undedicate nic device %(vdev)s of guest %(vm)s successfully'
-                % {'vdev': vdev, 'vm': userid})
-        LOG.info(msg)
 
     def _request_with_error_ignored(self, rd):
         """Send smut request, log and ignore any errors."""
@@ -2578,86 +2513,6 @@ class SMUTClient(object):
     def namelist_destroy(self, namelist):
         rd = "SMAPI %s API Name_List_Destroy" % namelist
         self._request_with_error_ignored(rd)
-
-    def live_resize_cpus(self, userid, start_addr, add_cnt):
-        # start_addr is a hexadecimal string value, the value should be
-        # in range 0-3F. add_cnt is an integer.
-        # Check cpu address in valid range
-        def _cpu_addr_valid(addr):
-            # cpu addr should be in range 1 to 63
-            if addr < 1 or addr >= 64:
-                return False
-            return True
-
-        decimal_start = int(start_addr, 16)
-        if not _cpu_addr_valid(decimal_start) or not _cpu_addr_valid(
-            decimal_start + add_cnt):
-            err_msg = ("Failed to live resize cpus of guest: %(uid)s, "
-                      "next available addr is %(start)i, to be added count: "
-                      "%(add_cnt)i, address exceeds valid range 0-63." %
-                      {'uid': userid, 'start': decimal_start,
-                       'add_cnt': add_cnt})
-            LOG.error(err_msg)
-            raise exception.SDKGuestOperationError(rs=8, userid=userid,
-                                                   start=decimal_start,
-                                                   add_cnt=add_cnt)
-        # Define new cpus in user directory
-        rd = ''.join(("SMAPI %s API Image_Definition_Update_DM " % userid,
-                      "--operands"))
-        hex_addrs = [start_addr]
-        cpu_entries = (" -k CPU=CPUADDR=%s" % start_addr)
-        for offset in range(1, add_cnt):
-            hex_addr = hex(decimal_start + offset)[2:]
-            hex_addrs.append(hex_addr)
-            # Usable for both Image_Definition_Update_DM and Delete_DM
-            cpu_entries += (" -k CPU=CPUADDR=%s" % hex_addr)
-        rd += cpu_entries
-        try:
-            self._request(rd)
-        except exception.SDKSMUTRequestFailed as err:
-            msg = ("Define cpus in user directory for '%s' failed with "
-                   "SMUT error: %s" % (userid, err.format_message()))
-            LOG.error(msg)
-            raise exception.SDKGuestOperationError(rs=9, userid=userid,
-                                                   err=msg)
-        LOG.info("New CPUs defined in user directory for '%s' successfully" %
-                 userid)
-        # Active new cpus added
-        cmd_str = "vmcp def cpu " + ' '.join(hex_addrs)
-        try:
-            self.execute_cmd(userid, cmd_str)
-        except exception.SDKSMUTRequestFailed as err1:
-            # rollback and return
-            msg1 = ("Define cpu of guest: '%s' to active failed with . "
-                   "error: %s." % (userid, err1.format_message()))
-            LOG.error(msg1 + " Will rollback the user directory change.")
-            rd = ''.join(("SMAPI %s API Image_Definition_Delete_DM " % userid,
-                          "--operands"))
-            rd += cpu_entries
-            try:
-                self._request(rd)
-            except exception.SDKSMUTRequestFailed as err2:
-                msg = ("Failed to rollback user directory change for '%s', "
-                       "SMUT error: %s" % (userid, err2.format_message()))
-                LOG.error(msg)
-            else:
-                LOG.info("Revoke user directory change for '%s' successfully."
-                         % userid)
-            raise exception.SDKGuestOperationError(rs=9, userid=userid,
-                                                   err=msg1)
-        # Activate successfully, rescan in Linux layer to hot-plug new cpus
-        LOG.info("Added new CPUs to active configuration of guest '%s'" %
-                 userid)
-        try:
-            self.execute_cmd(userid, "chcpu -r")
-        except exception.SDKSMUTRequestFailed as err:
-            msg = ("Rescan cpus to hot-plug new cpus for guest: '%s' failed "
-                   "with error: %s." % (userid, err.format_message()))
-            LOG.error(msg)
-            raise exception.SDKGuestOperationError(rs=9, userid=userid,
-                                                   err=msg)
-        LOG.info("Live resize cpus for guest: '%s' finished successfully."
-                 % userid)
 
 
 class FilesystemBackend(object):

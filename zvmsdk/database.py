@@ -348,6 +348,18 @@ class FCPDbOperator(object):
                          (connections, fcp))
             return connections
 
+    def get_connections_from_assigner(self, assigner_id):
+        connections = 0
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT * FROM fcp WHERE "
+                                  "assigner_id=?", (assigner_id,))
+            fcp_list = result.fetchall()
+            if not fcp_list:
+                connections = 0
+            else:
+                connections = fcp_list[0][2]
+        return connections
+
     def get_from_assigner(self, assigner_id):
         with get_fcp_conn() as conn:
 
