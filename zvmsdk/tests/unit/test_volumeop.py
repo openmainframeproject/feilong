@@ -49,8 +49,16 @@ class TestFCP(base.SDKTestCase):
 
 class TestFCPManager(base.SDKTestCase):
 
-    def setUp(self):
-        self.fcpops = volumeop.FCPManager()
+    @classmethod
+    def setUpClass(cls):
+        super(TestFCPManager, cls).setUpClass()
+        cls.fcpops = volumeop.FCPManager()
+
+    @classmethod
+    def tearDownClass(cls):
+        with database.get_fcp_conn() as conn:
+            conn.execute("DROP TABLE fcp")
+        super(TestFCPManager, cls).tearDownClass()
 
     def test_expand_fcp_list_normal(self):
         fcp_list = "1f10;1f11;1f12;1f13;1f14"
@@ -91,8 +99,9 @@ class TestFCPManager(base.SDKTestCase):
             'opnstk1:   Physical world wide port number: 20076D8500005185']
 
         mock_get.return_value = fcp_list
+        fake_userid = 'fakeuser'
 
-        self.fcpops._init_fcp_pool('b83d-b83f')
+        self.fcpops._init_fcp_pool('b83d-b83f', fake_userid)
         self.assertEqual(2, len(self.fcpops._fcp_pool))
         self.assertTrue('b83d' in self.fcpops._fcp_pool)
         self.assertTrue('b83e' in self.fcpops._fcp_pool)
@@ -133,8 +142,9 @@ class TestFCPManager(base.SDKTestCase):
             'opnstk1:   Physical world wide port number: 20076D8500005188']
 
         mock_get.return_value = fcp_list
+        fake_userid = 'fakeuser'
 
-        self.fcpops._init_fcp_pool('b83d-b83f')
+        self.fcpops._init_fcp_pool('b83d-b83f', fake_userid)
 
         db_op = database.FCPDbOperator()
         db_op.new('b83c')
@@ -239,8 +249,16 @@ class TestFCPManager(base.SDKTestCase):
 
 class TestFCPVolumeManager(base.SDKTestCase):
 
-    def setUp(self):
-        self.volumeops = volumeop.FCPVolumeManager()
+    @classmethod
+    def setUpClass(cls):
+        super(TestFCPVolumeManager, cls).setUpClass()
+        cls.volumeops = volumeop.FCPVolumeManager()
+
+    @classmethod
+    def tearDownClass(cls):
+        with database.get_fcp_conn() as conn:
+            conn.execute("DROP TABLE fcp")
+        super(TestFCPVolumeManager, cls).tearDownClass()
 
     def test_get_volume_connector(self):
         db_op = database.FCPDbOperator()
