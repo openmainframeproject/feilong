@@ -315,11 +315,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         super(FCPDbOperatorTestCase, cls).setUpClass()
         cls.db_op = database.FCPDbOperator()
 
-    @classmethod
-    def tearDownClass(cls):
-        with database.get_fcp_conn() as conn:
-            conn.execute("DROP TABLE FCP")
-        super(FCPDbOperatorTestCase, cls).tearDownClass()
+    # tearDownClass deleted to work around bug of 'no such table:fcp'
 
     def test_new(self):
         self.db_op.new('1111')
