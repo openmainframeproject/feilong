@@ -50,6 +50,7 @@ class TestFCP(base.SDKTestCase):
 class TestFCPManager(base.SDKTestCase):
 
     def setUp(self):
+        super(TestFCPManager, self).setUp()
         self.fcpops = volumeop.FCPManager()
 
     def test_expand_fcp_list_normal(self):
@@ -91,8 +92,9 @@ class TestFCPManager(base.SDKTestCase):
             'opnstk1:   Physical world wide port number: 20076D8500005185']
 
         mock_get.return_value = fcp_list
+        fake_userid = 'fakeuser'
 
-        self.fcpops._init_fcp_pool('b83d-b83f')
+        self.fcpops._init_fcp_pool('b83d-b83f', fake_userid)
         self.assertEqual(2, len(self.fcpops._fcp_pool))
         self.assertTrue('b83d' in self.fcpops._fcp_pool)
         self.assertTrue('b83e' in self.fcpops._fcp_pool)
@@ -133,8 +135,9 @@ class TestFCPManager(base.SDKTestCase):
             'opnstk1:   Physical world wide port number: 20076D8500005188']
 
         mock_get.return_value = fcp_list
+        fake_userid = 'fakeuser'
 
-        self.fcpops._init_fcp_pool('b83d-b83f')
+        self.fcpops._init_fcp_pool('b83d-b83f', fake_userid)
 
         db_op = database.FCPDbOperator()
         db_op.new('b83c')
@@ -240,6 +243,7 @@ class TestFCPManager(base.SDKTestCase):
 class TestFCPVolumeManager(base.SDKTestCase):
 
     def setUp(self):
+        super(TestFCPVolumeManager, self).setUp()
         self.volumeops = volumeop.FCPVolumeManager()
 
     def test_get_volume_connector(self):
