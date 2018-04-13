@@ -415,6 +415,17 @@ def log_and_reraise_smut_request_failed(action=None):
         raise exception.SDKSMUTRequestFailed(err.results, msg)
 
 
+@contextlib.contextmanager
+def ignore_errors():
+    """Only execute the clauses and ignore the results"""
+    try:
+        yield
+    except Exception as err:
+        msg = 'ignore an error:%s' % err.format_message()
+        LOG.debug(msg)
+        pass
+
+
 def get_smut_userid():
     """Get the userid of smut server"""
     cmd = ["sudo", "/sbin/vmcp", "query userid"]
