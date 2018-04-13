@@ -20,8 +20,10 @@ import six
 from zvmsdk import config
 from zvmsdk import constants
 from zvmsdk import database
+from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import log
+from zvmsdk import smutclient
 from zvmsdk import vmops
 
 
@@ -46,8 +48,8 @@ DEDICATE = 'dedicate'
 
 def get_volumeop():
     global _VolumeOP
-    # if not _VolumeOP:
-    #   _VolumeOP = VolumeOperator()
+    if not _VolumeOP:
+        _VolumeOP = FCPVolumeManager()
     return _VolumeOP
 
 
@@ -87,100 +89,55 @@ class VolumeConfiguratorAPI(object):
     The reason to design these APIs is to hide the details among
     different Linux distributions and releases.
     """
-
-    @abc.abstractmethod
-    def config_attach(self, instance, volume, connection_info):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def config_force_attach(self, instance, volume, connection_info):
-        # roll back when detaching fails
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def config_detach(self, instance, volume, connection_info):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def config_force_detach(self, instance, volume, connection_info):
-        # roll back when attaching fails
-        raise NotImplementedError
-
-
-class _BaseConfigurator(VolumeConfiguratorAPI):
-    """Contain common code for all distros."""
-
     def __init__(self):
         self._vmop = vmops.get_vmops()
+        self._dist_manager = dist.LinuxDistManager()
 
-    def config_attach(self, instance, volume, connection_info):
-        if self._vmop.is_reachable(instance[NAME]):
-            self.config_attach_active(instance, volume, connection_info)
+    def config_attach(self, fcp, assigner_id, target_wwpn, target_lun,
+                      multipath, os_version):
+        if self._vmop.is_reachable(assigner_id):
+            self.config_attach_active(fcp, assigner_id, target_wwpn,
+                                      target_lun, multipath, os_version)
         else:
-            self.config_attach_inactive(instance, volume, connection_info)
+            self.config_attach_inactive(fcp, assigner_id, target_wwpn,
+                                        target_lun, multipath, os_version)
 
-    def config_force_attach(self, instance, volume, connection_info):
+    def config_force_attach(self, fcp, assigner_id, target_wwpn, target_lun,
+                            multipath, os_version):
         pass
 
-    def config_detach(self, instance, volume, connection_info):
-        if self._vmop.is_reachable(instance[NAME]):
-            self.config_detach_active(instance, volume, connection_info)
+    def config_detach(self, fcp, assigner_id, target_wwpn, target_lun,
+                      multipath, os_version):
+        if self._vmop.is_reachable(assigner_id):
+            self.config_detach_active(fcp, assigner_id, target_wwpn,
+                                      target_lun, multipath, os_version)
         else:
-            self.config_detach_inactive(instance, volume, connection_info)
+            self.config_detach_inactive(fcp, assigner_id, target_wwpn,
+                                        target_lun, multipath, os_version)
 
-    def config_force_detach(self, instance, volume, connection_info):
+    def config_force_detach(self, fcp, assigner_id, target_wwpn, target_lun,
+                            multipath, os_version):
         pass
 
-    def config_attach_active(self, instance, volume, connection_info):
+    def config_attach_active(self, fcp, assigner_id, target_wwpn,
+                             target_lun, multipath, os_version):
+        linuxdist = self._dist_manager.get_linux_dist(os_version)()
+        linuxdist.config_volume_attach_active(fcp, assigner_id, target_wwpn,
+                                              target_lun, multipath)
+
+    def config_attach_inactive(self, fcp, assigner_id, target_wwpn,
+                               target_lun, multipath, os_version):
         raise NotImplementedError
 
-    def config_attach_inactive(self, instance, volume, connection_info):
+    def config_detach_active(self, fcp, assigner_id, target_wwpn,
+                             target_lun, multipath, os_version):
+        linuxdist = self._dist_manager.get_linux_dist(os_version)()
+        linuxdist.config_volume_detach_active(fcp, assigner_id, target_wwpn,
+                                              target_lun, multipath)
+
+    def config_detach_inactive(self, fcp, assigner_id, target_wwpn,
+                               target_lun, multipath, os_version):
         raise NotImplementedError
-
-    def config_detach_active(self, instance, volume, connection_info):
-        raise NotImplementedError
-
-    def config_detach_inactive(self, instance, volume, connection_info):
-        raise NotImplementedError
-
-
-class _Configurator_RHEL7(_BaseConfigurator):
-
-    def config_attach_active(self, instance, volume, connection_info):
-        pass
-
-    def config_attach_inactive(self, instance, volume, connection_info):
-        pass
-
-    def config_detach_active(self, instance, volume, connection_info):
-        pass
-
-    def config_detach_inactive(self, instance, volume, connection_info):
-        pass
-
-
-class _Configurator_SLES12(_BaseConfigurator):
-
-    def config_attach_active(self, instance, volume, connection_info):
-        pass
-
-    def config_attach_inactive(self, instance, volume, connection_info):
-        pass
-
-    def config_detach_active(self, instance, volume, connection_info):
-        pass
-
-    def config_detach_inactive(self, instance, volume, connection_info):
-        pass
-
-
-class _Configurator_Ubuntu16(_BaseConfigurator):
-
-    def config_attach_active(self, instance, volume, connection_info):
-        pass
-
-    def config_attach_inactive(self, instance, volume, connection_info):
-        pass
 
 
 class FCP(object):
@@ -239,20 +196,22 @@ class FCPManager(object):
     def __init__(self):
         self._fcp_pool = {}
         self.db = database.FCPDbOperator()
+        self._smutclient = smutclient.get_smutclient()
 
-    def init_fcp(self, host_stats):
+    def init_fcp(self, assigner_id):
         """init_fcp to init the FCP managed by this host"""
         # TODO master_fcp_list (zvm_zhcp_fcp_list) really need?
         fcp_list = CONF.volume.fcp_list
-        if fcp_list is None:
+        if fcp_list == '':
             errmsg = ("because CONF.volume.fcp_list is empty, "
                       "no volume functions available")
-            LOG.Info(errmsg)
+            LOG.info(errmsg)
             return
 
-        self._fcp_info = self._init_fcp_pool(fcp_list)
+        self._fcp_info = self._init_fcp_pool(fcp_list, assigner_id)
+        self._sync_db_fcp_list()
 
-    def _init_fcp_pool(self, fcp_list):
+    def _init_fcp_pool(self, fcp_list, assigner_id):
         """The FCP infomation got from smut(zthin) looks like :
            host: FCP device number: xxxx
            host:   Status: Active
@@ -268,7 +227,7 @@ class FCPManager(object):
 
         """
         complete_fcp_set = self._expand_fcp_list(fcp_list)
-        fcp_info = self._get_all_fcp_info()
+        fcp_info = self._get_all_fcp_info(assigner_id)
         lines_per_item = 5
 
         num_fcps = len(fcp_info) // lines_per_item
@@ -367,10 +326,13 @@ class FCPManager(object):
             if len(res) == 0:
                 self._add_fcp(fcp_conf_rec)
 
-    def _get_all_fcp_info(self):
+    def _list_fcp_details(self, userid, status):
+        return self._smutclient.get_fcp_info_by_status(userid, status)
+
+    def _get_all_fcp_info(self, assigner_id):
         fcp_info = []
-        free_fcp_info = self._list_fcp_details('free')
-        active_fcp_info = self._list_fcp_details('active')
+        free_fcp_info = self._list_fcp_details(assigner_id, 'free')
+        active_fcp_info = self._list_fcp_details(assigner_id, 'active')
 
         if free_fcp_info:
             fcp_info.extend(free_fcp_info)
@@ -438,13 +400,16 @@ class FCPManager(object):
 class FCPVolumeManager(object):
     def __init__(self):
         self.fcp_mgr = FCPManager()
+        self.config_api = VolumeConfiguratorAPI()
+        self._smutclient = smutclient.get_smutclient()
 
     def _dedicate_fcp(self, fcp, assigner_id):
-        pass
+        self._smutclient.dedicate_device(assigner_id, fcp, fcp, 0)
 
-    def _add_disk(self, fcp, assinger_id, target_wwpn, target_lun,
+    def _add_disk(self, fcp, assigner_id, target_wwpn, target_lun,
                   multipath, os_version):
-        pass
+        self.config_api.config_attach(fcp, assigner_id, target_wwpn,
+                                      target_lun, multipath, os_version)
 
     def _attach(self, fcp, assigner_id, target_wwpn, target_lun,
                 multipath, os_version):
@@ -454,6 +419,7 @@ class FCPVolumeManager(object):
         dedicate fcp to the user if it's needed, after that
         call smut layer to call linux command
         """
+        self.fcp_mgr.init_fcp(assigner_id)
         new = self.fcp_mgr.increase_fcp_usage(fcp, assigner_id)
 
         if new:
@@ -484,11 +450,12 @@ class FCPVolumeManager(object):
                      multipath, os_version)
 
     def _undedicate_fcp(self, fcp, assigner_id):
-        pass
+        self._smutclient.undedicate_device(assigner_id, fcp)
 
-    def _remove_disk(self, fcp, assinger_id, target_wwpn, target_lun,
+    def _remove_disk(self, fcp, assigner_id, target_wwpn, target_lun,
                      multipath, os_version):
-        pass
+        self.config_api.config_detach(fcp, assigner_id, target_wwpn,
+                                      target_lun, multipath, os_version)
 
     def _detach(self, fcp, assigner_id, target_wwpn, target_lun,
                 multipath, os_version):
