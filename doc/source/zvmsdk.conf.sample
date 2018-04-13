@@ -180,6 +180,15 @@
 #request_queue_size=128
 
 
+[volume]
+
+# 
+# volume fcp list
+# 
+# This param is optional
+#fcp_list=1
+
+
 [wsgi]
 
 # 
