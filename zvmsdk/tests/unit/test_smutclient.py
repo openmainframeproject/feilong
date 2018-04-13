@@ -1280,14 +1280,26 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         add_mdisk.assert_any_call(userid, disk_list[0], '0100')
         add_mdisk.assert_any_call(userid, disk_list[1], '0101')
 
-    @mock.patch.object(smutclient.SMUTClient, '_dedicate_device')
-    def test_dedicate_device(self, add_mdisk):
-        userid = 'fakeuser'
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_dedicate_device(self, request):
+        fake_userid = 'FakeID'
         vaddr = 'vaddr'
         raddr = 'raddr'
         mode = 1
-        self._smutclient.dedicate_device(userid, vaddr, raddr, mode)
-        add_mdisk.assert_any_call(userid, vaddr, raddr, mode)
+        requestData = "changevm FakeID dedicate vaddr raddr 1"
+        request.return_value = {'overallRC': 0}
+        self._smutclient.dedicate_device(fake_userid, vaddr,
+                                                  raddr, mode)
+        request.assert_called_once_with(requestData)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_undedicate_device(self, request):
+        fake_userid = 'FakeID'
+        vaddr = 'vaddr'
+        requestData = "changevm FakeID undedicate vaddr"
+        request.return_value = {'overallRC': 0}
+        self._smutclient.undedicate_device(fake_userid, vaddr)
+        request.assert_called_once_with(requestData)
 
     @mock.patch.object(smutclient.SMUTClient, '_remove_mdisk')
     def test_remove_mdisks(self, remove_mdisk):
