@@ -34,8 +34,8 @@
 # If nothing is specified then this function will not process any
 # configuration files in the reader.
 ###############################################################################
-version=1.0
-authorizedSenders=''
+version=2.0
+authorizedSenders='*'
 
 function onlineDevice {
   # @Description:
@@ -67,11 +67,11 @@ function pullReader {
   # @Description:
   #   Reads class x spool files from the reader if sent by an authorized sender.
   #   Drives special processing functions for files of a specific type.
-  #   Files with a filetype of:
-  #     tgz are unpacked into the transport directory
-  #     disk files are read and cause the setupDisk function to be driven (deprecated)
+  #   Files with a file type of:
+  #     iso that can be used to setup iso9660 loop device that will be consumed by cloud-init
+  #     sh that can be used to execute shell script
   #     doscript that contains a invokeScript.sh which will call the other script in it to do the speicial work
-  #     all other files are unpacked into the transport directory
+
   # @Input:
   #   None
   # @Output:
@@ -121,26 +121,19 @@ function pullReader {
     # Receive the spool file
     echo "Downloading record $spoolid: $file"
 
-    if [[ $type == "txt" ]]; then
-      # Receiving text
-      rc=$(/usr/sbin/vmur re -f $spoolid $file)
-    elif [[ $type == "sh" ]]; then
+    if [[ $type == "sh" ]]; then
       # Receiving shell
       rc=$(/usr/sbin/vmur re -f $spoolid $file)
       /bin/bash $file
       rm $file
-    elif [[ $type == "tgz" ]]; then
-      rc=$(/usr/sbin/vmur re $spoolid $file)
-      /bin/tar xzf $file -C $transportdir
-      rm $file
+    # Handle the cfgdrive.iso that punched by openstack nova-zvm-driver
+    elif [[ $type == "iso" ]]; then
+      rc=$(/usr/sbin/vmur re -f $spoolid $file)
     elif [[ $type == "doscript" ]]; then
       rc=$(/usr/sbin/vmur re $spoolid $file)
       /bin/tar xf $file -C $transportdir
       rm $file
       /bin/bash invokeScript.sh
-    else
-      # Receive block
-      rc=$(/usr/sbin/vmur re $spoolid $file)
     fi
 
     if (( rc != 0 )); then
@@ -161,19 +154,16 @@ function setupIso {
   #   None
   # @Code:
   local funcName="setupIso"
-  iso="/var/opt/zthin/transport.iso"
-
-  # If there are files in the transport directory then create an ISO system.
-  if [ "$(ls -A .)" ]; then
-    /usr/bin/mkisofs -l -V 'config-2' -o $iso $transportdir
-  fi
+  iso="/var/opt/zthin/transport/cfgdrive.iso"
+  iso4cloudinit="/var/opt/zthin/cfgdrive.iso"
 
   # If the ISO filesystem exists then create loop back device pointing
   # to the ISO9660 image
   if [[ -e $iso ]]; then
+    mv $iso $iso4cloudinit
     nextLoopDev=`/sbin/losetup -f`
     if [[ -n $nextLoopDev ]]; then
-      /sbin/losetup $nextLoopDev $iso
+      /sbin/losetup $nextLoopDev $iso4cloudinit
     fi
   fi
 

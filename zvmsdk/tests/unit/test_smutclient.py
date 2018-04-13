@@ -198,17 +198,17 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         image_name = 'fakeimg'
         get_image_path.return_value = \
             '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg'
-        transportfiles = '/faketrans'
+        transportfiles = '/faketran'
         self._smutclient.guest_deploy(userid, image_name, transportfiles)
         get_image_path.assert_called_once_with(image_name)
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
                       '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
-        cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrive.tgz']
+        cp_cmd = ["/usr/bin/cp", '/faketran', '/tmp/tmpdir/faketran']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
         punch_rd = ("changevm fakeuser punchfile "
-                    "/tmp/tmpdir/cfgdrive.tgz --class X")
+                    "/tmp/tmpdir/faketran --class X")
         request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
@@ -222,7 +222,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         base.set_conf("zvm", "user_root_vdev", "0100")
         userid = 'fakeuser'
         image_name = 'fakeimg'
-        transportfiles = '/faketrans'
+        transportfiles = '/faketran'
         get_image_path.return_value = \
             '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg'
         unpack_error = ('unpackdiskimage fakeuser start time: '
@@ -257,13 +257,13 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_guest_deploy_cp_transport_failed(self, get_image_path, request,
                                               execute, mkdtemp, cleantemp):
         base.set_conf("zvm", "user_root_vdev", "0100")
-        cp_error = ("/usr/bin/cp: cannot stat '/faketrans': "
+        cp_error = ("/usr/bin/cp: cannot stat '/faketran': "
                     "No such file or directory\n")
         execute.side_effect = [(0, ""), (1, cp_error)]
         mkdtemp.return_value = '/tmp/tmpdir'
         userid = 'fakeuser'
         image_name = 'fakeimg'
-        transportfiles = '/faketrans'
+        transportfiles = '/faketran'
         get_image_path.return_value = \
             '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg'
         self.assertRaises(exception.SDKGuestOperationError,
@@ -273,7 +273,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
                       '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
-        cp_cmd = ["/usr/bin/cp", '/faketrans', '/tmp/tmpdir/cfgdrive.tgz']
+        cp_cmd = ["/usr/bin/cp", '/faketran', '/tmp/tmpdir/faketran']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(cp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
         request.assert_called_once_with(purge_rd)
@@ -300,7 +300,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         mkdtemp.return_value = '/tmp/tmpdir'
         userid = 'fakeuser'
         image_name = 'fakeimg'
-        transportfiles = '/faketrans'
+        transportfiles = '/faketran'
         remote_host = "user@1.1.1.1"
         self.assertRaises(exception.SDKSMUTRequestFailed,
                            self._smutclient.guest_deploy, userid, image_name,
@@ -309,12 +309,12 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
                       '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
-        scp_cmd = ["/usr/bin/scp", "-B", 'user@1.1.1.1:/faketrans',
-                  '/tmp/tmpdir/cfgdrive.tgz']
+        scp_cmd = ["/usr/bin/scp", "-B", 'user@1.1.1.1:/faketran',
+                  '/tmp/tmpdir/faketran']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(scp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
         punch_rd = ("changevm fakeuser punchfile "
-                    "/tmp/tmpdir/cfgdrive.tgz --class X")
+                    "/tmp/tmpdir/faketran --class X")
         request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
