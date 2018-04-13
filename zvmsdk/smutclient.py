@@ -1612,7 +1612,7 @@ class SMUTClient(object):
             self._GuestDbOperator.delete_guest_by_userid(userid)
 
     def execute_cmd(self, userid, cmdStr):
-        """"cmdVM."""
+        """"cmdVM and return response in results."""
         requestData = 'cmdVM ' + userid + ' CMD \'' + cmdStr + '\''
         with zvmutils.log_and_reraise_smut_request_failed(action='execute '
         'command on vm via iucv channel'):
@@ -1620,6 +1620,15 @@ class SMUTClient(object):
 
         ret = results['response']
         return ret
+
+    def execute_cmd_direct(self, userid, cmdStr):
+        """"cmdVM."""
+        requestData = 'cmdVM ' + userid + ' CMD \'' + cmdStr + '\''
+        with zvmutils.log_and_reraise_smut_request_failed(action='execute '
+        'command on vm via iucv channel'):
+            results = self._request(requestData)
+
+        return results
 
     def image_import(self, image_name, url, image_meta, remote_host=None):
         """Import the image specified in url to SDK image repository, and
