@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "26d3e5ac_9cac9bc4",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1072,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2018-04-13T06:34:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "94cf5ce9_3e25e1d0",
+      "range": {
+        "startLine": 1072,
+        "startChar": 8,
+        "endLine": 1072,
+        "endChar": 55
+      },
+      "revId": "42355b44b6f277505837493d5884189502e48dd8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "50083784_82a5bb23",
         "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2018-04-04T07:14:00Z",
       "side": 1,
       "message": "this test means FFFF can\u0027t be dedicated so lead to 400 error?\n\nBTW, do we have document for this dedicated API ?",
+      "range": {
+        "startLine": 1079,
+        "startChar": 1,
+        "endLine": 1081,
+        "endChar": 51
+      },
+      "revId": "42355b44b6f277505837493d5884189502e48dd8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "26f471c8_666df30b",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1081,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2018-04-13T06:34:12Z",
+      "side": 1,
+      "message": "Yes， it is not an available OSA\nThe dedicated OSA is included in the current API, guest_create_network_interface, we have already doc it in this API",
+      "parentUuid": "50083784_82a5bb23",
       "range": {
         "startLine": 1079,
         "startChar": 1,
