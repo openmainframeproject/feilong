@@ -49,8 +49,8 @@ sdkserver to make the changes take effect.
      image should be captured for a subsequent deploy to an ECKD disk), and it should
      not be a full-pack minidisk, since cylinder 0 on full-pack minidisks is reserved.
 
-  c. If the souce image is captured from minidisk with virtual address 0100, it must
-     be deployed to the target vm's virtual address 0100, otherwise, the deployed vm
+  c. If the source image is captured from minidisk with virtual address 0100, it must
+     be deployed to the virtual address 0100 of target Virtual Machine(VM) , otherwise, the deployed vm
      will failed to start up. The root disk's vdev can be configured with user_root_vdev
      option under zvm section in /etc/zvmsdk/zvmsdk.conf. The recommendation vdev of root
      disk is 0100, this is also the default value.
@@ -101,7 +101,7 @@ steps to install and configure IUCV service.
 
 1. Logon your BYOL(Bring Your Own Linux, which will be used to represent the Linux
    on which the z/VM Cloud Connector will be run), and copy the following files
-   to target vm
+   to target VM
 
    .. code-block:: text
 
@@ -163,24 +163,24 @@ Configuration of zvmguestconfigure in zLinux
 The zvmguestconfigure script/service must be installed in the zLinux so it
 can process the request files transmitted by z/VM Cloud Connector to the
 reader of the zLinux as a class X file. zvmguestconfigure also act as the bridge
-between the zLinux and higher layer of zVM Cloud. Take spawn a VM via Openstack
+between the zLinux and higher layer of zVM Cloud. Take spawning a VM via Openstack
 nova-zvm-driver for example, the image use cloud-init as the underlying AE.
 If customer spawn a new VM with some customized data to initialize
 the VM via nova boot command. The overall work flow of the customized data is
 listed as below:
 
 1. Openstack nova-zvm-driver generate the cfgdrive.iso file which is iso9660 format
-  and with label 'config-2', this file is used to customize the vm
+   and with label 'config-2', this file is used to customize the target VM
 
 2. nova-zvm-driver then call z/VM Cloud Connector to punch the cfgdrive.iso file to
-  target vm's reader
+   target VM's reader
 
-3. When target vm start up, the installed zvmguestconfigure will download cfgdrive.iso
-  file and then mount it as loop device
+3. When target VM start up, the installed zvmguestconfigure will download cfgdrive.iso
+   file and then mount it as loop device
 
-4. When cloud-init run, it will automatically find the proper configure drive data
-  source via command blkid -t TYPE=iso9660 -o device, then consume the data provided
-  by cfgdrive.iso to customize the vm
+4. When cloud-init run, it will automatically find the proper configure drive data source
+   via command ``blkid -t TYPE=iso9660 -o device``, then consume the data provided
+   by cfgdrive.iso to customize the VM
 
 The z/VM Cloud Connector supports initiating changes to zLinux while it is shut
 down or the virtual machine is logged off.The changes to zLinux are implemented
