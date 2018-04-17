@@ -174,6 +174,30 @@ Possible values:
 Sample root disk in user directory:
     MDISK 0100 <disktype> <start> <end> <volumelabel> <readwrite>
 '''),
+    Opt('user_default_max_cpu',
+        section='zvm',
+        default=32,
+        opt_type='int',
+        help='''
+The default maximum number of virtual processers the user can define.
+This value is used as the default value for maximum vcpu number when
+create a guest with no max_cpu specified.
+
+The number must be a decimal value between 1 and 64.
+'''),
+    Opt('user_default_max_memory',
+        section='zvm',
+        default='64G',
+        help='''
+The default maximum size of memory the user can define.
+This value is used as the default value for maximum memory size when
+create a guest with no max_mem specified.
+The value can be specified by 1-4 bits of number suffixed by either
+M (Megabytes) or G (Gigabytes) and the number must be a whole number,
+values such as 4096.8M or 32.5G are not supported.
+
+The value should be adjusted based on your system capacity.
+'''),
     Opt('namelist',
         section='zvm',
         help='''
@@ -508,12 +532,31 @@ class ConfigOpts(object):
                 # Check format
                 if (k2 == "disk_pool") and (v2['default'] is not None):
                     self._check_zvm_disk_pool(v2['default'])
+                # check user_default_max_memory
+                if (k2 == "user_default_max_memory") and (
+                    v2['default'] is not None):
+                    self._check_user_default_max_memory(v2['default'])
+                # check user_default_max_cpu
+                if (k2 == "user_default_max_cpu") and (
+                    v2['default'] is not None):
+                    self._check_user_default_max_cpu(v2['default'])
 
     def _check_zvm_disk_pool(self, value):
         disks = value.split(':')
         if (len(disks) != 2) or (disks[0].upper() not in ['FBA', 'ECKD']) or (
             disks[1] == ''):
             raise OptFormatError("zvm", "disk_pool", value)
+
+    def _check_user_default_max_memory(self, value):
+        suffix = value[-1].upper()
+        size = value[:-1]
+        if (suffix not in ['G', 'M']) or (len(size) > 4) or (
+            size.strip('0123456789') is not ''):
+            raise OptFormatError("zvm", "user_default_max_memory", value)
+
+    def _check_user_default_max_cpu(self, value):
+        if (value < 1) or (value > 64):
+            raise OptFormatError("zvm", "user_default_max_cpu", value)
 
     def toDict(self, d):
         D = Dict()
