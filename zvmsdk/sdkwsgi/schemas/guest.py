@@ -27,6 +27,8 @@ create = {
                 # profile is similar to userid
                 'user_profile': parameter_types.userid,
                 'disk_list': parameter_types.disk_list,
+                'max_cpu': parameter_types.max_cpu,
+                'max_mem': parameter_types.max_mem,
             },
             'required': ['userid', 'vcpus', 'memory'],
             'additionalProperties': False,
