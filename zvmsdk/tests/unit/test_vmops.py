@@ -101,9 +101,12 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         memory = '2g'
         disk_list = []
         user_profile = 'testprof'
-        self.vmops.create_vm(userid, cpu, memory, disk_list, user_profile)
+        max_cpu = 10
+        max_mem = '4G'
+        self.vmops.create_vm(userid, cpu, memory, disk_list, user_profile,
+                             max_cpu, max_mem)
         create_vm.assert_called_once_with(userid, cpu, memory, disk_list,
-                                          user_profile)
+                                          user_profile, max_cpu, max_mem)
         namelistadd.assert_called_once_with('TSTNLIST', userid)
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.process_additional_minidisks")
