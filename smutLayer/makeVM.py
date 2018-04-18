@@ -66,6 +66,8 @@ keyOpsList = {
         '--logonby': ['byUsers', 1, 2],
         '--maxMemSize': ['maxMemSize', 1, 2],
         '--profile': ['profName', 1, 2],
+        '--maxCPU': ['maxCPU', 1, 1],
+        '--setReservedMem': ['setReservedMem', 0, 0],
         '--showparms': ['showParms', 0, 0]},
     'HELP': {},
     'VERSION': {},
@@ -95,8 +97,11 @@ def createVM(rh):
          rh.parms['maxMemSize'] + " " + rh.parms['privClasses'])
     if 'profName' in rh.parms:
         dirLines.append("INCLUDE " + rh.parms['profName'])
-    dirLines.append("CPU 00 BASE")
 
+    if 'maxCPU' in rh.parms:
+        dirLines.append("MACHINE ESA %i" % rh.parms['maxCPU'])
+
+    dirLines.append("CPU 00 BASE")
     if 'cpuCnt' in rh.parms:
         for i in range(1, rh.parms['cpuCnt']):
             dirLines.append("CPU %0.2X" % i)
@@ -107,6 +112,17 @@ def createVM(rh):
     if 'byUsers' in rh.parms:
         for user in rh.parms['byUsers']:
             dirLines.append("LOGONBY " + user)
+
+    priMem = rh.parms['priMemSize'].upper()
+    maxMem = rh.parms['maxMemSize'].upper()
+    if 'setReservedMem' in rh.parms and (priMem != maxMem):
+        reservedSize = getReservedMemSize(rh, priMem, maxMem)
+        if rh.results['overallRC'] != 0:
+            rh.printSysLog("Exit makeVM.createVM, rc: " +
+                   str(rh.results['overallRC']))
+            return rh.results['overallRC']
+        if reservedSize != '0M':
+            dirLines.append("COMMAND DEF STOR RESERVED %s" % standbySize)
 
     # Construct the temporary file for the USER entry.
     fd, tempFile = mkstemp()
@@ -272,6 +288,8 @@ def showInvLines(rh):
         "--ipl <ipl> --logonby <byUsers>")
     rh.printLn("N", "                     --maxMemSize <maxMemSize> " +
         "--profile <profName>")
+    rh.printLn("N", "                     --maxCPU <maxCPUCnt> " +
+        "--setReservedMem")
     rh.printLn("N", "  python " + rh.cmdName + " MakeVM help")
     rh.printLn("N", "  python " + rh.cmdName + " MakeVM version")
     return
@@ -300,6 +318,10 @@ def showOperandLines(rh):
                    "Specifies the desired number of virtual CPUs the")
         rh.printLn("N", "                              " +
                    "guest will have.")
+        rh.printLn("N", "      --maxcpu <maxCpuCnt>  - " +
+                   "Specifies the maximum number of virtual CPUs the")
+        rh.printLn("N", "                              " +
+                   "guest is allowed to define.")
         rh.printLn("N", "      --ipl <ipl>           - " +
                    "Specifies an IPL disk or NSS for the virtual")
         rh.printLn("N", "                              " +
@@ -308,10 +330,14 @@ def showOperandLines(rh):
                    "Specifies a list of up to 8 z/VM userids who can log")
         rh.printLn("N", "                              " +
                    "on to the virtual machine using their id and password.")
-        rh.printLn("N", "      --maxMemSize <maxMemSize> - " +
+        rh.printLn("N", "      --maxMemSize <maxMem> - " +
                    "Specifies the maximum memory the virtual machine")
         rh.printLn("N", "                              " +
                    "is allowed to define.")
+        rh.printLn("N", "      --setReservedMem      - " +
+                   "Set the additional memory space (maxMemSize - priMemSize)")
+        rh.printLn("N", "                              " +
+                   "as reserved memory of the virtual machine.")
         rh.printLn("N", "      <password>            - " +
                    "Specifies the password for the new virtual")
         rh.printLn("N", "                              " +
@@ -331,3 +357,43 @@ def showOperandLines(rh):
         rh.printLn("N", "      <userid>              - " +
                    "Userid of the virtual machine to create.")
     return
+
+
+def getReservedMemSize(rh, mem, maxMem):
+    rh.printSysLog("Enter makeVM.getReservedMemSize")
+
+    gap = '0M'
+    # Check size suffix
+    memSuffix = mem[-1].upper()
+    maxMemSuffix = maxMem[-1].upper()
+    if (memSuffix not in ['M', 'G']) or (maxMemSuffix not in ['M', 'G']):
+        # Suffix is not 'M' or 'G'
+        msg = msgs.msg['0205'][1] % modId
+        rh.printLn("ES", msg)
+        rh.updateResults(msgs.msg['0205'][0])
+        rh.printSysLog("Exit makeVM.parseCmdLine, rc: " +
+            str(rh.results['overallRC']))
+        return gap
+
+    # Convert both size to 'M'
+    memMb = int(mem[:-1])
+    maxMemMb = int(maxMem[:-1])
+    if memSuffix == 'G':
+        memMb = memMb * 1024
+    if maxMemSuffix == 'G':
+        maxMemMb = maxMemMb * 1024
+
+    # The define storage command can support 1-7 digits decimal number
+    # So we will use 'M' as suffix unless the gap size exceeds 9999999
+    # then convert to Gb.
+    gapSize = maxMemMb - memMb
+    if gapSize > 9999999:
+        gapSize = gapSize / 1024
+        gap = "%iG" % gapSize
+    else:
+        gap = "%iM" % gapSize
+
+    rh.printSysLog("Exit makeVM.getReservedMemSize, rc: " +
+        str(rh.results['overallRC']))
+
+    return gap
