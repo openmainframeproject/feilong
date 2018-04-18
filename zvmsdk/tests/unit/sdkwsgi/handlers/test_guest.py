@@ -314,7 +314,7 @@ class HandlersGuestTest(SDKWSGITest):
 
         guest.guest_create(self.req)
         mock_create.assert_called_once_with('guest_create', 'name1',
-                                            1, 1, disk_list=None)
+                                            1, 1)
 
     def test_guest_create_invalid_userid(self):
         body_str = '{"guest": {"userid": ""}}'
