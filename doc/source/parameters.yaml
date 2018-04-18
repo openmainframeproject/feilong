@@ -160,6 +160,22 @@ disk_list_guest:
   in: body
   required: false
   type: list
+guest_max_cpu:
+  description: |
+    The maximum number of virtual cpus this user can define.
+    The value should be a decimal value between 1 and 64.
+  in: body
+  required: false
+  type: integer
+guest_max_mem:
+  description: |
+    The maximum size of memory the user can define.
+    The value should be specified by 1-4 bits of number suffixed by
+    either M (Megabytes) or G (Gigabytes). And the number should be
+    a whole number, eg. 512M, 4G.
+  in: body
+  required: false
+  type: string
 additional_disk_guest:
   description: |
     A list of additional disks info for the guest
