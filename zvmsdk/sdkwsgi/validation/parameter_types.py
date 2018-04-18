@@ -422,3 +422,14 @@ native_vid_type = {
         {'type': 'integer', 'minimum': 1, 'maximum': 4094}
     ]
 }
+
+max_cpu = {
+    'type': 'integer',
+    'minimum': 1,
+    'maximum': 64
+}
+
+max_mem = {
+    'type': 'string',
+    'pattern': '^[1-9][0-9]{0,3}[m|M|g|G]$'
+    }

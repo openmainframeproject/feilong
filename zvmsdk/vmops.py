@@ -140,13 +140,16 @@ class VMOps(object):
         self._smutclient.guest_reset(userid)
 
     def create_vm(self, userid, cpu, memory, disk_list=[],
-                  user_profile=CONF.zvm.user_profile):
+                  user_profile=CONF.zvm.user_profile,
+                  max_cpu=CONF.zvm.user_default_max_cpu,
+                  max_mem=CONF.zvm.user_default_max_memory):
         """Create z/VM userid into user directory for a z/VM instance."""
         LOG.debug("Creating the z/VM user entry for instance %s"
                   % userid)
 
         self._smutclient.create_vm(userid, cpu, memory,
-                                   disk_list, user_profile)
+                                   disk_list, user_profile,
+                                   max_cpu, max_mem)
 
         # add userid into smapi namelist
         self._smutclient.namelist_add(self._namelist, userid)

@@ -51,16 +51,19 @@ class VMHandler(object):
         vcpus = guest['vcpus']
         memory = guest['memory']
 
-        disk_list = guest.get('disk_list', None)
-        user_profile = guest.get('user_profile', None)
+        kwargs_list = {}
+        guest_keys = guest.keys()
+        if 'disk_list' in guest_keys:
+            kwargs_list['disk_list'] = guest['disk_list']
+        if 'user_profile' in guest_keys:
+            kwargs_list['user_profile'] = guest['user_profile']
+        if 'max_cpu' in guest_keys:
+            kwargs_list['max_cpu'] = guest['max_cpu']
+        if 'max_mem' in guest_keys:
+            kwargs_list['max_mem'] = guest['max_mem']
 
-        if user_profile is not None:
-            info = self.client.send_request('guest_create', userid, vcpus,
-                                            memory, disk_list=disk_list,
-                                            user_profile=user_profile)
-        else:
-            info = self.client.send_request('guest_create', userid, vcpus,
-                                            memory, disk_list=disk_list)
+        info = self.client.send_request('guest_create', userid, vcpus,
+                                        memory, kwargs_list)
 
         return info
 
