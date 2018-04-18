@@ -371,13 +371,16 @@ class SMUTClient(object):
         with zvmutils.log_and_reraise_smut_request_failed():
             self._request(requestData)
 
-    def create_vm(self, userid, cpu, memory, disk_list, profile):
+    def create_vm(self, userid, cpu, memory, disk_list, profile,
+                  max_cpu, max_mem):
         """ Create VM and add disks if specified. """
         rd = ('makevm %(uid)s directory LBYONLY %(mem)im %(pri)s '
-              '--cpus %(cpu)i --profile %(prof)s' %
+              '--cpus %(cpu)i --profile %(prof)s --maxCPU %(max_cpu)i '
+              '--maxMemSize %(max_mem)s --setStandbyMem' %
               {'uid': userid, 'mem': memory,
                'pri': const.ZVM_USER_DEFAULT_PRIVILEGE,
-               'cpu': cpu, 'prof': profile})
+               'cpu': cpu, 'prof': profile,
+               'max_cpu': max_cpu, 'max_mem': max_mem})
 
         if CONF.zvm.default_admin_userid:
             rd += (' --logonby "%s"' % CONF.zvm.default_admin_userid)

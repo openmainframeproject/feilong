@@ -15,6 +15,8 @@
           "size": "200000",
           "disk_pool": "FBA:fbapool1",
           "format": "ext3"
-      }]
+      }],
+      "max_cpu": 10,
+      "max_mem": "32G"
   }
 }
