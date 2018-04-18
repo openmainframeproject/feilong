@@ -277,7 +277,26 @@ msg = {
         # SysAct: Processing of the subfunction terminates.
         # UserResp: Correct the disk size to specify a valid value
         #   and reissue the command.
-    # 0205-0299: Available
+    '0205': [{'overallRC': 4, 'rc': 4, 'rs': 205},
+            "ULT%s0204E memory size did not end with suffix 'G' or 'M'.",
+            ('MVM')],
+        # Explain: An error was encountered while handling memory size.
+        #   The size did not end with a valid magnitude character
+        #   (i.e., 'M' or 'G').
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the memory size to specify a valid value
+        #   and reissue the command.
+    '0206': [{'overallRC': 4, 'rc': 4, 'rs': 206},
+            "ULT%s0204E Max memory size %s specified is less than " +
+            "initial memory size %s.",
+            ('MVM', 'MAX_MEM_SIZE', 'INIT_MEM_SIZE')],
+        # Explain: An error was encountered while handling memory size.
+        #   The size did not end with a valid magnitude character
+        #   (i.e., 'M' or 'G').
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the memory size to specify a valid value
+        #   and reissue the command.
+    # 0207-0299: Available
 
     # SMCLI and SMAPI related messages.
     '0300': [{'overallRC': 8},    # dict is not used.
