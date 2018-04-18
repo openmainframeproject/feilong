@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bee2ac3f_813f4d97",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 629,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-04-18T02:38:58Z",
+      "side": 1,
+      "message": "Why there are multiple records for one guest, the guest should be unique in DB, if there are multiple records returned by one guest, it should be error and raise exception.",
+      "range": {
+        "startLine": 629,
+        "startChar": 8,
+        "endLine": 629,
+        "endChar": 12
+      },
+      "revId": "28713df31ad794eaf3bd6e9ad1cf1b672aeae002",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "829a5821_a7ee17e5",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 555,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-04-18T02:38:58Z",
+      "side": 1,
+      "message": "You defined get_metadate_by_userid, but never used it. I guess you want to do the append old metadata, right? So you should complete the functions.",
+      "range": {
+        "startLine": 555,
+        "startChar": 40,
+        "endLine": 555,
+        "endChar": 41
+      },
+      "revId": "28713df31ad794eaf3bd6e9ad1cf1b672aeae002",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
