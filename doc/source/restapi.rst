@@ -150,7 +150,9 @@ Create a vm in z/VM
   - format: format_disk
   - is_boot_disk: is_boot_disk
   - disk_pool: disk_pool_guest
-    
+  - max_cpu: guest_max_cpu
+  - max_mem: guest_max_mem
+
 
 * Request sample:
 

@@ -388,7 +388,9 @@ class SDKAPI(object):
             return self._vmops.get_definition_info(userid, **kwargs)
 
     def guest_create(self, userid, vcpus, memory, disk_list=[],
-                     user_profile=CONF.zvm.user_profile):
+                     user_profile=CONF.zvm.user_profile,
+                     max_cpu=CONF.zvm.user_default_max_cpu,
+                     max_mem=CONF.zvm.user_default_max_memory):
         """create a vm in z/VM
 
         :param userid: (str) the userid of the vm to be created
@@ -425,7 +427,13 @@ class SDKAPI(object):
                eckdpool1 for guest , then set IPL 0100 in guest's user
                directory, and it will create 0101 with 200000 blocks from
                FBA disk pool fbapool1, and formated with ext3.
-        :param user_profile: the profile for the guest
+        :param user_profile: (str) the profile for the guest
+        :param max_cpu: (int) the maximum number of virtual cpu this user can
+               define. The value should be a decimal value between 1 and 64.
+        :param max_mem: (str) the maximum size of memory the user can define.
+               The value should be specified by 1-4 bits of number suffixed by
+               either M (Megabytes) or G (Gigabytes). And the number should be
+               a whole number. eg, 512M, 4G.
         """
         if disk_list:
             for disk in disk_list:
@@ -457,10 +465,25 @@ class SDKAPI(object):
                     LOG.error(errmsg)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
 
+        # Check value of max_cpu and max_mem
+        if (max_cpu < 1) or (max_cpu > 64):
+            errmsg = ('Invalid "max_cpu" input, it should be a decimal number'
+                      ' between 1 and 64.')
+            LOG.error(errmsg)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+        mm_size = max_mem[:-1]
+        if (max_mem[-1].upper() not in ['M', 'G']) or (len(mm_size) > 4) or (
+            str(mm_size).strip('0123456789') is not ''):
+            errmsg = ('Invalid "max_mem" input, it should be a whole number of'
+                      ' 4 digits suffixed with "G" or "M".')
+            LOG.error(errmsg)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
         action = "create guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.create_vm(userid, vcpus, memory, disk_list,
-                                  user_profile)
+                                  user_profile, max_cpu, max_mem)
 
     def guest_create_disks(self, userid, disk_list):
         """Add disks to an existing guest vm.
