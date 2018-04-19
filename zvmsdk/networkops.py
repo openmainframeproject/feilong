@@ -111,8 +111,7 @@ class NetworkOPS(object):
 
     def network_configuration(self, userid, os_version, network_info,
                               active=False):
-        network_file_path = self._smutclient.get_guest_temp_path(userid,
-                                                                 'network')
+        network_file_path = self._smutclient.get_guest_temp_path(userid)
         LOG.debug('Creating folder %s to contain network configuration files'
                   % network_file_path)
         # check whether network interface has already been set for the guest
@@ -274,8 +273,7 @@ class NetworkOPS(object):
 
     def delete_network_configuration(self, userid, os_version, vdev,
                                      active=False):
-        network_file_path = self._smutclient.get_guest_temp_path(userid,
-                                                                 'network')
+        network_file_path = self._smutclient.get_guest_temp_path(userid)
         linuxdist = self._dist_manager.get_linux_dist(os_version)()
         file = linuxdist.get_network_configuration_files(vdev)
         cmd = 'rm -f %s\n' % file

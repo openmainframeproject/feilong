@@ -121,9 +121,10 @@ def create_config_drive(network_interface_info, os_version):
         netmask_v4 - IPV4 netmask
     :param str os_version: operating system version of the guest
     """
-    if not os.path.exists(CONF.guest.temp_path):
-        os.mkdir(CONF.guest.temp_path)
-    cfg_dir = os.path.join(CONF.guest.temp_path, 'openstack')
+    temp_path = CONF.guest.temp_path
+    if not os.path.exists(temp_path):
+        os.mkdir(temp_path)
+    cfg_dir = os.path.join(temp_path, 'openstack')
     if os.path.exists(cfg_dir):
         shutil.rmtree(cfg_dir)
     content_dir = os.path.join(cfg_dir, 'content')
@@ -143,9 +144,9 @@ def create_config_drive(network_interface_info, os_version):
     vendor_data_path = os.path.join(latest_dir, 'vendor_data.json')
     generate_file('{}', vendor_data_path)
 
-    tar_path = os.path.join(CONF.guest.temp_path, 'cfgdrive.tgz')
+    tar_path = os.path.join(temp_path, 'cfgdrive.tgz')
     tar = tarfile.open(tar_path, "w:gz")
-    os.chdir(CONF.guest.temp_path)
+    os.chdir(temp_path)
     tar.add('openstack')
     tar.close()
 

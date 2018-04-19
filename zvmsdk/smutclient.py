@@ -111,8 +111,8 @@ class SMUTClient(object):
                 raise exception.SDKSMUTRequestFailed(results, msg)
         return results
 
-    def get_guest_temp_path(self, userid, module):
-        return self._pathutils.get_guest_temp_path(userid, module)
+    def get_guest_temp_path(self, userid):
+        return self._pathutils.get_guest_temp_path(userid)
 
     def _generate_vdev(self, base, offset):
         """Generate virtual device number based on base vdev
@@ -1533,9 +1533,6 @@ class SMUTClient(object):
 
         # TODO: cleanup db record from volume table
         pass
-
-        # cleanup temp folder for guest
-        self._pathutils.remove_guest_temp_path(userid)
 
         # cleanup persistent folder for guest
         self._pathutils.remove_guest_path(userid)
