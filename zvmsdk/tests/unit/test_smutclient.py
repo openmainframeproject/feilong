@@ -1142,7 +1142,6 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                           self._smutclient.delete_userid, 'fuser1')
         request.assert_called_once_with(rd)
 
-    @mock.patch.object(zvmutils.PathUtils, 'remove_file')
     @mock.patch.object(os, 'rename')
     @mock.patch.object(database.ImageDbOperator, 'image_add_record')
     @mock.patch.object(smutclient.SMUTClient, '_get_image_size')
@@ -1154,7 +1153,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_image_import(self, image_query, create_path, image_import,
                           get_md5sum, disk_size_units, image_size,
-                          image_add_record, rename, remove_file):
+                          image_add_record, rename):
         image_name = 'testimage'
         url = 'file:///tmp/testdummyimg'
         image_meta = {'os_version': 'rhel6.5',
@@ -1198,12 +1197,11 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         image_query.assert_called_once_with(image_name)
         get_image_path.assert_not_called()
 
-    @mock.patch.object(zvmutils.PathUtils, 'remove_file')
     @mock.patch.object(smutclient.SMUTClient, '_get_md5sum')
     @mock.patch.object(smutclient.FilesystemBackend, 'image_import')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_image_import_invalid_md5sum(self, image_query, image_import,
-                                         get_md5sum, remove_file):
+                                         get_md5sum):
         image_name = 'testimage'
         url = 'file:///tmp/testdummyimg'
         image_meta = {'os_version': 'rhel6.5',
