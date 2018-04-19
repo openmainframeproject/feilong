@@ -185,18 +185,6 @@ SMAPI servers.
 The length of namelist must no longer than 64.
 '''),
     # image options
-    Opt('temp_path',
-        section='image',
-        default='/tmp/zvmsdk/images/',
-        help='''
-Temp path to store image temp information.
-
-During guest creation, image transferred from upper layer need to be
-create some temp files, this option is used to tell SDK where
-to store the temp files, make sure the process running SDK is able to
-read write the directory.
-    '''),
-    # image options
     Opt('sdk_image_repository',
         section='image',
         default='/var/lib/zvmsdk/images',
