@@ -148,7 +148,7 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
 
         self.networkops.network_configuration(userid, os_version, network_info,
                               active=True)
-        temp_path.assert_called_with(userid, 'network')
+        temp_path.assert_called_with(userid)
         is_first.assert_called_with(userid)
         doscript.assert_called_with(userid, os_version, network_info,
                                     network_file_path, True, active=True)
@@ -289,7 +289,7 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
 
         self.networkops.delete_network_configuration(userid, os_version, vdev,
                               active=True)
-        temp_path.assert_called_with(userid, 'network')
+        temp_path.assert_called_with(userid)
         linux_dist.assert_called_with(os_version)
         get_netconf_files.assert_called_with(vdev)
         delete_vdev.assert_called_with(vdev)

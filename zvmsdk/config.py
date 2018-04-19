@@ -221,17 +221,6 @@ this option tell the SDK the host ip which can be used to perform copy
 from and copy to operations.
     '''),
     # guest options
-    Opt('temp_path',
-        section='guest',
-        default='/tmp/zvmsdk/guests/',
-        help='''
-Temp path to store guest temp information.
-
-During guest creation, some temp data need to be stored in order to
-be provided to guest later, this option is used to tell SDK where
-to store the temp files, make sure the process running SDK is able to
-read write the directory.
-    '''),
     Opt('console_log_size',
         section='guest',
         default=100,
