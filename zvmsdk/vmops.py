@@ -105,45 +105,58 @@ class VMOps(object):
 
     def guest_start(self, userid):
         """"Power on z/VM instance."""
+        LOG.info("Begin to power on vm %s", userid)
         zvmutils.check_guest_exist(userid)
 
         self._smutclient.guest_start(userid)
+        LOG.info("Complete power on vm %s", userid)
 
     def guest_stop(self, userid, **kwargs):
+        LOG.info("Begin to power off vm %s", userid)
         zvmutils.check_guest_exist(userid)
         self._smutclient.guest_stop(userid, **kwargs)
+        LOG.info("Complete power off vm %s", userid)
 
     def guest_softstop(self, userid, **kwargs):
+        LOG.info("Begin to soft power off vm %s", userid)
         zvmutils.check_guest_exist(userid)
         self._smutclient.guest_softstop(userid, **kwargs)
+        LOG.info("Complete soft power off vm %s", userid)
 
     def guest_pause(self, userid):
+        LOG.info("Begin to pause vm %s", userid)
         zvmutils.check_guest_exist(userid)
 
         self._smutclient.guest_pause(userid)
+        LOG.info("Complete pause vm %s", userid)
 
     def guest_unpause(self, userid):
+        LOG.info("Begin to unpause vm %s", userid)
         zvmutils.check_guest_exist(userid)
 
         self._smutclient.guest_unpause(userid)
+        LOG.info("Complete unpause vm %s", userid)
 
     def guest_reboot(self, userid):
         """Reboot a guest vm."""
+        LOG.info("Begin to reboot vm %s", userid)
         zvmutils.check_guest_exist(userid)
 
         self._smutclient.guest_reboot(userid)
+        LOG.info("Complete reboot vm %s", userid)
 
     def guest_reset(self, userid):
         """Reset z/VM instance."""
+        LOG.info("Begin to reset vm %s", userid)
         zvmutils.check_guest_exist(userid)
 
         self._smutclient.guest_reset(userid)
+        LOG.info("Complete reset vm %s", userid)
 
     def create_vm(self, userid, cpu, memory, disk_list,
                   user_profile, max_cpu, max_mem):
         """Create z/VM userid into user directory for a z/VM instance."""
-        LOG.debug("Creating the z/VM user entry for instance %s"
-                  % userid)
+        LOG.info("Creating the user directory for vm %s", userid)
 
         self._smutclient.create_vm(userid, cpu, memory,
                                    disk_list, user_profile,
@@ -153,6 +166,8 @@ class VMOps(object):
         self._smutclient.namelist_add(self._namelist, userid)
 
     def create_disks(self, userid, disk_list):
+        LOG.info("Beging to create disks for vm: %(userid)s, list: %(list)s",
+                 {'userid': uesrid, 'list': disk_list})
         zvmutils.check_guest_exist(userid)
 
         user_direct = self._smutclient.get_user_direct(userid)
@@ -169,19 +184,26 @@ class VMOps(object):
             start_vdev = None
         self._smutclient.add_mdisks(userid, disk_list, start_vdev)
 
+        LOG.info("Complete create disks for vm: %s", userid)
+
     def delete_disks(self, userid, vdev_list):
+        LOG.info("Begin to delete disk on vm: %(userid), vdev list: %(list)s",
+                 {'userid': uesrid, 'list': vdev_list})
         zvmutils.check_guest_exist(userid)
 
         self._smutclient.remove_mdisks(userid, vdev_list)
+        LOG.info("Complete delete disks for vm: %s", userid)
 
     def guest_config_minidisks(self, userid, disk_info):
+        LOG.info("Begin to configure disks on vm: %(userid), info: %(info)s",
+                 {'userid': uesrid, 'info': disk_info})
         zvmutils.check_guest_exist(userid)
 
         if disk_info != []:
-            LOG.debug("Start to configure disks to %s." % userid)
             self._smutclient.process_additional_minidisks(userid, disk_info)
+            LOG.info("Complete configure disks for vm: %s", userid)
         else:
-            LOG.debug("No disk to handle on %s." % userid)
+            LOG.info("No disk to handle on %s." % userid)
 
     def is_powered_off(self, instance_name):
         """Return True if the instance is powered off."""
@@ -189,30 +211,35 @@ class VMOps(object):
 
     def delete_vm(self, userid):
         """Delete z/VM userid for the instance."""
+        LOG.info("Begin to delete vm %s", userid)
         self._smutclient.delete_vm(userid)
 
         # remove userid from smapi namelist
         self._smutclient.namelist_remove(self._namelist, userid)
+        LOG.info("Complete delete vm %s", userid)
 
     def execute_cmd(self, userid, cmdStr):
         """Execute commands on the guest vm."""
+        LOG.debug("executing cmd: %s", cmdStr)
         return self._smutclient.execute_cmd(userid, cmdStr)
 
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
+        LOG.info("Begin to deploy image on vm %s", userid)
         zvmutils.check_guest_exist(userid)
 
-        LOG.debug("Begin to deploy image on vm %s", userid)
         self._smutclient.guest_deploy(userid, image_name,
                                       transportfiles, remotehost, vdev)
 
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):
+        LOG.info("Begin to capture vm %(userid), image name is %(name)s",
+                 {'userid': userid, 'name': image_name})
         zvmutils.check_guest_exist(userid)
-        LOG.debug("Begin to capture vm %s", userid)
         self._smutclient.guest_capture(userid, image_name,
                                        capture_type=capture_type,
                                        compress_level=compress_level)
+        LOG.info("Complete capture image on vm %s", userid)
 
     def guest_list(self):
         return self._smutclient.get_vm_list()
@@ -247,6 +274,7 @@ class VMOps(object):
 
             return log_path
 
+        LOG.info("Begin to capture console log on vm %s", userid)
         log_size = CONF.guest.console_log_size * 1024
         console_log = self._smutclient.get_user_console_output(userid)
 
@@ -266,9 +294,13 @@ class VMOps(object):
         if remaining > 0:
             LOG.info('Truncated console log returned, %d bytes ignored' %
                      remaining)
+
+        LOG.info("Complete get console output on vm %s", userid)
         return log_data
 
     def live_resize_cpus(self, userid, count):
+
+        LOG.info("Begin to live resize cpu on vm %s", userid)
         # Check userid in ZCC DB
         if userid.upper() not in self.guest_list():
             LOG.error("Failed to live resize cpus of guest %s, error: guest "
@@ -287,7 +319,10 @@ class VMOps(object):
         # Do live resize
         self._smutclient.live_resize_cpus(userid, count)
 
+        LOG.info("Complete live resize cpu on vm %s", userid)
+
     def resize_cpus(self, userid, count):
+        LOG.info("Begin to resize cpu on vm %s", userid)
         # Check userid in ZCC DB
         if userid.upper() not in self.guest_list():
             LOG.error("Failed to resize cpus of guest '%s', error: guest "
@@ -297,3 +332,4 @@ class VMOps(object):
                                                    modID='guest')
         # Do resize
         self._smutclient.resize_cpus(userid, count)
+        LOG.info("Complete resize cpu on vm %s", userid)
