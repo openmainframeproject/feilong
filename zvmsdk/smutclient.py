@@ -493,6 +493,9 @@ class SMUTClient(object):
                      remotehost=None, vdev=None):
         """ Deploy image and punch config driver to target """
         # (TODO: add the support of multiple disks deploy)
+        msg = ('Start to deploy image %(img)s to guest %(vm)s'
+                % {'img': image_name, 'vm': userid})
+        LOG.info(msg)
         image_file = '/'.join([self._get_image_path_by_name(image_name),
                                CONF.zvm.user_root_vdev])
         # Unpack image file to root disk
@@ -522,6 +525,9 @@ class SMUTClient(object):
         # Punch transport files if specified
         if transportfiles:
             # Copy transport file to local
+            msg = ('Start to send customized file to vm %s' % userid)
+            LOG.info(msg)
+
             try:
                 tmp_trans_dir = tempfile.mkdtemp()
                 local_trans = '/'.join([tmp_trans_dir,
@@ -535,11 +541,12 @@ class SMUTClient(object):
                 with zvmutils.expect_and_reraise_internal_error(modID='guest'):
                     (rc, output) = zvmutils.execute(cmd)
                 if rc != 0:
-                    err_msg = ("copy config drive to local failed with"
-                               "return code: %d." % rc)
+                    err_msg = ('copy config drive with command %(cmd)s '
+                               'failed with output: %(res)s' %
+                               {'cmd': str(cmd), 'res': output})
                     LOG.error(err_msg)
                     raise exception.SDKGuestOperationError(rs=4, userid=userid,
-                                                           cp_rc=rc)
+                                                           err_info=err_msg)
 
                 # Punch config drive to guest userid
                 rd = ("changevm %(uid)s punchfile %(file)s --class X" %
@@ -553,6 +560,11 @@ class SMUTClient(object):
         # Authorize iucv client
         self.guest_authorize_iucv_client(userid)
 
+        msg = ('Deploy image %(img)s to guest %(vm)s disk %(vdev)s'
+               ' successfully' % {'img': image_name, 'vm': userid,
+                                  'vdev': vdev})
+        LOG.info(msg)
+
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):
         if capture_type == "alldisks":
@@ -561,6 +573,11 @@ class SMUTClient(object):
             LOG.error(msg)
             raise exception.SDKFunctionNotImplementError(func=func,
                                                          modID='guest')
+        msg = ('Start to capture %(vm)s to generate image %(img)s with '
+               'capture type %(type)s' % {'vm': userid,
+                                          'img': image_name,
+                                          'type': capture_type})
+        LOG.info(msg)
 
         # Get the vm status
         power_state = self.get_power_state(userid)
@@ -598,7 +615,10 @@ class SMUTClient(object):
             LOG.error(msg)
             raise exception.SDKGuestOperationError(rs=5, userid=userid,
                                                    msg=msg)
-        LOG.info('The os version of source vm is %s' % os_version)
+        msg = ('The os version of capture source vm %(vm)s is %(version)s' %
+               {'vm': userid,
+                'version': os_version})
+        LOG.info(msg)
         # Find the root device according to the capture type
         try:
             capture_devices = self._get_capture_devices(userid, capture_type)
@@ -619,6 +639,7 @@ class SMUTClient(object):
                                                    msg=msg)
         except exception.SDKGuestOperationError:
             raise
+
         # Shutdown the vm before capture
         self.guest_softstop(userid)
 
@@ -632,6 +653,10 @@ class SMUTClient(object):
         # Call creatediskimage to capture a vm to generate an image
         # TODO:(nafei) to support multiple disk capture
         vdev = capture_devices[0]
+        msg = ('Found the device %(vdev)s of %(vm)s for capture' %
+               {'vdev': vdev, 'vm': userid})
+        LOG.info(msg)
+
         image_file_name = vdev
         image_file_path = '/'.join((image_temp_dir, image_file_name))
         cmd = ['sudo', '/opt/zthin/bin/creatediskimage', userid, vdev,
@@ -668,6 +693,8 @@ class SMUTClient(object):
                 raise exception.SDKGuestOperationError(rs=5, userid=userid,
                                                        err=err_msg)
 
+        msg = ('Updating the metadata for captured image %s ' % image_name)
+        LOG.info(msg)
         # Get md5sum of image
         real_md5sum = self._get_md5sum(image_final_path)
         # Get disk_size_units of image
@@ -678,7 +705,8 @@ class SMUTClient(object):
         self._ImageDbOperator.image_add_record(image_name, os_version,
             real_md5sum, disk_size_units, image_size,
             capture_type)
-        LOG.info("Image %s is import successfully" % image_name)
+        LOG.info('Image %s is captured and imported to image repository '
+                 'successfully' % image_name)
 
     def _guest_get_os_version(self, userid):
         os_version = ''
