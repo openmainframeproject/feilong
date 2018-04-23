@@ -287,9 +287,10 @@ disk_conf = {
         'properties': {
             'vdev': vdev,
             'format': file_type,
-            'mntdir': {'type': 'string'}
+            'mntdir': {'type': 'string'},
+            'size': {'type': 'string'}
         },
-        'required': ['vdev', 'format', 'mntdir'],
+        'required': ['format'],
         'additionalProperties': False
     }
 }
