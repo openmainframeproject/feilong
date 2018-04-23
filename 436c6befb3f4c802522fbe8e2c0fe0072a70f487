@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4e0970a4_81e57335",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-04-23T02:36:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20f5eed9_34ab3c00",
+      "range": {
+        "startLine": 129,
+        "startChar": 8,
+        "endLine": 129,
+        "endChar": 12
+      },
+      "revId": "436c6befb3f4c802522fbe8e2c0fe0072a70f487",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e41a1870_59689b41",
         "filename": "zvmsdk/utils.py",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2018-04-20T01:01:54Z",
       "side": 1,
       "message": "I don\u0027t see the code in zCC which call this function, could we remove it too?",
+      "range": {
+        "startLine": 133,
+        "startChar": 8,
+        "endLine": 133,
+        "endChar": 20
+      },
+      "revId": "436c6befb3f4c802522fbe8e2c0fe0072a70f487",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8f07308c_59482470",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-04-23T02:36:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e41a1870_59689b41",
       "range": {
         "startLine": 133,
         "startChar": 8,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "9425526a_4ad47e5a",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-04-23T02:36:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a0cc1418_90761d87",
+      "range": {
+        "startLine": 136,
+        "startChar": 8,
+        "endLine": 136,
+        "endChar": 23
+      },
+      "revId": "436c6befb3f4c802522fbe8e2c0fe0072a70f487",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "839e61ef_d1df1f79",
         "filename": "zvmsdk/utils.py",
         "patchSetId": 1
@@ -82,6 +154,30 @@
       "writtenOn": "2018-04-20T01:01:54Z",
       "side": 1,
       "message": "Only UT call this function but not used it at all, could we remove it too?",
+      "range": {
+        "startLine": 146,
+        "startChar": 8,
+        "endLine": 146,
+        "endChar": 19
+      },
+      "revId": "436c6befb3f4c802522fbe8e2c0fe0072a70f487",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9fc28cc8_56a55846",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-04-23T02:36:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "839e61ef_d1df1f79",
       "range": {
         "startLine": 146,
         "startChar": 8,
