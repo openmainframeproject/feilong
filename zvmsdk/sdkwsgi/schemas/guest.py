@@ -197,6 +197,16 @@ capture = {
 }
 
 
+live_resize_cpus = {
+    'type': 'object',
+    'properties': {
+        'cpu_cnt': parameter_types.max_cpu,
+    },
+    'required': ['cpu_cnt'],
+    'additionalProperties': False,
+}
+
+
 userid_list_query = {
     'type': 'object',
     'properties': {
