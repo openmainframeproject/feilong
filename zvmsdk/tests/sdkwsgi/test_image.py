@@ -11,6 +11,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import shutil
+import tempfile
 
 from zvmsdk.tests.sdkwsgi import base
 from zvmsdk import config
@@ -33,7 +35,8 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
 
     def _image_create(self):
         image_fname = "image1"
-        image_fpath = ''.join([CONF.image.temp_path, image_fname])
+        tempDir = tempfile.mkdtemp()
+        image_fpath = '/'.join([tempDir, image_fname])
         utils.make_dummy_image(image_fpath)
         url = "file://" + image_fpath
         image_meta = '''{"os_version": "rhel7.2"}'''
@@ -45,6 +48,7 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
 
         resp = self.client.api_request(url='/images', method='POST',
                                        body=body)
+        shutil.rmtree(tempDir)
         return resp
 
     def _image_delete(self, image_name='image1'):
@@ -66,12 +70,14 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
 
     def _image_export(self, image_name='image1'):
         url = '/images/%s' % image_name
-        dest_url = ''.join(['file://', CONF.image.temp_path, image_name])
+        tempDir = tempfile.mkdtemp()
+        dest_url = ''.join(['file://', tempDir, '/', image_name])
         body = """{"location": {"dest_url": "%s"}}""" % (dest_url)
 
         resp = self.client.api_request(url=url,
                                        method='PUT',
                                        body=body)
+        shutil.rmtree(tempDir)
         return resp
 
     def test_image_create_empty_body(self):
@@ -88,7 +94,8 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
 
     def test_image_create_invalid_os_version(self):
         image_fname = "image1"
-        image_fpath = ''.join([CONF.image.temp_path, image_fname])
+        tempDir = tempfile.mkdtemp()
+        image_fpath = '/'.join([tempDir, image_fname])
         url = "file://" + image_fpath
         image_meta = '''{"os_version": "rhel8.2"}'''
         body = """{"image": {"image_name": "%s",
@@ -98,6 +105,7 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
         resp = self.client.api_request(url='/images', method='POST',
                                        body=body)
         self.assertEqual(400, resp.status_code)
+        shutil.rmtree(tempDir)
 
     def test_image_get_not_valid_resource(self):
         resp = self.client.api_request(url='/images/image1/root')
