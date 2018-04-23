@@ -182,3 +182,10 @@ class SDKAPITestCase(base.SDKTestCase):
         vdev_list = ['0102', '0103']
         self.api.guest_delete_disks(userid, vdev_list)
         dds.assert_called_once_with(userid, vdev_list)
+
+    @mock.patch("zvmsdk.vmops.VMOps.live_resize_cpus")
+    def test_guest_live_resize_cpus(self, live_resize_cpus):
+        userid = "testuid"
+        cpu_cnt = 3
+        self.api.guest_live_resize_cpus(userid, cpu_cnt)
+        live_resize_cpus.assert_called_once_with(userid, cpu_cnt)
