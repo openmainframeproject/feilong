@@ -1888,3 +1888,80 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         self._smutclient.namelist_destroy('tnlist')
         rd = "SMAPI tnlist API Name_List_Destroy"
         req.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_live_resize_cpus(self, req, exec_cmd):
+        userid = 'testuid'
+        start_addr = '4'
+        add_cnt = 2
+        self._smutclient.live_resize_cpus(userid, start_addr, add_cnt)
+        rd = ("SMAPI testuid API Image_Definition_Update_DM --operands "
+              "-k CPU=CPUADDR=4 -k CPU=CPUADDR=5")
+        req.assert_called_once_with(rd)
+        cmd_def_cpu = "vmcp def cpu 4 5"
+        cmd_rescan_cpu = "chcpu -r"
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
+                                   mock.call(userid, cmd_rescan_cpu)])
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_live_resize_cpus_invalid_addr(self, req, exec_cmd):
+        userid = 'testuid'
+        start_addr = '40'
+        add_cnt = 2
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.live_resize_cpus,
+                          userid, start_addr, add_cnt)
+        req.assert_not_called()
+        exec_cmd.assert_not_called()
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_live_resize_cpus_update_user_directory_failed(self,
+                                                           req, exec_cmd):
+        userid = 'testuid'
+        start_addr = '4'
+        add_cnt = 2
+        req.side_effect = exception.SDKSMUTRequestFailed({}, 'err')
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.live_resize_cpus,
+                          userid, start_addr, add_cnt)
+        exec_cmd.assert_not_called()
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_live_resize_cpus_activate_failed(self, req, exec_cmd):
+        userid = 'testuid'
+        start_addr = '4'
+        add_cnt = 2
+        exec_cmd.side_effect = [exception.SDKSMUTRequestFailed({}, 'err'), ""]
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.live_resize_cpus,
+                          userid, start_addr, add_cnt)
+        rd_update_dm = ("SMAPI testuid API Image_Definition_Update_DM "
+                        "--operands -k CPU=CPUADDR=4 -k CPU=CPUADDR=5")
+        rd_revoke_dm = ("SMAPI testuid API Image_Definition_Delete_DM "
+                        "--operands -k CPU=CPUADDR=4 -k CPU=CPUADDR=5")
+        req.assert_has_calls([mock.call(rd_update_dm),
+                              mock.call(rd_revoke_dm)])
+        exec_cmd.assert_called_once_with(userid, "vmcp def cpu 4 5")
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_live_resize_cpus_revoke_failed(self, req, exec_cmd):
+        userid = 'testuid'
+        start_addr = '4'
+        add_cnt = 2
+        exec_cmd.side_effect = [exception.SDKSMUTRequestFailed({}, 'err'), ""]
+        req.side_effect = ["", exception.SDKSMUTRequestFailed({}, 'err2')]
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.live_resize_cpus,
+                          userid, start_addr, add_cnt)
+        rd_update_dm = ("SMAPI testuid API Image_Definition_Update_DM "
+                        "--operands -k CPU=CPUADDR=4 -k CPU=CPUADDR=5")
+        rd_revoke_dm = ("SMAPI testuid API Image_Definition_Delete_DM "
+                        "--operands -k CPU=CPUADDR=4 -k CPU=CPUADDR=5")
+        req.assert_has_calls([mock.call(rd_update_dm),
+                              mock.call(rd_revoke_dm)])
+        exec_cmd.assert_called_once_with(userid, "vmcp def cpu 4 5")
