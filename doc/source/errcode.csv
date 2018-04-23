@@ -7,7 +7,7 @@
 300;10;300;1;Database operation failed, error: %(msg)s
 300;10;300;2;Failed to add mdisks when creating guest, error: %(msg)s
 300;10;300;3;Failed to deploy image to userid: '%(userid)s', unpackdiskimage failed with rc: %(unpack_rc)d, error: %(err)s
-300;10;300;4;Failed to deploy image to userid: '%(userid)s', copy config drive to local failed with rc: %(cp_rc)d
+300;10;300;4;Failed to deploy image to userid: '%(userid)s', copy configure drive failed: %(err_info)s
 300;10;300;5;Failed to capture userid %(userid)s to generate image, error: %(msg)s
 **Operation on Network failed**
 300;20;300;1;Database operation failed, error: %(msg)s
