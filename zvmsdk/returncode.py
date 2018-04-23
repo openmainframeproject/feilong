@@ -148,7 +148,17 @@ errors = {
                4: ("Failed to deploy image to userid: '%(userid)s', "
                    "copy config drive to local failed with rc: %(cp_rc)d"),
                5: ("Failed to capture userid %(userid)s to generate image, "
-                   "error: %(msg)s")
+                   "error: %(msg)s"),
+               6: ("Failed to live resize cpus of guest: '%(userid)s', "
+                   "error: guest is not active."),
+               7: ("Failed to live resize cpus of guest: '%(userid)s', "
+                   "error: current active cpu count: '%(cur_cnt)i' is greater "
+                   "than requested count: '%(req_cnt)i'."),
+               8: ("Failed to live resize cpus of guest: '%(userid)s', "
+                   "error: next available addr is %(start)i, to be added "
+                   "count %(add_cnt)i, address exceeds valid range 0-63." ),
+               9: ("Failed to live resize cpus of guest: '%(userid)s', "
+                   "%(err)s." ),
               },
               "Operation on Guest failed"
               ],

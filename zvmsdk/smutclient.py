@@ -2485,6 +2485,86 @@ class SMUTClient(object):
         rd = "SMAPI %s API Name_List_Destroy" % namelist
         self._request_with_error_ignored(rd)
 
+    def live_resize_cpus(self, userid, start_addr, add_cnt):
+        # start_addr is a hexadecimal string value, the value should be
+        # in range 0-3F. add_cnt is an integer.
+        # Check cpu address in valid range
+        def _cpu_addr_valid(addr):
+            # cpu addr should be in range 1 to 63
+            if addr < 1 or addr >= 64:
+                return False
+            return True
+
+        decimal_start = int(start_addr, 16)
+        if not _cpu_addr_valid(decimal_start) or not _cpu_addr_valid(
+            decimal_start + add_cnt):
+            err_msg = ("Failed to live resize cpus of guest: %(uid)s, "
+                      "next available addr is %(start)i, to be added count: "
+                      "%(add_cnt)i, address exceeds valid range 0-63." %
+                      {'uid': userid, 'start': decimal_start,
+                       'add_cnt': add_cnt})
+            LOG.error(err_msg)
+            raise exception.SDKGuestOperationError(rs=8, userid=userid,
+                                                   start=decimal_start,
+                                                   add_cnt=add_cnt)
+        # Define new cpus in user directory
+        rd = ''.join(("SMAPI %s API Image_Definition_Update_DM " % userid,
+                      "--operands"))
+        hex_addrs = [start_addr]
+        cpu_entries = (" -k CPU=CPUADDR=%s" % start_addr)
+        for offset in range(1, add_cnt):
+            hex_addr = hex(decimal_start+offset)[2:]
+            hex_addrs.append(hex_addr)
+            # Usable for both Image_Definition_Update_DM and Delete_DM
+            cpu_entries += (" -k CPU=CPUADDR=%s" % hex_addr)
+        rd += cpu_entries
+        try:
+            self._request(rd)
+        except exception.SDKSMUTRequestFailed as err:
+            msg = ("Define cpus in user directory for '%s' failed with "
+                   "SMUT error: %s" % (userid, err.format_message()))
+            LOG.error(msg)
+            raise exception.SDKGuestOperationError(rs=9, userid=userid,
+                                                   err=msg)
+        LOG.info("New CPUs defined in user directory for '%s' successfully" %
+                 userid)
+        # Active new cpus added
+        cmd_str = "vmcp def cpu " + ' '.join(hex_addrs)
+        try:
+            self.execute_cmd(userid, cmd_str)
+        except exception.SDKSMUTRequestFailed as err1:
+            # rollback and return
+            msg1 = ("Define cpu of guest: '%s' to active failed with . "
+                   "error: %s." % (userid, err1.format_message()))
+            LOG.error(msg1 + " Will rollback the user directory change.")
+            rd = ''.join(("SMAPI %s API Image_Definition_Delete_DM " % userid,
+                          "--operands"))
+            rd += cpu_entries
+            try:
+                self._request(rd)
+            except exception.SDKSMUTRequestFailed as err2:
+                msg = ("Failed to rollback user directory change for '%s', "
+                       "SMUT error: %s" % (userid, err2.format_message()))
+                LOG.error(msg)
+            else:
+                LOG.info("Revoke user directory change for '%s' successfully."
+                         % userid)
+            raise exception.SDKGuestOperationError(rs=9, userid=userid,
+                                                   err=msg1)
+        # Activate successfully, rescan in Linux layer to hot-plug new cpus
+        LOG.info("Added new CPUs to active configuration of guest '%s'" % userid)
+        try:
+            self.execute_cmd(userid, "chcpu -r")
+        except exception.SDKSMUTRequestFailed as err:
+            
+            msg = ("Rescan cpus to hot-plug new cpus for guest: '%s' failed with "
+                   "error: %s." % (userid, err.format_message()))
+            LOG.error(msg)
+            raise exception.SDKGuestOperationError(rs=9, userid=userid,
+                                                   err=msg)
+        LOG.info("Live resize cpus for guest: '%s' finished successfully."
+                 % userid)
+
 
 class FilesystemBackend(object):
     @classmethod
