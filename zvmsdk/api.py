@@ -387,7 +387,7 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_definition_info(userid, **kwargs)
 
-    def guest_create(self, userid, vcpus, memory, disk_list=[],
+    def guest_create(self, userid, vcpus, memory, disk_list=None,
                      user_profile=CONF.zvm.user_profile):
         """create a vm in z/VM
 
@@ -787,11 +787,30 @@ class SDKAPI(object):
 
         :param str userid: the user id of the vm
         :param disk_info: a list contains disks info for the guest. It
-               has one dictionary that describes the disk info for each disk.
-               For example,
+               contains dictionaries that describes disk info for each disk.
+
+               Each dictionary has 3 keys, format is required, vdev and
+               mntdir are optional. For example, if vdev is not specified, it
+               will start from the next vdev of CONF.zvm.user_root_vdev, eg.
+               if CONF.zvm.user_root_vdev is 0100, zvmsdk will use 0101 as the
+               vdev for first additional disk in disk_info, and if mntdir is
+               not specified, zvmsdk will use /mnt/ephemeral0 as the mount
+               point of first additional disk
+
+               Here are some examples:
                [{'vdev': '0101',
                'format': 'ext3',
-               'mntdir': '/mnt/0101'}]
+               'mntdir': '/mnt/ephemeral0'}]
+               In this case, the zvmsdk will treat 0101 as additional disk's
+               vdev, and it's formatted with ext3, and will be mounted to
+               /mnt/ephemeral0
+
+               [{'format': 'ext3'},
+               {'format': 'ext4'}]
+               In this case, if CONF.zvm.user_root_vdev is 0100, zvmsdk will
+               configure the first additional disk as 0101, mount it to
+               /mnt/ephemeral0 with ext3, and configure the second additional
+               disk 0102, mount it to /mnt/ephemeral1 with ext4.
 
         """
         action = "config disks for userid '%s'" % userid
