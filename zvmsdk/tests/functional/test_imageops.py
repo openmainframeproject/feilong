@@ -14,6 +14,7 @@
 
 
 import os
+import tempfile
 import uuid
 
 from zvmsdk import config
@@ -29,7 +30,9 @@ class SDKAPIImageTestCase(base.SDKAPIBaseTestCase):
     def test_image_operations(self):
         """ Import a image, query the existence and then delete it"""
         image_fname = str(uuid.uuid1())
-        image_fpath = ''.join([CONF.image.temp_path, image_fname])
+        tempDir = tempfile.mkdtemp()
+        os.chmod(tempDir, 0o755)
+        image_fpath = '/'.join([tempDir, image_fname])
         utils.make_dummy_image(image_fpath)
         url = "file://" + image_fpath
         image_meta = {'os_version': 'rhel7.2'}
