@@ -335,6 +335,20 @@ action_get_console_guest:
   in: body
   required: true
   type: dict
+action_live_resize_cpus_of_guest:
+  description: |
+    Take ``live_resize_cpus`` action on guest.
+  in: body
+  required: true
+  type: string
+cpu_cnt:
+  description: |
+    The number of virtual cpus that the guest should
+    have in active state after live resize. The value should be an
+    positive integer between 1 and 64.
+  in: body
+  required: true
+  type: integer
 vdev_guest:
   description: |
     nic device number, 1- to 4- hexadecimal digits.
