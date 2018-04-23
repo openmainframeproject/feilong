@@ -129,6 +129,18 @@ class GuestActionsTest(SDKWSGITest):
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_live_resize_cpus(self, mock_action,
+                        mock_userid):
+        self.req.body = '{"action": "live_resize_cpus", "cpu_cnt": 3}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_live_resize_cpus',
+                                            FAKE_USERID, 3)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_deploy(self, mock_action,
                           mock_userid):
         self.req.body = """{"action": "deploy",
