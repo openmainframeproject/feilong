@@ -264,61 +264,61 @@ action_start_guest:
     Take ``start`` action on guest.
   in: body
   required: true
-  type: dict
+  type: string
 action_stop_guest:
   description: |
     Take ``stop`` action on guest.
   in: body
   required: true
-  type: dict
+  type: string
 action_softstop_guest:
   description: |
     Take ``softstop`` action on guest.
   in: body
   required: true
-  type: dict
+  type: string
 action_pause_guest:
   description: |
     Take ``pause`` action on guest.
   in: body
   required: true
-  type: dict
+  type: string
 action_unpause_guest:
   description: |
     Take ``unpause`` action on guest.
   in: body
   required: true
-  type: dict
+  type: string
 action_reboot_guest:
   description: |
     Take ``reboot`` action on guest.
   in: body
   required: true
-  type: dict
+  type: string
 action_reset_guest:
   description: |
     Take ``reset`` action on guest.
   in: body
   required: true
-  type: dict
+  type: string
 action_deploy_guest:
   description: |
     Take ``deploy`` action on guest.
   in: body
   required: true
-  type: dict
+  type: string
 action_capture_guest:
   description: |
     Take ``capture`` action on guest.
   in: body
   required: true
-  type: dict
+  type: string
 action_get_console_guest:
   description: |
     Take ``get_console_output`` action on guest.
   in: body
   required: true
-  type: dict
+  type: string
 vdev_guest:
   description: |
     nic device number, 1- to 4- hexadecimal digits.
