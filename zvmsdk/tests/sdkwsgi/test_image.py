@@ -31,9 +31,6 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
         self.set_conf('sdkserver', 'bind_port', 3001)
         self.client = test_sdkwsgi.TestSDKClient()
 
-        # make sure image temp path exists
-        utils.PathUtils()._get_image_tmp_path()
-
     def _image_create(self):
         image_fname = "image1"
         image_fpath = ''.join([CONF.image.temp_path, image_fname])
