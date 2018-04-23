@@ -9,6 +9,10 @@
 300;10;300;3;Failed to deploy image to userid: '%(userid)s', unpackdiskimage failed with rc: %(unpack_rc)d, error: %(err)s
 300;10;300;4;Failed to deploy image to userid: '%(userid)s', copy configure drive failed: %(err_info)s
 300;10;300;5;Failed to capture userid %(userid)s to generate image, error: %(msg)s
+300;10;300;6;Failed to live resize cpus of guest: '%(userid)s', error: guest is not active.
+300;10;300;7;Failed to live resize cpus of guest: '%(userid)s', error: current active cpu count: '%(cur_cnt)i' is greater than requested count: '%(req_cnt)i'.
+300;10;300;8;Failed to live resize cpus of guest: '%(userid)s', error: next available addr is %(start)i, to be added count %(add_cnt)i, address exceeds valid range 0-63.
+300;10;300;9;Failed to live resize cpus of guest: '%(userid)s', %(err)s.
 **Operation on Network failed**
 300;20;300;1;Database operation failed, error: %(msg)s
 300;20;300;2;ZVMSDK network error: %(msg)s
