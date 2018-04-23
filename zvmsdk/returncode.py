@@ -146,7 +146,7 @@ errors = {
                    "unpackdiskimage failed with rc: %(unpack_rc)d, "
                    "error: %(err)s"),
                4: ("Failed to deploy image to userid: '%(userid)s', "
-                   "copy config drive to local failed with rc: %(cp_rc)d"),
+                   "copy configure drive failed: %(err_info)s"),
                5: ("Failed to capture userid %(userid)s to generate image, "
                    "error: %(msg)s")
               },
