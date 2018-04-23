@@ -126,74 +126,11 @@ def convert_to_mb(s):
 
 
 class PathUtils(object):
-    def open(self, path, mode):
-        """Wrapper on six.moves.builtins.open used to simplify unit testing."""
-        return six.moves.builtins.open(path, mode)
-
-    def _get_image_tmp_path(self):
-        image_tmp_path = os.path.normpath(CONF.image.temp_path)
-        if not os.path.exists(image_tmp_path):
-            LOG.debug('Creating folder %s for image temp files',
-                     image_tmp_path)
-            os.makedirs(image_tmp_path)
-        return image_tmp_path
-
-    def get_bundle_tmp_path(self, tmp_file_fn):
-        bundle_tmp_path = os.path.join(self._get_image_tmp_path(), "spawn_tmp",
-                                       tmp_file_fn)
-        if not os.path.exists(bundle_tmp_path):
-            LOG.debug('Creating folder %s for image bundle temp file',
-                      bundle_tmp_path)
-            os.makedirs(bundle_tmp_path)
-        return bundle_tmp_path
-
-    def get_img_path(self, bundle_file_path, image_name):
-        return os.path.join(bundle_file_path, image_name)
-
-    def _get_snapshot_path(self):
-        snapshot_folder = os.path.join(self._get_image_tmp_path(),
-                                       "snapshot_tmp")
-        if not os.path.exists(snapshot_folder):
-            LOG.debug("Creating the snapshot folder %s", snapshot_folder)
-            os.makedirs(snapshot_folder)
-        return snapshot_folder
-
-    def _get_punch_path(self):
-        punch_folder = os.path.join(self._get_image_tmp_path(), "punch_tmp")
-        if not os.path.exists(punch_folder):
-            LOG.debug("Creating the punch folder %s", punch_folder)
-            os.makedirs(punch_folder)
-        return punch_folder
-
-    def get_spawn_folder(self):
-        spawn_folder = os.path.join(self._get_image_tmp_path(), "spawn_tmp")
-        if not os.path.exists(spawn_folder):
-            LOG.debug("Creating the spawn folder %s", spawn_folder)
-            os.makedirs(spawn_folder)
-        return spawn_folder
-
-    def make_time_stamp(self):
-        tmp_file_fn = time.strftime('%Y%m%d%H%M%S',
-                                            time.localtime(time.time()))
-        return tmp_file_fn
-
-    def get_snapshot_time_path(self):
-        snapshot_time_path = os.path.join(self._get_snapshot_path(),
-                                          self.make_time_stamp())
-        if not os.path.exists(snapshot_time_path):
-            LOG.debug('Creating folder %s for image bundle temp file',
-                      snapshot_time_path)
-            os.makedirs(snapshot_time_path)
-        return snapshot_time_path
 
     def clean_temp_folder(self, tmp_folder):
         if os.path.isdir(tmp_folder):
             LOG.debug('Removing existing folder %s ', tmp_folder)
             shutil.rmtree(tmp_folder)
-
-    def remove_file(self, fpath):
-        if os.path.exists(fpath):
-            os.remove(fpath)
 
     def _get_guest_path(self):
         return os.path.join(constants.SDK_DATA_PATH, 'guests')

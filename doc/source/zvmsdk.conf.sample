@@ -40,18 +40,6 @@
 #sdk_image_repository=/var/lib/zvmsdk/images
 
 
-# 
-# Temp path to store image temp information.
-# 
-# During guest creation, image transferred from upper layer need to be
-# create some temp files, this option is used to tell SDK where
-# to store the temp files, make sure the process running SDK is able to
-# read write the directory.
-#     
-# This param is optional
-#temp_path=/tmp/zvmsdk/images/
-
-
 [logging]
 
 # 
