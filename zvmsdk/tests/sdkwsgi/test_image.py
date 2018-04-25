@@ -98,8 +98,8 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
     def test_image_create_invalid_os_version(self):
         image_fname = "image1"
         tempDir = tempfile.mkdtemp()
+        os.chmod(tempDir, 0o777)
         image_fpath = '/'.join([tempDir, image_fname])
-        os.chmod(image_fpath, 0o777)
         url = "file://" + image_fpath
         image_meta = '''{"os_version": "rhel8.2"}'''
         body = """{"image": {"image_name": "%s",
