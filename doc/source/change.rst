@@ -18,6 +18,13 @@
 Release Notes
 *************
 
+Release 1.0.1
+-------------
+
+zVMCloudConnector 1.0.1 release mainly adapts to the SMAPI changes in z/VM 6.4
+APAR VM66120 1Q 2018. If the z/VM 6.4 has been applied APAR VM66120, must
+upgrade z/VM Cloud Connector to 1.0.1 .
+
 Release 1.0.0
 -------------
 
