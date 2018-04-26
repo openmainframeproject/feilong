@@ -1,0 +1,9 @@
+Code-Review+2: Huang Rui <bjhuangr@cn.ibm.com>
+Verified+1: Huang Rui <bjhuangr@cn.ibm.com>
+Code-Review+1: <openstak@us.ibm.com>
+Verified+1: <openstak@us.ibm.com>
+Submitted-by: Huang Rui <bjhuangr@cn.ibm.com>
+Submitted-at: Thu, 26 Apr 2018 03:24:02 +0000
+Reviewed-on: https://review.gerrithub.io/409109
+Project: mfcloud/python-zvm-sdk
+Branch: refs/heads/1.1.n
