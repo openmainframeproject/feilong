@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6868dfb2_6847ac91",
+        "filename": "smutLayer/makeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 389,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-04-27T02:50:27Z",
+      "side": 1,
+      "message": "do we have a validation here that maxMemMb is bigger than memMb?",
+      "range": {
+        "startLine": 389,
+        "startChar": 4,
+        "endLine": 389,
+        "endChar": 30
+      },
+      "revId": "e852314cac9e7e98ed4edcad197b979b912ecc58",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
