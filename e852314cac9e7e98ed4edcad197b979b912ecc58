@@ -22,6 +22,30 @@
       "revId": "e852314cac9e7e98ed4edcad197b979b912ecc58",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2fd68e4d_1ea3891e",
+        "filename": "smutLayer/makeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 389,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-04-27T05:07:06Z",
+      "side": 1,
+      "message": "I planned to add it in the zvmsdk api layer, maybe here is more reasonable, will add it.",
+      "parentUuid": "6868dfb2_6847ac91",
+      "range": {
+        "startLine": 389,
+        "startChar": 4,
+        "endLine": 389,
+        "endChar": 30
+      },
+      "revId": "e852314cac9e7e98ed4edcad197b979b912ecc58",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
