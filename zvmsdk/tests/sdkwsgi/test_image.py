@@ -34,6 +34,10 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
         self.set_conf('sdkserver', 'bind_port', 3001)
         self.client = test_sdkwsgi.TestSDKClient()
 
+    def setUp(self):
+        super(ImageTestCase, self).setUp()
+        self.record_logfile_position()
+
     def _image_create(self):
         image_fname = "image1"
         tempDir = tempfile.mkdtemp()

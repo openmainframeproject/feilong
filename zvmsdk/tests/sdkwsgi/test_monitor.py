@@ -42,6 +42,10 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
         cls.test_utils.guest_destroy(cls.userid1)
         cls.test_utils.guest_destroy(cls.userid2)
 
+    def setUp(self):
+        super(MonitorTestCase, self).setUp()
+        self.record_logfile_position()
+
     def _inspect_stats(self, userid):
         body = None
         url = '/guests/stats?userid=%s' % userid
@@ -203,10 +207,12 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
 class MeteringCacheTestCase(base.ZVMConnectorBaseTestCase):
 
     def setUp(self):
+        super(MeteringCacheTestCase, self).setUp()
         self.set_conf('monitor', 'cache_interval', 1000)
         self.mc = monitor.MeteringCache(('typeA', 'typeB'))
         self.mc.refresh('typeA', {})
         self.mc.refresh('typeB', {})
+        self.record_logfile_position()
 
     def test_init(self):
         self.assertListEqual(sorted(self.mc._cache.keys()),
