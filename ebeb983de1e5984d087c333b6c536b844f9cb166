@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "82d6664f_8175e774",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 9
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-04-27T03:02:11Z",
+      "side": 1,
+      "message": "you code comments say 2 here",
+      "range": {
+        "startLine": 353,
+        "startChar": 29,
+        "endLine": 353,
+        "endChar": 38
+      },
+      "revId": "ebeb983de1e5984d087c333b6c536b844f9cb166",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d4ae4977_0e8dbf97",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-04-27T03:02:11Z",
+      "side": 1,
+      "message": "this will be widely used I suggest to make it debug or it might lead to log flood",
+      "range": {
+        "startLine": 48,
+        "startChar": 8,
+        "endLine": 48,
+        "endChar": 16
+      },
+      "revId": "ebeb983de1e5984d087c333b6c536b844f9cb166",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
