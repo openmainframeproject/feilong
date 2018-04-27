@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "70c79fed_d22521a1",
+        "filename": "smutLayer/makeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 340,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-04-27T08:30:24Z",
+      "side": 1,
+      "message": "not require to specify reservedmem, use maxmem - mem ?",
+      "range": {
+        "startLine": 337,
+        "startChar": 7,
+        "endLine": 340,
+        "endChar": 64
+      },
+      "revId": "e852314cac9e7e98ed4edcad197b979b912ecc58",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6868dfb2_6847ac91",
         "filename": "smutLayer/makeVM.py",
         "patchSetId": 5
@@ -42,6 +65,29 @@
         "startChar": 4,
         "endLine": 389,
         "endChar": 30
+      },
+      "revId": "e852314cac9e7e98ed4edcad197b979b912ecc58",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "94c215ff_7755a428",
+        "filename": "smutLayer/makeVM.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-04-27T08:30:24Z",
+      "side": 1,
+      "message": "if gapSize/1024 \u003e 9999999 ?",
+      "range": {
+        "startLine": 391,
+        "startChar": 8,
+        "endLine": 391,
+        "endChar": 32
       },
       "revId": "e852314cac9e7e98ed4edcad197b979b912ecc58",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
