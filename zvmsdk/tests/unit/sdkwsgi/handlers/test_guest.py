@@ -129,6 +129,62 @@ class GuestActionsTest(SDKWSGITest):
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_live_resize_cpus(self, mock_action,
+                        mock_userid):
+        self.req.body = '{"action": "live_resize_cpus", "cpu_cnt": 3}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_live_resize_cpus',
+                                            FAKE_USERID, 3)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_live_resize_cpus_missing_param(self, mock_action,
+                                                  mock_userid):
+        self.req.body = '{"action": "live_resize_cpus"}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_live_resize_cpus_invalid_cpu_cnt_1(self, mock_action,
+                                                      mock_userid):
+        self.req.body = '{"action": "live_resize_cpus", "cpu_cnt": 65}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_live_resize_cpus_invalid_cpu_cnt_2(self, mock_action,
+                                                      mock_userid):
+        self.req.body = '{"action": "live_resize_cpus", "cpu_cnt": 0}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_live_resize_cpus_invalid_cpu_cnt_type(self, mock_action,
+                                                         mock_userid):
+        self.req.body = '{"action": "live_resize_cpus", "cpu_cnt": "2"}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_deploy(self, mock_action,
                           mock_userid):
         self.req.body = """{"action": "deploy",

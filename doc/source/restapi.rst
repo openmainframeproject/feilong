@@ -755,6 +755,32 @@ Get console output of the guest.
    statment "COMMAND SP CONS * START" to the profile that used to deploy guest
    vm, otherwise no console log collected for the guest vm.
 
+Live resize CPUs of guest
+-------------------------
+
+**POST /guests/{userid}/action**
+
+Live resize CPUs of the guest.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - action: action_live_resize_cpus_of_guest
+  - cpu_cnt: cpu_cnt
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_live_resize_cpus_req.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
 Deploy guest
 ------------
 
