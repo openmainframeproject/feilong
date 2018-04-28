@@ -259,6 +259,30 @@
     },
     {
       "key": {
+        "uuid": "6fd5cc18_0e46d973",
+        "filename": "zvmsdk/tests/unit/test_smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-04-28T02:01:39Z",
+      "side": 1,
+      "message": "The UT for guest_create was simple, \"profile\" and disk_list param also has same issue. \nI will add the ut for max_cpu and max_mem as you requested.",
+      "parentUuid": "293dee2a_83a71188",
+      "range": {
+        "startLine": 143,
+        "startChar": 0,
+        "endLine": 144,
+        "endChar": 20
+      },
+      "revId": "089190d045741996e0d4b765ad24e31b9db0a18a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "762b6376_4d69dfd3",
         "filename": "zvmsdk/vmops.py",
         "patchSetId": 6
