@@ -1,0 +1,10 @@
+Code-Review+1: <openstak@us.ibm.com>
+Code-Review+1: Huang Rui <bjhuangr@cn.ibm.com>
+Code-Review+2: ji chen <jichenjc@cn.ibm.com>
+Verified+1: <openstak@us.ibm.com>
+Verified+1: ji chen <jichenjc@cn.ibm.com>
+Submitted-by: ji chen <jichenjc@cn.ibm.com>
+Submitted-at: Sat, 28 Apr 2018 01:03:30 +0000
+Reviewed-on: https://review.gerrithub.io/408600
+Project: mfcloud/python-zvm-sdk
+Branch: refs/heads/master
