@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "71127022_bac1b491",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-04-28T02:46:42Z",
+      "side": 1,
+      "message": "what\u0027s executed ? what\u0027s the return result?\n\nwe need at least log here for further info",
+      "range": {
+        "startLine": 45,
+        "startChar": 12,
+        "endLine": 46,
+        "endChar": 56
+      },
+      "revId": "9d7436caf9cd69be18684ddfe52e18e89a221954",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "febe6f9c_a89ce80b",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-04-28T02:46:42Z",
+      "side": 1,
+      "message": "The most important part is to revert\n\nin case any thing failed in those steps, can you revert the operations so that we don\u0027t have dirty data ?",
+      "range": {
+        "startLine": 216,
+        "startChar": 5,
+        "endLine": 219,
+        "endChar": 56
+      },
+      "revId": "9d7436caf9cd69be18684ddfe52e18e89a221954",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
