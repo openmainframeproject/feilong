@@ -78,6 +78,19 @@ class SDKAPITestCase(base.SDKTestCase):
         create_vm.assert_called_once_with(userid, vcpus, memory, disk_list,
                                           user_profile, max_cpu, max_mem)
 
+    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
+    def test_guest_create_with_default_max_cpu_memory(self, create_vm):
+        userid = 'userid'
+        vcpus = 1
+        memory = 1024
+        disk_list = []
+        user_profile = 'profile'
+
+        self.api.guest_create(userid, vcpus, memory, disk_list,
+                              user_profile)
+        create_vm.assert_called_once_with(userid, vcpus, memory, disk_list,
+                                          user_profile, 32, '64G')
+
     @mock.patch("zvmsdk.imageops.ImageOps.image_query")
     def test_image_query(self, image_query):
         imagekeyword = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'
