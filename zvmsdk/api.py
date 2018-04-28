@@ -388,7 +388,9 @@ class SDKAPI(object):
             return self._vmops.get_definition_info(userid, **kwargs)
 
     def guest_create(self, userid, vcpus, memory, disk_list=None,
-                     user_profile=CONF.zvm.user_profile):
+                     user_profile=CONF.zvm.user_profile,
+                     max_cpu=CONF.zvm.user_default_max_cpu,
+                     max_mem=CONF.zvm.user_default_max_memory):
         """create a vm in z/VM
 
         :param userid: (str) the userid of the vm to be created
@@ -425,7 +427,13 @@ class SDKAPI(object):
                eckdpool1 for guest , then set IPL 0100 in guest's user
                directory, and it will create 0101 with 200000 blocks from
                FBA disk pool fbapool1, and formated with ext3.
-        :param user_profile: the profile for the guest
+        :param user_profile: (str) the profile for the guest
+        :param max_cpu: (int) the maximum number of virtual cpu this user can
+               define. The value should be a decimal value between 1 and 64.
+        :param max_mem: (str) the maximum size of memory the user can define.
+               The value should be specified by 1-4 bits of number suffixed by
+               either M (Megabytes) or G (Gigabytes). And the number should be
+               an integer.
         """
         if disk_list:
             for disk in disk_list:
@@ -460,7 +468,7 @@ class SDKAPI(object):
         action = "create guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.create_vm(userid, vcpus, memory, disk_list,
-                                  user_profile)
+                                  user_profile, max_cpu, max_mem)
 
     def guest_create_disks(self, userid, disk_list):
         """Add disks to an existing guest vm.
