@@ -46,6 +46,23 @@
       "revId": "b444a5fa1310384f7a73c95d1b8dc912bf3cd7f4",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "09a8fee5_72009e7b",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 13
+      },
+      "lineNbr": 473,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-02T07:33:37Z",
+      "side": 1,
+      "message": "Consider to add a keyword to control whether do persist resize ? To fulfill the requirement that hotplug cpu temporarily.",
+      "revId": "b444a5fa1310384f7a73c95d1b8dc912bf3cd7f4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
