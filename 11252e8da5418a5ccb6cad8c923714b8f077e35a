@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a016238_addf2174",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 5
+      },
+      "lineNbr": 796,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-03T05:14:21Z",
+      "side": 1,
+      "message": "can we provide a configuration sample here (later ? )",
+      "revId": "11252e8da5418a5ccb6cad8c923714b8f077e35a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
