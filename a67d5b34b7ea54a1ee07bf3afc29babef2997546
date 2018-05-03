@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5185869a_f7175504",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 2
+      },
+      "lineNbr": 791,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-03T02:32:43Z",
+      "side": 1,
+      "message": "requires log off, then the vm be able to resize cpus in next logon?",
+      "range": {
+        "startLine": 791,
+        "startChar": 18,
+        "endLine": 791,
+        "endChar": 43
+      },
+      "revId": "a67d5b34b7ea54a1ee07bf3afc29babef2997546",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "35608580_e2993a34",
+        "filename": "smutLayer/tests/unit/base.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-03T02:32:43Z",
+      "side": 1,
+      "message": "only 2018",
+      "range": {
+        "startLine": 1,
+        "startChar": 12,
+        "endLine": 1,
+        "endChar": 21
+      },
+      "revId": "a67d5b34b7ea54a1ee07bf3afc29babef2997546",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2c4fce46_d61196f1",
+        "filename": "smutLayer/tests/unit/test_makeVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-03T02:32:43Z",
+      "side": 1,
+      "message": "2018",
+      "range": {
+        "startLine": 1,
+        "startChar": 12,
+        "endLine": 1,
+        "endChar": 21
+      },
+      "revId": "a67d5b34b7ea54a1ee07bf3afc29babef2997546",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
