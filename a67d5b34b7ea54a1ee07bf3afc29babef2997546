@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "68b10aff_f9c127d4",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 2
+      },
+      "lineNbr": 791,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-05-03T02:59:57Z",
+      "side": 1,
+      "message": "I don\u0027t plan to update the tool usage now, this part will be updated after the tool is developed.",
+      "parentUuid": "5185869a_f7175504",
+      "range": {
+        "startLine": 791,
+        "startChar": 18,
+        "endLine": 791,
+        "endChar": 43
+      },
+      "revId": "a67d5b34b7ea54a1ee07bf3afc29babef2997546",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "35608580_e2993a34",
         "filename": "smutLayer/tests/unit/base.py",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "1a77035f_88f0501f",
+        "filename": "smutLayer/tests/unit/base.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-05-03T02:59:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "35608580_e2993a34",
+      "range": {
+        "startLine": 1,
+        "startChar": 12,
+        "endLine": 1,
+        "endChar": 21
+      },
+      "revId": "a67d5b34b7ea54a1ee07bf3afc29babef2997546",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2c4fce46_d61196f1",
         "filename": "smutLayer/tests/unit/test_makeVM.py",
         "patchSetId": 2
@@ -59,6 +107,30 @@
       "writtenOn": "2018-05-03T02:32:43Z",
       "side": 1,
       "message": "2018",
+      "range": {
+        "startLine": 1,
+        "startChar": 12,
+        "endLine": 1,
+        "endChar": 21
+      },
+      "revId": "a67d5b34b7ea54a1ee07bf3afc29babef2997546",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6cad5459_311d172b",
+        "filename": "smutLayer/tests/unit/test_makeVM.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-05-03T02:59:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c4fce46_d61196f1",
       "range": {
         "startLine": 1,
         "startChar": 12,
