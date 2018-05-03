@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "daa34418_f1a0a8c9",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-03T06:32:20Z",
+      "side": 1,
+      "message": "change this",
+      "range": {
+        "startLine": 36,
+        "startChar": 35,
+        "endLine": 36,
+        "endChar": 77
+      },
+      "revId": "9fdb03820880f0dc72196b6004eac0f9d604836c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0f1c6b5f_fafea9a0",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-03T06:32:20Z",
+      "side": 1,
+      "message": "maybe you can consider define several exceptions \nand for each exception you add some handle \nthat will make logic more clear\n\ne.g\n \n\ntry:\n      xxx\nexcept e1:\n      xxxx \n      raise\nexcept e2:\n      tttt\n      raise",
+      "range": {
+        "startLine": 222,
+        "startChar": 0,
+        "endLine": 235,
+        "endChar": 73
+      },
+      "revId": "9fdb03820880f0dc72196b6004eac0f9d604836c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5d1368c7_847dcdfc",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-03T06:32:20Z",
+      "side": 1,
+      "message": "I believe you have further code here?",
+      "range": {
+        "startLine": 239,
+        "startChar": 8,
+        "endLine": 240,
+        "endChar": 55
+      },
+      "revId": "9fdb03820880f0dc72196b6004eac0f9d604836c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
