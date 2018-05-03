@@ -781,6 +781,26 @@ Live resize CPUs of the guest.
 
 * Response contents:
 
+.. note::
+
+   - Currently only increasing CPU count is supported, decreasing is not supported.
+   - To live resize a guest, the guest must have maximum CPU count defined in user
+     directory entry with "MACHINE ESA xx" where 'xx' is the maximum CPU count. The
+     resize CPU count can't exceed the maximum CPU count.
+   - For guests created by z/VM Cloud Connector after version 1.2.0, the maximum CPU
+     count is defined when the guest is created. The maximum CPU count is set by the configuration
+     "user_default_max_cpu" in [zvm] section and can be overriden by the parameter "max_cpu" when
+     creating the guest. eg, the following configuration would define the default maximum CPU count
+     as 64.
+
+     .. code-block:: text
+
+         [zvm]
+         user_default_max_cpu=64
+
+   - For legacy guests (guests created by z/VM Cloud Connector before v1.2.0), user can use
+     the tool to update them so that they can be live resized later. Tool usage:
+
 Deploy guest
 ------------
 
