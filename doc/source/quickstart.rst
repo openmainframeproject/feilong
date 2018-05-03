@@ -306,6 +306,7 @@ should be customized according to your environment.
     # zVM disk pool and type for root/ephemeral disks.
     # This param is required
     disk_pool=ECKD:eckdpool
+    user_default_max_cpu=32
 
 Setup for z/VM SDK Daemon
 =========================
