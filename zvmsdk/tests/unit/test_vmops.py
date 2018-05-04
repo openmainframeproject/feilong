@@ -335,31 +335,24 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         ige.assert_called_with('fakeid')
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.live_resize_cpus")
-    @mock.patch("zvmsdk.smutclient.SMUTClient.execute_cmd")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
     @mock.patch('zvmsdk.vmops.VMOps.guest_list')
     def test_live_resize_cpus(self, guest_list, power_state,
-                              exec_cmd, do_resize):
+                              do_resize):
         userid = 'testuid'
         cpu_cnt = 3
         guest_list.return_value = [userid.upper()]
         power_state.return_value = 'on'
-        cpu_output = ['CPU BOOK SOCKET CORE ONLINE CONFIGURED POLARIZATION '
-                      'ADDRESS',
-                      '0   0    0      0    yes    yes        horizontal   0',
-                      '1   1    1      1    yes    yes        horizontal   1']
-        exec_cmd.side_effect = [[], cpu_output]
         self.vmops.live_resize_cpus(userid, cpu_cnt)
         guest_list.assert_called_once_with()
         power_state.assert_called_once_with(userid)
-        do_resize.assert_called_once_with(userid, '2', 1)
+        do_resize.assert_called_once_with(userid, cpu_cnt)
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.live_resize_cpus")
-    @mock.patch("zvmsdk.smutclient.SMUTClient.execute_cmd")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
     @mock.patch('zvmsdk.vmops.VMOps.guest_list')
     def test_live_resize_cpus_guest_not_in_db(self, guest_list, power_state,
-                              exec_cmd, do_resize):
+                              do_resize):
         userid = 'testuid'
         cpu_cnt = 3
         guest_list.return_value = []
@@ -370,61 +363,16 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         do_resize.assert_not_called()
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.live_resize_cpus")
-    @mock.patch("zvmsdk.smutclient.SMUTClient.execute_cmd")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
     @mock.patch('zvmsdk.vmops.VMOps.guest_list')
     def test_live_resize_cpus_guest_inactive(self, guest_list, power_state,
-                              exec_cmd, do_resize):
+                              do_resize):
         userid = 'testuid'
         cpu_cnt = 3
         guest_list.return_value = [userid.upper()]
         power_state.return_value = 'off'
         self.assertRaises(exception.SDKGuestOperationError,
                           self.vmops.live_resize_cpus, userid, cpu_cnt)
-        guest_list.assert_called_once_with()
-        power_state.assert_called_once_with(userid)
-        do_resize.assert_not_called()
-
-    @mock.patch("zvmsdk.smutclient.SMUTClient.live_resize_cpus")
-    @mock.patch("zvmsdk.smutclient.SMUTClient.execute_cmd")
-    @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    @mock.patch('zvmsdk.vmops.VMOps.guest_list')
-    def test_live_resize_cpus_less_cpu_cnt(self, guest_list, power_state,
-                              exec_cmd, do_resize):
-        userid = 'testuid'
-        cpu_cnt = 3
-        guest_list.return_value = [userid.upper()]
-        power_state.return_value = 'on'
-        cpu_output = ['CPU BOOK SOCKET CORE ONLINE CONFIGURED POLARIZATION '
-                      'ADDRESS',
-                      '0   0    0      0    yes    yes        horizontal   0',
-                      '1   1    1      1    yes    yes        horizontal   1',
-                      '2   2    2      2    yes    yes        horizontal   2',
-                      '3   3    3      3    yes    yes        horizontal   3']
-        exec_cmd.side_effect = [[], cpu_output]
-        self.assertRaises(exception.SDKGuestOperationError,
-                          self.vmops.live_resize_cpus, userid, cpu_cnt)
-        guest_list.assert_called_once_with()
-        power_state.assert_called_once_with(userid)
-        do_resize.assert_not_called()
-
-    @mock.patch("zvmsdk.smutclient.SMUTClient.live_resize_cpus")
-    @mock.patch("zvmsdk.smutclient.SMUTClient.execute_cmd")
-    @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    @mock.patch('zvmsdk.vmops.VMOps.guest_list')
-    def test_live_resize_cpus_equal_cnt(self, guest_list, power_state,
-                              exec_cmd, do_resize):
-        userid = 'testuid'
-        cpu_cnt = 3
-        guest_list.return_value = [userid.upper()]
-        power_state.return_value = 'on'
-        cpu_output = ['CPU BOOK SOCKET CORE ONLINE CONFIGURED POLARIZATION '
-                      'ADDRESS',
-                      '0   0    0      0    yes    yes        horizontal   0',
-                      '1   1    1      1    yes    yes        horizontal   1',
-                      '2   2    2      2    yes    yes        horizontal   2']
-        exec_cmd.side_effect = [[], cpu_output]
-        self.vmops.live_resize_cpus(userid, cpu_cnt)
         guest_list.assert_called_once_with()
         power_state.assert_called_once_with(userid)
         do_resize.assert_not_called()
