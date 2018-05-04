@@ -265,49 +265,17 @@ class VMOps(object):
                      remaining)
         return log_data
 
-    def live_resize_cpus(self, userid, cpu_cnt):
+    def live_resize_cpus(self, userid, count):
         # Check userid in ZCC DB
         if userid.upper() not in self.guest_list():
-            err_msg = "guest doesn't exist in guests database"
-            LOG.error("Failed to live resize cpus of guest %s, error: %s" %
-                      (userid, err_msg))
-            raise exception.SDKGuestOperationError(rs=9, userid=userid,
-                                                   err=err_msg)
+            LOG.error("Failed to live resize cpus of guest %s, error: guest "
+                      "doesn't exist in guests database" % userid)
+            raise exception.SDKGuestOperationError(rs=11, userid=userid)
         # Check power state is 'on'
         state = self.get_power_state(userid)
         if state != 'on':
             LOG.error("Failed to live resize cpus of guest %s, error: "
                       "guest is inactive." % userid)
             raise exception.SDKGuestOperationError(rs=6, userid=userid)
-        # rescan to get all defined cpus active
-        self._smutclient.execute_cmd(userid, "chcpu -r")
-        # get active cpu count and check new_cpu_cnt > cur_cpu_cnt
-        # Sample output:
-        # CPU BOOK SOCKET CORE ONLINE CONFIGURED POLARIZATION ADDRESS
-        # 0   0    0      0    yes    yes        horizontal   0
-        # 1   1    1      1    yes    yes        horizontal   1
-        active_cpus = self._smutclient.execute_cmd(userid, "lscpu -e")[1:]
-        cur_cpu_cnt = len(active_cpus)
-        if cur_cpu_cnt > cpu_cnt:
-            LOG.error("Failed to live resize cpus of guest: %(uid)s, "
-                      "current cpu count: %(cur)i is greater than requested "
-                      "count: %(req)i." % {'uid': userid, 'cur': cur_cpu_cnt,
-                                           'req': cpu_cnt})
-            raise exception.SDKGuestOperationError(rs=7, userid=userid,
-                                                   cur_cnt=cur_cpu_cnt,
-                                                   req_cnt=cpu_cnt)
-        elif cur_cpu_cnt == cpu_cnt:
-            LOG.info("%i cpus are already active, no more action needed for "
-                     "cpu live resize." % cur_cpu_cnt)
-            return
-        # Get the biggest available cpu address to use
-        cpu_addrs = []
-        for c in active_cpus:
-            addr = int(c.split()[7].strip())
-            cpu_addrs.append(addr)
-        start_addr = hex(max(cpu_addrs) + 1)[2:]
-        LOG.info("Current active cpu count: %i, next available cpu address "
-                 "is 0x%s" % (cur_cpu_cnt, start_addr))
-        # Start to do live resize
-        self._smutclient.live_resize_cpus(userid, start_addr,
-                                          cpu_cnt - cur_cpu_cnt)
+        # Do live resize
+        self._smutclient.live_resize_cpus(userid, count)
