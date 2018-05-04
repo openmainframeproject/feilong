@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "387d1ee7_7132c7d1",
+        "filename": "zvmsdk/returncode.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-04T09:03:51Z",
+      "side": 1,
+      "message": "submit changes to error message .cvs file accordingly",
+      "range": {
+        "startLine": 155,
+        "startChar": 0,
+        "endLine": 167,
+        "endChar": 69
+      },
+      "revId": "9045ca1ae36f9c7601f13e8eaa6c58177f38fd4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7d3b558a_4aec1edc",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 2586,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-04T09:03:51Z",
+      "side": 1,
+      "message": "use start with \u0027CPU\u0027 is better than \u0027CPU\u0027 in user direct entry.",
+      "range": {
+        "startLine": 2586,
+        "startChar": 12,
+        "endLine": 2586,
+        "endChar": 28
+      },
+      "revId": "9045ca1ae36f9c7601f13e8eaa6c58177f38fd4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0a66ac2e_037b0c84",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 2697,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-04T09:03:51Z",
+      "side": 1,
+      "message": "why not add a compare between count and active_count at the beginning of live resize cpu?",
+      "range": {
+        "startLine": 2697,
+        "startChar": 11,
+        "endLine": 2697,
+        "endChar": 28
+      },
+      "revId": "9045ca1ae36f9c7601f13e8eaa6c58177f38fd4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
