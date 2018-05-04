@@ -152,13 +152,25 @@ errors = {
                6: ("Failed to live resize cpus of guest: '%(userid)s', "
                    "error: guest is not active."),
                7: ("Failed to live resize cpus of guest: '%(userid)s', "
-                   "error: current active cpu count: '%(cur_cnt)i' is greater "
-                   "than requested count: '%(req_cnt)i'."),
+                   "error: current active cpu count: '%(active)i' is greater "
+                   "than requested count: '%(req)i'."),
                8: ("Failed to live resize cpus of guest: '%(userid)s', "
-                   "error: next available addr is %(start)i, to be added "
-                   "count %(add_cnt)i, address exceeds valid range 0-63."),
+                   "error: update cpu definition in user entry failed with "
+                   "smut error: '%(err)s'."),
                9: ("Failed to live resize cpus of guest: '%(userid)s', "
-                   "%(err)s."),
+                   "error: define new cpu to active failed with smut error: "
+                   "'%(err)s'."),
+               10: ("Failed to live resize cpus of guest: '%(userid)s', "
+                   "error: rescan cpus to hot-plug new defined cpus failed: "
+                   "'%(err)s'."),
+               11: ("Failed to live resize cpus of guest: '%(userid)s', "
+                   "error: guest doesn't exist in guests database."),
+               12: ("Failed to live resize cpus of guest: '%(userid)s', "
+                   "error: maximum number of cpus is not defined in user "
+                   "directory."),
+               13: ("Failed to live resize cpus of guest: '%(userid)s', "
+                   "error: the requested number of cpus: '%(req)i' exceeds "
+                   "the maximum number of cpus allowed: '%(max)i'."),
               },
               "Operation on Guest failed"
               ],
