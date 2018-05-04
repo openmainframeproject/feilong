@@ -784,6 +784,16 @@ Live resize CPUs of the guest.
 .. note::
 
    - Currently only increasing CPU count is supported, decreasing is not supported.
+   - The guest to be live resized must be active and managed by z/VM Cloud Connector.
+   - If Live resize finished successfully, both the active CPU number and the number of
+     defined CPUs in user directory would be updated to the requested so that the CPU
+     count would persist even after the guest is restarted.
+   - If requested CPU count is smaller than the current active CPU count, then the API
+     would return error immediately since lively decrease CPU count is not supported.
+   - If requested CPU count is larger than the defined CPU number in user directory,
+     this API would increase the CPU number in user directory to requested count.
+     Otherwise, this API would decrease the CPU number in user directory to the requested
+     count.
    - To live resize a guest, the guest must have maximum CPU count defined in user
      directory entry with "MACHINE ESA xx" where 'xx' is the maximum CPU count. The
      resize CPU count can't exceed the maximum CPU count.

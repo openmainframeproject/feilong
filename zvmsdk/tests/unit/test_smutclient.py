@@ -1895,79 +1895,383 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         rd = "SMAPI tnlist API Name_List_Destroy"
         req.assert_called_once_with(rd)
 
+    @mock.patch.object(smutclient.SMUTClient, 'get_user_direct')
+    def test_private_get_defined_cpu_addrs(self, get_user_direct):
+        get_user_direct.return_value = ['USER TESTUID LBYONLY 1024m 64G G',
+                                        'INCLUDE OSDFLT',
+                                        'CPU 00 BASE',
+                                        'CPU 0A',
+                                        'IPL 0100',
+                                        'MACHINE ESA 32',
+                                        'NICDEF 1000 TYPE QDIO LAN '
+                                        'SYSTEM XCATVSW2 DEVICES 3',
+                                        'MDISK 0100 3390 52509 1100 OMB1AB MR',
+                                        '']
+        (max_cpus, defined_addrs) = self._smutclient._get_defined_cpu_addrs(
+            'TESTUID')
+        get_user_direct.assert_called_once_with('TESTUID')
+        self.assertEqual(max_cpus, 32)
+        self.assertEqual(defined_addrs, ['00', '0A'])
+
+    @mock.patch.object(smutclient.SMUTClient, 'get_user_direct')
+    def test_private_get_defined_cpu_addrs_no_max_cpu(self, get_user_direct):
+        get_user_direct.return_value = ['USER TESTUID LBYONLY 1024m 64G G',
+                                        'INCLUDE OSDFLT',
+                                        'CPU 00 BASE',
+                                        'CPU 0A',
+                                        'IPL 0100',
+                                        'NICDEF 1000 TYPE QDIO LAN '
+                                        'SYSTEM XCATVSW2 DEVICES 3',
+                                        'MDISK 0100 3390 52509 1100 OMB1AB MR',
+                                        '']
+        (max_cpus, defined_addrs) = self._smutclient._get_defined_cpu_addrs(
+            'TESTUID')
+        get_user_direct.assert_called_once_with('TESTUID')
+        self.assertEqual(max_cpus, 0)
+        self.assertEqual(defined_addrs, ['00', '0A'])
+
+    def test_private_get_available_cpu_addrs(self):
+        used = ['00', '01', '1A', '1F']
+        max = 32
+        avail_expected = ['02', '03', '04', '05', '06', '07', '08', '09',
+                          '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
+                          '12', '13', '14', '15', '16', '17', '18', '19',
+                          '1B', '1C', '1D', '1E']
+        avail_addrs = self._smutclient._get_available_cpu_addrs(used, max)
+        avail_addrs.sort()
+        self.assertListEqual(avail_addrs, avail_expected)
+
     @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    def test_private_get_active_cpu_addrs(self, exec_cmd):
+        active_cpus = ['CPU BOOK SOCKET CORE ONLINE CONFIGURED POLARIZATION '
+                      'ADDRESS',
+                      '0   0    0      0    yes    yes        horizontal   0',
+                      '1   1    1      1    yes    yes        horizontal   19',
+                      '2   2    2      2    yes    yes        horizontal   3',
+                      '3   3    3      3    yes    yes        horizontal   10']
+        exec_cmd.return_value = active_cpus
+        addrs = self._smutclient._get_active_cpu_addrs('TESTUID')
+        exec_cmd.assert_called_once_with('TESTUID', "lscpu -e")
+        addrs.sort()
+        self.assertListEqual(addrs, ['00', '03', '0A', '13'])
+
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_live_resize_cpus(self, req, exec_cmd):
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smutclient.SMUTClient, 'resize_cpus')
+    @mock.patch.object(smutclient.SMUTClient, '_get_active_cpu_addrs')
+    def test_live_resize_cpus(self, get_active, resize, get_avail,
+                              exec_cmd, request):
         userid = 'testuid'
-        start_addr = '4'
-        add_cnt = 2
-        self._smutclient.live_resize_cpus(userid, start_addr, add_cnt)
-        rd = ("SMAPI testuid API Image_Definition_Update_DM --operands "
-              "-k CPU=CPUADDR=4 -k CPU=CPUADDR=5")
-        req.assert_called_once_with(rd)
-        cmd_def_cpu = "vmcp def cpu 4 5"
+        count = 4
+        get_active.return_value = ['00', '01']
+        resize.return_value = (1, ['02', '03'], 32)
+        avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
+                     '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
+                     '12', '13', '14', '15', '16', '17', '18', '19',
+                     '1A', '1B', '1C', '1D', '1E', '1F']
+        get_avail.return_value = avail_lst
+        self._smutclient.live_resize_cpus(userid, count)
+        get_active.assert_called_once_with(userid)
+        resize.assert_called_once_with(userid, count)
+        get_avail.assert_called_once_with(['00', '01'], 32)
+        cmd_def_cpu = "vmcp def cpu 02 03"
         cmd_rescan_cpu = "chcpu -r"
         exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
                                    mock.call(userid, cmd_rescan_cpu)])
+        request.assert_not_called()
 
-    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_live_resize_cpus_invalid_addr(self, req, exec_cmd):
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smutclient.SMUTClient, 'resize_cpus')
+    @mock.patch.object(smutclient.SMUTClient, '_get_active_cpu_addrs')
+    def test_live_resize_cpus_equal_active(self, get_active, resize, get_avail,
+                                           exec_cmd, request):
         userid = 'testuid'
-        start_addr = '40'
-        add_cnt = 2
-        self.assertRaises(exception.SDKGuestOperationError,
-                          self._smutclient.live_resize_cpus,
-                          userid, start_addr, add_cnt)
-        req.assert_not_called()
+        count = 4
+        get_active.return_value = ['00', '01', '02', '03']
+        resize.return_value = (1, ['02', '03'], 32)
+        self._smutclient.live_resize_cpus(userid, count)
+        get_active.assert_called_once_with(userid)
+        resize.assert_called_once_with(userid, count)
+        get_avail.assert_not_called()
         exec_cmd.assert_not_called()
+        request.assert_not_called()
 
-    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_live_resize_cpus_update_user_directory_failed(self,
-                                                           req, exec_cmd):
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smutclient.SMUTClient, 'resize_cpus')
+    @mock.patch.object(smutclient.SMUTClient, '_get_active_cpu_addrs')
+    def test_live_resize_cpus_less_active(self, get_active, resize, get_avail,
+                                           exec_cmd, request):
         userid = 'testuid'
-        start_addr = '4'
-        add_cnt = 2
-        req.side_effect = exception.SDKSMUTRequestFailed({}, 'err')
+        count = 4
+        get_active.return_value = ['00', '01', '02', '03', '04']
         self.assertRaises(exception.SDKGuestOperationError,
-                          self._smutclient.live_resize_cpus,
-                          userid, start_addr, add_cnt)
+                          self._smutclient.live_resize_cpus, userid, count)
+        get_active.assert_called_once_with(userid)
+        resize.assert_not_called()
+        get_avail.assert_not_called()
         exec_cmd.assert_not_called()
+        request.assert_not_called()
 
-    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_live_resize_cpus_activate_failed(self, req, exec_cmd):
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smutclient.SMUTClient, 'resize_cpus')
+    @mock.patch.object(smutclient.SMUTClient, '_get_active_cpu_addrs')
+    def test_live_resize_cpus_revert_definition_equal(self, get_active,
+                                                        resize, get_avail,
+                                                        exec_cmd, request):
+        # Test case: active update failed, definition not updated
         userid = 'testuid'
-        start_addr = '4'
-        add_cnt = 2
+        count = 4
+        get_active.return_value = ['00', '01']
+        resize.return_value = (0, [], 32)
+        avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
+                     '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
+                     '12', '13', '14', '15', '16', '17', '18', '19',
+                     '1A', '1B', '1C', '1D', '1E', '1F']
+        get_avail.return_value = avail_lst
         exec_cmd.side_effect = [exception.SDKSMUTRequestFailed({}, 'err'), ""]
         self.assertRaises(exception.SDKGuestOperationError,
-                          self._smutclient.live_resize_cpus,
-                          userid, start_addr, add_cnt)
-        rd_update_dm = ("SMAPI testuid API Image_Definition_Update_DM "
-                        "--operands -k CPU=CPUADDR=4 -k CPU=CPUADDR=5")
-        rd_revoke_dm = ("SMAPI testuid API Image_Definition_Delete_DM "
-                        "--operands -k CPU=CPUADDR=4 -k CPU=CPUADDR=5")
-        req.assert_has_calls([mock.call(rd_update_dm),
-                              mock.call(rd_revoke_dm)])
-        exec_cmd.assert_called_once_with(userid, "vmcp def cpu 4 5")
+                          self._smutclient.live_resize_cpus, userid, count)
+        get_active.assert_called_once_with(userid)
+        resize.assert_called_once_with(userid, count)
+        get_avail.assert_called_once_with(['00', '01'], 32)
+        exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
+        request.assert_not_called()
 
-    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
     @mock.patch.object(smutclient.SMUTClient, '_request')
-    def test_live_resize_cpus_revoke_failed(self, req, exec_cmd):
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smutclient.SMUTClient, 'resize_cpus')
+    @mock.patch.object(smutclient.SMUTClient, '_get_active_cpu_addrs')
+    def test_live_resize_cpus_revert_added_cpus(self, get_active,
+                                                resize, get_avail,
+                                                exec_cmd, request):
         userid = 'testuid'
-        start_addr = '4'
-        add_cnt = 2
+        count = 4
+        get_active.return_value = ['00', '01']
+        resize.return_value = (1, ['01', '02', '03'], 32)
+        avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
+                     '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
+                     '12', '13', '14', '15', '16', '17', '18', '19',
+                     '1A', '1B', '1C', '1D', '1E', '1F']
+        get_avail.return_value = avail_lst
         exec_cmd.side_effect = [exception.SDKSMUTRequestFailed({}, 'err'), ""]
-        req.side_effect = ["", exception.SDKSMUTRequestFailed({}, 'err2')]
         self.assertRaises(exception.SDKGuestOperationError,
-                          self._smutclient.live_resize_cpus,
-                          userid, start_addr, add_cnt)
-        rd_update_dm = ("SMAPI testuid API Image_Definition_Update_DM "
-                        "--operands -k CPU=CPUADDR=4 -k CPU=CPUADDR=5")
-        rd_revoke_dm = ("SMAPI testuid API Image_Definition_Delete_DM "
-                        "--operands -k CPU=CPUADDR=4 -k CPU=CPUADDR=5")
-        req.assert_has_calls([mock.call(rd_update_dm),
-                              mock.call(rd_revoke_dm)])
-        exec_cmd.assert_called_once_with(userid, "vmcp def cpu 4 5")
+                          self._smutclient.live_resize_cpus, userid, count)
+        get_active.assert_called_once_with(userid)
+        resize.assert_called_once_with(userid, count)
+        get_avail.assert_called_once_with(['00', '01'], 32)
+        exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
+        rd = ("SMAPI testuid API Image_Definition_Delete_DM --operands "
+              "-k CPU=CPUADDR=01 -k CPU=CPUADDR=02 -k CPU=CPUADDR=03")
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smutclient.SMUTClient, 'resize_cpus')
+    @mock.patch.object(smutclient.SMUTClient, '_get_active_cpu_addrs')
+    def test_live_resize_cpus_revert_deleted_cpus(self, get_active,
+                                                  resize, get_avail,
+                                                  exec_cmd, request):
+        userid = 'testuid'
+        count = 4
+        get_active.return_value = ['00', '01']
+        resize.return_value = (2, ['04', '0A'], 32)
+        avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
+                     '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
+                     '12', '13', '14', '15', '16', '17', '18', '19',
+                     '1A', '1B', '1C', '1D', '1E', '1F']
+        get_avail.return_value = avail_lst
+        exec_cmd.side_effect = [exception.SDKSMUTRequestFailed({}, 'err'), ""]
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.live_resize_cpus, userid, count)
+        get_active.assert_called_once_with(userid)
+        resize.assert_called_once_with(userid, count)
+        get_avail.assert_called_once_with(['00', '01'], 32)
+        exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
+        rd = ("SMAPI testuid API Image_Definition_Create_DM --operands "
+              "-k CPU=CPUADDR=04 -k CPU=CPUADDR=0A")
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smutclient.SMUTClient, 'resize_cpus')
+    @mock.patch.object(smutclient.SMUTClient, '_get_active_cpu_addrs')
+    def test_live_resize_cpus_revert_failed(self, get_active,
+                                            resize, get_avail,
+                                            exec_cmd, request):
+        userid = 'testuid'
+        count = 4
+        get_active.return_value = ['00', '01']
+        resize.return_value = (2, ['04', '0A'], 32)
+        avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
+                     '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
+                     '12', '13', '14', '15', '16', '17', '18', '19',
+                     '1A', '1B', '1C', '1D', '1E', '1F']
+        get_avail.return_value = avail_lst
+        exec_cmd.side_effect = [exception.SDKSMUTRequestFailed({}, 'err'), ""]
+        request.side_effect = [exception.SDKSMUTRequestFailed({}, 'err'), ""]
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.live_resize_cpus, userid, count)
+        get_active.assert_called_once_with(userid)
+        resize.assert_called_once_with(userid, count)
+        get_avail.assert_called_once_with(['00', '01'], 32)
+        exec_cmd.assert_called_once_with(userid, "vmcp def cpu 02 03")
+        rd = ("SMAPI testuid API Image_Definition_Create_DM --operands "
+              "-k CPU=CPUADDR=04 -k CPU=CPUADDR=0A")
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smutclient.SMUTClient, 'resize_cpus')
+    @mock.patch.object(smutclient.SMUTClient, '_get_active_cpu_addrs')
+    def test_live_resize_cpus_rescan_failed(self, get_active,
+                                            resize, get_avail,
+                                            exec_cmd, request):
+        userid = 'testuid'
+        count = 4
+        get_active.return_value = ['00', '01']
+        resize.return_value = (2, ['04', '0A'], 32)
+        avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
+                     '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
+                     '12', '13', '14', '15', '16', '17', '18', '19',
+                     '1A', '1B', '1C', '1D', '1E', '1F']
+        get_avail.return_value = avail_lst
+        exec_cmd.side_effect = ["", exception.SDKSMUTRequestFailed({}, 'err')]
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.live_resize_cpus, userid, count)
+        get_active.assert_called_once_with(userid)
+        resize.assert_called_once_with(userid, count)
+        get_avail.assert_called_once_with(['00', '01'], 32)
+        cmd_def_cpu = "vmcp def cpu 02 03"
+        cmd_rescan_cpu = "chcpu -r"
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
+                                   mock.call(userid, cmd_rescan_cpu)])
+        request.assert_not_called()
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smutclient.SMUTClient, '_get_defined_cpu_addrs')
+    def test_resize_cpus_equal_count(self, get_defined,
+                                     get_avail, request):
+        userid = 'testuid'
+        count = 2
+        get_defined.return_value = (32, ['00', '01'])
+        return_data = self._smutclient.resize_cpus(userid, count)
+        self.assertTupleEqual(return_data, (0, [], 32))
+        get_defined.assert_called_once_with(userid)
+        get_avail.assert_not_called()
+        request.assert_not_called()
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smutclient.SMUTClient, '_get_defined_cpu_addrs')
+    def test_resize_cpus_add(self, get_defined,
+                             get_avail, request):
+        userid = 'testuid'
+        count = 4
+        get_defined.return_value = (32, ['00', '01'])
+        avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
+                     '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
+                     '12', '13', '14', '15', '16', '17', '18', '19',
+                     '1A', '1B', '1C', '1D', '1E', '1F']
+        get_avail.return_value = avail_lst
+        return_data = self._smutclient.resize_cpus(userid, count)
+        self.assertTupleEqual(return_data, (1, ['02', '03'], 32))
+        get_defined.assert_called_once_with(userid)
+        get_avail.assert_called_once_with(['00', '01'], 32)
+        rd = ("SMAPI testuid API Image_Definition_Update_DM --operands "
+              "-k CPU=CPUADDR=02 -k CPU=CPUADDR=03")
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smutclient.SMUTClient, '_get_defined_cpu_addrs')
+    def test_resize_cpus_delete(self, get_defined,
+                                get_avail, request):
+        userid = 'testuid'
+        count = 4
+        get_defined.return_value = (32, ['00', '1A', '02', '01', '11', '10'])
+        return_data = self._smutclient.resize_cpus(userid, count)
+        self.assertTupleEqual(return_data, (2, ['11', '1A'], 32))
+        get_defined.assert_called_once_with(userid)
+        get_avail.assert_not_called()
+        rd = ("SMAPI testuid API Image_Definition_Delete_DM --operands "
+              "-k CPU=CPUADDR=11 -k CPU=CPUADDR=1A")
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smutclient.SMUTClient, '_get_defined_cpu_addrs')
+    def test_resize_cpus_max_not_defined(self, get_defined,
+                                         get_avail, request):
+        userid = 'testuid'
+        count = 4
+        get_defined.return_value = (0, ['00', '01'])
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.resize_cpus, userid, count)
+        get_defined.assert_called_once_with(userid)
+        get_avail.assert_not_called()
+        request.assert_not_called()
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smutclient.SMUTClient, '_get_defined_cpu_addrs')
+    def test_resize_cpus_req_exceeds_max(self, get_defined,
+                                         get_avail, request):
+        userid = 'testuid'
+        count = 40
+        get_defined.return_value = (32, ['00', '01'])
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.resize_cpus, userid, count)
+        get_defined.assert_called_once_with(userid)
+        get_avail.assert_not_called()
+        request.assert_not_called()
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smutclient.SMUTClient, '_get_defined_cpu_addrs')
+    def test_resize_cpus_add_failed(self, get_defined,
+                                    get_avail, request):
+        userid = 'testuid'
+        count = 4
+        get_defined.return_value = (32, ['00', '01'])
+        avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
+                     '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
+                     '12', '13', '14', '15', '16', '17', '18', '19',
+                     '1A', '1B', '1C', '1D', '1E', '1F']
+        get_avail.return_value = avail_lst
+        request.side_effect = exception.SDKSMUTRequestFailed({}, 'err')
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.resize_cpus, userid, count)
+        get_defined.assert_called_once_with(userid)
+        get_avail.assert_called_once_with(['00', '01'], 32)
+        rd = ("SMAPI testuid API Image_Definition_Update_DM --operands "
+              "-k CPU=CPUADDR=02 -k CPU=CPUADDR=03")
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    @mock.patch.object(smutclient.SMUTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smutclient.SMUTClient, '_get_defined_cpu_addrs')
+    def test_resize_cpus_delete_failed(self, get_defined,
+                                       get_avail, request):
+        userid = 'testuid'
+        count = 4
+        get_defined.return_value = (32, ['00', '01', '02', '03', '04', '05'])
+        request.side_effect = exception.SDKSMUTRequestFailed({}, 'err')
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.resize_cpus, userid, count)
+        get_defined.assert_called_once_with(userid)
+        get_avail.assert_not_called()
+        rd = ("SMAPI testuid API Image_Definition_Delete_DM --operands "
+              "-k CPU=CPUADDR=04 -k CPU=CPUADDR=05")
+        request.assert_called_once_with(rd)
