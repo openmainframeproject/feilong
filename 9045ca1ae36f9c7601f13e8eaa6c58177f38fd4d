@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5b1d8c14_52e7b6b0",
+        "filename": "zvmsdk/returncode.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-05-04T09:42:13Z",
+      "side": 1,
+      "message": "will update together with ut.",
+      "parentUuid": "387d1ee7_7132c7d1",
+      "range": {
+        "startLine": 155,
+        "startChar": 0,
+        "endLine": 167,
+        "endChar": 69
+      },
+      "revId": "9045ca1ae36f9c7601f13e8eaa6c58177f38fd4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7d3b558a_4aec1edc",
         "filename": "zvmsdk/smutclient.py",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "5b2bf317_9d7084ba",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 2586,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-05-04T09:42:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d3b558a_4aec1edc",
+      "range": {
+        "startLine": 2586,
+        "startChar": 12,
+        "endLine": 2586,
+        "endChar": 28
+      },
+      "revId": "9045ca1ae36f9c7601f13e8eaa6c58177f38fd4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a66ac2e_037b0c84",
         "filename": "zvmsdk/smutclient.py",
         "patchSetId": 1
@@ -59,6 +107,30 @@
       "writtenOn": "2018-05-04T09:03:51Z",
       "side": 1,
       "message": "why not add a compare between count and active_count at the beginning of live resize cpu?",
+      "range": {
+        "startLine": 2697,
+        "startChar": 11,
+        "endLine": 2697,
+        "endChar": 28
+      },
+      "revId": "9045ca1ae36f9c7601f13e8eaa6c58177f38fd4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "99733514_16c7a9a9",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 2697,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-05-04T09:42:13Z",
+      "side": 1,
+      "message": "see new patch set, already updated.",
+      "parentUuid": "0a66ac2e_037b0c84",
       "range": {
         "startLine": 2697,
         "startChar": 11,
