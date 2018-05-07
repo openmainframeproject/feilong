@@ -9,7 +9,6 @@
 #    Unless required by applicable law or agreed to in writing, software
 #    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#    License for the specific language governing permissions and limitations
 #    under the License.
 
 
@@ -20,7 +19,6 @@ import unittest
 
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import base
-from zvmsdk.tests.sdkwsgi import test_sdkwsgi
 from zvmsdk.tests.sdkwsgi import test_utils
 from zvmsdk import config
 from zvmsdk import smutclient
@@ -39,7 +37,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         # test change bind_port
         base.set_conf('sdkserver', 'bind_port', 3000)
 
-        cls.client = test_sdkwsgi.TestSDKClient()
+        cls.client = test_utils.TestzCCClient()
         cls._smutclient = smutclient.get_smutclient()
 
         # every time, we need to random generate userid
@@ -1856,7 +1854,7 @@ class GuestActionTestCase(base.ZVMConnectorBaseTestCase):
 
     def setUp(self):
         super(GuestActionTestCase, self).setUp()
-        self.client = test_sdkwsgi.TestSDKClient()
+        self.client = test_utils.TestzCCClient()
         self.record_logfile_position()
 
     def test_guest_action_invalid_body(self):

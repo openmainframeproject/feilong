@@ -12,9 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from zvmsdk.tests.sdkwsgi import base
+
 from zvmsdk.tests.sdkwsgi import api_sample
-from zvmsdk.tests.sdkwsgi import test_sdkwsgi
+from zvmsdk.tests.sdkwsgi import base
+from zvmsdk.tests.sdkwsgi import test_utils
 
 
 class VersionTestCase(base.ZVMConnectorBaseTestCase):
@@ -24,7 +25,7 @@ class VersionTestCase(base.ZVMConnectorBaseTestCase):
 
     def setUp(self):
         super(VersionTestCase, self).setUp()
-        self.client = test_sdkwsgi.TestSDKClient()
+        self.client = test_utils.TestzCCClient()
         self.record_logfile_position()
 
     def test_version(self):
