@@ -19,7 +19,7 @@ from zvmsdk.tests.sdkwsgi import base
 from zvmsdk import config
 from zvmsdk import utils
 from zvmsdk.tests.sdkwsgi import api_sample
-from zvmsdk.tests.sdkwsgi import test_sdkwsgi
+from zvmsdk.tests.sdkwsgi import test_utils
 
 
 CONF = config.CONF
@@ -32,13 +32,13 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
         self.apibase = api_sample.APITestBase()
         # test change bind_port
         self.set_conf('sdkserver', 'bind_port', 3001)
-        self.client = test_sdkwsgi.TestSDKClient()
+        self.client = test_utils.TestzCCClient()
 
     def setUp(self):
         super(ImageTestCase, self).setUp()
         self.record_logfile_position()
 
-    def _image_create(self):
+    def _import_dummy_image(self):
         image_fname = "image1"
         tempDir = tempfile.mkdtemp()
         os.chmod(tempDir, 0o777)
@@ -120,11 +120,11 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
         self.assertEqual(404, resp.status_code)
 
     def test_image_create_duplicate(self):
-        resp = self._image_create()
+        resp = self._import_dummy_image()
         self.assertEqual(200, resp.status_code)
 
         try:
-            resp = self._image_create()
+            resp = self._import_dummy_image()
             self.assertEqual(409, resp.status_code)
         finally:
             self._image_delete()
@@ -147,7 +147,7 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
         self.assertEqual(404, resp.status_code)
 
     def test_image_create_delete(self):
-        self._image_create()
+        self._import_dummy_image()
 
         try:
             resp = self._image_query()
