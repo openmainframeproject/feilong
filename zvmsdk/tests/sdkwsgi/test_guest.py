@@ -9,7 +9,6 @@
 #    Unless required by applicable law or agreed to in writing, software
 #    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#    License for the specific language governing permissions and limitations
 #    under the License.
 
 
@@ -20,10 +19,10 @@ import unittest
 
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import base
-from zvmsdk.tests.sdkwsgi import test_sdkwsgi
 from zvmsdk.tests.sdkwsgi import test_utils
 from zvmsdk import config
 from zvmsdk import smutclient
+from redhat_support_lib.infrastructure.brokers import user
 
 
 CONF = config.CONF
@@ -31,67 +30,40 @@ CONF = config.CONF
 
 class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        super(GuestHandlerTestCase, cls).setUpClass()
-        cls.apibase = api_sample.APITestBase()
+    def __init__(self, methodName='runTest'):
+        super(GuestHandlerTestCase, self).__init__(methodName)
+        self.apibase = api_sample.APITestBase()
 
         # test change bind_port
         base.set_conf('sdkserver', 'bind_port', 3000)
 
-        cls.client = test_sdkwsgi.TestSDKClient()
-        cls._smutclient = smutclient.get_smutclient()
+        self.client = test_utils.TestzCCClient()
+        self._smutclient = smutclient.get_smutclient()
+        self.utils = test_utils.ZVMConnectorTestUtils()
 
-        # every time, we need to random generate userid
-        # the userid is used in most testcases that assume exists
-        cls.userid = test_utils.generate_test_userid()
+        # Generate random userid foreach run
+        self.userid = self.utils.generate_test_userid()
 
-        cls.userid_exists = test_utils.generate_test_userid()
-        cls._guest_create(cls.userid_exists)
+    @classmethod
+    def setUpClass(cls):
+        super(GuestHandlerTestCase, cls).setUpClass()
+        cls.userid_exists = cls.utils.generate_test_userid()
+        cls.client.guest_create(cls, cls.userid_exists)
 
     @classmethod
     def tearDownClass(cls):
         super(GuestHandlerTestCase, cls).tearDownClass()
-        cls._cleanup()
-
-    @classmethod
-    def _cleanup(cls):
-        url = '/guests/%s' % cls.userid_exists
-        cls.client.api_request(url=url, method='DELETE')
-
-        cls.client.api_request(url='/vswitches/restvsw1',
-                                method='DELETE')
+        cls.client.vswitch_delete('restvsw1')
+        cls.client.guest_delete(cls.userid_exists)
 
     def setUp(self):
         super(GuestHandlerTestCase, self).setUp()
         self.record_logfile_position()
 
-    @classmethod
-    def _guest_create(cls, userid=None, maxcpu=None, maxmem=None):
-        content = {"guest": {"vcpus": 1,
-                             "memory": 1024,
-                             "disk_list": [{"size": "1100",
-                                            "is_boot_disk": "True"}]}}
-        userid = userid or cls.userid
-        content["guest"]["userid"] = userid
-        if maxcpu is not None:
-            content["guest"]["max_cpu"] = maxcpu
-        if maxmem is not None:
-            content["guest"]["max_mem"] = maxmem
-
-        body = json.dumps(content)
-        resp = cls.client.api_request(url='/guests', method='POST',
-                                       body=body)
-
-        return resp
-
-    def _check_CPU_MEM(self, userid=None, cpu_cnt = None,
+    def _check_CPU_MEM(self, userid, cpu_cnt = None,
                        cpu_cnt_live = None,
                        maxcpu=CONF.zvm.user_default_max_cpu,
                        maxmem=CONF.zvm.user_default_max_memory):
-        if userid is None:
-            userid = self.userid
-
         resp_info = self._guest_get(userid=userid)
         self.assertEqual(200, resp_info.status_code)
 
@@ -128,11 +100,8 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         self.assertEqual(maxcpu, max_cpus)
         self.assertEqual(maxmem, max_memory)
 
-    def _check_total_memory(self, userid=None,
+    def _check_total_memory(self, userid,
                             maxmem=CONF.zvm.user_default_max_memory):
-        if userid is None:
-            userid = self.userid
-
         result_list = self._smutclient.execute_cmd(userid,
                                                    'lsmem | grep Total')
         online_memory = offline_memory = 0
@@ -153,71 +122,11 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             maxMemMb = maxMemMb * 1024
         self.assertEqual(total_memory, maxMemMb)
 
-    def _guest_create_with_profile(self):
-        body = """{"guest": {"userid": "%s", "vcpus": 1,
-                             "memory": 1024,
-                             "user_profile": "%s",
-                             "disk_list": [{"size": "3g",
-                                            "is_boot_disk": "True"},
-                                            {"size": "3g"}]}}"""
-        body = body % (self.userid, CONF.zvm.user_profile)
-        resp = self.client.api_request(url='/guests', method='POST',
-                                       body=body)
-
-        return resp
-
-    def _guest_create_with_profile_notexit(self):
-        body = """{"guest": {"userid": "%s", "vcpus": 1,
-                             "memory": 1024,
-                             "user_profile": "%s",
-                             "disk_list": [{"size": "1100",
-                                            "is_boot_disk": "True"},
-                                            {"size": "1100"}]}}"""
-        user_profile = 'notexist'
-        body = body % (self.userid, user_profile)
-        resp = self.client.api_request(url='/guests', method='POST',
-                                       body=body)
-
-        return resp
-
-    def _guest_delete(self, userid=None):
-        if userid is None:
-            userid = self.userid
-        url = '/guests/%s' % userid
-        resp = self.client.api_request(url=url, method='DELETE')
-        self.assertEqual(200, resp.status_code)
-
-        return resp
-
-    def _guest_nic_create(self, vdev="1000", userid=None, nic_id=None,
-                          mac_addr=None, active=False):
-        content = {"nic": {"vdev": vdev}}
-        if active:
-            content["nic"]["active"] = "True"
-        else:
-            content["nic"]["active"] = "False"
-        if nic_id is not None:
-            content["nic"]["nic_id"] = nic_id
-
-        if mac_addr is not None:
-            content["nic"]["mac_addr"] = mac_addr
-        body = json.dumps(content)
-        if userid is None:
-            userid = self.userid
-
-        url = '/guests/%s/nic' % userid
-        resp = self.client.api_request(url=url,
-                                       method='POST',
-                                       body=body)
-        return resp
-
-    def _check_interface(self, userid=None, ip="192.168.95.123"):
+    def _check_interface(self, userid, ip="192.168.95.123"):
         """ Check network interface.
         Returns a bool value to indicate whether the network interface is
         defined
         """
-        if userid is None:
-            userid = self.userid
         result_list = self._smutclient.execute_cmd(userid, 'ifconfig')
 
         for element in result_list:
@@ -225,370 +134,30 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
                 return True
         return False
 
-    def _guest_create_network_interface(self, userid,
-                                        networks=[{'ip': "192.168.95.123",
-                                                   'vdev': '1000'}],
-                                        active=False):
-        """
-        possible keys for networks parameter includes: 'ip'(required),
-        'vdev', 'osa'
-        """
-        common_attributes = {"dns_addr": ["9.0.3.1"],
-                             "gateway_addr": "192.168.95.1",
-                             "cidr": "192.168.95.0/24"}
-        res_networks = []
-        for net in networks:
-            res_network = {}
-            res_network["ip_addr"] = net['ip']
-            if 'vdev' in net.keys():
-                res_network["nic_vdev"] = net['vdev']
-            if 'osa' in net.keys():
-                res_network["osa_device"] = net['osa']
-            res_network.update(common_attributes)
-            res_networks.append(res_network)
-
-        content = {"interface": {"os_version": "rhel6.7",
-                                 "guest_networks": res_networks}}
-        if active:
-            content["interface"]["active"] = "True"
-        else:
-            content["interface"]["active"] = "False"
-
-        body = json.dumps(content)
-
-        if userid is None:
-            userid = self.userid
-        url = '/guests/%s/interface' % userid
-        resp = self.client.api_request(url=url,
-                                       method='POST',
-                                       body=body)
-        return resp
-
-    def _guest_delete_network_interface(self, userid=None, vdev='1000',
-                                        active=False):
-        content = {"interface": {"os_version": "rhel6.7",
-                                 "vdev": vdev}}
-        if active:
-            content["interface"]["active"] = "True"
-        else:
-            content["interface"]["active"] = "False"
-        body = json.dumps(content)
-
-        if userid is None:
-            userid = self.userid
-        url = '/guests/%s/interface' % userid
-        resp = self.client.api_request(url=url,
-                                       method='DELETE',
-                                       body=body)
-        return resp
-
-    def _guest_nic_delete(self, vdev="1000", userid=None, active=False):
-        if active:
-            body = '{"active": "True"}'
-        else:
-            body = '{"active": "False"}'
-        if userid is None:
-            userid = self.userid
-
-        url = '/guests/%s/nic/%s' % (userid, vdev)
-        resp = self.client.api_request(url=url,
-                                       method='DELETE',
-                                       body=body)
-        return resp
-
-    def _guest_nic_query(self, userid=None):
-        if userid is None:
-            userid = self.userid
-
-        url = '/guests/%s/nic' % userid
-        resp = self.client.api_request(url=url,
-                                       method='GET')
-        return resp
-
-    def _guest_disks_create_additional(self, userid=None, disk=None):
-        if userid is None:
-            userid = self.userid
-
-        if disk is None:
-            disk = "ECKD:xcateckd"
-
-        body = """{"disk_info": {"disk_list":
-                                    [{"size": "1g",
-                                      "format": "ext3",
-                                      "disk_pool": "%s"},
-                                      {"size": "1g",
-                                      "format": "ext3",
-                                      "disk_pool": "%s"}]}}""" % (disk, disk)
-        url = '/guests/%s/disks' % userid
-
-        resp = self.client.api_request(url=url,
-                                       method='POST',
-                                       body=body)
-        return resp
-
-    def _guest_disks_create(self, userid=None, disk=None):
-        if userid is None:
-            userid = self.userid
-
-        if disk is None:
-            disk = "ECKD:xcateckd"
-
-        body = """{"disk_info": {"disk_list":
-                                    [{"size": "1g",
-                                      "disk_pool": "%s"}]}}""" % disk
-        url = '/guests/%s/disks' % userid
-
-        resp = self.client.api_request(url=url,
-                                       method='POST',
-                                       body=body)
-        return resp
-
-    def _guest_config_minidisk(self, userid=None, disk=None):
-        if userid is None:
-            userid = self.userid
-
-        if disk is None:
-            disk = "0101"
-
-        body = """{"disk_info": {"disk_list":
-                                    [{"vdev": "%s",
-                                      "format": "ext3",
-                                      "mntdir": "/mnt/0101"},
-                                     {"vdev": "0102",
-                                      "format": "ext3",
-                                      "mntdir": "/mnt/0102"}]}}""" % disk
-        url = '/guests/%s/disks' % userid
-
-        resp = self.client.api_request(url=url,
-                                       method='PUT',
-                                       body=body)
-        return resp
-
-    def _guest_mutidisks_delete(self, userid=None, vdev=None):
-        if userid is None:
-            userid = self.userid
-
-        body = """{"vdev_info": {"vdev_list": ["0101", "0102"]}}"""
-        url = '/guests/%s/disks' % userid
-
-        resp = self.client.api_request(url=url,
-                                       method='DELETE',
-                                       body=body)
-        return resp
-
-    def _guest_disks_delete(self, userid=None, vdev=None):
-        if userid is None:
-            userid = self.userid
-
-        if vdev is None:
-            vdev = "0101"
-
-        body = """{"vdev_info": {"vdev_list": ["%s"]}}""" % vdev
-        url = '/guests/%s/disks' % userid
-
-        resp = self.client.api_request(url=url,
-                                       method='DELETE',
-                                       body=body)
-        return resp
-
-    def _guest_get(self, userid=None):
-        if userid is None:
-            userid = self.userid
-
-        url = '/guests/%s' % userid
-        resp = self.client.api_request(url=url,
-                                       method='GET')
-        return resp
-
-    def _guest_get_info(self, userid=None):
-        if userid is None:
-            userid = self.userid
-
-        url = '/guests/%s/info' % userid
-        resp = self.client.api_request(url=url,
-                                       method='GET')
-        return resp
-
-    def _guest_get_power_state(self, userid=None):
-        if userid is None:
-            userid = self.userid
-        url = '/guests/%s/power_state' % userid
-        resp = self.client.api_request(url=url,
-                                       method='GET')
-        return resp
-
-    def _guest_action(self, body, userid=None):
-        if userid is None:
-            userid = self.userid
-        url = '/guests/%s/action' % userid
-        resp = self.client.api_request(url=url,
-                                       method='POST', body=body)
-        return resp
-
-    def _guest_start(self, userid=None):
-        body = '{"action": "start"}'
-        return self._guest_action(body, userid=userid)
-
-    def _guest_get_console_output(self, userid=None):
-        body = '{"action": "get_console_output"}'
-        return self._guest_action(body, userid=userid)
-
-    def _guest_softstop(self, userid=None):
-        body = '{"action": "softstop", "timeout": 300, "poll_interval": 20}'
-        return self._guest_action(body, userid=userid)
-
-    def _guest_stop(self, userid=None):
-        body = '{"action": "stop", "timeout": 300, "poll_interval": 15}'
-        return self._guest_action(body, userid=userid)
-
-    def _guest_deploy_with_transport_file(self, userid=None,
-                                       vdev=None, image=None,
-                                       transportfiles=None):
-        if image is None:
-            image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
-
-        if vdev is None:
-            vdev = "100"
-
-        if transportfiles is None:
-            transportfiles = "/var/lib/zvmsdk/cfgdrive.tgz"
-
-        body = """{"action": "deploy",
-                   "image": "%s",
-                   "vdev": "%s",
-                   "transportfiles": "%s"}""" % (image, vdev, transportfiles)
-
-        return self._guest_action(body, userid=userid)
-
-    def _guest_deploy(self, userid=None, vdev=None, image=None):
-        if image is None:
-            image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
-
-        if vdev is None:
-            vdev = "100"
-        # "transportfiles" is None here
-        # "remotehost" is None here because transportfiles is None
-        body = """{"action": "deploy",
-                   "image": "%s",
-                   "vdev": "%s"}""" % (image, vdev)
-
-        return self._guest_action(body, userid=userid)
-
-    def _guest_capture(self, userid=None, image=None, capture_type=None,
-                       compress_level=None):
-        if capture_type is None:
-            capture_type = 'rootonly'
-
-        if compress_level is None:
-            compress_level = 6
-        body = """{"action": "capture",
-                   "image": "test_capture_image1",
-                   "capture_type": "%s",
-                   "compress_level": %d}""" % (capture_type,
-                                               compress_level)
-        return self._guest_action(body, userid=userid)
-
-    def _guest_pause(self, userid=None):
-        body = '{"action": "pause"}'
-        return self._guest_action(body, userid=userid)
-
-    def _guest_unpause(self, userid=None):
-        body = '{"action": "unpause"}'
-        return self._guest_action(body, userid=userid)
-
-    def _guest_reboot(self, userid=None):
-        body = '{"action": "reboot"}'
-        return self._guest_action(body, userid=userid)
-
-    def _guest_resize_cpus(self, max_cpu, userid=None):
-        body = """{"action": "resize_cpus",
-                   "cpu_cnt": %s}""" % max_cpu
-        return self._guest_action(body, userid=userid)
-
-    def _guest_live_resize_cpus(self, max_cpu, userid=None):
-        body = """{"action": "live_resize_cpus",
-                   "cpu_cnt": %s}""" % max_cpu
-        return self._guest_action(body, userid=userid)
-
-    def is_reachable(self, userid):
-        """Reachable through IUCV communication channel."""
-        return self._smutclient.get_guest_connection_status(userid)
-
-    def _wait_until(self, expect_state, func, *args, **kwargs):
-        """Looping call func until get expected state, otherwise 1 min timeout.
-
-        :param expect_state:    expected state
-        :param func:            function or method to be called
-        :param *args, **kwargs: parameters for the function
-        """
-        _inc_slp = [1, 2, 2, 5, 10, 20, 20]
-        # sleep intervals, total timeout 60 seconds
-        for _slp in _inc_slp:
-            real_state = func(*args, **kwargs)
-            if real_state == expect_state:
-                # sleep another 5 seconds to make sure at expected state
-                time.sleep(5)
-                return True
-            else:
-                time.sleep(_slp)
-
-        # timeout
-        return False
-
-    def _guest_reset(self, userid=None):
-        body = '{"action": "reset"}'
-        return self._guest_action(body, userid=userid)
-
-    def _guest_stats(self, userid=None):
-        if userid is None:
-            userid = self.userid
-
-        url = '/guests/stats?userid=%s' % userid
-        resp = self.client.api_request(url=url,
-                                       method='GET')
-        return resp
-
-    def _guest_interface_stats(self, userid=None):
-        if userid is None:
-            userid = self.userid
-
-        url = '/guests/interfacestats?userid=%s' % userid
-        resp = self.client.api_request(url=url,
-                                       method='GET')
-        return resp
-
-    def _guest_get_nic_DB_info(self, userid=None, nic_id=None,
-                               vswitch=None):
-        if ((userid is None) and
-            (nic_id is None) and
-            (vswitch is None)):
-            append = ''
-        else:
-            append = "?"
-            if userid is not None:
-                append += 'userid=%s&' % userid
-            if nic_id is not None:
-                append += 'nic_id=%s&' % nic_id
-            if vswitch is not None:
-                append += 'vswitch=%s&' % vswitch
-            append = append.strip('&')
-        url = '/guests/nics%s' % append
-        resp = self.client.api_request(url=url,
-                                       method='GET')
-        return resp
-
-    def _image_query(self, image_name='image1'):
-        url = '/images?imagename=%s' % image_name
-        resp = self.client.api_request(url=url,
-                                       method='GET')
-        return resp
-
-    def _image_delete(self):
-        url = '/images/test_capture_image1'
-        resp = self.client.api_request(url=url,
-                                       method='DELETE')
-        self.assertEqual(200, resp.status_code)
-        return resp
+    def _guest_disks_create_single(self, userid):
+        """Create 101 minidisk."""
+        disk_list = [{"size": "1g", "format": "ext3",
+                      "disk_pool": CONF.zvm.disk_pool}]
+        return self.client.guest_create_disks(userid, disk_list)
+
+    def _guest_disks_create_multiple(self, userid):
+        """Create 101 102 minidisks."""
+        disk_list = [{"size": "1g", "format": "ext3",
+                      "disk_pool": CONF.zvm.disk_pool},
+                     {"size": "1g", "format": "ext3",
+                      "disk_pool": CONF.zvm.disk_pool}]
+        return self.client.guest_create_disks(userid, disk_list)
+
+    def _guest_config_minidisk_multiple(self, userid):
+        """Configure minidisk 101, 102"""
+        disk_info = {"disk_list": [{"vdev": "0101",
+                                    "format": "ext3",
+                                    "mntdir": "/mnt/0101"},
+                                   {"vdev": "0102",
+                                    "format": "ext3",
+                                    "mntdir": "/mnt/0102"}]}
+
+        return self.client.guest_config_minidisks(userid, disk_info)
 
     def _check_nic(self, vdev, userid, mac=None, vsw=None, devices=3,
                    osa=None):
@@ -646,39 +215,39 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         return True, None
 
     def test_guest_get_not_exist(self):
-        resp = self._guest_get('notexist')
+        resp = self.client.guest_get_definition_info('notexist')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_get_incorrect(self):
-        resp = self._guest_get('@@@@@')
+        resp = self.client.guest_get_definition_info('@@@@@')
         self.assertEqual(400, resp.status_code)
 
     def test_guest_get_info_not_exist(self):
-        resp = self._guest_get_info('notexist')
+        resp = self.client.guest_get_info('notexist')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_get_info_incorrect(self):
-        resp = self._guest_get_info('@@@@@')
+        resp = self.client.guest_get_info('@@@@@')
         self.assertEqual(400, resp.status_code)
 
     def test_guest_get_power_state_not_exist(self):
-        resp = self._guest_get_power_state('notexist')
+        resp = self.client.guest_get_power_state('notexist')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_get_power_state_incorrect(self):
-        resp = self._guest_get_power_state('@@@@@')
+        resp = self.client.guest_get_power_state('@@@@@')
         self.assertEqual(400, resp.status_code)
 
     def test_guest_get_start_not_exist(self):
-        resp = self._guest_start('notexist')
+        resp = self.client.guest_start('notexist')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_softstop_not_exist(self):
-        resp = self._guest_softstop('notexist')
+        resp = self.client.guest_softstop('notexist')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_stop_not_exist(self):
-        resp = self._guest_stop('notexist')
+        resp = self.client.guest_stop('notexist')
         self.assertEqual(404, resp.status_code)
 
     def _make_transport_file(self):
@@ -730,112 +299,126 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         os.system('chmod -R 755 /var/lib/zvmsdk/cfgdrive.tgz')
 
     def test_guest_deploy_userid_not_exist(self):
-        resp = self._guest_deploy(userid='notexist')
+        resp = self.client.guest_deploy(userid='notexist')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_deploy_vdev_not_exist(self):
-        resp = self._guest_deploy(vdev='FFFF')
+        resp = self.client.guest_deploy(self.userid_exists, vdev='FFFF')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_deploy_image_not_exist(self):
-        resp = self._guest_deploy(image='notexist')
+        resp = self.client.guest_deploy(self.userid_exists, image='notexist')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_capture_userid_not_exist(self):
-        resp = self._guest_capture(userid='notexist')
+        resp = self.client.guest_capture(userid='notexist', image_name='test1')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_pause_not_exist(self):
-        resp = self._guest_pause('notexist')
+        resp = self.client.guest_pause('notexist')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_unpause_not_exist(self):
-        resp = self._guest_unpause('notexist')
+        resp = self.client.guest_unpause('notexist')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_reboot_not_exist(self):
-        resp = self._guest_reboot('notexist')
+        resp = self.client.guest_reboot('notexist')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_reset_not_exist(self):
-        resp = self._guest_reset('notexist')
+        resp = self.client.guest_reset('notexist')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_nic_create_not_exist(self):
-        resp = self._guest_nic_create(userid='notexist')
+        resp = self.client.guest_create_nic(userid='notexist')
         self.assertEqual(404, resp.status_code)
 
-    def test_guest_vic_create_not_exist(self):
-        resp = self._guest_create_network_interface(userid='notexist')
+    def test_guest_vif_create_not_exist(self):
+        resp = self.client.guest_create_network_interface(userid='notexist',
+                                                          os_version='rhel67')
         self.assertEqual(404, resp.status_code)
 
-    def test_guest_vic_delete_not_exist(self):
-        resp = self._guest_delete_network_interface(userid='notexist')
+    def test_guest_vif_delete_not_exist(self):
+        resp = self.client.guest_delete_network_interface(userid='notexist',
+                                                          os_version='rhel67')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_nic_query_not_exist(self):
-        resp = self._guest_nic_query(userid='notexist')
+        resp = self.client.guest_get_nic_info(userid='notexist')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_nic_delete_not_exist(self):
-        resp = self._guest_nic_delete(userid='notexist')
+        resp = self.client.guest_delete_nic(userid='notexist')
         self.assertEqual(404, resp.status_code)
 
-    def test_guest_nic_device_delete_not_exist(self):
-        resp = self._guest_nic_delete(vdev='FFFF')
+    def test_guest_nic_delete_device_not_exist(self):
+        resp = self.client.guest_delete_nic(self.userid_exists, vdev='FFFF')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_disk_create_not_exist(self):
-        resp = self._guest_disks_create(userid='notexist')
+        resp = self.client.guest_create_disks('notexist', [])
         self.assertEqual(404, resp.status_code)
 
     @unittest.skip("Skip until bug/1747591 fixed")
     def test_guest_disk_pool_create_not_exist(self):
-        resp = self._guest_disks_create(userid=self.userid_exists,
-                                        disk="ECKD:notexist")
+        disk_list = [{"size": "1g", "format": "ext3",
+                      "disk_pool": 'ECKD:notexist'}]
+        resp = self.client.guest_create_disks(self.userid_exists, disk_list)
         self.assertEqual(404, resp.status_code)
 
     def test_guest_disk_delete_not_exist(self):
-        resp = self._guest_disks_delete(userid='notexist')
+        resp = self.client.guest_delete_disks(userid='notexist', [])
         self.assertEqual(404, resp.status_code)
 
-    def test_guest_disk_device_delete_not_exist(self):
+    def test_guest_disk_delete_device_not_exist(self):
         # disk not exist
-        resp = self._guest_disks_delete(userid=self.userid_exists, vdev="FFFF")
+        resp = self.client.guest_delete_disks(self.userid_exists, ["FFFF"])
         self.assertEqual(200, resp.status_code)
 
     def test_guest_inspect_not_exist(self):
         # following 200 is expected
-        resp = self._guest_stats('notexist')
-        self.assertEqual(200, resp.status_code)
+        resp = self.client.guest_inspect_stats('notexist')
+        self.assertEqual(404, resp.status_code)
 
-        resp = self._guest_interface_stats('notexist')
-        self.assertEqual(200, resp.status_code)
+        resp = self.client.guest_inspect_vnics('notexist')
+        self.assertEqual(404, resp.status_code)
 
     def test_guest_inspect_incorrect(self):
-        resp = self._guest_stats('@@@@@123456789')
+        resp = self.client.guest_inspect_stats('@@@@@123456789')
         self.assertEqual(400, resp.status_code)
 
-        resp = self._guest_interface_stats('@@@@@123456789')
+        resp = self.client.guest_inspect_vnics('@@@@@123456789')
         self.assertEqual(400, resp.status_code)
 
     def test_guest_creat_with_profile_notexit(self):
-        resp = self._guest_create_with_profile_notexit()
+        userid = self.utils.generate_test_userid()
+        resp = self.client.guest_create(userid, user_profile="notexist")
         self.assertEqual(404, resp.status_code)
 
+    def _get_userid_auto_cleanup(self):
+        userid = self.utils.generate_test_userid()
+        self.addCleanup(self.client.guest_delete, userid)
+        return userid
+
     def test_guest_create_maxcpu_incorrect(self):
-        resp = self._guest_create(maxcpu=0)
+        userid = self._get_userid_auto_cleanup()
+        resp = self.client.guest_create(userid, max_cpu=0)
         self.assertEqual(400, resp.status_code)
-        resp = self._guest_create(maxcpu=65)
+        resp = self.client.guest_create(userid, max_cpu=65)
         self.assertEqual(400, resp.status_code)
 
     def test_guest_create_maxmem_incorrect(self):
-        resp = self._guest_create(maxmem="11111M")
+        userid = self._get_userid_auto_cleanup()
+        resp = self.client.guest_create(userid, max_mem="11111M")
         self.assertEqual(400, resp.status_code)
-        resp = self._guest_create(maxmem="1024K")
+        resp = self.client.guest_create(userid, max_mem="1024K")
         self.assertEqual(400, resp.status_code)
-        resp = self._guest_create(maxmem="1024")
+        resp = self.client.guest_create(userid, max_mem="1024")
         self.assertEqual(400, resp.status_code)
+
+    def test_guest_power_actions(self):
+        
 
     def test_guest_create_with_profile(self):
         resp = self._guest_create_with_profile()
@@ -873,7 +456,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
 
     def test_guest_create_delete(self):
         PURGE_GUEST = PURGE_VSW = PURGE_IMG = 0
-        userid = test_utils.generate_test_userid()
+        userid = self.utils.generate_test_userid()
         resp = self._guest_create(userid)
         self.assertEqual(200, resp.status_code)
         PURGE_GUEST = 1
@@ -1856,7 +1439,7 @@ class GuestActionTestCase(base.ZVMConnectorBaseTestCase):
 
     def setUp(self):
         super(GuestActionTestCase, self).setUp()
-        self.client = test_sdkwsgi.TestSDKClient()
+        self.client = test_utils.TestzCCClient()
         self.record_logfile_position()
 
     def test_guest_action_invalid_body(self):
