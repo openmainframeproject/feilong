@@ -15,7 +15,7 @@
 from zvmsdk.tests.sdkwsgi import base
 from zvmsdk import config
 from zvmsdk.tests.sdkwsgi import api_sample
-from zvmsdk.tests.sdkwsgi import test_sdkwsgi
+from zvmsdk.tests.sdkwsgi import test_utils
 
 
 CONF = config.CONF
@@ -27,7 +27,7 @@ class HostTestCase(base.ZVMConnectorBaseTestCase):
         self.apibase = api_sample.APITestBase()
         # test change bind_port
         self.set_conf('sdkserver', 'bind_port', 3123)
-        self.client = test_sdkwsgi.TestSDKClient()
+        self.client = test_utils.TestzCCClient()
 
     def setUp(self):
         super(HostTestCase, self).setUp()
