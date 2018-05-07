@@ -21,7 +21,7 @@ from zvmsdk.tests.sdkwsgi import test_version
 
 
 bvt_testcases = [
-    test_guest.GuestHandlerTestCase("test_guest_create_delete"),
+    test_guest.GuestHandlerTestCase("test_guest_create_deploy_capture_delete"),
     test_host.HostTestCase("test_host_info"),
     test_image.ImageTestCase("test_image_create_delete"),
     test_version.VersionTestCase("test_version"),
