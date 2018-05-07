@@ -19,6 +19,7 @@ import unittest
 from zvmconnector import connector
 from zvmsdk import config
 from zvmsdk.tests.sdkwsgi import api_sample
+from zvmsdk.tests.sdkwsgi import base
 
 
 CONF = config.CONF
@@ -26,7 +27,7 @@ CONN_REST = 'rest'
 CONN_SOCKET = 'socket'
 
 
-class ZVMConnectorTestCase(unittest.TestCase):
+class ZVMConnectorTestCase(base.ZVMConnectorBaseTestCase):
     def __init__(self, methodName='runTest'):
         super(ZVMConnectorTestCase, self).__init__(methodName)
         self.apibase = api_sample.APITestBase()

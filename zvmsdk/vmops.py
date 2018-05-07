@@ -97,10 +97,6 @@ class VMOps(object):
     def add_instance_metadata(self):
         pass
 
-    def is_reachable(self, userid):
-        """Reachable through IUCV communication channel."""
-        return self._smutclient.get_guest_connection_status(userid)
-
     def guest_start(self, userid):
         """"Power on z/VM instance."""
         LOG.info("Begin to power on vm %s", userid)

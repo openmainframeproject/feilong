@@ -13,201 +13,408 @@
 #    under the License.
 
 
+import json
 import os
-import random
 import re
+import requests
+import shutil
 import six
+import tempfile
 import time
 
-from zvmconnector import connector
 from zvmsdk import api
 from zvmsdk import config
-from zvmsdk import exception
+from zvmsdk import smutclient
 from zvmsdk import utils as zvmutils
 
-
 CONF = config.CONF
+TEST_IP_POOL = []
 
 
-def generate_test_userid():
-    '''Generate an userid base on time line.'''
-    prefix = six.text_type(CONF.tests.userid_prefix)[-3:].rjust(3, 't')
-    userid = prefix + '%05d' % ((time.time() * 10) % 100000)
-    time.sleep(1)
-    return userid
-
-
-def generate_test_ip():
-    '''Generate test IP address.'''
-    ip_list = CONF.tests.ip_addr_list.split(' ')
-    return ip_list[random.randint(0, len(ip_list) - 1)]
-
-
-class ZVMConnectorRequestHandler(object):
+class TestzCCClient(object):
 
     def __init__(self):
-        self.client = connector.ZVMConnector(ip_addr='127.0.0.1', port=8888,
-                                             connection_type='rest')
+        self.base_url = CONF.tests.restapi_url
 
-    def _call(self, func_name, *args, **kwargs):
-        results = self.client.send_request(func_name, *args, **kwargs)
-        if results['overallRC'] == 0:
-            return results['output']
+    def _get_admin_token(self, path):
+        token = ''
+        if os.path.exists(path):
+            with open(path, 'r') as fd:
+                token = fd.read().strip()
+        return token
+
+    def _get_token(self):
+        _headers = {'Content-Type': 'application/json'}
+        path = '/etc/zvmsdk/token.dat'
+        default_admin_token = self._get_admin_token(path)
+        _headers['X-Admin-Token'] = default_admin_token
+
+        url = self.base_url + '/token'
+        method = 'POST'
+        response = requests.request(method, url, headers=_headers)
+        token = response.headers['X-Auth-Token']
+
+        return token
+
+    def request(self, url, method, body, headers=None):
+        _headers = {'Content-Type': 'application/json'}
+        _headers.update(headers or {})
+
+        # Add token here so every request will validate before proceed
+        _headers['X-Auth-Token'] = self._get_token()
+
+        response = requests.request(method, url, data=body, headers=_headers)
+        return response
+
+    def api_request(self, url, method='GET', body=None):
+
+        full_uri = '%s%s' % (self.base_url, url)
+        return self.request(full_uri, method, body)
+
+    def image_query(self, image_name):
+        url = '/images?imagename=%s' % image_name
+        return self.api_request(url=url, method='GET')
+
+    def image_import(self, image_path, os_version):
+        image_name = os.path.basename(image_path)
+        url = 'file://' + image_path
+        image_meta = '''{"os_version": "%s"}''' % os_version
+
+        body = """{"image": {"image_name": "%s",
+                             "url": "%s",
+                             "image_meta": %s}}""" % (image_name, url,
+                                                      image_meta)
+
+        return self.api_request(url='/images', method='POST', body=body)
+
+    def image_export(self, image_name):
+        url = '/images/%s' % image_name
+        tempDir = tempfile.mkdtemp()
+        os.chmod(tempDir, 0o777)
+        dest_url = ''.join(['file://', tempDir, '/', image_name])
+        body = """{"location": {"dest_url": "%s"}}""" % (dest_url)
+
+        try:
+            resp = self.api_request(url=url, method='PUT', body=body)
+        finally:
+            shutil.rmtree(tempDir)
+        return resp
+
+    def image_delete(self, image_name):
+        url = '/images/%s' % image_name
+        return self.api_request(url=url, method='DELETE')
+
+    def image_get_root_disk_size(self, image_name):
+        url = '/images/%s/root_disk_size' % image_name
+        return self.api_request(url=url, method='GET')
+
+    def guest_create(self, userid, vcpus=1, memory=1024,
+                     disk_list=[{"size": "1100", "is_boot_disk": "True"}],
+                     user_profile=CONF.zvm.user_profile,
+                     max_cpu=CONF.zvm.user_default_max_cpu,
+                     max_mem=CONF.zvm.user_default_max_memory):
+        body = {"guest": {"userid": userid, "vcpus": vcpus,
+                          "memory": memory, "disk_list": disk_list}}
+        body = json.dumps(body)
+        return self.api_request(url='/guests', method='POST', body=body)
+
+    def guest_delete(self, userid):
+        url = '/guests/%s' % userid
+        return self.api_request(url=url, method='DELETE')
+
+    def guest_list(self):
+        return self.api_request(url='/guests', method="GET")
+
+    def _guest_action(self, userid, body):
+        url = '/guests/%s/action' % userid
+        return self.api_request(url=url, method='POST', body=body)
+
+    def guest_deploy(self, userid, image_name=None, transportfiles=None,
+                     remotehost=None, vdev="100"):
+        if transportfiles is not None:
+            body = """{"action": "deploy",
+                      "image": "%s",
+                      "vdev": "%s",
+                      "transportfiles": "%s"}""" % (image_name, vdev,
+                                                    transportfiles)
         else:
-            msg = ("SDK request %(api)s failed with parameters: %(args)s "
-                   "%(kwargs)s . Error messages: %(errmsg)s" %
-                   {'api': func_name, 'args': str(args), 'kwargs': str(kwargs),
-                    'errmsg': results['errmsg']})
-            raise exception.SDKBaseException(msg, results)
+            body = """{"action": "deploy",
+                   "image": "%s",
+                   "vdev": "%s"}""" % (image_name, vdev)
 
-    def guest_start(self, *args, **kwargs):
-        return self._call('guest_start', *args, **kwargs)
+        return self._guest_action(userid, body)
 
-    def guest_stop(self, *args, **kwargs):
-        return self._call('guest_stop', *args, **kwargs)
+    def guest_create_nic(self, userid, vdev="1000", nic_id=None,
+                         mac_addr=None, active=False):
+        content = {"nic": {"vdev": vdev}}
+        if active:
+            content["nic"]["active"] = "True"
+        else:
+            content["nic"]["active"] = "False"
+        if nic_id is not None:
+            content["nic"]["nic_id"] = nic_id
 
-    def guest_reboot(self, *args, **kwargs):
-        return self._call('guest_reboot', *args, **kwargs)
+        if mac_addr is not None:
+            content["nic"]["mac_addr"] = mac_addr
 
-    def guest_reset(self, *args, **kwargs):
-        return self._call('guest_reset', *args, **kwargs)
+        body = json.dumps(content)
+        url = '/guests/%s/nic' % userid
+        return self.api_request(url=url, method='POST', body=body)
 
-    def guest_pause(self, *args, **kwargs):
-        return self._call('guest_pause', *args, **kwargs)
+    def guest_delete_nic(self, userid, vdev="1000", active=False):
+        if active:
+            body = '{"active": "True"}'
+        else:
+            body = '{"active": "False"}'
 
-    def guest_unpause(self, *args, **kwargs):
-        return self._call('guest_unpause', *args, **kwargs)
+        url = '/guests/%s/nic/%s' % (userid, vdev)
+        return self.api_request(url=url, method='DELETE', body=body)
 
-    def guest_get_power_state(self, *args, **kwargs):
-        return self._call('guest_get_power_state', *args, **kwargs)
+    def guest_get_nic_vswitch_info(self, userid):
+        # TODO: related rest api to be removed
+        url = '/guests/%s/nic' % userid
+        return self.api_request(url=url, method='GET')
 
-    def guest_get_info(self, *args, **kwargs):
-        return self._call('guest_get_info', *args, **kwargs)
+    def guest_create_network_interface(self, userid,
+                                       os_version=CONF.tests.image_os_version,
+                                       guest_networks, active=False):
+        content = {"interface": {"os_version": os_version,
+                                 "guest_networks": guest_networks}}
+        if active:
+            content["interface"]["active"] = "True"
+        else:
+            content["interface"]["active"] = "False"
 
-    def guest_list(self, *args, **kwargs):
-        return self._call('guest_list', *args, **kwargs)
+        body = json.dumps(content)
 
-    def host_get_info(self, *args, **kwargs):
-        return self._call('host_get_info', *args, **kwargs)
+        url = '/guests/%s/interface' % userid
+        return self.api_request(url=url, method='POST', body=body)
 
-    def host_diskpool_get_info(self, *args, **kwargs):
-        return self._call('host_diskpool_get_info', *args, **kwargs)
+    def guest_delete_network_interface(self, userid,
+                                       os_version=CONF.tests.image_os_version,
+                                       vdev="1000", active=False):
+        content = {"interface": {"os_version": os_version,
+                                 "vdev": vdev}}
+        if active:
+            content["interface"]["active"] = "True"
+        else:
+            content["interface"]["active"] = "False"
+        body = json.dumps(content)
 
-    def image_delete(self, *args, **kwargs):
-        return self._call('image_delete', *args, **kwargs)
+        url = '/guests/%s/interface' % userid
+        return self.api_request(url=url, method='DELETE', body=body)
 
-    def image_get_root_disk_size(self, *args, **kwargs):
-        return self._call('image_get_root_disk_size', *args, **kwargs)
+    def guest_nic_couple_to_vswitch(self, userid, nic_vdev,
+                                    vswitch_name=CONF.tests.vswitch,
+                                    active=False):
+        if active:
+            content = {"info": {"couple": "True",
+                                "vswitch": vswitch_name, "active": "True"}}
+        else:
+            content = {"info": {"couple": "True",
+                                "vswitch": vswitch_name, "active": "False"}}
+        body = json.dumps(content)
 
-    def image_import(self, *args, **kwargs):
-        return self._call('image_import', *args, **kwargs)
+        url = '/guests/%s/nic/%s' % (userid, nic_vdev)
+        return self.api_request(url=url, method='PUT', body=body)
 
-    def image_query(self, *args, **kwargs):
-        return self._call('image_query', *args, **kwargs)
+    def guest_nic_uncouple_from_vswitch(self, userid, nic_vdev, active=False):
+        if active:
+            body = '{"info": {"couple": "False", "active": "True"}}'
+        else:
+            body = '{"info": {"couple": "False", "active": "False"}}'
 
-    def image_export(self, *args, **kwargs):
-        return self._call('image_export', *args, **kwargs)
+        url = '/guests/%s/nic/%s' % (userid, nic_vdev)
+        return self.api_request(url=url, method='PUT', body=body)
 
-    def guest_deploy(self, *args, **kwargs):
-        return self._call('guest_deploy', *args, **kwargs)
+    def guest_create_disks(self, userid, disk_list):
+        content = {"disk_info": {"disk_list": disk_list}}
+        body = json.dumps(content)
+        url = '/guests/%s/disks' % userid
+        return self.api_request(url=url, method='POST', body=body)
 
-    def guest_create_nic(self, *args, **kwargs):
-        return self._call('guest_create_nic', *args, **kwargs)
+    def guest_delete_disks(self, userid, disk_vdev_list):
+        content = {"vdev_info": {"vdev_list": disk_vdev_list}}
+        body = json.dumps(content)
+        url = '/guests/%s/disks' % userid
+        return self.api_request(url=url, method='DELETE', body=body)
 
-    def guest_delete_nic(self, *args, **kwargs):
-        return self._call('guest_delete_nic', *args, **kwargs)
+    def guest_config_minidisks(self, userid, disk_info):
+        body = json.dumps(disk_info)
+        url = '/guests/%s/disks' % userid
 
-    def guest_get_nic_vswitch_info(self, *args, **kwargs):
-        return self._call('guest_get_nic_vswitch_info', *args, **kwargs)
+        return self.api_request(url=url, method='PUT', body=body)
 
-    def guest_get_definition_info(self, *args, **kwargs):
-        return self._call('guest_get_definition_info', *args, **kwargs)
+    def guest_get_definition_info(self, userid):
+        url = '/guests/%s' % userid
+        return self.api_request(url=url, method='GET')
 
-    def guest_create(self, *args, **kwargs):
-        return self._call('guest_create', *args, **kwargs)
+    def guest_get_info(self, userid):
+        url = '/guests/%s/info' % userid
+        return self.api_request(url=url, method='GET')
 
-    def guest_create_disks(self, *args, **kwargs):
-        return self._call('guest_create_disks', *args, **kwargs)
+    def guest_get_power_state(self, userid):
+        url = '/guests/%s/power_state' % userid
+        return self.api_request(url=url, method='GET')
 
-    def guest_delete_disks(self, *args, **kwargs):
-        return self._call('guest_delete_disks', *args, **kwargs)
+    def guest_start(self, userid):
+        body = '{"action": "start"}'
+        return self._guest_action(userid, body)
 
-    def guest_nic_couple_to_vswitch(self, *args, **kwargs):
-        return self._call('guest_nic_couple_to_vswitch', *args, **kwargs)
+    def guest_stop(self, userid):
+        body = '{"action": "stop", "timeout": 300, "poll_interval": 15}'
+        return self._guest_action(userid, body)
 
-    def guest_nic_uncouple_from_vswitch(self, *args, **kwargs):
-        return self._call('guest_nic_uncouple_from_vswitch', *args, **kwargs)
+    def guest_get_console_output(self, userid):
+        body = '{"action": "get_console_output"}'
+        return self._guest_action(userid, body)
 
-    def vswitch_get_list(self, *args, **kwargs):
-        return self._call('vswitch_get_list', *args, **kwargs)
+    def guest_softstop(self, userid):
+        body = '{"action": "softstop", "timeout": 300, "poll_interval": 20}'
+        return self._guest_action(userid, body)
 
-    def vswitch_create(self, *args, **kwargs):
-        return self._call('vswitch_create', *args, **kwargs)
+    def guest_capture(self, userid, image_name, capture_type='rootonly',
+                       compress_level=6):
+        body = {"action": "capture",
+                "image": image_name,
+                "capture_type": capture_type,
+                "compress_level": compress_level}
+        body = json.dumps(body)
+        return self._guest_action(userid, body)
 
-    def guest_get_console_output(self, *args, **kwargs):
-        return self._call('guest_get_console_output', *args, **kwargs)
+    def guest_pause(self, userid):
+        body = '{"action": "pause"}'
+        return self._guest_action(userid, body)
 
-    def guest_delete(self, *args, **kwargs):
-        return self._call('guest_delete', *args, **kwargs)
+    def guest_unpause(self, userid):
+        body = '{"action": "unpause"}'
+        return self._guest_action(userid, body)
 
-    def guest_inspect_cpus(self, *args, **kwargs):
-        return self._call('guest_inspect_cpus', *args, **kwargs)
+    def guest_reboot(self, userid):
+        body = '{"action": "reboot"}'
+        return self._guest_action(userid, body)
 
-    def guest_inspect_mem(self, *args, **kwargs):
-        return self._call('guest_inspect_mem', *args, **kwargs)
+    def guest_resize_cpus(self, userid, cpu_cnt):
+        body = """{"action": "resize_cpus",
+                   "cpu_cnt": %s}""" % cpu_cnt
+        return self._guest_action(userid, body)
 
-    def guest_inspect_vnics(self, *args, **kwargs):
-        return self._call('guest_inspect_vnics', *args, **kwargs)
+    def guest_live_resize_cpus(self, userid, cpu_cnt):
+        body = """{"action": "live_resize_cpus",
+                   "cpu_cnt": %s}""" % cpu_cnt
+        return self._guest_action(userid, body)
 
-    def vswitch_grant_user(self, *args, **kwargs):
-        return self._call('vswitch_grant_user', *args, **kwargs)
+    def guest_reset(self, userid):
+        body = '{"action": "reset"}'
+        return self._guest_action(userid, body)
 
-    def vswitch_revoke_user(self, *args, **kwargs):
-        return self._call('vswitch_revoke_user', *args, **kwargs)
+    def guest_inspect_stats(self, userid):
+        url = '/guests/stats?userid=%s' % userid
+        return self.api_request(url=url, method='GET')
 
-    def vswitch_set_vlan_id_for_user(self, *args, **kwargs):
-        return self._call('vswitch_set_vlan_id_for_user', *args, **kwargs)
+    def guest_inspect_vnics(self, userid=None):
+        url = '/guests/interfacestats?userid=%s' % userid
+        return self.api_request(url=url, method='GET')
 
-    def guest_config_minidisks(self, *args, **kwargs):
-        return self._call('guest_config_minidisks', *args, **kwargs)
+    def guest_get_nic_info(self, userid=None, nic_id=None, vswitch=None):
+        if ((userid is None) and
+            (nic_id is None) and
+            (vswitch is None)):
+            append = ''
+        else:
+            append = "?"
+            if userid is not None:
+                append += 'userid=%s&' % userid
+            if nic_id is not None:
+                append += 'nic_id=%s&' % nic_id
+            if vswitch is not None:
+                append += 'vswitch=%s&' % vswitch
+            append = append.strip('&')
+        url = '/guests/nics%s' % append
+        return self.api_request(url=url, method='GET')
 
-    def vswitch_set(self, *args, **kwargs):
-        return self._call('vswitch_set', *args, **kwargs)
+    def vswitch_create(self, name, rdev=None, controller='*',
+                       connection='CONNECT', network_type='IP',
+                       router="NONROUTER", vid='UNAWARE', port_type='ACCESS',
+                       gvrp='GVRP', queue_mem=8, native_vid=1,
+                       persist=True):
+        vsw_info = {'name': name,
+                    'rdev': rdev,
+                    'controller': controller,
+                    'connection': connection,
+                    'network_type': network_type,
+                    'router': router,
+                    'vid': vid,
+                    'port_type': port_type,
+                    'gvrp': gvrp,
+                    'queue_mem': queue_mem,
+                    'native_vid': native_vid,
+                    'persist': persist}
+        body = json.dumps({"vswitch": vsw_info})
+        return self.api_request(url='/vswitches', method='POST', body=body)
 
-    def vswitch_delete(self, *args, **kwargs):
-        return self._call('vswitch_delete', *args, **kwargs)
+    def vswitch_delete(self, vswitch_name):
+        url = '/vswitches/%s' % vswitch_name
+        return self.api_request(url=url, method='DELETE')
 
-    def volume_attach(self, *args, **kwargs):
-        return self._call('volume_attach', *args, **kwargs)
+    def vswitch_get_list(self):
+        return self.api_request(url='/vswitches', method='GET')
 
-    def volume_detach(self, *args, **kwargs):
-        return self._call('volume_detach', *args, **kwargs)
+    def vswitch_query(self, vswitch_name):
+        url = '/vswitches/%s' % vswitch_name
+        return self.api_request(url=url, method='GET')
 
-    def guest_create_network_interface(self, *args, **kwargs):
-        return self._call('guest_create_network_interface', *args, **kwargs)
+    def vswitch_grant_user(self, vswitch_name, userid):
+        url = '/vswitches/%s' % vswitch_name
+        body = '{"vswitch": {"grant_userid": "%s"}}' % userid
+        return self.api_request(url=url, method='PUT', body=body)
 
 
 class ZVMConnectorTestUtils(object):
 
     def __init__(self):
-        self._reqh = ZVMConnectorRequestHandler()
+        self.client = TestzCCClient()
         self.rawapi = api.SDKAPI()
+        self._smutclient = smutclient.get_smutclient()
 
-    def image_import(self, image_path, os_version):
+    def generate_test_userid(self):
+        '''Generate an userid base on time line.'''
+        prefix = six.text_type(CONF.tests.userid_prefix)[-3:].rjust(3, 't')
+        userid = prefix + '%05d' % ((time.time() * 10) % 100000)
+        time.sleep(1)
+        return userid
+
+    def generate_test_ip(self):
+        '''Generate test IP address.'''
+        global TEST_IP_POOL
+        if TEST_IP_POOL == []:
+            TEST_IP_POOL = CONF.tests.ip_addr_list.split(' ')
+
+        return TEST_IP_POOL.pop()
+
+    def import_image_if_not_exist(self, image_path, os_version):
+
+        # TODO: re-write once image_upload implemented. To support run fvt
+        #       against remote zCC rest server
         image_name = os.path.basename(image_path)
-        url = 'file://' + image_path
         print("Checking if image %s exists or not, import it if not exists" %
               image_name)
-        try:
-            self._reqh.image_query(image_name)
-        except exception.SDKBaseException as err:
-            errmsg = err.format_message()
+
+        resp = self.client.image_query(image_name)
+        if resp.status_code == 404:
+            # image does not exist
             print('WARNING: image not exist, image_query failed with '
-                  'reason : %s, will import image now' % errmsg)
+                  'reason : %s, will import image now' % resp.content)
             print("Importing image %s ..." % image_name)
-            self._reqh.image_import(image_name, url,
-                        {"os_version": os_version})
+            self.client.image_import(image_path, os_version)
+
         return image_name
+
+    def get_image_root_disk_size(self, image_name):
+        resp = self.client.image_get_root_disk_size(image_name)
+        errmsg = "failed to get image root disk size for %s" % image_name
+        assert resp.status_code == 200, errmsg
+        return json.loads(resp.content)['output']
 
     def is_guest_exist(self, userid):
         cmd = 'sudo vmcp q %s' % userid
@@ -217,87 +424,63 @@ class ZVMConnectorTestUtils(object):
             return False
         return True
 
-    def guest_deploy(self, userid=None, cpu=1, memory=1024,
-                     image_path=None,
-                     image_version=None,
+    def is_guest_reachable(self, userid):
+        return self._smutclient.get_guest_connection_status(userid)
+
+    def deploy_guest(self, userid=None, cpu=1, memory=1024,
+                     image_path=CONF.tests.image_path,
+                     os_version=CONF.tests.image_os_version,
                      ip_addr=None):
         # Import image if specified, otherwise use the default image
-        image = '46a4aea3_54b6_4b1c_8a49_01f302e70c60'
-        os_version = 'rhel6.7'
-        if image_path is not None:
-            # When image_path is specified, the os_version is also required
-            if image_version is None:
-                print("guest_deploy ERROR: 'image_version' is also "
-                      "required when 'image_path' is specified.")
-                raise
-            image = self.image_import(image_path, image_version)
-            os_version = image_version
-        print("Using image %s ..." % image)
+        image_name = self.import_image_if_not_exist(image_path, os_version)
+        print("Using image %s ..." % image_name)
 
         # Get available userid and ip from conf if not specified.
-        userid = userid or generate_test_userid()
-        ip_addr = ip_addr or generate_test_ip()
+        userid = userid or self.generate_test_userid()
+        ip_addr = ip_addr or self.generate_test_ip()
         print("Using userid %s and IP addr %s ..." % (userid, ip_addr))
 
         # Create vm in zVM
-        size = self._reqh.image_get_root_disk_size(image)
+        size = self.get_image_root_disk_size(image_name)
         print("root disk size is %s" % size)
         disks_list = [{"size": size,
                        "is_boot_disk": True,
                        "disk_pool": CONF.zvm.disk_pool}]
-        user_profile = CONF.zvm.user_profile
 
         print("Creating userid %s ..." % userid)
-        try:
-            self._reqh.guest_create(userid, cpu, memory,
-                                    disk_list=disks_list,
-                                    user_profile=user_profile)
-        except exception.SDKBaseException as err:
-            errmsg = err.format_message()
-            print("WARNING: create userid failed: %s" % errmsg)
-            if err.results['rc'] == 400 and err.results['rs'] == 8:
-                print("userid %s still exist" % userid)
-                # switch to new userid
-                userid = userid or generate_test_userid()
-                ip_addr = ip_addr or generate_test_ip()
-                print("turn to use new userid %s and IP addr 5s" %
-                      (userid, ip_addr))
-                self._reqh.guest_create(userid, cpu, memory,
-                                        disk_list=disks_list,
-                                        user_profile=user_profile)
 
+        resp_gc = self.client.guest_create(userid, cpu, memory,
+                                        disk_list=disks_list)
+        assert resp_gc.status_code == 200, ("Failed to create userid %s" %
+                                            userid)
         assert self.wait_until_create_userid_complete(userid)
 
         # Deploy image on vm
+        # TODO: deploy with transportfiles specified
         print("Deploying userid %s ..." % userid)
-        self._reqh.guest_deploy(userid, image)
+        self.client.guest_deploy(userid, image_name)
 
-        # Create nic and configure it
-        guest_networks = [{
-            "ip_addr": ip_addr,
-            "gateway_addr": CONF.tests.gateway_v4,
-            "cidr": CONF.tests.cidr,
-        }]
-        netinfo = self._reqh.guest_create_network_interface(
-                                        userid, os_version, guest_networks)
-        nic_vdev = netinfo[0]['nic_vdev']
-        self._reqh.guest_nic_couple_to_vswitch(userid, nic_vdev,
+        resp_gcni = self.client.guest_create_network_interface(
+                                        userid, os_version, ip_addr=ip_addr)
+        assert resp_gcni.status_code == 200, "Failed to create nif %s" % userid
+        nic_vdev = json.loads(resp_gcni.content)['output'][0]['nic_vdev']
+
+        self.client.guest_nic_couple_to_vswitch(userid, nic_vdev,
                                              CONF.tests.vswitch)
-        self._reqh.vswitch_grant_user(CONF.tests.vswitch, userid)
+        self.client.vswitch_grant_user(CONF.tests.vswitch, userid)
 
         # Power on the vm
         print("Power on userid %s ..." % userid)
-        self._reqh.guest_start(userid)
+        self.client.guest_start(userid)
         # Wait IUCV path
-        self.wait_until_guest_in_connection_state(userid, True)
+        self.wait_until_guest_reachable(userid)
 
         return userid, ip_addr
 
-    def guest_destroy(self, userid):
-        try:
-            self._reqh.guest_delete(userid)
-        except exception.SDKBaseException as err:
-            print("WARNING: deleting userid failed: %s" % err.format_message())
+    def destroy_guest(self, userid):
+        resp = self.client.guest_delete(userid)
+        if resp.status_code != 200:
+            print("WARNING: deleting userid failed: %s" % resp.content)
 
         self._wait_until(False, self.is_guest_exist, userid)
 
@@ -324,8 +507,15 @@ class ZVMConnectorTestUtils(object):
         return self._wait_until(expect_state,
                                 self._reqh.guest_get_power_state, userid)
 
-    def wait_until_guest_in_connection_state(self, userid, expect_state):
+    def wait_until_guest_reachable(self, userid):
         return self._wait_until(True, self.rawapi._vmops.is_reachable, userid)
 
     def wait_until_create_userid_complete(self, userid):
         return self._wait_until(True, self.is_guest_exist, userid)
+
+    def get_image_name(self, image_path=CONF.test.image_path):
+        return os.path.basename(image_path)
+
+    def power_on_guest_until_reachable(self, userid):
+        self.client.guest_start(userid)
+        self.wait_until_guest_reachable(userid)
