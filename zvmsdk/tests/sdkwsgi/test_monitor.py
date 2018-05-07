@@ -18,7 +18,6 @@ import time
 
 from zvmsdk.tests.sdkwsgi import base
 from zvmsdk.tests.sdkwsgi import test_utils
-from zvmsdk.tests.sdkwsgi import test_sdkwsgi
 from zvmsdk import config
 from zvmsdk import monitor
 
@@ -31,16 +30,16 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
     def setUpClass(cls):
         super(MonitorTestCase, cls).setUpClass()
 
-        cls.client = test_sdkwsgi.TestSDKClient()
+        cls.client = test_utils.TestzCCClient()
         cls.test_utils = test_utils.ZVMConnectorTestUtils()
-        cls.userid1 = cls.test_utils.guest_deploy()[0]
-        cls.userid2 = cls.test_utils.guest_deploy()[0]
+        cls.userid1 = cls.test_utils.deploy_guest()[0]
+        cls.userid2 = cls.test_utils.deploy_guest()[0]
 
     @classmethod
     def tearDownClass(cls):
         super(MonitorTestCase, cls).tearDownClass()
-        cls.test_utils.guest_destroy(cls.userid1)
-        cls.test_utils.guest_destroy(cls.userid2)
+        cls.test_utils.destroy_guest(cls.userid1)
+        cls.test_utils.destroy_guest(cls.userid2)
 
     def setUp(self):
         super(MonitorTestCase, self).setUp()
@@ -120,10 +119,7 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
         """
         print("Test with a nonexistent guest")
         resp = self._inspect_stats('FAKE_ID')
-        self.assertEqual(200, resp.status_code)
-        results = json.loads(resp.content)
-        self.assertEqual(results['overallRC'], 0)
-        self.assertEqual(results['output'], {})
+        self.assertEqual(404, resp.status_code)
         """
         print("Test with an empty user list")
         resp = self._inspect_stats([])
@@ -190,10 +186,7 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
         """
         print("To test with a nonexistent guest")
         resp = self._inspect_vnics('FAKE_ID')
-        self.assertEqual(200, resp.status_code)
-        results = json.loads(resp.content)
-        self.assertEqual(results['overallRC'], 0)
-        self.assertEqual(results['output'], {})
+        self.assertEqual(404, resp.status_code)
         """
         print("To test with an empty user list")
         resp = self._inspect_vnics([])

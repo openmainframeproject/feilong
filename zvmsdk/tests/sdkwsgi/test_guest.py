@@ -9,7 +9,6 @@
 #    Unless required by applicable law or agreed to in writing, software
 #    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#    License for the specific language governing permissions and limitations
 #    under the License.
 
 
@@ -20,7 +19,6 @@ import unittest
 
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import base
-from zvmsdk.tests.sdkwsgi import test_sdkwsgi
 from zvmsdk.tests.sdkwsgi import test_utils
 from zvmsdk import config
 from zvmsdk import smutclient
@@ -39,14 +37,15 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         # test change bind_port
         base.set_conf('sdkserver', 'bind_port', 3000)
 
-        cls.client = test_sdkwsgi.TestSDKClient()
+        cls.client = test_utils.TestzCCClient()
         cls._smutclient = smutclient.get_smutclient()
+        cls.utils = test_utils.ZVMConnectorTestUtils()
 
         # every time, we need to random generate userid
         # the userid is used in most testcases that assume exists
-        cls.userid = test_utils.generate_test_userid()
+        cls.userid = cls.utils.generate_test_userid()
 
-        cls.userid_exists = test_utils.generate_test_userid()
+        cls.userid_exists = cls.utils.generate_test_userid()
         cls._guest_create(cls.userid_exists)
 
     @classmethod
@@ -873,7 +872,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
 
     def test_guest_create_delete(self):
         PURGE_GUEST = PURGE_VSW = PURGE_IMG = 0
-        userid = test_utils.generate_test_userid()
+        userid = self.utils.generate_test_userid()
         resp = self._guest_create(userid)
         self.assertEqual(200, resp.status_code)
         PURGE_GUEST = 1
@@ -1856,7 +1855,7 @@ class GuestActionTestCase(base.ZVMConnectorBaseTestCase):
 
     def setUp(self):
         super(GuestActionTestCase, self).setUp()
-        self.client = test_sdkwsgi.TestSDKClient()
+        self.client = test_utils.TestzCCClient()
         self.record_logfile_position()
 
     def test_guest_action_invalid_body(self):
