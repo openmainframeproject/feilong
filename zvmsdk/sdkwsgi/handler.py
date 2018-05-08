@@ -91,11 +91,11 @@ ROUTE_LIST = (
     }),
     ('/images', {
         'POST': image.image_create,
-        'GET': image.image_query
+        'GET': image.image_query,
+        'PUT': image.image_export,
     }),
     ('/images/{name}', {
         'DELETE': image.image_delete,
-        'PUT': image.image_export,
     }),
     ('/images/{name}/root_disk_size', {
         'GET': image.image_get_root_disk_size,

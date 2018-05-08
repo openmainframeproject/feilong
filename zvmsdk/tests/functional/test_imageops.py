@@ -39,6 +39,8 @@ class SDKAPIImageTestCase(base.SDKAPIBaseTestCase):
         self.sdkapi.image_import(image_fname, url, image_meta,
                                  utils.get_host())
 
+        os.system('rm -f %s' % image_fpath)
+
         query_result = self.sdkapi.image_query(image_fname)
         result_length = len(query_result)
         self.assertEqual(result_length, 1)
@@ -46,9 +48,22 @@ class SDKAPIImageTestCase(base.SDKAPIBaseTestCase):
         image_size = self.sdkapi.image_get_root_disk_size(image_fname)
         self.assertEqual(image_size, u'0')
 
-        self.sdkapi.image_delete(query_result[0][0])
-        query_result_after_delete = self.sdkapi.image_query(image_fname)
-        expect_result_after_delete = []
-        self.assertEqual(query_result_after_delete,
-                         expect_result_after_delete)
-        os.system('rm -f %s' % image_fpath)
+        export_tempDir = tempfile.mkdtemp()
+        os.chmod(export_tempDir, 0o777)
+
+        image_export_result = self.sdkapi.image_export(image_fname,
+                                                       export_tempDir)
+
+        self.assertEqual(image_export_result['image_name'], image_fname)
+        self.assertEqual(image_export_result['image_path'], export_tempDir)
+        self.assertEqual(image_export_result['os_version'],
+                         image_meta['os_version'])
+
+        # Verify after export, the source image has been deleted by default
+        query_result_after_export = self.sdkapi.image_query(image_fname)
+        expect_result_after_export = []
+        self.assertEqual(query_result_after_export,
+                         expect_result_after_export)
+
+        # Remove the exported image
+        os.system('rm -f %s' % export_tempDir)

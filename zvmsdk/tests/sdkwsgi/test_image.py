@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import json
 import os
 import shutil
 import tempfile
@@ -75,11 +76,15 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
         return resp
 
     def _image_export(self, image_name='image1'):
-        url = '/images/%s' % image_name
+        url = '/images'
         tempDir = tempfile.mkdtemp()
         os.chmod(tempDir, 0o777)
         dest_url = ''.join(['file://', tempDir, '/', image_name])
-        body = """{"location": {"dest_url": "%s"}}""" % (dest_url)
+        body = """{"image": {"image_name": "%s",
+                             "dest_url": "%s",
+                             "delete_source": False}}""" % (image_name,
+                                                            dest_url)
+        body = json.dumps(body)
 
         resp = self.client.api_request(url=url,
                                        method='PUT',

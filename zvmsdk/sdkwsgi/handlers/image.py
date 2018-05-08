@@ -69,11 +69,14 @@ class ImageAction(object):
 
     @validation.schema(image.export)
     def export(self, name, body):
-        location = body['location']
-        dest_url = location['dest_url']
-        remotehost = location.get('remote_host', None)
-        info = self.client.send_request('image_export', name,
-                                        dest_url, remotehost)
+        image = body['image']
+        image_name = image['image_name']
+        dest_url = image['dest_url']
+        remote_host = image.get('remote_host', None)
+        delete_source = image.get('delete_source', True)
+        info = self.client.send_request('image_export', image_name,
+                                        dest_url, remote_host=remote_host,
+                                        delete_source=delete_source)
         return info
 
 
