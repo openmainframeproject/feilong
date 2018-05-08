@@ -1762,7 +1762,8 @@ class SMUTClient(object):
             self._pathutils.clean_temp_folder(target_folder)
             raise
 
-    def image_export(self, image_name, dest_url, remote_host=None):
+    def image_export(self, image_name, dest_url, remote_host=None,
+                     delete_source=True):
         """Export the specific image to remote host or local file system
         :param image_name: image name that can be uniquely identify an image
         :param dest_path: the location to store exported image, eg.
@@ -1810,6 +1811,10 @@ class SMUTClient(object):
                        'os_version': image_info[0]['imageosdistro'],
                        'md5sum': image_info[0]['md5sum']}
         LOG.info("Image %s export successfully" % image_name)
+
+        if delete_source:
+            self.image_delete(image_name)
+
         return export_dict
 
     def _get_image_disk_size_units(self, image_path):

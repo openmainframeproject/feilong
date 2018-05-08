@@ -79,7 +79,8 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
         tempDir = tempfile.mkdtemp()
         os.chmod(tempDir, 0o777)
         dest_url = ''.join(['file://', tempDir, '/', image_name])
-        body = """{"location": {"dest_url": "%s"}}""" % (dest_url)
+        body = """{"location": {"dest_url": "%s",
+                                "delete_source": False}}""" % (dest_url)
 
         resp = self.client.api_request(url=url,
                                        method='PUT',

@@ -53,6 +53,8 @@ class ImageOps(object):
     def image_delete(self, image_name):
         return self._smutclient.image_delete(image_name)
 
-    def image_export(self, image_name, dest_url, remote_host=None):
+    def image_export(self, image_name, dest_url, remote_host=None,
+                     delete_source=True):
         return self._smutclient.image_export(image_name, dest_url,
-                                             remote_host)
+                                             remote_host=remote_host,
+                                             delete_source=delete_source)

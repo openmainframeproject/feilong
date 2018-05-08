@@ -60,4 +60,6 @@ class SDKImageOpsTestCase(base.SDKTestCase):
         image_name = 'testimage'
         dest_url = 'file:///path/to/export/image'
         self._image_ops.image_export(image_name, dest_url)
-        image_export.assert_called_once_with(image_name, dest_url, None)
+        image_export.assert_called_once_with(image_name, dest_url,
+                                             remote_host=None,
+                                             delete_source=True)
