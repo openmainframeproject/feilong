@@ -158,7 +158,7 @@ class VMOps(object):
 
         exist_disks = []
         for ent in user_direct:
-            if 'MDISK' in ent:
+            if ent.strip().startswith('MDISK'):
                 md_vdev = ent.split()[1].strip()
                 exist_disks.append(md_vdev)
 
