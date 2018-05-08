@@ -501,7 +501,7 @@ class ImageHandlerNegativeTest(unittest.TestCase):
 
     def test_image_create_invalid_method(self):
         self.env['PATH_INFO'] = '/images'
-        self.env['REQUEST_METHOD'] = 'PUT'
+        self.env['REQUEST_METHOD'] = 'DELETE'
         h = handler.SdkHandler()
         self.assertRaises(webob.exc.HTTPMethodNotAllowed,
                           h, self.env, dummy)
