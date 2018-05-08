@@ -163,8 +163,7 @@ errors = {
                10: ("Failed to live resize cpus of guest: '%(userid)s', "
                    "error: rescan cpus to hot-plug new defined cpus failed: "
                    "'%(err)s'."),
-               11: ("Failed to live resize cpus of guest: '%(userid)s', "
-                   "error: guest doesn't exist in guests database."),
+               11: ("Guest '%(userid)s' doesn't exist in guests database."),
                12: ("Failed to resize cpus of guest: '%(userid)s', "
                    "error: maximum number of cpus is not defined in user "
                    "directory."),

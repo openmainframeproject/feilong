@@ -281,6 +281,14 @@ class VMAction(object):
 
         return info
 
+    @validation.schema(guest.resize_cpus)
+    def resize_cpus(self, userid, body):
+        cpu_cnt = body['cpu_cnt']
+        info = self.client.send_request('guest_resize_cpus',
+                                        userid, cpu_cnt)
+
+        return info
+
     @validation.schema(guest.deploy)
     def deploy(self, userid, body):
         image_name = body['image']

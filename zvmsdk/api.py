@@ -486,6 +486,22 @@ class SDKAPI(object):
             self._vmops.live_resize_cpus(userid, cpu_cnt)
         LOG.info("%s successfully." % action)
 
+    def guest_resize_cpus(self, userid, cpu_cnt):
+        """Resize virtual cpus of guests.
+
+        :param userid: (str) the userid of the guest to be resized
+        :param cpu_cnt: (int) The number of virtual cpus that the guest should
+               have defined in user directory after resize. The value should
+               be an integer between 1 and 64.
+
+        """
+        action = "resize guest '%s' to have '%i' virtual cpus" % (userid,
+                                                                  cpu_cnt)
+        LOG.info("Begin to %s" % action)
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._vmops.resize_cpus(userid, cpu_cnt)
+        LOG.info("%s successfully." % action)
+
     def guest_create_disks(self, userid, disk_list):
         """Add disks to an existing guest vm.
 

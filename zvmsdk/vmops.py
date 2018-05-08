@@ -280,3 +280,12 @@ class VMOps(object):
             raise exception.SDKGuestOperationError(rs=6, userid=userid)
         # Do live resize
         self._smutclient.live_resize_cpus(userid, count)
+
+    def resize_cpus(self, userid, count):
+        # Check userid in ZCC DB
+        if userid.upper() not in self.guest_list():
+            LOG.error("Failed to resize cpus of guest '%s', error: guest "
+                      "doesn't exist in guests database" % userid)
+            raise exception.SDKGuestOperationError(rs=11, userid=userid)
+        # Do resize
+        self._smutclient.resize_cpus(userid, count)

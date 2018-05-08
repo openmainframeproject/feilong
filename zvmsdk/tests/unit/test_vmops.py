@@ -376,3 +376,24 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         guest_list.assert_called_once_with()
         power_state.assert_called_once_with(userid)
         do_resize.assert_not_called()
+
+    @mock.patch("zvmsdk.smutclient.SMUTClient.resize_cpus")
+    @mock.patch('zvmsdk.vmops.VMOps.guest_list')
+    def test_resize_cpus(self, guest_list, do_resize):
+        userid = 'testuid'
+        cpu_cnt = 3
+        guest_list.return_value = [userid.upper()]
+        self.vmops.resize_cpus(userid, cpu_cnt)
+        guest_list.assert_called_once_with()
+        do_resize.assert_called_once_with(userid, cpu_cnt)
+
+    @mock.patch("zvmsdk.smutclient.SMUTClient.resize_cpus")
+    @mock.patch('zvmsdk.vmops.VMOps.guest_list')
+    def test_resize_cpus_guest_not_in_db(self, guest_list, do_resize):
+        userid = 'testuid'
+        cpu_cnt = 3
+        guest_list.return_value = []
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self.vmops.resize_cpus, userid, cpu_cnt)
+        guest_list.assert_called_once_with()
+        do_resize.assert_not_called()

@@ -811,6 +811,38 @@ Live resize CPUs of the guest.
    - For legacy guests (guests created by z/VM Cloud Connector before v1.2.0), user can use
      the tool to update them so that they can be live resized later. Tool usage:
 
+Resize CPUs of guest
+-------------------------
+
+**POST /guests/{userid}/action**
+
+Resize CPUs of the guest.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - action: action_resize_cpus_of_guest
+  - cpu_cnt: cpu_cnt
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_resize_cpus_req.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. note::
+
+   - Both increasing and decreasing CPU count are supported.
+   - The target guest can be in either 'on' or 'off' status, the definition change would
+     take into effects after logoff and re-logon (reset).
+
 Deploy guest
 ------------
 
