@@ -61,7 +61,8 @@ class SDKAPITestCase(base.SDKTestCase):
         dest_url = "file:///install/temp/test.img"
         self.api.image_export(image_name, dest_url)
         image_export.assert_called_once_with(image_name, dest_url,
-                                             None)
+                                             remote_host=None,
+                                             delete_source=True)
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create(self, create_vm):

@@ -467,6 +467,13 @@ remotehost_image_export:
   in: body
   required: false
   type: string
+deletesource_image_export:
+  description: |
+    Indicate whether delete the source image from zCC database and file system or not,
+    the default is True.
+  in: body
+  required: false
+  type: bool
 root_disk_size_image:
   description: |
     The image's root disk size in units CYL or BLK, eg 3338:CYL or 614200:BLK.
