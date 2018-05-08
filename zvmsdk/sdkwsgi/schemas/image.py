@@ -43,7 +43,8 @@ export = {
             'type': 'object',
             'properties': {
                 'dest_url': parameter_types.url,
-                'remote_host': parameter_types.remotehost
+                'remote_host': parameter_types.remotehost,
+                'delete_source': parameter_types.deletesource,
             },
             'required': ['dest_url'],
             'additionalProperties': False
