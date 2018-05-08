@@ -1082,6 +1082,7 @@ Export the image to the specified location.
   - image_name: image_name
   - dest_url: image_export_url
   - remote_host: remotehost_image_export
+  - delete_source: deletesource_image_export
 
 * Request sample:
 

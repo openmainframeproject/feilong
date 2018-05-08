@@ -653,15 +653,16 @@ class RESTClientTestCase(unittest.TestCase):
     def test_image_export(self, get_token, request):
         method = 'PUT'
         destination = 'file:///tmp/export.img'
-        url = '/images/%s' % '100.img'
-        body = {'location': {'dest_url': destination}}
+        url = '/images'
+        body = {'image': {'image_name': 'testimage',
+                          'dest_url': destination}}
         body = json.dumps(body)
         header = self.headers
         full_uri = self.base_url + url
         request.return_value = self.response
         get_token.return_value = self._tmp_token()
 
-        self.client.call("image_export", '100.img',
+        self.client.call("image_export", 'testimage',
                          destination)
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,

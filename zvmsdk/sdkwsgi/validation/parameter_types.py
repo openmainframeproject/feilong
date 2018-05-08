@@ -195,6 +195,15 @@ remotehost = {
 }
 
 
+deletesource = {
+    'type': ['boolean', 'string'],
+    'enum': [True, 'True', 'TRUE', 'true', '1', 'ON', 'On', 'on',
+             'YES', 'Yes', 'yes',
+             False, 'False', 'FALSE', 'false', '0', 'OFF', 'Off', 'off',
+             'NO', 'No', 'no']
+}
+
+
 userid = {
     'type': ['string'],
     'minLength': 1,

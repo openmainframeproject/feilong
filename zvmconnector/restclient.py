@@ -386,9 +386,10 @@ def req_image_delete(start_index, *args, **kwargs):
 
 
 def req_image_export(start_index, *args, **kwargs):
-    url = '/images/%s'
-    body = {'location': {'dest_url': args[start_index]}}
-    fill_kwargs_in_body(body['location'], **kwargs)
+    url = '/images'
+    body = {'image': {'image_name': args[start_index],
+                      'dest_url': args[start_index + 1]}}
+    fill_kwargs_in_body(body['image'], **kwargs)
     return url, body
 
 
@@ -651,7 +652,7 @@ DATABASE = {
     'image_export': {
         'method': 'PUT',
         'args_required': 2,
-        'params_path': 1,
+        'params_path': 0,
         'request': req_image_export},
     'image_get_root_disk_size': {
         'method': 'GET',

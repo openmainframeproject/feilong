@@ -265,7 +265,8 @@ class SDKAPI(object):
             LOG.error("Failed to query image")
             raise
 
-    def image_export(self, image_name, dest_url, remote_host=None):
+    def image_export(self, image_name, dest_url, remote_host=None,
+                     delete_source=True):
         """Export the image to the specified location
         :param image_name: image name that can be uniquely identify an image
         :param dest_url: the location of exported image, eg.
@@ -274,6 +275,8 @@ class SDKAPI(object):
         :param remote_host: the server that the image will be export to, if
         remote_host is None, the image will be stored in the dest_path in
         local server,  the format is username@IP eg. nova@9.x.x.x
+        :param delete_source: after import, delete the source image from zCC
+        database and file system
         :returns a dictionary that contains the exported image info
         {
         'image_name': the image_name that exported
@@ -284,7 +287,8 @@ class SDKAPI(object):
         """
         try:
             return self._imageops.image_export(image_name, dest_url,
-                                               remote_host)
+                                               remote_host=remote_host,
+                                               delete_source=delete_source)
         except exception.SDKBaseException:
             LOG.error("Failed to export image '%s'" % image_name)
             raise

@@ -75,11 +75,14 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
         return resp
 
     def _image_export(self, image_name='image1'):
-        url = '/images/%s' % image_name
+        url = '/images'
         tempDir = tempfile.mkdtemp()
         os.chmod(tempDir, 0o777)
         dest_url = ''.join(['file://', tempDir, '/', image_name])
-        body = """{"location": {"dest_url": "%s"}}""" % (dest_url)
+        body = """{"image": {"image_name": "%s",
+                             "dest_url": "%s",
+                             "delete_source": False}}""" % (image_name,
+                                                            dest_url)
 
         resp = self.client.api_request(url=url,
                                        method='PUT',

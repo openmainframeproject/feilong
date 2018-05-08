@@ -1242,9 +1242,10 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         self._smutclient.image_get_root_disk_size(image_name)
         query_disk_size_units.assert_called_once_with(image_name)
 
+    @mock.patch.object(smutclient.SMUTClient, 'image_delete')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     @mock.patch.object(smutclient.FilesystemBackend, 'image_export')
-    def test_image_export(self, image_export, image_query):
+    def test_image_export(self, image_export, image_query, image_delete):
         image_name = u'testimage'
         dest_url = 'file:///path/to/exported/image'
         remote_host = 'nova@9.x.x.x'
@@ -1263,8 +1264,9 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
             'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f'
         }
         real_return = self._smutclient.image_export(image_name, dest_url,
-                                                remote_host=remote_host)
+                                                    remote_host=remote_host)
         image_query.assert_called_once_with(image_name)
+        image_delete.assert_called_once_with(image_name)
         self.assertDictEqual(real_return, expect_return)
 
     def test_generate_vdev(self):
