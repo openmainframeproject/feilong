@@ -72,8 +72,10 @@ class ImageAction(object):
         location = body['location']
         dest_url = location['dest_url']
         remotehost = location.get('remote_host', None)
+        deletesource = location.get('delete_source', True)
         info = self.client.send_request('image_export', name,
-                                        dest_url, remotehost)
+                                        dest_url, remote_host=remotehost,
+                                        delete_source=deletesource)
         return info
 
 
