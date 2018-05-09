@@ -228,6 +228,24 @@ class RESTClientTestCase(unittest.TestCase):
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_softstop_parameter_set_zero(self, get_token, request):
+        method = 'POST'
+        url = '/guests/%s/action' % self.fake_userid
+        body = {'action': 'softstop', 'timeout': 0, 'poll_interval': 0}
+        body = json.dumps(body)
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("guest_softstop", self.fake_userid,
+                         timeout=0, poll_interval=0)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
     def test_guest_pause(self, get_token, request):
         method = 'POST'
         url = '/guests/%s/action' % self.fake_userid
