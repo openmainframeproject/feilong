@@ -248,7 +248,7 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
             resp = self.client.api_request(url='/vswitches/RESTVSW1',
                                        method='PUT',
                                        body=body)
-            self.assertEqual(400, resp.status_code)
+            self.assertEqual(409, resp.status_code)
         except Exception:
             raise
         finally:
