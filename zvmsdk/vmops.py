@@ -162,7 +162,10 @@ class VMOps(object):
                 md_vdev = ent.split()[1].strip()
                 exist_disks.append(md_vdev)
 
-        start_vdev = hex(int(max(exist_disks), 16) + 1)[2:].rjust(4, '0')
+        if exist_disks:
+            start_vdev = hex(int(max(exist_disks), 16) + 1)[2:].rjust(4, '0')
+        else:
+            start_vdev = None
         self._smutclient.add_mdisks(userid, disk_list, start_vdev)
 
     def delete_disks(self, userid, vdev_list):
