@@ -1686,7 +1686,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_dedicate_OSA_notFree(self, OSA_free, get_vdev):
         OSA_free.return_value = False
         get_vdev.return_value = '1000'
-        self.assertRaises(exception.SDKInvalidInput,
+        self.assertRaises(exception.SDKConflictError,
                           self._smutclient.dedicate_OSA,
                           'userid', 'OSA_device', 'nic_vdev', active=True)
 
@@ -1715,7 +1715,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request_response.append(exception.SDKSMUTRequestFailed(
                                             {'rc': 404, 'rs': 8}, 'err'))
         request.side_effect = request_response
-        self.assertRaises(exception.SDKInvalidInput,
+        self.assertRaises(exception.SDKConflictError,
                           self._smutclient._dedicate_OSA,
                           'userid', 'f000', '1000', active=False)
         request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
@@ -1738,7 +1738,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                             {'rc': 1, 'rs': 1}, 'err'))
         request_response.append('')
         request.side_effect = request_response
-        self.assertRaises(exception.SDKObjectIsLockedError,
+        self.assertRaises(exception.SDKConflictError,
                           self._smutclient._dedicate_OSA,
                           'userid', 'f000', '1000', active=False)
         request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
@@ -1835,7 +1835,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request_response.append(exception.SDKSMUTRequestFailed(
                                             {'rc': 200, 'rs': 8}, 'err'))
         request.side_effect = request_response
-        self.assertRaises(exception.SDKInvalidInput,
+        self.assertRaises(exception.SDKConflictError,
                           self._smutclient._dedicate_OSA,
                           'userid', 'f000', '1000', active=True)
 
