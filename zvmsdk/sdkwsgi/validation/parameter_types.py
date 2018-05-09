@@ -110,6 +110,12 @@ positive_integer = {
 }
 
 
+non_negative_integer = {
+    'type': ['integer', 'string'],
+    'pattern': '^[0-9]*$', 'minimum': 0
+}
+
+
 ipv4 = {
     'type': 'string', 'format': 'ipv4'
 }
