@@ -766,7 +766,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
 
             # Creating NIC with vdev conflict with defined NIC."
             resp = self._guest_nic_create(vdev="1004", userid=userid)
-            self.assertEqual(400, resp.status_code)
+            self.assertEqual(409, resp.status_code)
 
             # Creating NIC with nic_id.
             resp = self._guest_nic_create(vdev="1006", nic_id='123456',
@@ -792,12 +792,12 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             # Creating NIC to active guest when guest is in off status.
             resp = self._guest_nic_create(vdev="1100", active=True,
                                           userid=userid)
-            self.assertEqual(400, resp.status_code)
+            self.assertEqual(409, resp.status_code)
 
             # Deleting NIC to active guest when guest is in off status.
             resp = self._guest_nic_delete(vdev="1009", active=True,
                                           userid=userid)
-            self.assertEqual(400, resp.status_code)
+            self.assertEqual(409, resp.status_code)
             nic_defined, vsw = self._check_nic("1009", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
@@ -1179,10 +1179,10 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             self.assertEqual(None, vsw)
 
             # Coupling with active=True on an off-state VM
-            # The active should fail and rollback the user direct
+            # The action should fail and rollback the user direct
             resp = self._vswitch_couple(vdev="1000", active=True,
                                         userid=userid)
-            self.assertEqual(400, resp.status_code)
+            self.assertEqual(409, resp.status_code)
             nic_defined, vsw = self._check_nic("1000", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
@@ -1209,7 +1209,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             self.assertEqual(200, resp.status_code)
             resp = self._vswitch_couple(vdev="1000", vswitch="RESTVSW2",
                                         userid=userid)
-            self.assertEqual(400, resp.status_code)
+            self.assertEqual(409, resp.status_code)
             nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1",
                                                userid=userid)
             self.assertTrue(nic_defined)
@@ -1219,7 +1219,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             # The NIC shoule not uncoupled in user direct and switch table
             resp = self._vswitch_uncouple(vdev="1000", active=True,
                                           userid=userid)
-            self.assertEqual(400, resp.status_code)
+            self.assertEqual(409, resp.status_code)
             nic_defined, vsw = self._check_nic("1000", vsw="RESTVSW1",
                                                userid=userid)
             self.assertTrue(nic_defined)
@@ -1301,7 +1301,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             # Should still be coupled to original vswitch
             resp = self._vswitch_couple(vdev="2000", vswitch="RESTVSW2",
                                         active=True, userid=userid)
-            self.assertEqual(400, resp.status_code)
+            self.assertEqual(409, resp.status_code)
             nic_defined, vsw = self._check_nic("2000", vsw="RESTVSW1",
                                                userid=userid)
             self.assertTrue(nic_defined)

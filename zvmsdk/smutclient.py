@@ -829,17 +829,16 @@ class SMUTClient(object):
             self._set_vswitch_exception(err, vswitch_name)
 
     def _set_vswitch_exception(self, error, switch_name):
-        if (error.results['rc'] == 8):
-            errmsg = error.format_message()
-            raise exception.SDKInvalidInput(msg=errmsg)
-        elif ((error.results['rc'] == 212) and (error.results['rs'] == 40)):
+        if ((error.results['rc'] == 212) and (error.results['rs'] == 40)):
             obj_desc = "Vswitch %s" % switch_name
             raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
                                                    modID='network')
         elif ((error.results['rc'] == 396) and (error.results['rs'] == 2846)):
             errmsg = ("Operation is not allowed for a "
-                      "VLAN UNAWARE vswitch %s" % switch_name)
-            raise exception.SDKInvalidInput(msg=errmsg)
+                      "VLAN UNAWARE vswitch")
+            raise exception.SDKConflictError(modID='network', rs=5,
+                                             vsw=switch_name,
+                                             msg=errmsg)
         elif ((error.results['rc'] == 396) and
               ((error.results['rs'] == 2838) or
                (error.results['rs'] == 2853) or
@@ -848,7 +847,9 @@ class SMUTClient(object):
                (error.results['rs'] == 3022) or
                (error.results['rs'] == 3033))):
             errmsg = error.format_message()
-            raise exception.SDKInvalidInput(msg=errmsg)
+            raise exception.SDKConflictError(modID='network', rs=5,
+                                             vsw=switch_name,
+                                             msg=errmsg)
         else:
             raise error
 
@@ -1185,35 +1186,35 @@ class SMUTClient(object):
     def _create_nic_inactive_exception(self, error, userid, vdev):
         if ((error.results['rc'] == 400) and (error.results['rs'] == 12)):
             obj_desc = "Guest %s" % userid
-            raise exception.SDKObjectIsLockedError(obj_desc=obj_desc,
-                                                   modID='network')
+            raise exception.SDKConflictError(modID='network', rs=7,
+                                             vdev=vdev, userid=userid,
+                                             obj=obj_desc)
         elif ((error.results['rc'] == 404) and (error.results['rs'] == 12)):
             obj_desc = "Guest device %s" % vdev
-            raise exception.SDKObjectIsLockedError(obj_desc=obj_desc,
-                                                   modID='network')
+            raise exception.SDKConflictError(modID='network', rs=7,
+                                             vdev=vdev, userid=userid,
+                                             obj=obj_desc)
         elif ((error.results['rc'] == 404) and (error.results['rs'] == 4)):
             errmsg = error.format_message()
-            raise exception.SDKInvalidInput(msg=errmsg)
-        elif ((error.results['rc'] == 8) and
-              ((error.results['rs'] == 3002) or
-               (error.results['rs'] == 3003) or
-               (error.results['rs'] == 2797))):
-            errmsg = error.format_message()
-            raise exception.SDKInvalidInput(msg=errmsg)
+            raise exception.SDKConflictError(modID='network', rs=6,
+                                             vdev=vdev, userid=userid,
+                                             msg=errmsg)
         else:
             raise error
 
-    def _create_nic_active_exception(self, error, vdev):
-        if (((error.results['rc'] == 204) and (error.results['rs'] == 2)) or
-            ((error.results['rc'] == 204) and (error.results['rs'] == 4)) or
+    def _create_nic_active_exception(self, error, userid, vdev):
+        if (((error.results['rc'] == 204) and (error.results['rs'] == 4)) or
             ((error.results['rc'] == 204) and (error.results['rs'] == 28))):
             errmsg = error.format_message()
-            raise exception.SDKInvalidInput(msg=errmsg)
+            raise exception.SDKConflictError(modID='network', rs=6,
+                                             vdev=vdev, userid=userid,
+                                             msg=errmsg)
         elif ((error.results['rc'] == 396) and
-              ((error.results['rs'] == 2794) or
-               (error.results['rs'] == 2797))):
+               (error.results['rs'] == 2797)):
             errmsg = error.format_message()
-            raise exception.SDKInvalidInput(msg=errmsg)
+            raise exception.SDKConflictError(modID='network', rs=6,
+                                             vdev=vdev, userid=userid,
+                                             msg=errmsg)
         else:
             raise error
 
@@ -1221,9 +1222,10 @@ class SMUTClient(object):
         # Get the vm status
         power_state = self.get_power_state(userid)
         if power_state == 'off':
-            errmsg = ('The vm %s is powered off, '
+            LOG.error('The vm %s is powered off, '
                       'active operation is not allowed' % userid)
-            raise exception.SDKInvalidInput(msg=errmsg)
+            raise exception.SDKConflictError(modID='network', rs=1,
+                                             userid=userid)
 
     def _create_nic(self, userid, vdev, nic_id=None, mac_addr=None,
                     active=False):
@@ -1250,7 +1252,7 @@ class SMUTClient(object):
             LOG.error("Failed to create nic %s for user %s in "
                       "the guest's user direct, error: %s" %
                       (vdev, userid, err.format_message()))
-            self._create_nic_inactive_exception(err, vdev)
+            self._create_nic_inactive_exception(err, userid, vdev)
 
         if active:
             if mac_addr is not None:
@@ -1285,7 +1287,7 @@ class SMUTClient(object):
                     else:
                         persist_OK = False
                 if persist_OK:
-                    self._create_nic_active_exception(err1, vdev)
+                    self._create_nic_active_exception(err1, userid, vdev)
                 else:
                     raise exception.SDKNetworkOperationError(rs=4,
                                     nic=vdev, userid=userid,
@@ -1301,18 +1303,21 @@ class SMUTClient(object):
             results = self._request("getvm %s directory" % userid)
         return results.get('response', [])
 
-    def _delete_nic_active_exception(self, error):
+    def _delete_nic_active_exception(self, error, userid, vdev):
         if ((error.results['rc'] == 204) and (error.results['rs'] == 28)):
             errmsg = error.format_message()
-            raise exception.SDKInvalidInput(msg=errmsg)
+            raise exception.SDKConflictError(modID='network', rs=8,
+                                             vdev=vdev, userid=userid,
+                                             msg=errmsg)
         else:
             raise error
 
-    def _delete_nic_inactive_exception(self, error, userid):
+    def _delete_nic_inactive_exception(self, error, userid, vdev):
         if ((error.results['rc'] == 400) and (error.results['rs'] == 12)):
             obj_desc = "Guest %s" % userid
-            raise exception.SDKObjectIsLockedError(obj_desc=obj_desc,
-                                                   modID='network')
+            raise exception.SDKConflictError(modID='network', rs=9,
+                                             vdev=vdev, userid=userid,
+                                             obj=obj_desc)
         else:
             raise error
 
@@ -1357,7 +1362,7 @@ class SMUTClient(object):
                 LOG.error("Failed to delete nic %s for %s in "
                           "the guest's user direct, error: %s" %
                           (vdev, userid, emsg))
-                self._delete_nic_inactive_exception(err, userid)
+                self._delete_nic_inactive_exception(err, userid, vdev)
 
         self._NetDbOperator.switch_delete_record_for_nic(userid, vdev)
         if active:
@@ -1379,17 +1384,20 @@ class SMUTClient(object):
                     LOG.error("Failed to delete nic %s for %s on "
                               "the active guest system, error: %s" %
                               (vdev, userid, emsg))
-                    self._delete_nic_active_exception(err)
+                    self._delete_nic_active_exception(err, userid, vdev)
         msg = ('Delete nic device %(vdev)s for guest %(vm)s successfully'
                 % {'vdev': vdev, 'vm': userid})
         LOG.info(msg)
 
-    def _couple_active_exception(self, error, vdev, vswitch):
+    def _couple_active_exception(self, error, userid, vdev, vswitch):
         if ((error.results['rc'] == 212) and
-            ((error.results['rs'] == 8) or
-             (error.results['rs'] == 28))):
+            ((error.results['rs'] == 28) or
+             (error.results['rs'] == 8))):
             errmsg = error.format_message()
-            raise exception.SDKInvalidInput(msg=errmsg)
+            raise exception.SDKConflictError(modID='network', rs=10,
+                                             vdev=vdev, userid=userid,
+                                             vsw=vswitch,
+                                             msg=errmsg)
         elif ((error.results['rc'] == 212) and (error.results['rs'] == 40)):
             obj_desc = "Vswitch %s" % vswitch
             raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
@@ -1404,26 +1412,36 @@ class SMUTClient(object):
                (error.results['rs'] == 3034) or
                (error.results['rs'] == 6011))):
             errmsg = error.format_message()
-            raise exception.SDKInvalidInput(msg=errmsg)
+            raise exception.SDKConflictError(modID='network', rs=10,
+                                             vdev=vdev, userid=userid,
+                                             vsw=vswitch,
+                                             msg=errmsg)
         else:
             raise error
 
-    def _couple_inactive_exception(self, error, userid, vdev):
+    def _couple_inactive_exception(self, error, userid, vdev, vswitch):
         if ((error.results['rc'] == 412) and (error.results['rs'] == 28)):
             errmsg = error.format_message()
-            raise exception.SDKInvalidInput(msg=errmsg)
+            raise exception.SDKConflictError(modID='network', rs=10,
+                                             vdev=vdev, userid=userid,
+                                             vsw=vswitch,
+                                             msg=errmsg)
         elif ((error.results['rc'] == 400) and (error.results['rs'] == 12)):
             obj_desc = "Guest %s" % userid
-            raise exception.SDKObjectIsLockedError(obj_desc=obj_desc,
-                                                   modID='network')
-        elif ((error.results['rc'] == 400) and (error.results['rs'] == 8)):
+            raise exception.SDKConflictError(modID='network', rs=11,
+                                             vdev=vdev, userid=userid,
+                                             vsw=vswitch,
+                                             obj=obj_desc)
+        elif ((error.results['rc'] == 400) and (error.results['rs'] == 4)):
             obj_desc = "Guest %s" % vdev
             raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
                                                    modID='network')
         elif ((error.results['rc'] == 404) and (error.results['rs'] == 12)):
             obj_desc = "Guest device %s" % vdev
-            raise exception.SDKObjectIsLockedError(obj_desc=obj_desc,
-                                                   modID='network')
+            raise exception.SDKConflictError(modID='network', rs=11,
+                                             vdev=vdev, userid=userid,
+                                             vsw=vswitch,
+                                             obj=obj_desc)
         elif ((error.results['rc'] == 404) and (error.results['rs'] == 8)):
             obj_desc = "Guest device %s" % vdev
             raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
@@ -1454,7 +1472,7 @@ class SMUTClient(object):
             LOG.error("Failed to couple nic %s to vswitch %s for user %s "
                       "in the guest's user direct, error: %s" %
                       (vdev, vswitch_name, userid, err.format_message()))
-            self._couple_inactive_exception(err, userid, vdev)
+            self._couple_inactive_exception(err, userid, vdev, vswitch_name)
 
         # the inst must be active, or this call will failed
         if active:
@@ -1496,7 +1514,7 @@ class SMUTClient(object):
                         else:
                             persist_OK = False
                     if persist_OK:
-                        self._couple_active_exception(err1, vdev,
+                        self._couple_active_exception(err1, userid, vdev,
                                                       vswitch_name)
                     else:
                         raise exception.SDKNetworkOperationError(rs=3,
@@ -1523,14 +1541,16 @@ class SMUTClient(object):
                   nic_vdev, vswitch_name, msg)
         self._couple_nic(userid, nic_vdev, vswitch_name, active=active)
 
-    def _uncouple_active_exception(self, error, vdev):
+    def _uncouple_active_exception(self, error, userid, vdev):
         if ((error.results['rc'] == 204) and (error.results['rs'] == 8)):
             obj_desc = "Guest device %s" % vdev
             raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
                                                    modID='network')
         elif ((error.results['rc'] == 204) and (error.results['rs'] == 28)):
             errmsg = error.format_message()
-            raise exception.SDKInvalidInput(msg=errmsg)
+            raise exception.SDKConflictError(modID='network', rs=12,
+                                             vdev=vdev, userid=userid,
+                                             msg=errmsg)
         else:
             raise error
 
@@ -1545,8 +1565,9 @@ class SMUTClient(object):
                                                    modID='network')
         elif ((error.results['rc'] == 400) and (error.results['rs'] == 12)):
             obj_desc = "Guest %s" % userid
-            raise exception.SDKObjectIsLockedError(obj_desc=obj_desc,
-                                                   modID='network')
+            raise exception.SDKConflictError(modID='network', rs=13,
+                                             vdev=vdev, userid=userid,
+                                             obj=obj_desc)
         else:
             raise error
 
@@ -1606,7 +1627,7 @@ class SMUTClient(object):
                 else:
                     LOG.error("Failed to uncouple nic %s on the active "
                               "guest system, error: %s" % (vdev, emsg))
-                    self._uncouple_active_exception(err, vdev)
+                    self._uncouple_active_exception(err, userid, vdev)
         msg = ('Uncouple nic device %(vdev)s of guest %(vm)s successfully'
                 % {'vdev': vdev, 'vm': userid})
         LOG.info(msg)
@@ -2297,7 +2318,9 @@ class SMUTClient(object):
                 else:
                     errmsg = ("The specified virtual device number %s "
                               "has already been used." % vdev)
-                    raise exception.SDKInvalidInputFormat(msg=errmsg)
+                    raise exception.SDKConflictError(modID='network', rs=6,
+                                                     vdev=vdev, userid=userid,
+                                                     msg=errmsg)
         if ((len(nic_vdev) > 4) or
             (len(str(hex(int(nic_vdev, 16) + 2))[2:]) > 4)):
             errmsg = ("Virtual device number %s is not valid" % nic_vdev)
@@ -2309,8 +2332,10 @@ class SMUTClient(object):
 
         if not self._is_OSA_free(OSA_device):
             errmsg = ("The specified OSA device number %s "
-                      "is not valid" % OSA_device)
-            raise exception.SDKInvalidInput(msg=errmsg)
+                      "is not free" % OSA_device)
+            raise exception.SDKConflictError(modID='network', rs=14,
+                                             osa=OSA_device, userid=userid,
+                                             msg=errmsg)
 
         LOG.debug('Nic attributes: vdev is %(vdev)s, '
                   'dedicated OSA device is %(osa)s',
@@ -2319,27 +2344,34 @@ class SMUTClient(object):
         self._dedicate_OSA(userid, OSA_device, nic_vdev, active=active)
         return nic_vdev
 
-    def _dedicate_OSA_inactive_exception(self, error, userid, vdev):
+    def _dedicate_OSA_inactive_exception(self, error, userid, vdev,
+                                         OSA_device):
         if ((error.results['rc'] == 400) and (error.results['rs'] == 12)):
             obj_desc = "Guest %s" % userid
-            raise exception.SDKObjectIsLockedError(obj_desc=obj_desc,
-                                                   modID='network')
+            raise exception.SDKConflictError(modID='network', rs=15,
+                                             osa=OSA_device, userid=userid,
+                                             obj=obj_desc)
         elif ((error.results['rc'] == 404) and (error.results['rs'] == 12)):
             obj_desc = "Guest device %s" % vdev
-            raise exception.SDKObjectIsLockedError(obj_desc=obj_desc,
-                                                   modID='network')
+            raise exception.SDKConflictError(modID='network', rs=15,
+                                             osa=OSA_device, userid=userid,
+                                             obj=obj_desc)
         elif ((error.results['rc'] == 404) and (error.results['rs'] == 4)):
             errmsg = error.format_message()
-            raise exception.SDKInvalidInput(msg=errmsg)
+            raise exception.SDKConflictError(modID='network', rs=14,
+                                             osa=OSA_device, userid=userid,
+                                             msg=errmsg)
         else:
             raise error
 
-    def _dedicate_OSA_active_exception(self, error, vdev):
+    def _dedicate_OSA_active_exception(self, error, userid, OSA_device):
         if (((error.results['rc'] == 204) and (error.results['rs'] == 4)) or
             ((error.results['rc'] == 204) and (error.results['rs'] == 8)) or
             ((error.results['rc'] == 204) and (error.results['rs'] == 16))):
             errmsg = error.format_message()
-            raise exception.SDKInvalidInput(msg=errmsg)
+            raise exception.SDKConflictError(modID='network', rs=14,
+                                             osa=OSA_device, userid=userid,
+                                             msg=errmsg)
         else:
             raise error
 
@@ -2392,7 +2424,8 @@ class SMUTClient(object):
                                       (def_vdev, userid,
                                        err2.format_message()))
                         pass
-                self._dedicate_OSA_inactive_exception(err, userid, vdev)
+                self._dedicate_OSA_inactive_exception(err, userid, vdev,
+                                                      OSA_device)
 
             def_vdev = str(hex(int(def_vdev, 16) + 1))[2:]
             att_OSA_device = str(hex(int(att_OSA_device, 16) + 1))[2:]
@@ -2461,7 +2494,8 @@ class SMUTClient(object):
                                           (def_vdev, userid,
                                            err3.format_message()))
                             pass
-                    self._dedicate_OSA_active_exception(err, vdev)
+                    self._dedicate_OSA_active_exception(err, userid,
+                                                        OSA_device)
 
                 def_vdev = str(hex(int(def_vdev, 16) + 1))[2:]
                 att_OSA_device = str(hex(int(att_OSA_device, 16) + 1))[2:]
@@ -2473,18 +2507,21 @@ class SMUTClient(object):
                 % {'vdev': vdev, 'vm': userid, 'osa': OSA_device})
         LOG.info(msg)
 
-    def _undedicate_nic_active_exception(self, error):
+    def _undedicate_nic_active_exception(self, error, userid, vdev):
         if ((error.results['rc'] == 204) and (error.results['rs'] == 44)):
             errmsg = error.format_message()
-            raise exception.SDKInvalidInput(msg=errmsg)
+            raise exception.SDKConflictError(modID='network', rs=16,
+                                             userid=userid, vdev=vdev,
+                                             msg=errmsg)
         else:
             raise error
 
-    def _undedicate_nic_inactive_exception(self, error, userid):
+    def _undedicate_nic_inactive_exception(self, error, userid, vdev):
         if ((error.results['rc'] == 400) and (error.results['rs'] == 12)):
             obj_desc = "Guest %s" % userid
-            raise exception.SDKObjectIsLockedError(obj_desc=obj_desc,
-                                                   modID='network')
+            raise exception.SDKConflictError(modID='network', rs=17,
+                                             userid=userid, vdev=vdev,
+                                             obj=obj_desc)
         else:
             raise error
 
@@ -2518,7 +2555,7 @@ class SMUTClient(object):
                     LOG.error("Failed to undedicate nic %s for %s in "
                               "the guest's user direct, error: %s" %
                               (vdev, userid, emsg))
-                self._undedicate_nic_inactive_exception(err, userid)
+                self._undedicate_nic_inactive_exception(err, userid, vdev)
             def_vdev = str(hex(int(def_vdev, 16) + 1))[2:]
 
         self._NetDbOperator.switch_delete_record_for_nic(userid, vdev)
@@ -2544,7 +2581,8 @@ class SMUTClient(object):
                         LOG.error("Failed to undedicate nic %s for %s on "
                                   "the active guest system, error: %s" %
                                   (vdev, userid, emsg))
-                        self._undedicate_nic_active_exception(err)
+                        self._undedicate_nic_active_exception(err, userid,
+                                                              vdev)
                 def_vdev = str(hex(int(def_vdev, 16) + 1))[2:]
         msg = ('Undedicate nic device %(vdev)s of guest %(vm)s successfully'
                 % {'vdev': vdev, 'vm': userid})
