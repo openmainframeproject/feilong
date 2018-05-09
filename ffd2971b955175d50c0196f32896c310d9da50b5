@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b6419c47_fcdb4ef2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-09T02:56:49Z",
+      "side": 1,
+      "message": "please add more commit message and related launchpad bug link",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 23
+      },
+      "revId": "ffd2971b955175d50c0196f32896c310d9da50b5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
