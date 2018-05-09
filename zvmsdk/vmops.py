@@ -273,14 +273,17 @@ class VMOps(object):
         if userid.upper() not in self.guest_list():
             LOG.error("Failed to live resize cpus of guest %s, error: guest "
                       "doesn't exist in guests database" % userid)
-            raise exception.SDKGuestOperationError(rs=11, userid=userid)
+            raise exception.SDKObjectNotExistError(obj_desc=("Guest '%s'" %
+                                                             userid),
+                                                   modID='guest')
         # Check power state is 'on'
         state = self.get_power_state(userid)
         if state != 'on':
             LOG.error("Failed to live resize cpus of guest %s, error: "
                       "guest is inactive, cann't perform live resize." %
                       userid)
-            raise exception.SDKGuestOperationError(rs=6, userid=userid)
+            raise exception.SDKConflictError(modID='guest', rs=1,
+                                             userid=userid)
         # Do live resize
         self._smutclient.live_resize_cpus(userid, count)
 
@@ -289,6 +292,8 @@ class VMOps(object):
         if userid.upper() not in self.guest_list():
             LOG.error("Failed to resize cpus of guest '%s', error: guest "
                       "doesn't exist in guests database" % userid)
-            raise exception.SDKGuestOperationError(rs=11, userid=userid)
+            raise exception.SDKObjectNotExistError(obj_desc=("Guest '%s'" %
+                                                             userid),
+                                                   modID='guest')
         # Do resize
         self._smutclient.resize_cpus(userid, count)

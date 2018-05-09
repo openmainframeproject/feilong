@@ -149,27 +149,15 @@ errors = {
                    "copy configure drive failed: %(err_info)s"),
                5: ("Failed to capture userid %(userid)s to generate image, "
                    "error: %(msg)s"),
-               6: ("Failed to live resize cpus of guest: '%(userid)s', "
-                   "error: guest is not active."),
-               7: ("Failed to live resize cpus of guest: '%(userid)s', "
-                   "error: current active cpu count: '%(active)i' is greater "
-                   "than requested count: '%(req)i'."),
-               8: ("Failed to resize cpus of guest: '%(userid)s', "
+               6: ("Failed to resize cpus of guest: '%(userid)s', "
                    "error: update cpu definition in user entry failed with "
                    "smut error: '%(err)s'."),
-               9: ("Failed to live resize cpus of guest: '%(userid)s', "
+               7: ("Failed to live resize cpus of guest: '%(userid)s', "
                    "error: define new cpu to active failed with smut error: "
                    "'%(err)s'."),
-               10: ("Failed to live resize cpus of guest: '%(userid)s', "
+               8: ("Failed to live resize cpus of guest: '%(userid)s', "
                    "error: rescan cpus to hot-plug new defined cpus failed: "
                    "'%(err)s'."),
-               11: ("Guest '%(userid)s' doesn't exist in guests database."),
-               12: ("Failed to resize cpus of guest: '%(userid)s', "
-                   "error: maximum number of cpus is not defined in user "
-                   "directory."),
-               13: ("Failed to resize cpus of guest: '%(userid)s', "
-                   "error: the requested number of cpus: '%(req)i' exceeds "
-                   "the maximum number of cpus allowed: '%(max)i'."),
               },
               "Operation on Guest failed"
               ],
@@ -254,7 +242,17 @@ errors = {
                  ],
 # Conflict Error (The to-be-updated object status conflict)
     'conflict': [{'overallRC': 409, 'modID': None, 'rc': 409},
-                 {},
+                 {1: "Guest '%(userid)s' is not in active status.",
+                  2: ("Failed to live resize cpus of guest: '%(userid)s', "
+                      "error: current active cpu count: '%(active)i' is "
+                      "greater than requested count: '%(req)i'."),
+                  3: ("Failed to resize cpus of guest: '%(userid)s', "
+                      "error: maximum number of cpus is not defined in user "
+                      "directory."),
+                  4: ("Failed to resize cpus of guest: '%(userid)s', "
+                      "error: the requested number of cpus: '%(req)i' exceeds "
+                      "the maximum number of cpus allowed: '%(max)i'."),
+                  },
                  "The operated object status conflict"
                  ],
 # Object deleted.

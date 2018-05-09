@@ -9,14 +9,9 @@
 300;10;300;3;Failed to deploy image to userid: '%(userid)s', unpackdiskimage failed with rc: %(unpack_rc)d, error: %(err)s
 300;10;300;4;Failed to deploy image to userid: '%(userid)s', copy configure drive failed: %(err_info)s
 300;10;300;5;Failed to capture userid %(userid)s to generate image, error: %(msg)s
-300;10;300;6;Failed to live resize cpus of guest: '%(userid)s', error: guest is not active.
-300;10;300;7;Failed to live resize cpus of guest: '%(userid)s', error: current active cpu count: '%(active)i' is greater than requested count: '%(req)i'.
-300;10;300;8;Failed to resize cpus of guest: '%(userid)s', error: update cpu definition in user entry failed with smut error: '%(err)s'.
-300;10;300;9;Failed to live resize cpus of guest: '%(userid)s', error: define new cpu to active failed with smut error: '%(err)s'.
-300;10;300;10;Failed to live resize cpus of guest: '%(userid)s', error: rescan cpus to hot-plug new defined cpus failed: '%(err)s'.
-300;10;300;11;Guest '%(userid)s' doesn't exist in guests database.
-300;10;300;12;Failed to resize cpus of guest: '%(userid)s', error: maximum number of cpus is not defined in user directory.
-300;10;300;13;Failed to resize cpus of guest: '%(userid)s', error: the requested number of cpus: '%(req)i' exceeds the maximum number of cpus allowed: '%(max)i'.
+300;10;300;6;Failed to resize cpus of guest: '%(userid)s', error: update cpu definition in user entry failed with smut error: '%(err)s'.
+300;10;300;7;Failed to live resize cpus of guest: '%(userid)s', error: define new cpu to active failed with smut error: '%(err)s'.
+300;10;300;8;Failed to live resize cpus of guest: '%(userid)s', error: rescan cpus to hot-plug new defined cpus failed: '%(err)s'.
 **Operation on Network failed**
 300;20;300;1;Database operation failed, error: %(msg)s
 300;20;300;2;ZVMSDK network error: %(msg)s
@@ -52,7 +47,10 @@
 **The operated object does not exist**
 404;None;404;1;%(obj_desc)s does not exist.
 **The operated object status conflict**
-409;None;409;;The operated object status conflict
+409;None;409;1;Guest '%(userid)s' is not in active status.
+409;None;409;2;Failed to live resize cpus of guest: '%(userid)s', error: current active cpu count: '%(active)i' is greater than requested count: '%(req)i'.
+409;None;409;3;Failed to resize cpus of guest: '%(userid)s', error: maximum number of cpus is not defined in user directory.
+409;None;409;4;Failed to resize cpus of guest: '%(userid)s', error: the requested number of cpus: '%(req)i' exceeds the maximum number of cpus allowed: '%(max)i'.
 **The operated object is deleted**
 410;None;410;;The operated object is deleted
 **The operated object is locked**
