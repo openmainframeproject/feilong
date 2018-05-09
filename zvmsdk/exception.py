@@ -130,17 +130,6 @@ class SDKInvalidInputFormat(SDKBaseException):
                                                     message=errormsg)
 
 
-class SDKInvalidInput(SDKBaseException):
-    def __init__(self, msg):
-        rc = returncode.errors['input']
-        results = rc[0]
-        results['modID'] = returncode.ModRCs['zvmsdk']
-        results['rs'] = 4
-        errormsg = rc[1][4] % {'msg': msg}
-        super(SDKInvalidInput, self).__init__(results=results,
-                                              message=errormsg)
-
-
 class SDKInternalError(SDKBaseException):
     def __init__(self, msg, modID='zvmsdk', results=None):
         # if results is set, it means the internal error comes from
@@ -182,17 +171,6 @@ class SDKObjectNotExistError(SDKBaseException):
         results['rs'] = 1
         errormsg = rc[1][1] % {'obj_desc': obj_desc}
         super(SDKObjectNotExistError, self).__init__(results=results,
-                                                     message=errormsg)
-
-
-class SDKObjectIsLockedError(SDKBaseException):
-    def __init__(self, obj_desc, modID='zvmsdk'):
-        rc = returncode.errors['isLocked']
-        results = rc[0]
-        results['modID'] = returncode.ModRCs[modID]
-        results['rs'] = 1
-        errormsg = rc[1][1] % {'obj_desc': obj_desc}
-        super(SDKObjectIsLockedError, self).__init__(results=results,
                                                      message=errormsg)
 
 
