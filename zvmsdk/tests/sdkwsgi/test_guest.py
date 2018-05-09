@@ -67,17 +67,81 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         self.record_logfile_position()
 
     @classmethod
-    def _guest_create(cls, userid=None):
-        body = """{"guest": {"userid": "%s", "vcpus": 1,
+    def _guest_create(cls, userid=None, maxcpu=None, maxmem=None):
+        content = {"guest": {"vcpus": 1,
                              "memory": 1024,
                              "disk_list": [{"size": "1100",
-                                            "is_boot_disk": "True"}]}}"""
+                                            "is_boot_disk": "True"}]}}
         userid = userid or cls.userid
-        body = body % userid
+        content["guest"]["userid"] = userid
+        if maxcpu is not None:
+            content["guest"]["max_cpu"] = maxcpu
+        if maxmem is not None:
+            content["guest"]["max_mem"] = maxmem
+
+        body = json.dumps(content)
         resp = cls.client.api_request(url='/guests', method='POST',
                                        body=body)
 
         return resp
+
+    def _check_CPU_MEM(self, userid=None, cpu_cnt = None,
+                       cpu_cnt_live = None,
+                       maxcpu=CONF.zvm.user_default_max_cpu,
+                       maxmem=CONF.zvm.user_default_max_memory):
+        if userid is None:
+            userid = self.userid
+
+        resp_info = self._guest_get(userid=userid)
+        self.assertEqual(200, resp_info.status_code)
+
+        Statement = "USER %s LBYONLY" % userid.upper()
+        resp_content = json.loads(resp_info.content)
+        user_direct = resp_content['output']['user_direct']
+        cpu_num = 0
+        cpu_num_live = 0
+        for ent in user_direct:
+            if ent.startswith(Statement):
+                max_memory = ent.split()[4].strip()
+            if ent.startswith("CPU"):
+                cpu_num = cpu_num + 1
+            if ent.startswith("MACHINE ESA"):
+                max_cpus = int(ent.split()[2].strip())
+        if cpu_cnt_live is not None:
+            active_cpus = self.execute_cmd(userid, "lscpu -e")[1:]
+            cpu_num_live = len(active_cpus)
+
+        if cpu_cnt is not None:
+            self.assertEqual(cpu_cnt, cpu_num)
+        if cpu_cnt_live is not None:
+            self.assertEqual(cpu_cnt_live, cpu_num_live)
+        self.assertEqual(maxcpu, max_cpus)
+        self.assertEqual(maxmem, max_memory)
+
+    def _check_total_memory(self, userid=None,
+                            maxmem=CONF.zvm.user_default_max_memory):
+        if userid is None:
+            userid = self.userid
+
+        result_list = self._smutclient.execute_cmd(userid,
+                                                   'lsmem | grep Total')
+        online_memory = offline_memory = 0
+
+        for element in result_list:
+            if "Total online memory" in element:
+                online_memory = int(element.split()[4].strip())
+                online_unit = element.split()[5].strip().upper()
+                self.assertEqual("MB", online_unit)
+            if "Total offline memory" in element:
+                offline_memory = int(element.split()[3].strip())
+                offline_unit = element.split()[4].strip().upper()
+                self.assertEqual("MB", offline_unit)
+        total_memory = online_memory + offline_memory
+        maxMemMb = int(maxmem[:-1])
+        maxMemSuffix = maxmem[-1].upper()
+        if maxMemSuffix == 'G':
+            maxMemMb = maxMemMb * 1024
+        self.assertEqual(total_memory, maxMemMb)
 
     def _guest_create_with_profile(self):
         body = """{"guest": {"userid": "%s", "vcpus": 1,
@@ -411,6 +475,16 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         body = '{"action": "reboot"}'
         return self._guest_action(body, userid=userid)
 
+    def _guest_resize_cpus(self, max_cpu, userid=None):
+        body = """{"action": "resize_cpus",
+                   "cpu_cnt": %s}""" % max_cpu
+        return self._guest_action(body, userid=userid)
+
+    def _guest_live_resize_cpus(self, max_cpu, userid=None):
+        body = """{"action": "live_resize_cpus",
+                   "cpu_cnt": %s}""" % max_cpu
+        return self._guest_action(body, userid=userid)
+
     def is_reachable(self, userid):
         """Reachable through IUCV communication channel."""
         return self._smutclient.get_guest_connection_status(userid)
@@ -697,6 +771,20 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
     def test_guest_creat_with_profile_notexit(self):
         resp = self._guest_create_with_profile_notexit()
         self.assertEqual(404, resp.status_code)
+
+    def test_guest_create_maxcpu_incorrect(self):
+        resp = self._guest_create(maxcpu=0)
+        self.assertEqual(400, resp.status_code)
+        resp = self._guest_create(maxcpu=65)
+        self.assertEqual(400, resp.status_code)
+
+    def test_guest_create_maxmem_incorrect(self):
+        resp = self._guest_create(maxmem="11111M")
+        self.assertEqual(400, resp.status_code)
+        resp = self._guest_create(maxmem="1024K")
+        self.assertEqual(400, resp.status_code)
+        resp = self._guest_create(maxmem="1024")
+        self.assertEqual(400, resp.status_code)
 
     def test_guest_create_with_profile(self):
         resp = self._guest_create_with_profile()
@@ -1334,6 +1422,46 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             self._guest_delete(userid=userid)
             self._vswitch_delete()
             self._vswitch_delete(vswitch="RESTVSW2")
+
+    def test_guest_create_cpu_memory_default(self):
+        userid = test_utils.generate_test_userid()
+        resp = self._guest_create(userid=userid)
+        self.assertEqual(200, resp.status_code)
+        self._make_transport_file()
+        transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
+
+        try:
+            resp = self._guest_deploy_with_transport_file(userid=userid,
+                                           transportfiles=transport_file)
+            self.assertEqual(200, resp.status_code)
+
+            resp = self._guest_start(userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                             userid))
+            self._check_CPU_MEM(userid)
+            self._check_total_memory(userid)
+        finally:
+            os.system('rm /var/lib/zvmsdk/cfgdrive.tgz')
+            self._guest_delete(userid=userid)
+
+    def test_guest_create_cpu_memory_userset(self):
+        userid = test_utils.generate_test_userid()
+        resp = self._guest_create(userid=userid, maxcpu=10, maxmem="2048M")
+        self.assertEqual(200, resp.status_code)
+
+        try:
+            resp = self._guest_deploy(userid=userid)
+            self.assertEqual(200, resp.status_code)
+
+            resp = self._guest_start(userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                             userid))
+            self._check_CPU_MEM(userid, maxcpu=10, maxmem="2048M")
+            self._check_total_memory(userid, maxmem="2048M")
+        finally:
+            self._guest_delete(userid=userid)
 
 
 class GuestActionTestCase(base.ZVMConnectorBaseTestCase):
