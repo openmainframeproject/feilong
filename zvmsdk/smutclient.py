@@ -605,6 +605,7 @@ class SMUTClient(object):
                 LOG.error(err_msg)
                 raise exception.SDKGuestOperationError(rs=5, userid=userid,
                                                        err=err_msg)
+        shutil.rmtree(image_temp_dir)
 
         # Get md5sum of image
         real_md5sum = self._get_md5sum(image_final_path)
