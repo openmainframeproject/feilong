@@ -21,12 +21,12 @@ import hashlib
 # as workaround here, we first import urllib then import requests
 # later, we need consider to use urllib.request to replace
 # requests if that's possible to avoid this kind of issue
-import six.moves.urllib.parse as urlparse # noqa
+import shutil
+import six.moves.urllib.parse as urlparse
 import requests
 import threading
 import os
 import re
-import shutil
 import six
 import string
 import tempfile
@@ -603,9 +603,11 @@ class SMUTClient(object):
                 err_msg = ("move image file from staging to netboot "
                            "folder failed with return code: %d." % rc)
                 LOG.error(err_msg)
+                self._pathutils.clean_temp_folder(image_temp_dir)
+                self._pathutils.clean_temp_folder(image_final_dir)
                 raise exception.SDKGuestOperationError(rs=5, userid=userid,
                                                        err=err_msg)
-        shutil.rmtree(image_temp_dir)
+        self._pathutils.clean_temp_folder(image_temp_dir)
 
         # Get md5sum of image
         real_md5sum = self._get_md5sum(image_final_path)
