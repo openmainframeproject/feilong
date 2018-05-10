@@ -2009,7 +2009,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         userid = 'testuid'
         count = 4
         get_active.return_value = ['00', '01', '02', '03', '04']
-        self.assertRaises(exception.SDKGuestOperationError,
+        self.assertRaises(exception.SDKConflictError,
                           self._smutclient.live_resize_cpus, userid, count)
         get_active.assert_called_once_with(userid)
         resize.assert_not_called()
@@ -2217,7 +2217,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         userid = 'testuid'
         count = 4
         get_defined.return_value = (0, ['00', '01'])
-        self.assertRaises(exception.SDKGuestOperationError,
+        self.assertRaises(exception.SDKConflictError,
                           self._smutclient.resize_cpus, userid, count)
         get_defined.assert_called_once_with(userid)
         get_avail.assert_not_called()
@@ -2231,7 +2231,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         userid = 'testuid'
         count = 40
         get_defined.return_value = (32, ['00', '01'])
-        self.assertRaises(exception.SDKGuestOperationError,
+        self.assertRaises(exception.SDKConflictError,
                           self._smutclient.resize_cpus, userid, count)
         get_defined.assert_called_once_with(userid)
         get_avail.assert_not_called()

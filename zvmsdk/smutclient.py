@@ -2629,15 +2629,17 @@ class SMUTClient(object):
             LOG.error("Resize for guest '%s' cann't be done. The maximum "
                       "number of cpus is not defined in user directory." %
                       userid)
-            raise exception.SDKGuestOperationError(rs=12, userid=userid)
+            raise exception.SDKConflictError(modID='guest', rs=3,
+                                             userid=userid)
         # Check requested count is less than the maximum cpus
         if count > max_cpus:
             LOG.error("Resize for guest '%s' cann't be done. The "
                       "requested number of cpus: '%i' exceeds the maximum "
                       "number of cpus allowed: '%i'." %
                       (userid, count, max_cpus))
-            raise exception.SDKGuestOperationError(rs=13, userid=userid,
-                                                   req=count, max=max_cpus)
+            raise exception.SDKConflictError(modID='guest', rs=4,
+                                             userid=userid,
+                                             req=count, max=max_cpus)
         # Check count and take action
         if defined_count == count:
             LOG.info("The number of current defined CPUs in user '%s' equals "
@@ -2663,7 +2665,7 @@ class SMUTClient(object):
                 msg = ("Define new cpus in user directory for '%s' failed with"
                        " SMUT error: %s" % (userid, e.format_message()))
                 LOG.error(msg)
-                raise exception.SDKGuestOperationError(rs=8, userid=userid,
+                raise exception.SDKGuestOperationError(rs=6, userid=userid,
                                                        err=e.format_message())
             LOG.info("New CPUs defined in user directory for '%s' "
                      "successfully" % userid)
@@ -2684,7 +2686,7 @@ class SMUTClient(object):
                 msg = ("Delete CPUs in user directory for '%s' failed with"
                        " SMUT error: %s" % (userid, e.format_message()))
                 LOG.error(msg)
-                raise exception.SDKGuestOperationError(rs=8, userid=userid,
+                raise exception.SDKGuestOperationError(rs=6, userid=userid,
                                                        err=e.format_message())
             LOG.info("CPUs '%s' deleted from user directory for '%s' "
                      "successfully" % (str(updated_addrs), userid))
@@ -2702,9 +2704,10 @@ class SMUTClient(object):
                       "the requested count: %(req)i." %
                       {'uid': userid, 'cur': active_count,
                        'req': count})
-            raise exception.SDKGuestOperationError(rs=7, userid=userid,
-                                                   active=active_count,
-                                                   req=count)
+            raise exception.SDKConflictError(modID='guest', rs=2,
+                                             userid=userid,
+                                             active=active_count,
+                                             req=count)
 
         # Static resize CPUs. (add or delete CPUs from user directory)
         (action, updated_addrs, max_cpus) = self.resize_cpus(userid, count)
@@ -2763,7 +2766,7 @@ class SMUTClient(object):
                                  "successfully." % userid)
                 # Finally raise the exception
                 raise exception.SDKGuestOperationError(
-                    rs=9, userid=userid, err=err1.format_message())
+                    rs=7, userid=userid, err=err1.format_message())
         # Activate successfully, rescan in Linux layer to hot-plug new cpus
         LOG.info("Added new CPUs to active configuration of guest '%s'" %
                  userid)
@@ -2775,7 +2778,7 @@ class SMUTClient(object):
                       "'%s' failed with error: %s. No rollback is done and you"
                       "may need to check the status and restart the guest to "
                       "make the defined cpus online." % (userid, msg))
-            raise exception.SDKGuestOperationError(rs=10, userid=userid,
+            raise exception.SDKGuestOperationError(rs=8, userid=userid,
                                                    err=msg)
         LOG.info("Live resize cpus for guest: '%s' finished successfully."
                  % userid)

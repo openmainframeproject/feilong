@@ -356,7 +356,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         userid = 'testuid'
         cpu_cnt = 3
         guest_list.return_value = []
-        self.assertRaises(exception.SDKGuestOperationError,
+        self.assertRaises(exception.SDKObjectNotExistError,
                           self.vmops.live_resize_cpus, userid, cpu_cnt)
         guest_list.assert_called_once_with()
         power_state.assert_not_called()
@@ -371,7 +371,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         cpu_cnt = 3
         guest_list.return_value = [userid.upper()]
         power_state.return_value = 'off'
-        self.assertRaises(exception.SDKGuestOperationError,
+        self.assertRaises(exception.SDKConflictError,
                           self.vmops.live_resize_cpus, userid, cpu_cnt)
         guest_list.assert_called_once_with()
         power_state.assert_called_once_with(userid)
@@ -393,7 +393,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         userid = 'testuid'
         cpu_cnt = 3
         guest_list.return_value = []
-        self.assertRaises(exception.SDKGuestOperationError,
+        self.assertRaises(exception.SDKObjectNotExistError,
                           self.vmops.resize_cpus, userid, cpu_cnt)
         guest_list.assert_called_once_with()
         do_resize.assert_not_called()

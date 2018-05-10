@@ -161,6 +161,19 @@ class SDKInternalError(SDKBaseException):
                                                message=errormsg)
 
 
+class SDKConflictError(SDKBaseException):
+    def __init__(self, modID, rs, **kwargs):
+        # kwargs can be used to contain different keyword for constructing
+        # the rs error msg
+        rc = returncode.errors['conflict']
+        results = rc[0]
+        results['modID'] = returncode.ModRCs[modID]
+        results['rs'] = rs
+        errormsg = rc[1][rs] % kwargs
+        super(SDKConflictError, self).__init__(results=results,
+                                               message=errormsg)
+
+
 class SDKObjectNotExistError(SDKBaseException):
     def __init__(self, obj_desc, modID='zvmsdk'):
         rc = returncode.errors['notExist']
