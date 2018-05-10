@@ -2603,14 +2603,20 @@ class SMUTClient(object):
 
     def _get_active_cpu_addrs(self, userid):
         # Get the active cpu addrs in two-digit hex string in upper case
-        # Sample output:
-        # CPU BOOK SOCKET CORE ONLINE CONFIGURED POLARIZATION ADDRESS
-        # 0   0    0      0    yes    yes        horizontal   0
-        # 1   1    1      1    yes    yes        horizontal   1
+        # Sample output for 'lscpu --parse=ADDRESS':
+        # # The following is the parsable format, which can be fed to other
+        # # programs. Each different item in every column has an unique ID
+        # # starting from zero.
+        # # Address
+        # 0
+        # 1
         active_addrs = []
-        active_cpus = self.execute_cmd(userid, "lscpu -e")[1:]
+        active_cpus = self.execute_cmd(userid, "lscpu --parse=ADDRESS")
         for c in active_cpus:
-            addr = hex(int(c.split()[7].strip()))[2:].rjust(2, '0').upper()
+            # Skip the comment lines at beginning
+            if c.startswith("# "):
+                continue
+            addr = hex(int(c.strip()))[2:].rjust(2, '0').upper()
             active_addrs.append(addr)
         return active_addrs
 

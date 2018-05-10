@@ -1945,15 +1945,16 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
     def test_private_get_active_cpu_addrs(self, exec_cmd):
-        active_cpus = ['CPU BOOK SOCKET CORE ONLINE CONFIGURED POLARIZATION '
-                      'ADDRESS',
-                      '0   0    0      0    yes    yes        horizontal   0',
-                      '1   1    1      1    yes    yes        horizontal   19',
-                      '2   2    2      2    yes    yes        horizontal   3',
-                      '3   3    3      3    yes    yes        horizontal   10']
+        active_cpus = [('# The following is the parsable format, which can '
+                        'be fed to other'),
+                       ('# programs. Each different item in every column has '
+                       'an unique ID'),
+                       '# starting from zero.',
+                       '# Address',
+                       '0', '3', '10', '19']
         exec_cmd.return_value = active_cpus
         addrs = self._smutclient._get_active_cpu_addrs('TESTUID')
-        exec_cmd.assert_called_once_with('TESTUID', "lscpu -e")
+        exec_cmd.assert_called_once_with('TESTUID', "lscpu --parse=ADDRESS")
         addrs.sort()
         self.assertListEqual(addrs, ['00', '03', '0A', '13'])
 
