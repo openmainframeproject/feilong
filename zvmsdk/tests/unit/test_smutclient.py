@@ -15,6 +15,7 @@
 
 import os
 import mock
+import shutil
 import tempfile
 
 from smutLayer import smut
@@ -1450,6 +1451,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         self.assertEqual(result, 'ubuntu16.04')
 
     @mock.patch.object(database.ImageDbOperator, 'image_add_record')
+    @mock.patch.object(shutil, 'rmtree')
     @mock.patch.object(smutclient.SMUTClient, '_get_image_size')
     @mock.patch.object(smutclient.SMUTClient, '_get_disk_size_units')
     @mock.patch.object(smutclient.SMUTClient, '_get_md5sum')
@@ -1463,7 +1465,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_guest_capture_good_path(self, get_power_state, execcmd,
                                      get_os_version, get_capture_devices,
                                      softstop, mkdir, execute, md5sum,
-                                     disk_size_units, imagesize,
+                                     disk_size_units, imagesize, rmtree,
                                      image_add_record):
         userid = 'fakeid'
         image_name = 'fakeimage'
@@ -1501,8 +1503,8 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
         execute.assert_has_calls([mock.call(cmd1), mock.call(cmd2)])
         mkdir.assert_has_calls([mock.call(image_temp_dir)],
-                              [mock.call(image_final_dir)])
-
+                               [mock.call(image_final_dir)])
+        rmtree.assert_called_once_with(image_temp_dir)
         md5sum.assert_called_once_with(image_final_path)
         disk_size_units.assert_called_once_with(image_final_path)
         imagesize.assert_called_once_with(image_final_path)

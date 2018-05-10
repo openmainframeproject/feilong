@@ -700,6 +700,7 @@ class SMUTClient(object):
                 LOG.error(err_msg)
                 raise exception.SDKGuestOperationError(rs=5, userid=userid,
                                                        err=err_msg)
+        shutil.rmtree(image_temp_dir)
 
         msg = ('Updating the metadata for captured image %s ' % image_name)
         LOG.info(msg)
