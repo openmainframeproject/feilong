@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "204c6dec_2bc8441f",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 703,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-10T01:28:58Z",
+      "side": 1,
+      "message": "if the mv cmd failed, the temp dir still there?",
+      "revId": "dd98b609864c24839b5d2f675552bfb70c63a7cb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
