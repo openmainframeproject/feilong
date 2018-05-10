@@ -808,9 +808,6 @@ Live resize CPUs of the guest.
          [zvm]
          user_default_max_cpu=64
 
-   - For legacy guests (guests created by z/VM Cloud Connector before v1.2.0), user can use
-     the tool to update them so that they can be live resized later. Tool usage:
-
 Resize CPUs of guest
 -------------------------
 
