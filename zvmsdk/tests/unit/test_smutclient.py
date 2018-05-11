@@ -928,7 +928,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                      'switch': None, 'port': None, 'comments': None},
                     {'userid': 'FAKE_ID', 'interface': '1006',
                      'switch': None, 'port': None, 'comments': None}]
-        self.assertRaises(exception.SDKInvalidInputFormat,
+        self.assertRaises(exception.SDKConflictError,
                           self._smutclient._get_available_vdev,
                           'fake_id', vdev='1004')
 
@@ -954,8 +954,11 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(smutclient.SMUTClient, '_get_available_vdev')
     def test_create_nic_with_used_vdev(self, get_vdev):
-        get_vdev.side_effect = exception.SDKInvalidInputFormat('error')
-        self.assertRaises(exception.SDKInvalidInputFormat,
+        get_vdev.side_effect = exception.SDKConflictError('network', rs=6,
+                                                          vdev='1004',
+                                                          userid='fake_id',
+                                                          msg="error")
+        self.assertRaises(exception.SDKConflictError,
                           self._smutclient.create_nic,
                           'fake_id', nic_id="nic_id", vdev='1004')
 
@@ -1685,7 +1688,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_dedicate_OSA_notFree(self, OSA_free, get_vdev):
         OSA_free.return_value = False
         get_vdev.return_value = '1000'
-        self.assertRaises(exception.SDKInvalidInput,
+        self.assertRaises(exception.SDKConflictError,
                           self._smutclient.dedicate_OSA,
                           'userid', 'OSA_device', 'nic_vdev', active=True)
 
@@ -1714,7 +1717,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request_response.append(exception.SDKSMUTRequestFailed(
                                             {'rc': 404, 'rs': 8}, 'err'))
         request.side_effect = request_response
-        self.assertRaises(exception.SDKInvalidInput,
+        self.assertRaises(exception.SDKConflictError,
                           self._smutclient._dedicate_OSA,
                           'userid', 'f000', '1000', active=False)
         request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
@@ -1737,7 +1740,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                             {'rc': 1, 'rs': 1}, 'err'))
         request_response.append('')
         request.side_effect = request_response
-        self.assertRaises(exception.SDKObjectIsLockedError,
+        self.assertRaises(exception.SDKConflictError,
                           self._smutclient._dedicate_OSA,
                           'userid', 'f000', '1000', active=False)
         request.assert_any_call('SMAPI userid API Image_Device_Dedicate_DM '
@@ -1834,7 +1837,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request_response.append(exception.SDKSMUTRequestFailed(
                                             {'rc': 200, 'rs': 8}, 'err'))
         request.side_effect = request_response
-        self.assertRaises(exception.SDKInvalidInput,
+        self.assertRaises(exception.SDKConflictError,
                           self._smutclient._dedicate_OSA,
                           'userid', 'f000', '1000', active=True)
 

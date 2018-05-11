@@ -248,7 +248,7 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
             resp = self.client.api_request(url='/vswitches/RESTVSW1',
                                        method='PUT',
                                        body=body)
-            self.assertEqual(400, resp.status_code)
+            self.assertEqual(409, resp.status_code)
         except Exception:
             raise
         finally:
@@ -285,6 +285,7 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
         except Exception:
             raise
         finally:
+            resp = self._vswitch_delete()
             self.assertEqual(200, resp.status_code)
 
     def test_vswitch_create_vlan_aware(self):
@@ -316,7 +317,7 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
             self.assertEqual('1000', vswinfo['vlan_id'])
             self.assertEqual('10', vswinfo['native_vlan_id'])
             self.assertEqual('NA', vswinfo['routing_value'])
-            self.assertTrue(sorted(['1111', '2222']),
+            self.assertEqual(sorted(['1111', '2222']),
                             sorted(vswinfo['real_devices'].keys()))
         except Exception:
             raise

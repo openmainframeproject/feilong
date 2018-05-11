@@ -2,7 +2,6 @@
 100;400;100;1;Invalid API arg count, API: %(api)s, %(expected)d expected while %(provided)d provided.
 100;400;100;2;Invalid API arg type, API: %(api)s, expected types: '%(expected)s', input types: '%(inputtypes)s'
 100;400;100;3;Invalid API arg format, error: %(msg)s
-100;400;100;4;Invalid API, error: %(msg)s
 **Operation on Guest failed**
 300;10;300;1;Database operation failed, error: %(msg)s
 300;10;300;2;Failed to add mdisks when creating guest, error: %(msg)s
@@ -51,10 +50,21 @@
 409;None;409;2;Failed to live resize cpus of guest: '%(userid)s', error: current active cpu count: '%(active)i' is greater than requested count: '%(req)i'.
 409;None;409;3;Failed to resize cpus of guest: '%(userid)s', error: maximum number of cpus is not defined in user directory.
 409;None;409;4;Failed to resize cpus of guest: '%(userid)s', error: the requested number of cpus: '%(req)i' exceeds the maximum number of cpus allowed: '%(max)i'.
+409;None;409;5;Failed to set vswitch %(vsw)s, error: %(msg)s
+409;None;409;6;Failed to create nic %(vdev)s for guest %(userid)s, error: %(msg)s
+409;None;409;7;Failed to create nic %(vdev)s for guest %(userid)s, error: %(obj)s is locked
+409;None;409;8;Failed to delete nic %(vdev)s for guest %(userid)s, error: %(msg)s
+409;None;409;9;Failed to delete nic %(vdev)s for guest %(userid)s, error: %(obj)s is locked
+409;None;409;10;Failed to couple nic %(vdev)s of guest %(userid)s with vswitch %(vsw)s, error: %(msg)s
+409;None;409;11;Failed to couple nic %(vdev)s of guest %(userid)s with vswitch %(vsw)s, error: %(obj)s is locked
+409;None;409;12;Failed to uncouple nic %(vdev)s of guest %(userid)s error: %(msg)s
+409;None;409;13;Failed to uncouple nic %(vdev)s of guest %(userid)s error: %(obj)s is locked
+409;None;409;14;Failed to dedicate OSA %(osa)s to guest %(userid)s error: %(msg)s
+409;None;409;15;Failed to dedicate OSA %(osa)s to guest %(userid)s error: %(obj)s is locked
+409;None;409;16;Failed to delete dedicated device from guest %(userid)s %(vdev)s, error: %(msg)s
+409;None;409;17;Failed to delete dedicated device from guest %(userid)s %(vdev)s, error: %(obj)s is locked
 **The operated object is deleted**
 410;None;410;;The operated object is deleted
-**The operated object is locked**
-423;None;423;1;%(obj_desc)s is locked.
 **ZVM SDK Internal Error**
 500;None;500;1;Unexpected internal error in ZVM SDK, error: %(msg)s
 **z/VM Cloud Connector service is unavailable**

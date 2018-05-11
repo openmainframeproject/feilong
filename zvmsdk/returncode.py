@@ -82,9 +82,6 @@ Object Deleted     410    MODRC   410   1    The operated object has been
                                              This can be used for some module
                                              that support deleted=1 in DB.
 
-Object is Locked   423    MODRC   423   1    The operated object is locked
-                                             eg, the guest/guest device
-
 Internal error     500    MODRC   500   1    The SDK module got unexpected
                                              error, eg, typeerror, keyerror,
                                              etc. SDK  server would take all
@@ -133,7 +130,6 @@ errors = {
                2: ("Invalid API arg type, API: %(api)s, expected types: "
                    "'%(expected)s', input types: '%(inputtypes)s'"),
                3: ("Invalid API arg format, error: %(msg)s"),
-               4: ("Invalid API, error: %(msg)s")
                },
               "Invalid API Input",
              ],
@@ -252,6 +248,31 @@ errors = {
                   4: ("Failed to resize cpus of guest: '%(userid)s', "
                       "error: the requested number of cpus: '%(req)i' exceeds "
                       "the maximum number of cpus allowed: '%(max)i'."),
+                  5: ("Failed to set vswitch %(vsw)s, error: %(msg)s"),
+                  6: ("Failed to create nic %(vdev)s for guest %(userid)s, "
+                      "error: %(msg)s"),
+                  7: ("Failed to create nic %(vdev)s for guest %(userid)s, "
+                      "error: %(obj)s is locked"),
+                  8: ("Failed to delete nic %(vdev)s for guest %(userid)s, "
+                      "error: %(msg)s"),
+                  9: ("Failed to delete nic %(vdev)s for guest %(userid)s, "
+                      "error: %(obj)s is locked"),
+                  10: ("Failed to couple nic %(vdev)s of guest %(userid)s "
+                       "with vswitch %(vsw)s, error: %(msg)s"),
+                  11: ("Failed to couple nic %(vdev)s of guest %(userid)s "
+                       "with vswitch %(vsw)s, error: %(obj)s is locked"),
+                  12: ("Failed to uncouple nic %(vdev)s of guest %(userid)s "
+                       "error: %(msg)s"),
+                  13: ("Failed to uncouple nic %(vdev)s of guest %(userid)s "
+                       "error: %(obj)s is locked"),
+                  14: ("Failed to dedicate OSA %(osa)s to guest %(userid)s "
+                       "error: %(msg)s"),
+                  15: ("Failed to dedicate OSA %(osa)s to guest %(userid)s "
+                       "error: %(obj)s is locked"),
+                  16: ("Failed to delete dedicated device from guest "
+                       "%(userid)s %(vdev)s, error: %(msg)s"),
+                  17: ("Failed to delete dedicated device from guest "
+                       "%(userid)s %(vdev)s, error: %(obj)s is locked"),
                   },
                  "The operated object status conflict"
                  ],
@@ -262,14 +283,6 @@ errors = {
                 {},
                 "The operated object is deleted"
                 ],
-# Object locked
-# Used when the operated object is locked.
-# 'modID' would be set to each module rc when raise the exception
-# 'rs' is always 1
-    'isLocked': [{'overallRC': 423, 'modID': None, 'rc': 423},
-                 {1: "%(obj_desc)s is locked."},
-                 "The operated object is locked"
-                 ],
 # Internal error
 # Module Internal error, rc is not defined here, it will be set when raising
 # exception. when module id is not specified, the 'zvmsdk' module rc will be
