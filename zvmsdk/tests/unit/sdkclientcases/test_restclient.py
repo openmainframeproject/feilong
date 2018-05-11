@@ -627,6 +627,18 @@ class RESTClientTestCase(unittest.TestCase):
     def test_host_diskpool_get_info(self, get_token, request):
         # wait host_diskpool_get_info bug fixed
         pass
+        method = 'GET'
+        url = '/host/diskpool?poolname=ECKD:test'
+        body = None
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("host_diskpool_get_info", disk_pool='ECKD:test')
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')

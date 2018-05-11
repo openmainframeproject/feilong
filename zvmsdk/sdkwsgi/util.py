@@ -190,6 +190,12 @@ def handle_already_exists(msg):
             LOG.debug('guest already exist, change ret to 409')
             return 409
 
+        # overall rc: 4, rc: 5, rs: 402 means disk pool not exist
+        if (msg['overallRC'] == 4 and msg['rc'] == 5 and
+            msg['rs'] == 402):
+            LOG.debug('disk pool not exist, change ret to 404')
+            return 404
+
     # not handle it well, go to default
     return 0
 
