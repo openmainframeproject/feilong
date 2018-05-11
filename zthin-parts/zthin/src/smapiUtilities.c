@@ -3127,6 +3127,10 @@ int getSmapiLevel(struct _vmApiInternalContext* vmapiContextP, char * image, int
     vmApiQueryApiFunctionalLevelOutput * output;
     FILE *myStream;
     char outlevel[20];
+    char queryData[80];
+    char * targetId = NULL;
+    FILE *fp;
+    char * saveptr;
 
     if (-1 == time(&currentTime)) {
         vmapiContextP->errnoSaved  = errno;
@@ -3150,7 +3154,21 @@ int getSmapiLevel(struct _vmApiInternalContext* vmapiContextP, char * image, int
         }
     }
     if (createFile) {
-        rc = smQuery_API_Functional_Level(vmapiContextP, "", 0, "", image, &output);
+        /* If passed in target image is null then use this userid */
+        targetId = image;
+        if (strlen(image) == 0) {
+            fp = popen("sudo /sbin/vmcp q userid", "r");
+            if (fp == NULL) {
+                printAndLogProcessingErrors("getSmapiLevel", PROCESSING_ERROR, vmapiContextP, "", 0);
+                printf("ERROR: Failed to identify the user");
+                return 1;
+            }
+            fgets(queryData, sizeof(queryData)-1, fp);
+            pclose(fp);
+
+            targetId = strtok_r(queryData, " ", &saveptr);
+        }
+        rc = smQuery_API_Functional_Level(vmapiContextP, "", 0, "", targetId, &output);
         // Handle the RC that comes back from making the SMAPI API call. If RC then the call to SMAPI failed
         if (rc) {
             printAndLogProcessingErrors("Query_API_Functional_Level", rc, vmapiContextP, "", 0);
