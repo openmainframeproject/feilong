@@ -2229,9 +2229,9 @@ class SMUTClient(object):
         elif len(osa_info['OSA']['FREE']) == 0:
             return False
         else:
-            dev1 = str(OSA_device).zfill(4)
-            dev2 = str(str(hex(int(OSA_device, 16) + 1))[2:]).zfill(4)
-            dev3 = str(str(hex(int(OSA_device, 16) + 2))[2:]).zfill(4)
+            dev1 = str(OSA_device).zfill(4).upper()
+            dev2 = str(str(hex(int(OSA_device, 16) + 1))[2:]).zfill(4).upper()
+            dev3 = str(str(hex(int(OSA_device, 16) + 2))[2:]).zfill(4).upper()
             if ((dev1 in osa_info['OSA']['FREE']) and
                 (dev2 in osa_info['OSA']['FREE']) and
                 (dev3 in osa_info['OSA']['FREE'])):
