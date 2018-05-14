@@ -437,7 +437,7 @@ class rhel7(rhel):
                                                     broadcast, device)
         else:
             activeIP_str = 'ip addr add %s dev %s\n' % (ip, device)
-        activeIP_str += 'ip link set dev %s up' % device
+        activeIP_str += 'ip link set dev %s up\n' % device
         return activeIP_str
 
     def create_active_net_interf_cmd(self):
@@ -694,7 +694,7 @@ class sles12(sles):
                                                     broadcast, device)
         else:
             activeIP_str = 'ip addr add %s dev %s\n' % (ip, device)
-        activeIP_str += 'ip link set dev %s up' % device
+        activeIP_str += 'ip link set dev %s up\n' % device
         return activeIP_str
 
 
