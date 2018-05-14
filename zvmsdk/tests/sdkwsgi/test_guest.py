@@ -100,6 +100,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         user_direct = resp_content['output']['user_direct']
         cpu_num = 0
         cpu_num_live = 0
+        cpu_num_online = 0
         for ent in user_direct:
             if ent.startswith(Statement):
                 max_memory = ent.split()[4].strip()
@@ -108,13 +109,22 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             if ent.startswith("MACHINE ESA"):
                 max_cpus = int(ent.split()[2].strip())
         if cpu_cnt_live is not None:
-            active_cpus = self.execute_cmd(userid, "lscpu -e")[1:]
+            active_cpus = self._smutclient.execute_cmd(userid, "lscpu -e")[1:]
             cpu_num_live = len(active_cpus)
-
+            active_cpus = self._smutclient.execute_cmd(userid,
+                                                       "lscpu --parse=ONLINE")
+            for c in active_cpus:
+                # check online CPU number
+                if c.startswith("# "):
+                    continue
+                online_state = c.strip().upper()
+                if online_state == "Y":
+                    cpu_num_online = cpu_num_online + 1
         if cpu_cnt is not None:
             self.assertEqual(cpu_cnt, cpu_num)
         if cpu_cnt_live is not None:
             self.assertEqual(cpu_cnt_live, cpu_num_live)
+            self.assertEqual(cpu_cnt_live, cpu_num_online)
         self.assertEqual(maxcpu, max_cpus)
         self.assertEqual(maxmem, max_memory)
 
@@ -1460,6 +1470,208 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
                                              userid))
             self._check_CPU_MEM(userid, maxcpu=10, maxmem="2048M")
             self._check_total_memory(userid, maxmem="2048M")
+
+            # Resized cpu number exceed the user's max cpu number
+            resp = self._guest_resize_cpus(11, userid=userid)
+            self.assertEqual(409, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=1, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu number exceed the allowed max cpu number
+            resp = self._guest_resize_cpus(65, userid=userid)
+            self.assertEqual(400, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=1, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu number is less than the allowed min cpu number
+            resp = self._guest_resize_cpus(0, userid=userid)
+            self.assertEqual(400, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=1, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu number exceed the user's max cpu number
+            resp = self._guest_live_resize_cpus(11, userid=userid)
+            self.assertEqual(409, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=1, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu number exceed the allowed max cpu number
+            resp = self._guest_live_resize_cpus(65, userid=userid)
+            self.assertEqual(400, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=1, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu number is less than the allowed min cpu number
+            resp = self._guest_live_resize_cpus(0, userid=userid)
+            self.assertEqual(400, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=1, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu num equal to the current cpu num in user direct,
+            # and equal to the live cpu num
+            #  - cpu num in user direct: not change
+            #  - live cpu num: not change
+            resp = self._guest_resize_cpus(1, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=1, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu num equal to the user's max cpu num in user direct,
+            #  - cpu num in user direct: increase
+            #  - live cpu num: not change
+            resp = self._guest_resize_cpus(10, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=10, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu num is less than the current cpu num in user direct
+            #  - cpu num in user direct: decrease
+            #  - live cpu num: not change
+            resp = self._guest_resize_cpus(3, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=3, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num equal to the current cpu num in user direct,
+            # and is greater than the live cpu num
+            #  - cpu num in user direct: not change
+            #  - live cpu num: increased
+            resp = self._guest_live_resize_cpus(3, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=3, cpu_cnt_live=3,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num equal to the current cpu num in user direct,
+            # and equal to the live cpu num
+            #  - cpu num in user direct: not change
+            #  - live cpu num: not change
+            resp = self._guest_live_resize_cpus(3, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=3, cpu_cnt_live=3,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu num is greater than the current cpu num in user
+            # direct, and is greater than the live cpu num
+            #  - cpu num in user direct: increase
+            #  - live cpu num: not change
+            resp = self._guest_resize_cpus(5, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=5, cpu_cnt_live=3,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num is less than the current cpu num
+            # in user direct, and is greater than the live cpu num
+            #  - cpu num in user direct: decrease
+            #  - live cpu num: increase
+            resp = self._guest_live_resize_cpus(4, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=4, cpu_cnt_live=4,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num is greater than the current cpu num
+            # in user direct, and is greater than the live cpu num
+            #  - cpu num in user direct: increase
+            #  - live cpu num: increase
+            resp = self._guest_live_resize_cpus(5, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=5, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu num is greater than the current cpu num
+            # in user direct, and is greater than the live cpu num
+            #  - cpu num in user direct: increase
+            #  - live cpu num: not change
+            resp = self._guest_resize_cpus(7, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=7, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu num is less than the current cpu num
+            # in user direct, and is less than the live cpu num
+            #  - cpu num in user direct: decrease
+            #  - live cpu num: not change
+            resp = self._guest_resize_cpus(4, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=4, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num equal to the current cpu num
+            # in user direct, and is less than the live cpu num
+            #  - cpu num in user direct: not change
+            #  - live cpu num: not change
+            resp = self._guest_live_resize_cpus(4, userid=userid)
+            self.assertEqual(409, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=4, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num is greater than the current cpu num
+            # in user direct, and equal to the live cpu num
+            #  - cpu num in user direct: increase
+            #  - live cpu num: not change
+            resp = self._guest_live_resize_cpus(5, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=5, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num is greater than the user's max cpu
+            # num in user direct
+            #  - cpu num in user direct: not change
+            #  - live cpu num: not change
+            resp = self._guest_live_resize_cpus(11, userid=userid)
+            self.assertEqual(409, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=5, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num is less than the live cpu num
+            #  - cpu num in user direct: not change
+            #  - live cpu num: not change
+            resp = self._guest_live_resize_cpus(4, userid=userid)
+            self.assertEqual(409, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=5, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu num is less than the current cpu num
+            # in user direct, and is less than the live cpu num
+            #  - cpu num in user direct: decrease
+            #  - live cpu num: not change
+            resp = self._guest_resize_cpus(4, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=4, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Restart guest, check cpu number
+            resp = self._guest_stop(userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self.assertTrue(self._wait_until(False, self.is_reachable,
+                                             userid))
+            resp = self._guest_start()
+            self.assertEqual(200, resp.status_code)
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                            self.userid))
+            self._check_CPU_MEM(userid, cpu_cnt=4, cpu_cnt_live=4,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num is greater than the current cpu num
+            # in user direct, and is greater than the live cpu num
+            #  - cpu num in user direct: increase
+            #  - live cpu num: increase
+            resp = self._guest_live_resize_cpus(7, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=7, cpu_cnt_live=7,
+                                maxcpu=10, maxmem="2048M")
+
+            # Restart guest, check cpu number
+            resp = self._guest_stop(userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self.assertTrue(self._wait_until(False, self.is_reachable,
+                                             userid))
+            resp = self._guest_start()
+            self.assertEqual(200, resp.status_code)
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                            self.userid))
+            self._check_CPU_MEM(userid, cpu_cnt=7, cpu_cnt_live=7,
+                                maxcpu=10, maxmem="2048M")
+
         finally:
             self._guest_delete(userid=userid)
 
