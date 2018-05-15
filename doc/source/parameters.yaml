@@ -555,7 +555,7 @@ rdev_vswitch:
   description: |
     The real device number, a maximum of three devices.
   in: body
-  required: true
+  required: false
   type: string
 controller_vswitch:
   description: |

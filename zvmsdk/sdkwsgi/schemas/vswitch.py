@@ -39,7 +39,7 @@ create = {
                 'gvrp': parameter_types.gvrp_type,
                 'native_vid': parameter_types.native_vid_type,
             },
-            'required': ['name', 'rdev'],
+            'required': ['name'],
             'additionalProperties': False,
         },
         'additionalProperties': False,

@@ -44,8 +44,8 @@ class VswitchAction(object):
     def create(self, body):
         vsw = body['vswitch']
         name = vsw['name']
-        rdev = vsw['rdev']
 
+        rdev = vsw.get('rdev', None)
         controller = vsw.get('controller', '*')
         connection = vsw.get('connection', "CONNECT")
         network_type = vsw.get('network_type', "IP")
@@ -58,7 +58,7 @@ class VswitchAction(object):
         persist = vsw.get('persist', True)
         persist = util.bool_from_string(persist, strict=True)
 
-        info = self.client.send_request('vswitch_create', name, rdev,
+        info = self.client.send_request('vswitch_create', name, rdev=rdev,
                                         controller=controller,
                                         connection=connection,
                                         network_type=network_type,
