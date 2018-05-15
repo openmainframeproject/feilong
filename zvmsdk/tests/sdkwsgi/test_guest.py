@@ -996,9 +996,8 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             self.assertEqual(501, resp.status_code)
 
             resp = self._guest_capture(userid=userid)
-            self.assertEqual(200, resp.status_code)
-
             PURGE_IMG = 1
+            self.assertEqual(200, resp.status_code)
 
             resp = self._image_query(image_name='test_capture_image1')
             self.assertEqual(200, resp.status_code)

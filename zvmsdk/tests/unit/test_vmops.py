@@ -26,19 +26,10 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops = vmops.get_vmops()
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.get_power_state")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_get_power_state(self, ige, gps):
-        ige.return_value = True
+    def test_get_power_state(self, gps):
         gps.return_value = 'on'
         self.vmops.get_power_state('cbi00063')
         gps.assert_called_with('cbi00063')
-
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_get_power_state_not_exist(self, ige):
-        ige.return_value = False
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.vmops.get_power_state, 'cbi00063')
-        ige.assert_called_with('cbi00063')
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.get_guest_connection_status")
     def test_is_reachable(self, ggcs):
@@ -47,51 +38,19 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertEqual(ret, True)
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.guest_start")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_guest_start(self, ige, guest_start):
-        ige.return_value = True
+    def test_guest_start(self, guest_start):
         self.vmops.guest_start('cbi00063')
         guest_start.assert_called_once_with('cbi00063')
 
-    @mock.patch("zvmsdk.smutclient.SMUTClient.guest_start")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_guest_start_guest_not_exist(self, ige, guest_start):
-        ige.return_value = False
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.vmops.guest_start, 'fakeid')
-        ige.assert_called_with('fakeid')
-
     @mock.patch("zvmsdk.smutclient.SMUTClient.guest_pause")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_guest_pause(self, ige, guest_pause):
-        ige.return_value = True
+    def test_guest_pause(self, guest_pause):
         self.vmops.guest_pause('cbi00063')
-        ige.assert_called_once_with('cbi00063')
         guest_pause.assert_called_once_with('cbi00063')
 
-    @mock.patch("zvmsdk.smutclient.SMUTClient.guest_pause")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_guest_pause_guest_not_exist(self, ige, guest_pause):
-        ige.return_value = False
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.vmops.guest_pause, 'fakeid')
-        ige.assert_called_with('fakeid')
-
     @mock.patch("zvmsdk.smutclient.SMUTClient.guest_unpause")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_guest_unpause(self, ige, guest_unpause):
-        ige.return_value = True
+    def test_guest_unpause(self, guest_unpause):
         self.vmops.guest_unpause('cbi00063')
-        ige.assert_called_once_with('cbi00063')
         guest_unpause.assert_called_once_with('cbi00063')
-
-    @mock.patch("zvmsdk.smutclient.SMUTClient.guest_unpause")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_guest_unpause_guest_not_exist(self, ige, guest_unpause):
-        ige.return_value = False
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.vmops.guest_unpause, 'fakeid')
-        ige.assert_called_with('fakeid')
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.namelist_add")
     @mock.patch("zvmsdk.smutclient.SMUTClient.create_vm")
@@ -110,9 +69,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         namelistadd.assert_called_once_with('TSTNLIST', userid)
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.process_additional_minidisks")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_guest_config_minidisks(self, ide, process_additional_minidisks):
-        ide.return_value = True
+    def test_guest_config_minidisks(self, process_additional_minidisks):
         userid = 'userid'
         disk_list = [{'vdev': '0101',
                       'format': 'ext3',
@@ -188,33 +145,16 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                           self.vmops.get_info, 'fakeid')
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.guest_deploy")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_guest_deploy(self, ige, deploy_image_to_vm):
-        ige.return_value = True
+    def test_guest_deploy(self, deploy_image_to_vm):
         self.vmops.guest_deploy('fakevm', 'fakeimg',
                                 '/test/transport.tgz')
-        ige.assert_called_with('fakevm')
         deploy_image_to_vm.assert_called_with('fakevm', 'fakeimg',
                                               '/test/transport.tgz', None,
                                               None)
 
-    @mock.patch("zvmsdk.smutclient.SMUTClient.guest_deploy")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_guest_deploy_guest_not_exist(self, ige, deploy_image_to_vm):
-        ige.return_value = False
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.vmops.guest_deploy,
-                          'fakevm', 'fakeimg',
-                          '/test/transport.tgz')
-        ige.assert_called_with('fakevm')
-        deploy_image_to_vm.assert_not_called()
-
     @mock.patch("zvmsdk.smutclient.SMUTClient.guest_capture")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_guest_capture(self, ige, guest_capture):
-        ige.return_value = True
+    def test_guest_capture(self, guest_capture):
         self.vmops.guest_capture('fakevm', 'fakeimg')
-        ige.assert_called_with('fakevm')
         guest_capture.assert_called_once_with('fakevm', 'fakeimg',
                                               capture_type = 'rootonly',
                                               compress_level = 6)
@@ -244,22 +184,16 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         execute_cmd.assert_called_once_with(userid, cmdStr)
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.guest_stop")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_guest_stop(self, ige, gs):
-        ige.return_value = True
+    def test_guest_stop(self, gs):
         userid = 'userid'
         self.vmops.guest_stop(userid)
-        ige.assert_called_once_with(userid)
         gs.assert_called_once_with(userid)
 
-    @mock.patch('zvmsdk.utils._is_guest_exist')
     @mock.patch("zvmsdk.smutclient.SMUTClient.guest_stop")
-    def test_guest_stop_with_timeout(self, gs, ige):
+    def test_guest_stop_with_timeout(self, gs):
         userid = 'userid'
-        ige.return_value = True
         gs.return_value = u'off'
         self.vmops.guest_stop(userid, timeout=300, poll_interval=10)
-        ige.assert_called_once_with(userid)
         gs.assert_called_once_with(userid, timeout=300, poll_interval=10)
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.get_vm_list")
@@ -269,9 +203,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.add_mdisks")
     @mock.patch("zvmsdk.smutclient.SMUTClient.get_user_direct")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_create_disks(self, ide, gud, amds):
-        ide.return_value = True
+    def test_create_disks(self, gud, amds):
         user_direct = ['USER TEST TEST',
                        'MDISK 100 3390',
                        'MDISK 101 3390']
@@ -283,97 +215,49 @@ class SDKVMOpsTestCase(base.SDKTestCase):
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.add_mdisks")
     @mock.patch("zvmsdk.smutclient.SMUTClient.get_user_direct")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_create_disks_200(self, ide, gud, amds):
-        ide.return_value = True
+    def test_create_disks_200(self, gud, amds):
         user_direct = ['USER TEST TEST',
                        'MDISK 100 3390',
                        'MDISK 200 3390']
         gud.return_value = user_direct
-
         self.vmops.create_disks('userid', [])
+
         gud.assert_called_once_with('userid')
         amds.assert_called_once_with('userid', [], '0201')
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.remove_mdisks")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_delete_disks(self, ide, rmd):
-        ide.return_value = True
+    def test_delete_disks(self, rmd):
         self.vmops.delete_disks('userid', ['101', '102'])
         rmd.assert_called_once_with('userid', ['101', '102'])
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.guest_reboot")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_guest_reboot(self, ige, guest_reboot):
-        ige.return_value = True
+    def test_guest_reboot(self, guest_reboot):
         self.vmops.guest_reboot('cbi00063')
-        ige.assert_called_once_with('cbi00063')
         guest_reboot.assert_called_once_with('cbi00063')
 
-    @mock.patch("zvmsdk.smutclient.SMUTClient.guest_reboot")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_guest_reboot_guest_not_exist(self, ige, guest_reboot):
-        ige.return_value = False
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.vmops.guest_reboot, 'fakeid')
-        ige.assert_called_with('fakeid')
-
     @mock.patch("zvmsdk.smutclient.SMUTClient.guest_reset")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_guest_reset(self, ige, guest_reset):
-        ige.return_value = True
+    def test_guest_reset(self, guest_reset):
         self.vmops.guest_reset('cbi00063')
-        ige.assert_called_once_with('cbi00063')
         guest_reset.assert_called_once_with('cbi00063')
-
-    @mock.patch("zvmsdk.smutclient.SMUTClient.guest_reset")
-    @mock.patch('zvmsdk.utils._is_guest_exist')
-    def test_guest_reset_guest_not_exist(self, ige, guest_reset):
-        ige.return_value = False
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.vmops.guest_reset, 'fakeid')
-        ige.assert_called_with('fakeid')
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.live_resize_cpus")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    @mock.patch('zvmsdk.vmops.VMOps.guest_list')
-    def test_live_resize_cpus(self, guest_list, power_state,
-                              do_resize):
+    def test_live_resize_cpus(self, power_state, do_resize):
         userid = 'testuid'
         cpu_cnt = 3
-        guest_list.return_value = [userid.upper()]
         power_state.return_value = 'on'
         self.vmops.live_resize_cpus(userid, cpu_cnt)
-        guest_list.assert_called_once_with()
         power_state.assert_called_once_with(userid)
         do_resize.assert_called_once_with(userid, cpu_cnt)
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.live_resize_cpus")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    @mock.patch('zvmsdk.vmops.VMOps.guest_list')
-    def test_live_resize_cpus_guest_not_in_db(self, guest_list, power_state,
-                              do_resize):
+    def test_live_resize_cpus_guest_inactive(self, power_state, do_resize):
         userid = 'testuid'
         cpu_cnt = 3
-        guest_list.return_value = []
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.vmops.live_resize_cpus, userid, cpu_cnt)
-        guest_list.assert_called_once_with()
-        power_state.assert_not_called()
-        do_resize.assert_not_called()
-
-    @mock.patch("zvmsdk.smutclient.SMUTClient.live_resize_cpus")
-    @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    @mock.patch('zvmsdk.vmops.VMOps.guest_list')
-    def test_live_resize_cpus_guest_inactive(self, guest_list, power_state,
-                              do_resize):
-        userid = 'testuid'
-        cpu_cnt = 3
-        guest_list.return_value = [userid.upper()]
         power_state.return_value = 'off'
         self.assertRaises(exception.SDKConflictError,
                           self.vmops.live_resize_cpus, userid, cpu_cnt)
-        guest_list.assert_called_once_with()
         power_state.assert_called_once_with(userid)
         do_resize.assert_not_called()
 
@@ -386,14 +270,3 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.resize_cpus(userid, cpu_cnt)
         guest_list.assert_called_once_with()
         do_resize.assert_called_once_with(userid, cpu_cnt)
-
-    @mock.patch("zvmsdk.smutclient.SMUTClient.resize_cpus")
-    @mock.patch('zvmsdk.vmops.VMOps.guest_list')
-    def test_resize_cpus_guest_not_in_db(self, guest_list, do_resize):
-        userid = 'testuid'
-        cpu_cnt = 3
-        guest_list.return_value = []
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.vmops.resize_cpus, userid, cpu_cnt)
-        guest_list.assert_called_once_with()
-        do_resize.assert_not_called()

@@ -14,6 +14,7 @@
 
 
 import netaddr
+import six
 
 from zvmsdk import config
 from zvmsdk import constants
@@ -32,6 +33,33 @@ CONF = config.CONF
 LOG = log.LOG
 
 
+def check_guest_exist(check_index=0):
+    """Check guest exist in database.
+
+    :param check_index: The parameter index of userid(s), default as 0
+
+    """
+
+    def outer(f):
+        @six.wraps(f)
+        def inner(self, *args, **kw):
+            userids = args[check_index]
+
+            if isinstance(userids, list):
+                # convert all userids to upper case
+                userids = [uid.upper() for uid in userids]
+            else:
+                # convert the userid to upper case
+                userids = userids.upper()
+                userids = [userids]
+
+            self._vmops.check_guests_exist_in_db(userids)
+
+            return f(self, *args, **kw)
+        return inner
+    return outer
+
+
 class SDKAPI(object):
     """Compute action interfaces."""
 
@@ -43,6 +71,7 @@ class SDKAPI(object):
         self._monitor = monitor.get_monitor()
         self._volumeop = volumeop.get_volumeop()
 
+    @check_guest_exist()
     def guest_start(self, userid):
         """Power on a virtual machine.
 
@@ -54,6 +83,7 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.guest_start(userid)
 
+    @check_guest_exist()
     def guest_stop(self, userid, **kwargs):
         """Power off a virtual machine.
 
@@ -73,6 +103,7 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.guest_stop(userid, **kwargs)
 
+    @check_guest_exist()
     def guest_softstop(self, userid, **kwargs):
         """Issue a shutdown command to shutdown the OS in a virtual
         machine and then log the virtual machine off z/VM..
@@ -93,6 +124,7 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.guest_softstop(userid, **kwargs)
 
+    @check_guest_exist()
     def guest_reboot(self, userid):
         """Reboot a virtual machine
         :param str userid: the id of the virtual machine to be reboot
@@ -102,6 +134,7 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.guest_reboot(userid)
 
+    @check_guest_exist()
     def guest_reset(self, userid):
         """reset a virtual machine
         :param str userid: the id of the virtual machine to be reset
@@ -111,6 +144,7 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.guest_reset(userid)
 
+    @check_guest_exist()
     def guest_pause(self, userid):
         """Pause a virtual machine.
 
@@ -121,6 +155,7 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.guest_pause(userid)
 
+    @check_guest_exist()
     def guest_unpause(self, userid):
         """Unpause a virtual machine.
 
@@ -131,12 +166,14 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.guest_unpause(userid)
 
+    @check_guest_exist()
     def guest_get_power_state(self, userid):
         """Returns power state."""
         action = "get power state of guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_power_state(userid)
 
+    @check_guest_exist()
     def guest_get_info(self, userid):
         """Get the status of a virtual machine.
 
@@ -289,6 +326,7 @@ class SDKAPI(object):
             LOG.error("Failed to export image '%s'" % image_name)
             raise
 
+    @check_guest_exist()
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
         """ Deploy the image to vm.
@@ -306,6 +344,7 @@ class SDKAPI(object):
             self._vmops.guest_deploy(userid, image_name,
                                      transportfiles, remotehost, vdev)
 
+    @check_guest_exist()
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):
         """ Capture the guest to generate a image
@@ -326,6 +365,7 @@ class SDKAPI(object):
                                       capture_type=capture_type,
                                       compress_level=compress_level)
 
+    @check_guest_exist()
     def guest_create_nic(self, userid, vdev=None, nic_id=None,
                          mac_addr=None, active=False):
         """ Create the nic for the vm, add NICDEF record into the user direct.
@@ -349,6 +389,7 @@ class SDKAPI(object):
         return self._networkops.create_nic(userid, vdev=vdev, nic_id=nic_id,
                                            mac_addr=mac_addr, active=active)
 
+    @check_guest_exist()
     def guest_delete_nic(self, userid, vdev, active=False):
         """ delete the nic for the vm
 
@@ -358,6 +399,7 @@ class SDKAPI(object):
         """
         self._networkops.delete_nic(userid, vdev, active=active)
 
+    @check_guest_exist()
     def guest_get_nic_vswitch_info(self, userid):
         """ Return the nic and switch pair for the specified vm.
 
@@ -370,6 +412,7 @@ class SDKAPI(object):
         """
         return self._networkops.get_vm_nic_vswitch_info(userid)
 
+    @check_guest_exist()
     def guest_get_definition_info(self, userid, **kwargs):
         """Get definition info for the specified guest vm, also could be used
         to check specific info.
@@ -470,6 +513,7 @@ class SDKAPI(object):
             self._vmops.create_vm(userid, vcpus, memory, disk_list,
                                   user_profile, max_cpu, max_mem)
 
+    @check_guest_exist()
     def guest_live_resize_cpus(self, userid, cpu_cnt):
         """Live resize virtual cpus of guests.
 
@@ -486,6 +530,7 @@ class SDKAPI(object):
             self._vmops.live_resize_cpus(userid, cpu_cnt)
         LOG.info("%s successfully." % action)
 
+    @check_guest_exist()
     def guest_resize_cpus(self, userid, cpu_cnt):
         """Resize virtual cpus of guests.
 
@@ -502,6 +547,7 @@ class SDKAPI(object):
             self._vmops.resize_cpus(userid, cpu_cnt)
         LOG.info("%s successfully." % action)
 
+    @check_guest_exist()
     def guest_create_disks(self, userid, disk_list):
         """Add disks to an existing guest vm.
 
@@ -549,6 +595,7 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.create_disks(userid, disk_list)
 
+    @check_guest_exist()
     def guest_delete_disks(self, userid, disk_vdev_list):
         """Delete disks from an existing guest vm.
 
@@ -561,6 +608,7 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.delete_disks(userid, disk_vdev_list)
 
+    @check_guest_exist()
     def guest_nic_couple_to_vswitch(self, userid, nic_vdev,
                                     vswitch_name, active=False):
         """ Couple nic device to specified vswitch.
@@ -573,6 +621,7 @@ class SDKAPI(object):
         self._networkops.couple_nic_to_vswitch(userid, nic_vdev,
                                                vswitch_name, active=active)
 
+    @check_guest_exist()
     def guest_nic_uncouple_from_vswitch(self, userid, nic_vdev,
                                         active=False):
         """ Disonnect nic device with network.
@@ -686,6 +735,7 @@ class SDKAPI(object):
                                      native_vid=native_vid,
                                      persist=persist)
 
+    @check_guest_exist()
     def guest_get_console_output(self, userid):
         """Get the console output of the guest virtual machine.
 
@@ -704,10 +754,23 @@ class SDKAPI(object):
 
         :param userid: the user id of the vm
         """
+
+        # check guest exist in database or not
+        if not self._vmops.check_guests_exist_in_db(userid, raise_exc=False):
+            if zvmutils.check_userid_exist(userid):
+                LOG.error("Guest '%s' does not exist in guests database" %
+                          userid)
+                raise exception.SDKObjectNotExistError(
+                    obj_desc=("Guest '%s'" % userid), modID='guest')
+            else:
+                LOG.debug("The guest %s does not exist." % userid)
+                return
+
         action = "delete guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.delete_vm(userid)
 
+    @check_guest_exist()
     def guest_inspect_stats(self, userid_list):
         """Get the statistics including cpu and mem of the guests
 
@@ -751,6 +814,7 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._monitor.inspect_stats(userid_list)
 
+    @check_guest_exist()
     def guest_inspect_vnics(self, userid_list):
         """Get the vnics statistics of the guest virtual machines
 
@@ -795,6 +859,7 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._monitor.inspect_vnics(userid_list)
 
+    @check_guest_exist(check_index=1)
     def vswitch_grant_user(self, vswitch_name, userid):
         """Set vswitch to grant user
 
@@ -804,6 +869,7 @@ class SDKAPI(object):
 
         self._networkops.grant_user_to_vswitch(vswitch_name, userid)
 
+    @check_guest_exist(check_index=1)
     def vswitch_revoke_user(self, vswitch_name, userid):
         """Revoke user for vswitch
 
@@ -812,6 +878,7 @@ class SDKAPI(object):
         """
         self._networkops.revoke_user_from_vswitch(vswitch_name, userid)
 
+    @check_guest_exist(check_index=1)
     def vswitch_set_vlan_id_for_user(self, vswitch_name, userid, vlan_id):
         """Set vlan id for user when connecting to the vswitch
 
@@ -822,6 +889,7 @@ class SDKAPI(object):
         self._networkops.set_vswitch_port_vlan_id(vswitch_name,
                                                   userid, vlan_id)
 
+    @check_guest_exist()
     def guest_config_minidisks(self, userid, disk_info):
         """Punch the script that used to process additional disks to vm
 
@@ -1096,6 +1164,7 @@ class SDKAPI(object):
                                                    connection_info,
                                                    is_rollback_in_failure)
 
+    @check_guest_exist()
     def guest_create_network_interface(self, userid, os_version,
                                        guest_networks, active=False):
         """ Create network interface(s) for the guest inux system. It will
@@ -1261,6 +1330,7 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._networkops.vswitch_query(vswitch_name)
 
+    @check_guest_exist()
     def guest_delete_network_interface(self, userid, os_version,
                                        vdev, active=False):
         """ delete the nic and network configuration for the vm
