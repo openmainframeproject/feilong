@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "71fc4ac1_0535be58",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1578,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-15T02:05:54Z",
+      "side": 1,
+      "message": "could you please add comments to describe verify points for each steps?",
+      "range": {
+        "startLine": 1474,
+        "startChar": 12,
+        "endLine": 1578,
+        "endChar": 58
+      },
+      "revId": "53e97f43afbc986ee8672919e29192b884894b50",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
