@@ -1663,9 +1663,16 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         self.assertFalse(result)
 
     @mock.patch.object(smutclient.SMUTClient, '_query_OSA')
-    def test_is_OSA_free_OK(self, query_osa):
+    def test_is_OSA_free_OK_num(self, query_osa):
         query_osa.return_value = {'OSA': {'FREE': ['0100', '0101', '0102']}}
         result = self._smutclient._is_OSA_free('0100')
+        query_osa.assert_called_once_with()
+        self.assertTrue(result)
+
+    @mock.patch.object(smutclient.SMUTClient, '_query_OSA')
+    def test_is_OSA_free_OK_character(self, query_osa):
+        query_osa.return_value = {'OSA': {'FREE': ['0AA0', '0AA1', '0AA2']}}
+        result = self._smutclient._is_OSA_free('AA0')
         query_osa.assert_called_once_with()
         self.assertTrue(result)
 
