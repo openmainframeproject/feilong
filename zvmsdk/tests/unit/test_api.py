@@ -16,14 +16,15 @@ import mock
 from zvmsdk import api
 from zvmsdk import exception
 from zvmsdk.tests.unit import base
+from zvmsdk import vmops
 
 
 class SDKAPITestCase(base.SDKTestCase):
     """Testcases for compute APIs."""
     def setUp(self):
         super(SDKAPITestCase, self).setUp()
+        vmops.VMOps.check_userids_exists = mock.MagicMock()
         self.api = api.SDKAPI()
-        self._vmops = mock.MagicMock()
 
     def test_init_ComputeAPI(self):
         self.assertTrue(isinstance(self.api, api.SDKAPI))
