@@ -336,15 +336,14 @@ class SDKVMOpsTestCase(base.SDKTestCase):
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.live_resize_cpus")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    @mock.patch('zvmsdk.vmops.VMOps.guest_list')
-    def test_live_resize_cpus(self, guest_list, power_state,
+    @mock.patch('zvmsdk.vmops.VMOps.check_userids_exists')
+    def test_live_resize_cpus(self, check_userids_exists, power_state,
                               do_resize):
         userid = 'testuid'
         cpu_cnt = 3
-        guest_list.return_value = [userid.upper()]
         power_state.return_value = 'on'
         self.vmops.live_resize_cpus(userid, cpu_cnt)
-        guest_list.assert_called_once_with()
+        check_userids_exists.assert_called_once_with(userid)
         power_state.assert_called_once_with(userid)
         do_resize.assert_called_once_with(userid, cpu_cnt)
 
@@ -364,16 +363,15 @@ class SDKVMOpsTestCase(base.SDKTestCase):
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.live_resize_cpus")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
-    @mock.patch('zvmsdk.vmops.VMOps.guest_list')
-    def test_live_resize_cpus_guest_inactive(self, guest_list, power_state,
-                              do_resize):
+    @mock.patch('zvmsdk.vmops.VMOps.check_userids_exists')
+    def test_live_resize_cpus_guest_inactive(self, check_userids_exists,
+                                             power_state, do_resize):
         userid = 'testuid'
         cpu_cnt = 3
-        guest_list.return_value = [userid.upper()]
         power_state.return_value = 'off'
         self.assertRaises(exception.SDKConflictError,
                           self.vmops.live_resize_cpus, userid, cpu_cnt)
-        guest_list.assert_called_once_with()
+        check_userids_exists.assert_called_once_with(userid)
         power_state.assert_called_once_with(userid)
         do_resize.assert_not_called()
 

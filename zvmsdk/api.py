@@ -14,6 +14,7 @@
 
 
 import netaddr
+import six
 
 from zvmsdk import config
 from zvmsdk import constants
@@ -32,6 +33,23 @@ CONF = config.CONF
 LOG = log.LOG
 
 
+def check_guest_exist(check_index=0):
+    """Check guest exist in database.
+
+    :param check_index: The parameter index of userid(s), default as 0
+
+    """
+
+    def outer(f):
+        @six.wraps(f)
+        def inner(self, *args, **kw):
+            userids = args[check_index]
+            self._vmops.check_userids_exists(userids)
+            return f(self, *args, **kw)
+        return inner
+    return outer
+
+
 class SDKAPI(object):
     """Compute action interfaces."""
 
@@ -43,6 +61,7 @@ class SDKAPI(object):
         self._monitor = monitor.get_monitor()
         self._volumeop = volumeop.get_volumeop()
 
+    @check_guest_exist()
     def guest_start(self, userid):
         """Power on a virtual machine.
 

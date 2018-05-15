@@ -268,14 +268,22 @@ class VMOps(object):
                      remaining)
         return log_data
 
+    def check_userids_exists(self, userids):
+        if not isinstance(userids, list):
+                userids = [userids]
+        all_userids = self.guest_list()
+        userids_not_in_db = list(set(userids) - set(all_userids))
+        if userids_not_in_db:
+            userids_not_in_db = ' '.join(userids_not_in_db)
+            LOG.debug("Guest %s do not exist in guests database" %
+                      userids_not_in_db)
+            raise exception.SDKObjectNotExistError(
+                obj_desc=("Guest '%s'" % userids_not_in_db), modID='guest')
+
     def live_resize_cpus(self, userid, count):
         # Check userid in ZCC DB
-        if userid.upper() not in self.guest_list():
-            LOG.error("Failed to live resize cpus of guest %s, error: guest "
-                      "doesn't exist in guests database" % userid)
-            raise exception.SDKObjectNotExistError(obj_desc=("Guest '%s'" %
-                                                             userid),
-                                                   modID='guest')
+        self.check_userids_exists(userid)
+
         # Check power state is 'on'
         state = self.get_power_state(userid)
         if state != 'on':
