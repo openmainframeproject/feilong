@@ -14,11 +14,9 @@
 
 
 import json
-import logging
 import Queue
 import socket
 import sys
-import syslog
 import threading
 import traceback
 
@@ -35,7 +33,6 @@ LOG = log.LOG
 
 class SDKServer(object):
     def __init__(self):
-        syslog.openlog(logoption=syslog.LOG_PID)
         # Initailize SDK API
         self.sdkapi = api.SDKAPI()
         self.server_socket = None
@@ -44,24 +41,23 @@ class SDKServer(object):
 
     def log_error(self, msg):
         thread = threading.current_thread().name
-        msg = ("ERROR: [%s] %s" % (thread, msg))
-        syslog.syslog(syslog.LOG_ERR, msg)
+        msg = ("[%s] %s" % (thread, msg))
+        LOG.error(msg)
 
     def log_info(self, msg):
         thread = threading.current_thread().name
-        msg = ("INFO: [%s] %s" % (thread, msg))
-        syslog.syslog(syslog.LOG_INFO, msg)
+        msg = ("[%s] %s" % (thread, msg))
+        LOG.info(msg)
 
     def log_warn(self, msg):
         thread = threading.current_thread().name
-        msg = ("WARNING: [%s] %s" % (thread, msg))
-        syslog.syslog(syslog.LOG_WARNING, msg)
+        msg = ("[%s] %s" % (thread, msg))
+        LOG.warning(msg)
 
     def log_debug(self, msg):
-        if log.LOGGER.getloglevel() <= logging.DEBUG:
-            thread = threading.current_thread().name
-            msg = ("DEBUG: [%s] %s" % (thread, msg))
-            syslog.syslog(syslog.LOG_DEBUG, msg)
+        thread = threading.current_thread().name
+        msg = ("[%s] %s" % (thread, msg))
+        LOG.debug(msg)
 
     def construct_internal_error(self, msg):
         self.log_error(msg)
