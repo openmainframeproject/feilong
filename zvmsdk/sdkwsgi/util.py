@@ -199,7 +199,7 @@ class SdkWsgify(wsgify):
     def call_func(self, req, *args, **kwargs):
         """Add json_error_formatter to any webob HTTPExceptions."""
         try:
-            super(SdkWsgify, self).call_func(req, *args, **kwargs)
+            return super(SdkWsgify, self).call_func(req, *args, **kwargs)
         except webob.exc.HTTPException as exc:
             msg = ('encounter %(error)s error') % {'error': exc}
             LOG.debug(msg)
@@ -215,4 +215,4 @@ class SdkWsgify(wsgify):
                 'output': '',
                 'errmsg': explanation}
             exc.text = six.text_type(json.dumps(fault_data))
-            return exc
+            raise exc
