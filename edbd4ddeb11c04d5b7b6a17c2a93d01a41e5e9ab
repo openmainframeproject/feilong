@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bf9d5a63_5cf6d584",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-05-16T03:11:46Z",
+      "side": 1,
+      "message": "if we can also handle the userid upper/lower case issue, it would be a relief for each API because each API implementation won\u0027t need to consider the case issue, all is already converted to upper layer.",
+      "range": {
+        "startLine": 45,
+        "startChar": 35,
+        "endLine": 45,
+        "endChar": 37
+      },
+      "revId": "edbd4ddeb11c04d5b7b6a17c2a93d01a41e5e9ab",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fdffbd2b_0a5d2c5c",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-05-16T03:11:46Z",
+      "side": 1,
+      "message": "userids should all be converted to upper case before check.",
+      "range": {
+        "startLine": 275,
+        "startChar": 8,
+        "endLine": 275,
+        "endChar": 65
+      },
+      "revId": "edbd4ddeb11c04d5b7b6a17c2a93d01a41e5e9ab",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cac6dbfd_655df4b2",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-05-16T03:11:46Z",
+      "side": 1,
+      "message": "suggest to add a \u0027\u0027 to make the log clear.",
+      "range": {
+        "startLine": 278,
+        "startChar": 29,
+        "endLine": 278,
+        "endChar": 31
+      },
+      "revId": "edbd4ddeb11c04d5b7b6a17c2a93d01a41e5e9ab",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ce2f3a68_b73b2f1d",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-05-16T03:11:46Z",
+      "side": 1,
+      "message": "No need to keep this check in vmops. The check is already done in api layer.",
+      "range": {
+        "startLine": 285,
+        "startChar": 13,
+        "endLine": 285,
+        "endChar": 33
+      },
+      "revId": "edbd4ddeb11c04d5b7b6a17c2a93d01a41e5e9ab",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
