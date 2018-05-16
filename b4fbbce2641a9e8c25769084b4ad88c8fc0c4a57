@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "251ac931_024f306f",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 1458,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-05-16T03:27:45Z",
+      "side": 1,
+      "message": "suggest to change the name to test_guest_live_resize, not create.",
+      "range": {
+        "startLine": 1458,
+        "startChar": 13,
+        "endLine": 1458,
+        "endChar": 44
+      },
+      "revId": "b4fbbce2641a9e8c25769084b4ad88c8fc0c4a57",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2d345253_409429e4",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 1504,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-05-16T03:27:45Z",
+      "side": 1,
+      "message": "seems you missed two cases: (Maybe I have been lost in your so many cases :) )\n\n1. live resize cpu number is less than the current live cpu number. (live decrease)\n\n2. live resize a guest that is not in active status.",
+      "range": {
+        "startLine": 1504,
+        "startChar": 71,
+        "endLine": 1504,
+        "endChar": 77
+      },
+      "revId": "b4fbbce2641a9e8c25769084b4ad88c8fc0c4a57",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
