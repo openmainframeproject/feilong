@@ -210,6 +210,7 @@ class NetworkOPS(object):
                 znetconfig = '\n'.join(('#!/bin/bash', commands,
                                         'sleep 2', znet_content))
             if len(append_cmd) > 0:
+                znetconfig += '\nsleep 2'
                 znetconfig += '\n%s\n' % append_cmd
             znetconfig += '\nrm -rf /tmp/znetconfig.sh\n'
             # Create a temp file in instance to execute above commands
