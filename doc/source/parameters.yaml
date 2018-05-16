@@ -238,7 +238,8 @@ disk_vdev:
     The device number of the disk, if not specified, zvmsdk will use the next vdev
     of CONF.zvm.user_root_vdev as the additional disk's vdev, eg. if CONF.zvm.user_root_vdev
     is 0100, zvmsdk will use 0101 as the vdev for first additional disk in disk_info, 0102 as
-    the second additional disk's vdev
+    the second additional disk's vdev. It is recommended that customer specify the vdev when
+    configure minidisk, if they already know which vdev to configure.
   in: body
   required: False
   type: string
@@ -246,7 +247,8 @@ disk_mountpoint:
   description: |
     The directory on guest to which the additional disk will be mounted, if not specified,
     zvmsdk will use /mnt/ephemeral0 as the mount point of first additional disk, /mnt/ephemeral1
-    as the mount point of second additional disk
+    as the mount point of second additional disk. It is recommended that customer specify the
+    mount point of disk.
   in: body
   required: False
   type: string
