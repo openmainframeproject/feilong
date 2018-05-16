@@ -71,6 +71,29 @@
     },
     {
       "key": {
+        "uuid": "4e201022_cab0edfe",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-05-16T05:26:22Z",
+      "side": 1,
+      "message": "The guest_delete needs to be handled specially.\n\nThe current guest_delete logic would first delete the userid, then delete from database, and ignore the not exist error in both steps.\n\nIf exception is raised without catch, Log.error should be used instead of Log.debug.",
+      "range": {
+        "startLine": 278,
+        "startChar": 12,
+        "endLine": 280,
+        "endChar": 50
+      },
+      "revId": "edbd4ddeb11c04d5b7b6a17c2a93d01a41e5e9ab",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ce2f3a68_b73b2f1d",
         "filename": "zvmsdk/vmops.py",
         "patchSetId": 1
