@@ -18,6 +18,18 @@
 Release Notes
 *************
 
+Release 1.1.1
+-------------
+Remove requirement of Webob<1.8.0
+
+Release 1.1.0
+-------------
+zVMCloudConnector 1.1.0 is mainly includes the change:
+
+* Switch config drive format from tgz to iso9660
+
+    Config drive in iso9660 format is commonly used by cloud-init.
+
 Release 1.0.1
 -------------
 
