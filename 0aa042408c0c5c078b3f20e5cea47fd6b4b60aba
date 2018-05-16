@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa3cc0d4_09fb103b",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-16T02:52:22Z",
+      "side": 1,
+      "message": "I am little bit confused by this wording..\n\nwhat means \u0027already know which vdev\u0027 to configure?",
+      "range": {
+        "startLine": 241,
+        "startChar": 39,
+        "endLine": 242,
+        "endChar": 69
+      },
+      "revId": "0aa042408c0c5c078b3f20e5cea47fd6b4b60aba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
