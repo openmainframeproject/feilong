@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8c8e3ba8_474ed189",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-16T08:18:58Z",
+      "side": 1,
+      "message": "good suggestion, will address this in one separate patch",
+      "parentUuid": "bf9d5a63_5cf6d584",
+      "range": {
+        "startLine": 45,
+        "startChar": 35,
+        "endLine": 45,
+        "endChar": 37
+      },
+      "revId": "edbd4ddeb11c04d5b7b6a17c2a93d01a41e5e9ab",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fdffbd2b_0a5d2c5c",
         "filename": "zvmsdk/vmops.py",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2018-05-16T03:11:46Z",
       "side": 1,
       "message": "userids should all be converted to upper case before check.",
+      "range": {
+        "startLine": 275,
+        "startChar": 8,
+        "endLine": 275,
+        "endChar": 65
+      },
+      "revId": "edbd4ddeb11c04d5b7b6a17c2a93d01a41e5e9ab",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4bd0b1a8_d0e21873",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-16T08:18:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fdffbd2b_0a5d2c5c",
       "range": {
         "startLine": 275,
         "startChar": 8,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "d8d30ee0_9202b385",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-16T08:18:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cac6dbfd_655df4b2",
+      "range": {
+        "startLine": 278,
+        "startChar": 29,
+        "endLine": 278,
+        "endChar": 31
+      },
+      "revId": "edbd4ddeb11c04d5b7b6a17c2a93d01a41e5e9ab",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4e201022_cab0edfe",
         "filename": "zvmsdk/vmops.py",
         "patchSetId": 1
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "3e7ecae1_5f83c2a8",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-16T08:18:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4e201022_cab0edfe",
+      "range": {
+        "startLine": 278,
+        "startChar": 12,
+        "endLine": 280,
+        "endChar": 50
+      },
+      "revId": "edbd4ddeb11c04d5b7b6a17c2a93d01a41e5e9ab",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ce2f3a68_b73b2f1d",
         "filename": "zvmsdk/vmops.py",
         "patchSetId": 1
@@ -105,6 +201,30 @@
       "writtenOn": "2018-05-16T03:11:46Z",
       "side": 1,
       "message": "No need to keep this check in vmops. The check is already done in api layer.",
+      "range": {
+        "startLine": 285,
+        "startChar": 13,
+        "endLine": 285,
+        "endChar": 33
+      },
+      "revId": "edbd4ddeb11c04d5b7b6a17c2a93d01a41e5e9ab",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6e5e28f6_1508db71",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-16T08:18:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ce2f3a68_b73b2f1d",
       "range": {
         "startLine": 285,
         "startChar": 13,
