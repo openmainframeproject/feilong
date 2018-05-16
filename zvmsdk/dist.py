@@ -115,7 +115,7 @@ class LinuxDist(object):
 
     def _generate_network_configuration(self, network, vdev, active=False):
         ip_v4 = dns_str = gateway_v4 = ''
-        netmask_v4 = broadcast_v4 = ''
+        ip_cidr = netmask_v4 = broadcast_v4 = ''
         net_cmd = ''
         if (('ip_addr' in network.keys()) and
             (network['ip_addr'] is not None)):
@@ -133,8 +133,17 @@ class LinuxDist(object):
 
         if (('cidr' in network.keys()) and
             (network['cidr'] is not None)):
-            netmask_v4 = str(netaddr.IPNetwork(network['cidr']).netmask)
-            broadcast_v4 = str(netaddr.IPNetwork(network['cidr']).broadcast)
+            ip_cidr = network['cidr']
+            netmask_v4 = str(netaddr.IPNetwork(ip_cidr).netmask)
+            broadcast_v4 = str(netaddr.IPNetwork(ip_cidr).broadcast)
+            if broadcast_v4 == 'None':
+                broadcast_v4 = ''
+        elif (ip_v4 != ""):
+            ip_cidr = self._get_default_cidr(ip_v4)
+            netmask_v4 = str(netaddr.IPNetwork(ip_cidr).netmask)
+            broadcast_v4 = str(netaddr.IPNetwork(ip_cidr).broadcast)
+            if broadcast_v4 == 'None':
+                broadcast_v4 = ''
 
         device = self._get_device_name(vdev)
         address_read = str(vdev).zfill(4)
@@ -151,9 +160,8 @@ class LinuxDist(object):
                                     address_data)
         route_str = self._get_route_str(gateway_v4)
         if active and ip_v4 != '':
-            if (('cidr' in network.keys()) and
-                (network['cidr'] is not None)):
-                mask = network['cidr'].rpartition('/')[2]
+            if ip_cidr != '':
+                mask = ip_cidr.rpartition('/')[2]
             else:
                 mask = '32'
             full_ip = '%s/%s' % (ip_v4, mask)
@@ -161,6 +169,17 @@ class LinuxDist(object):
                                                      broadcast_v4)
 
         return cfg_str, cmd_str, dns_str, route_str, net_cmd
+
+    def _get_default_cidr(self, ip_addr):
+        ip_type = int(ip_addr.split('.')[0])
+        if (ip_type >= 0 and ip_type <= 127):
+            mask = 8
+        elif (ip_type >= 128 and ip_type <= 191):
+            mask = 16
+        else:
+            mask = 24
+        default_cidr = "%s/%s" % (ip_addr, mask)
+        return default_cidr
 
     def get_simple_znetconfig_contents(self):
         return '\n'.join(('cio_ignore -R',
@@ -453,20 +472,11 @@ class sles(LinuxDist):
     def _get_network_file_path(self):
         return '/etc/sysconfig/network/'
 
-    def _get_cidr_from_ip_netmask(self, ip, netmask):
-        netmask_fields = netmask.split('.')
-        bin_str = ''
-        for octet in netmask_fields:
-            bin_str += bin(int(octet))[2:].zfill(8)
-        mask = str(len(bin_str.rstrip('0')))
-        cidr_v4 = ip + '/' + mask
-        return cidr_v4
-
     def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
                      netmask_v4, address_read, subchannels):
-        cidr_v4 = self._get_cidr_from_ip_netmask(ip_v4, netmask_v4)
         cfg_str = "BOOTPROTO=\'static\'\n"
-        cfg_str += "IPADDR=\'%s\'\n" % cidr_v4
+        cfg_str += "IPADDR=\'%s\'\n" % ip_v4
+        cfg_str += "NETMASK=\'%s\'\n" % netmask_v4
         cfg_str += "BROADCAST=\'%s\'\n" % broadcast_v4
         cfg_str += "STARTMODE=\'onboot\'\n"
         cfg_str += ("NAME=\'OSA Express Network card (%s)\'\n" %
@@ -813,14 +823,34 @@ class ubuntu(LinuxDist):
 
         if (('cidr' in network.keys()) and
             (network['cidr'] is not None)):
-            netmask_v4 = str(netaddr.IPNetwork(network['cidr']).netmask)
-            broadcast_v4 = str(netaddr.IPNetwork(network['cidr']).broadcast)
+            ip_cidr = network['cidr']
+            netmask_v4 = str(netaddr.IPNetwork(ip_cidr).netmask)
+            broadcast_v4 = str(netaddr.IPNetwork(ip_cidr).broadcast)
+            if broadcast_v4 == 'None':
+                broadcast_v4 = ''
+        elif (ip_v4 != ""):
+            ip_cidr = self._get_default_cidr(ip_v4)
+            netmask_v4 = str(netaddr.IPNetwork(ip_cidr).netmask)
+            broadcast_v4 = str(netaddr.IPNetwork(ip_cidr).broadcast)
+            if broadcast_v4 == 'None':
+                broadcast_v4 = ''
 
         device = self._get_device_name(vdev)
         cfg_str = self._get_cfg_str(device, broadcast_v4, gateway_v4,
                                     ip_v4, netmask_v4)
 
         return cfg_str, dns_str
+
+    def _get_default_cidr(self, ip_addr):
+        ip_type = int(ip_addr.split('.')[0])
+        if (ip_type >= 0 and ip_type <= 127):
+            mask = 8
+        elif (ip_type >= 128 and ip_type <= 191):
+            mask = 16
+        else:
+            mask = 24
+        default_cidr = "%s/%s" % (ip_addr, mask)
+        return default_cidr
 
     def _get_route_str(self, gateway_v4):
         return ''
