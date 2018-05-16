@@ -359,7 +359,6 @@ class GuestActionsTest(SDKWSGITest):
         self.req.body = '{"fake": "None"}'
 
         mock_userid.return_value = FAKE_USERID
-
         self.assertRaises(webob.exc.HTTPBadRequest, guest.guest_action,
                           self.req)
 
