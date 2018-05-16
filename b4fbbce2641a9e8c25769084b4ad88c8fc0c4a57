@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2597e46f_c72eafa9",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 1458,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2018-05-16T07:29:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "251ac931_024f306f",
+      "range": {
+        "startLine": 1458,
+        "startChar": 13,
+        "endLine": 1458,
+        "endChar": 44
+      },
+      "revId": "b4fbbce2641a9e8c25769084b4ad88c8fc0c4a57",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2d345253_409429e4",
         "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
         "patchSetId": 3
@@ -36,6 +60,30 @@
       "writtenOn": "2018-05-16T03:27:45Z",
       "side": 1,
       "message": "seems you missed two cases: (Maybe I have been lost in your so many cases :) )\n\n1. live resize cpu number is less than the current live cpu number. (live decrease)\n\n2. live resize a guest that is not in active status.",
+      "range": {
+        "startLine": 1504,
+        "startChar": 71,
+        "endLine": 1504,
+        "endChar": 77
+      },
+      "revId": "b4fbbce2641a9e8c25769084b4ad88c8fc0c4a57",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4b613665_33e6a701",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 1504,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2018-05-16T07:29:58Z",
+      "side": 1,
+      "message": "1. Line 1598 is the case you want\n2 Done",
+      "parentUuid": "2d345253_409429e4",
       "range": {
         "startLine": 1504,
         "startChar": 71,
