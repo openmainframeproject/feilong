@@ -286,12 +286,12 @@ Get guests cpu, memory information.
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_stats.tpl
    :language: javascript
 
-Get Guests vnics info
----------------------
+Get Guests interface stats
+--------------------------
 
-**GET /guests/vnicsinfo**
+**GET /guests/interfacestats**
 
-Get guests virtual nic information.
+Get guests network interface statistics.
 
 * Request:
 
@@ -311,7 +311,7 @@ Get guests virtual nic information.
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_vnics_info.tpl
+.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_interface_stats.tpl
    :language: javascript
 
 Get Guests nic info
