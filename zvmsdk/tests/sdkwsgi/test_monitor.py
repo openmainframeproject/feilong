@@ -98,10 +98,10 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
                 result[test_id].get('min_mem_kb'), int))
         self.assertTrue(isinstance(
                 result[test_id].get('shared_mem_kb'), int))
-        """
+
         print("Test with a userid list")
         test_id2 = self.userid2.upper()
-        guest_list = [self.userid1, self.userid2]
+        guest_list = "%s,%s" % (self.userid1, self.userid2)
         resp = self._inspect_stats(guest_list)
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
@@ -117,21 +117,13 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
                 result[test_id].get('guest_cpus'), int))
         self.assertTrue(isinstance(
                 result[test_id].get('shared_mem_kb'), int))
-        """
+
         print("Test with a nonexistent guest")
         resp = self._inspect_stats('FAKE_ID')
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
         self.assertEqual(results['overallRC'], 0)
         self.assertEqual(results['output'], {})
-        """
-        print("Test with an empty user list")
-        resp = self._inspect_stats([])
-        self.assertEqual(200, resp.status_code)
-        results = json.loads(resp.content)
-        self.assertEqual(results['overallRC'], 0)
-        self.assertEqual(results['output'], {})
-        """
 
     def test_guest_inspect_vnics(self):
         print("To test with a single uerid")
@@ -168,10 +160,10 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
                 result[test_id][0].get('nic_rx'), int))
         self.assertTrue(isinstance(
                 result[test_id][0].get('nic_tx'), int))
-        """
+
         print("To test with a userid list")
         test_id2 = self.userid2.upper()
-        guest_list = [self.userid1, self.userid2]
+        guest_list = "%s,%s" % (self.userid1, self.userid2)
         resp = self._inspect_vnics(guest_list)
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
@@ -187,21 +179,13 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
                 result[test_id][0].get('nic_vdev'), six.string_types))
         self.assertTrue(isinstance(
                 result[test_id2][0].get('nic_tx'), int))
-        """
+
         print("To test with a nonexistent guest")
         resp = self._inspect_vnics('FAKE_ID')
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
         self.assertEqual(results['overallRC'], 0)
         self.assertEqual(results['output'], {})
-        """
-        print("To test with an empty user list")
-        resp = self._inspect_vnics([])
-        self.assertEqual(200, resp.status_code)
-        results = json.loads(resp.content)
-        self.assertEqual(results['overallRC'], 0)
-        self.assertEqual(results['output'], {})
-        """
 
 
 class MeteringCacheTestCase(base.ZVMConnectorBaseTestCase):
