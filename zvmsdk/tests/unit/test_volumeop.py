@@ -49,8 +49,17 @@ class TestFCP(base.SDKTestCase):
 
 class TestFCPManager(base.SDKTestCase):
 
-    def setUp(self):
-        self.fcpops = volumeop.FCPManager()
+    @classmethod
+    def setUpClass(cls):
+        super(TestFCPManager, cls).setUpClass()
+        cls.fcpops = volumeop.FCPManager()
+        cls.db_op = database.FCPDbOperator()
+
+    @classmethod
+    def tearDownClass(cls):
+        with database.get_fcp_conn() as conn:
+            conn.execute("DROP TABLE fcp")
+        super(TestFCPManager, cls).tearDownClass()
 
     def test_expand_fcp_list_normal(self):
         fcp_list = "1f10;1f11;1f12;1f13;1f14"
@@ -136,26 +145,24 @@ class TestFCPManager(base.SDKTestCase):
 
         self.fcpops._init_fcp_pool('b83d-b83f')
 
-        db_op = database.FCPDbOperator()
-        db_op.new('b83c')
-        db_op.new('b83d')
-        db_op.new('b83e')
+        self.db_op.new('b83c')
+        self.db_op.new('b83d')
+        self.db_op.new('b83e')
 
         try:
             self.fcpops._sync_db_fcp_list()
             mock_add.assert_called_once_with('b83f')
             mock_report.assert_called_once_with('b83c')
         finally:
-            db_op.delete('b83d')
-            db_op.delete('b83e')
-            db_op.delete('b83f')
-            db_op.delete('b83c')
+            self.db_op.delete('b83d')
+            self.db_op.delete('b83e')
+            self.db_op.delete('b83f')
+            self.db_op.delete('b83c')
 
     def test_find_and_reserve_fcp_new(self):
-        db_op = database.FCPDbOperator()
         # create 2 FCP
-        db_op.new('b83c')
-        db_op.new('b83d')
+        self.db_op.new('b83c')
+        self.db_op.new('b83d')
 
         # find FCP for user and FCP not exist, should allocate them
         try:
@@ -165,22 +172,21 @@ class TestFCPManager(base.SDKTestCase):
             self.assertEqual('b83c', fcp1)
             self.assertEqual('b83d', fcp2)
 
-            fcp_list = db_op.get_from_fcp('b83c')
+            fcp_list = self.db_op.get_from_fcp('b83c')
             expected = [(u'b83c', u'', 0, 1, u'')]
             self.assertEqual(expected, fcp_list)
 
-            fcp_list = db_op.get_from_fcp('b83d')
+            fcp_list = self.db_op.get_from_fcp('b83d')
             expected = [(u'b83d', u'', 0, 1, u'')]
             self.assertEqual(expected, fcp_list)
         finally:
-            db_op.delete('b83c')
-            db_op.delete('b83d')
+            self.db_op.delete('b83c')
+            self.db_op.delete('b83d')
 
     def test_find_and_reserve_fcp_old(self):
-        db_op = database.FCPDbOperator()
         # create 2 FCP
-        db_op.new('b83c')
-        db_op.new('b83d')
+        self.db_op.new('b83c')
+        self.db_op.new('b83d')
 
         # find FCP for user and FCP not exist, should allocate them
         try:
@@ -188,46 +194,46 @@ class TestFCPManager(base.SDKTestCase):
             self.assertEqual('b83c', fcp1)
             self.fcpops.increase_fcp_usage('b83c', 'user1')
 
-            fcp_list = db_op.get_from_fcp('b83c')
+            fcp_list = self.db_op.get_from_fcp('b83c')
             expected = [(u'b83c', u'user1', 1, 1, u'')]
             self.assertEqual(expected, fcp_list)
 
             # After usage, we need find b83d now
             fcp2 = self.fcpops.find_and_reserve_fcp('user2')
             self.assertEqual('b83d', fcp2)
-            fcp_list = db_op.get_from_fcp('b83d')
+            fcp_list = self.db_op.get_from_fcp('b83d')
             expected = [(u'b83d', u'', 0, 1, u'')]
             self.assertEqual(expected, fcp_list)
 
             self.fcpops.increase_fcp_usage('b83c', 'user1')
-            fcp_list = db_op.get_from_fcp('b83c')
+            fcp_list = self.db_op.get_from_fcp('b83c')
             expected = [(u'b83c', u'user1', 2, 1, u'')]
             self.assertEqual(expected, fcp_list)
 
             self.fcpops.decrease_fcp_usage('b83c', 'user1')
-            fcp_list = db_op.get_from_fcp('b83c')
+            fcp_list = self.db_op.get_from_fcp('b83c')
             expected = [(u'b83c', u'user1', 1, 1, u'')]
             self.assertEqual(expected, fcp_list)
 
             self.fcpops.decrease_fcp_usage('b83c')
-            fcp_list = db_op.get_from_fcp('b83c')
+            fcp_list = self.db_op.get_from_fcp('b83c')
             expected = [(u'b83c', u'user1', 0, 1, u'')]
             self.assertEqual(expected, fcp_list)
 
             # unreserve makes this fcp free
             self.fcpops.unreserve_fcp('b83c')
-            fcp_list = db_op.get_from_fcp('b83c')
+            fcp_list = self.db_op.get_from_fcp('b83c')
             expected = [(u'b83c', u'user1', 0, 0, u'')]
             self.assertEqual(expected, fcp_list)
 
             fcp3 = self.fcpops.find_and_reserve_fcp('user3')
             self.assertEqual('b83c', fcp3)
-            fcp_list = db_op.get_from_fcp('b83c')
+            fcp_list = self.db_op.get_from_fcp('b83c')
             expected = [(u'b83c', u'user1', 0, 1, u'')]
             self.assertEqual(expected, fcp_list)
         finally:
-            db_op.delete('b83c')
-            db_op.delete('b83d')
+            self.db_op.delete('b83c')
+            self.db_op.delete('b83d')
 
     def test_find_and_reserve_fcp_exception(self):
         # no FCP at all
@@ -239,14 +245,22 @@ class TestFCPManager(base.SDKTestCase):
 
 class TestFCPVolumeManager(base.SDKTestCase):
 
-    def setUp(self):
-        self.volumeops = volumeop.FCPVolumeManager()
+    @classmethod
+    def setUpClass(cls):
+        super(TestFCPVolumeManager, cls).setUpClass()
+        cls.volumeops = volumeop.FCPVolumeManager()
+        cls.db_op = database.FCPDbOperator()
+
+    @classmethod
+    def tearDownClass(cls):
+        with database.get_fcp_conn() as conn:
+            conn.execute("DROP TABLE fcp")
+        super(TestFCPVolumeManager, cls).tearDownClass()
 
     def test_get_volume_connector(self):
-        db_op = database.FCPDbOperator()
         base.set_conf('network', 'my_ip', '1.2.3.4')
         # create 1 FCP
-        db_op.new('b83c')
+        self.db_op.new('b83c')
 
         try:
             connections = self.volumeops.get_volume_connector('dummy')
@@ -259,11 +273,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
                         'ip': '1.2.3.4'}
             self.assertEqual(expected, connections)
 
-            fcp_list = db_op.get_from_fcp('b83c')
+            fcp_list = self.db_op.get_from_fcp('b83c')
             expected = [(u'b83c', u'', 0, 1, u'')]
             self.assertEqual(expected, fcp_list)
         finally:
-            db_op.delete('b83c')
+            self.db_op.delete('b83c')
 
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disk")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
@@ -277,8 +291,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'target_lun': '2222',
                            'zvm_fcp': 'b83c',
                            'assigner_id': 'user1'}
-        db_op = database.FCPDbOperator()
-        db_op.new('b83c')
+        self.db_op.new('b83c')
 
         try:
             self.volumeops.attach(connection_info)
@@ -286,7 +299,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
             mock_add_disk.assert_called_once_with('b83c', 'user1', '1111',
                                                   '2222', False, 'rhel7')
         finally:
-            db_op.delete('b83c')
+            self.db_op.delete('b83c')
 
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disk")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
@@ -300,10 +313,9 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'target_lun': '2222',
                            'zvm_fcp': 'b83c',
                            'assigner_id': 'user1'}
-        db_op = database.FCPDbOperator()
-        db_op.new('b83c')
-        db_op.assign('b83c', 'user1')
-        db_op.increase_usage('b83c')
+        self.db_op.new('b83c')
+        self.db_op.assign('b83c', 'user1')
+        self.db_op.increase_usage('b83c')
 
         try:
             self.volumeops.attach(connection_info)
@@ -311,7 +323,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
             mock_add_disk.assert_called_once_with('b83c', 'user1', '1111',
                                                   '2222', False, 'rhel7')
         finally:
-            db_op.delete('b83c')
+            self.db_op.delete('b83c')
 
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disk")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
@@ -325,9 +337,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'target_lun': '2222',
                            'zvm_fcp': 'b83c',
                            'assigner_id': 'user1'}
-        db_op = database.FCPDbOperator()
-        db_op.new('b83c')
-        db_op.assign('b83c', 'user1')
+        self.db_op.new('b83c')
+        self.db_op.assign('b83c', 'user1')
 
         try:
             self.volumeops.detach(connection_info)
@@ -335,7 +346,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                                      '2222', False, 'rhel7')
             mock_undedicate.assert_called_once_with('b83c', 'user1')
         finally:
-            db_op.delete('b83c')
+            self.db_op.delete('b83c')
 
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disk")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
@@ -349,10 +360,9 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'target_lun': '2222',
                            'zvm_fcp': 'b83c',
                            'assigner_id': 'user1'}
-        db_op = database.FCPDbOperator()
-        db_op.new('b83c')
-        db_op.assign('b83c', 'user1')
-        db_op.increase_usage('b83c')
+        self.db_op.new('b83c')
+        self.db_op.assign('b83c', 'user1')
+        self.db_op.increase_usage('b83c')
 
         try:
             self.volumeops.detach(connection_info)
@@ -360,4 +370,4 @@ class TestFCPVolumeManager(base.SDKTestCase):
             mock_remove_disk.assert_called_once_with('b83c', 'user1', '1111',
                                                      '2222', False, 'rhel7')
         finally:
-            db_op.delete('b83c')
+            self.db_op.delete('b83c')
