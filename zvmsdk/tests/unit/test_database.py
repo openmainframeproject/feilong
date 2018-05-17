@@ -318,7 +318,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
     @classmethod
     def tearDownClass(cls):
         with database.get_fcp_conn() as conn:
-            conn.execute("DROP TABLE FCP")
+            conn.execute("DROP TABLE fcp")
         super(FCPDbOperatorTestCase, cls).tearDownClass()
 
     def test_new(self):
