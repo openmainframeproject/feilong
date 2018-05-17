@@ -21,7 +21,6 @@ from zvmsdk import config
 from zvmsdk import dist
 from zvmsdk import log
 from zvmsdk import smutclient
-from zvmsdk import utils as zvmutils
 
 
 _NetworkOPS = None
@@ -46,14 +45,10 @@ class NetworkOPS(object):
 
     def create_nic(self, userid, vdev=None, nic_id=None,
                    mac_addr=None, active=False):
-        zvmutils.check_guest_exist(userid)
-
         return self._smutclient.create_nic(userid, vdev=vdev, nic_id=nic_id,
                                            mac_addr=mac_addr, active=active)
 
     def get_vm_nic_vswitch_info(self, userid):
-        zvmutils.check_guest_exist(userid)
-
         return self._smutclient.get_vm_nic_vswitch_info(userid)
 
     def get_vswitch_list(self):
@@ -61,15 +56,11 @@ class NetworkOPS(object):
 
     def couple_nic_to_vswitch(self, userid, nic_vdev,
                               vswitch_name, active=False):
-        zvmutils.check_guest_exist(userid)
-
         self._smutclient.couple_nic_to_vswitch(userid, nic_vdev,
                                                vswitch_name, active=active)
 
     def uncouple_nic_from_vswitch(self, userid, nic_vdev,
                                   active=False):
-        zvmutils.check_guest_exist(userid)
-
         self._smutclient.uncouple_nic_from_vswitch(userid,
                                                    nic_vdev,
                                                    active=active)
@@ -104,8 +95,6 @@ class NetworkOPS(object):
         self._smutclient.delete_vswitch(vswitch_name, persist)
 
     def delete_nic(self, userid, vdev, active=False):
-        zvmutils.check_guest_exist(userid)
-
         self._smutclient.delete_nic(userid, vdev,
                                     active=active)
 
@@ -299,7 +288,5 @@ class NetworkOPS(object):
             self._smutclient.execute_cmd(userid, active_cmds)
 
     def dedicate_OSA(self, userid, OSA_device, vdev=None, active=False):
-        zvmutils.check_guest_exist(userid)
-
         return self._smutclient.dedicate_OSA(userid, OSA_device, vdev=vdev,
                                              active=active)

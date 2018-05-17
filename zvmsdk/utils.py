@@ -520,7 +520,7 @@ def _is_guest_exist(userid):
     return True
 
 
-def check_guest_exist(userid):
+def check_userid_exist(userid):
     if not _is_guest_exist(userid):
         msg = "Userid %s does not exist" % userid.upper()
         LOG.warning(msg)
