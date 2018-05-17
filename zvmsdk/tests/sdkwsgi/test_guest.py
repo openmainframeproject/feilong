@@ -448,11 +448,11 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
                                        method='GET')
         return resp
 
-    def _guest_vnicsinfo(self, userid=None):
+    def _guest_interface_stats(self, userid=None):
         if userid is None:
             userid = self.userid
 
-        url = '/guests/vnicsinfo?userid=%s' % userid
+        url = '/guests/interfacestats?userid=%s' % userid
         resp = self.client.api_request(url=url,
                                        method='GET')
         return resp
@@ -683,14 +683,14 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         resp = self._guest_stats('notexist')
         self.assertEqual(200, resp.status_code)
 
-        resp = self._guest_vnicsinfo('notexist')
+        resp = self._guest_interface_stats('notexist')
         self.assertEqual(200, resp.status_code)
 
     def test_guest_inspect_incorrect(self):
         resp = self._guest_stats('@@@@@123456789')
         self.assertEqual(400, resp.status_code)
 
-        resp = self._guest_vnicsinfo('@@@@@123456789')
+        resp = self._guest_interface_stats('@@@@@123456789')
         self.assertEqual(400, resp.status_code)
 
     def test_guest_creat_with_profile_notexit(self):
@@ -835,9 +835,9 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             self.apibase.verify_result('test_guest_get_power_state',
                                        resp.content)
 
-            resp = self._guest_vnicsinfo(userid=userid)
+            resp = self._guest_interface_stats(userid=userid)
             self.assertEqual(200, resp.status_code)
-            self.apibase.verify_result('test_guests_get_vnics_info',
+            self.apibase.verify_result('test_guests_get_interface_stats',
                                        resp.content)
 
             # Creating NIC

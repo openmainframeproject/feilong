@@ -695,11 +695,11 @@ class HandlersGuestTest(SDKWSGITest):
         mock_get.assert_called_once_with(self.req, FAKE_USERID_LIST)
 
     @mock.patch.object(guest.VMHandler, 'inspect_vnics')
-    def test_guest_get_vnics_info(self, mock_get):
+    def test_guest_get_interface_stats(self, mock_get):
         self.req.GET = FakeReqGet()
         mock_get.return_value = '{}'
 
-        guest.guest_get_vnics_info(self.req)
+        guest.guest_get_interface_stats(self.req)
         mock_get.assert_called_once_with(self.req, FAKE_USERID_LIST)
 
     def mock_get_userid_vdev(self, env, param):

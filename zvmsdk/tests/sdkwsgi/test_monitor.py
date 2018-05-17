@@ -51,7 +51,7 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
 
     def _inspect_vnics(self, userid):
         body = None
-        url = '/guests/vnicsinfo?userid=%s' % userid
+        url = '/guests/interfacestats?userid=%s' % userid
         resp = self.client.api_request(url=url, method='GET',
                                       body=body)
         return resp
