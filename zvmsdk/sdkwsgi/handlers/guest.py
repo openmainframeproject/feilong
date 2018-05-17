@@ -694,15 +694,15 @@ def guest_get_stats(req):
 
 @util.SdkWsgify
 @tokens.validate
-def guest_get_vnics_info(req):
+def guest_get_interface_stats(req):
 
     userid_list = _get_userid_list(req)
 
-    def _guest_get_vnics_info(req, userid_list):
+    def _guest_get_interface_stats(req, userid_list):
         action = get_handler()
         return action.inspect_vnics(req, userid_list)
 
-    info = _guest_get_vnics_info(req, userid_list)
+    info = _guest_get_interface_stats(req, userid_list)
 
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,
