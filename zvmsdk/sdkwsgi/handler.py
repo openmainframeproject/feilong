@@ -43,8 +43,8 @@ ROUTE_LIST = (
     ('/guests/stats', {
         'GET': guest.guest_get_stats
     }),
-    ('/guests/vnicsinfo', {
-        'GET': guest.guest_get_vnics_info
+    ('/guests/interfacestats', {
+        'GET': guest.guest_get_interface_stats
     }),
     ('/guests/nics', {
         'GET': guest.guests_get_nic_info
