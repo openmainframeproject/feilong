@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "89ca2a1b_1282fe47",
+        "filename": "zvmsdk/networkops.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-17T01:10:34Z",
+      "side": 1,
+      "message": "I think we need find root cause later..",
+      "range": {
+        "startLine": 213,
+        "startChar": 32,
+        "endLine": 213,
+        "endChar": 40
+      },
+      "revId": "162f8346910d19c87c5b8b48d9fc0357c95f3705",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
