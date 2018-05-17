@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "61ffc4cf_274a6f26",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-17T02:27:31Z",
+      "side": 1,
+      "message": "the 4 lines can be move out of the \"if .. elif ...\" section?",
+      "range": {
+        "startLine": 137,
+        "startChar": 11,
+        "endLine": 140,
+        "endChar": 33
+      },
+      "revId": "bccffe5f1431080144c846021686e574937fc408",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b9751910_b180460f",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-17T02:27:31Z",
+      "side": 1,
+      "message": "same code as above",
+      "range": {
+        "startLine": 143,
+        "startChar": 12,
+        "endLine": 146,
+        "endChar": 33
+      },
+      "revId": "bccffe5f1431080144c846021686e574937fc408",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4df98c69_a9e63291",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 827,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-17T02:27:31Z",
+      "side": 1,
+      "message": "six.text_type",
+      "range": {
+        "startLine": 827,
+        "startChar": 25,
+        "endLine": 827,
+        "endChar": 28
+      },
+      "revId": "bccffe5f1431080144c846021686e574937fc408",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6165dc09_179fb051",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 853,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-17T02:27:31Z",
+      "side": 1,
+      "message": "duplicate?",
+      "range": {
+        "startLine": 844,
+        "startChar": 0,
+        "endLine": 853,
+        "endChar": 27
+      },
+      "revId": "bccffe5f1431080144c846021686e574937fc408",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
