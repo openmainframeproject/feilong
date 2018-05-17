@@ -362,9 +362,9 @@ class GuestHandlerTest(unittest.TestCase):
                           dummy)
 
     @mock.patch.object(tokens, 'validate')
-    def test_guest_get_vnics_info_empty_userid_list(self, mock_validate):
+    def test_guest_get_interface_stats_empty_userid_list(self, mock_validate):
         self.env['wsgiorg.routing_args'] = ()
-        self.env['PATH_INFO'] = '/guests/vnicsinfo'
+        self.env['PATH_INFO'] = '/guests/interfacestats'
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = ''
         h = handler.SdkHandler()
@@ -377,9 +377,9 @@ class GuestHandlerTest(unittest.TestCase):
                                              [])
 
     @mock.patch.object(tokens, 'validate')
-    def test_guest_get_vnics_info_user_list(self, mock_validate):
+    def test_guest_get_interface_stats_user_list(self, mock_validate):
         self.env['wsgiorg.routing_args'] = ()
-        self.env['PATH_INFO'] = '/guests/vnicsinfo'
+        self.env['PATH_INFO'] = '/guests/interfacestats'
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = 'userid=l1,l2'
         h = handler.SdkHandler()
@@ -392,9 +392,9 @@ class GuestHandlerTest(unittest.TestCase):
                                              ['l1', 'l2'])
 
     @mock.patch.object(tokens, 'validate')
-    def test_guest_get_vnics_info_invalid(self, mock_validate):
+    def test_guest_get_interface_stats_invalid(self, mock_validate):
         self.env['wsgiorg.routing_args'] = ()
-        self.env['PATH_INFO'] = '/guests/vnicsinfo'
+        self.env['PATH_INFO'] = '/guests/interfacestats'
         self.env['REQUEST_METHOD'] = 'GET'
         self.env['QUERY_STRING'] = 'use=l1,l2'
         h = handler.SdkHandler()

@@ -207,7 +207,7 @@ class ZVMConnectorTestCase(unittest.TestCase):
             res = self.sockclient.send_request(api_name, userid)
         return res
 
-    def _guest_get_vnics_info(self, conn_type):
+    def _guest_get_interface_stats(self, conn_type):
         api_name = 'guest_inspect_vnics'
         if conn_type == CONN_REST:
             userid = self.userid_rest
@@ -330,10 +330,10 @@ class ZVMConnectorTestCase(unittest.TestCase):
             self.apibase.verify_result('test_guests_get_stats',
                                        resp)
 
-            resp_rest = self._guest_get_vnics_info(CONN_REST)
-            resp_sock = self._guest_get_vnics_info(CONN_SOCKET)
+            resp_rest = self._guest_get_interface_stats(CONN_REST)
+            resp_sock = self._guest_get_interface_stats(CONN_SOCKET)
             resp = json.dumps(resp_sock)
-            self.apibase.verify_result('test_guests_get_vnics_info',
+            self.apibase.verify_result('test_guests_get_interface_stats',
                                        resp)
 
             resp_rest = self._guest_create_nic(CONN_REST, "2000")
