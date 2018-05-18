@@ -30,6 +30,7 @@ import re
 import six
 import string
 import tempfile
+import time
 
 from smutLayer import smut
 
@@ -399,6 +400,69 @@ class SMUTClient(object):
                 result = "Profile '%s'" % profile
                 raise exception.SDKObjectNotExistError(obj_desc=result,
                                                        modID='guest')
+
+            elif ((err.results['rc'] == 596) and (err.results['rs'] == 1198)):
+                # createvm_retry = CONF.zvm.createvm_retry
+                # Temporarily set to retry for CI
+                createvm_retry = True
+                # Add retry if 596,1118 comes up, try 5 times
+                if createvm_retry:
+                    retry_array = [5, 10, 20, 40, 80]
+                    for i, val in enumerate(retry_array):
+                        try:
+                            LOG.info("Dirmaint 596,1198 error comes up, "
+                                     "perform %(time)s retry and wait %(sec)s"
+                                     " seconds  " % {'time': str(i),
+                                                     'sec': str(val)})
+                            time.sleep(val)
+                            self._request(rd)
+                            break
+                        except exception.SDKSMUTRequestFailed as err:
+                            if ((err.results['rc'] == 596) and
+                               (err.results['rs'] == 1198)):
+                                # The last retry still fail
+                                if i == (len(retry_array) - 1):
+                                    msg = ('Failed to create userid for '
+                                           '%(userid)s, after %(time)s times '
+                                           'retry of 596,1198 error, it still'
+                                           ' failed with message: %(msg)s' %
+                                           {'time': str(i + 1),
+                                            'userid': userid,
+                                            'msg': err.format_message})
+                                    LOG.error(msg)
+                                    raise exception.SDKSMUTRequestFailed(
+                                        err.results, msg)
+                                # If retry doesn't exceed 5 times
+                                LOG.info('Create vm retry failed by 596,1198'
+                                         'error after %s seconds sleep,'
+                                         'continue to retry...' % str(val))
+
+                            # In case any other other exceptions comes up
+                            # during retry
+                            else:
+                                msg = ('Failed to create userid for %(vm)s,'
+                                       ' other error happened during 596,1198'
+                                       ' error retry machanism with message:'
+                                       ' %(msg)s' % {'vm': userid,
+                                       'msg': err.format_message})
+                                LOG.error(msg)
+                                raise exception.SDKSMUTRequestFailed(
+                                                    err.results, msg)
+
+                    msg = ('Create vm %s successfully after 596,1198 error '
+                           'retry mechanism' % userid)
+                    LOG.info(msg)
+
+                # In case if turn off retry mechanism
+                else:
+                    msg = ''
+                    if action is not None:
+                        msg = "Failed to %s. " % action
+                    msg += "SMUT error: %s" % err.format_message()
+                    LOG.error(msg)
+                    raise exception.SDKSMUTRequestFailed(err.results, msg)
+
+            # Handle other errors
             else:
                 msg = ''
                 if action is not None:

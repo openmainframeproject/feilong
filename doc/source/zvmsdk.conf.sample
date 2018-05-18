@@ -214,6 +214,15 @@
 [zvm]
 
 # 
+# Create vm retry if 596,1198 errors comes up.
+# 
+# When dirmaint 596,1198 errors comes up, retry several times.
+# 
+# This param is optional
+#createvm_retry=False
+
+
+# 
 # Default LOGONBY userid(s) for the cloud.
 # 
 # This is a set of z/VM userid(s) which are allowed to logon using the LOGONBY
