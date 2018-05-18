@@ -311,13 +311,6 @@ class VMOps(object):
 
     def resize_cpus(self, userid, count):
         LOG.info("Begin to resize cpu on vm %s", userid)
-        # Check userid in ZCC DB
-        if userid.upper() not in self.guest_list():
-            LOG.error("Failed to resize cpus of guest '%s', error: guest "
-                      "doesn't exist in guests database" % userid)
-            raise exception.SDKObjectNotExistError(obj_desc=("Guest '%s'" %
-                                                             userid),
-                                                   modID='guest')
         # Do resize
         self._smutclient.resize_cpus(userid, count)
         LOG.info("Complete resize cpu on vm %s", userid)

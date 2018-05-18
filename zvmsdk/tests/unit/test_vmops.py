@@ -262,11 +262,8 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         do_resize.assert_not_called()
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.resize_cpus")
-    @mock.patch('zvmsdk.vmops.VMOps.guest_list')
-    def test_resize_cpus(self, guest_list, do_resize):
+    def test_resize_cpus(self, do_resize):
         userid = 'testuid'
         cpu_cnt = 3
-        guest_list.return_value = [userid.upper()]
         self.vmops.resize_cpus(userid, cpu_cnt)
-        guest_list.assert_called_once_with()
         do_resize.assert_called_once_with(userid, cpu_cnt)

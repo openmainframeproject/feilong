@@ -33,6 +33,11 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
     def setUpClass(cls):
         super(NetworkDbOperatorTestCase, cls).setUpClass()
         cls.db_op = database.NetworkDbOperator()
+        cls.userid = 'FAKEUSER'
+        cls.rec_list = [('ID01', '1000', 'port_id01'),
+                        ('ID01', '2000', 'port_id02'),
+                        ('ID02', '1000', 'port_id02'),
+                        ('ID03', '1000', 'port_id03')]
 
     @classmethod
     def tearDownClass(cls):
@@ -46,34 +51,33 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         create_table.assert_called_once_with()
 
     def test_switch_add_record(self):
-        userid = 'testuser'
         interface = '1000'
         port = None
 
         # insert a record without port
-        self.db_op.switch_add_record(userid, interface, port)
+        self.db_op.switch_add_record(self.userid, interface, port)
 
         # query
         switch_record = self.db_op.switch_select_table()
-        expected = [{'userid': userid.upper(), 'interface': interface,
+        expected = [{'userid': self.userid, 'interface': interface,
                      'switch': None, 'port': port, 'comments': None}]
         self.assertEqual(expected, switch_record)
 
         # clean test switch
-        self.db_op.switch_delete_record_for_userid(userid)
+        self.db_op.switch_delete_record_for_userid(self.userid)
 
         port = 'testport'
         # insert a record with port
-        self.db_op.switch_add_record(userid, interface, port)
+        self.db_op.switch_add_record(self.userid, interface, port)
 
         # query
         switch_record = self.db_op.switch_select_table()
-        expected = [{'userid': userid.upper(), 'interface': interface,
+        expected = [{'userid': self.userid, 'interface': interface,
                      'switch': None, 'port': port, 'comments': None}]
         self.assertEqual(expected, switch_record)
 
         # clean test switch
-        self.db_op.switch_delete_record_for_userid(userid)
+        self.db_op.switch_delete_record_for_userid(self.userid)
         switch_record = self.db_op.switch_select_table()
         expected = []
         self.assertEqual(expected, switch_record)
@@ -82,60 +86,57 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
                        '_get_switch_by_user_interface')
     def test_switch_update_record_with_switch_fail(self, get_record):
         get_record.return_value = None
-        userid = 'testuser'
         interface = '1000'
         switch = 'testswitch'
 
         self.assertRaises(exception.SDKObjectNotExistError,
                           self.db_op.switch_update_record_with_switch,
-                          userid, interface, switch)
+                          self.userid, interface, switch)
 
     def test_switch_update_record_with_switch(self):
-        userid = 'testuser'
         interface = '1000'
         port = 'testport'
         switch = 'testswitch'
 
         # insert a record first
-        self.db_op.switch_add_record(userid, interface, port)
+        self.db_op.switch_add_record(self.userid, interface, port)
 
         # update record with switch info
-        self.db_op.switch_update_record_with_switch(userid, interface, switch)
+        self.db_op.switch_update_record_with_switch(self.userid, interface,
+                                                    switch)
 
         # query
         switch_record = self.db_op.switch_select_table()
-        expected = [{'userid': userid.upper(), 'interface': interface,
+        expected = [{'userid': self.userid, 'interface': interface,
                      'switch': switch, 'port': port, 'comments': None}]
         self.assertEqual(expected, switch_record)
 
         switch = None
         # update record to remove switch info
-        self.db_op.switch_update_record_with_switch(userid, interface, switch)
+        self.db_op.switch_update_record_with_switch(self.userid, interface,
+                                                    switch)
 
         # query
         switch_record = self.db_op.switch_select_table()
-        expected = [{'userid': userid.upper(), 'interface': interface,
+        expected = [{'userid': self.userid, 'interface': interface,
                      'switch': switch, 'port': port, 'comments': None}]
 
         self.assertEqual(expected, switch_record)
 
         # clean test switch
-        self.db_op.switch_delete_record_for_userid(userid)
+        self.db_op.switch_delete_record_for_userid(self.userid)
         switch_record = self.db_op.switch_select_table()
         expected = []
         self.assertEqual(expected, switch_record)
 
     def test_switch_delete_record_for_userid(self):
-        list = [('id01', '1000', 'port_id01'),
-                ('id01', '2000', 'port_id02'),
-                ('id02', '1000', 'port_id02'),
-                ('id03', '1000', 'port_id03')]
         # insert multiple records
-        for (userid, interface, port) in list:
+        for (userid, interface, port) in self.rec_list:
             self.db_op.switch_add_record(userid, interface, port)
+            self.addCleanup(self.db_op.switch_delete_record_for_userid, userid)
 
         # delete specific records
-        userid = 'id01'
+        userid = 'ID01'
         self.db_op.switch_delete_record_for_userid(userid)
 
         # query: specific records removed
@@ -144,31 +145,21 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         self.assertEqual(expected, switch_record)
 
         # query: the other records still exist
-        switch_record = self.db_op.switch_select_record_for_userid('id02')
+        switch_record = self.db_op.switch_select_record_for_userid('ID02')
         expected = [{'userid': 'ID02', 'interface': '1000',
                      'switch': None, 'port': 'port_id02', 'comments': None}]
 
         self.assertEqual(expected, switch_record)
-        switch_record = self.db_op.switch_select_record_for_userid('id03')
+        switch_record = self.db_op.switch_select_record_for_userid('ID03')
         expected = [{'userid': 'ID03', 'interface': '1000',
                      'switch': None, 'port': 'port_id03', 'comments': None}]
         self.assertEqual(expected, switch_record)
 
-        # clean test switch and check
-        self.db_op.switch_delete_record_for_userid('id02')
-        self.db_op.switch_delete_record_for_userid('id03')
-        switch_record = self.db_op.switch_select_table()
-        expected = []
-        self.assertEqual(expected, switch_record)
-
     def test_switch_delete_record_for_nic(self):
-        list = [('id01', '1000', 'port_id01'),
-                ('id01', '2000', 'port_id02'),
-                ('id02', '1000', 'port_id02'),
-                ('id03', '1000', 'port_id03')]
         # insert multiple records
-        for (userid, interface, port) in list:
+        for (userid, interface, port) in self.rec_list:
             self.db_op.switch_add_record(userid, interface, port)
+            self.addCleanup(self.db_op.switch_delete_record_for_userid, userid)
 
         # query: specific record in the table
         record = {'userid': 'ID01', 'interface': '1000',
@@ -177,7 +168,7 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         self.assertEqual(record in switch_record, True)
 
         # delete one specific record
-        userid = 'id01'
+        userid = 'ID01'
         interface = '1000'
         self.db_op.switch_delete_record_for_nic(userid, interface)
 
@@ -186,9 +177,9 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         self.assertEqual(record not in switch_record, True)
 
         # clean test switch
-        self.db_op.switch_delete_record_for_userid('id01')
-        self.db_op.switch_delete_record_for_userid('id02')
-        self.db_op.switch_delete_record_for_userid('id03')
+        self.db_op.switch_delete_record_for_userid('ID01')
+        self.db_op.switch_delete_record_for_userid('ID02')
+        self.db_op.switch_delete_record_for_userid('ID03')
         switch_record = self.db_op.switch_select_table()
         expected = []
         self.assertEqual(expected, switch_record)
@@ -199,13 +190,10 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         expected = []
         self.assertEqual(expected, switch_record)
 
-        list = [('id01', '1000', 'port_id01'),
-                ('id01', '2000', 'port_id02'),
-                ('id02', '1000', 'port_id02'),
-                ('id03', '1000', 'port_id03')]
         # insert multiple records
-        for (userid, interface, port) in list:
+        for (userid, interface, port) in self.rec_list:
             self.db_op.switch_add_record(userid, interface, port)
+            self.addCleanup(self.db_op.switch_delete_record_for_userid, userid)
 
         # query: specific record in the table
         record = [{'userid': 'ID01', 'interface': '1000',
@@ -221,21 +209,18 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         self.assertEqual(record, switch_record)
 
         # clean test switch
-        self.db_op.switch_delete_record_for_userid('id01')
-        self.db_op.switch_delete_record_for_userid('id02')
-        self.db_op.switch_delete_record_for_userid('id03')
+        self.db_op.switch_delete_record_for_userid('ID01')
+        self.db_op.switch_delete_record_for_userid('ID02')
+        self.db_op.switch_delete_record_for_userid('ID03')
         switch_record = self.db_op.switch_select_table()
         expected = []
         self.assertEqual(expected, switch_record)
 
     def test_switch_select_record_for_userid(self):
-        list = [('id01', '1000', 'port_id01'),
-                ('id01', '2000', 'port_id02'),
-                ('id02', '1000', 'port_id02'),
-                ('id03', '1000', 'port_id03')]
         # insert multiple records
-        for (userid, interface, port) in list:
+        for (userid, interface, port) in self.rec_list:
             self.db_op.switch_add_record(userid, interface, port)
+            self.addCleanup(self.db_op.switch_delete_record_for_userid, userid)
 
         # query: specific record in the table
         record = [{'userid': 'ID01', 'interface': '1000',
@@ -243,22 +228,22 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
                   {'userid': 'ID01', 'interface': '2000',
                    'switch': None, 'port': 'port_id02', 'comments': None}]
 
-        switch_record = self.db_op.switch_select_record_for_userid('id01')
+        switch_record = self.db_op.switch_select_record_for_userid('ID01')
         self.assertEqual(record, switch_record)
 
         # clean test switch
-        self.db_op.switch_delete_record_for_userid('id01')
-        self.db_op.switch_delete_record_for_userid('id02')
-        self.db_op.switch_delete_record_for_userid('id03')
+        self.db_op.switch_delete_record_for_userid('ID01')
+        self.db_op.switch_delete_record_for_userid('ID02')
+        self.db_op.switch_delete_record_for_userid('ID03')
         switch_record = self.db_op.switch_select_table()
         expected = []
         self.assertEqual(expected, switch_record)
 
     def test_switch_select_record(self):
-        list = [('id01', '1000', 'port_id01'),
-                ('id01', '2000', 'port_id02'),
-                ('id02', '1000', 'port_id02'),
-                ('id03', '1000', 'port_id03')]
+        # insert multiple records
+        for (userid, interface, port) in self.rec_list:
+            self.db_op.switch_add_record(userid, interface, port)
+            self.addCleanup(self.db_op.switch_delete_record_for_userid, userid)
 
         # all record
         record = [{'userid': 'ID01', 'interface': '1000',
@@ -274,10 +259,6 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
                    'switch': 'switch02', 'port': 'port_id03',
                    'comments': None}]
 
-        # insert multiple records
-        for (userid, interface, port) in list:
-            self.db_op.switch_add_record(userid, interface, port)
-
         # update record with switch info
         self.db_op.switch_update_record_with_switch('ID01', '1000', 'switch01')
         self.db_op.switch_update_record_with_switch('ID01', '2000', 'switch01')
@@ -287,7 +268,7 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         switch_record = self.db_op.switch_select_record()
         self.assertEqual(record, switch_record)
 
-        switch_record = self.db_op.switch_select_record(userid='id01')
+        switch_record = self.db_op.switch_select_record(userid='ID01')
         self.assertEqual([record[0], record[1]], switch_record)
 
         switch_record = self.db_op.switch_select_record(nic_id='port_id02')
@@ -301,9 +282,9 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         self.assertEqual([record[2]], switch_record)
 
         # clean test switch
-        self.db_op.switch_delete_record_for_userid('id01')
-        self.db_op.switch_delete_record_for_userid('id02')
-        self.db_op.switch_delete_record_for_userid('id03')
+        self.db_op.switch_delete_record_for_userid('ID01')
+        self.db_op.switch_delete_record_for_userid('ID02')
+        self.db_op.switch_delete_record_for_userid('ID03')
         switch_record = self.db_op.switch_select_table()
         expected = []
         self.assertEqual(expected, switch_record)
@@ -483,6 +464,7 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
     def setUpClass(cls):
         super(GuestDbOperatorTestCase, cls).setUpClass()
         cls.db_op = database.GuestDbOperator()
+        cls.userid = 'FAKEUSER'
 
     @classmethod
     def tearDownClass(cls):
@@ -492,10 +474,9 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
 
     @mock.patch.object(uuid, 'uuid4')
     def test_add_guest(self, get_uuid):
-        userid = 'fakeuser'
         meta = 'fakemeta=1, fakemeta2=True'
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
-        self.db_op.add_guest(userid, meta=meta)
+        self.db_op.add_guest(self.userid, meta=meta)
         # Query, the guest should in table
         guests = self.db_op.get_guest_list()
         self.assertEqual(1, len(guests))
@@ -506,21 +487,19 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
 
     @mock.patch.object(uuid, 'uuid4')
     def test_add_guest_twice_error(self, get_uuid):
-        userid = 'fakeuser'
         meta = 'fakemeta=1, fakemeta2=True'
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
-        self.db_op.add_guest(userid, meta=meta)
+        self.db_op.add_guest(self.userid, meta=meta)
         # Add same user the second time
         self.assertRaises(exception.SDKGuestOperationError,
-                          self.db_op.add_guest, 'fakeuser')
+                          self.db_op.add_guest, self.userid)
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
     @mock.patch.object(uuid, 'uuid4')
     def test_delete_guest_by_id(self, get_uuid):
-        userid = 'fakeuser'
         meta = 'fakemeta=1, fakemeta2=True'
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
-        self.db_op.add_guest(userid, meta=meta)
+        self.db_op.add_guest(self.userid, meta=meta)
         # Delete
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
         guests = self.db_op.get_guest_list()
@@ -531,26 +510,24 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
 
     @mock.patch.object(uuid, 'uuid4')
     def test_delete_guest_by_userid(self, get_uuid):
-        userid = 'fakeuser'
         meta = 'fakemeta=1, fakemeta2=True'
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
-        self.db_op.add_guest(userid, meta=meta)
+        self.db_op.add_guest(self.userid, meta=meta)
         # Delete
-        self.db_op.delete_guest_by_userid('FaKeuser')
+        self.db_op.delete_guest_by_userid(self.userid)
         guests = self.db_op.get_guest_list()
         self.assertListEqual([], guests)
 
     def test_delete_guest_by_userid_not_exist(self):
-        self.db_op.delete_guest_by_id('Fakeuser')
+        self.db_op.delete_guest_by_id(self.userid)
 
     @mock.patch.object(uuid, 'uuid4')
     def test_get_guest_by_userid(self, get_uuid):
-        userid = 'fakeuser'
         meta = 'fakemeta=1, fakemeta2=True'
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
-        self.db_op.add_guest(userid, meta=meta)
+        self.db_op.add_guest(self.userid, meta=meta)
         # get guest
-        guest = self.db_op.get_guest_by_userid('FaKeuser')
+        guest = self.db_op.get_guest_by_userid(self.userid)
         self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
                           u'FAKEUSER', u'fakemeta=1, fakemeta2=True', 0,
                           u''), guest)
@@ -558,25 +535,23 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
 
     @mock.patch.object(uuid, 'uuid4')
     def test_get_metadata_by_userid(self, get_uuid):
-        userid = 'fake01'
         meta = 'fakemeta=1, fakemeta2=True'
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77d'
-        self.db_op.add_guest(userid, meta=meta)
+        self.db_op.add_guest(self.userid, meta=meta)
         # get metadata
-        metadata = self.db_op.get_metadata_by_userid('fake01')
+        metadata = self.db_op.get_metadata_by_userid(self.userid)
         self.assertEqual(meta, metadata)
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77d')
 
     def test_get_guest_by_userid_not_exist(self):
-        guest = self.db_op.get_guest_by_userid('FaKeuser')
+        guest = self.db_op.get_guest_by_userid(self.userid)
         self.assertEqual(None, guest)
 
     @mock.patch.object(uuid, 'uuid4')
     def test_get_guest_by_id(self, get_uuid):
-        userid = 'fakeuser'
         meta = 'fakemeta=1, fakemeta2=True'
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
-        self.db_op.add_guest(userid, meta=meta)
+        self.db_op.add_guest(self.userid, meta=meta)
         # get guest
         guest = self.db_op.get_guest_by_id(
             'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
@@ -592,10 +567,9 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
 
     @mock.patch.object(uuid, 'uuid4')
     def test_update_guest_by_id(self, get_uuid):
-        userid = 'fakeuser'
         meta = 'fakemeta=1, fakemeta2=True'
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
-        self.db_op.add_guest(userid, meta=meta)
+        self.db_op.add_guest(self.userid, meta=meta)
         # Update
         self.db_op.update_guest_by_id(
             'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c', meta='newmeta',
@@ -609,10 +583,9 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
 
     @mock.patch.object(uuid, 'uuid4')
     def test_update_guest_by_id_wrong_input(self, get_uuid):
-        userid = 'fakeuser'
         meta = 'fakemeta=1, fakemeta2=True'
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
-        self.db_op.add_guest(userid, meta=meta)
+        self.db_op.add_guest(self.userid, meta=meta)
         # Update
         self.assertRaises(exception.SDKInternalError,
                           self.db_op.update_guest_by_id,
@@ -627,10 +600,9 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
 
     @mock.patch.object(uuid, 'uuid4')
     def test_update_guest_by_id_null_value(self, get_uuid):
-        userid = 'fakeuser'
         meta = 'fakemeta=1, fakemeta2=True'
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
-        self.db_op.add_guest(userid, meta=meta)
+        self.db_op.add_guest(self.userid, meta=meta)
         # Update
         self.db_op.update_guest_by_id(
             'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c', meta='',
@@ -643,15 +615,14 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
 
     @mock.patch.object(uuid, 'uuid4')
     def test_update_guest_by_userid(self, get_uuid):
-        userid = 'fakeuser'
         meta = 'fakemeta=1, fakemeta2=True'
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
-        self.db_op.add_guest(userid, meta=meta)
+        self.db_op.add_guest(self.userid, meta=meta)
         # Update
         self.db_op.update_guest_by_userid(
-            'Fakeuser', meta='newmetauserid', net_set='1',
+            self.userid, meta='newmetauserid', net_set='1',
             comments='newcommentuserid')
-        guest = self.db_op.get_guest_by_userid('Fakeuser')
+        guest = self.db_op.get_guest_by_userid(self.userid)
         self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
                           u'FAKEUSER', u'newmetauserid', 1,
                           u'newcommentuserid'), guest)
@@ -659,32 +630,30 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
 
     @mock.patch.object(uuid, 'uuid4')
     def test_update_guest_by_userid_wrong_input(self, get_uuid):
-        userid = 'fakeuser'
         meta = 'fakemeta=1, fakemeta2=True'
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
-        self.db_op.add_guest(userid, meta=meta)
+        self.db_op.add_guest(self.userid, meta=meta)
         # Update
         self.assertRaises(exception.SDKInternalError,
                           self.db_op.update_guest_by_userid,
-                          'FakeUser')
+                          self.userid)
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
     def test_update_guest_by_userid_not_exist(self):
         self.assertRaises(exception.SDKObjectNotExistError,
                           self.db_op.update_guest_by_userid,
-                          'FaKeUser',
+                          self.userid,
                           meta='newmeta')
 
     @mock.patch.object(uuid, 'uuid4')
     def test_update_guest_by_userid_null_value(self, get_uuid):
-        userid = 'fakeuser'
         meta = 'fakemeta=1, fakemeta2=True'
         get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
-        self.db_op.add_guest(userid, meta=meta)
+        self.db_op.add_guest(self.userid, meta=meta)
         # Update
         self.db_op.update_guest_by_userid(
-            'FaKeUser', meta='', comments='')
-        guest = self.db_op.get_guest_by_userid('fakeuser')
+            self.userid, meta='', comments='')
+        guest = self.db_op.get_guest_by_userid(self.userid)
         self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
                           u'FAKEUSER', u'', 0, u''), guest)
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')

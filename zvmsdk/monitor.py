@@ -46,7 +46,6 @@ class ZVMMonitor(object):
         # construct and return final result
         stats_data = {}
         for uid in uid_list:
-            uid = uid.upper()
             if uid in cpumem_data:
                 with zvmutils.expect_invalid_resp_data():
                     user_data = cpumem_data[uid]
@@ -82,7 +81,6 @@ class ZVMMonitor(object):
         # construct and return final result
         target_vnics = {}
         for uid in uid_list:
-            uid = uid.upper()
             if uid in vnics:
                 with zvmutils.expect_invalid_resp_data():
                     target_vnics[uid] = vnics[uid]
@@ -98,9 +96,9 @@ class ZVMMonitor(object):
         for uid in uid_list:
             if not zvmutils.valid_userid(uid):
                 continue
-            cache_data = self._cache.get(type, uid.upper())
+            cache_data = self._cache.get(type, uid)
             if cache_data is not None:
-                inspect_data[uid.upper()] = cache_data
+                inspect_data[uid] = cache_data
             else:
                 if self._smutclient.get_power_state(uid) == 'on':
                     update_needed = True
@@ -121,9 +119,6 @@ class ZVMMonitor(object):
         return rdata
 
     def _update_cpumem_data(self, uid_list):
-        # translate userids to upper case
-        for i in range(len(uid_list)):
-            uid_list[i] = uid_list[i].upper()
 
         namelist_uids = self._smutclient.namelist_query(self._namelist)
         sdk_managed_uids = self._smutclient.get_vm_list()
@@ -150,7 +145,7 @@ class ZVMMonitor(object):
         with zvmutils.expect_invalid_resp_data():
             for vsw in vsw_dict['vswitches']:
                 for nic in vsw['nics']:
-                    userid = nic['userid'].upper()
+                    userid = nic['userid']
                     nic_entry = {
                         'vswitch_name': vsw['vswitch_name'],
                         'nic_vdev': nic['vdev'],
