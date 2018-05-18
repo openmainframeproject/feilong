@@ -142,7 +142,7 @@ class NetworkDbOperator(object):
         with get_network_conn() as conn:
             res = conn.execute("SELECT * FROM switch "
                                "WHERE userid=? and interface=?",
-                               (userid.upper(), interface))
+                               (userid, interface))
             switch_record = res.fetchall()
 
         if len(switch_record) == 1:
@@ -154,36 +154,36 @@ class NetworkDbOperator(object):
         """Remove userid switch record from switch table."""
         with get_network_conn() as conn:
             conn.execute("DELETE FROM switch WHERE userid=?",
-                         (userid.upper(),))
+                         (userid,))
             LOG.debug("Switch record for user %s is removed from "
-                      "switch table" % userid.upper())
+                      "switch table" % userid)
 
     def switch_delete_record_for_nic(self, userid, interface):
         """Remove userid switch record from switch table."""
         with get_network_conn() as conn:
             conn.execute("DELETE FROM switch WHERE userid=? and interface=?",
-                         (userid.upper(), interface))
+                         (userid, interface))
             LOG.debug("Switch record for user %s with nic %s is removed from "
-                      "switch table" % (userid.upper(), interface))
+                      "switch table" % (userid, interface))
 
     def switch_add_record(self, userid, interface, port=None,
                           switch=None, comments=None):
         """Add userid and nic name address into switch table."""
         with get_network_conn() as conn:
             conn.execute("INSERT INTO switch VALUES (?, ?, ?, ?, ?)",
-                         (userid.upper(), interface, switch, port, comments))
+                         (userid, interface, switch, port, comments))
             LOG.debug("New record in the switch table: user %s, "
                       "nic %s, port %s" %
-                      (userid.upper(), interface, port))
+                      (userid, interface, port))
 
     def switch_update_record_with_switch(self, userid, interface,
                                          switch=None):
         """Update information in switch table."""
         if not self._get_switch_by_user_interface(userid, interface):
-            msg = "User %s with nic %s does not exist in DB" % (userid.upper(),
+            msg = "User %s with nic %s does not exist in DB" % (userid,
                                                                 interface)
             LOG.error(msg)
-            obj_desc = ('User %s with nic %s' % (userid.upper(), interface))
+            obj_desc = ('User %s with nic %s' % (userid, interface))
             raise exception.SDKObjectNotExistError(obj_desc,
                                                    modID=self._module_id)
 
@@ -191,18 +191,18 @@ class NetworkDbOperator(object):
             with get_network_conn() as conn:
                 conn.execute("UPDATE switch SET switch=? "
                              "WHERE userid=? and interface=?",
-                             (switch, userid.upper(), interface))
+                             (switch, userid, interface))
                 LOG.debug("Set switch to %s for user %s with nic %s "
                           "in switch table" %
-                          (switch, userid.upper(), interface))
+                          (switch, userid, interface))
         else:
             with get_network_conn() as conn:
                 conn.execute("UPDATE switch SET switch=NULL "
                              "WHERE userid=? and interface=?",
-                             (userid.upper(), interface))
+                             (userid, interface))
                 LOG.debug("Set switch to None for user %s with nic %s "
                           "in switch table" %
-                          (userid.upper(), interface))
+                          (userid, interface))
 
     def _parse_switch_record(self, switch_list):
         # Map each switch record to be a dict, with the key is the field name
@@ -225,7 +225,7 @@ class NetworkDbOperator(object):
     def switch_select_record_for_userid(self, userid):
         with get_network_conn() as conn:
             result = conn.execute("SELECT * FROM switch "
-                                  "WHERE userid=?", (userid.upper(),))
+                                  "WHERE userid=?", (userid,))
             switch_info = result.fetchall()
         return self._parse_switch_record(switch_info)
 
@@ -239,7 +239,7 @@ class NetworkDbOperator(object):
         sql_var = []
         if userid is not None:
             sql_cmd += " userid=? and"
-            sql_var.append(userid.upper())
+            sql_var.append(userid)
         if nic_id is not None:
             sql_cmd += " port=? and"
             sql_var.append(nic_id)
@@ -515,7 +515,7 @@ class GuestDbOperator(object):
         with get_guest_conn() as conn:
             conn.execute(
                 "INSERT INTO guests VALUES (?, ?, ?, ?, ?)",
-                (guest_id, userid.upper(), meta, net_set, comments))
+                (guest_id, userid, meta, net_set, comments))
 
     def delete_guest_by_id(self, guest_id):
         # First check whether the guest exist in db table
@@ -534,7 +534,7 @@ class GuestDbOperator(object):
             return
         with get_guest_conn() as conn:
             conn.execute(
-                "DELETE FROM guests WHERE userid=?", (userid.upper(),))
+                "DELETE FROM guests WHERE userid=?", (userid,))
 
     def update_guest_by_id(self, uuid, userid=None, meta=None, net_set=None,
                            comments=None):
@@ -552,7 +552,7 @@ class GuestDbOperator(object):
         sql_var = []
         if userid is not None:
             sql_cmd += " userid=?,"
-            sql_var.append(userid.upper())
+            sql_var.append(userid)
         if meta is not None:
             sql_cmd += " metadata=?,"
             sql_var.append(meta)
@@ -574,7 +574,7 @@ class GuestDbOperator(object):
 
     def update_guest_by_userid(self, userid, meta=None, net_set=None,
                                comments=None):
-        userid = userid.upper()
+        userid = userid
         if (meta is None) and (net_set is None) and (comments is None):
             msg = ("Update guest with userid: %s failed, no field "
                    "specified to be updated." % userid)
@@ -615,7 +615,7 @@ class GuestDbOperator(object):
         """get metadata record.
         output should be like: "a=1,b=2,c=3"
         """
-        userid = userid.upper()
+        userid = userid
         with get_guest_conn() as conn:
             res = conn.execute("SELECT * FROM guests "
                                "WHERE userid=?", (userid,))
@@ -659,7 +659,7 @@ class GuestDbOperator(object):
         return None
 
     def get_guest_by_userid(self, userid):
-        userid = userid.upper()
+        userid = userid
         with get_guest_conn() as conn:
             res = conn.execute("SELECT * FROM guests "
                                "WHERE userid=?", (userid,))

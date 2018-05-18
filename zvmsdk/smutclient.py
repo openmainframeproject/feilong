@@ -223,7 +223,7 @@ class SMUTClient(object):
         :userid: the zvm userid to be queried
         """
         pi_dict = self.image_performance_query([userid])
-        return pi_dict.get(userid.upper(), None)
+        return pi_dict.get(userid, None)
 
     def _parse_vswitch_inspect_data(self, rd_list):
         """ Parse the Virtual_Network_Vswitch_Query_Byte_Stats data to get

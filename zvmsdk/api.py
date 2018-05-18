@@ -48,14 +48,18 @@ def check_guest_exist(check_index=0):
             if isinstance(userids, list):
                 # convert all userids to upper case
                 userids = [uid.upper() for uid in userids]
+                new_args = (args[:check_index] + (userids,) +
+                            args[check_index + 1:])
             else:
                 # convert the userid to upper case
                 userids = userids.upper()
+                new_args = (args[:check_index] + (userids,) +
+                            args[check_index + 1:])
                 userids = [userids]
 
             self._vmops.check_guests_exist_in_db(userids)
 
-            return f(self, *args, **kw)
+            return f(self, *new_args, **kw)
         return inner
     return outer
 

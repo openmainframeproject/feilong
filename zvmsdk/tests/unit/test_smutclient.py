@@ -1315,7 +1315,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                 'guest_cpus': u'2',
                 'userid': u'FKAEVM',
                 'max_memory': u'8388608 KB'}}
-        info = self._smutclient.get_image_performance_info('fakevm')
+        info = self._smutclient.get_image_performance_info('FAKEVM')
         self.assertEqual(info['used_memory'], '5222192 KB')
 
     @mock.patch.object(smutclient.SMUTClient, 'image_performance_query')

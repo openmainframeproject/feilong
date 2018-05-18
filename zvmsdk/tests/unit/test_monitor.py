@@ -151,7 +151,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
     def test_private_get_inspect_data_cache_hit_single(self, cache_enabled,
                                                        get_ps, cache_get):
         cache_get.return_value = CPUMEM_SAMPLE1
-        rdata = self._monitor._get_inspect_data('cpumem', ['userid1'])
+        rdata = self._monitor._get_inspect_data('cpumem', ['USERID1'])
         self.assertEqual(list(rdata.keys()), ['USERID1'])
         self.assertEqual(sorted(list(rdata['USERID1'].keys())),
                          sorted(CPUMEM_SAMPLE1.keys()))
@@ -170,7 +170,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
         cache_get.side_effect = [CPUMEM_SAMPLE1,
             CPUMEM_SAMPLE2]
         rdata = self._monitor._get_inspect_data('cpumem',
-                                                ['userid1', 'userid2'])
+                                                ['USERID1', 'USERID2'])
         self.assertEqual(sorted(rdata.keys()), ['USERID1', 'USERID2'])
         self.assertEqual(sorted(rdata['USERID1'].keys()),
                          sorted(CPUMEM_SAMPLE1.keys()))
@@ -319,7 +319,7 @@ class SDKMonitorTestCase(base.SDKTestCase):
             'USERID1': CPUMEM_SAMPLE1,
             'USERID2': CPUMEM_SAMPLE2,
             }
-        rdata = self._monitor._update_cpumem_data(['userid1', 'userid2'])
+        rdata = self._monitor._update_cpumem_data(['USERID1', 'USERID2'])
         image_performance_query.assert_called_once_with('TSTNLIST')
         namelist_query.assert_called_once_with('TSTNLIST')
         get_vm_list.assert_called_once_with()
@@ -364,8 +364,8 @@ class SDKMonitorTestCase(base.SDKTestCase):
             'USERID1': CPUMEM_SAMPLE1,
             'USERID2': CPUMEM_SAMPLE2
             }
-        rdata = self._monitor.inspect_stats(['userid1'])
-        _get_inspect_data.assert_called_once_with('cpumem', ['userid1'])
+        rdata = self._monitor.inspect_stats(['USERID1'])
+        _get_inspect_data.assert_called_once_with('cpumem', ['USERID1'])
         self.assertEqual(sorted(rdata.keys()), sorted(['USERID1']))
         self.assertEqual(rdata['USERID1']['guest_cpus'], 1)
         self.assertEqual(rdata['USERID1']['used_cpu_time_us'], 6185838)
@@ -383,9 +383,9 @@ class SDKMonitorTestCase(base.SDKTestCase):
             'USERID1': CPUMEM_SAMPLE1,
             'USERID2': CPUMEM_SAMPLE2
             }
-        rdata = self._monitor.inspect_stats(['userid1', 'userid2'])
+        rdata = self._monitor.inspect_stats(['USERID1', 'USERID2'])
         _get_inspect_data.assert_called_once_with('cpumem',
-                                                  ['userid1', 'userid2'])
+                                                  ['USERID1', 'USERID2'])
         self.assertEqual(sorted(rdata.keys()), sorted(['USERID1', 'USERID2']))
         self.assertEqual(rdata['USERID1']['guest_cpus'], 1)
         self.assertEqual(rdata['USERID1']['used_cpu_time_us'], 6185838)
@@ -420,9 +420,9 @@ class SDKMonitorTestCase(base.SDKTestCase):
         _get_inspect_data.return_value = {
             'USERID1': CPUMEM_SAMPLE1
             }
-        rdata = self._monitor.inspect_stats(['userid1', 'userid2'])
+        rdata = self._monitor.inspect_stats(['USERID1', 'USERID2'])
         _get_inspect_data.assert_called_once_with('cpumem',
-                                                  ['userid1', 'userid2'])
+                                                  ['USERID1', 'USERID2'])
         self.assertEqual(sorted(rdata.keys()), sorted(['USERID1']))
         self.assertEqual(rdata['USERID1']['guest_cpus'], 1)
         self.assertEqual(rdata['USERID1']['used_cpu_time_us'], 6185838)

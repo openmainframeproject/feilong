@@ -21,6 +21,13 @@ from zvmsdk import vmops
 
 class SDKAPITestCase(base.SDKTestCase):
     """Testcases for compute APIs."""
+
+    @classmethod
+    def setUpClass(cls):
+        super(SDKAPITestCase, cls).setUpClass()
+        cls.userid = 'TESTUID'
+        cls.userid_list = ["USERID1", "USERID2"]
+
     def setUp(self):
         super(SDKAPITestCase, self).setUp()
         vmops.VMOps.check_guests_exist_in_db = mock.MagicMock()
@@ -31,8 +38,8 @@ class SDKAPITestCase(base.SDKTestCase):
 
     @mock.patch("zvmsdk.vmops.VMOps.get_info")
     def test_guest_get_info(self, ginfo):
-        self.api.guest_get_info('fakevm')
-        ginfo.assert_called_once_with('fakevm')
+        self.api.guest_get_info(self.userid)
+        ginfo.assert_called_once_with(self.userid)
 
     @mock.patch("zvmsdk.vmops.VMOps.guest_deploy")
     def test_guest_deploy(self, guest_deploy):
@@ -43,8 +50,8 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.guest_deploy(user_id, image_name,
                               transportfiles=transportfiles,
                               vdev=vdev)
-        guest_deploy.assert_called_with(user_id, image_name, transportfiles,
-                                        None, vdev)
+        guest_deploy.assert_called_with(user_id.upper(), image_name,
+                                        transportfiles, None, vdev)
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_import")
     def test_image_import(self, image_import):
@@ -66,7 +73,6 @@ class SDKAPITestCase(base.SDKTestCase):
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create(self, create_vm):
-        userid = 'userid'
         vcpus = 1
         memory = 1024
         disk_list = []
@@ -74,23 +80,22 @@ class SDKAPITestCase(base.SDKTestCase):
         max_cpu = 10
         max_mem = '4G'
 
-        self.api.guest_create(userid, vcpus, memory, disk_list,
+        self.api.guest_create(self.userid, vcpus, memory, disk_list,
                               user_profile, max_cpu, max_mem)
-        create_vm.assert_called_once_with(userid, vcpus, memory, disk_list,
-                                          user_profile, max_cpu, max_mem)
+        create_vm.assert_called_once_with(self.userid, vcpus, memory,
+                                  disk_list, user_profile, max_cpu, max_mem)
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_default_max_cpu_memory(self, create_vm):
-        userid = 'userid'
         vcpus = 1
         memory = 1024
         disk_list = []
         user_profile = 'profile'
 
-        self.api.guest_create(userid, vcpus, memory, disk_list,
+        self.api.guest_create(self.userid, vcpus, memory, disk_list,
                               user_profile)
-        create_vm.assert_called_once_with(userid, vcpus, memory, disk_list,
-                                          user_profile, 32, '64G')
+        create_vm.assert_called_once_with(self.userid, vcpus, memory,
+                                          disk_list, user_profile, 32, '64G')
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_query")
     def test_image_query(self, image_query):
@@ -102,94 +107,81 @@ class SDKAPITestCase(base.SDKTestCase):
     @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
     def test_guest_delete(self, cge, delete_vm):
         cge.return_value = True
-        userid = 'userid'
-        self.api.guest_delete(userid)
-        cge.assert_called_once_with(userid, raise_exc=False)
-        delete_vm.assert_called_once_with(userid)
+        self.api.guest_delete(self.userid)
+        cge.assert_called_once_with(self.userid, raise_exc=False)
+        delete_vm.assert_called_once_with(self.userid)
 
     @mock.patch("zvmsdk.utils.check_userid_exist")
     @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
     def test_guest_delete_not_exist(self, cge, cue):
         cge.return_value = False
         cue.return_value = False
-        userid = 'userid'
-        self.api.guest_delete(userid)
-        cge.assert_called_once_with(userid, raise_exc=False)
-        cue.assert_called_once_with(userid)
+        self.api.guest_delete(self.userid)
+        cge.assert_called_once_with(self.userid, raise_exc=False)
+        cue.assert_called_once_with(self.userid)
 
     @mock.patch("zvmsdk.utils.check_userid_exist")
     @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
     def test_guest_delete_not_exist_in_db(self, cge, cue):
         cge.return_value = False
         cue.return_value = True
-        userid = 'userid'
         self.assertRaises(exception.SDKObjectNotExistError,
-                          self.api.guest_delete, userid)
-        cge.assert_called_once_with(userid, raise_exc=False)
-        cue.assert_called_once_with(userid)
+                          self.api.guest_delete, self.userid)
+        cge.assert_called_once_with(self.userid, raise_exc=False)
+        cue.assert_called_once_with(self.userid)
 
     @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_stats")
     def test_guest_inspect_cpus_list(self, inspect_stats):
-        userid_list = ["userid1", "userid2"]
-        self.api.guest_inspect_stats(userid_list)
-        inspect_stats.assert_called_once_with(userid_list)
+        self.api.guest_inspect_stats(self.userid_list)
+        inspect_stats.assert_called_once_with(self.userid_list)
 
     @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_stats")
     def test_guest_inspect_cpus_single(self, inspect_stats):
-        userid_list = "userid1"
-        self.api.guest_inspect_stats(userid_list)
-        inspect_stats.assert_called_once_with(["userid1"])
+        self.api.guest_inspect_stats(self.userid)
+        inspect_stats.assert_called_once_with([self.userid])
 
     @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_vnics")
     def test_guest_inspect_vnics_list(self, inspect_vnics):
-        userid_list = ["userid1", "userid2"]
-        self.api.guest_inspect_vnics(userid_list)
-        inspect_vnics.assert_called_once_with(userid_list)
+        self.api.guest_inspect_vnics(self.userid_list)
+        inspect_vnics.assert_called_once_with(self.userid_list)
 
     @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_vnics")
     def test_guest_inspect_vnics_single(self, inspect_vnics):
-        userid_list = "userid1"
-        self.api.guest_inspect_vnics(userid_list)
-        inspect_vnics.assert_called_once_with(["userid1"])
+        self.api.guest_inspect_vnics(self.userid)
+        inspect_vnics.assert_called_once_with([self.userid])
 
     @mock.patch("zvmsdk.vmops.VMOps.guest_stop")
     def test_guest_stop(self, gs):
-        userid = 'fakeuser'
-        self.api.guest_stop(userid)
-        gs.assert_called_once_with(userid)
+        self.api.guest_stop(self.userid)
+        gs.assert_called_once_with(self.userid)
 
     @mock.patch("zvmsdk.vmops.VMOps.guest_stop")
     def test_guest_stop_with_timeout(self, gs):
-        userid = 'fakeuser'
-        self.api.guest_stop(userid, timeout=300)
-        gs.assert_called_once_with(userid, timeout=300)
+        self.api.guest_stop(self.userid, timeout=300)
+        gs.assert_called_once_with(self.userid, timeout=300)
 
     @mock.patch("zvmsdk.vmops.VMOps.guest_softstop")
     def test_guest_softstop(self, gss):
-        userid = 'fakeuser'
-        self.api.guest_softstop(userid, timeout=300)
-        gss.assert_called_once_with(userid, timeout=300)
+        self.api.guest_softstop(self.userid, timeout=300)
+        gss.assert_called_once_with(self.userid, timeout=300)
 
     @mock.patch("zvmsdk.vmops.VMOps.guest_pause")
     def test_guest_pause(self, gp):
-        userid = 'fakeuser'
-        self.api.guest_pause(userid)
-        gp.assert_called_once_with(userid)
+        self.api.guest_pause(self.userid)
+        gp.assert_called_once_with(self.userid)
 
     @mock.patch("zvmsdk.vmops.VMOps.guest_unpause")
     def test_guest_unpause(self, gup):
-        userid = 'fakeuser'
-        self.api.guest_unpause(userid)
-        gup.assert_called_once_with(userid)
+        self.api.guest_unpause(self.userid)
+        gup.assert_called_once_with(self.userid)
 
     @mock.patch("zvmsdk.vmops.VMOps.guest_config_minidisks")
     def test_guest_process_additional_disks(self, config_disks):
-        userid = 'userid'
         disk_list = [{'vdev': '0101',
                       'format': 'ext3',
                       'mntdir': '/mnt/0101'}]
-        self.api.guest_config_minidisks(userid, disk_list)
-        config_disks.assert_called_once_with(userid, disk_list)
+        self.api.guest_config_minidisks(self.userid, disk_list)
+        config_disks.assert_called_once_with(self.userid, disk_list)
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_delete")
     def test_image_delete(self, image_delete):
@@ -204,10 +196,9 @@ class SDKAPITestCase(base.SDKTestCase):
 
     @mock.patch("zvmsdk.vmops.VMOps.create_disks")
     def test_guest_add_disks(self, cds):
-        userid = 'testuid'
         disk_list = [{'size': '1g'}]
-        self.api.guest_create_disks(userid, disk_list)
-        cds.assert_called_once_with(userid, disk_list)
+        self.api.guest_create_disks(self.userid, disk_list)
+        cds.assert_called_once_with(self.userid, disk_list)
 
     @mock.patch("zvmsdk.vmops.VMOps.create_disks")
     def test_guest_add_disks_nothing_to_do(self, cds):
@@ -216,21 +207,23 @@ class SDKAPITestCase(base.SDKTestCase):
 
     @mock.patch("zvmsdk.vmops.VMOps.delete_disks")
     def test_guest_delete_disks(self, dds):
-        userid = 'testuid'
         vdev_list = ['0102', '0103']
-        self.api.guest_delete_disks(userid, vdev_list)
-        dds.assert_called_once_with(userid, vdev_list)
+        self.api.guest_delete_disks(self.userid, vdev_list)
+        dds.assert_called_once_with(self.userid, vdev_list)
 
     @mock.patch("zvmsdk.vmops.VMOps.live_resize_cpus")
     def test_guest_live_resize_cpus(self, live_resize_cpus):
-        userid = "testuid"
         cpu_cnt = 3
-        self.api.guest_live_resize_cpus(userid, cpu_cnt)
-        live_resize_cpus.assert_called_once_with(userid, cpu_cnt)
+        self.api.guest_live_resize_cpus(self.userid, cpu_cnt)
+        live_resize_cpus.assert_called_once_with(self.userid, cpu_cnt)
 
     @mock.patch("zvmsdk.vmops.VMOps.resize_cpus")
     def test_guest_resize_cpus(self, resize_cpus):
-        userid = "testuid"
         cpu_cnt = 3
-        self.api.guest_resize_cpus(userid, cpu_cnt)
-        resize_cpus.assert_called_once_with(userid, cpu_cnt)
+        self.api.guest_resize_cpus(self.userid, cpu_cnt)
+        resize_cpus.assert_called_once_with(self.userid, cpu_cnt)
+
+    @mock.patch("zvmsdk.networkops.NetworkOPS.grant_user_to_vswitch")
+    def test_vswitch_grant_user(self, guv):
+        self.api.vswitch_grant_user("testvsw", self.userid)
+        guv.assert_called_once_with("testvsw", self.userid)

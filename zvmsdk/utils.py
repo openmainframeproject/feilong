@@ -143,8 +143,7 @@ class PathUtils(object):
     # This is for persistent info for guests
     # by default it's /var/lib/zvmsdk/guests/xxxx
     def remove_guest_path(self, userid):
-        userid_path = userid.upper()
-        guest_folder = os.path.join(self._get_guest_path(), userid_path)
+        guest_folder = os.path.join(self._get_guest_path(), userid)
         try:
             shutil.rmtree(guest_folder)
         except Exception:
@@ -157,8 +156,7 @@ class PathUtils(object):
         return tmp_inst_dir
 
     def get_guest_path(self, userid):
-        userid_path = userid.upper()
-        guest_folder = os.path.join(self._get_guest_path(), userid_path)
+        guest_folder = os.path.join(self._get_guest_path(), userid)
         self.mkdir_if_not_exist(guest_folder)
         return guest_folder
 
@@ -522,8 +520,8 @@ def _is_guest_exist(userid):
 
 def check_userid_exist(userid):
     if not _is_guest_exist(userid):
-        msg = "Userid %s does not exist" % userid.upper()
+        msg = "Userid %s does not exist" % userid
         LOG.warning(msg)
-        obj_desc = 'Userid %s' % userid.upper()
+        obj_desc = 'Userid %s' % userid
         raise exception.SDKObjectNotExistError(obj_desc,
                                                modID='guest')
