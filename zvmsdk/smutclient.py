@@ -1335,9 +1335,39 @@ class SMUTClient(object):
                 vdev_info = p
                 break
         if not vdev_exist:
+            # Device has already be removed from user direct
             LOG.warning("Virtual device %s does not exist in the switch table",
                         vdev)
+            if active:
+                try:
+                    resp = self.execute_cmd(userid, 'vmcp q %s' % vdev)
+                    nic_info = "%s ON NIC" % vdev.upper()
+                    osa_info = "%s ON OSA" % vdev.upper()
+                    if nic_info in resp[0]:
+                        pass
+                    elif osa_info in resp[0]:
+                        self._undedicate_nic(userid, vdev, active=active,
+                                             del_active_only=True)
+                        return
+                    else:
+                        LOG.warning("Device %s of guest %s is not "
+                                    "network adapter" % (vdev, userid))
+                        return
+                except exception.SDKSMUTRequestFailed as err:
+                    emsg = err.format_message()
+                    ignored_msg = ('Device %s does not exist'
+                                   % vdev.zfill(4).upper())
+                    if (emsg.__contains__(ignored_msg)):
+                        LOG.warning("Virtual device %s does not exist for "
+                                    "active guest %s" % (vdev, userid))
+                        return
+                    else:
+                        raise
+            else:
+                return
         else:
+            # Device hasnot be removed from user direct,
+            # check whether it is related to a dedicated OSA device
             if ((vdev_info["comments"] is not None) and
                 (vdev_info["comments"].__contains__('OSA='))):
                 self._undedicate_nic(userid, vdev, active=active)
@@ -1345,28 +1375,28 @@ class SMUTClient(object):
         msg = ('Start to delete nic device %(vdev)s for guest %(vm)s'
                 % {'vdev': vdev, 'vm': userid})
         LOG.info(msg)
+        if vdev_exist:
+            rd = ' '.join((
+                "SMAPI %s API Virtual_Network_Adapter_Delete_DM" %
+                userid,
+                "--operands",
+                '-v %s' % vdev))
+            try:
+                self._request(rd)
+            except exception.SDKSMUTRequestFailed as err:
+                results = err.results
+                emsg = err.format_message()
+                if ((results['rc'] == 404) and
+                    (results['rs'] == 8)):
+                    LOG.warning("Virtual device %s does not exist in "
+                                "the guest's user direct", vdev)
+                else:
+                    LOG.error("Failed to delete nic %s for %s in "
+                              "the guest's user direct, error: %s" %
+                              (vdev, userid, emsg))
+                    self._delete_nic_inactive_exception(err, userid, vdev)
+            self._NetDbOperator.switch_delete_record_for_nic(userid, vdev)
 
-        rd = ' '.join((
-            "SMAPI %s API Virtual_Network_Adapter_Delete_DM" %
-            userid,
-            "--operands",
-            '-v %s' % vdev))
-        try:
-            self._request(rd)
-        except exception.SDKSMUTRequestFailed as err:
-            results = err.results
-            emsg = err.format_message()
-            if ((results['rc'] == 404) and
-                (results['rs'] == 8)):
-                LOG.warning("Virtual device %s does not exist in "
-                            "the guest's user direct", vdev)
-            else:
-                LOG.error("Failed to delete nic %s for %s in "
-                          "the guest's user direct, error: %s" %
-                          (vdev, userid, emsg))
-                self._delete_nic_inactive_exception(err, userid, vdev)
-
-        self._NetDbOperator.switch_delete_record_for_nic(userid, vdev)
         if active:
             rd = ' '.join((
                 "SMAPI %s API Virtual_Network_Adapter_Delete" %
@@ -2527,7 +2557,8 @@ class SMUTClient(object):
         else:
             raise error
 
-    def _undedicate_nic(self, userid, vdev, active=False):
+    def _undedicate_nic(self, userid, vdev, active=False,
+                        del_active_only=False):
         if active:
             self._is_active(userid)
 
@@ -2535,32 +2566,32 @@ class SMUTClient(object):
                 % {'vdev': vdev, 'vm': userid})
         LOG.info(msg)
 
-        def_vdev = vdev
-        for i in range(3):
-            requestData = ' '.join((
-                'SMAPI %s API Image_Device_Undedicate_DM' %
-                userid,
-                "--operands",
-                "-v %s" % def_vdev))
+        if not del_active_only:
+            def_vdev = vdev
+            for i in range(3):
+                requestData = ' '.join((
+                    'SMAPI %s API Image_Device_Undedicate_DM' %
+                    userid,
+                    "--operands",
+                    "-v %s" % def_vdev))
 
-            try:
-                self._request(requestData)
-            except (exception.SDKSMUTRequestFailed,
-                    exception.SDKInternalError) as err:
-                results = err.results
-                emsg = err.format_message()
-                if ((results['rc'] == 404) and
-                    (results['rs'] == 8)):
-                    LOG.warning("Virtual device %s does not exist in "
-                                "the guest's user direct", vdev)
-                else:
-                    LOG.error("Failed to undedicate nic %s for %s in "
-                              "the guest's user direct, error: %s" %
-                              (vdev, userid, emsg))
-                self._undedicate_nic_inactive_exception(err, userid, vdev)
-            def_vdev = str(hex(int(def_vdev, 16) + 1))[2:]
-
-        self._NetDbOperator.switch_delete_record_for_nic(userid, vdev)
+                try:
+                    self._request(requestData)
+                except (exception.SDKSMUTRequestFailed,
+                        exception.SDKInternalError) as err:
+                    results = err.results
+                    emsg = err.format_message()
+                    if ((results['rc'] == 404) and
+                        (results['rs'] == 8)):
+                        LOG.warning("Virtual device %s does not exist in "
+                                    "the guest's user direct", vdev)
+                    else:
+                        LOG.error("Failed to undedicate nic %s for %s in "
+                                  "the guest's user direct, error: %s" %
+                                  (vdev, userid, emsg))
+                    self._undedicate_nic_inactive_exception(err, userid, vdev)
+                def_vdev = str(hex(int(def_vdev, 16) + 1))[2:]
+            self._NetDbOperator.switch_delete_record_for_nic(userid, vdev)
 
         if active:
             def_vdev = vdev
