@@ -22,6 +22,30 @@
       "revId": "0aa042408c0c5c078b3f20e5cea47fd6b4b60aba",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cb395777_6d90541a",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-18T07:03:15Z",
+      "side": 1,
+      "message": "There are two situations about guest_configure_minidisk. 1 user create the disk firstly and then configure it. In this case, we recommend user specify the vdev, since he already know it. \n2 For openstack situation. If customer spawn a vm by nova boot --ephemeral option. He doesn\u0027t know the vdev of the ephemeral minidisk, since there is no configuration option on driver side to tell customer which is the vdev of ephemeral disk. In this case,  SDK server will treat root_vdev + 1 as the first ephemeral minidisk.",
+      "parentUuid": "fa3cc0d4_09fb103b",
+      "range": {
+        "startLine": 241,
+        "startChar": 39,
+        "endLine": 242,
+        "endChar": 69
+      },
+      "revId": "0aa042408c0c5c078b3f20e5cea47fd6b4b60aba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
