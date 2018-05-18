@@ -771,7 +771,8 @@ guest_networks_list:
     Network info list of guest. It has one dictionary that contain some of the below
     keys for each interface. All the keys are optional \:
 
-    - ``ip_addr``: the IP address of the interface
+    - ``ip_addr``: the IP address of the interface, ``cidr`` is required if ip address
+      is set
     - ``dns_addr``: dns addresses list
     - ``gateway_addr``: gateway address
     - ``cidr``: cidr format

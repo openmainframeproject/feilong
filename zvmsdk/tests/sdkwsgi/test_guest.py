@@ -100,6 +100,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         user_direct = resp_content['output']['user_direct']
         cpu_num = 0
         cpu_num_live = 0
+        cpu_num_online = 0
         for ent in user_direct:
             if ent.startswith(Statement):
                 max_memory = ent.split()[4].strip()
@@ -108,13 +109,22 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             if ent.startswith("MACHINE ESA"):
                 max_cpus = int(ent.split()[2].strip())
         if cpu_cnt_live is not None:
-            active_cpus = self.execute_cmd(userid, "lscpu -e")[1:]
+            active_cpus = self._smutclient.execute_cmd(userid, "lscpu -e")[1:]
             cpu_num_live = len(active_cpus)
-
+            active_cpus = self._smutclient.execute_cmd(userid,
+                                                       "lscpu --parse=ONLINE")
+            for c in active_cpus:
+                # check online CPU number
+                if c.startswith("# "):
+                    continue
+                online_state = c.strip().upper()
+                if online_state == "Y":
+                    cpu_num_online = cpu_num_online + 1
         if cpu_cnt is not None:
             self.assertEqual(cpu_cnt, cpu_num)
         if cpu_cnt_live is not None:
             self.assertEqual(cpu_cnt_live, cpu_num_live)
+            self.assertEqual(cpu_cnt_live, cpu_num_online)
         self.assertEqual(maxcpu, max_cpus)
         self.assertEqual(maxmem, max_memory)
 
@@ -215,20 +225,35 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
                 return True
         return False
 
-    def _guest_create_network_interface(self, userid=None, vdev='1000',
-                                        ip="192.168.95.123",
+    def _guest_create_network_interface(self, userid,
+                                        networks=[{'ip': "192.168.95.123",
+                                                   'vdev': '1000'}],
                                         active=False):
+        """
+        possible keys for networks parameter includes: 'ip'(required),
+        'vdev', 'osa'
+        """
+        common_attributes = {"dns_addr": ["9.0.3.1"],
+                             "gateway_addr": "192.168.95.1",
+                             "cidr": "192.168.95.0/24"}
+        res_networks = []
+        for net in networks:
+            res_network = {}
+            res_network["ip_addr"] = net['ip']
+            if 'vdev' in net.keys():
+                res_network["nic_vdev"] = net['vdev']
+            if 'osa' in net.keys():
+                res_network["osa_device"] = net['osa']
+            res_network.update(common_attributes)
+            res_networks.append(res_network)
+
         content = {"interface": {"os_version": "rhel6.7",
-                                 "guest_networks":
-                                    [{"ip_addr": ip,
-                                     "dns_addr": ["9.0.3.1"],
-                                     "gateway_addr": "192.168.95.1",
-                                     "cidr": "192.168.95.0/24",
-                                     "nic_vdev": vdev}]}}
+                                 "guest_networks": res_networks}}
         if active:
             content["interface"]["active"] = "True"
         else:
             content["interface"]["active"] = "False"
+
         body = json.dumps(content)
 
         if userid is None:
@@ -565,34 +590,60 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         self.assertEqual(200, resp.status_code)
         return resp
 
-    def _check_nic(self, vdev, userid=None, mac=None, vsw=None, devices=3):
+    def _check_nic(self, vdev, userid, mac=None, vsw=None, devices=3,
+                   osa=None):
         """ Check nic status.
-        Returns a bool value to indicate whether the nic is defined in user and
-        a string value of the vswitch that the nic is attached to.
+        output: defined, osa_or_vswitch
+                defined: a bool value to indicate whether the nic is defined
+                in user entry.
+                osa_or_vswitch: a string value to indicate the vswitch that
+                the nic is attached to or the osa vdev as recorded in database.
         """
-        nic_entry = 'NICDEF %s TYPE QDIO' % vdev
-        if vsw is not None:
-            nic_entry += (" LAN SYSTEM %s") % vsw
-        nic_entry += (" DEVICES %d") % devices
-        if mac is not None:
-            nic_entry += (" MACID %s") % mac
+        userid = userid.upper()
 
-        resp_nic = self._guest_get(userid=userid)
-        self.assertEqual(200, resp_nic.status_code)
+        entries = []
+        if osa is None:
+            nic_entry = 'NICDEF %s TYPE QDIO' % vdev.upper()
+            if vsw is not None:
+                nic_entry += (" LAN SYSTEM %s") % vsw
+            nic_entry += (" DEVICES %d") % devices
+            if mac is not None:
+                nic_entry += (" MACID %s") % mac
+            entries = [nic_entry]
+        else:
+            osa = osa.upper()
+            vdev = vdev.upper()
+            osa1 = str(str(hex(int(osa, 16) + 1))[2:]).zfill(4).upper()
+            osa2 = str(str(hex(int(osa, 16) + 2))[2:]).zfill(4).upper()
+            vdev1 = str(hex(int(vdev, 16) + 1))[2:].upper()
+            vdev2 = str(hex(int(vdev, 16) + 2))[2:].upper()
+            entries = [("DEDICATE %s %s" % (vdev, osa)),
+                       ("DEDICATE %s %s" % (vdev1, osa1)),
+                       ("DEDICATE %s %s" % (vdev2, osa2))]
+
+        definition = self._guest_get(userid=userid)
+        self.assertEqual(200, definition.status_code)
 
         # Check definition
-        if nic_entry not in resp_nic.content:
-            return False, ""
-        else:
-            # Continue to check the nic info defined in vswitch table
-            resp = self._guest_nic_query(userid)
-            nic_info = json.loads(resp.content)['output']
-            if vdev not in nic_info.keys():
-                # NIC defined in user direct, but not in switch table
+        for entry in entries:
+            if entry not in definition.content:
                 return False, ""
-            else:
-                # NIC defined and added in switch table
-                return True, nic_info[vdev]
+
+        # Continue to check the nic info defined in vswitch table
+        resp = self._guest_get_nic_DB_info(userid)
+        nics_info = json.loads(resp.content)['output']
+
+        for nic in nics_info:
+            if (nic['interface'] != vdev) or (nic['userid'] != userid):
+                continue
+            # nic coupled to vswitch
+            if nic['switch'] is not None:
+                return True, nic['switch']
+            # dedicated osa
+            if nic['comments'] is not None:
+                return True, nic['comments'].split('=')[1].strip()
+        # Defined in user entry, but not attached to vswitch or OSA
+        return True, None
 
     def test_guest_get_not_exist(self):
         resp = self._guest_get('notexist')
@@ -996,9 +1047,8 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             self.assertEqual(501, resp.status_code)
 
             resp = self._guest_capture(userid=userid)
-            self.assertEqual(200, resp.status_code)
-
             PURGE_IMG = 1
+            self.assertEqual(200, resp.status_code)
 
             resp = self._image_query(image_name='test_capture_image1')
             self.assertEqual(200, resp.status_code)
@@ -1079,20 +1129,39 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         finally:
             self._guest_delete(userid=userid)
 
+    def _get_free_osa(self):
+        osa_info = self._smutclient._query_OSA()
+        if 'OSA' not in osa_info.keys():
+            return None
+        elif len(osa_info['OSA']['FREE']) == 0:
+            return None
+        else:
+            for osa in osa_info['OSA']['FREE']:
+                osa_1 = str(str(hex(int(osa, 16) + 1))[2:]).zfill(4).upper()
+                osa_2 = str(str(hex(int(osa, 16) + 2))[2:]).zfill(4).upper()
+                if (osa_1 in osa_info['OSA']['FREE']) and (
+                    osa_2 in osa_info['OSA']['FREE']):
+                    return osa
+            return None
+
     def test_guest_create_delete_network_interface(self):
         userid = test_utils.generate_test_userid()
         resp = self._guest_create(userid=userid)
         self.assertEqual(200, resp.status_code)
         self._make_transport_file()
         transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
+        ip_addrs = ["192.168.95.123", "192.168.95.124", "192.168.95.125",
+                    "192.168.95.126"]
 
         try:
             resp = self._guest_deploy_with_transport_file(userid=userid,
                                            transportfiles=transport_file)
             self.assertEqual(200, resp.status_code)
 
-            resp = self._guest_create_network_interface(vdev="2000",
-                                                        userid=userid)
+            # Case 1: create an interface to couple to vswitch
+            resp = self._guest_create_network_interface(userid=userid,
+                                            networks=[{'ip': ip_addrs[0],
+                                                       'vdev': "1000"}])
             self.assertEqual(200, resp.status_code)
 
             # Authorizing VM to couple to vswitch.
@@ -1102,53 +1171,164 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             self.assertEqual(200, resp.status_code)
 
             # Coupling NIC to the vswitch.
-            resp = self._vswitch_couple(vdev="2000", vswitch="XCATVSW2",
+            resp = self._vswitch_couple(vdev="1000", vswitch="XCATVSW2",
                                         userid=userid)
             self.assertEqual(200, resp.status_code)
-            nic_defined, vsw = self._check_nic("2000", vsw="XCATVSW2",
-                                               userid=userid)
+            nic_defined, vsw = self._check_nic("1000", userid, vsw="XCATVSW2")
             self.assertTrue(nic_defined)
             self.assertEqual("XCATVSW2", vsw)
 
+            # Case 2: create an interface to dedicate osa
+            osa = self._get_free_osa()
+            self.assertNotEqual(osa, None)
+            resp = self._guest_create_network_interface(
+                        userid=userid, networks=[{'ip': ip_addrs[1],
+                                                  'vdev': '2000',
+                                                  'osa': osa}])
+            self.assertEqual(200, resp.status_code)
+
+            nic_defined, nic_osa = self._check_nic("2000", userid=userid,
+                                                   osa=osa)
+            self.assertTrue(nic_defined)
+            self.assertEqual(nic_osa, osa)
+
+            # Case 3: create two interfaces together
+            resp = self._guest_create_network_interface(userid=userid,
+                                            networks=[{'ip': ip_addrs[2],
+                                                       'vdev': "3000"},
+                                                      {'ip': ip_addrs[3],
+                                                       'vdev': "4000"}])
+            self.assertEqual(200, resp.status_code)
+
+            # Coupling NIC to the vswitch.
+            resp = self._vswitch_couple(vdev="3000", vswitch="XCATVSW2",
+                                        userid=userid)
+            self.assertEqual(200, resp.status_code)
+            resp = self._vswitch_couple(vdev="4000", vswitch="XCATVSW2",
+                                        userid=userid)
+            self.assertEqual(200, resp.status_code)
+            nic_defined, vsw = self._check_nic("3000", userid=userid,
+                                               vsw="XCATVSW2")
+            self.assertTrue(nic_defined)
+            self.assertEqual("XCATVSW2", vsw)
+            nic_defined, vsw = self._check_nic("4000", userid=userid,
+                                               vsw="XCATVSW2")
+            self.assertTrue(nic_defined)
+            self.assertEqual("XCATVSW2", vsw)
+
+            # Start the guest and check results
             resp = self._guest_start(userid=userid)
             self.assertEqual(200, resp.status_code)
             self.assertTrue(self._wait_until(True, self.is_reachable,
                                              userid))
             time.sleep(20)
-            ip_set = self._check_interface(userid=userid)
-            self.assertTrue(ip_set)
+            for addr in ip_addrs:
+                ip_set = self._check_interface(userid=userid, ip=addr)
+                self.assertTrue(ip_set)
 
+            # Case: Delete network interface
+            resp = self._guest_delete_network_interface(vdev="1000",
+                                                        active=True,
+                                                        userid=userid)
+            self.assertEqual(200, resp.status_code)
+            ip_set = self._check_interface(userid=userid, ip=ip_addrs[0])
+            self.assertFalse(ip_set)
             resp = self._guest_delete_network_interface(vdev="2000",
                                                         active=True,
                                                         userid=userid)
             self.assertEqual(200, resp.status_code)
-            ip_set = self._check_interface(userid=userid)
+            ip_set = self._check_interface(userid=userid, ip=ip_addrs[1])
             self.assertFalse(ip_set)
-
-            resp = self._guest_create_network_interface(vdev="2000",
+            resp = self._guest_delete_network_interface(vdev="3000",
                                                         active=True,
                                                         userid=userid)
             self.assertEqual(200, resp.status_code)
+            ip_set = self._check_interface(userid=userid, ip=ip_addrs[2])
+            self.assertFalse(ip_set)
+            resp = self._guest_delete_network_interface(vdev="4000",
+                                                        active=True,
+                                                        userid=userid)
+            self.assertEqual(200, resp.status_code)
+            ip_set = self._check_interface(userid=userid, ip=ip_addrs[3])
+            self.assertFalse(ip_set)
 
-            resp = self._vswitch_couple(vdev="2000", vswitch="XCATVSW2",
+            # Case: Re-create with active=True
+            resp = self._guest_create_network_interface(userid=userid,
+                                            networks=[{'ip': ip_addrs[0],
+                                                       'vdev': "1000"}],
+                                            active=True)
+            self.assertEqual(200, resp.status_code)
+
+            osa = self._get_free_osa()
+            self.assertNotEqual(osa, None)
+            resp = self._guest_create_network_interface(userid=userid,
+                                        networks=[{'ip': ip_addrs[1],
+                                                   'vdev': '2000',
+                                                  'osa': osa}],
+                                        active=True)
+            self.assertEqual(200, resp.status_code)
+
+            resp = self._guest_create_network_interface(userid=userid,
+                                            networks=[{'ip': ip_addrs[2],
+                                                       'vdev': "3000"},
+                                                      {'ip': ip_addrs[3],
+                                                       'vdev': "4000"}],
+                                            active=True)
+            self.assertEqual(200, resp.status_code)
+
+            # Coupling NIC to the vswitch.
+            resp = self._vswitch_couple(vdev="1000", vswitch="XCATVSW2",
                                         active=True, userid=userid)
             self.assertEqual(200, resp.status_code)
-            ip_set = self._check_interface(userid=userid)
-            self.assertTrue(ip_set)
-            nic_defined, vsw = self._check_nic("2000", vsw='XCATVSW2',
-                                               userid=userid)
+            resp = self._vswitch_couple(vdev="3000", vswitch="XCATVSW2",
+                                        userid=userid, active=True)
+            self.assertEqual(200, resp.status_code)
+            resp = self._vswitch_couple(vdev="4000", vswitch="XCATVSW2",
+                                        userid=userid, active=True)
+            self.assertEqual(200, resp.status_code)
+            # check NICs defined
+            nic_defined, vsw = self._check_nic("1000", userid=userid,
+                                               vsw="XCATVSW2")
+            self.assertTrue(nic_defined)
+            self.assertEqual("XCATVSW2", vsw)
+            nic_defined, nic_osa = self._check_nic("2000", userid=userid,
+                                                   osa=osa)
+            self.assertTrue(nic_defined)
+            self.assertEqual(nic_osa, osa)
+            nic_defined, vsw = self._check_nic("3000", userid=userid,
+                                               vsw="XCATVSW2")
+            self.assertTrue(nic_defined)
+            self.assertEqual("XCATVSW2", vsw)
+            nic_defined, vsw = self._check_nic("4000", userid=userid,
+                                               vsw="XCATVSW2")
             self.assertTrue(nic_defined)
             self.assertEqual("XCATVSW2", vsw)
 
-            resp = self._guest_delete_network_interface(vdev="2000",
-                                                        active=False,
-                                                        userid=userid)
+            # Check IPs are all set in interface
+            for addr in ip_addrs:
+                ip_set = self._check_interface(userid=userid, ip=addr)
+                self.assertTrue(ip_set)
+
+            # Delete interfaces with active=False
+            resp = self._guest_delete_network_interface(userid=userid,
+                                                        vdev="1000",
+                                                        active=False)
             self.assertEqual(200, resp.status_code)
-            ip_set = self._check_interface(userid=userid)
+            ip_set = self._check_interface(userid=userid, ip=ip_addrs[0])
             self.assertTrue(ip_set)
-            nic_defined, vsw = self._check_nic("2000", userid=userid)
+            nic_defined, vsw = self._check_nic("1000", userid=userid)
             self.assertFalse(nic_defined)
             self.assertEqual("", vsw)
+            # undedicate OSA
+            resp = self._guest_delete_network_interface(userid=userid,
+                                                        vdev="2000",
+                                                        active=False)
+            self.assertEqual(200, resp.status_code)
+            ip_set = self._check_interface(userid=userid, ip=ip_addrs[1])
+            self.assertTrue(ip_set)
+            nic_defined, osa = self._check_nic("2000", userid=userid, osa=osa)
+            self.assertFalse(nic_defined)
+            self.assertEqual("", osa)
         finally:
             os.system('rm /var/lib/zvmsdk/cfgdrive.tgz')
             self._guest_delete(userid=userid)
@@ -1445,7 +1625,7 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             os.system('rm /var/lib/zvmsdk/cfgdrive.tgz')
             self._guest_delete(userid=userid)
 
-    def test_guest_create_cpu_memory_userset(self):
+    def test_guest_live_resize_cpus(self):
         userid = test_utils.generate_test_userid()
         resp = self._guest_create(userid=userid, maxcpu=10, maxmem="2048M")
         self.assertEqual(200, resp.status_code)
@@ -1454,12 +1634,218 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             resp = self._guest_deploy(userid=userid)
             self.assertEqual(200, resp.status_code)
 
+            # Live resize a guest's CPU when the guest is not active
+            resp = self._guest_live_resize_cpus(2, userid=userid)
+            self.assertEqual(409, resp.status_code)
+
             resp = self._guest_start(userid=userid)
             self.assertEqual(200, resp.status_code)
             self.assertTrue(self._wait_until(True, self.is_reachable,
                                              userid))
             self._check_CPU_MEM(userid, maxcpu=10, maxmem="2048M")
             self._check_total_memory(userid, maxmem="2048M")
+
+            # Resized cpu number exceed the user's max cpu number
+            resp = self._guest_resize_cpus(11, userid=userid)
+            self.assertEqual(409, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=1, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu number exceed the allowed max cpu number
+            resp = self._guest_resize_cpus(65, userid=userid)
+            self.assertEqual(400, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=1, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu number is less than the allowed min cpu number
+            resp = self._guest_resize_cpus(0, userid=userid)
+            self.assertEqual(400, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=1, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu number exceed the user's max cpu number
+            resp = self._guest_live_resize_cpus(11, userid=userid)
+            self.assertEqual(409, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=1, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu number exceed the allowed max cpu number
+            resp = self._guest_live_resize_cpus(65, userid=userid)
+            self.assertEqual(400, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=1, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu number is less than the allowed min cpu number
+            resp = self._guest_live_resize_cpus(0, userid=userid)
+            self.assertEqual(400, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=1, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu num equal to the current cpu num in user direct,
+            # and equal to the live cpu num
+            #  - cpu num in user direct: not change
+            #  - live cpu num: not change
+            resp = self._guest_resize_cpus(1, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=1, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu num equal to the user's max cpu num in user direct,
+            #  - cpu num in user direct: increase
+            #  - live cpu num: not change
+            resp = self._guest_resize_cpus(10, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=10, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu num is less than the current cpu num in user direct
+            #  - cpu num in user direct: decrease
+            #  - live cpu num: not change
+            resp = self._guest_resize_cpus(3, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=3, cpu_cnt_live=1,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num equal to the current cpu num in user direct,
+            # and is greater than the live cpu num
+            #  - cpu num in user direct: not change
+            #  - live cpu num: increased
+            resp = self._guest_live_resize_cpus(3, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=3, cpu_cnt_live=3,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num equal to the current cpu num in user direct,
+            # and equal to the live cpu num
+            #  - cpu num in user direct: not change
+            #  - live cpu num: not change
+            resp = self._guest_live_resize_cpus(3, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=3, cpu_cnt_live=3,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu num is greater than the current cpu num in user
+            # direct, and is greater than the live cpu num
+            #  - cpu num in user direct: increase
+            #  - live cpu num: not change
+            resp = self._guest_resize_cpus(5, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=5, cpu_cnt_live=3,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num is less than the current cpu num
+            # in user direct, and is greater than the live cpu num
+            #  - cpu num in user direct: decrease
+            #  - live cpu num: increase
+            resp = self._guest_live_resize_cpus(4, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=4, cpu_cnt_live=4,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num is greater than the current cpu num
+            # in user direct, and is greater than the live cpu num
+            #  - cpu num in user direct: increase
+            #  - live cpu num: increase
+            resp = self._guest_live_resize_cpus(5, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=5, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu num is greater than the current cpu num
+            # in user direct, and is greater than the live cpu num
+            #  - cpu num in user direct: increase
+            #  - live cpu num: not change
+            resp = self._guest_resize_cpus(7, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=7, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu num is less than the current cpu num
+            # in user direct, and is less than the live cpu num
+            #  - cpu num in user direct: decrease
+            #  - live cpu num: not change
+            resp = self._guest_resize_cpus(4, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=4, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num equal to the current cpu num
+            # in user direct, and is less than the live cpu num
+            #  - cpu num in user direct: not change
+            #  - live cpu num: not change
+            resp = self._guest_live_resize_cpus(4, userid=userid)
+            self.assertEqual(409, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=4, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num is greater than the current cpu num
+            # in user direct, and equal to the live cpu num
+            #  - cpu num in user direct: increase
+            #  - live cpu num: not change
+            resp = self._guest_live_resize_cpus(5, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=5, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num is greater than the user's max cpu
+            # num in user direct
+            #  - cpu num in user direct: not change
+            #  - live cpu num: not change
+            resp = self._guest_live_resize_cpus(11, userid=userid)
+            self.assertEqual(409, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=5, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num is less than the live cpu num
+            #  - cpu num in user direct: not change
+            #  - live cpu num: not change
+            resp = self._guest_live_resize_cpus(4, userid=userid)
+            self.assertEqual(409, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=5, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Resized cpu num is less than the current cpu num
+            # in user direct, and is less than the live cpu num
+            #  - cpu num in user direct: decrease
+            #  - live cpu num: not change
+            resp = self._guest_resize_cpus(4, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=4, cpu_cnt_live=5,
+                                maxcpu=10, maxmem="2048M")
+
+            # Restart guest, check cpu number
+            resp = self._guest_stop(userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self.assertTrue(self._wait_until(False, self.is_reachable,
+                                             userid))
+            resp = self._guest_start()
+            self.assertEqual(200, resp.status_code)
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                            self.userid))
+            self._check_CPU_MEM(userid, cpu_cnt=4, cpu_cnt_live=4,
+                                maxcpu=10, maxmem="2048M")
+
+            # Live resized cpu num is greater than the current cpu num
+            # in user direct, and is greater than the live cpu num
+            #  - cpu num in user direct: increase
+            #  - live cpu num: increase
+            resp = self._guest_live_resize_cpus(7, userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self._check_CPU_MEM(userid, cpu_cnt=7, cpu_cnt_live=7,
+                                maxcpu=10, maxmem="2048M")
+
+            # Restart guest, check cpu number
+            resp = self._guest_stop(userid=userid)
+            self.assertEqual(200, resp.status_code)
+            self.assertTrue(self._wait_until(False, self.is_reachable,
+                                             userid))
+            resp = self._guest_start()
+            self.assertEqual(200, resp.status_code)
+            self.assertTrue(self._wait_until(True, self.is_reachable,
+                                            self.userid))
+            self._check_CPU_MEM(userid, cpu_cnt=7, cpu_cnt_live=7,
+                                maxcpu=10, maxmem="2048M")
+
         finally:
             self._guest_delete(userid=userid)
 

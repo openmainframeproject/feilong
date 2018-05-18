@@ -16,14 +16,15 @@ import mock
 from zvmsdk import api
 from zvmsdk import exception
 from zvmsdk.tests.unit import base
+from zvmsdk import vmops
 
 
 class SDKAPITestCase(base.SDKTestCase):
     """Testcases for compute APIs."""
     def setUp(self):
         super(SDKAPITestCase, self).setUp()
+        vmops.VMOps.check_guests_exist_in_db = mock.MagicMock()
         self.api = api.SDKAPI()
-        self._vmops = mock.MagicMock()
 
     def test_init_ComputeAPI(self):
         self.assertTrue(isinstance(self.api, api.SDKAPI))
@@ -98,10 +99,34 @@ class SDKAPITestCase(base.SDKTestCase):
         image_query.assert_called_once_with(imagekeyword)
 
     @mock.patch("zvmsdk.vmops.VMOps.delete_vm")
-    def test_guest_delete(self, delete_vm):
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_delete(self, cge, delete_vm):
+        cge.return_value = True
         userid = 'userid'
         self.api.guest_delete(userid)
+        cge.assert_called_once_with(userid, raise_exc=False)
         delete_vm.assert_called_once_with(userid)
+
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_delete_not_exist(self, cge, cue):
+        cge.return_value = False
+        cue.return_value = False
+        userid = 'userid'
+        self.api.guest_delete(userid)
+        cge.assert_called_once_with(userid, raise_exc=False)
+        cue.assert_called_once_with(userid)
+
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_delete_not_exist_in_db(self, cge, cue):
+        cge.return_value = False
+        cue.return_value = True
+        userid = 'userid'
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.api.guest_delete, userid)
+        cge.assert_called_once_with(userid, raise_exc=False)
+        cue.assert_called_once_with(userid)
 
     @mock.patch("zvmsdk.monitor.ZVMMonitor.inspect_stats")
     def test_guest_inspect_cpus_list(self, inspect_stats):
