@@ -174,6 +174,14 @@ Possible values:
 Sample root disk in user directory:
     MDISK 0100 <disktype> <start> <end> <volumelabel> <readwrite>
 '''),
+    Opt('createvm_retry',
+        section='zvm',
+        default=False,
+        help='''
+Create vm retry if 596,1198 errors comes up.
+
+When dirmaint 596,1198 errors comes up, retry several times.
+'''),
     Opt('user_default_max_cpu',
         section='zvm',
         default=32,
