@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0e25915a_0b62c2f4",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1338,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-21T02:51:43Z",
+      "side": 1,
+      "message": "been",
+      "range": {
+        "startLine": 1338,
+        "startChar": 33,
+        "endLine": 1338,
+        "endChar": 35
+      },
+      "revId": "fab97d5d12162c2f40855efbaa32698f992ab12e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9d3c971c_f34c9f58",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 1378,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-21T02:51:43Z",
+      "side": 1,
+      "message": "this if condition can be merged into previous one",
+      "range": {
+        "startLine": 1378,
+        "startChar": 8,
+        "endLine": 1378,
+        "endChar": 22
+      },
+      "revId": "fab97d5d12162c2f40855efbaa32698f992ab12e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a13a7bed_5da6440e",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 2561,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-21T02:51:43Z",
+      "side": 1,
+      "message": "the two conflict keywords?",
+      "range": {
+        "startLine": 2560,
+        "startChar": 44,
+        "endLine": 2561,
+        "endChar": 45
+      },
+      "revId": "fab97d5d12162c2f40855efbaa32698f992ab12e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
