@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6abbb1d5_5cc3f5a4",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 405,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-21T06:36:51Z",
+      "side": 1,
+      "message": "defaut is false already, so you can refer to CONF.zvm.createvm_retry directly",
+      "range": {
+        "startLine": 405,
+        "startChar": 57,
+        "endLine": 405,
+        "endChar": 65
+      },
+      "revId": "6b5936ceae210e4f08c9685701a087ff0e1a96a5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1fa49230_632c6028",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 406,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-21T06:36:51Z",
+      "side": 1,
+      "message": "move this line into if createvm_retry section",
+      "range": {
+        "startLine": 406,
+        "startChar": 16,
+        "endLine": 406,
+        "endChar": 49
+      },
+      "revId": "6b5936ceae210e4f08c9685701a087ff0e1a96a5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
