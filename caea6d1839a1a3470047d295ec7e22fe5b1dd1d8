@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d2f86268_d87672aa",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-22T02:44:24Z",
+      "side": 1,
+      "message": "what kind of TODO here? check ret ? then hy not add it this patch?",
+      "range": {
+        "startLine": 219,
+        "startChar": 8,
+        "endLine": 219,
+        "endChar": 27
+      },
+      "revId": "caea6d1839a1a3470047d295ec7e22fe5b1dd1d8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "41cb00b7_92967b53",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-22T02:44:24Z",
+      "side": 1,
+      "message": "will this also lead to some exception ? \nthus the old exception will be overwritten here.",
+      "range": {
+        "startLine": 234,
+        "startChar": 12,
+        "endLine": 235,
+        "endChar": 59
+      },
+      "revId": "caea6d1839a1a3470047d295ec7e22fe5b1dd1d8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0359ed2f_6ad76c82",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-22T02:44:24Z",
+      "side": 1,
+      "message": "what\u0027s todo?",
+      "range": {
+        "startLine": 435,
+        "startChar": 8,
+        "endLine": 435,
+        "endChar": 26
+      },
+      "revId": "caea6d1839a1a3470047d295ec7e22fe5b1dd1d8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "017c2443_718683cb",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 525,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-22T02:44:24Z",
+      "side": 1,
+      "message": "I think we already make fcp as lower case somewhere ?\notherwise, the echo command below fail because of lower/upper case difference?",
+      "range": {
+        "startLine": 525,
+        "startChar": 28,
+        "endLine": 525,
+        "endChar": 31
+      },
+      "revId": "caea6d1839a1a3470047d295ec7e22fe5b1dd1d8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f6aa3e59_d8955e2a",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 16
+      },
+      "lineNbr": 594,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-22T02:44:24Z",
+      "side": 1,
+      "message": "RHEL6/7 is same in this function? can we move to RHEL directly?",
+      "range": {
+        "startLine": 591,
+        "startChar": 0,
+        "endLine": 594,
+        "endChar": 55
+      },
+      "revId": "caea6d1839a1a3470047d295ec7e22fe5b1dd1d8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
