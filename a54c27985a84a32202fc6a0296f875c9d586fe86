@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "36482413_dfa31fee",
+        "filename": "zvmconnector/restclient.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-22T02:31:45Z",
+      "side": 1,
+      "message": "this lack of unit test",
+      "range": {
+        "startLine": 130,
+        "startChar": 3,
+        "endLine": 134,
+        "endChar": 49
+      },
+      "revId": "a54c27985a84a32202fc6a0296f875c9d586fe86",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4a7f651b_ca1ee120",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-22T02:31:45Z",
+      "side": 1,
+      "message": "please add more unit test",
+      "range": {
+        "startLine": 239,
+        "startChar": 3,
+        "endLine": 247,
+        "endChar": 56
+      },
+      "revId": "a54c27985a84a32202fc6a0296f875c9d586fe86",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
