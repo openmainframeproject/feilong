@@ -358,7 +358,11 @@ network_list = {
             'mac_addr': mac_address,
             'cidr': cidr,
             'nic_vdev': vdev,
-            'nic_id': {'type': 'string'}},
+            'nic_id': {'type': 'string'}
+        },
+        'dependencies': {
+            'ip_addr': ['cidr']
+        }
     },
     'additionalProperties': False
 }
