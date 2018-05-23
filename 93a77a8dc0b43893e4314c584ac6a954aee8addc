@@ -71,6 +71,30 @@
     },
     {
       "key": {
+        "uuid": "1e6dbfff_4fb004ff",
+        "filename": "zvmsdk/sdkwsgi/handler.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-23T09:46:44Z",
+      "side": 1,
+      "message": "seems PUT is more reasonable here, GET only used for query",
+      "parentUuid": "b350c905_53222df4",
+      "range": {
+        "startLine": 106,
+        "startChar": 9,
+        "endLine": 106,
+        "endChar": 13
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aa5988a6_72e1842c",
         "filename": "zvmsdk/sdkwsgi/handlers/file.py",
         "patchSetId": 8
@@ -156,6 +180,121 @@
         "startChar": 14,
         "endLine": 78,
         "endChar": 53
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9a927658_2105d58f",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-23T09:46:44Z",
+      "side": 1,
+      "message": "rc\u0027: returncode.errors[\u0027file\u0027][\u0027overallRC\u0027],\n\nthis is correct?",
+      "range": {
+        "startLine": 84,
+        "startChar": 24,
+        "endLine": 84,
+        "endChar": 68
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "00beaa30_16f42890",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-23T09:46:44Z",
+      "side": 1,
+      "message": "this kind of code is really not maintainable\n\nI suggest you create some function or reuse smut layer\u0027s function to create error resposne",
+      "range": {
+        "startLine": 82,
+        "startChar": 12,
+        "endLine": 87,
+        "endChar": 36
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3fb6d930_707649d8",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-23T09:46:44Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 96,
+        "startChar": 17,
+        "endLine": 103,
+        "endChar": 30
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "25ef60b6_207a6096",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-23T09:46:44Z",
+      "side": 1,
+      "message": "I don\u0027t know why you use this logic here\n\nsomething like err, result \u003d xxx\nand check err can\u0027t be used here?",
+      "range": {
+        "startLine": 189,
+        "startChar": 4,
+        "endLine": 189,
+        "endChar": 33
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fd4f11d0_42f60292",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-23T09:46:44Z",
+      "side": 1,
+      "message": "all those from glance? \nif nothing changed, I suggest add a comment on where it comes from",
+      "range": {
+        "startLine": 206,
+        "startChar": 0,
+        "endLine": 288,
+        "endChar": 26
       },
       "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
