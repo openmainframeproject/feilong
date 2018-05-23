@@ -1344,8 +1344,8 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
         cons_log = self._smutclient.get_user_console_output('fakeuser')
         req.assert_called_once_with('getvm fakeuser consoleoutput')
-        execu.assert_any_call('/usr/sbin/vmur re -t -O 0001')
-        execu.assert_any_call('/usr/sbin/vmur re -t -O 0002')
+        execu.assert_any_call('sudo /usr/sbin/vmur re -t -O 0001')
+        execu.assert_any_call('sudo /usr/sbin/vmur re -t -O 0002')
         self.assertEqual(cons_log, 'first line\nsecond line\n')
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
