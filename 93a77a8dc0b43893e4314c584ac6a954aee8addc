@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2c09b0a7_68d070c9",
+        "filename": "zvmsdk/returncode.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-23T08:08:23Z",
+      "side": 1,
+      "message": "file",
+      "range": {
+        "startLine": 230,
+        "startChar": 27,
+        "endLine": 230,
+        "endChar": 28
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b350c905_53222df4",
+        "filename": "zvmsdk/sdkwsgi/handler.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-23T08:08:23Z",
+      "side": 1,
+      "message": "why post? use \u0027GET\u0027?",
+      "range": {
+        "startLine": 106,
+        "startChar": 9,
+        "endLine": 106,
+        "endChar": 13
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c6ab9d09_4480abe5",
+        "filename": "zvmsdk/sdkwsgi/handler.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-23T08:08:23Z",
+      "side": 1,
+      "message": "upload/download files?",
+      "range": {
+        "startLine": 105,
+        "startChar": 0,
+        "endLine": 106,
+        "endChar": 32
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "aa5988a6_72e1842c",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-23T08:08:23Z",
+      "side": 1,
+      "message": "The comments remain valid?",
+      "range": {
+        "startLine": 39,
+        "startChar": 4,
+        "endLine": 41,
+        "endChar": 42
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "61187214_34ce053c",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-23T08:08:23Z",
+      "side": 1,
+      "message": "update the comment",
+      "range": {
+        "startLine": 50,
+        "startChar": 8,
+        "endLine": 50,
+        "endChar": 72
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8d0a500e_fb371753",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-23T08:08:23Z",
+      "side": 1,
+      "message": "target fpath is a temp path, is it worth to return?\nIf it is required to return the target fpath, consider to use a formal path.",
+      "range": {
+        "startLine": 69,
+        "startChar": 27,
+        "endLine": 69,
+        "endChar": 63
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fd4b309f_ea9f11e3",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-05-23T08:08:23Z",
+      "side": 1,
+      "message": "update the comment",
+      "range": {
+        "startLine": 78,
+        "startChar": 14,
+        "endLine": 78,
+        "endChar": 53
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
