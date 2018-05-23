@@ -776,7 +776,7 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
     results['rc'] = 9
 
     # Punch to the current user intially and then change the spool class.
-    cmd = ["sudo", "vmur", "punch", "-r", fileLoc]
+    cmd = ["sudo", "/usr/sbin/vmur", "punch", "-r", fileLoc]
     strCmd = ' '.join(cmd)
     for secs in [1, 2, 3, 5, 10]:
         rh.printSysLog("Invoking: " + strCmd)

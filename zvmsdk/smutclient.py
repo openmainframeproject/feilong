@@ -1888,7 +1888,7 @@ class SMUTClient(object):
 
         logs = []
         for rf in rf_list:
-            cmd = '/usr/sbin/vmur re -t -O %s' % rf
+            cmd = 'sudo /usr/sbin/vmur re -t -O %s' % rf
             rc, output = zvmutils.execute(cmd)
             if rc == 0:
                 logs.append(output)
