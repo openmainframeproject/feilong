@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8b768ae7_974dd0fd",
+        "filename": "zvmsdk/returncode.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-24T09:04:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c09b0a7_68d070c9",
+      "range": {
+        "startLine": 230,
+        "startChar": 27,
+        "endLine": 230,
+        "endChar": 28
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b350c905_53222df4",
         "filename": "zvmsdk/sdkwsgi/handler.py",
         "patchSetId": 8
@@ -95,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "db35b954_7c658928",
+        "filename": "zvmsdk/sdkwsgi/handler.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-24T09:04:30Z",
+      "side": 1,
+      "message": "I don\u0027t changes this because lots of changes need to made, just keep the import/export is also ok.",
+      "parentUuid": "c6ab9d09_4480abe5",
+      "range": {
+        "startLine": 105,
+        "startChar": 0,
+        "endLine": 106,
+        "endChar": 32
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aa5988a6_72e1842c",
         "filename": "zvmsdk/sdkwsgi/handlers/file.py",
         "patchSetId": 8
@@ -106,6 +154,30 @@
       "writtenOn": "2018-05-23T08:08:23Z",
       "side": 1,
       "message": "The comments remain valid?",
+      "range": {
+        "startLine": 39,
+        "startChar": 4,
+        "endLine": 41,
+        "endChar": 42
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f4696492_09146028",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-24T09:04:30Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "aa5988a6_72e1842c",
       "range": {
         "startLine": 39,
         "startChar": 4,
@@ -141,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "80ede9ac_711f3b36",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-24T09:04:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "61187214_34ce053c",
+      "range": {
+        "startLine": 50,
+        "startChar": 8,
+        "endLine": 50,
+        "endChar": 72
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8d0a500e_fb371753",
         "filename": "zvmsdk/sdkwsgi/handlers/file.py",
         "patchSetId": 8
@@ -152,6 +248,30 @@
       "writtenOn": "2018-05-23T08:08:23Z",
       "side": 1,
       "message": "target fpath is a temp path, is it worth to return?\nIf it is required to return the target fpath, consider to use a formal path.",
+      "range": {
+        "startLine": 69,
+        "startChar": 27,
+        "endLine": 69,
+        "endChar": 63
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "519e20b3_7f6e5e22",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-24T09:04:30Z",
+      "side": 1,
+      "message": "Will use /var/lib/zvmsdk/files as the formal path, the imported files will be put into /var/lib/zvmsdk/files/imported  and exported files will be put into /var/lib/zvmsdk/files/exported",
+      "parentUuid": "8d0a500e_fb371753",
       "range": {
         "startLine": 69,
         "startChar": 27,
@@ -187,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "aac45edc_ae092bcc",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-24T09:04:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fd4b309f_ea9f11e3",
+      "range": {
+        "startLine": 78,
+        "startChar": 14,
+        "endLine": 78,
+        "endChar": 53
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a927658_2105d58f",
         "filename": "zvmsdk/sdkwsgi/handlers/file.py",
         "patchSetId": 8
@@ -198,6 +342,30 @@
       "writtenOn": "2018-05-23T09:46:44Z",
       "side": 1,
       "message": "rc\u0027: returncode.errors[\u0027file\u0027][\u0027overallRC\u0027],\n\nthis is correct?",
+      "range": {
+        "startLine": 84,
+        "startChar": 24,
+        "endLine": 84,
+        "endChar": 68
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f482f229_4853a3f1",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-24T09:04:30Z",
+      "side": 1,
+      "message": "Will change it",
+      "parentUuid": "9a927658_2105d58f",
       "range": {
         "startLine": 84,
         "startChar": 24,
@@ -233,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "9466f429_3477794d",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-24T09:04:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "00beaa30_16f42890",
+      "range": {
+        "startLine": 82,
+        "startChar": 12,
+        "endLine": 87,
+        "endChar": 36
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3fb6d930_707649d8",
         "filename": "zvmsdk/sdkwsgi/handlers/file.py",
         "patchSetId": 8
@@ -244,6 +436,30 @@
       "writtenOn": "2018-05-23T09:46:44Z",
       "side": 1,
       "message": "ditto",
+      "range": {
+        "startLine": 96,
+        "startChar": 17,
+        "endLine": 103,
+        "endChar": 30
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4ee21046_109b693d",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-24T09:04:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3fb6d930_707649d8",
       "range": {
         "startLine": 96,
         "startChar": 17,
@@ -279,6 +495,30 @@
     },
     {
       "key": {
+        "uuid": "b5aa979e_0b1cc745",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-24T09:04:30Z",
+      "side": 1,
+      "message": "in normal case if export works it will return an app_iter, and if some error happens, it will return the dict as sdkwsgi\u0027s body.",
+      "parentUuid": "25ef60b6_207a6096",
+      "range": {
+        "startLine": 189,
+        "startChar": 4,
+        "endLine": 189,
+        "endChar": 33
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fd4f11d0_42f60292",
         "filename": "zvmsdk/sdkwsgi/handlers/file.py",
         "patchSetId": 8
@@ -290,6 +530,30 @@
       "writtenOn": "2018-05-23T09:46:44Z",
       "side": 1,
       "message": "all those from glance? \nif nothing changed, I suggest add a comment on where it comes from",
+      "range": {
+        "startLine": 206,
+        "startChar": 0,
+        "endLine": 288,
+        "endChar": 26
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8bc949f7_195954cd",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-24T09:04:30Z",
+      "side": 1,
+      "message": "I do some changes base on glance code. I will also add comments on where it comes",
+      "parentUuid": "fd4f11d0_42f60292",
       "range": {
         "startLine": 206,
         "startChar": 0,
