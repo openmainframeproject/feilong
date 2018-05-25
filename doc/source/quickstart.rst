@@ -99,6 +99,10 @@ Preparation on BYOL
    If something like 'is already  online' is returned, it means punch already
    online and feel free to ignore the warning.
 
+.. note::
+   Preparation step 2 and step 3 require to re-IML(logoff then re-logon) the
+   BYOL to make the updates become effective.
+
 Installation Requirements
 -------------------------
 
@@ -291,7 +295,7 @@ should be customized according to your environment.
 
     [network]
     # IP address of the Linux machine which is running SDK on.
-    # This param is required
+    # This config option is required
     my_ip=127.0.0.1
 
     [sdkserver]
@@ -304,9 +308,21 @@ should be customized according to your environment.
 
     [zvm]
     # zVM disk pool and type for root/ephemeral disks.
-    # This param is required
+    # This config option is required
     disk_pool=ECKD:eckdpool
+
+    # PROFILE name to use when creating a z/VM guest.
+    # This config option is required
+    user_profile=osdflt
+
+    # The default maximum number of virtual processers the user can define.
     user_default_max_cpu=32
+
+    # The default maximum size of memory the user can define.
+    user_default_max_memory=64G
+
+For the details of all configuration options, please refer to
+:ref:`configuration options`.
 
 Setup for z/VM SDK Daemon
 =========================
