@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "984d9639_e69bbbec",
+        "filename": "doc/source/quickstart.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-05-25T02:49:11Z",
+      "side": 1,
+      "message": "IML ?? IML \u003d reboot Z machine...",
+      "range": {
+        "startLine": 103,
+        "startChar": 44,
+        "endLine": 103,
+        "endChar": 72
+      },
+      "revId": "c2d156cfdfde05164a48718c1c6bd80de6774ddc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
