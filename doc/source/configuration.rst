@@ -13,6 +13,8 @@
 .. limitations under the License.
 ..
 
+.. _`configuration options`:
+
 Configuration Options
 *********************
 
