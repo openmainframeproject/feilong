@@ -284,6 +284,30 @@
     },
     {
       "key": {
+        "uuid": "19c5b028_b0cb4641",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-25T05:33:18Z",
+      "side": 1,
+      "message": "After change, If the customer import file to a folder he doesn\u0027t has operation, it will prompt such error:\n{u\u0027rs\u0027: 1, u\u0027overallRC\u0027: 300, u\u0027modID\u0027: 60, u\u0027rc\u0027: 300, u\u0027output\u0027: u\u0027\u0027, u\u0027errmsg\u0027: u\"File import error: [Errno 13] Permission denied: \u0027/var/lib/zvmsdk/files/imported\u0027, please check access right to specified file or folder\"}\n\u003e\u003e\u003e",
+      "parentUuid": "519e20b3_7f6e5e22",
+      "range": {
+        "startLine": 69,
+        "startChar": 27,
+        "endLine": 69,
+        "endChar": 63
+      },
+      "revId": "93a77a8dc0b43893e4314c584ac6a954aee8addc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fd4b309f_ea9f11e3",
         "filename": "zvmsdk/sdkwsgi/handlers/file.py",
         "patchSetId": 8
