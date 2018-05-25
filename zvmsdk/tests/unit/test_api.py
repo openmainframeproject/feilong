@@ -111,6 +111,14 @@ class SDKAPITestCase(base.SDKTestCase):
         cge.assert_called_once_with(self.userid, raise_exc=False)
         delete_vm.assert_called_once_with(self.userid)
 
+    @mock.patch("zvmsdk.vmops.VMOps.delete_vm")
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    def test_guest_delete_userid_in_lower_case(self, cge, delete_vm):
+        cge.return_value = True
+        self.api.guest_delete('testuid')
+        cge.assert_called_once_with(self.userid, raise_exc=False)
+        delete_vm.assert_called_once_with(self.userid)
+
     @mock.patch("zvmsdk.utils.check_userid_exist")
     @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
     def test_guest_delete_not_exist(self, cge, cue):
