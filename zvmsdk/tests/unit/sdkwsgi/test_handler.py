@@ -228,18 +228,6 @@ class GuestHandlerTest(unittest.TestCase):
 
             get.assert_called_once_with(mock.ANY, '1')
 
-    @mock.patch.object(tokens, 'validate')
-    def test_guest_get_nic_info(self, mock_validate):
-        self.env['PATH_INFO'] = '/guests/1/nic'
-        self.env['REQUEST_METHOD'] = 'GET'
-        h = handler.SdkHandler()
-        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler.get_nic_vswitch_info'
-        with mock.patch(func) as get_nic_info:
-            get_nic_info.return_value = {'overallRC': 0}
-            h(self.env, dummy)
-
-            get_nic_info.assert_called_once_with(mock.ANY, '1')
-
     @mock.patch('zvmsdk.sdkwsgi.util.extract_json')
     @mock.patch.object(tokens, 'validate')
     def test_guest_delete_nic(self, mock_validate, mock_json):

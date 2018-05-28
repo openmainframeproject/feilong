@@ -296,15 +296,6 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
                                        body=body)
         return resp
 
-    def _guest_nic_query(self, userid=None):
-        if userid is None:
-            userid = self.userid
-
-        url = '/guests/%s/nic' % userid
-        resp = self.client.api_request(url=url,
-                                       method='GET')
-        return resp
-
     def _guest_disks_create_additional(self, userid=None, disk=None):
         if userid is None:
             userid = self.userid
@@ -771,10 +762,6 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
 
     def test_guest_vic_delete_not_exist(self):
         resp = self._guest_delete_network_interface(userid='notexist')
-        self.assertEqual(404, resp.status_code)
-
-    def test_guest_nic_query_not_exist(self):
-        resp = self._guest_nic_query(userid='notexist')
         self.assertEqual(404, resp.status_code)
 
     def test_guest_nic_delete_not_exist(self):
@@ -1590,10 +1577,6 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
             nic_defined, vsw = self._check_nic("2000", userid=userid)
             self.assertTrue(nic_defined)
             self.assertEqual(None, vsw)
-
-            resp = self._guest_nic_query(userid=userid)
-            self.assertEqual(200, resp.status_code)
-            self.apibase.verify_result('test_guest_get_nic', resp.content)
 
             resp = self._guest_nic_delete(vdev="2000", userid=userid)
             self.assertEqual(200, resp.status_code)

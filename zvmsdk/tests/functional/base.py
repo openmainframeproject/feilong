@@ -107,9 +107,6 @@ class SDKAPIRequestHandler(object):
     def guest_delete_nic(self, *args, **kwargs):
         return self._call('guest_delete_nic', *args, **kwargs)
 
-    def guest_get_nic_vswitch_info(self, *args, **kwargs):
-        return self._call('guest_get_nic_vswitch_info', *args, **kwargs)
-
     def guest_get_definition_info(self, *args, **kwargs):
         return self._call('guest_get_definition_info', *args, **kwargs)
 

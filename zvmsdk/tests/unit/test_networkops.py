@@ -33,11 +33,6 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
                                       nic_id='Fake_nic_id',
                                       mac_addr=None, active=True)
 
-    @mock.patch('zvmsdk.smutclient.SMUTClient.get_vm_nic_vswitch_info')
-    def test_get_vm_nic_vswitch_info(self, get_nic_vswitch_info):
-        self.networkops.get_vm_nic_vswitch_info("fakenode")
-        get_nic_vswitch_info.assert_called_with("fakenode")
-
     @mock.patch('zvmsdk.smutclient.SMUTClient.get_vswitch_list')
     def test_get_vswitch_list(self, get_vswitch_list):
         self.networkops.get_vswitch_list()

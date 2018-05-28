@@ -811,15 +811,6 @@ class HandlersGuestTest(SDKWSGITest):
                                             vdev_list)
 
     @mock.patch.object(util, 'wsgi_path_item')
-    @mock.patch.object(guest.VMHandler, 'get_nic_vswitch_info')
-    def test_guest_get_nic_info(self, mock_get, mock_userid):
-        mock_userid.return_value = FAKE_USERID
-        mock_get.return_value = ''
-
-        guest.guest_get_nic_info(self.req)
-        mock_get.assert_called_once_with(self.req, FAKE_USERID)
-
-    @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get_definition_info')
     def test_guest_get(self, mock_get, mock_userid):
         mock_get.return_value = ''

@@ -780,23 +780,6 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                                   userid, vlan_id)
         request.assert_called_once_with(rd)
 
-    @mock.patch.object(database.NetworkDbOperator,
-                       'switch_select_record_for_userid')
-    def test_get_vm_nic_vswitch_info(self, select):
-        """
-        Get NIC and switch mapping for the specified virtual machine.
-        """
-        select.return_value = [{'userid': 'FakeID', 'interface': '1000',
-                                'switch': 'testvs1', 'port': None,
-                                'comments': None},
-                               {'userid': 'FakeID', 'interface': '2000',
-                                'switch': 'testvs2', 'port': None,
-                                'comments': None}]
-        expect = {'1000': 'testvs1', '2000': 'testvs2'}
-        switch_dict = self._smutclient.get_vm_nic_vswitch_info('FakeID')
-        select.assert_called_once_with('FakeID')
-        self.assertDictEqual(switch_dict, expect)
-
     @mock.patch.object(zvmutils, 'get_smut_userid')
     @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_add_vswitch(self, request, get_smut_userid):

@@ -327,13 +327,16 @@ class SDKNICTestCase(base.SDKAPIBaseTestCase):
             return False, ""
         else:
             # Continue to check the nic info defined in vswitch table
-            nic_info = self.sdkapi.guest_get_nic_vswitch_info(self.basevm)
-            if vdev not in nic_info.keys():
-                # NIC defined in user direct, but not in switch table
-                return False, ""
-            else:
+            nic_info = self.sdkapi.guests_get_nic_info(userid=self.basevm)
+
+            for nic in nic_info:
+                if ((nic['interface'] != vdev) or
+                    (nic['userid'] != self.basevm)):
+                    continue
                 # NIC defined and added in switch table
-                return True, nic_info[vdev]
+                return True, nic['switch']
+            # NIC defined in user direct, but not in switch table
+            return False, ""
 
     def test_guest_create_nic(self):
         """ Test each parameter of guest_create_nic. """
