@@ -417,22 +417,6 @@ class RESTClientTestCase(unittest.TestCase):
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
-    def test_guest_get_nic_vswitch_info(self, get_token, request):
-        method = 'GET'
-        url = '/guests/%s/nic' % self.fake_userid
-        body = None
-        header = self.headers
-        full_uri = self.base_url + url
-        request.return_value = self.response
-        get_token.return_value = self._tmp_token()
-
-        self.client.call("guest_get_nic_vswitch_info", self.fake_userid)
-        request.assert_called_with(method, full_uri,
-                                   data=body, headers=header,
-                                   verify=False)
-
-    @mock.patch.object(requests, 'request')
-    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
     def test_guest_create_nic(self, get_token, request):
         # method = 'POST'
         # url = '/guests/%s/nic' % self.fake_userid

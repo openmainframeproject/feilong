@@ -91,11 +91,6 @@ class VMHandler(object):
         info = self.client.send_request('guest_delete', userid)
         return info
 
-    @validation.query_schema(guest.userid_list_query)
-    def get_nic_vswitch_info(self, req, userid):
-        info = self.client.send_request('guest_get_nic_vswitch_info', userid)
-        return info
-
     def delete_nic(self, userid, vdev, body):
         active = body.get('active', False)
         active = util.bool_from_string(active, strict=True)
@@ -536,25 +531,6 @@ def guest_delete(req):
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.status = util.get_http_code_from_sdk_return(info, default=200)
-    req.response.content_type = 'application/json'
-    return req.response
-
-
-@util.SdkWsgify
-@tokens.validate
-def guest_get_nic_info(req):
-
-    def _guest_get_nic_info(req, userid):
-        action = get_handler()
-        return action.get_nic_vswitch_info(req, userid)
-
-    userid = util.wsgi_path_item(req.environ, 'userid')
-    info = _guest_get_nic_info(req, userid)
-
-    info_json = json.dumps(info)
-    req.response.body = utils.to_utf8(info_json)
-    req.response.status = util.get_http_code_from_sdk_return(info,
-        additional_handler=util.handle_not_found)
     req.response.content_type = 'application/json'
     return req.response
 

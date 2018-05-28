@@ -432,34 +432,6 @@ Get running information of guest.
 .. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get_info.tpl
    :language: javascript
 
-Get Guest nic info
-------------------
-
-**GET /guests/{userid}/nic**
-
-Return the nic and vswitch pair for specified guest
-
-* Request:
-
-.. restapi_parameters:: parameters.yaml
-
-  - userid: guest_userid
-
-* Response code:
-
-  HTTP status code 200 on success.
-
-* Response contents:
-
-.. restapi_parameters:: parameters.yaml
-
-  - output: guest_nic_info
-
-* Response sample:
-
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get_nic.tpl
-   :language: javascript
-
 Create Guest nic
 ----------------
 

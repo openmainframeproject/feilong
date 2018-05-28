@@ -48,9 +48,6 @@ class NetworkOPS(object):
         return self._smutclient.create_nic(userid, vdev=vdev, nic_id=nic_id,
                                            mac_addr=mac_addr, active=active)
 
-    def get_vm_nic_vswitch_info(self, userid):
-        return self._smutclient.get_vm_nic_vswitch_info(userid)
-
     def get_vswitch_list(self):
         return self._smutclient.get_vswitch_list()
 

@@ -980,20 +980,6 @@ class SMUTClient(object):
 
         return pi_dict
 
-    def get_vm_nic_vswitch_info(self, vm_id):
-        """
-        Get NIC and switch mapping for the specified virtual machine.
-        """
-        switch_info = self._NetDbOperator.switch_select_record_for_userid(
-                                                                    vm_id)
-        switch_dict = {}
-        for item in switch_info:
-            switch_dict[item['interface']] = item['switch']
-
-        LOG.debug("Switch info the %(vm_id)s is %(switch_dict)s",
-                  {"vm_id": vm_id, "switch_dict": switch_dict})
-        return switch_dict
-
     def virtual_network_vswitch_query_byte_stats(self):
         smut_userid = zvmutils.get_smut_userid()
         rd = ' '.join((

@@ -404,19 +404,6 @@ class SDKAPI(object):
         self._networkops.delete_nic(userid, vdev, active=active)
 
     @check_guest_exist()
-    def guest_get_nic_vswitch_info(self, userid):
-        """ Return the nic and switch pair for the specified vm.
-
-        :param str userid: the user id of the vm
-
-        :returns: Dictionary describing nic and switch info, format is
-                  {'vdev': 'vswitch'}, such as
-                  {'1000': 'VSWITCH1', '1003': 'VSWITCH2'}
-        :rtype: dict
-        """
-        return self._networkops.get_vm_nic_vswitch_info(userid)
-
-    @check_guest_exist()
     def guest_get_definition_info(self, userid, **kwargs):
         """Get definition info for the specified guest vm, also could be used
         to check specific info.

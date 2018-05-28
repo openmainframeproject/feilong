@@ -127,12 +127,6 @@ guest_vnics:
   in: body
   required: true
   type: dict
-guest_nic_info:
-  description: |
-    vNIC and vswitch pair of guest.
-  in: body
-  required: true
-  type: dict
 guest_info:
   description: |
     Status of guest.

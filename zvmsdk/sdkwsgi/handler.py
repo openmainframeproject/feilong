@@ -61,7 +61,6 @@ ROUTE_LIST = (
         'GET': guest.guest_get_info,
     }),
     ('/guests/{userid}/nic', {
-        'GET': guest.guest_get_nic_info,
         'POST': guest.guest_create_nic,
     }),
     ('/guests/{userid}/nic/{vdev}', {
