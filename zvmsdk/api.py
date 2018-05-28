@@ -760,6 +760,7 @@ class SDKAPI(object):
         """
 
         # check guest exist in database or not
+        userid = userid.upper()
         if not self._vmops.check_guests_exist_in_db(userid, raise_exc=False):
             if zvmutils.check_userid_exist(userid):
                 LOG.error("Guest '%s' does not exist in guests database" %
