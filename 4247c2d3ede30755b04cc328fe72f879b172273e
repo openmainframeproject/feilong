@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "87aa5863_1c8f8d63",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-29T07:16:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e4ffc0c0_abb554f4",
+      "range": {
+        "startLine": 225,
+        "startChar": 9,
+        "endLine": 225,
+        "endChar": 28
+      },
+      "revId": "4247c2d3ede30755b04cc328fe72f879b172273e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "daefc164_ed70113f",
         "filename": "zvmsdk/config.py",
         "patchSetId": 9
@@ -45,6 +69,30 @@
       "revId": "4247c2d3ede30755b04cc328fe72f879b172273e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd5d122a_0d7dc86b",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-29T07:16:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "daefc164_ed70113f",
+      "range": {
+        "startLine": 232,
+        "startChar": 46,
+        "endLine": 232,
+        "endChar": 67
+      },
+      "revId": "4247c2d3ede30755b04cc328fe72f879b172273e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "a9ddc861_949e5dcf",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-29T07:16:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8b604291_7783bafb",
+      "range": {
+        "startLine": 114,
+        "startChar": 24,
+        "endLine": 114,
+        "endChar": 37
+      },
+      "revId": "4247c2d3ede30755b04cc328fe72f879b172273e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "249f6e62_eb8a70f1",
         "filename": "zvmsdk/sdkwsgi/handlers/file.py",
         "patchSetId": 9
@@ -82,6 +154,30 @@
       "writtenOn": "2018-05-29T01:56:32Z",
       "side": 1,
       "message": "should this be rs instead of rc ?",
+      "range": {
+        "startLine": 116,
+        "startChar": 56,
+        "endLine": 116,
+        "endChar": 58
+      },
+      "revId": "4247c2d3ede30755b04cc328fe72f879b172273e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7439a7b4_f5b3e31c",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-29T07:16:11Z",
+      "side": 1,
+      "message": "Yes,you are right, this should be rs.",
+      "parentUuid": "249f6e62_eb8a70f1",
       "range": {
         "startLine": 116,
         "startChar": 56,
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "142e4d86_e6d7c86e",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-29T07:16:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8b4cd8d3_7d2a85af",
+      "range": {
+        "startLine": 155,
+        "startChar": 4,
+        "endLine": 155,
+        "endChar": 13
+      },
+      "revId": "4247c2d3ede30755b04cc328fe72f879b172273e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2ab6d665_7b152aab",
         "filename": "zvmsdk/sdkwsgi/handlers/file.py",
         "patchSetId": 9
@@ -137,6 +257,30 @@
       "revId": "4247c2d3ede30755b04cc328fe72f879b172273e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55b5f6e4_96f0ed9d",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-29T07:16:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ab6d665_7b152aab",
+      "range": {
+        "startLine": 156,
+        "startChar": 12,
+        "endLine": 156,
+        "endChar": 34
+      },
+      "revId": "4247c2d3ede30755b04cc328fe72f879b172273e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "e0ea101b_a153dd45",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-29T07:16:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8d6a3014_229f6d98",
+      "range": {
+        "startLine": 175,
+        "startChar": 17,
+        "endLine": 175,
+        "endChar": 57
+      },
+      "revId": "4247c2d3ede30755b04cc328fe72f879b172273e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8f0516e4_b7154c4a",
         "filename": "zvmsdk/sdkwsgi/handlers/file.py",
         "patchSetId": 9
@@ -174,6 +342,30 @@
       "writtenOn": "2018-05-29T01:56:32Z",
       "side": 1,
       "message": "change to what?",
+      "range": {
+        "startLine": 207,
+        "startChar": 7,
+        "endLine": 207,
+        "endChar": 24
+      },
+      "revId": "4247c2d3ede30755b04cc328fe72f879b172273e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03bb42a1_acb565cf",
+        "filename": "zvmsdk/sdkwsgi/handlers/file.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-05-29T07:16:11Z",
+      "side": 1,
+      "message": "Have remove it",
+      "parentUuid": "8f0516e4_b7154c4a",
       "range": {
         "startLine": 207,
         "startChar": 7,
