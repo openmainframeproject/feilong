@@ -129,10 +129,10 @@ class NetworkDbOperator(object):
     def _create_switch_table(self):
         create_table_sql = ' '.join((
                 'create table if not exists switch (',
-                'userid       varchar(8),',
-                'interface    varchar(4),',
-                'switch       varchar(8),',
-                'port         varchar(128),',
+                'userid       varchar(8)    COLLATE NOCASE,',
+                'interface    varchar(4)    COLLATE NOCASE,',
+                'switch       varchar(8)    COLLATE NOCASE,',
+                'port         varchar(128)  COLLATE NOCASE,',
                 'comments     varchar(128),',
                 'primary key (userid, interface));'))
         with get_network_conn() as conn:
@@ -265,10 +265,10 @@ class FCPDbOperator(object):
     def _initialize_table(self):
         sql = ' '.join((
             'CREATE TABLE IF NOT EXISTS fcp(',
-            'fcp_id         char(4)      PRIMARY KEY,',
-            'assigner_id    varchar(8),',   # foreign key of a VM
-            'connections    integer,',      # 0 means no assigner
-            'reserved       integer,',      # 0 for not reserved
+            'fcp_id         char(4)    PRIMARY KEY COLLATE NOCASE,',
+            'assigner_id    varchar(8) COLLATE NOCASE,',  # foreign key of a VM
+            'connections    integer,',  # 0 means no assigner
+            'reserved       integer,',  # 0 for not reserved
             'comment        varchar(128))'))
         with get_fcp_conn() as conn:
             conn.execute(sql)
@@ -352,8 +352,7 @@ class FCPDbOperator(object):
         connections = 0
         with get_fcp_conn() as conn:
             result = conn.execute("SELECT * FROM fcp WHERE "
-                                  "assigner_id=? COLLATE NOCASE",
-                                  (assigner_id,))
+                                  "assigner_id=?", (assigner_id,))
             fcp_list = result.fetchall()
             if not fcp_list:
                 connections = 0
@@ -405,7 +404,7 @@ class ImageDbOperator(object):
     def _create_image_table(self):
         create_image_table_sql = ' '.join((
                 'CREATE TABLE IF NOT EXISTS image (',
-                'imagename                varchar(128) PRIMARY KEY,',
+                'imagename         varchar(128) PRIMARY KEY COLLATE NOCASE,',
                 'imageosdistro            varchar(16),',
                 'md5sum                   varchar(512),',
                 'disk_size_units          varchar(512),',
@@ -485,8 +484,8 @@ class GuestDbOperator(object):
         """
         sql = ' '.join((
             'CREATE TABLE IF NOT EXISTS guests(',
-            'id             char(36)      PRIMARY KEY,',
-            'userid         varchar(8)    NOT NULL UNIQUE,',
+            'id             char(36)     PRIMARY KEY COLLATE NOCASE,',
+            'userid         varchar(8)   NOT NULL UNIQUE  COLLATE NOCASE,',
             'metadata       varchar(255),',
             'net_set        smallint      DEFAULT 0,',
             'comments       text)'))
