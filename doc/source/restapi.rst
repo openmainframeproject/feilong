@@ -1109,7 +1109,7 @@ Import an image into image repository
 Export image
 ------------
 
-**PUT /images**
+**PUT /images/{name}**
 
 Export the image to the specified location.
 
@@ -1117,8 +1117,8 @@ Export the image to the specified location.
 
 .. restapi_parameters:: parameters.yaml
 
-  - image: image_dict
-  - image_name: image_name
+  - name: image_name_path
+  - location: image_export_location
   - dest_url: image_export_url
   - remote_host: remotehost_image_export
 

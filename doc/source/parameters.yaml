@@ -437,6 +437,12 @@ image_import_url:
   in: body
   required: true
   type: string
+image_export_location:
+  description: |
+    The dictionary to indicate the location info of image to be exported
+  in: body
+  required: true
+  type: dict
 image_export_url:
   description: |
     The location of the exported image, support export to 2 types location,
