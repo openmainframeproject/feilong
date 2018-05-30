@@ -180,14 +180,14 @@ format_disk:
   description: |
     Format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``xfs``.
   in: body
-  required: true
+  required: false
   type: string
 is_boot_disk:
   description: |
     is boot disk or not. For the root disk, this key must be set to
     indicate the image that will be deployed on this disk.
   in: body
-  required: true
+  required: false
   type: bool
 disk_pool_guest:
   description: |
@@ -221,11 +221,17 @@ disk_vdev:
   description: |
     The device number of the disk
   in: body
-  required: true
+  required: false
   type: string
 disk_mountpoint:
   description: |
     The directory on guest to which the disk will be mounted, eg ``/mnt/0101``
+  in: body
+  required: false
+  type: string
+format_disk_required:
+  description: |
+    Format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``xfs``.
   in: body
   required: true
   type: string
