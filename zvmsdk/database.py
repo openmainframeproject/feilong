@@ -141,7 +141,8 @@ class NetworkDbOperator(object):
     def _get_switch_by_user_interface(self, userid, interface):
         with get_network_conn() as conn:
             res = conn.execute("SELECT * FROM switch "
-                               "WHERE userid=? and interface=?",
+                               "WHERE userid=? COLLATE NOCASE and "
+                               "interface=? COLLATE NOCASE",
                                (userid, interface))
             switch_record = res.fetchall()
 
@@ -153,7 +154,7 @@ class NetworkDbOperator(object):
     def switch_delete_record_for_userid(self, userid):
         """Remove userid switch record from switch table."""
         with get_network_conn() as conn:
-            conn.execute("DELETE FROM switch WHERE userid=?",
+            conn.execute("DELETE FROM switch WHERE userid=? COLLATE NOCASE",
                          (userid,))
             LOG.debug("Switch record for user %s is removed from "
                       "switch table" % userid)
@@ -161,7 +162,8 @@ class NetworkDbOperator(object):
     def switch_delete_record_for_nic(self, userid, interface):
         """Remove userid switch record from switch table."""
         with get_network_conn() as conn:
-            conn.execute("DELETE FROM switch WHERE userid=? and interface=?",
+            conn.execute("DELETE FROM switch WHERE userid=? COLLATE NOCASE "
+                         "and interface=? COLLATE NOCASE",
                          (userid, interface))
             LOG.debug("Switch record for user %s with nic %s is removed from "
                       "switch table" % (userid, interface))
@@ -190,7 +192,8 @@ class NetworkDbOperator(object):
         if switch is not None:
             with get_network_conn() as conn:
                 conn.execute("UPDATE switch SET switch=? "
-                             "WHERE userid=? and interface=?",
+                             "WHERE userid=? COLLATE NOCASE "
+                             "and interface=? COLLATE NOCASE",
                              (switch, userid, interface))
                 LOG.debug("Set switch to %s for user %s with nic %s "
                           "in switch table" %
@@ -198,7 +201,8 @@ class NetworkDbOperator(object):
         else:
             with get_network_conn() as conn:
                 conn.execute("UPDATE switch SET switch=NULL "
-                             "WHERE userid=? and interface=?",
+                             "WHERE userid=? COLLATE NOCASE "
+                             "and interface=? COLLATE NOCASE",
                              (userid, interface))
                 LOG.debug("Set switch to None for user %s with nic %s "
                           "in switch table" %
@@ -225,7 +229,7 @@ class NetworkDbOperator(object):
     def switch_select_record_for_userid(self, userid):
         with get_network_conn() as conn:
             result = conn.execute("SELECT * FROM switch "
-                                  "WHERE userid=?", (userid,))
+                                  "WHERE userid=? COLLATE NOCASE", (userid,))
             switch_info = result.fetchall()
         return self._parse_switch_record(switch_info)
 
@@ -238,13 +242,13 @@ class NetworkDbOperator(object):
         sql_cmd = "SELECT * FROM switch WHERE"
         sql_var = []
         if userid is not None:
-            sql_cmd += " userid=? and"
+            sql_cmd += " userid=? COLLATE NOCASE and"
             sql_var.append(userid)
         if nic_id is not None:
-            sql_cmd += " port=? and"
+            sql_cmd += " port=? COLLATE NOCASE and"
             sql_var.append(nic_id)
         if vswitch is not None:
-            sql_cmd += " switch=?"
+            sql_cmd += " switch=? COLLATE NOCASE"
             sql_var.append(vswitch)
 
         # remove the tailing ' and'
@@ -276,7 +280,7 @@ class FCPDbOperator(object):
     def _update_reserve(self, fcp, reserved):
         with get_fcp_conn() as conn:
             conn.execute("UPDATE fcp SET reserved=? "
-                         "WHERE fcp_id=?",
+                         "WHERE fcp_id=? COLLATE NOCASE",
                          (reserved, fcp))
 
     def unreserve(self, fcp):
@@ -310,31 +314,31 @@ class FCPDbOperator(object):
     def assign(self, fcp, assigner_id):
         with get_fcp_conn() as conn:
             conn.execute("UPDATE fcp SET assigner_id=?, connections=? "
-                         "WHERE fcp_id=?",
+                         "WHERE fcp_id=? COLLATE NOCASE",
                          (assigner_id, 1, fcp))
 
     def delete(self, fcp):
         with get_fcp_conn() as conn:
             conn.execute("DELETE FROM fcp "
-                         "WHERE fcp_id=?", (fcp,))
+                         "WHERE fcp_id=? COLLATE NOCASE", (fcp,))
 
     def increase_usage(self, fcp):
         with get_fcp_conn() as conn:
             result = conn.execute("SELECT * FROM fcp WHERE "
-                                  "fcp_id=?", (fcp,))
+                                  "fcp_id=? COLLATE NOCASE", (fcp,))
             fcp_list = result.fetchall()
             connections = fcp_list[0][2]
             connections += 1
 
             conn.execute("UPDATE fcp SET connections=? "
-                         "WHERE fcp_id=?", (connections, fcp))
+                         "WHERE fcp_id=? COLLATE NOCASE", (connections, fcp))
             return connections
 
     def decrease_usage(self, fcp):
         with get_fcp_conn() as conn:
 
             result = conn.execute("SELECT * FROM fcp WHERE "
-                                  "fcp_id=?", (fcp,))
+                                  "fcp_id=? COLLATE NOCASE", (fcp,))
             fcp_list = result.fetchall()
             connections = fcp_list[0][2]
             connections -= 1
@@ -344,7 +348,7 @@ class FCPDbOperator(object):
                             fcp)
 
             conn.execute("UPDATE fcp SET connections=? "
-                         "WHERE fcp_id=?",
+                         "WHERE fcp_id=? COLLATE NOCASE",
                          (connections, fcp))
             return connections
 
@@ -352,7 +356,8 @@ class FCPDbOperator(object):
         with get_fcp_conn() as conn:
 
             result = conn.execute("SELECT * FROM fcp WHERE "
-                                  "assigner_id=?", (assigner_id,))
+                                  "assigner_id=? COLLATE NOCASE",
+                                  (assigner_id,))
             fcp_list = result.fetchall()
 
         return fcp_list
@@ -368,7 +373,8 @@ class FCPDbOperator(object):
     def get_from_fcp(self, fcp):
         with get_fcp_conn() as conn:
 
-            result = conn.execute("SELECT * FROM fcp where fcp_id=?", (fcp,))
+            result = conn.execute("SELECT * FROM fcp "
+                                  "where fcp_id=? COLLATE NOCASE", (fcp,))
             fcp_list = result.fetchall()
 
         return fcp_list
@@ -429,7 +435,8 @@ class ImageDbOperator(object):
         if imagename:
             with get_image_conn() as conn:
                 result = conn.execute("SELECT * FROM image WHERE "
-                                      "imagename=?", (imagename,))
+                                      "imagename=? COLLATE NOCASE",
+                                      (imagename,))
                 image_list = result.fetchall()
             if not image_list:
                 obj_desc = "Image with name: %s" % imagename
@@ -455,7 +462,8 @@ class ImageDbOperator(object):
     def image_delete_record(self, imagename):
         """Delete the record of specified imagename from image table"""
         with get_image_conn() as conn:
-            conn.execute("DELETE FROM image WHERE imagename=?", (imagename,))
+            conn.execute("DELETE FROM image WHERE imagename=? COLLATE NOCASE",
+                         (imagename,))
 
 
 class GuestDbOperator(object):
@@ -525,7 +533,7 @@ class GuestDbOperator(object):
         # Update guest if exist
         with get_guest_conn() as conn:
             conn.execute(
-                "DELETE FROM guests WHERE id=?", (guest_id,))
+                "DELETE FROM guests WHERE id=? COLLATE NOCASE", (guest_id,))
 
     def delete_guest_by_userid(self, userid):
         # First check whether the guest exist in db table
@@ -534,7 +542,7 @@ class GuestDbOperator(object):
             return
         with get_guest_conn() as conn:
             conn.execute(
-                "DELETE FROM guests WHERE userid=?", (userid,))
+                "DELETE FROM guests WHERE userid=? COLLATE NOCASE", (userid,))
 
     def update_guest_by_id(self, uuid, userid=None, meta=None, net_set=None,
                            comments=None):
@@ -566,7 +574,7 @@ class GuestDbOperator(object):
         # remove the tailing comma
         sql_cmd = sql_cmd.strip(',')
         # Add the id filter
-        sql_cmd += " WHERE id=?"
+        sql_cmd += " WHERE id=? COLLATE NOCASE"
         sql_var.append(uuid)
 
         with get_guest_conn() as conn:
@@ -599,7 +607,7 @@ class GuestDbOperator(object):
         # remove the tailing comma
         sql_cmd = sql_cmd.strip(',')
         # Add the id filter
-        sql_cmd += " WHERE userid=?"
+        sql_cmd += " WHERE userid=? COLLATE NOCASE"
         sql_var.append(userid)
 
         with get_guest_conn() as conn:
@@ -618,7 +626,7 @@ class GuestDbOperator(object):
         userid = userid
         with get_guest_conn() as conn:
             res = conn.execute("SELECT * FROM guests "
-                               "WHERE userid=?", (userid,))
+                               "WHERE userid=? COLLATE NOCASE", (userid,))
             guest = res.fetchall()
 
         if len(guest) == 1:
@@ -647,7 +655,7 @@ class GuestDbOperator(object):
     def get_guest_by_id(self, guest_id):
         with get_guest_conn() as conn:
             res = conn.execute("SELECT * FROM guests "
-                               "WHERE id=?", (guest_id,))
+                               "WHERE id=? COLLATE NOCASE", (guest_id,))
             guest = res.fetchall()
         # As id is the primary key, the filtered entry number should be 0 or 1
         if len(guest) == 1:
@@ -662,7 +670,7 @@ class GuestDbOperator(object):
         userid = userid
         with get_guest_conn() as conn:
             res = conn.execute("SELECT * FROM guests "
-                               "WHERE userid=?", (userid,))
+                               "WHERE userid=? COLLATE NOCASE", (userid,))
             guest = res.fetchall()
         # As id is the primary key, the filtered entry number should be 0 or 1
         if len(guest) == 1:
