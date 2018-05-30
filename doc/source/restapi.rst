@@ -214,7 +214,7 @@ Configure additional disks for a guest
   - disk_info: disk_info
   - disk_list: additional_disk_guest
   - vdev: disk_vdev
-  - format: format_disk
+  - format: format_disk_required
   - mntdir: disk_mountpoint
 
 * Request sample:
