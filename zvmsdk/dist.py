@@ -858,7 +858,8 @@ class sles12(sles):
                           'udevadm settle',
                           'sleep 2',
                           'znetconf -A',
-                          'cio_ignore -u'))
+                          'cio_ignore -u',
+                          'systemctl restart network'))
 
     def get_scp_string(self, root, fcp, wwpn, lun):
         return ("=root=%(root)s zfcp.allow_lun_scan=0 "
