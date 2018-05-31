@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "07bf1f81_81a8bbbc",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-05-31T07:44:21Z",
+      "side": 1,
+      "message": "missing , at the end of each line?",
+      "range": {
+        "startLine": 269,
+        "startChar": 12,
+        "endLine": 271,
+        "endChar": 59
+      },
+      "revId": "b7e6ca30bc51d3d487affb631369d46ca61d1ae3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
