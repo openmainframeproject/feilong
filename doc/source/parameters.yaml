@@ -196,14 +196,14 @@ format_disk:
   description: |
     Format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``xfs``.
   in: body
-  required: true
+  required: false
   type: string
 is_boot_disk:
   description: |
     is boot disk or not. For the root disk, this key must be set to
     indicate the image that will be deployed on this disk.
   in: body
-  required: true
+  required: false
   type: bool
 disk_pool_guest:
   description: |
@@ -240,7 +240,7 @@ disk_vdev:
     is 0100, zvmsdk will use 0101 as the vdev for first additional disk in disk_info, 0102 as
     the second additional disk's vdev
   in: body
-  required: False
+  required: false
   type: string
 disk_mountpoint:
   description: |
@@ -248,7 +248,13 @@ disk_mountpoint:
     zvmsdk will use /mnt/ephemeral0 as the mount point of first additional disk, /mnt/ephemeral1
     as the mount point of second additional disk
   in: body
-  required: False
+  required: false
+  type: string
+format_disk_required:
+  description: |
+    Format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``xfs``.
+  in: body
+  required: true
   type: string
 userid_list_guest:
   description: |
