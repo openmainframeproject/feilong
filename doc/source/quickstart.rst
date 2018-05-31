@@ -234,7 +234,7 @@ Change to nova user and inject the zvmsdk server's public key into it.
     mv $HOME/id_rsa.pub $HOME/.ssh/authorized_keys
 
 where:
-zvmsdk: is running user the of BYOL server.
+zvmsdk: is running user of the BYOL server.
 zvmsdk-ip: is the IP address of the BYOL server
 Note: If the $HOME/.ssh/authorized_keys file already exists,
 you just need to append the BYOL’s public key to it.
