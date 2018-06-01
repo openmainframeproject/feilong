@@ -109,6 +109,7 @@ ModRCs = {
     'volume': 30,
     'image': 40,
     'monitor': 50,
+    'file': 60,
     'sdkserver': 100,
     'sdkwsgi': 120,
     # The 'zvmsdk' is used as the default module if module is not specified
@@ -222,10 +223,17 @@ errors = {
                  },
                 "Operation on Monitor failed"
                 ],
+# File Operation failed
+    'file': [{'overallRC': 300, 'modID': ModRCs['file'], 'rc': 300},
+             {1: "File import operation failed",
+              2: "File export operation failed"},
+             "Operation on file failed"
+            ],
 # REST API Request error (Only used by sdkwsgi)
 # 'modID' would be set to ModRC['sdkwsgi']
     'RESTAPI': [{'overallRC': 400, 'modID': ModRCs['sdkwsgi'], 'rc': 400},
-                {},
+                {1: "Invalid request",
+                 },
                 "REST API Request error"
                 ],
 # Object not exist

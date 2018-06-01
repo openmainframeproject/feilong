@@ -221,6 +221,17 @@ netboot directory accordingly. Two kinds of image repository looks like:
 /var/lib/zvmsdk/images/netboot/<image_osversion>/<imagename>
 /var/lib/zvmsdk/images/staging/<image_osversion>/<imagename>
     '''),
+    # file options
+    Opt('file_repository',
+        section='file',
+        default='/var/lib/zvmsdk/files',
+        help='''
+Directory to store sdk imported or exported files.
+
+SDK file repository to store the imported files and the files that will be
+exported, the imported files will be put into <file_repository>/imported
+the files to be exported will be put into <file_repository>/exported
+    '''),
     # network options
     Opt('my_ip',
         section='network',

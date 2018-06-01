@@ -130,4 +130,8 @@ IMAGE_TYPE = {
     'DEPLOY': 'netboot',
     'CAPTURE': 'staging'}
 
+FILE_TYPE = {
+    'IMPORT': 'imported',
+    'EXPORT': 'exported'}
+
 SDK_DATA_PATH = '/var/lib/zvmsdk/'

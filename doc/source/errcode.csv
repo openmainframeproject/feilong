@@ -42,7 +42,7 @@
 **Operation on Monitor failed**
 300;50;300;1;Database operation failed, error: %(msg)s
 **REST API Request error**
-400;120;400;;REST API Request error
+400;120;400;1;Invalid request
 **The operated object does not exist**
 404;None;404;1;%(obj_desc)s does not exist.
 **The operated object status conflict**

@@ -177,6 +177,16 @@ class PathUtils(object):
             os.makedirs(zvmsdk_image_import_repo)
         return zvmsdk_image_import_repo
 
+    def create_file_repository(self, file_type):
+        zvmsdk_file_repo = os.path.join(CONF.file.sdk_file_repository,
+                                        file_type)
+
+        if not os.path.exists(zvmsdk_file_repo):
+            LOG.debug('Creating file repository %s for file transfer',
+                      zvmsdk_file_repo)
+            os.makedirs(zvmsdk_file_repo)
+        return zvmsdk_file_repo
+
 
 def to_utf8(text):
     if isinstance(text, bytes):
