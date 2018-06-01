@@ -114,7 +114,9 @@ class TestzCCClient(object):
                      max_cpu=CONF.zvm.user_default_max_cpu,
                      max_mem=CONF.zvm.user_default_max_memory):
         body = {"guest": {"userid": userid, "vcpus": vcpus,
-                          "memory": memory, "disk_list": disk_list}}
+                          "memory": memory, "disk_list": disk_list,
+                          "user_profile": user_profile,
+                          "max_cpu": max_cpu, "max_mem": max_mem}}
         body = json.dumps(body)
         return self.api_request(url='/guests', method='POST', body=body)
 
@@ -208,10 +210,10 @@ class TestzCCClient(object):
                                     active=False):
         if active:
             content = {"info": {"couple": "True",
-                                "vswitch": vswitch_name, "active": "True"}}
+                                "vswitch": vswitch_name, "active": True}}
         else:
             content = {"info": {"couple": "True",
-                                "vswitch": vswitch_name, "active": "False"}}
+                                "vswitch": vswitch_name, "active": False}}
         body = json.dumps(content)
 
         url = '/guests/%s/nic/%s' % (userid, nic_vdev)
@@ -238,7 +240,8 @@ class TestzCCClient(object):
         url = '/guests/%s/disks' % userid
         return self.api_request(url=url, method='DELETE', body=body)
 
-    def guest_config_minidisks(self, userid, disk_info):
+    def guest_config_minidisks(self, userid, disk_list):
+        disk_info = {"disk_info": {"disk_list": disk_list}}
         body = json.dumps(disk_info)
         url = '/guests/%s/disks' % userid
 
@@ -315,7 +318,7 @@ class TestzCCClient(object):
         url = '/guests/interfacestats?userid=%s' % userid
         return self.api_request(url=url, method='GET')
 
-    def guest_get_nic_info(self, userid=None, nic_id=None, vswitch=None):
+    def guests_get_nic_info(self, userid=None, nic_id=None, vswitch=None):
         if ((userid is None) and
             (nic_id is None) and
             (vswitch is None)):
@@ -469,12 +472,6 @@ class ZVMConnectorTestUtils(object):
                                              CONF.tests.vswitch)
         self.client.vswitch_grant_user(CONF.tests.vswitch, userid)
 
-        # Power on the vm
-        print("Power on userid %s ..." % userid)
-        self.client.guest_start(userid)
-        # Wait IUCV path
-        self.wait_until_guest_reachable(userid)
-
         return userid, ip_addr
 
     def destroy_guest(self, userid):
@@ -523,4 +520,4 @@ class ZVMConnectorTestUtils(object):
 
     def power_on_guest_until_reachable(self, userid):
         self.client.guest_start(userid)
-        self.wait_until_guest_reachable(userid)
+        return self.wait_until_guest_reachable(userid)
