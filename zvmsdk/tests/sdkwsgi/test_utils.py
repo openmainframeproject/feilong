@@ -238,7 +238,8 @@ class TestzCCClient(object):
         url = '/guests/%s/disks' % userid
         return self.api_request(url=url, method='DELETE', body=body)
 
-    def guest_config_minidisks(self, userid, disk_info):
+    def guest_config_minidisks(self, userid, disk_list):
+        disk_info = {"disk_info": {"disk_list": disk_list}}
         body = json.dumps(disk_info)
         url = '/guests/%s/disks' % userid
 
@@ -468,12 +469,6 @@ class ZVMConnectorTestUtils(object):
         self.client.guest_nic_couple_to_vswitch(userid, nic_vdev,
                                              CONF.tests.vswitch)
         self.client.vswitch_grant_user(CONF.tests.vswitch, userid)
-
-        # Power on the vm
-        print("Power on userid %s ..." % userid)
-        self.client.guest_start(userid)
-        # Wait IUCV path
-        self.wait_until_guest_reachable(userid)
 
         return userid, ip_addr
 

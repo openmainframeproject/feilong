@@ -26,10 +26,10 @@ from zvmsdk import smutclient
 CONF = config.CONF
 
 
-class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
+class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
 
     def __init__(self, methodName='runTest'):
-        super(GuestHandlerTestCase, self).__init__(methodName)
+        super(GuestHandlerBase, self).__init__(methodName)
         self.apibase = api_sample.APITestBase()
 
         # test change bind_port
@@ -43,10 +43,6 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
         self.userid = self.utils.generate_test_userid()
         self.test_vsw = "RESTVSW1"
         self.test_vsw2 = "RESTVSW2"
-
-    def setUp(self):
-        super(GuestHandlerTestCase, self).setUp()
-        self.record_logfile_position()
 
     def _check_CPU_MEM(self, userid, cpu_cnt=None, cpu_cnt_live=None,
                        maxcpu=CONF.zvm.user_default_max_cpu,
@@ -137,14 +133,14 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
 
     def _guest_config_minidisk_multiple(self, userid):
         """Configure minidisk 101, 102"""
-        disk_info = {"disk_list": [{"vdev": "0101",
-                                    "format": "ext3",
-                                    "mntdir": "/mnt/0101"},
-                                   {"vdev": "0102",
-                                    "format": "ext3",
-                                    "mntdir": "/mnt/0102"}]}
+        disk_list = [{"vdev": "0101",
+                      "format": "ext3",
+                      "mntdir": "/mnt/0101"},
+                     {"vdev": "0102",
+                      "format": "ext3",
+                      "mntdir": "/mnt/0102"}]
 
-        return self.client.guest_config_minidisks(userid, disk_info)
+        return self.client.guest_config_minidisks(userid, disk_list)
 
     def _check_nic(self, vdev, userid, mac=None, vsw=None, devices=3,
                    osa=None):
@@ -263,6 +259,13 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
                     osa_2 in osa_info['OSA']['FREE']):
                     return osa
             return None
+
+
+class GuestHandlerTestCase(GuestHandlerBase):
+
+    def setUp(self):
+        super(GuestHandlerTestCase, self).setUp()
+        self.record_logfile_position()
 
     def test_guest_get_not_exist(self):
         resp = self.client.guest_get_definition_info('notexist')
@@ -783,12 +786,16 @@ class GuestHandlerTestCase(base.ZVMConnectorBaseTestCase):
                             maxcpu=10, maxmem="2048M")
 
 
-class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerTestCase):
+class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerBase):
 
     @classmethod
     def setUpClass(cls):
         super(GuestHandlerTestCaseWithDeployedGuest, cls).setUpClass()
+        cls.client = test_utils.TestzCCClient()
+        cls.utils = test_utils.ZVMConnectorTestUtils()
         cls.userid_exists = cls.utils.deploy_guest()[0]
+        cls.client.guest_stop(cls.userid_exists)
+        cls.utils.wait_until_guest_in_power_state(cls.userid_exists, 'off')
 
     @classmethod
     def tearDownClass(cls):
@@ -796,12 +803,19 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerTestCase):
         cls.client.vswitch_delete('restvsw1')
         cls.client.guest_delete(cls.userid_exists)
 
+    def tearDown(self):
+        # make sure the guest in shutdown state
+        self.client.guest_stop(self.userid_exists)
+        self.assertTrue(self.utils.wait_until_guest_in_power_state(
+            self.userid_exists, 'off'))
+
+        GuestHandlerBase.tearDown(self)
+
     def test_guest_get_console_output(self):
         # power on
         self.client.guest_start(self.userid_exists)
         self.assertTrue(self.utils.wait_until_guest_in_power_state(
                                                 self.userid_exists, "on"))
-        self.addCleanup(self.client.guest_stop, self.userid_exists)
 
         # get console output
         resp = self.client.guest_get_console_output(self.userid_exists)
@@ -810,11 +824,6 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerTestCase):
         self.assertNotEqual(outputs, '')
 
     def test_guest_power_actions(self):
-        # make sure the guest in power off state
-        self.client.guest_stop(self.userid_exists)
-        self.assertTrue(self.utils.wait_until_guest_in_power_state(
-                                                self.userid_exists, "off"))
-
         # power on
         resp = self.client.guest_start(self.userid_exists)
         self.assertEqual(200, resp.status_code)
@@ -829,17 +838,17 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerTestCase):
 
         # reboot and reset
         resp = self.client.guest_reboot(self.userid_exists)
-        self.assertTrue(self._wait_until(False, self.is_reachable,
-                                         self.userid))
-        self.assertTrue(self._wait_until(True, self.is_reachable,
-                                         self.userid))
+        self.assertTrue(self.utils._wait_until(False,
+                           self.utils.is_guest_reachable, self.userid_exists))
+        self.assertTrue(self.utils.wait_until_guest_reachable(
+                                                        self.userid_exists))
         self.assertEqual(200, resp.status_code)
 
         resp = self.client.guest_reset(self.userid_exists)
-        self.assertTrue(self._wait_until(False, self.is_reachable,
-                                         self.userid))
-        self.assertTrue(self._wait_until(True, self.is_reachable,
-                                         self.userid))
+        self.assertTrue(self.utils._wait_until(False,
+                           self.utils.is_guest_reachable, self.userid_exists))
+        self.assertTrue(self.utils.wait_until_guest_reachable(
+                                                        self.userid_exists))
         self.assertEqual(200, resp.status_code)
 
         # power off
@@ -898,12 +907,14 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerTestCase):
         resp = self.client.guest_create_network_interface(self.userid_exists,
                           CONF.tests.image_os_version, guest_networks=if_list)
         self.assertEqual(200, resp.status_code)
+        self.addCleanup(self.client.guest_delete_network_interface(
+                    self.userid_exists, CONF.tests.image_os_version, "2000"))
 
         # Coupling NIC to the vswitch.
-        resp = self.client.guest_nic_couple_to_vswitch(self.useri_exists,
+        resp = self.client.guest_nic_couple_to_vswitch(self.userid_exists,
                                                        "2000")
         self.assertEqual(200, resp.status_code)
-        nic_defined, vsw = self._check_nic("2000", self.useri_exists,
+        nic_defined, vsw = self._check_nic("2000", self.userid_exists,
                                            vsw=CONF.tests.vswitch)
         self.assertTrue(nic_defined)
         self.assertEqual(CONF.tests.vswitch, vsw)
@@ -911,8 +922,8 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerTestCase):
         # Start the guest and check results
         self.client.guest_start(self.userid_exists)
         self.assertEqual(200, resp.status_code)
-        self.assertTrue(self._wait_until(True, self.is_reachable,
-                                         self.userid_exists))
+        self.assertTrue(self.utils.wait_until_guest_reachable(
+                                                        self.userid_exists))
 
         ip_set = self._check_interface(self.userid_exists, ip=ip_addr)
         self.assertTrue(ip_set)
@@ -933,19 +944,23 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerTestCase):
         resp = self.client.guest_create_network_interface(self.userid_exists,
                           CONF.tests.image_os_version, guest_networks=if_list)
         self.assertEqual(200, resp.status_code)
+        self.addCleanup(self.client.guest_delete_network_interface(
+                    self.userid_exists, CONF.tests.image_os_version, "3000"))
+        self.addCleanup(self.client.guest_delete_network_interface(
+                    self.userid_exists, CONF.tests.image_os_version, "4000"))
 
         # Coupling NIC to the vswitch.
-        resp = self.client.guest_nic_couple_to_vswitch(self.useri_exists,
+        resp = self.client.guest_nic_couple_to_vswitch(self.userid_exists,
                                                        "3000")
         self.assertEqual(200, resp.status_code)
-        resp = self.client.guest_nic_couple_to_vswitch(self.useri_exists,
+        resp = self.client.guest_nic_couple_to_vswitch(self.userid_exists,
                                                        "4000")
         self.assertEqual(200, resp.status_code)
-        nic_defined, vsw = self._check_nic("3000", self.useri_exists,
+        nic_defined, vsw = self._check_nic("3000", self.userid_exists,
                                            vsw=CONF.tests.vswitch)
         self.assertTrue(nic_defined)
         self.assertEqual(CONF.tests.vswitch, vsw)
-        nic_defined, vsw = self._check_nic("4000", self.useri_exists,
+        nic_defined, vsw = self._check_nic("4000", self.userid_exists,
                                            vsw=CONF.tests.vswitch)
         self.assertTrue(nic_defined)
         self.assertEqual(CONF.tests.vswitch, vsw)
@@ -953,8 +968,8 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerTestCase):
         # Start the guest and check results
         self.client.guest_start(self.userid_exists)
         self.assertEqual(200, resp.status_code)
-        self.assertTrue(self._wait_until(True, self.is_reachable,
-                                         self.userid_exists))
+        self.assertTrue(self.utils.wait_until_guest_reachable(
+                                                        self.userid_exists))
 
         for addr in (ip_addr2, ip_addr3):
             ip_set = self._check_interface(self.userid_exists, ip=addr)
@@ -987,6 +1002,8 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerTestCase):
         resp = self.client.guest_create_network_interface(self.userid_exists,
                       CONF.tests.image_os_version, guest_networks=[if_info])
         self.assertEqual(200, resp.status_code)
+        self.addCleanup(self.client.guest_delete_network_interface(
+                    self.userid_exists, CONF.tests.image_os_version, "2000"))
 
         nic_defined, nic_osa = self._check_nic("2000", self.userid_exists,
                                                osa=osa)
@@ -1011,18 +1028,13 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerTestCase):
 
         # vswitch = "notexist"
         resp = self.client.guest_nic_couple_to_vswitch(self.userid_exists,
-                                                       vswitch_name="NOTEXIST")
+                                               "5000", vswitch_name="NOTEXIST")
         self.assertEqual(404, resp.status_code)
 
         resp = self.client.guest_nic_uncouple_from_vswitch("notexist")
         self.assertEqual(404, resp.status_code)
 
     def test_guest_vswitch_couple_uncouple(self):
-        # make suer the guest in shutdown state
-        self.client.guest_stop(self.userid_exists)
-        self.assertTrue(self.utils.wait_until_guest_in_power_state(
-                                                self.userid_exists, "off"))
-
         # create vswitch
         resp = self.client.vswitch_create(self.test_vsw, rdev='FF00')
         self.assertEqual(200, resp.status_code)
@@ -1192,11 +1204,6 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerTestCase):
         self._check_total_memory(self.userid_exists)
 
     def test_guest_create_delete_nic(self):
-        # make user the guest in shutdown state
-        self.client.guest_stop(self.userid_exists)
-        self.assertTrue(self.utils.wait_until_guest_in_power_state(
-                                                self.userid_exists, "off"))
-
         # Creating NIC with fixed vdev.
         resp = self.client.guest_create_nic(self.userid_exists, vdev="1003")
         self.assertEqual(200, resp.status_code)
@@ -1273,11 +1280,6 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerTestCase):
         self.assertEqual(200, resp.status_code)
         nic_defined, vsw = self._check_nic("2000", self.userid_exists)
         self.assertFalse(nic_defined)
-
-        # shutdown the guest
-        self.client.guest_stop(self.userid_exists)
-        self.assertTrue(self.utils.wait_until_guest_in_power_state(
-                        self.userid_exists, "off"))
 
 
 class GuestActionTestCase(base.ZVMConnectorBaseTestCase):
