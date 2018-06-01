@@ -31,6 +31,9 @@ class ZVMConnectorBaseTestCase(unittest.TestCase):
         super(ZVMConnectorBaseTestCase, self).__init__(methodName)
         self.longMessage = True
         self.start_position = 0
+
+    def setUp(self):
+        super(ZVMConnectorBaseTestCase, self).setUp()
         self.record_logfile_position()
 
     def set_conf(self, section, opt, value):
