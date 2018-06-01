@@ -19,7 +19,7 @@ from zvmsdk.tests.sdkwsgi import base
 from zvmsdk import config
 from zvmsdk import utils
 from zvmsdk.tests.sdkwsgi import api_sample
-from zvmsdk.tests.sdkwsgi import test_sdkwsgi
+from zvmsdk.tests.sdkwsgi import test_utils
 
 
 CONF = config.CONF
@@ -32,59 +32,26 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
         self.apibase = api_sample.APITestBase()
         # test change bind_port
         self.set_conf('sdkserver', 'bind_port', 3001)
-        self.client = test_sdkwsgi.TestSDKClient()
+        self.client = test_utils.TestzCCClient()
+
+        self.dummy_image_fname = "image1"
 
     def setUp(self):
         super(ImageTestCase, self).setUp()
         self.record_logfile_position()
 
-    def _image_create(self):
+    def _import_dummy_image(self):
         image_fname = "image1"
         tempDir = tempfile.mkdtemp()
         os.chmod(tempDir, 0o777)
         image_fpath = '/'.join([tempDir, image_fname])
         utils.make_dummy_image(image_fpath)
-        url = "file://" + image_fpath
-        image_meta = '''{"os_version": "rhel7.2"}'''
 
-        body = """{"image": {"image_name": "%s",
-                             "url": "%s",
-                             "image_meta": %s}}""" % (image_fname, url,
-                                                      image_meta)
+        try:
+            resp = self.client.image_import(image_fpath, "rhel7.2")
+        finally:
+            shutil.rmtree(tempDir)
 
-        resp = self.client.api_request(url='/images', method='POST',
-                                       body=body)
-        shutil.rmtree(tempDir)
-        return resp
-
-    def _image_delete(self, image_name='image1'):
-        url = '/images/%s' % image_name
-        resp = self.client.api_request(url=url, method='DELETE')
-        return resp
-
-    def _image_get_root_disk_size(self, image_name='image1'):
-        url = '/images/%s/root_disk_size' % image_name
-
-        resp = self.client.api_request(url=url, method='GET')
-        return resp
-
-    def _image_query(self, image_name='image1'):
-        url = '/images?imagename=%s' % image_name
-        resp = self.client.api_request(url=url,
-                                       method='GET')
-        return resp
-
-    def _image_export(self, image_name='image1'):
-        url = '/images/%s' % image_name
-        tempDir = tempfile.mkdtemp()
-        os.chmod(tempDir, 0o777)
-        dest_url = ''.join(['file://', tempDir, '/', image_name])
-        body = """{"location": {"dest_url": "%s"}}""" % (dest_url)
-
-        resp = self.client.api_request(url=url,
-                                       method='PUT',
-                                       body=body)
-        shutil.rmtree(tempDir)
         return resp
 
     def test_image_create_empty_body(self):
@@ -120,48 +87,45 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
         self.assertEqual(404, resp.status_code)
 
     def test_image_create_duplicate(self):
-        resp = self._image_create()
+        resp = self._import_dummy_image()
         self.assertEqual(200, resp.status_code)
+        self.addCleanup(self.client.image_delete, self.dummy_image_fname)
 
-        try:
-            resp = self._image_create()
-            self.assertEqual(409, resp.status_code)
-        finally:
-            self._image_delete()
+        resp = self._import_dummy_image()
+        self.assertEqual(409, resp.status_code)
 
     def test_image_export_not_exist(self):
         # image not created yet
-        resp = self._image_export(image_name='dummy')
+        resp = self.client.image_export("dummy")
         self.assertEqual(404, resp.status_code)
 
     def test_image_query_not_exist(self):
-        resp = self._image_query(image_name='dummy')
+        resp = self.client.image_query("dummy")
         self.assertEqual(404, resp.status_code)
 
     def test_image_delete_not_exist(self):
-        resp = self._image_delete(image_name='dummy')
+        resp = self.client.image_delete("dummy")
         self.assertEqual(404, resp.status_code)
 
     def test_image_get_root_disk_size_not_exist(self):
-        resp = self._image_get_root_disk_size(image_name='dummy')
+        resp = self.client.image_get_root_disk_size(self.dummy_image_fname)
         self.assertEqual(404, resp.status_code)
 
     def test_image_create_delete(self):
-        self._image_create()
+        """Senario tests for image operations."""
+        resp = self._import_dummy_image()
+        self.assertEqual(200, resp.status_code)
+        self.addCleanup(self.client.image_delete, self.dummy_image_fname)
 
-        try:
-            resp = self._image_query()
-            self.assertEqual(200, resp.status_code)
-            self.apibase.verify_result('test_image_query', resp.content)
+        resp = self.client.image_query(self.dummy_image_fname)
+        self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_image_query', resp.content)
 
-            resp = self._image_get_root_disk_size()
-            self.assertEqual(200, resp.status_code)
-            self.apibase.verify_result('test_image_get_root_disk_size',
-                                       resp.content)
+        resp = self.client.image_get_root_disk_size(self.dummy_image_fname)
+        self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_image_get_root_disk_size',
+                                   resp.content)
 
-            resp = self._image_export()
-            self.assertEqual(200, resp.status_code)
-            self.apibase.verify_result('test_image_export', resp.content)
-        finally:
-            # if delete failed, anyway we can't re-delete it because of failure
-            self._image_delete()
+        resp = self.client.image_export(self.dummy_image_fname)
+        self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_image_export', resp.content)
