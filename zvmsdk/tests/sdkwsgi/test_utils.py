@@ -469,12 +469,6 @@ class ZVMConnectorTestUtils(object):
                                              CONF.tests.vswitch)
         self.client.vswitch_grant_user(CONF.tests.vswitch, userid)
 
-        # Power on the vm
-        print("Power on userid %s ..." % userid)
-        self.client.guest_start(userid)
-        # Wait IUCV path
-        self.wait_until_guest_reachable(userid)
-
         return userid, ip_addr
 
     def destroy_guest(self, userid):
