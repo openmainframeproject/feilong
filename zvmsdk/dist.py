@@ -230,7 +230,8 @@ class LinuxDist(object):
         try:
             self._set_zfcp_config_files(assigner_id, fcp, target_wwpn,
                                         target_lun)
-            self._set_zfcp_multipath(assigner_id, multipath)
+            if multipath:
+                self._set_zfcp_multipath(assigner_id)
         except exception.SDKSMUTRequestFailed as err:
             errmsg = err.format_message()
             LOG.error(errmsg)
@@ -248,7 +249,8 @@ class LinuxDist(object):
                                     target_lun, multipath):
         self._offline_fcp_device(assigner_id, fcp, target_wwpn,
                                  target_lun, multipath)
-        self._restart_multipath(assigner_id, multipath)
+        if multipath:
+            self._restart_multipath(assigner_id)
 
     @abc.abstractmethod
     def _online_fcp_device(self, assigner_id, fcp):
@@ -265,11 +267,11 @@ class LinuxDist(object):
         pass
 
     @abc.abstractmethod
-    def _restart_multipath(self, assigner_id, multipath):
+    def _restart_multipath(self, assigner_id):
         pass
 
     @abc.abstractmethod
-    def _set_zfcp_multipath(self, assigner_id, multipath):
+    def _set_zfcp_multipath(self, assigner_id):
         pass
 
     @abc.abstractmethod
@@ -435,7 +437,7 @@ class rhel(LinuxDist):
         offline_dev = 'chccwdev -d %s' % fcp
         self.execute_cmd(assigner_id, offline_dev)
 
-    def _set_zfcp_multipath(self, assigner_id, multipath):
+    def _set_zfcp_multipath(self, assigner_id):
         """sampe to all rhel distro ???"""
         # TODO: multipath?
         # update multipath configuration
@@ -446,7 +448,7 @@ class rhel(LinuxDist):
         self.execute_cmd(assigner_id, cmd)
         mpathconf = 'mpathconf'
         self.execute_cmd(assigner_id, mpathconf)
-        self._restart_multipath(assigner_id, multipath)
+        self._restart_multipath(assigner_id)
 
     def _config_to_persistent(self, assigner_id):
         """rhel"""
@@ -502,7 +504,7 @@ class rhel6(rhel):
                              self._get_all_device_filename())
         return '\nrm -f %s\n' % files
 
-    def _restart_multipath(self, assigner_id, multipath):
+    def _restart_multipath(self, assigner_id):
         """rhel6"""
         start_multipathd = '/sbin/multipath -r'
         self.execute_cmd(assigner_id, start_multipathd)
@@ -595,7 +597,7 @@ class rhel7(rhel):
                            'lun': target_lun}
         self.execute_cmd(assigner_id, set_zfcp_conf)
 
-    def _restart_multipath(self, assigner_id, multipath):
+    def _restart_multipath(self, assigner_id):
         """rhel7"""
         start_multipathd = '/sbin/multipath -r'
         self.execute_cmd(assigner_id, start_multipathd)
@@ -794,13 +796,13 @@ class sles(LinuxDist):
                        'lun': target_lun}
         self.execute_cmd(assigner_id, disk_config)
 
-    def _restart_multipath(self, assigner_id, multipath):
+    def _restart_multipath(self, assigner_id):
         """sles restart multipath"""
         # reload device mapper
         reload_map = 'systemctl restart multipathd'
         self.execute_cmd(assigner_id, reload_map)
 
-    def _set_zfcp_multipath(self, assigner_id, multipath):
+    def _set_zfcp_multipath(self, assigner_id):
         """sles"""
         # modprobe DM multipath kernel module
         modprobe = 'modprobe dm_multipath'
@@ -810,7 +812,7 @@ class sles(LinuxDist):
         conf_file += '#}\n'
         cmd = 'echo -e %s > /etc/multipath.conf' % conf_file
         self.execute_cmd(assigner_id, cmd)
-        self._restart_multipath(assigner_id, multipath)
+        self._restart_multipath(assigner_id)
 
     def _offline_fcp_device(self, assigner_id, fcp, target_wwpn,
                             target_lun, multipath):
@@ -1112,12 +1114,12 @@ class ubuntu(LinuxDist):
         errmsg = 'multipath-tools not installed.'
         self.execute_cmd(assigner_id, multipath, msg=errmsg)
 
-    def _restart_multipath(self, assigner_id, multipath):
+    def _restart_multipath(self, assigner_id):
         # restart multipathd
         reload_map = 'systemctl restart multipath-tools.service'
         self.execute_cmd(assigner_id, reload_map)
 
-    def _set_zfcp_multipath(self, assigner_id, multipath):
+    def _set_zfcp_multipath(self, assigner_id):
         """ubuntu multipath setup
         multipath-tools and multipath-tools-boot must be set.
         """
@@ -1127,7 +1129,7 @@ class ubuntu(LinuxDist):
         conf_file += '#}\n'
         cmd = 'echo -e %s > /etc/multipath.conf' % conf_file
         self.execute_cmd(assigner_id, cmd)
-        self._restart_multipath(assigner_id, multipath)
+        self._restart_multipath(assigner_id)
 
     def _offline_fcp_device(self, assigner_id, fcp, target_wwpn,
                             target_lun, multipath):
