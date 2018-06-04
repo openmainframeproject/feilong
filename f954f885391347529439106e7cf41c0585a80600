@@ -22,6 +22,30 @@
       "revId": "f954f885391347529439106e7cf41c0585a80600",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36f3a09b_c0fdef61",
+        "filename": "zvmconnector/restclient.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 910,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-06-04T07:04:31Z",
+      "side": 1,
+      "message": "Ok, will do it",
+      "parentUuid": "40833811_9e9c61e5",
+      "range": {
+        "startLine": 894,
+        "startChar": 1,
+        "endLine": 910,
+        "endChar": 1
+      },
+      "revId": "f954f885391347529439106e7cf41c0585a80600",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
