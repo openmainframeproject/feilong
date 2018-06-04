@@ -98,49 +98,57 @@ class VolumeConfiguratorAPI(object):
         self._dist_manager = dist.LinuxDistManager()
 
     def config_attach(self, fcp, assigner_id, target_wwpn, target_lun,
-                      multipath, os_version):
+                      multipath, os_version, mount_point):
         if self._vmop.is_reachable(assigner_id):
             self.config_attach_active(fcp, assigner_id, target_wwpn,
-                                      target_lun, multipath, os_version)
+                                      target_lun, multipath, os_version,
+                                      mount_point)
         else:
             self.config_attach_inactive(fcp, assigner_id, target_wwpn,
-                                        target_lun, multipath, os_version)
+                                        target_lun, multipath, os_version,
+                                        mount_point)
 
     def config_force_attach(self, fcp, assigner_id, target_wwpn, target_lun,
                             multipath, os_version):
         pass
 
     def config_detach(self, fcp, assigner_id, target_wwpn, target_lun,
-                      multipath, os_version):
+                      multipath, os_version, mount_point):
         if self._vmop.is_reachable(assigner_id):
             self.config_detach_active(fcp, assigner_id, target_wwpn,
-                                      target_lun, multipath, os_version)
+                                      target_lun, multipath, os_version,
+                                      mount_point)
         else:
             self.config_detach_inactive(fcp, assigner_id, target_wwpn,
-                                        target_lun, multipath, os_version)
+                                        target_lun, multipath, os_version,
+                                        mount_point)
 
     def config_force_detach(self, fcp, assigner_id, target_wwpn, target_lun,
                             multipath, os_version):
         pass
 
     def config_attach_active(self, fcp, assigner_id, target_wwpn,
-                             target_lun, multipath, os_version):
+                             target_lun, multipath, os_version, mount_point):
         linuxdist = self._dist_manager.get_linux_dist(os_version)()
         linuxdist.config_volume_attach_active(fcp, assigner_id, target_wwpn,
-                                              target_lun, multipath)
+                                              target_lun, multipath,
+                                              mount_point)
 
     def config_attach_inactive(self, fcp, assigner_id, target_wwpn,
-                               target_lun, multipath, os_version):
+                               target_lun, multipath, os_version, mount_point):
         raise NotImplementedError
 
     def config_detach_active(self, fcp, assigner_id, target_wwpn,
-                             target_lun, multipath, os_version):
+                             target_lun, multipath, os_version,
+                             mount_point):
         linuxdist = self._dist_manager.get_linux_dist(os_version)()
         linuxdist.config_volume_detach_active(fcp, assigner_id, target_wwpn,
-                                              target_lun, multipath)
+                                              target_lun, multipath,
+                                              mount_point)
 
     def config_detach_inactive(self, fcp, assigner_id, target_wwpn,
-                               target_lun, multipath, os_version):
+                               target_lun, multipath, os_version,
+                               mount_point):
         raise NotImplementedError
 
 
@@ -411,12 +419,13 @@ class FCPVolumeManager(object):
         self._smutclient.dedicate_device(assigner_id, fcp, fcp, 0)
 
     def _add_disk(self, fcp, assigner_id, target_wwpn, target_lun,
-                  multipath, os_version):
+                  multipath, os_version, mount_point):
         self.config_api.config_attach(fcp, assigner_id, target_wwpn,
-                                      target_lun, multipath, os_version)
+                                      target_lun, multipath, os_version,
+                                      mount_point)
 
     def _attach(self, fcp, assigner_id, target_wwpn, target_lun,
-                multipath, os_version):
+                multipath, os_version, mount_point):
         """Attach a volume
 
         First, we need translate fcp into local wwpn, then
@@ -431,7 +440,7 @@ class FCPVolumeManager(object):
                 self._dedicate_fcp(fcp, assigner_id)
 
             self._add_disk(fcp, assigner_id, target_wwpn, target_lun,
-                           multipath, os_version)
+                           multipath, os_version, mount_point)
         except exception.SDKBaseException as err:
             errmsg = 'rollback attach because error:' + err.format_message()
             LOG.error(errmsg)
@@ -462,27 +471,29 @@ class FCPVolumeManager(object):
         assigner_id = connection_info['assigner_id']
         multipath = connection_info['multipath']
         os_version = connection_info['os_version']
+        mount_point = connection_info['mount_point']
 
         self._attach(fcp, assigner_id, target_wwpn, target_lun,
-                     multipath, os_version)
+                     multipath, os_version, mount_point)
 
     def _undedicate_fcp(self, fcp, assigner_id):
         self._smutclient.undedicate_device(assigner_id, fcp)
 
     def _remove_disk(self, fcp, assigner_id, target_wwpn, target_lun,
-                     multipath, os_version):
+                     multipath, os_version, mount_point):
         self.config_api.config_detach(fcp, assigner_id, target_wwpn,
-                                      target_lun, multipath, os_version)
+                                      target_lun, multipath, os_version,
+                                      mount_point)
 
     def _detach(self, fcp, assigner_id, target_wwpn, target_lun,
-                multipath, os_version):
+                multipath, os_version, mount_point):
         """Detach a volume from a guest"""
         LOG.info('Start to detach device from %s' % assigner_id)
         connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
 
         try:
             self._remove_disk(fcp, assigner_id, target_wwpn, target_lun,
-                              multipath, os_version)
+                              multipath, os_version, mount_point)
             if not connections:
                 self._undedicate_fcp(fcp, assigner_id)
         except (exception.SDKBaseException,
@@ -492,7 +503,7 @@ class FCPVolumeManager(object):
             self.fcp_mgr.increase_fcp_usage(fcp, assigner_id)
             with zvmutils.ignore_errors():
                 self._add_disk(fcp, assigner_id, target_wwpn, target_lun,
-                               multipath, os_version)
+                               multipath, os_version, mount_point)
             raise exception.SDKBaseException(msg=errmsg)
 
         LOG.info('Detaching device to %s is done.' % assigner_id)
@@ -507,9 +518,10 @@ class FCPVolumeManager(object):
         assigner_id = connection_info['assigner_id']
         multipath = connection_info['multipath']
         os_version = connection_info['os_version']
+        mount_point = connection_info['mount_point']
 
         self._detach(fcp, assigner_id, target_wwpn, target_lun, multipath,
-                     os_version)
+                     os_version, mount_point)
 
     def get_volume_connector(self, assigner_id):
         """Get volume connector, mainly get a fcp
