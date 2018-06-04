@@ -37,14 +37,16 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
         target_lun = '2222'
         multipath = ''
         os_version = 'rhel7'
+        mount_point = '/dev/sdz'
 
         is_reachable.return_value = True
 
         self.configurator.config_attach(fcp, assigner_id, target_wwpn,
-                                        target_lun, multipath, os_version)
+                                        target_lun, multipath, os_version,
+                                        mount_point)
         attach_active.assert_called_once_with(fcp, assigner_id, target_wwpn,
                                               target_lun, multipath,
-                                              os_version)
+                                              os_version, mount_point)
 
     @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI.config_attach_inactive")
     @mock.patch("zvmsdk.vmops.VMOps.is_reachable")
@@ -55,14 +57,16 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
         target_lun = '2222'
         multipath = ''
         os_version = 'rhel7'
+        mount_point = '/dev/sdz'
 
         is_reachable.return_value = False
 
         self.configurator.config_attach(fcp, assigner_id, target_wwpn,
-                                        target_lun, multipath, os_version)
+                                        target_lun, multipath, os_version,
+                                        mount_point)
         attach_inactive.assert_called_once_with(fcp, assigner_id, target_wwpn,
                                               target_lun, multipath,
-                                              os_version)
+                                              os_version, mount_point)
 
     def test_config_force_attach(self):
         pass
@@ -78,12 +82,14 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
         target_lun = '2222'
         multipath = ''
         os_version = 'rhel7'
+        mount_point = '/dev/sdz'
         self.configurator.config_attach_active(fcp, assigner_id,
                                                target_wwpn, target_lun,
-                                               multipath, os_version)
+                                               multipath, os_version,
+                                               mount_point)
         dist_attach_active.assert_called_once_with(fcp, assigner_id,
                                                    target_wwpn, target_lun,
-                                                   multipath)
+                                                   multipath, mount_point)
 
     @mock.patch("zvmsdk.dist.LinuxDist.config_volume_detach_active")
     def test_config_detach_active(self, dist_detach_active):
@@ -93,12 +99,14 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
         target_lun = '2222'
         multipath = ''
         os_version = 'rhel7'
+        mount_point = '/dev/sdz'
         self.configurator.config_detach_active(fcp, assigner_id,
                                                target_wwpn, target_lun,
-                                               multipath, os_version)
+                                               multipath, os_version,
+                                               mount_point)
         dist_detach_active.assert_called_once_with(fcp, assigner_id,
                                                    target_wwpn, target_lun,
-                                                   multipath)
+                                                   multipath, mount_point)
 
 
 class TestFCP(base.SDKTestCase):
@@ -364,6 +372,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'target_wwpn': '1111',
                            'target_lun': '2222',
                            'zvm_fcp': 'b83c',
+                           'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
         self.db_op = database.FCPDbOperator()
         self.db_op.new('b83c')
@@ -372,7 +381,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.volumeops.attach(connection_info)
             mock_dedicate.assert_called_once_with('b83c', 'user1')
             mock_add_disk.assert_called_once_with('b83c', 'user1', '1111',
-                                                  '2222', False, 'rhel7')
+                                                  '2222', False, 'rhel7',
+                                                  '/dev/sdz')
         finally:
             self.db_op.delete('b83c')
 
@@ -387,6 +397,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'target_wwpn': '1111',
                            'target_lun': '2222',
                            'zvm_fcp': 'b83c',
+                           'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
         self.db_op = database.FCPDbOperator()
         self.db_op.new('b83c')
@@ -397,7 +408,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.volumeops.attach(connection_info)
             self.assertFalse(mock_dedicate.called)
             mock_add_disk.assert_called_once_with('b83c', 'user1', '1111',
-                                                  '2222', False, 'rhel7')
+                                                  '2222', False, 'rhel7',
+                                                  '/dev/sdz')
         finally:
             self.db_op.delete('b83c')
 
@@ -414,6 +426,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'target_wwpn': '1111',
                            'target_lun': '2222',
                            'zvm_fcp': 'b83c',
+                           'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
         mock_increase.return_value = True
         results = {'rs': 0, 'errno': 0, 'strError': '',
@@ -441,6 +454,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'target_wwpn': '1111',
                            'target_lun': '2222',
                            'zvm_fcp': 'b83c',
+                           'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
         # this return does not matter
         mock_decrease.return_value = 0
@@ -454,7 +468,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
                           connection_info)
         mock_increase.assert_called_once_with('b83c', 'user1')
         mock_add_disk.assert_called_once_with('b83c', 'user1', '1111',
-                                              '2222', False, 'rhel7')
+                                              '2222', False, 'rhel7',
+                                              '/dev/sdz')
 
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disk")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
@@ -467,6 +482,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'target_wwpn': '1111',
                            'target_lun': '2222',
                            'zvm_fcp': 'b83c',
+                           'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
         self.db_op = database.FCPDbOperator()
         self.db_op.new('b83c')
@@ -475,7 +491,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
         try:
             self.volumeops.detach(connection_info)
             mock_remove_disk.assert_called_once_with('b83c', 'user1', '1111',
-                                                     '2222', False, 'rhel7')
+                                                     '2222', False, 'rhel7',
+                                                     '/dev/sdz')
             mock_undedicate.assert_called_once_with('b83c', 'user1')
         finally:
             self.db_op.delete('b83c')
@@ -491,6 +508,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'target_wwpn': '1111',
                            'target_lun': '2222',
                            'zvm_fcp': 'b83c',
+                           'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
         self.db_op = database.FCPDbOperator()
         self.db_op.new('b83c')
@@ -501,6 +519,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.volumeops.detach(connection_info)
             self.assertFalse(mock_undedicate.called)
             mock_remove_disk.assert_called_once_with('b83c', 'user1', '1111',
-                                                     '2222', False, 'rhel7')
+                                                     '2222', False, 'rhel7',
+                                                     '/dev/sdz')
         finally:
             self.db_op.delete('b83c')
