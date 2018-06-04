@@ -591,6 +591,11 @@ class rhel7(rhel):
                                target_lun):
         """rhel7 set WWPN and LUN in configuration files"""
         device = '0.0.%s' % fcp
+        # add to port(WWPN)
+        unit_add = "echo '%s' > " % target_lun
+        unit_add += "/sys/bus/ccw/drivers/zfcp/%(device)s/%(wwpn)s/unit_add"\
+                    % {'device': device, 'wwpn': target_wwpn}
+        self.execute_cmd(assigner_id, unit_add)
         # configure to persistent
         set_zfcp_conf = 'echo %(device)s %(wwpn)s %(lun)s >> /etc/zfcp.conf'\
                         % {'device': device, 'wwpn': target_wwpn,

@@ -236,12 +236,17 @@ class RHEL7TestCase(base.SDKTestCase):
         target_wwpn = '0x5005076812341234'
         target_lun = '0x0026000000000000'
         device = '0.0.%s' % fcp
+        # add to port(WWPN)
+        unit_add = "echo '%s' > " % target_lun
+        unit_add += "/sys/bus/ccw/drivers/zfcp/%(device)s/%(wwpn)s/unit_add"\
+                    % {'device': device, 'wwpn': target_wwpn}
         set_zfcp_conf = 'echo %(device)s %(wwpn)s %(lun)s >> /etc/zfcp.conf'\
                         % {'device': device, 'wwpn': target_wwpn,
                            'lun': target_lun}
         self.linux_dist._set_zfcp_config_files(assigner_id, fcp,
                                                target_wwpn, target_lun)
-        exec_cmd.assert_called_once_with(assigner_id, set_zfcp_conf)
+        exec_cmd.assert_has_calls([mock.call(assigner_id, unit_add),
+                                   mock.call(assigner_id, set_zfcp_conf)])
 
     @mock.patch.object(dist.LinuxDist, 'execute_cmd')
     def test_restart_multipath(self, exec_cmd):
