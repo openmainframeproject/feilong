@@ -16,6 +16,7 @@
 import abc
 import netaddr
 import os
+import re
 import six
 
 from zvmsdk import config
@@ -220,11 +221,116 @@ class LinuxDist(object):
         # modprobe zfcp module
         modprobe = 'modprobe zfcp'
         ret = self.execute_cmd(assigner_id, modprobe)
-        # TODO: process ret
         return ret
 
+    def _get_path_source_device(self, assigner_id, fcp,
+                                target_wwpn, target_lun):
+        # TODO: mount_point format check?
+        path = '/dev/disk/by-path/ccw-0.0.%(fcp)s-zfcp-%(wwpn)s:%(lun)s'
+        srcdev = path % {'fcp': fcp, 'wwpn': target_wwpn, 'lun': target_lun}
+        # check the path exist or not
+        check_exist = 'test -e %s && echo exist' % srcdev
+        check_res = self.execute_cmd(assigner_id, check_exist)['response'][0]
+        if check_res != 'exist':
+            errmsg = 'srcdev NOT exist when creating mountpoint.'
+            LOG.error(errmsg)
+            raise exception.SDKBaseException(message=errmsg)
+        return srcdev
+
+    def _get_wwid(self, assigner_id, srcdev):
+        query_cmd = ('/sbin/udevadm info --query=all --name=%s | '
+                   'grep ^S: | grep scsi-' % srcdev)
+        by_disk = self.execute_cmd(assigner_id, query_cmd)['response'][0]
+        wwid = re.search('^S: disk\/by-id\/scsi-(\w+)\s*$', by_disk).group(1)
+        return wwid
+
+    def _get_rules_config_file_path(self, assigner_id):
+        config_file_lib = '/lib/udev/rules.d/56-zfcp.rules'
+        config_file_etc = '/etc/udev/rules.d/56-zfcp.rules'
+        check_rules_lib = 'find /lib/udev/rules.d/ -name 56-zfcp.rules'
+        output = self.execute_cmd(assigner_id, check_rules_lib)['response']
+        if output == []:
+            config_file = config_file_etc
+        else:
+            # prefer to use config file in /lib/udev/rules.d/
+            # because rule file of same name in /etc/udev/rules.d/ will
+            # shield the rules in /lib/udev/rules.d/
+            config_file = config_file_lib
+        return config_file
+
+    def _add_udev_rules(self, assigner_id, wwid, mount_point,
+                        target_wwpn, target_lun, multipath):
+        # TODO: mount_point format check?
+        # get file name
+        target_filename = mount_point.replace('/dev/', '')
+        # find the right path of config file
+        config_file = self._get_rules_config_file_path(assigner_id)
+        # add rules
+        data = {'wwid': wwid, 'wwpn': target_wwpn, 'lun': target_lun,
+                'tgtFileName': target_filename}
+        if multipath:
+            # KERNEL: device name in kernel
+            # ENV: environment variable
+            # SYMLINK: create symbol link for device under /dev
+            link_item = ('KERNEL==\\"dm-*\\", '
+                         'ENV{DM_UUID}==\\"mpath-%(wwid)s\\", '
+                         'SYMLINK+=\\"%(tgtFileName)s\\"' % data)
+        else:
+            link_item = ('KERNEL==\\"sd*\\", ATTRS{wwpn}==\\"%(wwpn)s\\", '
+                         'ATTRS{fcp_lun}==\\"%(lun)s\\", '
+                         'SYMLINK+=\\"%(tgtFileName)s%%n\\"' % data)
+        add_rules_cmd = 'echo -e %s >> %s' % (link_item, config_file)
+        self.execute_cmd(assigner_id, add_rules_cmd)
+
+    def _remove_udev_rules(self, assigner_id, mount_point, multipath):
+        # get file name
+        target_filename = mount_point.replace('/dev/', '')
+        # find the right path of config file
+        config_file = self._get_rules_config_file_path(assigner_id)
+        # remove rules
+        data = {'configFile': config_file, 'tgtFileName': target_filename}
+        if multipath:
+            # delete the matched records
+            remove_rules_cmd = ('sed -i -e /SYMLINK+=\\"%(tgtFileName)s\\"/d '
+                                '%(configFile)s' % data)
+        else:
+            remove_rules_cmd = ('sed -i -e '
+                                '/SYMLINK+=\\"%(tgtFileName)s%%n\\"/d '
+                                '%(configFile)s' % data)
+        self.execute_cmd(assigner_id, remove_rules_cmd)
+
+    def _reload_rules_config_file(self, assigner_id, multipath):
+        # reload the rules by sending reload signal to systemd-udevd
+        reload_cmd = 'udevadm control --reload'
+        self.execute_cmd(assigner_id, reload_cmd)
+        # trigger uevent with the device path in /sys
+        if multipath:
+            create_symlink_cmd = 'udevadm trigger --sysname-match=dm-*'
+        else:
+            create_symlink_cmd = 'udevadm trigger --sysname-match=sd*'
+        self.execute_cmd(assigner_id, create_symlink_cmd)
+
+    def create_mount_point(self, assigner_id, fcp, target_wwpn,
+                          target_lun, mount_point, multipath):
+        # get path of source device
+        srcdev = self._get_path_source_device(assigner_id, fcp,
+                                              target_wwpn, target_lun)
+        # get WWID
+        wwid = self._get_wwid(assigner_id, srcdev)
+        # add rules into config file
+        self._add_udev_rules(assigner_id, wwid, mount_point,
+                             target_wwpn, target_lun, multipath)
+        # reload the rules
+        self._reload_rules_config_file(assigner_id, multipath)
+
+    def remove_mount_point(self, assigner_id, mount_point, multipath):
+        # remove rules
+        self._remove_udev_rules(assigner_id, mount_point, multipath)
+        # reload the rules
+        self._reload_rules_config_file(assigner_id, multipath)
+
     def config_volume_attach_active(self, fcp, assigner_id, target_wwpn,
-                                    target_lun, multipath):
+                                    target_lun, multipath, mount_point):
         self.check_zfcp_module(assigner_id)
         self._online_fcp_device(assigner_id, fcp)
         try:
@@ -232,6 +338,10 @@ class LinuxDist(object):
                                         target_lun)
             if multipath:
                 self._set_zfcp_multipath(assigner_id)
+            if mount_point != '':
+                # TODO:rollback??
+                self.create_mount_point(assigner_id, fcp, target_wwpn,
+                                        target_lun, mount_point, multipath)
         except exception.SDKSMUTRequestFailed as err:
             errmsg = err.format_message()
             LOG.error(errmsg)
@@ -246,11 +356,13 @@ class LinuxDist(object):
             raise exception.ZVMException(msg=errmsg)
 
     def config_volume_detach_active(self, fcp, assigner_id, target_wwpn,
-                                    target_lun, multipath):
+                                    target_lun, multipath, mount_point):
         self._offline_fcp_device(assigner_id, fcp, target_wwpn,
                                  target_lun, multipath)
         if multipath:
             self._restart_multipath(assigner_id)
+        if mount_point != '':
+            self.remove_mount_point(assigner_id, mount_point, multipath)
 
     @abc.abstractmethod
     def _online_fcp_device(self, assigner_id, fcp):
@@ -441,7 +553,6 @@ class rhel(LinuxDist):
 
     def _set_zfcp_multipath(self, assigner_id):
         """sampe to all rhel distro ???"""
-        # TODO: multipath?
         # update multipath configuration
         conf_file = '#blacklist {\n'
         conf_file += '#\tdevnode "*"\n'
