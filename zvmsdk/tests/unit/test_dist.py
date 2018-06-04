@@ -42,6 +42,77 @@ class RHEL6TestCase(base.SDKTestCase):
     def test_create_network_configuration_files(self):
         pass
 
+    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
+    def test_create_mount_point_multipath(self, exec_cmd):
+        fcp = '1fc5'
+        assigner_id = 'fakeid'
+        wwpn = '0x5005076812341234'
+        lun = '0x0026000000000000'
+        mount_point = '/dev/sde'
+        multipath = True
+        wwid_raw = 'S: disk/by-id/scsi-36005076801a3813cb800000000000225'
+        config_file_lib = '/lib/udev/rules.d/56-zfcp.rules'
+        path = '/dev/disk/by-path/ccw-0.0.%(fcp)s-zfcp-%(wwpn)s:%(lun)s'
+        srcdev = path % {'fcp': fcp, 'wwpn': wwpn, 'lun': lun}
+        check_cmd = 'test -e %s && echo exist' % srcdev
+        check_rules_cmd = 'test -e %s && echo lib' % config_file_lib
+        exec_cmd.side_effect = [{'response': ['exist']},
+                                {'response': [wwid_raw]},
+                                {'response': ['lib']},
+                                {}, {}, {}]
+        query_cmd = ('/sbin/udevadm info --query=all --name=%s | '
+                     'grep ^S: | grep scsi-' % srcdev)
+        link_item = ('KERNEL==\\"dm-*\\", ENV{DM_UUID}==\\"mpath-'
+                     '36005076801a3813cb800000000000225\\", '
+                     'SYMLINK+=\\"sde\\"')
+        update_rule_cmd = 'echo -e %s >> %s' % (link_item, config_file_lib)
+        reload_cmd = 'udevadm control --reload'
+        create_symlink_cmd = 'udevadm trigger --sysname-match=dm-*'
+        self.linux_dist.create_mount_point(assigner_id, fcp, wwpn, lun,
+                                           mount_point, multipath)
+        exec_cmd.assert_has_calls([mock.call(assigner_id, check_cmd),
+                                   mock.call(assigner_id, query_cmd),
+                                   mock.call(assigner_id, check_rules_cmd),
+                                   mock.call(assigner_id, update_rule_cmd),
+                                   mock.call(assigner_id, reload_cmd),
+                                   mock.call(assigner_id, create_symlink_cmd)])
+
+    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
+    def test_create_mount_point_no_multipath(self, exec_cmd):
+        fcp = '1fc5'
+        assigner_id = 'fakeid'
+        wwpn = '0x5005076812341234'
+        lun = '0x0026000000000000'
+        mount_point = '/dev/sde'
+        multipath = False
+        wwid_raw = 'S: disk/by-id/scsi-36005076801a3813cb800000000000225'
+        config_file_lib = '/lib/udev/rules.d/56-zfcp.rules'
+        path = '/dev/disk/by-path/ccw-0.0.%(fcp)s-zfcp-%(wwpn)s:%(lun)s'
+        srcdev = path % {'fcp': fcp, 'wwpn': wwpn, 'lun': lun}
+        check_cmd = 'test -e %s && echo exist' % srcdev
+        check_rules_cmd = 'test -e %s && echo lib' % config_file_lib
+        query_cmd = ('/sbin/udevadm info --query=all --name=%s | '
+                     'grep ^S: | grep scsi-' % srcdev)
+        exec_cmd.side_effect = [{'response': ['exist']},
+                                {'response': [wwid_raw]},
+                                {'response': ['lib']},
+                                {}, {}, {}]
+        link_item = ('KERNEL==\\"sd*\\", '
+                     'ATTRS{wwpn}==\\"0x5005076812341234\\", '
+                     'ATTRS{fcp_lun}==\\"0x0026000000000000\\", '
+                     'SYMLINK+=\\"sde%n\\"')
+        update_rule_cmd = 'echo -e %s >> %s' % (link_item, config_file_lib)
+        reload_cmd = 'udevadm control --reload'
+        create_symlink_cmd = 'udevadm trigger --sysname-match=sd*'
+        self.linux_dist.create_mount_point(assigner_id, fcp, wwpn, lun,
+                                           mount_point, multipath)
+        exec_cmd.assert_has_calls([mock.call(assigner_id, check_cmd),
+                                   mock.call(assigner_id, query_cmd),
+                                   mock.call(assigner_id, check_rules_cmd),
+                                   mock.call(assigner_id, update_rule_cmd),
+                                   mock.call(assigner_id, reload_cmd),
+                                   mock.call(assigner_id, create_symlink_cmd)])
+
     @mock.patch('zvmsdk.dist.rhel._set_zfcp_multipath')
     @mock.patch('zvmsdk.dist.rhel6._set_zfcp_config_files')
     @mock.patch('zvmsdk.dist.rhel._online_fcp_device')
