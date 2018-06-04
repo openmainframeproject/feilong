@@ -16,6 +16,7 @@
 import abc
 import netaddr
 import os
+import re
 import six
 
 from zvmsdk import config
@@ -222,6 +223,61 @@ class LinuxDist(object):
         ret = self.execute_cmd(assigner_id, modprobe)
         # TODO: process ret
         return ret
+
+    def create_mount_point(self, assigner_id, fcp, target_wwpn,
+                          target_lun, mount_point, multipath):
+        # get path of source device
+        path = '/dev/disk/by-path/ccw-0.0.%(fcp)s-zfcp-%(wwpn)s:%(lun)s'
+        srcdev = path % {'fcp': fcp, 'wwpn': target_wwpn, 'lun': target_lun}
+        # TODO:srcdev not exists?
+        # get WWID
+        query_cmd = ('/sbin/udevadm info --query=all --name=%s | '
+                   'grep ^S: | grep scsi-' % srcdev)
+        by_disk = self.execute_cmd(assigner_id, query_cmd)['response'][0]
+        wwid = re.search('^S: disk\/by-id\/scsi-(\w+)\s*$', by_disk).group(1)
+        # get file name
+        target_filename = mount_point.replace('/dev/', '')
+        # create config file
+        config_file = '/etc/udev/rules.d/56-zfcp.rules'
+        data = {'wwid': wwid, 'wwpn': target_wwpn, 'lun': target_lun,
+                'tgtFileName': target_filename}
+        if multipath:
+            link_item = ('KERNEL==\\"dm-*\\", '
+                         'ENV{DM_UUID}==\\"mpath-%(wwid)s\\", '
+                         'SYMLINK+=\\"%(tgtFileName)s\\"' % data)
+            create_symlink_cmd = 'udevadm trigger --sysname-match=dm-*'
+        else:
+            link_item = ('KERNEL==\\"sd*\\", ATTRS{wwpn}==\\"%(wwpn)s\\", '
+                         'ATTRS{fcp_lun}==\\"%(lun)s\\", '
+                         'SYMLINK+=\\"%(tgtFileName)s%%n\\"' % data)
+            create_symlink_cmd = 'udevadm trigger --sysname-match=sd*'
+        update_rule_cmd = 'echo -e %s >> %s' % (link_item, config_file)
+        reload_cmd = 'udevadm control --reload'
+        # execute cmds
+        self.execute_cmd(assigner_id, update_rule_cmd)
+        self.execute_cmd(assigner_id, reload_cmd)
+        self.execute_cmd(assigner_id, create_symlink_cmd)
+
+    def remove_mount_point(self, assigner_id, mount_point, multipath):
+        # get file name
+        target_filename = mount_point.replace('/dev/', '')
+        # update config file
+        config_file = '/etc/udev/rules.d/56-zfcp.rules'
+        data = {'configFile': config_file, 'tgtFileName': target_filename}
+        if multipath:
+            update_rule_cmd = ('sed -i -e /SYMLINK+=\\"%(tgtFileName)s\\"/d '
+                               '%(configFile)s' % data)
+            create_symlink_cmd = 'udevadm trigger --sysname-match=dm-*'
+        else:
+            update_rule_cmd = ('sed -i -e '
+                               '/SYMLINK+=\\"%(tgtFileName)s%%n\\"/d '
+                               '%(configFile)s' % data)
+            create_symlink_cmd = 'udevadm trigger --sysname-match=sd*'
+        reload_cmd = 'udevadm control --reload'
+        # execute cmds
+        self.execute_cmd(assigner_id, update_rule_cmd)
+        self.execute_cmd(assigner_id, reload_cmd)
+        self.execute_cmd(assigner_id, create_symlink_cmd)
 
     def config_volume_attach_active(self, fcp, assigner_id, target_wwpn,
                                     target_lun, multipath):
