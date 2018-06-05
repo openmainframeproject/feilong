@@ -94,3 +94,13 @@ class ZVMConnectorBaseTestCase(unittest.TestCase):
         log_info = self.get_log()
         super(ZVMConnectorBaseTestCase, self).assertFalse(expr,
                                                           msg=log_info)
+
+    def assertListEqual(self, list1, list2):
+        log_info = self.get_log()
+        super(ZVMConnectorBaseTestCase, self).assertListEqual(list1, list2,
+                                                          msg=log_info)
+
+    def assertDictEqual(self, d1, d2):
+        log_info = self.get_log()
+        super(ZVMConnectorBaseTestCase, self).assertDictEqual(d1, d2,
+                                                          msg=log_info)

@@ -801,8 +801,9 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerBase):
         self.assertEqual(404, resp.status_code)
 
     def test_guest_nic_delete_device_not_exist(self):
+        # no error returned if the vnic does not exist
         resp = self.client.guest_delete_nic(self.userid_exists, vdev='FFFF')
-        self.assertEqual(404, resp.status_code)
+        self.assertEqual(200, resp.status_code)
 
     def test_guest_get_console_output(self):
         # power on
