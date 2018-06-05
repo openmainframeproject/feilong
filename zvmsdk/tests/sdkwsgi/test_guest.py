@@ -105,7 +105,7 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
             maxMemMb = maxMemMb * 1024
         self.assertEqual(total_memory, maxMemMb)
 
-    def _check_interface(self, userid, ip="192.168.95.123"):
+    def _check_interface(self, userid, ip):
         """ Check network interface.
         Returns a bool value to indicate whether the network interface is
         defined
@@ -445,7 +445,8 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.addCleanup(os.system, 'rm /var/lib/zvmsdk/cfgdrive.tgz')
 
         transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
-        image_name = self.utils.get_image_name(CONF.tests.image_path)
+        image_name = self.utils.import_image_if_not_exist(
+            CONF.tests.image_path, CONF.tests.image_os_version)
 
         resp = self.client.guest_deploy(userid, image_name=image_name,
                                         transportfiles=transport_file)
@@ -557,7 +558,8 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.assertEqual(200, resp.status_code)
         self.addCleanup(self.client.guest_delete, userid)
 
-        image_name = self.utils.get_image_name()
+        image_name = self.utils.import_image_if_not_exist(
+            CONF.tests.image_path, CONF.tests.image_os_version)
 
         resp = self.client.guest_deploy(userid, image_name)
         self.assertEqual(200, resp.status_code)
