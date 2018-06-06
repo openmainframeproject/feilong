@@ -408,11 +408,7 @@ running SDK is able to read write and execute the directory.
 volume fcp list
 '''),
     # tests options
-    Opt('image_path',
-        section='tests',
-        opt_type='str',
-        ),
-    Opt('image_os_version',
+    Opt('images',
         section='tests',
         opt_type='str',
         ),
