@@ -16,6 +16,7 @@ import json
 import os
 import unittest
 
+from parameterized import parameterized
 from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import base
 from zvmsdk.tests.sdkwsgi import test_utils
@@ -24,6 +25,7 @@ from zvmsdk import smutclient
 
 
 CONF = config.CONF
+TEST_IMAGE_LIST = base.TEST_IMAGE_LIST
 
 
 class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
@@ -31,9 +33,6 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
     def __init__(self, methodName='runTest'):
         super(GuestHandlerBase, self).__init__(methodName)
         self.apibase = api_sample.APITestBase()
-
-        # test change bind_port
-        base.set_conf('sdkserver', 'bind_port', 3000)
 
         self.client = test_utils.TestzCCClient()
         self._smutclient = smutclient.get_smutclient()
@@ -264,7 +263,7 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
 
     def _get_userid_auto_cleanup(self):
         userid = self.utils.generate_test_userid()
-        self.addCleanup(self.client.guest_delete, userid)
+        self.addCleanup(self.utils.destroy_guest, userid)
         return userid
 
 
@@ -416,7 +415,6 @@ class GuestHandlerTestCase(GuestHandlerBase):
         resp = self.client.guest_create(userid, disk_list=disk_list,
                                         user_profile=CONF.zvm.user_profile)
         self.assertEqual(200, resp.status_code)
-        self.addCleanup(self.client.guest_delete, userid)
 
         # get guest definition
         resp = self.client.guest_get_definition_info(userid)
@@ -429,32 +427,35 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.assertTrue('INCLUDE %s' % CONF.zvm.user_profile.upper() in
                         resp.content)
 
-    def test_guest_create_deploy_capture_delete(self):
+    @parameterized.expand(TEST_IMAGE_LIST)
+    def test_guest_create_deploy_capture_delete(self, case_name,
+                                                image_path, os_version):
         """Scenario BVT testcases."""
-        userid = self.utils.generate_test_userid()
+        print("Testing image path: %s, version: %s. case: %s" %
+              (image_path, os_version, case_name))
+        userid = self._get_userid_auto_cleanup()
         ip_addr = self.utils.generate_test_ip()
         guest_networks = [{'ip_addr': ip_addr, 'cidr': CONF.tests.cidr}]
-        captured_image_name = 'test_capture_image1'
+        captured_image_name = "test_capture_%s" % case_name
 
         resp = self.client.guest_create(userid)
         self.assertEqual(200, resp.status_code)
-        self.addCleanup(self.utils.destroy_guest, userid)
         self.assertTrue(self.utils.wait_until_create_userid_complete(userid))
 
         self._make_transport_file()
         self.addCleanup(os.system, 'rm /var/lib/zvmsdk/cfgdrive.tgz')
 
         transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
-        image_name = self.utils.import_image_if_not_exist(
-            CONF.tests.image_path, CONF.tests.image_os_version)
+        image_name = self.utils.import_image_if_not_exist(image_path,
+                                                          os_version)
 
         resp = self.client.guest_deploy(userid, image_name=image_name,
                                         transportfiles=transport_file)
         self.assertEqual(200, resp.status_code)
 
         # todo: create newwork interface
-        resp = self.client.guest_create_network_interface(userid,
-                                  CONF.tests.image_os_version, guest_networks)
+        resp = self.client.guest_create_network_interface(userid, os_version,
+                                                          guest_networks)
 
         resp = self.client.guest_start(userid)
         self.assertEqual(200, resp.status_code)
