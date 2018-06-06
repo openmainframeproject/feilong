@@ -21,6 +21,19 @@ config.load_config()
 CONF = config.CONF
 
 
+# This list contains list of tuples with info (name, path, distro)
+TEST_IMAGE_LIST = []
+def get_test_image_list():
+    global IMAGES_LIST
+    for image in CONF.tests.images.split(','):
+        info = image.strip(' ').split(':')
+        # use image_file_name-distro as the image name
+        name = os.path.basename(info[0]) + '-' + info[1]
+        TEST_IMAGE_LIST.append((name, info[0], info[1]))
+# get image list from CONF
+get_test_image_list()
+
+
 def set_conf(section, opt, value):
     CONF[section][opt] = value
 

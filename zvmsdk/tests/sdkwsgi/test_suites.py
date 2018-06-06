@@ -12,18 +12,30 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import random
+import re
 import unittest
 
+from zvmsdk.tests.sdkwsgi import base
 from zvmsdk.tests.sdkwsgi import test_guest
 from zvmsdk.tests.sdkwsgi import test_host
 from zvmsdk.tests.sdkwsgi import test_image
 from zvmsdk.tests.sdkwsgi import test_version
 
 
+TEST_IMAGE_LIST = base.TEST_IMAGE_LIST
+rdm_idx = random.randint(0, len(TEST_IMAGE_LIST)-1)
+
 bvt_testcases = [
-    test_guest.GuestHandlerTestCase("test_guest_create_deploy_capture_delete"),
-    test_host.HostTestCase("test_host_info"),
-    test_image.ImageTestCase("test_image_create_delete"),
+    test_guest.GuestHandlerTestCase("test_guest_create_deploy_capture_delete_"
+                                    "%i_%s" %
+                                    (rdm_idx,
+                                     re.sub('\W', '_',
+                                            TEST_IMAGE_LIST[rdm_idx][0]
+                                            )
+                                     )),
+    #test_host.HostTestCase("test_host_info"),
+    #test_image.ImageTestCase("test_image_create_delete"),
     test_version.VersionTestCase("test_version"),
 ]
 
