@@ -14,13 +14,12 @@
 
 import json
 import os
+import time
 import unittest
 
-from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import base
 from zvmsdk.tests.sdkwsgi import test_utils
 from zvmsdk import config
-from zvmsdk import smutclient
 
 
 CONF = config.CONF
@@ -30,15 +29,6 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
 
     def __init__(self, methodName='runTest'):
         super(GuestHandlerBase, self).__init__(methodName)
-        self.apibase = api_sample.APITestBase()
-
-        # test change bind_port
-        base.set_conf('sdkserver', 'bind_port', 3000)
-
-        self.client = test_utils.TestzCCClient()
-        self._smutclient = smutclient.get_smutclient()
-        self.utils = test_utils.ZVMConnectorTestUtils()
-
         # Generate random userid foreach run
         self.userid = self.utils.generate_test_userid()
         self.test_vsw = "RESTVSW1"
@@ -773,8 +763,6 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerBase):
     @classmethod
     def setUpClass(cls):
         super(GuestHandlerTestCaseWithDeployedGuest, cls).setUpClass()
-        cls.client = test_utils.TestzCCClient()
-        cls.utils = test_utils.ZVMConnectorTestUtils()
         cls.userid_exists = cls.utils.deploy_guest()[0]
         cls.client.guest_stop(cls.userid_exists)
         cls.utils.wait_until_guest_in_power_state(cls.userid_exists, 'off')
@@ -890,6 +878,7 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerBase):
         self.assertTrue(self.utils.wait_until_guest_reachable(
                                                         self.userid_exists))
 
+        time.sleep(10)
         result = self._smutclient.execute_cmd(self.userid_exists, 'df -h')
         for element in result:
             if '/mnt/0101' in element:
@@ -1293,9 +1282,6 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerBase):
 
 
 class GuestActionTestCase(base.ZVMConnectorBaseTestCase):
-    def __init__(self, methodName='runTest'):
-        super(GuestActionTestCase, self).__init__(methodName)
-        self.client = test_utils.TestzCCClient()
 
     def test_guest_action_invalid_body(self):
         body = '{"dummy": "none"}'

@@ -18,8 +18,6 @@ import tempfile
 from zvmsdk.tests.sdkwsgi import base
 from zvmsdk import config
 from zvmsdk import utils
-from zvmsdk.tests.sdkwsgi import api_sample
-from zvmsdk.tests.sdkwsgi import test_utils
 
 
 CONF = config.CONF
@@ -28,12 +26,6 @@ CONF = config.CONF
 class ImageTestCase(base.ZVMConnectorBaseTestCase):
     def __init__(self, methodName='runTest'):
         super(ImageTestCase, self).__init__(methodName)
-
-        self.apibase = api_sample.APITestBase()
-        # test change bind_port
-        self.set_conf('sdkserver', 'bind_port', 3001)
-        self.client = test_utils.TestzCCClient()
-
         self.dummy_image_fname = "image1"
 
     def setUp(self):

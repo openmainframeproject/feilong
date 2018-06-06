@@ -16,9 +16,7 @@ import json
 
 from zvmsdk import config
 from zvmsdk import log
-from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import base
-from zvmsdk.tests.sdkwsgi import test_utils
 
 
 LOG = log.LOG
@@ -28,11 +26,6 @@ CONF = config.CONF
 class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
     def __init__(self, methodName='runTest'):
         super(VSwitchTestCase, self).__init__(methodName)
-        self.apibase = api_sample.APITestBase()
-
-        # test change bind_port
-        self.set_conf('sdkserver', 'bind_port', 3000)
-        self.client = test_utils.TestzCCClient()
 
         # make sure test vswitch does not exist
         self._vswitch_delete()

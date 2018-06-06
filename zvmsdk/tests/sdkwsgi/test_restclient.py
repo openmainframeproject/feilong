@@ -17,7 +17,6 @@ import time
 
 from zvmconnector import connector
 from zvmsdk import config
-from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import base
 
 
@@ -29,7 +28,6 @@ CONN_SOCKET = 'socket'
 class ZVMConnectorTestCase(base.ZVMConnectorBaseTestCase):
     def __init__(self, methodName='runTest'):
         super(ZVMConnectorTestCase, self).__init__(methodName)
-        self.apibase = api_sample.APITestBase()
         self.restclient = connector.ZVMConnector(connection_type=CONN_REST,
                                                  port=8888)
         self.sockclient = connector.ZVMConnector(connection_type=CONN_SOCKET)
