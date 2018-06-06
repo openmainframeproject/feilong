@@ -15,6 +15,9 @@ import os
 import unittest
 
 from zvmsdk import config
+from zvmsdk import smutclient
+from zvmsdk.tests.sdkwsgi import api_sample
+from zvmsdk.tests.sdkwsgi import test_utils
 
 
 config.load_config()
@@ -31,6 +34,15 @@ class ZVMConnectorBaseTestCase(unittest.TestCase):
         super(ZVMConnectorBaseTestCase, self).__init__(methodName)
         self.longMessage = True
         self.start_position = 0
+        self.client = test_utils.TestzCCClient()
+        self.apibase = api_sample.APITestBase()
+        self._smutclient = smutclient.get_smutclient()
+        self.utils = test_utils.ZVMConnectorTestUtils()
+
+    @classmethod
+    def setUpClass(cls):
+        super(ZVMConnectorBaseTestCase, cls).setUpClass()
+        cls.client = test_utils.TestzCCClient()
 
     def setUp(self):
         super(ZVMConnectorBaseTestCase, self).setUp()
@@ -75,32 +87,32 @@ class ZVMConnectorBaseTestCase(unittest.TestCase):
         header = 'Messages in log file:\n'
         return header + sep + log
 
-    def assertEqual(self, first, second):
+    def assertEqual(self, first, second, msg=None):
         log_info = self.get_log()
         super(ZVMConnectorBaseTestCase, self).assertEqual(first, second,
                                                           msg=log_info)
 
-    def assertNotEqual(self, first, second):
+    def assertNotEqual(self, first, second, msg=None):
         log_info = self.get_log()
         super(ZVMConnectorBaseTestCase, self).assertNotEqual(first, second,
                                                              msg=log_info)
 
-    def assertTrue(self, expr):
+    def assertTrue(self, expr, msg=None):
         log_info = self.get_log()
         super(ZVMConnectorBaseTestCase, self).assertTrue(expr,
                                                          msg=log_info)
 
-    def assertFalse(self, expr):
+    def assertFalse(self, expr, msg=None):
         log_info = self.get_log()
         super(ZVMConnectorBaseTestCase, self).assertFalse(expr,
                                                           msg=log_info)
 
-    def assertListEqual(self, list1, list2):
+    def assertListEqual(self, list1, list2, msg=None):
         log_info = self.get_log()
         super(ZVMConnectorBaseTestCase, self).assertListEqual(list1, list2,
                                                           msg=log_info)
 
-    def assertDictEqual(self, d1, d2):
+    def assertDictEqual(self, d1, d2, msg=None):
         log_info = self.get_log()
         super(ZVMConnectorBaseTestCase, self).assertDictEqual(d1, d2,
                                                           msg=log_info)

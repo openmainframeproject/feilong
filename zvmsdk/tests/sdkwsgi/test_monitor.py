@@ -29,8 +29,6 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
     @classmethod
     def setUpClass(cls):
         super(MonitorTestCase, cls).setUpClass()
-
-        cls.client = test_utils.TestzCCClient()
         cls.test_utils = test_utils.ZVMConnectorTestUtils()
         cls.userid1 = cls.test_utils.deploy_guest()[0]
         cls.userid2 = cls.test_utils.deploy_guest()[0]
@@ -45,24 +43,11 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
         super(MonitorTestCase, self).setUp()
         self.record_logfile_position()
 
-    def _inspect_stats(self, userid):
-        body = None
-        url = '/guests/stats?userid=%s' % userid
-        resp = self.client.api_request(url=url, method='GET',
-                                      body=body)
-        return resp
-
-    def _inspect_vnics(self, userid):
-        body = None
-        url = '/guests/interfacestats?userid=%s' % userid
-        resp = self.client.api_request(url=url, method='GET',
-                                      body=body)
-        return resp
-
     def test_guest_inspect_stats(self):
         print("Test with a single uerid")
         test_id = self.userid1.upper()
-        resp = self._inspect_stats(self.userid1)
+        resp = self.client.guest_inspect_stats(self.userid1)
+        resp = self.client.guest_inspect_stats(self.userid1)
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
         self.assertEqual(0, results['overallRC'])
@@ -101,7 +86,7 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
         print("Test with a userid list")
         test_id2 = self.userid2.upper()
         guest_list = [self.userid1, self.userid2]
-        resp = self._inspect_stats(guest_list)
+        resp = self.client.guest_inspect_stats(guest_list)
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
         self.assertEqual(0, results['overallRC'])
@@ -118,11 +103,11 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
                 result[test_id].get('shared_mem_kb'), int))
         """
         print("Test with a nonexistent guest")
-        resp = self._inspect_stats('FAKE_ID')
+        resp = self.client.guest_inspect_stats('FAKE_ID')
         self.assertEqual(404, resp.status_code)
         """
         print("Test with an empty user list")
-        resp = self._inspect_stats([])
+        resp = self.client.guest_inspect_stats([])
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
         self.assertEqual(results['overallRC'], 0)
@@ -132,7 +117,7 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
     def test_guest_inspect_vnics(self):
         print("To test with a single uerid")
         test_id = self.userid1.upper()
-        resp = self._inspect_vnics(self.userid1)
+        resp = self.client.guest_inspect_vnics(self.userid1)
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
         self.assertEqual(0, results['overallRC'])
@@ -168,7 +153,7 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
         print("To test with a userid list")
         test_id2 = self.userid2.upper()
         guest_list = [self.userid1, self.userid2]
-        resp = self._inspect_vnics(guest_list)
+        resp = self.client.guest_inspect_vnics(guest_list)
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
         self.assertEqual(0, results['overallRC'])
@@ -185,11 +170,11 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
                 result[test_id2][0].get('nic_tx'), int))
         """
         print("To test with a nonexistent guest")
-        resp = self._inspect_vnics('FAKE_ID')
+        resp = self.client.guest_inspect_vnics('FAKE_ID')
         self.assertEqual(404, resp.status_code)
         """
         print("To test with an empty user list")
-        resp = self._inspect_vnics([])
+        resp = self.client.guest_inspect_vnics([])
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
         self.assertEqual(results['overallRC'], 0)
