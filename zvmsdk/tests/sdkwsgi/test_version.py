@@ -13,20 +13,10 @@
 #    under the License.
 
 
-from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import base
-from zvmsdk.tests.sdkwsgi import test_utils
 
 
 class VersionTestCase(base.ZVMConnectorBaseTestCase):
-    def __init__(self, methodName='runTest'):
-        super(VersionTestCase, self).__init__(methodName)
-        self.apibase = api_sample.APITestBase()
-
-    def setUp(self):
-        super(VersionTestCase, self).setUp()
-        self.client = test_utils.TestzCCClient()
-        self.record_logfile_position()
 
     def test_version(self):
         resp = self.client.api_request(url='/')
