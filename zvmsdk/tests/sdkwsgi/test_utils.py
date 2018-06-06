@@ -30,8 +30,22 @@ from zvmsdk import utils as zvmutils
 
 config.load_config()
 CONF = config.CONF
-
 TEST_IP_POOL = []
+# This list contains list of tuples with info (name, path, distro)
+TEST_IMAGE_LIST = []
+
+
+def get_test_image_list():
+    global IMAGES_LIST
+    for image in CONF.tests.images.split(','):
+        info = image.strip(' ').split(':')
+        # use image_file_name-distro as the image name
+        name = os.path.basename(info[0]) + '-' + info[1]
+        TEST_IMAGE_LIST.append((name, info[0], info[1]))
+
+
+# get image list from CONF
+get_test_image_list()
 
 
 class TestzCCClient(object):
@@ -111,8 +125,8 @@ class TestzCCClient(object):
         url = '/images/%s/root_disk_size' % image_name
         return self.api_request(url=url, method='GET')
 
-    def guest_create(self, userid, vcpus=1, memory=1024,
-                     disk_list=[{"size": "1100", "is_boot_disk": "True"}],
+    def guest_create(self, userid, vcpus=1, memory=2048,
+                     disk_list=[{"size": "5500", "is_boot_disk": "True"}],
                      user_profile=CONF.zvm.user_profile,
                      max_cpu=CONF.zvm.user_default_max_cpu,
                      max_mem=CONF.zvm.user_default_max_memory):
@@ -195,7 +209,7 @@ class TestzCCClient(object):
         return self.api_request(url=url, method='POST', body=body)
 
     def guest_delete_network_interface(self, userid,
-                                       os_version=CONF.tests.image_os_version,
+                                       os_version,
                                        vdev="1000", active=False):
         content = {"interface": {"os_version": os_version,
                                  "vdev": vdev}}
@@ -432,9 +446,10 @@ class ZVMConnectorTestUtils(object):
     def is_guest_reachable(self, userid):
         return self._smutclient.get_guest_connection_status(userid)
 
-    def deploy_guest(self, userid=None, cpu=1, memory=1024,
-                     image_path=CONF.tests.image_path,
-                     os_version=CONF.tests.image_os_version,
+# Will use the first image as the default image to deploy guest.
+    def deploy_guest(self, userid=None, cpu=1, memory=2048,
+                     image_path=TEST_IMAGE_LIST[0][1],
+                     os_version=TEST_IMAGE_LIST[0][2],
                      ip_addr=None):
         # Import image if specified, otherwise use the default image
         image_name = self.import_image_if_not_exist(image_path, os_version)
@@ -484,6 +499,10 @@ class ZVMConnectorTestUtils(object):
 
         self._wait_until(False, self.is_guest_exist, userid)
 
+    def softstop_guest(self, userid):
+        self.client.guest_softstop(userid)
+        self.wait_until_guest_in_power_state(userid, 'off')
+
     def _wait_until(self, expect_state, func, *args, **kwargs):
         """Looping call func until get expected state, otherwise 1 min timeout.
 
@@ -517,9 +536,6 @@ class ZVMConnectorTestUtils(object):
 
     def wait_until_create_userid_complete(self, userid):
         return self._wait_until(True, self.is_guest_exist, userid)
-
-    def get_image_name(self, image_path=CONF.tests.image_path):
-        return os.path.basename(image_path)
 
     def power_on_guest_until_reachable(self, userid):
         self.client.guest_start(userid)
