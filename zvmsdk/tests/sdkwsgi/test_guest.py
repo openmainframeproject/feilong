@@ -17,11 +17,31 @@ import os
 import time
 import unittest
 
+
+from parameterized import parameterized
 from zvmsdk.tests.sdkwsgi import base
+from zvmsdk.tests.sdkwsgi import test_utils
 from zvmsdk import config
 
 
 CONF = config.CONF
+TEST_IMAGE_LIST = base.TEST_IMAGE_LIST
+# This list is used as userid to deploy different images
+TEST_USERID_LIST = []
+
+
+def generate_test_userid_list():
+    global TEST_USERID_LIST
+    utils = test_utils.ZVMConnectorTestUtils()
+    for i in range(0, len(TEST_IMAGE_LIST)):
+        userid = utils.generate_test_userid()
+        TEST_USERID_LIST.append(userid)
+
+
+# Generate the global userid list at the beginning so that the following
+# test classes (currently only cases in GuestHandlerTestCaseWithDeployedGuest)
+# can use this list to parameterize test cases for different distros.
+generate_test_userid_list()
 
 
 class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
@@ -253,7 +273,7 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
 
     def _get_userid_auto_cleanup(self):
         userid = self.utils.generate_test_userid()
-        self.addCleanup(self.client.guest_delete, userid)
+        self.addCleanup(self.utils.destroy_guest, userid)
         return userid
 
 
@@ -321,6 +341,14 @@ class GuestHandlerTestCase(GuestHandlerBase):
 
     def test_guest_nic_create_not_exist(self):
         resp = self.client.guest_create_nic(userid='notexist')
+        self.assertEqual(404, resp.status_code)
+
+    def test_guest_vswitch_couple_uncouple_userid_not_exist(self):
+        resp = self.client.guest_nic_couple_to_vswitch("notexist", "1000",
+                                                       self.test_vsw)
+        self.assertEqual(404, resp.status_code)
+
+        resp = self.client.guest_nic_uncouple_from_vswitch("notexist", "5000")
         self.assertEqual(404, resp.status_code)
 
     def test_guest_vif_create_not_exist(self):
@@ -405,7 +433,6 @@ class GuestHandlerTestCase(GuestHandlerBase):
         resp = self.client.guest_create(userid, disk_list=disk_list,
                                         user_profile=CONF.zvm.user_profile)
         self.assertEqual(200, resp.status_code)
-        self.addCleanup(self.client.guest_delete, userid)
 
         # get guest definition
         resp = self.client.guest_get_definition_info(userid)
@@ -418,32 +445,33 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.assertTrue('INCLUDE %s' % CONF.zvm.user_profile.upper() in
                         resp.content)
 
-    def test_guest_create_deploy_capture_delete(self):
+    @parameterized.expand(TEST_IMAGE_LIST)
+    def test_guest_create_deploy_capture_delete(self, case_name,
+                                                image_path, os_version):
         """Scenario BVT testcases."""
-        userid = self.utils.generate_test_userid()
+        userid = self._get_userid_auto_cleanup()
         ip_addr = self.utils.generate_test_ip()
         guest_networks = [{'ip_addr': ip_addr, 'cidr': CONF.tests.cidr}]
-        captured_image_name = 'test_capture_image1'
+        captured_image_name = "test_capture_%s" % case_name
 
         resp = self.client.guest_create(userid)
         self.assertEqual(200, resp.status_code)
-        self.addCleanup(self.utils.destroy_guest, userid)
         self.assertTrue(self.utils.wait_until_create_userid_complete(userid))
 
         self._make_transport_file()
         self.addCleanup(os.system, 'rm /var/lib/zvmsdk/cfgdrive.tgz')
 
         transport_file = '/var/lib/zvmsdk/cfgdrive.tgz'
-        image_name = self.utils.import_image_if_not_exist(
-            CONF.tests.image_path, CONF.tests.image_os_version)
+        image_name = self.utils.import_image_if_not_exist(image_path,
+                                                          os_version)
 
         resp = self.client.guest_deploy(userid, image_name=image_name,
                                         transportfiles=transport_file)
         self.assertEqual(200, resp.status_code)
 
         # todo: create newwork interface
-        resp = self.client.guest_create_network_interface(userid,
-                                  CONF.tests.image_os_version, guest_networks)
+        resp = self.client.guest_create_network_interface(userid, os_version,
+                                                          guest_networks)
 
         resp = self.client.guest_start(userid)
         self.assertEqual(200, resp.status_code)
@@ -467,7 +495,9 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.apibase.verify_result('test_guests_get_interface_stats',
                                    resp.content)
 
-        resp = self.client.guest_stop(userid)
+        # Use softstop instend of stop to avoid the data lose with guest_stop
+        # when testing the sles12 image.
+        resp = self.client.guest_softstop(userid)
         self.assertEqual(200, resp.status_code)
         self.assertTrue(self.utils.wait_until_guest_in_power_state(userid,
                                                                    "off"))
@@ -541,14 +571,15 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.apibase.verify_result('test_guests_get_nic_info',
                                    resp.content)
 
-    def test_guest_live_resize_cpus(self):
-        userid = self.utils.generate_test_userid()
+    @parameterized.expand(TEST_IMAGE_LIST)
+    def test_guest_live_resize_cpus(self, case_name,
+                                    image_path, os_version):
+        userid = self._get_userid_auto_cleanup()
         resp = self.client.guest_create(userid, max_cpu=10, max_mem="2048M")
         self.assertEqual(200, resp.status_code)
-        self.addCleanup(self.client.guest_delete, userid)
 
-        image_name = self.utils.import_image_if_not_exist(
-            CONF.tests.image_path, CONF.tests.image_os_version)
+        image_name = self.utils.import_image_if_not_exist(image_path,
+                                                          os_version)
 
         resp = self.client.guest_deploy(userid, image_name)
         self.assertEqual(200, resp.status_code)
@@ -726,7 +757,7 @@ class GuestHandlerTestCase(GuestHandlerBase):
                             maxcpu=10, maxmem="2048M")
 
         # Restart guest, check cpu number
-        resp = self.client.guest_stop(userid)
+        resp = self.client.guest_softstop(userid)
         self.assertEqual(200, resp.status_code)
         self.assertTrue(self.utils.wait_until_guest_in_power_state(userid,
                                                                   "off"))
@@ -746,7 +777,7 @@ class GuestHandlerTestCase(GuestHandlerBase):
                             maxcpu=10, maxmem="2048M")
 
         # Restart guest, check cpu number
-        resp = self.client.guest_stop(userid)
+        resp = self.client.guest_softstop(userid)
         self.assertEqual(200, resp.status_code)
         self.assertTrue(self.utils.wait_until_guest_in_power_state(userid,
                                                                   "off"))
@@ -763,18 +794,18 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerBase):
     def setUpClass(cls):
         super(GuestHandlerTestCaseWithDeployedGuest, cls).setUpClass()
         cls.userid_exists = cls.utils.deploy_guest()[0]
-        cls.client.guest_stop(cls.userid_exists)
+        cls.client.guest_softstop(cls.userid_exists)
         cls.utils.wait_until_guest_in_power_state(cls.userid_exists, 'off')
 
     @classmethod
     def tearDownClass(cls):
         super(GuestHandlerTestCaseWithDeployedGuest, cls).tearDownClass()
         cls.client.vswitch_delete('restvsw1')
-        cls.client.guest_delete(cls.userid_exists)
+        cls.utils.destroy_guest(cls.userid_exists)
 
     def tearDown(self):
         # make sure the guest in shutdown state
-        self.client.guest_stop(self.userid_exists)
+        self.client.guest_softstop(self.userid_exists)
         self.assertTrue(self.utils.wait_until_guest_in_power_state(
             self.userid_exists, 'off'))
 
@@ -1015,18 +1046,9 @@ class GuestHandlerTestCaseWithDeployedGuest(GuestHandlerBase):
         ip_set = self._check_interface(self.userid_exists, ip=ip_addr)
         self.assertFalse(ip_set)
 
-    def test_guest_vswitch_couple_uncouple_not_exist(self):
-        # guest does not exist
-        resp = self.client.guest_nic_couple_to_vswitch("notexist",
-                                                       self.test_vsw)
-        self.assertEqual(404, resp.status_code)
-
-        # vswitch = "notexist"
+    def test_guest_vswitch_couple_uncouple_vswitch_not_exist(self):
         resp = self.client.guest_nic_couple_to_vswitch(self.userid_exists,
                                                "5000", vswitch_name="NOTEXIST")
-        self.assertEqual(404, resp.status_code)
-
-        resp = self.client.guest_nic_uncouple_from_vswitch("notexist", "5000")
         self.assertEqual(404, resp.status_code)
 
     def test_guest_vswitch_couple_uncouple(self):
