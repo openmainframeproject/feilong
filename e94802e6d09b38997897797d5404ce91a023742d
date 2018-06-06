@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "12b364f9_79debe42",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 562,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-06-06T01:24:13Z",
+      "side": 1,
+      "message": "for the images specified in config file, might be re-used by other testcases, so suggest move this to a common place, for example, init method of base test class",
+      "range": {
+        "startLine": 561,
+        "startChar": 0,
+        "endLine": 562,
+        "endChar": 63
+      },
+      "revId": "e94802e6d09b38997897797d5404ce91a023742d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
