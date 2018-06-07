@@ -63,7 +63,7 @@ class NetworkOPS(object):
                                                    active=active)
 
     def add_vswitch(self, name, rdev=None, controller='*',
-                    connection='CONNECT', network_type='IP',
+                    connection='CONNECT', network_type='ETHERNET',
                     router="NONROUTER", vid='UNAWARE', port_type='ACCESS',
                     gvrp='GVRP', queue_mem=8, native_vid=1, persist=True):
         self._smutclient.add_vswitch(name, rdev=rdev, controller=controller,

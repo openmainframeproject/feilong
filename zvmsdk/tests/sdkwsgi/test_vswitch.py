@@ -229,7 +229,7 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
         vswinfo = {"rdev": "FF00",
                    "controller": "FAKEVMID",
                    "connection": "CONnect",
-                   "network_type": "IP", "router": "NONrouter",
+                   "network_type": "ETHERNET", "router": "NONrouter",
                    "vid": "UNAWARE", "port_type": "ACCESS",
                    "gvrp": "NOGVRP", "queue_mem": 3,
                    "native_vid": 1, "persist": False}
@@ -243,7 +243,7 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
         vswinfo = json.loads(resp.content)['output']
         switch_name = vswinfo['switch_name']
         self.assertEqual('RESTVSW1', switch_name)
-        self.assertEqual('IP', vswinfo['transport_type'])
+        self.assertEqual('ETHERNET', vswinfo['transport_type'])
         self.assertEqual('NONE', vswinfo['port_type'])
         self.assertEqual('3', vswinfo['queue_memory_limit'])
         self.assertEqual('UNAWARE', vswinfo['vlan_awareness'])

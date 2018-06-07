@@ -583,7 +583,7 @@ connection_vswitch:
 network_type_vswitch:
   description: |
     Specifies the transport mechanism to be used for switch,
-    as follow:IP, ETHERNET.
+    as follow:IP, ETHERNET, default is ETHERNET.
   in: body
   required: false
   type: string
@@ -591,9 +591,9 @@ router_vswitch:
   description: |
     Connection type option \:
 
-    - ``NONrouter``: The OSA-Express device identified in
+    - ``NONROUTER``: The OSA-Express device identified in
       real_device_address= will not act as a router to the vswitch.
-    - ``PRIrouter``: The OSA-Express device identified in
+    - ``PRIROUTER``: The OSA-Express device identified in
       real_device_address= will act as a primary router to the vswitch.
     - ``Note``: If the network_type is ETHERNET, this value must be
       unspecified, otherwise, if this value is unspecified,

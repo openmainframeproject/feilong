@@ -61,13 +61,15 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
     def test_add_vswitch(self, add_vswitch):
         self.networkops.add_vswitch("fakename", "fakerdev",
                                     controller='*',
-                                    connection='CONNECT', network_type='IP',
+                                    connection='CONNECT',
+                                    network_type='ETHERNET',
                                     router="NONROUTER", vid='UNAWARE',
                                     port_type='ACCESS', gvrp='GVRP',
                                     queue_mem=8, native_vid=2, persist=False)
         add_vswitch.assert_called_with("fakename", rdev="fakerdev",
                                        controller='*', connection='CONNECT',
-                                       network_type='IP', router="NONROUTER",
+                                       network_type='ETHERNET',
+                                       router="NONROUTER",
                                        vid='UNAWARE', port_type='ACCESS',
                                        gvrp='GVRP', queue_mem=8,
                                        native_vid=2, persist=False)
