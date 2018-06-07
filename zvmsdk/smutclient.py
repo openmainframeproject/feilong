@@ -1065,7 +1065,7 @@ class SMUTClient(object):
         LOG.info(msg)
 
     def add_vswitch(self, name, rdev=None, controller='*',
-                    connection='CONNECT', network_type='IP',
+                    connection='CONNECT', network_type='ETHERNET',
                     router="NONROUTER", vid='UNAWARE', port_type='ACCESS',
                     gvrp='GVRP', queue_mem=8, native_vid=1, persist=True):
 

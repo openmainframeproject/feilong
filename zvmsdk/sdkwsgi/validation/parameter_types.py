@@ -392,20 +392,20 @@ user_vlan_id = {
 
 connection_type = {
     'type': 'string',
-    'enum': ['CONnect', 'CONNECT', 'connect', 'CON', 'con',
-             'DISCONnect', 'DISCONNECT', 'disconnect', 'DISCON', 'discon',
+    'enum': ['CONnect', 'CONNECT', 'connect',
+             'DISCONnect', 'DISCONNECT', 'disconnect',
              'NOUPLINK', 'nouplink']
 }
 
 router_type = {
     'type': 'string',
-    'enum': ['NONrouter', 'NONROUTER', 'nonrouter', 'NON', 'non',
-             'PRIrouter', 'PRIROUTER', 'prirouter', 'PRI', 'pri']
+    'enum': ['NONrouter', 'NONROUTER', 'nonrouter',
+             'PRIrouter', 'PRIROUTER', 'prirouter']
 }
 
 network_type = {
     'type': 'string',
-    'enum': ['IP', 'ip', 'ETHernet', 'ethernet', 'eth', 'ETH']
+    'enum': ['IP', 'ip', 'ETHernet', 'ethernet', 'ETHERNET']
 }
 
 vid_type = {

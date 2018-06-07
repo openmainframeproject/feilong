@@ -5,7 +5,7 @@
       "rdev": "FF00",
       "controller": "*",
       "connection": "CONnect",
-      "network_type": "IP",
+      "network_type": "ETHERNET",
       "router": "NONROUTER",
       "vid": "UNAWARE",
       "port_type": "ACCESS",
