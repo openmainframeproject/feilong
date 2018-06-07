@@ -1965,9 +1965,21 @@ class SMUTClient(object):
 
     def image_delete(self, image_name):
         # Delete image file
-        self._delete_image_file(image_name)
-        # Delete image record from db
-        self._ImageDbOperator.image_delete_record(image_name)
+        try:
+            self._delete_image_file(image_name)
+            # Delete image record from db
+            self._ImageDbOperator.image_delete_record(image_name)
+        except exception.SDKImageOperationError as err:
+            results = err.results
+            if ((results['rc'] == 300) and (results['rs'] == 20)):
+                LOG.warning("Image %s does not exist", image_name)
+                return
+            else:
+                LOG.error("Failed to delete image %s, error: %s" %
+                          (image_name, err.format_message()))
+                raise
+        msg = ('Delete image %s successfully' % image_name)
+        LOG.info(msg)
 
     def _delete_image_file(self, image_name):
         image_path = self._get_image_path_by_name(image_name)
