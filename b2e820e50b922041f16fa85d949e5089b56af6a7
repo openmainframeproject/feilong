@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "50065619_faf2bfbb",
+        "filename": "doc/source/quickstart.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-06-07T07:36:22Z",
+      "side": 1,
+      "message": "reader",
+      "range": {
+        "startLine": 99,
+        "startChar": 64,
+        "endLine": 99,
+        "endChar": 69
+      },
+      "revId": "b2e820e50b922041f16fa85d949e5089b56af6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
