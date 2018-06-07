@@ -82,7 +82,24 @@ Preparation on BYOL
 
 .. _z/VM Systems Management Application Programming: https://www.ibm.com/support/knowledgecenter/SSB27U_6.4.0/com.ibm.zvm.v640.dmse6/toc.htm
 
-4. Enable punch device
+4. Enable reader device
+
+   In order to get console output of target vm, BYOL's reader device needs to
+   be enabled to receive console output spool files send from target vm
+
+   Use the following command on BYOL itself to achieve that:
+
+   .. code-block:: text
+
+       [root@xxxx ~]# cio_ignore -r 000c
+       [root@xxxx ~]# chccwdev -e 000c
+       Setting device 0.0.000c online
+       Done
+
+   If something like 'is already  online' is returned, it means reader already
+   online and feel free to ignore the warning.
+
+5. Enable punch device
 
    In order to spawn guest, BYOL needs to be able to punch files to spawned
    guests' reader, so the punch device on BYOL needs to be enabled.
@@ -91,8 +108,8 @@ Preparation on BYOL
 
    .. code-block:: text
 
-       [root@xxxx ~]# cio_ignore -r d
-       [root@xxxx ~]# chccwdev -e d
+       [root@xxxx ~]# cio_ignore -r 000d
+       [root@xxxx ~]# chccwdev -e 000d
        Setting device 0.0.000d online
        Done
 
