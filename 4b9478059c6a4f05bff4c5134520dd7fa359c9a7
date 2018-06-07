@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9be95c49_92192403",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-06-07T01:48:32Z",
+      "side": 1,
+      "message": "I suggest we add more comments on what\u0027s doing here\n\nand are you sure all dist use same method ?\ne.g 56-zfcp.rules all distro use same name here?",
+      "range": {
+        "startLine": 232,
+        "startChar": 8,
+        "endLine": 255,
+        "endChar": 47
+      },
+      "revId": "4b9478059c6a4f05bff4c5134520dd7fa359c9a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
