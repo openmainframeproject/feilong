@@ -50,7 +50,7 @@ DEDICATE = 'dedicate'
 def get_volumeop():
     global _VolumeOP
     if not _VolumeOP:
-        _VolumeOP = FCPVolumeManager()
+        _VolumeOP = VolumeOperatorAPI()
     return _VolumeOP
 
 
@@ -71,15 +71,18 @@ class VolumeOperatorAPI(object):
     still make things much easier.
     """
 
-    @abc.abstractmethod
-    def attach_volume_to_instance(self, instance, volume, connection_info,
-                                  is_rollback_in_failure=False):
-        raise NotImplementedError
+    _fcp_manager_obj = None
 
-    @abc.abstractmethod
-    def detach_volume_from_instance(self, instance, volume, connection_info,
-                                    is_rollback_in_failure=False):
-        raise NotImplementedError
+    def __init__(self):
+        if not VolumeOperatorAPI._fcp_manager_obj:
+            VolumeOperatorAPI._fcp_manager_obj = FCPVolumeManager()
+        self._volume_manager = VolumeOperatorAPI._fcp_manager_obj
+
+    def attach_volume_to_instance(self, connection_info):
+        self._volume_manager.attach(connection_info)
+
+    def detach_volume_from_instance(self, connection_info):
+        self._volume_manager.detach(connection_info)
 
 
 @six.add_metaclass(abc.ABCMeta)

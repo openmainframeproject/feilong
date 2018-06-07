@@ -235,3 +235,30 @@ class SDKAPITestCase(base.SDKTestCase):
     def test_vswitch_grant_user(self, guv):
         self.api.vswitch_grant_user("testvsw", self.userid)
         guv.assert_called_once_with("testvsw", self.userid)
+
+    @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI.attach_volume_to_instance")
+    def test_volume_attach(self, mock_attach):
+        connection_info = {'platform': 'x86_64',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': False,
+                           'target_wwpn': '1111',
+                           'target_lun': '2222',
+                           'zvm_fcp': 'b83c',
+                           'assigner_id': 'user1'}
+        self.api.volume_attach(connection_info)
+        mock_attach.assert_called_once_with(connection_info)
+
+    @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI."
+                "detach_volume_from_instance")
+    def test_volume_detach(self, mock_detach):
+        connection_info = {'platform': 'x86_64',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': False,
+                           'target_wwpn': '1111',
+                           'target_lun': '2222',
+                           'zvm_fcp': 'b83c',
+                           'assigner_id': 'user1'}
+        self.api.volume_detach(connection_info)
+        mock_detach.assert_called_once_with(connection_info)
