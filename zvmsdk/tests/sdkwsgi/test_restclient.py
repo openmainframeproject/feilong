@@ -17,7 +17,6 @@ import time
 
 from zvmconnector import connector
 from zvmsdk import config
-from zvmsdk.tests.sdkwsgi import api_sample
 from zvmsdk.tests.sdkwsgi import base
 
 
@@ -29,16 +28,11 @@ CONN_SOCKET = 'socket'
 class ZVMConnectorTestCase(base.ZVMConnectorBaseTestCase):
     def __init__(self, methodName='runTest'):
         super(ZVMConnectorTestCase, self).__init__(methodName)
-        self.apibase = api_sample.APITestBase()
         self.restclient = connector.ZVMConnector(connection_type=CONN_REST,
                                                  port=8888)
         self.sockclient = connector.ZVMConnector(connection_type=CONN_SOCKET)
         self.userid_rest = 'RESTT%03d' % (time.time() % 1000)
         self.userid_sock = 'SOCKT%03d' % (time.time() % 1000)
-
-    def setUp(self):
-        super(ZVMConnectorTestCase, self).setUp()
-        self.record_logfile_position()
 
     def _guest_create(self, conn_type):
         api_name = 'guest_create'

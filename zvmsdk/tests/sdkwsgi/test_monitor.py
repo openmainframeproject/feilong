@@ -17,7 +17,6 @@ import six
 import time
 
 from zvmsdk.tests.sdkwsgi import base
-from zvmsdk.tests.sdkwsgi import test_utils
 from zvmsdk import config
 from zvmsdk import monitor
 
@@ -29,40 +28,21 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
     @classmethod
     def setUpClass(cls):
         super(MonitorTestCase, cls).setUpClass()
-
-        cls.client = test_utils.TestzCCClient()
-        cls.test_utils = test_utils.ZVMConnectorTestUtils()
-        cls.userid1 = cls.test_utils.deploy_guest()[0]
-        cls.userid2 = cls.test_utils.deploy_guest()[0]
+        cls.userid1 = cls.utils.deploy_guest()[0]
+        cls.userid2 = cls.utils.deploy_guest()[0]
+        cls.utils.power_on_guest_until_reachable(cls.userid1)
+        cls.utils.power_on_guest_until_reachable(cls.userid2)
 
     @classmethod
     def tearDownClass(cls):
         super(MonitorTestCase, cls).tearDownClass()
-        cls.test_utils.destroy_guest(cls.userid1)
-        cls.test_utils.destroy_guest(cls.userid2)
-
-    def setUp(self):
-        super(MonitorTestCase, self).setUp()
-        self.record_logfile_position()
-
-    def _inspect_stats(self, userid):
-        body = None
-        url = '/guests/stats?userid=%s' % userid
-        resp = self.client.api_request(url=url, method='GET',
-                                      body=body)
-        return resp
-
-    def _inspect_vnics(self, userid):
-        body = None
-        url = '/guests/interfacestats?userid=%s' % userid
-        resp = self.client.api_request(url=url, method='GET',
-                                      body=body)
-        return resp
+        cls.utils.destroy_guest(cls.userid1)
+        cls.utils.destroy_guest(cls.userid2)
 
     def test_guest_inspect_stats(self):
         print("Test with a single uerid")
         test_id = self.userid1.upper()
-        resp = self._inspect_stats(self.userid1)
+        resp = self.client.guest_inspect_stats(self.userid1)
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
         self.assertEqual(0, results['overallRC'])
@@ -101,7 +81,7 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
         print("Test with a userid list")
         test_id2 = self.userid2.upper()
         guest_list = [self.userid1, self.userid2]
-        resp = self._inspect_stats(guest_list)
+        resp = self.client.guest_inspect_stats(guest_list)
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
         self.assertEqual(0, results['overallRC'])
@@ -118,11 +98,11 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
                 result[test_id].get('shared_mem_kb'), int))
         """
         print("Test with a nonexistent guest")
-        resp = self._inspect_stats('FAKE_ID')
+        resp = self.client.guest_inspect_stats('FAKE_ID')
         self.assertEqual(404, resp.status_code)
         """
         print("Test with an empty user list")
-        resp = self._inspect_stats([])
+        resp = self.client.guest_inspect_stats([])
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
         self.assertEqual(results['overallRC'], 0)
@@ -132,7 +112,7 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
     def test_guest_inspect_vnics(self):
         print("To test with a single uerid")
         test_id = self.userid1.upper()
-        resp = self._inspect_vnics(self.userid1)
+        resp = self.client.guest_inspect_vnics(self.userid1)
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
         self.assertEqual(0, results['overallRC'])
@@ -168,7 +148,7 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
         print("To test with a userid list")
         test_id2 = self.userid2.upper()
         guest_list = [self.userid1, self.userid2]
-        resp = self._inspect_vnics(guest_list)
+        resp = self.client.guest_inspect_vnics(guest_list)
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
         self.assertEqual(0, results['overallRC'])
@@ -185,11 +165,11 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
                 result[test_id2][0].get('nic_tx'), int))
         """
         print("To test with a nonexistent guest")
-        resp = self._inspect_vnics('FAKE_ID')
+        resp = self.client.guest_inspect_vnics('FAKE_ID')
         self.assertEqual(404, resp.status_code)
         """
         print("To test with an empty user list")
-        resp = self._inspect_vnics([])
+        resp = self.client.guest_inspect_vnics([])
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
         self.assertEqual(results['overallRC'], 0)
@@ -199,13 +179,20 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
 
 class MeteringCacheTestCase(base.ZVMConnectorBaseTestCase):
 
+    def _set_conf(self, section, opt, value):
+        monitor.CONF[section][opt] = value
+
+    def _set_conf_auto_cleanup(self, section, opt, value):
+        old_value = monitor.CONF[section][opt]
+        monitor.CONF[section][opt] = value
+        self.addCleanup(self._set_conf, section, opt, old_value)
+
     def setUp(self):
         super(MeteringCacheTestCase, self).setUp()
-        self.set_conf('monitor', 'cache_interval', 1000)
+        self._set_conf_auto_cleanup('monitor', 'cache_interval', 1000)
         self.mc = monitor.MeteringCache(('typeA', 'typeB'))
         self.mc.refresh('typeA', {})
         self.mc.refresh('typeB', {})
-        self.record_logfile_position()
 
     def test_init(self):
         self.assertListEqual(sorted(self.mc._cache.keys()),
@@ -247,7 +234,7 @@ class MeteringCacheTestCase(base.ZVMConnectorBaseTestCase):
         self.mc.refresh('typeA', data)
         self.assertEqual(self.mc.get('typeA', 'data1'), 'value1')
         self.assertEqual(self.mc.get('typeA', 'data2'), 'value2')
-        self.set_conf('monitor', 'cache_interval', 1)
+        self._set_conf('monitor', 'cache_interval', 1)
         # Test expire
         self.mc.refresh('typeA', data)
         time.sleep(2)

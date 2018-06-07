@@ -27,7 +27,10 @@ from zvmsdk import config
 from zvmsdk import smutclient
 from zvmsdk import utils as zvmutils
 
+
+config.load_config()
 CONF = config.CONF
+
 TEST_IP_POOL = []
 
 
