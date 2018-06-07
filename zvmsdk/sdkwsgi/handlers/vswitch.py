@@ -48,7 +48,7 @@ class VswitchAction(object):
         rdev = vsw.get('rdev', None)
         controller = vsw.get('controller', '*')
         connection = vsw.get('connection', "CONNECT")
-        network_type = vsw.get('network_type', "IP")
+        network_type = vsw.get('network_type', "ETHERNET")
         router = vsw.get('router', "NONROUTER")
         vid = vsw.get('vid', "UNAWARE")
         port_type = vsw.get('port_type', "ACCESS")
