@@ -30,6 +30,17 @@ class VSwitchTestCase(base.ZVMConnectorBaseTestCase):
         # make sure test vswitch does not exist
         self._vswitch_delete()
 
+    @classmethod
+    def setUpClass(cls):
+        super(VSwitchTestCase, cls).setUpClass()
+        cls.userid = "FVTUSER1"
+        cls.client.guest_create(cls.userid, disk_list=[])
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.utils.destroy_guest(cls.userid)
+        super(VSwitchTestCase, cls).tearDownClass()
+
     def _vswitch_create(self, vswitch_name="RESTVSW1", rdev="FF00"):
         resp = self.client.vswitch_create(vswitch_name, rdev)
         if resp.status_code in (200, 409):
