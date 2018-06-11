@@ -93,7 +93,7 @@ class ImageTestCase(base.ZVMConnectorBaseTestCase):
 
     def test_image_delete_not_exist(self):
         resp = self.client.image_delete("dummy")
-        self.assertEqual(404, resp.status_code)
+        self.assertEqual(200, resp.status_code)
 
     def test_image_get_root_disk_size_not_exist(self):
         resp = self.client.image_get_root_disk_size(self.dummy_image_fname)
