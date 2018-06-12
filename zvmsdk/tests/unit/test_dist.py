@@ -114,10 +114,17 @@ class RHEL6TestCase(base.SDKTestCase):
         wwpn = '0x5005076812341234'
         lun = '0x0026000000000000'
         multipath = True
+        device = '0.0.%s' % fcp
         cmd_offline_dev = 'chccwdev -d %s' % fcp
+        data = {'wwpn': wwpn, 'lun': lun,
+                'device': device, 'zfcpConf': '/etc/zfcp.conf'}
+        cmd_delete_records = ('sed -i -e '
+                              '\"/%(device)s %(wwpn)s %(lun)s/d\" '
+                              '%(zfcpConf)s' % data)
         self.linux_dist._offline_fcp_device(assigner_id, fcp,
                                             wwpn, lun, multipath)
-        exec_cmd.assert_called_once_with(assigner_id, cmd_offline_dev)
+        exec_cmd.assert_has_calls([mock.call(assigner_id, cmd_offline_dev),
+                                   mock.call(assigner_id, cmd_delete_records)])
 
     @mock.patch.object(dist.LinuxDist, 'execute_cmd')
     def test_set_zfcp_config_files(self, exec_cmd):
