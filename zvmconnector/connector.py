@@ -66,12 +66,11 @@ class ZVMConnector(object):
                                     to use. Default to False.
         :param str token_path:      The path of token file.
         """
-        if connection_type is None:
-            if ((ip_addr is None) or
-                (ip_addr == '127.0.0.1')):
-                connection_type = CONN_TYPE_SOCKET
-            else:
-                connection_type = CONN_TYPE_REST
+        if (connection_type is not None and
+                connection_type.lower() == CONN_TYPE_SOCKET):
+            connection_type = CONN_TYPE_SOCKET
+        else:
+            connection_type = CONN_TYPE_REST
         self.conn = self._get_connection(ip_addr, port, timeout,
                                          connection_type, ssl_enabled, verify,
                                          token_path)
