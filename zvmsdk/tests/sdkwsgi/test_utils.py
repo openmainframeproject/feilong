@@ -36,7 +36,7 @@ TEST_IMAGE_LIST = []
 
 
 def get_test_image_list():
-    global IMAGES_LIST
+    global TEST_IMAGES_LIST
     for image in CONF.tests.images.split(','):
         info = image.strip(' ').split(':')
         # use image_file_name-distro as the image name
