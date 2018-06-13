@@ -416,7 +416,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'zvm_fcp': 'b83c',
                            'assigner_id': 'user1'}
         mock_increase.return_value = True
-        mock_dedicate.side_effect = exception.SDKBaseException
+        results = {'rs': 0, 'errno': 0, 'strError': '',
+                   'overallRC': 1, 'logEntries': [], 'rc': 0,
+                   'response': ['fake response']}
+        mock_dedicate.side_effect = exception.SDKSMUTRequestFailed(
+            results, 'fake error')
         # return value of decreate must bigger than 1
         mock_decrease.return_value = 0
         self.assertRaises(exception.SDKBaseException,
@@ -440,7 +444,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'assigner_id': 'user1'}
         # this return does not matter
         mock_decrease.return_value = 0
-        mock_remove_disk.side_effect = exception.SDKBaseException
+        results = {'rs': 0, 'errno': 0, 'strError': '',
+                   'overallRC': 1, 'logEntries': [], 'rc': 0,
+                   'response': ['fake response']}
+        mock_remove_disk.side_effect = exception.SDKSMUTRequestFailed(
+            results, 'fake error')
         self.assertRaises(exception.SDKBaseException,
                           self.volumeops.detach,
                           connection_info)
