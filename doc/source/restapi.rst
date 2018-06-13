@@ -108,7 +108,7 @@ List Guests
 
 **GET /guests**
 
-List names of all the VMs on this host
+List names of all the guests created by z/VM Cloud Connector.
 
 * Request:
 
