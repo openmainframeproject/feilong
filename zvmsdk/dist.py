@@ -436,6 +436,8 @@ class rhel(LinuxDist):
         """rhel offline zfcp. sampe to all rhel distro."""
         offline_dev = 'chccwdev -d %s' % fcp
         self.execute_cmd(assigner_id, offline_dev)
+        self._delete_zfcp_config_records(assigner_id, fcp,
+                                         target_wwpn, target_lun)
 
     def _set_zfcp_multipath(self, assigner_id):
         """sampe to all rhel distro ???"""
@@ -453,6 +455,17 @@ class rhel(LinuxDist):
     def _config_to_persistent(self, assigner_id):
         """rhel"""
         pass
+
+    def _delete_zfcp_config_records(self, assigner_id, fcp,
+                                    target_wwpn, target_lun):
+        """rhel"""
+        device = '0.0.%s' % fcp
+        data = {'wwpn': target_wwpn, 'lun': target_lun,
+                'device': device, 'zfcpConf': '/etc/zfcp.conf'}
+        delete_records_cmd = ('sed -i -e '
+                              '\"/%(device)s %(wwpn)s %(lun)s/d\" '
+                              '%(zfcpConf)s' % data)
+        self.execute_cmd(assigner_id, delete_records_cmd)
 
 
 class rhel6(rhel):
