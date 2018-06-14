@@ -14,6 +14,7 @@
 
 import json
 import os
+import subprocess
 import time
 import unittest
 
@@ -22,6 +23,7 @@ from parameterized import parameterized
 from zvmsdk.tests.sdkwsgi import base
 from zvmsdk.tests.sdkwsgi import test_utils
 from zvmsdk import config
+from __builtin__ import False
 
 
 CONF = config.CONF
@@ -252,6 +254,29 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
             f.write('{}')
         with open(transport_file3, 'w') as f:
             f.write('{}')
+        cmd = ['mkisofs',
+               '-o',
+               '/root/testconfiguredrive/cfgdrive.iso',
+               '-ldots',
+               '-allow-lowercase',
+               '-allow-multidot',
+               '-l',
+               '-quiet',
+               '-J',
+               '-r',
+               '-V',
+               'config-2',
+               '/root/testconfiguredrive/testtmp/']
+        try:
+            subprocess.check_output(cmd,
+                                    close_fds=True,
+                                    stderr=subprocess.STDOUT).split()[2]
+        except subprocess.CalledProcessError as e:
+            msg = e.output
+            print msg
+        except Exception as e:
+            msg = e.output
+            print msg
         os.system('tar -czvf cfgdrive.tgz openstack')
         os.system('cp cfgdrive.tgz /var/lib/zvmsdk/cfgdrive.tgz')
         os.system('rm -rf openstack')
