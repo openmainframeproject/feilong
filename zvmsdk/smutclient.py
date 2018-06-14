@@ -1907,10 +1907,11 @@ class SMUTClient(object):
         return size
 
     def _get_image_path_by_name(self, image_name):
-        target_info = self._ImageDbOperator.image_query_record(image_name)
-        if not target_info:
+        try:
+            target_info = self._ImageDbOperator.image_query_record(image_name)
+        except exception.SDKObjectNotExistError:
             msg = ("The image %s does not exist in image repository"
-                      % image_name)
+                   % image_name)
             LOG.error(msg)
             raise exception.SDKImageOperationError(rs=20, img=image_name)
 
