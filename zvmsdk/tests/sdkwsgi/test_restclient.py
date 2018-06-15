@@ -18,6 +18,7 @@ import time
 from zvmconnector import connector
 from zvmsdk import config
 from zvmsdk.tests.sdkwsgi import base
+from zvmsdk.tests.sdkwsgi import test_utils
 
 
 CONF = config.CONF
@@ -33,6 +34,7 @@ class ZVMConnectorTestCase(base.ZVMConnectorBaseTestCase):
         self.sockclient = connector.ZVMConnector(connection_type=CONN_SOCKET)
         self.userid_rest = 'RESTT%03d' % (time.time() % 1000)
         self.userid_sock = 'SOCKT%03d' % (time.time() % 1000)
+        self.image_path = test_utils.TEST_IMAGE_LIST[0][1]
 
     def _guest_create(self, conn_type):
         api_name = 'guest_create'
@@ -97,7 +99,7 @@ class ZVMConnectorTestCase(base.ZVMConnectorBaseTestCase):
 
     def _image_create(self, conn_type):
         image_fname = 'rhel67eckd_small_1100cyl.img'
-        image_fpath = CONF.tests.image_path
+        image_fpath = self.image_path
         url = "file://" + image_fpath
         image_meta = {"os_version": "rhel6.7"}
         api_name = 'image_import'
