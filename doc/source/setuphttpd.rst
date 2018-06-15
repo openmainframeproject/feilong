@@ -31,6 +31,28 @@ The detailed setup steps for each type of web server product is out of this docu
 you can refer to the specific guide of your chosen web server. This guide would take Apache and uwsgi
 on RHEL7.2 as a sample about the deployment process, you can setup your own web server similarly.
 
+**NOTE**:
+
+The uwsgi package contained in the **Ubuntu 16.04 LTS** repository cann't work on IBM Z because of
+the know big endian issue which is fixed in version 2.0.13.
+If you are using Ubuntu 16.04 LTS for the BYOL and using apache2 to proxy requests to uwsgi,
+you will get the HTTPD internal error with 500 as the error code.
+
+References:
+
+* `Ubuntu launchpad bug`_
+* `uwsgi 2.0.13 changelog`_
+
+.. _Ubuntu launchpad bug: https://bugs.launchpad.net/ubuntu/+source/uwsgi/+bug/1776624
+.. _uwsgi 2.0.13 changelog: https://uwsgi-docs.readthedocs.io/en/latest/Changelog-2.0.13.html
+
+To work around this issue, you have the a few choices:
+
+* Install uwsgi of version >= 2.0.13. (eg, you can choose to use pip to install uwsgi and specify the version)
+* Use the mod-wsgi module of apache2 instead of uwsgi, you can refer to :ref:`Steps to deploy z/VM Cloud Connector into Apache with mod_wsgi`
+  for the detailed setup.
+
+
 Installation
 ============
 
@@ -175,6 +197,8 @@ Start Apache service
 
     #systemctl start httpd.service
 
+.. _`Verification`:
+
 Verification
 ============
 
@@ -301,3 +325,52 @@ Setup Client Side
 
      >>> from zvmconnector import connector
      >>> conn = connector.ZVMConnector(port=8080, token_path='/your/own/path/token.dat')
+
+
+.. _`Steps to deploy z/VM Cloud Connector into Apache with mod_wsgi`:
+
+Steps to deploy z/VM Cloud Connector into Apache with mod_wsgi
+==============================================================
+
+* Install packages
+
+  * apache2
+  * libapache2-mod-wsgi
+
+* Configure Apache
+
+  Create a vhost for z/VM Cloud Connector in Apache. Copy the following content to
+  /etc/apache2/sites-available/zvmsdk_wsgi.conf and update the file to match your system and requirements.
+
+  Then execute command "a2ensite zvmsdk_wsgi" to enable the site.
+
+  .. code-block:: text
+
+      Listen 8080
+      <VirtualHost *:8080>
+          WSGIDaemonProcess zvmsdkwsgi user=zvmsdk group=zvmsdk processes=2 threads=5
+              WSGIProcessGroup zvmsdkwsgi
+
+          WSGIScriptAlias / /usr/bin/zvmsdk-wsgi
+          <Directory /usr/lib/python2.7/dist-packages/zvmsdk/sdkwsgi>
+              Require all granted
+          </Directory>
+
+          <Directory /usr/bin>
+          <Files zvmsdk-wsgi>
+              Require all granted
+          </Files>
+          </Directory>
+      </VirtualHost>
+
+  SSL is strongly recommended for security considerations. Refer to the specific web server
+  documentation on how to enable SSL.
+
+* Start Apache service
+
+  .. code-block:: text
+
+      #systemctl start apache2.service
+
+  Now the z/VM Cloud Connector has been deployed into apache2 with mod_wsgi, please continue to follow the
+  :ref:`Verification` to verify the configuration and setup token.
