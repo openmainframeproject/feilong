@@ -77,10 +77,10 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
                 result[test_id].get('min_mem_kb'), int))
         self.assertTrue(isinstance(
                 result[test_id].get('shared_mem_kb'), int))
-        """
+
         print("Test with a userid list")
         test_id2 = self.userid2.upper()
-        guest_list = [self.userid1, self.userid2]
+        guest_list = "%s, %s" % (self.userid1, self.userid2)
         resp = self.client.guest_inspect_stats(guest_list)
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
@@ -96,18 +96,15 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
                 result[test_id].get('guest_cpus'), int))
         self.assertTrue(isinstance(
                 result[test_id].get('shared_mem_kb'), int))
-        """
+
         print("Test with a nonexistent guest")
         resp = self.client.guest_inspect_stats('FAKE_ID')
         self.assertEqual(404, resp.status_code)
-        """
-        print("Test with an empty user list")
-        resp = self.client.guest_inspect_stats([])
-        self.assertEqual(200, resp.status_code)
-        results = json.loads(resp.content)
-        self.assertEqual(results['overallRC'], 0)
-        self.assertEqual(results['output'], {})
-        """
+
+        print("To test with an empty user list")
+        resp = self.client.guest_inspect_vnics('')
+        # returns validation error when userid is ''
+        self.assertEqual(400, resp.status_code)
 
     def test_guest_inspect_vnics(self):
         print("To test with a single uerid")
@@ -144,10 +141,10 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
                 result[test_id][0].get('nic_rx'), int))
         self.assertTrue(isinstance(
                 result[test_id][0].get('nic_tx'), int))
-        """
+
         print("To test with a userid list")
         test_id2 = self.userid2.upper()
-        guest_list = [self.userid1, self.userid2]
+        guest_list = "%s, %s" % (self.userid1, self.userid2)
         resp = self.client.guest_inspect_vnics(guest_list)
         self.assertEqual(200, resp.status_code)
         results = json.loads(resp.content)
@@ -163,18 +160,15 @@ class MonitorTestCase(base.ZVMConnectorBaseTestCase):
                 result[test_id][0].get('nic_vdev'), six.string_types))
         self.assertTrue(isinstance(
                 result[test_id2][0].get('nic_tx'), int))
-        """
+
         print("To test with a nonexistent guest")
         resp = self.client.guest_inspect_vnics('FAKE_ID')
         self.assertEqual(404, resp.status_code)
-        """
+
         print("To test with an empty user list")
-        resp = self.client.guest_inspect_vnics([])
-        self.assertEqual(200, resp.status_code)
-        results = json.loads(resp.content)
-        self.assertEqual(results['overallRC'], 0)
-        self.assertEqual(results['output'], {})
-        """
+        resp = self.client.guest_inspect_vnics('')
+        # returns validation error when userid is ''
+        self.assertEqual(400, resp.status_code)
 
 
 class MeteringCacheTestCase(base.ZVMConnectorBaseTestCase):
