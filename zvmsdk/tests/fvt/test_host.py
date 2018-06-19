@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from zvmsdk.tests.sdkwsgi import base
+from zvmsdk.tests.fvt import base
 from zvmsdk import config
 
 

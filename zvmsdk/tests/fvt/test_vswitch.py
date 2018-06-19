@@ -16,7 +16,7 @@ import json
 
 from zvmsdk import config
 from zvmsdk import log
-from zvmsdk.tests.sdkwsgi import base
+from zvmsdk.tests.fvt import base
 
 
 LOG = log.LOG

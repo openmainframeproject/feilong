@@ -16,7 +16,7 @@ import json
 import six
 import time
 
-from zvmsdk.tests.sdkwsgi import base
+from zvmsdk.tests.fvt import base
 from zvmsdk import config
 from zvmsdk import monitor
 

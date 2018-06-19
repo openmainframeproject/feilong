@@ -19,8 +19,8 @@ import unittest
 
 
 from parameterized import parameterized
-from zvmsdk.tests.sdkwsgi import base
-from zvmsdk.tests.sdkwsgi import test_utils
+from zvmsdk.tests.fvt import base
+from zvmsdk.tests.fvt import test_utils
 from zvmsdk import config
 
 
