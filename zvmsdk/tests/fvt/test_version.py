@@ -13,7 +13,7 @@
 #    under the License.
 
 
-from zvmsdk.tests.sdkwsgi import base
+from zvmsdk.tests.fvt import base
 
 
 class VersionTestCase(base.ZVMConnectorBaseTestCase):

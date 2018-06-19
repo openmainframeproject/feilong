@@ -69,7 +69,7 @@ Get zvm cloud connector version
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_version.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_version.tpl
    :language: javascript
 
 Token
@@ -126,7 +126,7 @@ List names of all the guests created by z/VM Cloud Connector.
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_list.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guests_list.tpl
    :language: javascript
 
 Create Guest
@@ -156,7 +156,7 @@ Create a vm in z/VM
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_create.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_create.tpl
    :language: javascript
 
 * Response code:
@@ -188,7 +188,7 @@ Add disks for a guest
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_add_disks.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_add_disks.tpl
    :language: javascript
 
 * Response code:
@@ -219,7 +219,7 @@ Configure additional disks for a guest
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_config_disks.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_config_disks.tpl
    :language: javascript
 
 * Response code:
@@ -247,7 +247,7 @@ Delete disks form a guest
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_delete_disks.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_delete_disks.tpl
    :language: javascript
 
 * Response code:
@@ -283,7 +283,7 @@ Get guests cpu, memory information.
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_stats.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guests_get_stats.tpl
    :language: javascript
 
 Get Guests interface stats
@@ -311,7 +311,7 @@ Get guests network interface statistics.
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_interface_stats.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guests_get_interface_stats.tpl
    :language: javascript
 
 Get Guests nic info
@@ -346,7 +346,7 @@ Get guests nic information, including userid, nic number, vswitch, nic id and co
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guests_get_nic_info.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guests_get_nic_info.tpl
    :language: javascript
 
 Show Guest definition
@@ -374,7 +374,7 @@ Display the user direct by the given userid.
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get.tpl
    :language: javascript
 
 Delete Guest
@@ -429,7 +429,7 @@ Get running information of guest.
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get_info.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_info.tpl
    :language: javascript
 
 Create Guest nic
@@ -452,7 +452,7 @@ Create a virtual nic on giving guest.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_create_nic.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_create_nic.tpl
    :language: javascript
 
 * Response code:
@@ -480,7 +480,7 @@ Create one or more network interfaces on giving guest.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_create_network_interface.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_create_network_interface.tpl
    :language: javascript
 
 * Response code:
@@ -508,7 +508,7 @@ Delete one network interface on giving guest.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_delete_network_interface.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_delete_network_interface.tpl
    :language: javascript
 
 * Response code:
@@ -533,7 +533,7 @@ Start a guest.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_start_req.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_start_req.tpl
    :language: javascript
 
 * Response code:
@@ -558,7 +558,7 @@ Stop a guest.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_stop_req.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_stop_req.tpl
    :language: javascript
 
 * Response code:
@@ -583,7 +583,7 @@ Stop a guest gracefully, it will firstly shutdown the os on vm, then stop the vm
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_softstop_req.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_softstop_req.tpl
    :language: javascript
 
 * Response code:
@@ -608,7 +608,7 @@ Pause a guest.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_pause_req.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_pause_req.tpl
    :language: javascript
 
 * Response code:
@@ -633,7 +633,7 @@ Unpause a guest.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_unpause_req.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_unpause_req.tpl
    :language: javascript
 
 * Response code:
@@ -659,7 +659,7 @@ given guest.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_reboot_req.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_reboot_req.tpl
    :language: javascript
 
 * Response code:
@@ -685,7 +685,7 @@ z/VM it is running on, then log on the guest and IPL.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_reset_req.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_reset_req.tpl
    :language: javascript
 
 * Response code:
@@ -710,7 +710,7 @@ Get console output of the guest.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get_console_output_req.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_console_output_req.tpl
    :language: javascript
 
 * Response code:
@@ -744,7 +744,7 @@ Live resize CPUs of the guest.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_live_resize_cpus_req.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_live_resize_cpus_req.tpl
    :language: javascript
 
 * Response code:
@@ -797,7 +797,7 @@ Resize CPUs of the guest.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_resize_cpus_req.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_resize_cpus_req.tpl
    :language: javascript
 
 * Response code:
@@ -832,7 +832,7 @@ After guest created, deploy image onto the guest.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_deploy_req.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_deploy_req.tpl
    :language: javascript
 
 * Response code:
@@ -858,7 +858,7 @@ Capture guest
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_capture_req.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_capture_req.tpl
    :language: javascript
 
 * Response code:
@@ -892,7 +892,7 @@ Get power state of the guest.
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_get_power_state.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_power_state.tpl
    :language: javascript
 
 Update Guest nic
@@ -915,7 +915,7 @@ Couple or uncouple nic with vswitch on the guest.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_guest_couple_uncouple_nic.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_couple_uncouple_nic.tpl
    :language: javascript
 
 * Response code:
@@ -975,7 +975,7 @@ Get host information.
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_host_info.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_info.tpl
    :language: javascript
 
 Get Host disk pool info
@@ -1005,7 +1005,7 @@ Get disk pool information on the host.
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_host_disk_info.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_disk_info.tpl
    :language: javascript
 
 Image(s)
@@ -1045,7 +1045,7 @@ Get the list of image info in image repository.
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_query.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_image_query.tpl
    :language: javascript
 
 Create image
@@ -1067,7 +1067,7 @@ Import an image into image repository
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_create_req.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_image_create_req.tpl
    :language: javascript
 
 * Response code:
@@ -1096,7 +1096,7 @@ Export the image to the specified location.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_export_req.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_image_export_req.tpl
    :language: javascript
 
 * Response code:
@@ -1111,7 +1111,7 @@ Export the image to the specified location.
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_export_res.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_image_export_res.tpl
    :language: javascript
 
 Get root disk size of image
@@ -1139,7 +1139,7 @@ Get the root disk size of the image.
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_image_get_root_disk_size.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_image_get_root_disk_size.tpl
    :language: javascript
 
 Delete image
@@ -1194,7 +1194,7 @@ Create a new vswitch.
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_create.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_vswitch_create.tpl
    :language: javascript
 
 * Response code:
@@ -1228,7 +1228,7 @@ Get the list of vswitch name on the host
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_get.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_vswitch_get.tpl
    :language: javascript
 
 GET vswitch details
@@ -1256,7 +1256,7 @@ Get the details of a vswitch
 
 * Response sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_query.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_vswitch_query.tpl
    :language: javascript
 
 Grant user to vswitch
@@ -1276,7 +1276,7 @@ Grant an user to access vswitch
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_update_req.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_vswitch_update_req.tpl
    :language: javascript
 
 * Response code:
@@ -1304,7 +1304,7 @@ Revoke the user access from vswitch
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_update_revoke.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_vswitch_update_revoke.tpl
    :language: javascript
 
 * Response code:
@@ -1334,7 +1334,7 @@ Set vlan id for user when connecting to the vswitch
 
 * Request sample:
 
-.. literalinclude:: ../../zvmsdk/tests/sdkwsgi/api_templates/test_vswitch_set_vlan.tpl
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_vswitch_set_vlan.tpl
    :language: javascript
 
 * Response code:

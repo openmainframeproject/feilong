@@ -17,8 +17,8 @@ import time
 
 from zvmconnector import connector
 from zvmsdk import config
-from zvmsdk.tests.sdkwsgi import base
-from zvmsdk.tests.sdkwsgi import test_utils
+from zvmsdk.tests.fvt import base
+from zvmsdk.tests.fvt import test_utils
 
 
 CONF = config.CONF

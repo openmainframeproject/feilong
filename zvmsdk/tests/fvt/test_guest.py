@@ -19,8 +19,8 @@ import unittest
 
 
 from parameterized import parameterized
-from zvmsdk.tests.sdkwsgi import base
-from zvmsdk.tests.sdkwsgi import test_utils
+from zvmsdk.tests.fvt import base
+from zvmsdk.tests.fvt import test_utils
 from zvmsdk import config
 
 
@@ -48,6 +48,10 @@ generate_test_userid_list()
 
 
 class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
+    """Base class for guest releated tests, which includes:
+    - common init steps;
+    - common helper functions;
+    """
 
     def __init__(self, methodName='runTest'):
         super(GuestHandlerBase, self).__init__(methodName)
@@ -281,6 +285,7 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
 
 
 class GuestHandlerTestCase(GuestHandlerBase):
+    """Guest testcases without an existing userid."""
 
     def test_guest_get_not_exist(self):
         resp = self.client.guest_get_definition_info('notexist')
@@ -791,9 +796,10 @@ class GuestHandlerTestCase(GuestHandlerBase):
                             maxcpu=10, maxmem="2048M")
 
 
-# This class is used to test functions that requires a guest to be created
-# but doesn't need the guest to be started, so no need to do deploy.
 class GuestHandlerTestCaseWithCreatedGuest(GuestHandlerBase):
+    """This class is used to test functions that requires a guest to be
+    created but doesn't need the guest to be started, so no need to do deploy.
+    """
 
     @classmethod
     def setUpClass(cls):
@@ -844,9 +850,9 @@ class GuestHandlerTestCaseWithCreatedGuest(GuestHandlerBase):
         self.assertEqual(404, resp.status_code)
 
 
-# This class is used to test functions that requires a deployed guest to be
-# active, but not related to the guest distro.
 class GuestHandlerTestCaseWithSingleDeployedGuest(GuestHandlerBase):
+    """This class is used to test functions that requires a deployed guest to
+    be active, but not related to the guest distro."""
 
     @classmethod
     def setUpClass(cls):
@@ -1109,6 +1115,9 @@ class GuestHandlerTestCaseWithSingleDeployedGuest(GuestHandlerBase):
 
 
 class GuestHandlerTestCaseWithMultipleDeployedGuest(GuestHandlerBase):
+    """This class is used to test functions that requires multip deployed
+    guests to be active, and performs tests on different supported distros.
+    """
 
     @classmethod
     def setUpClass(cls):
@@ -1136,6 +1145,8 @@ class GuestHandlerTestCaseWithMultipleDeployedGuest(GuestHandlerBase):
         for userid in self.userid_list:
             self.utils.softstop_guest(userid)
             self.utils.wait_until_guest_in_power_state(userid, "off")
+            # make sure guest in shutdown state even performed softoff
+            self.client.guest_stop(userid)
 
         GuestHandlerBase.tearDown(self)
 
@@ -1355,6 +1366,7 @@ class GuestHandlerTestCaseWithMultipleDeployedGuest(GuestHandlerBase):
 
 
 class GuestActionTestCase(base.ZVMConnectorBaseTestCase):
+    """Testcases for url of /guests/<userid>/action ."""
 
     def test_guest_action_invalid_body(self):
         body = '{"dummy": "none"}'

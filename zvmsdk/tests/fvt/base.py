@@ -16,8 +16,8 @@ import unittest
 
 from zvmsdk import config
 from zvmsdk import smutclient
-from zvmsdk.tests.sdkwsgi import api_sample
-from zvmsdk.tests.sdkwsgi import test_utils
+from zvmsdk.tests.fvt import api_sample
+from zvmsdk.tests.fvt import test_utils
 
 
 config.load_config()
