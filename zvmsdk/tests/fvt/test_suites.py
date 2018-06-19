@@ -16,11 +16,11 @@ import random
 import re
 import unittest
 
-from zvmsdk.tests.sdkwsgi import test_utils
-from zvmsdk.tests.sdkwsgi import test_guest
-from zvmsdk.tests.sdkwsgi import test_host
-from zvmsdk.tests.sdkwsgi import test_image
-from zvmsdk.tests.sdkwsgi import test_version
+from zvmsdk.tests.fvt import test_utils
+from zvmsdk.tests.fvt import test_guest
+from zvmsdk.tests.fvt import test_host
+from zvmsdk.tests.fvt import test_image
+from zvmsdk.tests.fvt import test_version
 
 
 TEST_IMAGE_LIST = test_utils.TEST_IMAGE_LIST
