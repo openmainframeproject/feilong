@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "19f47861_fed85db6",
+        "filename": "zvmsdk/tests/sdkwsgi/test_guest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 518,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-06-19T07:42:29Z",
+      "side": 1,
+      "message": "what\u0027s the logic here? \nhostname set to deploy_fvt ?\ncan\u0027t use assertIn(\u0027deploy_fvt\u0027, result) ?\n\ncan\u0027t we check the result within Json format?",
+      "range": {
+        "startLine": 514,
+        "startChar": 8,
+        "endLine": 518,
+        "endChar": 45
+      },
+      "revId": "17d01668b00b55f6b6f69944284be8d1873587ff",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
