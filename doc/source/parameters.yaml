@@ -559,7 +559,7 @@ vswitch_name_body:
   type: string
 rdev_vswitch:
   description: |
-    The real device number, a maximum of three devices.
+    The real device number, a maximum of three devices. None is also allowed.
   in: body
   required: false
   type: string

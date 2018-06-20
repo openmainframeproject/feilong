@@ -144,8 +144,11 @@ boolean = {
 
 
 rdev_list = {
-    'type': ['string'],
-    'pattern': '^([0-9a-fA-F]{,4})(\s+[0-9a-fA-F]{,4}){,2}$'
+    'oneOf': [
+        {'type': 'null'},
+        {'type': 'string',
+         'pattern': '^([0-9a-fA-F]{,4})(\s+[0-9a-fA-F]{,4}){,2}$'}
+    ]
 }
 
 
