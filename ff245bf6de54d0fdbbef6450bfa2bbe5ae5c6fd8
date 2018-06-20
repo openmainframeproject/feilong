@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "95746fdd_47148fde",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 562,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-06-20T03:16:33Z",
+      "side": 1,
+      "message": "I don\u0027t know whether we really need talk about this\nand , it should be \u0027null\u0027 from json perspective?",
+      "range": {
+        "startLine": 562,
+        "startChar": 56,
+        "endLine": 562,
+        "endChar": 76
+      },
+      "revId": "ff245bf6de54d0fdbbef6450bfa2bbe5ae5c6fd8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
