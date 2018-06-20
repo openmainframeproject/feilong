@@ -1,8 +1,17 @@
 How to add functional testcases and run tests
 ---------------------------------------------
 
-Configure functional test enviroment
-====================================
+Install FVT requirements
+========================
+
+Install the dependencies listed in the python-zvm-sdk/fvt-requirements.txt.
+  .. code-block:: text
+
+     cd python-zvm-sdk
+     pip install fvt-requirements.txt
+
+Configure functional test environment
+=====================================
 
 First of all, you should have a zCC installed, configured and works correctlly.
 It is requred to put at least one deployable image into your test environment.
@@ -12,8 +21,11 @@ options:
 
 - restapi_url: REST API URL. Sample value: 'http://127.0.0.1:8888'
 
-- images: Test image file path plus operating system version. Sample value:
-  "/var/lib/zvmsdk/images/netboot/rhel6.7/46a4aea3_54b6_4b1c_8a49_01f302e70c60:rhel6.7"
+- images: Test image file path plus operating system version, separated by ':'.
+  Several images can be specified to test, separated by ','. Sample value:
+
+  * "/var/lib/zvmsdk/images/netboot/rhel6.7/46a4aea3_54b6_4b1c_8a49_01f302e70c60:rhel6.7"
+  * "/var/lib/zvmsdk/images/netboot/rhel6.7/test_image1:rhel6.7, /var/lib/zvmsdk/images/netboot/sles12/test_image2:sles12"
 
 - vswitch: The vswitch that test guests connect to.
 
@@ -66,8 +78,16 @@ Please **NOTE**:
 
 - All zCC REST request should be sent through zCC client in test_utils.py.
 
-- For those tests should be run in different Linux distros, pleaes add tests
-  into test_guest.GuestHandlerTestCaseWithMultipleDeployedGuest .
+- For those tests should be run in different Linux distros, please add tests
+  into one of the following two test classes in test_guest.py:
+
+  * GuestHandlerTestCase.
+
+    (Add @parameterized.expand(TEST_IMAGE_LIST) to extend the case, you can refer to test_guest_live_resize_cpus).
+
+  * GuestHandlerTestCaseWithMultipleDeployedGuest.
+
+    (Add @parameterized.expand(TEST_USERID_LIST) to extend the case, you can refer to test_guest_power_actions).
 
 
 Run function tests
