@@ -22,6 +22,30 @@
       "revId": "ff245bf6de54d0fdbbef6450bfa2bbe5ae5c6fd8",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31606d42_d87dccf7",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 562,
+      "author": {
+        "id": 1010999
+      },
+      "writtenOn": "2018-06-20T05:44:18Z",
+      "side": 1,
+      "message": "Yes, it is null in JSON. The case is from neutron zvm agent. If a vswitch is specified in config file without rdev, and this vswitch is a new one on the host, the neutron zvm agent will try to create it with rdev\u003dNone. The current uwsgi didn\u0027t accept None (null for json mode)",
+      "parentUuid": "95746fdd_47148fde",
+      "range": {
+        "startLine": 562,
+        "startChar": 56,
+        "endLine": 562,
+        "endChar": 76
+      },
+      "revId": "ff245bf6de54d0fdbbef6450bfa2bbe5ae5c6fd8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
     }
   ]
 }
