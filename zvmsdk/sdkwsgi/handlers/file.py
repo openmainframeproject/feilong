@@ -113,7 +113,8 @@ class FileAction(object):
                 msg = ("The specific file %s for export does not exist" %
                        fpath)
                 LOG.error(msg)
-                results = FILE_OPERATION_ERROR.update({'rs': 2,
+                results = FILE_OPERATION_ERROR
+                results.update({'rs': 2,
                     'errmsg': msg, 'output': ''})
                 return results
 

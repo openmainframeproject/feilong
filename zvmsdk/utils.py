@@ -178,7 +178,7 @@ class PathUtils(object):
         return zvmsdk_image_import_repo
 
     def create_file_repository(self, file_type):
-        zvmsdk_file_repo = os.path.join(CONF.file.sdk_file_repository,
+        zvmsdk_file_repo = os.path.join(CONF.file.file_repository,
                                         file_type)
 
         if not os.path.exists(zvmsdk_file_repo):
