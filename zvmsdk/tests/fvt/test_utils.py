@@ -83,10 +83,10 @@ class TestzCCClient(object):
         response = requests.request(method, url, data=body, headers=_headers)
         return response
 
-    def api_request(self, url, method='GET', body=None):
+    def api_request(self, url, method='GET', body=None, headers=None):
 
         full_uri = '%s%s' % (self.base_url, url)
-        return self.request(full_uri, method, body)
+        return self.request(full_uri, method, body, headers)
 
     def image_query(self, image_name):
         url = '/images?imagename=%s' % image_name
@@ -124,6 +124,24 @@ class TestzCCClient(object):
     def image_get_root_disk_size(self, image_name):
         url = '/images/%s/root_disk_size' % image_name
         return self.api_request(url=url, method='GET')
+
+    def _get_data_file(self, fpath):
+        if fpath:
+            return open(fpath, 'rb')
+
+    def file_import(self, fpath):
+        url = '/files'
+        headers = {'Content-Type': 'application/octet-stream'}
+        body = self._get_data_file(fpath)
+        return self.api_request(url=url, method='PUT', body=body,
+                                headers=headers)
+
+    def file_export(self, fpath):
+        url = '/files'
+        headers = {'Content-Type': 'application/octet-stream'}
+        body = fpath
+        return self.api_request(url=url, method='POST', body=body,
+                                headers=headers)
 
     def guest_create(self, userid, vcpus=1, memory=2048,
                      disk_list=[{"size": "5500", "is_boot_disk": "True"}],
