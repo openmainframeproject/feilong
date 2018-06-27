@@ -927,36 +927,29 @@ Where:
 Import the Images to z/VM Cloud Connector
 =========================================
 
-If you just want to import the image to z/VM Cloud Connector, you can use
-ZVMConnector to import the image. Type the following command:
+If you want to import the image to z/VM Cloud Connector, you can use REST API.
+Type the following command:
 
 .. code-block:: text
 
-    >>> from zvmconnector import connector
-    >>> conn = connector.ZVMConnector(ip_addr='1.2.3.4', port=8888);
-    >>> conn.send_request('image_import', 'testimage', 'file:///root/testimage.img',
-    {"os_version": "rhel6.7"},  remote_host="root@6.7.8.9")
-    {u'rs': 0, u'overallRC': 0, u'modID': None, u'rc': 0, u'output': u'', u'errmsg': u''}
+    # curl http://1.2.3.4:8080/images -H "Content-Type:application/json" -H 'X-Auth-Token:<your token>' -X POST -d '{"image": {"url": "file:///var/lib/zvmsdk/images/0100", "image_meta": {"os_version": "rhel6.7"}, "image_name": "0100", "remote_host": "root@6.7.8.9"}}'
+    {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": "", "errmsg": ""}
 
 Please note that if the source image is located at same server as BYOL, there is no need
-to specify the remote_host parameter in image_import.
+to specify the remote_host parameter in data field. And please refer to :ref:`TokenUsage` to get
+your token to fill in the request area ``<your token>``.
 
 Verify the import result by command:
 
 .. code-block:: text
 
-    >>> conn.send_request('image_query', imagename='testimage')
-    {u'rs': 0, u'overallRC': 0, u'modID': None, u'rc': 0,
-    u'output': [{u'image_size_in_bytes': u'512', u'disk_size_units': u'0:CYL',
-    u'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f', u'comments': None,
-    u'imagename': u'testimage', u'imageosdistro': u'rhel6.7', u'type': u'rootonly'}], u'errmsg': u''}
+    # curl http://127.0.0.1:8080/images?imagename=0100 -X GET -H "Content-Type:application/json" -H 'X-Auth-Token:<your token>'
+    {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": [{"image_size_in_bytes": "236435482", "disk_size_units": "1100:CYL", "md5sum": "26ddd19301d4f9c8a85e812412164bb8", "comments": null, "imagename": "0100", "imageosdistro": "rhel6.7", "type": "rootonly"}], "errmsg": ""}
 
 During image import you may meet following error:
 
 .. code-block:: text
 
-    >> conn.send_request('image_import', 'testimage', 'file:///root/testimage.img', {"os_version": "rhel6.7"},
-    remote_host="root@6.7.8.9)
     {u'rs': 10, u'overallRC': 300, u'modID': 40, u'rc': 300, u'output': u'', 'errmsg': u"Image import error:
     Copying image file from remote filesystem failed with error Warning: Permanently added '6.7.8.9' (ECDSA)
     to the list of known hosts.\r\nPermission denied, please try again.\r\nPermission denied, please try again.
