@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dc17e0b6_4830e3c5",
+        "filename": "doc/source/quickstart.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 469,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-06-27T12:10:24Z",
+      "side": 0,
+      "message": "we don\u0027t want to add verification after remove this?",
+      "range": {
+        "startLine": 447,
+        "startChar": 1,
+        "endLine": 469,
+        "endChar": 7
+      },
+      "revId": "30fcd5e2f01a00e133638430fb3c1d781eace986",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
