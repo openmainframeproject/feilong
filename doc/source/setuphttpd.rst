@@ -211,6 +211,8 @@ http service is running well.
     # curl http://localhost:8080/
     {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": {"min_version": "1.0", "version": "1.0", "max_version": "1.0"}, "errmsg": ""}
 
+.. _`TokenUsage`:
+
 Token Usage
 ============
 
@@ -271,8 +273,6 @@ Setup Server Side
 Setup Client Side
 -----------------
 
-* Send requests using admin-token
-
   On client side, you need to get the admin-token stored in the admin-token file. Just As what we have talked above,
   admin-token file is generated on server side. Users should contact the administrator for admin-token before sending
   requests. Then users can put the admin_token into the ``X-Admin-Token`` field in headers of request object for
@@ -301,30 +301,6 @@ Setup Client Side
 
      # curl http://localhost:8080/ -H "Content-Type:application/json" -H 'X-Auth-Token:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTI1NDQyODJ9.TVlcQb_QuUPJ37cRyzZqroR6kLZ-5zH2-tliIkhsQ1A'
      {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": {"min_version": "1.0", "version": "1.0", "max_version": "1.0"}, "errmsg": ""}
-
-* Send requests using ZVMConnector
-
-  If you use ZVMConnector on client side, you can save admin-token file as /etc/zvmsdk/token.dat.
-  And please remember to change this file's owner to user **zvmsdk**.
-
-  Now, you have a easier way to use token now:
-
-  .. code-block:: text
-
-     >>> from zvmconnector import connector
-     >>> conn = connector.ZVMConnector(port=8080)
-     >>> conn.send_request('guest_list')
-     {u'rs': 0, u'overallRC': 0, u'modID': None, u'rc': 0, u'output': [u'NAME1', u'NAME2'], u'errmsg': u'}
-
-  As you can see, you do not need to use them explicitly now because ZVMConnector use the default
-  token file /etc/zvmsdk/token.dat.
-
-  You can specify your own token file path by this way:
-
-  .. code-block:: text
-
-     >>> from zvmconnector import connector
-     >>> conn = connector.ZVMConnector(port=8080, token_path='/your/own/path/token.dat')
 
 
 .. _`Steps to deploy z/VM Cloud Connector into Apache with mod_wsgi`:
