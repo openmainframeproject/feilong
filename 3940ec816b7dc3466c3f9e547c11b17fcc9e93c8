@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4a81788f_e8d33448",
+        "filename": "doc/source/makeimage.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 941,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-06-28T02:25:01Z",
+      "side": 1,
+      "message": "Add python to the beginning.",
+      "range": {
+        "startLine": 941,
+        "startChar": 0,
+        "endLine": 941,
+        "endChar": 1
+      },
+      "revId": "3940ec816b7dc3466c3f9e547c11b17fcc9e93c8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92649b8d_5de27ef4",
+        "filename": "doc/source/makeimage.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 960,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-06-28T02:25:01Z",
+      "side": 1,
+      "message": "Suggest to align with the previous import action. (For import, two methods: curl and requests are provided). This image query only has curl.",
+      "range": {
+        "startLine": 960,
+        "startChar": 5,
+        "endLine": 960,
+        "endChar": 127
+      },
+      "revId": "3940ec816b7dc3466c3f9e547c11b17fcc9e93c8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}

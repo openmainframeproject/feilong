@@ -22,6 +22,30 @@
       "revId": "30fcd5e2f01a00e133638430fb3c1d781eace986",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe148a1b_5b8fe4cf",
+        "filename": "doc/source/quickstart.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 469,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-06-28T02:25:01Z",
+      "side": 0,
+      "message": "Service status is checked before this. So maybe add a \"netstat\" command here checking the sdkserver process is listening the configured port is enough, no better method here to verify sdkserver functioning.",
+      "parentUuid": "dc17e0b6_4830e3c5",
+      "range": {
+        "startLine": 447,
+        "startChar": 1,
+        "endLine": 469,
+        "endChar": 7
+      },
+      "revId": "30fcd5e2f01a00e133638430fb3c1d781eace986",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
     }
   ]
 }
