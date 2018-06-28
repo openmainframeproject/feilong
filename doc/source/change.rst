@@ -18,6 +18,17 @@
 Release Notes
 *************
 
+Release 1.2.0
+-------------
+Two new features released with zVMCloudConnector 1.2.0:
+
+* Dedicate OSA device to virtual guest. If osa_device specified when invoking
+  z/VM Cloud Connector restful API to create network interface, the OSA device
+  will be dedicated to the virtual guest.
+
+* Live resize vcpus. Live resize vcpus for virtual guests. Currently only
+  increasing CPU count is supported, decreasing is not supported.
+
 Release 1.1.0
 -------------
 zVMCloudConnector 1.1.0 is mainly includes the change:
