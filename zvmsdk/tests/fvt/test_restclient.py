@@ -29,8 +29,9 @@ CONN_SOCKET = 'socket'
 class ZVMConnectorTestCase(base.ZVMConnectorBaseTestCase):
     def __init__(self, methodName='runTest'):
         super(ZVMConnectorTestCase, self).__init__(methodName)
+        rest_port = int(CONF.tests.restapi_url.split(':')[2].strip('/'))
         self.restclient = connector.ZVMConnector(connection_type=CONN_REST,
-                                                 port=8888)
+                                                 port=rest_port)
         self.sockclient = connector.ZVMConnector(connection_type=CONN_SOCKET)
         self.userid_rest = 'RESTT%03d' % (time.time() % 1000)
         self.userid_sock = 'SOCKT%03d' % (time.time() % 1000)
