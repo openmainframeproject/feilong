@@ -27,7 +27,7 @@ class HostTestCase(base.ZVMConnectorBaseTestCase):
         self.apibase.verify_result('test_host_info', resp.content)
 
     def test_host_disk_info(self):
-        url = '/host/diskpool?poolname=%s' % 'ECKD:xcateckd'
+        url = '/host/diskpool?poolname=%s' % CONF.zvm.disk_pool
         resp = self.client.api_request(url)
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_host_disk_info', resp.content)
