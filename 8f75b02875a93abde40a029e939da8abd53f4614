@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4e542cfc_bc522f3a",
+        "filename": "zvmsdk/tests/fvt/test_file.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-06-29T02:13:38Z",
+      "side": 1,
+      "message": "I think it should return 300, such as this? \n {u\u0027rs\u0027: 2, u\u0027overallRC\u0027: 300, u\u0027modID\u0027: 60, u\u0027rc\u0027: 300, u\u0027output\u0027: u\u0027\u0027, u\u0027errmsg\u0027: u\u0027The specific file /root/abcde for export does not exist in zvmsdk server\u0027}",
+      "range": {
+        "startLine": 43,
+        "startChar": 13,
+        "endLine": 43,
+        "endChar": 24
+      },
+      "revId": "8f75b02875a93abde40a029e939da8abd53f4614",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eea9b4c4_aada8dfe",
+        "filename": "zvmsdk/tests/fvt/test_file.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1009058
+      },
+      "writtenOn": "2018-06-29T02:13:38Z",
+      "side": 1,
+      "message": "Please add clean up step to delete the created test files.",
+      "range": {
+        "startLine": 54,
+        "startChar": 30,
+        "endLine": 54,
+        "endChar": 44
+      },
+      "revId": "8f75b02875a93abde40a029e939da8abd53f4614",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
