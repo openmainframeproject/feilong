@@ -102,6 +102,12 @@ Start z/VM Cloud Connector in uwsgi
       [Install]
       WantedBy=multi-user.target
 
+* Enable zvmsdk uwsgi service
+
+  .. code-block:: text
+
+      #systemctl enable zvmsdk-wsgi.service
+
 * Start zvmsdk uwsgi service
 
   .. code-block:: text

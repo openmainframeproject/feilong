@@ -422,6 +422,11 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
 Start z/VM SDK Daemon
 =====================
 
+Configure the sdkserver service to start automatically at boot by command:
+.. code-block:: text
+
+    # systemctl enable sdkserver
+
 The z/VM SDK Daemon can be started via the following command:
 
 .. code-block:: text
