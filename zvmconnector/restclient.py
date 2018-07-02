@@ -333,25 +333,15 @@ def req_guest_config_minidisks(start_index, *args, **kwargs):
     return url, body
 
 
-# FIXME: (userid, os_type) in one params, how to parse?
 def req_volume_attach(start_index, *args, **kwargs):
-    url = '/guests/%s/volumes'
-    body = {'info': {'os_type': args[start_index],
-                     'volume': args[start_index + 1],
-                     'connection': args[start_index + 2],
-                     'rollback': args[start_index + 3]}}
-    fill_kwargs_in_body(body['info'], **kwargs)
+    url = '/guests/volumes'
+    body = {'info': {'connection': args[start_index]}}
     return url, body
 
 
-# FIXME: (userid, os_type) in one params, how to parse?
 def req_volume_detach(start_index, *args, **kwargs):
-    url = '/guests/%s/volumes'
-    body = {'info': {'os_type': args[start_index],
-                     'volume': args[start_index + 1],
-                     'connection': args[start_index + 2],
-                     'rollback': args[start_index + 3]}}
-    fill_kwargs_in_body(body['info'], **kwargs)
+    url = '/guests/volumes'
+    body = {'info': {'connection': args[start_index]}}
     return url, body
 
 
@@ -644,13 +634,13 @@ DATABASE = {
         'request': req_guest_config_minidisks},
     'volume_attach': {
         'method': 'POST',
-        'args_required': 3,
-        'params_path': 1,
+        'args_required': 1,
+        'params_path': 0,
         'request': req_volume_attach},
     'volume_detach': {
         'method': 'DELETE',
-        'args_required': 3,
-        'params_path': 1,
+        'args_required': 1,
+        'params_path': 0,
         'request': req_volume_detach},
     'host_get_info': {
         'method': 'GET',
