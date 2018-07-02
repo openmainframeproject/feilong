@@ -393,6 +393,38 @@ user_vlan_id = {
     'additionalProperties': False
 }
 
+fcp = {
+    'type': ['string'], 'minLength': 4, 'maxLength': 4,
+    'pattern': '^[0-9a-fA-F]{4}$'
+}
+
+wwpn = {
+    'type': ['string'], 'minLength': 18, 'maxLength': 18,
+    'pattern': '^0x[0-9]{16}$'
+}
+
+lun = {
+    'type': ['string'], 'minLength': 18, 'maxLength': 18,
+    'pattern': '^0x[0-9]{16}$'
+}
+
+connection_info = {
+    'type': 'object',
+    'properties': {
+        'assigner_id': userid,
+        'zvm_fcp': fcp,
+        'target_wwpn': wwpn,
+        'target_lun': lun,
+        'os_version': os_version,
+        'multipath': boolean,
+        'mount_point': {'type': 'string'},
+    },
+    'required': ['assigner_id', 'zvm_fcp', 'target_wwpn',
+                 'target_lun', 'multipath', 'os_version',
+                 'mount_point'],
+    'additionalProperties': False
+}
+
 connection_type = {
     'type': 'string',
     'enum': ['CONnect', 'CONNECT', 'connect',

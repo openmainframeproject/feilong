@@ -258,6 +258,76 @@ Delete disks form a guest
 
   No Response
 
+Attach Volume
+-------------
+
+**POST /guests/volumes**
+
+Attach volume to a vm in z/VM
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - info: volume_info
+  - connection: volume_conn
+  - assigner_id: guest_userid
+  - zvm_fcp: volume_fcp
+  - target_wwpn: volume_wwpn
+  - target_lun: volume_lun
+  - os_version: guest_os_version
+  - multipath: guest_multipath
+  - mount_point: mount_point
+
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_volume_attach_detach.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No Response
+
+Detach Volume
+-------------
+
+**DELETE /guests/volumes**
+
+Detach volume from a vm in z/VM
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - info: volume_info
+  - connection: volume_conn
+  - assigner_id: guest_userid
+  - zvm_fcp: volume_fcp
+  - target_wwpn: volume_wwpn
+  - target_lun: volume_lun
+  - os_version: guest_os_version
+  - multipath: guest_multipath
+  - mount_point: mount_point
+
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_volume_attach_detach.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+  No Response
+
 Get Guests stats including cpu and memory
 -----------------------------------------
 
