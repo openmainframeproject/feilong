@@ -20,7 +20,7 @@ from zvmconnector import connector
 from zvmsdk import config
 from zvmsdk import log
 from zvmsdk.sdkwsgi.handlers import tokens
-from zvmsdk.sdkwsgi.schemas import vswitch
+from zvmsdk.sdkwsgi.schemas import volume
 from zvmsdk.sdkwsgi import util
 from zvmsdk.sdkwsgi import validation
 from zvmsdk import utils
@@ -37,32 +37,21 @@ class VolumeAction(object):
                                              ip_addr=CONF.sdkserver.bind_addr,
                                              port=CONF.sdkserver.bind_port)
 
-    def attach(self, userid, body):
+    @validation.schema(volume.attach)
+    def attach(self, body):
         info = body['info']
-        guest = {'guest': {'os_type': info['os_type'],
-                           'name': userid}}
-        volume = info['volume']
         connection = info['connection']
-        rollback = info['rollback']
 
-        info = self.client.send_request('volume_attach', guest, volume,
-                                        connection,
-                                        is_rollback_in_failure=rollback)
+        info = self.client.send_request('volume_attach', connection)
 
         return info
 
-    @validation.schema(vswitch.create)
-    def detach(self, userid, body):
+    @validation.schema(volume.detach)
+    def detach(self, body):
         info = body['info']
-        guest = {'guest': {'os_type': info['os_type'],
-                           'name': userid}}
-        volume = info['volume']
         connection = info['connection']
-        rollback = info['rollback']
 
-        info = self.client.send_request('volume_detach', guest, volume,
-                                        connection,
-                                        is_rollback_in_failure=rollback)
+        info = self.client.send_request('volume_detach', connection)
 
         return info
 
@@ -78,13 +67,12 @@ def get_action():
 @tokens.validate
 def volume_attach(req):
 
-    def _volume_attach(userid, req):
+    def _volume_attach(req):
         action = get_action()
         body = util.extract_json(req.body)
-        return action.attach(userid, body)
+        return action.attach(body=body)
 
-    userid = util.wsgi_path_item(req.environ, 'userid')
-    info = _volume_attach(userid, req)
+    info = _volume_attach(req)
 
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
@@ -97,13 +85,12 @@ def volume_attach(req):
 @tokens.validate
 def volume_detach(req):
 
-    def _volume_detach(userid, req):
+    def _volume_detach(req):
         action = get_action()
         body = util.extract_json(req.body)
-        return action.detach(userid, body)
+        return action.detach(body=body)
 
-    userid = util.wsgi_path_item(req.environ, 'userid')
-    info = _volume_detach(userid, req)
+    info = _volume_detach(req)
     info_json = json.dumps(info)
 
     req.response.body = utils.to_utf8(info_json)
