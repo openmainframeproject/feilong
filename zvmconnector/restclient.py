@@ -829,8 +829,8 @@ class RESTClient(object):
 
     def _process_rest_response(self, response):
         content_type = response.headers.get('Content-Type')
-        if content_type not in ['application/json',
-                                'application/octet-stream']:
+        if ('application/json' not in content_type) and (
+            'application/octet-stream' not in content_type):
             # Currently, all the response content from zvmsdk wsgi are
             # 'application/json' or application/octet-stream type.
             # If it is not, the response may be sent by HTTP server due
@@ -841,7 +841,7 @@ class RESTClient(object):
             raise UnexpectedResponse(response)
 
         # Read body into string if it isn't obviously image data
-        if content_type == 'application/octet-stream':
+        if 'application/octet-stream' in content_type:
             # Do not read all response in memory when downloading an file
             body_iter = self._close_after_stream(response, CHUNKSIZE)
         else:
