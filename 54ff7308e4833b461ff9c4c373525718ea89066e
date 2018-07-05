@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b7f52261_04922ea8",
+        "filename": "zvmconnector/restclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 846,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-07-05T02:46:02Z",
+      "side": 1,
+      "message": "can we add some test cases here for avoid further issue?",
+      "range": {
+        "startLine": 832,
+        "startChar": 8,
+        "endLine": 846,
+        "endChar": 69
+      },
+      "revId": "54ff7308e4833b461ff9c4c373525718ea89066e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
