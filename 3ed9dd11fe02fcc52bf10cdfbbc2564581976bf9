@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b6510597_f708b100",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-07-09T03:45:21Z",
+      "side": 1,
+      "message": "curious why we didn\u0027t find this error before",
+      "range": {
+        "startLine": 181,
+        "startChar": 40,
+        "endLine": 181,
+        "endChar": 66
+      },
+      "revId": "3ed9dd11fe02fcc52bf10cdfbbc2564581976bf9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
