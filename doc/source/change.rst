@@ -18,6 +18,12 @@
 Release Notes
 *************
 
+Release 1.2.1
+-------------
+zVMCloudConnector 1.2.1 includes one change:
+
+* Support "application/json,utf-8" context type in restclient.
+
 Release 1.2.0
 -------------
 Following new features released with zVMCloudConnector 1.2.0:
