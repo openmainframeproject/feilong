@@ -139,6 +139,17 @@ class VMOps(object):
         self._smutclient.guest_reset(userid)
         LOG.info("Complete reset vm %s", userid)
 
+    def live_migrate_vm(self, userid, destination, parms, action):
+        """Move an eligible, running z/VM(R) virtual machine transparently
+        from one z/VM system to another within an SSI cluster."""
+        if action is 'move':
+            LOG.info("Moving the specific vm %s", userid)
+            self._smutclient.live_migrate_move(userid, destination, parms)
+            LOG.info("Complete move vm %s", userid)
+        if action is 'test':
+            LOG.info("Testing the eligiblity of specific vm %s", userid)
+            self._smutclient.live_migrate_test(userid, destination)
+
     def create_vm(self, userid, cpu, memory, disk_list,
                   user_profile, max_cpu, max_mem):
         """Create z/VM userid into user directory for a z/VM instance."""
