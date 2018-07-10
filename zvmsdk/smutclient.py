@@ -371,6 +371,55 @@ class SMUTClient(object):
         with zvmutils.log_and_reraise_smut_request_failed():
             self._request(requestData)
 
+    def live_migrate_move(self, userid, destination, parms):
+        """ moves the specified virtual machine, while it continues to run,
+         to the specified system within the SSI cluster. """
+        rd = ('migratevm %(uid)s move --destination %(dest)s ' %
+              {'uid': userid, 'dest': destination})
+
+        if 'maxtotal' in parms:
+            rd += ('--maxtotal ' + str(parms['maxTotal']))
+        if 'maxquiesce' in parms:
+            rd += ('--maxquiesce ' + str(parms['maxquiesce']))
+        if 'immediate' in parms:
+            rd += " --immediate"
+        if 'forcearch' in parms:
+            rd += " --forcearch"
+        if 'forcedomain' in parms:
+            rd += " --forcedomain"
+        if 'forcestorage' in parms:
+            rd += " --forcestorage"
+
+        action = "move userid '%s' to SSI '%s'" % (userid, destination)
+
+        try:
+            self._request(rd)
+        except exception.SDKSMUTRequestFailed as err:
+            msg = ''
+            if action is not None:
+                msg = "Failed to %s. " % action
+            msg += "SMUT error: %s" % err.format_message()
+            LOG.error(msg)
+            raise exception.SDKSMUTRequestFailed(err.results, msg)
+
+    def live_migrate_test(self, userid, destination):
+        """ tests the specified virtual machine and reports whether or not
+        it is eligible to be relocated to the specified system. """
+        rd = ('migratevm %(uid)s test --destination %(dest)s ' %
+              {'uid': userid, 'dest': destination})
+
+        action = "test to move userid '%s' to SSI '%s'" % (userid, destination)
+
+        try:
+            self._request(rd)
+        except exception.SDKSMUTRequestFailed as err:
+            msg = ''
+            if action is not None:
+                msg = "Failed to %s. " % action
+            msg += "SMUT error: %s" % err.format_message()
+            LOG.error(msg)
+            raise exception.SDKSMUTRequestFailed(err.results, msg)
+
     def create_vm(self, userid, cpu, memory, disk_list, profile,
                   max_cpu, max_mem):
         """ Create VM and add disks if specified. """
