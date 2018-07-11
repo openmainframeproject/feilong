@@ -1365,3 +1365,67 @@ Delete a vswitch by using given name.
 * Response contents:
 
   No response.
+
+Files
+=====
+Imports and exports raw file data.
+
+These operations may be restricted to z/VM Cloud Connector administrators.
+
+Import file
+-----------
+
+**PUT /files**
+
+Import binary file data to z/VM Cloud Connector. Please set the Content-Type
+ request header to application/octet-stream.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - Content-type: file_request_header
+
+* Request sample:
+
+  curl http://192.168.99.3:8888/files -i -X PUT -H "X-Auth-Token: $token" -H
+   "Content-Type: application/octet-stream" --data-binary @/root/testfile
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: file_import_output
+  - dest_url: file_import_dest_url
+  - filesize_in_bytes: imported_file_size
+  - md5sum: file_md5sum
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_file_import_res.tpl
+   :language: javascript
+
+
+Export file
+-----------
+
+**POST /files/**
+
+Export file from zVM Cloud Connector, internal use only.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - source_file: export_source_file
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+The response body contains the raw binary data that represents the actual file.
+The Content-Type header contains the application/octet-stream value.
