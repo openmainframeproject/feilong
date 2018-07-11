@@ -182,13 +182,9 @@ def file_export(request):
         action = get_action()
         return action.file_export(fpath)
 
-    # Check if the request content type is valid
-    content_type = request.content_type
-
-    results = _content_type_validation(content_type)
-    if not results:
-        fpath = request.body
-        results = _export(fpath)
+    body = util.extract_json(request.body)
+    fpath = body['source_file']
+    results = _export(fpath)
 
     # if results is dict, means error happened.
     if isinstance(results, dict):
