@@ -422,7 +422,7 @@ def req_file_import(start_index, *args, **kwargs):
 
 def req_file_export(start_index, *args, **kwargs):
     url = '/files'
-    body = args[start_index]
+    body = {'source_file': args[start_index]}
 
     return url, body
 
@@ -818,7 +818,7 @@ class RESTClient(object):
         func = DATABASE[api_name]['request']
         url, body = func(count_params_in_path, *args, **kwargs)
 
-        if api_name in ['file_import', 'file_export']:
+        if api_name in ['file_import']:
             headers['Content-Type'] = 'application/octet-stream'
 
         if count_params_in_path > 0:
@@ -866,13 +866,13 @@ class RESTClient(object):
         stream = content_type == 'application/octet-stream'
         if stream:
             response = requests.request(method, url, data=body,
-                                    headers=_headers,
-                                    verify=self.verify,
-                                    stream=stream)
+                                        headers=_headers,
+                                        verify=self.verify,
+                                        stream=stream)
         else:
             response = requests.request(method, url, data=body,
-                                    headers=_headers,
-                                    verify=self.verify)
+                                        headers=_headers,
+                                        verify=self.verify)
         return response
 
     def call(self, api_name, *args, **kwargs):
