@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1dea5597_f7ab8a33",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 6
+      },
+      "lineNbr": 873,
+      "author": {
+        "id": 1010932
+      },
+      "writtenOn": "2018-07-12T07:02:04Z",
+      "side": 1,
+      "message": "no, if multipath set to false, we can process this.\nIf we plan to only support multipath, I can remove this config item.",
+      "parentUuid": "d8020ece_29e320d5",
+      "range": {
+        "startLine": 868,
+        "startChar": 0,
+        "endLine": 873,
+        "endChar": 12
+      },
+      "revId": "cab519ebc0789a2f1045ec9d48c02ea04f813c68",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "db16b1c8_49ab1b68",
         "filename": "zvmsdk/tests/fvt/api_templates/test_volume_attach_detach.tpl",
         "patchSetId": 6
@@ -36,6 +60,30 @@
       "writtenOn": "2018-07-09T03:53:40Z",
       "side": 1,
       "message": "just for discussion\n\nsomewhere forced us to use this connection?\n\nof it will be simple if we use \n\ninfo:\n       \"assigner_id\": xxxx \n\n?",
+      "range": {
+        "startLine": 4,
+        "startChar": 6,
+        "endLine": 5,
+        "endChar": 7
+      },
+      "revId": "cab519ebc0789a2f1045ec9d48c02ea04f813c68",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2c7b29f_cad7a5e5",
+        "filename": "zvmsdk/tests/fvt/api_templates/test_volume_attach_detach.tpl",
+        "patchSetId": 6
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1010932
+      },
+      "writtenOn": "2018-07-12T07:02:04Z",
+      "side": 1,
+      "message": "I have thought about this, but we may need add more properties under info in the future.\nSo I preserved connection here.",
+      "parentUuid": "db16b1c8_49ab1b68",
       "range": {
         "startLine": 4,
         "startChar": 6,
