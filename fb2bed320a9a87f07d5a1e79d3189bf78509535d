@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2024b843_7d1725c3",
+        "filename": "zvmsdk/tests/fvt/test_file.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-07-12T03:48:44Z",
+      "side": 1,
+      "message": "addcleanup immediately after the file created",
+      "range": {
+        "startLine": 74,
+        "startChar": 8,
+        "endLine": 74,
+        "endChar": 51
+      },
+      "revId": "fb2bed320a9a87f07d5a1e79d3189bf78509535d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
