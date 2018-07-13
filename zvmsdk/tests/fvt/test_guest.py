@@ -516,7 +516,7 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.assertTrue(self.utils.wait_until_guest_reachable(userid))
 
         # Verify cfgdrive.iso take effect
-        time.sleep(15)
+        time.sleep(30)
         result = self._smutclient.execute_cmd(userid, 'hostname')
         self.assertIn('deploy_fvt', result)
 
