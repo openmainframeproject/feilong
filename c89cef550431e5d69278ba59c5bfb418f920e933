@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eddf2173_61790063",
+        "filename": "zvmsdk/tests/fvt/test_guest.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 522,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-07-16T04:16:10Z",
+      "side": 0,
+      "message": "can we move this to later in order to give more time, e.g line 540?",
+      "range": {
+        "startLine": 519,
+        "startChar": 8,
+        "endLine": 522,
+        "endChar": 1
+      },
+      "revId": "c89cef550431e5d69278ba59c5bfb418f920e933",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
