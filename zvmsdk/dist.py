@@ -552,7 +552,9 @@ class rhel(LinuxDist):
                                          target_wwpn, target_lun)
 
     def _set_zfcp_multipath(self, assigner_id):
-        """sampe to all rhel distro ???"""
+        """sampe to all rhel distro"""
+        modprobe = 'modprobe dm_multipath'
+        self.execute_cmd(assigner_id, modprobe)
         # update multipath configuration
         conf_file = '#blacklist {\n'
         conf_file += '#\tdevnode "*"\n'
