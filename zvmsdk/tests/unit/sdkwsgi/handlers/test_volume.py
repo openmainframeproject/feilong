@@ -14,6 +14,7 @@
 
 import datetime
 import jwt
+import json
 import mock
 import unittest
 
@@ -57,18 +58,34 @@ class HandlersVolumeTest(unittest.TestCase):
         self.req = FakeReq()
         self.req.headers['X-Auth-Token'] = payload
 
-    @mock.patch.object(volume.VolumeAction, 'attach')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_volume_attach(self, mock_attach):
-        mock_attach.return_value = ''
-        self.req.body = '{}'
+        mock_attach.return_value = {'overallRC': 0}
+        connection_info = {"assigner_id": "username", "zvm_fcp": "1fc5",
+                           "target_wwpn": "0x5005076801401234",
+                           "target_lun": "0x0026000000000000",
+                           "os_version": "rhel7.2",
+                           "multipath": "true", "mount_point": ""}
+        body_str = {"info": {"connection": connection_info}}
+        self.req.body = json.dumps(body_str)
 
         volume.volume_attach(self.req)
-        self.assertTrue(mock_attach.called)
+        mock_attach.assert_called_once_with(
+            'volume_attach',
+            connection_info)
 
-    @mock.patch.object(volume.VolumeAction, 'detach')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_volume_detach(self, mock_detach):
-        mock_detach.return_value = ''
-        self.req.body = '{}'
+        mock_detach.return_value = {'overallRC': 0}
+        connection_info = {"assigner_id": "username", "zvm_fcp": "1fc5",
+                           "target_wwpn": "0x5005076801401234",
+                           "target_lun": "0x0026000000000000",
+                           "os_version": "rhel7.2",
+                           "multipath": "true", "mount_point": ""}
+        body_str = {"info": {"connection": connection_info}}
+        self.req.body = json.dumps(body_str)
 
         volume.volume_detach(self.req)
-        self.assertTrue(mock_detach.called)
+        mock_detach.assert_called_once_with(
+            'volume_detach',
+            connection_info)

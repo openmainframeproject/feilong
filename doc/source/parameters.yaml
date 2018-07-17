@@ -878,3 +878,45 @@ export_source_file:
   in: body
   required: true
   type: string
+volume_info:
+  description: |
+    A dict to describe connection info of the volume
+  in: body
+  required: true
+  type: dict
+volume_conn:
+  description: |
+    A dict to describe info of the volume to be operated
+  in: body
+  required: true
+  type: dict
+volume_fcp:
+  description: |
+    FCP Device number, for example ``1fc5``
+  in: body
+  required: true
+  type: string
+volume_wwpn:
+  description: |
+    World Wide Port Number, must be start with ``0x``, for example ``0x50050763050b073d``
+  in: body
+  required: true
+  type: string
+volume_lun:
+  description: |
+    Logical Unit Number, must be start with ``0x``, for example ``0x4020400100000000``
+  in: body
+  required: true
+  type: string
+guest_multipath:
+  description: |
+    Multipath service is open or not
+  in: body
+  required: true
+  type: bool
+mount_point:
+  description: |
+    The symbol link name of the volume device. If not assigned, will be assigned by the os in vm.
+  in: body
+  required: false
+  type: string
