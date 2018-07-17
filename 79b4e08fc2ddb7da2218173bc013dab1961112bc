@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8b448b76_22b1c75a",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 7
+      },
+      "lineNbr": 910,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-07-17T04:27:39Z",
+      "side": 1,
+      "message": "I believe we need enhance this, at least ,tell the length limitation etc\nand I think there must be some spec for WWPN/LUN somewhere？",
+      "range": {
+        "startLine": 899,
+        "startChar": 0,
+        "endLine": 910,
+        "endChar": 14
+      },
+      "revId": "79b4e08fc2ddb7da2218173bc013dab1961112bc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4bd9c79b_d9b375d4",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 7
+      },
+      "lineNbr": 916,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-07-17T04:27:39Z",
+      "side": 1,
+      "message": "default\u003dtrue？still required?",
+      "range": {
+        "startLine": 911,
+        "startChar": 0,
+        "endLine": 916,
+        "endChar": 12
+      },
+      "revId": "79b4e08fc2ddb7da2218173bc013dab1961112bc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa0bc482_a3920aaf",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 7
+      },
+      "lineNbr": 919,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-07-17T04:27:39Z",
+      "side": 1,
+      "message": "what\u0027s assigned by the os in the VM? \ncan you elaborate this behavior? please note this is a API doc , we need to be provide more detail",
+      "range": {
+        "startLine": 919,
+        "startChar": 63,
+        "endLine": 919,
+        "endChar": 97
+      },
+      "revId": "79b4e08fc2ddb7da2218173bc013dab1961112bc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
