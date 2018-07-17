@@ -1768,7 +1768,7 @@ class SMUTClient(object):
     def execute_cmd_direct(self, userid, cmdStr):
         """"cmdVM."""
         requestData = 'cmdVM ' + userid + ' CMD \'' + cmdStr + '\''
-        results = self._request(requestData)
+        results = self._smut.request(requestData)
         return results
 
     def image_import(self, image_name, url, image_meta, remote_host=None):

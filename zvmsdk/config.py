@@ -433,6 +433,14 @@ volume fcp list
     Opt('restapi_url',
         section='tests',
         default='http://127.0.0.1:8888'),
+    Opt('zvm_fcp',
+        section='tests'),
+    Opt('target_wwpn',
+        section='tests'),
+    Opt('target_lun',
+        section='tests'),
+    Opt('mount_point',
+        section='tests'),
     ]
 
 
