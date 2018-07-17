@@ -537,6 +537,21 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_guests_get_interface_stats',
                                    resp.content)
+        # volume attach/detach test
+        # TODO: add config items for fcp,wwpn,lun in BVT env?
+        """
+        connection_info = {'assigner_id': userid,
+                           'zvm_fcp': '1fc5',
+                           'os_version': os_version,
+                           'multipath': True,
+                           'target_wwpn': '0x5005076801402797',
+                           'target_lun': '0x0026000000000000',
+                           'mount_point': '/dev/sdz'}
+        resp = self.client.volume_attach(connection_info)
+        self.assertEqual(200, resp.status_code)
+        resp = self.client.volume_detach(connection_info)
+        self.assertEqual(200, resp.status_code)
+        """
 
         # Use softstop instend of stop to avoid the data lose with guest_stop
         # when testing the sles12 image.
