@@ -470,16 +470,18 @@ class SDKAPI(object):
         :param action: (str) indicates the action is move or test for vm.
 
         """
-        if action is 'move':
+        if action.lower() == 'move':
             operation = "Move guest '%s' to SSI '%s'" % (userid, destination)
+            LOG.info(operation)
             with zvmutils.log_and_reraise_sdkbase_error(operation):
-                self._vmops.live_migrate_vm(self, userid, destination,
+                self._vmops.live_migrate_vm(userid, destination,
                                              parms, action)
-        if action is 'test':
+            LOG.info('successfully move.')
+        if action.lower() == 'test':
             operation = "Test move guest '%s' to SSI '%s'" % (userid,
                                                     destination)
             with zvmutils.log_and_reraise_sdkbase_error(operation):
-                self._vmops.live_migrate_vm(self, userid, destination,
+                self._vmops.live_migrate_vm(userid, destination,
                                              parms, action)
 
     def guest_create(self, userid, vcpus, memory, disk_list=None,
