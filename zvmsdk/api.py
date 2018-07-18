@@ -475,6 +475,7 @@ class SDKAPI(object):
             with zvmutils.log_and_reraise_sdkbase_error(operation):
                 self._vmops.live_migrate_vm(self, userid, destination,
                                              parms, action)
+            LOG.info('successfully move.')
         if action is 'test':
             operation = "Test move guest '%s' to SSI '%s'" % (userid,
                                                     destination)
