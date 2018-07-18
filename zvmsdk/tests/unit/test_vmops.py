@@ -267,3 +267,28 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         cpu_cnt = 3
         self.vmops.resize_cpus(userid, cpu_cnt)
         do_resize.assert_called_once_with(userid, cpu_cnt)
+
+    @mock.patch("zvmsdk.smutclient.SMUTClient.live_migrate_move")
+    @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
+    def test_live_migrate_vm(self, power_state, live_migrate_vm):
+        userid = 'testuid'
+        destination = 'testssi'
+        parms = {}
+        action = "move"
+        power_state.return_value = 'on'
+        self.vmops.live_migrate_vm(userid, destination, parms, action)
+        power_state.assert_called_once_with(userid)
+        live_migrate_vm.assert_called_once_with(userid, destination,
+                                                    parms)
+
+    @mock.patch("zvmsdk.smutclient.SMUTClient.live_migrate_test")
+    @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
+    def test_live_migrate_test(self, power_state, live_migrate_vm):
+        userid = 'testuid'
+        destination = 'testssi'
+        parms = {}
+        action = "test"
+        power_state.return_value = 'on'
+        self.vmops.live_migrate_vm(userid, destination, parms, action)
+        power_state.assert_called_once_with(userid)
+        live_migrate_vm.assert_called_once_with(userid, destination)

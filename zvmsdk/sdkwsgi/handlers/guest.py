@@ -268,6 +268,16 @@ class VMAction(object):
 
         return info
 
+    @validation.schema(guest.live_migrate_vm)
+    def live_migrate_vm(self, userid, body):
+        destination = body['destination']
+        operation = body['operation']
+        parms = body['parms']
+
+        info = self.client.send_request('guest_live_migrate',
+                                userid, destination, parms, operation)
+        return info
+
     @validation.schema(guest.live_resize_cpus)
     def live_resize_cpus(self, userid, body):
         cpu_cnt = body['cpu_cnt']

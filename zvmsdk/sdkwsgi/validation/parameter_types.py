@@ -287,6 +287,18 @@ disk_list = {
     }
 }
 
+live_migrate_parms = {
+    'type': 'object',
+    'properties': {
+        'maxtotal': {'type': 'integer'},
+        'maxquiesce': {'type': 'integer'},
+        'immediate': {'type': 'string'},
+        'forcearch': {'type': 'string'},
+        'forcedomain': {'type': 'string'},
+        'forcestorage': {'type': 'string'}
+    },
+    'additionalProperties': False
+}
 
 disk_conf = {
     'type': 'array',

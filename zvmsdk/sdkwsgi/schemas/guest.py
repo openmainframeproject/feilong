@@ -39,6 +39,16 @@ create = {
     'additionalProperties': False,
 }
 
+live_migrate_vm = {
+    'type': 'object',
+    'properties': {
+        'destination': parameter_types.userid,
+        'parms': parameter_types.live_migrate_parms,
+        'operation': parameter_types.name,
+    },
+    'required': ['destination', 'operation'],
+    'additionalProperties': False,
+}
 
 create_nic = {
     'type': 'object',

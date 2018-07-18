@@ -1186,6 +1186,30 @@ class GuestHandlerTestCaseWithMultipleDeployedGuest(GuestHandlerBase):
         GuestHandlerBase.tearDown(self)
 
     @parameterized.expand(TEST_USERID_LIST)
+    def test_guest_live_migrate(self, case_name, userid, version):
+        # Move a running guest from one z/VM to another within an SSI cluster
+        # power on
+        self.client.guest_start(userid)
+        self.assertTrue(self.utils.wait_until_guest_in_power_state(
+                                                userid, "on"))
+        # live migrate
+        resp_test1 = self.client.guest_live_migrate_vm(userid, "opnstk1",
+                                                     {}, "test")
+        resp_test2 = self.client.guest_live_migrate_vm(userid, "opnstk2",
+                                                     {}, "test")
+
+        if resp_test1.status_code == 200:
+            resp = self.client.guest_live_migrate_vm(userid, "opnstk1",
+                                                     {}, "move")
+            self.assertEqual(200, resp.status_code)
+        if resp_test2.status_code == 200:
+            resp = self.client.guest_live_migrate_vm(userid, "opnstk2",
+                                                     {}, "move")
+            self.assertEqual(200, resp.status_code)
+
+        self.client.guest_delete(userid)
+
+    @parameterized.expand(TEST_USERID_LIST)
     def test_guest_get_console_output(self, case_name, userid, version):
         # power on
         self.client.guest_start(userid)
