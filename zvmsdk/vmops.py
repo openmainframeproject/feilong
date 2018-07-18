@@ -142,11 +142,11 @@ class VMOps(object):
     def live_migrate_vm(self, userid, destination, parms, action):
         """Move an eligible, running z/VM(R) virtual machine transparently
         from one z/VM system to another within an SSI cluster."""
-        if action is 'move':
+        if action.lower() == 'move':
             LOG.info("Moving the specific vm %s", userid)
             self._smutclient.live_migrate_move(userid, destination, parms)
             LOG.info("Complete move vm %s", userid)
-        if action is 'test':
+        if action.lower() == 'test':
             LOG.info("Testing the eligiblity of specific vm %s", userid)
             self._smutclient.live_migrate_test(userid, destination)
 
