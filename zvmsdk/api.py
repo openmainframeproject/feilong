@@ -432,10 +432,7 @@ class SDKAPI(object):
                It has one dictionary that contains some of the below keys:
                {'maxtotal': i,
                 'maxquiesce': i,
-                'immediate': str,
-                'forcearch': str,
-                'forcedomain': str,
-                'forcestorage': str}
+                'immediate': str}
 
                 In which, 'maxtotal':indicates the maximum total time
                 (in seconds)
@@ -452,34 +449,22 @@ class SDKAPI(object):
                 which causes the VMRELOCATE command
                 to do one early pass through virtual machine storage
                 and then go directly to the quiesce stage.
-                'forcearch':If present, force=architecture is set,
-                which indicates that relocation
-                is to be attempted even though the specified constraint
-                would normally prevent it.
-                'forcedomain':If present, force=domain is set,
-                which indicates that relocation is
-                to be attempted even though the target z/VM system
-                does not support all the current
-                architectural features of the virtual machine
-                or the target z/VM system is an excluded
-                member of the domain.
-                'forcestorage':If present, force=storage is set,
-                which indicates the relocation should proceed
-                if CP determines there are insufficient storage resources
-                available on the destination.
+
         :param action: (str) indicates the action is move or test for vm.
 
         """
-        if action is 'move':
+        if action.lower() == 'move':
             operation = "Move guest '%s' to SSI '%s'" % (userid, destination)
+            LOG.info(operation)
             with zvmutils.log_and_reraise_sdkbase_error(operation):
-                self._vmops.live_migrate_vm(self, userid, destination,
+                self._vmops.live_migrate_vm(userid, destination,
                                              parms, action)
-        if action is 'test':
+            LOG.info('successfully move.')
+        if action.lower() == 'test':
             operation = "Test move guest '%s' to SSI '%s'" % (userid,
                                                     destination)
             with zvmutils.log_and_reraise_sdkbase_error(operation):
-                self._vmops.live_migrate_vm(self, userid, destination,
+                self._vmops.live_migrate_vm(userid, destination,
                                              parms, action)
 
     def guest_create(self, userid, vcpus, memory, disk_list=None,

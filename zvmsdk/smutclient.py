@@ -378,17 +378,11 @@ class SMUTClient(object):
               {'uid': userid, 'dest': destination})
 
         if 'maxtotal' in parms:
-            rd = rd + ('--maxtotal ' + str(parms['maxTotal']))
+            rd += ('--maxtotal ' + str(parms['maxTotal']))
         if 'maxquiesce' in parms:
-            rd = rd + ('--maxquiesce ' + str(parms['maxquiesce']))
+            rd += ('--maxquiesce ' + str(parms['maxquiesce']))
         if 'immediate' in parms:
-            rd = rd + " --immediate"
-        if 'forcearch' in parms:
-            rd = rd + " --forcearch"
-        if 'forcedomain' in parms:
-            rd = rd + " --forcedomain"
-        if 'forcestorage' in parms:
-            rd = rd + " --forcestorage"
+            rd += " --immediate"
 
         action = "move userid '%s' to SSI '%s'" % (userid, destination)
 
