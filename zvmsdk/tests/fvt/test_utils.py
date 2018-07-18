@@ -337,6 +337,15 @@ class TestzCCClient(object):
                    "cpu_cnt": %s}""" % cpu_cnt
         return self._guest_action(userid, body)
 
+    def guest_live_migrate_vm(self, userid, destination,
+                                         parms, operation):
+        body = {"action": "live_migrate_vm",
+                   "destination": destination,
+                   "parms": parms,
+                   "operation": operation}
+        body = json.dumps(body)
+        return self._guest_action(userid, body)
+
     def guest_live_resize_cpus(self, userid, cpu_cnt):
         body = """{"action": "live_resize_cpus",
                    "cpu_cnt": %s}""" % cpu_cnt
