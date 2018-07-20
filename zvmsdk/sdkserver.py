@@ -14,11 +14,16 @@
 
 
 import json
-import Queue
+import six
 import socket
 import sys
 import threading
 import traceback
+
+if six.PY3:
+  import queue as Queue
+else:
+  import Queue
 
 from zvmsdk import api
 from zvmsdk import config
