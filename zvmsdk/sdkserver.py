@@ -14,7 +14,7 @@
 
 
 import json
-import Queue
+from queue import Queue # for py3
 import socket
 import sys
 import threading
