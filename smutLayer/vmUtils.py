@@ -605,7 +605,8 @@ def invokeSMCLI(rh, api, parms, hideInLog=[]):
 
     try:
         smcliResp = subprocess.check_output(cmd + parms,
-            close_fds=True).split('\n', 1)
+            close_fds=True)
+        smcliREsp = bytes.decode(smcliResp).split('\n', 1)
         results['response'] = smcliResp[1]
         results['overallRC'] = 0
         results['rc'] = 0
