@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1938e8d5_684dcca1",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 439,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-07-23T02:54:31Z",
+      "side": 1,
+      "message": "suggest move these 3 params into config options with appropriate default value, since API caller not care about this.",
+      "range": {
+        "startLine": 436,
+        "startChar": 16,
+        "endLine": 439,
+        "endChar": 1
+      },
+      "revId": "7f6c1d8fce84451cdc3a1532fac60bc3e1c4e3b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1c286fe_15d0045a",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-07-23T02:54:31Z",
+      "side": 1,
+      "message": "rd +\u003d ...",
+      "range": {
+        "startLine": 381,
+        "startChar": 12,
+        "endLine": 381,
+        "endChar": 62
+      },
+      "revId": "7f6c1d8fce84451cdc3a1532fac60bc3e1c4e3b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "688c7347_ffc79679",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-07-23T02:54:31Z",
+      "side": 1,
+      "message": "not using \"action is \u0027move\u0027\", use \"\u003d\u003d\" instead",
+      "range": {
+        "startLine": 145,
+        "startChar": 8,
+        "endLine": 145,
+        "endChar": 28
+      },
+      "revId": "7f6c1d8fce84451cdc3a1532fac60bc3e1c4e3b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
