@@ -20,6 +20,7 @@ from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import smutclient
+from zvmsdk import database
 from zvmsdk import utils as zvmutils
 
 
@@ -42,6 +43,7 @@ class VMOps(object):
         self._dist_manager = dist.LinuxDistManager()
         self._pathutils = zvmutils.PathUtils()
         self._namelist = zvmutils.get_namelist()
+        self._GuestDbOperator = database.GuestDbOperator()
 
     def get_power_state(self, userid):
         """Get power status of a z/VM instance."""
@@ -142,10 +144,20 @@ class VMOps(object):
     def live_migrate_vm(self, userid, destination, parms, action):
         """Move an eligible, running z/VM(R) virtual machine transparently
         from one z/VM system to another within an SSI cluster."""
+        # Check guest state is 'on'
+        state = self.get_power_state(userid)
+        if state != 'on':
+            LOG.error("Failed to live migrate guest %s, error: "
+                    "guest is inactive, cann't perform live migrate." %
+                    userid)
+            raise exception.SDKConflictError(modID='guest', rs=1,
+                                             userid=userid)
+        # Do live migrate
         if action.lower() == 'move':
             LOG.info("Moving the specific vm %s", userid)
             self._smutclient.live_migrate_move(userid, destination, parms)
             LOG.info("Complete move vm %s", userid)
+
         if action.lower() == 'test':
             LOG.info("Testing the eligiblity of specific vm %s", userid)
             self._smutclient.live_migrate_test(userid, destination)
@@ -304,7 +316,35 @@ class VMOps(object):
             else:
                 return False
         else:
-            return True
+            # case1 userid has been migrated.
+            userids_migrated = self._GuestDbOperator.get_migrated_guest_list()
+            userids_not_in_db = list(set(userids) - set(userids_migrated))
+            if userids_not_in_db:
+                if raise_exc:
+                    # log and raise exception
+                    userids_not_in_db = ' '.join(userids_not_in_db)
+                    LOG.error("Guest '%s' has not been migrated." %
+                                userids_not_in_db)
+                    raise exception.SDKObjectNotExistError(
+                        obj_desc=("Guest '%s'" % userids_not_in_db),
+                                                        modID='guest')
+                else:
+                    return True
+            else:
+                # case2 userid has been shudown and started on other host.
+                flag = False
+                for userid in userids:
+                    if zvmutils.check_userid_on_others(userid):
+                        comment = self._GuestDbOperator.get_comments_by_userid(
+                                                            userid)
+                        comment['migrated'] = 1
+                        action = "update guest '%s' in database" % userid
+                        with zvmutils.log_and_reraise_sdkbase_error(action):
+                            self._GuestDbOperator.update_guest_by_userid(
+                                            userid, comments=comment)
+                    else:
+                        flag = True
+                return flag
 
     def live_resize_cpus(self, userid, count):
         # Check power state is 'on'

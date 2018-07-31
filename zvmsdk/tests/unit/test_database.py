@@ -617,7 +617,7 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         # Update
         self.db_op.update_guest_by_userid(
             self.userid, meta='newmetauserid', net_set='1',
-            comments='newcommentuserid')
+            comments={'newcommentuserid': '1'})
         guest = self.db_op.get_guest_by_userid(self.userid)
         self.assertEqual((u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
                           u'FAKEUSER', u'newmetauserid', 1,

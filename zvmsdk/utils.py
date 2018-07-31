@@ -537,3 +537,16 @@ def check_userid_exist(userid):
         # userid not exist
         return False
     return True
+
+
+def check_userid_on_others(userid):
+    try:
+        check_userid_exist(userid)
+        cmd = 'sudo vmcp q %s' % userid
+        rc, output = execute(cmd)
+        if re.search(' - SSI', output):
+            return True
+        return False
+    except Exception as err:
+        msg = ("Could not find the userid: %s") % err
+        raise exception.SDKInternalError(msg=msg)
