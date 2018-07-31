@@ -277,7 +277,9 @@ def getGeneralInfo(rh):
         host = subprocess.check_output(
             cmd,
             close_fds=True,
-            stderr=subprocess.STDOUT).split()[2]
+            stderr=subprocess.STDOUT)
+        host = bytes.decode(host)
+        host = host.split()[2]
     except subprocess.CalledProcessError as e:
         msg = msgs.msg['0405'][1] % (modId, "Hypervisor Name",
                                      strCmd, e.output)
@@ -408,12 +410,12 @@ def getGeneralInfo(rh):
         rh.updateResults(msgs.msg['0421'][0])
 
     # Create output string
-    outstr = "z/VM Host: " + bytes.decode(host)
+    outstr = "z/VM Host: " + host
     outstr += "\nArchitecture: " + arch
     outstr += "\nCEC Vendor: " + cecVendor
     outstr += "\nCEC Model: " + cecModel
     outstr += "\nHypervisor OS: " + hvInfo
-    outstr += "\nHypervisor Name: " + bytes.decode(host)
+    outstr += "\nHypervisor Name: " + host
     outstr += "\nLPAR CPU Total: " + lparCpuTotal
     outstr += "\nLPAR CPU Used: " + lparCpuUsed
     outstr += "\nLPAR Memory Total: " + lparMemTotal
