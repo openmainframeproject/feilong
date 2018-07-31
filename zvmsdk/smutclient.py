@@ -1888,7 +1888,6 @@ class SMUTClient(object):
             LOG.error(msg)
             raise exception.SDKImageOperationError(rs=6)
 
-        output = bytes.decode(output)
         if 'FBA' not in output and 'CKD' not in output:
             raise exception.SDKImageOperationError(rs=7)
 
