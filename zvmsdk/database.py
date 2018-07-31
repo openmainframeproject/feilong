@@ -623,6 +623,13 @@ class GuestDbOperator(object):
             guests = res.fetchall()
         return guests
 
+    def get_migrated_guest_list(self):
+        with get_guest_conn() as conn:
+            res = conn.execute("SELECT * FROM guests"
+                               "WHERE 'migrated' in comments")
+            guests = res.fetchall()
+        return guests
+
     def get_metadata_by_userid(self, userid):
         """get metadata record.
         output should be like: "a=1,b=2,c=3"
