@@ -87,6 +87,8 @@ class SDKSocketClient(object):
 
             # Prepare the data to be sent
             api_data = json.dumps((func, api_args, api_kwargs))
+            api_data = api_data.encode()
+
             # Send the API call data to SDK server
             sent = 0
             total_len = len(api_data)
