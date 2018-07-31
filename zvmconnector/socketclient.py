@@ -134,7 +134,7 @@ class SDKSocketClient(object):
         # This client assumes that the server would return result in
         # the standard result form, so client just return the received
         # data
-        if return_blocks != []:
+        if return_blocks:
             results = json.loads(''.join(return_blocks))
         else:
             results = self._construct_socket_error(4)
