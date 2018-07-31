@@ -76,7 +76,9 @@ try:
     subs['<<<localUserid>>>'] = subprocess.check_output(
         cmd,
         close_fds=True,
-        stderr=subprocess.STDOUT).split()[0]
+        stderr=subprocess.STDOUT)
+    subs['<<<localUserid>>>'] = bytes.decode(subs['<<<localUserid>>>'])
+    subs['<<<localUserid>>>'].split()[0]
 except Exception:
     print("Could not find the userid of this system.")
     subs['<<<localUserid>>>'] = 'unknownUserid'
@@ -1329,6 +1331,7 @@ def purgeRdr(userid):
                 queryCmd,
                 close_fds=True,
                 shell=True)
+        qryRes = bytes.decode(qryRes)
         spoolList = qryRes.splitlines()
     except Exception as e:
         # All exceptions.
@@ -1389,6 +1392,7 @@ def runTest(smut, test):
                     stderr=subprocess.STDOUT,
                     close_fds=True,
                     shell=True)
+            results['response'] = bytes.decode(results['response'])
         except CalledProcessError as e:
             results['response'] = e.output
             results['overallRC'] = e.returncode
@@ -1441,6 +1445,7 @@ def runTest(smut, test):
 
             try:
                 junk = subprocess.check_output(cmd, close_fds=True)
+                junk = bytes.decode(junk)
                 if junk == '':
                     respScore = 0
             except Exception:
@@ -1577,6 +1582,7 @@ def driveTestSet(smut, setId, setToTest):
                         stderr=subprocess.STDOUT,
                         close_fds=True,
                         shell=True)
+                out = bytes.decode(out)
                 out = "".join(out)
 
             except CalledProcessError as e:
