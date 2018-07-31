@@ -63,6 +63,7 @@ def execute(cmd):
         err_msg = ('Command "%s" Error: %s' % (' '.join(cmd), str(err)))
         raise exception.SDKInternalError(msg=err_msg)
 
+    output = bytes.decode(output)
     return (rc, output)
 
 
@@ -192,7 +193,7 @@ def to_utf8(text):
     if isinstance(text, bytes):
         return text
     elif isinstance(text, six.text_type):
-        return text.encode('utf-8')
+        return text.encode()
     else:
         raise TypeError("bytes or Unicode expected, got %s"
                         % type(text).__name__)
@@ -458,7 +459,9 @@ def get_namelist():
         if len(CONF.zvm.namelist) <= 8:
             return CONF.zvm.namelist
 
-    return ''.join(('NL', get_smut_userid().rjust(6, '0')[-6:]))
+    # return ''.join(('NL', get_smut_userid().rjust(6, '0')[-6:]))
+    # py3 compatible changes
+    return 'NL' + bytes.decode(get_smut_userid().rjust(6, b'0')[-6:])
 
 
 def generate_iucv_authfile(fn, client):
@@ -515,9 +518,9 @@ def make_dummy_image(image_path, d_type='CKD'):
     header = ("z/VM %(type)s Disk Image:           0 %(unit)s" %
               {'type': d_type, 'unit': d_unit})
 
-    header = bytes(' '.join((header, 'HLen: 0055', 'GZIP: 0')))
+    header = (' '.join((header, 'HLen: 0055', 'GZIP: 0')))
     with open(image_path, 'wb') as f:
-        f.write(header)
+        f.write(header.encode())
 
 
 @contextlib.contextmanager
