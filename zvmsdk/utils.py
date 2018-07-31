@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 import contextlib
 import errno
 import functools
@@ -463,8 +462,12 @@ def get_namelist():
 
     # return ''.join(('NL', get_smut_userid().rjust(6, '0')[-6:]))
     # py3 compatible changes
+<<<<<<< HEAD
     userid = get_smut_userid().encode()
     return 'NL' + bytes.decode(get_smut_userid().rjust(6, b'0')[-6:])
+=======
+    return 'NL' + get_smut_userid().rjust(6, '0')[-6:]
+>>>>>>> 74bfabd... enhance split function in py3
 
 
 def generate_iucv_authfile(fn, client):
