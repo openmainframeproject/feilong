@@ -130,7 +130,7 @@ def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[]):
                 cmd,
                 stderr=subprocess.STDOUT,
                 close_fds=True)
-
+        results['response'] = bytes.decode(results['response'])
     except CalledProcessError as e:
         msg = []
         results['overallRC'] = 2
@@ -311,6 +311,7 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
     rh.printSysLog("Invoking: " + strCmd)
     try:
         out = subprocess.check_output(cmd, close_fds=True)
+        out = bytes.decode(out)
         diskAccessed = True
     except CalledProcessError as e:
         rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
@@ -361,6 +362,7 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
         rh.printSysLog("Invoking: " + strCmd)
         try:
             out = subprocess.check_output(cmd, close_fds=True)
+            out = bytes.decode(out)
         except CalledProcessError as e:
             rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
                 e.returncode, e.output))
@@ -408,6 +410,7 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
         try:
             out = subprocess.check_output(cmd,
                 stderr=subprocess.STDOUT, close_fds=True)
+            out = bytes.decode(out)
         except CalledProcessError as e:
             rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
                 e.returncode, e.output))
@@ -432,6 +435,7 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
                 stderr=subprocess.STDOUT,
                 close_fds=True,
                 shell=True)
+            out = bytes.decode(out)
         except CalledProcessError as e:
             rh.printLn("ES", msgs.msg['0415'][1] % (modId, cmd,
                 e.returncode, e.output))
@@ -455,6 +459,7 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
                 stderr=subprocess.STDOUT,
                 close_fds=True,
                 shell=True)
+            out = bytes.decode(out)
         except CalledProcessError as e:
             rh.printLn("ES", msgs.msg['0415'][1] % (modId, cmd,
                 e.returncode, e.output))
@@ -479,6 +484,7 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
                 stderr=subprocess.STDOUT,
                 close_fds=True,
                 shell=True)
+            out = bytes.decode(out)
         except CalledProcessError as e:
             rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
                 e.returncode, e.output))
@@ -506,6 +512,7 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
             try:
                 out = subprocess.check_output(cmd,
                     stderr=subprocess.STDOUT, close_fds=True)
+                out = bytes.decode(out)
                 rh.printLn("N", "File system: " + fileSystem +
                     " is installed.")
             except CalledProcessError as e:
@@ -533,6 +540,7 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
         rh.printSysLog("Invoking: " + strCmd)
         try:
             out = subprocess.check_output(cmd, close_fds=True)
+            out = bytes.decode(out)
         except CalledProcessError as e:
             rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
                 e.returncode, e.output))
@@ -786,6 +794,7 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
             results['response'] = subprocess.check_output(cmd,
                                         close_fds=True,
                                         stderr=subprocess.STDOUT)
+            results['response'] = bytes.decode(results['response'])
             results['rc'] = 0
             rh.updateResults(results)
             break
@@ -834,6 +843,7 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
             results['response'] = subprocess.check_output(cmd,
                                         close_fds=True,
                                         stderr=subprocess.STDOUT)
+            results['response'] = bytes.decode(results['response'])
             rh.updateResults(results)
         except CalledProcessError as e:
             msg = msgs.msg['0404'][1] % (modId,
@@ -850,6 +860,7 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
                 results['response'] = subprocess.check_output(cmd,
                                             close_fds=True,
                                             stderr=subprocess.STDOUT)
+                results['response'] = bytes.decode(results['response'])
             # We only need to issue the printLn.
             # Don't need to change return/reason code values
             except CalledProcessError as e:
@@ -880,6 +891,7 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
             results['response'] = subprocess.check_output(cmd,
                                         close_fds=True,
                                         stderr=subprocess.STDOUT)
+            results['response'] = bytes.decode(results['response'])
             rh.updateResults(results)
         except CalledProcessError as e:
             msg = msgs.msg['0424'][1] % (modId,
@@ -896,6 +908,7 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
                 results['response'] = subprocess.check_output(cmd,
                                             close_fds=True,
                                             stderr=subprocess.STDOUT)
+                results['response'] = bytes.decode(results['response'])
                 # We only need to issue the printLn.
                 # Don't need to change return/reason code values
             except CalledProcessError as e:
@@ -1022,6 +1035,7 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
                 cmd,
                 close_fds=True,
                 stderr=subprocess.STDOUT)
+            out = bytes.decode(out)
             if desiredState == 'on':
                 stateFnd = True
                 break
