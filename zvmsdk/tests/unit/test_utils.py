@@ -28,8 +28,11 @@ class ZVMUtilsTestCases(base.SDKTestCase):
     def test_get_namelist(self, gsu):
         gsu.return_value = 'TUID'
         self.assertEqual('TSTNLIST', zvmutils.get_namelist())
+
         base.set_conf('zvm', 'namelist', None)
+        gsu.return_value = 'TUID'
         self.assertEqual('NL00TUID', zvmutils.get_namelist())
+
         gsu.return_value = 'TESTUSER'
         self.assertEqual('NLSTUSER', zvmutils.get_namelist())
         base.set_conf('zvm', 'namelist', 'TSTNLIST')
