@@ -277,7 +277,9 @@ def getGeneralInfo(rh):
         host = subprocess.check_output(
             cmd,
             close_fds=True,
-            stderr=subprocess.STDOUT).split()[2]
+            stderr=subprocess.STDOUT)
+        host = bytes.decode(host)
+        host = host.split()[2]
     except subprocess.CalledProcessError as e:
         msg = msgs.msg['0405'][1] % (modId, "Hypervisor Name",
                                      strCmd, e.output)
