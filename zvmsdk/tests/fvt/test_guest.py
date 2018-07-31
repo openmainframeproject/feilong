@@ -24,7 +24,6 @@ from parameterized import parameterized
 from zvmsdk.tests.fvt import base
 from zvmsdk.tests.fvt import test_utils
 from zvmsdk import config
-from __builtin__ import False
 
 
 CONF = config.CONF
