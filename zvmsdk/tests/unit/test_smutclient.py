@@ -249,7 +249,6 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                         'A detailed trace can be found at: /var/log/zthin/'
                         'unpackdiskimage_trace_2017-08-16-01:29:59.453.txt\n'
                         'unpackdiskimage end time: 2017-08-16-01:29:59.605\n')
-        unpack_error = unpack_error.encode()
         execute.return_value = (3, unpack_error)
         self.assertRaises(exception.SDKGuestOperationError,
                            self._smutclient.guest_deploy, userid, image_name,
