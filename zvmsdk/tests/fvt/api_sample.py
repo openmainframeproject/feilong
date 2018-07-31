@@ -30,7 +30,7 @@ def make_json(data):
     if not data:
         return {}
     # data = re.sub(r'(\: )%\((.+)\)s([^"])', r'\1"%(int:\2)s"\3', data)
-    return json.loads(data)
+    return json.loads(data.encode())
 
 
 class APITestBase(object):
@@ -83,7 +83,8 @@ class APITestBase(object):
 
         template = ''.join([dirname, '/', name, '.tpl'])
         with open(template) as inf:
-            return inf.read().strip()
+            in_contents = inf.read().strip()
+            return bytes.decode(in_contents)
 
     def _verify_result(self, expected, result):
 
