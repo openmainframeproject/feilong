@@ -24,7 +24,6 @@ from parameterized import parameterized
 from zvmsdk.tests.fvt import base
 from zvmsdk.tests.fvt import test_utils
 from zvmsdk import config
-from __builtin__ import False
 
 
 CONF = config.CONF
@@ -281,7 +280,7 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
         try:
             subprocess.check_output(cmd,
                                     close_fds=True,
-                                    stderr=subprocess.STDOUT).split()[2]
+                                    stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             msg = e.output
             print ("Create cfgdrive.iso meet error: %s" % msg)
@@ -516,7 +515,7 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.assertTrue(self.utils.wait_until_guest_reachable(userid))
 
         # Verify cfgdrive.iso take effect
-        time.sleep(15)
+        time.sleep(30)
         result = self._smutclient.execute_cmd(userid, 'hostname')
         self.assertIn('deploy_fvt', result)
 
