@@ -126,7 +126,8 @@ def createVM(rh):
 
     # Construct the temporary file for the USER entry.
     fd, tempFile = mkstemp()
-    os.write(fd, '\n'.join(dirLines) + '\n')
+    to_write = '\n'.join(dirLines) + '\n'
+    os.write(fd, to_write.encode())
     os.close(fd)
 
     parms = ["-T", rh.userid, "-f", tempFile]

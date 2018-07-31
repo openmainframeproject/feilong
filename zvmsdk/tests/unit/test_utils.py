@@ -26,7 +26,8 @@ class ZVMUtilsTestCases(base.SDKTestCase):
 
     @mock.patch.object(zvmutils, 'get_smut_userid')
     def test_get_namelist(self, gsu):
-        gsu.return_value = 'TUID'
+        ret = 'TUID'.encode()
+        gsu.return_value = ret
         self.assertEqual('TSTNLIST', zvmutils.get_namelist())
         base.set_conf('zvm', 'namelist', None)
         self.assertEqual('NL00TUID', zvmutils.get_namelist())
