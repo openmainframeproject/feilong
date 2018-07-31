@@ -19,6 +19,7 @@ import argparse
 import datetime
 import os
 import re
+from six import string_types
 import sys
 import subprocess
 from subprocess import CalledProcessError
@@ -1403,7 +1404,7 @@ def runTest(smut, test):
             else:
                 results['overallRC'] = -9999999
 
-        if isinstance(results['response'], basestring):
+        if isinstance(results['response'], string_types):
             results['response'] = [results['response']]
 
     print("    Overall rc:  %s" % results['overallRC'])
@@ -1593,7 +1594,7 @@ def driveTestSet(smut, setId, setToTest):
                 else:
                     shellRC = -9999999
 
-            if isinstance(out, basestring):
+            if isinstance(out, string_types):
                 out = [out]
 
             shellOk = 0
