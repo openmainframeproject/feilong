@@ -131,30 +131,32 @@ def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[]):
                 stderr=subprocess.STDOUT,
                 close_fds=True)
 
+        results['response'] = bytes.decode(results['response'])
     except CalledProcessError as e:
         msg = []
         results['overallRC'] = 2
         results['rc'] = e.returncode
+        output = bytes.decode(e.output)
 
-        match = re.search('Return code (.+?),', e.output)
+        match = re.search('Return code (.+?),', output)
         if match:
             try:
                 results['rc'] = int(match.group(1))
             except ValueError:
                 # Return code in response from IUCVCLNT is not an int.
                 msg = msgs.msg['0311'][1] % (modId, userid, strCmd,
-                    results['rc'], match.group(1), e.output)
+                    results['rc'], match.group(1), output)
 
         if not msg:
             # We got the rc. Now, get the rs.
-            match = re.search('Reason code (.+?)\.', e.output)
+            match = re.search('Reason code (.+?)\.', output)
             if match:
                 try:
                     results['rs'] = int(match.group(1))
                 except ValueError:
                     # Reason code in response from IUCVCLNT is not an int.
                     msg = msgs.msg['0312'][1] % (modId, userid, strCmd,
-                        results['rc'], match.group(1), e.output)
+                        results['rc'], match.group(1), output)
 
         if msg:
             # Already produced an error message.
@@ -162,31 +164,31 @@ def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[]):
         elif results['rc'] == 1:
             # Command was not authorized or a generic Linux error.
             msg = msgs.msg['0313'][1] % (modId, userid, strCmd,
-                results['rc'], results['rs'], e.output)
+                results['rc'], results['rs'], output)
         elif results['rc'] == 2:
             # IUCV client parameter error.
             msg = msgs.msg['0314'][1] % (modId, userid, strCmd,
-                results['rc'], results['rs'], e.output)
+                results['rc'], results['rs'], output)
         elif results['rc'] == 4:
             # IUCV socket error
             msg = msgs.msg['0315'][1] % (modId, userid, strCmd,
-                results['rc'], results['rs'], e.output)
+                results['rc'], results['rs'], output)
         elif results['rc'] == 8:
             # Executed command failed
             msg = msgs.msg['0316'][1] % (modId, userid, strCmd,
-                results['rc'], results['rs'], e.output)
+                results['rc'], results['rs'], output)
         elif results['rc'] == 16:
             # File Transport failed
             msg = msgs.msg['0317'][1] % (modId, userid, strCmd,
-                results['rc'], results['rs'], e.output)
+                results['rc'], results['rs'], output)
         elif results['rc'] == 32:
             # IUCV server file was not found on this system.
             msg += msgs.msg['0318'][1] % (modId, userid, strCmd,
-                results['rc'], results['rs'], e.output)
+                results['rc'], results['rs'], output)
         else:
             # Unrecognized IUCV client error
             msg = msgs.msg['0319'][1] % (modId, userid, strCmd,
-                results['rc'], results['rs'], e.output)
+                results['rc'], results['rs'], output)
         results['response'] = msg
 
     except Exception as e:
@@ -605,7 +607,8 @@ def invokeSMCLI(rh, api, parms, hideInLog=[]):
 
     try:
         smcliResp = subprocess.check_output(cmd + parms,
-            close_fds=True).split('\n', 1)
+            close_fds=True)
+        smcliResp = bytes.decode(smcliResp).split('\n', 1)
         results['response'] = smcliResp[1]
         results['overallRC'] = 0
         results['rc'] = 0
@@ -617,7 +620,7 @@ def invokeSMCLI(rh, api, parms, hideInLog=[]):
         if e.output == '':
             smcliResp = ['']
         else:
-            smcliResp = e.output.split('\n', 1)
+            smcliResp = bytes.decode(e.output).split('\n', 1)
 
         # Split the header into its component pieces.
         rcHeader = smcliResp[0].split('(details)', 1)
@@ -732,7 +735,8 @@ def isLoggedOn(rh, userid):
             close_fds=True,
             stderr=subprocess.STDOUT)
     except CalledProcessError as e:
-        match = re.search('(^HCP\w\w\w045E|^HCP\w\w\w361E)', e.output)
+        search_pattern = '(^HCP\w\w\w045E|^HCP\w\w\w361E)'.encode()
+        match = re.search(search_pattern, e.output)
         if match:
             # Not logged on
             results['rs'] = 1
@@ -790,8 +794,9 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
         except CalledProcessError as e:
             results['response'] = e.output
             # Check if we have concurrent instance of vmur active
-            if results['response'].find("A concurrent instance of vmur" +
-                " is already active") == -1:
+            to_find = "A concurrent instance of vmur is already active"
+            to_find = to_find.encode()
+            if results['response'].find(to_find) == -1:
                 # Failure in VMUR punch update the rc
                 results['rc'] = 7
                 break

@@ -12,7 +12,6 @@
 #    under the License.
 
 
-import json
 import os
 import subprocess
 import tempfile
@@ -24,7 +23,6 @@ from parameterized import parameterized
 from zvmsdk.tests.fvt import base
 from zvmsdk.tests.fvt import test_utils
 from zvmsdk import config
-from __builtin__ import False
 
 
 CONF = config.CONF
@@ -70,7 +68,7 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
         self.assertEqual(200, resp_info.status_code)
 
         Statement = "USER %s LBYONLY" % userid.upper()
-        resp_content = json.loads(resp_info.content)
+        resp_content = test_utils.load_output(resp_info.content)
         user_direct = resp_content['output']['user_direct']
         cpu_num = 0
         cpu_num_live = 0
@@ -204,7 +202,7 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
 
         # Continue to check the nic info defined in vswitch table
         resp = self.client.guests_get_nic_info(userid)
-        nics_info = json.loads(resp.content)['output']
+        nics_info = test_utils.load_output(resp.content)['output']
 
         for nic in nics_info:
             if (nic['interface'] != vdev) or (nic['userid'] != userid):
@@ -281,7 +279,7 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
         try:
             subprocess.check_output(cmd,
                                     close_fds=True,
-                                    stderr=subprocess.STDOUT).split()[2]
+                                    stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             msg = e.output
             print ("Create cfgdrive.iso meet error: %s" % msg)
@@ -516,7 +514,7 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.assertTrue(self.utils.wait_until_guest_reachable(userid))
 
         # Verify cfgdrive.iso take effect
-        time.sleep(15)
+        time.sleep(30)
         result = self._smutclient.execute_cmd(userid, 'hostname')
         self.assertIn('deploy_fvt', result)
 
@@ -560,7 +558,8 @@ class GuestHandlerTestCase(GuestHandlerBase):
 
         resp_info = self.client.guest_get_info(userid)
         self.assertEqual(200, resp_info.status_code)
-        resp_content = json.loads(resp_info.content)
+
+        resp_content = test_utils.load_output(resp_info.content)
         info_off = resp_content['output']
         self.assertEqual('on', info_off['power_state'])
         self.assertNotEqual(info_off['cpu_time_us'], 0)
@@ -579,7 +578,8 @@ class GuestHandlerTestCase(GuestHandlerBase):
 
         resp_state = self.client.guest_get_power_state(userid)
         self.assertEqual(200, resp_state.status_code)
-        resp_content = json.loads(resp_state.content)
+
+        resp_content = test_utils.load_output(resp_state.content)
         self.assertEqual('off', resp_content['output'])
 
     def test_guests_get_nic_info(self):
@@ -931,7 +931,8 @@ class GuestHandlerTestCaseWithSingleDeployedGuest(GuestHandlerBase):
         resp = self.client.guests_get_nic_info(self.userid_exists,
                                               nic_id='123456')
         self.assertEqual(200, resp.status_code)
-        nic_info = json.loads(resp.content)['output']
+
+        nic_info = test_utils.load_output(resp.content)['output']
         self.assertEqual("1006", nic_info[0]["interface"])
         self.assertEqual("123456", nic_info[0]["port"])
 
@@ -1195,7 +1196,7 @@ class GuestHandlerTestCaseWithMultipleDeployedGuest(GuestHandlerBase):
         # get console output
         resp = self.client.guest_get_console_output(userid)
         self.assertEqual(200, resp.status_code)
-        outputs = json.loads(resp.content)['output']
+        outputs = test_utils.load_output(resp.content)['output']
         self.assertNotEqual(outputs, '')
 
     @parameterized.expand(TEST_USERID_LIST)
