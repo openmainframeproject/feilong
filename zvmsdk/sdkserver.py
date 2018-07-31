@@ -14,7 +14,7 @@
 
 
 import json
-import Queue
+import six
 import socket
 import sys
 import threading
@@ -25,6 +25,11 @@ from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import returncode
+
+if six.PY3:
+    import queue as Queue
+else:
+    import Queue
 
 
 CONF = config.CONF
