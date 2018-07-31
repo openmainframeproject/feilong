@@ -19,6 +19,7 @@ import six
 import sqlite3
 import threading
 import uuid
+import json
 
 from zvmsdk import config
 from zvmsdk import constants as const
@@ -520,6 +521,14 @@ class GuestDbOperator(object):
                                                        modID=self._module_id)
         return guest
 
+    def add_guest_migrated(self, userid, meta, net_set, comments):
+        # Add guest which is migrated from other host.
+        guest_id = str(uuid.uuid4())
+        with get_guest_conn() as conn:
+            conn.execute(
+                "INSERT INTO guests VALUES (?, ?, ?, ?, ?)",
+                (guest_id, userid, meta, net_set, comments))
+
     def add_guest(self, userid, meta='', comments=''):
         # Generate uuid automatically
         guest_id = str(uuid.uuid4())
@@ -622,6 +631,24 @@ class GuestDbOperator(object):
             res = conn.execute("SELECT * FROM guests")
             guests = res.fetchall()
         return guests
+
+    def get_migrated_guest_list(self):
+        with get_guest_conn() as conn:
+            res = conn.execute("SELECT * FROM guests "
+                               "WHERE comments LIKE '\%\"migrated\"\:\"1\"\%'")
+            guests = res.fetchall()
+        return guests
+
+    def get_comments_by_userid(self, userid):
+        """ Get comments record.
+        output should be like: {'k1': 'v1', 'k2': 'v2'}'
+        """
+        userid = userid
+        with get_guest_conn() as conn:
+            res = conn.execute("SELECT comments FROM guests "
+                               "WHERE userid=?", (userid,))
+        comments = json.loads(res)
+        return comments
 
     def get_metadata_by_userid(self, userid):
         """get metadata record.
