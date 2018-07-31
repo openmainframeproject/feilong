@@ -14,7 +14,7 @@
 
 
 import json
-import Queue
+import six
 import socket
 import sys
 import threading
@@ -25,6 +25,11 @@ from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import returncode
+
+if six.PY3:
+    import queue as Queue
+else:
+    import Queue
 
 
 CONF = config.CONF
@@ -89,7 +94,7 @@ class SDKServer(object):
         total_len = len(json_results)
         got_error = False
         while (sent < total_len):
-            this_sent = client.send(json_results[sent:])
+            this_sent = client.send(json_results[sent:].encode())
             if this_sent == 0:
                 got_error = True
                 break
@@ -116,7 +121,7 @@ class SDKServer(object):
                 self.log_warn("(%s:%s) Failed to receive data from client." %
                               (addr[0], addr[1]))
                 return
-            api_data = json.loads(data)
+            api_data = json.loads(data.decode())
 
             # API_data should be in the form [funcname, args_list, kwargs_dict]
             if not isinstance(api_data, list) or len(api_data) != 3:
