@@ -605,7 +605,8 @@ def invokeSMCLI(rh, api, parms, hideInLog=[]):
 
     try:
         smcliResp = subprocess.check_output(cmd + parms,
-            close_fds=True).split('\n', 1)
+            close_fds=True)
+        smcliResp = bytes.decode(smcliResp).split('\n', 1)
         results['response'] = smcliResp[1]
         results['overallRC'] = 0
         results['rc'] = 0
@@ -732,7 +733,8 @@ def isLoggedOn(rh, userid):
             close_fds=True,
             stderr=subprocess.STDOUT)
     except CalledProcessError as e:
-        match = re.search('(^HCP\w\w\w045E|^HCP\w\w\w361E)', e.output)
+        search_pattern = '(^HCP\w\w\w045E|^HCP\w\w\w361E)'.encode()
+        match = re.search(search_pattern, e.output)
         if match:
             # Not logged on
             results['rs'] = 1
@@ -790,8 +792,9 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
         except CalledProcessError as e:
             results['response'] = e.output
             # Check if we have concurrent instance of vmur active
-            if results['response'].find("A concurrent instance of vmur" +
-                " is already active") == -1:
+            to_find = "A concurrent instance of vmur is already active"
+            to_find = to_find.encode()
+            if results['response'].find(to_find) == -1:
                 # Failure in VMUR punch update the rc
                 results['rc'] = 7
                 break
