@@ -15,6 +15,7 @@
 
 import netaddr
 import six
+import json
 
 from zvmsdk import config
 from zvmsdk import constants
@@ -26,6 +27,7 @@ from zvmsdk import monitor
 from zvmsdk import networkops
 from zvmsdk import vmops
 from zvmsdk import volumeop
+from zvmsdk import database
 from zvmsdk import utils as zvmutils
 
 
@@ -74,6 +76,7 @@ class SDKAPI(object):
         self._imageops = imageops.get_imageops()
         self._monitor = monitor.get_monitor()
         self._volumeop = volumeop.get_volumeop()
+        self._GuestDbOperator = database.GuestDbOperator()
 
     @check_guest_exist()
     def guest_start(self, userid):
@@ -421,6 +424,42 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_definition_info(userid, **kwargs)
 
+    def guest_pre_migrate(self, userid, meta, net_set, comments):
+        """DB operation for migrate vm from another z/VM host in same SSI
+        :param userid: (str) the userid of the vm to be relocated or tested
+        :param meta: (str) the metadata of the vm to be relocated or tested
+        :param net_set: (str) the net_set of the vm, default is 0.
+        :param comments: (str) the comments of the vm,
+                         for example, {"migrated":"1"}
+        """
+        if not zvmutils.check_userid_exist(userid):
+            LOG.error("User directory '%s' does not exist." % userid)
+            raise exception.SDKObjectNotExistError(
+                    obj_desc=("Guest '%s'" % userid), modID='guest')
+        else:
+            action = "list all guests in database which has been migrated."
+            with zvmutils.log_and_reraise_sdkbase_error(action):
+                guests = self._GuestDbOperator.get_migrated_guest_list()
+            if userid in guests:
+                """change comments for vm"""
+                old_comments = self._GuestDbOperator.get_comments_by_userid(
+                                                                    userid)
+                old_comments_dict = json.loads(old_comments)
+                old_comments_dict['migrated'] = 0
+                new_comments = json.dumps(old_comments_dict)
+                action = "update guest '%s' in database" % userid
+                with zvmutils.log_and_reraise_sdkbase_error(action):
+                    self._GuestDbOperator.update_guest_by_userid(userid,
+                                                    comments=new_comments)
+            else:
+                """add one record for new vm"""
+                action = "add guest '%s' to database" % userid
+                with zvmutils.log_and_reraise_sdkbase_error(action):
+                    self._GuestDbOperator.add_guest_migrated(userid, meta,
+                                                             net_set, comments)
+            LOG.info("Guest %s registered." % userid)
+
+    @check_guest_exist()
     def guest_live_migrate(self, userid, destination, parms, action):
         """Move an eligible, running z/VM(R) virtual machine transparently
         from one z/VM system to another within an SSI cluster.
@@ -455,11 +494,17 @@ class SDKAPI(object):
         """
         if action.lower() == 'move':
             operation = "Move guest '%s' to SSI '%s'" % (userid, destination)
-            LOG.info(operation)
             with zvmutils.log_and_reraise_sdkbase_error(operation):
                 self._vmops.live_migrate_vm(userid, destination,
                                              parms, action)
-            LOG.info('successfully move.')
+            old_comments = self._GuestDbOperator.get_comments_by_userid(userid)
+            old_comments_dict = json.loads(old_comments)
+            old_comments_dict['migrated'] = 0
+            new_comments = json.dumps(old_comments_dict)
+            action = "update guest '%s' in database" % userid
+            with zvmutils.log_and_reraise_sdkbase_error(action):
+                self._GuestDbOperator.update_guest_by_userid(userid,
+                                                    comments=new_comments)
         if action.lower() == 'test':
             operation = "Test move guest '%s' to SSI '%s'" % (userid,
                                                     destination)
