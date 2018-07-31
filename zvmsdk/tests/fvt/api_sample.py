@@ -30,6 +30,7 @@ def make_json(data):
     if not data:
         return {}
     # data = re.sub(r'(\: )%\((.+)\)s([^"])', r'\1"%(int:\2)s"\3', data)
+    data = bytes.decode(data)
     return json.loads(data)
 
 
