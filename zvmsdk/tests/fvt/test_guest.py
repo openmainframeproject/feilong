@@ -24,7 +24,6 @@ from parameterized import parameterized
 from zvmsdk.tests.fvt import base
 from zvmsdk.tests.fvt import test_utils
 from zvmsdk import config
-from __builtin__ import False
 
 
 CONF = config.CONF
@@ -518,6 +517,8 @@ class GuestHandlerTestCase(GuestHandlerBase):
         # Verify cfgdrive.iso take effect
         time.sleep(15)
         result = self._smutclient.execute_cmd(userid, 'hostname')
+        if isinstance(result, bytes):
+            result = bytes.decode(result)
         self.assertIn('deploy_fvt', result)
 
         resp = self.client.guest_get_definition_info(userid)
