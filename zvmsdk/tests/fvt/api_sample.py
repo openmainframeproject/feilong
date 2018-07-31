@@ -99,5 +99,6 @@ class APITestBase(object):
                            (expected_json, result_json))
 
     def verify_result(self, test_name, result):
+        result = bytes.decode(result)
         expected = self._read_template(test_name)
         return self._verify_result(expected, result)

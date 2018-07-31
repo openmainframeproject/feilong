@@ -529,7 +529,7 @@ class ZVMConnectorTestUtils(object):
         :param func:            function or method to be called
         :param *args, **kwargs: parameters for the function
         """
-        _inc_slp = [1, 2, 2, 5, 5, 5, 10, 10, 10, 10, 10, 15, 15, 20]
+        _inc_slp = [1, 2, 2, 5, 5, 5, 10, 10, 10, 10, 10, 15, 15, 20, 500, 1000, 4000]
         # sleep intervals, total timeout 120 seconds
         for _slp in _inc_slp:
             real_state = func(*args, **kwargs)
@@ -543,7 +543,8 @@ class ZVMConnectorTestUtils(object):
 
     def get_guest_power_state(self, userid):
         resp = self.client.guest_get_power_state(userid)
-        power_state = json.loads(resp.content)['output']
+        output = resp.content
+        power_state = json.loads(output)['output']
         return power_state
 
     def wait_until_guest_in_power_state(self, userid, expect_state):
