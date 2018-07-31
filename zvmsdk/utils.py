@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 import contextlib
 import errno
 import functools
@@ -441,7 +440,9 @@ def get_smut_userid():
     try:
         userid = subprocess.check_output(cmd,
                                          close_fds=True,
-                                         stderr=subprocess.STDOUT).split()[0]
+                                         stderr=subprocess.STDOUT)
+        userid = bytes.decode(userid)
+        userid = userid.split()[0]
         return userid
     except Exception as err:
         msg = ("Could not find the userid of the smut server: %s") % err
@@ -461,7 +462,7 @@ def get_namelist():
 
     # return ''.join(('NL', get_smut_userid().rjust(6, '0')[-6:]))
     # py3 compatible changes
-    return 'NL' + bytes.decode(get_smut_userid().rjust(6, b'0')[-6:])
+    return 'NL' + get_smut_userid().rjust(6, '0')[-6:]
 
 
 def generate_iucv_authfile(fn, client):
