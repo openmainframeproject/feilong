@@ -28,6 +28,11 @@ SDKWSGI_MODID = 120
 def extract_json(body):
     try:
         LOG.debug('Decoding body: %s', body)
+        # This function actually is received from upper layer through
+        # socket, so it's bytes in py3
+        if isinstance(body, bytes):
+            body = bytes.decode(body)
+
         data = json.loads(body)
     except ValueError as exc:
         msg = ('Malformed JSON: %(error)s') % {'error': exc}
