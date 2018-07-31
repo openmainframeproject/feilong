@@ -543,7 +543,10 @@ class ZVMConnectorTestUtils(object):
 
     def get_guest_power_state(self, userid):
         resp = self.client.guest_get_power_state(userid)
-        power_state = json.loads(resp.content)['output']
+        output = resp.content
+        if isinstance(output, bytes):
+             output = bytes.decode(output)
+        power_state = json.loads(output)['output']
         return power_state
 
     def wait_until_guest_in_power_state(self, userid, expect_state):
