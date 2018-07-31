@@ -457,7 +457,7 @@ class ZVMConnectorTestUtils(object):
     def is_guest_exist(self, userid):
         cmd = 'sudo vmcp q %s' % userid
         output = zvmutils.execute(cmd)[1]
-        if re.search('(^HCP\w\w\w003E)', output):
+        if re.search('(^HCP\w\w\w003E)'.encode(), output):
             # userid not exist
             return False
         return True

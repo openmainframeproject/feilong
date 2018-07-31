@@ -56,6 +56,7 @@ def execute(cmd):
     try:
         output = subprocess.check_output(cmd, close_fds=True,
                                          stderr=subprocess.STDOUT)
+        output = bytes.decode(output)
     except subprocess.CalledProcessError as err:
         rc = err.returncode
         output = err.output
@@ -458,7 +459,9 @@ def get_namelist():
         if len(CONF.zvm.namelist) <= 8:
             return CONF.zvm.namelist
 
-    return ''.join(('NL', get_smut_userid().rjust(6, '0')[-6:]))
+    # return ''.join(('NL', get_smut_userid().rjust(6, '0')[-6:]))
+    # py3 compatible changes
+    return 'NL' + bytes.decode(get_smut_userid().rjust(6, b'0')[-6:])
 
 
 def generate_iucv_authfile(fn, client):
@@ -515,9 +518,9 @@ def make_dummy_image(image_path, d_type='CKD'):
     header = ("z/VM %(type)s Disk Image:           0 %(unit)s" %
               {'type': d_type, 'unit': d_unit})
 
-    header = bytes(' '.join((header, 'HLen: 0055', 'GZIP: 0')))
+    header = (' '.join((header, 'HLen: 0055', 'GZIP: 0')))
     with open(image_path, 'wb') as f:
-        f.write(header)
+        f.write(header.encode())
 
 
 @contextlib.contextmanager
