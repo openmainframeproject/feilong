@@ -19,6 +19,7 @@ import six
 import sqlite3
 import threading
 import uuid
+import json
 
 from zvmsdk import config
 from zvmsdk import constants as const
@@ -175,6 +176,16 @@ class NetworkDbOperator(object):
             LOG.debug("New record in the switch table: user %s, "
                       "nic %s, port %s" %
                       (userid, interface, port))
+
+    def switch_add_record_migrated(self, userid, interface, port=None,
+                                   switch, comments=None):
+        """Add userid and interfaces and switch into switch table."""
+        with get_network_conn() as conn:
+            conn.execute("INSERT INTO switch VALUES (?, ?, ?, ?, ?)",
+                         (userid, interface, switch, port, comments))
+            LOG.debug("New record in the switch table: user %s, "
+                      "nic %s, switch %s" %
+                      (userid, interface, switch))
 
     def switch_update_record_with_switch(self, userid, interface,
                                          switch=None):
@@ -520,6 +531,14 @@ class GuestDbOperator(object):
                                                        modID=self._module_id)
         return guest
 
+    def add_guest_migrated(self, userid, meta, net_set, comments):
+        # Add guest which is migrated from other host.
+        guest_id = str(uuid.uuid4())
+        with get_guest_conn() as conn:
+            conn.execute(
+                "INSERT INTO guests VALUES (?, ?, ?, ?, ?)",
+                (guest_id, userid, meta, net_set, comments))
+
     def add_guest(self, userid, meta='', comments=''):
         # Generate uuid automatically
         guest_id = str(uuid.uuid4())
@@ -605,8 +624,9 @@ class GuestDbOperator(object):
             sql_cmd += " net_set=?,"
             sql_var.append(net_set)
         if comments is not None:
+            new_comments = json.dumps(comments)
             sql_cmd += " comments=?,"
-            sql_var.append(comments)
+            sql_var.append(new_comments)
 
         # remove the tailing comma
         sql_cmd = sql_cmd.strip(',')
@@ -622,6 +642,24 @@ class GuestDbOperator(object):
             res = conn.execute("SELECT * FROM guests")
             guests = res.fetchall()
         return guests
+
+    def get_migrated_guest_list(self):
+        with get_guest_conn() as conn:
+            res = conn.execute("SELECT * FROM guests "
+                               "WHERE comments LIKE '\%\"migrated\"\:\"1\"\%'")
+            guests = res.fetchall()
+        return guests
+
+    def get_comments_by_userid(self, userid):
+        """ Get comments record.
+        output should be like: {'k1': 'v1', 'k2': 'v2'}'
+        """
+        userid = userid
+        with get_guest_conn() as conn:
+            res = conn.execute("SELECT comments FROM guests "
+                               "WHERE userid=?", (userid,))
+        comments = json.loads(res)
+        return comments
 
     def get_metadata_by_userid(self, userid):
         """get metadata record.
