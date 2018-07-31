@@ -17,7 +17,7 @@
 import logging
 import logging.handlers
 import shlex
-import types
+from six import string_types
 
 from smutLayer import changeVM
 from smutLayer import cmdVM
@@ -225,10 +225,10 @@ class ReqHandle(object):
         self.printSysLog("Enter ReqHandle.parseCmdline")
 
         # Save the request data based on the type of operand.
-        if isinstance(requestData, types.ListType):
+        if isinstance(requestData, list):
             self.requestString = ' '.join(requestData)  # Request as a string
             self.request = requestData                  # Request as a list
-        elif isinstance(requestData, basestring):
+        elif isinstance(requestData, string_types):
             self.requestString = requestData            # Request as a string
             self.request = shlex.split(requestData)     # Request as a list
         else:
