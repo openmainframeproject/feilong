@@ -87,6 +87,8 @@ class SDKSocketClient(object):
 
             # Prepare the data to be sent
             api_data = json.dumps((func, api_args, api_kwargs))
+            api_data = api_data.encode()
+
             # Send the API call data to SDK server
             sent = 0
             total_len = len(api_data)
@@ -101,6 +103,10 @@ class SDKSocketClient(object):
             except socket.error as err:
                 return self._construct_socket_error(5,
                                                     error=six.text_type(err))
+            except Exception as err:
+                LOG.exception("get error: %s", err)
+                raise
+
             if got_error or sent != total_len:
                 return self._construct_socket_error(3, sent=sent,
                                                     api=api_data)
