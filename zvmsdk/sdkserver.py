@@ -121,8 +121,6 @@ class SDKServer(object):
                 self.log_warn("(%s:%s) Failed to receive data from client." %
                               (addr[0], addr[1]))
                 return
-            if isinstance(bytes):
-                data = bytes.deocde(data)
             api_data = json.loads(data)
 
             # API_data should be in the form [funcname, args_list, kwargs_dict]
