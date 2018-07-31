@@ -510,6 +510,7 @@ class SMUTClient(object):
         if rc != 0:
             err_msg = ("unpackdiskimage failed with return code: %d." % rc)
             err_output = ""
+            output = bytes.decode(output)
             output_lines = output.split('\n')
             for line in output_lines:
                 if line.__contains__("ERROR:"):
@@ -1732,7 +1733,7 @@ class SMUTClient(object):
             image_info = self._ImageDbOperator.image_query_record(image_name)
         except exception.SDKObjectNotExistError:
             msg = ("The image record %s doens't exist in SDK image datebase,"
-                   " will import the image and create record now")
+                   " will import the image and create record now" % image_name)
             LOG.info(msg)
 
         # Ensure the specified image is not exist in image DB
@@ -1880,7 +1881,8 @@ class SMUTClient(object):
         try:
             root_disk_size = int(output[144:156])
             disk_units = output[220:223]
-            root_disk_units = ':'.join([str(root_disk_size), disk_units])
+            root_disk_units = ':'.join([str(root_disk_size),
+                                       bytes.decode(disk_units)])
         except ValueError:
             msg = ("Image file at %s is missing built-in disk size "
                    "metadata, it was probably not captured by SDK" %
@@ -1888,6 +1890,7 @@ class SMUTClient(object):
             LOG.error(msg)
             raise exception.SDKImageOperationError(rs=6)
 
+        output = bytes.decode(output)
         if 'FBA' not in output and 'CKD' not in output:
             raise exception.SDKImageOperationError(rs=7)
 
@@ -1938,7 +1941,7 @@ class SMUTClient(object):
         """Calculate the md5sum of the specific image file"""
         try:
             current_md5 = hashlib.md5()
-            if isinstance(fpath, basestring) and os.path.exists(fpath):
+            if isinstance(fpath, six.string_types) and os.path.exists(fpath):
                 with open(fpath, "rb") as fh:
                     for chunk in self._read_chunks(fh):
                         current_md5.update(chunk)
