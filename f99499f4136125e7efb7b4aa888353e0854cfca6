@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d2572d8b_221b2779",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-08-01T05:12:21Z",
+      "side": 1,
+      "message": "suggest upper userid at the beginning",
+      "range": {
+        "startLine": 427,
+        "startChar": 8,
+        "endLine": 427,
+        "endChar": 58
+      },
+      "revId": "f99499f4136125e7efb7b4aa888353e0854cfca6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37a59397_7de4bab2",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-08-01T05:12:21Z",
+      "side": 1,
+      "message": "another z/VM host in same SSI",
+      "range": {
+        "startLine": 427,
+        "startChar": 52,
+        "endLine": 427,
+        "endChar": 55
+      },
+      "revId": "f99499f4136125e7efb7b4aa888353e0854cfca6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3561670_393b1b83",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-08-01T05:12:21Z",
+      "side": 1,
+      "message": "Add parameter description like other APIs",
+      "range": {
+        "startLine": 427,
+        "startChar": 11,
+        "endLine": 427,
+        "endChar": 55
+      },
+      "revId": "f99499f4136125e7efb7b4aa888353e0854cfca6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0b1aae7_ec480f59",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 447,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-08-01T05:12:21Z",
+      "side": 1,
+      "message": "refine the log message",
+      "range": {
+        "startLine": 447,
+        "startChar": 12,
+        "endLine": 447,
+        "endChar": 55
+      },
+      "revId": "f99499f4136125e7efb7b4aa888353e0854cfca6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
