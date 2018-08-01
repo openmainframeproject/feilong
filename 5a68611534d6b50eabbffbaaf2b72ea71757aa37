@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b9bbf045_3766d62b",
+        "filename": "zvmsdk/tests/fvt/test_guest.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 552,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-08-01T04:08:17Z",
+      "side": 1,
+      "message": "we need a way to know whether it\u0027s really mounted or not \n\nI suggest you separate this volume function to a new FVT test case\nthen reuse existing test server if you can and try attch first\nthen verify everything is fine, then detach and check the status again\n\nand will you test in all distro?",
+      "range": {
+        "startLine": 542,
+        "startChar": 9,
+        "endLine": 552,
+        "endChar": 47
+      },
+      "revId": "5a68611534d6b50eabbffbaaf2b72ea71757aa37",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
