@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "154701b5_41c433a3",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 441,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-08-01T04:14:56Z",
+      "side": 1,
+      "message": "can you do that ? \ncomments will contain the info for all field, will \nthis remove all other settings in this field?",
+      "range": {
+        "startLine": 441,
+        "startChar": 52,
+        "endLine": 441,
+        "endChar": 71
+      },
+      "revId": "d98e2fce610508056e77f71426536b176929946d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f130fee_09eeb017",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 629,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-08-01T04:14:56Z",
+      "side": 1,
+      "message": "I guess you might want something like \nmigrated\u003d1 or migrated\u003d0 \nwe might have something like\nos_version\u003dxxx;migrated\u003d0 in the db",
+      "range": {
+        "startLine": 629,
+        "startChar": 31,
+        "endLine": 629,
+        "endChar": 67
+      },
+      "revId": "d98e2fce610508056e77f71426536b176929946d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82bc6023_08ff90d6",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-08-01T04:14:56Z",
+      "side": 1,
+      "message": "why we can\u0027t let lower layer detect the statue and handle the error/exception here to avoid additional calls?",
+      "range": {
+        "startLine": 148,
+        "startChar": 9,
+        "endLine": 154,
+        "endChar": 59
+      },
+      "revId": "d98e2fce610508056e77f71426536b176929946d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
