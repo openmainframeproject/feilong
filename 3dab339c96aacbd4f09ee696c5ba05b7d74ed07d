@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "51e78c0c_2100cdd2",
+        "filename": "zvmsdk/sdkwsgi/schemas/guest.py",
+        "patchSetId": 12
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-08-01T04:25:32Z",
+      "side": 1,
+      "message": "this naming convention is not good , suggest change it",
+      "range": {
+        "startLine": 46,
+        "startChar": 33,
+        "endLine": 46,
+        "endChar": 39
+      },
+      "revId": "3dab339c96aacbd4f09ee696c5ba05b7d74ed07d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db693af8_df3c50b0",
+        "filename": "zvmsdk/sdkwsgi/validation/parameter_types.py",
+        "patchSetId": 12
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-08-01T04:25:32Z",
+      "side": 1,
+      "message": "force* is bool value? only accept True/False?",
+      "range": {
+        "startLine": 293,
+        "startChar": 9,
+        "endLine": 298,
+        "endChar": 42
+      },
+      "revId": "3dab339c96aacbd4f09ee696c5ba05b7d74ed07d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
