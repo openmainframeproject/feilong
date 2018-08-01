@@ -268,6 +268,11 @@ class VMAction(object):
 
         return info
 
+    @validation.schema(guest.register_vm)
+    def register_vm(self, userid, body):
+        info = self.client.send_request('guest_register', userid)
+        return info
+
     @validation.schema(guest.live_migrate_vm)
     def live_migrate_vm(self, userid, body):
         destination = body['destination']
