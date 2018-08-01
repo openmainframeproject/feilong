@@ -236,6 +236,12 @@ def req_guest_live_migrate(start_index, *args, **kwargs):
     return url, body
 
 
+def req_guest_pre_migrate(start_index, *args, **kwargs):
+    url = '/guests/%s/action'
+    body = {'action': 'register_vm'}
+    return url, body
+
+
 def req_guest_live_resize_cpus(start_index, *args, **kwargs):
     url = '/guests/%s/action'
     body = {'action': 'live_resize_cpus',
@@ -566,6 +572,11 @@ DATABASE = {
         'args_required': 1,
         'params_path': 1,
         'request': req_guest_get_console_output},
+    'guest_register': {
+        'method': 'POST',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_pre_migrate},
     'guest_live_migrate': {
         'method': 'POST',
         'args_required': 4,
