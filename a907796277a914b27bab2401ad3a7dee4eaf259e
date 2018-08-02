@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b6a88eda_a53fa712",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-08-02T05:25:48Z",
+      "side": 1,
+      "message": "guest_register?",
+      "range": {
+        "startLine": 427,
+        "startChar": 8,
+        "endLine": 427,
+        "endChar": 25
+      },
+      "revId": "a907796277a914b27bab2401ad3a7dee4eaf259e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c16ac26_96966ab9",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 431,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-08-02T05:25:48Z",
+      "side": 1,
+      "message": "default net_set as 1, since in most case, the guest has network interface ready before calling this api",
+      "revId": "a907796277a914b27bab2401ad3a7dee4eaf259e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f23f80c_37b6aec5",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 449,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-08-02T05:25:48Z",
+      "side": 1,
+      "message": "suggest to do the json translate in database layer.",
+      "range": {
+        "startLine": 447,
+        "startChar": 16,
+        "endLine": 449,
+        "endChar": 60
+      },
+      "revId": "a907796277a914b27bab2401ad3a7dee4eaf259e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b69dc1b_9c3b02d8",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 503,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-08-02T05:25:48Z",
+      "side": 1,
+      "message": "do json translation in database layer to avoid duplicated code lines",
+      "range": {
+        "startLine": 501,
+        "startChar": 12,
+        "endLine": 503,
+        "endChar": 56
+      },
+      "revId": "a907796277a914b27bab2401ad3a7dee4eaf259e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15aa46b7_b1e18daf",
+        "filename": "zvmsdk/database.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 650,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-08-02T05:25:48Z",
+      "side": 1,
+      "message": "why dumps here?",
+      "range": {
+        "startLine": 650,
+        "startChar": 8,
+        "endLine": 650,
+        "endChar": 34
+      },
+      "revId": "a907796277a914b27bab2401ad3a7dee4eaf259e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ce6811c_24c854a0",
+        "filename": "zvmsdk/utils.py",
+        "patchSetId": 11
+      },
+      "lineNbr": 545,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-08-02T05:25:48Z",
+      "side": 1,
+      "message": "if the guest userid includes \"SSI\"?",
+      "range": {
+        "startLine": 545,
+        "startChar": 4,
+        "endLine": 545,
+        "endChar": 23
+      },
+      "revId": "a907796277a914b27bab2401ad3a7dee4eaf259e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
