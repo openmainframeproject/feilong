@@ -22,22 +22,29 @@ and basic usages of z/VM Cloud Connector.
 Pre-requirements
 ================
 
-z/VM Cloud Connector has to be installed inside a Linux running on z/VM.
+1. z/VM Cloud Connector depends on the under-layer z/VM SMAPI support to manage
+the z/VM objects. For the z/VM Cloud Connector to work normally, the managed z/VM
+system should be updated to the latest level with APARs listed in the 
+`z/VM service Information`_ installed.
+
+.. _z/VM service Information: http://www.vm.ibm.com/sysman/osmntlvl.html
+
+2. z/VM Cloud Connector has to be installed inside a Linux running on z/VM.
 Currently planned to be supported distros include the most current
 supported versions:
 
-- SUSE Linux Enterprise Server
-- Red Hat Enterprise Linux
-- Ubuntu 16.04 LTS
+  - SUSE Linux Enterprise Server
+  - Red Hat Enterprise Linux
+  - Ubuntu 16.04 LTS
 
-**NOTE**: This guide is based on RHEL 7.2, you may need to adjust the commands
-on other Linux distros.
+  **NOTE**: This guide is based on RHEL 7.2, you may need to adjust the commands
+  on other Linux distros.
 
-From now on, BYOL (Bring Your Own Linux) will be used to represent
-the Linux on which the z/VM Cloud Connector will be run.
+  From now on, BYOL (Bring Your Own Linux) will be used to represent
+  the Linux on which the z/VM Cloud Connector will be run.
 
-For the z/VM Cloud Connector to run, the BYOL must have enough free disk space (>100M).
-And besides that, the following updates need to be made to the BYOL.
+  For the z/VM Cloud Connector to run, the BYOL must have enough free disk space (>100M).
+  And besides that, the following updates need to be made to the BYOL.
 
 Preparation on BYOL
 -------------------
