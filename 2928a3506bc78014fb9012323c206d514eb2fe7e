@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "27a4457d_25a96557",
+        "filename": "zvmconnector/restclient.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 575,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-08-07T09:11:21Z",
+      "side": 1,
+      "message": "guest_register",
+      "range": {
+        "startLine": 575,
+        "startChar": 5,
+        "endLine": 575,
+        "endChar": 22
+      },
+      "revId": "2928a3506bc78014fb9012323c206d514eb2fe7e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "053e00f9_8086d14f",
+        "filename": "zvmsdk/sdkwsgi/handlers/guest.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-08-07T09:11:21Z",
+      "side": 1,
+      "message": "guest_register?",
+      "range": {
+        "startLine": 273,
+        "startChar": 41,
+        "endLine": 273,
+        "endChar": 58
+      },
+      "revId": "2928a3506bc78014fb9012323c206d514eb2fe7e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ac8103e_47fc8bd4",
+        "filename": "zvmsdk/tests/fvt/test_utils.py",
+        "patchSetId": 8
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-08-07T09:11:21Z",
+      "side": 1,
+      "message": "register_vm?",
+      "range": {
+        "startLine": 341,
+        "startChar": 27,
+        "endLine": 341,
+        "endChar": 41
+      },
+      "revId": "2928a3506bc78014fb9012323c206d514eb2fe7e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
