@@ -82,6 +82,19 @@ class NetworkDbOperatorTestCase(base.SDKTestCase):
         expected = []
         self.assertEqual(expected, switch_record)
 
+    def test_switch_add_record_migrated(self):
+        interface = '1000'
+        switch = 'XCATVSW1'
+        self.db_op.switch_add_record_migrated(self.userid, interface, switch)
+        # query
+        switch_record = self.db_op.switch_select_table()
+        expected = [{'userid': self.userid, 'interface': interface,
+                     'switch': switch, 'port': None, 'comments': None}]
+        self.assertEqual(expected, switch_record)
+
+        # clean test switch
+        self.db_op.switch_delete_record_for_userid(self.userid)
+
     @mock.patch.object(database.NetworkDbOperator,
                        '_get_switch_by_user_interface')
     def test_switch_update_record_with_switch_fail(self, get_record):
@@ -455,7 +468,6 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
 
 
 class GuestDbOperatorTestCase(base.SDKTestCase):
-
     @classmethod
     def setUpClass(cls):
         super(GuestDbOperatorTestCase, cls).setUpClass()
@@ -479,6 +491,20 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         self.assertListEqual([(u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
                                u'FAKEUSER', u'fakemeta=1, fakemeta2=True', 0,
                                u'')], guests)
+        self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
+
+    @mock.patch.object(uuid, 'uuid4')
+    def test_add_guest_migrated(self, get_uuid):
+        meta = 'fakemeta=1, fakemeta2=True'
+        net = 1
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        self.db_op.add_guest_migrated(self.userid, meta, net)
+        # Query, the guest should in table
+        guests = self.db_op.get_guest_list()
+        self.assertEqual(1, len(guests))
+        self.assertListEqual([(u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c',
+                               u'FAKEUSER', u'fakemeta=1, fakemeta2=True', 1,
+                               None)], guests)
         self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
 
     @mock.patch.object(uuid, 'uuid4')
