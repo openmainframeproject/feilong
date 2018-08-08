@@ -277,9 +277,11 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
                'config-2',
                tempDir]
         try:
-            subprocess.check_output(cmd,
-                                    close_fds=True,
-                                    stderr=subprocess.STDOUT)
+            output = subprocess.check_output(cmd,
+                                             close_fds=True,
+                                             stderr=subprocess.STDOUT)
+            output = bytes.decode(output)
+            output.split()[2]
         except subprocess.CalledProcessError as e:
             msg = e.output
             print ("Create cfgdrive.iso meet error: %s" % msg)
