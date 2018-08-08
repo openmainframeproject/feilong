@@ -48,6 +48,13 @@ def get_test_image_list():
 get_test_image_list()
 
 
+def load_output(data):
+    # FIXME after we upgrade python3 to py36
+    if isinstance(data, bytes):
+        data = bytes.decode(data)
+    return json.loads(data)
+
+
 class TestzCCClient(object):
 
     def __init__(self):
@@ -461,7 +468,7 @@ class ZVMConnectorTestUtils(object):
         resp = self.client.image_get_root_disk_size(image_name)
         errmsg = "failed to get image root disk size for %s" % image_name
         assert resp.status_code == 200, errmsg
-        return json.loads(resp.content)['output']
+        return load_output(resp.content)['output']
 
     def is_guest_exist(self, userid):
         cmd = 'sudo vmcp q %s' % userid
@@ -512,7 +519,8 @@ class ZVMConnectorTestUtils(object):
         resp_gcni = self.client.guest_create_network_interface(userid,
                                                    os_version, guest_networks)
         assert resp_gcni.status_code == 200, "Failed to create nif %s" % userid
-        nic_vdev = json.loads(resp_gcni.content)['output'][0]['nic_vdev']
+        output = load_output(resp_gcni.content)['output']
+        nic_vdev = output[0]['nic_vdev']
 
         self.client.guest_nic_couple_to_vswitch(userid, nic_vdev,
                                              CONF.tests.vswitch)
@@ -552,7 +560,7 @@ class ZVMConnectorTestUtils(object):
 
     def get_guest_power_state(self, userid):
         resp = self.client.guest_get_power_state(userid)
-        power_state = json.loads(resp.content)['output']
+        power_state = load_output(resp.content)['output']
         return power_state
 
     def wait_until_guest_in_power_state(self, userid, expect_state):

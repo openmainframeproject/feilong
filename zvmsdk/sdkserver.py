@@ -14,7 +14,7 @@
 
 
 import json
-import Queue
+import six
 import socket
 import sys
 import threading
@@ -25,6 +25,11 @@ from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import returncode
+
+if six.PY3:
+    import queue as Queue
+else:
+    import Queue
 
 
 CONF = config.CONF
@@ -85,6 +90,8 @@ class SDKServer(object):
          'output': 'out'}
         """
         json_results = json.dumps(results)
+        json_results = json_results.encode()
+
         sent = 0
         total_len = len(json_results)
         got_error = False
@@ -108,6 +115,7 @@ class SDKServer(object):
         results = None
         try:
             data = client.recv(4096)
+            data = bytes.decode(data)
             # When client failed to send the data or quit before sending the
             # data, server side would receive null data.
             # In such case, server would not send back any info and just
@@ -141,8 +149,8 @@ class SDKServer(object):
             # invoke target API function
             return_data = api_func(*api_args, **api_kwargs)
         except exception.SDKBaseException as e:
-            LOG.error("(%s:%s) %s" % (addr[0], addr[1],
-                                      traceback.format_exc()))
+            self.log_error("(%s:%s) %s" % (addr[0], addr[1],
+                                           traceback.format_exc()))
             # get the error info from exception attribute
             # All SDKbaseexception should eventually has a
             # results attribute defined which can be used by
@@ -160,8 +168,8 @@ class SDKServer(object):
                            'errmsg': e.format_message(),
                            'output': ''}
         except Exception as e:
-            LOG.error("(%s:%s) %s" % (addr[0], addr[1],
-                                      traceback.format_exc()))
+            self.log_error("(%s:%s) %s" % (addr[0], addr[1],
+                                           traceback.format_exc()))
             msg = ("(%s:%s) SDK server got unexpected exception: "
                    "%s" % (addr[0], addr[1], repr(e)))
             results = self.construct_internal_error(msg)
@@ -172,23 +180,21 @@ class SDKServer(object):
                        'rc': 0, 'rs': 0,
                        'errmsg': '',
                        'output': return_data}
+        # Send back the final results
+        try:
+            if results is not None:
+                self.send_results(client, addr, results)
+        except Exception as e:
+            # This should not happen in normal case.
+            # A special case is the server side socket is closed/removed
+            # before the send() action.
+            self.log_error("(%s:%s) %s" % (addr[0], addr[1], repr(e)))
         finally:
-            # Send back the final results
-            try:
-                if results is not None:
-                    self.send_results(client, addr, results)
-            except Exception as e:
-                # This should not happen in normal case.
-                # A special case is the server side socket is closed/removed
-                # before the send() action.
-                LOG.error("(%s:%s) %s", (addr[0], addr[1],
-                                          traceback.format_exc()))
-            finally:
-                # Close the connection to make sure the thread socket got
-                # closed even when it got unexpected exceptions.
-                self.log_debug("(%s:%s) Finish handling request, closing "
-                               "socket." % (addr[0], addr[1]))
-                client.close()
+            # Close the connection to make sure the thread socket got
+            # closed even when it got unexpected exceptions.
+            self.log_debug("(%s:%s) Finish handling request, closing "
+                           "socket." % (addr[0], addr[1]))
+            client.close()
 
     def worker_loop(self):
         # The worker thread would continuously fetch request from queue

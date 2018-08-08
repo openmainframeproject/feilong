@@ -16,7 +16,6 @@
 
 import os
 import subprocess
-import types
 
 from smutLayer import generalUtils
 from smutLayer import msgs
@@ -164,7 +163,7 @@ def getDiskPoolSpace(rh):
     if 'poolName' not in rh.parms:
         poolNames = ["*"]
     else:
-        if isinstance(rh.parms['poolName'], types.ListType):
+        if isinstance(rh.parms['poolName'], list):
             poolNames = rh.parms['poolName']
         else:
             poolNames = [rh.parms['poolName']]
@@ -395,7 +394,8 @@ def getGeneralInfo(rh):
         ipl = subprocess.check_output(
             cmd,
             close_fds=True,
-            stderr=subprocess.STDOUT).split("\n")[2]
+            stderr=subprocess.STDOUT)
+        ipl = bytes.decode(ipl).split("\n")[2]
     except subprocess.CalledProcessError as e:
         msg = msgs.msg['0405'][1] % (modId, "IPL Time",
                                      strCmd, e.output)
@@ -408,12 +408,12 @@ def getGeneralInfo(rh):
         rh.updateResults(msgs.msg['0421'][0])
 
     # Create output string
-    outstr = "z/VM Host: " + host
+    outstr = "z/VM Host: " + bytes.decode(host)
     outstr += "\nArchitecture: " + arch
     outstr += "\nCEC Vendor: " + cecVendor
     outstr += "\nCEC Model: " + cecModel
     outstr += "\nHypervisor OS: " + hvInfo
-    outstr += "\nHypervisor Name: " + host
+    outstr += "\nHypervisor Name: " + bytes.decode(host)
     outstr += "\nLPAR CPU Total: " + lparCpuTotal
     outstr += "\nLPAR CPU Used: " + lparCpuUsed
     outstr += "\nLPAR Memory Total: " + lparMemTotal
