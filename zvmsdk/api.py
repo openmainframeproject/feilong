@@ -455,7 +455,7 @@ class SDKAPI(object):
                     self._GuestDbOperator.add_guest_migrated(userid, meta,
                                                              net_set)
                 action = "add switches of guest '%s' to database" % userid
-                info = self.guest_get_definition_info(userid)
+                info = self._vmops.get_definition_info(userid)
                 user_direct = info['user_direct']
                 for nic_info in user_direct:
                     if nic_info.startswith('NICDEF'):
