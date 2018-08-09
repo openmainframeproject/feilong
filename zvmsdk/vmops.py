@@ -317,35 +317,33 @@ class VMOps(object):
             else:
                 return False
         else:
-            # case1 userid has been migrated.
             userids_migrated = self._GuestDbOperator.get_migrated_guest_list()
-            userids_not_in_db = list(set(userids) - set(userids_migrated))
-            if userids_not_in_db:
+
+            # case1 userid has been migrated.
+            if userids_migrated:
                 if raise_exc:
-                    # log and raise exception
-                    userids_not_in_db = ' '.join(userids_not_in_db)
-                    LOG.error("Guest '%s' has not been migrated." %
-                                userids_not_in_db)
+                    migrated_userids = ' '.join(userids_migrated)
+                    LOG.error("Guest(s) '%s' has been migrated." %
+                              migrated_userids)
                     raise exception.SDKObjectNotExistError(
-                        obj_desc=("Guest '%s'" % userids_not_in_db),
-                                                        modID='guest')
+                                obj_desc=("Guest(s) '%s'" % migrated_userids),
+                                modID='guest')
                 else:
-                    return True
-            else:
+                    return False
+
+            flag = True
+            rest_userids = list(set(userids) - set(userids_migrated))
+            for uid in rest_userids:
                 # case2 userid has been shudown and started on other host.
-                flag = False
-                for userid in userids:
-                    if zvmutils.check_userid_on_others(userid):
-                        comment = self._GuestDbOperator.get_comments_by_userid(
-                                                            userid)
-                        comment['migrated'] = 1
-                        action = "update guest '%s' in database" % userid
-                        with zvmutils.log_and_reraise_sdkbase_error(action):
-                            self._GuestDbOperator.update_guest_by_userid(
-                                            userid, comments=comment)
-                    else:
-                        flag = True
-                return flag
+                if zvmutils.check_userid_on_others(uid):
+                    flag = False
+                    comment = self._GuestDbOperator.get_comments_by_userid(uid)
+                    comment['migrated'] = 1
+                    action = "update guest '%s' in database" % uid
+                    with zvmutils.log_and_reraise_sdkbase_error(action):
+                        self._GuestDbOperator.update_guest_by_userid(
+                                        uid, comments=comment)
+            return flag
 
     def live_resize_cpus(self, userid, count):
         # Check power state is 'on'
