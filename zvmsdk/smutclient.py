@@ -501,7 +501,7 @@ class SMUTClient(object):
         # guests is a list of tuple (uuid, userid, metadata, comments)
         userid_list = []
         for g in guests:
-            userid_list.append(g[1])
+            userid_list.append(g[1].upper())
         return userid_list
 
     def _remove_mdisk(self, userid, vdev):

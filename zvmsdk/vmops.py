@@ -304,6 +304,7 @@ class VMOps(object):
             userids = [userids]
 
         all_userids = self.guest_list()
+
         userids_not_in_db = list(set(userids) - set(all_userids))
         if userids_not_in_db:
             if raise_exc:
