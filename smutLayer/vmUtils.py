@@ -755,7 +755,7 @@ def isLoggedOn(rh, userid):
             cmd,
             close_fds=True,
             stderr=subprocess.STDOUT)
-       
+
     except CalledProcessError as e:
         search_pattern = '(^HCP\w\w\w045E|^HCP\w\w\w361E)'.encode()
         match = re.search(search_pattern, e.output)

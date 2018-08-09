@@ -430,6 +430,7 @@ class SDKAPI(object):
         :param meta: (str) the metadata of the vm to be relocated or tested
         :param net_set: (str) the net_set of the vm, default is 1.
         """
+        userid = userid.upper()
         if not zvmutils.check_userid_exist(userid):
             LOG.error("User directory '%s' does not exist." % userid)
             raise exception.SDKObjectNotExistError(
@@ -565,6 +566,7 @@ class SDKAPI(object):
                either M (Megabytes) or G (Gigabytes). And the number should be
                an integer.
         """
+        userid = userid.upper()
         if disk_list:
             for disk in disk_list:
                 if not isinstance(disk, dict):
