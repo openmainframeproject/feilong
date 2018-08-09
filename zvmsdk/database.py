@@ -659,7 +659,8 @@ class GuestDbOperator(object):
         with get_guest_conn() as conn:
             res = conn.execute("SELECT comments FROM guests "
                                "WHERE userid=?", (userid,))
-        comments = json.loads(res)
+        if res:
+            comments = json.loads(res)
         return comments
 
     def get_metadata_by_userid(self, userid):
