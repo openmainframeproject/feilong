@@ -469,6 +469,7 @@ class SDKAPI(object):
                either M (Megabytes) or G (Gigabytes). And the number should be
                an integer.
         """
+        userid = userid.upper()
         if disk_list:
             for disk in disk_list:
                 if not isinstance(disk, dict):
