@@ -1158,6 +1158,9 @@ class SDKAPI(object):
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
 
+    def get_volume_connector(self, userid):
+        return self._volumeop.get_volume_connector(userid)
+
     def volume_attach(self, connection_info):
         """ Attach a volume to a guest. It's prerequisite to active multipath
             feature on the guest before utilizing persistent volumes.
