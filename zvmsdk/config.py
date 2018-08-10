@@ -64,6 +64,9 @@ logging.DEBUG: All log level (ERROR, WARNING, INFO, DEBUG)
                will be written to log file.
     '''),
     # zvm options
+    Opt('zvm_host',
+        section='zvm',
+        default=''),
     Opt('default_nic_vdev',
         section='zvm',
         default='1000',
