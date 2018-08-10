@@ -238,7 +238,9 @@ def req_guest_live_migrate(start_index, *args, **kwargs):
 
 def req_guest_pre_migrate(start_index, *args, **kwargs):
     url = '/guests/%s/action'
-    body = {'action': 'register_vm'}
+    body = {'action': 'register_vm',
+            'meta': args[start_index],
+            'net_set': args[start_index + 1]}
     return url, body
 
 
@@ -574,7 +576,7 @@ DATABASE = {
         'request': req_guest_get_console_output},
     'guest_register': {
         'method': 'POST',
-        'args_required': 1,
+        'args_required': 3,
         'params_path': 1,
         'request': req_guest_pre_migrate},
     'guest_live_migrate': {

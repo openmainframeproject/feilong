@@ -270,7 +270,10 @@ class VMAction(object):
 
     @validation.schema(guest.register_vm)
     def register_vm(self, userid, body):
-        info = self.client.send_request('guest_register', userid)
+        meta = body['meta']
+        net_set = body['net_set']
+        info = self.client.send_request('guest_register',
+                                userid, meta, net_set)
         return info
 
     @validation.schema(guest.live_migrate_vm)

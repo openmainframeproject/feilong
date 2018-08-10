@@ -241,7 +241,7 @@ register_vm = {
         'meta': {'type': ['string']},
         'net_set': {'type': ['string']},
     },
-    'required': ['meta','net_set'],
+    'required': ['meta', 'net_set'],
     'additionalProperties': False
 }
 
