@@ -175,7 +175,7 @@
 # volume fcp list
 # 
 # This param is optional
-#fcp_list=
+#fcp_list=1fc1-1fc5
 
 
 [wsgi]
@@ -386,5 +386,9 @@
 # 
 # This param is optional
 #user_root_vdev=0100
+
+
+# This param is optional
+#zvm_host=test
 
 

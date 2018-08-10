@@ -64,6 +64,9 @@ logging.DEBUG: All log level (ERROR, WARNING, INFO, DEBUG)
                will be written to log file.
     '''),
     # zvm options
+    Opt('zvm_host',
+        section='zvm',
+        default='test'),
     Opt('default_nic_vdev',
         section='zvm',
         default='1000',
@@ -402,7 +405,7 @@ running SDK is able to read write and execute the directory.
     # volume options
     Opt('fcp_list',
         section='volume',
-        default='',
+        default='1fc1-1fc5',
         opt_type='str',
         help='''
 volume fcp list
