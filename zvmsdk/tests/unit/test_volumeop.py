@@ -339,24 +339,24 @@ class TestFCPVolumeManager(base.SDKTestCase):
 
     # tearDownClass deleted to work around bug of 'no such table:fcp'
 
-    def test_get_volume_connector(self):
-        base.set_conf('network', 'my_ip', '1.2.3.4')
-        # create 1 FCP
-        self.db_op.new('b83c')
+    @mock.patch("zvmsdk.volumeop.FCPManager.get_wwpn")
+    def test_get_volume_connector(self, get_wwpn):
+        get_wwpn.return_value = '2007123400001234'
+        base.set_conf('zvm', 'zvm_host', 'fakehost')
+        # assign FCP
+        self.volumeops.fcp_mgr._init_fcp_pool('b83c', 'fakeuser')
+        self.volumeops.fcp_mgr._sync_db_fcp_list()
+        self.db_op.assign('b83c', 'fakeuser')
 
         try:
-            connections = self.volumeops.get_volume_connector('dummy')
-            expected = {'multipath': True,
-                        'platform': 's390x',
-                        'do_local_attach': False,
-                        'fcp': u'b83c',
-                        'os_version': '',
-                        'os_type': 'linux',
-                        'ip': '1.2.3.4'}
+            connections = self.volumeops.get_volume_connector('fakeuser')
+            expected = {'zvm_fcp': ['b83c'],
+                        'wwpns': ['2007123400001234'],
+                        'host': 'fakehost'}
             self.assertEqual(expected, connections)
 
             fcp_list = self.db_op.get_from_fcp('b83c')
-            expected = [(u'b83c', u'', 0, 1, u'')]
+            expected = [(u'b83c', u'fakeuser', 1, 0, u'')]
             self.assertEqual(expected, fcp_list)
         finally:
             self.db_op.delete('b83c')

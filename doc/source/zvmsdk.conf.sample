@@ -388,3 +388,7 @@
 #user_root_vdev=0100
 
 
+# This param is optional
+#zvm_host=
+
+

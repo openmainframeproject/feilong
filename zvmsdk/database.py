@@ -296,6 +296,14 @@ class FCPDbOperator(object):
     def reserve(self, fcp):
         self._update_reserve(fcp, 1)
 
+    def is_reserved(self, fcp):
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT * FROM fcp WHERE "
+                                  "fcp_id=?", (fcp,))
+            fcp_list = result.fetchall()
+            reserved = fcp_list[0][3]
+            return reserved == 1
+
     def find_and_reserve(self):
         with get_fcp_conn() as conn:
             result = conn.execute("SELECT * FROM fcp where connections=0 "
