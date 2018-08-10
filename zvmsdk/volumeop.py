@@ -18,7 +18,6 @@ import re
 import six
 
 from zvmsdk import config
-from zvmsdk import constants
 from zvmsdk import database
 from zvmsdk import dist
 from zvmsdk import exception
@@ -83,6 +82,9 @@ class VolumeOperatorAPI(object):
 
     def detach_volume_from_instance(self, connection_info):
         self._volume_manager.detach(connection_info)
+
+    def get_volume_connector(self, assigner_id):
+        return self._volume_manager.get_volume_connector(assigner_id)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -197,6 +199,15 @@ class FCP(object):
 
     def get_dev_no(self):
         return self._dev_no
+
+    def get_npiv_port(self):
+        return self._npiv_port
+
+    def get_physical_port(self):
+        return self._physical_port
+
+    def get_chpid(self):
+        return self._chpid
 
     def is_valid(self):
         # FIXME: add validation later
@@ -407,6 +418,37 @@ class FCPManager(object):
         # TODO: check assigner_id to make sure on the correct fcp record
         self.db.unreserve(fcp)
 
+    def is_reserved(self, fcp):
+        self.db.is_reserved(fcp)
+
+    def get_fcp_from_pool(self, assigner_id):
+        """get all the fcps not reserved"""
+        # get the FCP devices attached to assigner_id and reserved
+        used_list = []
+        fcp_assigner = self.db.get_from_assigner(assigner_id)
+        for item in fcp_assigner:
+            if self.is_reserved(item[0]):
+                used_list.append(item[0])
+        # get the unreserved FCP devices belongs to assigner_id
+        fcp_list = []
+        for fcp_no in self._fcp_pool.keys():
+            if not self.is_reserved(fcp_no) and\
+                    fcp_no not in used_list:
+                fcp_list.append(fcp_no)
+        return fcp_list
+
+    def get_wwpn(self, fcp_no):
+        fcp = self._fcp_pool.get(fcp_no)
+        if not fcp:
+            return None
+        npiv = fcp.get_npiv_port()
+        physical = fcp.get_physical_port()
+        if npiv:
+            return npiv
+        if physical:
+            return physical
+        return None
+
 
 # volume manager for FCP protocol
 class FCPVolumeManager(object):
@@ -524,18 +566,52 @@ class FCPVolumeManager(object):
                      os_version, mount_point)
 
     def get_volume_connector(self, assigner_id):
-        """Get volume connector, mainly get a fcp
+        """Get connector information of the instance for attaching to volumes.
 
+        Connector information is a dictionary representing the ip of the
+        machine that will be making the connection, the name of the iscsi
+        initiator and the hostname of the machine as follows::
+
+            {
+                'zvm_fcp': fcp
+                'wwpns': [wwpn]
+                'host': host
+            }
+        This information will be used by IBM storwize FC driver in Cinder.
         """
-        fcp = self.fcp_mgr.find_and_reserve_fcp(assigner_id)
-        res = {'platform': constants.ARCHITECTURE,
-               'ip': CONF.network.my_ip,
-               'do_local_attach': False,
-               'os_type': 'linux',
-               # FIXME:
-               'os_version': '',
-               'multipath': True,
-               'fcp': fcp}
+
+        empty_connector = {'zvm_fcp': [], 'wwpns': [], 'host': ''}
+
+        # init fcp pool
+        self.fcp_mgr.init_fcp(assigner_id)
+        fcp_list = self.fcp_mgr.get_fcp_from_pool(assigner_id)
+        if not fcp_list:
+            errmsg = "No available FCP device found."
+            LOG.warning(errmsg)
+            return empty_connector
+        wwpns = []
+        for fcp_no in fcp_list:
+            wwpn = self.fcp_mgr.get_wwpn(fcp_no)
+            if not wwpn:
+                errmsg = "FCP device %s has no available WWPN." % fcp_no
+                LOG.warning(errmsg)
+            else:
+                wwpns.append(wwpn)
+
+        if not wwpns:
+            errmsg = "No available WWPN found."
+            LOG.warning(errmsg)
+            return empty_connector
+
+        zvm_host = CONF.zvm.zvm_host
+        if zvm_host == '':
+            errmsg = "zvm host not specified."
+            LOG.warning(errmsg)
+            return empty_connector
+
+        connector = {'zvm_fcp': fcp_list,
+                     'wwpns': wwpns,
+                     'host': zvm_host}
         LOG.debug('get_volume_connector returns %s for %s' %
-                  (fcp, assigner_id))
-        return res
+                  (connector, assigner_id))
+        return connector
