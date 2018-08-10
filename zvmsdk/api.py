@@ -1197,6 +1197,25 @@ class SDKAPI(object):
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
 
+    def get_volume_connector(self, userid):
+        """Get connector information of the guest for attaching to volumes.
+        This API is for Openstack Cinder driver only now.
+
+        Connector information is a dictionary representing the ip of the
+        machine that will be making the connection, the name of the iscsi
+        initiator and the hostname of the machine as follows::
+
+            {
+                'zvm_fcp': fcp
+                'wwpns': [wwpn]
+                'host': host
+            }
+        This information will be used by IBM storwize FC driver in Cinder.
+
+        :param str userid: the user id of the guest
+        """
+        return self._volumeop.get_volume_connector(userid)
+
     def volume_attach(self, connection_info):
         """ Attach a volume to a guest. It's prerequisite to active multipath
             feature on the guest before utilizing persistent volumes.
