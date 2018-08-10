@@ -339,24 +339,29 @@ class TestFCPVolumeManager(base.SDKTestCase):
 
     # tearDownClass deleted to work around bug of 'no such table:fcp'
 
-    def test_get_volume_connector(self):
-        base.set_conf('network', 'my_ip', '1.2.3.4')
-        # create 1 FCP
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    def test_get_volume_connector(self, get_fcp_info):
+        fcp_info = ['opnstk1: FCP device number: B83C',
+            'opnstk1:   Status: Free',
+            'opnstk1:   NPIV world wide port number: 2007123400001234',
+            'opnstk1:   Channel path ID: 59',
+            'opnstk1:   Physical world wide port number: 20076D8500005181']
+
+        get_fcp_info.return_value = fcp_info
+        base.set_conf('zvm', 'zvm_host', 'fakehost')
+        base.set_conf('volume', 'fcp_list', 'b83c')
+        # assign FCP
         self.db_op.new('b83c')
 
         try:
-            connections = self.volumeops.get_volume_connector('dummy')
-            expected = {'multipath': True,
-                        'platform': 's390x',
-                        'do_local_attach': False,
-                        'fcp': u'b83c',
-                        'os_version': '',
-                        'os_type': 'linux',
-                        'ip': '1.2.3.4'}
+            connections = self.volumeops.get_volume_connector('fakeuser')
+            expected = {'zvm_fcp': ['b83c'],
+                        'wwpns': ['2007123400001234'],
+                        'host': 'fakehost'}
             self.assertEqual(expected, connections)
 
             fcp_list = self.db_op.get_from_fcp('b83c')
-            expected = [(u'b83c', u'', 0, 1, u'')]
+            expected = [(u'b83c', u'', 0, 0, u'')]
             self.assertEqual(expected, fcp_list)
         finally:
             self.db_op.delete('b83c')
@@ -379,8 +384,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
 
         try:
             self.volumeops.attach(connection_info)
-            mock_dedicate.assert_called_once_with('b83c', 'user1')
-            mock_add_disk.assert_called_once_with('b83c', 'user1', '1111',
+            mock_dedicate.assert_called_once_with('b83c', 'USER1')
+            mock_add_disk.assert_called_once_with('b83c', 'USER1', '1111',
                                                   '2222', False, 'rhel7',
                                                   '/dev/sdz')
         finally:
@@ -401,13 +406,13 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'assigner_id': 'user1'}
         self.db_op = database.FCPDbOperator()
         self.db_op.new('b83c')
-        self.db_op.assign('b83c', 'user1')
+        self.db_op.assign('b83c', 'USER1')
         self.db_op.increase_usage('b83c')
 
         try:
             self.volumeops.attach(connection_info)
             self.assertFalse(mock_dedicate.called)
-            mock_add_disk.assert_called_once_with('b83c', 'user1', '1111',
+            mock_add_disk.assert_called_once_with('b83c', 'USER1', '1111',
                                                   '2222', False, 'rhel7',
                                                   '/dev/sdz')
         finally:
@@ -439,7 +444,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         self.assertRaises(exception.SDKBaseException,
                           self.volumeops.attach,
                           connection_info)
-        mock_undedicate.assert_called_once_with('b83c', 'user1')
+        mock_undedicate.assert_called_once_with('b83c', 'USER1')
 
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disk")
     @mock.patch("zvmsdk.volumeop.FCPManager.increase_fcp_usage")
@@ -466,8 +471,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
         self.assertRaises(exception.SDKBaseException,
                           self.volumeops.detach,
                           connection_info)
-        mock_increase.assert_called_once_with('b83c', 'user1')
-        mock_add_disk.assert_called_once_with('b83c', 'user1', '1111',
+        mock_increase.assert_called_once_with('b83c', 'USER1')
+        mock_add_disk.assert_called_once_with('b83c', 'USER1', '1111',
                                               '2222', False, 'rhel7',
                                               '/dev/sdz')
 
@@ -490,10 +495,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
 
         try:
             self.volumeops.detach(connection_info)
-            mock_remove_disk.assert_called_once_with('b83c', 'user1', '1111',
+            mock_remove_disk.assert_called_once_with('b83c', 'USER1', '1111',
                                                      '2222', False, 'rhel7',
                                                      '/dev/sdz')
-            mock_undedicate.assert_called_once_with('b83c', 'user1')
+            mock_undedicate.assert_called_once_with('b83c', 'USER1')
         finally:
             self.db_op.delete('b83c')
 
@@ -518,7 +523,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         try:
             self.volumeops.detach(connection_info)
             self.assertFalse(mock_undedicate.called)
-            mock_remove_disk.assert_called_once_with('b83c', 'user1', '1111',
+            mock_remove_disk.assert_called_once_with('b83c', 'USER1', '1111',
                                                      '2222', False, 'rhel7',
                                                      '/dev/sdz')
         finally:
