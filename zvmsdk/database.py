@@ -647,7 +647,7 @@ class GuestDbOperator(object):
     def get_migrated_guest_list(self):
         with get_guest_conn() as conn:
             res = conn.execute("SELECT * FROM guests "
-                               "WHERE comments LIKE '\%\"migrated\"\:\"1\"\%'")
+                               "WHERE comments LIKE '%\"migrated\": 1%'")
             guests = res.fetchall()
         return guests
 
@@ -656,13 +656,14 @@ class GuestDbOperator(object):
         output should be like: {'k1': 'v1', 'k2': 'v2'}'
         """
         userid = userid
-        comments = {}
         with get_guest_conn() as conn:
             res = conn.execute("SELECT comments FROM guests "
                                "WHERE userid=?", (userid,))
 
         result = res.fetchall()
-        if result != []:
+        if result == []:
+            comments = {}
+        else:
             comments = json.loads(result)
         return comments
 
