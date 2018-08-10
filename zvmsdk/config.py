@@ -405,7 +405,9 @@ running SDK is able to read write and execute the directory.
         default='',
         opt_type='str',
         help='''
-volume fcp list
+volume fcp list.
+
+SDK will only use the fcp devices in the scope of this value.
 '''),
     # tests options
     Opt('images',
