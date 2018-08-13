@@ -439,7 +439,7 @@ class SDKAPI(object):
             action = "list all guests in database which has been migrated."
             with zvmutils.log_and_reraise_sdkbase_error(action):
                 guests = self._GuestDbOperator.get_migrated_guest_list()
-            if userid in guests:
+            if userid in str(guests):
                 """change comments for vm"""
                 comments = self._GuestDbOperator.get_comments_by_userid(
                                                                     userid)
