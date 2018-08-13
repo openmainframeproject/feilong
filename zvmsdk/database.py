@@ -646,7 +646,7 @@ class GuestDbOperator(object):
 
     def get_migrated_guest_list(self):
         with get_guest_conn() as conn:
-            res = conn.execute("SELECT * FROM guests "
+            res = conn.execute("SELECT userid FROM guests "
                                "WHERE comments LIKE '%\"migrated\": 1%'")
             guests = res.fetchall()
         return guests
@@ -661,10 +661,9 @@ class GuestDbOperator(object):
                                "WHERE userid=?", (userid,))
 
         result = res.fetchall()
-        if result == []:
-            comments = {}
-        else:
-            comments = json.loads(result)
+        comments = {}
+        if result[0][0]:
+            comments = json.loads(result[0][0])
         return comments
 
     def get_metadata_by_userid(self, userid):
