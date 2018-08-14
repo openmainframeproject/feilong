@@ -556,6 +556,8 @@ class rhel(LinuxDist):
         modprobe = 'modprobe dm_multipath'
         self.execute_cmd(assigner_id, modprobe)
         # update multipath configuration
+        modprobe = 'modprobe dm-multipath'
+        self.execute_cmd(assigner_id, modprobe)
         conf_file = '#blacklist {\n'
         conf_file += '#\tdevnode "*"\n'
         conf_file += '#}\n'
