@@ -554,6 +554,8 @@ class rhel(LinuxDist):
     def _set_zfcp_multipath(self, assigner_id):
         """sampe to all rhel distro ???"""
         # update multipath configuration
+        modprobe = 'modprobe dm-multipath'
+        self.execute_cmd(assigner_id, modprobe)
         conf_file = '#blacklist {\n'
         conf_file += '#\tdevnode "*"\n'
         conf_file += '#}\n'
