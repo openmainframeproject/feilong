@@ -354,6 +354,12 @@ def req_volume_detach(start_index, *args, **kwargs):
     return url, body
 
 
+def req_get_volume_connector(start_index, *args, **kwargs):
+    url = '/volumes/conn/%s'
+    body = None
+    return url, body
+
+
 def req_host_get_info(start_index, *args, **kwargs):
     url = '/host'
     body = None
@@ -656,6 +662,11 @@ DATABASE = {
         'args_required': 1,
         'params_path': 0,
         'request': req_volume_detach},
+    'get_volume_connector': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_get_volume_connector},
     'host_get_info': {
         'method': 'GET',
         'args_required': 0,
