@@ -55,6 +55,11 @@ class VolumeAction(object):
 
         return info
 
+    @validation.query_schema(volume.get_volume_connector)
+    def get_volume_connector(self, req, userid):
+        conn = self.client.send_request('get_volume_connector', userid)
+        return conn
+
 
 def get_action():
     global _VOLUMEACTION
@@ -96,4 +101,21 @@ def volume_detach(req):
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     req.response.status = util.get_http_code_from_sdk_return(info, default=200)
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def get_volume_connector(req):
+    def _get_volume_conn(req, userid):
+        action = get_action()
+        return action.get_volume_connector(req, userid)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    conn = _get_volume_conn(req, userid)
+    conn_json = json.dumps(conn)
+
+    req.response.content_type = 'application/json'
+    req.response.body = utils.to_utf8(conn_json)
+    req.response.status = util.get_http_code_from_sdk_return(conn, default=200)
     return req.response

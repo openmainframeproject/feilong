@@ -333,6 +333,28 @@ Detach volume from a vm in z/VM
 
   No Response
 
+Get Volume Connector
+--------------------
+
+**GET /volumes/conn/{userid}**
+
+Get volume connector in z/VM(for IBM OpenStack storwize FC driver only).
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_get_volume_connector.tpl
+   :language: javascript
+
 Get Guests stats including cpu and memory
 -----------------------------------------
 
