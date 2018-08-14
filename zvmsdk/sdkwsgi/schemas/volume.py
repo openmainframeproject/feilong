@@ -49,3 +49,12 @@ detach = {
     'required': ['info'],
     'additionalProperties': False,
 }
+
+
+get_volume_connector = {
+    'type': 'object',
+    'properties': {
+        'userid': parameter_types.userid_list,
+    },
+    'additionalProperties': False,
+}

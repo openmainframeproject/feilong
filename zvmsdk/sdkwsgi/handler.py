@@ -54,6 +54,9 @@ ROUTE_LIST = (
         'POST': volume.volume_attach,
         'DELETE': volume.volume_detach,
     }),
+    ('/volumes/conn/{userid}', {
+        'GET': volume.get_volume_connector,
+    }),
     ('/guests/{userid}', {
         'DELETE': guest.guest_delete,
         'GET': guest.guest_get,
