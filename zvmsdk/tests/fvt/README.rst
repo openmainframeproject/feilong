@@ -4,11 +4,16 @@ How to add functional testcases and run tests
 Install FVT requirements
 ========================
 
-Install the dependencies listed in the python-zvm-sdk/fvt-requirements.txt.
-  .. code-block:: text
+1. Install the dependencies listed in the python-zvm-sdk/fvt-requirements.txt.
+     .. code-block:: text
 
-     cd python-zvm-sdk
-     pip install -r fvt-requirements.txt
+        cd python-zvm-sdk
+        pip install -r fvt-requirements.txt
+
+2. Install the following packages with the package manager of your target platform:
+
+   * genisoimage
+
 
 Configure functional test environment
 =====================================
