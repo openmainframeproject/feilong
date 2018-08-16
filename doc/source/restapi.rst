@@ -80,7 +80,8 @@ Create token
 
 **POST /token**
 
-Get a valid token to perform further request by using user and password.
+Get a valid token to perform further request by using Admin-Token which
+you can think as a combination of username and password.
 
 * Request:
 
@@ -97,6 +98,10 @@ Get a valid token to perform further request by using user and password.
 .. restapi_parameters:: parameters.yaml
 
   - X-Auth-Token: auth_token
+
+* Response sample:
+
+  Please refer to :ref:`TokenUsage` to get more details.
 
 Guest(s)
 ========
