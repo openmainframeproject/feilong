@@ -11,6 +11,9 @@
 300;10;300;6;Failed to resize cpus of guest: '%(userid)s', error: update cpu definition in user entry failed with smut error: '%(err)s'.
 300;10;300;7;Failed to live resize cpus of guest: '%(userid)s', error: define new cpu to active failed with smut error: '%(err)s'.
 300;10;300;8;Failed to live resize cpus of guest: '%(userid)s', error: rescan cpus to hot-plug new defined cpus failed: '%(err)s'.
+300;10;300;9;Failed to resize memory of guest: '%(userid)s', error: lock user entry failed with smut error: '%(err)s'.
+300;10;300;10;Failed to resize memory of guest: '%(userid)s', error: replace user entry failed with smut error: '%(err)s'.
+300;10;300;11;Failed to live resize memory of guest: '%(userid)s', error: define standby memory failed with smut error: '%(err)s'.
 **Operation on Network failed**
 300;20;300;1;Database operation failed, error: %(msg)s
 300;20;300;2;ZVMSDK network error: %(msg)s
@@ -63,6 +66,9 @@
 409;None;409;15;Failed to dedicate OSA %(osa)s to guest %(userid)s error: %(obj)s is locked
 409;None;409;16;Failed to delete dedicated device from guest %(userid)s %(vdev)s, error: %(msg)s
 409;None;409;17;Failed to delete dedicated device from guest %(userid)s %(vdev)s, error: %(obj)s is locked
+409;None;409;18;Failed to live resize memory of guest: '%(userid)s', error: current active memory size: '%(active)i'm is greater than requested size: '%(req)i'm.
+409;None;409;19;Failed to resize memory of guest: '%(userid)s', error: user definition is not in expected format, cann't get the defined/max/reserved storage.
+409;None;409;20;Failed to resize memory of guest: '%(userid)s', error: the requested memory size: '%(req)im' exceeds the maximum memory size defined: '%(max)im'.
 **The operated object is deleted**
 410;None;410;;The operated object is deleted
 **ZVM SDK Internal Error**
