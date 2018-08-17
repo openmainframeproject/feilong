@@ -268,6 +268,34 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.resize_cpus(userid, cpu_cnt)
         do_resize.assert_called_once_with(userid, cpu_cnt)
 
+    @mock.patch("zvmsdk.smutclient.SMUTClient.live_resize_memory")
+    @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
+    def test_live_resize_memory(self, power_state, do_resize):
+        userid = 'testuid'
+        size = '1g'
+        power_state.return_value = 'on'
+        self.vmops.live_resize_memory(userid, size)
+        power_state.assert_called_once_with(userid)
+        do_resize.assert_called_once_with(userid, size)
+
+    @mock.patch("zvmsdk.smutclient.SMUTClient.live_resize_memory")
+    @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
+    def test_live_resize_memory_guest_inactive(self, power_state, do_resize):
+        userid = 'testuid'
+        size = '1g'
+        power_state.return_value = 'off'
+        self.assertRaises(exception.SDKConflictError,
+                          self.vmops.live_resize_memory, userid, size)
+        power_state.assert_called_once_with(userid)
+        do_resize.assert_not_called()
+
+    @mock.patch("zvmsdk.smutclient.SMUTClient.resize_memory")
+    def test_resize_memory(self, do_resize):
+        userid = 'testuid'
+        size = '1g'
+        self.vmops.resize_memory(userid, size)
+        do_resize.assert_called_once_with(userid, size)
+
     @mock.patch("zvmsdk.smutclient.SMUTClient.live_migrate_move")
     @mock.patch('zvmsdk.vmops.VMOps.get_power_state')
     def test_live_migrate_vm(self, power_state, live_migrate_vm):

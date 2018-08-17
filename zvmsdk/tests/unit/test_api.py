@@ -231,6 +231,18 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.guest_resize_cpus(self.userid, cpu_cnt)
         resize_cpus.assert_called_once_with(self.userid, cpu_cnt)
 
+    @mock.patch("zvmsdk.vmops.VMOps.live_resize_memory")
+    def test_guest_live_resize_mem(self, live_resize_memory):
+        size = "1024m"
+        self.api.guest_live_resize_mem(self.userid, size)
+        live_resize_memory.assert_called_once_with(self.userid, size)
+
+    @mock.patch("zvmsdk.vmops.VMOps.resize_memory")
+    def test_guest_resize_mem(self, resize_memory):
+        size = "2g"
+        self.api.guest_resize_mem(self.userid, size)
+        resize_memory.assert_called_once_with(self.userid, size)
+
     @mock.patch("zvmsdk.networkops.NetworkOPS.grant_user_to_vswitch")
     def test_vswitch_grant_user(self, guv):
         self.api.vswitch_grant_user("testvsw", self.userid)

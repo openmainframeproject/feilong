@@ -2282,3 +2282,208 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         rd = ("SMAPI testuid API Image_Definition_Delete_DM --operands "
               "-k CPU=CPUADDR=04 -k CPU=CPUADDR=05")
         request.assert_called_once_with(rd)
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_defined_memory')
+    @mock.patch.object(smutclient.SMUTClient, '_replace_user_direct')
+    def test_resize_memory_reserved_not_defined(self, replace_def,
+                                                get_defined):
+        userid = 'testuid'
+        size = '2g'
+        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+                             u'INCLUDE OSDFLT',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_defined.return_value = (4096, 65536, -1, sample_definition)
+        self.assertRaises(exception.SDKConflictError,
+                          self._smutclient.resize_memory, userid, size)
+        replace_def.assert_not_called()
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_defined_memory')
+    @mock.patch.object(smutclient.SMUTClient, '_replace_user_direct')
+    def test_resize_memory_exceed_max_size(self, replace_def, get_defined):
+        userid = 'testuid'
+        size = '65g'
+        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+                             u'INCLUDE OSDFLT',
+                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_defined.return_value = (4096, 65536, 61440, sample_definition)
+        self.assertRaises(exception.SDKConflictError,
+                          self._smutclient.resize_memory, userid, size)
+        replace_def.assert_not_called()
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_defined_memory')
+    @mock.patch.object(smutclient.SMUTClient, '_replace_user_direct')
+    def test_resize_memory_equal_size(self, replace_def, get_defined):
+        userid = 'testuid'
+        size = '4g'
+        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+                             u'INCLUDE OSDFLT',
+                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_defined.return_value = (4096, 65536, 61440, sample_definition)
+        (action, defined_mem, max_mem, user_direct) = \
+            self._smutclient.resize_memory(userid, size)
+        self.assertEqual(action, 0)
+        replace_def.assert_not_called()
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_defined_memory')
+    @mock.patch.object(smutclient.SMUTClient, '_lock_user_direct')
+    @mock.patch.object(smutclient.SMUTClient, '_replace_user_direct')
+    def test_resize_memory_increase(self, replace_def, lock_def, get_def):
+        userid = 'testuid'
+        size = '10240M'
+        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+                             u'INCLUDE OSDFLT',
+                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_def.return_value = (4096, 65536, 61440, sample_definition)
+        (action, defined_mem, max_mem, user_direct) = \
+            self._smutclient.resize_memory(userid, size)
+        self.assertEqual(action, 1)
+        get_def.assert_called_once_with(userid)
+        lock_def.assert_called_once_with(userid)
+        new_entry = ("USER T9430060 LBYONLY 10240M 64G G\n"
+                     "INCLUDE OSDFLT\n"
+                     "COMMAND DEF STOR RESERVED 55296M\n"
+                     "CPU 00 BASE\n"
+                     "IPL 0100\n"
+                     "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
+        replace_def.assert_called_once_with(userid, new_entry)
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_defined_memory')
+    @mock.patch.object(smutclient.SMUTClient, '_lock_user_direct')
+    @mock.patch.object(smutclient.SMUTClient, '_replace_user_direct')
+    def test_resize_memory_decrease(self, replace_def, lock_def, get_def):
+        userid = 'testuid'
+        size = '2g'
+        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+                             u'INCLUDE OSDFLT',
+                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_def.return_value = (4096, 65536, 61440, sample_definition)
+        (action, defined_mem, max_mem, user_direct) = \
+            self._smutclient.resize_memory(userid, size)
+        self.assertEqual(action, 1)
+        get_def.assert_called_once_with(userid)
+        lock_def.assert_called_once_with(userid)
+        new_entry = ("USER T9430060 LBYONLY 2048M 64G G\n"
+                     "INCLUDE OSDFLT\n"
+                     "COMMAND DEF STOR RESERVED 63488M\n"
+                     "CPU 00 BASE\n"
+                     "IPL 0100\n"
+                     "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
+        replace_def.assert_called_once_with(userid, new_entry)
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_defined_memory')
+    @mock.patch.object(smutclient.SMUTClient, '_lock_user_direct')
+    @mock.patch.object(smutclient.SMUTClient, '_replace_user_direct')
+    def test_resize_memory_lock_failed(self, replace_def, lock_def, get_def):
+        userid = 'testuid'
+        size = '2g'
+        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+                             u'INCLUDE OSDFLT',
+                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_def.return_value = (4096, 65536, 61440, sample_definition)
+        lock_def.side_effect = exception.SDKSMUTRequestFailed({}, 'err')
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.resize_memory, userid, size)
+        get_def.assert_called_once_with(userid)
+        lock_def.assert_called_once_with(userid)
+        replace_def.assert_not_called()
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_defined_memory')
+    @mock.patch.object(smutclient.SMUTClient, '_lock_user_direct')
+    @mock.patch.object(smutclient.SMUTClient, '_replace_user_direct')
+    def test_resize_memory_replace_failed(self, replace_def, lock_def,
+                                          get_def):
+        userid = 'testuid'
+        size = '2g'
+        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+                             u'INCLUDE OSDFLT',
+                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_def.return_value = (4096, 65536, 61440, sample_definition)
+        replace_def.side_effect = exception.SDKSMUTRequestFailed({}, 'err')
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.resize_memory, userid, size)
+        get_def.assert_called_once_with(userid)
+        lock_def.assert_called_once_with(userid)
+        new_entry = ("USER T9430060 LBYONLY 2048M 64G G\n"
+                     "INCLUDE OSDFLT\n"
+                     "COMMAND DEF STOR RESERVED 63488M\n"
+                     "CPU 00 BASE\n"
+                     "IPL 0100\n"
+                     "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
+        replace_def.assert_called_once_with(userid, new_entry)
+
+    @mock.patch.object(smutclient.SMUTClient, 'get_user_direct')
+    def test_get_defined_memory(self, get_user_direct):
+        userid = 'testuid'
+        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+                             u'INCLUDE OSDFLT',
+                             u'COMMAND DEF STOR RESERVED 61440M',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_user_direct.return_value = sample_definition
+        (defined_mem, max_mem, reserved_mem, user_direct) = \
+            self._smutclient._get_defined_memory(userid)
+        self.assertEqual(defined_mem, 4096)
+        self.assertEqual(max_mem, 65536)
+        self.assertEqual(reserved_mem, 61440)
+        self.assertListEqual(user_direct, sample_definition)
+
+    @mock.patch.object(smutclient.SMUTClient, 'get_user_direct')
+    def test_get_defined_memory_reserved_not_defined(self, get_user_direct):
+        userid = 'testuid'
+        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+                             u'INCLUDE OSDFLT',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_user_direct.return_value = sample_definition
+        (defined_mem, max_mem, reserved_mem, user_direct) = \
+            self._smutclient._get_defined_memory(userid)
+        self.assertEqual(defined_mem, 4096)
+        self.assertEqual(max_mem, 65536)
+        self.assertEqual(reserved_mem, -1)
+        self.assertListEqual(user_direct, sample_definition)
+
+    @mock.patch.object(smutclient.SMUTClient, '_request')
+    def test_replace_user_direct_err(self, req):
+        userid = 'testuid'
+        user_entry = [u'USER T9430060 LBYONLY 4096M 64G G',
+                     u'INCLUDE OSDFLT',
+                     u'COMMAND DEF STOR RESERVED 61440M',
+                     u'CPU 00 BASE',
+                     u'IPL 0100',
+                     u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                     u'']
+        req.side_effect = [exception.SDKSMUTRequestFailed({}, 'err'), ""]
+        self.assertRaises(exception.SDKSMUTRequestFailed,
+                          self._smutclient._replace_user_direct, userid,
+                          user_entry)
