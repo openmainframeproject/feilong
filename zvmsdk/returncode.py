@@ -155,6 +155,12 @@ errors = {
                8: ("Failed to live resize cpus of guest: '%(userid)s', "
                    "error: rescan cpus to hot-plug new defined cpus failed: "
                    "'%(err)s'."),
+               9: ("Failed to resize memory of guest: '%(userid)s', "
+                   "error: lock user entry failed with "
+                   "smut error: '%(err)s'."),
+               10: ("Failed to resize memory of guest: '%(userid)s', "
+                   "error: replace user entry failed with "
+                   "smut error: '%(err)s'."),
               },
               "Operation on Guest failed"
               ],
@@ -281,6 +287,15 @@ errors = {
                        "%(userid)s %(vdev)s, error: %(msg)s"),
                   17: ("Failed to delete dedicated device from guest "
                        "%(userid)s %(vdev)s, error: %(obj)s is locked"),
+                  18: ("Failed to live resize memory of guest: '%(userid)s', "
+                      "error: current active memory size: '%(active)i'm is "
+                      "greater than requested size: '%(req)i'm."),
+                  19: ("Failed to resize memory of guest: '%(userid)s', "
+                      "error: user definition is not in expected format, "
+                      "cann't get the defined/max/reserved storage."),
+                  20: ("Failed to resize memory of guest: '%(userid)s', "
+                      "error: the requested memory size: '%(req)im' exceeds "
+                      "the maximum memory size defined: '%(max)im'."),
                   },
                  "The operated object status conflict"
                  ],
