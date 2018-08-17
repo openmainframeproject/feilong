@@ -2915,6 +2915,296 @@ class SMUTClient(object):
         LOG.info("Live resize cpus for guest: '%s' finished successfully."
                  % userid)
 
+    def _get_defined_memory(self, userid):
+        user_direct = self.get_user_direct(userid)
+        defined_mem = max_mem = reserved_mem = 0
+        for ent in user_direct:
+            # u'USER userid password storage max privclass'
+            if ent.startswith("USER "):
+                fields = ent.split(' ')
+                if len(fields) != 6:
+                    # This case should not exist if the target user
+                    # is created by zcc and not updated manually by user
+                    break
+                defined_mem = int(zvmutils.convert_to_mb(fields[3]))
+                max_mem = int(zvmutils.convert_to_mb(fields[4]))
+            # For legacy guests, the reserved memory may not be defined
+            if ent.startswith("COMMAND DEF STOR RESERVED"):
+                reserved_mem = int(zvmutils.convert_to_mb(ent.split(' ')[4]))
+        return (defined_mem, max_mem, reserved_mem, user_direct)
+
+    def _replace_user_direct(self, userid, user_entry):
+        # user_entry can be a list or a string
+        if isinstance(user_entry, list):
+            entry_str = ""
+            for ent in user_entry:
+                if ent == "":
+                    # skip empty line
+                    continue
+                else:
+                    entry_str += (ent + '\n')
+        elif isinstance(user_entry, str):
+            entry_str = user_entry
+        else:
+            return
+        tmp_folder = tempfile.mkdtemp()
+        tmp_user_direct = os.path.join(tmp_folder, userid)
+        with open(tmp_user_direct, 'w') as f:
+            f.write(entry_str)
+        rd = ''.join(("SMAPI %s API Image_Replace_DM " % userid,
+                      "--operands ",
+                      "-f %s" % tmp_user_direct))
+        try:
+            self._request(rd)
+        except exception.SDKSMUTRequestFailed as err1:
+            msg = ("Replace definition of guest '%s' failed with "
+                   "SMUT error: %s." % (userid, err1.format_message()))
+            LOG.error(msg)
+            LOG.info("Unlocking the user directory.")
+            rd = ("SMAPI %s API Image_Unlock_DM " % userid)
+            try:
+                self._request(rd)
+            except exception.SDKSMUTRequestFailed as err2:
+                # ignore 'not locked' error
+                if ((err2.results['rc'] == 400) and (
+                    err2.results['rs'] == 24)):
+                    LOG.info("Guest '%s' unlocked successfully." % userid)
+                    pass
+                else:
+                    # just print error and ignore this unlock error
+                    msg = ("Unlock definition of guest '%s' failed "
+                           "with SMUT error: %s" %
+                           (userid, err2.format_message()))
+                    LOG.error(msg)
+            else:
+                LOG.info("Guest '%s' unlocked successfully." % userid)
+            # at the end, raise the replace error for upper layer to handle
+            raise err1
+        finally:
+            self._pathutils.clean_temp_folder(tmp_folder)
+
+    def _lock_user_direct(self, userid):
+        rd = ("SMAPI %s API Image_Lock_DM " % userid)
+        try:
+            self._request(rd)
+        except exception.SDKSMUTRequestFailed as e:
+            # ignore the "already locked" error
+            if ((e.results['rc'] == 400) and (e.results['rs'] == 12)):
+                pass
+            else:
+                msg = ("Lock definition of guest '%s' failed with"
+                       " SMUT error: %s" % (userid, e.format_message()))
+                LOG.error(msg)
+                raise e
+
+    def resize_memory(self, userid, size):
+        # Check defined storage in user entry.
+        # Update STORAGE and RESERVED accordingly.
+        size = int(zvmutils.convert_to_mb(size))
+        (defined_mem, max_mem, reserved_mem,
+         user_direct) = self._get_defined_memory(userid)
+        # Check max memory is properly defined
+        if max_mem == 0 or reserved_mem == 0:
+            LOG.error("Memory resize for guest '%s' cann't be done."
+                      "Failed to get the defined/max/reserved memory size "
+                      "from user directory." % userid)
+            raise exception.SDKConflictError(modID='guest', rs=19,
+                                             userid=userid)
+        action = 0
+        # Make sure requested size is less than the maximum memory size
+        if size > max_mem:
+            LOG.error("Memory resize for guest '%s' cann't be done. The "
+                      "requested memory size: '%im' exceeds the maximum "
+                      "size allowed: '%im'." %
+                      (userid, size, max_mem))
+            raise exception.SDKConflictError(modID='guest', rs=20,
+                                             userid=userid,
+                                             req=size, max=max_mem)
+        # check if already satisfy request
+        if defined_mem == size:
+            LOG.info("The current defined memory size in user '%s' equals "
+                     "to requested size: %im, no action for memory resize "
+                     "needed." % (userid, size))
+            return (action, defined_mem, max_mem, user_direct)
+        else:
+            # set action to 1 to represent that revoke need to be done when
+            # live resize failed.
+            action = 1
+            # get the new reserved memory size
+            new_reserved = max_mem - size
+
+            # prepare the new user entry content
+            entry_str = ""
+            for ent in user_direct:
+                if ent == '':
+                    # Avoid adding an empty line in the entry file
+                    # otherwise Image_Replace_DM would return syntax error.
+                    continue
+                new_ent = ""
+                if ent.startswith("USER "):
+                    fields = ent.split(' ')
+                    for i in range(len(fields)):
+                        # update fields[3] to new defined size
+                        if i != 3:
+                            new_ent += (fields[i] + ' ')
+                        else:
+                            new_ent += (str(size) + 'M ')
+                    # remove the last space
+                    new_ent = new_ent.strip()
+                elif ent.startswith("COMMAND DEF STOR RESERVED"):
+                    new_ent = ("COMMAND DEF STOR RESERVED %iM" % new_reserved)
+                else:
+                    new_ent = ent
+                # append this new entry
+                entry_str += (new_ent + '\n')
+
+            # Lock and replace user definition with the new_entry content
+            try:
+                self._lock_user_direct(userid)
+            except exception.SDKSMUTRequestFailed as e:
+                raise exception.SDKGuestOperationError(rs=9, userid=userid,
+                                                       err=e.format_message())
+            LOG.info("User directory Locked successfully for guest '%s' " %
+                     userid)
+
+            # Replace user directory
+            try:
+                self._replace_user_direct(userid, entry_str)
+            except exception.SDKSMUTRequestFailed as e:
+                raise exception.SDKGuestOperationError(rs=10,
+                                                       userid=userid,
+                                                       err=e.format_message())
+            # Finally return useful info
+            return (action, defined_mem, max_mem, user_direct)
+
+    def _revert_user_direct(self, userid, user_entry):
+        # user_entry can be a list or a string
+        try:
+            self._lock_user_direct(userid)
+        except exception.SDKSMUTRequestFailed:
+            # print revert error and return
+            msg = ("Failed to revert user direct of guest '%s'." % userid)
+            LOG.error(msg)
+            return
+        LOG.info("User directory Locked successfully for guest '%s'." %
+                 userid)
+
+        # Replace user directory
+        try:
+            self._replace_user_direct(userid, user_entry)
+        except exception.SDKSMUTRequestFailed:
+            msg = ("Failed to revert user direct of guest '%s'." % userid)
+            LOG.error(msg)
+            return
+        LOG.info("User directory reverted successfully for guest '%s'." %
+                 userid)
+
+    def _get_active_memory_size(self, userid):
+        # Return an integer value representing the active memory size in mb
+        output = self.execute_cmd(userid, "vmcp q storage")
+        # sample cmd output:
+        # [u'STORAGE = 3G MAX = 64G INC = 128M STANDBY = 0  RESERVED = 61G']
+        try:
+            sizes = output[0].split(' = ')
+            # Sample sizes:
+            # [u'STORAGE', u'5G MAX', u'64G INC', u'128M STANDBY',
+            # u'0  RESERVED', u'59G']
+            active_size = int(zvmutils.convert_to_mb(sizes[1].split(' ')[0]))
+            avtive_max = int(zvmutils.convert_to_mb(sizes[2].split(' ')[0]))
+            active_standby = int(zvmutils.convert_to_mb(
+                sizes[4].split(' ')[0]))
+            active_reserved = int(zvmutils.convert_to_mb(sizes[5]))
+        except (IndexError, ValueError, KeyError, TypeError):
+            errmsg = ("Failed to get active storage size for guest: %s" %
+                      userid)
+            raise exception.SDKInternalError(msg=errmsg)
+
+        return (active_size, active_max, active_standby, active_reserved)
+
+    def live_resize_memory(self, userid, memory):
+        # Get active memory size and compare with requested size
+        # If request size is smaller than the current size, then report
+        # error and exit immediately.
+        size = int(zvmutils.convert_to_mb(memory))
+        (active_size, avtive_max, active_standby,
+         active_reserved) = self._get_active_memory_size(userid)
+        if active_size > size:
+            LOG.error("Failed to live resize memory of guest: %(uid)s, "
+                      "current active memory size: %(cur)im is greater than "
+                      "the requested size: %(req)im." %
+                      {'uid': userid, 'cur': active_size,
+                       'req': size})
+            raise exception.SDKConflictError(modID='guest', rs=18,
+                                             userid=userid,
+                                             active=active_size,
+                                             req=size)
+
+        # Static resize memory. (increase/decrease memory from user directory)
+        (action, defined_mem, max_mem,
+         user_direct) = self.resize_memory(userid, size)
+
+        # Compare active size and requested size, then update accordingly
+        if active_size == size:
+            # online memory already satisfied
+            LOG.info("Current active memory size of guest: '%s' equals to the "
+                     "requested size: '%iM', no more actions needed for "
+                     "live resize." % (userid, size))
+            LOG.info("Live resize memory for guest: '%s' finished successfully."
+                     % userid)
+            return
+        else:
+            # Do live resize. update memory size
+            increase_size = size - active_size
+            # Step1: Define new standby storage
+            cmd_str = ("vmcp def storage standby %sM" % increase_size)
+            try:
+                self.execute_cmd(userid, cmd_str)
+            except exception.SDKSMUTRequestFailed as e:
+                # rollback and return
+                msg = ("Define standby memory of guest: '%s' failed with "
+                       "error: %s." % (userid, e.format_message()))
+                LOG.error(msg)
+                # Start to do rollback
+                if action == 1:
+                    LOG.info("Start to revert user definition of guest '%s'." %
+                             userid)
+                    self._revert_user_direct(userid, user_direct)
+                # Finally, raise the error and exit
+                raise exception.SDKGuestOperationError(rs=11,
+                                                       userid=userid,
+                                                       err=e.format_message())
+
+            # Step 2: Online new memory
+            cmd_str = ("chmem -e %sM" % increase_size)
+            try:
+                self.execute_cmd(userid, cmd_str)
+            except exception.SDKSMUTRequestFailed as err1:
+                # rollback and return
+                msg1 = ("Online memory of guest: '%s' failed with "
+                       "error: %s." % (userid, err1.format_message()))
+                LOG.error(msg1)
+                # Start to do rollback
+                LOG.info("Start to do revert.")
+                LOG.info("Reverting the standby memory.")
+                try:
+                    self.execute_cmd(userid, "vmcp def storage standby 0M")
+                except exception.SDKSMUTRequestFailed as err2:
+                    # print revert error info and continue
+                    msg2 = ("Revert standby memory of guest: '%s' failed with "
+                           "error: %s." % (userid, err2.format_message()))
+                    LOG.error(msg2)
+                # Continue to do the user directory change.
+                if action == 1:
+                    LOG.info("Reverting the user directory change of guest "
+                              "'%s'." % userid)
+                    self._revert_user_direct(userid, user_direct)
+                # Finally raise the exception
+                raise exception.SDKGuestOperationError(
+                    rs=7, userid=userid, err=err1.format_message())
+
+        LOG.info("Live resize memory for guest: '%s' finished successfully."
+                 % userid)
+
 
 class FilesystemBackend(object):
     @classmethod
