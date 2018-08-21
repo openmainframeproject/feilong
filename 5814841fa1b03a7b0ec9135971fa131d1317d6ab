@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "af4ff91a_7a237a64",
+        "filename": "zvmsdk/tests/fvt/README.rst",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-08-21T02:51:19Z",
+      "side": 1,
+      "message": "all platform has this name? it\u0027s apt/yum, not pip, right?",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 16
+      },
+      "revId": "5814841fa1b03a7b0ec9135971fa131d1317d6ab",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
