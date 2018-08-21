@@ -224,6 +224,7 @@ Token Usage
 
 When you sending requests, you can use token authenticaion to enhance security of the connection between client and server.
 z/VM Cloud Connector use admin-token to authicate the safety of the connection instead of username&password.
+In other words, admin-token is what you can think as a combination of traditional username&password.
 
 On client side, users should use this admin-token to request for a temporary token first. Then users can use
 this temporary token to send requests.
