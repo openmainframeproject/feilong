@@ -364,3 +364,23 @@ class VMOps(object):
         # Do resize
         self._smutclient.resize_cpus(userid, count)
         LOG.info("Complete resize cpu on vm %s", userid)
+
+    def live_resize_memory(self, userid, memory):
+        # Check power state is 'on'
+        state = self.get_power_state(userid)
+        if state != 'on':
+            LOG.error("Failed to live resize memory of guest %s, error: "
+                      "guest is inactive, cann't perform live resize." %
+                      userid)
+            raise exception.SDKConflictError(modID='guest', rs=1,
+                                             userid=userid)
+        # Do live resize
+        self._smutclient.live_resize_memory(userid, memory)
+
+        LOG.info("Complete live resize memory on vm %s", userid)
+
+    def resize_memory(self, userid, memory):
+        LOG.info("Begin to resize memory on vm %s", userid)
+        # Do resize
+        self._smutclient.resize_memory(userid, memory)
+        LOG.info("Complete resize memory on vm %s", userid)
