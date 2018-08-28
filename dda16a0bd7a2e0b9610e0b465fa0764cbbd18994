@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "59a69fc4_66e2f675",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 2941,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-08-28T06:17:59Z",
+      "side": 1,
+      "message": "nit: len(ent) \u003d\u003d 0 might be better",
+      "range": {
+        "startLine": 2941,
+        "startChar": 19,
+        "endLine": 2941,
+        "endChar": 29
+      },
+      "revId": "dda16a0bd7a2e0b9610e0b465fa0764cbbd18994",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f734ff0_046404be",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 2991,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-08-28T06:17:59Z",
+      "side": 1,
+      "message": "suggest to add some debug log here at least",
+      "range": {
+        "startLine": 2991,
+        "startChar": 16,
+        "endLine": 2991,
+        "endChar": 20
+      },
+      "revId": "dda16a0bd7a2e0b9610e0b465fa0764cbbd18994",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d13f340_4b1b176d",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 3003,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-08-28T06:17:59Z",
+      "side": 1,
+      "message": "nit: consider rename to _get_memory",
+      "range": {
+        "startLine": 3003,
+        "startChar": 29,
+        "endLine": 3003,
+        "endChar": 48
+      },
+      "revId": "dda16a0bd7a2e0b9610e0b465fa0764cbbd18994",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a28a5b8b_21ed4e79",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 3017,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-08-28T06:17:59Z",
+      "side": 1,
+      "message": "it\u0027s not an internal error, it\u0027s user input incorrect, so \u0027info\u0027 instead of \u0027error\u0027",
+      "range": {
+        "startLine": 3014,
+        "startChar": 11,
+        "endLine": 3017,
+        "endChar": 46
+      },
+      "revId": "dda16a0bd7a2e0b9610e0b465fa0764cbbd18994",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71212001_039a0e4c",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 3095,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-08-28T06:17:59Z",
+      "side": 1,
+      "message": "should we consider unlock here?",
+      "range": {
+        "startLine": 3094,
+        "startChar": 11,
+        "endLine": 3095,
+        "endChar": 26
+      },
+      "revId": "dda16a0bd7a2e0b9610e0b465fa0764cbbd18994",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3275d482_19f82134",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 3109,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-08-28T06:17:59Z",
+      "side": 1,
+      "message": "I highly doubt whether py3 test has been run \n\nin py3, mostly output will be bytes \n\n\u003e\u003e\u003e c \u003d subprocess.check_output([\"lsmem\"])\n\u003e\u003e\u003e type(c)\n\u003cclass \u0027bytes\u0027\u003e\n\u003e\u003e\u003e mem_info \u003d c.split(\u0027 : \u0027)[1].split(\u0027 \u0027)\nTraceback (most recent call last):\n  File \"\u003cstdin\u003e\", line 1, in \u003cmodule\u003e\nTypeError: a bytes-like object is required, not \u0027str\u0027",
+      "range": {
+        "startLine": 3109,
+        "startChar": 20,
+        "endLine": 3109,
+        "endChar": 59
+      },
+      "revId": "dda16a0bd7a2e0b9610e0b465fa0764cbbd18994",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
