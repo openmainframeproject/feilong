@@ -428,6 +428,20 @@ class TestzCCClient(object):
         body = '{"vswitch": {"grant_userid": "%s"}}' % userid
         return self.api_request(url=url, method='PUT', body=body)
 
+    def volume_attach(self, connection_info):
+        url = '/guests/volumes'
+        body = {'info': {'connection': connection_info}}
+        body_str = json.dumps(body)
+        return self.api_request(url=url, method='POST',
+                                body=body_str)
+
+    def volume_detach(self, connection_info):
+        url = '/guests/volumes'
+        body = {'info': {'connection': connection_info}}
+        body_str = json.dumps(body)
+        return self.api_request(url=url, method='DELETE',
+                                body=body_str)
+
 
 class ZVMConnectorTestUtils(object):
 
