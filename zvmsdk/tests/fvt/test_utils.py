@@ -35,6 +35,17 @@ TEST_IP_POOL = []
 TEST_IMAGE_LIST = []
 
 
+def convert_to_mb(s):
+    """Convert memory size from GB to MB."""
+    s = s.upper()
+    if s.endswith('G'):
+        return float(s[:-1].strip()) * 1024
+    elif s.endswith('T'):
+        return float(s[:-1].strip()) * 1024 * 1024
+    else:
+        return float(s[:-1].strip())
+
+
 def get_test_image_list():
     global TEST_IMAGES_LIST
     for image in CONF.tests.images.split(','):
@@ -344,6 +355,12 @@ class TestzCCClient(object):
                    "cpu_cnt": %s}""" % cpu_cnt
         return self._guest_action(userid, body)
 
+    def guest_resize_memory(self, userid, memory):
+        body = {"action": "resize_mem",
+                "size": memory}
+        body = json.dumps(body)
+        return self._guest_action(userid, body)
+
     def guest_pre_migrate_vm(self, userid):
         body = {"action": "register_vm"}
         body = json.dumps(body)
@@ -361,6 +378,12 @@ class TestzCCClient(object):
     def guest_live_resize_cpus(self, userid, cpu_cnt):
         body = """{"action": "live_resize_cpus",
                    "cpu_cnt": %s}""" % cpu_cnt
+        return self._guest_action(userid, body)
+
+    def guest_live_resize_memory(self, userid, memory):
+        body = {"action": "live_resize_mem",
+                "size": memory}
+        body = json.dumps(body)
         return self._guest_action(userid, body)
 
     def guest_reset(self, userid):
