@@ -140,6 +140,30 @@
     },
     {
       "key": {
+        "uuid": "ba27c0b2_93b48254",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 3109,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-08-29T05:12:10Z",
+      "side": 1,
+      "message": "It seems the code works in py3 env. smutclient.execute_cmd returns str, the same as py27. Let\u0027s verify this in fvt tests.",
+      "parentUuid": "3275d482_19f82134",
+      "range": {
+        "startLine": 3109,
+        "startChar": 20,
+        "endLine": 3109,
+        "endChar": 59
+      },
+      "revId": "dda16a0bd7a2e0b9610e0b465fa0764cbbd18994",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2af5faaf_c4e80809",
         "filename": "zvmsdk/smutclient.py",
         "patchSetId": 6
