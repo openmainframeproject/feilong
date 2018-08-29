@@ -62,6 +62,9 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
         self.test_vsw2 = "RESTVSW2"
 
     def _check_CPU_MEM(self, userid, cpu_cnt=None, cpu_cnt_live=None,
+                       memory_size=None,
+                       memory_size_live=None,
+                       check_reserve=True,
                        maxcpu=CONF.zvm.user_default_max_cpu,
                        maxmem=CONF.zvm.user_default_max_memory):
         resp_info = self.client.guest_get_definition_info(userid)
@@ -73,9 +76,16 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
         cpu_num = 0
         cpu_num_live = 0
         cpu_num_online = 0
+
         for ent in user_direct:
             if ent.startswith(Statement):
+                memory_direct = ent.split()[3].strip()
                 max_memory = ent.split()[4].strip()
+                memory_direct = int(test_utils.convert_to_mb(memory_direct))
+            if ent.startswith("COMMAND DEF STOR RESERVED"):
+                memory_reserve_direct = ent.split()[4].strip()
+                memory_reserve_direct = int(test_utils.convert_to_mb(
+                                                    memory_reserve_direct))
             if ent.startswith("CPU"):
                 cpu_num = cpu_num + 1
             if ent.startswith("MACHINE ESA"):
@@ -92,11 +102,25 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
                 online_state = c.strip().upper()
                 if online_state == "Y":
                     cpu_num_online = cpu_num_online + 1
+        if memory_size_live is not None:
+            memory_info = self._smutclient.execute_cmd(userid, "lsmem")[-2:]
+            online_memory = int(memory_info[0].split()[4].strip())
+            offline_memory = int(memory_info[1].split()[3].strip())
+
         if cpu_cnt is not None:
             self.assertEqual(cpu_cnt, cpu_num)
+        if memory_size is not None:
+            memory_size = int(test_utils.convert_to_mb(memory_size))
+            self.assertEqual(memory_size, memory_direct)
         if cpu_cnt_live is not None:
             self.assertEqual(cpu_cnt_live, cpu_num_live)
-            self.assertEqual(cpu_cnt_live, cpu_num_online)
+
+        if memory_size_live is not None:
+            memory_size_live = int(test_utils.convert_to_mb(memory_size_live))
+            self.assertEqual(memory_size_live, online_memory)
+            if check_reserve:
+                self.assertEqual(memory_reserve_direct, offline_memory)
+
         self.assertEqual(maxcpu, max_cpus)
         self.assertEqual(maxmem, max_memory)
 
@@ -831,6 +855,125 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.assertTrue(self.utils.wait_until_guest_reachable(userid))
         self._check_CPU_MEM(userid, cpu_cnt=7, cpu_cnt_live=7,
                             maxcpu=10, maxmem="2048M")
+
+    @parameterized.expand(TEST_IMAGE_LIST)
+    def test_guest_live_resize_memory(self, case_name,
+                                    image_path, os_version):
+        userid = self._get_userid_auto_cleanup()
+        resp = self.client.guest_create(userid, memory=2048,
+                                        max_cpu=10, max_mem="10G")
+        self.assertEqual(200, resp.status_code)
+
+        image_name = self.utils.import_image_if_not_exist(image_path,
+                                                          os_version)
+
+        resp = self.client.guest_deploy(userid, image_name)
+        self.assertEqual(200, resp.status_code)
+
+        # Live resize a guest's CPU when the guest is not active
+        resp = self.client.guest_live_resize_memory(userid, "1G")
+        self.assertEqual(409, resp.status_code)
+
+        # Power on the guest
+        resp = self.client.guest_start(userid)
+        self.assertEqual(200, resp.status_code)
+        self.assertTrue(self.utils.wait_until_guest_reachable(userid))
+
+        # check cpu memory
+        self._check_CPU_MEM(userid, memory_size="2048M",
+                            memory_size_live="2048M", maxcpu=10, maxmem="10G")
+        self._check_total_memory(userid, maxmem="10G")
+
+        # Live resize a guest's memory when the guest is active
+        resp = self.client.guest_live_resize_memory(userid, "4096M")
+        self.assertEqual(200, resp.status_code)
+        self._check_CPU_MEM(userid, memory_size="4096M",
+                            memory_size_live="4096M", maxcpu=10, maxmem="10G")
+
+        # Live resize a guest's memory more than the current size
+        resp = self.client.guest_live_resize_memory(userid, "9G")
+        self.assertEqual(200, resp.status_code)
+        self._check_CPU_MEM(userid, memory_size="9G",
+                            memory_size_live="9G", maxcpu=10, maxmem="10G")
+
+        # Live resize a guest's memory less than the current size
+        resp = self.client.guest_live_resize_memory(userid, "4096M")
+        self.assertEqual(409, resp.status_code)
+        self._check_CPU_MEM(userid, memory_size="9G",
+                            memory_size_live="9G", maxcpu=10, maxmem="10G")
+
+        # Live resize a guest's memory equal to the current size
+        resp = self.client.guest_live_resize_memory(userid, "9G")
+        self.assertEqual(200, resp.status_code)
+        self._check_CPU_MEM(userid, memory_size="9G",
+                            memory_size_live="9G", maxcpu=10, maxmem="10G")
+
+        # Live resize a guest's memory more than the max size
+        resp = self.client.guest_live_resize_memory(userid, "20G")
+        self.assertEqual(409, resp.status_code)
+        self._check_CPU_MEM(userid, memory_size="9G",
+                            memory_size_live="9G", maxcpu=10, maxmem="10G")
+
+        # Resize a guest's memory more than the current size
+        resp = self.client.guest_resize_memory(userid, "10G")
+        self.assertEqual(200, resp.status_code)
+        self._check_CPU_MEM(userid, memory_size="10G",
+                            memory_size_live="9G", check_reserve=False,
+                            maxcpu=10, maxmem="10G")
+
+        # Resize a guest's memory less than the current size
+        resp = self.client.guest_resize_memory(userid, "8192M")
+        self.assertEqual(200, resp.status_code)
+        self._check_CPU_MEM(userid, memory_size="8192M",
+                            memory_size_live="9G", check_reserve=False,
+                            maxcpu=10, maxmem="10G")
+
+        # Resize a guest's memory equal to the current size
+        resp = self.client.guest_resize_memory(userid, "8192M")
+        self.assertEqual(200, resp.status_code)
+        self._check_CPU_MEM(userid, memory_size="8192M",
+                            memory_size_live="9G", check_reserve=False,
+                            maxcpu=10, maxmem="10G")
+
+        # Resize a guest's memory more than the max size
+        resp = self.client.guest_resize_memory(userid, "20G")
+        self.assertEqual(409, resp.status_code)
+        self._check_CPU_MEM(userid, memory_size="8192M",
+                            memory_size_live="9G", check_reserve=False,
+                            maxcpu=10, maxmem="10G")
+
+        # Restart guest, check cpu number
+        resp = self.client.guest_softstop(userid)
+        self.assertEqual(200, resp.status_code)
+        self.assertTrue(self.utils.wait_until_guest_in_power_state(userid,
+                                                                  "off"))
+        resp = self.client.guest_start(userid)
+        self.assertEqual(200, resp.status_code)
+        self.assertTrue(self.utils.wait_until_guest_reachable(userid))
+        self._check_CPU_MEM(userid, memory_size="8192M",
+                            memory_size_live="8192M", maxcpu=10, maxmem="10G")
+
+        # Live resize a guest's memory equal to the max size
+        resp = self.client.guest_live_resize_memory(userid, "10G")
+        self.assertEqual(200, resp.status_code)
+        self._check_CPU_MEM(userid, memory_size="10G",
+                            memory_size_live="10G", maxcpu=10, maxmem="10G")
+
+        # Live resize a guest's memory, invalid size
+        resp = self.client.guest_live_resize_memory(userid, "1T")
+        self.assertEqual(400, resp.status_code)
+        self._check_CPU_MEM(userid, memory_size="10G",
+                            memory_size_live="10G", maxcpu=10, maxmem="10G")
+
+        resp = self.client.guest_live_resize_memory(userid, "10240m")
+        self.assertEqual(400, resp.status_code)
+        self._check_CPU_MEM(userid, memory_size="10G",
+                            memory_size_live="10G", maxcpu=10, maxmem="10G")
+
+        resp = self.client.guest_live_resize_memory(userid, "1024k")
+        self.assertEqual(400, resp.status_code)
+        self._check_CPU_MEM(userid, memory_size="10G",
+                            memory_size_live="10G", maxcpu=10, maxmem="10G")
 
 
 class GuestHandlerTestCaseWithCreatedGuest(GuestHandlerBase):
