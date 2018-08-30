@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "96114193_b804c88a",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 2941,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-08-30T06:19:39Z",
+      "side": 1,
+      "message": "I don\u0027t quite understand the difference...",
+      "parentUuid": "59a69fc4_66e2f675",
+      "range": {
+        "startLine": 2941,
+        "startChar": 19,
+        "endLine": 2941,
+        "endChar": 29
+      },
+      "revId": "dda16a0bd7a2e0b9610e0b465fa0764cbbd18994",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9f734ff0_046404be",
         "filename": "zvmsdk/smutclient.py",
         "patchSetId": 6
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "f24d5146_68f8dd42",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 2991,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-08-30T06:19:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9f734ff0_046404be",
+      "range": {
+        "startLine": 2991,
+        "startChar": 16,
+        "endLine": 2991,
+        "endChar": 20
+      },
+      "revId": "dda16a0bd7a2e0b9610e0b465fa0764cbbd18994",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1d13f340_4b1b176d",
         "filename": "zvmsdk/smutclient.py",
         "patchSetId": 6
@@ -59,6 +107,30 @@
       "writtenOn": "2018-08-28T06:17:59Z",
       "side": 1,
       "message": "nit: consider rename to _get_memory",
+      "range": {
+        "startLine": 3003,
+        "startChar": 29,
+        "endLine": 3003,
+        "endChar": 48
+      },
+      "revId": "dda16a0bd7a2e0b9610e0b465fa0764cbbd18994",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "811d8a19_8f45ab40",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 3003,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-08-30T06:19:39Z",
+      "side": 1,
+      "message": "I used the name _get_defined_memory to differentiate clearly with another function _get_active_memory (now its name is _get_active_memory_size, I will change it.)",
+      "parentUuid": "1d13f340_4b1b176d",
       "range": {
         "startLine": 3003,
         "startChar": 29,
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "51747fe9_dfed4f4e",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 3017,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-08-30T06:19:39Z",
+      "side": 1,
+      "message": "I didn\u0027t use internal error. Here returns ConflictError which will be translated to HTTP conflict error(409?).",
+      "parentUuid": "a28a5b8b_21ed4e79",
+      "range": {
+        "startLine": 3014,
+        "startChar": 11,
+        "endLine": 3017,
+        "endChar": 46
+      },
+      "revId": "dda16a0bd7a2e0b9610e0b465fa0764cbbd18994",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "71212001_039a0e4c",
         "filename": "zvmsdk/smutclient.py",
         "patchSetId": 6
@@ -105,6 +201,30 @@
       "writtenOn": "2018-08-28T06:17:59Z",
       "side": 1,
       "message": "should we consider unlock here?",
+      "range": {
+        "startLine": 3094,
+        "startChar": 11,
+        "endLine": 3095,
+        "endChar": 26
+      },
+      "revId": "dda16a0bd7a2e0b9610e0b465fa0764cbbd18994",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94002d66_44aa8c83",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 3095,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-08-30T06:19:39Z",
+      "side": 1,
+      "message": "the _replace_user_direct already contains the unlock logic.",
+      "parentUuid": "71212001_039a0e4c",
       "range": {
         "startLine": 3094,
         "startChar": 11,
@@ -187,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "fed3f577_2db8e66f",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 3152,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-08-30T06:19:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2af5faaf_c4e80809",
+      "range": {
+        "startLine": 3152,
+        "startChar": 8,
+        "endLine": 3152,
+        "endChar": 13
+      },
+      "revId": "dda16a0bd7a2e0b9610e0b465fa0764cbbd18994",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "35d77def_06ec0eeb",
         "filename": "zvmsdk/smutclient.py",
         "patchSetId": 6
@@ -198,6 +342,30 @@
       "writtenOn": "2018-08-29T02:16:07Z",
       "side": 1,
       "message": "combine them together",
+      "range": {
+        "startLine": 3184,
+        "startChar": 15,
+        "endLine": 3185,
+        "endChar": 58
+      },
+      "revId": "dda16a0bd7a2e0b9610e0b465fa0764cbbd18994",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2efbde5_6b184d69",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 3185,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-08-30T06:19:39Z",
+      "side": 1,
+      "message": "The revert contains two steps: 1. revert standby storage. 2. revert user directory.\nSo I want to log them seperately.\nAnd also log the \"start to do revert\" as info, and the two internal revert steps as debug to avoid too many logs.",
+      "parentUuid": "35d77def_06ec0eeb",
       "range": {
         "startLine": 3184,
         "startChar": 15,
