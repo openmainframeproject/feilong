@@ -2289,7 +2289,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                                 get_defined):
         userid = 'testuid'
         size = '2g'
-        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+        sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
                              u'CPU 00 BASE',
                              u'IPL 0100',
@@ -2305,7 +2305,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_resize_memory_exceed_max_size(self, replace_def, get_defined):
         userid = 'testuid'
         size = '65g'
-        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+        sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
                              u'COMMAND DEF STOR RESERVED 61440M',
                              u'CPU 00 BASE',
@@ -2322,7 +2322,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_resize_memory_equal_size(self, replace_def, get_defined):
         userid = 'testuid'
         size = '4g'
-        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+        sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
                              u'COMMAND DEF STOR RESERVED 61440M',
                              u'CPU 00 BASE',
@@ -2341,7 +2341,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_resize_memory_increase(self, replace_def, lock_def, get_def):
         userid = 'testuid'
         size = '10240M'
-        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+        sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
                              u'COMMAND DEF STOR RESERVED 61440M',
                              u'CPU 00 BASE',
@@ -2354,7 +2354,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         self.assertEqual(action, 1)
         get_def.assert_called_once_with(userid)
         lock_def.assert_called_once_with(userid)
-        new_entry = ("USER T9430060 LBYONLY 10240M 64G G\n"
+        new_entry = ("USER TESTUID LBYONLY 10240M 64G G\n"
                      "INCLUDE OSDFLT\n"
                      "COMMAND DEF STOR RESERVED 55296M\n"
                      "CPU 00 BASE\n"
@@ -2368,7 +2368,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_resize_memory_decrease(self, replace_def, lock_def, get_def):
         userid = 'testuid'
         size = '2g'
-        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+        sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
                              u'COMMAND DEF STOR RESERVED 61440M',
                              u'CPU 00 BASE',
@@ -2381,7 +2381,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         self.assertEqual(action, 1)
         get_def.assert_called_once_with(userid)
         lock_def.assert_called_once_with(userid)
-        new_entry = ("USER T9430060 LBYONLY 2048M 64G G\n"
+        new_entry = ("USER TESTUID LBYONLY 2048M 64G G\n"
                      "INCLUDE OSDFLT\n"
                      "COMMAND DEF STOR RESERVED 63488M\n"
                      "CPU 00 BASE\n"
@@ -2395,7 +2395,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     def test_resize_memory_lock_failed(self, replace_def, lock_def, get_def):
         userid = 'testuid'
         size = '2g'
-        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+        sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
                              u'COMMAND DEF STOR RESERVED 61440M',
                              u'CPU 00 BASE',
@@ -2417,7 +2417,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                                           get_def):
         userid = 'testuid'
         size = '2g'
-        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+        sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
                              u'COMMAND DEF STOR RESERVED 61440M',
                              u'CPU 00 BASE',
@@ -2430,7 +2430,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                           self._smutclient.resize_memory, userid, size)
         get_def.assert_called_once_with(userid)
         lock_def.assert_called_once_with(userid)
-        new_entry = ("USER T9430060 LBYONLY 2048M 64G G\n"
+        new_entry = ("USER TESTUID LBYONLY 2048M 64G G\n"
                      "INCLUDE OSDFLT\n"
                      "COMMAND DEF STOR RESERVED 63488M\n"
                      "CPU 00 BASE\n"
@@ -2441,7 +2441,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smutclient.SMUTClient, 'get_user_direct')
     def test_get_defined_memory(self, get_user_direct):
         userid = 'testuid'
-        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+        sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
                              u'COMMAND DEF STOR RESERVED 61440M',
                              u'CPU 00 BASE',
@@ -2459,7 +2459,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smutclient.SMUTClient, 'get_user_direct')
     def test_get_defined_memory_reserved_not_defined(self, get_user_direct):
         userid = 'testuid'
-        sample_definition = [u'USER T9430060 LBYONLY 4096M 64G G',
+        sample_definition = [u'USER TESTUID LBYONLY 4096M 64G G',
                              u'INCLUDE OSDFLT',
                              u'CPU 00 BASE',
                              u'IPL 0100',
@@ -2476,7 +2476,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_replace_user_direct_err(self, req):
         userid = 'testuid'
-        user_entry = [u'USER T9430060 LBYONLY 4096M 64G G',
+        user_entry = [u'USER TESTUID LBYONLY 4096M 64G G',
                      u'INCLUDE OSDFLT',
                      u'COMMAND DEF STOR RESERVED 61440M',
                      u'CPU 00 BASE',
@@ -2487,3 +2487,162 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         self.assertRaises(exception.SDKSMUTRequestFailed,
                           self._smutclient._replace_user_direct, userid,
                           user_entry)
+
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    def test_get_active_memory(self, execute_cmd):
+        userid = 'testuid'
+        sample_lsmem = [u'Address Range                          Size (MB)  \
+                        State    Removable  Device',
+                        u'==================================================\
+                        =============================',
+                        u'0x0000000000000000-0x000000000fffffff        256  \
+                        online   no         0-1',
+                        u'0x0000000010000000-0x000000003fffffff        768  \
+                        online   yes        2-7',
+                        u'0x0000000040000000-0x000000007fffffff       1024  \
+                        online   no         8-15',
+                        u'0x0000000080000000-0x00000000ffffffff       2048  \
+                        online   yes        16-31',
+                        u'0x0000000100000000-0x0000000fffffffff      61440  \
+                        offline  -          32-511',
+                        u'',
+                        u'Memory device size  : 128 MB',
+                        u'Memory block size   : 256 MB',
+                        u'Total online memory : 4096 MB',
+                        u'Total offline memory: 61440 MB'
+                        ]
+        execute_cmd.return_value = sample_lsmem
+        active_mem = self._smutclient._get_active_memory(userid)
+        self.assertEqual(active_mem, 4096)
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_active_memory')
+    @mock.patch.object(smutclient.SMUTClient, 'resize_memory')
+    def test_live_resize_memory_less(self, resize_mem, get_active_mem):
+        userid = 'testuid'
+        req_mem = "1g"
+        get_active_mem.return_value = 2048
+        self.assertRaises(exception.SDKConflictError,
+                          self._smutclient.live_resize_memory, userid,
+                          req_mem)
+        resize_mem.assert_not_called()
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_active_memory')
+    @mock.patch.object(smutclient.SMUTClient, 'resize_memory')
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    def test_live_resize_memory_equal(self, exec_cmd, resize_mem,
+                                      get_active_mem):
+        userid = 'testuid'
+        req_mem = "2g"
+        get_active_mem.return_value = 2048
+        resize_mem.return_value = (1, 2048, 65536, [])
+        self._smutclient.live_resize_memory(userid, req_mem)
+        resize_mem.assert_called_once_with(userid, req_mem)
+        exec_cmd.assert_not_called()
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_active_memory')
+    @mock.patch.object(smutclient.SMUTClient, 'resize_memory')
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_revert_user_direct')
+    def test_live_resize_memory_more(self, revert, exec_cmd, resize_mem,
+                                     get_active_mem):
+        userid = 'testuid'
+        req_mem = "4096m"
+        get_active_mem.return_value = 2048
+        resize_mem.return_value = (1, 2048, 65536, [])
+        exec_cmd.side_effect = ['', '']
+        self._smutclient.live_resize_memory(userid, req_mem)
+        resize_mem.assert_called_once_with(userid, req_mem)
+        def_standby_cmd = "vmcp def storage standby 2048M"
+        online_mem_cmd = "chmem -e 2048M"
+        exec_cmd.assert_has_calls([mock.call(userid, def_standby_cmd),
+                                   mock.call(userid, online_mem_cmd)])
+        revert.assert_not_called()
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_active_memory')
+    @mock.patch.object(smutclient.SMUTClient, 'resize_memory')
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_revert_user_direct')
+    def test_live_resize_memory_standby_failed(self, revert, exec_cmd,
+                                               resize_mem, get_active_mem):
+        userid = 'testuid'
+        req_mem = "4096m"
+        get_active_mem.return_value = 2048
+        sample_direct = [u'USER TESTUID LBYONLY 2048M 64G G',
+                         u'INCLUDE OSDFLT',
+                         u'COMMAND DEF STOR RESERVED 61440M',
+                         u'CPU 00 BASE',
+                         u'IPL 0100',
+                         u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                         u'']
+        resize_mem.return_value = (1, 2048, 65536, sample_direct)
+        exec_cmd.side_effect = exception.SDKSMUTRequestFailed({}, 'fake err')
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.live_resize_memory, userid,
+                          req_mem)
+        resize_mem.assert_called_once_with(userid, req_mem)
+        def_standby_cmd = "vmcp def storage standby 2048M"
+        exec_cmd.assert_called_with(userid, def_standby_cmd)
+        revert.assert_called_once_with(userid, sample_direct)
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_active_memory')
+    @mock.patch.object(smutclient.SMUTClient, 'resize_memory')
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_revert_user_direct')
+    def test_live_resize_memory_standby_failed_no_revert(self, revert,
+                                                         exec_cmd,
+                                                         resize_mem,
+                                                         get_active_mem):
+        userid = 'testuid'
+        req_mem = "4096m"
+        get_active_mem.return_value = 2048
+        sample_direct = [u'USER TESTUID LBYONLY 4096M 64G G',
+                         u'INCLUDE OSDFLT',
+                         u'COMMAND DEF STOR RESERVED 61440M',
+                         u'CPU 00 BASE',
+                         u'IPL 0100',
+                         u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                         u'']
+        resize_mem.return_value = (0, 4096, 65536, sample_direct)
+        exec_cmd.side_effect = [exception.SDKSMUTRequestFailed({}, 'fake err'),
+                                '']
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.live_resize_memory, userid,
+                          req_mem)
+        resize_mem.assert_called_once_with(userid, req_mem)
+        def_standby_cmd = "vmcp def storage standby 2048M"
+        exec_cmd.assert_called_with(userid, def_standby_cmd)
+        revert.assert_not_called()
+
+    @mock.patch.object(smutclient.SMUTClient, '_get_active_memory')
+    @mock.patch.object(smutclient.SMUTClient, 'resize_memory')
+    @mock.patch.object(smutclient.SMUTClient, 'execute_cmd')
+    @mock.patch.object(smutclient.SMUTClient, '_revert_user_direct')
+    def test_live_resize_memory_online_failed(self, revert,
+                                              exec_cmd,
+                                              resize_mem,
+                                              get_active_mem):
+        userid = 'testuid'
+        req_mem = "4096m"
+        get_active_mem.return_value = 2048
+        sample_direct = [u'USER TESTUID LBYONLY 4096M 64G G',
+                         u'INCLUDE OSDFLT',
+                         u'COMMAND DEF STOR RESERVED 61440M',
+                         u'CPU 00 BASE',
+                         u'IPL 0100',
+                         u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                         u'']
+        resize_mem.return_value = (1, 4096, 65536, sample_direct)
+        exec_cmd.side_effect = ['',
+                                exception.SDKSMUTRequestFailed({}, 'fake err'),
+                                '']
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smutclient.live_resize_memory, userid,
+                          req_mem)
+        resize_mem.assert_called_once_with(userid, req_mem)
+        def_standby_cmd = "vmcp def storage standby 2048M"
+        online_mem_cmd = "chmem -e 2048M"
+        revert_standby_cmd = "vmcp def storage standby 0M"
+        exec_cmd.assert_has_calls([mock.call(userid, def_standby_cmd),
+                                   mock.call(userid, online_mem_cmd),
+                                   mock.call(userid, revert_standby_cmd)])
+        revert.assert_called_once_with(userid, sample_direct)
