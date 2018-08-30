@@ -2988,6 +2988,7 @@ class SMUTClient(object):
         except exception.SDKSMUTRequestFailed as e:
             # ignore the "already locked" error
             if ((e.results['rc'] == 400) and (e.results['rs'] == 12)):
+                LOG.debug("Image is already unlocked.")
                 pass
             else:
                 msg = ("Lock definition of guest '%s' failed with"
@@ -3097,7 +3098,7 @@ class SMUTClient(object):
         LOG.debug("User directory reverted successfully for guest '%s'." %
                  userid)
 
-    def _get_active_memory_size(self, userid):
+    def _get_active_memory(self, userid):
         # Return an integer value representing the active memory size in mb
         output = self.execute_cmd(userid, "lsmem")
         # cmd output contains following line:
@@ -3124,7 +3125,7 @@ class SMUTClient(object):
         # If request size is smaller than the current size, then report
         # error and exit immediately.
         size = int(zvmutils.convert_to_mb(memory))
-        active_size = self._get_active_memory_size(userid)
+        active_size = self._get_active_memory(userid)
         if active_size > size:
             LOG.error("Failed to live resize memory of guest: %(uid)s, "
                       "current active memory size: %(cur)im is greater than "
