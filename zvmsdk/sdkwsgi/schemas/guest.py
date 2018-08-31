@@ -207,7 +207,7 @@ capture = {
 }
 
 
-live_resize_cpus = {
+resize_cpus = {
     'type': 'object',
     'properties': {
         'cpu_cnt': parameter_types.max_cpu,
@@ -217,12 +217,12 @@ live_resize_cpus = {
 }
 
 
-resize_cpus = {
+resize_mem = {
     'type': 'object',
     'properties': {
-        'cpu_cnt': parameter_types.max_cpu,
+        'size': parameter_types.max_mem,
     },
-    'required': ['cpu_cnt'],
+    'required': ['size'],
     'additionalProperties': False,
 }
 

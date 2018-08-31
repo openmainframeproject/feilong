@@ -887,6 +887,88 @@ Resize CPUs of the guest.
    - The target guest can be in either 'on' or 'off' status, the definition change would
      take into effects after logoff and re-logon (reset).
 
+Live resize memory of guest
+---------------------------
+
+**POST /guests/{userid}/action**
+
+Live resize memory of the guest.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - action: action_live_resize_mem_of_guest
+  - size: mem_size
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_live_resize_mem_req.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. note::
+
+   - Currently only increasing memory size is supported, decreasing is not supported.
+   - The guest to be live resized must be active and managed by z/VM Cloud Connector.
+   - If live resize finished successfully, both the active memory and the initial memory
+     defined in user directory would be updated to the requested size so that the change
+     would persist even after the guest is restarted.
+   - If requested memory size is smaller than the current active memory, then the API
+     would return error immediately since lively decrease memory size is not supported.
+   - If requested memory size is larger than the defined initial memory in user directory,
+     this API would increase the initial memory defined in user directory to requested size.
+     Otherwise, this API would decrease the memory in user directory to the requested
+     size.
+   - The resize memory size can't exceed the maximum memory defined in user directory.
+   - The maximum memory size is defined when the guest is created. It is set by the configuration
+     "user_default_max_memory" in [zvm] section and can be overriden by the parameter "max_mem" when
+     creating the guest. eg, the following configuration would define the default maximum memory size
+     as 64G.
+
+     .. code-block:: text
+
+         [zvm]
+         user_default_max_memory=64g
+
+Resize memory of guest
+----------------------
+
+**POST /guests/{userid}/action**
+
+Resize memory of the guest.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - action: action_resize_mem_of_guest
+  - size: mem_size
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_resize_mem_req.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. note::
+
+   - Both increasing and decreasing memory size are supported.
+   - The target guest can be in either 'on' or 'off' status, the definition change would
+     take into effects after logoff and re-logon (reset).
+
 Deploy guest
 ------------
 

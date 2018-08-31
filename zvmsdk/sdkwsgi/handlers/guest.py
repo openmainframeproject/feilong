@@ -286,7 +286,15 @@ class VMAction(object):
                                 userid, destination, parms, operation)
         return info
 
-    @validation.schema(guest.live_resize_cpus)
+    @validation.schema(guest.resize_cpus)
+    def resize_cpus(self, userid, body):
+        cpu_cnt = body['cpu_cnt']
+        info = self.client.send_request('guest_resize_cpus',
+                                        userid, cpu_cnt)
+
+        return info
+
+    @validation.schema(guest.resize_cpus)
     def live_resize_cpus(self, userid, body):
         cpu_cnt = body['cpu_cnt']
         info = self.client.send_request('guest_live_resize_cpus',
@@ -294,11 +302,19 @@ class VMAction(object):
 
         return info
 
-    @validation.schema(guest.resize_cpus)
-    def resize_cpus(self, userid, body):
-        cpu_cnt = body['cpu_cnt']
-        info = self.client.send_request('guest_resize_cpus',
-                                        userid, cpu_cnt)
+    @validation.schema(guest.resize_mem)
+    def resize_mem(self, userid, body):
+        size = body['size']
+        info = self.client.send_request('guest_resize_mem',
+                                        userid, size)
+
+        return info
+
+    @validation.schema(guest.resize_mem)
+    def live_resize_mem(self, userid, body):
+        size = body['size']
+        info = self.client.send_request('guest_live_resize_mem',
+                                        userid, size)
 
         return info
 
