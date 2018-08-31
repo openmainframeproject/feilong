@@ -22,6 +22,30 @@
       "revId": "25395f2f81f97dce9ef5d22b75d6293f1d5a3da1",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5bf501e9_fa311ea7",
+        "filename": "zvmsdk/smutclient.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 2992,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-08-31T02:45:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8f266900_c6e3b402",
+      "range": {
+        "startLine": 2992,
+        "startChar": 16,
+        "endLine": 2992,
+        "endChar": 20
+      },
+      "revId": "25395f2f81f97dce9ef5d22b75d6293f1d5a3da1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
