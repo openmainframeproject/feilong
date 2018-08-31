@@ -360,6 +360,27 @@ cpu_cnt:
   in: body
   required: true
   type: integer
+action_live_resize_mem_of_guest:
+  description: |
+    Take ``live_resize_mem`` action on guest.
+  in: body
+  required: true
+  type: string
+action_resize_mem_of_guest:
+  description: |
+    Take ``resize_mem`` action on guest.
+  in: body
+  required: true
+  type: string
+mem_size:
+  description: |
+    The size of memory that the guest should have after resize.
+    The value should be specified by 1-4 bits of number suffixed by
+    either M (Megabytes) or G (Gigabytes). And the number should be
+    an integer, eg. 512M, 4G.
+  in: body
+  required: true
+  type: string
 vdev_guest:
   description: |
     nic device number, 1- to 4- hexadecimal digits.

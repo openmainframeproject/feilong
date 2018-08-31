@@ -637,11 +637,11 @@ class SDKAPI(object):
         LOG.info("%s successfully." % action)
 
     @check_guest_exist()
-    def guest_live_resize_mem(self, userid, memory):
+    def guest_live_resize_mem(self, userid, size):
         """Live resize memory of guests.
 
         :param userid: (str) the userid of the guest to be live resized
-        :param memory: (str) The memory size that the guest should have
+        :param size: (str) The memory size that the guest should have
                in available status after live resize.
                The value should be specified by 1-4 bits of number suffixed by
                either M (Megabytes) or G (Gigabytes). And the number should be
@@ -649,28 +649,28 @@ class SDKAPI(object):
 
         """
         action = "live resize guest '%s' to have '%s' memory" % (userid,
-                                                                 memory)
+                                                                 size)
         LOG.info("Begin to %s" % action)
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            self._vmops.live_resize_memory(userid, memory)
+            self._vmops.live_resize_memory(userid, size)
         LOG.info("%s successfully." % action)
 
     @check_guest_exist()
-    def guest_resize_mem(self, userid, memory):
+    def guest_resize_mem(self, userid, size):
         """Resize memory of guests.
 
         :param userid: (str) the userid of the guest to be resized
-        :param memory: (str) The memory size that the guest should have
+        :param size: (str) The memory size that the guest should have
                defined in user directory after resize.
                The value should be specified by 1-4 bits of number suffixed by
                either M (Megabytes) or G (Gigabytes). And the number should be
                an integer.
 
         """
-        action = "resize guest '%s' to have '%s' memory" % (userid, memory)
+        action = "resize guest '%s' to have '%s' memory" % (userid, size)
         LOG.info("Begin to %s" % action)
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            self._vmops.resize_memory(userid, memory)
+            self._vmops.resize_memory(userid, size)
         LOG.info("%s successfully." % action)
 
     @check_guest_exist()

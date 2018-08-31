@@ -242,6 +242,71 @@ class GuestActionsTest(SDKWSGITest):
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_resize_mem(self, mock_action, mock_userid):
+        self.req.body = '{"action": "resize_mem", "size": "4096m"}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_resize_mem',
+                                            FAKE_USERID, "4096m")
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_resize_mem_missing_param(self, mock_action, mock_userid):
+        self.req.body = '{"action": "resize_mem"}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_resize_mem_invalid_mem_1(self, mock_action,
+                                            mock_userid):
+        self.req.body = '{"action": "resize_mem", "size": "88888M"}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_resize_mem_invalid_mem_2(self, mock_action,
+                                            mock_userid):
+        self.req.body = '{"action": "resize_mem", "size": "123"}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_resize_cpus_invalid_mem_type(self, mock_action,
+                                                mock_userid):
+        self.req.body = '{"action": "resize_mem", "size": 1024}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        self.assertRaises(exception.ValidationError, guest.guest_action,
+                          self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_live_resize_mem(self, mock_action, mock_userid):
+        self.req.body = '{"action": "live_resize_mem", "size": "4G"}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_live_resize_mem',
+                                            FAKE_USERID, "4G")
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_deploy(self, mock_action,
                           mock_userid):
         self.req.body = """{"action": "deploy",
