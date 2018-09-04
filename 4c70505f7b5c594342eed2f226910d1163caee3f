@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "29e0119f_93c66d46",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-09-04T02:03:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4b6d501b_8a406b86",
+      "range": {
+        "startLine": 377,
+        "startChar": 23,
+        "endLine": 377,
+        "endChar": 26
+      },
+      "revId": "4c70505f7b5c594342eed2f226910d1163caee3f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d38bc502_91f0ec94",
         "filename": "doc/source/parameters.yaml",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2018-09-04T01:38:37Z",
       "side": 1,
       "message": "\"integer\" is better?",
+      "range": {
+        "startLine": 380,
+        "startChar": 6,
+        "endLine": 380,
+        "endChar": 18
+      },
+      "revId": "4c70505f7b5c594342eed2f226910d1163caee3f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7c32def_c6ca9c7d",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-09-04T02:03:06Z",
+      "side": 1,
+      "message": "I copied this from CP document, same meaning, I think. Anyway, I will change to integer.",
+      "parentUuid": "d38bc502_91f0ec94",
       "range": {
         "startLine": 380,
         "startChar": 6,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "2c7e21f3_ddccdbb3",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 895,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-09-04T02:03:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "48c7daf8_2bf45900",
+      "range": {
+        "startLine": 895,
+        "startChar": 0,
+        "endLine": 895,
+        "endChar": 31
+      },
+      "revId": "4c70505f7b5c594342eed2f226910d1163caee3f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c454c95b_5d5dbc4f",
         "filename": "doc/source/restapi.rst",
         "patchSetId": 1
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "3dd049fd_62b9bec6",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 932,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-09-04T02:03:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c454c95b_5d5dbc4f",
+      "range": {
+        "startLine": 932,
+        "startChar": 25,
+        "endLine": 932,
+        "endChar": 27
+      },
+      "revId": "4c70505f7b5c594342eed2f226910d1163caee3f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "38c20153_11d20a74",
         "filename": "doc/source/restapi.rst",
         "patchSetId": 1
@@ -114,6 +210,30 @@
       "revId": "4c70505f7b5c594342eed2f226910d1163caee3f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b937beb_caad4d55",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 945,
+      "author": {
+        "id": 1008926
+      },
+      "writtenOn": "2018-09-04T02:03:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "38c20153_11d20a74",
+      "range": {
+        "startLine": 945,
+        "startChar": 0,
+        "endLine": 945,
+        "endChar": 26
+      },
+      "revId": "4c70505f7b5c594342eed2f226910d1163caee3f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
