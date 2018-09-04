@@ -627,7 +627,7 @@ def invokeSMCLI(rh, api, parms, hideInLog=[]):
         smcliResp = subprocess.check_output(cmd + parms,
             close_fds=True)
         if isinstance(smcliResp, bytes):
-            smcliResp = bytes.decode(smcliResp)
+            smcliResp = bytes.decode(smcliResp, errors='replace')
 
         smcliResp = smcliResp.split('\n', 1)
         results['response'] = smcliResp[1]
