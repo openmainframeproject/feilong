@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "794d16f3_c48b22a2",
+        "filename": "smutLayer/vmUtils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 630,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-09-04T05:21:22Z",
+      "side": 1,
+      "message": "are we sure we can do this kind of ignore?\nor at least we need log some debug message here ?",
+      "range": {
+        "startLine": 630,
+        "startChar": 11,
+        "endLine": 630,
+        "endChar": 64
+      },
+      "revId": "b5def316a1dbaf4374ae5b9d8a4ed245d9c6c30b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
