@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4b6d501b_8a406b86",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-09-04T01:38:37Z",
+      "side": 1,
+      "message": "remove the second \"the\"",
+      "range": {
+        "startLine": 377,
+        "startChar": 23,
+        "endLine": 377,
+        "endChar": 26
+      },
+      "revId": "4c70505f7b5c594342eed2f226910d1163caee3f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d38bc502_91f0ec94",
+        "filename": "doc/source/parameters.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-09-04T01:38:37Z",
+      "side": 1,
+      "message": "\"integer\" is better?",
+      "range": {
+        "startLine": 380,
+        "startChar": 6,
+        "endLine": 380,
+        "endChar": 18
+      },
+      "revId": "4c70505f7b5c594342eed2f226910d1163caee3f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48c7daf8_2bf45900",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 895,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-09-04T01:38:37Z",
+      "side": 1,
+      "message": "sync with line 890",
+      "range": {
+        "startLine": 895,
+        "startChar": 0,
+        "endLine": 895,
+        "endChar": 31
+      },
+      "revId": "4c70505f7b5c594342eed2f226910d1163caee3f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c454c95b_5d5dbc4f",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 932,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-09-04T01:38:37Z",
+      "side": 1,
+      "message": "e.g.",
+      "range": {
+        "startLine": 932,
+        "startChar": 25,
+        "endLine": 932,
+        "endChar": 27
+      },
+      "revId": "4c70505f7b5c594342eed2f226910d1163caee3f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38c20153_11d20a74",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 945,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-09-04T01:38:37Z",
+      "side": 1,
+      "message": "shoud sync with line 940",
+      "range": {
+        "startLine": 945,
+        "startChar": 0,
+        "endLine": 945,
+        "endChar": 26
+      },
+      "revId": "4c70505f7b5c594342eed2f226910d1163caee3f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
