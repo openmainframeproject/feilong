@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "40bf55b1_64b1b71a",
+        "filename": "zvmsdk/tests/fvt/test_guest.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 897,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-09-05T01:52:44Z",
+      "side": 1,
+      "message": "the two cases duplicated?",
+      "range": {
+        "startLine": 886,
+        "startChar": 1,
+        "endLine": 897,
+        "endChar": 75
+      },
+      "revId": "9fd93cabd35e38a667e93830d5e6b637141f0482",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2dcf6db_06d767fe",
+        "filename": "zvmsdk/tests/fvt/test_guest.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 945,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-09-05T01:52:44Z",
+      "side": 1,
+      "message": "check memory",
+      "range": {
+        "startLine": 945,
+        "startChar": 25,
+        "endLine": 945,
+        "endChar": 41
+      },
+      "revId": "9fd93cabd35e38a667e93830d5e6b637141f0482",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c3eab1e_fbe8b63b",
+        "filename": "zvmsdk/tests/fvt/test_utils.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-09-05T01:52:44Z",
+      "side": 1,
+      "message": "It\u0027s ok to me to re-use zvmsdk.utils.convert_to_mb",
+      "range": {
+        "startLine": 37,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 36
+      },
+      "revId": "9fd93cabd35e38a667e93830d5e6b637141f0482",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
