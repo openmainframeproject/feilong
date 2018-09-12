@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import time
 from parameterized import parameterized
 from zvmsdk.tests.fvt import base
 from zvmsdk import config
@@ -72,6 +73,7 @@ class VolumeTestCase(base.ZVMConnectorBaseTestCase):
     def test_attach_detach_active_mode(self, case_name, userid, os_version):
         # active mode: power on guest
         self.utils.power_on_guest_until_reachable(userid)
+        time.sleep(10)
         # prepare connection_info
         connection_info = {'assigner_id': userid,
                            'zvm_fcp': CONF.tests.zvm_fcp,
@@ -82,13 +84,74 @@ class VolumeTestCase(base.ZVMConnectorBaseTestCase):
                            'mount_point': CONF.tests.mount_point}
         # attach volume
         resp = self.client.volume_attach(connection_info)
+        time.sleep(10)
         self.assertEqual(200, resp.status_code)
+        time.sleep(60)
         self.assertTrue(self.check_mount_result(userid))
         # detach volume
         resp = self.client.volume_detach(connection_info)
+        time.sleep(10)
         self.assertEqual(200, resp.status_code)
+        time.sleep(60)
         self.assertFalse(self.check_mount_result(userid))
 
-    def test_attach_detach_inactive_mode(self):
-        """No need to power on guest."""
-        pass
+    @parameterized.expand(TEST_USERID_LIST)
+    def test_attach_detach_inactive_mode(self, case_name,
+                                         userid, os_version):
+        self.utils.power_on_guest_until_reachable(userid)
+        time.sleep(10)
+        connection_info = {'assigner_id': userid,
+                           'zvm_fcp': CONF.tests.zvm_fcp,
+                           'os_version': os_version,
+                           'multipath': True,
+                           'target_wwpn': CONF.tests.target_wwpn,
+                           'target_lun': CONF.tests.target_lun,
+                           'mount_point': CONF.tests.mount_point}
+        # attach volume
+        self.utils.softstop_guest(userid)
+        time.sleep(10)
+        resp = self.client.volume_attach(connection_info)
+        time.sleep(10)
+        self.assertEqual(200, resp.status_code)
+        self.utils.power_on_guest_until_reachable(userid)
+        time.sleep(60)
+        self.assertTrue(self.check_mount_result(userid))
+        # detach volume
+        self.utils.softstop_guest(userid)
+        time.sleep(10)
+        resp = self.client.volume_detach(connection_info)
+        time.sleep(10)
+        self.assertEqual(200, resp.status_code)
+        self.utils.power_on_guest_until_reachable(userid)
+        time.sleep(60)
+        self.assertFalse(self.check_mount_result(userid))
+
+    @parameterized.expand(TEST_USERID_LIST)
+    def test_attach_detach_active_userid_not_exist(self, case_name, userid,
+                                                   os_version):
+        connection_info = {'assigner_id': 'dummy',
+                           'zvm_fcp': CONF.tests.zvm_fcp,
+                           'os_version': os_version,
+                           'multipath': True,
+                           'target_wwpn': CONF.tests.target_wwpn,
+                           'target_lun': CONF.tests.target_lun,
+                           'mount_point': CONF.tests.mount_point}
+        resp = self.client.volume_attach(connection_info)
+        self.assertEqual(404, resp.status_code)
+        resp = self.client.volume_detach(connection_info)
+        self.assertEqual(404, resp.status_code)
+
+    @parameterized.expand(TEST_USERID_LIST)
+    def test_attach_detach_inactive_userid_not_exist(self, case_name, userid,
+                                                     os_version):
+        connection_info = {'assigner_id': 'dummy',
+                           'zvm_fcp': CONF.tests.zvm_fcp,
+                           'os_version': os_version,
+                           'multipath': True,
+                           'target_wwpn': CONF.tests.target_wwpn,
+                           'target_lun': CONF.tests.target_lun,
+                           'mount_point': CONF.tests.mount_point}
+        resp = self.client.volume_attach(connection_info)
+        self.assertEqual(404, resp.status_code)
+        resp = self.client.volume_detach(connection_info)
+        self.assertEqual(404, resp.status_code)
