@@ -89,6 +89,61 @@ class VolumeTestCase(base.ZVMConnectorBaseTestCase):
         self.assertEqual(200, resp.status_code)
         self.assertFalse(self.check_mount_result(userid))
 
+    @parameterized.expand(TEST_USERID_LIST)
+    def test_attach_detach_active_userid_not_exist(self, case_name, userid,
+                                                   os_version):
+        connection_info = {'assigner_id': 'dummy',
+                           'zvm_fcp': CONF.tests.zvm_fcp,
+                           'os_version': os_version,
+                           'multipath': True,
+                           'target_wwpn': CONF.tests.target_wwpn,
+                           'target_lun': CONF.tests.target_lun,
+                           'mount_point': CONF.tests.mount_point}
+        resp = self.client.volume_attach(connection_info)
+        self.assertEqual(500, resp.status_code)
+
+    @parameterized.expand(TEST_USERID_LIST)
+    def test_attach_detach_active_wwpn_not_exist(self, case_name, userid,
+                                                 os_version):
+        connection_info = {'assigner_id': userid,
+                           'zvm_fcp': CONF.tests.zvm_fcp,
+                           'os_version': os_version,
+                           'multipath': True,
+                           'target_wwpn': '0x1234123412341234',
+                           'target_lun': CONF.tests.target_lun,
+                           'mount_point': CONF.tests.mount_point}
+        resp = self.client.volume_attach(connection_info)
+        self.assertEqual(500, resp.status_code)
+
+    @parameterized.expand(TEST_USERID_LIST)
+    def test_attach_detach_active_lun_not_exist(self, case_name, userid,
+                                                os_version):
+        connection_info = {'assigner_id': userid,
+                           'zvm_fcp': CONF.tests.zvm_fcp,
+                           'os_version': os_version,
+                           'multipath': True,
+                           'target_wwpn': CONF.tests.target_wwpn,
+                           'target_lun': '0x1234123412341234',
+                           'mount_point': CONF.tests.mount_point}
+        resp = self.client.volume_attach(connection_info)
+        self.assertEqual(500, resp.status_code)
+
+    @parameterized.expand(TEST_USERID_LIST)
+    def test_attach_detach_active_mode_userid_inactive(self, case_name,
+                                                       userid, os_version):
+        self.utils.power_on_guest_until_reachable(userid)
+        self.utils.softstop_guest(userid)
+        connection_info = {'assigner_id': userid,
+                           'zvm_fcp': CONF.tests.zvm_fcp,
+                           'os_version': os_version,
+                           'multipath': True,
+                           'target_wwpn': CONF.tests.target_wwpn,
+                           'target_lun': CONF.tests.target_lun,
+                           'mount_point': CONF.tests.mount_point}
+        self.assertRaises(NotImplementedError,
+                          self.client.volume_attach,
+                          connection_info)
+
     def test_attach_detach_inactive_mode(self):
         """No need to power on guest."""
         pass

@@ -469,6 +469,7 @@ class FCPVolumeManager(object):
         target_wwpn = connection_info['target_wwpn']
         target_lun = connection_info['target_lun']
         assigner_id = connection_info['assigner_id']
+        assigner_id = assigner_id.upper()
         multipath = connection_info['multipath']
         os_version = connection_info['os_version']
         mount_point = connection_info['mount_point']
@@ -516,6 +517,7 @@ class FCPVolumeManager(object):
         target_wwpn = connection_info['target_wwpn']
         target_lun = connection_info['target_lun']
         assigner_id = connection_info['assigner_id']
+        assigner_id = assigner_id.upper()
         multipath = connection_info['multipath']
         os_version = connection_info['os_version']
         mount_point = connection_info['mount_point']
