@@ -29,6 +29,7 @@ class SDKHostOpsTestCase(base.SDKTestCase):
     @mock.patch("zvmsdk.smutclient.SMUTClient.get_host_info")
     def test_get_host_info(self, get_host_info, diskpool_get_info):
         get_host_info.return_value = {
+            "zcc_userid": "FAKEUSER",
             "zvm_host": "FAKENODE",
             "zhcp": "fakehcp.fake.com",
             "cec_vendor": "FAKE",

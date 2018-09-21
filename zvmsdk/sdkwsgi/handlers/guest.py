@@ -278,12 +278,15 @@ class VMAction(object):
 
     @validation.schema(guest.live_migrate_vm)
     def live_migrate_vm(self, userid, body):
+        # dest_zcc_userid default as ''
+        dest_zcc_userid = body.get('dest_zcc_userid', '')
         destination = body['destination']
-        operation = body['operation']
+        operation = body.get('operation', {})
         parms = body['parms']
 
         info = self.client.send_request('guest_live_migrate',
-                                userid, destination, parms, operation)
+                                userid, dest_zcc_userid, destination,
+                                parms, operation)
         return info
 
     @validation.schema(guest.resize_cpus)
