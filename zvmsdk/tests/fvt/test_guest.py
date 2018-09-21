@@ -1341,18 +1341,18 @@ class GuestHandlerTestCaseWithMultipleDeployedGuest(GuestHandlerBase):
         self.assertTrue(self.utils.wait_until_guest_in_power_state(
                                                 userid, "on"))
         # live migrate
-        resp_test1 = self.client.guest_live_migrate_vm(userid, "opnstk1",
-                                                     {}, "test")
-        resp_test2 = self.client.guest_live_migrate_vm(userid, "opnstk2",
-                                                     {}, "test")
+        resp_test1 = self.client.guest_live_migrate_vm(userid, "OPNCLOUD",
+                                         "opnstk1", {}, "test")
+        resp_test2 = self.client.guest_live_migrate_vm(userid, "OPNCLOUD",
+                                         "opnstk2", {}, "test")
 
         if resp_test1.status_code == 200:
-            resp = self.client.guest_live_migrate_vm(userid, "opnstk1",
-                                                     {}, "move")
+            resp = self.client.guest_live_migrate_vm(userid, "OPNCLOUD",
+                                         "opnstk1", {}, "move")
             self.assertEqual(200, resp.status_code)
         if resp_test2.status_code == 200:
-            resp = self.client.guest_live_migrate_vm(userid, "opnstk2",
-                                                     {}, "move")
+            resp = self.client.guest_live_migrate_vm(userid, "OPNCLOUD",
+                                         "opnstk2", {}, "move")
             self.assertEqual(200, resp.status_code)
 
         self.client.guest_delete(userid)

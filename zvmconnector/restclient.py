@@ -230,9 +230,10 @@ def req_guest_get_console_output(start_index, *args, **kwargs):
 def req_guest_live_migrate(start_index, *args, **kwargs):
     url = '/guests/%s/action'
     body = {'action': 'live_migrate_vm',
-            'destination': args[start_index],
-            'parms': args[start_index + 1],
-            'operation': args[start_index + 2]}
+            'zcc_userid': args[start_index],
+            'destination': args[start_index + 1],
+            'parms': args[start_index + 2],
+            'operation': args[start_index + 3]}
     return url, body
 
 
@@ -595,7 +596,7 @@ DATABASE = {
         'request': req_guest_pre_migrate},
     'guest_live_migrate': {
         'method': 'POST',
-        'args_required': 4,
+        'args_required': 5,
         'params_path': 1,
         'request': req_guest_live_migrate},
     'guest_live_resize_cpus': {
