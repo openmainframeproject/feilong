@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c165691a_42a59ab8",
+        "filename": "zvmsdk/config.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-09-21T06:45:50Z",
+      "side": 1,
+      "message": "you need add help on why you want to use this option",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 20
+      },
+      "revId": "74ed3a44baf58a86b04e9bdb5dab1dd61730f12c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3da2167a_e4516146",
+        "filename": "zvmsdk/volumeop.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 575,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-09-21T06:45:50Z",
+      "side": 1,
+      "message": "I don\u0027t think we need this as we plan to use it for more drivers and \nzcc should not talk cinder",
+      "range": {
+        "startLine": 575,
+        "startChar": 8,
+        "endLine": 575,
+        "endChar": 74
+      },
+      "revId": "74ed3a44baf58a86b04e9bdb5dab1dd61730f12c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e675e65_6b18d10e",
+        "filename": "zvmsdk/volumeop.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 601,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-09-21T06:45:50Z",
+      "side": 1,
+      "message": "we should have a way to get the host name\nso no need for this",
+      "range": {
+        "startLine": 601,
+        "startChar": 7,
+        "endLine": 601,
+        "endChar": 36
+      },
+      "revId": "74ed3a44baf58a86b04e9bdb5dab1dd61730f12c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
