@@ -24,7 +24,7 @@ from zvmsdk.tests.fvt import base
 from zvmsdk.tests.fvt import test_utils
 from zvmsdk import config
 from zvmsdk import utils
-
+from zvmsdk import database
 
 CONF = config.CONF
 TEST_IMAGE_LIST = test_utils.TEST_IMAGE_LIST
@@ -61,6 +61,7 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
         self.userid = self.utils.generate_test_userid()
         self.test_vsw = "RESTVSW1"
         self.test_vsw2 = "RESTVSW2"
+        self._GuestDbOperator = database.GuestDbOperator()
 
     def _check_CPU_MEM(self, userid, cpu_cnt=None, cpu_cnt_live=None,
                        memory_size=None,
@@ -1341,20 +1342,18 @@ class GuestHandlerTestCaseWithMultipleDeployedGuest(GuestHandlerBase):
         self.assertTrue(self.utils.wait_until_guest_in_power_state(
                                                 userid, "on"))
         # live migrate
-        resp_test1 = self.client.guest_live_migrate_vm(userid, "opnstk1",
-                                                     {}, "test")
-        resp_test2 = self.client.guest_live_migrate_vm(userid, "opnstk2",
-                                                     {}, "test")
+        resp_test1 = self.client.guest_live_migrate_vm(userid, "LEON0001",
+                                         "opnstk2", {}, "test")
 
         if resp_test1.status_code == 200:
-            resp = self.client.guest_live_migrate_vm(userid, "opnstk1",
-                                                     {}, "move")
-            self.assertEqual(200, resp.status_code)
-        if resp_test2.status_code == 200:
-            resp = self.client.guest_live_migrate_vm(userid, "opnstk2",
-                                                     {}, "move")
+            resp = self.client.guest_live_migrate_vm(userid, "LEON0001",
+                                         "opnstk2", {}, "move")
             self.assertEqual(200, resp.status_code)
 
+        comments = self._GuestDbOperator.get_comments_by_userid(userid)
+        comments['migrated'] = 0
+        self._GuestDbOperator.update_guest_by_userid(userid,
+                                                    comments=comments)
         self.client.guest_delete(userid)
 
     @parameterized.expand(TEST_USERID_LIST)

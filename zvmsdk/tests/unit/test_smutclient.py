@@ -694,7 +694,8 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_get_host_info(self, smut_req):
-        resp = ['z/VM Host: OPNSTK2',
+        resp = ['ZCC USERID: OPNCLOUD',
+                'z/VM Host: OPNSTK2',
                 'Architecture: s390x',
                 'CEC Vendor: IBM',
                 'CEC Model: 2817',
@@ -721,6 +722,7 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
                   'lpar_memory_offline': '0',
                   'lpar_memory_total': '50G',
                   'lpar_memory_used': '36.5G',
+                  'zcc_userid': 'OPNCLOUD',
                   'zvm_host': 'OPNSTK2'}
         host_info = self._smutclient.get_host_info()
 
