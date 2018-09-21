@@ -12,7 +12,7 @@ Quickstart
 Please refer to `Quick Start Guide <https://cloudlib4zvm.readthedocs.io/en/latest/quickstart.html>`_.
 
 Documentation
-==========
+=============
 Please refer to `Documentation of z/VM Cloud Connector <https://cloudlib4zvm.readthedocs.io/en/latest/index.html>`_.
 
 License
