@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c487bf2c_7feea226",
+        "filename": "doc/source/restapi.rst",
+        "patchSetId": 10
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-09-21T06:23:08Z",
+      "side": 1,
+      "message": "this should not be in the doc",
+      "range": {
+        "startLine": 341,
+        "startChar": 29,
+        "endLine": 341,
+        "endChar": 70
+      },
+      "revId": "6e34beb5daf284796c66300fea2e593b41b87628",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b61bf48c_d09f7709",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 560,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-09-21T06:23:08Z",
+      "side": 1,
+      "message": "why you add this ??same to above",
+      "range": {
+        "startLine": 559,
+        "startChar": 8,
+        "endLine": 560,
+        "endChar": 47
+      },
+      "revId": "6e34beb5daf284796c66300fea2e593b41b87628",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
