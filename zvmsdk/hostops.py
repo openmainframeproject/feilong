@@ -43,6 +43,7 @@ class HOSTOps(object):
         host_info = {}
 
         with zvmutils.expect_invalid_resp_data(inv_info):
+            host_info['zcc_userid'] = inv_info['zcc_userid']
             host_info['zvm_host'] = inv_info['zvm_host']
             host_info['vcpus'] = int(inv_info['lpar_cpu_total'])
             host_info['vcpus_used'] = int(inv_info['lpar_cpu_used'])
