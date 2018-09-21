@@ -22,6 +22,7 @@ DEFAULT_EPH_DISK_FMT = 'ext3'
 DISK_FUNC_NAME = 'setupDisk'
 
 RINV_HOST_KEYWORDS = {
+    "zcc_userid": "ZCC USERID"
     "zvm_host": "z/VM Host:",
     "zhcp": "zHCP:",
     "cec_vendor": "CEC Vendor:",
