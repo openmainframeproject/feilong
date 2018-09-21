@@ -25,6 +25,7 @@ from zvmsdk import log
 from zvmsdk import monitor
 from zvmsdk import networkops
 from zvmsdk import vmops
+from zvmsdk import smutclient
 from zvmsdk import volumeop
 from zvmsdk import database
 from zvmsdk import utils as zvmutils
@@ -70,6 +71,7 @@ class SDKAPI(object):
 
     def __init__(self, **kwargs):
         self._vmops = vmops.get_vmops()
+        self._smutclient = smutclient.get_smutclient()
         self._hostops = hostops.get_hostops()
         self._networkops = networkops.get_networkops()
         self._imageops = imageops.get_imageops()
@@ -468,11 +470,13 @@ class SDKAPI(object):
             LOG.info("Guest %s registered." % userid)
 
     @check_guest_exist()
-    def guest_live_migrate(self, userid, destination, parms, action):
+    def guest_live_migrate(self, userid, zcc_userid, destination,
+                                 parms, action):
         """Move an eligible, running z/VM(R) virtual machine transparently
         from one z/VM system to another within an SSI cluster.
 
         :param userid: (str) the userid of the vm to be relocated or tested
+        :param zcc_userid: (str) the userid of zcc on destination
         :param destination: (str) the SSI name of the z/VM system to which
                the specified vm will be relocated or tested.
         :param parms: (dict) a list of params for relocation.
@@ -501,6 +505,14 @@ class SDKAPI(object):
 
         """
         if action.lower() == 'move':
+            # Add authorization for new zcc.
+            self._smutclient.guest_authorize_iucv_client(userid, zcc_userid)
+            cmd = 'systemctl zvmguestconfig restart'
+            rc, output = zvmutils.execute(cmd)
+            if rc != 0:
+                err_msg = ("Restart zvmguestconfig failed")
+                LOG.error(err_msg)
+            # Live_migrate the guest.
             operation = "Move guest '%s' to SSI '%s'" % (userid, destination)
             with zvmutils.log_and_reraise_sdkbase_error(operation):
                 self._vmops.live_migrate_vm(userid, destination,

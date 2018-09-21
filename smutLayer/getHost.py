@@ -279,6 +279,7 @@ def getGeneralInfo(rh):
             close_fds=True,
             stderr=subprocess.STDOUT)
         host = bytes.decode(host)
+        userid = host.split()[0]
         host = host.split()[2]
     except subprocess.CalledProcessError as e:
         msg = msgs.msg['0405'][1] % (modId, "Hypervisor Name",
@@ -410,7 +411,8 @@ def getGeneralInfo(rh):
         rh.updateResults(msgs.msg['0421'][0])
 
     # Create output string
-    outstr = "z/VM Host: " + host
+    outstr = "ZCC USERID: " + userid
+    outstr += "\nz/VM Host: " + host
     outstr += "\nArchitecture: " + arch
     outstr += "\nCEC Vendor: " + cecVendor
     outstr += "\nCEC Model: " + cecModel
