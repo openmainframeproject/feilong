@@ -396,8 +396,8 @@ host_info:
 disk_pool:
   description: |
     The pool name to get pool information from
-  in: body
-  required: true
+  in: path
+  required: false
   type: string
 disk_info_total:
   description: |
