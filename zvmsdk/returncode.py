@@ -131,6 +131,7 @@ errors = {
                2: ("Invalid API arg type, API: %(api)s, expected types: "
                    "'%(expected)s', input types: '%(inputtypes)s'"),
                3: ("Invalid API arg format, error: %(msg)s"),
+               4: ("Missing required option: %(msg)s"),
                },
               "Invalid API Input",
              ],

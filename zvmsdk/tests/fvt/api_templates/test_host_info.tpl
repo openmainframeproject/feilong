@@ -18,6 +18,7 @@
               "architecture": "s390x"
          },
          "disk_total": 3623,
+         "zcc_userid": "ZCCUID",
          "hypervisor_hostname": "OPNSTK2",
          "hypervisor_version": 640,
          "disk_used": 566,

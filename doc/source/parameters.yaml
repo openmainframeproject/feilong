@@ -340,6 +340,59 @@ action_get_console_guest:
   in: body
   required: true
   type: string
+action_live_migrate_guest:
+  description: |
+    Take ``live_migrate_vm`` action on guest.
+  in: body
+  required: true
+  type: string
+dest_zcc_userid:
+  description: |
+     The userid of zcc on destination node.
+     Required if ``lgr_action`` equals ``move``.
+  in: body
+  required: false
+  type: string
+lgr_destination:
+  description: |
+     The system ID of the z/VM system to which
+     the specified vm will be relocated or tested.
+  in: body
+  required: true
+  type: string
+lgr_parms:
+  description: |
+     A dictionary of options for relocation.
+  in: body
+  required: false
+  type: dict
+lgr_action:
+  description: |
+     Indicates the action is ``test`` or ``move`` for the live migration.
+     ``test`` will test the guest is eligible to live migrate or not.
+     ``move`` will live migrate the guest immediately.
+  in: body
+  required: true
+  type: string
+action_register_guest:
+  description: |
+    Take ``register_vm`` action on guest.
+  in: body
+  required: true
+  type: string
+guest_register_meta:
+  description: |
+    The metadata of the vm to be relocated.
+  in: body
+  required: true
+  type: string
+guest_register_net_set:
+  description: |
+    Guest network configured or not.
+    ``1`` means configured, ``0`` means not configured. Default as ``1``.
+  in: body
+  required: true
+  type: string
 action_live_resize_cpus_of_guest:
   description: |
     Take ``live_resize_cpus`` action on guest.

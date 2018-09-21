@@ -824,6 +824,59 @@ Get console output of guest.
    statment "COMMAND SP CONS * START" to the profile that used to deploy guest
    vm, otherwise no console log collected for the guest vm.
 
+Live migration of guest
+-----------------------
+
+**POST /guests/{userid}/action**
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - action: action_live_migrate_guest
+  - dest_zcc_userid: dest_zcc_userid
+  - destination: lgr_destination
+  - parms: lgr_parms
+  - lgr_action: lgr_action
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_live_migrate.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+Guest register
+--------------
+
+**POST /guests/{userid}/action**
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - action: action_register_guest
+  - meta: guest_register_meta
+  - net_set: guest_register_net_set  
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_register.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+
 Live resize CPUs of guest
 -------------------------
 

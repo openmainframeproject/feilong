@@ -25,6 +25,7 @@ from zvmsdk import log
 from zvmsdk import monitor
 from zvmsdk import networkops
 from zvmsdk import vmops
+from zvmsdk import smutclient
 from zvmsdk import volumeop
 from zvmsdk import database
 from zvmsdk import utils as zvmutils
@@ -70,6 +71,7 @@ class SDKAPI(object):
 
     def __init__(self, **kwargs):
         self._vmops = vmops.get_vmops()
+        self._smutclient = smutclient.get_smutclient()
         self._hostops = hostops.get_hostops()
         self._networkops = networkops.get_networkops()
         self._imageops = imageops.get_imageops()
@@ -468,14 +470,16 @@ class SDKAPI(object):
             LOG.info("Guest %s registered." % userid)
 
     @check_guest_exist()
-    def guest_live_migrate(self, userid, destination, parms, action):
+    def guest_live_migrate(self, userid, dest_zcc_userid, destination,
+                           parms, lgr_action):
         """Move an eligible, running z/VM(R) virtual machine transparently
         from one z/VM system to another within an SSI cluster.
 
         :param userid: (str) the userid of the vm to be relocated or tested
-        :param destination: (str) the SSI name of the z/VM system to which
+        :param dest_zcc_userid: (str) the userid of zcc on destination
+        :param destination: (str) the system ID of the z/VM system to which
                the specified vm will be relocated or tested.
-        :param parms: (dict) a list of params for relocation.
+        :param parms: (dict) a dictionary of options for relocation.
                It has one dictionary that contains some of the below keys:
                {'maxtotal': i,
                 'maxquiesce': i,
@@ -496,27 +500,41 @@ class SDKAPI(object):
                 which causes the VMRELOCATE command
                 to do one early pass through virtual machine storage
                 and then go directly to the quiesce stage.
-
-        :param action: (str) indicates the action is move or test for vm.
+        :param lgr_action: (str) indicates the action is move or test for vm.
 
         """
-        if action.lower() == 'move':
+        if lgr_action.lower() == 'move':
+            if dest_zcc_userid == '':
+                errmsg = ("'dest_zcc_userid' is required if the value of "
+                          "'lgr_action' equals 'move'.")
+                LOG.error(errmsg)
+                raise exception.SDKMissingRequiredInput(msg=errmsg)
+
+            # Add authorization for new zcc.
+            cmd = ('echo -n %s > /etc/iucv_authorized_userid\n' %
+                                                    dest_zcc_userid)
+            rc = self._smutclient.execute_cmd(userid, cmd)
+            if rc != 0:
+                err_msg = ("Add authorization for new zcc failed")
+                LOG.error(err_msg)
+
+            # Live_migrate the guest
             operation = "Move guest '%s' to SSI '%s'" % (userid, destination)
             with zvmutils.log_and_reraise_sdkbase_error(operation):
                 self._vmops.live_migrate_vm(userid, destination,
-                                             parms, action)
+                                            parms, lgr_action)
             comments = self._GuestDbOperator.get_comments_by_userid(userid)
             comments['migrated'] = 1
             action = "update guest '%s' in database" % userid
             with zvmutils.log_and_reraise_sdkbase_error(action):
                 self._GuestDbOperator.update_guest_by_userid(userid,
                                                     comments=comments)
-        if action.lower() == 'test':
+        if lgr_action.lower() == 'test':
             operation = "Test move guest '%s' to SSI '%s'" % (userid,
                                                     destination)
             with zvmutils.log_and_reraise_sdkbase_error(operation):
                 self._vmops.live_migrate_vm(userid, destination,
-                                             parms, action)
+                                            parms, lgr_action)
 
     def guest_create(self, userid, vcpus, memory, disk_list=None,
                      user_profile=CONF.zvm.user_profile,
