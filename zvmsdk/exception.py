@@ -130,6 +130,17 @@ class SDKInvalidInputFormat(SDKBaseException):
                                                     message=errormsg)
 
 
+class SDKMissingRequiredInput(SDKBaseException):
+    def __init__(self, msg):
+        rc = returncode.errors['input']
+        results = rc[0]
+        results['modID'] = returncode.ModRCs['zvmsdk']
+        results['rs'] = 4
+        errormsg = rc[1][4] % {'msg': msg}
+        super(SDKInvalidInputFormat, self).__init__(results=results,
+                                                    message=errormsg)
+
+
 class SDKInternalError(SDKBaseException):
     def __init__(self, msg, modID='zvmsdk', results=None):
         # if results is set, it means the internal error comes from
