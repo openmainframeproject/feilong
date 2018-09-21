@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c3742a85_d71b3c3e",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 473,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-09-21T06:29:52Z",
+      "side": 1,
+      "message": "dest_zcc_userid",
+      "range": {
+        "startLine": 473,
+        "startChar": 41,
+        "endLine": 473,
+        "endChar": 51
+      },
+      "revId": "25e79eda5fea2e5aee52c97f81be96088c93f6ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "614c27ba_da2d07ca",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 510,
+      "author": {
+        "id": 1008953
+      },
+      "writtenOn": "2018-09-21T06:29:52Z",
+      "side": 1,
+      "message": "systemctl restart zvmguestconfigure",
+      "range": {
+        "startLine": 510,
+        "startChar": 12,
+        "endLine": 510,
+        "endChar": 52
+      },
+      "revId": "25e79eda5fea2e5aee52c97f81be96088c93f6ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
