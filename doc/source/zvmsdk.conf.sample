@@ -172,7 +172,9 @@
 [volume]
 
 # 
-# volume fcp list
+# volume fcp list.
+# 
+# SDK will only use the fcp devices in the scope of this value.
 # 
 # This param is optional
 #fcp_list=
