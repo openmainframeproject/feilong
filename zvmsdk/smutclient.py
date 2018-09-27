@@ -497,11 +497,14 @@ class SMUTClient(object):
         return userid list"""
         action = "list all guests in database"
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            guests = self._GuestDbOperator.get_guest_list()
-        # guests is a list of tuple (uuid, userid, metadata, comments)
-        userid_list = []
-        for g in guests:
-            userid_list.append(g[1].upper())
+            guests_in_db = self._GuestDbOperator.get_guest_list()
+            guests_migrated = self._GuestDbOperator.get_migrated_guest_list()
+
+        # db query return value in tuple (uuid, userid, metadata, comments)
+        userids_in_db = [g[1].upper() for g in guests_in_db]
+        userids_migrated = [g[1].upper() for g in guests_migrated]
+        userid_list = list(set(userids_in_db) - set(userids_migrated))
+
         return userid_list
 
     def _remove_mdisk(self, userid, vdev):
