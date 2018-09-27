@@ -1094,18 +1094,37 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         request.assert_any_call(requestData1)
         request.assert_any_call(requestData2)
 
-    @mock.patch.object(database.GuestDbOperator,
-                       'get_guest_list')
-    def test_get_vm_list(self, db_list):
+    @mock.patch.object(database.GuestDbOperator, 'get_migrated_guest_list')
+    @mock.patch.object(database.GuestDbOperator, 'get_guest_list')
+    def test_get_vm_list(self, db_list, migrated_list):
         db_list.return_value = [(u'9a5c9689-d099-46bb-865f-0c01c384f58c',
                                  u'TEST0', u'', u''),
                                 (u'3abe0ac8-90b5-4b00-b624-969c184b8158',
                                  u'TEST1', u'comm1', u''),
                                 (u'aa252ca5-03aa-4407-9c2e-d9737ddb8d24',
                                  u'TEST2', u'comm2', u'meta2')]
+        migrated_list.return_value = []
         userid_list = self._smutclient.get_vm_list()
+        db_list.assert_called_once()
+        migrated_list.assert_called_once()
         self.assertListEqual(sorted(userid_list),
                              sorted(['TEST0', 'TEST1', 'TEST2']))
+
+    @mock.patch.object(database.GuestDbOperator, 'get_migrated_guest_list')
+    @mock.patch.object(database.GuestDbOperator, 'get_guest_list')
+    def test_get_vm_list_exclude_migrated(self, db_list, migrated_list):
+        db_list.return_value = [(u'9a5c9689-d099-46bb-865f-0c01c384f58c',
+                                 u'TEST0', u'', u''),
+                                (u'3abe0ac8-90b5-4b00-b624-969c184b8158',
+                                 u'TEST1', u'comm1', u''),
+                                (u'aa252ca5-03aa-4407-9c2e-d9737ddb8d24',
+                                 u'TEST2', u'{"migrated": 1}', u'meta2')]
+        migrated_list.return_value = [(u'aa252ca5-03aa-4407-9c2e-d9737ddb8d24',
+                                       u'TEST2', u'{"migrated": 1}', u'meta2')]
+        userid_list = self._smutclient.get_vm_list()
+        db_list.assert_called_once()
+        migrated_list.assert_called_once()
+        self.assertListEqual(sorted(userid_list), sorted(['TEST0', 'TEST1']))
 
     @mock.patch.object(smutclient.SMUTClient, '_request')
     def test_delete_userid(self, request):
