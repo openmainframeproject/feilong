@@ -18,6 +18,18 @@
 Release Notes
 *************
 
+Release 1.3.0
+-------------
+New features released with zVMCloudConnector 1.3.0:
+
+* Support upload image through octet stream.
+
+* Guest live migrate, support live migrate in z/VM SSI cluster.
+
+* Live resize guest memory, and static resize guest memory.
+
+* Attach/detach volume to active guest.
+
 Release 1.2.1
 -------------
 zVMCloudConnector 1.2.1 includes one change:
