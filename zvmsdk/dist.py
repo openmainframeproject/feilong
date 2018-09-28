@@ -911,7 +911,9 @@ class sles(LinuxDist):
 
     def _online_fcp_device(self, assigner_id, fcp):
         """sles online fcp"""
-        pass
+        # cio_ignore
+        cio_ignore = 'cio_ignore -r %s' % fcp
+        self.execute_cmd(assigner_id, cio_ignore)
 
     def _set_zfcp_config_files(self, assigner_id, fcp, target_wwpn,
                                target_lun):
