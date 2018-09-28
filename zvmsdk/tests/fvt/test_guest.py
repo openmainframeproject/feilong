@@ -16,6 +16,8 @@ import os
 import subprocess
 import tempfile
 import time
+import unittest
+
 
 from parameterized import parameterized
 from zvmsdk.tests.fvt import base
@@ -1009,6 +1011,7 @@ class GuestHandlerTestCaseWithCreatedGuest(GuestHandlerBase):
         resp = self.client.guest_delete_nic(self.userid_exists, vdev='FFFF')
         self.assertEqual(200, resp.status_code)
 
+    @unittest.skip("Skip until bug/1747591 fixed")
     def test_guest_disk_pool_create_not_exist(self):
         disk_list = [{"size": "1g", "format": "ext3",
                       "disk_pool": 'ECKD:notexist'}]
