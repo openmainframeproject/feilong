@@ -829,6 +829,8 @@ Live migration of guest
 
 **POST /guests/{userid}/action**
 
+Live migrate guest in z/VM SSI cluster.
+
 * Request:
 
 .. restapi_parameters:: parameters.yaml
@@ -855,6 +857,8 @@ Guest register
 --------------
 
 **POST /guests/{userid}/action**
+
+Register guest to be managed by z/VM Cloud Connector.
 
 * Request:
 
