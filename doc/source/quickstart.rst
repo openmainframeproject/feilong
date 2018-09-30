@@ -69,9 +69,16 @@ Preparation on BYOL
 
        OPTION LNKNOPAS
 
+   If under RACF, RACF command need to be executed like blow while the ``BYOL``
+   is the name of the virtual machine which is going to run cloud connector.
+
+   .. code-block:: text
+
+       RAC PERMIT BYOL CLASS(VMRDR) ID(VSMWORK1) ACCESS(UPDATE)
+
 .. note::
-   Please note when under RACF (ESM of z/VM) is used, additional setup is needed
-   to make the BYOL able to link to the disk.
+   Please note when under RACF (ESM of z/VM) is used, additional setup for SMAPI is needed
+   to make the BYOL able to work.
 
    See `z/VM Systems Management Application Programming`_ for how to make it.
 
