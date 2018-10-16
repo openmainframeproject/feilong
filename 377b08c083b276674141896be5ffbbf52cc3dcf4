@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "000e22e7_2dd9f41c",
+        "filename": "doc/source/quickstart.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1008483
+      },
+      "writtenOn": "2018-10-16T18:14:37Z",
+      "side": 1,
+      "message": "\"like below\"",
+      "revId": "377b08c083b276674141896be5ffbbf52cc3dcf4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
