@@ -15,7 +15,9 @@
 
 import abc
 import re
+import shutil
 import six
+import os
 
 from zvmsdk import config
 from zvmsdk import database
@@ -98,17 +100,18 @@ class VolumeConfiguratorAPI(object):
     def __init__(self):
         self._vmop = vmops.get_vmops()
         self._dist_manager = dist.LinuxDistManager()
+        self._smutclient = smutclient.get_smutclient()
 
     def config_attach(self, fcp, assigner_id, target_wwpn, target_lun,
                       multipath, os_version, mount_point):
+        linuxdist = self._dist_manager.get_linux_dist(os_version)()
+        self.configure_volume_attach(fcp, assigner_id, target_wwpn,
+                                     target_lun, multipath, os_version,
+                                     mount_point, linuxdist)
+        # active mode should restart zvmguestconfigure to execute reader file
         if self._vmop.is_reachable(assigner_id):
-            self.config_attach_active(fcp, assigner_id, target_wwpn,
-                                      target_lun, multipath, os_version,
-                                      mount_point)
-        else:
-            self.config_attach_inactive(fcp, assigner_id, target_wwpn,
-                                        target_lun, multipath, os_version,
-                                        mount_point)
+            active_cmds = linuxdist.create_active_net_interf_cmd()
+            self._smutclient.execute_cmd(assigner_id, active_cmds)
 
     def config_force_attach(self, fcp, assigner_id, target_wwpn, target_lun,
                             multipath, os_version):
@@ -116,42 +119,73 @@ class VolumeConfiguratorAPI(object):
 
     def config_detach(self, fcp, assigner_id, target_wwpn, target_lun,
                       multipath, os_version, mount_point):
+        linuxdist = self._dist_manager.get_linux_dist(os_version)()
+        self.configure_volume_detach(fcp, assigner_id, target_wwpn,
+                                     target_lun, multipath, os_version,
+                                     mount_point, linuxdist)
+        # active mode should restart zvmguestconfigure to execute reader file
         if self._vmop.is_reachable(assigner_id):
-            self.config_detach_active(fcp, assigner_id, target_wwpn,
-                                      target_lun, multipath, os_version,
-                                      mount_point)
-        else:
-            self.config_detach_inactive(fcp, assigner_id, target_wwpn,
-                                        target_lun, multipath, os_version,
-                                        mount_point)
+            active_cmds = linuxdist.create_active_net_interf_cmd()
+            self._smutclient.execute_cmd(assigner_id, active_cmds)
 
     def config_force_detach(self, fcp, assigner_id, target_wwpn, target_lun,
                             multipath, os_version):
         pass
 
-    def config_attach_active(self, fcp, assigner_id, target_wwpn,
-                             target_lun, multipath, os_version, mount_point):
-        linuxdist = self._dist_manager.get_linux_dist(os_version)()
-        linuxdist.config_volume_attach_active(fcp, assigner_id, target_wwpn,
-                                              target_lun, multipath,
-                                              mount_point)
+    def _create_file(self, assigner_id, file_name, data):
+        temp_folder = self._smutclient.get_guest_temp_path(assigner_id)
+        file_path = os.path.join(temp_folder, file_name)
+        with open(file_path, "w") as f:
+            f.write(data)
+        return file_path, temp_folder
 
-    def config_attach_inactive(self, fcp, assigner_id, target_wwpn,
-                               target_lun, multipath, os_version, mount_point):
-        raise NotImplementedError
+    def configure_volume_attach(self, fcp, assigner_id, target_wwpn,
+                                target_lun, multipath, os_version,
+                                mount_point, linuxdist):
+        # get configuration commands
+        config_cmds = linuxdist.get_volume_attach_configuration_cmds(
+                          fcp, target_wwpn, target_lun, multipath,
+                          mount_point)
+        LOG.debug('Got volume attachment configuation cmds for %s,'
+                  'the content is:%s'
+                  % (assigner_id, config_cmds))
+        # write commands into script file
+        config_file, config_file_path = self._create_file(assigner_id,
+                                                          'atvol.sh',
+                                                          config_cmds)
+        LOG.debug('Creating file %s to contain volume attach '
+                  'configuration file' % config_file)
+        # punch file into guest
+        fileClass = "X"
+        try:
+            self._smutclient.punch_file(assigner_id, config_file, fileClass)
+        finally:
+            LOG.debug('Removing the folder %s ', config_file_path)
+            shutil.rmtree(config_file_path)
 
-    def config_detach_active(self, fcp, assigner_id, target_wwpn,
-                             target_lun, multipath, os_version,
-                             mount_point):
-        linuxdist = self._dist_manager.get_linux_dist(os_version)()
-        linuxdist.config_volume_detach_active(fcp, assigner_id, target_wwpn,
-                                              target_lun, multipath,
-                                              mount_point)
-
-    def config_detach_inactive(self, fcp, assigner_id, target_wwpn,
-                               target_lun, multipath, os_version,
-                               mount_point):
-        raise NotImplementedError
+    def configure_volume_detach(self, fcp, assigner_id, target_wwpn,
+                                target_lun, multipath, os_version,
+                                mount_point, linuxdist):
+        # get configuration commands
+        config_cmds = linuxdist.get_volume_detach_configuration_cmds(
+                          fcp, target_wwpn, target_lun, multipath,
+                          mount_point)
+        LOG.debug('Got volume detachment configuation cmds for %s,'
+                  'the content is:%s'
+                  % (assigner_id, config_cmds))
+        # write commands into script file
+        config_file, config_file_path = self._create_file(assigner_id,
+                                                          'devol.sh',
+                                                          config_cmds)
+        LOG.debug('Creating file %s to contain volume detach '
+                  'configuration file' % config_file)
+        # punch file into guest
+        fileClass = "X"
+        try:
+            self._smutclient.punch_file(assigner_id, config_file, fileClass)
+        finally:
+            LOG.debug('Removing the folder %s ', config_file_path)
+            shutil.rmtree(config_file_path)
 
 
 class FCP(object):
@@ -485,6 +519,7 @@ class FCPVolumeManager(object):
                 with zvmutils.ignore_errors():
                     self._undedicate_fcp(fcp, assigner_id)
             raise exception.SDKBaseException(msg=errmsg)
+        # TODO: other exceptions?
 
         LOG.info('Attaching device to %s is done.' % assigner_id)
 
