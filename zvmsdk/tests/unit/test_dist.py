@@ -14,7 +14,6 @@
 import mock
 
 from zvmsdk import dist
-from zvmsdk import exception
 from zvmsdk.tests.unit import base
 
 
@@ -31,171 +30,155 @@ class RHEL6TestCase(base.SDKTestCase):
         self.dist_manager = dist.LinuxDistManager()
         self.linux_dist = self.dist_manager.get_linux_dist(self.os_version)()
 
-    @mock.patch('zvmsdk.smutclient.SMUTClient.execute_cmd_direct')
-    def test_execute_cmd(self, mock_execute_cmd):
-        user_id = 'fakevm'
-        cmd_str = 'ls'
-        mock_execute_cmd.return_value = {'overallRC': 0}
-        self.linux_dist.execute_cmd(user_id, cmd_str)
-        mock_execute_cmd.assert_called_once_with(user_id, cmd_str)
-
     def test_create_network_configuration_files(self):
         pass
 
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_create_mount_point_multipath(self, exec_cmd):
+    @mock.patch('zvmsdk.dist.LinuxDist._reload_rules_config_file')
+    @mock.patch('zvmsdk.dist.LinuxDist._add_udev_rules')
+    @mock.patch('zvmsdk.dist.LinuxDist._get_wwid')
+    @mock.patch.object(dist.rhel, '_get_source_device_path')
+    def test_create_mount_point_multipath(self, get_source_path,
+                                          get_wwid, add_rules,
+                                          reload_rules):
         fcp = '1fc5'
-        assigner_id = 'fakeid'
         wwpn = '0x5005076812341234'
         lun = '0x0026000000000000'
         mount_point = '/dev/sde'
         multipath = True
-        wwid_raw = 'S: disk/by-id/scsi-36005076801a3813cb800000000000225'
-        config_file_lib = '/lib/udev/rules.d/56-zfcp.rules'
-        path = '/dev/disk/by-path/ccw-0.0.%(fcp)s-zfcp-%(wwpn)s:%(lun)s'
-        srcdev = path % {'fcp': fcp, 'wwpn': wwpn, 'lun': lun}
-        check_cmd = 'test -e %s && echo exist' % srcdev
-        check_rules_cmd = 'find /lib/udev/rules.d/ -name 56-zfcp.rules'
-        exec_cmd.side_effect = [{'response': ['exist']},
-                                {'response': [wwid_raw]},
-                                {'response': [config_file_lib]},
-                                {}, {}, {}]
-        query_cmd = ('/sbin/udevadm info --query=all --name=%s | '
-                     'grep ^S: | grep scsi-' % srcdev)
-        link_item = ('KERNEL==\\"dm-*\\", ENV{DM_UUID}==\\"mpath-'
-                     '36005076801a3813cb800000000000225\\", '
-                     'SYMLINK+=\\"sde\\"')
-        update_rule_cmd = 'echo -e %s >> %s' % (link_item, config_file_lib)
-        reload_cmd = 'udevadm control --reload'
-        create_symlink_cmd = 'udevadm trigger --sysname-match=dm-*'
-        self.linux_dist.create_mount_point(assigner_id, fcp, wwpn, lun,
+        get_source_path.return_value = 'fake_ret'
+        get_wwid.return_value = 'fake_ret'
+        add_rules.return_value = 'fake_ret'
+        reload_rules.return_value = 'fake_ret'
+        self.linux_dist.create_mount_point(fcp, wwpn, lun,
                                            mount_point, multipath)
-        exec_cmd.assert_has_calls([mock.call(assigner_id, check_cmd),
-                                   mock.call(assigner_id, query_cmd),
-                                   mock.call(assigner_id, check_rules_cmd),
-                                   mock.call(assigner_id, update_rule_cmd),
-                                   mock.call(assigner_id, reload_cmd),
-                                   mock.call(assigner_id, create_symlink_cmd)])
+        get_source_path.assert_called_once_with(fcp, wwpn, lun)
+        get_wwid.assert_called_once_with()
+        add_rules.assert_called_once_with(mount_point, wwpn, lun, multipath)
+        reload_rules.assert_called_once_with(multipath)
 
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_create_mount_point_no_multipath(self, exec_cmd):
+    def test_get_source_device_path(self):
         fcp = '1fc5'
-        assigner_id = 'fakeid'
         wwpn = '0x5005076812341234'
         lun = '0x0026000000000000'
+        device = '0.0.%s' % fcp
+        data = {'device': device, 'wwpn': wwpn, 'lun': lun}
+        expect = ('SourceDevice="/dev/disk/by-path/ccw-%(device)s-'
+                  'zfcp-%(wwpn)s:%(lun)s"\n' % data)
+        ret = self.linux_dist._get_source_device_path(fcp, wwpn, lun)
+        self.assertEqual(ret, expect)
+
+    def test_get_wwid(self):
+        var_wwid_line = ('wwid_line=`/sbin/udevadm info --query=all '
+                         '--name=$SourceDevice | egrep -a -i \"ID_SERIAL=\"`')
+        var_wwid = 'WWID=${wwid_line##*=}\n'
+        wwid = '\n'.join((var_wwid_line,
+                          var_wwid))
+        ret = self.linux_dist._get_wwid()
+        self.assertEqual(ret, wwid)
+
+    def test_add_udev_rules_multipath(self):
+        wwpn = '0x5005076812341234'
+        lun = '0x0026000000000000'
+        multipath = True
         mount_point = '/dev/sde'
-        multipath = False
-        wwid_raw = 'S: disk/by-id/scsi-36005076801a3813cb800000000000225'
+        var_target_file = 'TargetFile="sde"\n'
+        var_wwpn = 'WWPN="%s"\n' % wwpn
+        var_lun = 'LUN="%s"\n' % lun
         config_file_lib = '/lib/udev/rules.d/56-zfcp.rules'
-        path = '/dev/disk/by-path/ccw-0.0.%(fcp)s-zfcp-%(wwpn)s:%(lun)s'
-        srcdev = path % {'fcp': fcp, 'wwpn': wwpn, 'lun': lun}
-        check_cmd = 'test -e %s && echo exist' % srcdev
-        check_rules_cmd = 'find /lib/udev/rules.d/ -name 56-zfcp.rules'
-        query_cmd = ('/sbin/udevadm info --query=all --name=%s | '
-                     'grep ^S: | grep scsi-' % srcdev)
-        exec_cmd.side_effect = [{'response': ['exist']},
-                                {'response': [wwid_raw]},
-                                {'response': [config_file_lib]},
-                                {}, {}, {}]
-        link_item = ('KERNEL==\\"sd*\\", '
-                     'ATTRS{wwpn}==\\"0x5005076812341234\\", '
-                     'ATTRS{fcp_lun}==\\"0x0026000000000000\\", '
-                     'SYMLINK+=\\"sde%n\\"')
-        update_rule_cmd = 'echo -e %s >> %s' % (link_item, config_file_lib)
+        find_config = 'ConfigLib="%s"\n' % config_file_lib
+        find_config += 'if [ -e "$ConfigLib" ]\n'
+        find_config += 'then\n'
+        find_config += '    ConfigFile="/lib/udev/rules.d/56-zfcp.rules"\n'
+        find_config += 'else\n'
+        find_config += '    ConfigFile="/etc/udev/rules.d/56-zfcp.rules"\n'
+        find_config += 'fi\n'
+        var_config_file = find_config
+        link_item = ('KERNEL==\\"dm-*\\", '
+                     'ENV{DM_UUID}==\\"mpath-$WWID\\", '
+                     'SYMLINK+=\\"$TargetFile\\"')
+        var_link_item = 'LinkItem="%s"\n' % link_item
+        add_rules_cmd = ''.join((var_target_file,
+                                 var_wwpn,
+                                 var_lun,
+                                 var_config_file,
+                                 var_link_item,
+                                 'echo -e $LinkItem >> $ConfigFile\n'))
+        ret = self.linux_dist._add_udev_rules(mount_point, wwpn, lun,
+                                              multipath)
+        self.assertEqual(ret, add_rules_cmd)
+
+    def test_reload_udev_rules_multipath(self):
+        multipath = True
         reload_cmd = 'udevadm control --reload'
-        create_symlink_cmd = 'udevadm trigger --sysname-match=sd*'
-        self.linux_dist.create_mount_point(assigner_id, fcp, wwpn, lun,
-                                           mount_point, multipath)
-        exec_cmd.assert_has_calls([mock.call(assigner_id, check_cmd),
-                                   mock.call(assigner_id, query_cmd),
-                                   mock.call(assigner_id, check_rules_cmd),
-                                   mock.call(assigner_id, update_rule_cmd),
-                                   mock.call(assigner_id, reload_cmd),
-                                   mock.call(assigner_id, create_symlink_cmd)])
+        create_symlink_cmd = 'udevadm trigger --sysname-match=dm-*'
+        expect = '\n'.join((reload_cmd,
+                            create_symlink_cmd))
+        ret = self.linux_dist._reload_rules_config_file(multipath)
+        self.assertEqual(ret, expect)
 
     @mock.patch('zvmsdk.dist.LinuxDist.create_mount_point')
     @mock.patch('zvmsdk.dist.rhel._set_zfcp_multipath')
     @mock.patch('zvmsdk.dist.rhel6._set_zfcp_config_files')
     @mock.patch('zvmsdk.dist.rhel._online_fcp_device')
-    @mock.patch('zvmsdk.dist.LinuxDist.check_zfcp_module')
-    def test_config_volume_attach_active(self, check_module,
-                                         online_device, zfcp_config,
-                                         zfcp_multipath, create_mount_point):
+    @mock.patch('zvmsdk.dist.LinuxDist.modprobe_zfcp_module')
+    def test_get_volume_attach_configuration_cmds(self, check_module,
+                                                  online_device, zfcp_config,
+                                                  zfcp_multipath,
+                                                  create_mount_point):
         fcp = '1fc5'
-        assigner_id = 'fakeid'
         wwpn = '0x5005076812341234'
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
-        self.linux_dist.config_volume_attach_active(fcp, assigner_id,
-                                                    wwpn, lun, multipath,
-                                                    mount_point)
-        check_module.assert_called_once_with(assigner_id)
-        online_device.assert_called_once_with(assigner_id, fcp)
-        zfcp_config.assert_called_once_with(assigner_id, fcp, wwpn, lun)
-        zfcp_multipath.assert_called_once_with(assigner_id)
-        create_mount_point.assert_called_once_with(assigner_id, fcp, wwpn,
+        check_module.return_value = 'fake_ret'
+        online_device.return_value = 'fake_ret'
+        zfcp_config.return_value = 'fake_ret'
+        zfcp_multipath.return_value = 'fake_ret'
+        create_mount_point.return_value = 'fake_ret'
+        self.linux_dist.get_volume_attach_configuration_cmds(fcp, wwpn, lun,
+                                                             multipath,
+                                                             mount_point)
+        check_module.assert_called_once_with()
+        online_device.assert_called_once_with(fcp)
+        zfcp_config.assert_called_once_with(fcp, wwpn, lun)
+        zfcp_multipath.assert_called_once_with()
+        create_mount_point.assert_called_once_with(fcp, wwpn,
                                                    lun, mount_point,
                                                    multipath)
-
-    @mock.patch('zvmsdk.dist.rhel._offline_fcp_device')
-    @mock.patch('zvmsdk.dist.rhel6._set_zfcp_config_files')
-    @mock.patch('zvmsdk.dist.rhel._online_fcp_device')
-    @mock.patch('zvmsdk.dist.LinuxDist.check_zfcp_module')
-    def test_config_volume_attach_active_rollback(self, check_module,
-                                                  online_device, zfcp_config,
-                                                  offline_device):
-        fcp = '1fc5'
-        assigner_id = 'fakeid'
-        wwpn = '0x5005076812341234'
-        lun = '0x0026000000000000'
-        multipath = True
-        mount_point = '/dev/sdz'
-        zfcp_config.side_effect = exception.SDKSMUTRequestFailed({}, 'err')
-        self.assertRaises(exception.SDKSMUTRequestFailed,
-                          self.linux_dist.config_volume_attach_active,
-                          fcp, assigner_id, wwpn, lun, multipath,
-                          mount_point)
-        check_module.assert_called_once_with(assigner_id)
-        online_device.assert_called_once_with(assigner_id, fcp)
-        offline_device.assert_called_once_with(assigner_id, fcp, wwpn,
-                                               lun, multipath)
 
     @mock.patch('zvmsdk.dist.LinuxDist.remove_mount_point')
     @mock.patch('zvmsdk.dist.rhel6._restart_multipath')
     @mock.patch('zvmsdk.dist.rhel._offline_fcp_device')
-    def test_config_volume_detach_active(self, offline_device,
-                                         restart_multipath,
-                                         remove_mount_point):
+    def test_get_volume_detach_configuration_cmds(self, offline_device,
+                                                  restart_multipath,
+                                                  remove_mount_point):
         fcp = '1fc5'
-        assigner_id = 'fakeid'
         wwpn = '0x5005076812341234'
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
-        self.linux_dist.config_volume_detach_active(fcp, assigner_id,
-                                                    wwpn, lun, multipath,
-                                                    mount_point)
-        offline_device.assert_called_once_with(assigner_id, fcp, wwpn,
+        offline_device.return_value = 'fake_ret'
+        restart_multipath.return_value = 'fake_ret'
+        remove_mount_point.return_value = 'fake_ret'
+        self.linux_dist.get_volume_detach_configuration_cmds(fcp, wwpn, lun,
+                                                             multipath,
+                                                             mount_point)
+        offline_device.assert_called_once_with(fcp, wwpn,
                                                lun, multipath)
-        restart_multipath.assert_called_once_with(assigner_id)
-        remove_mount_point.assert_called_once_with(assigner_id, mount_point,
-                                                   multipath)
+        restart_multipath.assert_called_once_with()
+        remove_mount_point.assert_called_once_with(mount_point, wwpn,
+                                                   lun, multipath)
 
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_online_fcp_device(self, exec_cmd):
+    def test_online_fcp_device(self):
         fcp = '1fc5'
-        assigner_id = 'fakeid'
-        cmd_cio_ignore = 'cio_ignore -r %s' % fcp
-        cmd_online_dev = 'chccwdev -e %s' % fcp
-        self.linux_dist._online_fcp_device(assigner_id, fcp)
-        exec_cmd.assert_has_calls([mock.call(assigner_id, cmd_cio_ignore),
-                                   mock.call(assigner_id, cmd_online_dev)])
+        cmd_cio_ignore = 'cio_ignore -r %s\n' % fcp
+        cmd_online_dev = 'chccwdev -e %s\n' % fcp
+        ret = self.linux_dist._online_fcp_device(fcp)
+        expect = cmd_cio_ignore + cmd_online_dev
+        self.assertEqual(ret, expect)
 
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_offline_fcp_device(self, exec_cmd):
+    def test_offline_fcp_device(self):
         fcp = '1fc5'
-        assigner_id = 'fakeid'
         wwpn = '0x5005076812341234'
         lun = '0x0026000000000000'
         multipath = True
@@ -205,16 +188,14 @@ class RHEL6TestCase(base.SDKTestCase):
                 'device': device, 'zfcpConf': '/etc/zfcp.conf'}
         cmd_delete_records = ('sed -i -e '
                               '\"/%(device)s %(wwpn)s %(lun)s/d\" '
-                              '%(zfcpConf)s' % data)
-        self.linux_dist._offline_fcp_device(assigner_id, fcp,
-                                            wwpn, lun, multipath)
-        exec_cmd.assert_has_calls([mock.call(assigner_id, cmd_offline_dev),
-                                   mock.call(assigner_id, cmd_delete_records)])
+                              '%(zfcpConf)s\n' % data)
+        ret = self.linux_dist._offline_fcp_device(fcp, wwpn, lun, multipath)
+        expect = '\n'.join((cmd_offline_dev,
+                            cmd_delete_records))
+        self.assertEqual(ret, expect)
 
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_set_zfcp_config_files(self, exec_cmd):
+    def test_set_zfcp_config_files(self):
         fcp = '1fc5'
-        assigner_id = 'fakeid'
         target_wwpn = '0x5005076812341234'
         target_lun = '0x0026000000000000'
         device = '0.0.%s' % fcp
@@ -225,33 +206,36 @@ class RHEL6TestCase(base.SDKTestCase):
         set_zfcp_conf = 'echo %(device)s %(wwpn)s %(lun)s >> /etc/zfcp.conf'\
                         % {'device': device, 'wwpn': target_wwpn,
                            'lun': target_lun}
-        trigger_uevent = 'echo add >> /sys/bus/ccw/devices/%s/uevent' % device
-        self.linux_dist._set_zfcp_config_files(assigner_id, fcp,
-                                               target_wwpn, target_lun)
-        exec_cmd.assert_has_calls([mock.call(assigner_id, unit_add),
-                                   mock.call(assigner_id, set_zfcp_conf),
-                                   mock.call(assigner_id, trigger_uevent)])
+        trigger_uevent = 'echo add >> /sys/bus/ccw/devices/%s/uevent\n'\
+                         % device
+        ret = self.linux_dist._set_zfcp_config_files(fcp, target_wwpn,
+                                                     target_lun)
+        expect = '\n'.join((unit_add,
+                            set_zfcp_conf,
+                            trigger_uevent))
+        self.assertEqual(ret, expect)
 
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_restart_multipath(self, exec_cmd):
-        assigner_id = 'fakeid'
-        self.linux_dist._restart_multipath(assigner_id)
-        start_multipathd = '/sbin/multipath -r'
-        exec_cmd.assert_called_once_with(assigner_id, start_multipathd)
+    def test_restart_multipath(self):
+        ret = self.linux_dist._restart_multipath()
+        expect = 'service multipathd restart\n'
+        self.assertEqual(ret, expect)
 
-    @mock.patch('zvmsdk.dist.rhel6._restart_multipath')
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_set_zfcp_multipath(self, exec_cmd, restart_multipath):
-        assigner_id = 'fakeid'
+    def test_set_zfcp_multipath(self):
+        modprobe = 'modprobe dm-multipath'
         conf_file = '#blacklist {\n'
-        conf_file += '#\tdevnode "*"\n'
+        conf_file += '#\tdevnode \\"*\\"\n'
         conf_file += '#}\n'
-        cmd_conf = 'echo -e %s > /etc/multipath.conf' % conf_file
+        cmd_conf = 'echo -e "%s" > /etc/multipath.conf' % conf_file
         cmd_mpathconf = 'mpathconf'
-        self.linux_dist._set_zfcp_multipath(assigner_id)
-        exec_cmd.assert_has_calls([mock.call(assigner_id, cmd_conf),
-                                   mock.call(assigner_id, cmd_mpathconf)])
-        restart_multipath.assert_called_once_with(assigner_id)
+        restart = 'service multipathd restart\n'
+        expect = '\n'.join((modprobe,
+                            cmd_conf,
+                            cmd_mpathconf,
+                            'sleep 2',
+                            restart,
+                            'sleep 2\n'))
+        ret = self.linux_dist._set_zfcp_multipath()
+        self.assertEqual(ret, expect)
 
 
 class RHEL7TestCase(base.SDKTestCase):
@@ -270,76 +254,55 @@ class RHEL7TestCase(base.SDKTestCase):
     @mock.patch('zvmsdk.dist.rhel._set_zfcp_multipath')
     @mock.patch('zvmsdk.dist.rhel7._set_zfcp_config_files')
     @mock.patch('zvmsdk.dist.rhel._online_fcp_device')
-    @mock.patch('zvmsdk.dist.LinuxDist.check_zfcp_module')
-    def test_config_volume_attach_active(self, check_module,
-                                         online_device, zfcp_config,
-                                         zfcp_multipath, create_mount_point):
-        fcp = '1fc5'
-        assigner_id = 'fakeid'
-        wwpn = '0x5005076812341234'
-        lun = '0x0026000000000000'
-        multipath = True
-        mount_point = '/dev/sdz'
-        self.linux_dist.config_volume_attach_active(fcp, assigner_id,
-                                                    wwpn, lun, multipath,
-                                                    mount_point)
-        check_module.assert_called_once_with(assigner_id)
-        online_device.assert_called_once_with(assigner_id, fcp)
-        zfcp_config.assert_called_once_with(assigner_id, fcp, wwpn, lun)
-        zfcp_multipath.assert_called_once_with(assigner_id)
-        create_mount_point.assert_called_once_with(assigner_id, fcp, wwpn,
-                                                   lun, mount_point,
-                                                   multipath)
-
-    @mock.patch('zvmsdk.dist.rhel._offline_fcp_device')
-    @mock.patch('zvmsdk.dist.rhel7._set_zfcp_config_files')
-    @mock.patch('zvmsdk.dist.rhel._online_fcp_device')
-    @mock.patch('zvmsdk.dist.LinuxDist.check_zfcp_module')
-    def test_config_volume_attach_active_rollback(self, check_module,
+    @mock.patch('zvmsdk.dist.LinuxDist.modprobe_zfcp_module')
+    def test_get_volume_attach_configuration_cmds(self, check_module,
                                                   online_device, zfcp_config,
-                                                  offline_device):
+                                                  zfcp_multipath,
+                                                  create_mount_point):
         fcp = '1fc5'
-        assigner_id = 'fakeid'
         wwpn = '0x5005076812341234'
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
-        zfcp_config.side_effect = exception.SDKSMUTRequestFailed({}, 'err')
-        self.assertRaises(exception.SDKSMUTRequestFailed,
-                          self.linux_dist.config_volume_attach_active,
-                          fcp, assigner_id, wwpn, lun, multipath,
-                          mount_point)
-        check_module.assert_called_once_with(assigner_id)
-        online_device.assert_called_once_with(assigner_id, fcp)
-        offline_device.assert_called_once_with(assigner_id, fcp, wwpn,
-                                               lun, multipath)
+        check_module.return_value = 'fake_ret'
+        online_device.return_value = 'fake_ret'
+        zfcp_config.return_value = 'fake_ret'
+        zfcp_multipath.return_value = 'fake_ret'
+        create_mount_point.return_value = 'fake_ret'
+        self.linux_dist.get_volume_attach_configuration_cmds(fcp, wwpn, lun,
+                                                             multipath,
+                                                             mount_point)
+        check_module.assert_called_once_with()
+        online_device.assert_called_once_with(fcp)
+        zfcp_config.assert_called_once_with(fcp, wwpn, lun)
+        zfcp_multipath.assert_called_once_with()
+        create_mount_point.assert_called_once_with(fcp, wwpn, lun, mount_point,
+                                                   multipath)
 
     @mock.patch('zvmsdk.dist.LinuxDist.remove_mount_point')
     @mock.patch('zvmsdk.dist.rhel7._restart_multipath')
     @mock.patch('zvmsdk.dist.rhel._offline_fcp_device')
-    def test_config_volume_detach_active(self, offline_device,
-                                         restart_multipath,
-                                         remove_mount_point):
+    def test_get_volume_detach_configuration_cmds(self, offline_device,
+                                                  restart_multipath,
+                                                  remove_mount_point):
         fcp = '1fc5'
-        assigner_id = 'fakeid'
         wwpn = '0x5005076812341234'
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
-        self.linux_dist.config_volume_detach_active(fcp, assigner_id,
-                                                    wwpn, lun, multipath,
-                                                    mount_point)
-        offline_device.assert_called_once_with(assigner_id, fcp, wwpn,
-                                               lun, multipath)
-        restart_multipath.assert_called_once_with(assigner_id)
-        remove_mount_point.assert_called_once_with(assigner_id,
-                                                   mount_point,
-                                                   multipath)
+        offline_device.return_value = 'fake_ret'
+        restart_multipath.return_value = 'fake_ret'
+        remove_mount_point.return_value = 'fake_ret'
+        self.linux_dist.get_volume_detach_configuration_cmds(fcp, wwpn, lun,
+                                                             multipath,
+                                                             mount_point)
+        offline_device.assert_called_once_with(fcp, wwpn, lun, multipath)
+        restart_multipath.assert_called_once_with()
+        remove_mount_point.assert_called_once_with(mount_point, wwpn,
+                                                   lun, multipath)
 
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_set_zfcp_config_files(self, exec_cmd):
+    def test_set_zfcp_config_files(self):
         fcp = '1fc5'
-        assigner_id = 'fakeid'
         target_wwpn = '0x5005076812341234'
         target_lun = '0x0026000000000000'
         device = '0.0.%s' % fcp
@@ -347,34 +310,36 @@ class RHEL7TestCase(base.SDKTestCase):
         unit_add = "echo '%s' > " % target_lun
         unit_add += "/sys/bus/ccw/drivers/zfcp/%(device)s/%(wwpn)s/unit_add"\
                     % {'device': device, 'wwpn': target_wwpn}
-        set_zfcp_conf = 'echo %(device)s %(wwpn)s %(lun)s >> /etc/zfcp.conf'\
+        set_zfcp_conf = 'echo %(device)s %(wwpn)s %(lun)s >> /etc/zfcp.conf\n'\
                         % {'device': device, 'wwpn': target_wwpn,
                            'lun': target_lun}
-        self.linux_dist._set_zfcp_config_files(assigner_id, fcp,
-                                               target_wwpn, target_lun)
-        exec_cmd.assert_has_calls([mock.call(assigner_id, unit_add),
-                                   mock.call(assigner_id, set_zfcp_conf)])
+        ret = self.linux_dist._set_zfcp_config_files(fcp, target_wwpn,
+                                                     target_lun)
+        expect = '\n'.join((unit_add,
+                            set_zfcp_conf))
+        self.assertEqual(ret, expect)
 
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_restart_multipath(self, exec_cmd):
-        assigner_id = 'fakeid'
-        self.linux_dist._restart_multipath(assigner_id)
-        start_multipathd = '/sbin/multipath -r'
-        exec_cmd.assert_called_once_with(assigner_id, start_multipathd)
+    def test_restart_multipath(self):
+        ret = self.linux_dist._restart_multipath()
+        expect = 'systemctl restart multipathd.service\n'
+        self.assertEqual(ret, expect)
 
-    @mock.patch('zvmsdk.dist.rhel7._restart_multipath')
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_set_zfcp_multipath(self, exec_cmd, restart_multipath):
-        assigner_id = 'fakeid'
+    def test_set_zfcp_multipath(self):
+        modprobe = 'modprobe dm-multipath'
         conf_file = '#blacklist {\n'
-        conf_file += '#\tdevnode "*"\n'
+        conf_file += '#\tdevnode \\"*\\"\n'
         conf_file += '#}\n'
-        cmd_conf = 'echo -e %s > /etc/multipath.conf' % conf_file
+        cmd_conf = 'echo -e "%s" > /etc/multipath.conf' % conf_file
         cmd_mpathconf = 'mpathconf'
-        self.linux_dist._set_zfcp_multipath(assigner_id)
-        exec_cmd.assert_has_calls([mock.call(assigner_id, cmd_conf),
-                                   mock.call(assigner_id, cmd_mpathconf)])
-        restart_multipath.assert_called_once_with(assigner_id)
+        restart = 'systemctl restart multipathd.service\n'
+        expect = '\n'.join((modprobe,
+                            cmd_conf,
+                            cmd_mpathconf,
+                            'sleep 2',
+                            restart,
+                            'sleep 2\n'))
+        ret = self.linux_dist._set_zfcp_multipath()
+        self.assertEqual(ret, expect)
 
 
 class SLESTestCase(base.SDKTestCase):
@@ -389,10 +354,8 @@ class SLESTestCase(base.SDKTestCase):
         self.sles11_dist = self.dist_manager.get_linux_dist('sles11')()
         self.sles12_dist = self.dist_manager.get_linux_dist('sles12')()
 
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_set_zfcp_config_files(self, exec_cmd):
+    def test_set_zfcp_config_files(self):
         fcp = '1fc5'
-        assigner_id = 'fakeid'
         target_wwpn = '0x5005076812341234'
         target_lun = '0x0026000000000000'
         device = '0.0.%s' % fcp
@@ -401,45 +364,42 @@ class SLESTestCase(base.SDKTestCase):
                       '%(device)s %(wwpn)s %(lun)s 1' %\
                       {'device': device, 'wwpn': target_wwpn,
                        'lun': target_lun}
-        self.sles11_dist._set_zfcp_config_files(assigner_id, fcp,
-                                               target_wwpn, target_lun)
-        exec_cmd.assert_has_calls([mock.call(assigner_id, host_config),
-                                   mock.call(assigner_id, disk_config)])
+        expect = '\n'.join((host_config,
+                            'sleep 2',
+                            disk_config,
+                            'sleep 2\n'))
+        ret = self.sles11_dist._set_zfcp_config_files(fcp, target_wwpn,
+                                                      target_lun)
+        self.assertEqual(ret, expect)
 
-        self.sles12_dist._set_zfcp_config_files(assigner_id, fcp,
-                                               target_wwpn, target_lun)
-        exec_cmd.assert_has_calls([mock.call(assigner_id, host_config),
-                                   mock.call(assigner_id, disk_config)])
+        ret = self.sles12_dist._set_zfcp_config_files(fcp, target_wwpn,
+                                                      target_lun)
+        self.assertEqual(ret, expect)
 
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_restart_multipath(self, exec_cmd):
-        assigner_id = 'fakeid'
-        self.sles11_dist._restart_multipath(assigner_id)
-        start_multipathd = 'systemctl restart multipathd'
-        exec_cmd.assert_called_with(assigner_id, start_multipathd)
+    def test_restart_multipath(self):
+        ret = self.sles11_dist._restart_multipath()
+        start_multipathd = 'systemctl restart multipathd\n'
+        self.assertEqual(ret, start_multipathd)
 
-        self.sles12_dist._restart_multipath(assigner_id)
-        start_multipathd = 'systemctl restart multipathd'
-        exec_cmd.assert_called_with(assigner_id, start_multipathd)
+        ret = self.sles12_dist._restart_multipath()
+        start_multipathd = 'systemctl restart multipathd\n'
+        self.assertEqual(ret, start_multipathd)
 
-    @mock.patch('zvmsdk.dist.sles._restart_multipath')
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_set_zfcp_multipath(self, exec_cmd, restart_multipath):
-        assigner_id = 'fakeid'
+    def test_set_zfcp_multipath(self):
         modprobe = 'modprobe dm_multipath'
         conf_file = '#blacklist {\n'
-        conf_file += '#\tdevnode "*"\n'
+        conf_file += '#\tdevnode \\"*\\"\n'
         conf_file += '#}\n'
-        cmd_conf = 'echo -e %s > /etc/multipath.conf' % conf_file
-        self.sles11_dist._set_zfcp_multipath(assigner_id)
-        exec_cmd.assert_has_calls([mock.call(assigner_id, modprobe),
-                                   mock.call(assigner_id, cmd_conf)])
-        restart_multipath.assert_called_with(assigner_id)
+        cmd_conf = 'echo -e "%s" > /etc/multipath.conf' % conf_file
+        restart = 'systemctl restart multipathd\n'
+        expect = '\n'.join((modprobe,
+                            cmd_conf,
+                            restart))
+        ret = self.sles11_dist._set_zfcp_multipath()
+        self.assertEqual(ret, expect)
 
-        self.sles12_dist._set_zfcp_multipath(assigner_id)
-        exec_cmd.assert_has_calls([mock.call(assigner_id, modprobe),
-                                   mock.call(assigner_id, cmd_conf)])
-        restart_multipath.assert_called_with(assigner_id)
+        ret = self.sles12_dist._set_zfcp_multipath()
+        self.assertEqual(ret, expect)
 
 
 class UBUNTUTestCase(base.SDKTestCase):
@@ -453,40 +413,31 @@ class UBUNTUTestCase(base.SDKTestCase):
         self.dist_manager = dist.LinuxDistManager()
         self.linux_dist = self.dist_manager.get_linux_dist('ubuntu16')()
 
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_check_multipath_tools(self, exec_cmd):
-        assigner_id = 'fakeid'
+    def test_check_multipath_tools(self):
         multipath = 'multipath'
-        errmsg = 'multipath-tools not installed.'
-        self.linux_dist._check_multipath_tools(assigner_id)
-        exec_cmd.assert_called_with(assigner_id, multipath, msg=errmsg)
+        ret = self.linux_dist._check_multipath_tools()
+        self.assertEqual(ret, multipath)
 
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_restart_multipath(self, exec_cmd):
-        assigner_id = 'fakeid'
-        self.linux_dist._restart_multipath(assigner_id)
-        reload_map = 'systemctl restart multipath-tools.service'
-        exec_cmd.assert_called_with(assigner_id, reload_map)
+    def test_restart_multipath(self):
+        reload_map = 'systemctl restart multipath-tools.service\n'
+        ret = self.linux_dist._restart_multipath()
+        self.assertEqual(ret, reload_map)
 
-    @mock.patch('zvmsdk.dist.ubuntu._restart_multipath')
-    @mock.patch('zvmsdk.dist.ubuntu._check_multipath_tools')
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_set_zfcp_multipath(self, exec_cmd, check_multipath,
-                                restart_multipath):
-        assigner_id = 'fakeid'
+    def test_set_zfcp_multipath(self):
+        modprobe = 'multipath'
         conf_file = '#blacklist {\n'
-        conf_file += '#\tdevnode "*"\n'
+        conf_file += '#\tdevnode \\"*\\"\n'
         conf_file += '#}\n'
-        cmd_conf = 'echo -e %s > /etc/multipath.conf' % conf_file
-        self.linux_dist._set_zfcp_multipath(assigner_id)
-        check_multipath.assert_called_with(assigner_id)
-        exec_cmd.assert_called_with(assigner_id, cmd_conf)
-        restart_multipath.assert_called_with(assigner_id)
+        cmd_conf = 'echo -e "%s" > /etc/multipath.conf' % conf_file
+        restart = 'systemctl restart multipath-tools.service\n'
+        expect = '\n'.join((modprobe,
+                            cmd_conf,
+                            restart))
+        ret = self.linux_dist._set_zfcp_multipath()
+        self.assertEqual(ret, expect)
 
-    @mock.patch.object(dist.LinuxDist, 'execute_cmd')
-    def test_offline_fcp_device(self, exec_cmd):
+    def test_offline_fcp_device(self):
         fcp = '1fc5'
-        assigner_id = 'fakeid'
         target_wwpn = '0x5005076812341234'
         target_lun = '0x0026000000000000'
         multipath = True
@@ -495,8 +446,10 @@ class UBUNTUTestCase(base.SDKTestCase):
         disk_offline = '/sbin/chzdev zfcp-lun %s -d' % target
         host_offline = '/sbin/chzdev zfcp-host %s -d' % fcp
         offline_dev = 'chccwdev -d %s' % fcp
-        self.linux_dist._offline_fcp_device(assigner_id, fcp,
-                                            target_wwpn, target_lun, multipath)
-        exec_cmd.assert_has_calls([mock.call(assigner_id, disk_offline),
-                                   mock.call(assigner_id, host_offline),
-                                   mock.call(assigner_id, offline_dev)])
+        ret = self.linux_dist._offline_fcp_device(fcp, target_wwpn,
+                                                  target_lun, multipath)
+
+        expect = '\n'.join((disk_offline,
+                            host_offline,
+                            offline_dev))
+        self.assertEqual(ret, expect)
