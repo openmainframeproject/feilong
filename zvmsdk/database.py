@@ -271,6 +271,7 @@ class NetworkDbOperator(object):
 class FCPDbOperator(object):
 
     def __init__(self):
+        self._module_id = 'FCP'
         self._initialize_table()
 
     def _initialize_table(self):
@@ -356,7 +357,14 @@ class FCPDbOperator(object):
                                   "fcp_id=?", (fcp,))
             fcp_list = result.fetchall()
             connections = fcp_list[0][2]
-            connections -= 1
+            if connections == 0:
+                msg = 'FCP with id: %s no connections in DB.' % fcp
+                LOG.error(msg)
+                obj_desc = "FCP with id: %s" % fcp
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
+            else:
+                connections -= 1
             if connections < 0:
                 connections = 0
                 LOG.warning("Warning: connections of fcp is negative",
