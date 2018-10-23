@@ -14,8 +14,10 @@
 
 
 import mock
+import shutil
 
 from zvmsdk import database
+from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import volumeop
 from zvmsdk.tests.unit import base
@@ -28,45 +30,58 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
         super(TestVolumeConfiguratorAPI, cls).setUpClass()
         cls.configurator = volumeop.VolumeConfiguratorAPI()
 
-    @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI.config_attach_active")
+    @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
+    @mock.patch("zvmsdk.smutclient.SMUTClient.execute_cmd")
+    @mock.patch.object(dist.rhel7, "create_active_net_interf_cmd")
+    @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI."
+                "configure_volume_attach")
     @mock.patch("zvmsdk.vmops.VMOps.is_reachable")
-    def test_config_attach_reachable(self, is_reachable, attach_active):
+    def test_config_attach_reachable(self, is_reachable, config_attach,
+                                     restart_zvmguestconfigure, execute_cmd,
+                                     get_dist):
         fcp = 'bfc3'
         assigner_id = 'userid1'
         target_wwpn = '1111'
         target_lun = '2222'
-        multipath = ''
+        multipath = True
         os_version = 'rhel7'
         mount_point = '/dev/sdz'
 
+        get_dist.return_value = dist.rhel7
+        config_attach.return_value = None
         is_reachable.return_value = True
+        active_cmds = 'systemctl start zvmguestconfigure.service'
+        restart_zvmguestconfigure.return_value = active_cmds
 
         self.configurator.config_attach(fcp, assigner_id, target_wwpn,
                                         target_lun, multipath, os_version,
                                         mount_point)
-        attach_active.assert_called_once_with(fcp, assigner_id, target_wwpn,
-                                              target_lun, multipath,
-                                              os_version, mount_point)
+        get_dist.assert_called_once_with(os_version)
+        restart_zvmguestconfigure.assert_called_once_with()
+        execute_cmd.assert_called_once_with(assigner_id,
+                                            active_cmds)
 
-    @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI.config_attach_inactive")
+    @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
+    @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI."
+                "configure_volume_attach")
     @mock.patch("zvmsdk.vmops.VMOps.is_reachable")
-    def test_config_attach_not_reachable(self, is_reachable, attach_inactive):
+    def test_config_attach_not_reachable(self, is_reachable, config_attach,
+                                         get_dist):
         fcp = 'bfc3'
         assigner_id = 'userid1'
         target_wwpn = '1111'
         target_lun = '2222'
-        multipath = ''
+        multipath = True
         os_version = 'rhel7'
         mount_point = '/dev/sdz'
-
         is_reachable.return_value = False
+        get_dist.return_value = dist.rhel7
+        config_attach.return_value = None
 
         self.configurator.config_attach(fcp, assigner_id, target_wwpn,
                                         target_lun, multipath, os_version,
                                         mount_point)
-        attach_inactive.assert_called_once_with(fcp, assigner_id, target_wwpn,
-                                              target_lun, multipath,
-                                              os_version, mount_point)
+        get_dist.assert_called_once_with(os_version)
 
     def test_config_force_attach(self):
         pass
@@ -74,39 +89,61 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
     def test_config_force_detach(self):
         pass
 
-    @mock.patch("zvmsdk.dist.LinuxDist.config_volume_attach_active")
-    def test_config_attach_active(self, dist_attach_active):
+    @mock.patch("zvmsdk.smutclient.SMUTClient.punch_file")
+    @mock.patch.object(shutil, "rmtree")
+    @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI._create_file")
+    @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
+    @mock.patch("zvmsdk.dist.LinuxDist.get_volume_attach_configuration_cmds")
+    def test_config_attach_active(self, get_attach_cmds, get_dist,
+                                  create_file, rmtree, punch_file):
         fcp = 'bfc3'
         assigner_id = 'userid1'
         target_wwpn = '1111'
         target_lun = '2222'
-        multipath = ''
+        multipath = True
         os_version = 'rhel7'
         mount_point = '/dev/sdz'
-        self.configurator.config_attach_active(fcp, assigner_id,
-                                               target_wwpn, target_lun,
-                                               multipath, os_version,
-                                               mount_point)
-        dist_attach_active.assert_called_once_with(fcp, assigner_id,
-                                                   target_wwpn, target_lun,
-                                                   multipath, mount_point)
+        config_file = '/tm/userid1xxx/attach_volume.sh'
+        config_file_path = '/tm/userid1xxx/'
+        linuxdist = dist.rhel7
+        get_dist.return_value = linuxdist
+        create_file.return_value = (config_file, config_file_path)
+        rmtree.return_value = None
+        self.configurator.configure_volume_attach(fcp, assigner_id,
+                                                  target_wwpn, target_lun,
+                                                  multipath, os_version,
+                                                  mount_point, linuxdist)
+        get_attach_cmds.assert_called_once_with(fcp, target_wwpn, target_lun,
+                                                multipath, mount_point)
+        punch_file.assert_called_once_with(assigner_id, config_file, 'X')
 
-    @mock.patch("zvmsdk.dist.LinuxDist.config_volume_detach_active")
-    def test_config_detach_active(self, dist_detach_active):
+    @mock.patch("zvmsdk.smutclient.SMUTClient.punch_file")
+    @mock.patch.object(shutil, "rmtree")
+    @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI._create_file")
+    @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
+    @mock.patch("zvmsdk.dist.LinuxDist.get_volume_detach_configuration_cmds")
+    def test_config_detach_active(self, get_detach_cmds, get_dist,
+                                  create_file, rmtree, punch_file):
         fcp = 'bfc3'
         assigner_id = 'userid1'
         target_wwpn = '1111'
         target_lun = '2222'
-        multipath = ''
+        multipath = True
         os_version = 'rhel7'
         mount_point = '/dev/sdz'
-        self.configurator.config_detach_active(fcp, assigner_id,
-                                               target_wwpn, target_lun,
-                                               multipath, os_version,
-                                               mount_point)
-        dist_detach_active.assert_called_once_with(fcp, assigner_id,
-                                                   target_wwpn, target_lun,
-                                                   multipath, mount_point)
+        config_file = '/tm/userid1xxx/attach_volume.sh'
+        config_file_path = '/tm/userid1xxx/'
+        linuxdist = dist.rhel7
+        get_dist.return_value = linuxdist
+        create_file.return_value = (config_file, config_file_path)
+        rmtree.return_value = None
+        self.configurator.configure_volume_detach(fcp, assigner_id,
+                                                  target_wwpn, target_lun,
+                                                  multipath, os_version,
+                                                  mount_point, linuxdist)
+        get_detach_cmds.assert_called_once_with(fcp, target_wwpn, target_lun,
+                                                multipath, mount_point)
+        punch_file.assert_called_once_with(assigner_id, config_file, 'X')
 
 
 class TestFCP(base.SDKTestCase):
@@ -367,9 +404,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
         finally:
             self.db_op.delete('b83c')
 
+    @mock.patch("zvmsdk.utils.check_userid_exist")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disk")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
-    def test_attach(self, mock_dedicate, mock_add_disk):
+    def test_attach(self, mock_dedicate, mock_add_disk, mock_check):
 
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
@@ -380,6 +418,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'zvm_fcp': 'b83c',
                            'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
+        mock_check.return_value = True
         self.db_op = database.FCPDbOperator()
         self.db_op.new('b83c')
 
@@ -392,9 +431,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
         finally:
             self.db_op.delete('b83c')
 
+    @mock.patch("zvmsdk.utils.check_userid_exist")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disk")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
-    def test_attach_no_dedicate(self, mock_dedicate, mock_add_disk):
+    def test_attach_no_dedicate(self, mock_dedicate, mock_add_disk,
+                                mock_check):
 
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
@@ -405,6 +446,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'zvm_fcp': 'b83c',
                            'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
+        mock_check.return_value = True
         self.db_op = database.FCPDbOperator()
         self.db_op.new('b83c')
         self.db_op.assign('b83c', 'USER1')
@@ -419,12 +461,14 @@ class TestFCPVolumeManager(base.SDKTestCase):
         finally:
             self.db_op.delete('b83c')
 
+    @mock.patch("zvmsdk.utils.check_userid_exist")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
     @mock.patch("zvmsdk.volumeop.FCPManager.decrease_fcp_usage")
     @mock.patch("zvmsdk.volumeop.FCPManager.increase_fcp_usage")
     def test_attach_rollback(self, mock_increase, mock_decrease,
-                             mock_dedicate, mock_undedicate):
+                             mock_dedicate, mock_undedicate,
+                             mock_check):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -434,6 +478,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'zvm_fcp': 'b83c',
                            'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
+        mock_check.return_value = True
         mock_increase.return_value = True
         results = {'rs': 0, 'errno': 0, 'strError': '',
                    'overallRC': 1, 'logEntries': [], 'rc': 0,
@@ -447,12 +492,13 @@ class TestFCPVolumeManager(base.SDKTestCase):
                           connection_info)
         mock_undedicate.assert_called_once_with('b83c', 'USER1')
 
+    @mock.patch("zvmsdk.utils.check_userid_exist")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disk")
     @mock.patch("zvmsdk.volumeop.FCPManager.increase_fcp_usage")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disk")
     @mock.patch("zvmsdk.volumeop.FCPManager.decrease_fcp_usage")
     def test_detach_rollback(self, mock_decrease, mock_remove_disk,
-                             mock_increase, mock_add_disk):
+                             mock_increase, mock_add_disk, mock_check):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -463,6 +509,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
         # this return does not matter
+        mock_check.return_value = True
         mock_decrease.return_value = 0
         results = {'rs': 0, 'errno': 0, 'strError': '',
                    'overallRC': 1, 'logEntries': [], 'rc': 0,
@@ -477,9 +524,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                               '2222', False, 'rhel7',
                                               '/dev/sdz')
 
+    @mock.patch("zvmsdk.utils.check_userid_exist")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disk")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
-    def test_detach(self, mock_undedicate, mock_remove_disk):
+    def test_detach(self, mock_undedicate, mock_remove_disk, mock_check):
 
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
@@ -490,6 +538,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'zvm_fcp': 'b83c',
                            'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
+        mock_check.return_value = True
         self.db_op = database.FCPDbOperator()
         self.db_op.new('b83c')
         self.db_op.assign('b83c', 'user1')
@@ -503,9 +552,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
         finally:
             self.db_op.delete('b83c')
 
+    @mock.patch("zvmsdk.utils.check_userid_exist")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disk")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
-    def test_detach_no_undedicate(self, mock_undedicate, mock_remove_disk):
+    def test_detach_no_undedicate(self, mock_undedicate, mock_remove_disk,
+                                  mock_check):
 
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
@@ -516,6 +567,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'zvm_fcp': 'b83c',
                            'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
+        mock_check.return_value = True
         self.db_op = database.FCPDbOperator()
         self.db_op.new('b83c')
         self.db_op.assign('b83c', 'user1')
