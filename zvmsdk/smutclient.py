@@ -151,6 +151,9 @@ class SMUTClient(object):
         for idx, disk in enumerate(disk_list):
             vdev = self.generate_disk_vdev(start_vdev=start_vdev, offset=idx)
             self._add_mdisk(userid, disk, vdev)
+            disk['vdev'] = vdev
+
+        return disk_list
 
     def remove_mdisks(self, userid, vdev_list):
         for vdev in vdev_list:
@@ -464,7 +467,7 @@ class SMUTClient(object):
         # Continue to add disk
         if disk_list:
             # Add disks for vm
-            self.add_mdisks(userid, disk_list)
+            return self.add_mdisks(userid, disk_list)
 
     def _add_mdisk(self, userid, disk, vdev):
         """Create one disk for userid
