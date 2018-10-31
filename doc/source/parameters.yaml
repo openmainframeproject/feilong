@@ -994,3 +994,30 @@ mount_point:
   in: body
   required: false
   type: string
+disk_list_output:
+  description: |
+    A list of created disks info for the guest
+    It has one dictionary that contain some of the below keys for
+    each disk.
+  in: body
+  required: true
+  type: list
+vdev_disk:
+  description: |
+    Device number of the disk, 1- to 4- hexadecimal digits.
+  in: body
+  required: true
+  type: string
+disk_pool_output:
+  description: |
+    disk pool, the format is ``ECKD:eckdpoolname`` or ``FBA:fbapoolname``.
+  in: body
+  required: true
+  type: string
+size_output:
+  description: |
+    size of disk, case insensitive, the unit can be in Megabytes (M),
+    Gigabytes (G), for example, please ``512M``, ``1g``.
+  in: body
+  required: true
+  type: string

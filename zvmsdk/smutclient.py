@@ -151,6 +151,32 @@ class SMUTClient(object):
         for idx, disk in enumerate(disk_list):
             vdev = self.generate_disk_vdev(start_vdev=start_vdev, offset=idx)
             self._add_mdisk(userid, disk, vdev)
+            disk['vdev'] = vdev
+
+            if disk.get('disk_pool') is None:
+                disk['disk_pool'] = CONF.zvm.disk_pool
+
+            sizeUpper = disk.get('size').strip().upper()
+            sizeUnit = sizeUpper[-1]
+            if sizeUnit != 'G' and sizeUnit != 'M':
+                sizeValue = sizeUpper
+                disk_pool = disk.get('disk_pool')
+                [diskpool_type, diskpool_name] = disk_pool.split(':')
+                if (diskpool_type.upper() == 'ECKD'):
+                    # Convert the cylinders to bytes
+                    convert = 737280
+                else:
+                    # Convert the blocks to bytes
+                    convert = 512
+                byteSize = float(float(int(sizeValue) * convert / 1024) / 1024)
+                unit = "M"
+                if (byteSize > 1024):
+                    byteSize = float(byteSize / 1024)
+                    unit = "G"
+                byteSize = "%.1f" % byteSize
+                disk['size'] = byteSize + unit
+
+        return disk_list
 
     def remove_mdisks(self, userid, vdev_list):
         for vdev in vdev_list:
@@ -464,7 +490,7 @@ class SMUTClient(object):
         # Continue to add disk
         if disk_list:
             # Add disks for vm
-            self.add_mdisks(userid, disk_list)
+            return self.add_mdisks(userid, disk_list)
 
     def _add_mdisk(self, userid, disk, vdev):
         """Create one disk for userid

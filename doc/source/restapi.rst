@@ -170,7 +170,19 @@ Create a vm in z/VM
 
 * Response contents:
 
-  No Response
+.. restapi_parameters:: parameters.yaml
+
+  - output: disk_list_output
+  - vdev: vdev_disk
+  - size: size_output
+  - format: format_disk
+  - is_boot_disk: is_boot_disk
+  - disk_pool: disk_pool_output
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_disk_output.tpl
+   :language: javascript
 
 Guest add disks
 ---------------
@@ -202,7 +214,19 @@ Add disks for a guest
 
 * Response contents:
 
-  No Response
+.. restapi_parameters:: parameters.yaml
+
+  - output: disk_list_output
+  - vdev: vdev_disk
+  - size: size_output
+  - format: format_disk
+  - is_boot_disk: is_boot_disk
+  - disk_pool: disk_pool_output
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_disk_output.tpl
+   :language: javascript
 
 Guest configure disks
 ---------------------
