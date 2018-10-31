@@ -617,8 +617,8 @@ class SDKAPI(object):
 
         action = "create guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            self._vmops.create_vm(userid, vcpus, memory, disk_list,
-                                  user_profile, max_cpu, max_mem)
+            return self._vmops.create_vm(userid, vcpus, memory, disk_list,
+                                         user_profile, max_cpu, max_mem)
 
     @check_guest_exist()
     def guest_live_resize_cpus(self, userid, cpu_cnt):
@@ -737,7 +737,7 @@ class SDKAPI(object):
 
         action = "create disks '%s' for guest '%s'" % (str(disk_list), userid)
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            self._vmops.create_disks(userid, disk_list)
+            return self._vmops.create_disks(userid, disk_list)
 
     @check_guest_exist()
     def guest_delete_disks(self, userid, disk_vdev_list):

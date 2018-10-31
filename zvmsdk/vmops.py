@@ -167,12 +167,13 @@ class VMOps(object):
         """Create z/VM userid into user directory for a z/VM instance."""
         LOG.info("Creating the user directory for vm %s", userid)
 
-        self._smutclient.create_vm(userid, cpu, memory,
+        info = self._smutclient.create_vm(userid, cpu, memory,
                                    disk_list, user_profile,
                                    max_cpu, max_mem)
 
         # add userid into smapi namelist
         self._smutclient.namelist_add(self._namelist, userid)
+        return info
 
     def create_disks(self, userid, disk_list):
         LOG.info("Beging to create disks for vm: %(userid)s, list: %(list)s",
@@ -189,9 +190,10 @@ class VMOps(object):
             start_vdev = hex(int(max(exist_disks), 16) + 1)[2:].rjust(4, '0')
         else:
             start_vdev = None
-        self._smutclient.add_mdisks(userid, disk_list, start_vdev)
+        info = self._smutclient.add_mdisks(userid, disk_list, start_vdev)
 
         LOG.info("Complete create disks for vm: %s", userid)
+        return info
 
     def delete_disks(self, userid, vdev_list):
         LOG.info("Begin to delete disk on vm: %(userid), vdev list: %(list)s",
