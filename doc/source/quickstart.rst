@@ -69,7 +69,7 @@ Preparation on BYOL
 
        OPTION LNKNOPAS
 
-   If under RACF, RACF command need to be executed like blow while the ``BYOL``
+   If under RACF, RACF command need to be executed like below while the ``BYOL``
    is the name of the virtual machine which is going to run cloud connector.
 
    .. code-block:: text
