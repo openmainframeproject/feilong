@@ -2119,7 +2119,7 @@ class SMUTClient(object):
                                                     offset = (idx + 1))
             fmt = disk.get('format')
             mount_dir = disk.get('mntdir') or ''.join(['/mnt/ephemeral',
-                                                       str(idx)])
+                                                       str(vdev)])
             disk_parms = self._generate_disk_parmline(vdev, fmt, mount_dir)
             func_name = '/var/lib/zvmsdk/setupDisk'
             self.aemod_handler(userid, func_name, disk_parms)
