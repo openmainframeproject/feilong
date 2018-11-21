@@ -13,6 +13,7 @@
 #    under the License.
 
 
+import os
 import six
 
 from zvmsdk import config
@@ -44,6 +45,7 @@ class VMOps(object):
         self._pathutils = zvmutils.PathUtils()
         self._namelist = zvmutils.get_namelist()
         self._GuestDbOperator = database.GuestDbOperator()
+        self._ImageDbOperator = database.ImageDbOperator()
 
     def get_power_state(self, userid):
         """Get power status of a z/VM instance."""
@@ -228,11 +230,48 @@ class VMOps(object):
         LOG.debug("executing cmd: %s", cmdStr)
         return self._smutclient.execute_cmd(userid, cmdStr)
 
+    def set_hostname(self, userid, hostname, os_version):
+        """Punch a script that used to set the hostname of the guest.
+
+        :param str guest: the user id of the guest
+        :param str hostname: the hostname of the guest
+        :param str os_version: version of guest operation system
+        """
+        tmp_path = self._pathutils.get_guest_temp_path(userid)
+        if not os.path.exists(tmp_path):
+            os.makedirs(tmp_path)
+        tmp_file = tmp_path + '/hostname.sh'
+
+        lnxdist = self._dist_manager.get_linux_dist(os_version)
+        lines = lnxdist.generate_set_hostname_script(userid, hostname)
+        with open(tmp_file, 'w') as f:
+            f.writelines(lines)
+
+        requestData = "ChangeVM " + userid + " punchfile " + \
+                            tmp_file + " --class x"
+        LOG.debug("Punch script to guest %s to set hostname" % userid)
+
+        try:
+            self._smutclient._request(requestData)
+        except exception.SDKSMUTRequestFailed as err:
+            msg = ("Failed to punch set_hostname script to userid '%s'. SMUT "
+                   "error: %s" % (userid, err.format_message()))
+            LOG.error(msg)
+            raise exception.SDKSMUTRequestFailed(err.results, msg)
+        finally:
+            self._pathutils.clean_temp_folder(tmp_path)
+
     def guest_deploy(self, userid, image_name, transportfiles=None,
-                     remotehost=None, vdev=None):
+                     remotehost=None, vdev=None, hostname=None):
         LOG.info("Begin to deploy image on vm %s", userid)
-        self._smutclient.guest_deploy(userid, image_name,
-                                      transportfiles, remotehost, vdev)
+        self._smutclient.guest_deploy(userid, image_name, transportfiles,
+                                      remotehost, vdev)
+
+        # punch scripts to set hostname
+        if (transportfiles is None) and hostname:
+            image_info = self._ImageDbOperator.image_query_record(image_name)
+            os_version = image_info[0]['imageosdistro']
+            self.set_hostname(userid, hostname, os_version)
 
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):
