@@ -152,6 +152,16 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                                               '/test/transport.tgz', None,
                                               None)
 
+    @mock.patch('zvmsdk.vmops.VMOps.set_hostname')
+    @mock.patch("zvmsdk.smutclient.SMUTClient.guest_deploy")
+    def test_guest_deploy_sethostname(self, deploy_image_to_vm, set_hostname):
+        fake_hostname = 'fakehost'
+        self.vmops.guest_deploy('fakevm', 'fakeimg',
+                                hostname=fake_hostname)
+        deploy_image_to_vm.assert_called_with('fakevm', 'fakeimg', None, None,
+                                              None)
+        set_hostname.assert_called_once_with('fakevm', fake_hostname)
+
     @mock.patch("zvmsdk.smutclient.SMUTClient.guest_capture")
     def test_guest_capture(self, guest_capture):
         self.vmops.guest_capture('fakevm', 'fakeimg')

@@ -13,6 +13,7 @@
 #    under the License.
 
 
+import os
 import six
 
 from zvmsdk import config
@@ -228,11 +229,46 @@ class VMOps(object):
         LOG.debug("executing cmd: %s", cmdStr)
         return self._smutclient.execute_cmd(userid, cmdStr)
 
+    def set_hostname(self, userid, hostname):
+        """Punch a script that used to set the hostname of the guest.
+
+        :param str guest: the user id of the vm
+        :param str hostname: the hostname of the vm
+        """
+        tmp_path = self._pathutils.get_guest_temp_path(userid)
+        if not os.path.exists(tmp_path):
+            os.makedirs(tmp_path)
+        tmp_file = tmp_path + '/hostname.sh'
+
+        lines = ['#!/bin/bash\n',
+                 'echo -n %s > /etc/hostname\n' % hostname,
+                 '/bin/hostname %s\n' % hostname]
+        with open(tmp_file, 'w') as f:
+            f.writelines(lines)
+
+        requestData = "ChangeVM " + userid + " punchfile " + \
+                            tmp_file + " --class x"
+        LOG.debug("Punch script to guest %s to set hostname" % userid)
+
+        try:
+            self._smutclient._request(requestData)
+        except exception.SDKSMUTRequestFailed as err:
+            msg = ("Failed to punch set_hostname script to userid '%s'. SMUT "
+                   "error: %s" % (userid, err.format_message()))
+            LOG.error(msg)
+            raise exception.SDKSMUTRequestFailed(err.results, msg)
+        finally:
+            self._pathutils.clean_temp_folder(tmp_path)
+
     def guest_deploy(self, userid, image_name, transportfiles=None,
-                     remotehost=None, vdev=None):
+                     remotehost=None, vdev=None, hostname=None):
         LOG.info("Begin to deploy image on vm %s", userid)
-        self._smutclient.guest_deploy(userid, image_name,
-                                      transportfiles, remotehost, vdev)
+        self._smutclient.guest_deploy(userid, image_name, transportfiles,
+                                      remotehost, vdev)
+
+        # punch scripts to set hostname
+        if (transportfiles is None) and hostname:
+            self.set_hostname(userid, hostname)
 
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):
