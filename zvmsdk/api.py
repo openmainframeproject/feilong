@@ -337,7 +337,7 @@ class SDKAPI(object):
 
     @check_guest_exist()
     def guest_deploy(self, userid, image_name, transportfiles=None,
-                     remotehost=None, vdev=None):
+                     remotehost=None, vdev=None, hostname=None):
         """ Deploy the image to vm.
 
         :param userid: (str) the user id of the vm
@@ -346,12 +346,14 @@ class SDKAPI(object):
         :param remotehost: the server where the transportfiles located, the
                format is username@IP, eg nova@192.168.99.1
         :param vdev: (str) the device that image will be deploy to
+        :param hostname: (str) the hostname of the vm. This parameter will be
+               ignored if transportfiles present.
         """
         action = ("deploy image '%(img)s' to guest '%(vm)s'" %
                   {'img': image_name, 'vm': userid})
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            self._vmops.guest_deploy(userid, image_name,
-                                     transportfiles, remotehost, vdev)
+            self._vmops.guest_deploy(userid, image_name, transportfiles,
+                                     remotehost, vdev, hostname)
 
     @check_guest_exist()
     def guest_capture(self, userid, image_name, capture_type='rootonly',
