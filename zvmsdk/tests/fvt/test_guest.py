@@ -611,6 +611,39 @@ class GuestHandlerTestCase(GuestHandlerBase):
         resp_content = test_utils.load_output(resp_state.content)
         self.assertEqual('off', resp_content['output'])
 
+    @parameterized.expand(TEST_IMAGE_LIST)
+    def test_guest_create_deploy_set_hostname(self, case_name, image_path,
+                                              os_version):
+        """Deploy with hostname specified."""
+        userid = self._get_userid_auto_cleanup()
+        ip_addr = self.utils.generate_test_ip()
+        guest_networks = [{'ip_addr': ip_addr, 'cidr': CONF.tests.cidr}]
+        hostname = 'fakehostname'
+
+        resp = self.client.guest_create(userid)
+        self.assertEqual(200, resp.status_code)
+        self.assertTrue(self.utils.wait_until_create_userid_complete(userid))
+
+        image_name = self.utils.import_image_if_not_exist(image_path,
+                                                          os_version)
+
+        resp = self.client.guest_deploy(userid, image_name=image_name,
+                                        hostname=hostname)
+        self.assertEqual(200, resp.status_code)
+
+        # todo: create network interface
+        resp = self.client.guest_create_network_interface(userid, os_version,
+                                                          guest_networks)
+
+        resp = self.client.guest_start(userid)
+        self.assertEqual(200, resp.status_code)
+        self.assertTrue(self.utils.wait_until_guest_reachable(userid))
+
+        # Verify hostname changed
+        time.sleep(30)
+        result = self._smutclient.execute_cmd(userid, 'hostname')
+        self.assertIn('fakehostname', result)
+
     def test_guests_get_nic_info(self):
         resp = self.client.guests_get_nic_info()
         self.assertEqual(200, resp.status_code)

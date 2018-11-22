@@ -489,3 +489,8 @@ max_mem = {
     'type': 'string',
     'pattern': '^[1-9][0-9]{0,3}[m|M|g|G]$'
     }
+
+hostname = {
+    'type': 'string', 'minLength': 1, 'maxLength': 255,
+    'pattern': '^[a-zA-Z0-9-._]*$',
+}
