@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "620f8b4b_15cf16ee",
+        "filename": "zvmsdk/api.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-11-22T07:52:23Z",
+      "side": 1,
+      "message": "maybe at least a INFO here to indicate both given",
+      "range": {
+        "startLine": 349,
+        "startChar": 8,
+        "endLine": 350,
+        "endChar": 49
+      },
+      "revId": "dc35dd48e97b9ba09904c62b91ae0b2fb7f44844",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55ea4755_d3c4f436",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 483,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-11-22T07:52:23Z",
+      "side": 1,
+      "message": "what about /etc/hosts ??\n\notherwise ping hostname will fail?",
+      "range": {
+        "startLine": 481,
+        "startChar": 8,
+        "endLine": 483,
+        "endChar": 49
+      },
+      "revId": "dc35dd48e97b9ba09904c62b91ae0b2fb7f44844",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "432bea8d_c8832729",
+        "filename": "zvmsdk/vmops.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-11-22T07:52:23Z",
+      "side": 1,
+      "message": "not sure it\u0027s ok to clean temp folder here, will it be possible some other temp files there?\nI think clean temp file should be enough here",
+      "range": {
+        "startLine": 262,
+        "startChar": 13,
+        "endLine": 262,
+        "endChar": 55
+      },
+      "revId": "dc35dd48e97b9ba09904c62b91ae0b2fb7f44844",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
