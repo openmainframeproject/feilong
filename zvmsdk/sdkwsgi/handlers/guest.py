@@ -328,12 +328,14 @@ class VMAction(object):
         transportfiles = body.get('transportfiles', None)
         remotehost = body.get('remotehost', None)
         vdev = body.get('vdev', None)
+        hostname = body.get('hostname', None)
 
         request_info = ("action: 'deploy', userid: %(userid)s,"
                         "transportfiles: %(trans)s, remotehost: %(remote)s,"
                         "vdev: %(vdev)s" %
                         {'userid': userid, 'trans': transportfiles,
-                         'remote': remotehost, 'vdev': vdev
+                         'remote': remotehost, 'vdev': vdev,
+                         'hostname': hostname
                          })
 
         info = None
@@ -354,7 +356,7 @@ class VMAction(object):
                                             image_name,
                                             transportfiles=transportfiles,
                                             remotehost=remotehost,
-                                            vdev=vdev)
+                                            vdev=vdev, hostname=hostname)
         finally:
             try:
                 self.dd_semaphore.release()

@@ -190,6 +190,7 @@ deploy = {
         'transportfiles': {'type': ['string']},
         'remotehost': parameter_types.remotehost,
         'vdev': parameter_types.vdev,
+        'hostname': parameter_types.hostname,
     },
     'required': ['image'],
     'additionalProperties': False,

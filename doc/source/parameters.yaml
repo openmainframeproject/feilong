@@ -604,6 +604,11 @@ deploy_vdev:
   in: body
   required: false
   type: string
+deploy_hostname:
+  description: hostname of the guest
+  in: body
+  required: false
+  type: string
 capture_type:
   description: |
     The type of capture\:
