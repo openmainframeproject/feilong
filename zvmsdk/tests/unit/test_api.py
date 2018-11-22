@@ -51,7 +51,7 @@ class SDKAPITestCase(base.SDKTestCase):
                               transportfiles=transportfiles,
                               vdev=vdev)
         guest_deploy.assert_called_with(user_id.upper(), image_name,
-                                        transportfiles, None, vdev)
+                                        transportfiles, None, vdev, None)
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_import")
     def test_image_import(self, image_import):

@@ -477,6 +477,12 @@ class LinuxDist(object):
         """delete udev rules file."""
         pass
 
+    def generate_set_hostname_script(self, hostname):
+        lines = ['#!/bin/bash\n',
+                 'echo -n %s > /etc/hostname\n' % hostname,
+                 '/bin/hostname %s\n' % hostname]
+        return lines
+
 
 class rhel(LinuxDist):
     def _get_network_file_path(self):
@@ -651,6 +657,13 @@ class rhel6(rhel):
         self.execute_cmd(assigner_id, set_zfcp_conf)
         trigger_uevent = 'echo add >> /sys/bus/ccw/devices/%s/uevent' % device
         self.execute_cmd(assigner_id, trigger_uevent)
+
+    def generate_set_hostname_script(self, hostname):
+        lines = ['#!/bin/bash\n',
+                 'sed -i "s/^HOSTNAME=.*/HOSTNAME=%s/" '
+                    '/etc/sysconfig/network\n' % hostname,
+                 '/bin/hostname %s\n' % hostname]
+        return lines
 
 
 class rhel7(rhel):
