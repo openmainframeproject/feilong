@@ -1089,6 +1089,7 @@ After guest created, deploy image onto the guest.
   - transportfiles: transportfiles
   - remotehost: remotehost_transportfiles
   - vdev: deploy_vdev
+  - hostname: deploy_hostname
 
 * Request sample:
 

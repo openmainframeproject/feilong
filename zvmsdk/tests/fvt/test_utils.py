@@ -175,7 +175,7 @@ class TestzCCClient(object):
         return self.api_request(url=url, method='POST', body=body)
 
     def guest_deploy(self, userid, image_name=None, transportfiles=None,
-                     remotehost=None, vdev="100"):
+                     remotehost=None, vdev="100", hostname=None):
         if transportfiles is not None:
             body = """{"action": "deploy",
                       "image": "%s",
@@ -183,9 +183,15 @@ class TestzCCClient(object):
                       "transportfiles": "%s"}""" % (image_name, vdev,
                                                     transportfiles)
         else:
-            body = """{"action": "deploy",
-                   "image": "%s",
-                   "vdev": "%s"}""" % (image_name, vdev)
+            if hostname is not None:
+                body = """{"action": "deploy",
+                       "image": "%s",
+                       "vdev": "%s",
+                       "hostname": "%s"}""" % (image_name, vdev, hostname)
+            else:
+                body = """{"action": "deploy",
+                       "image": "%s",
+                       "vdev": "%s"}""" % (image_name, vdev)
 
         return self._guest_action(userid, body)
 
