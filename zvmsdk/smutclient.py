@@ -500,7 +500,7 @@ class SMUTClient(object):
 
         """
         size = disk['size']
-        fmt = disk.get('format')
+        fmt = disk.get('format', 'ext4')
         disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
         [diskpool_type, diskpool_name] = disk_pool.split(':')
 
