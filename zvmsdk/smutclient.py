@@ -2124,6 +2124,9 @@ class SMUTClient(object):
             func_name = '/var/lib/zvmsdk/setupDisk'
             self.aemod_handler(userid, func_name, disk_parms)
 
+        # trigger do-script
+        self.execute_cmd(userid, "/usr/bin/zvmguestconfigure start")
+
     def aemod_handler(self, instance_name, func_name, parms):
         rd = ' '.join(['changevm', instance_name, 'aemod', func_name,
                        '--invparms', parms])
