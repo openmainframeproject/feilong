@@ -320,7 +320,7 @@ class GuestActionsTest(SDKWSGITest):
         guest.guest_action(self.req)
         mock_action.assert_called_once_with('guest_deploy', FAKE_USERID,
             'image1', remotehost='test@host1.x.y', transportfiles='file1',
-            vdev='1000')
+            vdev='1000', hostname=None)
 
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_deploy_missing_param(self, mock_userid):
@@ -373,7 +373,7 @@ class GuestActionsTest(SDKWSGITest):
         guest.guest_action(self.req)
         mock_action.assert_called_once_with('guest_deploy', FAKE_USERID,
             'image1', remotehost='test@192.168.99.99',
-            transportfiles='file1', vdev='1000')
+            transportfiles='file1', vdev='1000', hostname=None)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
@@ -391,7 +391,7 @@ class GuestActionsTest(SDKWSGITest):
         guest.guest_action(self.req)
         mock_action.assert_called_once_with('guest_deploy', FAKE_USERID,
             'image1', remotehost='test123@test.xyz.com',
-            transportfiles='file1', vdev='1000')
+            transportfiles='file1', vdev='1000', hostname=None)
 
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_deploy_without_username_in_remotehost(self,
