@@ -347,6 +347,17 @@ class SMUTClient(object):
             status = results['response'][0].partition(': ')[2]
         return status
 
+    def _check_power_state(self, userid, action):
+        # Get the vm status
+        power_state = self.get_power_state(userid)
+
+        # Power on the vm if it is inactive
+        if power_state == 'off':
+            msg = ('The vm %s is powered off, please start up it '
+                   'before %s' % (userid, action))
+            raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                   msg=msg)
+
     def guest_start(self, userid):
         """Power on VM."""
         requestData = "PowerVM " + userid + " on"
@@ -378,11 +389,15 @@ class SMUTClient(object):
             self._request(requestData)
 
     def guest_pause(self, userid):
+        self._check_power_state(userid, 'pause')
+
         requestData = "PowerVM " + userid + " pause"
         with zvmutils.log_and_reraise_smut_request_failed():
             self._request(requestData)
 
     def guest_unpause(self, userid):
+        self._check_power_state(userid, 'unpause')
+
         requestData = "PowerVM " + userid + " unpause"
         with zvmutils.log_and_reraise_smut_request_failed():
             self._request(requestData)
@@ -665,15 +680,7 @@ class SMUTClient(object):
                                           'type': capture_type})
         LOG.info(msg)
 
-        # Get the vm status
-        power_state = self.get_power_state(userid)
-        # Power on the vm if it is inactive
-        if power_state == 'off':
-            msg = ('The vm %s is powered off, please start up it '
-                   'before capture' % userid)
-            raise exception.SDKGuestOperationError(rs=5, userid=userid,
-                                                   msg=msg)
-
+        self._check_power_state(userid, 'capture')
         # Make sure the iucv channel is ready for communication on source vm
         try:
             self.execute_cmd(userid, 'pwd')
