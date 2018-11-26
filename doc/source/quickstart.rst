@@ -362,7 +362,10 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
 
   Replace the *PASSWORD* with your own password for the new created user.
 
-* Configure sudo access for 'zvmsdk' user
+* Configure sudo access for 'zvmsdk' user (optional)
+
+  If z/VM Cloud Connector is installed from source code ``python setup.py install`` or from package install
+  such as deb or rpm, then you can skip this step as it's already done during install stage.
 
   The z/VM SDK Daemon relies on some privileged commands for the management of the z/VM host, so you
   need to grant the 'zvmsdk' user to run following commands with sudo without password:
