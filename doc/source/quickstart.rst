@@ -30,11 +30,10 @@ system should be updated to the latest level with APARs listed in the
 .. _z/VM service Information: http://www.vm.ibm.com/sysman/osmntlvl.html
 
 2. z/VM Cloud Connector has to be installed inside a Linux running on z/VM.
-Currently planned to be supported distros include the most current
-supported versions:
+Currently supported distros include the most current supported versions:
 
-  - SUSE Linux Enterprise Server
-  - Red Hat Enterprise Linux
+  - SUSE Linux Enterprise Server 12.x
+  - Red Hat Enterprise Linux 7.x
   - Ubuntu 16.04 LTS
 
   **NOTE**: This guide is based on RHEL 7.2, you may need to adjust the commands
