@@ -577,9 +577,15 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.apibase.verify_result('test_guests_get_stats',
                                    resp.content)
 
+        # pause unpause a stopped instance should return 409
+        resp = self.client.guest_pause(userid)
+        self.assertEqual(409, resp.status_code)
+        resp = self.client.guest_unpause(userid)
+        self.assertEqual(409, resp.status_code)
+
         # Capture a powered off instance will lead to error
         resp = self.client.guest_capture(userid, 'failed')
-        self.assertEqual(500, resp.status_code)
+        self.assertEqual(409, resp.status_code)
 
         resp = self.client.guest_start(userid)
         self.assertEqual(200, resp.status_code)
