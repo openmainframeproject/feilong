@@ -264,7 +264,7 @@ Guest delete disks
 
 **DELETE /guests/{userid}/disks**
 
-Delete disks form a guest
+Delete disks form a guest that in shutdown state
 
 * Request:
 
@@ -286,6 +286,10 @@ Delete disks form a guest
 * Response contents:
 
   No Response
+
+.. note::
+
+  Not support delete disks when guest is active
 
 Attach Volume
 -------------
