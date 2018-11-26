@@ -333,7 +333,7 @@ errors = {
 # the 'modID' would be set to each module rc when raise the exception
 # 'rs' is always 1
     'serviceNotSupport': [{'overallRC': 501, 'modID': None, 'rc': 501},
-                          {1: "The requested function: %(func)s has not been"
+                          {1: "The requested function: %(func)s has not been "
                            "implemented in current release",
                           },
                           "z/VM Cloud Connector function not implemented"
