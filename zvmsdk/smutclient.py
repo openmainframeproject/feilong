@@ -2125,7 +2125,8 @@ class SMUTClient(object):
             self.aemod_handler(userid, func_name, disk_parms)
 
         # trigger do-script
-        self.execute_cmd(userid, "/usr/bin/zvmguestconfigure start")
+        if self.get_power_state(userid) == 'on':
+            self.execute_cmd(userid, "/usr/bin/zvmguestconfigure start")
 
     def aemod_handler(self, instance_name, func_name, parms):
         rd = ' '.join(['changevm', instance_name, 'aemod', func_name,
