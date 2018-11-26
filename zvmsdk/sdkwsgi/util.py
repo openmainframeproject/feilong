@@ -199,6 +199,26 @@ def handle_already_exists(msg):
     return 0
 
 
+def handle_conflict_state(msg):
+    if 'overallRC' in msg and 'rc' in msg and 'rs' in msg:
+        # overall rc: 8, rc: 212, rs: 36 means vswitch already exist
+        if (msg['overallRC'] == 300 and msg['rc'] == 300 and
+            msg['rs'] == 5):
+            LOG.debug('guest power off state, change ret to 409')
+            return 409
+
+    return 0
+
+
+def handle_not_found_and_conflict(msg):
+    err = handle_not_found(msg)
+
+    if err == 0:
+        return handle_conflict_state(msg)
+
+    return err
+
+
 class SdkWsgify(wsgify):
 
     def call_func(self, req, *args, **kwargs):

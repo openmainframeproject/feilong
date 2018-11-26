@@ -552,7 +552,7 @@ def guest_action(req):
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
     req.response.status = util.get_http_code_from_sdk_return(info,
-        additional_handler=util.handle_not_found)
+        additional_handler=util.handle_not_found_and_conflict)
     return req.response
 
 
