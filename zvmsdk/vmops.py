@@ -200,6 +200,12 @@ class VMOps(object):
     def delete_disks(self, userid, vdev_list):
         LOG.info("Begin to delete disk on vm: %(userid), vdev list: %(list)s",
                  {'userid': userid, 'list': vdev_list})
+
+        # not support delete disks when guest is active
+        if self._smutclient.get_power_state(userid) == 'on':
+            func = 'delete disks when guest is active'
+            raise exception.SDKFunctionNotImplementError(func)
+
         self._smutclient.remove_mdisks(userid, vdev_list)
         LOG.info("Complete delete disks for vm: %s", userid)
 

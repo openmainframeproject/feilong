@@ -241,9 +241,18 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         amds.assert_called_once_with('userid', [], '0201')
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.remove_mdisks")
-    def test_delete_disks(self, rmd):
+    @mock.patch("zvmsdk.smutclient.SMUTClient.get_power_state")
+    def test_delete_disks(self, gps, rmd):
+        gps.return_value = 'off'
         self.vmops.delete_disks('userid', ['101', '102'])
         rmd.assert_called_once_with('userid', ['101', '102'])
+
+    @mock.patch("zvmsdk.smutclient.SMUTClient.get_power_state")
+    def test_delete_disks_active(self, gps):
+        gps.return_value = 'on'
+        self.assertRaises(exception.SDKFunctionNotImplementError,
+                          self.vmops.delete_disks, 'userid', ['101', '102'])
+        gps.assert_called_once_with('userid')
 
     @mock.patch("zvmsdk.smutclient.SMUTClient.guest_reboot")
     def test_guest_reboot(self, guest_reboot):
