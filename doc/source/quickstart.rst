@@ -29,6 +29,10 @@ system should be updated to the latest level with APARs listed in the
 
 .. _z/VM service Information: http://www.vm.ibm.com/sysman/osmntlvl.html
 
+.. note::
+   please make sure you applied http://www-01.ibm.com/support/docview.wss?uid=isg1VM66120
+   if z/VM 6.4 is used.
+
 2. z/VM Cloud Connector has to be installed inside a Linux running on z/VM.
 Currently supported distros include the most current supported versions:
 
