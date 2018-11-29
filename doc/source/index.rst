@@ -31,3 +31,4 @@ Welcome to the z/VM Cloud Connector Document
    errorcodemsg
    configuration
    change
+   faq
