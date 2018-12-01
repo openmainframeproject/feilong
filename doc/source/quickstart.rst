@@ -203,6 +203,8 @@ SSH onto the BYOL as root user, and then follow the following steps:
    * The SMAPI server on this z/VM host is working normally.
    * The zthin rpm is installed without any error.
 
+5. Optionally, Consider to add ``/opt/zthin/bin/`` into $PATH so you can use ``smcli`` command directly.
+
 z/VM SDK install
 ----------------
 
