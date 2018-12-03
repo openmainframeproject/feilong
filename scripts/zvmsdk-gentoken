@@ -11,7 +11,7 @@ DEFAULT_TOKEN_PATH = '/etc/zvmsdk/token.dat'
 
 
 def usage():
-    print('Usage: gen-token [-h] [-u] [token file path]')
+    print('Usage: zvmsdk-gentoken [-h] [-u] [token file path]')
     print('')
     print('Tool to Generate and Update Token')
     print('')
