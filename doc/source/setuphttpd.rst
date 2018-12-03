@@ -237,19 +237,19 @@ Setup Server Side
 
 * Create admin-token file
 
-  Administrators can use gen-token tool to create admin-token file.
+  Administrators can use zvmsdk-gentoken tool to create admin-token file.
 
   Fox example, initialize one token file:
 
   .. code-block:: text
 
-     # /usr/bin/gen-token
+     # /usr/bin/zvmsdk-gentoken
 
-  Gen-token use **/etc/zvmsdk/token.dat** as default path of token file. You can also specify your own token file path:
+  zvmsdk-gentoken use **/etc/zvmsdk/token.dat** as default path of token file. You can also specify your own token file path:
 
   .. code-block:: text
 
-     # /usr/bin/gen-token /new/path/of/token/file
+     # /usr/bin/zvmsdk-gentoken /new/path/of/token/file
 
   The commands above will initialize one token file and write a random admin-token into it.
 
@@ -257,14 +257,14 @@ Setup Server Side
 
   .. code-block:: text
 
-     # /usr/bin/gen-token -u
+     # /usr/bin/zvmsdk-gentoken -u
 
-  If you don't assign a file path, gen-token will update the file of default token path. You can update specified
+  If you don't assign a file path, zvmsdk-gentoken will update the file of default token path. You can update specified
   file by this way:
 
   .. code-block:: text
 
-     # /usr/bin/gen-token -u /new/path/of/token/file
+     # /usr/bin/zvmsdk-gentoken -u /new/path/of/token/file
 
   **NOTE:** please remember to change token file's owner to user **zvmsdk** after operating it.
 

@@ -47,7 +47,7 @@ setuptools.setup(
         ]
     },
     scripts=['scripts/sdkserver', 'zvmsdk/sdkwsgi/zvmsdk-wsgi',
-             'scripts/gen-token'],
+             'scripts/zvmsdk-gentoken'],
     data_files=[('/lib/systemd/system', ['data/sdkserver.service']),
                 ('/var/lib/zvmsdk', ['data/setupDisk']),
                 ('/etc/sudoers.d', ['data/sudoers-zvmsdk']),
