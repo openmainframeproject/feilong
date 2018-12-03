@@ -802,7 +802,7 @@ class RESTClient(object):
 
     def __init__(self, ip='127.0.0.1', port=8888,
                  ssl_enabled=False, verify=False,
-                 token_path='/etc/zvmsdk/token.dat'):
+                 token_path=''):
         # SSL enable or not
         if ssl_enabled:
             self.base_url = "https://" + ip + ":" + str(port)
@@ -831,6 +831,8 @@ class RESTClient(object):
             raise ArgsFormatError(msg)
 
     def _get_admin_token(self, path):
+        if path == '':
+            return 'none'
         if os.path.exists(path):
             TOKEN_LOCK.acquire()
             try:
