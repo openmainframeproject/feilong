@@ -802,7 +802,7 @@ class RESTClient(object):
 
     def __init__(self, ip='127.0.0.1', port=8888,
                  ssl_enabled=False, verify=False,
-                 token_path='/etc/zvmsdk/token.dat'):
+                 token_path=None):
         # SSL enable or not
         if ssl_enabled:
             self.base_url = "https://" + ip + ":" + str(port)
@@ -913,7 +913,9 @@ class RESTClient(object):
             except TypeError:
                 # if data is a file-like object
                 body = body
-        _headers['X-Auth-Token'] = self._get_token()
+
+        if self.token_path is not None:
+            _headers['X-Auth-Token'] = self._get_token()
 
         content_type = headers['Content-Type']
         stream = content_type == 'application/octet-stream'

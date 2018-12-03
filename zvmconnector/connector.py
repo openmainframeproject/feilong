@@ -38,7 +38,7 @@ class socketConnection(baseConnection):
 class restConnection(baseConnection):
 
     def __init__(self, ip_addr='127.0.0.1', port=8080, ssl_enabled=False,
-                 verify=False, token_path='/etc/zvmsdk/token.dat'):
+                 verify=False, token_path=None):
         self.client = restclient.RESTClient(ip_addr, port, ssl_enabled, verify,
                                             token_path)
 
@@ -50,7 +50,7 @@ class ZVMConnector(object):
 
     def __init__(self, ip_addr=None, port=None, timeout=3600,
                  connection_type=None, ssl_enabled=False, verify=False,
-                 token_path='/etc/zvmsdk/token.dat'):
+                 token_path=None):
         """
         :param str ip_addr:         IP address of SDK server
         :param int port:            Port of SDK server daemon
