@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6e08208d_43d62282",
+        "filename": "zvmconnector/restclient.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 835,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-12-06T01:22:49Z",
+      "side": 1,
+      "message": "what\u0027s the \u0027none\u0027 token means???",
+      "range": {
+        "startLine": 834,
+        "startChar": 8,
+        "endLine": 835,
+        "endChar": 25
+      },
+      "revId": "3193bd374fc074f70fde10f960198451cf6d75cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
