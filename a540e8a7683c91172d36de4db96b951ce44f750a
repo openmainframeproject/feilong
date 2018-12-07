@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3664b9af_d1f82def",
+        "filename": "doc/source/setuphttpd.rst",
+        "patchSetId": 4
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2018-12-07T02:01:05Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 248,
+        "startChar": 1,
+        "endLine": 248,
+        "endChar": 4
+      },
+      "revId": "a540e8a7683c91172d36de4db96b951ce44f750a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
