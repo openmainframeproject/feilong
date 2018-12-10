@@ -18,6 +18,15 @@
 Release Notes
 *************
 
+Release 1.4.0
+-------------
+
+New features released with zVMCLoudConnector 1.4.0:
+
+* Attach/detach volume to inactive guest.
+
+* Support set hostname without cloud-init.
+
 Release 1.3.0
 -------------
 New features released with zVMCloudConnector 1.3.0:
