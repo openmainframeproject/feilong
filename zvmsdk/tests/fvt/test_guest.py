@@ -154,7 +154,7 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
         Returns a bool value to indicate whether the network interface is
         defined
         """
-        result_list = self._smutclient.execute_cmd(userid, 'ifconfig')
+        result_list = self._smutclient.execute_cmd(userid, 'ip addr')
 
         for element in result_list:
             if ip in element:
@@ -543,9 +543,9 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.assertTrue(self.utils.wait_until_guest_reachable(userid))
 
         # Verify cfgdrive.iso take effect
-        time.sleep(30)
+        time.sleep(60)
         result = self._smutclient.execute_cmd(userid, 'hostname')
-        self.assertIn('deploy_fvt', result)
+        self.assertIn('deploy_fvt', str(result))
 
         resp = self.client.guest_get_definition_info(userid)
         self.assertEqual(200, resp.status_code)
@@ -1472,10 +1472,18 @@ class GuestHandlerTestCaseWithMultipleDeployedGuest(GuestHandlerBase):
         self.assertEqual(True, flag1)
         self.assertEqual(True, flag2)
 
-        # delete new disks
+        # delete new disks when guest active - not supported
         resp = self.client.guest_delete_disks(userid,
                                               ['101', '102'])
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(501, resp.status_code)
+
+        # delete disks when guest inactive
+        resp = self.client.guest_stop(userid)
+        self.assertTrue(
+            self.utils.wait_until_guest_in_power_state(userid, 'off'))
+        resp = self.client.guest_delete_disks(userid,
+                                              ['101', '102'])
+
         resp_delete = self.client.guest_get_definition_info(userid)
         self.assertEqual(200, resp_delete.status_code)
         self.assertTrue('MDISK 0101' not in resp_delete.content)
