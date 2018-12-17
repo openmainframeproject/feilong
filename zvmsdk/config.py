@@ -208,6 +208,12 @@ SMAPI servers.
 
 The length of namelist must no longer than 64.
 '''),
+    Opt('remotehost_sshd_port',
+        section='zvm',
+        default='22',
+        help='''
+The port number of remotehost sshd.
+'''),
     # image options
     Opt('sdk_image_repository',
         section='image',
