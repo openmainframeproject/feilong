@@ -2723,7 +2723,7 @@ class SMUTClient(object):
             return self._request(rd)
         except Exception as err:
             # log as warning and ignore namelist operation failures
-            LOG.warn(six.text_type(err))
+            LOG.warning(six.text_type(err))
 
     def namelist_add(self, namelist, userid):
         rd = ''.join(("SMAPI %s API Name_List_Add " % namelist,
