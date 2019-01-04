@@ -2018,7 +2018,7 @@ class SMUTClient(object):
             }[scheme]
         except KeyError:
             msg = ("No backend found for '%s'" % scheme)
-            LOG.err(msg)
+            LOG.error(msg)
             raise exception.SDKImageOperationError(rs=2, schema=scheme)
 
     def _get_md5sum(self, fpath):
