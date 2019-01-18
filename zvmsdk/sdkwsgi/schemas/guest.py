@@ -187,7 +187,7 @@ deploy = {
     'type': 'object',
     'properties': {
         'image': parameter_types.name,
-        'transportfiles': {'type': ['string']},
+        'transportfiles': {'type': ['string', 'null']},
         'remotehost': parameter_types.remotehost,
         'vdev': parameter_types.vdev,
         'hostname': parameter_types.hostname,
@@ -240,8 +240,8 @@ userid_list_query = {
 register_vm = {
     'type': 'object',
     'properties': {
-        'meta': {'type': ['string']},
-        'net_set': {'type': ['string']},
+        'meta': {'type': ['string', 'null']},
+        'net_set': {'type': ['string', 'null']},
     },
     'required': ['meta', 'net_set'],
     'additionalProperties': False

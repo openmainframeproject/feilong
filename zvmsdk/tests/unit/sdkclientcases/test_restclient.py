@@ -32,7 +32,9 @@ class FakeResp(object):
 class RESTClientTestCase(unittest.TestCase):
     """Testcases for RESTClient."""
     def setUp(self):
-        self.client = restclient.RESTClient(ssl_enabled=False)
+        self.token_path = 'fakepath'
+        self.client = restclient.RESTClient(ssl_enabled=False,
+                                            token_path=self.token_path)
         self.fake_userid = 'userid01'
         self.base_url = 'http://127.0.0.1:8888'
         self.headers = {'Content-Type': 'application/json'}
@@ -40,7 +42,8 @@ class RESTClientTestCase(unittest.TestCase):
         self.headers['X-Auth-Token'] = self._tmp_token()
         self.response = FakeResp()
 
-        self.client_ssl = restclient.RESTClient(ssl_enabled=True)
+        self.client_ssl = restclient.RESTClient(ssl_enabled=True,
+                                                token_path=self.token_path)
         self.base_url_ssl = 'https://127.0.0.1:8888'
 
     def test_init_ComputeAPI(self):

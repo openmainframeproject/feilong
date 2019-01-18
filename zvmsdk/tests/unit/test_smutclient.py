@@ -323,8 +323,9 @@ class SDKSMUTClientTestCases(base.SDKTestCase):
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
                       '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
-        scp_cmd = ["/usr/bin/scp", "-B", 'user@1.1.1.1:/faketran',
-                  '/tmp/tmpdir/faketran']
+        scp_cmd = ["/usr/bin/scp", "-B", "-P", "22",
+                   '-o StrictHostKeyChecking=no', 'user@1.1.1.1:/faketran',
+                   '/tmp/tmpdir/faketran']
         execute.assert_has_calls([mock.call(unpack_cmd), mock.call(scp_cmd)])
         purge_rd = "changevm fakeuser purgerdr"
         punch_rd = ("changevm fakeuser punchfile "
