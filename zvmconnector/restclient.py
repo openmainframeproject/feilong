@@ -159,9 +159,9 @@ def req_guests_get_nic_info(start_index, *args, **kwargs):
     nic_id = kwargs.get('nic_id', None)
     vswitch = kwargs.get('vswitch', None)
     if ((userid is None) and
-        (nic_id is None) and
-        (vswitch is None)):
-            append = ''
+            (nic_id is None) and
+            (vswitch is None)):
+        append = ''
     else:
         append = "?"
         if userid is not None:

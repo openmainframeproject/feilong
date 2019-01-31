@@ -825,9 +825,9 @@ def punch2reader(rh, userid, fileLoc, spoolClass):
                 break
             else:
                 # if concurrent vmur is active try after sometime
-                    rh.printSysLog("Punch in use. Retrying after " +
-                                        str(secs) + " seconds")
-                    time.sleep(secs)
+                rh.printSysLog("Punch in use. Retrying after " +
+                               str(secs) + " seconds")
+                time.sleep(secs)
         except Exception as e:
             # All other exceptions.
             rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,

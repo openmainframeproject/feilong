@@ -327,6 +327,13 @@
 
 
 # 
+# The port number of remotehost sshd.
+# 
+# This param is optional
+#remotehost_sshd_port=22
+
+
+# 
 # The default maximum number of virtual processers the user can define.
 # This value is used as the default value for maximum vcpu number when
 # create a guest with no max_cpu specified.
