@@ -572,7 +572,7 @@ class ConfigOpts(object):
         suffix = value[-1].upper()
         size = value[:-1]
         if (suffix not in ['G', 'M']) or (len(size) > 4) or (
-            size.strip('0123456789') is not ''):
+            size.strip('0123456789') != ''):
             raise OptFormatError("zvm", "user_default_max_memory", value)
 
     def _check_user_default_max_cpu(self, value):

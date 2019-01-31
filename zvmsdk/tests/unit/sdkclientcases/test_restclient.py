@@ -37,7 +37,6 @@ class RESTClientTestCase(unittest.TestCase):
         self.base_url = 'http://127.0.0.1:8888'
         self.headers = {'Content-Type': 'application/json'}
         self.headers.update(self.headers or {})
-        self.headers['X-Auth-Token'] = self._tmp_token()
         self.response = FakeResp()
 
         self.client_ssl = restclient.RESTClient(ssl_enabled=True)
