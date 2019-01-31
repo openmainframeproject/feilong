@@ -1,4 +1,3 @@
-
 Image and cloud-init Configuration
 **********************************
 
