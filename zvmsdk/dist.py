@@ -1101,7 +1101,7 @@ class sles12(sles):
                           'sleep 2',
                           'znetconf -A',
                           'cio_ignore -u',
-                          'systemctl restart network'))
+                          'wicked ifreload all'))
 
     def get_scp_string(self, root, fcp, wwpn, lun):
         return ("=root=%(root)s zfcp.allow_lun_scan=0 "
