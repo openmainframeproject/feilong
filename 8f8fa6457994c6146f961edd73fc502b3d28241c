@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a81aad69_55721f53",
+        "filename": "zvmsdk/dist.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1104,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2019-02-11T06:51:39Z",
+      "side": 1,
+      "message": "Mike, I posted some questions on the bug ,can you help to check it? Thanks~",
+      "range": {
+        "startLine": 1104,
+        "startChar": 26,
+        "endLine": 1104,
+        "endChar": 49
+      },
+      "revId": "8f8fa6457994c6146f961edd73fc502b3d28241c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
