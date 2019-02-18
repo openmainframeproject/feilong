@@ -9,12 +9,12 @@
 300;10;300;3;Failed to deploy image to userid: '%(userid)s', unpackdiskimage failed with rc: %(unpack_rc)d, error: %(err)s
 300;10;300;4;Failed to deploy image to userid: '%(userid)s', copy configure drive failed: %(err_info)s
 300;10;300;5;Failed to capture userid %(userid)s to generate image, error: %(msg)s
-300;10;300;6;Failed to resize cpus of guest: '%(userid)s', error: update cpu definition in user entry failed with smut error: '%(err)s'.
-300;10;300;7;Failed to live resize cpus of guest: '%(userid)s', error: define new cpu to active failed with smut error: '%(err)s'.
+300;10;300;6;Failed to resize cpus of guest: '%(userid)s', error: update cpu definition in user entry failed with smt error: '%(err)s'.
+300;10;300;7;Failed to live resize cpus of guest: '%(userid)s', error: define new cpu to active failed with smt error: '%(err)s'.
 300;10;300;8;Failed to live resize cpus of guest: '%(userid)s', error: rescan cpus to hot-plug new defined cpus failed: '%(err)s'.
-300;10;300;9;Failed to resize memory of guest: '%(userid)s', error: lock user entry failed with smut error: '%(err)s'.
-300;10;300;10;Failed to resize memory of guest: '%(userid)s', error: replace user entry failed with smut error: '%(err)s'.
-300;10;300;11;Failed to live resize memory of guest: '%(userid)s', error: define standby memory failed with smut error: '%(err)s'.
+300;10;300;9;Failed to resize memory of guest: '%(userid)s', error: lock user entry failed with smt error: '%(err)s'.
+300;10;300;10;Failed to resize memory of guest: '%(userid)s', error: replace user entry failed with smt error: '%(err)s'.
+300;10;300;11;Failed to live resize memory of guest: '%(userid)s', error: define standby memory failed with smt error: '%(err)s'.
 **Operation on Network failed**
 300;20;300;1;Database operation failed, error: %(msg)s
 300;20;300;2;ZVMSDK network error: %(msg)s
@@ -76,7 +76,7 @@
 500;None;500;1;Unexpected internal error in ZVM SDK, error: %(msg)s
 **z/VM Cloud Connector service is unavailable**
 503;120;503;1;Max concurrent deploy/capture requests received, request is rejected. %(req)s
-**smut errors**
+**smt errors**
 2;1;2;99;ULTSMP0311E On USERID, command sent through IUCV failed, rc in response string is not an integer. cmd: CMD, rc: RC, out: OUTPUT
 2;1;2;99;ULTSMP0312E On USERID, command sent through IUCV failed, reason code in response string is not an integer. cmd: CMD, rc: RC, rs: RS, out: OUTPUT
 2;1;1;None;ULTSMP0313E On USERID, command sent through IUCV was not authorized or a generic Linux error occurred. cmd: CMD, rc: RC, rs: RS, out: OUTPUT

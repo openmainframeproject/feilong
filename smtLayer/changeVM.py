@@ -20,11 +20,11 @@ import shutil
 import tarfile
 import tempfile
 
-from smutLayer import generalUtils
-from smutLayer import msgs
-from smutLayer.vmUtils import disableEnableDisk, execCmdThruIUCV, installFS
-from smutLayer.vmUtils import invokeSMCLI, isLoggedOn
-from smutLayer.vmUtils import punch2reader, purgeReader
+from smtLayer import generalUtils
+from smtLayer import msgs
+from smtLayer.vmUtils import disableEnableDisk, execCmdThruIUCV, installFS
+from smtLayer.vmUtils import invokeSMCLI, isLoggedOn
+from smtLayer.vmUtils import punch2reader, purgeReader
 
 
 modId = "CVM"

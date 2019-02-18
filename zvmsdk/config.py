@@ -117,7 +117,7 @@ Possible values:
          'oper1 oper2' is a valid value.
          'o1 o2 o3 o4 o5 o6 o7 o8 o9' is NOT a valid value.
     '''),
-    # FIXME: remove this option when switch to smut
+    # FIXME: remove this option when switch to smt
     Opt('user_default_password',
         section='zvm'),
     Opt('disk_pool',

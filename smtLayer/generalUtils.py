@@ -16,7 +16,7 @@
 
 import math
 
-from smutLayer import msgs
+from smtLayer import msgs
 
 fiveGigSize = (1024 * 5)
 modId = 'GUT'

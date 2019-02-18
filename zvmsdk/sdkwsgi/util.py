@@ -117,7 +117,7 @@ def get_http_code_from_sdk_return(msg, additional_handler=None, default=200):
             if ret in [100]:
                 return 400
 
-            # Add a special handle for smut return
+            # Add a special handle for smt return
             if additional_handler:
                 ret = additional_handler(msg)
                 if ret:

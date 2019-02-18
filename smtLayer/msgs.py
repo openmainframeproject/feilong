@@ -655,7 +655,7 @@ msg = {
         #   x'000C'.  Linux does not believe this device is online.
         # SysAct:  Processing of the function ends with no action taken.
         # UserResp: If the reader is at a different virtual device
-        #   address, update the SMUT code to recognize the alternative
+        #   address, update the SMT code to recognize the alternative
         #   device address, otherwise bring the reader at x'000C' online
         #   to Linux.  Then, reinvoke the function.
     '0412': [{'overallRC': 4, 'rc': 4, 'rs': 412},     # dict is not used.

@@ -93,9 +93,9 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
             if ent.startswith("MACHINE ESA"):
                 max_cpus = int(ent.split()[2].strip())
         if cpu_cnt_live is not None:
-            active_cpus = self._smutclient.execute_cmd(userid, "lscpu -e")[1:]
+            active_cpus = self._smtclient.execute_cmd(userid, "lscpu -e")[1:]
             cpu_num_live = len(active_cpus)
-            active_cpus = self._smutclient.execute_cmd(userid,
+            active_cpus = self._smtclient.execute_cmd(userid,
                                                        "lscpu --parse=ONLINE")
             for c in active_cpus:
                 # check online CPU number
@@ -105,7 +105,7 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
                 if online_state == "Y":
                     cpu_num_online = cpu_num_online + 1
         if memory_size_live is not None:
-            memory_info = self._smutclient.execute_cmd(userid, "lsmem")[-2:]
+            memory_info = self._smtclient.execute_cmd(userid, "lsmem")[-2:]
             online_memory = int(memory_info[0].split()[4].strip())
             offline_memory = int(memory_info[1].split()[3].strip())
 
@@ -129,7 +129,7 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
 
     def _check_total_memory(self, userid,
                             maxmem=CONF.zvm.user_default_max_memory):
-        result_list = self._smutclient.execute_cmd(userid,
+        result_list = self._smtclient.execute_cmd(userid,
                                                    'lsmem | grep Total')
         online_memory = offline_memory = 0
 
@@ -154,7 +154,7 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
         Returns a bool value to indicate whether the network interface is
         defined
         """
-        result_list = self._smutclient.execute_cmd(userid, 'ip addr')
+        result_list = self._smtclient.execute_cmd(userid, 'ip addr')
 
         for element in result_list:
             if ip in element:
@@ -321,7 +321,7 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
         os.system('chmod -R 755 /var/lib/zvmsdk/cfgdrive.iso')
 
     def _get_free_osa(self):
-        osa_info = self._smutclient._query_OSA()
+        osa_info = self._smtclient._query_OSA()
         if 'OSA' not in osa_info.keys():
             return None
         elif len(osa_info['OSA']['FREE']) == 0:
@@ -544,7 +544,7 @@ class GuestHandlerTestCase(GuestHandlerBase):
 
         # Verify cfgdrive.iso take effect
         time.sleep(60)
-        result = self._smutclient.execute_cmd(userid, 'hostname')
+        result = self._smtclient.execute_cmd(userid, 'hostname')
         self.assertIn('deploy_fvt', str(result))
 
         resp = self.client.guest_get_definition_info(userid)
@@ -647,7 +647,7 @@ class GuestHandlerTestCase(GuestHandlerBase):
 
         # Verify hostname changed
         time.sleep(30)
-        result = self._smutclient.execute_cmd(userid, 'hostname')
+        result = self._smtclient.execute_cmd(userid, 'hostname')
         self.assertIn('fakehostname', result)
 
     def test_guests_get_nic_info(self):
@@ -1463,7 +1463,7 @@ class GuestHandlerTestCaseWithMultipleDeployedGuest(GuestHandlerBase):
         self.assertTrue(self.utils.wait_until_guest_reachable(userid))
 
         time.sleep(15)
-        result = self._smutclient.execute_cmd(userid, 'df -h')
+        result = self._smtclient.execute_cmd(userid, 'df -h')
         for element in result:
             if '/mnt/0101' in element:
                 flag1 = True

@@ -26,7 +26,7 @@ class SDKHostOpsTestCase(base.SDKTestCase):
         self._hostops = hostops.get_hostops()
 
     @mock.patch("zvmsdk.hostops.HOSTOps.diskpool_get_info")
-    @mock.patch("zvmsdk.smutclient.SMUTClient.get_host_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_host_info")
     def test_get_host_info(self, get_host_info, diskpool_get_info):
         get_host_info.return_value = {
             "zcc_userid": "FAKEUSER",
@@ -57,7 +57,7 @@ class SDKHostOpsTestCase(base.SDKTestCase):
         self.assertEqual(host_info['hypervisor_version'], 610)
         self.assertEqual(host_info['disk_total'], 406105)
 
-    @mock.patch("zvmsdk.smutclient.SMUTClient.get_diskpool_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_diskpool_info")
     def test_get_diskpool_info(self, get_diskpool_info):
         get_diskpool_info.return_value = {
             "disk_total": "406105.3G",

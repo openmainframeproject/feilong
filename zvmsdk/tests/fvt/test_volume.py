@@ -16,7 +16,7 @@ import time
 from parameterized import parameterized
 from zvmsdk.tests.fvt import base
 from zvmsdk import config
-from zvmsdk import smutclient
+from zvmsdk import smtclient
 from zvmsdk.tests.fvt import test_utils
 
 CONF = config.CONF
@@ -47,7 +47,7 @@ class VolumeTestCase(base.ZVMConnectorBaseTestCase):
     @classmethod
     def setUpClass(cls):
         super(VolumeTestCase, cls).setUpClass()
-        cls.smutcli = smutclient.get_smutclient()
+        cls.smtcli = smtclient.get_smtclient()
         cls.userid_list = []
         # Deploy a guest with each specified image and previously generated
         # userid.
@@ -66,7 +66,7 @@ class VolumeTestCase(base.ZVMConnectorBaseTestCase):
 
     def check_mount_result(self, userid):
         cmd = 'test -e %s && echo exist' % CONF.tests.mount_point
-        ret = self.smutcli.execute_cmd_direct(userid, cmd)['response'][0]
+        ret = self.smtcli.execute_cmd_direct(userid, cmd)['response'][0]
         return ret == 'exist'
 
     @parameterized.expand(TEST_USERID_LIST)

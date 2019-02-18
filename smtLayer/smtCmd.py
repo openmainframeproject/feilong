@@ -17,8 +17,8 @@
 
 import sys
 
-from smutLayer.smut import SMUT
-from smutLayer.ReqHandle import ReqHandle
+from smtLayer.smt import SMT
+from smtLayer.ReqHandle import ReqHandle
 
 version = '1.0.0'         # Version of this script
 
@@ -27,9 +27,9 @@ version = '1.0.0'         # Version of this script
  main routine
 ******************************************************************************
 """
-useSMUT = True
-if useSMUT:
-    results = SMUT(cmdName=sys.argv[0]).request(sys.argv[1:], captureLogs=True)
+useSMT = True
+if useSMT:
+    results = SMT(cmdName=sys.argv[0]).request(sys.argv[1:], captureLogs=True)
 else:
     reqHandle = ReqHandle(cmdName=sys.argv[0], captureLogs=True)
     results = reqHandle.parseCmdline(sys.argv[1:])

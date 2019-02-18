@@ -29,7 +29,7 @@ class SDKImageOpsTestCase(base.SDKTestCase):
         self._image_ops = imageops.get_imageops()
         self._pathutil = zvmutils.PathUtils()
 
-    @mock.patch("zvmsdk.smutclient.SMUTClient.image_import")
+    @mock.patch("zvmsdk.smtclient.SMTClient.image_import")
     def test_image_import(self, image_import):
         image_name = '95a4da37-9f9b-4fb2-841f-f0bb441b7544'
         url = 'file:///path/to/image/file'
@@ -43,19 +43,19 @@ class SDKImageOpsTestCase(base.SDKTestCase):
                                              image_meta,
                                              remote_host)
 
-    @mock.patch("zvmsdk.smutclient.SMUTClient.image_query")
+    @mock.patch("zvmsdk.smtclient.SMTClient.image_query")
     def test_image_query(self, image_query):
         imagekeyword = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'
         self._image_ops.image_query(imagekeyword)
         image_query.assert_called_once_with(imagekeyword)
 
-    @mock.patch("zvmsdk.smutclient.SMUTClient.image_delete")
+    @mock.patch("zvmsdk.smtclient.SMTClient.image_delete")
     def test_image_delete(self, image_delete):
         image_name = 'eae09a9f_7958_4024_a58c_83d3b2fc0aab'
         self._image_ops.image_delete(image_name)
         image_delete.assert_called_once_with(image_name)
 
-    @mock.patch("zvmsdk.smutclient.SMUTClient.image_export")
+    @mock.patch("zvmsdk.smtclient.SMTClient.image_export")
     def test_image_export(self, image_export):
         image_name = 'testimage'
         dest_url = 'file:///path/to/export/image'

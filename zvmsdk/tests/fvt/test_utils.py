@@ -24,7 +24,7 @@ import time
 
 from zvmsdk import api
 from zvmsdk import config
-from zvmsdk import smutclient
+from zvmsdk import smtclient
 from zvmsdk import utils as zvmutils
 
 
@@ -467,7 +467,7 @@ class ZVMConnectorTestUtils(object):
     def __init__(self):
         self.client = TestzCCClient()
         self.rawapi = api.SDKAPI()
-        self._smutclient = smutclient.get_smutclient()
+        self._smtclient = smtclient.get_smtclient()
 
     def generate_test_userid(self):
         '''Generate an userid base on time line.'''
@@ -517,7 +517,7 @@ class ZVMConnectorTestUtils(object):
         return True
 
     def is_guest_reachable(self, userid):
-        return self._smutclient.get_guest_connection_status(userid)
+        return self._smtclient.get_guest_connection_status(userid)
 
 # Will use the first image as the default image to deploy guest.
     def deploy_guest(self, userid=None, cpu=1, memory=2048,

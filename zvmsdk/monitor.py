@@ -17,7 +17,7 @@ import time
 
 from zvmsdk import config
 from zvmsdk import log
-from zvmsdk import smutclient
+from zvmsdk import smtclient
 from zvmsdk import utils as zvmutils
 
 _MONITOR = None
@@ -38,7 +38,7 @@ class ZVMMonitor(object):
 
     def __init__(self):
         self._cache = MeteringCache(self._TYPES)
-        self._smutclient = smutclient.get_smutclient()
+        self._smtclient = smtclient.get_smtclient()
         self._namelist = zvmutils.get_namelist()
 
     def inspect_stats(self, uid_list):
@@ -100,7 +100,7 @@ class ZVMMonitor(object):
             if cache_data is not None:
                 inspect_data[uid] = cache_data
             else:
-                if self._smutclient.get_power_state(uid) == 'on':
+                if self._smtclient.get_power_state(uid) == 'on':
                     update_needed = True
                     inspect_data = {}
                     break
@@ -120,28 +120,28 @@ class ZVMMonitor(object):
 
     def _update_cpumem_data(self, uid_list):
 
-        namelist_uids = self._smutclient.namelist_query(self._namelist)
-        sdk_managed_uids = self._smutclient.get_vm_list()
+        namelist_uids = self._smtclient.namelist_query(self._namelist)
+        sdk_managed_uids = self._smtclient.get_vm_list()
         mis_uids = list((set(uid_list) -
                      set(namelist_uids)).intersection(set(sdk_managed_uids)))
 
         for muid in mis_uids:
-            self._smutclient.namelist_add(self._namelist, muid)
+            self._smtclient.namelist_add(self._namelist, muid)
 
         rdata = {}
         if self._cache_enabled():
-            rdata = self._smutclient.system_image_performance_query(
+            rdata = self._smtclient.system_image_performance_query(
                 self._namelist)
             self._cache.refresh('cpumem', rdata)
         else:
-            rdata = self._smutclient.system_image_performance_query(
+            rdata = self._smtclient.system_image_performance_query(
                 self._namelist)
 
         return rdata
 
     def _update_nic_data(self):
         nics = {}
-        vsw_dict = self._smutclient.virtual_network_vswitch_query_byte_stats()
+        vsw_dict = self._smtclient.virtual_network_vswitch_query_byte_stats()
         with zvmutils.expect_invalid_resp_data():
             for vsw in vsw_dict['vswitches']:
                 for nic in vsw['nics']:

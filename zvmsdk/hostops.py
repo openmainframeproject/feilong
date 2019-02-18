@@ -17,7 +17,7 @@ from zvmsdk import config
 from zvmsdk import constants as const
 from zvmsdk import exception
 from zvmsdk import log
-from zvmsdk import smutclient
+from zvmsdk import smtclient
 from zvmsdk import utils as zvmutils
 
 
@@ -36,10 +36,10 @@ def get_hostops():
 class HOSTOps(object):
 
     def __init__(self):
-        self._smutclient = smutclient.get_smutclient()
+        self._smtclient = smtclient.get_smtclient()
 
     def get_info(self):
-        inv_info = self._smutclient.get_host_info()
+        inv_info = self._smtclient.get_host_info()
         host_info = {}
 
         with zvmutils.expect_invalid_resp_data(inv_info):
@@ -67,7 +67,7 @@ class HOSTOps(object):
         return host_info
 
     def diskpool_get_info(self, pool):
-        dp_info = self._smutclient.get_diskpool_info(pool)
+        dp_info = self._smtclient.get_diskpool_info(pool)
         with zvmutils.expect_invalid_resp_data(dp_info):
             for k in list(dp_info.keys()):
                 s = dp_info[k].strip().upper()

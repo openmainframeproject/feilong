@@ -14,9 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from smutLayer import generalUtils
-from smutLayer import msgs
-from smutLayer.vmUtils import execCmdThruIUCV
+from smtLayer import generalUtils
+from smtLayer import msgs
+from smtLayer.vmUtils import execCmdThruIUCV
 
 modId = 'CMD'
 version = "1.0.0"

@@ -15,7 +15,7 @@
 
 import six
 
-from smutLayer import msgs
+from smtLayer import msgs
 from zvmconnector import restclient
 from zvmconnector import socketclient
 from zvmsdk import returncode
@@ -67,23 +67,23 @@ def generate_errcode():
                 _line += '\n'
                 _lines.append(_line)
 
-    # add smut error codes and messages
-    _lines.append('**' + "smut errors" + '**\n')
-    _smut_orcs = {}
-    _smut_errkeys = msgs.msg.keys()
-    _smut_errkeys.sort()
-    for k in _smut_errkeys:
+    # add smt error codes and messages
+    _lines.append('**' + "smt errors" + '**\n')
+    _smt_orcs = {}
+    _smt_errkeys = msgs.msg.keys()
+    _smt_errkeys.sort()
+    for k in _smt_errkeys:
         _orcs = msgs.msg[k]
         _orrc = _orcs[0].get('overallRC')
-        if _smut_orcs.get(_orrc) is not None:
-            _smut_orcs[_orrc].append(_orcs)
+        if _smt_orcs.get(_orrc) is not None:
+            _smt_orcs[_orrc].append(_orcs)
         else:
-            _smut_orcs[_orrc] = [_orcs]
+            _smt_orcs[_orrc] = [_orcs]
 
-    orcs = _smut_orcs.keys()
+    orcs = _smt_orcs.keys()
     orcs.sort()
     for orc in orcs:
-        for _msg in _smut_orcs[orc]:
+        for _msg in _smt_orcs[orc]:
             _orc = _msg[0].get('overallRC')
             _mid = '1'
             _rc = _msg[0].get('rc')

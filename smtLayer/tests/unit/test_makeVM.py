@@ -14,13 +14,13 @@
 
 import mock
 
-from smutLayer import makeVM
-from smutLayer import ReqHandle
-from smutLayer.tests.unit import base
+from smtLayer import makeVM
+from smtLayer import ReqHandle
+from smtLayer.tests.unit import base
 
 
-class SMUTMakeVMTestCase(base.SMUTTestCase):
-    """Test cases for makeVM.py in smutLayer."""
+class SMTMakeVMTestCase(base.SMTTestCase):
+    """Test cases for makeVM.py in smtLayer."""
 
     def test_getReservedMemSize(self):
         rh = mock.Mock()
@@ -30,7 +30,7 @@ class SMUTMakeVMTestCase(base.SMUTTestCase):
 
     def test_getReservedMemSize_invalid_suffix(self):
         rh = ReqHandle.ReqHandle(captureLogs=False,
-                                 smut=mock.Mock())
+                                 smt=mock.Mock())
         gap = makeVM.getReservedMemSize(rh, '1024M', '128T')
         self.assertEqual(gap, '0M')
         self.assertEqual(rh.results['overallRC'], 4)
@@ -39,7 +39,7 @@ class SMUTMakeVMTestCase(base.SMUTTestCase):
 
     def test_getReservedMemSize_max_less_than_initial(self):
         rh = ReqHandle.ReqHandle(captureLogs=False,
-                                 smut=mock.Mock())
+                                 smt=mock.Mock())
         gap = makeVM.getReservedMemSize(rh, '64G', '32G')
         self.assertEqual(gap, '0M')
         self.assertEqual(rh.results['overallRC'], 4)
@@ -48,14 +48,14 @@ class SMUTMakeVMTestCase(base.SMUTTestCase):
 
     def test_getReservedMemSize_equal_size(self):
         rh = ReqHandle.ReqHandle(captureLogs=False,
-                                 smut=mock.Mock())
+                                 smt=mock.Mock())
         gap = makeVM.getReservedMemSize(rh, '1024M', '1G')
         self.assertEqual(gap, '0M')
         self.assertEqual(rh.results['overallRC'], 0)
 
     def test_getReservedMemSize_gap_G(self):
         rh = ReqHandle.ReqHandle(captureLogs=False,
-                                 smut=mock.Mock())
+                                 smt=mock.Mock())
         gap = makeVM.getReservedMemSize(rh, '512m', '9999G')
         self.assertEqual(gap, '9998G')
         self.assertEqual(rh.results['overallRC'], 0)

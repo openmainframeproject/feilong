@@ -356,7 +356,7 @@ def expect_invalid_resp_data(data=''):
         yield
     except (ValueError, TypeError, IndexError, AttributeError,
             KeyError) as err:
-        msg = ('Invalid smut response data: %s. Error: %s' %
+        msg = ('Invalid smt response data: %s. Error: %s' %
                (data, six.text_type(err)))
         LOG.error(msg)
         raise exception.SDKInternalError(msg=msg)
@@ -371,7 +371,7 @@ def wrap_invalid_resp_data_error(function):
             return function(*arg, **kwargs)
         except (ValueError, TypeError, IndexError, AttributeError,
                 KeyError) as err:
-            msg = ('Invalid smut response data. Error: %s' %
+            msg = ('Invalid smt response data. Error: %s' %
                    six.text_type(err))
             LOG.error(msg)
             raise exception.SDKInternalError(msg=msg)
@@ -407,20 +407,20 @@ def log_and_reraise_sdkbase_error(action):
 
 
 @contextlib.contextmanager
-def log_and_reraise_smut_request_failed(action=None):
+def log_and_reraise_smt_request_failed(action=None):
     """Catch SDK base exception and print error log before reraise exception.
 
     msg: the error message to be logged.
     """
     try:
         yield
-    except exception.SDKSMUTRequestFailed as err:
+    except exception.SDKSMTRequestFailed as err:
         msg = ''
         if action is not None:
             msg = "Failed to %s. " % action
-        msg += "SMUT error: %s" % err.format_message()
+        msg += "SMT error: %s" % err.format_message()
         LOG.error(msg)
-        raise exception.SDKSMUTRequestFailed(err.results, msg)
+        raise exception.SDKSMTRequestFailed(err.results, msg)
 
 
 @contextlib.contextmanager
@@ -434,8 +434,8 @@ def ignore_errors():
         pass
 
 
-def get_smut_userid():
-    """Get the userid of smut server"""
+def get_smt_userid():
+    """Get the userid of smt server"""
     cmd = ["sudo", "/sbin/vmcp", "query userid"]
     try:
         userid = subprocess.check_output(cmd,
@@ -445,14 +445,14 @@ def get_smut_userid():
         userid = userid.split()[0]
         return userid
     except Exception as err:
-        msg = ("Could not find the userid of the smut server: %s") % err
+        msg = ("Could not find the userid of the smt server: %s") % err
         raise exception.SDKInternalError(msg=msg)
 
 
 def get_namelist():
     """Generate namelist.
 
-    Either through set CONF.zvm.namelist, or by generate based on smut userid.
+    Either through set CONF.zvm.namelist, or by generate based on smt userid.
     """
     if CONF.zvm.namelist is not None:
         # namelist length limit should be 64, but there's bug limit to 8
@@ -460,9 +460,9 @@ def get_namelist():
         if len(CONF.zvm.namelist) <= 8:
             return CONF.zvm.namelist
 
-    # return ''.join(('NL', get_smut_userid().rjust(6, '0')[-6:]))
+    # return ''.join(('NL', get_smt_userid().rjust(6, '0')[-6:]))
     # py3 compatible changes
-    userid = get_smut_userid()
+    userid = get_smt_userid()
     return 'NL' + userid.rjust(6, '0')[-6:]
 
 
@@ -476,9 +476,9 @@ def generate_iucv_authfile(fn, client):
 
 @wrap_invalid_resp_data_error
 def translate_response_to_dict(rawdata, dirt):
-    """Translate SMUT response to a python dictionary.
+    """Translate SMT response to a python dictionary.
 
-    SMUT response example:
+    SMT response example:
     keyword1: value1\n
     keyword2: value2\n
     ...
@@ -501,7 +501,7 @@ def translate_response_to_dict(rawdata, dirt):
                 break
 
     if data == {}:
-        msg = ("Invalid smut response data. Error: No value matched with "
+        msg = ("Invalid smt response data. Error: No value matched with "
                "keywords. Raw Data: %(raw)s; Keywords: %(kws)s" %
                {'raw': rawdata, 'kws': str(dirt)})
         raise exception.SDKInternalError(msg=msg)

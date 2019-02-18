@@ -19,16 +19,16 @@ import logging.handlers
 import shlex
 from six import string_types
 
-from smutLayer import changeVM
-from smutLayer import cmdVM
-from smutLayer import deleteVM
-from smutLayer import getHost
-from smutLayer import getVM
-from smutLayer import makeVM
-from smutLayer import migrateVM
-from smutLayer import msgs
-from smutLayer import smapi
-from smutLayer import powerVM
+from smtLayer import changeVM
+from smtLayer import cmdVM
+from smtLayer import deleteVM
+from smtLayer import getHost
+from smtLayer import getVM
+from smtLayer import makeVM
+from smtLayer import migrateVM
+from smtLayer import msgs
+from smtLayer import smapi
+from smtLayer import powerVM
 
 from zvmsdk import log as zvmsdklog
 
@@ -102,11 +102,11 @@ class ReqHandle(object):
            cmdName=<cmdName>
                             Name of the command that is using ReqHandle.
                             This is only used for the function help.
-                            It defaults to "smutCmd.py".
+                            It defaults to "smtCmd.py".
            requestId=requestId
                             Optional request Id
-           smut=<smutDaemon>
-                            SMUT daemon, it it exists.
+           smt=<smtDaemon>
+                            SMT daemon, it it exists.
         """
 
         self.results = {
@@ -129,9 +129,9 @@ class ReqHandle(object):
             'logEntries': [],     # Syslog entries related to this request
             }
 
-        if 'smut' in kwArgs.keys():
-            self.daemon = kwArgs['smut']    # SMUT Daemon
-            # Actual SysLog handling is done in SMUT.
+        if 'smt' in kwArgs.keys():
+            self.daemon = kwArgs['smt']    # SMT Daemon
+            # Actual SysLog handling is done in SMT.
         else:
             self.daemon = ''
             # Set up SysLog handling to be done by ReqHandle
@@ -146,7 +146,7 @@ class ReqHandle(object):
         if 'cmdName' in kwArgs.keys():
             self.cmdName = kwArgs['cmdName']
         else:
-            self.cmdName = 'smutCmd.py'
+            self.cmdName = 'smtCmd.py'
 
         if 'requestId' in kwArgs.keys():
             self.requestId = kwArgs['requestId']

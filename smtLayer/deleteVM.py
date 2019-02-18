@@ -14,9 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from smutLayer import generalUtils
-from smutLayer import msgs
-from smutLayer.vmUtils import invokeSMCLI, isLoggedOn, purgeReader
+from smtLayer import generalUtils
+from smtLayer import msgs
+from smtLayer.vmUtils import invokeSMCLI, isLoggedOn, purgeReader
 
 modId = "DVM"
 version = "1.0.0"

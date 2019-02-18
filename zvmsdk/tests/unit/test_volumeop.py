@@ -31,7 +31,7 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
         cls.configurator = volumeop.VolumeConfiguratorAPI()
 
     @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
-    @mock.patch("zvmsdk.smutclient.SMUTClient.execute_cmd")
+    @mock.patch("zvmsdk.smtclient.SMTClient.execute_cmd")
     @mock.patch.object(dist.rhel7, "create_active_net_interf_cmd")
     @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI."
                 "configure_volume_attach")
@@ -89,7 +89,7 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
     def test_config_force_detach(self):
         pass
 
-    @mock.patch("zvmsdk.smutclient.SMUTClient.punch_file")
+    @mock.patch("zvmsdk.smtclient.SMTClient.punch_file")
     @mock.patch.object(shutil, "rmtree")
     @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI._create_file")
     @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
@@ -117,7 +117,7 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
                                                 multipath, mount_point)
         punch_file.assert_called_once_with(assigner_id, config_file, 'X')
 
-    @mock.patch("zvmsdk.smutclient.SMUTClient.punch_file")
+    @mock.patch("zvmsdk.smtclient.SMTClient.punch_file")
     @mock.patch.object(shutil, "rmtree")
     @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI._create_file")
     @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
@@ -376,7 +376,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
 
     # tearDownClass deleted to work around bug of 'no such table:fcp'
 
-    @mock.patch("zvmsdk.smutclient.SMUTClient.get_host_info")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_host_info")
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     def test_get_volume_connector(self, get_fcp_info, get_host_info):
         fcp_info = ['opnstk1: FCP device number: B83C',
@@ -483,7 +483,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         results = {'rs': 0, 'errno': 0, 'strError': '',
                    'overallRC': 1, 'logEntries': [], 'rc': 0,
                    'response': ['fake response']}
-        mock_dedicate.side_effect = exception.SDKSMUTRequestFailed(
+        mock_dedicate.side_effect = exception.SDKSMTRequestFailed(
             results, 'fake error')
         # return value of decreate must bigger than 1
         mock_decrease.return_value = 0
@@ -514,7 +514,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         results = {'rs': 0, 'errno': 0, 'strError': '',
                    'overallRC': 1, 'logEntries': [], 'rc': 0,
                    'response': ['fake response']}
-        mock_remove_disk.side_effect = exception.SDKSMUTRequestFailed(
+        mock_remove_disk.side_effect = exception.SDKSMTRequestFailed(
             results, 'fake error')
         self.assertRaises(exception.SDKBaseException,
                           self.volumeops.detach,

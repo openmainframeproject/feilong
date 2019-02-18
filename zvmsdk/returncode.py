@@ -24,7 +24,7 @@ Each error corresponds to a dictionary contains: 'overallRC', 'modID', 'rc',
 
     ModName    ModID
     ------     --
-    SMUT       1
+    SMT       1
     GUEST      10
     NETWORK    20
     VOLUME     30
@@ -47,8 +47,8 @@ ErrorCode General Classification
 -------------------------------------------------------------------------------
 ErrorClass       overallRC modID  rc   rs    Description
 
-SMUT               1-99     1     xx   xx    Used by SMUT, refer to
-                                             smutlayer/msgs.py
+SMT               1-99     1     xx   xx    Used by SMT, refer to
+                                             smtlayer/msgs.py
 
 Invalid input      100    SDKGEN  100   1    SDK API parameter number error
                    100    SDKGEN  100   2    SDK API input type error
@@ -103,7 +103,7 @@ Not Implementation  501   MODRC   501   1   The requested SDK function has not
 # Detail Module RC definition of each error
 # -----------------------------------------------------------------------------
 ModRCs = {
-    'smut': 1,
+    'smt': 1,
     'guest': 10,
     'network': 20,
     'volume': 30,
@@ -149,22 +149,22 @@ errors = {
                    "error: %(msg)s"),
                6: ("Failed to resize cpus of guest: '%(userid)s', "
                    "error: update cpu definition in user entry failed with "
-                   "smut error: '%(err)s'."),
+                   "smt error: '%(err)s'."),
                7: ("Failed to live resize cpus of guest: '%(userid)s', "
-                   "error: define new cpu to active failed with smut error: "
+                   "error: define new cpu to active failed with smt error: "
                    "'%(err)s'."),
                8: ("Failed to live resize cpus of guest: '%(userid)s', "
                    "error: rescan cpus to hot-plug new defined cpus failed: "
                    "'%(err)s'."),
                9: ("Failed to resize memory of guest: '%(userid)s', "
                    "error: lock user entry failed with "
-                   "smut error: '%(err)s'."),
+                   "smt error: '%(err)s'."),
                10: ("Failed to resize memory of guest: '%(userid)s', "
                    "error: replace user entry failed with "
-                   "smut error: '%(err)s'."),
+                   "smt error: '%(err)s'."),
                11: ("Failed to live resize memory of guest: '%(userid)s', "
                    "error: define standby memory failed with "
-                   "smut error: '%(err)s'."),
+                   "smt error: '%(err)s'."),
               },
               "Operation on Guest failed"
               ],
@@ -340,13 +340,13 @@ errors = {
                          ],
     }
 
-# smut internal error
-# This const defines the list of smut errors that should be converted to
+# smt internal error
+# This const defines the list of smt errors that should be converted to
 # internal error in SDK layer.
 # Each element in the list is a tuple consisting the 'overallRC', 'rc',
 # list of 'rs'
 # when the value is 'None', it means always match.
-SMUT_INTERNAL_ERROR = [(4, 4, range(1, 18)),
+SMT_INTERNAL_ERROR = [(4, 4, range(1, 18)),
                        (2, 2, [99, ]),
                        (25, None, None),
                        (99, 99, [416, 417])
