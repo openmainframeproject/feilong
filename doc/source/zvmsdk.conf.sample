@@ -272,6 +272,28 @@
 
 
 # 
+# Default IPL param.
+# 
+# When z/VM Cloud Connector spawn a virtual machine, it will use this
+# param as IPL param if it's not empty, otherwise it will use value
+# defined by `user_root_vdev`.
+# 
+# For example, define this param to `CMS` will make VM start IPL
+# from `IPL CMS`.
+# 
+# Please note it's administrator's responsibility to write something
+# like a `PROFILE EXEC` to hijack the IPL process and the commands
+# in `PROFILE EXEC` need call the real IPL, which is:
+# IPL `user_root_vdev`
+# 
+# Possible values:
+#     A string, defined by administrator, define where to IPL from.
+# 
+# This param is optional
+#default_ipl_param=
+
+
+# 
 # Virtual device number for default NIC address.
 # 
 # This value is the first NIC virtual device number,
