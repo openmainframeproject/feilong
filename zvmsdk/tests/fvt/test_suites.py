@@ -34,6 +34,7 @@ bvt_testcases = [
                                             TEST_IMAGE_LIST[rdm_idx][0]
                                             )
                                      )),
+    test_guest.GuestHandlerTestCase("test_guest_create_with_ipl_cms"),
     test_host.HostTestCase("test_host_info"),
     test_image.ImageTestCase("test_image_create_delete"),
     test_version.VersionTestCase("test_version"),
