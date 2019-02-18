@@ -17,9 +17,9 @@
 import os
 import subprocess
 
-from smutLayer import generalUtils
-from smutLayer import msgs
-from smutLayer.vmUtils import invokeSMCLI
+from smtLayer import generalUtils
+from smtLayer import msgs
+from smtLayer.vmUtils import invokeSMCLI
 
 modId = 'GHO'
 version = "1.0.0"

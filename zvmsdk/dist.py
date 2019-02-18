@@ -21,7 +21,7 @@ import six
 from zvmsdk import config
 from zvmsdk import exception
 from zvmsdk import log
-from zvmsdk import smutclient
+from zvmsdk import smtclient
 
 
 CONF = config.CONF
@@ -37,7 +37,7 @@ class LinuxDist(object):
     and UBUNTU16 are supported.
     """
     def __init__(self):
-        self._smutclient = smutclient.get_smutclient()
+        self._smtclient = smtclient.get_smtclient()
 
     def create_network_configuration_files(self, file_path, guest_networks,
                                            first, active=False):

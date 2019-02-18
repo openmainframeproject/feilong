@@ -24,7 +24,7 @@ from zvmsdk import database
 from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import log
-from zvmsdk import smutclient
+from zvmsdk import smtclient
 from zvmsdk import utils as zvmutils
 from zvmsdk import vmops
 
@@ -100,7 +100,7 @@ class VolumeConfiguratorAPI(object):
     def __init__(self):
         self._vmop = vmops.get_vmops()
         self._dist_manager = dist.LinuxDistManager()
-        self._smutclient = smutclient.get_smutclient()
+        self._smtclient = smtclient.get_smtclient()
 
     def config_attach(self, fcp, assigner_id, target_wwpn, target_lun,
                       multipath, os_version, mount_point):
@@ -111,7 +111,7 @@ class VolumeConfiguratorAPI(object):
         # active mode should restart zvmguestconfigure to execute reader file
         if self._vmop.is_reachable(assigner_id):
             active_cmds = linuxdist.create_active_net_interf_cmd()
-            self._smutclient.execute_cmd(assigner_id, active_cmds)
+            self._smtclient.execute_cmd(assigner_id, active_cmds)
 
     def config_force_attach(self, fcp, assigner_id, target_wwpn, target_lun,
                             multipath, os_version):
@@ -126,14 +126,14 @@ class VolumeConfiguratorAPI(object):
         # active mode should restart zvmguestconfigure to execute reader file
         if self._vmop.is_reachable(assigner_id):
             active_cmds = linuxdist.create_active_net_interf_cmd()
-            self._smutclient.execute_cmd(assigner_id, active_cmds)
+            self._smtclient.execute_cmd(assigner_id, active_cmds)
 
     def config_force_detach(self, fcp, assigner_id, target_wwpn, target_lun,
                             multipath, os_version):
         pass
 
     def _create_file(self, assigner_id, file_name, data):
-        temp_folder = self._smutclient.get_guest_temp_path(assigner_id)
+        temp_folder = self._smtclient.get_guest_temp_path(assigner_id)
         file_path = os.path.join(temp_folder, file_name)
         with open(file_path, "w") as f:
             f.write(data)
@@ -158,7 +158,7 @@ class VolumeConfiguratorAPI(object):
         # punch file into guest
         fileClass = "X"
         try:
-            self._smutclient.punch_file(assigner_id, config_file, fileClass)
+            self._smtclient.punch_file(assigner_id, config_file, fileClass)
         finally:
             LOG.debug('Removing the folder %s ', config_file_path)
             shutil.rmtree(config_file_path)
@@ -182,7 +182,7 @@ class VolumeConfiguratorAPI(object):
         # punch file into guest
         fileClass = "X"
         try:
-            self._smutclient.punch_file(assigner_id, config_file, fileClass)
+            self._smtclient.punch_file(assigner_id, config_file, fileClass)
         finally:
             LOG.debug('Removing the folder %s ', config_file_path)
             shutil.rmtree(config_file_path)
@@ -253,7 +253,7 @@ class FCPManager(object):
     def __init__(self):
         self._fcp_pool = {}
         self.db = database.FCPDbOperator()
-        self._smutclient = smutclient.get_smutclient()
+        self._smtclient = smtclient.get_smtclient()
 
     def init_fcp(self, assigner_id):
         """init_fcp to init the FCP managed by this host"""
@@ -269,7 +269,7 @@ class FCPManager(object):
         self._sync_db_fcp_list()
 
     def _init_fcp_pool(self, fcp_list, assigner_id):
-        """The FCP infomation got from smut(zthin) looks like :
+        """The FCP infomation got from smt(zthin) looks like :
            host: FCP device number: xxxx
            host:   Status: Active
            host:   NPIV world wide port number: xxxxxxxx
@@ -384,7 +384,7 @@ class FCPManager(object):
                 self._add_fcp(fcp_conf_rec)
 
     def _list_fcp_details(self, userid, status):
-        return self._smutclient.get_fcp_info_by_status(userid, status)
+        return self._smtclient.get_fcp_info_by_status(userid, status)
 
     def _get_all_fcp_info(self, assigner_id):
         fcp_info = []
@@ -482,10 +482,10 @@ class FCPVolumeManager(object):
     def __init__(self):
         self.fcp_mgr = FCPManager()
         self.config_api = VolumeConfiguratorAPI()
-        self._smutclient = smutclient.get_smutclient()
+        self._smtclient = smtclient.get_smtclient()
 
     def _dedicate_fcp(self, fcp, assigner_id):
-        self._smutclient.dedicate_device(assigner_id, fcp, fcp, 0)
+        self._smtclient.dedicate_device(assigner_id, fcp, fcp, 0)
 
     def _add_disk(self, fcp, assigner_id, target_wwpn, target_lun,
                   multipath, os_version, mount_point):
@@ -499,7 +499,7 @@ class FCPVolumeManager(object):
 
         First, we need translate fcp into local wwpn, then
         dedicate fcp to the user if it's needed, after that
-        call smut layer to call linux command
+        call smt layer to call linux command
         """
         LOG.info('Start to attach device to %s' % assigner_id)
         self.fcp_mgr.init_fcp(assigner_id)
@@ -554,7 +554,7 @@ class FCPVolumeManager(object):
                          multipath, os_version, mount_point)
 
     def _undedicate_fcp(self, fcp, assigner_id):
-        self._smutclient.undedicate_device(assigner_id, fcp)
+        self._smtclient.undedicate_device(assigner_id, fcp)
 
     def _remove_disk(self, fcp, assigner_id, target_wwpn, target_lun,
                      multipath, os_version, mount_point):
@@ -574,7 +574,7 @@ class FCPVolumeManager(object):
             if not connections:
                 self._undedicate_fcp(fcp, assigner_id)
         except (exception.SDKBaseException,
-                exception.SDKSMUTRequestFailed) as err:
+                exception.SDKSMTRequestFailed) as err:
             errmsg = 'rollback detach because error:' + err.format_message()
             LOG.error(errmsg)
             self.fcp_mgr.increase_fcp_usage(fcp, assigner_id)
@@ -643,7 +643,7 @@ class FCPVolumeManager(object):
             LOG.warning(errmsg)
             return empty_connector
 
-        inv_info = self._smutclient.get_host_info()
+        inv_info = self._smtclient.get_host_info()
         zvm_host = inv_info['zvm_host']
         if zvm_host == '':
             errmsg = "zvm host not specified."

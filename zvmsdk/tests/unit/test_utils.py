@@ -24,7 +24,7 @@ class ZVMUtilsTestCases(base.SDKTestCase):
         self.assertEqual(20, zvmutils.convert_to_mb('20M'))
         self.assertEqual(1153433.6, zvmutils.convert_to_mb('1.1T'))
 
-    @mock.patch.object(zvmutils, 'get_smut_userid')
+    @mock.patch.object(zvmutils, 'get_smt_userid')
     def test_get_namelist(self, gsu):
         gsu.return_value = 'TUID'
         self.assertEqual('TSTNLIST', zvmutils.get_namelist())

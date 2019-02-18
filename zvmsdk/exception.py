@@ -144,7 +144,7 @@ class SDKMissingRequiredInput(SDKBaseException):
 class SDKInternalError(SDKBaseException):
     def __init__(self, msg, modID='zvmsdk', results=None):
         # if results is set, it means the internal error comes from
-        # smut module, we need to keep the rc/rs value from SMUT
+        # smt module, we need to keep the rc/rs value from SMT
         rc = returncode.errors['internal']
         errormsg = rc[1][1] % {'msg': msg}
         if results is None:
@@ -152,11 +152,11 @@ class SDKInternalError(SDKBaseException):
             results['rs'] = 1
             results['modID'] = returncode.ModRCs[modID]
         else:
-            # SMUT internal error
+            # SMT internal error
             # Reset the overallRC in results to the overallRC value
             # corresponding to internal error
             results['overallRC'] = (rc[0]['overallRC'])
-            results['modID'] = returncode.ModRCs['smut']
+            results['modID'] = returncode.ModRCs['smt']
         super(SDKInternalError, self).__init__(results=results,
                                                message=errormsg)
 
@@ -185,11 +185,11 @@ class SDKObjectNotExistError(SDKBaseException):
                                                      message=errormsg)
 
 
-class SDKSMUTRequestFailed(SDKBaseException):
+class SDKSMTRequestFailed(SDKBaseException):
 
     def __init__(self, results, msg):
-        results['modID'] = returncode.ModRCs['smut']
-        super(SDKSMUTRequestFailed, self).__init__(results=results,
+        results['modID'] = returncode.ModRCs['smt']
+        super(SDKSMTRequestFailed, self).__init__(results=results,
                                                    message=msg)
 
 

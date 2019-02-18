@@ -25,8 +25,8 @@ import subprocess
 from subprocess import CalledProcessError
 from tempfile import NamedTemporaryFile
 
-from smutLayer.smut import SMUT
-from smutLayer.ReqHandle import ReqHandle
+from smtLayer.smt import SMT
+from smtLayer.ReqHandle import ReqHandle
 
 version = '1.0.0'         # Version of this script
 
@@ -54,10 +54,10 @@ subs = {
     '<<<pw>>>': 'password',             # password
     '<<<vmSize>>>': '2G',               # Virtual machine size
     '<<<pool3390>>>': 'POOL1',          # 3390 disk pool (keep this in
-                                        #   uppercase for smutTest ease of use)
+                                        #   uppercase for smtTest ease of use)
     '<<<size3390>>>': '1100',           # Size of a 3390 for system deploys
     '<<<pool9336>>>': 'POOL4',          # 9336 disk pool (keep this in
-                                        # uppercase for smutTest ease of use)
+                                        # uppercase for smtTest ease of use)
     '<<<setupDisk>>>': '/opt/xcat/share/xcat/scripts/setupDisk',  # SetupDisk
     '<<<SimpleCfgFile>>>': '/install/zvm/POC/testImages/cfgdrive.tgz',
                                         # Simple tar file for the config drive
@@ -98,7 +98,7 @@ file.close()
 A dictionary contains the elements needed to process a test.
 This includes the following keys:
    description - Discriptive information to show when running the test.
-   request     - Request to be passed to SMUT.
+   request     - Request to be passed to SMT.
    out         - Input to grep to validate the output from a test.
                  Normally, this is a reqular expression.  The regular
                  expression is input to grep which scans and validates the
@@ -1266,7 +1266,7 @@ def localize(localFile, subs, testSets):
 
     Input:
        Name of local tailorization file (without .py)
-          e.g. smutTestLocal for smutTestLocal.py file.
+          e.g. smtTestLocal for smtTestLocal.py file.
        Substitution dictionary to be updated.
        Test set dictionary to be updated.
 
@@ -1279,31 +1279,31 @@ def localize(localFile, subs, testSets):
          file.
     """
     try:
-        smutTestLocal = __import__(localFile, fromlist=["*"])
+        smtTestLocal = __import__(localFile, fromlist=["*"])
     except Exception as e:
         print(e)
         return 1
 
     # Apply local overrides to the subs dictionary.
-    if len(smutTestLocal.localSubs) > 0:
+    if len(smtTestLocal.localSubs) > 0:
         print("Localizing localSubs dictionary.")
-        for key in smutTestLocal.localSubs:
-            print("Localizing " + key + ": " + smutTestLocal.localSubs[key])
-            subs[key] = smutTestLocal.localSubs[key]
+        for key in smtTestLocal.localSubs:
+            print("Localizing " + key + ": " + smtTestLocal.localSubs[key])
+            subs[key] = smtTestLocal.localSubs[key]
     else:
         print("No local overrides exist for the subs dictionary.")
 
     # Apply local overrides to the testSets dictionary.
-    if len(smutTestLocal.localTestSets) > 0:
+    if len(smtTestLocal.localTestSets) > 0:
         print("Localizing the test sets.")
-        if 'clear:testSets' in smutTestLocal.localTestSets:
+        if 'clear:testSets' in smtTestLocal.localTestSets:
             print("Removing all original test sets.")
             testSets.clear()
-        for key in smutTestLocal.localTestSets:
+        for key in smtTestLocal.localTestSets:
             if key == 'clear:testSets':
                 continue
             print("Localizing test set: " + key)
-            testSets[key] = smutTestLocal.localTestSets[key]
+            testSets[key] = smtTestLocal.localTestSets[key]
     else:
         print("No local test sets exist.")
 
@@ -1355,12 +1355,12 @@ def purgeRdr(userid):
     return subRC
 
 
-def runTest(smut, test):
+def runTest(smt, test):
     """
     Drive a test and validate the results.
 
     Input:
-       SMUT daemon object
+       SMT daemon object
        Dictionary element for the test to drive.
 
     Output:
@@ -1520,12 +1520,12 @@ def runTest(smut, test):
     return testScore
 
 
-def driveTestSet(smut, setId, setToTest):
+def driveTestSet(smt, setId, setToTest):
     """
     Drive a set of test.
 
     Input:
-       SMUT daemon object
+       SMT daemon object
        Dictionary element for the test to drive.
 
     Global:
@@ -1621,7 +1621,7 @@ def driveTestSet(smut, setId, setToTest):
             # Attempt the test.
             print("Test %s: %s" % (cntInfo, test['description']))
             localAttempted += 1
-            testScore = runTest(smut, test)
+            testScore = runTest(smt, test)
             if testScore == 1:
                 localPassed += 1
             else:
@@ -1666,7 +1666,7 @@ parser.add_argument('--listparms',
                     action='store_true',
                     help='List the command being run.')
 parser.add_argument('--local',
-                    default='smutTestLocal',
+                    default='smtTestLocal',
                     dest='localFile',
                     help="Localization file or 'none'.")
 parser.add_argument('--showlog',
@@ -1693,8 +1693,8 @@ else:
 regSubs = dict((re.escape(k), v) for k, v in subs.iteritems())
 pattern = re.compile("|".join(regSubs.keys()))
 
-smut = SMUT()
-smut.enableLogCapture()              # Capture request related logs
+smt = SMT()
+smt.enableLogCapture()              # Capture request related logs
 
 cnts = {}
 cnts['total'] = 0
@@ -1774,12 +1774,12 @@ else:
         for key in args.setsToRun:
             key = key.upper()
             if key in testSets:
-                driveTestSet(smut, key, testSets[key])
+                driveTestSet(smt, key, testSets[key])
             else:
                 print("The following tests set was not recognized: " + key)
     else:
         for key in sorted(testSets):
-            driveTestSet(smut, key, testSets[key])
+            driveTestSet(smt, key, testSets[key])
     totalEndTime = datetime.datetime.now()
 
     # Cleanup the work files.

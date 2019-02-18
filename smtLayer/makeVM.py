@@ -17,9 +17,9 @@
 import os
 from tempfile import mkstemp
 
-from smutLayer import generalUtils
-from smutLayer import msgs
-from smutLayer.vmUtils import invokeSMCLI
+from smtLayer import generalUtils
+from smtLayer import msgs
+from smtLayer.vmUtils import invokeSMCLI
 
 modId = 'MVM'
 version = "1.0.0"

@@ -25,7 +25,7 @@ from zvmsdk import log
 from zvmsdk import monitor
 from zvmsdk import networkops
 from zvmsdk import vmops
-from zvmsdk import smutclient
+from zvmsdk import smtclient
 from zvmsdk import volumeop
 from zvmsdk import database
 from zvmsdk import utils as zvmutils
@@ -71,7 +71,7 @@ class SDKAPI(object):
 
     def __init__(self, **kwargs):
         self._vmops = vmops.get_vmops()
-        self._smutclient = smutclient.get_smutclient()
+        self._smtclient = smtclient.get_smtclient()
         self._hostops = hostops.get_hostops()
         self._networkops = networkops.get_networkops()
         self._imageops = imageops.get_imageops()
@@ -515,7 +515,7 @@ class SDKAPI(object):
             # Add authorization for new zcc.
             cmd = ('echo -n %s > /etc/iucv_authorized_userid\n' %
                                                     dest_zcc_userid)
-            rc = self._smutclient.execute_cmd(userid, cmd)
+            rc = self._smtclient.execute_cmd(userid, cmd)
             if rc != 0:
                 err_msg = ("Add authorization for new zcc failed")
                 LOG.error(err_msg)

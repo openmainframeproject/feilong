@@ -16,13 +16,13 @@
 
 import mock
 
-from smutLayer import vmUtils
-from smutLayer import ReqHandle
-from smutLayer.tests.unit import base
+from smtLayer import vmUtils
+from smtLayer import ReqHandle
+from smtLayer.tests.unit import base
 
 
-class SMUTvmUtilsTestCase(base.SMUTTestCase):
-    """Test cases for vmUtils.py in smutLayer."""
+class SMTvmUtilsTestCase(base.SMTTestCase):
+    """Test cases for vmUtils.py in smtLayer."""
 
     def test_getVM_directory_py3(self):
         rh = ReqHandle.ReqHandle(captureLogs=False)

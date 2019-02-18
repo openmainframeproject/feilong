@@ -20,7 +20,7 @@ from zvmsdk import config
 from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import log
-from zvmsdk import smutclient
+from zvmsdk import smtclient
 from zvmsdk import database
 from zvmsdk import utils as zvmutils
 
@@ -40,7 +40,7 @@ def get_vmops():
 class VMOps(object):
 
     def __init__(self):
-        self._smutclient = smutclient.get_smutclient()
+        self._smtclient = smtclient.get_smtclient()
         self._dist_manager = dist.LinuxDistManager()
         self._pathutils = zvmutils.PathUtils()
         self._namelist = zvmutils.get_namelist()
@@ -49,7 +49,7 @@ class VMOps(object):
 
     def get_power_state(self, userid):
         """Get power status of a z/VM instance."""
-        return self._smutclient.get_power_state(userid)
+        return self._smtclient.get_power_state(userid)
 
     def _get_cpu_num_from_user_dict(self, dict_info):
         cpu_num = 0
@@ -65,7 +65,7 @@ class VMOps(object):
 
     def get_info(self, userid):
         power_stat = self.get_power_state(userid)
-        perf_info = self._smutclient.get_image_performance_info(userid)
+        perf_info = self._smtclient.get_image_performance_info(userid)
 
         if perf_info:
             try:
@@ -87,7 +87,7 @@ class VMOps(object):
                     'cpu_time_us': cpu_time_us}
         else:
             # virtual machine in shutdown state or not exists
-            dict_info = self._smutclient.get_user_direct(userid)
+            dict_info = self._smtclient.get_user_direct(userid)
             return {
                 'power_state': power_stat,
                 'max_mem_kb': self._get_max_memory_from_user_dict(dict_info),
@@ -103,44 +103,44 @@ class VMOps(object):
 
     def is_reachable(self, userid):
         """Reachable through IUCV communication channel."""
-        return self._smutclient.get_guest_connection_status(userid)
+        return self._smtclient.get_guest_connection_status(userid)
 
     def guest_start(self, userid):
         """"Power on z/VM instance."""
         LOG.info("Begin to power on vm %s", userid)
-        self._smutclient.guest_start(userid)
+        self._smtclient.guest_start(userid)
         LOG.info("Complete power on vm %s", userid)
 
     def guest_stop(self, userid, **kwargs):
         LOG.info("Begin to power off vm %s", userid)
-        self._smutclient.guest_stop(userid, **kwargs)
+        self._smtclient.guest_stop(userid, **kwargs)
         LOG.info("Complete power off vm %s", userid)
 
     def guest_softstop(self, userid, **kwargs):
         LOG.info("Begin to soft power off vm %s", userid)
-        self._smutclient.guest_softstop(userid, **kwargs)
+        self._smtclient.guest_softstop(userid, **kwargs)
         LOG.info("Complete soft power off vm %s", userid)
 
     def guest_pause(self, userid):
         LOG.info("Begin to pause vm %s", userid)
-        self._smutclient.guest_pause(userid)
+        self._smtclient.guest_pause(userid)
         LOG.info("Complete pause vm %s", userid)
 
     def guest_unpause(self, userid):
         LOG.info("Begin to unpause vm %s", userid)
-        self._smutclient.guest_unpause(userid)
+        self._smtclient.guest_unpause(userid)
         LOG.info("Complete unpause vm %s", userid)
 
     def guest_reboot(self, userid):
         """Reboot a guest vm."""
         LOG.info("Begin to reboot vm %s", userid)
-        self._smutclient.guest_reboot(userid)
+        self._smtclient.guest_reboot(userid)
         LOG.info("Complete reboot vm %s", userid)
 
     def guest_reset(self, userid):
         """Reset z/VM instance."""
         LOG.info("Begin to reset vm %s", userid)
-        self._smutclient.guest_reset(userid)
+        self._smtclient.guest_reset(userid)
         LOG.info("Complete reset vm %s", userid)
 
     def live_migrate_vm(self, userid, destination, parms, action):
@@ -157,30 +157,30 @@ class VMOps(object):
         # Do live migrate
         if action.lower() == 'move':
             LOG.info("Moving the specific vm %s", userid)
-            self._smutclient.live_migrate_move(userid, destination, parms)
+            self._smtclient.live_migrate_move(userid, destination, parms)
             LOG.info("Complete move vm %s", userid)
 
         if action.lower() == 'test':
             LOG.info("Testing the eligiblity of specific vm %s", userid)
-            self._smutclient.live_migrate_test(userid, destination)
+            self._smtclient.live_migrate_test(userid, destination)
 
     def create_vm(self, userid, cpu, memory, disk_list,
                   user_profile, max_cpu, max_mem):
         """Create z/VM userid into user directory for a z/VM instance."""
         LOG.info("Creating the user directory for vm %s", userid)
 
-        info = self._smutclient.create_vm(userid, cpu, memory,
+        info = self._smtclient.create_vm(userid, cpu, memory,
                                    disk_list, user_profile,
                                    max_cpu, max_mem)
 
         # add userid into smapi namelist
-        self._smutclient.namelist_add(self._namelist, userid)
+        self._smtclient.namelist_add(self._namelist, userid)
         return info
 
     def create_disks(self, userid, disk_list):
         LOG.info("Beging to create disks for vm: %(userid)s, list: %(list)s",
                  {'userid': userid, 'list': disk_list})
-        user_direct = self._smutclient.get_user_direct(userid)
+        user_direct = self._smtclient.get_user_direct(userid)
 
         exist_disks = []
         for ent in user_direct:
@@ -192,7 +192,7 @@ class VMOps(object):
             start_vdev = hex(int(max(exist_disks), 16) + 1)[2:].rjust(4, '0')
         else:
             start_vdev = None
-        info = self._smutclient.add_mdisks(userid, disk_list, start_vdev)
+        info = self._smtclient.add_mdisks(userid, disk_list, start_vdev)
 
         LOG.info("Complete create disks for vm: %s", userid)
         return info
@@ -202,39 +202,39 @@ class VMOps(object):
                  {'userid': userid, 'list': vdev_list})
 
         # not support delete disks when guest is active
-        if self._smutclient.get_power_state(userid) == 'on':
+        if self._smtclient.get_power_state(userid) == 'on':
             func = 'delete disks when guest is active'
             raise exception.SDKFunctionNotImplementError(func)
 
-        self._smutclient.remove_mdisks(userid, vdev_list)
+        self._smtclient.remove_mdisks(userid, vdev_list)
         LOG.info("Complete delete disks for vm: %s", userid)
 
     def guest_config_minidisks(self, userid, disk_info):
         LOG.info("Begin to configure disks on vm: %(userid), info: %(info)s",
                  {'userid': userid, 'info': disk_info})
         if disk_info != []:
-            self._smutclient.process_additional_minidisks(userid, disk_info)
+            self._smtclient.process_additional_minidisks(userid, disk_info)
             LOG.info("Complete configure disks for vm: %s", userid)
         else:
             LOG.info("No disk to handle on %s." % userid)
 
     def is_powered_off(self, instance_name):
         """Return True if the instance is powered off."""
-        return self._smutclient.get_power_state(instance_name) == 'off'
+        return self._smtclient.get_power_state(instance_name) == 'off'
 
     def delete_vm(self, userid):
         """Delete z/VM userid for the instance."""
         LOG.info("Begin to delete vm %s", userid)
-        self._smutclient.delete_vm(userid)
+        self._smtclient.delete_vm(userid)
 
         # remove userid from smapi namelist
-        self._smutclient.namelist_remove(self._namelist, userid)
+        self._smtclient.namelist_remove(self._namelist, userid)
         LOG.info("Complete delete vm %s", userid)
 
     def execute_cmd(self, userid, cmdStr):
         """Execute commands on the guest vm."""
         LOG.debug("executing cmd: %s", cmdStr)
-        return self._smutclient.execute_cmd(userid, cmdStr)
+        return self._smtclient.execute_cmd(userid, cmdStr)
 
     def set_hostname(self, userid, hostname, os_version):
         """Punch a script that used to set the hostname of the guest.
@@ -258,19 +258,19 @@ class VMOps(object):
         LOG.debug("Punch script to guest %s to set hostname" % userid)
 
         try:
-            self._smutclient._request(requestData)
-        except exception.SDKSMUTRequestFailed as err:
-            msg = ("Failed to punch set_hostname script to userid '%s'. SMUT "
+            self._smtclient._request(requestData)
+        except exception.SDKSMTRequestFailed as err:
+            msg = ("Failed to punch set_hostname script to userid '%s'. SMT "
                    "error: %s" % (userid, err.format_message()))
             LOG.error(msg)
-            raise exception.SDKSMUTRequestFailed(err.results, msg)
+            raise exception.SDKSMTRequestFailed(err.results, msg)
         finally:
             self._pathutils.clean_temp_folder(tmp_path)
 
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None, hostname=None):
         LOG.info("Begin to deploy image on vm %s", userid)
-        self._smutclient.guest_deploy(userid, image_name, transportfiles,
+        self._smtclient.guest_deploy(userid, image_name, transportfiles,
                                       remotehost, vdev)
 
         # punch scripts to set hostname
@@ -283,17 +283,17 @@ class VMOps(object):
                       compress_level=6):
         LOG.info("Begin to capture vm %(userid), image name is %(name)s",
                  {'userid': userid, 'name': image_name})
-        self._smutclient.guest_capture(userid, image_name,
+        self._smtclient.guest_capture(userid, image_name,
                                        capture_type=capture_type,
                                        compress_level=compress_level)
         LOG.info("Complete capture image on vm %s", userid)
 
     def guest_list(self):
-        return self._smutclient.get_vm_list()
+        return self._smtclient.get_vm_list()
 
     def get_definition_info(self, userid, **kwargs):
         check_command = ["nic_coupled"]
-        direct_info = self._smutclient.get_user_direct(userid)
+        direct_info = self._smtclient.get_user_direct(userid)
         info = {}
         info['user_direct'] = direct_info
 
@@ -323,7 +323,7 @@ class VMOps(object):
 
         LOG.info("Begin to capture console log on vm %s", userid)
         log_size = CONF.guest.console_log_size * 1024
-        console_log = self._smutclient.get_user_console_output(userid)
+        console_log = self._smtclient.get_user_console_output(userid)
 
         log_path = self._pathutils.get_console_log_path(userid)
         # TODO: need consider shrink log file size
@@ -402,14 +402,14 @@ class VMOps(object):
             raise exception.SDKConflictError(modID='guest', rs=1,
                                              userid=userid)
         # Do live resize
-        self._smutclient.live_resize_cpus(userid, count)
+        self._smtclient.live_resize_cpus(userid, count)
 
         LOG.info("Complete live resize cpu on vm %s", userid)
 
     def resize_cpus(self, userid, count):
         LOG.info("Begin to resize cpu on vm %s", userid)
         # Do resize
-        self._smutclient.resize_cpus(userid, count)
+        self._smtclient.resize_cpus(userid, count)
         LOG.info("Complete resize cpu on vm %s", userid)
 
     def live_resize_memory(self, userid, memory):
@@ -422,12 +422,12 @@ class VMOps(object):
             raise exception.SDKConflictError(modID='guest', rs=1,
                                              userid=userid)
         # Do live resize
-        self._smutclient.live_resize_memory(userid, memory)
+        self._smtclient.live_resize_memory(userid, memory)
 
         LOG.info("Complete live resize memory on vm %s", userid)
 
     def resize_memory(self, userid, memory):
         LOG.info("Begin to resize memory on vm %s", userid)
         # Do resize
-        self._smutclient.resize_memory(userid, memory)
+        self._smtclient.resize_memory(userid, memory)
         LOG.info("Complete resize memory on vm %s", userid)

@@ -15,7 +15,7 @@
 
 from zvmsdk import config
 from zvmsdk import log
-from zvmsdk import smutclient
+from zvmsdk import smtclient
 from zvmsdk import utils as zvmutils
 
 
@@ -34,25 +34,25 @@ def get_imageops():
 
 class ImageOps(object):
     def __init__(self):
-        self._smutclient = smutclient.get_smutclient()
+        self._smtclient = smtclient.get_smtclient()
         self._pathutils = zvmutils.PathUtils()
 
     def image_get_root_disk_size(self, image_name):
-        return self._smutclient.image_get_root_disk_size(image_name)
+        return self._smtclient.image_get_root_disk_size(image_name)
 
     def image_import(self, image_name, url, image_meta, remote_host=None):
 
-        return self._smutclient.image_import(image_name,
+        return self._smtclient.image_import(image_name,
                                              url,
                                              image_meta,
                                              remote_host)
 
     def image_query(self, imagename=None):
-        return self._smutclient.image_query(imagename)
+        return self._smtclient.image_query(imagename)
 
     def image_delete(self, image_name):
-        return self._smutclient.image_delete(image_name)
+        return self._smtclient.image_delete(image_name)
 
     def image_export(self, image_name, dest_url, remote_host=None):
-        return self._smutclient.image_export(image_name, dest_url,
+        return self._smtclient.image_export(image_name, dest_url,
                                              remote_host)

@@ -15,7 +15,7 @@
 import unittest
 
 
-class SMUTTestCase(unittest.TestCase):
+class SMTTestCase(unittest.TestCase):
 
     def setUp(self):
-        super(SMUTTestCase, self).setUp()
+        super(SMTTestCase, self).setUp()

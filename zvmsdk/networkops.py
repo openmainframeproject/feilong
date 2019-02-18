@@ -20,7 +20,7 @@ import tarfile
 from zvmsdk import config
 from zvmsdk import dist
 from zvmsdk import log
-from zvmsdk import smutclient
+from zvmsdk import smtclient
 
 
 _NetworkOPS = None
@@ -40,25 +40,25 @@ class NetworkOPS(object):
        oriented towards SDK driver
     """
     def __init__(self):
-        self._smutclient = smutclient.get_smutclient()
+        self._smtclient = smtclient.get_smtclient()
         self._dist_manager = dist.LinuxDistManager()
 
     def create_nic(self, userid, vdev=None, nic_id=None,
                    mac_addr=None, active=False):
-        return self._smutclient.create_nic(userid, vdev=vdev, nic_id=nic_id,
+        return self._smtclient.create_nic(userid, vdev=vdev, nic_id=nic_id,
                                            mac_addr=mac_addr, active=active)
 
     def get_vswitch_list(self):
-        return self._smutclient.get_vswitch_list()
+        return self._smtclient.get_vswitch_list()
 
     def couple_nic_to_vswitch(self, userid, nic_vdev,
                               vswitch_name, active=False):
-        self._smutclient.couple_nic_to_vswitch(userid, nic_vdev,
+        self._smtclient.couple_nic_to_vswitch(userid, nic_vdev,
                                                vswitch_name, active=active)
 
     def uncouple_nic_from_vswitch(self, userid, nic_vdev,
                                   active=False):
-        self._smutclient.uncouple_nic_from_vswitch(userid,
+        self._smtclient.uncouple_nic_from_vswitch(userid,
                                                    nic_vdev,
                                                    active=active)
 
@@ -66,7 +66,7 @@ class NetworkOPS(object):
                     connection='CONNECT', network_type='ETHERNET',
                     router="NONROUTER", vid='UNAWARE', port_type='ACCESS',
                     gvrp='GVRP', queue_mem=8, native_vid=1, persist=True):
-        self._smutclient.add_vswitch(name, rdev=rdev, controller=controller,
+        self._smtclient.add_vswitch(name, rdev=rdev, controller=controller,
                                      connection=connection,
                                      network_type=network_type,
                                      router=router, vid=vid,
@@ -76,33 +76,33 @@ class NetworkOPS(object):
                                      persist=persist)
 
     def grant_user_to_vswitch(self, vswitch_name, userid):
-        self._smutclient.grant_user_to_vswitch(vswitch_name, userid)
+        self._smtclient.grant_user_to_vswitch(vswitch_name, userid)
 
     def revoke_user_from_vswitch(self, vswitch_name, userid):
-        self._smutclient.revoke_user_from_vswitch(vswitch_name, userid)
+        self._smtclient.revoke_user_from_vswitch(vswitch_name, userid)
 
     def set_vswitch_port_vlan_id(self, vswitch_name, userid, vlan_id):
-        self._smutclient.set_vswitch_port_vlan_id(vswitch_name, userid,
+        self._smtclient.set_vswitch_port_vlan_id(vswitch_name, userid,
                                                   vlan_id)
 
     def set_vswitch(self, vswitch_name, **kwargs):
-        self._smutclient.set_vswitch(vswitch_name, **kwargs)
+        self._smtclient.set_vswitch(vswitch_name, **kwargs)
 
     def delete_vswitch(self, vswitch_name, persist=True):
-        self._smutclient.delete_vswitch(vswitch_name, persist)
+        self._smtclient.delete_vswitch(vswitch_name, persist)
 
     def delete_nic(self, userid, vdev, active=False):
-        self._smutclient.delete_nic(userid, vdev,
+        self._smtclient.delete_nic(userid, vdev,
                                     active=active)
 
     def network_configuration(self, userid, os_version, network_info,
                               active=False):
-        network_file_path = self._smutclient.get_guest_temp_path(userid)
+        network_file_path = self._smtclient.get_guest_temp_path(userid)
         LOG.debug('Creating folder %s to contain network configuration files'
                   % network_file_path)
         # check whether network interface has already been set for the guest
         # if not, means this the first time to set the network interface
-        first = self._smutclient.is_first_network_config(userid)
+        first = self._smtclient.is_first_network_config(userid)
         (network_doscript, active_cmds) = self._generate_network_doscript(
                                                            userid,
                                                            os_version,
@@ -112,18 +112,18 @@ class NetworkOPS(object):
                                                            active=active)
         fileClass = "X"
         try:
-            self._smutclient.punch_file(userid, network_doscript, fileClass)
+            self._smtclient.punch_file(userid, network_doscript, fileClass)
         finally:
             LOG.debug('Removing the folder %s ', network_file_path)
             shutil.rmtree(network_file_path)
 
         # update guest db to mark the network is already set
         if first:
-            self._smutclient.update_guestdb_with_net_set(userid)
+            self._smtclient.update_guestdb_with_net_set(userid)
 
         # using zvmguestconfigure tool to parse network_doscript
         if active:
-            self._smutclient.execute_cmd(userid, active_cmds)
+            self._smtclient.execute_cmd(userid, active_cmds)
 
     # Prepare and create network doscript for instance
     def _generate_network_doscript(self, userid, os_version, network_info,
@@ -252,15 +252,15 @@ class NetworkOPS(object):
         return network_doscript
 
     def get_nic_info(self, userid=None, nic_id=None, vswitch=None):
-        return self._smutclient.get_nic_info(userid=userid, nic_id=nic_id,
+        return self._smtclient.get_nic_info(userid=userid, nic_id=nic_id,
                                              vswitch=vswitch)
 
     def vswitch_query(self, vswitch_name):
-        return self._smutclient.query_vswitch(vswitch_name)
+        return self._smtclient.query_vswitch(vswitch_name)
 
     def delete_network_configuration(self, userid, os_version, vdev,
                                      active=False):
-        network_file_path = self._smutclient.get_guest_temp_path(userid)
+        network_file_path = self._smtclient.get_guest_temp_path(userid)
         linuxdist = self._dist_manager.get_linux_dist(os_version)()
         file = linuxdist.get_network_configuration_files(vdev)
         cmd = 'rm -f %s\n' % file
@@ -275,15 +275,15 @@ class NetworkOPS(object):
 
         fileClass = "X"
         try:
-            self._smutclient.punch_file(userid, file_name, fileClass)
+            self._smtclient.punch_file(userid, file_name, fileClass)
         finally:
             LOG.debug('Removing the folder %s ', network_file_path)
             shutil.rmtree(network_file_path)
 
         if active:
             active_cmds = linuxdist.create_active_net_interf_cmd()
-            self._smutclient.execute_cmd(userid, active_cmds)
+            self._smtclient.execute_cmd(userid, active_cmds)
 
     def dedicate_OSA(self, userid, OSA_device, vdev=None, active=False):
-        return self._smutclient.dedicate_OSA(userid, OSA_device, vdev=vdev,
+        return self._smtclient.dedicate_OSA(userid, OSA_device, vdev=vdev,
                                              active=active)

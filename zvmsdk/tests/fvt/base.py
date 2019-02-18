@@ -15,7 +15,7 @@ import os
 import unittest
 
 from zvmsdk import config
-from zvmsdk import smutclient
+from zvmsdk import smtclient
 from zvmsdk.tests.fvt import api_sample
 from zvmsdk.tests.fvt import test_utils
 
@@ -35,7 +35,7 @@ class ZVMConnectorBaseTestCase(unittest.TestCase):
         self.longMessage = True
         self.start_position = 0
         self.apibase = api_sample.APITestBase()
-        self._smutclient = smutclient.get_smutclient()
+        self._smtclient = smtclient.get_smtclient()
         self.client = test_utils.TestzCCClient()
         self.utils = test_utils.ZVMConnectorTestUtils()
 

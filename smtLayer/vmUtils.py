@@ -19,7 +19,7 @@ import subprocess
 from subprocess import CalledProcessError
 import time
 
-from smutLayer import msgs
+from smtLayer import msgs
 
 modId = 'VMU'
 version = '1.0.0'         # Version of this script
@@ -661,7 +661,7 @@ def invokeSMCLI(rh, api, parms, hideInLog=[]):
         else:
             goodHeader = True
             # Convert the first word (overall rc from SMAPI) to an int
-            # and set the SMUT overall rc based on this value.
+            # and set the SMT overall rc based on this value.
             orcError = False
             try:
                 results['overallRC'] = int(codes[0])
