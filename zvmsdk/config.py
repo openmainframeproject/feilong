@@ -174,6 +174,27 @@ Possible values:
 Sample root disk in user directory:
     MDISK 0100 <disktype> <start> <end> <volumelabel> <readwrite>
 '''),
+    Opt('default_ipl_param',
+        section='zvm',
+        default='',
+        help='''
+Default IPL param.
+
+When z/VM Cloud Connector spawn a virtual machine, it will use this
+param as IPL param if it's not empty, otherwise it will use value
+defined by `user_root_vdev`.
+
+For example, define this param to `CMS` will make VM start IPL
+from `IPL CMS`.
+
+Please note it's administrator's responsibility to write something
+like a `PROFILE EXEC` to hijack the IPL process and the commands
+in `PROFILE EXEC` need call the real IPL, which is:
+IPL `user_root_vdev`
+
+Possible values:
+    A string, defined by administrator, define where to IPL from.
+'''),
     Opt('user_default_max_cpu',
         section='zvm',
         default=32,
