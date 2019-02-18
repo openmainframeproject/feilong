@@ -71,8 +71,7 @@ def generate_errcode():
     _lines.append('**' + "smt errors" + '**\n')
     _smt_orcs = {}
     _smt_errkeys = msgs.msg.keys()
-    _smt_errkeys.sort()
-    for k in _smt_errkeys:
+    for k in sorted(_smt_errkeys):
         _orcs = msgs.msg[k]
         _orrc = _orcs[0].get('overallRC')
         if _smt_orcs.get(_orrc) is not None:
@@ -81,8 +80,7 @@ def generate_errcode():
             _smt_orcs[_orrc] = [_orcs]
 
     orcs = _smt_orcs.keys()
-    orcs.sort()
-    for orc in orcs:
+    for orc in sorted(orcs):
         for _msg in _smt_orcs[orc]:
             _orc = _msg[0].get('overallRC')
             _mid = '1'
