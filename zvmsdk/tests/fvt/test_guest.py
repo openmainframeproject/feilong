@@ -311,10 +311,10 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
             output.split()[2]
         except subprocess.CalledProcessError as e:
             msg = e.output
-            print ("Create cfgdrive.iso meet error: %s" % msg)
+            print("Create cfgdrive.iso meet error: %s" % msg)
         except Exception as e:
             msg = e.output
-            print ("Create cfgdrive.iso meet error: %s" % msg)
+            print("Create cfgdrive.iso meet error: %s" % msg)
 
         os.system('rm -rf %s' % tempDir)
         os.system('chown -R zvmsdk:zvmsdk /var/lib/zvmsdk/cfgdrive.iso')
