@@ -165,7 +165,7 @@ def _run_guest(userid, image_path, os_version, profile,
 
     deploy_start = time.time()
     create_time = deploy_start - spawn_start
-    print "%s create takes %s seconds" % (userid, create_time)
+    print("%s create takes %s seconds" % (userid, create_time))
 
     # Deploy image to root disk
     image_name = os.path.basename(image_path)
@@ -176,7 +176,7 @@ def _run_guest(userid, image_path, os_version, profile,
 
     network_create = time.time()
     deploy_time = network_create - deploy_start
-    print "%s deploy takes %s seconds" % (userid, deploy_time)
+    print("%s deploy takes %s seconds" % (userid, deploy_time))
 
     # Create network device and configure network interface
     res = sdk_client.send_request('guest_create_network_interface', userid,
@@ -197,7 +197,7 @@ def _run_guest(userid, image_path, os_version, profile,
 
     guest_start = time.time()
     network_time = guest_start - network_create
-    print "%s configure network %s seconds" % (userid, network_time)
+    print("%s configure network %s seconds" % (userid, network_time))
 
     # Power on the vm
     print("Starting guest %s" % userid)
@@ -207,7 +207,7 @@ def _run_guest(userid, image_path, os_version, profile,
 
     # End time
     spawn_time = time.time() - spawn_start
-    print "%s test completed in %s seconds" % (userid, spawn_time)
+    print("%s test completed in %s seconds" % (userid, spawn_time))
 
 
 def run_guest():
@@ -239,12 +239,12 @@ def run_guest():
 
 def main():
     if len(sys.argv) != 2:
-        print 'need param for guest name'
+        print('need param for guest name')
         exit(1)
 
     global GUEST_USERID
     GUEST_USERID = sys.argv[1]
-    print 'create %s' % GUEST_USERID
+    print('create %s' % GUEST_USERID)
     run_guest()
 
 

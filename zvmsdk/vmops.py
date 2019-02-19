@@ -329,7 +329,7 @@ class VMOps(object):
         # TODO: need consider shrink log file size
         append_to_log(console_log, log_path)
 
-        log_fp = file(log_path, 'rb')
+        log_fp = open(log_path, 'rb')
         try:
             log_data, remaining = zvmutils.last_bytes(log_fp, log_size)
         except Exception as err:

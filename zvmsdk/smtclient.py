@@ -21,6 +21,7 @@ import hashlib
 # as workaround here, we first import urllib then import requests
 # later, we need consider to use urllib.request to replace
 # requests if that's possible to avoid this kind of issue
+from io import IOBase
 import shutil
 import six.moves.urllib.parse as urlparse
 import requests
@@ -2031,7 +2032,7 @@ class SMTClient(object):
                         current_md5.update(chunk)
 
             elif (fpath.__class__.__name__ in ["StringIO", "StringO"] or
-                  isinstance(fpath, file)):
+                  isinstance(fpath, IOBase)):
                 for chunk in self._read_chunks(fpath):
                     current_md5.update(chunk)
             else:

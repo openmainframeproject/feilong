@@ -23,11 +23,11 @@ def terminate_guest(userid):
 
 def main():
     if len(sys.argv) != 2:
-        print 'need param for guest name'
+        print('need param for guest name')
         exit(1)
 
     guest_id = sys.argv[1]
-    print 'destroy %s' % guest_id
+    print('destroy %s' % guest_id)
     terminate_guest(guest_id)
 
 

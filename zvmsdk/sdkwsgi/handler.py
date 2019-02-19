@@ -189,7 +189,7 @@ class SdkHandler(object):
                 LOG.debug(msg)
                 raise webob.exc.HTTPBadRequest(msg,
                    json_formatter=util.json_error_formatter)
-        except ValueError as exc:
+        except ValueError:
             msg = 'content-length header must be an integer'
             LOG.debug(msg)
             raise webob.exc.HTTPBadRequest(msg,
@@ -199,5 +199,5 @@ class SdkHandler(object):
         except exception.NotFound as exc:
             raise webob.exc.HTTPNotFound(
                 exc, json_formatter=util.json_error_formatter)
-        except Exception as exc:
+        except Exception:
             raise
