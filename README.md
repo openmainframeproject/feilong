@@ -20,5 +20,9 @@ This package is licensed under the [Apache 2.0 License](https://raw.githubuserco
 If you encounter any problem with this package, please open a bug against
 [cloud connector issue tracker](https://bugs.launchpad.net/python-zvm-sdk/+bug)
 
+## Open mainframe project
+z/VM Cloud connector is moving under governance of OMP [Open mainframe project](https://openmainframeproject.com), see
+[Governance document](https://github.com/openmainframeproject/tsc/blob/master/process/example_governance.md) for more info.
+
 ----
 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a><br />Documentation license: <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
