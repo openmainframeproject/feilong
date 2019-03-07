@@ -308,19 +308,35 @@ function resizeECKD {
 
   local partitionsCount=`blkid | grep ${devNode} | wc -l`
   if [[ $partitionsCount -gt 1 ]]; then
-    inform "(Warning) Multiple partitions are detected on root disk, extend is not supported. Only single partition can be extended."
-    return 0
-  fi
-
-  # Resize the partition to take the whole disk.
-  # Note: We will see a message indicating that "device is not fully formatted".
-  #       We will ignore that because we are redoing the parition to take 
-  #       advantage of the increased size.
-  out=`fdasd -a ${devNode}`
-  rc=$?
-  if (( rc != 0 )); then
-    printError "When resizing the dasd, 'fsdasd -a' to  ${devNode} returns rc: $rc, out: $out"
-    return 1
+    inform "Multiple partitions are detected on root disk. The last partition will be extended."
+    lastpart=`parted -m ${devNode} unit mb print | tail -n 1 | cut -d':' -f1,3`
+    partnum=`echo $lastpart | cut -d':' -f1`
+    # Note: Have to increase the partition by 1MB to avoid following parted error
+    #       BUG: specified free space extent for deleting not found in FMT5 DSCB!
+    mbsize=`echo $lastpart | cut -d':' -f2 | tr -d [:alpha:]`
+    out=`parted ${devNode} resize $partnum $((mbsize + 1))`
+    rc=$?
+    if (( rc != 0 )); then
+      printError "When resizing the dasd by 1MB, 'parted' to  ${devNode} returns rc: $rc, out: $out"
+      return 1
+    fi
+    out=`parted ${devNode} resize $partnum 100%`
+    rc=$?
+    if (( rc != 0 )); then
+      printError "When resizing the dasd, 'parted' to  ${devNode} returns rc: $rc, out: $out"
+      return 1
+    fi
+  else
+    # Resize the partition to take the whole disk.
+    # Note: We will see a message indicating that "device is not fully formatted".
+    #       We will ignore that because we are redoing the parition to take 
+    #       advantage of the increased size.
+    out=`fdasd -a ${devNode}`
+    rc=$?
+    if (( rc != 0 )); then
+      printError "When resizing the dasd, 'fsdasd -a' to  ${devNode} returns rc: $rc, out: $out"
+      return 1
+    fi
   fi
 
   # Reset the device by disconnecting and then reconnecting
