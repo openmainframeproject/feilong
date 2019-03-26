@@ -156,12 +156,13 @@ class TestzCCClient(object):
                      user_profile=CONF.zvm.user_profile,
                      max_cpu=CONF.zvm.user_default_max_cpu,
                      max_mem=CONF.zvm.user_default_max_memory,
-                     ipl_from=''):
+                     ipl_from='', ipl_param='', ipl_loadparam=''):
         body = {"guest": {"userid": userid, "vcpus": vcpus,
                           "memory": memory, "disk_list": disk_list,
                           "user_profile": user_profile,
                           "max_cpu": max_cpu, "max_mem": max_mem,
-                          "ipl_from": ipl_from}}
+                          "ipl_from": ipl_from, "ipl_param": ipl_param,
+                          "ipl_loadparam": ipl_loadparam}}
         body = json.dumps(body)
         return self.api_request(url='/guests', method='POST', body=body)
 
