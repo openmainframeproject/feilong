@@ -146,13 +146,14 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         profile = 'osdflt'
         max_cpu = 10
         max_mem = '4G'
+        ipl_loadparam = 'load=1'
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
-              '--logonby "lbyuser1 lbyuser2" --ipl 0100')
+              '--logonby "lbyuser1 lbyuser2" --ipl 0100 --iplLoadparam load=1')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
-                                   max_cpu, max_mem)
+                                   max_cpu, max_mem, ipl_loadparam)
         request.assert_called_with(rd)
         add_mdisks.assert_called_with(user_id, disk_list)
         add_guest.assert_called_with(user_id)

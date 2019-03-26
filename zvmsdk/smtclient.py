@@ -463,7 +463,7 @@ class SMTClient(object):
             raise exception.SDKSMTRequestFailed(err.results, msg)
 
     def create_vm(self, userid, cpu, memory, disk_list, profile,
-                  max_cpu, max_mem):
+                  max_cpu, max_mem, ipl_loadparam):
         """ Create VM and add disks if specified. """
         rd = ('makevm %(uid)s directory LBYONLY %(mem)im %(pri)s '
               '--cpus %(cpu)i --profile %(prof)s --maxCPU %(max_cpu)i '
@@ -480,6 +480,10 @@ class SMTClient(object):
             disk_list[0]['is_boot_disk']):
             ipl_disk = CONF.zvm.user_root_vdev
             rd += (' --ipl %s' % ipl_disk)
+
+            # load param for ipl
+            if ipl_loadparam:
+                rd += ' --iplLoadparam %s' % ipl_loadparam
 
         action = "create userid '%s'" % userid
 
