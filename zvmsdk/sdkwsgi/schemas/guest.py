@@ -29,6 +29,7 @@ create = {
                 'disk_list': parameter_types.disk_list,
                 'max_cpu': parameter_types.max_cpu,
                 'max_mem': parameter_types.max_mem,
+                'ipl_loadparam': parameter_types.ipl_loadparam, 
             },
             'required': ['userid', 'vcpus', 'memory'],
             'additionalProperties': False,
