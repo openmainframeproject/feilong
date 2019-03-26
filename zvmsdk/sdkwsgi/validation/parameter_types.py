@@ -104,6 +104,11 @@ name = {
 }
 
 
+ipl_loadparam = {
+    'type': 'string', 'minLength': 1, 'maxLength': 255,
+}
+
+
 positive_integer = {
     'type': ['integer', 'string'],
     'pattern': '^[0-9]*$', 'minimum': 1
