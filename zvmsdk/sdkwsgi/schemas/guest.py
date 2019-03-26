@@ -30,6 +30,8 @@ create = {
                 'max_cpu': parameter_types.max_cpu,
                 'max_mem': parameter_types.max_mem,
                 'ipl_from': parameter_types.ipl_from,
+                'ipl_param': parameter_types.ipl_param,
+                'ipl_loadparam': parameter_types.ipl_loadparam,
             },
             'required': ['userid', 'vcpus', 'memory'],
             'additionalProperties': False,
