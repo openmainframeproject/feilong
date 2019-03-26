@@ -79,7 +79,10 @@ class NetworkOPS(object):
         self._smtclient.grant_user_to_vswitch(vswitch_name, userid)
 
     def revoke_user_from_vswitch(self, vswitch_name, userid):
-        self._smtclient.revoke_user_from_vswitch(vswitch_name, userid)
+        if CONF.need_revoke_from_vswitch:
+            self._smtclient.revoke_user_from_vswitch(vswitch_name, userid)
+        else:
+            LOG.debug('Avoid revoke_user_from_vswitch for guest %s', userid)
 
     def set_vswitch_port_vlan_id(self, vswitch_name, userid, vlan_id):
         self._smtclient.set_vswitch_port_vlan_id(vswitch_name, userid,
