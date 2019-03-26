@@ -214,6 +214,19 @@ The length of namelist must no longer than 64.
         help='''
 The port number of remotehost sshd.
 '''),
+    Opt('need_revoke_from_vswitch',
+        section='zvm',
+        default=True,
+        help='''
+Whether revoke will be called during delete guest.
+
+Before apply APARs VM65925, VM65926, and VM65931 on z/VM 6.4 or z/VM 7.1
+DNA feature is not enabled. So zVM cloud connector has to manually call
+revoke function. After the APAR or upgrade to z/VM 7.1 this call won't be
+needed.
+
+Set to True to make it backward compatible.
+'''),
     # image options
     Opt('sdk_image_repository',
         section='image',
