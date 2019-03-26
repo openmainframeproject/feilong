@@ -63,6 +63,10 @@ class VMHandler(object):
             kwargs_list['max_mem'] = guest['max_mem']
         if 'ipl_from' in guest_keys:
             kwargs_list['ipl_from'] = guest['ipl_from']
+        if 'ipl_param' in guest_keys:
+            kwargs_list['ipl_param'] = guest['ipl_param']
+        if 'ipl_loadparam' in guest_keys:
+            kwargs_list['ipl_loadparam'] = guest['ipl_loadparam']
 
         info = self.client.send_request('guest_create', userid, vcpus,
                                         memory, **kwargs_list)

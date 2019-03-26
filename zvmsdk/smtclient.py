@@ -471,7 +471,7 @@ class SMTClient(object):
         return ipl_param
 
     def create_vm(self, userid, cpu, memory, disk_list, profile,
-                  max_cpu, max_mem, ipl_from):
+                  max_cpu, max_mem, ipl_from, ipl_param, ipl_loadparam):
         """ Create VM and add disks if specified. """
         rd = ('makevm %(uid)s directory LBYONLY %(mem)im %(pri)s '
               '--cpus %(cpu)i --profile %(prof)s --maxCPU %(max_cpu)i '
@@ -489,6 +489,13 @@ class SMTClient(object):
             # we assume at least one disk exist, which means, is_boot_disk
             # is true for exactly one disk.
             rd += (' --ipl %s' % self._get_ipl_param(ipl_from))
+
+            # load param for ipl
+            if ipl_param:
+                rd += ' --iplParam %s' % ipl_param
+
+            if ipl_loadparam:
+                rd += ' --iplLoadparam %s' % ipl_loadparam
 
         action = "create userid '%s'" % userid
 
