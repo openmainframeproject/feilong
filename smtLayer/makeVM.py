@@ -68,7 +68,9 @@ keyOpsList = {
         '--profile': ['profName', 1, 2],
         '--maxCPU': ['maxCPU', 1, 1],
         '--setReservedMem': ['setReservedMem', 0, 0],
-        '--showparms': ['showParms', 0, 0]},
+        '--showparms': ['showParms', 0, 0],
+        '--iplParam': ['iplParam', 1, 2],
+        '--iplLoadparam': ['iplLoadparam', 1, 2]}
     'HELP': {},
     'VERSION': {},
      }
@@ -107,7 +109,15 @@ def createVM(rh):
             dirLines.append("CPU %0.2X" % i)
 
     if 'ipl' in rh.parms:
-        dirLines.append("IPL %s" % rh.parms['ipl'])
+        ipl_string = "IPL %s " % rh.parms['ipl']
+
+        if 'iplParam' in rh.parms:
+            ipl_string += ("PARM %s " % rh.parms['iplParam'])
+
+        if 'iplLoadparam' in rh.parms:
+            ipl_string += ("LOADPARM %s " % rh.parms['iplLoadparam'])
+
+        dirLines.append(ipl_string)
 
     if 'byUsers' in rh.parms:
         for user in rh.parms['byUsers']:
