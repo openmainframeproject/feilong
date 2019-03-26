@@ -163,6 +163,18 @@ guest_ipl_from:
   in: body
   required: false
   type: string
+guest_ipl_param:
+  description: |
+    The param to add to IPL command, e.g. `IPL xxx PARM <guest_ipl_param>`
+  in: body
+  required: false
+  type: string
+guest_ipl_loadparam:
+  description: |
+    The loadparam to add to IPL command, e.g. `IPL xxx LOADPARM <guest_ipl_loadparam>`
+  in: body
+  required: false
+  type: string
 guest_max_cpu:
   description: |
     The maximum number of virtual cpus this user can define.
