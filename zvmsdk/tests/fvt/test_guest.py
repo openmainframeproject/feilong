@@ -527,6 +527,23 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.assertTrue('IPL CMS' in resp.content)
         self.assertFalse('IPL 0100' in resp.content)
 
+    def test_guest_create_with_ipl_with_param(self):
+        userid = self._get_userid_auto_cleanup()
+        disk_list = [{"size": "3g", "is_boot_disk": True}]
+
+        resp = self.client.guest_create(userid, disk_list=disk_list,
+                                        user_profile=CONF.zvm.user_profile,
+                                        ipl_param='dummy',
+                                        ipl_loadparam='load=1')
+        self.assertEqual(200, resp.status_code)
+
+        # get guest definition
+        resp = self.client.guest_get_definition_info(userid)
+        self.assertEqual(200, resp.status_code)
+
+        # verify two disks added
+        self.assertTrue('IPL 0100 PARM DUMMY LOADPARM LOAD=1' in resp.content)
+
     @parameterized.expand(TEST_IMAGE_LIST)
     def test_guest_create_deploy_capture_delete(self, case_name,
                                                 image_path, os_version):
