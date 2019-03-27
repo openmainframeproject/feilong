@@ -154,6 +154,15 @@ disk_list_guest:
   in: body
   required: false
   type: list
+guest_ipl_from:
+  description: |
+    where the guest IPL from, by default it's ipl from
+    `CONF.zvm.user_root_vdev`, and if this value is not empty,
+    the IPL will from given param, for example `IPL CMS` will IPL
+    from CMS instead of device number.
+  in: body
+  required: false
+  type: string
 guest_max_cpu:
   description: |
     The maximum number of virtual cpus this user can define.
