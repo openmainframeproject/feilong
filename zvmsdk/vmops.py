@@ -165,13 +165,13 @@ class VMOps(object):
             self._smtclient.live_migrate_test(userid, destination)
 
     def create_vm(self, userid, cpu, memory, disk_list,
-                  user_profile, max_cpu, max_mem):
+                  user_profile, max_cpu, max_mem, ipl_from):
         """Create z/VM userid into user directory for a z/VM instance."""
         LOG.info("Creating the user directory for vm %s", userid)
 
         info = self._smtclient.create_vm(userid, cpu, memory,
                                    disk_list, user_profile,
-                                   max_cpu, max_mem)
+                                   max_cpu, max_mem, ipl_from)
 
         # add userid into smapi namelist
         self._smtclient.namelist_add(self._namelist, userid)
