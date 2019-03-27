@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b7cda299_0a115ca8",
+        "filename": "zthin-parts/zthin/bin/unpackdiskimage",
+        "patchSetId": 2
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1008712
+      },
+      "writtenOn": "2019-03-27T04:04:49Z",
+      "side": 1,
+      "message": "we are ok with this patch basically\n\none question is whether parted included in all SuSE distro by default? or we have add dependency on the package so auto install this package, also zCC fit for other distro as well ,we need to make sure those works for them as well\n\nand can you paste the result so in case we can take that as a reference (we need document this into doc for users as well) , thanks",
+      "range": {
+        "startLine": 312,
+        "startChar": 13,
+        "endLine": 312,
+        "endChar": 20
+      },
+      "revId": "930265f0f8d9cdbe8591520d2c48dc5e993c517c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
