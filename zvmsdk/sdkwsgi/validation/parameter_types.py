@@ -103,6 +103,10 @@ name = {
     'format': 'name'
 }
 
+ipl_from = {
+    'type': 'string', 'minLength': 1, 'maxLength': 255,
+}
+
 
 positive_integer = {
     'type': ['integer', 'string'],

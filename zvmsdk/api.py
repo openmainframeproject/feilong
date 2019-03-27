@@ -541,7 +541,8 @@ class SDKAPI(object):
     def guest_create(self, userid, vcpus, memory, disk_list=None,
                      user_profile=CONF.zvm.user_profile,
                      max_cpu=CONF.zvm.user_default_max_cpu,
-                     max_mem=CONF.zvm.user_default_max_memory):
+                     max_mem=CONF.zvm.user_default_max_memory,
+                     ipl_from=None):
         """create a vm in z/VM
 
         :param userid: (str) the userid of the vm to be created
@@ -585,6 +586,8 @@ class SDKAPI(object):
                The value should be specified by 1-4 bits of number suffixed by
                either M (Megabytes) or G (Gigabytes). And the number should be
                an integer.
+        :param ipl_from: (str) where to ipl the guest from, it can be given
+               by guest input param, e.g CMS.
         """
         userid = userid.upper()
         if disk_list:
@@ -620,7 +623,8 @@ class SDKAPI(object):
         action = "create guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.create_vm(userid, vcpus, memory, disk_list,
-                                         user_profile, max_cpu, max_mem)
+                                         user_profile, max_cpu, max_mem,
+                                         ipl_from)
 
     @check_guest_exist()
     def guest_live_resize_cpus(self, userid, cpu_cnt):
