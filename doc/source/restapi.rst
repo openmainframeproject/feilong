@@ -142,6 +142,7 @@ Create a vm in z/VM
   - disk_pool: disk_pool_guest
   - max_cpu: guest_max_cpu
   - max_mem: guest_max_mem
+  - ipl_from: guest_ipl_from
 
 
 * Request sample:
