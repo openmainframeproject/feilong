@@ -107,7 +107,7 @@ def createVM(rh):
             dirLines.append("CPU %0.2X" % i)
 
     if 'ipl' in rh.parms:
-        dirLines.append("IPL %0.4s" % rh.parms['ipl'])
+        dirLines.append("IPL %s" % rh.parms['ipl'])
 
     if 'byUsers' in rh.parms:
         for user in rh.parms['byUsers']:
