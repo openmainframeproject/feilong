@@ -79,7 +79,13 @@ class NetworkOPS(object):
         self._smtclient.grant_user_to_vswitch(vswitch_name, userid)
 
     def revoke_user_from_vswitch(self, vswitch_name, userid):
-        self._smtclient.revoke_user_from_vswitch(vswitch_name, userid)
+        try:
+            self._smtclient.revoke_user_from_vswitch(vswitch_name, userid)
+        except Exception as e:
+            # TODO: for APARs VM65925, VM65926, and VM65931 applied or z/VM 7.1
+            # this call won't be needed, so we can avoid raise exception
+            # and let it be as some configuration may block this API call.
+            LOG.debug('Error ignored: %s', str(e))
 
     def set_vswitch_port_vlan_id(self, vswitch_name, userid, vlan_id):
         self._smtclient.set_vswitch_port_vlan_id(vswitch_name, userid,
