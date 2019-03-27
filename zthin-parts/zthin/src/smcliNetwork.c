@@ -444,7 +444,9 @@ int networkIpInterfaceQuery(int argC, char* argV[], struct _vmApiInternalContext
     	        printf("%s\n", token);
                 while (token != NULL) {
     	            token = strtok_r(NULL, blank, &buffer);
-        	        printf("%s\n", token);
+                    if (token != NULL) {
+                        printf("%s\n", token);
+                    }
                 }
     	    }
     	}

@@ -2047,6 +2047,8 @@ int imageDiskCopyDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
 
     if (rc) {
         printAndLogProcessingErrors("Image_Disk_Copy_DM", rc, vmapiContextP, strMsg, 0);
+    } else if (output->common.returnCode == 592 && output->operationId) {
+        rc = queryAsyncOperation(srcImage, output->operationId, "Image_Disk_Copy_DM", vmapiContextP, strMsg);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Disk_Copy_DM", output->common.returnCode,

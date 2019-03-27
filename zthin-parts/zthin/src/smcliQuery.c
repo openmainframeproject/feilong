@@ -134,10 +134,12 @@ int queryAllDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
     int rc;
     int i;
     int j;
+    int k;
     int recCount;
     int recLen;
     int entryCount = 0;
     int option;
+    int isLineNum;
     char format[10+1] = "";
     char line[80];
     char * targetIdentifier = NULL;
@@ -268,7 +270,20 @@ int queryAllDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
                 // Print out directory entry
                 recCount = output->directoryEntryArray[i].directoryEntryArrayCount;
                 for (j = 0; j < recCount; j++ ) {
-                    recLen = output->directoryEntryArray[i].directoryEntryRecordArray[j].directoryEntryRecordLength - 8;
+                    recLen = output->directoryEntryArray[i].directoryEntryRecordArray[j].directoryEntryRecordLength;
+                    // Remove line number if present
+                    if (recLen == 80) {
+                        isLineNum = 1;
+                        for (k = 72; k < 80; k++) {
+                            if (!isdigit(output->directoryEntryArray[i].directoryEntryRecordArray[j].directoryEntryRecord[k])) {
+                                isLineNum = 0;
+                                break;
+                            }
+                        }
+                        if (isLineNum) {
+                            recLen = 72;
+                        }
+                    }
                     memset(line, 0x20, 80);
                     strncpy(line, output->directoryEntryArray[i].directoryEntryRecordArray[j].directoryEntryRecord, recLen);
                     trim(line);
