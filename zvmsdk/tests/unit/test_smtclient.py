@@ -196,6 +196,18 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         request.assert_called_once_with(rd)
 
     @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_add_mdisk_format_none(self, request):
+        userid = 'fakeuser'
+        disk = {'size': '1g',
+                'disk_pool': 'ECKD:eckdpool1',
+                'format': 'none'}
+        vdev = '0101'
+        rd = ('changevm fakeuser add3390 eckdpool1 0101 1g --mode MR')
+
+        self._smtclient._add_mdisk(userid, disk, vdev),
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
     def test_remove_mdisk(self, request):
         userid = 'fakeuser'
         vdev = '0102'

@@ -259,7 +259,7 @@ userid_list_array = {
 
 file_type = {
     'type': 'string',
-    'enum': ['ext2', 'ext3', 'ext4', 'xfs']
+    'enum': ['ext2', 'ext3', 'ext4', 'xfs', 'none']
 }
 
 disk_pool = {

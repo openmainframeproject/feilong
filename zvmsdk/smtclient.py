@@ -536,7 +536,7 @@ class SMTClient(object):
 
         rd = ' '.join(['changevm', userid, action, diskpool_name,
                        vdev, size, '--mode MR'])
-        if fmt:
+        if fmt and fmt != 'none':
             rd += (' --filesystem %s' % fmt.lower())
 
         action = "add mdisk to userid '%s'" % userid

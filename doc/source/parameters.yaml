@@ -197,7 +197,10 @@ size_disk:
   type: string
 format_disk:
   description: |
-    Format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``xfs``.
+    Format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``xfs``, ``none``.
+    The file system ``none`` means there is no need to create a file system,
+    and in turn no format and partition table will be created, this usually
+    used for some system such as z/OS.
   in: body
   required: false
   type: string
@@ -256,6 +259,9 @@ disk_mountpoint:
 format_disk_required:
   description: |
     Format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``xfs``.
+    The file system ``none`` means there is no need to create a file system,
+    and in turn no format and partition table will be created, this usually
+    used for some system such as z/OS.
   in: body
   required: true
   type: string
