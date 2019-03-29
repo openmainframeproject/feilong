@@ -308,19 +308,37 @@ function resizeECKD {
 
   local partitionsCount=`blkid | grep ${devNode} | wc -l`
   if [[ $partitionsCount -gt 1 ]]; then
-    inform "(Warning) Multiple partitions are detected on root disk, extend is not supported. Only single partition can be extended."
-    return 0
-  fi
-
-  # Resize the partition to take the whole disk.
-  # Note: We will see a message indicating that "device is not fully formatted".
-  #       We will ignore that because we are redoing the parition to take 
-  #       advantage of the increased size.
-  out=`fdasd -a ${devNode}`
-  rc=$?
-  if (( rc != 0 )); then
-    printError "When resizing the dasd, 'fsdasd -a' to  ${devNode} returns rc: $rc, out: $out"
-    return 1
+    inform "Multiple partitions are detected on root disk. The last partition will be extended."
+    partnum=`parted -m ${devNode} print | tail -n 1 | cut -d':' -f1`
+    # Input redirection needed because fdasd does not have a command line parameter for
+    #    u   re-create VTOC re-using existing partition sizes
+    out=`fdasd ${devNode} <<-END
+	u
+	y
+	w
+	END`
+    rc=$?
+    if (( rc != 0 )); then
+      printError "When recreating the VTOC, 'fdasd' to  ${devNode} returns rc: $rc, out: $out"
+      return 1
+    fi
+    out=`parted ${devNode} resize $partnum 100%`
+    rc=$?
+    if (( rc != 0 )); then
+      printError "When resizing the dasd, 'parted' to  ${devNode} returns rc: $rc, out: $out"
+      return 1
+    fi
+  else
+    # Resize the partition to take the whole disk.
+    # Note: We will see a message indicating that "device is not fully formatted".
+    #       We will ignore that because we are redoing the parition to take 
+    #       advantage of the increased size.
+    out=`fdasd -a ${devNode}`
+    rc=$?
+    if (( rc != 0 )); then
+      printError "When resizing the dasd, 'fsdasd -a' to  ${devNode} returns rc: $rc, out: $out"
+      return 1
+    fi
   fi
 
   # Reset the device by disconnecting and then reconnecting
