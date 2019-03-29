@@ -22,6 +22,30 @@
       "revId": "930265f0f8d9cdbe8591520d2c48dc5e993c517c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7eec9b6_f9d6943d",
+        "filename": "zthin-parts/zthin/bin/unpackdiskimage",
+        "patchSetId": 2
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1015122
+      },
+      "writtenOn": "2019-03-29T02:57:46Z",
+      "side": 1,
+      "message": "\u003e we are ok with this patch basically\n\u003e \n\u003e one question is whether parted included in all SuSE distro by default? \n\nThe parted package is available in SLES11, SLES12 and SLES15.\n\nSLES11 goes out of general support on 31 Mar 2019. I have not tested multiple partitions using SLES11 SP4.\n\nI have tested using parted included in SLES12 SP4 and SLES15 to extend the last partition.\n\nhttps://scc.suse.com/packages?name\u003dSUSE%20Linux%20Enterprise%20Server\u0026version\u003d12.4\u0026arch\u003ds390x\u0026query\u003dparted\u0026module\u003d\n\nhttps://scc.suse.com/packages?name\u003dSUSE%20Linux%20Enterprise%20Server\u0026version\u003d15\u0026arch\u003ds390x\u0026query\u003dparted\u0026module\u003d\n\n\u003e or we have add dependency on the package so auto install this package, \n\nparted is installed by default with SLES but adding a dependency will guarantee the package is installed.\n\n\u003e also zCC fit for other distro as well ,we need to make sure those works for them as well\n\u003e and can you paste the result so in case we can take that as a reference (we need document this into doc for users as well) , thanks\n\nIs it my responsibility as the submitter of the patch to test the other supported distros?",
+      "parentUuid": "b7cda299_0a115ca8",
+      "range": {
+        "startLine": 312,
+        "startChar": 13,
+        "endLine": 312,
+        "endChar": 20
+      },
+      "revId": "930265f0f8d9cdbe8591520d2c48dc5e993c517c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
     }
   ]
 }
