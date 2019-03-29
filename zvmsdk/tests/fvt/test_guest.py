@@ -489,6 +489,32 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_guests_list', resp.content)
 
+    def test_guest_create_with_profile_multiple_disks_with_vdev(self):
+        userid = self._get_userid_auto_cleanup()
+        disk_list = [{"size": "3g", "is_boot_disk": True, "vdev": "0150"},
+                     {"size": "2g", "vdev": "0200"}]
+
+        # create multi-disks guest with profile specified
+        resp = self.client.guest_create(userid, disk_list=disk_list,
+                                        user_profile=CONF.zvm.user_profile)
+        self.assertEqual(200, resp.status_code)
+
+        # get guest definition
+        resp = self.client.guest_get_definition_info(userid)
+        self.assertEqual(200, resp.status_code)
+
+        resp_content = test_utils.load_output(resp.content)
+        resp_direct = str(resp_content['output']['user_direct'])
+
+        # verify two disks added
+        self.assertFalse('MDISK 0100' in resp_direct)
+        self.assertFalse('MDISK 0101' in resp_direct)
+        self.assertTrue('MDISK 0150' in resp_direct)
+        self.assertTrue('MDISK 0200' in resp_direct)
+        # verify included the profile
+        self.assertTrue('INCLUDE %s' % CONF.zvm.user_profile.upper() in
+                        resp_direct)
+
     def test_guest_create_with_profile_multiple_disks(self):
         userid = self._get_userid_auto_cleanup()
         disk_list = [{"size": "3g", "is_boot_disk": True},

@@ -154,6 +154,15 @@ disk_list_guest:
   in: body
   required: false
   type: list
+add_mdisk_disk_vdev:
+  description: |
+    when adding mdisk (either add after create or during create guest)
+    use this param to specify the virtual device number.
+    e.g. add this param to dist list as `vdev: 0123` will result user
+    direct has something like `MDISK 0123`
+  in: body
+  required: false
+  type: string
 guest_ipl_from:
   description: |
     where the guest IPL from, by default it's ipl from

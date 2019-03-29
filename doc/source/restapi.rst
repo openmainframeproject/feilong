@@ -139,6 +139,7 @@ Create a vm in z/VM
   - size: size_disk
   - format: format_disk
   - is_boot_disk: is_boot_disk
+  - vdev: add_mdisk_disk_vdev
   - disk_pool: disk_pool_guest
   - max_cpu: guest_max_cpu
   - max_mem: guest_max_mem
@@ -189,6 +190,7 @@ Add disks for a guest
   - size: size_disk
   - format: format_disk
   - is_boot_disk: is_boot_disk
+  - vdev: add_mdisk_disk_vdev
   - disk_pool: disk_pool_guest
 
 * Request sample:
