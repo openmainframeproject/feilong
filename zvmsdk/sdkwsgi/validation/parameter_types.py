@@ -284,6 +284,7 @@ disk_list = {
             'size': {'type': 'string'},
             'format': file_type,
             'is_boot_disk': boolean,
+            'vdev': vdev,
             'disk_pool': {'type': 'string', 'pattern': '^\w+:\w+$'}
         },
         'required': ['size'],
