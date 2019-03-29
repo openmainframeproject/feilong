@@ -150,7 +150,13 @@ class SMTClient(object):
         """
 
         for idx, disk in enumerate(disk_list):
-            vdev = self.generate_disk_vdev(start_vdev=start_vdev, offset=idx)
+            if 'vdev' in disk:
+                # this means user want to create their own device number
+                vdev = disk['vdev']
+            else:
+                vdev = self.generate_disk_vdev(start_vdev=start_vdev,
+                                               offset=idx)
+
             self._add_mdisk(userid, disk, vdev)
             disk['vdev'] = vdev
 
