@@ -101,12 +101,12 @@ int ssiQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP
         if (0 != (rc = addMessageToBuffer(&saveMsgs, strMsg))) {
             goto end;
         }
-        snprintf(strMsg, sizeof(strMsg), "output.ssiInfoCount = %d\n\2n", output->ssiInfoCount);
+        snprintf(strMsg, sizeof(strMsg), "output.ssiInfoCount = %d\n\n", output->ssiInfoCount);
         if (0 != (rc = addMessageToBuffer(&saveMsgs, strMsg))) {
             goto end;
         }
 
-        // Obtain the 5 members of the ssi_info_structure that are in the output->ssiInfo[i].vmapiString
+        // Obtain the 4 members of the ssi_info_structure that are in the output->ssiInfo[i].vmapiString
         for (i = 0; i < output->ssiInfoCount; i++) {
             // Obtain member_slot
             token = strtok_r(output->ssiInfo[i].vmapiString, blank, &buffer);
@@ -145,6 +145,19 @@ int ssiQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP
             if (strcasecmp(member_state, "Available") == 0) {
                 //  We are done there is no SSI data for this member_slot. This is not a error it just means
                 //  this member_slot has no zVM in it. Continue to get the next member_slot if there is one.
+//                continue;
+                //  There is no SSI data for this member_slot because this zVM is down
+                snprintf(strMsg, sizeof(strMsg),
+                         "member_slot = %s\n"
+                         "member_system_id = N/A\n"
+                         "member_state = %s\n"
+                         "member_pdr_heartbeat = N/A\n"
+                         "member_received_heartbeat = N/A\n\n",
+                         member_slot, member_state);
+
+                if (0 != (rc = addMessageToBuffer(&saveMsgs, strMsg))) {
+                    goto end;
+                }
                 continue;
             } else if (strcasecmp(member_state, "Down") == 0) {
                 //  There is no SSI data for this member_slot because this zVM is down
@@ -155,9 +168,11 @@ int ssiQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP
                          "member_pdr_heartbeat = N/A\n"
                          "member_received_heartbeat = N/A\n\n",
                          member_slot, member_system_id, member_state);
+
                 if (0 != (rc = addMessageToBuffer(&saveMsgs, strMsg))) {
                     goto end;
                 }
+                continue;
             }
 
             // Obtain member_pdr_heartbeat
@@ -189,6 +204,9 @@ int ssiQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiContextP
                      "member_pdr_heartbeat = %s\n"
                      "member_received_heartbeat = %s\n\n",
                      member_slot, member_system_id, member_state, member_pdr_heartbeat, member_received_heartbeat);
+            if (0 != (rc = addMessageToBuffer(&saveMsgs, strMsg))) {
+                goto end;
+            }
         }
         end:
         if (rc) {
