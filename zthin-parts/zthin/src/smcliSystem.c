@@ -659,7 +659,7 @@ int systemEQIDQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
     char *buffer;  // char * whose value is preserved between successive related calls to strtok_r.
     const char * blank = " ";
     char eqid_name[50+1];
-    char eqid_rdev[4+1];
+    char eqid_rdev[5+1];
     vmApiSystemEQIDQueryOutput * output;
 
     opterr = 0; // 0 =>Tell getopt to not display a mesage
@@ -670,6 +670,7 @@ int systemEQIDQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
     // These variables hold output messages until the end
     smMessageCollector saveMsgs;
     char msgBuff[MESSAGE_BUFFER_SIZE];
+    INIT_MESSAGE_BUFFER(&saveMsgs, MESSAGE_BUFFER_SIZE, msgBuff);
 
     // Options that have arguments are followed by a : character
     while ((option = getopt(argC, argV, "T:k:h?")) != -1)
