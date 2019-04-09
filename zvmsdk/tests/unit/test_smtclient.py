@@ -1364,6 +1364,35 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         add_mdisk.assert_any_call(userid, disk_list[0], '0100')
         add_mdisk.assert_any_call(userid, disk_list[1], '0101')
 
+    @mock.patch.object(smtclient.SMTClient, '_add_mdisk')
+    def test_add_mdisks_with_1dev(self, add_mdisk):
+        userid = 'fakeuser'
+        disk_list = [{'size': '1g',
+                      'is_boot_disk': True,
+                      'disk_pool': 'ECKD:eckdpool1'},
+                     {'size': '200000',
+                      'disk_pool': 'FBA:fbapool1',
+                      'format': 'ext3',
+                      'vdev': '0200'}]
+        self._smtclient.add_mdisks(userid, disk_list)
+        add_mdisk.assert_any_call(userid, disk_list[0], '0100')
+        add_mdisk.assert_any_call(userid, disk_list[1], '0200')
+
+    @mock.patch.object(smtclient.SMTClient, '_add_mdisk')
+    def test_add_mdisks_with_2dev(self, add_mdisk):
+        userid = 'fakeuser'
+        disk_list = [{'size': '1g',
+                      'is_boot_disk': True,
+                      'disk_pool': 'ECKD:eckdpool1',
+                      'vdev': '0200'},
+                     {'size': '200000',
+                      'disk_pool': 'FBA:fbapool1',
+                      'format': 'ext3',
+                      'vdev': '0300'}]
+        self._smtclient.add_mdisks(userid, disk_list)
+        add_mdisk.assert_any_call(userid, disk_list[0], '0200')
+        add_mdisk.assert_any_call(userid, disk_list[1], '0300')
+
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_dedicate_device(self, request):
         fake_userid = 'FakeID'
