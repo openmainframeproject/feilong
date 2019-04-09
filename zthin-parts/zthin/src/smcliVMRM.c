@@ -395,7 +395,9 @@ int vmrmMeasurementQuery(int argC, char* argV[], struct _vmApiInternalContext* v
         int i;
         printf("Workload:\n");
         for (i = 0; i < output->workloadCount; i++) {
-            printf("  %s\n", output->workloadInfoList[i].workloadRecord);
+            printf(" %*.*s\n", output->workloadInfoList[i].workloadRecordLength,
+                               output->workloadInfoList[i].workloadRecordLength,
+                               output->workloadInfoList[i].workloadRecord);
         }
     }
     return rc;
