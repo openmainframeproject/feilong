@@ -560,7 +560,7 @@ class SDKAPI(object):
                In which, 'size': case insensitive, the unit can be in
                Megabytes (M), Gigabytes (G), or number of cylinders/blocks, eg
                512M, 1g or just 2000.
-               'format': can be ext2, ext3, ext4, xfs and none.
+               'format': can be ext2, ext3, ext4, xfs ,swap and none.
                'is_boot_disk': For root disk, this key must be set to indicate
                the image that will be deployed on this disk.
                'disk_pool': optional, if not specified, the disk will be
@@ -616,9 +616,10 @@ class SDKAPI(object):
                 # 'format' value check
                 if ('format' in disk.keys()) and (disk['format'].lower() not in
                                                   ('ext2', 'ext3', 'ext4',
-                                                   'xfs', 'none')):
+                                                   'swap', 'xfs', 'none')):
                     errmsg = ("Invalid disk_pool input, supported 'format' "
-                              "includes 'ext2', 'ext3', 'ext4', 'xfs', 'none'")
+                              "includes 'ext2', 'ext3', 'ext4', 'xfs', "
+                              "'swap', 'none'")
                     LOG.error(errmsg)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
 
@@ -716,7 +717,7 @@ class SDKAPI(object):
                In which, 'size': case insensitive, the unit can be in
                Megabytes (M), Gigabytes (G), or number of cylinders/blocks, eg
                512M, 1g or just 2000.
-               'format': optional, can be ext2, ext3, ext4, xfs, if not
+               'format': optional, can be ext2, ext3, ext4, xfs, swap, if not
                specified, the disk will not be formatted.
                'is_boot_disk': For root disk, this key must be set to indicate
                the image that will be deployed on this disk.
