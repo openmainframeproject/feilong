@@ -27,16 +27,7 @@ TEST_IMAGE_LIST = test_utils.TEST_IMAGE_LIST
 rdm_idx = random.randint(0, len(TEST_IMAGE_LIST) - 1)
 
 bvt_testcases = [
-    test_guest.GuestHandlerTestCase("test_guest_create_deploy_capture_delete_"
-                                    "%i_%s" %
-                                    (rdm_idx,
-                                     re.sub('\W', '_',
-                                            TEST_IMAGE_LIST[rdm_idx][0]
-                                            )
-                                     )),
-    test_host.HostTestCase("test_host_info"),
-    test_image.ImageTestCase("test_image_create_delete"),
-    test_version.VersionTestCase("test_version"),
+    test_guest.GuestHandlerTestCaseWithMultipleDeployedGuest("test_guest_create_disks_and_configure")
 ]
 
 
