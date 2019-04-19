@@ -172,6 +172,8 @@ class GuestHandlerBase(base.ZVMConnectorBaseTestCase):
         disk_list = [{"size": "1g", "format": "ext3",
                       "disk_pool": CONF.zvm.disk_pool},
                      {"size": "1g", "format": "ext3",
+                      "disk_pool": CONF.zvm.disk_pool},
+                     {"size": "512m", "format": "swap",
                       "disk_pool": CONF.zvm.disk_pool}]
         return self.client.guest_create_disks(userid, disk_list)
 
@@ -1513,6 +1515,7 @@ class GuestHandlerTestCaseWithMultipleDeployedGuest(GuestHandlerBase):
         self.assertEqual(200, resp_create.status_code)
         self.assertTrue('MDISK 0101' in resp_create.content)
         self.assertTrue('MDISK 0102' in resp_create.content)
+        self.assertTrue('MDISK 0103' in resp_create.content)
 
         # config 'MDISK 0101'
         resp_config = self._guest_config_minidisk_multiple(userid)
@@ -1529,12 +1532,12 @@ class GuestHandlerTestCaseWithMultipleDeployedGuest(GuestHandlerBase):
                 flag1 = True
             if '/mnt/0102' in element:
                 flag2 = True
-        self.assertEqual(True, flag1)
-        self.assertEqual(True, flag2)
+        self.assertTrue(flag1)
+        self.assertTrue(flag2)
 
         # delete new disks when guest active - not supported
         resp = self.client.guest_delete_disks(userid,
-                                              ['101', '102'])
+                                              ['101', '102', '103'])
         self.assertEqual(501, resp.status_code)
 
         # delete disks when guest inactive
@@ -1542,12 +1545,13 @@ class GuestHandlerTestCaseWithMultipleDeployedGuest(GuestHandlerBase):
         self.assertTrue(
             self.utils.wait_until_guest_in_power_state(userid, 'off'))
         resp = self.client.guest_delete_disks(userid,
-                                              ['101', '102'])
+                                              ['101', '102', '103'])
 
         resp_delete = self.client.guest_get_definition_info(userid)
         self.assertEqual(200, resp_delete.status_code)
         self.assertTrue('MDISK 0101' not in resp_delete.content)
         self.assertTrue('MDISK 0102' not in resp_delete.content)
+        self.assertTrue('MDISK 0103' not in resp_delete.content)
 
     @parameterized.expand(TEST_USERID_LIST)
     def test_guest_create_delete_network_interface(self, case_name,
