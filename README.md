@@ -3,9 +3,9 @@
 # z/VM Cloud Connector
 
 ## Description
-z/VM cloud connector is a development sdk for manage z/VM. It provides a set of APIs to operate z/VM including guest, image, network, volume etc.
+z/VM Cloud Connector is a development sdk for manage z/VM. It provides a set of APIs to operate z/VM including guest, image, network, volume etc.
 
-Just like os-win for nova hyperv driver and oslo.vmware for nova vmware driver, z/VM cloud connector (zVMCloudConnector) is for nova z/vm driver and other z/VM related openstack driver such as neutron, ceilometer.
+Just like os-win for nova hyperv driver and oslo.vmware for nova vmware driver, z/VM Cloud Connector (zVMCloudConnector) is for nova z/vm driver and other z/VM related openstack driver such as neutron, ceilometer.
 
 ## Quickstart
 Please refer to [Quick Start Guide](https://cloudlib4zvm.readthedocs.io/en/latest/quickstart.html).
@@ -21,7 +21,7 @@ If you encounter any problem with this package, please open a bug against
 [cloud connector issue tracker](https://bugs.launchpad.net/python-zvm-sdk/+bug)
 
 ## Open mainframe project
-z/VM Cloud connector is moving under governance of OMP [Open mainframe project](https://openmainframeproject.com), see
+z/VM Cloud connector is moving under governance of OMP [Open Mainframe Project](https://openmainframeproject.com), see
 [Governance document](https://github.com/openmainframeproject/tsc/blob/master/process/example_governance.md) for more info.
 
 ----
