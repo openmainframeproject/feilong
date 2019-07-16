@@ -360,7 +360,7 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
             "-y",
             "-b", "4096",
             "-d", "cdl",
-            "-f", device]
+            "-v", device]
         strCmd = ' '.join(cmd)
         rh.printSysLog("Invoking: " + strCmd)
         try:
