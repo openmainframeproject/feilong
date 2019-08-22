@@ -541,6 +541,11 @@ class FCPVolumeManager(object):
         assigner_id = connection_info['assigner_id']
         assigner_id = assigner_id.upper()
         multipath = connection_info['multipath']
+        multipath = multipath.lower()
+        if multipath == 'true':
+            multipath = True
+        else:
+            multipath = False
         os_version = connection_info['os_version']
         mount_point = connection_info['mount_point']
 

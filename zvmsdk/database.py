@@ -667,6 +667,13 @@ class GuestDbOperator(object):
             guests = res.fetchall()
         return guests
 
+    def get_migrated_guest_info_list(self):
+        with get_guest_conn() as conn:
+            res = conn.execute("SELECT * FROM guests "
+                               "WHERE comments LIKE '%\"migrated\": 1%'")
+            guests = res.fetchall()
+        return guests
+
     def get_comments_by_userid(self, userid):
         """ Get comments record.
         output should be like: {'k1': 'v1', 'k2': 'v2'}'
