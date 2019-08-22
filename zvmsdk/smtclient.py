@@ -562,7 +562,7 @@ class SMTClient(object):
         action = "list all guests in database"
         with zvmutils.log_and_reraise_sdkbase_error(action):
             guests_in_db = self._GuestDbOperator.get_guest_list()
-            guests_migrated = self._GuestDbOperator.get_migrated_guest_list()
+            guests_migrated = self._GuestDbOperator.get_migrated_guest_info_list()
 
         # db query return value in tuple (uuid, userid, metadata, comments)
         userids_in_db = [g[1].upper() for g in guests_in_db]

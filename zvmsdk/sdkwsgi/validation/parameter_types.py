@@ -427,12 +427,12 @@ fcp = {
 
 wwpn = {
     'type': ['string'], 'minLength': 18, 'maxLength': 18,
-    'pattern': '^0x[0-9]{16}$'
+    'pattern': '^0x[0-9a-fA-F]{16}$'
 }
 
 lun = {
     'type': ['string'], 'minLength': 18, 'maxLength': 18,
-    'pattern': '^0x[0-9]{16}$'
+    'pattern': '^0x[0-9a-fA-F]{16}$'
 }
 
 connection_info = {
