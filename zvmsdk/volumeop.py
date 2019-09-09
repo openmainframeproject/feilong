@@ -422,7 +422,8 @@ class FCPManager(object):
         else:
             # we got it from db, let's reuse it
             old_fcp = fcp_list[0][0]
-            self.db.reserve(fcp_list[0][0])
+            #self.db.reserve(fcp_list[0][0])
+            self.db.negation(fcp_list[0][0])
             return old_fcp
 
     def increase_fcp_usage(self, fcp, assigner_id=None):
@@ -452,13 +453,27 @@ class FCPManager(object):
         # TODO: check assigner_id to make sure on the correct fcp record
         self.db.unreserve(fcp)
 
+    def reverse_fcp(self, fcp, assigner_id=None):
+        """ now we have a problem, we need to lock FCP devices when attaching
+        or detaching is running. But detach has different process order with
+        attach.
+        When attach, Cinder will call get_volume_connector first and then
+        call attah_volume.
+        When detach, Cinder will call detach first and then call
+        get_volume_connector.
+        During this process, if we want to lock our FCP, we need a negation
+        or reverse operation to let us can lock FCP in multiprocess env.
+        """
+        self.db.negation(fcp)
+
     def is_reserved(self, fcp):
         self.db.is_reserved(fcp)
 
-    def get_available_fcp(self):
+    def get_available_fcp(self, assigner_id):
         """get all the fcps not reserved"""
         # get the unreserved FCP devices belongs to assigner_id
         available_list = []
+        # first check whether this userid already has a FCP device
         free_unreserved = self.db.get_all_free_unreserved()
         for item in free_unreserved:
             available_list.append(item[0])
@@ -520,6 +535,8 @@ class FCPVolumeManager(object):
                     self._undedicate_fcp(fcp, assigner_id)
             raise exception.SDKBaseException(msg=errmsg)
         # TODO: other exceptions?
+        finally:
+            self.fcp_mgr.reverse_fcp(fcp)
 
         LOG.info('Attaching device to %s is done.' % assigner_id)
 
@@ -571,6 +588,7 @@ class FCPVolumeManager(object):
                 multipath, os_version, mount_point):
         """Detach a volume from a guest"""
         LOG.info('Start to detach device from %s' % assigner_id)
+        self.fcp_mgr.reverse_fcp(fcp)
         connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
 
         try:
@@ -587,6 +605,8 @@ class FCPVolumeManager(object):
                 self._add_disk(fcp, assigner_id, target_wwpn, target_lun,
                                multipath, os_version, mount_point)
             raise exception.SDKBaseException(msg=errmsg)
+
+        self.fcp_mgr.unreserve_fcp(fcp)
 
         LOG.info('Detaching device to %s is done.' % assigner_id)
 
@@ -629,7 +649,9 @@ class FCPVolumeManager(object):
 
         # init fcp pool
         self.fcp_mgr.init_fcp(assigner_id)
-        fcp_list = self.fcp_mgr.get_available_fcp()
+        #fcp_list = self.fcp_mgr.get_available_fcp(assigner_id)
+        fcp = self.fcp_mgr.find_and_reserve_fcp(assigner_id)
+        fcp_list = [fcp]
         if not fcp_list:
             errmsg = "No available FCP device found."
             LOG.warning(errmsg)
