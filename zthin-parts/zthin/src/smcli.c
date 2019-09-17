@@ -417,7 +417,7 @@ int main(int argC, char* argV[]) {
     readTraceFile(&vmapiContext);
     TRACE_ENTRY_FLOW(&vmapiContext, TRACEAREA_ZTHIN_GENERAL);
 
-    rc = getSmapiLevel(&vmapiContext, " ", &smapiLevel);
+    rc = getSmapiLevel(&vmapiContext, "", &smapiLevel);
     if (rc != 0){
         printf("\nERROR: Unable to determine SMAPI level.\n");
         return 1;

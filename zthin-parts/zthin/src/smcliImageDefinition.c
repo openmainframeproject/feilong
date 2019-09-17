@@ -365,7 +365,7 @@ int imageDefinitionQueryDM(int argC, char* argV[], struct _vmApiInternalContext*
     const char * argumentsRequired = "Tk";
     char tempStr[1];
 
-    rc = getSmapiLevel(vmapiContextP, " ", &smapiLevel);
+    rc = getSmapiLevel(vmapiContextP, "", &smapiLevel);
     if (rc != 0){
         printf("\nERROR: Unable to determine SMAPI level.\n");
         return 1;

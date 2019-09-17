@@ -368,7 +368,7 @@ int systemDiskQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
 
     int smapiLevel = 0;
 
-    rc = getSmapiLevel(vmapiContextP, " ", &smapiLevel);
+    rc = getSmapiLevel(vmapiContextP, "", &smapiLevel);
     if (rc != 0){
         printf("\nERROR: Unable to determine SMAPI level.\n");
         return 1;
@@ -3050,7 +3050,7 @@ int systemWWPNQuery(int argC, char* argV[], struct _vmApiInternalContext* vmapiC
     INIT_MESSAGE_BUFFER(&saveMsgs, MESSAGE_BUFFER_SIZE, msgBuff) ;
 
 
-    rc = getSmapiLevel(vmapiContextP, " ", &smapiLevel);
+    rc = getSmapiLevel(vmapiContextP, "", &smapiLevel);
     if (rc != 0){
         printf("\nERROR: Unable to determine SMAPI level.\n");
         return 1;
