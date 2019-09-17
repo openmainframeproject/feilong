@@ -305,6 +305,24 @@ class FCPDbOperator(object):
             reserved = fcp_list[0][3]
             return reserved == 1
 
+    def negation(self, fcp):
+        """ now we have a problem, we need to lock FCP devices when attaching
+        or detaching is running. But detach has different process order with
+        attach.
+        When attach, Cinder will call get_volume_connector first and then
+        call attah_volume.
+        When detach, Cinder will call detach first and then call
+        get_volume_connector.
+        During this process, if we want to lock our FCP, we need a negation
+        or reverse operation to let us can lock FCP in multiprocess env.
+        """
+        if self.is_reserved(fcp):
+            # if reserved == 1, reverse it to 0
+            self.unreserve(fcp)
+        else:
+            # if reserved == 0, reverse it to 1
+            self.reserve(fcp)
+
     def find_and_reserve(self):
         with get_fcp_conn() as conn:
             result = conn.execute("SELECT * FROM fcp where connections=0 "
@@ -348,6 +366,18 @@ class FCPDbOperator(object):
 
             conn.execute("UPDATE fcp SET connections=? "
                          "WHERE fcp_id=?", (connections, fcp))
+            return connections
+
+    def increase_usage_by_assigner(self, fcp, assigner_id):
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT * FROM fcp WHERE "
+                                  "fcp_id=?", (fcp,))
+            fcp_list = result.fetchall()
+            connections = fcp_list[0][2]
+            connections += 1
+
+            conn.execute("UPDATE fcp SET assigner_id=?, connections=? "
+                         "WHERE fcp_id=?", (assigner_id, connections, fcp))
             return connections
 
     def decrease_usage(self, fcp):
