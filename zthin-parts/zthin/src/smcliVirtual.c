@@ -4099,7 +4099,7 @@ int virtualNetworkVswitchQueryExtended(int argC, char* argV[], struct _vmApiInte
     int native_vlan_id_int;
     int user_vlan_id_int;
 
-    rc = getSmapiLevel(vmapiContextP, " ", &smapiLevel);
+    rc = getSmapiLevel(vmapiContextP, "", &smapiLevel);
     // Options that have arguments are followed by a : character
     while ((option = getopt(argC, argV, "T:k:h?")) != -1)
         switch (option) {
