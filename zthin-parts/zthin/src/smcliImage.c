@@ -369,7 +369,7 @@ int imageCPUDefineDM(int argC, char* argV[], struct _vmApiInternalContext* vmapi
     char strMsg[250];
 
 
-    rc = getSmapiLevel(vmapiContextP, " ", &smapiLevel);
+    rc = getSmapiLevel(vmapiContextP, "", &smapiLevel);
     if (rc != 0){
         printAndLogProcessingErrors("Image_CPU_Define_DM", rc, vmapiContextP, "", 0);
         printf("\nERROR: Unable to determine SMAPI level.\n");
