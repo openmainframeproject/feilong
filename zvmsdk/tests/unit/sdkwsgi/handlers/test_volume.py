@@ -61,8 +61,8 @@ class HandlersVolumeTest(unittest.TestCase):
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_volume_attach(self, mock_attach):
         mock_attach.return_value = {'overallRC': 0}
-        connection_info = {"assigner_id": "username", "zvm_fcp": "1fc5",
-                           "target_wwpn": "0x5005076801401234",
+        connection_info = {"assigner_id": "username", "zvm_fcp": ["1fc5"],
+                           "target_wwpn": ["0x5005076801401234"],
                            "target_lun": "0x0026000000000000",
                            "os_version": "rhel7.2",
                            "multipath": "true", "mount_point": ""}
@@ -77,8 +77,8 @@ class HandlersVolumeTest(unittest.TestCase):
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_volume_detach(self, mock_detach):
         mock_detach.return_value = {'overallRC': 0}
-        connection_info = {"assigner_id": "username", "zvm_fcp": "1fc5",
-                           "target_wwpn": "0x5005076801401234",
+        connection_info = {"assigner_id": "username", "zvm_fcp": ["1fc5"],
+                           "target_wwpn": ["0x5005076801401234"],
                            "target_lun": "0x0026000000000000",
                            "os_version": "rhel7.2",
                            "multipath": "true", "mount_point": ""}
