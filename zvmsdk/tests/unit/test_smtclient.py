@@ -1167,7 +1167,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         request.assert_any_call(requestData1)
         request.assert_any_call(requestData2)
 
-    @mock.patch.object(database.GuestDbOperator, 'get_migrated_guest_list')
+    @mock.patch.object(database.GuestDbOperator,
+                       'get_migrated_guest_info_list')
     @mock.patch.object(database.GuestDbOperator, 'get_guest_list')
     def test_get_vm_list(self, db_list, migrated_list):
         db_list.return_value = [(u'9a5c9689-d099-46bb-865f-0c01c384f58c',
@@ -1183,7 +1184,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertListEqual(sorted(userid_list),
                              sorted(['TEST0', 'TEST1', 'TEST2']))
 
-    @mock.patch.object(database.GuestDbOperator, 'get_migrated_guest_list')
+    @mock.patch.object(database.GuestDbOperator,
+                       'get_migrated_guest_info_list')
     @mock.patch.object(database.GuestDbOperator, 'get_guest_list')
     def test_get_vm_list_exclude_migrated(self, db_list, migrated_list):
         db_list.return_value = [(u'9a5c9689-d099-46bb-865f-0c01c384f58c',

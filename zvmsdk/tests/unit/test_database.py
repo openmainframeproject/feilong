@@ -312,17 +312,24 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
     # tearDownClass deleted to work around bug of 'no such table:fcp'
 
     def test_new(self):
-        self.db_op.new('1111')
+        self.db_op.new('1111', 0)
+        self.db_op.new('2222', 1)
+        try:
+            fcp_list = self.db_op.get_all()
+            self.assertEqual(2, len(fcp_list))
+            fcp = fcp_list[0]
+            self.assertEqual('1111', fcp[0])
+            self.assertEqual(0, fcp[4])
 
-        fcp_list = self.db_op.get_all()
-        self.assertEqual(1, len(fcp_list))
-        fcp = fcp_list[0]
-        self.assertEqual('1111', fcp[0])
-
-        self.db_op.delete('1111')
+            fcp = fcp_list[1]
+            self.assertEqual('2222', fcp[0])
+            self.assertEqual(1, fcp[4])
+        finally:
+            self.db_op.delete('1111')
+            self.db_op.delete('2222')
 
     def test_assign(self):
-        self.db_op.new('1111')
+        self.db_op.new('1111', 0)
 
         try:
             self.db_op.assign('1111', 'incuser')
@@ -343,10 +350,10 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.delete('1111')
 
     def test_get_all_free(self):
-        self.db_op.new('1111')
-        self.db_op.new('1112')
-        self.db_op.new('1113')
-        self.db_op.new('1114')
+        self.db_op.new('1111', 0)
+        self.db_op.new('1112', 0)
+        self.db_op.new('1113', 0)
+        self.db_op.new('1114', 0)
 
         try:
             self.db_op.assign('1111', 'user1')
@@ -368,8 +375,8 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.delete('1114')
 
     def test_get_from_assigner(self):
-        self.db_op.new('1111')
-        self.db_op.new('1112')
+        self.db_op.new('1111', 0)
+        self.db_op.new('1112', 1)
 
         try:
             self.db_op.assign('1111', 'user1')
@@ -385,8 +392,8 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.delete('1112')
 
     def test_get_from_fcp(self):
-        self.db_op.new('1111')
-        self.db_op.new('1112')
+        self.db_op.new('1111', 0)
+        self.db_op.new('1112', 2)
 
         try:
             self.db_op.assign('1111', 'user1')
@@ -402,7 +409,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.delete('1112')
 
     def test_reserve_unreserve(self):
-        self.db_op.new('1111')
+        self.db_op.new('1111', 2)
         try:
             self.db_op.reserve('1111')
             fcp_list = self.db_op.get_all()
@@ -422,9 +429,21 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         finally:
             self.db_op.delete('1111')
 
+    def test_get_fcp_pair(self):
+        self.db_op.new('1111', 0)
+        self.db_op.new('1112', 1)
+        self.db_op.new('1113', 2)
+        try:
+            fcp_list = self.db_op.get_fcp_pair()
+            self.assertEqual(fcp_list, [u'1111', u'1112', '1113'])
+        finally:
+            self.db_op.delete('1111')
+            self.db_op.delete('1112')
+            self.db_op.delete('1113')
+
     def test_find_and_reserve(self):
-        self.db_op.new('1111')
-        self.db_op.new('1112')
+        self.db_op.new('1111', 1)
+        self.db_op.new('1112', 2)
 
         try:
             fcp = self.db_op.find_and_reserve()
@@ -440,7 +459,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.delete('1112')
 
     def test_decrease_usage(self):
-        self.db_op.new('1111')
+        self.db_op.new('1111', 0)
 
         try:
             self.db_op.assign('1111', 'decuser')
@@ -463,6 +482,17 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.assertEqual('1111', fcp[0])
             self.assertEqual(2, fcp[2])
 
+        finally:
+            self.db_op.delete('1111')
+
+    def test_increase_usage_by_assigner(self):
+        self.db_op.new('1111', 0)
+        try:
+            self.db_op.assign('1111', 'auser')
+            self.db_op.increase_usage_by_assigner('1111', 'buser')
+            fcp_list = self.db_op.get_all()
+            fcp = fcp_list[0]
+            self.assertEqual(u'buser', fcp[1])
         finally:
             self.db_op.delete('1111')
 

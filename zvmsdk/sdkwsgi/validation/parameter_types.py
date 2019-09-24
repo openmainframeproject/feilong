@@ -421,13 +421,24 @@ user_vlan_id = {
 }
 
 fcp = {
-    'type': ['string'], 'minLength': 4, 'maxLength': 4,
-    'pattern': '^[0-9a-fA-F]{4}$'
+    'type': 'array',
+    'items': {
+        'type': 'string',
+        'minLength': 4,
+        'maxLength': 4,
+        'pattern': '^[0-9a-fA-F]{4}$'
+    }
+
 }
 
 wwpn = {
-    'type': ['string'], 'minLength': 18, 'maxLength': 18,
-    'pattern': '^0x[0-9a-fA-F]{16}$'
+    'type': 'array',
+    'items': {
+        'type': 'string',
+        'minLength': 18,
+        'maxLength': 18,
+        'pattern': '^0x[0-9a-fA-F]{16}$'
+    }
 }
 
 lun = {
