@@ -121,6 +121,7 @@ class LinuxDist(object):
         ip_v4 = dns_str = gateway_v4 = ''
         ip_cidr = netmask_v4 = broadcast_v4 = ''
         net_cmd = ''
+        dns_v4 = []
         if (('ip_addr' in network.keys()) and
             (network['ip_addr'] is not None)):
             ip_v4 = network['ip_addr']
@@ -134,6 +135,7 @@ class LinuxDist(object):
             (len(network['dns_addr']) > 0)):
             for dns in network['dns_addr']:
                 dns_str += 'nameserver ' + dns + '\n'
+                dns_v4.append(dns)
 
         if (('cidr' in network.keys()) and
             (network['cidr'] is not None)):
@@ -152,8 +154,8 @@ class LinuxDist(object):
         subchannels += ',0.0.%s' % address_data.lower()
 
         cfg_str = self._get_cfg_str(device, broadcast_v4, gateway_v4,
-                                    ip_v4, netmask_v4, address_read,
-                                    subchannels)
+                                    ip_v4, netmask_v4,address_read,
+                                    subchannels, dns_v4)
         cmd_str = self._get_cmd_str(address_read, address_write,
                                     address_data)
         route_str = self._get_route_str(gateway_v4)
@@ -519,7 +521,7 @@ class rhel(LinuxDist):
         return srcdev
 
     def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
-                     netmask_v4, address_read, subchannels):
+                     netmask_v4, address_read, subchannels, dns_v4):
         cfg_str = 'DEVICE=\"' + device + '\"\n'
         cfg_str += 'BOOTPROTO=\"static\"\n'
         cfg_str += 'BROADCAST=\"' + broadcast_v4 + '\"\n'
@@ -531,6 +533,11 @@ class rhel(LinuxDist):
         cfg_str += 'PORTNAME=\"PORT' + address_read + '\"\n'
         cfg_str += 'OPTIONS=\"layer2=1\"\n'
         cfg_str += 'SUBCHANNELS=\"' + subchannels + '\"\n'
+        if (dns_v4 is not None) and (len(dns_v4) > 0):
+            i = 1
+            for dns in dns_v4:
+                cfg_str += 'DNS' + str(i) +'=\"' + dns + '\"\n'
+                i += 1
         return cfg_str
 
     def _get_route_str(self, gateway_v4):
@@ -796,7 +803,7 @@ class sles(LinuxDist):
         return '/etc/sysconfig/network/'
 
     def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
-                     netmask_v4, address_read, subchannels):
+                     netmask_v4, address_read, subchannels, dns_v4):
         cfg_str = "BOOTPROTO=\'static\'\n"
         cfg_str += "IPADDR=\'%s\'\n" % ip_v4
         cfg_str += "NETMASK=\'%s\'\n" % netmask_v4
