@@ -281,6 +281,7 @@ class FCPDbOperator(object):
             'assigner_id    varchar(8) COLLATE NOCASE,',  # foreign key of a VM
             'connections    integer,',  # 0 means no assigner
             'reserved       integer,',  # 0 for not reserved
+            'path           integer,',  # 0 or path0, 1 for path1
             'comment        varchar(128))'))
         with get_fcp_conn() as conn:
             conn.execute(sql)
@@ -338,12 +339,12 @@ class FCPDbOperator(object):
 
             return fcp
 
-    def new(self, fcp):
+    def new(self, fcp, path):
         with get_fcp_conn() as conn:
             conn.execute("INSERT INTO fcp (fcp_id, assigner_id, "
-                         "connections, reserved, comment) VALUES "
-                         "(?, ?, ?, ?, ?)",
-                         (fcp, '', 0, 0, ''))
+                         "connections, reserved, path, comment) VALUES "
+                         "(?, ?, ?, ?, ?, ?)",
+                         (fcp, '', 0, 0, path, ''))
 
     def assign(self, fcp, assigner_id):
         with get_fcp_conn() as conn:
@@ -414,14 +415,23 @@ class FCPDbOperator(object):
             if not fcp_list:
                 connections = 0
             else:
-                connections = fcp_list[0][2]
+                for fcp in fcp_list:
+                    connections = connections + fcp[2]
+        return connections
+
+    def get_connections_from_fcp(self, fcp):
+        connections = 0
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT connections FROM fcp WHERE "
+                                  "fcp_id=?", (fcp,))
+            connections = result.fetchall()
         return connections
 
     def get_from_assigner(self, assigner_id):
         with get_fcp_conn() as conn:
 
-            result = conn.execute("SELECT * FROM fcp WHERE "
-                                  "assigner_id=?", (assigner_id,))
+            result = conn.execute("SELECT * FROM fcp WHERE assigner_id=? "
+                                  "order by fcp_id ASC", (assigner_id,))
             fcp_list = result.fetchall()
 
         return fcp_list
@@ -440,6 +450,23 @@ class FCPDbOperator(object):
             result = conn.execute("SELECT * FROM fcp where fcp_id=?", (fcp,))
             fcp_list = result.fetchall()
 
+        return fcp_list
+
+    def get_fcp_pair(self):
+        fcp_list = []
+        with get_fcp_conn() as conn:
+            # Get distinct path list in DB
+            result = conn.execute("SELECT DISTINCT path FROM fcp")
+            path_list = result.fetchall()
+            # Get fcp_list of every path
+            for no in path_list:
+                result = conn.execute("SELECT * FROM fcp where connections=0 "
+                                      "and reserved=0 and path=%s order by "
+                                      "fcp_id" % no)
+                fcps = result.fetchall()
+                fcp_list.append(fcps[0][0])
+        if not fcp_list:
+            LOG.warning("Warning: Not enough FCPs in fcp pool")
         return fcp_list
 
     def get_all_free_unreserved(self):
