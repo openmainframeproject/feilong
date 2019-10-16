@@ -248,6 +248,26 @@ class RHEL7TestCase(base.SDKTestCase):
         self.dist_manager = dist.LinuxDistManager()
         self.linux_dist = self.dist_manager.get_linux_dist(self.os_version)()
 
+    def test_create_network_configuration_files(self):
+        guest_networks = [{'ip_addr': '192.168.95.10',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.95.1',
+               'cidr': "192.168.95.0/24",
+               'nic_vdev': '1000'}]
+        file_path = '/etc/sysconfig/network-scripts/'
+        first = False
+        files_and_cmds = self.linux_dist.create_network_configuration_files(file_path, guest_networks,
+                                           first, active=False)
+        (net_conf_files, net_conf_cmds,
+         clean_cmd, net_enable_cmd) = files_and_cmds
+        cfg_str = net_conf_files[0][1].split('\n')
+        self.assertEqual('DEVICE="enccw0.0.1000"',cfg_str[0])
+        self.assertEqual('BROADCAST="192.168.95.255"',cfg_str[2])
+        self.assertEqual('GATEWAY="192.168.95.1"',cfg_str[3])
+        self.assertEqual('IPADDR="192.168.95.10"',cfg_str[4])
+        self.assertEqual('DNS1="9.0.2.1"',cfg_str[11])
+        self.assertEqual('DNS2="9.0.3.1"',cfg_str[12])
+
     @mock.patch('zvmsdk.dist.LinuxDist.create_mount_point')
     @mock.patch('zvmsdk.dist.rhel._set_zfcp_multipath')
     @mock.patch('zvmsdk.dist.rhel7._set_zfcp_config_files')

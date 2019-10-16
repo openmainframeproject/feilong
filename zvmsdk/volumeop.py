@@ -251,7 +251,10 @@ class FCP(object):
 class FCPManager(object):
 
     def __init__(self):
+        # _fcp_pool store the objects of FCP index by fcp id
         self._fcp_pool = {}
+        # _fcp_path_info store the FCP path mapping index by path no
+        self._fcp_path_mapping = {}
         self.db = database.FCPDbOperator()
         self._smtclient = smtclient.get_smtclient()
 
@@ -265,7 +268,7 @@ class FCPManager(object):
             LOG.info(errmsg)
             return
 
-        self._fcp_info = self._init_fcp_pool(fcp_list, assigner_id)
+        self._init_fcp_pool(fcp_list, assigner_id)
         self._sync_db_fcp_list()
 
     def _init_fcp_pool(self, fcp_list, assigner_id):
@@ -283,10 +286,15 @@ class FCPManager(object):
            host:   Physical world wide port number: xxxxxxxx
 
         """
-        complete_fcp_set = self._expand_fcp_list(fcp_list)
+        self._fcp_path_mapping = self._expand_fcp_list(fcp_list)
+        complete_fcp_set = set()
+        for path, fcp_set in self._fcp_path_mapping.items():
+            complete_fcp_set = complete_fcp_set | fcp_set
         fcp_info = self._get_all_fcp_info(assigner_id)
         lines_per_item = 5
-
+        # after process, _fcp_pool should be a list include FCP ojects
+        # whose FCP ID are from CONF.volume.fcp_list and also should be
+        # found in fcp_info
         num_fcps = len(fcp_info) // lines_per_item
         for n in range(0, num_fcps):
             fcp_init_info = fcp_info[(5 * n):(5 * (n + 1))]
@@ -321,34 +329,49 @@ class FCPManager(object):
         "0011-0013;0015;0017-0018", expand_fcp_list(fcp_list) will return
         [0011, 0012, 0013, 0015, 0017, 0018].
 
-        """
+        ATTENTION: To support multipath, we expect fcp_list should be like
+        "0011-0014;0021-0024", "0011-0014" should have been on same physical
+        WWPN which we called path0, "0021-0024" should be on another physical
+        WWPN we called path1 which is different from "0011-0014".
+        path0 and path1 should have same count of FCP devices in their group.
+        When attach, we will choose one WWPN from path0 group, and choose
+        another one from path1 group. Then we will attach this pair of WWPNs
+        together to the guest as a way to implement multipath.
 
+        """
         LOG.debug("Expand FCP list %s" % fcp_list)
 
         if not fcp_list:
             return set()
-
+        fcp_list = fcp_list.strip()
+        fcp_list = fcp_list.replace(' ', '')
         range_pattern = '[0-9a-fA-F]{1,4}(-[0-9a-fA-F]{1,4})?'
-        match_pattern = "^(%(range)s)(;%(range)s)*$" % {'range': range_pattern}
+        match_pattern = "^(%(range)s)(;%(range)s;?)*$" % \
+                        {'range': range_pattern}
         if not re.match(match_pattern, fcp_list):
             errmsg = ("Invalid FCP address %s") % fcp_list
             raise exception.SDKInternalError(msg=errmsg)
 
-        fcp_devices = set()
+        fcp_devices = {}
+        path_no = 0
         for _range in fcp_list.split(';'):
-            if '-' not in _range:
-                # single device
-                fcp_addr = int(_range, 16)
-                fcp_devices.add("%04x" % fcp_addr)
-            else:
-                # a range of address
-                (_min, _max) = _range.split('-')
-                _min = int(_min, 16)
-                _max = int(_max, 16)
-                for fcp_addr in range(_min, _max + 1):
-                    fcp_devices.add("%04x" % fcp_addr)
+            # remove duplicate entries
+            devices = set()
+            if _range != '':
+                if '-' not in _range:
+                    # single device
+                    fcp_addr = int(_range, 16)
+                    devices.add("%04x" % fcp_addr)
+                else:
+                    # a range of address
+                    (_min, _max) = _range.split('-')
+                    _min = int(_min, 16)
+                    _max = int(_max, 16)
+                    for fcp_addr in range(_min, _max + 1):
+                        devices.add("%04x" % fcp_addr)
+                fcp_devices[path_no] = devices
+            path_no = path_no + 1
 
-        # remove duplicate entries
         return fcp_devices
 
     def _report_orphan_fcp(self, fcp):
@@ -357,12 +380,12 @@ class FCPManager(object):
                     "CONF.volume.fcp_list which is %s" %
                     (fcp, CONF.volume.fcp_list))
 
-    def _add_fcp(self, fcp):
+    def _add_fcp(self, fcp, path):
         """add fcp to db if it's not in db but in fcp list and init it"""
         try:
             LOG.info("fcp %s found in CONF.volume.fcp_list, add it to db" %
                      fcp)
-            self.db.new(fcp)
+            self.db.new(fcp, path)
         except Exception:
             LOG.info("failed to add fcp %s into db", fcp)
 
@@ -375,13 +398,15 @@ class FCPManager(object):
         for fcp_rec in fcp_db_list:
             if not fcp_rec[0].lower() in self._fcp_pool:
                 self._report_orphan_fcp(fcp_rec[0])
-
-        for fcp_conf_rec, v in self._fcp_pool.items():
-            res = self.db.get_from_fcp(fcp_conf_rec)
-
-            # if not found this record, a [] will be returned
-            if len(res) == 0:
-                self._add_fcp(fcp_conf_rec)
+        # firt loop is for getting the path No
+        for path, fcp_list in self._fcp_path_mapping.items():
+            for fcp in fcp_list:
+                if fcp.lower() in self._fcp_pool:
+                    res = self.db.get_from_fcp(fcp)
+                    # if not found this record, a [] will be returned
+                    if len(res) == 0:
+                        # now only support 2 paths
+                        self._add_fcp(fcp, path)
 
     def _list_fcp_details(self, userid, status):
         return self._smtclient.get_fcp_info_by_status(userid, status)
@@ -422,8 +447,7 @@ class FCPManager(object):
         else:
             # we got it from db, let's reuse it
             old_fcp = fcp_list[0][0]
-            #self.db.reserve(fcp_list[0][0])
-            self.db.negation(fcp_list[0][0])
+            self.db.reserve(fcp_list[0][0])
             return old_fcp
 
     def increase_fcp_usage(self, fcp, assigner_id=None):
@@ -432,14 +456,36 @@ class FCPManager(object):
         Returns True if it's a new fcp, otherwise return False
         """
         # TODO: check assigner_id to make sure on the correct fcp record
-        connections = self.db.get_connections_from_assigner(assigner_id)
+        connections = self.db.get_connections_from_fcp(fcp)
         new = False
-
-        if connections == 0:
+        if not connections:
             self.db.assign(fcp, assigner_id)
             new = True
         else:
             self.db.increase_usage(fcp)
+
+        return new
+
+    def add_fcp_for_assigner(self, path_count, fcp, assigner_id=None):
+        """Incrase fcp usage of given fcp
+        path_count: how many paths we will use in multipath
+        Returns True if it's a new fcp, otherwise return False
+        """
+        # get the sum of connections belong to assinger_id
+        connections = self.db.get_connections_from_assigner(assigner_id)
+        new = False
+        # TODO: we assume that the connections of every FCP at most is 1,
+        # TODO: so multiattach will not be supported.
+        # Now because support multipath, so if sum connections of one assigner
+        # < path_count, we think not all the FCP devices attached to the
+        # instance. So a new FCP still should be attached to the instance
+        # and the new flag still need set to True.
+        if connections < path_count:
+            # ATTENTION: logically, only new fcp was added
+            self.db.assign(fcp, assigner_id)
+            new = True
+        else:
+            self.db.increase_usage_by_assigner(fcp, assigner_id)
 
         return new
 
@@ -453,30 +499,33 @@ class FCPManager(object):
         # TODO: check assigner_id to make sure on the correct fcp record
         self.db.unreserve(fcp)
 
-    def reverse_fcp(self, fcp, assigner_id=None):
-        """ now we have a problem, we need to lock FCP devices when attaching
-        or detaching is running. But detach has different process order with
-        attach.
-        When attach, Cinder will call get_volume_connector first and then
-        call attah_volume.
-        When detach, Cinder will call detach first and then call
-        get_volume_connector.
-        During this process, if we want to lock our FCP, we need a negation
-        or reverse operation to let us can lock FCP in multiprocess env.
-        """
-        self.db.negation(fcp)
-
     def is_reserved(self, fcp):
         self.db.is_reserved(fcp)
 
     def get_available_fcp(self, assigner_id):
-        """get all the fcps not reserved"""
-        # get the unreserved FCP devices belongs to assigner_id
+        """get all the fcps not reserved, choose one from path0
+           and choose another from path1, compose a pair to return.
+           result will only have two FCP IDs, looks like [0011, 0021]
+        """
         available_list = []
         # first check whether this userid already has a FCP device
-        free_unreserved = self.db.get_all_free_unreserved()
-        for item in free_unreserved:
-            available_list.append(item[0])
+        # get the FCP devices belongs to assigner_id
+        fcp_list = self.db.get_from_assigner(assigner_id)
+        if not fcp_list:
+            free_unreserved = self.db.get_fcp_pair()
+            for item in free_unreserved:
+                available_list.append(item)
+            if free_unreserved is None:
+                LOG.info("no more fcp to be allocated")
+                return None
+
+            LOG.debug("allocated %s fcp for %s assigner" %
+                      (available_list, assigner_id))
+        else:
+            # we got it from db, let's reuse it
+            for old_fcp in fcp_list:
+                available_list.append(old_fcp[0])
+
         return available_list
 
     def get_wwpn(self, fcp_no):
@@ -509,7 +558,7 @@ class FCPVolumeManager(object):
                                       mount_point)
 
     def _attach(self, fcp, assigner_id, target_wwpn, target_lun,
-                multipath, os_version, mount_point):
+                multipath, os_version, mount_point, path_count):
         """Attach a volume
 
         First, we need translate fcp into local wwpn, then
@@ -517,8 +566,10 @@ class FCPVolumeManager(object):
         call smt layer to call linux command
         """
         LOG.info('Start to attach device to %s' % assigner_id)
+        # TODO: init_fcp should be called in contructor function
+        # but no assinger_id in contructor
         self.fcp_mgr.init_fcp(assigner_id)
-        new = self.fcp_mgr.increase_fcp_usage(fcp, assigner_id)
+        new = self.fcp_mgr.add_fcp_for_assigner(path_count, fcp, assigner_id)
         try:
             if new:
                 self._dedicate_fcp(fcp, assigner_id)
@@ -535,8 +586,6 @@ class FCPVolumeManager(object):
                     self._undedicate_fcp(fcp, assigner_id)
             raise exception.SDKBaseException(msg=errmsg)
         # TODO: other exceptions?
-        finally:
-            self.fcp_mgr.reverse_fcp(fcp)
 
         LOG.info('Attaching device to %s is done.' % assigner_id)
 
@@ -552,7 +601,6 @@ class FCPVolumeManager(object):
         all the above assume the storage side info is given by caller
         """
         fcp = connection_info['zvm_fcp']
-        fcp = fcp.lower()
         target_wwpn = connection_info['target_wwpn']
         target_lun = connection_info['target_lun']
         assigner_id = connection_info['assigner_id']
@@ -572,8 +620,12 @@ class FCPVolumeManager(object):
             raise exception.SDKObjectNotExistError(
                     obj_desc=("Guest '%s'" % assigner_id), modID='volume')
         else:
-            self._attach(fcp, assigner_id, target_wwpn, target_lun,
-                         multipath, os_version, mount_point)
+            # TODO: the length of fcp is the count of paths in multipath
+            path_count = len(fcp)
+            for i in range(path_count):
+                self._attach(fcp[i].lower(), assigner_id, target_wwpn[i],
+                             target_lun, multipath, os_version, mount_point,
+                             path_count)
 
     def _undedicate_fcp(self, fcp, assigner_id):
         self._smtclient.undedicate_device(assigner_id, fcp)
@@ -588,7 +640,6 @@ class FCPVolumeManager(object):
                 multipath, os_version, mount_point):
         """Detach a volume from a guest"""
         LOG.info('Start to detach device from %s' % assigner_id)
-        self.fcp_mgr.reverse_fcp(fcp)
         connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
 
         try:
@@ -606,15 +657,12 @@ class FCPVolumeManager(object):
                                multipath, os_version, mount_point)
             raise exception.SDKBaseException(msg=errmsg)
 
-        self.fcp_mgr.unreserve_fcp(fcp)
-
         LOG.info('Detaching device to %s is done.' % assigner_id)
 
     def detach(self, connection_info):
         """Detach a volume from a guest
         """
         fcp = connection_info['zvm_fcp']
-        fcp = fcp.lower()
         target_wwpn = connection_info['target_wwpn']
         target_lun = connection_info['target_lun']
         assigner_id = connection_info['assigner_id']
@@ -622,14 +670,21 @@ class FCPVolumeManager(object):
         multipath = connection_info['multipath']
         os_version = connection_info['os_version']
         mount_point = connection_info['mount_point']
-
+        multipath = multipath.lower()
+        if multipath == 'true':
+            multipath = True
+        else:
+            multipath = False
         if not zvmutils.check_userid_exist(assigner_id):
             LOG.error("Guest '%s' does not exist" % assigner_id)
             raise exception.SDKObjectNotExistError(
                     obj_desc=("Guest '%s'" % assigner_id), modID='volume')
         else:
-            self._detach(fcp, assigner_id, target_wwpn, target_lun,
-                         multipath, os_version, mount_point)
+            # TODO: now we only support 2 paths
+            path_count = len(fcp)
+            for i in range(path_count):
+                self._detach(fcp[i].lower(), assigner_id, target_wwpn[i],
+                             target_lun, multipath, os_version, mount_point)
 
     def get_volume_connector(self, assigner_id):
         """Get connector information of the instance for attaching to volumes.
@@ -639,7 +694,7 @@ class FCPVolumeManager(object):
         initiator and the hostname of the machine as follows::
 
             {
-                'zvm_fcp': fcp
+                'zvm_fcp': [fcp]
                 'wwpns': [wwpn]
                 'host': host
             }
@@ -649,9 +704,8 @@ class FCPVolumeManager(object):
 
         # init fcp pool
         self.fcp_mgr.init_fcp(assigner_id)
-        #fcp_list = self.fcp_mgr.get_available_fcp(assigner_id)
-        fcp = self.fcp_mgr.find_and_reserve_fcp(assigner_id)
-        fcp_list = [fcp]
+        # fcp = self.fcp_mgr.find_and_reserve_fcp(assigner_id)
+        fcp_list = self.fcp_mgr.get_available_fcp(assigner_id)
         if not fcp_list:
             errmsg = "No available FCP device found."
             LOG.warning(errmsg)
