@@ -520,8 +520,26 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
             strCmd = ' '.join(cmd)
             rh.printSysLog("Invoking: " + strCmd)
             try:
-                out = subprocess.check_output(cmd,
-                    stderr=subprocess.STDOUT, close_fds=True)
+                # Sometimes the device is not ready: sleep and retry
+                try_num = 0
+                for sleep_secs in [0.1, 0.2, 0.3, 0.5, 1, 2, -1]:
+                    try_num += 1
+                    try:
+                        out = subprocess.check_output(cmd,
+                            stderr=subprocess.STDOUT, close_fds=True)
+                        rh.printSysLog("Run `%s` successfully." % strCmd)
+                        break
+                    except CalledProcessError as e:
+                        if sleep_secs > 0:
+                            rh.printSysLog("Num %d try `%s` failed ("
+                                           "retry after %s seconds): "
+                                           "rc=%d msg=%s" % (
+                                           try_num, strCmd, sleep_secs,
+                                           e.returncode, e.output))
+                            time.sleep(sleep_secs)
+                        else:
+                            raise
+
                 if isinstance(out, bytes):
                     out = bytes.decode(out)
                 rh.printLn("N", "File system: " + fileSystem +
