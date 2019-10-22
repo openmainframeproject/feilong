@@ -102,35 +102,27 @@ class VolumeConfiguratorAPI(object):
         self._dist_manager = dist.LinuxDistManager()
         self._smtclient = smtclient.get_smtclient()
 
-    def config_attach(self, fcp, assigner_id, target_wwpn, target_lun,
-                      multipath, os_version, mount_point):
+    def config_attach(self, fcp, assigner_id, target_wwpns, target_lun,
+                      multipath, os_version, mount_point, new):
         linuxdist = self._dist_manager.get_linux_dist(os_version)()
-        self.configure_volume_attach(fcp, assigner_id, target_wwpn,
+        self.configure_volume_attach(fcp, assigner_id, target_wwpns,
                                      target_lun, multipath, os_version,
-                                     mount_point, linuxdist)
+                                     mount_point, linuxdist, new)
         # active mode should restart zvmguestconfigure to execute reader file
         if self._vmop.is_reachable(assigner_id):
             active_cmds = linuxdist.create_active_net_interf_cmd()
             self._smtclient.execute_cmd(assigner_id, active_cmds)
 
-    def config_force_attach(self, fcp, assigner_id, target_wwpn, target_lun,
-                            multipath, os_version):
-        pass
-
-    def config_detach(self, fcp, assigner_id, target_wwpn, target_lun,
-                      multipath, os_version, mount_point):
+    def config_detach(self, fcp, assigner_id, target_wwpns, target_lun,
+                      multipath, os_version, mount_point, connections):
         linuxdist = self._dist_manager.get_linux_dist(os_version)()
-        self.configure_volume_detach(fcp, assigner_id, target_wwpn,
+        self.configure_volume_detach(fcp, assigner_id, target_wwpns,
                                      target_lun, multipath, os_version,
-                                     mount_point, linuxdist)
+                                     mount_point, linuxdist, connections)
         # active mode should restart zvmguestconfigure to execute reader file
         if self._vmop.is_reachable(assigner_id):
             active_cmds = linuxdist.create_active_net_interf_cmd()
             self._smtclient.execute_cmd(assigner_id, active_cmds)
-
-    def config_force_detach(self, fcp, assigner_id, target_wwpn, target_lun,
-                            multipath, os_version):
-        pass
 
     def _create_file(self, assigner_id, file_name, data):
         temp_folder = self._smtclient.get_guest_temp_path(assigner_id)
@@ -139,13 +131,14 @@ class VolumeConfiguratorAPI(object):
             f.write(data)
         return file_path, temp_folder
 
-    def configure_volume_attach(self, fcp, assigner_id, target_wwpn,
+    def configure_volume_attach(self, fcp, assigner_id, target_wwpns,
                                 target_lun, multipath, os_version,
-                                mount_point, linuxdist):
+                                mount_point, linuxdist, new):
+        """new==True means this is first attachment"""
         # get configuration commands
         config_cmds = linuxdist.get_volume_attach_configuration_cmds(
-                          fcp, target_wwpn, target_lun, multipath,
-                          mount_point)
+                          fcp, target_wwpns, target_lun, multipath,
+                          mount_point, new)
         LOG.debug('Got volume attachment configuation cmds for %s,'
                   'the content is:%s'
                   % (assigner_id, config_cmds))
@@ -163,13 +156,13 @@ class VolumeConfiguratorAPI(object):
             LOG.debug('Removing the folder %s ', config_file_path)
             shutil.rmtree(config_file_path)
 
-    def configure_volume_detach(self, fcp, assigner_id, target_wwpn,
+    def configure_volume_detach(self, fcp, assigner_id, target_wwpns,
                                 target_lun, multipath, os_version,
-                                mount_point, linuxdist):
+                                mount_point, linuxdist, connections):
         # get configuration commands
         config_cmds = linuxdist.get_volume_detach_configuration_cmds(
-                          fcp, target_wwpn, target_lun, multipath,
-                          mount_point)
+                          fcp, target_wwpns, target_lun, multipath,
+                          mount_point, connections)
         LOG.debug('Got volume detachment configuation cmds for %s,'
                   'the content is:%s'
                   % (assigner_id, config_cmds))
@@ -551,13 +544,13 @@ class FCPVolumeManager(object):
     def _dedicate_fcp(self, fcp, assigner_id):
         self._smtclient.dedicate_device(assigner_id, fcp, fcp, 0)
 
-    def _add_disk(self, fcp, assigner_id, target_wwpn, target_lun,
-                  multipath, os_version, mount_point):
-        self.config_api.config_attach(fcp, assigner_id, target_wwpn,
+    def _add_disk(self, fcp, assigner_id, target_wwpns, target_lun,
+                  multipath, os_version, mount_point, new):
+        self.config_api.config_attach(fcp, assigner_id, target_wwpns,
                                       target_lun, multipath, os_version,
-                                      mount_point)
+                                      mount_point, new)
 
-    def _attach(self, fcp, assigner_id, target_wwpn, target_lun,
+    def _attach(self, fcp, assigner_id, target_wwpns, target_lun,
                 multipath, os_version, mount_point, path_count):
         """Attach a volume
 
@@ -574,8 +567,8 @@ class FCPVolumeManager(object):
             if new:
                 self._dedicate_fcp(fcp, assigner_id)
 
-            self._add_disk(fcp, assigner_id, target_wwpn, target_lun,
-                           multipath, os_version, mount_point)
+            self._add_disk(fcp, assigner_id, target_wwpns, target_lun,
+                           multipath, os_version, mount_point, new)
         except exception.SDKBaseException as err:
             errmsg = 'rollback attach because error:' + err.format_message()
             LOG.error(errmsg)
@@ -601,7 +594,7 @@ class FCPVolumeManager(object):
         all the above assume the storage side info is given by caller
         """
         fcp = connection_info['zvm_fcp']
-        target_wwpn = connection_info['target_wwpn']
+        target_wwpns = connection_info['target_wwpn']
         target_lun = connection_info['target_lun']
         assigner_id = connection_info['assigner_id']
         assigner_id = assigner_id.upper()
@@ -623,28 +616,28 @@ class FCPVolumeManager(object):
             # TODO: the length of fcp is the count of paths in multipath
             path_count = len(fcp)
             for i in range(path_count):
-                self._attach(fcp[i].lower(), assigner_id, target_wwpn[i],
+                self._attach(fcp[i].lower(), assigner_id, target_wwpns,
                              target_lun, multipath, os_version, mount_point,
                              path_count)
 
     def _undedicate_fcp(self, fcp, assigner_id):
         self._smtclient.undedicate_device(assigner_id, fcp)
 
-    def _remove_disk(self, fcp, assigner_id, target_wwpn, target_lun,
-                     multipath, os_version, mount_point):
-        self.config_api.config_detach(fcp, assigner_id, target_wwpn,
+    def _remove_disk(self, fcp, assigner_id, target_wwpns, target_lun,
+                     multipath, os_version, mount_point, connections):
+        self.config_api.config_detach(fcp, assigner_id, target_wwpns,
                                       target_lun, multipath, os_version,
-                                      mount_point)
+                                      mount_point, connections)
 
-    def _detach(self, fcp, assigner_id, target_wwpn, target_lun,
+    def _detach(self, fcp, assigner_id, target_wwpns, target_lun,
                 multipath, os_version, mount_point):
         """Detach a volume from a guest"""
         LOG.info('Start to detach device from %s' % assigner_id)
         connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
 
         try:
-            self._remove_disk(fcp, assigner_id, target_wwpn, target_lun,
-                              multipath, os_version, mount_point)
+            self._remove_disk(fcp, assigner_id, target_wwpns, target_lun,
+                              multipath, os_version, mount_point, connections)
             if not connections:
                 self._undedicate_fcp(fcp, assigner_id)
         except (exception.SDKBaseException,
@@ -653,8 +646,9 @@ class FCPVolumeManager(object):
             LOG.error(errmsg)
             self.fcp_mgr.increase_fcp_usage(fcp, assigner_id)
             with zvmutils.ignore_errors():
-                self._add_disk(fcp, assigner_id, target_wwpn, target_lun,
-                               multipath, os_version, mount_point)
+                new = (connections == 0)
+                self._add_disk(fcp, assigner_id, target_wwpns, target_lun,
+                               multipath, os_version, mount_point, new)
             raise exception.SDKBaseException(msg=errmsg)
 
         LOG.info('Detaching device to %s is done.' % assigner_id)
@@ -663,7 +657,7 @@ class FCPVolumeManager(object):
         """Detach a volume from a guest
         """
         fcp = connection_info['zvm_fcp']
-        target_wwpn = connection_info['target_wwpn']
+        target_wwpns = connection_info['target_wwpn']
         target_lun = connection_info['target_lun']
         assigner_id = connection_info['assigner_id']
         assigner_id = assigner_id.upper()
@@ -683,7 +677,7 @@ class FCPVolumeManager(object):
             # TODO: now we only support 2 paths
             path_count = len(fcp)
             for i in range(path_count):
-                self._detach(fcp[i].lower(), assigner_id, target_wwpn[i],
+                self._detach(fcp[i].lower(), assigner_id, target_wwpns,
                              target_lun, multipath, os_version, mount_point)
 
     def get_volume_connector(self, assigner_id):
