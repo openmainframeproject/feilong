@@ -62,6 +62,13 @@ function parseArgs {
     fcpChannel=$(echo ${fcpChannel} | tr '[:upper:]' '[:lower:]')
     wwpn=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
     lun=$(echo ${lun} | tr '[:upper:]' '[:lower:]')
+  elif [[ ${#args[@]} == 6 ]]; then
+    getPositionalArg 1 userID
+    getPositionalArg 2 channelID
+    getPositionalArg 3 imageFile
+    getPositionalArg 4 ignitionUrl
+    getPositionalArg 5 diskType
+    getPositionalArg 6 nicID
   else
     getPositionalArg 1 userID
     getPositionalArg 2 channelID
@@ -84,6 +91,10 @@ function parseArgs {
     printCMDUsage
     exit 1
   elif [[ ${#args[@]} == 3 && (! $userID || ! $channelID || ! $imageFile) ]]; then
+    echo 'ERROR: Missing required parameter.'
+    printCMDUsage
+    exit 1
+  elif [[ ${#args[@]} == 6 && (! $userID || ! $channelID || ! $imageFile || ! $ignitionUrl || ! $diskType || ! $nicID) ]]; then
     echo 'ERROR: Missing required parameter.'
     printCMDUsage
     exit 1
@@ -125,6 +136,14 @@ function parseArgs {
     echo "LUN:            \"$lun\""
     echo "IMAGE FILE:     \"$imageFile\""
     echo ""
+  elif [[ ${#args[@]} == 6 ]]; then
+    echo "SOURCE USER ID: \"$userID\""
+    echo "DISK CHANNEL:   \"$channelID\""
+    echo "IMAGE FILE:     \"$imageFile\""
+    echo "IGNITION URL:   \"$ignitionUrl\""
+    echo "DISK TYPE:      \"$diskType\""
+    echo "DISK TYPE:      \"$nicID\""
+    echo ""
   else
     echo "SOURCE USER ID: \"$userID\""
     echo "DISK CHANNEL:   \"$channelID\""
@@ -146,6 +165,12 @@ function checkSanity {
   if [[ ! -f $imageFile ]]; then
     printError 'The specified image file was not found.'
     exit 3
+  fi
+
+  if [[ -n "$diskType" ]]; then
+    inform "The image file is for RHCOS, no need to check image header. "
+    format='RHCOS'
+    return
   fi
 
   # Determine type of source disk from image header.
@@ -425,6 +450,39 @@ function resizeFBA {
   return 0
 } #resizeFBA{}
 
+function mount_boot_partition {
+    # The location of the mountpoint
+    mountpoint=$1
+
+    if [ ! -d $mountpoint ]; then
+        log "mountpoint $mountpoint must be a directory"
+        exit 1
+    fi
+
+    # Get the boot partition
+    set -o pipefail
+    let retry=0
+    while true
+    do
+        output=$(lsblk "${DEST_DEV}" --output NAME,LABEL,UUID --pairs | grep 'LABEL="boot"')
+        eval $(echo $output | tr ' ' '\n' | tail -n 1)
+        mount "/dev/disk/by-uuid/${UUID}" "$mountpoint"
+        RETCODE=$?
+        if [[ -z "$output" ]] || [[ $RETCODE -ne 0 ]]; then
+            if [[ $retry -lt 30 ]]; then
+                # retry and sleep to allow udevd to populate /dev/disk/by-uuid
+                sleep 1
+                let retry=$retry+1
+                continue
+            fi
+            log "failed mounting boot partition"
+            exit 1
+        fi
+        break;
+    done
+    set +o pipefail
+} #mount_boot_partition{}
+
 ### DEPLOY FUNCTIONS ##########################################################
 ###############################################################################
 
@@ -703,6 +761,54 @@ function deployDiskImage {
     return 0
   } #execZIPL
 
+  function update_zipl_bootloader {
+    inform "Updating zipl"
+    mkdir -p /tmp/$userID/boot_partition
+    mount_boot_partition /tmp/$userID/boot_partition
+    trap 'umount /tmp/$userID/boot_partition; trap - RETURN' RETURN
+
+    #Get ignition config file
+    mkdir -p "/tmp/$userID/boot_partition/ignition"
+    if [ -f "$ignitionUrl" ]; then
+        inform "$ignitionUrl is FILE"
+        cat $ignitionUrl >/tmp/$userID/boot_partition/ignition/config.ign 2>/dev/null
+    else
+        inform "$ignitionUrl is URL"
+        let retry=0
+        while true
+        do
+            curl -Lf $ignitionUrl >/tmp/$userID/boot_partition/ignition/config.ign 2>/dev/null
+            RETCODE=$?
+            if [ $RETCODE -ne 0 ]
+            then
+                if [[ $RETCODE -eq 22 && $retry -lt 5 ]]
+                then
+                    # Network isn't up yet, sleep for a sec and retry
+                    sleep 1
+                    let retry=$retry+1
+                    continue
+                else
+                    log "failed fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+                    exit 1
+                fi
+                log "fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+            else
+                inform "Successfully get the ignition config"
+                break;
+            fi
+        done
+    fi
+
+    blsfile=$(ls /tmp/$userID/boot_partition/loader/entries/*.conf)
+    #Get zipl config file for parameters
+    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.dasd=0.0.$channelID rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot rd.neednet=1 ip=dhcp" > /tmp/zipl_prm
+    #Run zipl to update bootloader
+    zipl --verbose -p /tmp/zipl_prm -i $(ls /tmp/$userID/boot_partition/ostree/*/*vmlinuz*) -r $(ls /tmp/$userID/boot_partition/ostree/*/*initramfs*) --target /tmp/$userID/boot_partition
+    if [[ $? -ne 0 ]]; then
+        printError "failed updating bootloder"
+        exit 1
+    fi
+  } #update_zipl_bootloader{}
 
   function deployFBAptImage {
     : SOURCE: ${BASH_SOURCE}
@@ -881,6 +987,77 @@ function deployDiskImage {
     fi
   } #deployFCPImage{}
 
+  function deployRHCOSECKDImage {
+    : SOURCE: ${BASH_SOURCE}
+    : STACK:  ${FUNCNAME[@]}
+    # @Description:
+    #   Deploy the specified count-key-data disk image.
+    # @Code:
+    connectDisk $userID $channelID 'w' 0
+    if (( $? )); then
+      printError "Failed to connect disk: ${userID}:${channelID}"
+      exit 3
+    fi
+
+    local alias=$(getDiskAlias $userID $channelID)
+    DEST_DEV=$(findLinuxDeviceNode $alias)
+
+    #Wipe any remaining disk labels
+    inform "Wiping ${DEST_DEV}"
+    wipefs --all --force "${DEST_DEV}"
+
+    #low-level format the ECKD DASD using dasdfmt, if needed
+    DEST_DEV_BUS=$(lszdev --by-node ${DEST_DEV} | tail -n 1  | awk '{print $2}')
+    if [[ $? -ne 0 ]]; then
+            log "failed to lszdev DASD device"
+            exit 1
+    fi
+    if [ "$(< /sys/bus/ccw/devices/${DEST_DEV_BUS}/status)" = "unformatted" ]; then
+        dasdfmt --blocksize 4096 --disk_layout cdl --mode full -ypv "${DEST_DEV}"
+    fi
+    #Get blocks for per track of target disk
+    block_per_tracks=$(fdasd -p ${DEST_DEV} | grep blocks\ per\ track | awk '{print $5}')
+    #the first 2 tracks of the ECKD DASD are reserved
+    first_track=2
+    partition_Num=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*[0-9]" | wc -l))
+    boot_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*1" | awk '{print $2,$4}'))
+    root_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*${partition_Num}" | awk '{print $2,$4}'))
+    boot_partition+=( $first_track $(( (${boot_partition[1]} + $block_per_tracks - 1) / $block_per_tracks )) )
+    root_partition+=($(( ${boot_partition[2]} + ${boot_partition[3]} )) "last")
+    cat > "/tmp/fdasd_conf" <<- EOF
+[$first_track,$(( ${root_partition[2]} - 1 )),native]
+[${root_partition[2]},${root_partition[3]},native]
+EOF
+
+    # format the ECKD DASD using fdasd program
+    fdasd --silent --config /tmp/fdasd_conf "${DEST_DEV}"
+
+    # copy the content of each partition
+    set -- ${boot_partition[@]} ${root_partition[@]}
+    while [ $# -gt 0 ]; do
+        dd bs=4096 if="${imageFile}" iflag=fullblock of="${DEST_DEV}" \
+            status=progress \
+            skip="$1" \
+            count="$2" \
+            seek="$(( $3 * $block_per_tracks ))"
+        if [[ $? -ne 0 ]]; then
+            log "failed to write image to ECKD DASD device"
+            exit 1
+        fi
+        shift 4
+    done
+
+    # Update bootloader records
+    update_zipl_bootloader
+
+    inform "Install complete"
+
+  } #deployRHCOSECKDImage{}
+
+  function deployRHCOSFCPImage {
+    log "Not support to deploy with FCP"
+  } #deployRHCOSFCPImage{}
+
   if [[ $userID ]]; then
     inform "Deploying image to ${userID}'s disk at channel ${channelID}."
   else
@@ -895,6 +1072,10 @@ function deployDiskImage {
     deployFBAptImage
   elif [[ $format = 'CKD' ]]; then
     deployCKDImage
+  elif [[ $format = 'RHCOS' && $diskType = 'ECKD' ]]; then
+    deployRHCOSECKDImage
+  elif [[ $format = 'RHCOS' && $diskType = 'SCSI' ]]; then
+    deployRHCOSFCPImage
   else
     # It should not be possible to get here after our sanity checks, but in
     # any case...
