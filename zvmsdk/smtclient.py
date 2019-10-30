@@ -386,11 +386,16 @@ class SMTClient(object):
     def guest_softstop(self, userid, **kwargs):
         """Power off VM gracefully, it will call shutdown os then
             deactivate vm"""
-        requestData = "PowerVM " + userid + " softoff"
+        requestData = "PowerVM " + userid + " softoff --wait"
         if 'timeout' in kwargs.keys() and kwargs['timeout']:
             requestData += ' --maxwait ' + str(kwargs['timeout'])
+        else:
+            requestData += ' --maxwait ' + str(CONF.guest.softstop_timeout)
+
         if 'poll_interval' in kwargs.keys() and kwargs['poll_interval']:
             requestData += ' --poll ' + str(kwargs['poll_interval'])
+        else:
+            requestData += ' --poll ' + str(CONF.guest.softstop_interval)
 
         with zvmutils.log_and_reraise_smt_request_failed():
             self._request(requestData)
