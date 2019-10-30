@@ -261,6 +261,28 @@ Console logs might be transferred to sdk user, this option controls how
 large each file can be. A smaller size may mean more calls will be needed
 to transfer large consoles, which may not be desirable for performance reasons.
     '''),
+    Opt('softstop_timeout',
+        section='guest',
+        default=15,
+        opt_type='int',
+        help='''
+The maximum time waiting until the guest shut down.
+
+Sometimes, the shutdown action will take a bit lone time to complete.
+If you want to make sure the guest in shut-down status after executing action
+of softstop, this will help.
+    '''),
+    Opt('softstop_interval',
+        section='guest',
+        default=3,
+        opt_type='int',
+        help='''
+The interval time between 2 retries, in seconds.
+
+This will take effect only when you set softstop_retries item.
+What's more, the value of softstop_timeout/softstop_interval is
+the times retried.
+    '''),
     # monitor options
     Opt('cache_interval',
         section='monitor',

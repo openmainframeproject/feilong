@@ -96,7 +96,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_guest_softstop(self, request):
         fake_userid = 'FakeID'
-        requestData = "PowerVM FakeID softoff --maxwait 300 --poll 10"
+        requestData = "PowerVM FakeID softoff --wait --maxwait 300 --poll 10"
         request.return_value = {'overallRC': 0}
         self._smtclient.guest_softstop(fake_userid, timeout=300,
                                         poll_interval=10)
