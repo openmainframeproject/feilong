@@ -1022,7 +1022,6 @@ class SDKAPI(object):
 
         self._networkops.grant_user_to_vswitch(vswitch_name, userid)
 
-    @check_guest_exist(check_index=1)
     def vswitch_revoke_user(self, vswitch_name, userid):
         """Revoke user for vswitch
 
