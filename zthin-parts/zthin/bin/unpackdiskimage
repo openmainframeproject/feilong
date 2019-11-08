@@ -142,7 +142,7 @@ function parseArgs {
     echo "IMAGE FILE:     \"$imageFile\""
     echo "IGNITION URL:   \"$ignitionUrl\""
     echo "DISK TYPE:      \"$diskType\""
-    echo "DISK TYPE:      \"$nicID\""
+    echo "NIC ID:         \"$nicID\""
     echo ""
   else
     echo "SOURCE USER ID: \"$userID\""
@@ -751,7 +751,60 @@ function deployDiskImage {
     return 0
   } #execZIPL
 
-  function update_zipl_bootloader {
+  function update_zipl_bootloader_fcp {
+    inform "Updating zipl"
+    mkdir -p /tmp/$fcpChannel/boot_partition
+    mount_boot_partition /tmp/$fcpChannel/boot_partition
+    trap 'umount /tmp/$fcpChannel/boot_partition; trap - RETURN' RETURN
+
+    #Get ignition config file
+    mkdir -p "/tmp/$fcpChannel/boot_partition/ignition"
+    if [ -f "$ignitionUrl" ]; then
+        inform "$ignitionUrl is FILE"
+        cat $ignitionUrl >/tmp/$fcpChannel/boot_partition/ignition/config.ign 2>/dev/null
+    else
+        inform "$ignitionUrl is URL"
+        let retry=0
+        while true
+        do
+            curl -Lf $ignitionUrl >/tmp/$fcpChannel/boot_partition/ignition/config.ign 2>/dev/null
+            RETCODE=$?
+            if [ $RETCODE -ne 0 ]
+            then
+                if [[ $RETCODE -eq 22 && $retry -lt 5 ]]
+                then
+                    # Network isn't up yet, sleep for a sec and retry
+                    sleep 1
+                    let retry=$retry+1
+                    continue
+                else
+                    log "failed fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+                    exit 1
+                fi
+                log "fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+            else
+                inform "Successfully get the ignition config"
+                break;
+            fi
+        done
+    fi
+
+    blsfile=$(ls /tmp/$fcpChannel/boot_partition/loader/entries/*.conf)
+    #Get zipl config file for parameters
+    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.zfcp=0.0.$fcpChannel,$wwpn,$lun zfcp.allow_lun_scan=0 rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot rd.neednet=1 ip=dhcp" > /tmp/$fcpChannel/zipl_prm
+    #Run zipl to update bootloader
+    zipl --verbose -p /tmp/$fcpChannel/zipl_prm -i $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*vmlinuz*) -r $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*initramfs*) --target /tmp/$fcpChannel/boot_partition
+    if [[ $? -ne 0 ]]; then
+        printError "failed updating bootloder"
+        exit 1
+    fi
+    #Update BLS config file for reboot
+    sed -e '/options/d' $blsfile > /tmp/$fcpChannel/blsfile
+    echo "options $(cat /tmp/$fcpChannel/zipl_prm) " >>/tmp/$fcpChannel/blsfile
+    cat /tmp/$fcpChannel/blsfile > $blsfile
+  } #update_zipl_bootloader_fcp{}
+
+  function update_zipl_bootloader_eckd {
     inform "Updating zipl"
     mkdir -p /tmp/$userID/boot_partition
     mount_boot_partition /tmp/$userID/boot_partition
@@ -802,7 +855,7 @@ function deployDiskImage {
     sed -e '/options/d' $blsfile > /tmp/$userID/blsfile
     echo "options $(cat /tmp/$userID/zipl_prm) " >>/tmp/$userID/blsfile
     cat /tmp/$userID/blsfile > $blsfile
-  } #update_zipl_bootloader{}
+  } #update_zipl_bootloader_eckd{}
 
   function deployFBAptImage {
     : SOURCE: ${BASH_SOURCE}
@@ -1041,14 +1094,65 @@ EOF
     done
 
     # Update bootloader records
-    update_zipl_bootloader
+    update_zipl_bootloader_eckd
 
     inform "Install complete"
 
   } #deployRHCOSECKDImage{}
 
   function deployRHCOSFCPImage {
-    log "Not support to deploy with FCP"
+    : SOURCE: ${BASH_SOURCE}
+    : STACK:  ${FUNCNAME[@]}
+    # @Description:
+    #   Deploy the specified SCSI disk image.
+    # @Code:
+    dedicateFcp $fcpChannel
+    if (( $? )); then
+      printError "Failed to connect SCSI disk:${fcpChannel}"
+      exit 3
+    fi
+    inform "Get partition info..."
+    wwpn=$(ls /dev/disk/by-path/ |grep -E ccw-0.0.${fcpChannel}-zfcp-|cut -d "-" -f 4 |tail -n 1 |cut -d ":" -f 1)
+    lun=$(ls /dev/disk/by-path/ |grep -E ccw-0.0.${fcpChannel}-zfcp-|cut -d "-" -f 4 |tail -n 1 |cut -d ":" -f 2)
+    local DEST_DEV=`ls -al /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} | tr '/' ' ' | awk '{print \$NF}'`
+    DEST_DEV=/dev/$DEST_DEV
+    # store the imageinfo to a file
+    mkdir -p /tmp/${fcpChannel}
+    sfdisk -d $imageFile >/tmp/${fcpChannel}/image.info
+    (while IFS='\n' read -r line || [ -n "$line" ]
+    do
+        if [[ $line =~ "start=" ]]
+        then
+            # we save the start= and size= here, then dd the partitions later
+            printf "%s:%s\n" \
+                "$(echo $line | cut -d: -f 2 | cut -d, -f 1 | tr -d ' ')" \
+                "$(echo $line | cut -d: -f 2 | cut -d, -f 2 | tr -d ' ')" \
+                >> /tmp/${fcpChannel}/sfdisk_info
+        elif ! [[ $line =~ "label:" || $line =~ "label-id:" || $line =~ "unit:" ]]
+        then
+            continue
+        fi
+        echo $line
+    done < /tmp/${fcpChannel}/image.info
+    ) | sfdisk "${DEST_DEV}"
+
+    inform "Copy partition..."
+    while IFS='' read -r line || [ -n "$line" ]
+    do
+        eval ${line%%:*} ${line##*:}
+        dd if=${imageFile} bs=512 iflag=fullblock \
+            of="${DEST_DEV}" status=progress skip=$start seek=$start count=$size
+        if [[ $? -ne 0 ]]; then
+            log "failed to write image to zFCP SCSI disk"
+            exit 1
+        fi
+    done < /tmp/${fcpChannel}/sfdisk_info
+
+    # Update bootloader records
+    update_zipl_bootloader_fcp
+
+    inform "Install complete"
+
   } #deployRHCOSFCPImage{}
 
   if [[ $userID ]]; then
@@ -1116,8 +1220,16 @@ function cleanup {
   # Make sure we've released our connection to the target disk.
   if [[ $userID ]]; then
     disconnectDisk $userID $channelID 0
+    if [[ $diskType ]]; then
+      rm -rf /tmp/${userID}
+    fi
   else
-    disconnectFcp ${fcpChannel} ${wwpn} ${lun}
+    if [[ $diskType ]]; then
+      undedicateFcp ${fcpChannel} ${wwpn} ${lun}
+      rm -rf /tmp/${fcpChannel}
+    else
+      disconnectFcp ${fcpChannel} ${wwpn} ${lun}
+    fi
   fi
 
   timestamp=$(date -u --rfc-3339=ns | sed 's/ /-/;s/\.\(...\).*/.\1/')
