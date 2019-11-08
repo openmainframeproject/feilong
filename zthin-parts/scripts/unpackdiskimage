@@ -465,6 +465,8 @@ function chccwdevDevice {
   fi
   englishOpt=$turnOn
 
+  cio_ignore -r $device
+
   # Enable or disable the device
   chccwdev $opt $device &> /dev/null
   local rc=$?
@@ -549,6 +551,71 @@ function connectFcp {
 
   return $rc
 } #connectFcp{}
+
+###############################################################################
+
+function dedicateFcp {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Attaches the SCSI/FCP disk at the specified FCP device channel
+  # @Parameters:
+  local fcpChannel=$1       # FCP device channel to connect to disk.
+  local wwpn                # World wide port number.
+  local lun                 # Logical unit number.
+  local out
+
+  inform "Dedicating FCP disk..."
+  # Dedicate FCP channel to zthin
+  local rc=0
+  local zthinUserID=$(vmcp q userid | awk '{printf $1}')
+  out=`vmcp attach ${fcpChannel} to $zthinUserID as ${fcpChannel}`
+  if (( $? )); then
+    printError "An error was encountered while connecting to the dedicate device. Response:\n$out"
+    exit 3
+  fi
+
+  # Online the FCP channel
+  chccwdevDevice $fcpChannel "online"
+  if [[ $? -ne 0 ]]; then
+    # Online failed
+    rc=4
+    return $rc
+  fi
+  inform "Please wait for disk online ..."
+  sleep 15
+  wwpn=$(ls /dev/disk/by-path/ |grep -E ccw-0.0.${fcpChannel}-zfcp- |cut -d "-" -f 4 |tail -n 1 |cut -d ":" -f 1)
+  lun=$(ls /dev/disk/by-path/ |grep -E ccw-0.0.${fcpChannel}-zfcp- |cut -d "-" -f 4 |tail -n 1 |cut -d ":" -f 2)
+
+  # Attach the disk to the zthin
+  if [[ ! -d /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn} ]]; then
+    echo "${wwpn}" > /sys/bus/ccw/devices/0.0.${fcpChannel}/port_add
+  fi
+  if [[ ! -d /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/${lun} ]]; then
+    echo "${lun}" > /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_add
+  fi
+  if (( $? )); then
+    printError "An error was encountered while attaching the disk."
+    local rc=5
+    return $rc
+  fi
+  echo add > /sys/bus/ccw/devices/0.0.${fcpChannel}/uevent
+  which udevadm &> /dev/null && udevadm settle || udevsettle
+
+  # Wait until disk shows up
+  local try=10
+  while [[ ! -b /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} && $try > 0 ]]; do
+    sleep 2
+    try=$((try - 1))
+  done
+  if [[ ! -b /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} ]]; then
+    printError "An error was encountered while locating disk."
+    local rc=6
+    return $rc
+  fi
+
+  return $rc
+} #dedicateFcp{}
 
 ###############################################################################
 
@@ -785,6 +852,83 @@ function disconnectFcp {
 
 ###############################################################################
 
+function undedicateFcp {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Attaches the SCSI/FCP disk at the specified FCP device channel
+  # @Parameters:
+  local fcpChannel=$1       # FCP device channel to connect to disk.
+  local wwpn=$2             # World wide port number.
+  local lun=$3              # Logical unit number.
+  local rc=0
+
+  inform "Undedicating FCP disk..."
+  # We could be trying to delete the device before all related files have been
+  # created so we will wait up to 3 minutes for the unit_remove file to show up.
+  if [[ -d /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/${lun} ]]; then
+    local unit_remove_missing=1
+    local lun_missing=1
+    local i
+
+    # Remove the SCSI device
+    local devName=`ls -al /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} | tr '/' ' ' | awk '{print \$NF}'`
+    if [[ "$devName" != "" && -e "/sys/block/$devName/device/delete" ]]; then
+      echo "1" > "/sys/block/$devName/device/delete"
+    fi
+
+    # Remove the lun device
+    for i in 1 2 2 10 15 30 30 30 60 0
+    do
+      if [[ -e "/sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_remove" ]]; then
+        unit_remove_missing=0
+        echo $lun > "/sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_remove"
+        if [[ $? -eq 0 ]]; then
+          lun_missing=0
+          break;
+        fi
+      fi
+      sleep $i
+    done
+
+    if [[ $lun_missing -eq 1 ]]; then
+      printError "An error was encountered while writing to the unit_remove file."
+      rc=5
+      return $rc
+    fi
+    if [[ $unit_remove_missing -eq 1 ]]; then
+      printError "An error was encountered while detaching the disk.  \
+        /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_remove \
+        does not exist."
+      rc=7
+      return $rc
+    fi
+  fi
+
+  # Offline the FCP channel
+  if [[ -b /dev/disk/by-path/0.0.${fcpChannel} ]]; then
+    chccwdevDevice ${fcpChannel} "offline"
+    if [[ $? -ne 0 ]]; then
+      # Offline failed
+      rc=1
+      return $rc
+    fi
+  fi
+
+  # Undedicate FCP channel to zthin
+  local zthinUserID=$(vmcp q userid | awk '{printf $1}')
+  vmcp det ${fcpChannel} &> /dev/null
+  if (( $? )); then
+    printError "An error was encountered while disconnecting dedicated device."
+    rc=2
+    return $rc
+  fi
+
+  return $rc
+} #undedicateFcp{}
+
+###############################################################################
+
 function disconnectDisk {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
@@ -944,6 +1088,15 @@ function parseArgs {
     getPositionalArg 4 ignitionUrl
     getPositionalArg 5 diskType
     getPositionalArg 6 nicID
+  elif [[ ${#args[@]} == 5 ]]; then
+    getPositionalArg 1 fcpChannel
+    getPositionalArg 2 imageFile
+    getPositionalArg 3 ignitionUrl
+    getPositionalArg 4 diskType
+    getPositionalArg 5 nicID
+
+    # Make channel, WWPN, and LUN lower case
+    fcpChannel=$(echo ${fcpChannel} | tr '[:upper:]' '[:lower:]')
   else
     getPositionalArg 1 userID
     getPositionalArg 2 channelID
@@ -970,6 +1123,10 @@ function parseArgs {
     printCMDUsage
     exit 1
   elif [[ ${#args[@]} == 6 && (! $userID || ! $channelID || ! $imageFile || ! $ignitionUrl || ! $diskType || ! $nicID) ]]; then
+    echo 'ERROR: Missing required parameter.'
+    printCMDUsage
+    exit 1
+  elif [[ ${#args[@]} == 5 && (! $fcpChannel || ! $imageFile || ! $ignitionUrl || ! $diskType || ! $nicID) ]]; then
     echo 'ERROR: Missing required parameter.'
     printCMDUsage
     exit 1
@@ -1017,7 +1174,14 @@ function parseArgs {
     echo "IMAGE FILE:     \"$imageFile\""
     echo "IGNITION URL:   \"$ignitionUrl\""
     echo "DISK TYPE:      \"$diskType\""
-    echo "DISK TYPE:      \"$nicID\""
+    echo "NIC ID:         \"$nicID\""
+    echo ""
+  elif [[ ${#args[@]} == 5 ]]; then
+    echo "FCP CHANNEL:    \"$fcpChannel\""
+    echo "IMAGE FILE:     \"$imageFile\""
+    echo "IGNITION URL:   \"$ignitionUrl\""
+    echo "DISK TYPE:      \"$diskType\""
+    echo "NIC ID:         \"$nicID\""
     echo ""
   else
     echo "SOURCE USER ID: \"$userID\""
@@ -1626,7 +1790,7 @@ function deployDiskImage {
     return 0
   } #execZIPL
 
-  function update_zipl_bootloader {
+  function update_zipl_bootloader_eckd {
     inform "Updating zipl"
     mkdir -p /tmp/$userID/boot_partition
     mount_boot_partition /tmp/$userID/boot_partition
@@ -1677,7 +1841,60 @@ function deployDiskImage {
     sed -e '/options/d' $blsfile > /tmp/$userID/blsfile
     echo "options $(cat /tmp/$userID/zipl_prm) " >>/tmp/$userID/blsfile
     cat /tmp/$userID/blsfile > $blsfile
-  } #update_zipl_bootloader{}
+  } #update_zipl_bootloader_eckd{}
+
+  function update_zipl_bootloader_fcp {
+    inform "Updating zipl"
+    mkdir -p /tmp/$fcpChannel/boot_partition
+    mount_boot_partition /tmp/$fcpChannel/boot_partition
+    trap 'umount /tmp/$fcpChannel/boot_partition; trap - RETURN' RETURN
+
+    #Get ignition config file
+    mkdir -p "/tmp/$fcpChannel/boot_partition/ignition"
+    if [ -f "$ignitionUrl" ]; then
+        inform "$ignitionUrl is FILE"
+        cat $ignitionUrl >/tmp/$fcpChannel/boot_partition/ignition/config.ign 2>/dev/null
+    else
+        inform "$ignitionUrl is URL"
+        let retry=0
+        while true
+        do
+            curl -Lf $ignitionUrl >/tmp/$fcpChannel/boot_partition/ignition/config.ign 2>/dev/null
+            RETCODE=$?
+            if [ $RETCODE -ne 0 ]
+            then
+                if [[ $RETCODE -eq 22 && $retry -lt 5 ]]
+                then
+                    # Network isn't up yet, sleep for a sec and retry
+                    sleep 1
+                    let retry=$retry+1
+                    continue
+                else
+                    log "failed fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+                    exit 1
+                fi
+                log "fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+            else
+                inform "Successfully get the ignition config"
+                break;
+            fi
+        done
+    fi
+
+    blsfile=$(ls /tmp/$fcpChannel/boot_partition/loader/entries/*.conf)
+    #Get zipl config file for parameters
+    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.zfcp=0.0.$fcpChannel,$wwpn,$lun zfcp.allow_lun_scan=0 rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot rd.neednet=1 ip=dhcp" > /tmp/$fcpChannel/zipl_prm
+    #Run zipl to update bootloader
+    zipl --verbose -p /tmp/$fcpChannel/zipl_prm -i $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*vmlinuz*) -r $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*initramfs*) --target /tmp/$fcpChannel/boot_partition
+    if [[ $? -ne 0 ]]; then
+        printError "failed updating bootloder"
+        exit 1
+    fi
+    #Update BLS config file for reboot
+    sed -e '/options/d' $blsfile > /tmp/$fcpChannel/blsfile
+    echo "options $(cat /tmp/$fcpChannel/zipl_prm) " >>/tmp/$fcpChannel/blsfile
+    cat /tmp/$fcpChannel/blsfile > $blsfile
+  } #update_zipl_bootloader_fcp{}
 
   function deployFBAptImage {
     : SOURCE: ${BASH_SOURCE}
@@ -1790,6 +2007,8 @@ function deployDiskImage {
     fi
   } #deployFBAptImage{}
 
+
+
   function deployFCPImage {
     : SOURCE: ${BASH_SOURCE}
     : STACK:  ${FUNCNAME[@]}
@@ -1880,6 +2099,7 @@ function deployDiskImage {
     type lszdev >/dev/null 2>&1 || { printError "Require lszdev tool, but not installed. Aborting."; exit 3; }
     DEST_DEV_BUS=$(lszdev --by-node ${DEST_DEV} | tail -n 1  | awk '{print $2}')
     if [ "$(< /sys/bus/ccw/devices/${DEST_DEV_BUS}/status)" = "unformatted" ]; then
+        inform "Formatting..."
         dasdfmt --blocksize 4096 --disk_layout cdl --mode full -ypv "${DEST_DEV}"
     fi
 
@@ -1892,15 +2112,17 @@ function deployDiskImage {
     root_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*${partition_Num}" | awk '{print $2,$4}'))
     boot_partition+=( $first_track $(( (${boot_partition[1]} + $block_per_tracks - 1) / $block_per_tracks )) )
     root_partition+=($(( ${boot_partition[2]} + ${boot_partition[3]} )) "last")
-    cat > "/tmp/fdasd_conf" <<- EOF
+    cat > "/tmp/${userID}/fdasd_conf" <<- EOF
 [$first_track,$(( ${root_partition[2]} - 1 )),native]
 [${root_partition[2]},${root_partition[3]},native]
 EOF
 
     # format the ECKD DASD using fdasd program
-    fdasd --silent --config /tmp/fdasd_conf "${DEST_DEV}"
+    inform "Create partitions..."
+    fdasd --silent --config /tmp/${userID}/fdasd_conf "${DEST_DEV}"
 
     # copy the content of each partition
+    inform "Coping partitions..."
     set -- ${boot_partition[@]} ${root_partition[@]}
     while [ $# -gt 0 ]; do
         dd bs=4096 if="${imageFile}" iflag=fullblock of="${DEST_DEV}" \
@@ -1916,20 +2138,71 @@ EOF
     done
 
     # Update bootloader records
-    update_zipl_bootloader
+    update_zipl_bootloader_eckd
 
     inform "Install complete"
 
   } #deployRHCOSECKDImage{}
 
   function deployRHCOSFCPImage {
-    log "Not support to deploy with FCP"
+    : SOURCE: ${BASH_SOURCE}
+    : STACK:  ${FUNCNAME[@]}
+    # @Description:
+    #   Deploy the specified SCSI disk image.
+    # @Code:
+    dedicateFcp $fcpChannel
+    if (( $? )); then
+      printError "Failed to connect SCSI disk:${fcpChannel}"
+      exit 3
+    fi
+    inform "Get partition info..."
+    wwpn=$(ls /dev/disk/by-path/ |grep -E ccw-0.0.${fcpChannel}-zfcp-|cut -d "-" -f 4 |tail -n 1 |cut -d ":" -f 1)
+    lun=$(ls /dev/disk/by-path/ |grep -E ccw-0.0.${fcpChannel}-zfcp-|cut -d "-" -f 4 |tail -n 1 |cut -d ":" -f 2)
+    local DEST_DEV=`ls -al /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} | tr '/' ' ' | awk '{print \$NF}'`
+    DEST_DEV=/dev/$DEST_DEV
+    # store the imageinfo to a file
+    mkdir -p /tmp/${fcpChannel}
+    sfdisk -d $imageFile >/tmp/${fcpChannel}/image.info
+    (while IFS='\n' read -r line || [ -n "$line" ]
+    do
+        if [[ $line =~ "start=" ]]
+        then
+            # we save the start= and size= here, then dd the partitions later
+            printf "%s:%s\n" \
+                "$(echo $line | cut -d: -f 2 | cut -d, -f 1 | tr -d ' ')" \
+                "$(echo $line | cut -d: -f 2 | cut -d, -f 2 | tr -d ' ')" \
+                >> /tmp/${fcpChannel}/sfdisk_info
+        elif ! [[ $line =~ "label:" || $line =~ "label-id:" || $line =~ "unit:" ]]
+        then
+            continue
+        fi
+        echo $line
+    done < /tmp/${fcpChannel}/image.info
+    ) | sfdisk "${DEST_DEV}"
+
+    inform "Copy partition..."
+    while IFS='' read -r line || [ -n "$line" ]
+    do
+        eval ${line%%:*} ${line##*:}
+        dd if=${imageFile} bs=512 iflag=fullblock \
+            of="${DEST_DEV}" status=progress skip=$start seek=$start count=$size
+        if [[ $? -ne 0 ]]; then
+            log "failed to write image to zFCP SCSI disk"
+            exit 1
+        fi
+    done < /tmp/${fcpChannel}/sfdisk_info
+
+    # Update bootloader records
+    update_zipl_bootloader_fcp
+
+    inform "Install complete"
+
   } #deployRHCOSFCPImage{}
 
   if [[ $userID ]]; then
     inform "Deploying image to ${userID}'s disk at channel ${channelID}."
   else
-    inform "Deploying image to ${wwpn}/${lun} disk at channel ${fcpChannel}."
+    inform "Deploying image to FCP disk at channel ${fcpChannel}."
   fi
 
   if [[ $format = 'FCP' ]]; then
@@ -1991,8 +2264,16 @@ function cleanup {
   # Make sure we've released our connection to the target disk.
   if [[ $userID ]]; then
     disconnectDisk $userID $channelID 0
+    if [[ $diskType ]]; then
+      rm -rf /tmp/${userID}
+    fi
   else
-    disconnectFcp ${fcpChannel} ${wwpn} ${lun}
+    if [[ $diskType ]]; then
+      undedicateFcp ${fcpChannel} ${wwpn} ${lun}
+      rm -rf /tmp/${fcpChannel}
+    else
+      disconnectFcp ${fcpChannel} ${wwpn} ${lun}
+    fi
   fi
 
   timestamp=$(date -u --rfc-3339=ns | sed 's/ /-/;s/\.\(...\).*/.\1/')
