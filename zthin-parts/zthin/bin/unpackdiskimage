@@ -338,7 +338,7 @@ function resizeECKD {
     if (( rc != 0 )); then
       if (( rc == 255 )); then
         sleep 0.5
-        out =`blockdev --rereadpt ${devNode}`
+        out=`blockdev --rereadpt ${devNode}`
         rc=$?
         if (( rc != 0 )); then
           printError "When resizing the dasd, 'blockdev --rereadpt' to  ${devNode} returns rc: $rc, out: $out"
