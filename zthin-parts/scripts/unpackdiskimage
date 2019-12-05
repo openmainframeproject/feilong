@@ -20,8 +20,1027 @@
 # Deploys a disk iamge to the disk at the specified channel ID on the         #
 # specified z/VM guest system.                                                #
 ###############################################################################
+#!/bin/bash
+###############################################################################
+# Copyright 2017 IBM Corporation
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+###############################################################################
+# COMPONENT: zthinshellutils                                                   #
+#                                                                             #
+# Sourceable functions for Bash scripts in xCAT.                              #
+###############################################################################
+# Pick up our configuration settings:
 
-source /opt/zthin/lib/zthinshellutils
+export PATH=/opt/zthin/bin:$PATH
+keepOldTraces=10
+
+###############################################################################
+### CAPTURE COMMAND-LINE ARGUMENTS AS AN ARRAY ################################
+###############################################################################
+
+i=0
+for arg in "$@"; do
+  args[$i]=$arg
+  i=$(($i+1))
+done
+
+###############################################################################
+### ARGUMENT-HANDLING VARIABLES ###############################################
+###############################################################################
+
+expectedShortOptions=''
+expectedLongOptions=''
+expectedNamedArguments=''
+namedArgListing=''
+positionalArgListing=''
+optionHelp='OPTIONS:'
+
+###############################################################################
+### ENVIRONMENT AND COMPATIBILITY CHECKS ######################################
+###############################################################################
+
+# Make sure VMCP is available and loaded. It's possible vmcp didn't load
+# becuase it was built into the kernel rather than as a loadable module, so
+# we also (if attempting to load the vmcp module fails) check whether the
+# vmcp command works for us before deciding we have a problem here.
+modprobe vmcp &>/dev/null || vmcp q userid &> /dev/null
+if (( $? )); then
+  echo 'ERROR: Unable to load module "vmcp"' 1>&2
+  exit 3
+fi
+
+# Compatibility mode to deal with inconsistencies between how BASH 3.2.x and
+# 3.1.x handle regular expressions (and possibly other syntax issues).
+[[ ! $(bash --version |
+       head -1 |
+       sed 's/.*version \([^(]*\).*/\1/') < 3.2 ]] && shopt -s compat31
+
+###############################################################################
+### GLOBAL VARIABLES ##########################################################
+###############################################################################
+
+CMDNAME=$(basename $0)
+
+###############################################################################
+### CONSTANTS #################################################################
+###############################################################################
+
+blockSize=512
+diskConnectionLock=/var/run/zthin_disk_connection_lock
+diskLinkingAliases=/var/run/zthin_disk_linking_aliases
+currentDiskAliases=/var/run/zthin_current_disk_aliases
+# Avoid warnings when trying to read the alias files if they haven't yet been
+# created (such as when checking for an available alias when none has yet
+# been assigned).
+touch $diskLinkingAliases $currentDiskAliases
+
+###############################################################################
+### ARGUMENT-HANDLING FUNCTIONS ###############################################
+###############################################################################
+
+function isOption {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Indicates whether the specified option was given on the command line.
+  #   Also records the option being checked for as part of a list of "expected"
+  #   options which can be used to check for "unexpected" options.
+  # @Returns:
+  #   0 if the specified option was given on the command line
+  #   1 otherwise.
+  # @Parameters:
+  local short=$1
+  local long=$2
+  local helpText=$3
+  # @Code:
+  helpText=$(echo "$helpText" | sed 's/\(\S\)\s\s*/\1 /g')
+  if [[ $short =~ ^- ]]; then
+    expectedShortOptions="${expectedShortOptions}${short#-}"
+    if [[ $long =~ ^-- ]]; then
+      expectedLongOptions="${expectedLongOptions} ${long#--}"
+      optionHelp=$(echo -e "${optionHelp}\n  ${short}/${long}: ${helpText}")
+    else
+      optionHelp=$(echo -e "${optionHelp}\n  ${short}: ${helpText}")
+    fi
+  else
+    if [[ $long =~ ^-- ]]; then
+      expectedLongOptions="${expectedLongOptions} ${long#--}"
+      optionHelp=$(echo -e "${optionHelp}\n     ${long}: ${helpText}")
+    fi
+  fi
+  for arg in ${args[@]}; do
+    if [[ $long =~ ^-- ]]; then
+      if [[ $arg = $long ]]; then
+        return 0
+      fi
+    fi
+    if [[ $short =~ ^- ]]; then
+      if [[ $arg =~ ^- && ! $arg =~ ^-- ]]; then
+        if [[ ${arg#-} =~ ${short#-} ]]; then
+          return 0
+        fi
+      fi
+    fi
+  done
+  return 1
+} #isOption{}
+
+###############################################################################
+
+function getNamedArg {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   If the specified named argument is found on the command line, the
+  #   value associated with it is assigned to the the specified variable. Also
+  #   records the specified argument name in a list of expected named arguments
+  #   which can be used in checking for unexpected command-line parameters.
+  # @Returns:
+  #   0 if the specified option was given on the command line
+  #   1 otherwise.
+  # @Parameters:
+  local argumentName=$1
+  local variableName=$2
+  local helpText=$3
+  # @Code:
+  [[ $helpText ]] || helpText=$(echo ${variableName} |
+                                sed -r 's/([A-Z])/_\1/g' |
+                                tr '[:lower:]' '[:upper:]')
+  expectedNamedArguments="${expectedNamedArguments} ${argumentName#--}"
+  namedArgListing=$(echo ${namedArgListing}[${argumentName} ${helpText}])
+  for i in $(seq 0 ${#args[@]}); do
+    if [[ ${args[$i]} = $argumentName ]]; then
+      eval "$2=\"${args[$((${i}+1))]}\""
+      return 0
+    fi
+  done
+  return 1
+} #getNamedArg{}
+
+###############################################################################
+
+function getPositionalArg {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Gets a command-line argument by position (not counting named arguments
+  #   and option flags when determining argument positions).
+  # @Parameters:
+  local position=$1
+  local varName=$2
+  local helpText=$3
+  # @Code:
+  local helpText=$(echo "$helpText" | sed 's/\(\S\)\s\s*/\1 /g')
+  [[ $helpText ]] || helpText=$(echo ${varName} |
+                                sed -r 's/([A-Z])/_\1/g' |
+                                tr '[:lower:]' '[:upper:]')
+  local i=0
+  local n=1
+  positionalArgListing=$(echo ${positionalArgListing} ${helpText})
+  while [[ $i -lt ${#args[@]} ]]; do
+    if [[ " ${expectedNamedArguments} " =~ " ${args[$i]#--} " ]]; then
+      i=$(($i+2))
+    elif [[ ${args[$i]} =~ ^- ]]; then
+      i=$(($i+1))
+    else
+      [[ $n -eq $position ]] && eval "$varName=\"${args[$i]}\""
+      i=$(($i+1))
+      n=$(($n+1))
+    fi
+  done
+} #getPositionalArg{}
+
+###############################################################################
+
+function getBadOptions {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Checks for "unexpected" options and named arguments using a list
+  #   generated by previous requests made to parse the command-line argument
+  #   list.
+  # @Returns:
+  #   0 if no unexpected options were found
+  #   1 otherwise.
+  # @Code:
+  for arg in ${args[@]}; do
+    if [[ $arg =~ ^- ]]; then
+     if [[ $arg =~ ^-- ]]; then
+       if [[ ! " ${expectedLongOptions} ${expectedNamedArguments} " =~ \
+               " ${arg#--} " ]]; then
+         echo "Unrecognized Option: \"${arg}\"."
+         return 1
+       fi
+     else
+       for char in $(echo ${arg#-} | sed -r 's/(.)/\1 /g'); do
+         if [[ ! $expectedShortOptions =~ $char ]]; then
+           echo "Unrecognized Option: \"${char}\"."
+           return 1
+         fi
+       done
+     fi
+    fi
+  done
+  return 0
+} #getBadOptions{}
+
+###############################################################################
+### HELP FUNCTIONS ############################################################
+###############################################################################
+
+function printCMDUsage {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Prints usage help text using a list generated by previous requests made
+  #   to parse the command-line argument list.
+  # @Code:
+  echo -n "USAGE: $CMDNAME [OPTIONS]"
+  [[ $namedArgListing ]] && echo -n " ${namedArgListing}" |
+                            sed 's/\[--/ \\\n       '"${CMDNAME//?/ }"' [--/g'
+  if [[ $positionalArgListing ]]; then
+    echo " ${positionalArgListing}" |
+      sed 's/ / \\\n       '"${CMDNAME//?/ }"' /g'
+  else
+    echo ''
+  fi
+  echo "${optionHelp}"
+} #printCMDUsage{}
+
+###############################################################################
+
+function printCMDDescription {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   This function is not intended to be actually called, but it will serve as
+  #   a fall-back in the event that an override is not provided in the script
+  #   making use of this library.
+  # @Code:
+  echo 'No description available.'
+} #printCMDDescription{}
+
+###############################################################################
+
+function printCMDExamples {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   This function is not intended to be actually called, but it will serve as
+  #   a fall-back in the event that an override is not provided in the script
+  #   making use of this library.
+  # @Code:
+} #printCMDDescription{}
+
+###############################################################################
+
+function printCMDNotes {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   This function is not intended to be actually called, but it will serve as
+  #   a fall-back in the event that an override is not provided in the script
+  #   making use of this library.
+  # @Code:
+} #printCMDNodes{}
+
+###############################################################################
+
+function printHelp {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Prints full help with auto-generated usage text and an overridable
+  #   command description, examples, and notes.
+  # @See:
+  #   printCMDDescription{}
+  #   printCMDExamples{}
+  #   printCMDNotes{}
+  # @Code:
+  printCMDDescription
+  printCMDUsage    | sed -r 's/(^\S.*$)/\n\1/'
+  printCMDExamples | sed -r 's/(^\S.*$)/\n\1/'
+  printCMDNotes    | sed -r 's/(^\S.*$)/\n\1/'
+} #printHelp{}
+
+###############################################################################
+### OUTPUT AND LOGGING FUNCTIONS ##############################################
+###############################################################################
+
+function inform {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Prints and logs informational text.
+  # @Parameters:
+  local message=$1
+  # @Code:
+  message=$(echo "$message" | sed 's/\(\S\)\s\s*/\1 /g')
+  logger -p 'local5.info' \
+            "$$.0 $CMDNAME: ${BASH_SOURCE[1]/*\/}: ${FUNCNAME[1]}: ${message}"
+  echo "${message}"
+} #inform{}
+
+###############################################################################
+
+function warn {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Prints and logs warning text. 'WARNING: ' is prepended to the specified
+  #   text when printing it to the console.
+  # @Parameters:
+  local message=$1
+  # @Code:
+  message=$(echo "$message" | sed 's/\s\s*/ /g')
+  logger -p 'local5.warning' \
+            "$$.0 $CMDNAME: ${BASH_SOURCE[1]/*\/}: ${FUNCNAME[1]}: ${message}"
+  echo "WARNING: ${message}"
+} #warn{}
+
+###############################################################################
+
+function printError {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Prints and logs error text. 'ERROR: ' is prepended to the specified
+  #   text when printing it to the console.
+  # @Parameters:
+  local message=$1
+  # @Code:
+  message=$(echo "$message" | sed 's/\s\s*/ /g')
+  logger -p 'local5.err' \
+            "$$.0 $CMDNAME: ${BASH_SOURCE[1]/*\/}: ${FUNCNAME[1]}: ${message}"
+  echo "ERROR: ${message}"
+} #printError{}
+
+###############################################################################
+
+function getStageFailures {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Gets a list of the pipe stages that are failing and their return code.
+  # @Parameters:
+  declare -a stageNames=("${!1}")
+  declare -a stageRC=("${!2}")
+  # @Code:
+  getStageFailuresOut=""
+  for (( i=1; i<${#stageRC[@]}; i++ ))
+  do
+    if (( ${stageRC[i]} == 0 )); then
+      continue
+    else
+      if [ -n "$getStageFailuresOut" ]; then
+        getStageFailuresOut="$getStageFailuresOut, ${stageNames[i]}("${stageRC[i]}")"
+      else
+        getStageFailuresOut="${stageNames[i]}("${stageRC[i]}")"
+      fi
+    fi
+  done
+} #getStageFailures{}
+
+###############################################################################
+### DISK HANDLING FUNCTIONS ###################################################
+###############################################################################
+
+function findLinuxDeviceNode {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Locates the Linux device node associated with the specified virtual
+  #   device address.
+  # @Parameters:
+  local vdev=$1
+  # @Code:
+  grep -i 0.0.$vdev /proc/dasd/devices | sed 's/.*is\s\(\S*\)\s.*/\/dev\/\1/'
+} #findLinuxDeviceNode{}
+
+###############################################################################
+
+function chccwdevDevice {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  # Issue chccwdev to online or offline a device.
+  # @Parameters:
+  local device=$1              # device address
+  local turnOn=$2              # 1 = online device, 0 = offline device
+  # @Returns:
+  #   0 - chccwdev was successful
+  #   1 - Invalid online/offline operand
+  #   4 - chccwdev failed
+  # @Code:
+  local opt
+  local englishOpt
+  local retCode=0
+  local sleepTimes
+
+  # Handle parms
+  if [[ $turnOn == "online" ]]; then
+    opt="-e"
+    # Sleep total about 2:30 minutes.  If it takes more than that it is better
+    # to fail the connect.
+    sleepTimes=".001 .01 .1 .5 1 2 3 5 8 15 22 34 60"
+  elif [[ "$turnOn" == "offline" ]]; then
+    opt="-d"
+    # Total about 10 minutes to allow for worst case scenario during offline.
+    # This gives disconnect functions the best chance to ensure that
+    # Linux is cleaned up and avoid future problems.
+    sleepTimes=".001 .01 .1 .5 1 2 3 5 8 15 22 34 60 60 60 60 60 90 120"
+  else
+    return 1
+  fi
+  englishOpt=$turnOn
+
+  cio_ignore -r $device
+
+  # Enable or disable the device
+  chccwdev $opt $device &> /dev/null
+  local rc=$?
+  if [[ $rc -ne 0 ]]; then
+    inform "Attempt to set device offline failed. Retrying..." 1>&2
+    # retry, while waiting various durations
+    for seconds in $sleepTimes; do
+      sleep $seconds
+      chccwdev $opt $device > /dev/null 2>&1
+      rc=$?
+      if [[ $rc -eq 0 ]]; then
+        break # successful - leave loop
+      fi
+    done
+
+    # Set subroutine return code if chccwdev attempts failed
+    if [[ $rc -ne 0 ]]; then
+      warn "Error setting device $device $englishOpt: $retCode"
+      local retCode=1
+    fi
+  fi
+
+  # Settle udev whether or not the change was successful
+  which udevadm &> /dev/null && udevadm settle || udevsettle
+
+  return $retCode
+} #onOrOffDevice{}
+
+###############################################################################
+
+function connectFcp {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Attaches the SCSI/FCP disk at the specified FCP device channel
+  # @Parameters:
+  local fcpChannel=$1       # FCP device channel to connect to disk.
+  local wwpn=$2             # World wide port number.
+  local lun=$3              # Logical unit number.
+  local out
+
+  # Dedicate FCP channel to zthin
+  local rc=0
+  local zthinUserID=$(vmcp q userid | awk '{printf $1}')
+  out=`/opt/zthin/bin/smcli Image_Device_Dedicate -T $zthinUserID -v ${fcpChannel} -r ${fcpChannel} 0 &`
+  if (( $? )); then
+    printError "An error was encountered while connecting to the dedicate device. Response:\n$out"
+    exit 3
+  fi
+
+  # Online the FCP channel
+  chccwdevDevice $fcpChannel "online"
+  if [[ $? -ne 0 ]]; then
+    # Online failed
+    rc=4
+  fi
+
+  # Attach the disk to the zthin
+  if [[ ! -d /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn} ]]; then
+    echo "${wwpn}" > /sys/bus/ccw/devices/0.0.${fcpChannel}/port_add
+  fi
+  if [[ ! -d /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/${lun} ]]; then
+    echo "${lun}" > /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_add
+  fi
+  if (( $? )); then
+    printError "An error was encountered while attaching the disk."
+    local rc=5
+  fi
+  echo add > /sys/bus/ccw/devices/0.0.${fcpChannel}/uevent
+  which udevadm &> /dev/null && udevadm settle || udevsettle
+
+  # Wait until disk shows up
+  local try=10
+  while [[ ! -b /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} && $try > 0 ]]; do
+    sleep 5
+    try=$((try - 1))    
+  done
+  if [[ ! -b /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} ]]; then
+    printError "An error was encountered while locating disk."
+    local rc=6
+  fi
+
+  return $rc
+} #connectFcp{}
+
+###############################################################################
+
+function dedicateFcp {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Attaches the SCSI/FCP disk at the specified FCP device channel
+  # @Parameters:
+  local fcpChannel=$1       # FCP device channel to connect to disk.
+  local wwpn                # World wide port number.
+  local lun                 # Logical unit number.
+  local out
+
+  inform "Dedicating FCP disk..."
+  # Dedicate FCP channel to zthin
+  local rc=0
+  local zthinUserID=$(vmcp q userid | awk '{printf $1}')
+  out=`vmcp attach ${fcpChannel} to $zthinUserID as ${fcpChannel}`
+  if (( $? )); then
+    printError "An error was encountered while connecting to the dedicate device. Response:\n$out"
+    exit 3
+  fi
+
+  # Online the FCP channel
+  chccwdevDevice $fcpChannel "online"
+  if [[ $? -ne 0 ]]; then
+    # Online failed
+    rc=4
+    return $rc
+  fi
+  inform "Please wait for disk online ..."
+  sleep 15
+  wwpn=$(ls /dev/disk/by-path/ |grep -E ccw-0.0.${fcpChannel}-zfcp- |cut -d "-" -f 4 |tail -n 1 |cut -d ":" -f 1)
+  lun=$(ls /dev/disk/by-path/ |grep -E ccw-0.0.${fcpChannel}-zfcp- |cut -d "-" -f 4 |tail -n 1 |cut -d ":" -f 2)
+
+  # Attach the disk to the zthin
+  if [[ ! -d /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn} ]]; then
+    echo "${wwpn}" > /sys/bus/ccw/devices/0.0.${fcpChannel}/port_add
+  fi
+  if [[ ! -d /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/${lun} ]]; then
+    echo "${lun}" > /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_add
+  fi
+  if (( $? )); then
+    printError "An error was encountered while attaching the disk."
+    local rc=5
+    return $rc
+  fi
+  echo add > /sys/bus/ccw/devices/0.0.${fcpChannel}/uevent
+  which udevadm &> /dev/null && udevadm settle || udevsettle
+
+  # Wait until disk shows up
+  local try=10
+  while [[ ! -b /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} && $try > 0 ]]; do
+    sleep 2
+    try=$((try - 1))
+  done
+  if [[ ! -b /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} ]]; then
+    printError "An error was encountered while locating disk."
+    local rc=6
+    return $rc
+  fi
+
+  return $rc
+} #dedicateFcp{}
+
+###############################################################################
+
+function connectDisk {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Links to (or attaches) the disk at the specified virtual device address
+  #   (on the system being captured/deployed) using the specified link mode (or
+  #   'RR' if a mode is not specified), and sets the disk on-line with
+  #   `chccwdev -e`.
+  # @Returns:
+  #   0 if the connection was successful.
+  #   1 if there was an error with attaching a dedicated disk.
+  #   2 if there was an error with linking to a minidisk.
+  #   3 if there was an error with setting/unsetting raw_track_access.
+  #   4 if there was an error with setting the disk online.
+  #   5 if we time out waiting for the disk connection lock.
+  # @Parameters:
+  local userID=$1            # ID of disk-owning z/VM user.
+  local vdev=$2              # Virtual device address of disk to connect to.
+  local mode=$3              # The disk linking mode.
+  local rawTrackAccess=$4    # Set to "1" to specify that the disk be brought
+                             # online in raw_track_access mode, "0" to specify
+                             # that the disk *not* be brought online in
+                             # raw_track_access mode. Otherwise existing mode
+                             # is used.
+  # @Code:
+  [[ $mode ]] || mode='rr'
+
+  # Obtain the disk connection lock.
+  local attempts=1
+  while [[ $(mkdir $diskConnectionLock; echo $?) -ne 0 ]]; do
+    if [[ $attempts -gt 120 ]]; then
+      return 5
+    fi
+    if [[ $(( $attempts % 30 )) -eq 0 ]]; then
+      warn "Waiting on lock: ${diskConnectionLock}" | sed 's/^/  /'
+    fi
+    attempts=$((attempts + 1))
+    sleep 1
+  done
+
+  # Keep a file in /tmp listing previously-used aliases, to avoid always
+  # using different aliases (which makes udev keep incrementing addresses
+  # in the /dev/dasd[letter][number] scheme). Try each of those aliases
+  # before generating new ones.
+  while read line; do
+    if [[ $(vmcp "query virtual ${line}" 2>&1 |
+            grep 'HCPQVD040E') ]]; then
+      local alias=$line
+      break
+    fi
+  done < $diskLinkingAliases
+
+  # Since none of the already-used aliases are free, keep picking a random
+  # virtual device address until one is found that hasn't already been taken.
+  while [[ $(vmcp "query virtual ${alias}" 2>&1 |
+             grep 'HCPQVD040E' |
+             wc -l) -eq 0 ]]; do
+    local alias=$(uuidgen | sed 's/\(....\).*/\1/')
+  done
+
+  # Record the alias we used, both in the list of used aliases and in the list
+  # of aliases currently in use.
+  if [[ ! $(grep "${alias}" $diskLinkingAliases) ]]; then
+    echo $alias >> $diskLinkingAliases
+  fi
+  echo "${userID} ${vdev} AS ${alias}" >> $currentDiskAliases
+
+  local rc=0
+  local cmdResp=$(vmcp "link $userID $vdev as $alias $mode" 2>&1)
+  local error=$(echo "$cmdResp" | grep '^Error:')
+
+  # We can at this point remove the disk connection lock, since we have
+  # reserved its channel ID alias by linking it and made all required
+  # alterations to the alias listing file.
+  rmdir $diskConnectionLock
+
+  # Check for link errors
+  if [[ $error ]]; then
+    local errorInfo=$(echo "$cmdResp" | grep '^HCP')
+    printError "Unable to link $userID $vdev disk. $errorInfo"
+    # Note: We will do a detach just in case we linked it in read mode.
+    vmcp "detach $alias"
+    local rc=2
+  fi
+
+  # Make sure device channel isn't black-listed..
+  if [[ $rc -eq 0 ]]; then
+    sleep 2
+    sudo cio_ignore -r $alias &> /dev/null
+    sleep 2
+  fi
+
+  # Online the device.
+  if [[ $rc -eq 0 ]]; then
+    # Set the requested raw track access mode.
+    if [[ $rawTrackAccess -eq 0 || $rawTrackAccess -eq 1 ]]; then
+      local devBusNode=/sys/bus/ccw/devices/0.0.${alias}
+      echo $rawTrackAccess > $devBusNode/raw_track_access
+      if [[ $(cat $devBusNode/raw_track_access) -ne $rawTrackAccess ]]; then
+        sleep 5
+        echo $rawTrackAccess > $devBusNode/raw_track_access
+        if [[ $(cat $devBusNode/raw_track_access) -ne $rawTrackAccess ]]; then
+          warn "Unable to correctly set/unset raw_track_access mode."
+          local rc=3
+        fi
+      fi
+    fi
+  fi
+
+  # Online the disk.
+  if [[ $rc -eq 0 ]]; then
+    chccwdevDevice $alias "online"
+    if [[ $? -ne 0 ]]; then
+      # Online failed
+      rc=4
+    fi
+  fi
+
+  # Deactivate auto-connected LVM volume groups.
+  if [[ $rc -eq 0 ]]; then
+    local ldev=$(findLinuxDeviceNode $alias)
+    if [[ $ldev ]]; then
+      # We have a check here for the ldev to ensure that we only proceed with
+      # the LVM deactivation if the disk was successfully brought online.
+      local volumeGroup=$(pvs 2>/dev/null |
+                        sed -n "s/\s*${ldev//\//\\/}[0-9]*\s//p" |
+                        awk '{print $1}')
+      if [[ $volumeGroup ]]; then
+        vgchange -a n $volumeGroup &> /dev/null
+      fi
+    fi
+  fi
+
+  return $rc
+} #connectDisk{}
+
+###############################################################################
+
+function getDiskAlias {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Prints the alias virtual device address used on this system for the
+  #   connected disk with the specified virtual device address on the system
+  #   being captured/deployed.  NOTE: It is expected that there is only one
+  #   active link to a target virtual machines disk.  Multiple capture/deploy
+  #   working on the same target disk is not supported.
+  # @Parameters:
+  local userID=$1
+  local vdev=$2
+  # @Code:
+  # The "tail -1" here is used as a robustness measure to avoid running into
+  # problems if a previous failed disconnect lead to an admin manually cleaning
+  # up disk links, but not the list of current linking aliases.
+  grep "^${userID} ${vdev}" $currentDiskAliases |
+    sed 's/.*AS //' |
+    tail -1
+} #getDiskAlias{}
+
+###############################################################################
+
+function disconnectFcp {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Attaches the SCSI/FCP disk at the specified FCP device channel
+  # @Parameters:
+  local fcpChannel=$1       # FCP device channel to connect to disk.
+  local wwpn=$2             # World wide port number.
+  local lun=$3              # Logical unit number.
+  local rc=0
+
+  # We could be trying to delete the device before all related files have been
+  # created so we will wait up to 3 minutes for the unit_remove file to show up.
+  if [[ -d /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/${lun} ]]; then
+    local unit_remove_missing=1
+    local lun_missing=1
+    local i
+
+    # Remove the SCSI device
+    local devName=`ls -al /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} | tr '/' ' ' | awk '{print \$NF}'`
+    if [[ "$devName" != "" && -e "/sys/block/$devName/device/delete" ]]; then
+      echo "1" > "/sys/block/$devName/device/delete"
+    fi
+
+    # Remove the lun device
+    for i in 1 2 2 10 15 30 30 30 60 0
+    do
+      if [[ -e "/sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_remove" ]]; then
+        unit_remove_missing=0
+        echo $lun > "/sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_remove"
+        if [[ $? -eq 0 ]]; then
+          lun_missing=0
+          break;
+        fi
+      fi
+      sleep $i
+    done
+
+    if [[ $lun_missing -eq 1 ]]; then
+      printError "An error was encountered while writing to the unit_remove file."
+      rc=5
+    fi
+    if [[ $unit_remove_missing -eq 1 ]]; then
+      printError "An error was encountered while detaching the disk.  \
+        /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_remove \
+        does not exist."
+      rc=7
+    fi
+  fi
+
+  # Offline the FCP channel
+  if [[ -b /dev/disk/by-path/0.0.${fcpChannel} ]]; then
+    chccwdevDevice ${fcpChannel} "offline"
+    if [[ $? -ne 0 ]]; then
+      # Offline failed
+      rc=1
+    fi
+  fi
+
+  # Undedicate FCP channel to zthin
+  local zthinUserID=$(vmcp q userid | awk '{printf $1}')
+  /opt/zthin/bin/smcli Image_Device_Undedicate -T $zthinUserID -v ${fcpChannel} &> /dev/null
+  if (( $? )); then
+    printError "An error was encountered while disconnecting dedicated device."
+    rc=2
+  fi
+
+  return $rc
+} #disconnectFcp{}
+
+###############################################################################
+
+function undedicateFcp {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Attaches the SCSI/FCP disk at the specified FCP device channel
+  # @Parameters:
+  local fcpChannel=$1       # FCP device channel to connect to disk.
+  local wwpn=$2             # World wide port number.
+  local lun=$3              # Logical unit number.
+  local rc=0
+
+  inform "Undedicating FCP disk..."
+  # We could be trying to delete the device before all related files have been
+  # created so we will wait up to 3 minutes for the unit_remove file to show up.
+  if [[ -d /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/${lun} ]]; then
+    local unit_remove_missing=1
+    local lun_missing=1
+    local i
+
+    # Remove the SCSI device
+    local devName=`ls -al /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} | tr '/' ' ' | awk '{print \$NF}'`
+    if [[ "$devName" != "" && -e "/sys/block/$devName/device/delete" ]]; then
+      echo "1" > "/sys/block/$devName/device/delete"
+    fi
+
+    # Remove the lun device
+    for i in 1 2 2 10 15 30 30 30 60 0
+    do
+      if [[ -e "/sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_remove" ]]; then
+        unit_remove_missing=0
+        echo $lun > "/sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_remove"
+        if [[ $? -eq 0 ]]; then
+          lun_missing=0
+          break;
+        fi
+      fi
+      sleep $i
+    done
+
+    if [[ $lun_missing -eq 1 ]]; then
+      printError "An error was encountered while writing to the unit_remove file."
+      rc=5
+      return $rc
+    fi
+    if [[ $unit_remove_missing -eq 1 ]]; then
+      printError "An error was encountered while detaching the disk.  \
+        /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_remove \
+        does not exist."
+      rc=7
+      return $rc
+    fi
+  fi
+
+  # Offline the FCP channel
+  if [[ -b /dev/disk/by-path/0.0.${fcpChannel} ]]; then
+    chccwdevDevice ${fcpChannel} "offline"
+    if [[ $? -ne 0 ]]; then
+      # Offline failed
+      rc=1
+      return $rc
+    fi
+  fi
+
+  # Undedicate FCP channel to zthin
+  local zthinUserID=$(vmcp q userid | awk '{printf $1}')
+  vmcp det ${fcpChannel} &> /dev/null
+  if (( $? )); then
+    printError "An error was encountered while disconnecting dedicated device."
+    rc=2
+    return $rc
+  fi
+
+  return $rc
+} #undedicateFcp{}
+
+###############################################################################
+
+function disconnectDisk {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Sets the disk at the specified virtual device address (on the system
+  #   being captured/deployed) offline (from this system) with `chccwdev -d`,
+  #   and then detaches it.
+  # @Returns:
+  #   0 if the disconnection was successful.
+  #   1 if there was an error with setting the disk offline.
+  #   2 if there was an error with setting/unsetting raw_track_access.
+  #   3 if there was an error with detaching the disk.
+  #   4 if we time out waiting for the disk connection lock.
+  # @Parameters:
+  local userID=$1
+  local disk=$2
+  local rawTrackAccess=$3
+  # @Code:
+  local alias=$(getDiskAlias $userID $disk)
+  local rc=0
+
+  # Offline the disk if it is not concurrently being used by other scripts.
+  if [[ $(grep -i "^0\.0\.$alias" /proc/dasd/devices | wc -l) -eq 1 ]]; then
+    # "sync" moved to routines which write to the disk.  We should do a
+    # "sync" after we finish the writes to the disk and before we go to
+    # disconnect the disk.  We do not need it for reads from the disk.
+    chccwdevDevice $alias "offline"
+    if [[ $? -ne 0 ]]; then
+      # Offline failed
+      rc=1
+    fi
+  fi
+
+  # For ECKD disk capable of raw track access, reset the raw track access mode
+  # to the requested state.
+  if [[ $rc -eq 0 && -e /sys/bus/ccw/devices/0.0.${alias}/raw_track_access ]]; then
+    if [[ $rawTrackAccess -eq 0 || $rawTrackAccess -eq 1 ]]; then
+      local devBusNode=/sys/bus/ccw/devices/0.0.${alias}
+      echo $rawTrackAccess > $devBusNode/raw_track_access
+      if [[ $(cat $devBusNode/raw_track_access) -ne $rawTrackAccess ]]; then
+        sleep 5
+        echo $rawTrackAccess > $devBusNode/raw_track_access
+        if [[ $(cat $devBusNode/raw_track_access) -ne $rawTrackAccess ]]; then
+          warn "Unable to correctly set/unset raw_track_access mode."
+          local rc=2
+        fi
+      fi
+    fi
+  fi
+
+  # Obtain the disk connection lock.
+  local attempts=1
+  while [[ $(mkdir $diskConnectionLock; echo $?) -ne 0 ]]; do
+    if [[ $attempts -gt 360 ]]; then
+      # Waited 6 minutes (360 seconds, 3 times max of connectDisk), give up.
+      return 4
+    fi
+    if [[ $(( $attempts % 30 )) -eq 0 ]]; then
+      warn "Waiting on lock: ${diskConnectionLock}" | sed 's/^/  /'
+    fi
+    attempts=$((attempts + 1))
+    sleep 1
+  done
+
+  # Detach the disk.
+  if [[ $(vmcp 'query virtual dasd' |
+          grep -i "^DASD $alias" | wc -l) -eq 1 ]]; then
+    local error=$(vmcp detach $alias 2>&1 | grep '^Error:')
+    if [[ $error ]]; then
+      warn "Disk Detach $error"
+      local rc=3
+    fi
+  fi
+
+  # Remove the left partition link
+  if [[ -L /dev/disk/by-path/ccw-0.0.${alias}-part1 ]]; then
+    rm -f /dev/disk/by-path/ccw-0.0.${alias}-part1
+  fi
+
+  # If the disk is no longer attached to the zthin virtual machine then remove it
+  # from the current disk aliases.
+  if [[ $(vmcp 'query virtual dasd' |
+          grep -i "^DASD $alias" | wc -l) -eq 0 ]]; then
+    sed -i "/${userID} ${disk} AS ${alias}/d" \
+           $currentDiskAliases
+  fi
+
+  # Release the disk connection lock and return.
+  rmdir $diskConnectionLock
+  return $rc
+} #disconnectDisk{}
+
+###############################################################################
+### VIRTUAL SERVER STATE FUNCTIONS ############################################
+###############################################################################
+
+function isSystemActive {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Prints 'yes' if the specified system is running (as in "not logged off",
+  #   it could be disconnected and in a CP Wait state and we'd still think of
+  #   it as "running" for the purposes of this test).
+  # @Parameters:
+  local userID=$1
+  # @Code:
+  vmcp query user $userID &> /dev/null && echo 'yes'
+} #isSystemActive{}
+
+###############################################################################
+### END OF FUNCTION LIBRARY ###################################################
+###############################################################################
 
 ###############################################################################
 ### FUNCTIONS #################################################################
@@ -69,6 +1088,15 @@ function parseArgs {
     getPositionalArg 4 ignitionUrl
     getPositionalArg 5 diskType
     getPositionalArg 6 nicID
+  elif [[ ${#args[@]} == 5 ]]; then
+    getPositionalArg 1 fcpChannel
+    getPositionalArg 2 imageFile
+    getPositionalArg 3 ignitionUrl
+    getPositionalArg 4 diskType
+    getPositionalArg 5 nicID
+
+    # Make channel, WWPN, and LUN lower case
+    fcpChannel=$(echo ${fcpChannel} | tr '[:upper:]' '[:lower:]')
   else
     getPositionalArg 1 userID
     getPositionalArg 2 channelID
@@ -95,6 +1123,10 @@ function parseArgs {
     printCMDUsage
     exit 1
   elif [[ ${#args[@]} == 6 && (! $userID || ! $channelID || ! $imageFile || ! $ignitionUrl || ! $diskType || ! $nicID) ]]; then
+    echo 'ERROR: Missing required parameter.'
+    printCMDUsage
+    exit 1
+  elif [[ ${#args[@]} == 5 && (! $fcpChannel || ! $imageFile || ! $ignitionUrl || ! $diskType || ! $nicID) ]]; then
     echo 'ERROR: Missing required parameter.'
     printCMDUsage
     exit 1
@@ -139,6 +1171,13 @@ function parseArgs {
   elif [[ ${#args[@]} == 6 ]]; then
     echo "SOURCE USER ID: \"$userID\""
     echo "DISK CHANNEL:   \"$channelID\""
+    echo "IMAGE FILE:     \"$imageFile\""
+    echo "IGNITION URL:   \"$ignitionUrl\""
+    echo "DISK TYPE:      \"$diskType\""
+    echo "NIC ID:         \"$nicID\""
+    echo ""
+  elif [[ ${#args[@]} == 5 ]]; then
+    echo "FCP CHANNEL:    \"$fcpChannel\""
     echo "IMAGE FILE:     \"$imageFile\""
     echo "IGNITION URL:   \"$ignitionUrl\""
     echo "DISK TYPE:      \"$diskType\""
@@ -361,18 +1400,8 @@ function resizeECKD {
     out=`fdasd -a ${devNode}`
     rc=$?
     if (( rc != 0 )); then
-      if (( rc == 255 )); then
-        sleep 0.5
-        out =`blockdev --rereadpt ${devNode}`
-        rc=$?
-        if (( rc != 0 )); then
-          printError "When resizing the dasd, 'blockdev --rereadpt' to  ${devNode} returns rc: $rc, out: $out"
-          return 1
-        fi
-      else
-        printError "When resizing the dasd, 'fsdasd -a' to  ${devNode} returns rc: $rc, out: $out"
-        return 1
-      fi
+      printError "When resizing the dasd, 'fsdasd -a' to  ${devNode} returns rc: $rc, out: $out"
+      return 1
     fi
   fi
 
@@ -761,59 +1790,6 @@ function deployDiskImage {
     return 0
   } #execZIPL
 
-  function update_zipl_bootloader_fcp {
-    inform "Updating zipl"
-    mkdir -p /tmp/$fcpChannel/boot_partition
-    mount_boot_partition /tmp/$fcpChannel/boot_partition
-    trap 'umount /tmp/$fcpChannel/boot_partition; trap - RETURN' RETURN
-
-    #Get ignition config file
-    mkdir -p "/tmp/$fcpChannel/boot_partition/ignition"
-    if [ -f "$ignitionUrl" ]; then
-        inform "$ignitionUrl is FILE"
-        cat $ignitionUrl >/tmp/$fcpChannel/boot_partition/ignition/config.ign 2>/dev/null
-    else
-        inform "$ignitionUrl is URL"
-        let retry=0
-        while true
-        do
-            curl -Lf $ignitionUrl >/tmp/$fcpChannel/boot_partition/ignition/config.ign 2>/dev/null
-            RETCODE=$?
-            if [ $RETCODE -ne 0 ]
-            then
-                if [[ $RETCODE -eq 22 && $retry -lt 5 ]]
-                then
-                    # Network isn't up yet, sleep for a sec and retry
-                    sleep 1
-                    let retry=$retry+1
-                    continue
-                else
-                    log "failed fetching ignition config from ${ignitionUrl}: ${RETCODE}"
-                    exit 1
-                fi
-                log "fetching ignition config from ${ignitionUrl}: ${RETCODE}"
-            else
-                inform "Successfully get the ignition config"
-                break;
-            fi
-        done
-    fi
-
-    blsfile=$(ls /tmp/$fcpChannel/boot_partition/loader/entries/*.conf)
-    #Get zipl config file for parameters
-    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.zfcp=0.0.$fcpChannel,$wwpn,$lun zfcp.allow_lun_scan=0 rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot rd.neednet=1 ip=dhcp" > /tmp/$fcpChannel/zipl_prm
-    #Run zipl to update bootloader
-    zipl --verbose -p /tmp/$fcpChannel/zipl_prm -i $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*vmlinuz*) -r $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*initramfs*) --target /tmp/$fcpChannel/boot_partition
-    if [[ $? -ne 0 ]]; then
-        printError "failed updating bootloder"
-        exit 1
-    fi
-    #Update BLS config file for reboot
-    sed -e '/options/d' $blsfile > /tmp/$fcpChannel/blsfile
-    echo "options $(cat /tmp/$fcpChannel/zipl_prm) " >>/tmp/$fcpChannel/blsfile
-    cat /tmp/$fcpChannel/blsfile > $blsfile
-  } #update_zipl_bootloader_fcp{}
-
   function update_zipl_bootloader_eckd {
     inform "Updating zipl"
     mkdir -p /tmp/$userID/boot_partition
@@ -866,6 +1842,59 @@ function deployDiskImage {
     echo "options $(cat /tmp/$userID/zipl_prm) " >>/tmp/$userID/blsfile
     cat /tmp/$userID/blsfile > $blsfile
   } #update_zipl_bootloader_eckd{}
+
+  function update_zipl_bootloader_fcp {
+    inform "Updating zipl"
+    mkdir -p /tmp/$fcpChannel/boot_partition
+    mount_boot_partition /tmp/$fcpChannel/boot_partition
+    trap 'umount /tmp/$fcpChannel/boot_partition; trap - RETURN' RETURN
+
+    #Get ignition config file
+    mkdir -p "/tmp/$fcpChannel/boot_partition/ignition"
+    if [ -f "$ignitionUrl" ]; then
+        inform "$ignitionUrl is FILE"
+        cat $ignitionUrl >/tmp/$fcpChannel/boot_partition/ignition/config.ign 2>/dev/null
+    else
+        inform "$ignitionUrl is URL"
+        let retry=0
+        while true
+        do
+            curl -Lf $ignitionUrl >/tmp/$fcpChannel/boot_partition/ignition/config.ign 2>/dev/null
+            RETCODE=$?
+            if [ $RETCODE -ne 0 ]
+            then
+                if [[ $RETCODE -eq 22 && $retry -lt 5 ]]
+                then
+                    # Network isn't up yet, sleep for a sec and retry
+                    sleep 1
+                    let retry=$retry+1
+                    continue
+                else
+                    log "failed fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+                    exit 1
+                fi
+                log "fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+            else
+                inform "Successfully get the ignition config"
+                break;
+            fi
+        done
+    fi
+
+    blsfile=$(ls /tmp/$fcpChannel/boot_partition/loader/entries/*.conf)
+    #Get zipl config file for parameters
+    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.zfcp=0.0.$fcpChannel,$wwpn,$lun zfcp.allow_lun_scan=0 rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot rd.neednet=1 ip=dhcp" > /tmp/$fcpChannel/zipl_prm
+    #Run zipl to update bootloader
+    zipl --verbose -p /tmp/$fcpChannel/zipl_prm -i $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*vmlinuz*) -r $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*initramfs*) --target /tmp/$fcpChannel/boot_partition
+    if [[ $? -ne 0 ]]; then
+        printError "failed updating bootloder"
+        exit 1
+    fi
+    #Update BLS config file for reboot
+    sed -e '/options/d' $blsfile > /tmp/$fcpChannel/blsfile
+    echo "options $(cat /tmp/$fcpChannel/zipl_prm) " >>/tmp/$fcpChannel/blsfile
+    cat /tmp/$fcpChannel/blsfile > $blsfile
+  } #update_zipl_bootloader_fcp{}
 
   function deployFBAptImage {
     : SOURCE: ${BASH_SOURCE}
@@ -978,6 +2007,8 @@ function deployDiskImage {
     fi
   } #deployFBAptImage{}
 
+
+
   function deployFCPImage {
     : SOURCE: ${BASH_SOURCE}
     : STACK:  ${FUNCNAME[@]}
@@ -1068,6 +2099,7 @@ function deployDiskImage {
     type lszdev >/dev/null 2>&1 || { printError "Require lszdev tool, but not installed. Aborting."; exit 3; }
     DEST_DEV_BUS=$(lszdev --by-node ${DEST_DEV} | tail -n 1  | awk '{print $2}')
     if [ "$(< /sys/bus/ccw/devices/${DEST_DEV_BUS}/status)" = "unformatted" ]; then
+        inform "Formatting..."
         dasdfmt --blocksize 4096 --disk_layout cdl --mode full -ypv "${DEST_DEV}"
     fi
 
@@ -1080,15 +2112,17 @@ function deployDiskImage {
     root_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*${partition_Num}" | awk '{print $2,$4}'))
     boot_partition+=( $first_track $(( (${boot_partition[1]} + $block_per_tracks - 1) / $block_per_tracks )) )
     root_partition+=($(( ${boot_partition[2]} + ${boot_partition[3]} )) "last")
-    cat > "/tmp/fdasd_conf" <<- EOF
+    cat > "/tmp/${userID}/fdasd_conf" <<- EOF
 [$first_track,$(( ${root_partition[2]} - 1 )),native]
 [${root_partition[2]},${root_partition[3]},native]
 EOF
 
     # format the ECKD DASD using fdasd program
-    fdasd --silent --config /tmp/fdasd_conf "${DEST_DEV}"
+    inform "Create partitions..."
+    fdasd --silent --config /tmp/${userID}/fdasd_conf "${DEST_DEV}"
 
     # copy the content of each partition
+    inform "Coping partitions..."
     set -- ${boot_partition[@]} ${root_partition[@]}
     while [ $# -gt 0 ]; do
         dd bs=4096 if="${imageFile}" iflag=fullblock of="${DEST_DEV}" \
@@ -1168,7 +2202,7 @@ EOF
   if [[ $userID ]]; then
     inform "Deploying image to ${userID}'s disk at channel ${channelID}."
   else
-    inform "Deploying image to ${wwpn}/${lun} disk at channel ${fcpChannel}."
+    inform "Deploying image to FCP disk at channel ${fcpChannel}."
   fi
 
   if [[ $format = 'FCP' ]]; then
