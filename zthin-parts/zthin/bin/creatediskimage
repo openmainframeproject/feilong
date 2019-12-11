@@ -70,6 +70,10 @@ function parseArgs {
   if [[ -z "$gzipCompression" ]]; then
     gzipCompression=6
   fi
+
+  if [[ -z "$headerLabel" ]]; then
+    headerLabel=1
+  fi
   
   # Non-local variables in this function are intentionally non-local.
   isOption -h --help '     Print this help message.'   && printHelp='true'
@@ -102,6 +106,11 @@ function parseArgs {
   getNamedArg --compression compOper 'Compression level, 0-9'
   if [[ $? -eq 0 ]]; then
     gzipCompression=$compOper
+  fi
+
+  getNamedArg --header headerlabel 'Add header label, 0-1'
+  if [[ $? -eq 0 ]]; then
+    headerLabel=$headerlabel
   fi
   
   # Handle options that provide info but don't deal with locks or disks
@@ -179,6 +188,7 @@ function parseArgs {
     echo "LUN:            \"$lun\""
     echo "IMAGE FILE:     \"$imageFile\""
     echo "COMPRESSION:    \"$gzipCompression\""
+    echo "HEADER:         \"$headerLabel\""
     echo ""
   else
     echo "SOURCE USER ID: \"$userID\""
@@ -230,44 +240,48 @@ function createDiskImage {
     # @Code:
     local out
     local rc
-    
-    # First bytes of image file identify file as an image of xCAT
-    # and indicates the type of source disk.
-    local header="xCAT FCP Disk Image:"
-    
-    # Next 16 bytes of image file are an ASCII representation of the disk's
-    # size and the unit (BLK or CYL) used for this measurement:
+
     size=`/usr/bin/sg_readcap /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} |
       egrep -i "Device size:" | 
         awk '{printf("%0.0f BLK", $3/512)}'`
-    local nextPart=`echo -n $size |
-          sed 's/^/                /;s/.*\(.\{16\}\)$/\1/'`
-    header="$header$nextPart"
-    
-    # Next 9 bytes are header length in ASCII (version 2 and later images).
-    header="$header HLen: 0055"
-    
-    # Next 8 bytes indicate GZIP compression level in ASCII.
-    header="$header GZIP: $gzipCompression"
-    
-    # Write the header to the file and fill up the rest with blanks 
-    # to make a reasonable blocksize
-    if (( ${#header} <= $blockSize )); then
-      printf "%-512s" "$header" > $imageFile
-    else
-      # Handle writing the beginning full block portion of header
-      local blocks=$(( ${#header} / $blockSize ))
-      local partialLength=$(( $blocks * $blockSize ))
-      echo -n "${header:0:$partialLength}" > $imageFile
-      # Handle writing rest of header
-      printf "%-512s" "${header:$partialLength}" >> $imageFile
+
+    if (( $headerLabel == 1 )); then
+      # First bytes of image file identify file as an image of xCAT
+      # and indicates the type of source disk.
+      local header="xCAT FCP Disk Image:"
+      
+      # Next 16 bytes of image file are an ASCII representation of the disk's
+      # size and the unit (BLK or CYL) used for this measurement:
+      local nextPart=`echo -n $size |
+            sed 's/^/                /;s/.*\(.\{16\}\)$/\1/'`
+      header="$header$nextPart"
+      
+      # Next 9 bytes are header length in ASCII (version 2 and later images).
+      header="$header HLen: 0055"
+      
+      # Next 8 bytes indicate GZIP compression level in ASCII.
+      header="$header GZIP: $gzipCompression"
+      
+      # Write the header to the file and fill up the rest with blanks 
+      # to make a reasonable blocksize
+      if (( ${#header} <= $blockSize )); then
+        printf "%-512s" "$header" > $imageFile
+      else
+        # Handle writing the beginning full block portion of header
+        local blocks=$(( ${#header} / $blockSize ))
+        local partialLength=$(( $blocks * $blockSize ))
+        echo -n "${header:0:$partialLength}" > $imageFile
+        # Handle writing rest of header
+        printf "%-512s" "${header:$partialLength}" >> $imageFile
+      fi
+      
+      # Now read and compress the data on this fixed-block disk and write the
+      # result to the end of our image file.
     fi
-    
-    # Now read and compress the data on this fixed-block disk and write the
-    # result to the end of our image file.
     inform "Creating $(basename $imageFile) image file for ${wwpn}/${lun} disk\
       at channel ${fcpChannel} with disk size ${size}."
     inform "Compression level: $gzipCompression"
+    inform "Header label: $headerLabel"
     if (( gzipCompression == 0 )); then
       out=`dd if=/dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} 2>&1 >> $imageFile`
       rc=$?
