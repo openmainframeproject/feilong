@@ -72,7 +72,8 @@ function parseArgs {
   fi
 
   if [[ -z "$headerLabel" ]]; then
-    headerLabel=1
+    headerLabel=0
+    gzipCompression=0
   fi
   
   # Non-local variables in this function are intentionally non-local.
