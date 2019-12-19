@@ -356,6 +356,20 @@ class SDKAPI(object):
                                      remotehost, vdev, hostname)
 
     @check_guest_exist()
+    def guest_send(self, userid, transportfiles, remotehost=None):
+        """ Send files to customize the vm.
+
+        :param userid: (str) the user id of the vm
+        :param transportfiles: (str) the files that used to customize the vm
+        :param remotehost: the server where the transportfiles located, the
+               format is username@IP, eg nova@192.168.99.1
+        """
+        action = ("send to guest '%(vm)s'" %
+                  {'vm': userid})
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._smtclient.guest_send(userid, transportfiles, remotehost)
+
+    @check_guest_exist()
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):
         """ Capture the guest to generate a image
