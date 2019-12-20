@@ -62,13 +62,24 @@ function parseArgs {
     fcpChannel=$(echo ${fcpChannel} | tr '[:upper:]' '[:lower:]')
     wwpn=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
     lun=$(echo ${lun} | tr '[:upper:]' '[:lower:]')
-  elif [[ ${#args[@]} == 6 ]]; then
+  elif [[ ${#args[@]} == 7 ]]; then
     getPositionalArg 1 userID
     getPositionalArg 2 channelID
     getPositionalArg 3 imageFile
     getPositionalArg 4 ignitionUrl
     getPositionalArg 5 diskType
     getPositionalArg 6 nicID
+    getPositionalArg 7 ipConfig
+  elif [[ ${#args[@]} == 6 ]]; then
+    getPositionalArg 1 fcpChannel
+    getPositionalArg 2 imageFile
+    getPositionalArg 3 ignitionUrl
+    getPositionalArg 4 diskType
+    getPositionalArg 5 nicID
+    getPositionalArg 6 ipConfig
+
+    # Make channel, WWPN, and LUN lower case
+    fcpChannel=$(echo ${fcpChannel} | tr '[:upper:]' '[:lower:]')
   else
     getPositionalArg 1 userID
     getPositionalArg 2 channelID
@@ -94,7 +105,11 @@ function parseArgs {
     echo 'ERROR: Missing required parameter.'
     printCMDUsage
     exit 1
-  elif [[ ${#args[@]} == 6 && (! $userID || ! $channelID || ! $imageFile || ! $ignitionUrl || ! $diskType || ! $nicID) ]]; then
+  elif [[ ${#args[@]} == 7 && (! $userID || ! $channelID || ! $imageFile || ! $ignitionUrl || ! $diskType || ! $nicID || ! $ipConfig) ]]; then
+    echo 'ERROR: Missing required parameter.'
+    printCMDUsage
+    exit 1
+  elif [[ ${#args[@]} == 6 && (! $fcpChannel || ! $imageFile || ! $ignitionUrl || ! $diskType || ! $nicID || ! $ipConfig) ]]; then
     echo 'ERROR: Missing required parameter.'
     printCMDUsage
     exit 1
@@ -136,13 +151,22 @@ function parseArgs {
     echo "LUN:            \"$lun\""
     echo "IMAGE FILE:     \"$imageFile\""
     echo ""
-  elif [[ ${#args[@]} == 6 ]]; then
+  elif [[ ${#args[@]} == 7 ]]; then
     echo "SOURCE USER ID: \"$userID\""
     echo "DISK CHANNEL:   \"$channelID\""
     echo "IMAGE FILE:     \"$imageFile\""
     echo "IGNITION URL:   \"$ignitionUrl\""
     echo "DISK TYPE:      \"$diskType\""
     echo "NIC ID:         \"$nicID\""
+    echo "IP config:      \"$ipConfig\""
+    echo ""
+  elif [[ ${#args[@]} == 6 ]]; then
+    echo "FCP CHANNEL:    \"$fcpChannel\""
+    echo "IMAGE FILE:     \"$imageFile\""
+    echo "IGNITION URL:   \"$ignitionUrl\""
+    echo "DISK TYPE:      \"$diskType\""
+    echo "NIC ID:         \"$nicID\""
+    echo "IP config:      \"$ipConfig\""
     echo ""
   else
     echo "SOURCE USER ID: \"$userID\""
@@ -363,7 +387,7 @@ function resizeECKD {
     if (( rc != 0 )); then
       if (( rc == 255 )); then
         sleep 0.5
-        out =`blockdev --rereadpt ${devNode}`
+        out=`blockdev --rereadpt ${devNode}`
         rc=$?
         if (( rc != 0 )); then
           printError "When resizing the dasd, 'blockdev --rereadpt' to  ${devNode} returns rc: $rc, out: $out"
@@ -801,7 +825,7 @@ function deployDiskImage {
 
     blsfile=$(ls /tmp/$fcpChannel/boot_partition/loader/entries/*.conf)
     #Get zipl config file for parameters
-    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.zfcp=0.0.$fcpChannel,$wwpn,$lun zfcp.allow_lun_scan=0 rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot rd.neednet=1 ip=dhcp" > /tmp/$fcpChannel/zipl_prm
+    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.zfcp=0.0.$fcpChannel,$wwpn,$lun zfcp.allow_lun_scan=0 rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot rd.neednet=1 ip=$ipConfig" > /tmp/$fcpChannel/zipl_prm
     #Run zipl to update bootloader
     zipl --verbose -p /tmp/$fcpChannel/zipl_prm -i $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*vmlinuz*) -r $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*initramfs*) --target /tmp/$fcpChannel/boot_partition
     if [[ $? -ne 0 ]]; then
@@ -854,7 +878,7 @@ function deployDiskImage {
 
     blsfile=$(ls /tmp/$userID/boot_partition/loader/entries/*.conf)
     #Get zipl config file for parameters
-    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.dasd=0.0.$channelID rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot rd.neednet=1 ip=dhcp" > /tmp/$userID/zipl_prm
+    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.dasd=0.0.$channelID rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot rd.neednet=1 ip=$ipConfig" > /tmp/$userID/zipl_prm
     #Run zipl to update bootloader
     zipl --verbose -p /tmp/$userID/zipl_prm -i $(ls /tmp/$userID/boot_partition/ostree/*/*vmlinuz*) -r $(ls /tmp/$userID/boot_partition/ostree/*/*initramfs*) --target /tmp/$userID/boot_partition
     if [[ $? -ne 0 ]]; then
@@ -1086,9 +1110,11 @@ function deployDiskImage {
 EOF
 
     # format the ECKD DASD using fdasd program
+    inform "Create partitions..."
     fdasd --silent --config /tmp/fdasd_conf "${DEST_DEV}"
 
     # copy the content of each partition
+    inform "Coping partitions..."
     set -- ${boot_partition[@]} ${root_partition[@]}
     while [ $# -gt 0 ]; do
         dd bs=4096 if="${imageFile}" iflag=fullblock of="${DEST_DEV}" \
@@ -1168,7 +1194,7 @@ EOF
   if [[ $userID ]]; then
     inform "Deploying image to ${userID}'s disk at channel ${channelID}."
   else
-    inform "Deploying image to ${wwpn}/${lun} disk at channel ${fcpChannel}."
+    inform "Deploying image to FCP disk at channel ${fcpChannel}."
   fi
 
   if [[ $format = 'FCP' ]]; then
