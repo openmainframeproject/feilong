@@ -435,7 +435,7 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
         # Delete the existing partition in case the disk already
         # has a partition in it.
         cmd = "sudo /sbin/fdisk " + device + " << EOF\nd\nw\nEOF"
-        rh.printSysLog("Invoking: /sbin/fdsik " + device +
+        rh.printSysLog("Invoking: sudo /sbin/fdsik " + device +
             " << EOF\\nd\\nw\\nEOF ")
         try:
             out = subprocess.check_output(cmd,
@@ -463,10 +463,27 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
         rh.printSysLog("Invoking: sudo /sbin/fdisk " + device +
             " << EOF\\nn\\np\\n1\\n\\n\\nw\\nEOF")
         try:
-            out = subprocess.check_output(cmd,
-                stderr=subprocess.STDOUT,
-                close_fds=True,
-                shell=True)
+            # Sometimes the table is not ready: sleep and retry
+            try_num = 0
+            for sleep_secs in [0.1, 0.2, 0.3, 0.5, 1, 2, -1]:
+                try_num += 1
+                try:
+                    out = subprocess.check_output(cmd,
+                        stderr=subprocess.STDOUT,
+                        close_fds=True,
+                        shell=True)
+                    rh.printSysLog("Run `%s` successfully." % cmd)
+                    break
+                except CalledProcessError as e:
+                    if sleep_secs > 0:
+                        rh.printSysLog("Num %d try `%s` failed ("
+                                       "retry after %s seconds): "
+                                       "rc=%d msg=%s" % (
+                                        try_num, cmd, sleep_secs,
+                                        e.returncode, e.output))
+                        time.sleep(sleep_secs)
+                    else:
+                        raise
             if isinstance(out, bytes):
                 out = bytes.decode(out)
         except CalledProcessError as e:

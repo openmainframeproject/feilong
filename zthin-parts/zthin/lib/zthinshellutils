@@ -471,6 +471,67 @@ function chccwdevDevice {
   return $retCode
 } #onOrOffDevice{}
 
+##############################################################################
+function dedicateFcp {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Attaches the SCSI/FCP disk at the specified FCP device channel
+  # @Parameters:
+  local fcpChannel=$1       # FCP device channel to connect to disk.
+  local wwpn                # World wide port number.
+  local lun                 # Logical unit number.
+  local out
+
+  inform "Dedicating FCP disk..."
+  # Dedicate FCP channel to zthin
+  local rc=0
+  local zthinUserID=$(vmcp q userid | awk '{printf $1}')
+  out=`vmcp attach ${fcpChannel} to $zthinUserID as ${fcpChannel} &`
+  if (( $? )); then
+    printError "An error was encountered while connecting to the dedicate device. Response:\n$out"
+    exit 3
+  fi
+
+  # Online the FCP channel
+  chccwdevDevice $fcpChannel "online"
+  if [[ $? -ne 0 ]]; then
+    # Online failed
+    rc=4
+  fi
+  inform "Please wait for disk online ..."
+  sleep 15
+  wwpn=$(ls /dev/disk/by-path/ |grep -E ccw-0.0.${fcpChannel}-zfcp- |cut -d "-" -f 4 |tail -n 1 |cut -d ":" -f 1)
+  lun=$(ls /dev/disk/by-path/ |grep -E ccw-0.0.${fcpChannel}-zfcp- |cut -d "-" -f 4 |tail -n 1 |cut -d ":" -f 2)
+
+  # Attach the disk to the zthin
+  if [[ ! -d /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn} ]]; then
+    echo "${wwpn}" > /sys/bus/ccw/devices/0.0.${fcpChannel}/port_add
+  fi
+  if [[ ! -d /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/${lun} ]]; then
+    echo "${lun}" > /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_add
+  fi
+  if (( $? )); then
+    printError "An error was encountered while attaching the disk."
+    local rc=5
+  fi
+  echo add > /sys/bus/ccw/devices/0.0.${fcpChannel}/uevent
+  which udevadm &> /dev/null && udevadm settle || udevsettle
+
+  # Wait until disk shows up
+  local try=10
+  while [[ ! -b /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} && $try > 0 ]]; do
+    sleep 5
+    try=$((try - 1))
+  done
+  if [[ ! -b /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} ]]; then
+    printError "An error was encountered while locating disk."
+    local rc=6
+  fi
+
+  return $rc
+} #dedicateFcp{}
+
 ###############################################################################
 
 function connectFcp {
@@ -760,6 +821,78 @@ function disconnectFcp {
 
   return $rc
 } #disconnectFcp{}
+
+##############################################################################
+function undedicateFcp {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Attaches the SCSI/FCP disk at the specified FCP device channel
+  # @Parameters:
+  local fcpChannel=$1       # FCP device channel to connect to disk.
+  local wwpn=$2             # World wide port number.
+  local lun=$3              # Logical unit number.
+  local rc=0
+
+  inform "Undedicating FCP disk..."
+  # We could be trying to delete the device before all related files have been
+  # created so we will wait up to 3 minutes for the unit_remove file to show up.
+  if [[ -d /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/${lun} ]]; then
+    local unit_remove_missing=1
+    local lun_missing=1
+    local i
+
+    # Remove the SCSI device
+    local devName=`ls -al /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} | tr '/' ' ' | awk '{print \$NF}'`
+    if [[ "$devName" != "" && -e "/sys/block/$devName/device/delete" ]]; then
+      echo "1" > "/sys/block/$devName/device/delete"
+    fi
+
+    # Remove the lun device
+    for i in 1 2 2 10 15 30 30 30 60 0
+    do
+      if [[ -e "/sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_remove" ]]; then
+        unit_remove_missing=0
+        echo $lun > "/sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_remove"
+        if [[ $? -eq 0 ]]; then
+          lun_missing=0
+          break;
+        fi
+      fi
+      sleep $i
+    done
+
+    if [[ $lun_missing -eq 1 ]]; then
+      printError "An error was encountered while writing to the unit_remove file."
+      rc=5
+    fi
+    if [[ $unit_remove_missing -eq 1 ]]; then
+      printError "An error was encountered while detaching the disk.  \
+        /sys/bus/ccw/devices/0.0.${fcpChannel}/${wwpn}/unit_remove \
+        does not exist."
+      rc=7
+    fi
+  fi
+
+  # Offline the FCP channel
+  if [[ -b /dev/disk/by-path/0.0.${fcpChannel} ]]; then
+    chccwdevDevice ${fcpChannel} "offline"
+    if [[ $? -ne 0 ]]; then
+      # Offline failed
+      rc=1
+    fi
+  fi
+
+  # Undedicate FCP channel to zthin
+  local zthinUserID=$(vmcp q userid | awk '{printf $1}')
+  vmcp det ${fcpChannel} &> /dev/null
+  if (( $? )); then
+    printError "An error was encountered while disconnecting dedicated device."
+    rc=2
+  fi
+
+  return $rc
+} #undedicateFcp{}
 
 ###############################################################################
 
