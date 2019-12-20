@@ -109,11 +109,6 @@ function parseArgs {
     gzipCompression=$compOper
   fi
 
-  getNamedArg --header headerlabel 'Add header label, 0-1'
-  if [[ $? -eq 0 ]]; then
-    headerLabel=$headerlabel
-  fi
-  
   # Handle options that provide info but don't deal with locks or disks
   if [[ $printVersion ]]; then
     echo $version
@@ -189,7 +184,6 @@ function parseArgs {
     echo "LUN:            \"$lun\""
     echo "IMAGE FILE:     \"$imageFile\""
     echo "COMPRESSION:    \"$gzipCompression\""
-    echo "HEADER:         \"$headerLabel\""
     echo ""
   else
     echo "SOURCE USER ID: \"$userID\""
