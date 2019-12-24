@@ -1407,6 +1407,11 @@ class SMTClient(object):
             results = self._request("getvm %s directory" % userid)
         return results.get('response', [])
 
+    def get_all_user_direct(self):
+        with zvmutils.log_and_reraise_smt_request_failed():
+            results = self._request("getvm alldirectory")
+        return results.get('response', [])
+
     def _delete_nic_active_exception(self, error, userid, vdev):
         if ((error.results['rc'] == 204) and (error.results['rs'] == 28)):
             errmsg = error.format_message()
