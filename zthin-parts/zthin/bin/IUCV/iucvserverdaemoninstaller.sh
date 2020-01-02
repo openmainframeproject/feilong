@@ -112,7 +112,7 @@ function installIucvserver {
     COPY_SERVICE_CMD="cp iucvserd /etc/init.d/"
     REGISTER_SERVICE_CMD="chkconfig --add iucvserd"
     START_SERVICE_CMD="service iucvserd start"
-  elif [[ $os == ubuntu* || $os == rhel7* ]]; then
+  elif [[ $os == ubuntu* || $os == rhel7* || $os == rhel8* ]]; then
     COPY_SERVICE_CMD="cp iucvserd.service /lib/systemd/system/"
     REGISTER_SERVICE_CMD="systemctl enable iucvserd.service"
     START_SERVICE_CMD="systemctl start iucvserd.service"
