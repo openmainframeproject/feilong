@@ -24,8 +24,9 @@ To work on something, whether a new feature or a bugfix:
   ```
   git remote add gerrit ssh://<username>@review.gerrithub.io:29418/mfcloud/python-zvm-sdk
   ```
-  Where <username> is your GerritHub username.
+  Where ```<username>``` is your GerritHub username.
   And, you should add the public key of your workstation into your GerritHub SSH public keys.
+  
   3. Create a branch
   Create a descriptively-named branch off of your cloned repository
   ```
