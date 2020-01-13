@@ -364,6 +364,11 @@ class TestzCCClient(object):
         body = json.dumps(body)
         return self._guest_action(userid, body)
 
+    def guest_deregister(self, userid):
+        body = {"action": "deregister_vm"}
+        body = json.dumps(body)
+        return self._guest_action(userid, body)
+
     def guest_live_migrate_vm(self, userid, dest_zcc_userid,
                          destination, parms, operation):
         body = {"action": "live_migrate_vm",
