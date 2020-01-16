@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2020 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -944,7 +944,24 @@ class rhel7(rhel):
         content = template.render(fcp=fcp, lun=target_lun, target_filename=target_filename)
         return content
 
+class rhel8(rhel7):
+    """docstring for rhel8"""
 
+    def _get_device_filename(self, vdev):
+        return 'ifcfg-enc' + str(vdev).zfill(4)
+
+    def _get_all_device_filename(self):
+        return 'ifcfg-enc*'
+
+    def _get_device_name(self, vdev):
+        # Construct a device like enc1000
+        return 'enc' + str(vdev).zfill(4)
+
+    def _get_clean_command(self):
+        files = os.path.join(self._get_network_file_path(),
+                             self._get_all_device_filename())
+        return '\nrm -f %s\n' % files
+        
 class sles(LinuxDist):
     def _get_network_file_path(self):
         return '/etc/sysconfig/network/'
@@ -1633,7 +1650,7 @@ class LinuxDistManager(object):
         return globals()[distro + release]
 
     def _parse_release(self, os_version, distro, remain):
-        supported = {'rhel': ['6', '7'],
+        supported = {'rhel': ['6', '7', '8'],
                      'sles': ['11', '12'],
                      'ubuntu': ['16']}
         releases = supported[distro]

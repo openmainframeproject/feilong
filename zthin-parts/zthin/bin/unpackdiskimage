@@ -1,6 +1,6 @@
 #!/bin/bash
 ###############################################################################
-# Copyright 2017 IBM Corp.
+# Copyright 2017,2020 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -305,7 +305,10 @@ function resizePartition {
     #Resize the ext filesystem.
     out=`e2fsck -yf ${lastPartition} 2>&1`
     rc=$?
-    if (( rc != 0 && rc != 1 && rc != 2 )); then
+
+    #Considering that the e2fsck version of rhel77 is too low to support 
+    #the rhel8 guest VM, so the return value of 8 is ignored.
+    if (( rc != 0 && rc != 1 && rc != 2 && rc != 8 )); then
       printError "'e2fsck -f ${lastPartition}' returns rc: $rc, out: $out"
       return 1
     fi
