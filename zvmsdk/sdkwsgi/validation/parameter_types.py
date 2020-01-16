@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2020 IBM Corp.
 # Copyright 2013 NEC Corporation.
 # All rights reserved.
 #
@@ -343,7 +343,7 @@ os_version = {
 'oneOf': [
 {'type': 'string',
  'pattern':
- '^((r|R)(h|H)(e|E)(l|L))(6|7){1}([.][0-9])?$'},
+ '^((r|R)(h|H)(e|E)(l|L))(6|7|8){1}([.][0-9])?$'},
 {'type': 'string',
  'pattern':
  '^((r|R)(e|E)(d|D)(h|H)(a|A)(t|T))(6|7){1}([.][0-9])?$'},
