@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2020 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -429,6 +429,62 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
+
+    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    def test_image_get_os_distro(self, image_info):
+        image_info.return_value = [{'image_size_in_bytes': '3072327680',
+                                    'disk_size_units': '3339:CYL',
+                                    'md5sum': '370cd177c51e39f0e2e2b\
+                                        eecbb88f701',
+                                    'comments': "{'disk_type':'DASD'}",
+                                    'imagename': '0b3013e1-1356-431c-\
+                                        b680-ba06a1768aea',
+                                    'imageosdistro': 'RHCOS4',
+                                    'type': 'rootonly'}]
+        self.assertEqual(self._smtclient.image_get_os_distro(image_info),
+                         'RHCOS4')
+
+    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    def test_get_image_disk_type_dasd(self, image_info):
+        image_info.return_value = [{'image_size_in_bytes': '3072327680',
+                                    'disk_size_units': '3339:CYL',
+                                    'md5sum': '370cd177c51e39f0e2e2b\
+                                        eecbb88f701',
+                                    'comments': "{'disk_type':'DASD'}",
+                                    'imagename': '0b3013e1-1356-431c-\
+                                        b680-ba06a1768aea',
+                                    'imageosdistro': 'RHCOS4',
+                                    'type': 'rootonly'}]
+        self.assertEqual(self._smtclient._get_image_disk_type(image_info),
+                         'ECKD')
+
+    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    def test_get_image_disk_type_scsi(self, image_info):
+        image_info.return_value = [{'image_size_in_bytes': '3072327680',
+                                    'disk_size_units': '3339:CYL',
+                                    'md5sum': '370cd177c51e39f0e2e2b\
+                                        eecbb88f701',
+                                    'comments': "{'disk_type':'SCSI'}",
+                                    'imagename': '0b3013e1-1356-431c-\
+                                        b680-ba06a1768aea',
+                                    'imageosdistro': 'RHCOS4',
+                                    'type': 'rootonly'}]
+        self.assertEqual(self._smtclient._get_image_disk_type(image_info),
+                         'SCSI')
+
+    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    def test_get_image_disk_type_failed(self, image_info):
+        image_info.return_value = [{'image_size_in_bytes': '3072327680',
+                                    'disk_size_units': '3339:CYL',
+                                    'md5sum': '370cd177c51e39f0e2e2b\
+                                        eecbb88f701',
+                                    'comments': "{'disk_type':'FCP'}",
+                                    'imagename': '0b3013e1-1356-431c-\
+                                        b680-ba06a1768aea',
+                                    'imageosdistro': 'RHCOS4',
+                                    'type': 'rootonly'}]
+        self.assertEqual(self._smtclient._get_image_disk_type(image_info),
+                         None)
 
     @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
@@ -1382,6 +1438,16 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         idx = 1
         vdev = self._smtclient._generate_vdev(base, idx)
         self.assertEqual(vdev, '0101')
+
+    def test_generate_generate_increasing_nic_id(self):
+        nic_id_base = "1000"
+        nic_id = self._smtclient._generate_increasing_nic_id(nic_id_base)
+        self.assertEqual(nic_id, '0.0.1000,0.0.1001,0.0.1002')
+
+    def test_generate_generate_increasing_nic_id_failed(self):
+        self.assertRaises(exception.SDKInvalidInputFormat, 
+                          self._smtclient._generate_increasing_nic_id,
+                          'FFFF')
 
     @mock.patch.object(smtclient.SMTClient, '_add_mdisk')
     def test_add_mdisks(self, add_mdisk):
