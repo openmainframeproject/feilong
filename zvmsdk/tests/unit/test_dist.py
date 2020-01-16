@@ -14,6 +14,7 @@
 import mock
 
 from zvmsdk import dist
+from zvmsdk import utils as zvmutil
 from zvmsdk.tests.unit import base
 
 
@@ -501,6 +502,18 @@ class RHEL8TestCase(base.SDKTestCase):
         self.assertEqual('DNS1="9.0.2.1"', cfg_str[11])
         self.assertEqual('DNS2="9.0.3.1"', cfg_str[12])
 
+class RHCOS4TestCase(base.SDKTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(RHCOS4TestCase, cls).setUpClass()
+        cls.os_version = 'rhcos4'
+
+    def setUp(self):
+        super(RHCOS4TestCase, self).setUp()
+        self.dist_manager = dist.LinuxDistManager()
+        self.linux_dist = self.dist_manager.get_linux_dist(self.os_version)()
+    
 class SLESTestCase(base.SDKTestCase):
 
     @classmethod
