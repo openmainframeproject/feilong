@@ -147,6 +147,19 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertRaises(exception.ZVMVirtualMachineNotExist,
                           self.vmops.get_info, 'fakeid')
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_adapters_info")
+    def test_get_adapters_info(self, adapters_info):
+        adapters = [{u'lan_owner': u'SYSTEM',
+                     u'adapter_address': u'1000',
+                     u'lan_name': u'VSC12345',
+                     u'adapter_status': u'02',
+                     u'mac_address': u'02:55:36:5D:48:57',
+                     u'mac_ip_version': u'4',
+                     u'mac_ip_address': u'9.152.85.152'}]
+        adapters_info.return_value = adapters
+        ret = self.vmops.get_adapters_info('fakeid')
+        self.assertEqual(ret['adapters'][0]['mac_ip_address'], u'9.152.85.152')
+
     @mock.patch("zvmsdk.smtclient.SMTClient._get_image_last_access_time")
     @mock.patch("zvmsdk.database.ImageDbOperator.image_query_record")
     @mock.patch("zvmsdk.smtclient.SMTClient.guest_deploy")

@@ -41,6 +41,11 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.guest_get_info(self.userid)
         ginfo.assert_called_once_with(self.userid)
 
+    @mock.patch("zvmsdk.vmops.VMOps.get_adapters_info")
+    def test_guest_get_adapters_info(self, adapters_info):
+        self.api.guest_get_adapters_info(self.userid)
+        adapters_info.assert_called_once_with(self.userid)
+
     @mock.patch("zvmsdk.vmops.VMOps.guest_deploy")
     def test_guest_deploy(self, guest_deploy):
         user_id = 'fakevm'
