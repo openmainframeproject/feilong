@@ -88,6 +88,11 @@ class VMHandler(object):
         return info
 
     @validation.query_schema(guest.userid_list_query)
+    def get_adapters(self, req, userid):
+        info = self.client.send_request('guest_get_adapters_info', userid)
+        return info
+
+    @validation.query_schema(guest.userid_list_query)
     def get_definition_info(self, req, userid):
         info = self.client.send_request('guest_get_definition_info', userid)
         return info
@@ -460,6 +465,25 @@ def guest_get_info(req):
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     info = _guest_get_info(req, userid)
+
+    info_json = json.dumps(info)
+    req.response.status = util.get_http_code_from_sdk_return(info,
+        additional_handler=util.handle_not_found)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def guest_get_adapters_info(req):
+
+    def _guest_get_adapters_info(req, userid):
+        action = get_handler()
+        return action.get_adapters(req, userid)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _guest_get_adapters_info(req, userid)
 
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,
