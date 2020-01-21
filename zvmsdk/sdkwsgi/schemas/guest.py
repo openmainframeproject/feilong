@@ -250,6 +250,14 @@ register_vm = {
     'additionalProperties': False
 }
 
+deregister_vm = {
+    'type': 'object',
+    'properties': {
+        'userid': parameter_types.userid,
+    },
+    'additionalProperties': False
+}
+
 userid_list_array_query = {
     'type': 'object',
     'properties': {

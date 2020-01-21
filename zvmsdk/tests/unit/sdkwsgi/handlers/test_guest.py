@@ -106,6 +106,17 @@ class GuestActionsTest(SDKWSGITest):
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_deregister(self, mock_action,
+                        mock_userid):
+        self.req.body = '{"action": "deregister_vm"}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_deregister', FAKE_USERID)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_softstop_with_timeout_poll_interval(self, mock_action,
                                                        mock_userid):
         self.req.body = """{"action": "softstop", "timeout": 300,
