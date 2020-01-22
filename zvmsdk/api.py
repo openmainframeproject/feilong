@@ -471,6 +471,27 @@ class SDKAPI(object):
                                 userid, interface, switch)
             LOG.info("Guest %s registered." % userid)
 
+    # Deregister the guest (not delete), this function has no relationship with
+    # migration.
+    def guest_deregister(self, userid):
+        """DB operation for deregister vm for offboard (dismiss) request.
+        :param userid: (str) the userid of the vm to be deregistered
+        """
+        userid = userid.upper()
+        if not zvmutils.check_userid_exist(userid):
+            LOG.error("User directory '%s' does not exist." % userid)
+            raise exception.SDKObjectNotExistError(
+                    obj_desc=("Guest '%s'" % userid), modID='guest')
+        else:
+            action = "delete switches of guest '%s' from database" % userid
+            with zvmutils.log_and_reraise_sdkbase_error(action):
+                self._NetworkDbOperator.switch_delete_record_for_userid(userid)
+
+            action = "delete guest '%s' from database" % userid
+            with zvmutils.log_and_reraise_sdkbase_error(action):
+                self._GuestDbOperator.delete_guest_by_userid(userid)
+            LOG.info("Guest %s deregistered." % userid)
+
     @check_guest_exist()
     def guest_live_migrate(self, userid, dest_zcc_userid, destination,
                            parms, lgr_action):

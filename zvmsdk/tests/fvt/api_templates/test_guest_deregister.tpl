@@ -1,0 +1,3 @@
+{
+   "action": "deregister_vm",
+}
