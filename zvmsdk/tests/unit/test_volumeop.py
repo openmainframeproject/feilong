@@ -95,7 +95,8 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
     @mock.patch.object(shutil, "rmtree")
     @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI._create_file")
     @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
-    @mock.patch("zvmsdk.dist.LinuxDist.get_volume_attach_configuration_cmds")
+    # @mock.patch("zvmsdk.dist.LinuxDist.get_volume_attach_configuration_cmds")
+    @mock.patch("zvmsdk.dist.rhel7.get_volume_attach_configuration_cmds")
     def test_config_attach_active(self, get_attach_cmds, get_dist,
                                   create_file, rmtree, punch_file):
         fcp = 'bfc3'
@@ -125,7 +126,8 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
     @mock.patch.object(shutil, "rmtree")
     @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI._create_file")
     @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
-    @mock.patch("zvmsdk.dist.LinuxDist.get_volume_detach_configuration_cmds")
+    # @mock.patch("zvmsdk.dist.LinuxDist.get_volume_detach_configuration_cmds")
+    @mock.patch("zvmsdk.dist.rhel7.get_volume_detach_configuration_cmds")
     def test_config_detach_active(self, get_detach_cmds, get_dist,
                                   create_file, rmtree, punch_file):
         fcp = 'bfc3'
