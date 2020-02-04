@@ -1298,6 +1298,34 @@ Delete Guest nic
 Host
 ====
 
+Get guests list, info from host (hypervisor) running on.
+
+Get Guests List
+---------------
+
+**GET /host/guests**
+
+List names of all the guests on the host.
+
+* Request:
+
+  None
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: guest_list
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_get_guest_list.tpl
+   :language: javascript
+
 Get info from host (hypervisor) running on.
 
 Get Host Info
