@@ -21,6 +21,11 @@ CONF = config.CONF
 
 class HostTestCase(base.ZVMConnectorBaseTestCase):
 
+    def test_host_get_guest_list(self):
+        resp = self.client.api_request(url='/host/guests')
+        self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_host_get_guest_list', resp.content)
+
     def test_host_info(self):
         resp = self.client.api_request(url='/host')
         self.assertEqual(200, resp.status_code)
