@@ -764,6 +764,18 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                          vsw_dict['vswitches'][1]['nics'][1]['nic_rx'])
 
     @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_all_user_direct(self, smt_req):
+        resp = ['vm1', 'vm2', 'vm3']
+        smt_req.return_value = {'rs': 0, 'errno': 0, 'strError': '',
+                                'overallRC': 0, 'logEntries': [], 'rc': 0,
+                                'response': resp}
+        expect = ['vm1', 'vm2', 'vm3']
+        rd = 'getvm alldirectory'
+        guest_list = self._smtclient.get_all_user_direct()
+        smt_req.assert_called_once_with(rd)
+        self.assertEqual(guest_list, expect)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
     def test_get_host_info(self, smt_req):
         resp = ['ZCC USERID: OPNCLOUD',
                 'z/VM Host: OPNSTK2',

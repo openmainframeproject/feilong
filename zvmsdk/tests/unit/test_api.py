@@ -276,3 +276,8 @@ class SDKAPITestCase(base.SDKTestCase):
                            'assigner_id': 'user1'}
         self.api.volume_detach(connection_info)
         mock_detach.assert_called_once_with(connection_info)
+
+    @mock.patch("zvmsdk.hostops.HOSTOps.guest_list")
+    def test_guest_get_info(self, guest_list):
+        self.api.host_get_guest_list()
+        guest_list.assert_called_once_with()
