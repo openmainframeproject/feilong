@@ -439,3 +439,8 @@ class SDKAPITestCase(base.SDKTestCase):
         guestdb_del.assert_called_once_with(self.userid)
         networkdb_del.assert_called_once_with(self.userid)
         chk_usr.assert_called_once_with(self.userid)
+
+    @mock.patch("zvmsdk.hostops.HOSTOps.guest_list")
+    def test_host_get_guest_list(self, guest_list):
+        self.api.host_get_guest_list()
+        guest_list.assert_called_once_with()
