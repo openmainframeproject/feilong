@@ -673,20 +673,6 @@ class SMTClient(object):
 
         # Punch transport files if specified
         if transportfiles:
-            self.guest_send(userid, transportfiles, remotehost)
-
-        # Authorize iucv client
-        self.guest_authorize_iucv_client(userid)
-        # Update os version in guest metadata
-        # TODO: may should append to old metadata, not replace
-        self._GuestDbOperator.update_guest_by_userid(userid, meta=metadata)
-
-        msg = ('Deploy image %(img)s to guest %(vm)s disk %(vdev)s'
-               ' successfully' % {'img': image_name, 'vm': userid,
-                                  'vdev': vdev})
-        LOG.info(msg)
-
-    def guest_send(self, userid, transportfiles, remotehost=None):
             # Copy transport file to local
             msg = ('Start to send customized file to vm %s' % userid)
             LOG.info(msg)
@@ -722,6 +708,18 @@ class SMTClient(object):
             finally:
                 # remove the local temp config drive folder
                 self._pathutils.clean_temp_folder(tmp_trans_dir)
+        # Authorize iucv client
+        self.guest_authorize_iucv_client(userid)
+        # Update os version in guest metadata
+        # TODO: may should append to old metadata, not replace
+        image_info = self._ImageDbOperator.image_query_record(image_name)
+        metadata = 'os_version=%s' % image_info[0]['imageosdistro']
+        self._GuestDbOperator.update_guest_by_userid(userid, meta=metadata)
+
+        msg = ('Deploy image %(img)s to guest %(vm)s disk %(vdev)s'
+               ' successfully' % {'img': image_name, 'vm': userid,
+                                  'vdev': vdev})
+        LOG.info(msg)
 
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):

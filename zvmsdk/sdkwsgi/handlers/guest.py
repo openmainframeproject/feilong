@@ -376,14 +376,6 @@ class VMAction(object):
 
         return info
 
-    def send(self, userid, body):
-        transportfiles = body.get('transportfiles', None)
-        remotehost = body.get('remotehost', None)
-
-        info = self.client.send_request('guest_send', userid, transportfiles=transportfiles,
-                                        remotehost=remotehost)
-        return info
-
     @validation.schema(guest.capture)
     def capture(self, userid, body):
         image_name = body['image']
