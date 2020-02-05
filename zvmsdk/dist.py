@@ -17,6 +17,8 @@ import abc
 import netaddr
 import os
 import six
+import sys
+from jinja2 import Environment, FileSystemLoader
 
 from zvmsdk import config
 from zvmsdk import exception
@@ -583,6 +585,16 @@ class LinuxDist(object):
                  '/bin/hostname %s\n' % hostname]
         return lines
 
+    def get_template(self, module, template_name):
+        relative_path = module + "/templates"
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        template_file_path = os.path.join(base_path, relative_path, template_name)
+        template_file_directory = os.path.dirname(template_file_path)
+        template_loader = FileSystemLoader(searchpath=template_file_directory)
+        env = Environment(loader=template_loader)
+        template = env.get_template(template_name)
+        return template
+
 
 class rhel(LinuxDist):
     def _get_network_file_path(self):
@@ -916,7 +928,40 @@ class rhel7(rhel):
         rescan += 'done\n'
         return rescan
 
+    def get_volume_attach_configuration_cmds(self, fcp, target_wwpn,
+                                             target_lun, multipath,
+                                             mount_point, new):
+        template = self.get_template("volumeops", "rhel7_attach_volume.j2")
+        target_filename = mount_point.replace('/dev/', '')
+        content = template.render(fcp=fcp, lun=target_lun, target_filename=target_filename)
+        return content
 
+    def get_volume_detach_configuration_cmds(self, fcp, target_wwpn,
+                                             target_lun, multipath,
+                                             mount_point, connections):
+        template = self.get_template("volumeops", "rhel7_detach_volume.j2")
+        target_filename = mount_point.replace('/dev/', '')
+        content = template.render(fcp=fcp, lun=target_lun, target_filename=target_filename)
+        return content
+
+class rhel8(rhel7):
+    """docstring for rhel8"""
+
+    def _get_device_filename(self, vdev):
+        return 'ifcfg-enc' + str(vdev).zfill(4)
+
+    def _get_all_device_filename(self):
+        return 'ifcfg-enc*'
+
+    def _get_device_name(self, vdev):
+        # Construct a device like enc1000
+        return 'enc' + str(vdev).zfill(4)
+
+    def _get_clean_command(self):
+        files = os.path.join(self._get_network_file_path(),
+                             self._get_all_device_filename())
+        return '\nrm -f %s\n' % files
+        
 class sles(LinuxDist):
     def _get_network_file_path(self):
         return '/etc/sysconfig/network/'
@@ -1605,7 +1650,7 @@ class LinuxDistManager(object):
         return globals()[distro + release]
 
     def _parse_release(self, os_version, distro, remain):
-        supported = {'rhel': ['6', '7'],
+        supported = {'rhel': ['6', '7', '8'],
                      'sles': ['11', '12'],
                      'ubuntu': ['16']}
         releases = supported[distro]
