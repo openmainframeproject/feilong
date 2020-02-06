@@ -96,3 +96,24 @@ class HOSTOps(object):
                     raise exception.SDKInternalError(msg=errmsg)
 
         return dp_info
+
+    def get_guest_definition_info(self, userid, **kwargs):
+        check_command = ["nic_coupled"]
+        direct_info = self._smtclient.get_user_direct(userid)
+        info = {}
+        info['user_direct'] = direct_info
+
+        for k, v in kwargs.items():
+            if k in check_command:
+                if (k == 'nic_coupled'):
+                    info['nic_coupled'] = False
+                    nstr = "NICDEF %s TYPE QDIO LAN SYSTEM" % v
+                    for inf in direct_info:
+                        if nstr in inf:
+                            info['nic_coupled'] = True
+                            break
+            else:
+                raise exception.SDKInvalidInputFormat(
+                    msg=("invalid check option for user direct: %s") % k)
+
+        return info

@@ -254,6 +254,23 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._hostops.diskpool_get_info(diskpool_name)
 
+    def host_get_guest_definition_info(self, userid, **kwargs):
+        """Get definition info for the specified guest vm on hypervisor,
+        also could be used to check specific info.
+
+        :param str userid: the user id of the guest vm
+        :param dict kwargs: Dictionary used to check specific info in user
+                            direct. Valid keywords for kwargs:
+                            nic_coupled=<vdev>, where <vdev> is the virtual
+                            device number of the nic to be checked the couple
+                            status.
+        :returns: Dictionary describing user direct and check info result
+        :rtype: dict
+        """
+        action = "get the definition info of guest '%s' on hypervisor" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._hostops.get_guest_definition_info(userid, **kwargs)
+
     def image_delete(self, image_name):
         """Delete image from image repository
 
