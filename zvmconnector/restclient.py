@@ -424,6 +424,12 @@ def req_host_diskpool_get_info(start_index, *args, **kwargs):
     return url, body
 
 
+def req_host_get_guest_definition_info(start_index, *args, **kwargs):
+    url = '/host/%s/def_info'
+    body = None
+    return url, body
+
+
 def req_image_import(start_index, *args, **kwargs):
     url = '/images'
     body = {'image': {'image_name': args[start_index],
@@ -750,6 +756,11 @@ DATABASE = {
         'args_required': 0,
         'params_path': 0,
         'request': req_host_diskpool_get_info},
+    'host_get_guest_definition_info': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_host_get_guest_definition_info},
     'image_import': {
         'method': 'POST',
         'args_required': 3,
