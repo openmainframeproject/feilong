@@ -1289,6 +1289,34 @@ Get disk pool information on the host.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_disk_info.tpl
    :language: javascript
 
+Get Guest definition info
+-------------------------
+
+**GET /host/{userid}/def_info**
+
+Get the user direct of the given userid from hypervisor.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: user_direct_guest
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_get_guest_definition_info.tpl
+   :language: javascript
+
 Image(s)
 ========
 
