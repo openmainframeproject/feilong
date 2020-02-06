@@ -520,3 +520,16 @@ hostname = {
     'type': 'string', 'minLength': 1, 'maxLength': 255,
     'pattern': '^[a-zA-Z0-9-._]*$',
 }
+
+config_parms = {
+    'type': 'array',
+    'items': {
+        'type': 'object',
+        'properties': {
+            'key': {'type': 'string'},
+            'value': {'type': 'string'}
+        },
+        'required': ['key', 'value'],
+        'additionalProperties': False
+    }
+}

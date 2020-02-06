@@ -376,12 +376,16 @@ class VMAction(object):
 
         return info
 
+    @validation.schema(guest.send)
     def send(self, userid, body):
         transportfiles = body.get('transportfiles', None)
         remotehost = body.get('remotehost', None)
+        configparms = body.get('configparms', None)
+        executeimmediate = body.get('executeimmediate', None)
 
         info = self.client.send_request('guest_send', userid, transportfiles=transportfiles,
-                                        remotehost=remotehost)
+                                        remotehost=remotehost,configparms=configparms,
+                                        executeimmediate=executeimmediate)
         return info
 
     @validation.schema(guest.capture)
