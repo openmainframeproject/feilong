@@ -413,6 +413,12 @@ def req_host_get_info(start_index, *args, **kwargs):
     return url, body
 
 
+def req_host_get_guest_power_state(start_index, *args, **kwargs):
+    url = '/host/%s/power_state'
+    body = None
+    return url, body
+
+
 def req_host_diskpool_get_info(start_index, *args, **kwargs):
     url = '/host/diskpool'
     poolname = kwargs.get('disk_pool', None)
@@ -745,6 +751,11 @@ DATABASE = {
         'args_required': 0,
         'params_path': 0,
         'request': req_host_get_info},
+    'host_get_guest_power_state': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_host_get_guest_power_state},
     'host_diskpool_get_info': {
         'method': 'GET',
         'args_required': 0,
