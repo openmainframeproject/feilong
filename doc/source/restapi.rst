@@ -1288,6 +1288,34 @@ Get host information.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_info.tpl
    :language: javascript
 
+Get Guest power state
+---------------------
+
+**GET /host/{userid}/power_state**
+
+Get power state of the guest from host
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: power_status_guest
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_get_guest_power_state.tpl
+   :language: javascript
+
 Get Host disk pool info
 -----------------------
 
