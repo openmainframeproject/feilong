@@ -217,6 +217,12 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._hostops.get_info()
 
+    def host_get_guest_power_state(self, userid):
+        """Returns power state of the guest from host."""
+        action = "get power state of guest '%s' from host" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._hostops.get_power_state(userid)
+
     def host_diskpool_get_info(self, disk_pool=None):
         """ Retrieve diskpool information.
         :param str disk_pool: the disk pool info. It use ':' to separate
