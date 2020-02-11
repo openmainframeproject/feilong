@@ -137,6 +137,9 @@ void printSmapiDescriptionAndLogError(const char * APIname, int rc, int rs, stru
     } else if (rc == 0 && rs == 640) {
         sprintf(errMsg, "The API functional level is z/VM V6.4\n");
         logMSG = false;
+    } else if (rc == 0 && rs == 710) {
+        sprintf(errMsg, "The API functional level is z/VM V7.1\n");
+        logMSG = false;
     } else if (rc == 4 && rs == 4) {
         sprintf(errMsg, "Request does not exist\n");
     } else if (rc == 4 && rs == 5) {
