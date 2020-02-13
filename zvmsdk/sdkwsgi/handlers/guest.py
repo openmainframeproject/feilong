@@ -282,6 +282,11 @@ class VMAction(object):
                                 userid, meta, net_set)
         return info
 
+    @validation.schema(guest.deregister_vm)
+    def deregister_vm(self, userid, body):
+        info = self.client.send_request('guest_deregister', userid)
+        return info
+
     @validation.schema(guest.live_migrate_vm)
     def live_migrate_vm(self, userid, body):
         # dest_zcc_userid default as ''
