@@ -152,7 +152,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby "lbyuser1 lbyuser2" --ipl 0100')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
-                                   max_cpu, max_mem, '', '', '')
+                                   max_cpu, max_mem, '', '', '', [], {})
         request.assert_called_with(rd)
         add_mdisks.assert_called_with(user_id, disk_list)
         add_guest.assert_called_with(user_id)
@@ -177,7 +177,37 @@ class SDKSMTClientTestCases(base.SDKTestCase):
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby "lbyuser1 lbyuser2" --ipl cms')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
-                                  max_cpu, max_mem, 'cms', '', '')
+                                  max_cpu, max_mem, 'cms', '', '', [], {})
+        request.assert_called_with(rd)
+        add_mdisks.assert_called_with(user_id, disk_list)
+        add_guest.assert_called_with(user_id)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_boot_from_volume(self, add_guest, request, add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '1g',
+                      'disk_pool': 'ECKD:eckdpool1',
+                      'format': 'ext3'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        ipl_from = '5c71'
+        dedicate_vdevs = ['5c71', '5d71']
+        loaddev = {'portname': '5005076802400c1b',
+                   'lun': '0000000000000000'}
+        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--logonby "lbyuser1 lbyuser2" --ipl 5c71 --dedicate "5c71 5d71" '
+              '--loadportname 5005076802400c1b --loadlun 0000000000000000')
+        self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
+                                   max_cpu, max_mem, ipl_from, '', '',
+                                   dedicate_vdevs, loaddev)
         request.assert_called_with(rd)
         add_mdisks.assert_called_with(user_id, disk_list)
         add_guest.assert_called_with(user_id)
@@ -206,7 +236,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
               '--iplLoadparam load=1')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, 'cms', ipl_param,
-                                  ipl_loadparam)
+                                  ipl_loadparam, [], {})
         request.assert_called_with(rd)
         add_mdisks.assert_called_with(user_id, disk_list)
         add_guest.assert_called_with(user_id)
