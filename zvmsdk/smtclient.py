@@ -482,7 +482,8 @@ class SMTClient(object):
         return ipl_param
 
     def create_vm(self, userid, cpu, memory, disk_list, profile,
-                  max_cpu, max_mem, ipl_from, ipl_param, ipl_loadparam):
+                  max_cpu, max_mem, ipl_from, ipl_param, ipl_loadparam,
+                  dedicate_vdevs, loaddev):
         """ Create VM and add disks if specified. """
         rd = ('makevm %(uid)s directory LBYONLY %(mem)im %(pri)s '
               '--cpus %(cpu)i --profile %(prof)s --maxCPU %(max_cpu)i '
@@ -495,8 +496,11 @@ class SMTClient(object):
         if CONF.zvm.default_admin_userid:
             rd += (' --logonby "%s"' % CONF.zvm.default_admin_userid)
 
+        # when use dasd as root disk, the disk_list[0] would be the boot
+        # disk.
+        # when boot from volume, ipl_from should be specified explicitly.
         if (disk_list and 'is_boot_disk' in disk_list[0] and
-            disk_list[0]['is_boot_disk']):
+            disk_list[0]['is_boot_disk']) or ipl_from:
             # we assume at least one disk exist, which means, is_boot_disk
             # is true for exactly one disk.
             rd += (' --ipl %s' % self._get_ipl_param(ipl_from))
@@ -507,6 +511,15 @@ class SMTClient(object):
 
             if ipl_loadparam:
                 rd += ' --iplLoadparam %s' % ipl_loadparam
+
+        if dedicate_vdevs:
+            rd += ' --dedicate "%s"' % " ".join(dedicate_vdevs)
+
+        if loaddev:
+            if 'portname' in loaddev:
+                rd += ' --loadportname %s' % loaddev['portname']
+            if 'lun' in loaddev:
+                rd += ' --loadlun %s' % loaddev['lun']
 
         action = "create userid '%s'" % userid
 
