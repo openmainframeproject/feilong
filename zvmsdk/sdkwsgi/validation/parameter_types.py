@@ -117,6 +117,20 @@ ipl_loadparam = {
     'type': 'string', 'minLength': 0, 'maxLength': 255,
 }
 
+loaddev = {
+    'type': 'object',
+    'properties': {
+        'portname': {'type': 'string',
+                     'minLength': 1,
+                     'maxLength': 16,
+                     'pattern': '^[0-9a-fA-F]{,16}$'},
+        'lun': {'type': 'string',
+                'minLength': 1,
+                'maxLength': 16,
+                'pattern': '^[0-9a-fA-F]{,16}$'},
+    },
+    'additionalProperties': False
+}
 
 positive_integer = {
     'type': ['integer', 'string'],
@@ -339,6 +353,8 @@ disk_conf = {
 # For ubuntu linux, it will match ubuntuX, ubuntuX.Y, ubuntuX.Y.Z,
 # where X is 16, Y is 01 to 10, Z is 0 to 9, such as ubuntu16.04.3,
 # all case insensitive
+# For red hat cores linux, it will match rhcosX, where X is 4, 
+# such as rhcos4, all case insensitive
 os_version = {
 'oneOf': [
 {'type': 'string',
@@ -355,7 +371,10 @@ os_version = {
  '^((s|S)(u|U)(s|S)(e|E))(11|12){1}(([.]|((s|S)(p|P)))[0-9])?$'},
 {'type': 'string',
  'pattern':
- '^((u|U)(b|B)(u|U)(n|N)(t|T)(u|U))(16){1}([.][0-9]{2})?([.][0-9])?$'}
+ '^((u|U)(b|B)(u|U)(n|N)(t|T)(u|U))(16){1}([.][0-9]{2})?([.][0-9])?$'},
+ {'type': 'string',
+ 'pattern':
+ '^((r|R)(h|H)(c|C)(o|O)(s|S))(4){1}?$'}
 ]
 }
 
@@ -517,6 +536,9 @@ max_mem = {
     }
 
 hostname = {
-    'type': 'string', 'minLength': 1, 'maxLength': 255,
-    'pattern': '^[a-zA-Z0-9-._]*$',
+    'oneOf': [
+        {'type': 'null'},
+        {'type': 'string', 'minLength': 1, 'maxLength': 255, 
+        'pattern': '^[a-zA-Z0-9-._]*$',}
+    ]
 }
