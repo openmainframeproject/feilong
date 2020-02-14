@@ -117,6 +117,20 @@ ipl_loadparam = {
     'type': 'string', 'minLength': 0, 'maxLength': 255,
 }
 
+loaddev = {
+    'type': 'object',
+    'properties': {
+        'portname': {'type': 'string',
+                     'minLength': 1,
+                     'maxLength': 16,
+                     'pattern': '^[0-9a-fA-F]{,16}$'},
+        'lun': {'type': 'string',
+                'minLength': 1,
+                'maxLength': 16,
+                'pattern': '^[0-9a-fA-F]{,16}$'},
+    },
+    'additionalProperties': False
+}
 
 positive_integer = {
     'type': ['integer', 'string'],
