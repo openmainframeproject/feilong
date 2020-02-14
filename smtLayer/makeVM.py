@@ -70,7 +70,10 @@ keyOpsList = {
         '--setReservedMem': ['setReservedMem', 0, 0],
         '--showparms': ['showParms', 0, 0],
         '--iplParam': ['iplParam', 1, 2],
-        '--iplLoadparam': ['iplLoadparam', 1, 2]},
+        '--iplLoadparam': ['iplLoadparam', 1, 2],
+        '--dedicate': ['dedicate', 1, 2],
+        '--loadportname': ['loadportname', 1, 2],
+        '--loadlun': ['loadlun', 1, 2]},
     'HELP': {},
     'VERSION': {},
      }
@@ -97,6 +100,7 @@ def createVM(rh):
     dirLines.append("USER " + rh.userid + " " + rh.parms['pw'] +
          " " + rh.parms['priMemSize'] + " " +
          rh.parms['maxMemSize'] + " " + rh.parms['privClasses'])
+
     if 'profName' in rh.parms:
         dirLines.append("INCLUDE " + rh.parms['profName'])
 
@@ -133,6 +137,20 @@ def createVM(rh):
             return rh.results['overallRC']
         if reservedSize != '0M':
             dirLines.append("COMMAND DEF STOR RESERVED %s" % reservedSize)
+
+    if 'loadportname' in rh.parms:
+        wwpn = rh.parms['loadportname'].replace("0x", "")
+        dirLines.append("LOADDEV PORTname %s" % wwpn)
+
+    if 'loadlun' in rh.parms:
+        lun = rh.parms['loadlun'].replace("0x", "")
+        dirLines.append("LOADDEV LUN %s" % lun)
+
+    if 'dedicate' in rh.parms:
+        vdevs = rh.parms['dedicate'].split()
+        # add a DEDICATE statement for each vdev
+        for vdev in vdevs:
+            dirLines.append("DEDICATE %s %s" % (vdev, vdev))
 
     # Construct the temporary file for the USER entry.
     fd, tempFile = mkstemp()
@@ -301,6 +319,9 @@ def showInvLines(rh):
         "--profile <profName>")
     rh.printLn("N", "                     --maxCPU <maxCPUCnt> " +
         "--setReservedMem")
+    rh.printLn("N", "                     --dedicate <vdevs> ")
+    rh.printLn("N", "                     --loadportname <wwpn> " +
+        "--loadlun <lun>")
     rh.printLn("N", "  python " + rh.cmdName + " MakeVM help")
     rh.printLn("N", "  python " + rh.cmdName + " MakeVM version")
     return
@@ -337,6 +358,22 @@ def showOperandLines(rh):
                    "Specifies an IPL disk or NSS for the virtual")
         rh.printLn("N", "                              " +
                    "machine's directory entry.")
+        rh.printLn("N", "      --dedicate <vdevs>     - " +
+                   "Specifies a device vdev list to dedicate to the ")
+        rh.printLn("N", "                              " +
+                   "virtual machine.")
+        rh.printLn("N", "      --loadportname <wwpn> - " +
+                   "Specifies a one- to eight-byte fibre channel port ")
+        rh.printLn("N", "                              " +
+                   "name of the FCP-I/O device to define with a LOADDEV ")
+        rh.printLn("N", "                              " +
+                   "statement in the virtual machine's definition")
+        rh.printLn("N", "      --loadlun <lun>       - " +
+                   "Specifies a one- to eight-byte logical unit number ")
+        rh.printLn("N", "                              " +
+                   "name of the FCP-I/O device to define with a LOADDEV ")
+        rh.printLn("N", "                              " +
+                   "statement in the virtual machine's definition")
         rh.printLn("N", "      --logonby <byUsers>   - " +
                    "Specifies a list of up to 8 z/VM userids who can log")
         rh.printLn("N", "                              " +
