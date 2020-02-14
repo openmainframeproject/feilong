@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2020 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -165,6 +165,8 @@ errors = {
                11: ("Failed to live resize memory of guest: '%(userid)s', "
                    "error: define standby memory failed with "
                    "smt error: '%(err)s'."),
+               12: ("Failed to deploy image to userid: '%(userid)s', "
+                   "get unpackdiskimage cmd failed: %(err)s"),
               },
               "Operation on Guest failed"
               ],
