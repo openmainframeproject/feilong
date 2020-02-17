@@ -21,6 +21,7 @@ from smtLayer import smt
 
 from zvmsdk import config
 from zvmsdk import database
+from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import smtclient
 from zvmsdk import utils as zvmutils
@@ -324,41 +325,6 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         guestauth.assert_called_once_with(userid)
         guest_update.assert_called_once_with(userid, meta='os_version=fakeos')
 
-    @mock.patch.object(zvmutils, 'execute')
-    @mock.patch.object(smtclient.SMTClient, '_request')
-    @mock.patch.object(smtclient.SMTClient, '_get_image_path_by_name')
-    def test_guest_deploy_unpackdiskimage_failed(self, get_image_path,
-                                                 request, execute):
-        base.set_conf("zvm", "user_root_vdev", "0100")
-        userid = 'fakeuser'
-        image_name = 'fakeimg'
-        transportfiles = '/faketran'
-        get_image_path.return_value = \
-            '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg'
-        unpack_error = ('unpackdiskimage fakeuser start time: '
-                        '2017-08-16-01:29:59.453\nSOURCE USER ID: "fakeuser"\n'
-                        'DISK CHANNEL:   "0100"\n'
-                        'IMAGE FILE:     "/var/lib/zvmsdk/images/fakeimg"\n\n'
-                        'Image file compression level: 6\n'
-                        'Deploying image to fakeuser\'s disk at channel 100.\n'
-                        'ERROR: Unable to link fakeuser 0100 disk. '
-                        'HCPLNM053E FAKEUSER not in CP directory\n'
-                        'HCPDTV040E Device 260C does not exist\n'
-                        'ERROR: Failed to connect disk: fakeuser:0100\n\n'
-                        'IMAGE DEPLOYMENT FAILED.\n'
-                        'A detailed trace can be found at: /var/log/zthin/'
-                        'unpackdiskimage_trace_2017-08-16-01:29:59.453.txt\n'
-                        'unpackdiskimage end time: 2017-08-16-01:29:59.605\n')
-        execute.return_value = (3, unpack_error)
-        self.assertRaises(exception.SDKGuestOperationError,
-                           self._smtclient.guest_deploy, userid, image_name,
-                           transportfiles)
-        get_image_path.assert_called_once_with(image_name)
-        unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
-                      '0100',
-                     '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
-        execute.assert_called_once_with(unpack_cmd)
-
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
     @mock.patch.object(tempfile, 'mkdtemp')
     @mock.patch.object(zvmutils, 'execute')
@@ -429,6 +395,50 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
+    
+    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    def test_image_get_os_distro(self, image_info):
+        image_info.return_value = [{'image_size_in_bytes': '3072327680', 
+                                    'disk_size_units': '3339:CYL', 
+                                    'md5sum': '370cd177c51e39f0e2e2beecbb88f701', 
+                                    'comments': "{'disk_type':'DASD'}", 
+                                    'imagename': '0b3013e1-1356-431c-b680-ba06a1768aea', 
+                                    'imageosdistro': 'RHCOS4', 
+                                    'type': 'rootonly'}]
+        self.assertEqual(self._smtclient.image_get_os_distro(image_info), 'RHCOS4')
+
+    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    def test_get_image_disk_type_dasd(self, image_info):
+        image_info.return_value = [{'image_size_in_bytes': '3072327680', 
+                                    'disk_size_units': '3339:CYL', 
+                                    'md5sum': '370cd177c51e39f0e2e2beecbb88f701', 
+                                    'comments': "{'disk_type':'DASD'}", 
+                                    'imagename': '0b3013e1-1356-431c-b680-ba06a1768aea', 
+                                    'imageosdistro': 'RHCOS4', 
+                                    'type': 'rootonly'}]
+        self.assertEqual(self._smtclient._get_image_disk_type(image_info), 'ECKD')
+
+    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    def test_get_image_disk_type_scsi(self, image_info):
+        image_info.return_value = [{'image_size_in_bytes': '3072327680', 
+                                    'disk_size_units': '3339:CYL', 
+                                    'md5sum': '370cd177c51e39f0e2e2beecbb88f701', 
+                                    'comments': "{'disk_type':'SCSI'}", 
+                                    'imagename': '0b3013e1-1356-431c-b680-ba06a1768aea', 
+                                    'imageosdistro': 'RHCOS4', 
+                                    'type': 'rootonly'}]
+        self.assertEqual(self._smtclient._get_image_disk_type(image_info), 'SCSI')
+
+    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    def test_get_image_disk_type_failed(self, image_info):
+        image_info.return_value = [{'image_size_in_bytes': '3072327680', 
+                                    'disk_size_units': '3339:CYL', 
+                                    'md5sum': '370cd177c51e39f0e2e2beecbb88f701', 
+                                    'comments': "{'disk_type':'FBA'}", 
+                                    'imagename': '0b3013e1-1356-431c-b680-ba06a1768aea', 
+                                    'imageosdistro': 'RHCOS4', 
+                                    'type': 'rootonly'}]
+        self.assertEqual(self._smtclient._get_image_disk_type(image_info), None)
 
     @mock.patch.object(smtclient.SMTClient, 'image_query')
     def test_image_get_os_distro(self, image_info):
