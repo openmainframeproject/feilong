@@ -17,7 +17,6 @@ import abc
 import netaddr
 import os
 import six
-import sys
 from jinja2 import Environment, FileSystemLoader
 
 from zvmsdk import config
@@ -588,7 +587,8 @@ class LinuxDist(object):
     def get_template(self, module, template_name):
         relative_path = module + "/templates"
         base_path = os.path.dirname(os.path.abspath(__file__))
-        template_file_path = os.path.join(base_path, relative_path, template_name)
+        template_file_path = os.path.join(base_path, relative_path,
+                                          template_name)
         template_file_directory = os.path.dirname(template_file_path)
         template_loader = FileSystemLoader(searchpath=template_file_directory)
         env = Environment(loader=template_loader)
@@ -933,7 +933,8 @@ class rhel7(rhel):
                                              mount_point, new):
         template = self.get_template("volumeops", "rhel7_attach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp=fcp, lun=target_lun, target_filename=target_filename)
+        content = template.render(fcp=fcp, lun=target_lun,
+                                  target_filename=target_filename)
         return content
 
     def get_volume_detach_configuration_cmds(self, fcp, target_wwpn,
@@ -941,8 +942,10 @@ class rhel7(rhel):
                                              mount_point, connections):
         template = self.get_template("volumeops", "rhel7_detach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp=fcp, lun=target_lun, target_filename=target_filename)
+        content = template.render(fcp=fcp, lun=target_lun,
+                                  target_filename=target_filename)
         return content
+
 
 class rhel8(rhel7):
     """docstring for rhel8"""
@@ -961,7 +964,7 @@ class rhel8(rhel7):
         files = os.path.join(self._get_network_file_path(),
                              self._get_all_device_filename())
         return '\nrm -f %s\n' % files
-        
+
 
 class rhcos(LinuxDist):
     def create_coreos_parameter(self, network_info, userid):
@@ -985,9 +988,9 @@ class rhcos(LinuxDist):
             # transfor network info and hostname into form of
             # ip=<client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>
             # :<interface>:none[:[<dns1>][:<dns2>]]
-            result = "%s::%s:%s:%s:%s:none:%s:%s" %(ip_addr, gateway_addr, 
-                                                    netmask, userid, nic_name,
-                                                    _dns[0], _dns[1])
+            result = "%s::%s:%s:%s:%s:none:%s:%s" % (ip_addr, gateway_addr,
+                                                     netmask, userid, nic_name,
+                                                     _dns[0], _dns[1])
             tmp_path = self._smtclient.get_guest_path(userid.upper())
             LOG.debug("Created coreos fixed ip parameter: %(result)s, "
                       "writing them to tempfile: %(tmp_path)s/fixed_ip_param"
@@ -1000,25 +1003,25 @@ class rhcos(LinuxDist):
             LOG.error("Failed to create coreos parameter for userid '%s',"
                       "error: %s" % (userid, err))
             return False
-        
+
     def read_coreos_parameter(self, userid):
         # read coreos fixed ip parameters from tempfile by matching userid
         tmp_path = self._smtclient.get_guest_path(userid.upper())
         tmp_file_path = ('%s/fixed_ip_param' % tmp_path)
         with open(tmp_file_path, 'r') as f:
-            fixed_ip_parameter = f.read().replace('\n','')
-            LOG.debug('Read coreos fixed ip paramter: %(parameter)s '
+            fixed_ip_parameter = f.read().replace('\n', '')
+            LOG.debug('Read coreos fixed ip parameter: %(parameter)s '
                       'from tempfile: %(filename)s'
                       % {'parameter': fixed_ip_parameter,
                       'filename': tmp_file_path})
         # Clean up tempfile
         self._smtclient.clean_temp_folder(tmp_path)
         return fixed_ip_parameter
-    
+
     def _append_udev_info(self, cmd_str, cfg_files, file_name_route,
                       route_cfg_str, udev_cfg_str, first=False):
         pass
-    
+
     def _append_udev_rules_file(self, cfg_files, base_vdev):
         pass
 
@@ -1047,7 +1050,7 @@ class rhcos(LinuxDist):
 
     def _get_device_filename(self, vdev):
         pass
-    
+
     def _get_device_name(self, vdev):
         pass
 
@@ -1106,7 +1109,7 @@ class rhcos(LinuxDist):
 class rhcos4(rhcos):
     pass
 
-    
+
 class sles(LinuxDist):
     def _get_network_file_path(self):
         return '/etc/sysconfig/network/'
