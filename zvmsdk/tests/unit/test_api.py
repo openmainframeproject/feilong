@@ -277,7 +277,8 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.volume_detach(connection_info)
         mock_detach.assert_called_once_with(connection_info)
 
-    @mock.patch("zvmsdk.database.NetworkDbOperator.switch_delete_record_for_userid")
+    @mock.patch("zvmsdk.database.NetworkDbOperator."
+                "switch_delete_record_for_userid")
     @mock.patch("zvmsdk.database.GuestDbOperator.delete_guest_by_userid")
     def test_guest_deregister(self, guestdb_del, networkdb_del):
         guestdb_del.return_value = ''
