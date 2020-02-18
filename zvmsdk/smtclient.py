@@ -116,8 +116,8 @@ class SMTClient(object):
         return self._pathutils.get_guest_temp_path(userid)
 
     def get_guest_path(self, userid):
-        return self._pathutils.get_guest_path(userid)    
-    
+        return self._pathutils.get_guest_path(userid)
+
     def clean_temp_folder(self, tmp_folder):
         return self._pathutils.clean_temp_folder(tmp_folder)
 
@@ -135,8 +135,8 @@ class SMTClient(object):
         :return: increasing nic id, string like '0.0.1000,0.0.1001,0.0.1002'
         """
         nic_id = str(hex(int(nic_id, 16)))[2:]
-        nic_id_1 = str(hex(int(nic_id, 16)+1))[2:]
-        nic_id_2 = str(hex(int(nic_id, 16)+2))[2:]
+        nic_id_1 = str(hex(int(nic_id, 16) + 1))[2:]
+        nic_id_2 = str(hex(int(nic_id, 16) + 2))[2:]
         if len(nic_id_2) > 4:
             errmsg = ("Virtual device number %s is not valid" % nic_id_2)
             raise exception.SDKInvalidInputFormat(msg=errmsg)
@@ -741,7 +741,7 @@ class SMTClient(object):
         # Unpack image file to root disk
         vdev = vdev or CONF.zvm.user_root_vdev
         tmp_trans_dir = None
-        
+
         if remotehost:
             # download igintion file from remote host
             tmp_trans_dir = tempfile.mkdtemp()
@@ -763,8 +763,8 @@ class SMTClient(object):
                                                        err_info=err_msg)
             transportfiles = local_trans
 
-        cmd = self._get_unpackdiskimage_cmd_rhcos(userid, image_name, 
-                                                  transportfiles, vdev, 
+        cmd = self._get_unpackdiskimage_cmd_rhcos(userid, image_name,
+                                                  transportfiles, vdev,
                                                   image_file, hostname)
         with zvmutils.expect_and_reraise_internal_error(modID='guest'):
             (rc, output) = zvmutils.execute(cmd)
@@ -782,7 +782,7 @@ class SMTClient(object):
 
         # remove the temp ignition file
         if tmp_trans_dir:
-            self._pathutils.clean_temp_folder(tmp_trans_dir) 
+            self._pathutils.clean_temp_folder(tmp_trans_dir)
 
         # Update os version in guest metadata
         # TODO: may should append to old metadata, not replace
@@ -1026,19 +1026,20 @@ class SMTClient(object):
             # for capture, leave for future
             pass
 
-    def _get_unpackdiskimage_cmd_rhcos(self, userid, image_name, transportfiles=None,
-                                       vdev=None, image_file=None, hostname=None):
+    def _get_unpackdiskimage_cmd_rhcos(self, userid, image_name,
+                                       transportfiles=None, vdev=None,
+                                       image_file=None, hostname=None):
         os_version = self.image_get_os_distro(image_name)
-        # Query image disk type 
+        # Query image disk type
         image_disk_type = self._get_image_disk_type(image_name)
-        if image_disk_type == None:
+        if image_disk_type is None:
             err_msg = ("failed to get image disk type for "
                        "image '%(image_name)s'."
-                        % {'image_name': image_name}) 
+                        % {'image_name': image_name})
             raise exception.SDKGuestOperationError(rs=12, userid=userid,
                                                err=err_msg)
         try:
-            # Query vm's disk pool type and image disk type 
+            # Query vm's disk pool type and image disk type
             from zvmsdk import dist
             _dist_manager = dist.LinuxDistManager()
             linuxdist = _dist_manager.get_linux_dist(os_version)()
@@ -1046,23 +1047,26 @@ class SMTClient(object):
             fixed_ip_parameter = linuxdist.read_coreos_parameter(userid)
         except Exception as err:
             err_msg = ("failed to read coreos fixed ip"
-                        "parameters for userid '%(userid)s'," 
-                        "error: %(err)s." 
+                        "parameters for userid '%(userid)s',"
+                        "error: %(err)s."
                         % {'userid': userid, 'err': err})
             raise exception.SDKGuestOperationError(rs=12, userid=userid,
                                                err=err_msg)
-        if fixed_ip_parameter == None: 
+        if fixed_ip_parameter is None:
             err_msg = ("coreos fixed ip parameters don't exist.")
             raise exception.SDKGuestOperationError(rs=12, userid=userid,
                                                err=err_msg)
-        if hostname != None:
+        if hostname is not None:
             # replace hostname to display name instead of userid
-            fixed_ip_parameter = fixed_ip_parameter.replace(userid.upper(), hostname)
-        # read nic device id and change it into the form like "0.0.1000,0.0.1001,0.0.1002" 
+            fixed_ip_parameter = fixed_ip_parameter.replace(userid.upper(),
+                                                            hostname)
+        # read nic device id and change it into the form like
+        # "0.0.1000,0.0.1001,0.0.1002"
         nic_id = self._generate_increasing_nic_id(
-            fixed_ip_parameter.split(":")[5].replace("enc",""))
+            fixed_ip_parameter.split(":")[5].replace("enc", ""))
         return ['sudo', '/opt/zthin/bin/unpackdiskimage', userid, vdev,
-               image_file, transportfiles, image_disk_type, nic_id, fixed_ip_parameter]
+               image_file, transportfiles, image_disk_type, nic_id,
+               fixed_ip_parameter]
 
     def grant_user_to_vswitch(self, vswitch_name, userid):
         """Set vswitch to grant user."""
@@ -2260,7 +2264,7 @@ class SMTClient(object):
             raise exception.SDKImageOperationError(rs=20, img=image_name)
         os_distro = image_info[0]['imageosdistro']
         return os_distro
-    
+
     def _get_image_disk_type(self, image_name):
         """
         Return image disk type
