@@ -2241,8 +2241,41 @@ class SMTClient(object):
         image_path = self._get_image_path_by_name(image_name)
         self._pathutils.clean_temp_folder(image_path)
 
-    def image_query(self, imagename=None):
-        return self._ImageDbOperator.image_query_record(imagename)
+    def _get_image_last_access_time(self, image_name, raise_exception=True):
+        """Get the last access time of the image."""
+        image_file = os.path.join(self._get_image_path_by_name(image_name),
+                                  CONF.zvm.user_root_vdev)
+        if not os.path.exists(image_file):
+            if raise_exception:
+                msg = 'Failed to get time stamp of image:%s' % image_name
+                LOG.error(msg)
+                raise exception.SDKImageOperationError(rs=23, img=image_name)
+            else:
+                # An invalid timestamp
+                return -1
+        atime = os.path.getatime(image_file)
+        return atime
+
+    def image_query(self, image_name=None):
+        image_info = self._ImageDbOperator.image_query_record(image_name)
+        if not image_info:
+            # because database maybe None, so return nothing here
+            return []
+
+        # if image_name is not None, means there is only one record
+        if image_name:
+            last_access_time = self._get_image_last_access_time(
+                                   image_name, raise_exception=False)
+            image_info[0]['last_access_time'] = last_access_time
+        else:
+            for item in image_info:
+                image_name = item['imagename']
+                # set raise_exception to false because one failed
+                # may stop processing all the items in the list
+                last_access_time = self._get_image_last_access_time(
+                                       image_name, raise_exception=False)
+                item['last_access_time'] = last_access_time
+        return image_info
 
     def image_get_root_disk_size(self, image_name):
         """Return the root disk units of the specified image
