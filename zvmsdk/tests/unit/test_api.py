@@ -280,9 +280,12 @@ class SDKAPITestCase(base.SDKTestCase):
     @mock.patch("zvmsdk.database.NetworkDbOperator."
                 "switch_delete_record_for_userid")
     @mock.patch("zvmsdk.database.GuestDbOperator.delete_guest_by_userid")
-    def test_guest_deregister(self, guestdb_del, networkdb_del):
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    def test_guest_deregister(self, check_exist, guestdb_del, networkdb_del):
+        check_exist.return_value = True
         guestdb_del.return_value = ''
         networkdb_del.return_value = ''
         self.api.guest_deregister(self.userid)
+        check_exist.assert_called_once_with(self.userid)
         guestdb_del.assert_called_once_with(self.userid)
         networkdb_del.assert_called_once_with(self.userid)
