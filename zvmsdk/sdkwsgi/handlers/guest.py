@@ -67,6 +67,10 @@ class VMHandler(object):
             kwargs_list['ipl_param'] = guest['ipl_param']
         if 'ipl_loadparam' in guest_keys:
             kwargs_list['ipl_loadparam'] = guest['ipl_loadparam']
+        if 'dedicate_vdevs' in guest_keys:
+            kwargs_list['dedicate_vdevs'] = guest['dedicate_vdevs']
+        if 'loaddev' in guest_keys:
+            kwargs_list['loaddev'] = guest['loaddev']
 
         info = self.client.send_request('guest_create', userid, vcpus,
                                         memory, **kwargs_list)
@@ -280,6 +284,11 @@ class VMAction(object):
         net_set = body['net_set']
         info = self.client.send_request('guest_register',
                                 userid, meta, net_set)
+        return info
+
+    @validation.schema(guest.deregister_vm)
+    def deregister_vm(self, userid, body):
+        info = self.client.send_request('guest_deregister', userid)
         return info
 
     @validation.schema(guest.live_migrate_vm)
