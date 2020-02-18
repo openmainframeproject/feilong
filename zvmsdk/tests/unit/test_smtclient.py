@@ -572,6 +572,14 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
 
+    @mock.patch.object(zvmutils, 'execute')
+    def test_get_free_space_on_zcc(self, execute_cmd):
+        output = ("Filesystem      Size  Used Avail Use% Mounted on\n"
+                  "/dev/dasda1     9.8G  6.9G  2.4G  75% /")
+        execute_cmd.return_value = (0, output)
+        ret = self._smtclient.get_free_space_on_zcc()
+        self.assertEqual(ret, '2.4')
+
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_image_get_os_distro(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',

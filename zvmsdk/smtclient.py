@@ -940,6 +940,37 @@ class SMTClient(object):
                                   'vdev': vdev})
         LOG.info(msg)
 
+    def get_free_space_on_zcc(self):
+        """Get the free disk size on which zcc is running"""
+        # our execute cannot proces pipe
+        # cmd = 'df -h / | sed 1d'
+        cmd = 'df -h /'
+        with zvmutils.expect_and_reraise_internal_error(modID='guest'):
+            (rc, output) = zvmutils.execute(cmd)
+        if rc:
+            msg = ("Error happened when getting free space on "
+                   "host with reason: %s" % output)
+            LOG.error(msg)
+            userid = zvmutils.get_smt_userid()
+            raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                   msg=msg)
+        else:
+            try:
+                out_list = output.split('\n')
+                # delete first line
+                # second line should be like '/dev/dasda1 9.8G 3.9G 5.4G 42% /'
+                free_space = out_list[1].strip().split()[3]
+                if 'G' not in free_space or free_space.split('G')[0] == '':
+                    msg = ("Error happened when get free space on host with"
+                           "reason of command analysis error:%s" % cmd)
+                    LOG.error(msg)
+                    userid = zvmutils.get_smt_userid()
+                    raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                       msg=msg)
+            except (IndexError, ValueError, TypeError) as err:
+                raise exception.SDKInternalError(msg=err, modID='guest')
+            return free_space.split('G')[0]
+
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):
         if capture_type == "alldisks":

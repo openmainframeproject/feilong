@@ -444,6 +444,12 @@ def req_host_diskpool_get_info(start_index, *args, **kwargs):
     return url, body
 
 
+def req_get_free_space_on_zcc(start_index, *args, **kwargs):
+    url = '/host/zccfreespace'
+    body = None
+    return url, body
+
+
 def req_image_import(start_index, *args, **kwargs):
     url = '/images'
     body = {'image': {'image_name': args[start_index],
@@ -785,6 +791,11 @@ DATABASE = {
         'args_required': 0,
         'params_path': 0,
         'request': req_host_diskpool_get_info},
+    'get_free_space_on_zcc': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_get_free_space_on_zcc},
     'image_import': {
         'method': 'POST',
         'args_required': 3,

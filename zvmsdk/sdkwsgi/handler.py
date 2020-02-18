@@ -104,6 +104,9 @@ ROUTE_LIST = (
     ('/host/diskpool', {
         'GET': host.host_get_disk_info,
     }),
+    ('/host/zccfreespace', {
+        'GET': host.get_free_space_on_zcc,
+    }),
     ('/images', {
         'POST': image.image_create,
         'GET': image.image_query

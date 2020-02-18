@@ -46,6 +46,10 @@ class HostAction(object):
         info = self.client.send_request('host_get_guest_list')
         return info
 
+    def get_free_space_on_zcc(self):
+        info = self.client.send_request('get_free_space_on_zcc')
+        return info
+
     @validation.query_schema(image.diskpool)
     def diskpool_get_info(self, req, poolname):
         info = self.client.send_request('host_diskpool_get_info',
@@ -104,6 +108,23 @@ def host_get_disk_info(req):
     if 'poolname' in req.GET:
         poolname = req.GET['poolname']
     info = _host_get_disk_info(req, poolname)
+    info_json = json.dumps(info)
+    req.response.status = util.get_http_code_from_sdk_return(info,
+        additional_handler=util.handle_not_found)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def get_free_space_on_zcc(req):
+
+    def _host_get_free_space_on_zcc():
+        action = get_action()
+        return action.get_free_space_on_zcc()
+
+    info = _host_get_free_space_on_zcc()
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,
         additional_handler=util.handle_not_found)

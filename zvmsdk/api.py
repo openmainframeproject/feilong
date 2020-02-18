@@ -274,6 +274,11 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._hostops.diskpool_get_info(diskpool_name)
 
+    def get_free_space_on_zcc(self):
+        action = "get free disk space on zcc."
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._hostops.get_free_space_on_zcc()
+
     def image_delete(self, image_name):
         """Delete image from image repository
 

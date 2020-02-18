@@ -96,3 +96,6 @@ class HOSTOps(object):
                     raise exception.SDKInternalError(msg=errmsg)
 
         return dp_info
+
+    def get_free_space_on_zcc(self):
+        return self._smtclient.get_free_space_on_zcc()
