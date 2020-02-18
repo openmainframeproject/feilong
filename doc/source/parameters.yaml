@@ -1086,3 +1086,10 @@ size_output:
   in: body
   required: true
   type: string
+last_access_time:
+  description: |
+    the time stamp of last access time of this image
+    the seconds count after 1970 and is generated from python ``time`` module.
+  in: body
+  required: true
+  type: float
