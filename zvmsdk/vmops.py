@@ -276,14 +276,14 @@ class VMOps(object):
         os_version = self._smtclient.image_get_os_distro(image_name)
         if not os_version.lower().startswith('rhcos'):
             self._smtclient.guest_deploy(userid, image_name, transportfiles,
-                                         remotehost, vdev)       
-                                          
+                                         remotehost, vdev)
+
             # punch scripts to set hostname
             if (transportfiles is None) and hostname:
                 self.set_hostname(userid, hostname, os_version)
         else:
-            self._smtclient.guest_deploy_rhcos(userid, image_name, transportfiles,
-                                         remotehost, vdev, hostname)
+            self._smtclient.guest_deploy_rhcos(userid, image_name,
+                            transportfiles, remotehost, vdev, hostname)
 
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):

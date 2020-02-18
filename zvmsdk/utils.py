@@ -549,7 +549,8 @@ def check_userid_exist(userid, needLogon=False):
     cmd = 'sudo vmcp q %s' % userid
     rc, output = execute(cmd)
     if needLogon:
-        strfail = '(^HCP\w\w\w003E|^HCP\w\w\w040E|^HCP\w\w\w026E|^HCP\w\w\w045E)'
+        strfail = '(^HCP\w\w\w003E|^HCP\w\w\w040E|' + \
+                    '^HCP\w\w\w026E|^HCP\w\w\w045E)'
         strok = '(^%s)' % userid
     else:
         strfail = '(^HCP\w\w\w003E|^HCP\w\w\w040E|^HCP\w\w\w026E)'
