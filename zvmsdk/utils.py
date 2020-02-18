@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2020 IBM Corp.
 # Copyright 2013 NEC Corporation.
 # Copyright 2011 OpenStack Foundation.
 #
@@ -535,13 +535,36 @@ def acquire_lock(lock):
         lock.release()
 
 
-def check_userid_exist(userid):
+def check_userid_exist(userid, needLogon=False):
+    """The successful output is: FBA0004  - DSC
+    The successful output for device is (vmcp q 0100):
+    DASD 0100 3390 IAS106 R/W      29128 CYL ON DASD  1356 SUBCHANNEL = 0003
+
+    Errors are:
+    HCPCQV003E Invalid option - XXXXX
+    HCPQVD040E Device XXXX does not exist
+    HCPCFC026E Operand missing or invalid
+    HCPCQU045E XXXXX not logged on
+    """
     cmd = 'sudo vmcp q %s' % userid
     rc, output = execute(cmd)
-    if re.search('(^HCP\w\w\w003E)', output):
+    if needLogon:
+        strfail = '(^HCP\w\w\w003E|^HCP\w\w\w040E|' + \
+                    '^HCP\w\w\w026E|^HCP\w\w\w045E)'
+        strok = '(^%s)' % userid
+    else:
+        strfail = '(^HCP\w\w\w003E|^HCP\w\w\w040E|^HCP\w\w\w026E)'
+        strok = '(^%s|^HCP\w\w\w045E)' % userid
+
+    if re.search(strfail, output):
         # userid not exist
         return False
-    return True
+    if re.search(strok, output):
+        # userid exist
+        return True
+    # When reaching here most likely the userid represents a device
+    # and anyway it's not a guest.
+    return False
 
 
 def check_userid_on_others(userid):
