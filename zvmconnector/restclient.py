@@ -383,6 +383,22 @@ def req_volume_detach(start_index, *args, **kwargs):
     return url, body
 
 
+def req_volume_refresh_bootmap(start_index, *args, **kwargs):
+    url = '/volumes/volume_refresh_bootmap'
+    fcpchannel = kwargs.get('fcpchannels', None)
+    wwpn = kwargs.get('wwpn', None)
+    lun = kwargs.get('lun', None)
+    body = {'info':
+        {
+            "fcpchannel": fcpchannel,
+            "wwpn": wwpn,
+            "lun": lun,
+        }
+    }
+    fill_kwargs_in_body(body['info'], **kwargs)
+    return url, body
+
+
 def req_get_volume_connector(start_index, *args, **kwargs):
     url = '/volumes/conn/%s'
     body = None
@@ -711,6 +727,11 @@ DATABASE = {
         'args_required': 1,
         'params_path': 0,
         'request': req_volume_detach},
+    'volume_refresh_bootmap': {
+        'method': 'PUT',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_volume_refresh_bootmap},
     'get_volume_connector': {
         'method': 'GET',
         'args_required': 1,
