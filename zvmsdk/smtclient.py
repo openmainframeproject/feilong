@@ -736,53 +736,60 @@ class SMTClient(object):
         msg = ('Start to deploy image %(img)s to guest %(vm)s'
                 % {'img': image_name, 'vm': userid})
         LOG.info(msg)
+
+        if transportfiles is None:
+            err_msg = 'Ignition file is required when deploying RHCOS image'
+            LOG.error(err_msg)
+            raise exception.SDKGuestOperationError(rs=13, userid=userid)
+
         image_file = '/'.join([self._get_image_path_by_name(image_name),
                                CONF.zvm.user_root_vdev])
         # Unpack image file to root disk
         vdev = vdev or CONF.zvm.user_root_vdev
         tmp_trans_dir = None
 
-        if remotehost:
-            # download igintion file from remote host
-            tmp_trans_dir = tempfile.mkdtemp()
-            local_trans = '/'.join([tmp_trans_dir,
-                                    os.path.basename(transportfiles)])
-            cmd = ["/usr/bin/scp", "-B",
-                   "-P", CONF.zvm.remotehost_sshd_port,
-                   "-o StrictHostKeyChecking=no",
-                   ("%s:%s" % (remotehost, transportfiles)),
-                   local_trans]
+        try:
+            if remotehost:
+                # download igintion file from remote host
+                tmp_trans_dir = tempfile.mkdtemp()
+                local_trans = '/'.join([tmp_trans_dir,
+                                        os.path.basename(transportfiles)])
+                cmd = ["/usr/bin/scp", "-B",
+                       "-P", CONF.zvm.remotehost_sshd_port,
+                       "-o StrictHostKeyChecking=no",
+                       ("%s:%s" % (remotehost, transportfiles)),
+                       local_trans]
+                with zvmutils.expect_and_reraise_internal_error(modID='guest'):
+                    (rc, output) = zvmutils.execute(cmd)
+                if rc != 0:
+                    err_msg = ('copy ignition file with command %(cmd)s '
+                               'failed with output: %(res)s' %
+                               {'cmd': str(cmd), 'res': output})
+                    LOG.error(err_msg)
+                    raise exception.SDKGuestOperationError(rs=4, userid=userid,
+                                                           err_info=err_msg)
+                transportfiles = local_trans
+
+            cmd = self._get_unpackdiskimage_cmd_rhcos(userid, image_name,
+                                                      transportfiles, vdev,
+                                                      image_file, hostname)
             with zvmutils.expect_and_reraise_internal_error(modID='guest'):
                 (rc, output) = zvmutils.execute(cmd)
             if rc != 0:
-                err_msg = ('copy ignition file with command %(cmd)s '
-                           'failed with output: %(res)s' %
-                           {'cmd': str(cmd), 'res': output})
-                LOG.error(err_msg)
-                raise exception.SDKGuestOperationError(rs=4, userid=userid,
-                                                       err_info=err_msg)
-            transportfiles = local_trans
-
-        cmd = self._get_unpackdiskimage_cmd_rhcos(userid, image_name,
-                                                  transportfiles, vdev,
-                                                  image_file, hostname)
-        with zvmutils.expect_and_reraise_internal_error(modID='guest'):
-            (rc, output) = zvmutils.execute(cmd)
-        if rc != 0:
-            err_msg = ("unpackdiskimage failed with return code: %d." % rc)
-            err_output = ""
-            output_lines = output.split('\n')
-            for line in output_lines:
-                if line.__contains__("ERROR:"):
-                    err_output += ("\\n" + line.strip())
-            LOG.error(err_msg + err_output)
-            raise exception.SDKGuestOperationError(rs=3, userid=userid,
-                                                   unpack_rc=rc,
-                                                   err=err_output)
-
-        # remove the temp ignition file
-        if tmp_trans_dir:
-            self._pathutils.clean_temp_folder(tmp_trans_dir)
+                err_msg = ("unpackdiskimage failed with return code: %d." % rc)
+                err_output = ""
+                output_lines = output.split('\n')
+                for line in output_lines:
+                    if line.__contains__("ERROR:"):
+                        err_output += ("\\n" + line.strip())
+                LOG.error(err_msg + err_output)
+                raise exception.SDKGuestOperationError(rs=3, userid=userid,
+                                                       unpack_rc=rc,
+                                                       err=err_output)
+        finally:
+            # remove the temp ignition file
+            if tmp_trans_dir:
+                self._pathutils.clean_temp_folder(tmp_trans_dir)
 
         # Update os version in guest metadata
         # TODO: may should append to old metadata, not replace
