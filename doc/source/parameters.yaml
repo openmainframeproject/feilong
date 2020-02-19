@@ -446,6 +446,12 @@ guest_register_net_set:
   in: body
   required: true
   type: string
+action_deregister_guest:
+  description: |
+    Take ``deregister_vm`` action on guest.
+  in: body
+  required: true
+  type: string
 action_live_resize_cpus_of_guest:
   description: |
     Take ``live_resize_cpus`` action on guest.
