@@ -70,16 +70,11 @@ function parseArgs {
     getPositionalArg 5 diskType
     getPositionalArg 6 nicID
     getPositionalArg 7 ipConfig
-  elif [[ ${#args[@]} == 6 ]]; then
-    getPositionalArg 1 fcpChannel
-    getPositionalArg 2 imageFile
-    getPositionalArg 3 ignitionUrl
-    getPositionalArg 4 diskType
-    getPositionalArg 5 nicID
-    getPositionalArg 6 ipConfig
 
-    # Make channel, WWPN, and LUN lower case
-    fcpChannel=$(echo ${fcpChannel} | tr '[:upper:]' '[:lower:]')
+    # Set fcp channel and make channel lower case
+    if [[ $diskType = 'SCSI' ]]; then
+      fcpChannel=$(echo ${channelID} | tr '[:upper:]' '[:lower:]')
+    fi
   else
     getPositionalArg 1 userID
     getPositionalArg 2 channelID
@@ -106,10 +101,6 @@ function parseArgs {
     printCMDUsage
     exit 1
   elif [[ ${#args[@]} == 7 && (! $userID || ! $channelID || ! $imageFile || ! $ignitionUrl || ! $diskType || ! $nicID || ! $ipConfig) ]]; then
-    echo 'ERROR: Missing required parameter.'
-    printCMDUsage
-    exit 1
-  elif [[ ${#args[@]} == 6 && (! $fcpChannel || ! $imageFile || ! $ignitionUrl || ! $diskType || ! $nicID || ! $ipConfig) ]]; then
     echo 'ERROR: Missing required parameter.'
     printCMDUsage
     exit 1
@@ -151,7 +142,7 @@ function parseArgs {
     echo "LUN:            \"$lun\""
     echo "IMAGE FILE:     \"$imageFile\""
     echo ""
-  elif [[ ${#args[@]} == 7 ]]; then
+  elif [[ ${#args[@]} == 7 && $diskType = 'DASD' ]]; then
     echo "SOURCE USER ID: \"$userID\""
     echo "DISK CHANNEL:   \"$channelID\""
     echo "IMAGE FILE:     \"$imageFile\""
@@ -160,7 +151,7 @@ function parseArgs {
     echo "NIC ID:         \"$nicID\""
     echo "IP config:      \"$ipConfig\""
     echo ""
-  elif [[ ${#args[@]} == 6 ]]; then
+  elif [[ ${#args[@]} == 7 && $diskType = 'SCSI' ]]; then
     echo "FCP CHANNEL:    \"$fcpChannel\""
     echo "IMAGE FILE:     \"$imageFile\""
     echo "IGNITION URL:   \"$ignitionUrl\""
@@ -1257,7 +1248,7 @@ function cleanup {
   fi
 
   # Make sure we've released our connection to the target disk.
-  if [[ $userID ]]; then
+  if [[ $userID && ! $fcpChannel ]]; then
     disconnectDisk $userID $channelID 0
     if [[ $diskType ]]; then
       rm -rf /tmp/${userID}
