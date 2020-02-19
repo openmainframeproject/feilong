@@ -17,7 +17,6 @@ import abc
 import netaddr
 import os
 import six
-import sys
 from jinja2 import Environment, FileSystemLoader
 
 from zvmsdk import config
@@ -36,7 +35,7 @@ class LinuxDist(object):
 
     Due to we need to interact with linux dist and inject different files
     according to the dist version. Currently RHEL6, RHEL7, SLES11, SLES12
-    and UBUNTU16 are supported.
+    , UBUNTU16 and RHCOS4 are supported.
     """
     def __init__(self):
         self._smtclient = smtclient.get_smtclient()
@@ -588,7 +587,8 @@ class LinuxDist(object):
     def get_template(self, module, template_name):
         relative_path = module + "/templates"
         base_path = os.path.dirname(os.path.abspath(__file__))
-        template_file_path = os.path.join(base_path, relative_path, template_name)
+        template_file_path = os.path.join(base_path, relative_path,
+                                          template_name)
         template_file_directory = os.path.dirname(template_file_path)
         template_loader = FileSystemLoader(searchpath=template_file_directory)
         env = Environment(loader=template_loader)
@@ -933,7 +933,8 @@ class rhel7(rhel):
                                              mount_point, new):
         template = self.get_template("volumeops", "rhel7_attach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp=fcp, lun=target_lun, target_filename=target_filename)
+        content = template.render(fcp=fcp, lun=target_lun,
+                                  target_filename=target_filename)
         return content
 
     def get_volume_detach_configuration_cmds(self, fcp, target_wwpn,
@@ -941,8 +942,10 @@ class rhel7(rhel):
                                              mount_point, connections):
         template = self.get_template("volumeops", "rhel7_detach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp=fcp, lun=target_lun, target_filename=target_filename)
+        content = template.render(fcp=fcp, lun=target_lun,
+                                  target_filename=target_filename)
         return content
+
 
 class rhel8(rhel7):
     """docstring for rhel8"""
@@ -961,7 +964,152 @@ class rhel8(rhel7):
         files = os.path.join(self._get_network_file_path(),
                              self._get_all_device_filename())
         return '\nrm -f %s\n' % files
-        
+
+
+class rhcos(LinuxDist):
+    def create_coreos_parameter(self, network_info, userid):
+        # Create the coreos parameters for ZCC, includes ignitionUrl, diskType,
+        # nicID and ipConfig, then save them in a temp file
+        try:
+            vif = network_info[0]
+            ip_addr = vif['ip_addr']
+            gateway_addr = vif['gateway_addr']
+            netmask = vif['cidr'].split("/")[-1]
+            nic_name = "enc" + vif['nic_vdev']
+            # update dns name server info if they're defined in subnet
+            _dns = ["", ""]
+            if 'dns_addr' in vif.keys():
+                if ((vif['dns_addr'] is not None) and
+                    (len(vif['dns_addr']) > 0)):
+                    _index = 0
+                    for dns in vif['dns_addr']:
+                        _dns[_index] = dns
+                        _index += 1
+            # transfor network info and hostname into form of
+            # ip=<client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>
+            # :<interface>:none[:[<dns1>][:<dns2>]]
+            result = "%s::%s:%s:%s:%s:none:%s:%s" % (ip_addr, gateway_addr,
+                                                     netmask, userid, nic_name,
+                                                     _dns[0], _dns[1])
+            tmp_path = self._smtclient.get_guest_path(userid.upper())
+            LOG.debug("Created coreos fixed ip parameter: %(result)s, "
+                      "writing them to tempfile: %(tmp_path)s/fixed_ip_param"
+                      % {'result': result, 'tmp_path': tmp_path})
+            with open('%s/fixed_ip_param' % tmp_path, 'w') as f:
+                f.write(result)
+                f.write('\n')
+            return True
+        except Exception as err:
+            LOG.error("Failed to create coreos parameter for userid '%s',"
+                      "error: %s" % (userid, err))
+            return False
+
+    def read_coreos_parameter(self, userid):
+        # read coreos fixed ip parameters from tempfile by matching userid
+        tmp_path = self._smtclient.get_guest_path(userid.upper())
+        tmp_file_path = ('%s/fixed_ip_param' % tmp_path)
+        with open(tmp_file_path, 'r') as f:
+            fixed_ip_parameter = f.read().replace('\n', '')
+            LOG.debug('Read coreos fixed ip parameter: %(parameter)s '
+                      'from tempfile: %(filename)s'
+                      % {'parameter': fixed_ip_parameter,
+                      'filename': tmp_file_path})
+        # Clean up tempfile
+        self._smtclient.clean_temp_folder(tmp_path)
+        return fixed_ip_parameter
+
+    def _append_udev_info(self, cmd_str, cfg_files, file_name_route,
+                      route_cfg_str, udev_cfg_str, first=False):
+        pass
+
+    def _append_udev_rules_file(self, cfg_files, base_vdev):
+        pass
+
+    def _config_to_persistent(self):
+        """rhcos"""
+        pass
+
+    def _delete_vdev_info(self, vdev):
+        pass
+
+    def _delete_zfcp_config_records(self, fcp, target_lun):
+        pass
+
+    def _enable_network_interface(self, device, ip, broadcast):
+        pass
+
+    def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
+                     netmask_v4, address_read, subchannels):
+        pass
+
+    def _get_clean_command(self):
+        pass
+
+    def _get_cmd_str(self, address_read, address_write, address_data):
+        pass
+
+    def _get_device_filename(self, vdev):
+        pass
+
+    def _get_device_name(self, vdev):
+        pass
+
+    def _get_dns_filename(self):
+        pass
+
+    def _get_network_file_path(self):
+        pass
+
+    def _get_route_str(self, gateway_v4):
+        pass
+
+    def _get_source_devices(self, fcp, target_lun):
+        pass
+
+    def _get_udev_configuration(self, device, dev_channel):
+        pass
+
+    def _get_udev_rules(self, channel_read, channel_write, channel_data):
+        pass
+
+    def _offline_fcp_device(self, fcp):
+        pass
+
+    def _online_fcp_device(self, fcp):
+        pass
+
+    def _rescan_multipath(self):
+        pass
+
+    def _restart_multipath(self):
+        pass
+
+    def _set_sysfs(self, fcp, target_wwpns, target_lun):
+        pass
+
+    def _set_zfcp_config_files(self, fcp, target_lun):
+        pass
+
+    def _set_zfcp_multipath(self, new):
+        pass
+
+    def create_active_net_interf_cmd(self):
+        pass
+
+    def get_scp_string(self, root, fcp, wwpn, lun):
+        pass
+
+    def get_zipl_script_lines(self, image, ramdisk, root, fcp, wwpn, lun):
+        pass
+
+    def get_znetconfig_contents(self):
+        pass
+
+
+class rhcos4(rhcos):
+    pass
+
+
 class sles(LinuxDist):
     def _get_network_file_path(self):
         return '/etc/sysconfig/network/'
@@ -1652,7 +1800,8 @@ class LinuxDistManager(object):
     def _parse_release(self, os_version, distro, remain):
         supported = {'rhel': ['6', '7', '8'],
                      'sles': ['11', '12'],
-                     'ubuntu': ['16']}
+                     'ubuntu': ['16'],
+                     'rhcos': ['4']}
         releases = supported[distro]
 
         for r in releases:
@@ -1670,7 +1819,8 @@ class LinuxDistManager(object):
         """
         supported = {'rhel': ['rhel', 'redhat', 'red hat'],
                     'sles': ['suse', 'sles'],
-                    'ubuntu': ['ubuntu']}
+                    'ubuntu': ['ubuntu'],
+                    'rhcos': ['rhcos', 'coreos', 'red hat coreos']}
         os_version = os_version.lower()
         for distro, patterns in supported.items():
             for i in patterns:
