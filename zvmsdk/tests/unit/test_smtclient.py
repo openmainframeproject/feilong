@@ -3016,3 +3016,11 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                    mock.call(userid, online_mem_cmd),
                                    mock.call(userid, revert_standby_cmd)])
         revert.assert_called_once_with(userid, sample_direct)
+
+    def test_guest_deploy_rhcos_no_ignition(self):
+        userid = 'testuid'
+        image_name = "test_image"
+        transportfiles = None
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smtclient.guest_deploy_rhcos, userid,
+                          image_name, transportfiles)
