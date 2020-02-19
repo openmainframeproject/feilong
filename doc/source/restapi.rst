@@ -146,6 +146,8 @@ Create a vm in z/VM
   - ipl_from: guest_ipl_from
   - ipl_param: guest_ipl_param
   - ipl_loadparam: guest_ipl_loadparam
+  - dedicate_vdevs: guest_dedicate_vdevs
+  - loaddev: guest_loaddev
 
 
 * Request sample:

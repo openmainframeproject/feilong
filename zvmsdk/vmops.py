@@ -1,4 +1,4 @@
-# Copyright 2017 IBM Corp.
+# Copyright 2017,2020 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -166,14 +166,15 @@ class VMOps(object):
 
     def create_vm(self, userid, cpu, memory, disk_list,
                   user_profile, max_cpu, max_mem, ipl_from,
-                  ipl_param, ipl_loadparam):
+                  ipl_param, ipl_loadparam, dedicate_vdevs, loaddev):
         """Create z/VM userid into user directory for a z/VM instance."""
         LOG.info("Creating the user directory for vm %s", userid)
 
         info = self._smtclient.create_vm(userid, cpu, memory,
                                    disk_list, user_profile,
                                    max_cpu, max_mem, ipl_from,
-                                   ipl_param, ipl_loadparam)
+                                   ipl_param, ipl_loadparam,
+                                   dedicate_vdevs, loaddev)
 
         # add userid into smapi namelist
         self._smtclient.namelist_add(self._namelist, userid)
@@ -272,14 +273,17 @@ class VMOps(object):
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None, hostname=None):
         LOG.info("Begin to deploy image on vm %s", userid)
-        self._smtclient.guest_deploy(userid, image_name, transportfiles,
-                                      remotehost, vdev)
+        os_version = self._smtclient.image_get_os_distro(image_name)
+        if not os_version.lower().startswith('rhcos'):
+            self._smtclient.guest_deploy(userid, image_name, transportfiles,
+                                         remotehost, vdev)
 
-        # punch scripts to set hostname
-        if (transportfiles is None) and hostname:
-            image_info = self._ImageDbOperator.image_query_record(image_name)
-            os_version = image_info[0]['imageosdistro']
-            self.set_hostname(userid, hostname, os_version)
+            # punch scripts to set hostname
+            if (transportfiles is None) and hostname:
+                self.set_hostname(userid, hostname, os_version)
+        else:
+            self._smtclient.guest_deploy_rhcos(userid, image_name,
+                            transportfiles, remotehost, vdev, hostname)
 
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):
