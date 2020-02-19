@@ -351,6 +351,33 @@ Detach volume from a vm in z/VM
 
   No Response
 
+Refresh Volume Bootmap Info
+---------------------------
+
+**PUT /volumes/volume_refresh_bootmap**
+
+Refresh a volume's bootmap info.
+
+.. restapi_parameters:: parameters.yaml
+
+  - fcpchannel: fcp_list
+  - wwpn: wwpn_list
+  - lun: lun
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_refresh_bootmap.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_refresh_bootmap_response.tpl
+   :language: javascript
+
 Get Volume Connector
 --------------------
 

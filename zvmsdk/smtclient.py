@@ -614,6 +614,45 @@ class SMTClient(object):
         finally:
             self._pathutils.clean_temp_folder(iucv_path)
 
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun):
+        """ Refresh bootmap info of specific volume.
+        : param fcpchannels: list of fcpchannels.
+        : param wwpns: list of wwpns.
+        : param lun: string of lun.
+        : return value: list of physical wwpns.
+        """
+        fcps = ','.join(fcpchannels)
+        ws = ','.join(wwpns)
+        fcs = "--fcpchannel=%s" % fcps
+        wwpns = "--wwpn=%s" % ws
+        lun = "--lun=%s" % lun
+        cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap', fcs, wwpns, lun]
+        LOG.info("Running command: %s", cmd)
+
+        with zvmutils.expect_and_reraise_internal_error(
+             modID='refresh_bootmap'):
+            (rc, output) = zvmutils.execute(cmd)
+        if rc != 0:
+            err_msg = ("refresh_bootmap failed with return code: %d." % rc)
+            err_output = ""
+            output_lines = output.split('\n')
+            for line in output_lines:
+                if line.__contains__("ERROR:"):
+                    err_output += ("\\n" + line.strip())
+            LOG.error(err_msg + err_output)
+            raise exception.SDKVolumeOperationError(rs=5,
+                                                    errcode=rc,
+                                                    errmsg=output)
+        output_lines = output.split('\n')
+        res = []
+        for line in output_lines:
+            if line.__contains__("WWPNs: "):
+                wwpns = line[7:]
+                # Convert string to list by space
+                res = wwpns.split()
+        return res
+
+
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None):
         """ Deploy image and punch config driver to target """
