@@ -1,0 +1,378 @@
+#!/bin/bash
+###############################################################################
+# Copyright 2020 IBM Corp.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+#                            #
+###############################################################################
+# COMPONENT: refresh_bootmap                                                  #
+#                                                                             #
+# Refresh bootmap info of the specific device, the device can be FCP, eckd,   #
+# etc. Currently, the script support FCP device only.                         #
+###############################################################################
+
+source /opt/zthin/lib/zthinshellutils
+
+###############################################################################
+### FUNCTIONS #################################################################
+###############################################################################
+
+function printCMDDescription {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Prints a short description of this command.
+  # @Overrides:
+  #   printCMDDescription{} in "zthinshellutils".
+  # @Code:
+  echo -n "Refresh bootmap info of the specific device. "
+  echo    "Currently, the script only support FCP device."
+} #printCMDDescription{}
+
+function printCMDUsage {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Prints a short description of this command.
+  # @Overrides:
+  #   printCMDUsage{} in "zthinshellutils".
+  # @Code:
+  echo -n "Usage: $CMDNAME OPTIONS"
+  [[ $namedArgListing ]] && echo -n " ${namedArgListing}" |
+                            sed 's/\[--/ \\\n       '"${CMDNAME//?/ }"' [--/g'
+  if [[ $positionalArgListing ]]; then
+    echo " ${positionalArgListing}" |
+      sed 's/ / \\\n       '"${CMDNAME//?/ }"' /g'
+  else
+    echo ''
+  fi
+  echo "${optionHelp}"
+} #printCMDUsage
+
+function printCMDExamples {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Prints a short description of this command.
+  # @Overrides:
+  #   printCMDDescription{} in "zthinshellutils".
+  # @Code:
+  echo "Example:
+  ./refresh_bootmap.sh --fcpchannel="5d71" --wwpn="5005076802100C1B" --lun=0000000000000000
+  ./refresh_bootmap.sh --fcpchannel="5d71,5d72" --wwpn="5005076802100C1B,5005076802200C1B,5005076802300C1B,5005076802400C1B,5005076802400C1A,5005076802300C1A,5005076802200C1A,5005076802100C1A" --lun=0000000000000000" 
+} #printCMDDescription
+
+function parseArgs {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Parses and checks command-line arguments.
+  # @Code:
+  # Non-local variables in this function are intentionally non-local.
+  isOption -h --help "         Print this help message."   && printHelp='true'
+  isOption -v --verbose "      Print verbose output."      && verbose='-v'
+  isOption -x --debug "        Print debugging output."    && debug='-x'
+  isOption -t --type "         Device type. The default device typs is fcp and fcp is the only currently supported type."
+  isOption -f --fcpchannel "   FCP channel IDs. Support multi fcpchannel, split by ','."
+  isOption -w --wwpn "         World Wide Port Name IDs. Support multi wwpn, split by ',' Example: 5005076802400c1b"
+  isOption -l --lun "          Logical Unit Number ID. Example: 0000000000000000"
+
+  if [[ $printHelp ]]; then
+    printHelp
+    exit 0
+  fi
+
+  for i in "$@"
+  do
+  case $i in
+      -t|--type=*)
+      device_type="${i#*=}"
+      shift # past argument=value
+      ;;
+      -f|--fcpchannel=*)
+      fcpchannel="${i#*=}"
+      shift # past argument=value
+      ;;
+      -w|--wwpn=*)
+      wwpn="${i#*=}"
+      shift # past argument=value
+      ;;
+      -l|--lun=*)
+      lun="${i#*=}"
+      shift # past argument=value
+      ;;
+      --default)
+      DEFAULT=YES
+      shift # past argument with no value
+      ;;
+      *)
+      printError "Unknow option: $i." 
+      exit 3
+      ;;
+  esac
+  done
+
+  # Set default device type to FCP if not specific.
+  device_type=${device_type:-fcp}
+  device_type=$(echo ${device_type} | tr '[:upper:]' '[:lower:]')
+} #parseArgs
+
+function checkSanity {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Performs basic checks to ensure that a successful deploy can reasonably
+  #   be expected.
+  if [[ $device_type = 'fcp' ]]; then
+    if [[ ! $lun || ! $wwpn || ! $lun || ! $fcpchannel ]];then
+        printError "Please specific lun, wwpn or fcpchannel."
+        exit 4
+    fi
+    # Intentionally non-local variable.
+    format='FCP'
+  elif [[ $device_type = 'fba' ]]; then
+    # We don't support fba now.
+    :
+  else
+    printError "Unknown device type."
+    exit 5
+  fi
+} #checkSanity
+
+function refreshZIPL {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Retrieves initial information for the IPL from disk
+  # @Parameters:
+  # None
+  # @Returns:
+  #   0 - If the zipl is executed successfully on target disk
+  #   1 - If the zipl failed to be executed on target disk
+  # @Code:
+  # Characters in the IFS are treated individually as sparators.
+  #IFS=',' read -r -a fcps <<< "$fcpchannels"
+  #IFS=',' read -r -a ws <<< "$wwpns"
+  # We will mount the devNode so that refresh its ZIPL.
+  # We use the first item in fcps and wwpns as the devNode.
+  local devNode=/dev/disk/by-path/ccw-0.0.${fcps[0]}-zfcp-0x${wwpns[0]}:${lun}-part1
+
+  if [[ ! -e "$devNode" ]]; then
+    printError "devNode ${devNode} doesn't exist."
+    exit 6
+  fi
+
+  # Create a mount dir.
+  deviceMountPoint=$(/usr/bin/mktemp -d /mnt/XXXXX)
+  if [[ $? != 0 ]]; then
+    printError "Create mount dir fails."
+    exit 7
+  fi
+
+  # Try to mount fcp device.
+  mount $devNode $deviceMountPoint
+  mount -t proc proc $deviceMountPoint/proc
+  mount -t sysfs sysfs $deviceMountPoint/sys
+  mount -t tmpfs tmpfs $deviceMountPoint/run
+  if [[ $? != 0 ]]; then
+    printError "Mount fails."
+    exit 8
+  fi
+
+  #Get target os version
+  local osRelease="$deviceMountPoint/etc/os-release"
+  local slesRelease="$deviceMountPoint/etc/SuSE-release"
+  local rhelRelease="$deviceMountPoint/etc/redhat-release"
+
+  if [[ -e $osRelease ]]; then
+    os=`cat $osRelease | grep "^ID=" | sed \
+      -e 's/ID=//' \
+      -e 's/"//g'`
+    version=`cat $osRelease | grep "^VERSION_ID=" | sed \
+      -e 's/VERSION_ID=//' \
+      -e 's/"//g' \
+      -e 's/\.//'`
+    os=$os$version
+
+  #The /etc/redhat-release file will be deprecated in rhel7 and later release
+  elif [[ -e $rhelRelease ]]; then
+    os='rhel'
+    version=`cat $rhelRelease | grep -i "Red Hat Enterprise Linux Server" | sed \
+      -e 's/[A-Za-z\/\.\(\)]//g' \
+      -e 's/^ *//g' \
+      -e 's/ *$//g' \
+      -e 's/\s.*$//'`
+    os=$os$version
+  fi
+
+  # Exec zipl command to prepare device for initial problem load
+  if [[ $os == rhel7* ]]; then
+    zipl_conf='/etc/zipl.conf'
+    for fcp in ${fcps[@]}
+    do
+      for w in ${wwpns[@]}
+      do
+        x+="rd.zfcp=0.0."$fcp,$w,$lun" "
+      done
+    done
+    
+    ### Delete all items start with "rd.zfcp="
+    chroot $deviceMountPoint sed -ri 's/rd.zfcp=\S+\s*[[:space:]]//g' $zipl_conf
+    
+    # Remove quote
+    chroot $deviceMountPoint sed -i 's/\"$//g' $zipl_conf
+    
+    # Remove quote
+    chroot $deviceMountPoint sed -i 's/[ \t]*$//g' $zipl_conf
+    
+    # Append rd.zfcp= string to "parameters=" line.
+    chroot $deviceMountPoint sed -i "/^[[:space:]]parameters=/ s/$/ $x/" $zipl_conf
+    
+    # Append quote to "parameters=" line
+    chroot $deviceMountPoint sed -i "/^[[:space:]]parameters=/ s/$/\"/" $zipl_conf
+  elif [[ $os == rhel8* ]]; then
+    #machine_id=$(chroot $deviceMountPoint cat /etc/machine-id)
+    # Get all kernel conf files except *rescue file.
+    kernel_version_conf_files=`chroot $deviceMountPoint find /boot/loader/entries/ -name '*.conf' | grep -v rescue`
+    # The Volume may be contains several kernel version conf files.
+    # So every conf file needs to be changed.
+    for fcp in ${fcps[@]}
+    do
+      for w in ${wwpns[@]}
+      do
+        x+="rd.zfcp=0.0."$fcp,$w,$lun" "
+      done
+    done
+    for confFile in $kernel_version_conf_files; do
+       # Delete all items start with "rd.zfcp="
+       chroot $deviceMountPoint sed -ri 's/rd.zfcp=\S+\s*[[:space:]]//g' $confFile
+       # Remove trailing space
+       chroot $deviceMountPoint sed -i 's/[ \t]*$//g' $confFile
+       # Append rd.zfcp= string to "options root=" line.
+       chroot $deviceMountPoint sed -i "/^options root=/ s/$/ $x/" $confFile
+    done
+  elif [[ $os == "" ]]; then
+    inform "This is not the root disk, zipl will not be executed on it"
+  else
+    inform "The os version is: $os, this is not a supported linux distro"
+  fi
+
+  # Refresh bootmap
+  out=`chroot $deviceMountPoint /sbin/zipl 2>&1`
+  rc=$?
+  if (( rc != 0 )); then
+    printError "Failed to execute zipl on $os due to $out"
+    umount $deviceMountPoint/proc
+    umount $deviceMountPoint/sys
+    umount $deviceMountPoint/run
+    umount $deviceMountPoint
+    rm -rf $deviceMountPoint
+    return 1
+  fi
+  #Unmount the target disk
+  umount $deviceMountPoint/proc
+  umount $deviceMountPoint/sys
+  umount $deviceMountPoint/run
+  umount $deviceMountPoint
+  rm -rf $deviceMountPoint
+
+  # Display physical wwpns to stdout
+  for w in ${wwpns[@]}
+  do
+    res+=$w" "
+  done
+  inform "$res"
+  return
+} #refreshZIPL
+
+function refreshFCPBootmap {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Refresh bootmap info of FCP device.
+  # @Code:
+
+  local out
+  local rc
+  local errorFile
+
+  fcpchannels=$(echo ${fcpchannel} | tr '[:upper:]' '[:lower:]')
+  lun=$(echo ${lun} | tr '[:upper:]' '[:lower:]')
+  wwpn=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
+
+  # Add 0x to lun
+  lun=0x$lun
+
+  # Split fcpchannels and wwpn by ","
+  IFS=',' read -r -a fcps <<< "$fcpchannels"
+  IFS=',' read -r -a ws <<< "$wwpn"
+
+  # Try to find which physical wwpns are being used.
+  wwpns=()
+  for fcp in "${fcps[@]}"
+  do
+    for wwpn in "${ws[@]}"
+    do
+      ww=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
+      f="/dev/disk/by-path/ccw-0.0.${fcp}-zfcp-0x${ww}:${lun}"
+      if [[ -e "$f" ]];then
+        wwpns+=($ww)
+      fi
+    done
+  done
+
+  # Remove duplicates
+  wwpns=($(echo "${wwpns[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+
+  # Try to connect FCP
+  if [[ ! wwpns[0] ]]; then
+    printError "wwpns[0] is empty. Please check the parameters in command line."
+    exit 9
+  fi
+
+  connectFcp ${fcps[0]} 0x${wwpns[0]} ${lun}
+  if (( $? )); then
+    printError "Failed to connect disk: ccw-0.0.${fcps[0]}-0x${wwpns[0]}:${lun}."
+    exit 10
+  fi
+  refreshZIPL
+} #refreshFCPBootmap
+
+function refreshBootMap {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Refresh the bootmap of disk image.
+  # @Code:
+
+  if [[ $format = 'FCP' ]]; then
+    refreshFCPBootmap
+  elif [[ $format = 'FBA' ]]; then
+    :
+  else
+    printError "Device type not recognised."
+    exit 11
+  fi 
+} #refreshBootMap
+
+###############################################################################
+### START EXECUTION ###########################################################
+###############################################################################
+
+parseArgs $@
+checkSanity
+refreshBootMap
+
+###############################################################################
+### END OF SCRIPT #############################################################
+###############################################################################
