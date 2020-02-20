@@ -282,7 +282,8 @@ class SDKAPI(object):
                a dictionary to describe the image info, such as md5sum,
                os_version. For example:
                {'os_version': 'rhel6.2',
-               'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5'}
+               'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5',
+               'disk_type': 'DASD'}
         :param string remote_host:
                 if the image url schema is file, the remote_host is used to
                 indicate where the image comes from, the format is username@IP
@@ -326,6 +327,7 @@ class SDKAPI(object):
         'image_path': the image_path after exported
         'os_version': the os version of the exported image
         'md5sum': the md5sum of the original image
+        'comments': the comments of the original image
         }
         """
         try:
