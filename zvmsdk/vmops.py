@@ -278,7 +278,7 @@ class VMOps(object):
             os_version = self._smtclient.image_get_os_distro(image_name)
         else:
             os_version = image_name
-        if not os_version.lower().startswith('rhcos'):
+        if not self._smtclient.is_rhcos(os_version):
             self._smtclient.guest_deploy(userid, image_name, transportfiles,
                                          remotehost, vdev, skipdiskcopy)
 

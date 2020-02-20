@@ -89,6 +89,38 @@ class HandlersImageTest(unittest.TestCase):
         image.image_create(self.req)
         mock_create.assert_called_once_with(body=body)
 
+    @mock.patch.object(image.ImageAction, 'create')
+    def test_image_create_rhcos(self, mock_create):
+        body_str = """{"image": {"image_name": "46a4aea3-54b6-4b1c",
+                                 "url": "file:///tmp/test.img",
+                                 "image_meta": {
+                                 "os_version": "rhcos4.2",
+                                 "md5sum": "12345678912345678912345678912345",
+                                 "disk_type": "DASD"
+                                 },
+                                 "remotehost": "hostname"
+                                }
+                      }"""
+        self.req.body = body_str
+        body = {
+                  'image':
+                  {
+                       'remotehost': 'hostname',
+                       'image_meta':
+                       {
+                            'os_version': 'rhcos4.2',
+                            'md5sum': '12345678912345678912345678912345',
+                            "disk_type": "DASD"
+                       },
+                       'url': 'file:///tmp/test.img',
+                       'image_name': '46a4aea3-54b6-4b1c'
+                   }
+               }
+        mock_create.return_value = ''
+
+        image.image_create(self.req)
+        mock_create.assert_called_once_with(body=body)
+
     def test_image_create_invalidname(self):
         body_str = '{"image": {"version": ""}}'
         self.req.body = body_str
@@ -102,6 +134,22 @@ class HandlersImageTest(unittest.TestCase):
                          "image_meta": {
                          "os_version": "rhel2.2",
                          "md5sum": "12345678912345678912345678912345"
+                         },
+                         "remotehost": "hostname"
+                        }
+              }"""
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, image.image_create,
+                          self.req)
+
+    def test_image_create_rhcos_invalid_disktype(self):
+        body_str = """{"image": {"image_name": "46a4aea3-54b6-4b1c",
+                         "url": "file:///tmp/test.img",
+                         "image_meta": {
+                         "os_version": "rhcos4.2",
+                         "md5sum": "12345678912345678912345678912345",
+                         "disk_type": "any"
                          },
                          "remotehost": "hostname"
                         }
