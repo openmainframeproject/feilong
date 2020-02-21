@@ -44,6 +44,7 @@
 300;40;300;20;The image record of %(img)s does not exist
 300;40;300;21;Image Export error: Failed to copy image file to remote host with reason: %(msg)s
 300;40;300;22;Export image to local file system failed: %(err)s
+300;40;300;23;Image file of %(img)s does not exist, so failed to get its timestamp.
 **Operation on Monitor failed**
 300;50;300;1;Database operation failed, error: %(msg)s
 **REST API Request error**
