@@ -25,3 +25,5 @@
 - Discuss ideas how to increase number of Feilong participants
 - Update on how-to access z/VM resource effort
 - Update on CI/CD infrastructure effort
+
+Signed-off-by: James Vincent <jamesscottvincent@gmail.com>
