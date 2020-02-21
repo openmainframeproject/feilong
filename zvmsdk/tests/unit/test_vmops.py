@@ -148,9 +148,12 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                           self.vmops.get_info, 'fakeid')
 
     @mock.patch("zvmsdk.smtclient.SMTClient.guest_deploy")
-    def test_guest_deploy(self, deploy_image_to_vm):
+    @mock.patch("zvmsdk.smtclient.SMTClient.image_get_os_distro")
+    def test_guest_deploy(self, image_get_os_distro, deploy_image_to_vm):
+        image_get_os_distro.return_value = 'fake-distro'
         self.vmops.guest_deploy('fakevm', 'fakeimg',
                                 '/test/transport.tgz')
+        image_get_os_distro.assert_called_once_with('fakeimg')
         deploy_image_to_vm.assert_called_with('fakevm', 'fakeimg',
                                               '/test/transport.tgz', None,
                                               None)

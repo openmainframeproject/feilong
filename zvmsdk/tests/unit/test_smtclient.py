@@ -204,8 +204,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                    'lun': '0000000000000000'}
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
-              '--logonby "lbyuser1 lbyuser2" --ipl 5c71 --dedicate "5c71 5d71" '
-              '--loadportname 5005076802400c1b --loadlun 0000000000000000')
+              '--logonby "lbyuser1 lbyuser2" --ipl 5c71 '
+              '--dedicate "5c71 5d71" --loadportname 5005076802400c1b '
+              '--loadlun 0000000000000000')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                    max_cpu, max_mem, ipl_from, '', '',
                                    dedicate_vdevs, loaddev)
@@ -325,6 +326,134 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         guestauth.assert_called_once_with(userid)
         guest_update.assert_called_once_with(userid, meta='os_version=fakeos')
 
+    @mock.patch.object(database.GuestDbOperator, 'update_guest_by_userid')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    @mock.patch.object(dist.rhcos4, 'read_coreos_parameter')
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, '_get_image_path_by_name')
+    def test_guest_deploy_rhcos(self, get_image_path, request, execute,
+                                coreos_param, image_query, guest_update):
+        base.set_conf("zvm", "user_root_vdev", "0100")
+        execute.side_effect = [(0, ""), (0, "")]
+        image_query.return_value = [{'imageosdistro': 'RHCOS4',
+                                     'comments': u"{'disk_type':'DASD'}"
+                                     }]
+        userid = 'fakeuser'
+        image_name = 'fakeimg'
+        get_image_path.return_value = \
+            '/var/lib/zvmsdk/images/netboot/RHCOS4/fakeimg'
+        transportfiles = '/faketran'
+        coreos_param.return_value = \
+            '10.10.0.29::10.10.0.1:24:fakeuser:enc1000:none:'
+        self._smtclient.guest_deploy_rhcos(userid, image_name, transportfiles)
+        get_image_path.assert_called_once_with(image_name)
+        guest_update.assert_called_once_with(userid, meta='os_version=RHCOS4')
+
+    @mock.patch.object(database.GuestDbOperator, 'update_guest_by_userid')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    @mock.patch.object(dist.rhcos4, 'read_coreos_parameter')
+    @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
+    @mock.patch.object(tempfile, 'mkdtemp')
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, '_get_image_path_by_name')
+    def test_guest_deploy_rhcos_remote(self, get_image_path, request, execute,
+                          mkdtemp, cleantemp, coreos_param, image_query,
+                          guest_update):
+        base.set_conf("zvm", "user_root_vdev", "0100")
+        base.set_conf("zvm", "remotehost_sshd_port", "22")
+        execute.side_effect = [(0, ""), (0, "")]
+        mkdtemp.return_value = '/tmp/tmpdir'
+        image_query.return_value = [{'imageosdistro': 'RHCOS4',
+                                     'comments': u"{'disk_type':'DASD'}"
+                                     }]
+        userid = 'fakeuser'
+        image_name = 'fakeimg'
+        get_image_path.return_value = \
+            '/var/lib/zvmsdk/images/netboot/RHCOS4/fakeimg'
+        transportfiles = '/faketran'
+        remote_host = 'user@1.1.1.1'
+        coreos_param.return_value = \
+            '10.10.0.29::10.10.0.1:24:fakeuser:enc1000:none:'
+        self._smtclient.guest_deploy_rhcos(userid, image_name, transportfiles,
+                                           remote_host)
+        get_image_path.assert_called_once_with(image_name)
+        scp_cmd = ["/usr/bin/scp", "-B",
+                   "-P", "22",
+                   "-o StrictHostKeyChecking=no",
+                   "user@1.1.1.1:/faketran", "/tmp/tmpdir/faketran"]
+        execute.assert_has_calls([mock.call(scp_cmd)])
+        mkdtemp.assert_called_with()
+        cleantemp.assert_called_with('/tmp/tmpdir')
+        guest_update.assert_called_once_with(userid, meta='os_version=RHCOS4')
+
+    @mock.patch.object(dist.rhcos4, 'read_coreos_parameter')
+    @mock.patch.object(smtclient.SMTClient, '_get_image_disk_type')
+    @mock.patch.object(smtclient.SMTClient, 'image_get_os_distro')
+    def test_get_unpackdiskimage_cmd_rhcos(self, os_version, image_disk_type,
+                                           coreos_param):
+        os_version.return_value = 'RHCOS4'
+        image_disk_type.return_value = 'ECKD'
+        coreos_param.return_value = \
+            '10.10.0.29::10.10.0.1:24:FAKEUSER:enc1000:none:10.10.0.250:'
+        hostname = 'fakehost'
+        userid = 'fakeuser'
+        image_name = 'FakeImg'
+        transportfiles = '/var/lib/nova/instances/fake/ignition.file'
+        image_file = '/var/lib/zvmsdk/images/netboot/RHCOS4/fakeimg/0100'
+        vdev = '1000'
+        cmd = self._smtclient._get_unpackdiskimage_cmd_rhcos(userid,
+                                                             image_name,
+                                                             transportfiles,
+                                                             vdev,
+                                                             image_file,
+                                                             hostname)
+        coreos_param.assert_called_once_with(userid)
+        self.assertEqual(cmd, ['sudo', '/opt/zthin/bin/unpackdiskimage',
+                          'fakeuser',
+                          '1000',
+                          '/var/lib/zvmsdk/images/netboot/RHCOS4/fakeimg/0100',
+                          '/var/lib/nova/instances/fake/ignition.file', 'ECKD',
+                          '0.0.1000,0.0.1001,0.0.1002',
+                          '10.10.0.29::10.10.0.1:24:fakehost:enc1000:none:'
+                          '10.10.0.250:'])
+
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, '_get_image_path_by_name')
+    def test_guest_deploy_unpackdiskimage_failed(self, get_image_path,
+                                                 request, execute):
+        base.set_conf("zvm", "user_root_vdev", "0100")
+        userid = 'fakeuser'
+        image_name = 'fakeimg'
+        transportfiles = '/faketran'
+        get_image_path.return_value = \
+            '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg'
+        unpack_error = ('unpackdiskimage fakeuser start time: '
+                        '2017-08-16-01:29:59.453\nSOURCE USER ID: "fakeuser"\n'
+                        'DISK CHANNEL:   "0100"\n'
+                        'IMAGE FILE:     "/var/lib/zvmsdk/images/fakeimg"\n\n'
+                        'Image file compression level: 6\n'
+                        'Deploying image to fakeuser\'s disk at channel 100.\n'
+                        'ERROR: Unable to link fakeuser 0100 disk. '
+                        'HCPLNM053E FAKEUSER not in CP directory\n'
+                        'HCPDTV040E Device 260C does not exist\n'
+                        'ERROR: Failed to connect disk: fakeuser:0100\n\n'
+                        'IMAGE DEPLOYMENT FAILED.\n'
+                        'A detailed trace can be found at: /var/log/zthin/'
+                        'unpackdiskimage_trace_2017-08-16-01:29:59.453.txt\n'
+                        'unpackdiskimage end time: 2017-08-16-01:29:59.605\n')
+        execute.return_value = (3, unpack_error)
+        self.assertRaises(exception.SDKGuestOperationError,
+                           self._smtclient.guest_deploy, userid, image_name,
+                           transportfiles)
+        get_image_path.assert_called_once_with(image_name)
+        unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
+                      '0100',
+                     '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
+        execute.assert_called_once_with(unpack_cmd)
+
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
     @mock.patch.object(tempfile, 'mkdtemp')
     @mock.patch.object(zvmutils, 'execute')
@@ -395,50 +524,62 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
-    
+
     @mock.patch.object(smtclient.SMTClient, 'image_query')
     def test_image_get_os_distro(self, image_info):
-        image_info.return_value = [{'image_size_in_bytes': '3072327680', 
-                                    'disk_size_units': '3339:CYL', 
-                                    'md5sum': '370cd177c51e39f0e2e2beecbb88f701', 
-                                    'comments': "{'disk_type':'DASD'}", 
-                                    'imagename': '0b3013e1-1356-431c-b680-ba06a1768aea', 
-                                    'imageosdistro': 'RHCOS4', 
+        image_info.return_value = [{'image_size_in_bytes': '3072327680',
+                                    'disk_size_units': '3339:CYL',
+                                    'md5sum': '370cd177c51e39f0e2e2b\
+                                        eecbb88f701',
+                                    'comments': "{'disk_type':'DASD'}",
+                                    'imagename': '0b3013e1-1356-431c-\
+                                        b680-ba06a1768aea',
+                                    'imageosdistro': 'RHCOS4',
                                     'type': 'rootonly'}]
-        self.assertEqual(self._smtclient.image_get_os_distro(image_info), 'RHCOS4')
+        self.assertEqual(self._smtclient.image_get_os_distro(image_info),
+                         'RHCOS4')
 
     @mock.patch.object(smtclient.SMTClient, 'image_query')
     def test_get_image_disk_type_dasd(self, image_info):
-        image_info.return_value = [{'image_size_in_bytes': '3072327680', 
-                                    'disk_size_units': '3339:CYL', 
-                                    'md5sum': '370cd177c51e39f0e2e2beecbb88f701', 
-                                    'comments': "{'disk_type':'DASD'}", 
-                                    'imagename': '0b3013e1-1356-431c-b680-ba06a1768aea', 
-                                    'imageosdistro': 'RHCOS4', 
+        image_info.return_value = [{'image_size_in_bytes': '3072327680',
+                                    'disk_size_units': '3339:CYL',
+                                    'md5sum': '370cd177c51e39f0e2e2b\
+                                        eecbb88f701',
+                                    'comments': "{'disk_type':'DASD'}",
+                                    'imagename': '0b3013e1-1356-431c-\
+                                        b680-ba06a1768aea',
+                                    'imageosdistro': 'RHCOS4',
                                     'type': 'rootonly'}]
-        self.assertEqual(self._smtclient._get_image_disk_type(image_info), 'ECKD')
+        self.assertEqual(self._smtclient._get_image_disk_type(image_info),
+                         'ECKD')
 
     @mock.patch.object(smtclient.SMTClient, 'image_query')
     def test_get_image_disk_type_scsi(self, image_info):
-        image_info.return_value = [{'image_size_in_bytes': '3072327680', 
-                                    'disk_size_units': '3339:CYL', 
-                                    'md5sum': '370cd177c51e39f0e2e2beecbb88f701', 
-                                    'comments': "{'disk_type':'SCSI'}", 
-                                    'imagename': '0b3013e1-1356-431c-b680-ba06a1768aea', 
-                                    'imageosdistro': 'RHCOS4', 
+        image_info.return_value = [{'image_size_in_bytes': '3072327680',
+                                    'disk_size_units': '3339:CYL',
+                                    'md5sum': '370cd177c51e39f0e2e2b\
+                                        eecbb88f701',
+                                    'comments': "{'disk_type':'SCSI'}",
+                                    'imagename': '0b3013e1-1356-431c-\
+                                        b680-ba06a1768aea',
+                                    'imageosdistro': 'RHCOS4',
                                     'type': 'rootonly'}]
-        self.assertEqual(self._smtclient._get_image_disk_type(image_info), 'SCSI')
+        self.assertEqual(self._smtclient._get_image_disk_type(image_info),
+                         'SCSI')
 
     @mock.patch.object(smtclient.SMTClient, 'image_query')
     def test_get_image_disk_type_failed(self, image_info):
-        image_info.return_value = [{'image_size_in_bytes': '3072327680', 
-                                    'disk_size_units': '3339:CYL', 
-                                    'md5sum': '370cd177c51e39f0e2e2beecbb88f701', 
-                                    'comments': "{'disk_type':'FBA'}", 
-                                    'imagename': '0b3013e1-1356-431c-b680-ba06a1768aea', 
-                                    'imageosdistro': 'RHCOS4', 
+        image_info.return_value = [{'image_size_in_bytes': '3072327680',
+                                    'disk_size_units': '3339:CYL',
+                                    'md5sum': '370cd177c51e39f0e2e2b\
+                                        eecbb88f701',
+                                    'comments': "{'disk_type':'FCP'}",
+                                    'imagename': '0b3013e1-1356-431c-\
+                                        b680-ba06a1768aea',
+                                    'imageosdistro': 'RHCOS4',
                                     'type': 'rootonly'}]
-        self.assertEqual(self._smtclient._get_image_disk_type(image_info), None)
+        self.assertEqual(self._smtclient._get_image_disk_type(image_info),
+                         None)
 
     @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
@@ -1399,7 +1540,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(nic_id, '0.0.1000,0.0.1001,0.0.1002')
 
     def test_generate_generate_increasing_nic_id_failed(self):
-        self.assertRaises(exception.SDKInvalidInputFormat, 
+        self.assertRaises(exception.SDKInvalidInputFormat,
                           self._smtclient._generate_increasing_nic_id,
                           'FFFF')
 

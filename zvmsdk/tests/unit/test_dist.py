@@ -12,9 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import mock
+import os
 
 from zvmsdk import dist
-from zvmsdk import utils as zvmutil
+from zvmsdk import smtclient
 from zvmsdk.tests.unit import base
 
 
@@ -470,6 +471,7 @@ class RHEL7TestCase(base.SDKTestCase):
         ret = self.linux_dist._set_zfcp_multipath(True)
         self.assertEqual(ret, expect)
 
+
 class RHEL8TestCase(base.SDKTestCase):
 
     @classmethod
@@ -502,18 +504,45 @@ class RHEL8TestCase(base.SDKTestCase):
         self.assertEqual('DNS1="9.0.2.1"', cfg_str[11])
         self.assertEqual('DNS2="9.0.3.1"', cfg_str[12])
 
+
 class RHCOS4TestCase(base.SDKTestCase):
 
     @classmethod
     def setUpClass(cls):
         super(RHCOS4TestCase, cls).setUpClass()
         cls.os_version = 'rhcos4'
+        os.makedirs("/tmp/FakeID")
 
     def setUp(self):
         super(RHCOS4TestCase, self).setUp()
         self.dist_manager = dist.LinuxDistManager()
         self.linux_dist = self.dist_manager.get_linux_dist(self.os_version)()
-    
+        self._smtclient = smtclient.SMTClient()
+
+    @mock.patch.object(smtclient.SMTClient, 'get_guest_path')
+    def test_create_coreos_parameter(self, guest_path):
+        network_info = [{'nic_vdev': '1000',
+                        'ip_addr': '10.10.0.217',
+                        'gateway_addr': '10.10.0.1',
+                        'dns_addr': ['10.10.0.250', '10.10.0.51'],
+                        'mac_addr': 'fa:16:3e:7a:1b:87',
+                        'cidr': '10.10.0.0/24',
+                        'nic_id': 'adca70f3-8509-44d4-92d4-2c1c14b3f25e'}]
+        userid = "FakeID"
+        guest_path.return_value = "/tmp/FakeID"
+        res = self.linux_dist.create_coreos_parameter(network_info, userid)
+        self.assertEqual(res, True)
+
+    @mock.patch.object(smtclient.SMTClient, 'get_guest_path')
+    def test_read_coreos_parameter(self, guest_path):
+        guest_path.return_value = "/tmp/FakeID"
+        userid = "FakeID"
+        param = self.linux_dist.read_coreos_parameter(userid)
+        self.assertEqual(param,
+                         '10.10.0.217::10.10.0.1:24:FakeID:'
+                         'enc1000:none:10.10.0.250:10.10.0.51')
+
+
 class SLESTestCase(base.SDKTestCase):
 
     @classmethod

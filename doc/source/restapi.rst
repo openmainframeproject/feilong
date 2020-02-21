@@ -901,7 +901,7 @@ Register guest to be managed by z/VM Cloud Connector.
 * Response contents:
 
 Guest deregister
---------------
+----------------
 
 **POST /guests/{userid}/action**
 

@@ -1046,7 +1046,7 @@ class SMTClient(object):
             # Read coros fixed ip parameter from tempfile
             fixed_ip_parameter = linuxdist.read_coreos_parameter(userid)
         except Exception as err:
-            err_msg = ("failed to read coreos fixed ip"
+            err_msg = ("failed to read coreos fixed ip "
                         "parameters for userid '%(userid)s',"
                         "error: %(err)s."
                         % {'userid': userid, 'err': err})
@@ -1056,7 +1056,7 @@ class SMTClient(object):
             err_msg = ("coreos fixed ip parameters don't exist.")
             raise exception.SDKGuestOperationError(rs=12, userid=userid,
                                                err=err_msg)
-        if hostname is not None:
+        if hostname:
             # replace hostname to display name instead of userid
             fixed_ip_parameter = fixed_ip_parameter.replace(userid.upper(),
                                                             hostname)
