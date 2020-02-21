@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2020 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -103,33 +103,36 @@ class NetworkOPS(object):
 
     def network_configuration(self, userid, os_version, network_info,
                               active=False):
-        network_file_path = self._smtclient.get_guest_temp_path(userid)
-        LOG.debug('Creating folder %s to contain network configuration files'
-                  % network_file_path)
-        # check whether network interface has already been set for the guest
-        # if not, means this the first time to set the network interface
-        first = self._smtclient.is_first_network_config(userid)
-        (network_doscript, active_cmds) = self._generate_network_doscript(
-                                                           userid,
-                                                           os_version,
-                                                           network_info,
-                                                           network_file_path,
-                                                           first,
-                                                           active=active)
-        fileClass = "X"
-        try:
-            self._smtclient.punch_file(userid, network_doscript, fileClass)
-        finally:
-            LOG.debug('Removing the folder %s ', network_file_path)
-            shutil.rmtree(network_file_path)
+        if os_version.lower().startswith('rhcos'):
+            linuxdist = self._dist_manager.get_linux_dist(os_version)()
+            linuxdist.create_coreos_parameter(network_info, userid)
+        else:
+            network_file_path = self._smtclient.get_guest_temp_path(userid)
+            LOG.debug('Creating folder %s to contain network configuration '
+                      'files' % network_file_path)
+            # check whether network interface has already been set for the
+            # guest. If not, means this is the first time to set the network
+            # interface
+            first = self._smtclient.is_first_network_config(userid)
+            (network_doscript, active_cmds) = self._generate_network_doscript(
+                                                    userid, os_version,
+                                                    network_info,
+                                                    network_file_path,
+                                                    first, active=active)
+            fileClass = "X"
+            try:
+                self._smtclient.punch_file(userid, network_doscript, fileClass)
+            finally:
+                LOG.debug('Removing the folder %s ', network_file_path)
+                shutil.rmtree(network_file_path)
 
-        # update guest db to mark the network is already set
-        if first:
-            self._smtclient.update_guestdb_with_net_set(userid)
+            # update guest db to mark the network is already set
+            if first:
+                self._smtclient.update_guestdb_with_net_set(userid)
 
-        # using zvmguestconfigure tool to parse network_doscript
-        if active:
-            self._smtclient.execute_cmd(userid, active_cmds)
+            # using zvmguestconfigure tool to parse network_doscript
+            if active:
+                self._smtclient.execute_cmd(userid, active_cmds)
 
     # Prepare and create network doscript for instance
     def _generate_network_doscript(self, userid, os_version, network_info,

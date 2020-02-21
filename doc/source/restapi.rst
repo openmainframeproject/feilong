@@ -146,6 +146,8 @@ Create a vm in z/VM
   - ipl_from: guest_ipl_from
   - ipl_param: guest_ipl_param
   - ipl_loadparam: guest_ipl_loadparam
+  - dedicate_vdevs: guest_dedicate_vdevs
+  - loaddev: guest_loaddev
 
 
 * Request sample:
@@ -898,6 +900,30 @@ Register guest to be managed by z/VM Cloud Connector.
 
 * Response contents:
 
+Guest deregister
+----------------
+
+**POST /guests/{userid}/action**
+
+Deregister guest to be managed by z/VM Cloud Connector.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - action: action_deregister_guest
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_deregister.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
 
 Live resize CPUs of guest
 -------------------------
