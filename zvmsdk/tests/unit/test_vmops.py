@@ -147,10 +147,15 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.assertRaises(exception.ZVMVirtualMachineNotExist,
                           self.vmops.get_info, 'fakeid')
 
+    @mock.patch("zvmsdk.smtclient.SMTClient._get_image_last_access_time")
+    @mock.patch("zvmsdk.database.ImageDbOperator.image_query_record")
     @mock.patch("zvmsdk.smtclient.SMTClient.guest_deploy")
     @mock.patch("zvmsdk.smtclient.SMTClient.image_get_os_distro")
-    def test_guest_deploy(self, image_get_os_distro, deploy_image_to_vm):
+    def test_guest_deploy(self, image_get_os_distro, deploy_image_to_vm,
+                          img_query, get_atime):
         image_get_os_distro.return_value = 'fake-distro'
+        get_atime.return_value = 1581910539.3330014
+        img_query.return_value = [{'imageosdistro': 'rhel6.7'}]
         self.vmops.guest_deploy('fakevm', 'fakeimg',
                                 '/test/transport.tgz')
         image_get_os_distro.assert_called_once_with('fakeimg')
@@ -158,13 +163,15 @@ class SDKVMOpsTestCase(base.SDKTestCase):
                                               '/test/transport.tgz', None,
                                               None)
 
+    @mock.patch("zvmsdk.smtclient.SMTClient._get_image_last_access_time")
     @mock.patch('zvmsdk.vmops.VMOps.set_hostname')
     @mock.patch("zvmsdk.database.ImageDbOperator.image_query_record")
     @mock.patch("zvmsdk.smtclient.SMTClient.guest_deploy")
     def test_guest_deploy_sethostname(self, deploy_image_to_vm, img_query,
-                                      set_hostname):
+                                      set_hostname, get_atime):
         fake_hostname = 'fakehost'
         img_query.return_value = [{'imageosdistro': 'rhel6.7'}]
+        get_atime.return_value = 1581910539.3330014
         self.vmops.guest_deploy('fakevm', 'fakeimg',
                                 hostname=fake_hostname)
         deploy_image_to_vm.assert_called_with('fakevm', 'fakeimg', None, None,
