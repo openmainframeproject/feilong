@@ -15,6 +15,7 @@
 300;10;300;9;Failed to resize memory of guest: '%(userid)s', error: lock user entry failed with smt error: '%(err)s'.
 300;10;300;10;Failed to resize memory of guest: '%(userid)s', error: replace user entry failed with smt error: '%(err)s'.
 300;10;300;11;Failed to live resize memory of guest: '%(userid)s', error: define standby memory failed with smt error: '%(err)s'.
+300;10;300;12;Failed to deploy image to userid: '%(userid)s', get unpackdiskimage cmd failed: %(err)s
 **Operation on Network failed**
 300;20;300;1;Database operation failed, error: %(msg)s
 300;20;300;2;ZVMSDK network error: %(msg)s
