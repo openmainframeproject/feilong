@@ -21,6 +21,7 @@ from smtLayer import smt
 
 from zvmsdk import config
 from zvmsdk import database
+from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import smtclient
 from zvmsdk import utils as zvmutils
@@ -324,6 +325,99 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         cleantemp.assert_called_with('/tmp/tmpdir')
         guestauth.assert_called_once_with(userid)
         guest_update.assert_called_once_with(userid, meta='os_version=fakeos')
+
+    @mock.patch.object(database.GuestDbOperator, 'update_guest_by_userid')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    @mock.patch.object(dist.rhcos4, 'read_coreos_parameter')
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, '_get_image_path_by_name')
+    def test_guest_deploy_rhcos(self, get_image_path, request, execute,
+                                coreos_param, image_query, guest_update):
+        base.set_conf("zvm", "user_root_vdev", "0100")
+        execute.side_effect = [(0, ""), (0, "")]
+        image_query.return_value = [{'imageosdistro': 'RHCOS4',
+                                     'comments': u"{'disk_type':'DASD'}"
+                                     }]
+        userid = 'fakeuser'
+        image_name = 'fakeimg'
+        get_image_path.return_value = \
+            '/var/lib/zvmsdk/images/netboot/RHCOS4/fakeimg'
+        transportfiles = '/faketran'
+        coreos_param.return_value = \
+            '10.10.0.29::10.10.0.1:24:fakeuser:enc1000:none:'
+        self._smtclient.guest_deploy_rhcos(userid, image_name, transportfiles)
+        get_image_path.assert_called_once_with(image_name)
+        guest_update.assert_called_once_with(userid, meta='os_version=RHCOS4')
+
+    @mock.patch.object(database.GuestDbOperator, 'update_guest_by_userid')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    @mock.patch.object(dist.rhcos4, 'read_coreos_parameter')
+    @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
+    @mock.patch.object(tempfile, 'mkdtemp')
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, '_get_image_path_by_name')
+    def test_guest_deploy_rhcos_remote(self, get_image_path, request, execute,
+                          mkdtemp, cleantemp, coreos_param, image_query,
+                          guest_update):
+        base.set_conf("zvm", "user_root_vdev", "0100")
+        base.set_conf("zvm", "remotehost_sshd_port", "22")
+        execute.side_effect = [(0, ""), (0, "")]
+        mkdtemp.return_value = '/tmp/tmpdir'
+        image_query.return_value = [{'imageosdistro': 'RHCOS4',
+                                     'comments': u"{'disk_type':'DASD'}"
+                                     }]
+        userid = 'fakeuser'
+        image_name = 'fakeimg'
+        get_image_path.return_value = \
+            '/var/lib/zvmsdk/images/netboot/RHCOS4/fakeimg'
+        transportfiles = '/faketran'
+        remote_host = 'user@1.1.1.1'
+        coreos_param.return_value = \
+            '10.10.0.29::10.10.0.1:24:fakeuser:enc1000:none:'
+        self._smtclient.guest_deploy_rhcos(userid, image_name, transportfiles,
+                                           remote_host)
+        get_image_path.assert_called_once_with(image_name)
+        scp_cmd = ["/usr/bin/scp", "-B",
+                   "-P", "22",
+                   "-o StrictHostKeyChecking=no",
+                   "user@1.1.1.1:/faketran", "/tmp/tmpdir/faketran"]
+        execute.assert_has_calls([mock.call(scp_cmd)])
+        mkdtemp.assert_called_with()
+        cleantemp.assert_called_with('/tmp/tmpdir')
+        guest_update.assert_called_once_with(userid, meta='os_version=RHCOS4')
+
+    @mock.patch.object(dist.rhcos4, 'read_coreos_parameter')
+    @mock.patch.object(smtclient.SMTClient, '_get_image_disk_type')
+    @mock.patch.object(smtclient.SMTClient, 'image_get_os_distro')
+    def test_get_unpackdiskimage_cmd_rhcos(self, os_version, image_disk_type,
+                                           coreos_param):
+        os_version.return_value = 'RHCOS4'
+        image_disk_type.return_value = 'ECKD'
+        coreos_param.return_value = \
+            '10.10.0.29::10.10.0.1:24:FAKEUSER:enc1000:none:10.10.0.250:'
+        hostname = 'fakehost'
+        userid = 'fakeuser'
+        image_name = 'FakeImg'
+        transportfiles = '/var/lib/nova/instances/fake/ignition.file'
+        image_file = '/var/lib/zvmsdk/images/netboot/RHCOS4/fakeimg/0100'
+        vdev = '1000'
+        cmd = self._smtclient._get_unpackdiskimage_cmd_rhcos(userid,
+                                                             image_name,
+                                                             transportfiles,
+                                                             vdev,
+                                                             image_file,
+                                                             hostname)
+        coreos_param.assert_called_once_with(userid)
+        self.assertEqual(cmd, ['sudo', '/opt/zthin/bin/unpackdiskimage',
+                          'fakeuser',
+                          '1000',
+                          '/var/lib/zvmsdk/images/netboot/RHCOS4/fakeimg/0100',
+                          '/var/lib/nova/instances/fake/ignition.file', 'ECKD',
+                          '0.0.1000,0.0.1001,0.0.1002',
+                          '10.10.0.29::10.10.0.1:24:fakehost:enc1000:none:'
+                          '10.10.0.250:'])
 
     @mock.patch.object(zvmutils, 'execute')
     @mock.patch.object(smtclient.SMTClient, '_request')
