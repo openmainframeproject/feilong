@@ -2292,7 +2292,7 @@ class SMTClient(object):
         """
         Return the operating system distro of the specified image
         """
-        image_info = self.image_query(image_name)
+        image_info = self._ImageDbOperator.image_query_record(image_name)
         if not image_info:
             raise exception.SDKImageOperationError(rs=20, img=image_name)
         os_distro = image_info[0]['imageosdistro']
@@ -2302,7 +2302,7 @@ class SMTClient(object):
         """
         Return image disk type
         """
-        image_info = self.image_query(image_name)
+        image_info = self._ImageDbOperator.image_query_record(image_name)
         if ((image_info[0]['comments'] is not None) and
             (image_info[0]['comments'].__contains__('disk_type'))):
             image_disk_type = eval(image_info[0]['comments'])['disk_type']

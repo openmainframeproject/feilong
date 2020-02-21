@@ -525,7 +525,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
 
-    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_image_get_os_distro(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
@@ -539,7 +539,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(self._smtclient.image_get_os_distro(image_info),
                          'RHCOS4')
 
-    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_get_image_disk_type_dasd(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
@@ -553,7 +553,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(self._smtclient._get_image_disk_type(image_info),
                          'ECKD')
 
-    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_get_image_disk_type_scsi(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
@@ -567,7 +567,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(self._smtclient._get_image_disk_type(image_info),
                          'SCSI')
 
-    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_get_image_disk_type_failed(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
