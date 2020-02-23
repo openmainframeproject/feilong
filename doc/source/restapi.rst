@@ -1323,6 +1323,7 @@ Get the list of image info in image repository.
   - image_size_in_bytes: physical_disk_size_image
   - type: image_type
   - comments: image_comments
+  - last_access_time: last_access_time
 
 * Response sample:
 

@@ -525,7 +525,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
 
-    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_image_get_os_distro(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
@@ -539,7 +539,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(self._smtclient.image_get_os_distro(image_info),
                          'RHCOS4')
 
-    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_get_image_disk_type_dasd(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
@@ -553,7 +553,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(self._smtclient._get_image_disk_type(image_info),
                          'ECKD')
 
-    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_get_image_disk_type_scsi(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
@@ -567,7 +567,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(self._smtclient._get_image_disk_type(image_info),
                          'SCSI')
 
-    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_get_image_disk_type_failed(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
@@ -1483,11 +1483,54 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                           self._smtclient.image_import,
                           image_name, url, image_meta)
 
-    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
-    def test_image_query(self, image_query):
+    @mock.patch.object(smtclient.SMTClient, '_get_image_path_by_name')
+    def test_get_image_access_time_image_not_exist(self, image_path):
         image_name = "testimage"
-        self._smtclient.image_query(image_name)
+        image_path.return_value = '/tmp/notexistpath/'
+        self.assertRaises(exception.SDKImageOperationError,
+                          self._smtclient._get_image_last_access_time,
+                          image_name)
+
+    @mock.patch.object(smtclient.SMTClient, '_get_image_last_access_time')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    def test_image_query(self, image_query, access_time):
+        image_name = "testimage"
+        fake_access_time = 1581910539.3330014
+        access_time.return_value = fake_access_time
+        image_query.return_value = [{'imagename': 'testimage'}]
+        image_info = self._smtclient.image_query(image_name)
         image_query.assert_called_once_with(image_name)
+        self.assertEqual(image_info[0]['last_access_time'],
+                         fake_access_time)
+
+    @mock.patch.object(smtclient.SMTClient, '_get_image_last_access_time')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    def test_image_query_image_not_exist(self, image_query, access_time):
+        image_name = "testimage"
+        fake_access_time = 1581910539.3330014
+        access_time.return_value = fake_access_time
+        image_query.return_value = None
+        image_info = self._smtclient.image_query(image_name)
+        self.assertEqual(image_info, [])
+
+    @mock.patch.object(smtclient.SMTClient, '_get_image_last_access_time')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    def test_image_query_none_imagename(self, image_query, access_time):
+        image_name = None
+        fake_access_time = 1581910539.3330014
+        image_query.return_value = [{u'image_size_in_bytes': u'719045489',
+                                     u'last_access_time': 1581910539.3330014,
+                                     u'disk_size_units': u'3339:CYL',
+                                     u'md5sum': u'157e2a2c3be1d49ef6e69324',
+                                     u'comments': None,
+                                     u'imagename': u'testimage',
+                                     u'imageosdistro': u'rhel7',
+                                     u'type': u'rootonly'}]
+        access_time.return_value = fake_access_time
+        image_info = self._smtclient.image_query(image_name)
+        image_query.assert_called_once_with(image_name)
+        self.assertEqual(image_info[0]['last_access_time'],
+                         fake_access_time)
 
     @mock.patch.object(database.ImageDbOperator, 'image_delete_record')
     @mock.patch.object(smtclient.SMTClient, '_delete_image_file')
