@@ -1110,6 +1110,7 @@ After guest created, deploy image onto the guest.
   - remotehost: remotehost_transportfiles
   - vdev: deploy_vdev
   - hostname: deploy_hostname
+  - skipdiskcopy: deploy_skipdiskcopy
 
 * Request sample:
 
