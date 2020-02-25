@@ -161,7 +161,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         image_get_os_distro.assert_called_once_with('fakeimg')
         deploy_image_to_vm.assert_called_with('fakevm', 'fakeimg',
                                               '/test/transport.tgz', None,
-                                              None)
+                                              None, False)
 
     @mock.patch("zvmsdk.smtclient.SMTClient._get_image_last_access_time")
     @mock.patch('zvmsdk.vmops.VMOps.set_hostname')
@@ -175,7 +175,7 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.guest_deploy('fakevm', 'fakeimg',
                                 hostname=fake_hostname)
         deploy_image_to_vm.assert_called_with('fakevm', 'fakeimg', None, None,
-                                              None)
+                                              None, False)
         img_query.assert_called_once_with('fakeimg')
         set_hostname.assert_called_once_with('fakevm', fake_hostname,
                                              'rhel6.7')

@@ -604,9 +604,9 @@ class GuestDbOperator(object):
                                                        modID=self._module_id)
         return guest
 
-    def add_guest_migrated(self, userid, meta, net_set,
+    def add_guest_registered(self, userid, meta, net_set,
                              comments=None):
-        # Add guest which is migrated from other host.
+        # Add guest which is migrated from other host or onboarded.
         guest_id = str(uuid.uuid4())
         with get_guest_conn() as conn:
             conn.execute(
