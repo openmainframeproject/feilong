@@ -541,12 +541,15 @@ class SDKAPI(object):
                 switch = nics_info[key]['vswitch']
                 port = None
                 if port_macs is not None:
-                    mac = nics_info[key]['mac']
-                    port = port_macs[mac]
+                    if 'mac' in nics_info[key].keys():
+                        mac = nics_info[key]['mac']
+                        if mac in port_macs.keys():
+                            port = port_macs[mac]
                     if port is None:
-                        LOG.warning("Port not found for mac %s." % mac)
+                        LOG.warning("Port not found for nic %s, %s." %
+                                    (key, port_macs))
                     else:
-                        LOG.info("Port found for mac %s." % mac)
+                        LOG.info("Port found for nic %s." % key)
                 with zvmutils.log_and_reraise_sdkbase_error(action):
                     self._NetworkDbOperator.switch_add_record(
                                 userid, interface, port, switch)
