@@ -111,7 +111,7 @@ class GuestActionsTest(SDKWSGITest):
         self.req.body = '{"action": "register_vm",\
                           "meta": "rhel7",\
                           "net_set": "1",\
-                          "port": "5abc7819-abec-4deb-9115-2af5da249155"}'
+                          "port_macs": "5abc7819-abec-4deb-9115-2af5da249155"}'
         mock_action.return_value = ''
         mock_userid.return_value = FAKE_USERID
         guest.guest_action(self.req)
