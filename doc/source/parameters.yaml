@@ -184,6 +184,23 @@ guest_ipl_loadparam:
   in: body
   required: false
   type: string
+
+guest_dedicate_vdevs:
+  description: |
+    A list of device vdevs to dedicate to the guest。
+  in: body
+  required: false
+  type: list
+
+guest_loaddev:
+  description: |
+    The loaddev parms to add in the guest directory.Current supported key includes 'portname'
+    and 'lun'. Both the 'portname' and 'lun' can specify only one one- to
+    eight-byte hexadecimal value in the range of 0-FFFFFFFFFFFFFFFF.
+  in: body
+  required: false
+  type: dict
+
 guest_max_cpu:
   description: |
     The maximum number of virtual cpus this user can define.
@@ -652,6 +669,15 @@ deploy_hostname:
   in: body
   required: false
   type: string
+deploy_skipdiskcopy:
+  description: |
+    whether to skip the copy of image to disk. Default value if False.
+    If the value is True, the ``image_name`` specified should be the os version.
+    If the value is False, the ``image_name`` specified should be the name of the image
+    to be used to copy to the root disk.
+  in: body
+  required: false
+  type: boolean
 capture_type:
   description: |
     The type of capture\:
@@ -1069,3 +1095,10 @@ size_output:
   in: body
   required: true
   type: string
+last_access_time:
+  description: |
+    the time stamp of last access time of this image
+    the seconds count after 1970 and is generated from python ``time`` module.
+  in: body
+  required: true
+  type: float

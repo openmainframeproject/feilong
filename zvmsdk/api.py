@@ -337,23 +337,29 @@ class SDKAPI(object):
 
     @check_guest_exist()
     def guest_deploy(self, userid, image_name, transportfiles=None,
-                     remotehost=None, vdev=None, hostname=None):
+                     remotehost=None, vdev=None, hostname=None,
+                     skipdiskcopy=False):
         """ Deploy the image to vm.
 
         :param userid: (str) the user id of the vm
-        :param image_name: (str) the name of image that used to deploy the vm
+        :param image_name: (str) If the skipdiskcopy is False, this would be
+               used as the name of image that used to deploy the vm;
+               Otherwise, this value should be the os version.
         :param transportfiles: (str) the files that used to customize the vm
         :param remotehost: the server where the transportfiles located, the
                format is username@IP, eg nova@192.168.99.1
         :param vdev: (str) the device that image will be deploy to
         :param hostname: (str) the hostname of the vm. This parameter will be
                ignored if transportfiles present.
+        :param skipdiskcopy: (bool) whether to skip the disk copy process.
+               If True, the os version should be specified in the parameter
+               image_name.
         """
         action = ("deploy image '%(img)s' to guest '%(vm)s'" %
                   {'img': image_name, 'vm': userid})
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.guest_deploy(userid, image_name, transportfiles,
-                                     remotehost, vdev, hostname)
+                                     remotehost, vdev, hostname, skipdiskcopy)
 
     @check_guest_exist()
     def guest_capture(self, userid, image_name, capture_type='rootonly',
@@ -563,7 +569,8 @@ class SDKAPI(object):
                      user_profile=CONF.zvm.user_profile,
                      max_cpu=CONF.zvm.user_default_max_cpu,
                      max_mem=CONF.zvm.user_default_max_memory,
-                     ipl_from='', ipl_param='', ipl_loadparam=''):
+                     ipl_from='', ipl_param='', ipl_loadparam='',
+                     dedicate_vdevs=[], loaddev={}):
         """create a vm in z/VM
 
         :param userid: (str) the userid of the vm to be created
@@ -611,6 +618,15 @@ class SDKAPI(object):
                by guest input param, e.g CMS.
         :param ipl_param: the param to use when IPL for as PARM
         :param ipl_loadparam: the param to use when IPL for as LOADPARM
+        :param dedicate_vdevs: (list) the list of device vdevs to dedicate to
+               the guest.
+        :param loaddev: (dict) the loaddev parms to add in the guest directory.
+               Current supported key includes: 'portname', 'lun'.
+               Both the 'portname' and 'lun' can specify only one one- to
+               eight-byte hexadecimal value in the range of 0-FFFFFFFFFFFFFFFF
+               The format should be:
+               {'portname': str,
+               'lun': str}
         """
         userid = userid.upper()
         if disk_list:
@@ -643,11 +659,24 @@ class SDKAPI(object):
                     LOG.error(errmsg)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
 
+        if dedicate_vdevs and not isinstance(dedicate_vdevs, list):
+            errmsg = ('Invalid "dedicate_vdevs" input, it should be a '
+                              'list. Details could be found in doc.')
+            LOG.error(errmsg)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+        if loaddev and not isinstance(loaddev, dict):
+            errmsg = ('Invalid "loaddev" input, it should be a '
+                              'dictionary. Details could be found in doc.')
+            LOG.error(errmsg)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
         action = "create guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.create_vm(userid, vcpus, memory, disk_list,
                                          user_profile, max_cpu, max_mem,
-                                         ipl_from, ipl_param, ipl_loadparam)
+                                         ipl_from, ipl_param, ipl_loadparam,
+                                         dedicate_vdevs, loaddev)
 
     @check_guest_exist()
     def guest_live_resize_cpus(self, userid, cpu_cnt):

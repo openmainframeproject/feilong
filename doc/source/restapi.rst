@@ -146,6 +146,8 @@ Create a vm in z/VM
   - ipl_from: guest_ipl_from
   - ipl_param: guest_ipl_param
   - ipl_loadparam: guest_ipl_loadparam
+  - dedicate_vdevs: guest_dedicate_vdevs
+  - loaddev: guest_loaddev
 
 
 * Request sample:
@@ -899,7 +901,7 @@ Register guest to be managed by z/VM Cloud Connector.
 * Response contents:
 
 Guest deregister
---------------
+----------------
 
 **POST /guests/{userid}/action**
 
@@ -1108,6 +1110,7 @@ After guest created, deploy image onto the guest.
   - remotehost: remotehost_transportfiles
   - vdev: deploy_vdev
   - hostname: deploy_hostname
+  - skipdiskcopy: deploy_skipdiskcopy
 
 * Request sample:
 
@@ -1321,6 +1324,7 @@ Get the list of image info in image repository.
   - image_size_in_bytes: physical_disk_size_image
   - type: image_type
   - comments: image_comments
+  - last_access_time: last_access_time
 
 * Response sample:
 

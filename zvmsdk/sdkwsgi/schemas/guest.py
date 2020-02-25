@@ -32,6 +32,8 @@ create = {
                 'ipl_from': parameter_types.ipl_from,
                 'ipl_param': parameter_types.ipl_param,
                 'ipl_loadparam': parameter_types.ipl_loadparam,
+                'dedicate_vdevs': parameter_types.vdev_list,
+                'loaddev': parameter_types.loaddev
             },
             'required': ['userid', 'vcpus', 'memory'],
             'additionalProperties': False,
@@ -194,6 +196,7 @@ deploy = {
         'remotehost': parameter_types.remotehost,
         'vdev': parameter_types.vdev,
         'hostname': parameter_types.hostname,
+        'skipdiskcopy': parameter_types.boolean,
     },
     'required': ['image'],
     'additionalProperties': False,
