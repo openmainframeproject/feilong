@@ -51,7 +51,8 @@ class SDKAPITestCase(base.SDKTestCase):
                               transportfiles=transportfiles,
                               vdev=vdev)
         guest_deploy.assert_called_with(user_id.upper(), image_name,
-                                        transportfiles, None, vdev, None)
+                                        transportfiles, None, vdev,
+                                        None, False)
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_import")
     def test_image_import(self, image_import):
@@ -276,3 +277,16 @@ class SDKAPITestCase(base.SDKTestCase):
                            'assigner_id': 'user1'}
         self.api.volume_detach(connection_info)
         mock_detach.assert_called_once_with(connection_info)
+
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.database.NetworkDbOperator."
+                "switch_delete_record_for_userid")
+    @mock.patch("zvmsdk.database.GuestDbOperator.delete_guest_by_userid")
+    def test_guest_deregister(self, guestdb_del, networkdb_del, chk_usr):
+        guestdb_del.return_value = ''
+        networkdb_del.return_value = ''
+        chk_usr.return_value = True
+        self.api.guest_deregister(self.userid)
+        guestdb_del.assert_called_once_with(self.userid)
+        networkdb_del.assert_called_once_with(self.userid)
+        chk_usr.assert_called_once_with(self.userid)

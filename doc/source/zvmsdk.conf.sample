@@ -38,6 +38,28 @@
 #console_log_size=100
 
 
+# 
+# The interval time between 2 retries, in seconds.
+# 
+# This will take effect only when you set softstop_retries item.
+# What's more, the value of softstop_timeout/softstop_interval is
+# the times retried.
+#     
+# This param is optional
+#softstop_interval=5
+
+
+# 
+# The maximum time waiting until the guest shut down.
+# 
+# Sometimes, the shutdown action will take a bit lone time to complete.
+# If you want to make sure the guest in shut-down status after executing action
+# of softstop, this will help.
+#     
+# This param is optional
+#softstop_timeout=60
+
+
 [image]
 
 # 

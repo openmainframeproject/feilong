@@ -141,9 +141,9 @@ function installIucvserver {
     exit 1
   fi
 
-  # On rhel7, install selinux policy module to enable iucv communication if selinux is enforcing
+  # On rhel7 and rhel8, install selinux policy module to enable iucv communication if selinux is enforcing
   # TODO: Similar resolution has a bug on sles and ubuntu waiting for further verify.
-  if [[ $os == rhel7* && $(getenforce) == 'Enforcing' ]]; then
+  if [[  $os == rhel7* || $os == rhel8* ]] && [[ $(getenforce) == 'Enforcing' ]] ; then
     out=`semodule -i iucvselx_running.pp`
     rc=$?
     if (( rc != 0 )); then

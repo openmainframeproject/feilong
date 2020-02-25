@@ -337,23 +337,29 @@ class SDKAPI(object):
 
     @check_guest_exist()
     def guest_deploy(self, userid, image_name, transportfiles=None,
-                     remotehost=None, vdev=None, hostname=None):
+                     remotehost=None, vdev=None, hostname=None,
+                     skipdiskcopy=False):
         """ Deploy the image to vm.
 
         :param userid: (str) the user id of the vm
-        :param image_name: (str) the name of image that used to deploy the vm
+        :param image_name: (str) If the skipdiskcopy is False, this would be
+               used as the name of image that used to deploy the vm;
+               Otherwise, this value should be the os version.
         :param transportfiles: (str) the files that used to customize the vm
         :param remotehost: the server where the transportfiles located, the
                format is username@IP, eg nova@192.168.99.1
         :param vdev: (str) the device that image will be deploy to
         :param hostname: (str) the hostname of the vm. This parameter will be
                ignored if transportfiles present.
+        :param skipdiskcopy: (bool) whether to skip the disk copy process.
+               If True, the os version should be specified in the parameter
+               image_name.
         """
         action = ("deploy image '%(img)s' to guest '%(vm)s'" %
                   {'img': image_name, 'vm': userid})
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.guest_deploy(userid, image_name, transportfiles,
-                                     remotehost, vdev, hostname)
+                                     remotehost, vdev, hostname, skipdiskcopy)
 
     @check_guest_exist()
     def guest_capture(self, userid, image_name, capture_type='rootonly',
@@ -470,6 +476,27 @@ class SDKAPI(object):
                             self._NetworkDbOperator.switch_add_record_migrated(
                                 userid, interface, switch)
             LOG.info("Guest %s registered." % userid)
+
+    # Deregister the guest (not delete), this function has no relationship with
+    # migration.
+    def guest_deregister(self, userid):
+        """DB operation for deregister vm for offboard (dismiss) request.
+        :param userid: (str) the userid of the vm to be deregistered
+        """
+        userid = userid.upper()
+        if not zvmutils.check_userid_exist(userid):
+            LOG.error("User directory '%s' does not exist." % userid)
+            raise exception.SDKObjectNotExistError(
+                    obj_desc=("Guest '%s'" % userid), modID='guest')
+        else:
+            action = "delete switches of guest '%s' from database" % userid
+            with zvmutils.log_and_reraise_sdkbase_error(action):
+                self._NetworkDbOperator.switch_delete_record_for_userid(userid)
+
+            action = "delete guest '%s' from database" % userid
+            with zvmutils.log_and_reraise_sdkbase_error(action):
+                self._GuestDbOperator.delete_guest_by_userid(userid)
+            LOG.info("Guest %s deregistered." % userid)
 
     @check_guest_exist()
     def guest_live_migrate(self, userid, dest_zcc_userid, destination,

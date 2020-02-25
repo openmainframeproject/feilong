@@ -196,6 +196,7 @@ deploy = {
         'remotehost': parameter_types.remotehost,
         'vdev': parameter_types.vdev,
         'hostname': parameter_types.hostname,
+        'skipdiskcopy': parameter_types.boolean,
     },
     'required': ['image'],
     'additionalProperties': False,
@@ -249,6 +250,14 @@ register_vm = {
         'net_set': {'type': ['string']},
     },
     'required': ['meta', 'net_set'],
+    'additionalProperties': False
+}
+
+deregister_vm = {
+    'type': 'object',
+    'properties': {
+        'userid': parameter_types.userid,
+    },
     'additionalProperties': False
 }
 
