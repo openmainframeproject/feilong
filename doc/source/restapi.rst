@@ -888,6 +888,7 @@ Register guest to be managed by z/VM Cloud Connector.
   - action: action_register_guest
   - meta: guest_register_meta
   - net_set: guest_register_net_set  
+  - port: guest_register_port_macs
 
 * Request sample:
 
@@ -1110,6 +1111,7 @@ After guest created, deploy image onto the guest.
   - remotehost: remotehost_transportfiles
   - vdev: deploy_vdev
   - hostname: deploy_hostname
+  - skipdiskcopy: deploy_skipdiskcopy
 
 * Request sample:
 
