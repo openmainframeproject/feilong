@@ -47,3 +47,9 @@ class HostTestCase(base.ZVMConnectorBaseTestCase):
         url = '/host/diskpool?poolname=%s' % 'xxxx:dummy'
         resp = self.client.api_request(url)
         self.assertEqual(400, resp.status_code)
+
+    def test_host_get_guest_power_state(self):
+        resp = self.client.api_request(url='/host/noexist/power_state')
+        self.assertEqual(400, resp.status_code)
+        self.apibase.verify_result('test_host_get_guest_power_state',
+                                   resp.content)
