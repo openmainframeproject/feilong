@@ -447,7 +447,7 @@ function chccwdevDevice {
   chccwdev $opt $device &> /dev/null
   local rc=$?
   if [[ $rc -ne 0 ]]; then
-    inform "Attempt to set device offline failed. Retrying..." 1>&2
+    inform "Attempt to set device $englishOpt failed and return code is $rc. Retrying..." 1>&2
     # retry, while waiting various durations
     for seconds in $sleepTimes; do
       sleep $seconds
