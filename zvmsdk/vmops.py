@@ -271,12 +271,16 @@ class VMOps(object):
             self._pathutils.clean_temp_folder(tmp_path)
 
     def guest_deploy(self, userid, image_name, transportfiles=None,
-                     remotehost=None, vdev=None, hostname=None):
+                     remotehost=None, vdev=None, hostname=None,
+                     skipdiskcopy=False):
         LOG.info("Begin to deploy image on vm %s", userid)
-        os_version = self._smtclient.image_get_os_distro(image_name)
+        if not skipdiskcopy:
+            os_version = self._smtclient.image_get_os_distro(image_name)
+        else:
+            os_version = image_name
         if not os_version.lower().startswith('rhcos'):
             self._smtclient.guest_deploy(userid, image_name, transportfiles,
-                                         remotehost, vdev)
+                                         remotehost, vdev, skipdiskcopy)
 
             # punch scripts to set hostname
             if (transportfiles is None) and hostname:

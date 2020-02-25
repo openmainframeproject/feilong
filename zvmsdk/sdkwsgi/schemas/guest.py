@@ -196,6 +196,7 @@ deploy = {
         'remotehost': parameter_types.remotehost,
         'vdev': parameter_types.vdev,
         'hostname': parameter_types.hostname,
+        'skipdiskcopy': parameter_types.boolean,
     },
     'required': ['image'],
     'additionalProperties': False,
