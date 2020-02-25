@@ -435,7 +435,7 @@ action_register_guest:
   type: string
 guest_register_meta:
   description: |
-    The metadata of the vm to be relocated.
+    The metadata of the vm to be registered.
   in: body
   required: true
   type: string
@@ -446,6 +446,12 @@ guest_register_net_set:
   in: body
   required: true
   type: string
+guest_register_port_macs:
+  description: |
+    The dict of virtual interface port id and mac id
+  in: body
+  required: false
+  type: dict
 action_deregister_guest:
   description: |
     Take ``deregister_vm`` action on guest.
