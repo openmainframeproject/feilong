@@ -237,11 +237,13 @@ def req_guest_live_migrate(start_index, *args, **kwargs):
     return url, body
 
 
-def req_guest_pre_migrate(start_index, *args, **kwargs):
+def req_guest_register(start_index, *args, **kwargs):
     url = '/guests/%s/action'
     body = {'action': 'register_vm',
             'meta': args[start_index],
             'net_set': args[start_index + 1]}
+    if len(args) - start_index == 3:
+        body['port_macs'] = args[start_index + 2]
     return url, body
 
 
@@ -604,8 +606,9 @@ DATABASE = {
     'guest_register': {
         'method': 'POST',
         'args_required': 3,
+        'args_optional': 1,
         'params_path': 1,
-        'request': req_guest_pre_migrate},
+        'request': req_guest_register},
     'guest_deregister': {
         'method': 'POST',
         'args_required': 1,
@@ -834,10 +837,13 @@ class RESTClient(object):
             raise APINameNotFound(msg)
         # check args count is valid
         count = DATABASE[api_name]['args_required']
+        optional = 0
+        if 'args_optional' in DATABASE[api_name].keys():
+            optional = DATABASE[api_name]['args_optional']
         if len(args) < count:
             msg = "Missing some args,please check:%s." % args
             raise ArgsFormatError(msg)
-        if len(args) > count:
+        if len(args) > count + optional:
             msg = "Too many args,please check:%s." % args
             raise ArgsFormatError(msg)
 
