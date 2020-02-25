@@ -647,31 +647,36 @@ class SMTClient(object):
             self._pathutils.clean_temp_folder(iucv_path)
 
     def guest_deploy(self, userid, image_name, transportfiles=None,
-                     remotehost=None, vdev=None):
+                     remotehost=None, vdev=None, skipdiskcopy=False):
         """ Deploy image and punch config driver to target """
         # (TODO: add the support of multiple disks deploy)
-        msg = ('Start to deploy image %(img)s to guest %(vm)s'
+        if skipdiskcopy:
+            msg = ('Start guest_deploy without unpackdiskimage, guest: %(vm)s'
+                   'os_version: %(img)s' % {'img': image_name, 'vm': userid})
+            LOG.info(msg)
+        else:
+            msg = ('Start to deploy image %(img)s to guest %(vm)s'
                 % {'img': image_name, 'vm': userid})
-        LOG.info(msg)
-        image_file = '/'.join([self._get_image_path_by_name(image_name),
-                               CONF.zvm.user_root_vdev])
-        # Unpack image file to root disk
-        vdev = vdev or CONF.zvm.user_root_vdev
-        cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', userid, vdev,
-               image_file]
-        with zvmutils.expect_and_reraise_internal_error(modID='guest'):
-            (rc, output) = zvmutils.execute(cmd)
-        if rc != 0:
-            err_msg = ("unpackdiskimage failed with return code: %d." % rc)
-            err_output = ""
-            output_lines = output.split('\n')
-            for line in output_lines:
-                if line.__contains__("ERROR:"):
-                    err_output += ("\\n" + line.strip())
-            LOG.error(err_msg + err_output)
-            raise exception.SDKGuestOperationError(rs=3, userid=userid,
-                                                   unpack_rc=rc,
-                                                   err=err_output)
+            LOG.info(msg)
+            image_file = '/'.join([self._get_image_path_by_name(image_name),
+                                   CONF.zvm.user_root_vdev])
+            # Unpack image file to root disk
+            vdev = vdev or CONF.zvm.user_root_vdev
+            cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', userid, vdev,
+                   image_file]
+            with zvmutils.expect_and_reraise_internal_error(modID='guest'):
+                (rc, output) = zvmutils.execute(cmd)
+            if rc != 0:
+                err_msg = ("unpackdiskimage failed with return code: %d." % rc)
+                err_output = ""
+                output_lines = output.split('\n')
+                for line in output_lines:
+                    if line.__contains__("ERROR:"):
+                        err_output += ("\\n" + line.strip())
+                LOG.error(err_msg + err_output)
+                raise exception.SDKGuestOperationError(rs=3, userid=userid,
+                                                       unpack_rc=rc,
+                                                       err=err_output)
 
         # Purge guest reader to clean dirty data
         rd = ("changevm %s purgerdr" % userid)
@@ -720,11 +725,20 @@ class SMTClient(object):
         self.guest_authorize_iucv_client(userid)
         # Update os version in guest metadata
         # TODO: may should append to old metadata, not replace
-        image_info = self._ImageDbOperator.image_query_record(image_name)
-        metadata = 'os_version=%s' % image_info[0]['imageosdistro']
+        if skipdiskcopy:
+            os_version = image_name
+        else:
+            image_info = self._ImageDbOperator.image_query_record(image_name)
+            os_version = image_info[0]['imageosdistro']
+        metadata = 'os_version=%s' % os_version
         self._GuestDbOperator.update_guest_by_userid(userid, meta=metadata)
 
-        msg = ('Deploy image %(img)s to guest %(vm)s disk %(vdev)s'
+        if skipdiskcopy:
+            msg = ('guest_deploy without unpackdiskimage finish successfully, '
+                   'guest: %(vm)s, os_version: %(img)s'
+                   % {'img': image_name, 'vm': userid})
+        else:
+            msg = ('Deploy image %(img)s to guest %(vm)s disk %(vdev)s'
                ' successfully' % {'img': image_name, 'vm': userid,
                                   'vdev': vdev})
         LOG.info(msg)
@@ -2292,7 +2306,7 @@ class SMTClient(object):
         """
         Return the operating system distro of the specified image
         """
-        image_info = self.image_query(image_name)
+        image_info = self._ImageDbOperator.image_query_record(image_name)
         if not image_info:
             raise exception.SDKImageOperationError(rs=20, img=image_name)
         os_distro = image_info[0]['imageosdistro']
@@ -2302,7 +2316,7 @@ class SMTClient(object):
         """
         Return image disk type
         """
-        image_info = self.image_query(image_name)
+        image_info = self._ImageDbOperator.image_query_record(image_name)
         if ((image_info[0]['comments'] is not None) and
             (image_info[0]['comments'].__contains__('disk_type'))):
             image_disk_type = eval(image_info[0]['comments'])['disk_type']

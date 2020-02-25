@@ -282,8 +282,9 @@ class VMAction(object):
     def register_vm(self, userid, body):
         meta = body['meta']
         net_set = body['net_set']
+        port = body['port']
         info = self.client.send_request('guest_register',
-                                userid, meta, net_set)
+                                userid, meta, net_set, port)
         return info
 
     @validation.schema(guest.deregister_vm)
@@ -344,13 +345,15 @@ class VMAction(object):
         remotehost = body.get('remotehost', None)
         vdev = body.get('vdev', None)
         hostname = body.get('hostname', None)
+        skipdiskcopy = body.get('skipdiskcopy', False)
 
         request_info = ("action: 'deploy', userid: %(userid)s,"
                         "transportfiles: %(trans)s, remotehost: %(remote)s,"
-                        "vdev: %(vdev)s" %
+                        "vdev: %(vdev)s, skipdiskcopy: %(skipdiskcopy)s" %
                         {'userid': userid, 'trans': transportfiles,
                          'remote': remotehost, 'vdev': vdev,
-                         'hostname': hostname
+                         'hostname': hostname,
+                         'skipdiskcopy': skipdiskcopy,
                          })
 
         info = None
@@ -371,7 +374,8 @@ class VMAction(object):
                                             image_name,
                                             transportfiles=transportfiles,
                                             remotehost=remotehost,
-                                            vdev=vdev, hostname=hostname)
+                                            vdev=vdev, hostname=hostname,
+                                            skipdiskcopy=skipdiskcopy)
         finally:
             try:
                 self.dd_semaphore.release()
