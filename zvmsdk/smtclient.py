@@ -684,7 +684,6 @@ class SMTClient(object):
                 res = wwpns.split()
         return res
 
-
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None, skipdiskcopy=False):
         """ Deploy image and punch config driver to target """
