@@ -147,7 +147,7 @@ SSH onto the BYOL as root user, and then follow the following steps:
 
    .. code-block:: text
 
-       # git clone https://github.com/mfcloud/build-zvmsdk.git
+       # git clone https://github.com/openmainframeproject/build-zvmsdk.git
 
 2. Trigger the build tool
 
@@ -207,7 +207,7 @@ supported SDK APIs by communicating with the zthin backend.
 
      .. code-block:: text
 
-         # git clone https://github.com/mfcloud/python-zvm-sdk.git
+         # git clone https://github.com/openmainframeproject/python-zvm-sdk.git
 
      (If this has been done in the "z/VM zthin install" step, this step can be
      obsoleted.)

@@ -67,6 +67,10 @@ class VMHandler(object):
             kwargs_list['ipl_param'] = guest['ipl_param']
         if 'ipl_loadparam' in guest_keys:
             kwargs_list['ipl_loadparam'] = guest['ipl_loadparam']
+        if 'dedicate_vdevs' in guest_keys:
+            kwargs_list['dedicate_vdevs'] = guest['dedicate_vdevs']
+        if 'loaddev' in guest_keys:
+            kwargs_list['loaddev'] = guest['loaddev']
 
         info = self.client.send_request('guest_create', userid, vcpus,
                                         memory, **kwargs_list)
@@ -278,8 +282,14 @@ class VMAction(object):
     def register_vm(self, userid, body):
         meta = body['meta']
         net_set = body['net_set']
+        port = body['port']
         info = self.client.send_request('guest_register',
-                                userid, meta, net_set)
+                                userid, meta, net_set, port)
+        return info
+
+    @validation.schema(guest.deregister_vm)
+    def deregister_vm(self, userid, body):
+        info = self.client.send_request('guest_deregister', userid)
         return info
 
     @validation.schema(guest.live_migrate_vm)
@@ -335,13 +345,15 @@ class VMAction(object):
         remotehost = body.get('remotehost', None)
         vdev = body.get('vdev', None)
         hostname = body.get('hostname', None)
+        skipdiskcopy = body.get('skipdiskcopy', False)
 
         request_info = ("action: 'deploy', userid: %(userid)s,"
                         "transportfiles: %(trans)s, remotehost: %(remote)s,"
-                        "vdev: %(vdev)s" %
+                        "vdev: %(vdev)s, skipdiskcopy: %(skipdiskcopy)s" %
                         {'userid': userid, 'trans': transportfiles,
                          'remote': remotehost, 'vdev': vdev,
-                         'hostname': hostname
+                         'hostname': hostname,
+                         'skipdiskcopy': skipdiskcopy,
                          })
 
         info = None
@@ -362,7 +374,8 @@ class VMAction(object):
                                             image_name,
                                             transportfiles=transportfiles,
                                             remotehost=remotehost,
-                                            vdev=vdev, hostname=hostname)
+                                            vdev=vdev, hostname=hostname,
+                                            skipdiskcopy=skipdiskcopy)
         finally:
             try:
                 self.dd_semaphore.release()

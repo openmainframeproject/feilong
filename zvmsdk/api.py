@@ -337,23 +337,29 @@ class SDKAPI(object):
 
     @check_guest_exist()
     def guest_deploy(self, userid, image_name, transportfiles=None,
-                     remotehost=None, vdev=None, hostname=None):
+                     remotehost=None, vdev=None, hostname=None,
+                     skipdiskcopy=False):
         """ Deploy the image to vm.
 
         :param userid: (str) the user id of the vm
-        :param image_name: (str) the name of image that used to deploy the vm
+        :param image_name: (str) If the skipdiskcopy is False, this would be
+               used as the name of image that used to deploy the vm;
+               Otherwise, this value should be the os version.
         :param transportfiles: (str) the files that used to customize the vm
         :param remotehost: the server where the transportfiles located, the
                format is username@IP, eg nova@192.168.99.1
         :param vdev: (str) the device that image will be deploy to
         :param hostname: (str) the hostname of the vm. This parameter will be
                ignored if transportfiles present.
+        :param skipdiskcopy: (bool) whether to skip the disk copy process.
+               If True, the os version should be specified in the parameter
+               image_name.
         """
         action = ("deploy image '%(img)s' to guest '%(vm)s'" %
                   {'img': image_name, 'vm': userid})
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.guest_deploy(userid, image_name, transportfiles,
-                                     remotehost, vdev, hostname)
+                                     remotehost, vdev, hostname, skipdiskcopy)
 
     @check_guest_exist()
     def guest_capture(self, userid, image_name, capture_type='rootonly',
@@ -428,11 +434,129 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_definition_info(userid, **kwargs)
 
-    def guest_register(self, userid, meta, net_set):
-        """DB operation for migrate vm from another z/VM host in same SSI
+    """Parse the nics' info from the user directory
+    :param user_direct: (str) the user directory info to be parsed
+    """
+    def _parse_nic_info(self, user_direct):
+        nics_info = {}
+        for nic_info in user_direct:
+            if nic_info.startswith('NICDEF'):
+                split_info = nic_info.split()
+                nic_id = split_info[1].strip()
+                count = 2
+                one_nic = nics_info.get(nic_id, {})
+                while count < len(split_info):
+                    if split_info[count] == 'LAN':
+                        one_nic['vswitch'] = split_info[count + 2].strip()
+                        count += 3
+                        continue
+                    elif split_info[count] == 'MACID':
+                        one_nic['mac'] = split_info[count + 1].strip()
+                        count += 2
+                        continue
+                    elif split_info[count] == 'VLAN':
+                        one_nic['vid'] = split_info[count + 1].strip()
+                        count += 2
+                        continue
+                    else:
+                        count += 1
+
+                nics_info[nic_id] = one_nic
+
+        return nics_info
+
+    def guest_register(self, userid, meta, net_set, port_macs=None):
+        """Register vm by inserting or updating DB for e.g. migration and onboarding
         :param userid: (str) the userid of the vm to be relocated or tested
         :param meta: (str) the metadata of the vm to be relocated or tested
         :param net_set: (str) the net_set of the vm, default is 1.
+        :param port_macs: (dir) the virtual interface port id maps with mac id
+                     Format: { macid1 : portid1, macid2 : portid2}.
+                     For example,
+                     {
+                       'EF5091':'6e2ecc4f-14a2-4f33-9f12-5ac4a42f97e7',
+                       '69FCF1':'389dee5e-7b03-405c-b1e8-7c9c235d1425'
+                     }
+        """
+        if port_macs is not None and not isinstance(port_macs, dict):
+            msg = ('Invalid input parameter port_macs, expect dict')
+            LOG.error(msg)
+            raise exception.SDKInvalidInputFormat(msg)
+
+        userid = userid.upper()
+        if not zvmutils.check_userid_exist(userid):
+            LOG.error("User directory '%s' does not exist." % userid)
+            raise exception.SDKObjectNotExistError(
+                    obj_desc=("Guest '%s'" % userid), modID='guest')
+        else:
+            action = "query the guest in database."
+            with zvmutils.log_and_reraise_sdkbase_error(action):
+                guest = self._GuestDbOperator.get_guest_by_userid(userid)
+            if guest is not None:
+                # The below handling is for migration
+                action = "list all guests in database which has been migrated."
+                with zvmutils.log_and_reraise_sdkbase_error(action):
+                    guests = self._GuestDbOperator.get_migrated_guest_list()
+                if userid in str(guests):
+                    """change comments for vm"""
+                    comments = self._GuestDbOperator.get_comments_by_userid(
+                                                                    userid)
+                    comments['migrated'] = 0
+                    action = "update guest '%s' in database" % userid
+                    with zvmutils.log_and_reraise_sdkbase_error(action):
+                        self._GuestDbOperator.update_guest_by_userid(userid,
+                                                    comments=comments)
+                    LOG.info("Guest %s comments updated." % userid)
+                # We just return no matter onboarding or migration
+                # since the guest exists
+                return
+
+            # add one record for new vm for both onboarding and migration,
+            # and even others later.
+            action = "add guest '%s' to database" % userid
+            with zvmutils.log_and_reraise_sdkbase_error(action):
+                self._GuestDbOperator.add_guest_registered(userid, meta,
+                                                             net_set)
+
+            # We need to query and add vswitch to the database.
+            # The result got by get_definition_info is like:
+            # USER ZSJC002F LBYONLY 4096m 64G G
+            # INCLUDE ZCCDFLT
+            # COMMAND DEF STOR RESERVED 61440M
+            # CPU 00 BASE
+            # IPL 0100
+            # LOGONBY IAASADM
+            # MACHINE ESA 32
+            # NICDEF 1000 TYPE QDIO LAN SYSTEM VSC1159B DEVICES 3 MACID EF5091
+            # NICDEF 1000 VLAN 8
+            # NICDEF 1003 TYPE QDIO LAN SYSTEM VSC1159B DEVICES 3 MACID 69FCF1
+            # NICDEF 1003 VLAN 798
+            # MDISK 0100 3390 0001 14564 IAS10D MR
+            action = "add switches of guest '%s' to database" % userid
+            info = self._vmops.get_definition_info(userid)
+            user_direct = info['user_direct']
+            nics_info = self._parse_nic_info(user_direct)
+            for key in nics_info:
+                interface = key
+                switch = nics_info[key]['vswitch']
+                port = None
+                if port_macs is not None:
+                    mac = nics_info[key]['mac']
+                    port = port_macs[mac]
+                    if port is None:
+                        LOG.warning("Port not found for mac %s." % mac)
+                    else:
+                        LOG.info("Port found for mac %s." % mac)
+                with zvmutils.log_and_reraise_sdkbase_error(action):
+                    self._NetworkDbOperator.switch_add_record(
+                                userid, interface, port, switch)
+            LOG.info("Guest %s registered." % userid)
+
+    # Deregister the guest (not delete), this function has no relationship with
+    # migration.
+    def guest_deregister(self, userid):
+        """DB operation for deregister vm for offboard (dismiss) request.
+        :param userid: (str) the userid of the vm to be deregistered
         """
         userid = userid.upper()
         if not zvmutils.check_userid_exist(userid):
@@ -440,36 +564,14 @@ class SDKAPI(object):
             raise exception.SDKObjectNotExistError(
                     obj_desc=("Guest '%s'" % userid), modID='guest')
         else:
-            action = "list all guests in database which has been migrated."
+            action = "delete switches of guest '%s' from database" % userid
             with zvmutils.log_and_reraise_sdkbase_error(action):
-                guests = self._GuestDbOperator.get_migrated_guest_list()
-            if userid in str(guests):
-                """change comments for vm"""
-                comments = self._GuestDbOperator.get_comments_by_userid(
-                                                                    userid)
-                comments['migrated'] = 0
-                action = "update guest '%s' in database" % userid
-                with zvmutils.log_and_reraise_sdkbase_error(action):
-                    self._GuestDbOperator.update_guest_by_userid(userid,
-                                                    comments=comments)
-            else:
-                """add one record for new vm"""
-                action = "add guest '%s' to database" % userid
-                with zvmutils.log_and_reraise_sdkbase_error(action):
-                    self._GuestDbOperator.add_guest_migrated(userid, meta,
-                                                             net_set)
-                action = "add switches of guest '%s' to database" % userid
-                info = self._vmops.get_definition_info(userid)
-                user_direct = info['user_direct']
-                for nic_info in user_direct:
-                    if nic_info.startswith('NICDEF'):
-                        nic_list = nic_info.split()
-                        interface = nic_list[1]
-                        switch = nic_list[6]
-                        with zvmutils.log_and_reraise_sdkbase_error(action):
-                            self._NetworkDbOperator.switch_add_record_migrated(
-                                userid, interface, switch)
-            LOG.info("Guest %s registered." % userid)
+                self._NetworkDbOperator.switch_delete_record_for_userid(userid)
+
+            action = "delete guest '%s' from database" % userid
+            with zvmutils.log_and_reraise_sdkbase_error(action):
+                self._GuestDbOperator.delete_guest_by_userid(userid)
+            LOG.info("Guest %s deregistered." % userid)
 
     @check_guest_exist()
     def guest_live_migrate(self, userid, dest_zcc_userid, destination,
@@ -542,7 +644,8 @@ class SDKAPI(object):
                      user_profile=CONF.zvm.user_profile,
                      max_cpu=CONF.zvm.user_default_max_cpu,
                      max_mem=CONF.zvm.user_default_max_memory,
-                     ipl_from='', ipl_param='', ipl_loadparam=''):
+                     ipl_from='', ipl_param='', ipl_loadparam='',
+                     dedicate_vdevs=[], loaddev={}):
         """create a vm in z/VM
 
         :param userid: (str) the userid of the vm to be created
@@ -590,6 +693,15 @@ class SDKAPI(object):
                by guest input param, e.g CMS.
         :param ipl_param: the param to use when IPL for as PARM
         :param ipl_loadparam: the param to use when IPL for as LOADPARM
+        :param dedicate_vdevs: (list) the list of device vdevs to dedicate to
+               the guest.
+        :param loaddev: (dict) the loaddev parms to add in the guest directory.
+               Current supported key includes: 'portname', 'lun'.
+               Both the 'portname' and 'lun' can specify only one one- to
+               eight-byte hexadecimal value in the range of 0-FFFFFFFFFFFFFFFF
+               The format should be:
+               {'portname': str,
+               'lun': str}
         """
         userid = userid.upper()
         if disk_list:
@@ -622,11 +734,24 @@ class SDKAPI(object):
                     LOG.error(errmsg)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
 
+        if dedicate_vdevs and not isinstance(dedicate_vdevs, list):
+            errmsg = ('Invalid "dedicate_vdevs" input, it should be a '
+                              'list. Details could be found in doc.')
+            LOG.error(errmsg)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+        if loaddev and not isinstance(loaddev, dict):
+            errmsg = ('Invalid "loaddev" input, it should be a '
+                              'dictionary. Details could be found in doc.')
+            LOG.error(errmsg)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
         action = "create guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.create_vm(userid, vcpus, memory, disk_list,
                                          user_profile, max_cpu, max_mem,
-                                         ipl_from, ipl_param, ipl_loadparam)
+                                         ipl_from, ipl_param, ipl_loadparam,
+                                         dedicate_vdevs, loaddev)
 
     @check_guest_exist()
     def guest_live_resize_cpus(self, userid, cpu_cnt):
