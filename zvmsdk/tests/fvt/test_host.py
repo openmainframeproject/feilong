@@ -47,3 +47,9 @@ class HostTestCase(base.ZVMConnectorBaseTestCase):
         url = '/host/diskpool?poolname=%s' % 'xxxx:dummy'
         resp = self.client.api_request(url)
         self.assertEqual(400, resp.status_code)
+
+    def test_host_get_guest_definition_info(self):
+        resp = self.client.api_request(url='/host/USER1/def_info')
+        self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_host_get_guest_definition_info',
+                                   resp.content)
