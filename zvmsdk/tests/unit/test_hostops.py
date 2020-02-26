@@ -69,3 +69,13 @@ class SDKHostOpsTestCase(base.SDKTestCase):
         self.assertEqual(dp_info['disk_total'], 406105)
         self.assertEqual(dp_info['disk_used'], 367263)
         self.assertEqual(dp_info['disk_available'], 38)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_user_direct")
+    def test_get_guest_definition_info(self, get_user_direct):
+        get_user_direct.return_value = [
+            'line1',
+            'NICDEF 1000 TYPE QDIO LAN SYSTEM VSWITCH']
+
+        self._hostops.get_guest_definition_info("fake_user_id",
+                                                nic_coupled='1000')
+        get_user_direct.assert_called_with("fake_user_id")

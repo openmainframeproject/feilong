@@ -18,6 +18,10 @@ import mock
 import unittest
 
 from zvmsdk.sdkwsgi.handlers import host
+from zvmsdk.sdkwsgi import util
+
+
+FAKE_USERID = 'noexist'
 
 
 class FakeResp(object):
@@ -61,3 +65,12 @@ class HandlersHostTest(unittest.TestCase):
         self.req.GET['poolname'] = 'disk1'
         host.host_get_disk_info(self.req)
         self.assertTrue(mock_get_disk_info.called)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(host.HostAction, 'get_guest_definition_info')
+    def test_host_get_guest_definition_info(self, mock_get, mock_userid):
+        mock_get.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        host.host_get_guest_definition_info(self.req)
+        mock_get.assert_called_once_with(self.req, FAKE_USERID)
