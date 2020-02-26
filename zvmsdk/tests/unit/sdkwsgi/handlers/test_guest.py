@@ -123,6 +123,21 @@ class GuestActionsTest(SDKWSGITest):
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_register_no_port_macs(self, mock_action,
+                        mock_userid):
+        self.req.body = '{"action": "register_vm",\
+                          "meta": "rhel7",\
+                          "net_set": "1"}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_register', FAKE_USERID,
+                                            "rhel7",
+                                            "1",
+                                            None)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_deregister(self, mock_action,
                         mock_userid):
         self.req.body = '{"action": "deregister_vm"}'
