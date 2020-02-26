@@ -1391,6 +1391,15 @@ class SDKAPI(object):
         """
         self._volumeop.attach_volume_to_instance(connection_info)
 
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun):
+        """ Refresh a volume's bootmap info.
+
+        :param list of fcpchannels
+        :param list of wwpns
+        :param string lun
+        """
+        return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun)
+
     def volume_detach(self, connection_info):
         """ Detach a volume from a guest. It's prerequisite to active multipath
             feature on the guest before utilizing persistent volumes.
