@@ -132,6 +132,16 @@ loaddev = {
     'additionalProperties': False
 }
 
+dedicate_vdevs = {
+    'type': 'array',
+    'minItems': 0,
+    'items': {
+        'type': 'string',
+        'pattern': '^[0-9a-fA-F]{,4}$'
+    },
+    'uniqueItems': True
+}
+
 positive_integer = {
     'type': ['integer', 'string'],
     'pattern': '^[0-9]*$', 'minimum': 1
