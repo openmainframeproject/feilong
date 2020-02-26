@@ -228,6 +228,8 @@ errors = {
                 3: "Volume %(vol)s has already been attached on instance "
                    "%(inst)s",
                 4: "Volume %(vol)s is not attached on instance %(inst)s",
+                5: "Refresh bootmap fails, error code: %(errcode)s and "
+                   "reason: %(errmsg)s",
                 },
                "Operation on Volume failed"
                ],

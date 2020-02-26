@@ -1095,11 +1095,18 @@ function deployDiskImage {
     type lszdev >/dev/null 2>&1 || { printError "Require lszdev tool, but not installed. Aborting."; exit 3; }
     DEST_DEV_BUS=$(lszdev --by-node ${DEST_DEV} | tail -n 1  | awk '{print $2}')
     if [ "$(< /sys/bus/ccw/devices/${DEST_DEV_BUS}/status)" = "unformatted" ]; then
+        inform "Formatting..."
         dasdfmt --blocksize 4096 --disk_layout cdl --mode full -ypv "${DEST_DEV}"
     fi
 
     #Get blocks for per track of target disk
     block_per_tracks=$(fdasd -p ${DEST_DEV} | grep blocks\ per\ track | awk '{print $5}')
+    if [ ! $block_per_tracks ]; then
+        #DEST_DEV is not formatted with z/OS compatible disk layout!
+        inform "Formatting..."
+        dasdfmt --blocksize 4096 --disk_layout cdl --mode full -ypv "${DEST_DEV}"
+    fi
+
     #the first 2 tracks of the ECKD DASD are reserved
     first_track=2
     partition_Num=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*[0-9]" | wc -l))
@@ -1107,14 +1114,15 @@ function deployDiskImage {
     root_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*${partition_Num}" | awk '{print $2,$4}'))
     boot_partition+=( $first_track $(( (${boot_partition[1]} + $block_per_tracks - 1) / $block_per_tracks )) )
     root_partition+=($(( ${boot_partition[2]} + ${boot_partition[3]} )) "last")
-    cat > "/tmp/fdasd_conf" <<- EOF
+    touch /tmp/${userID}/fdasd_conf
+    cat > "/tmp/${userID}/fdasd_conf" <<- EOF
 [$first_track,$(( ${root_partition[2]} - 1 )),native]
 [${root_partition[2]},${root_partition[3]},native]
 EOF
 
     # format the ECKD DASD using fdasd program
     inform "Create partitions..."
-    fdasd --silent --config /tmp/fdasd_conf "${DEST_DEV}"
+    fdasd --silent --config /tmp/${userID}/fdasd_conf "${DEST_DEV}"
 
     # copy the content of each partition
     inform "Coping partitions..."
