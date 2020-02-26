@@ -1115,7 +1115,7 @@ function deployDiskImage {
     root_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*${partition_Num}" | awk '{print $2,$4}'))
     boot_partition+=( $first_track $(( (${boot_partition[1]} + $block_per_tracks - 1) / $block_per_tracks )) )
     root_partition+=($(( ${boot_partition[2]} + ${boot_partition[3]} )) "last")
-    touch /tmp/${userID}/fdasd_conf
+    mkdir -p /tmp/${userID} && touch /tmp/${userID}/fdasd_conf
     cat > "/tmp/${userID}/fdasd_conf" <<- EOF
 [$first_track,$(( ${root_partition[2]} - 1 )),native]
 [${root_partition[2]},${root_partition[3]},native]
