@@ -434,3 +434,8 @@ class SDKAPITestCase(base.SDKTestCase):
         guestdb_del.assert_called_once_with(self.userid)
         networkdb_del.assert_called_once_with(self.userid)
         chk_usr.assert_called_once_with(self.userid)
+
+    @mock.patch("zvmsdk.hostops.HOSTOps.get_power_state")
+    def test_host_get_guest_power_state(self, guest_power_state):
+        self.api.host_get_guest_power_state(self.userid)
+        guest_power_state.assert_called_once_with(self.userid)

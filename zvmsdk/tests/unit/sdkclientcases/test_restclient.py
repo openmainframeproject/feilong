@@ -629,6 +629,22 @@ class RESTClientTestCase(unittest.TestCase):
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_host_get_guest_power_state(self, get_token, request):
+        method = 'GET'
+        url = '/host/%s/power_state' % self.fake_userid
+        body = None
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("host_get_guest_power_state", self.fake_userid)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
     def test_image_import(self, get_token, request):
         method = 'POST'
         image_uri = 'file:///tmp/100.img'

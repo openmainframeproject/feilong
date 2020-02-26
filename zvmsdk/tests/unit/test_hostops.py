@@ -69,3 +69,9 @@ class SDKHostOpsTestCase(base.SDKTestCase):
         self.assertEqual(dp_info['disk_total'], 406105)
         self.assertEqual(dp_info['disk_used'], 367263)
         self.assertEqual(dp_info['disk_available'], 38)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_power_state")
+    def test_get_power_state(self, gps):
+        gps.return_value = 'on'
+        self._hostops.get_power_state('FakeUser')
+        gps.assert_called_with('FakeUser')

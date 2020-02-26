@@ -617,6 +617,19 @@ class HostHandlerTest(unittest.TestCase):
 
             get_disk_info.assert_called_once_with(mock.ANY, None)
 
+    @mock.patch.object(tokens, 'validate')
+    def test_host_get_guest_power_state(self, mock_validate):
+        self.env['PATH_INFO'] = '/host/1/power_state'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        func = 'zvmsdk.sdkwsgi.handlers.host.HostAction'\
+               '.get_power_state'
+        with mock.patch(func) as get_power:
+            get_power.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+
+            get_power.assert_called_once_with(mock.ANY, '1')
+
 
 class VswitchHandlerNegativeTest(unittest.TestCase):
 
