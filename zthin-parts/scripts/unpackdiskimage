@@ -2098,19 +2098,20 @@ function deployDiskImage {
     inform "Format ${DEST_DEV} and Copy..."
     type lszdev >/dev/null 2>&1 || { printError "Require lszdev tool, but not installed. Aborting."; exit 3; }
     DEST_DEV_BUS=$(lszdev --by-node ${DEST_DEV} | tail -n 1  | awk '{print $2}')
-    if [ "$(< /sys/bus/ccw/devices/${DEST_DEV_BUS}/status)" = "unformatted" ]; then
+    if dasdview -x ${DEST_DEV} |grep 'CDL formatted'
+    then
+        if [ ! $(fdasd -p ${DEST_DEV} | grep blocks\ per\ track | awk '{print $5}') ]; then
+            inform "Formatting..."
+            dasdfmt --blocksize 4096 --disk_layout cdl --mode full -ypv "${DEST_DEV}"
+        fi
+    else
+        #DEST_DEV is not formatted with z/OS compatible disk layout!
         inform "Formatting..."
         dasdfmt --blocksize 4096 --disk_layout cdl --mode full -ypv "${DEST_DEV}"
     fi
 
     #Get blocks for per track of target disk
     block_per_tracks=$(fdasd -p ${DEST_DEV} | grep blocks\ per\ track | awk '{print $5}')
-    if [ ! $block_per_tracks ]; then
-        #DEST_DEV is not formatted with z/OS compatible disk layout!
-        inform "Formatting..."
-        dasdfmt --blocksize 4096 --disk_layout cdl --mode full -ypv "${DEST_DEV}"
-    fi
-
     #the first 2 tracks of the ECKD DASD are reserved
     first_track=2
     partition_Num=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*[0-9]" | wc -l))
