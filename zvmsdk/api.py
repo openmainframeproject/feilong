@@ -541,12 +541,15 @@ class SDKAPI(object):
                 switch = nics_info[key]['vswitch']
                 port = None
                 if port_macs is not None:
-                    mac = nics_info[key]['mac']
-                    port = port_macs[mac]
+                    if 'mac' in nics_info[key].keys():
+                        mac = nics_info[key]['mac']
+                        if mac in port_macs.keys():
+                            port = port_macs[mac]
                     if port is None:
-                        LOG.warning("Port not found for mac %s." % mac)
+                        LOG.warning("Port not found for nic %s, %s." %
+                                    (key, port_macs))
                     else:
-                        LOG.info("Port found for mac %s." % mac)
+                        LOG.info("Port found for nic %s." % key)
                 with zvmutils.log_and_reraise_sdkbase_error(action):
                     self._NetworkDbOperator.switch_add_record(
                                 userid, interface, port, switch)
@@ -1390,6 +1393,15 @@ class SDKAPI(object):
                     to work properly.
         """
         self._volumeop.attach_volume_to_instance(connection_info)
+
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun):
+        """ Refresh a volume's bootmap info.
+
+        :param list of fcpchannels
+        :param list of wwpns
+        :param string lun
+        """
+        return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun)
 
     def volume_detach(self, connection_info):
         """ Detach a volume from a guest. It's prerequisite to active multipath
