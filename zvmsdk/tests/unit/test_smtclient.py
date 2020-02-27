@@ -1076,6 +1076,19 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                      real_device_address='1000 1003')
         request.assert_called_with(rd)
 
+    @mock.patch.object(zvmutils, 'execute')
+    def test_refresh_bootmap_return_value(self, execute):
+        fcpchannels = ['5d71']
+        wwpns = ['5005076802100c1b', '5005076802200c1b']
+        lun = '0000000000000000'
+        execute.side_effect = [(0, "")]
+        self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun)
+        refresh_bootmap_cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap',
+                               '--fcpchannel=5d71',
+                               '--wwpn=5005076802100c1b,5005076802200c1b',
+                               '--lun=0000000000000000']
+        execute.assert_called_once_with(refresh_bootmap_cmd)
+
     @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_set_vswitch_with_errorcode(self, request, get_smt_userid):
