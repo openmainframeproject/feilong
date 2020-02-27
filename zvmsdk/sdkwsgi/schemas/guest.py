@@ -251,7 +251,7 @@ register_vm = {
         'port': {'type': ['string']},
     },
     'required': ['meta', 'net_set'],
-    'additionalProperties': False
+    'additionalProperties': True
 }
 
 deregister_vm = {
