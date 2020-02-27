@@ -447,7 +447,7 @@ function chccwdevDevice {
   chccwdev $opt $device &> /dev/null
   local rc=$?
   if [[ $rc -ne 0 ]]; then
-    inform "Attempt to set device offline failed. Retrying..." 1>&2
+    inform "Attempt to set device $englishOpt failed and return code is $rc. Retrying..." 1>&2
     # retry, while waiting various durations
     for seconds in $sleepTimes; do
       sleep $seconds
@@ -813,9 +813,14 @@ function disconnectFcp {
 
   # Undedicate FCP channel to zthin
   local zthinUserID=$(vmcp q userid | awk '{printf $1}')
-  /opt/zthin/bin/smcli Image_Device_Undedicate -T $zthinUserID -v ${fcpChannel} &> /dev/null
-  if (( $? )); then
-    printError "An error was encountered while disconnecting dedicated device."
+  res=`/opt/zthin/bin/smcli Image_Device_Undedicate -T $zthinUserID -v ${fcpChannel}`
+  image_no_exist="Image device does not exist"
+  if [[ $res == *$image_no_exist* ]]; then
+    inform "FCP device $fcpChannel has already detached."
+  elif [[ $res -eq 0 ]]; then
+    :
+  else
+    printError "An error was encountered while disconnecting dedicated device because $res."
     rc=2
   fi
 
