@@ -167,6 +167,8 @@ errors = {
                    "smt error: '%(err)s'."),
                12: ("Failed to deploy image to userid: '%(userid)s', "
                    "get unpackdiskimage cmd failed: %(err)s"),
+               13: ("Failed to deploy image to userid: '%(userid)s', "
+                   "ignition file is required when deploying RHCOS image"),
               },
               "Operation on Guest failed"
               ],

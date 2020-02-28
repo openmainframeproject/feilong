@@ -650,7 +650,8 @@ export_image_dict:
   type: dict
 transportfiles:
   description: |
-    The files path that used to customize the vm.
+    The files path that used to customize the vm. For RHCOS image, the transportfiles
+    should be the ignition file.
   in: body
   required: false
   type: string
