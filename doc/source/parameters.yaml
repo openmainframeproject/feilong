@@ -435,7 +435,7 @@ action_register_guest:
   type: string
 guest_register_meta:
   description: |
-    The metadata of the vm to be relocated.
+    The metadata of the vm to be registered.
   in: body
   required: true
   type: string
@@ -446,6 +446,12 @@ guest_register_net_set:
   in: body
   required: true
   type: string
+guest_register_port_macs:
+  description: |
+    The dict of virtual interface port id and mac id
+  in: body
+  required: false
+  type: dict
 action_deregister_guest:
   description: |
     Take ``deregister_vm`` action on guest.
@@ -644,7 +650,8 @@ export_image_dict:
   type: dict
 transportfiles:
   description: |
-    The files path that used to customize the vm.
+    The files path that used to customize the vm. For RHCOS image, the transportfiles
+    should be the ignition file.
   in: body
   required: false
   type: string
@@ -669,6 +676,15 @@ deploy_hostname:
   in: body
   required: false
   type: string
+deploy_skipdiskcopy:
+  description: |
+    whether to skip the copy of image to disk. Default value if False.
+    If the value is True, the ``image_name`` specified should be the os version.
+    If the value is False, the ``image_name`` specified should be the name of the image
+    to be used to copy to the root disk.
+  in: body
+  required: false
+  type: boolean
 capture_type:
   description: |
     The type of capture\:

@@ -51,7 +51,8 @@ class SDKAPITestCase(base.SDKTestCase):
                               transportfiles=transportfiles,
                               vdev=vdev)
         guest_deploy.assert_called_with(user_id.upper(), image_name,
-                                        transportfiles, None, vdev, None)
+                                        transportfiles, None, vdev,
+                                        None, False)
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_import")
     def test_image_import(self, image_import):
@@ -263,6 +264,14 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.volume_attach(connection_info)
         mock_attach.assert_called_once_with(connection_info)
 
+    @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI.volume_refresh_bootmap")
+    def test_refresh_bootmap(self, mock_attach):
+        fcpchannel = ['5d71']
+        wwpn = ['5005076802100c1b', '5005076802200c1b']
+        lun = '01000000000000'
+        self.api.volume_refresh_bootmap(fcpchannel, wwpn, lun)
+        mock_attach.assert_called_once_with(fcpchannel, wwpn, lun)
+
     @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI."
                 "detach_volume_from_instance")
     def test_volume_detach(self, mock_detach):
@@ -276,6 +285,142 @@ class SDKAPITestCase(base.SDKTestCase):
                            'assigner_id': 'user1'}
         self.api.volume_detach(connection_info)
         mock_detach.assert_called_once_with(connection_info)
+
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.vmops.VMOps.get_definition_info")
+    @mock.patch("zvmsdk.database.GuestDbOperator.add_guest_registered")
+    @mock.patch("zvmsdk.database.NetworkDbOperator.switch_add_record")
+    def test_guest_register(self, networkdb_add, guestdb_reg,
+                              get_def_info, chk_usr):
+        networkdb_add.return_value = ''
+        guestdb_reg.return_value = ''
+        info = {}
+        info['user_direct'] = ['USER FBA LBYONLY 2048m 64G G',
+                               'INCLUDE ZCCDFLT', 'COMMAND DEF STOR '
+                               'RESERVED 57344M',
+                               'CPU 00 BASE', 'CPU 01', 'CPU 02',
+                               'CPU 03', 'IPL 0100',
+                               'LOGONBY IAASADM', 'MACHINE ESA 32',
+                               'NICDEF 1000 TYPE QDIO LAN SYSTEM VSC11590 '
+                               'DEVICES 3 MACID EF5091',
+                               'NICDEF 1000 VLAN 8',
+                               '']
+        get_def_info.return_value = info
+        chk_usr.return_value = True
+
+        meta_data = 'rhel7'
+        net_set = '1'
+        port_macs = {'EF5091': '6e2ecc4f-14a2-4f33-9f12-5ac4a42f97e7',
+                     '69FCF1': '389dee5e-7b03-405c-b1e8-7c9c235d1425'
+                    }
+
+        self.api.guest_register(self.userid, meta_data, net_set, port_macs)
+        networkdb_add.assert_called_once_with(self.userid, '1000',
+                                              '6e2ecc4f-14a2-4f33-9f12'
+                                              '-5ac4a42f97e7',
+                                              'VSC11590')
+        guestdb_reg.assert_called_once_with(self.userid, 'rhel7', '1')
+        get_def_info.assert_called_once_with(self.userid)
+        chk_usr.assert_called_once_with(self.userid)
+
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.vmops.VMOps.get_definition_info")
+    @mock.patch("zvmsdk.database.GuestDbOperator.add_guest_registered")
+    @mock.patch("zvmsdk.database.NetworkDbOperator.switch_add_record")
+    def test_guest_register_invalid_portmacs(self, networkdb_add, guestdb_reg,
+                              get_def_info, chk_usr):
+        networkdb_add.return_value = ''
+        guestdb_reg.return_value = ''
+        info = {}
+        info['user_direct'] = ['USER FBA LBYONLY 2048m 64G G',
+                               'INCLUDE ZCCDFLT',
+                               'COMMAND DEF STOR RESERVED 57344M',
+                               'CPU 00 BASE', 'CPU 01', 'CPU 02',
+                               'CPU 03', 'IPL 0100',
+                               'LOGONBY IAASADM', 'MACHINE ESA 32',
+                               'NICDEF 1000 TYPE QDIO LAN SYSTEM VSC11590 '
+                               'DEVICES 3 MACID EF5091',
+                               'NICDEF 1000 VLAN 8',
+                               '']
+        get_def_info.return_value = info
+        chk_usr.return_value = True
+
+        meta_data = 'rhel7'
+        net_set = '1'
+        port_macs = '6e2ecc4f-14a2-4f33-9f12-5ac4a42f97e7'
+
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_register,
+                          self.userid, meta_data, net_set, port_macs)
+
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.vmops.VMOps.get_definition_info")
+    @mock.patch("zvmsdk.database.GuestDbOperator.add_guest_registered")
+    @mock.patch("zvmsdk.database.NetworkDbOperator.switch_add_record")
+    def test_guest_register_no_port_macs(self, networkdb_add, guestdb_reg,
+                              get_def_info, chk_usr):
+        networkdb_add.return_value = ''
+        guestdb_reg.return_value = ''
+        info = {}
+        info['user_direct'] = ['USER FBA LBYONLY 2048m 64G G',
+                               'INCLUDE ZCCDFLT', 'COMMAND DEF STOR '
+                               'RESERVED 57344M',
+                               'CPU 00 BASE', 'CPU 01', 'CPU 02',
+                               'CPU 03', 'IPL 0100',
+                               'LOGONBY IAASADM', 'MACHINE ESA 32',
+                               'NICDEF 1000 TYPE QDIO LAN SYSTEM VSC11590 '
+                               'DEVICES 3 MACID EF5091',
+                               'NICDEF 1000 VLAN 8',
+                               '']
+        get_def_info.return_value = info
+        chk_usr.return_value = True
+
+        meta_data = 'rhel7'
+        net_set = '1'
+
+        self.api.guest_register(self.userid, meta_data, net_set)
+        networkdb_add.assert_called_once_with(self.userid, '1000',
+                                              None,
+                                              'VSC11590')
+        guestdb_reg.assert_called_once_with(self.userid, 'rhel7', '1')
+        get_def_info.assert_called_once_with(self.userid)
+        chk_usr.assert_called_once_with(self.userid)
+
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.vmops.VMOps.get_definition_info")
+    @mock.patch("zvmsdk.database.GuestDbOperator.add_guest_registered")
+    @mock.patch("zvmsdk.database.NetworkDbOperator.switch_add_record")
+    @mock.patch("zvmsdk.database.GuestDbOperator.update_guest_by_userid")
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_comments_by_userid")
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_migrated_guest_list")
+    @mock.patch("zvmsdk.database.GuestDbOperator.get_guest_by_userid")
+    def test_guest_register_guest_in_db(self, get_guest, get_mig_guest,
+                              get_comments, update_guest, networkdb_add,
+                              guestdb_reg, get_def_info, chk_usr):
+        get_guest.return_value = 'fake_guest'
+        get_mig_guest.return_value = self.userid + ' other info'
+        get_comments.return_value = {'migrated': 1}
+        update_guest.return_value = ''
+        # Below mocks shall not be called
+        networkdb_add.return_value = ''
+        guestdb_reg.return_value = ''
+        get_def_info.return_value = {}
+        chk_usr.return_value = True
+
+        meta_data = 'rhel7'
+        net_set = '1'
+
+        self.api.guest_register(self.userid, meta_data, net_set)
+        get_guest.assert_called_once_with(self.userid)
+        get_mig_guest.assert_called_once_with()
+        get_comments.assert_called_once_with(self.userid)
+        update_guest.assert_called_once_with(self.userid,
+                                             comments={'migrated': 0})
+        chk_usr.assert_called_once_with(self.userid)
+
+        networkdb_add.assert_not_called()
+        guestdb_reg.assert_not_called()
+        get_def_info.assert_not_called()
 
     @mock.patch("zvmsdk.utils.check_userid_exist")
     @mock.patch("zvmsdk.database.NetworkDbOperator."

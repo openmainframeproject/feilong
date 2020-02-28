@@ -167,6 +167,8 @@ errors = {
                    "smt error: '%(err)s'."),
                12: ("Failed to deploy image to userid: '%(userid)s', "
                    "get unpackdiskimage cmd failed: %(err)s"),
+               13: ("Failed to deploy image to userid: '%(userid)s', "
+                   "ignition file is required when deploying RHCOS image"),
               },
               "Operation on Guest failed"
               ],
@@ -228,6 +230,8 @@ errors = {
                 3: "Volume %(vol)s has already been attached on instance "
                    "%(inst)s",
                 4: "Volume %(vol)s is not attached on instance %(inst)s",
+                5: "Refresh bootmap fails, error code: %(errcode)s and "
+                   "reason: %(errmsg)s",
                 },
                "Operation on Volume failed"
                ],

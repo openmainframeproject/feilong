@@ -89,3 +89,20 @@ class HandlersVolumeTest(unittest.TestCase):
         mock_detach.assert_called_once_with(
             'volume_detach',
             connection_info)
+
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_refresh_volume_bootmap(self, mock_detach):
+        mock_detach.return_value = {'overallRC': 0}
+        fcpchannels = ['5d71']
+        wwpns = ['5005076802100c1b', '5005076802200c1b']
+        lun = '0000000000000000'
+        info = {"fcpchannel": fcpchannels,
+                "wwpn": wwpns,
+                "lun": lun}
+        body_str = {"info": info}
+        self.req.body = json.dumps(body_str)
+
+        volume.volume_refresh_bootmap(self.req)
+        mock_detach.assert_called_once_with(
+            'volume_refresh_bootmap',
+            fcpchannels, wwpns, lun)
