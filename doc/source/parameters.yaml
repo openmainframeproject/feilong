@@ -1093,3 +1093,21 @@ last_access_time:
   in: body
   required: true
   type: float
+fcp_list:
+  description: |
+    FCP devices list.
+  in: body
+  required: true
+  type: string
+wwpn_list:
+  description: |
+    World Wide Port Name IDs.
+  in: body
+  required: true
+  type: string
+lun:
+  description: |
+    Logical Unit Number ID
+  in: body
+  required: true
+  type: string
