@@ -593,10 +593,11 @@ image_export_url:
   type: string
 image_metadata:
   description: |
-    The metadata which describes image, the valid keys are os_version and md5sum,
+    The metadata which describes image, the valid keys are os_version, md5sum and disk_type,
     os_version is required key, the valid os_version values are: rhel6.x, rhel7.x,
-    sles11.x, sles12.x, ubuntu16.x, all case insensitive, please contact with your cloud administrator
-    if you don't know the image's os version
+    sles11.x, sles12.x, ubuntu16.x, rhcos4.X, all case insensitive, please contact with your cloud administrator
+    if you don't know the image's os version. disk_type is required if os_version is rhcos4,
+    the valid disk_type values are: DASD, SCSI.
   in: body
   required: true
   type: dict
@@ -921,6 +922,14 @@ guest_os_version:
   description: |
     Operating system version, the valid os_version values are: rhel6.x, rhel7.x,
     sles11.x, sles12.x, ubuntu16.x, all case insensitive, please contact with your
+    cloud administrator if you don't know the guest's os version
+  in: body
+  required: true
+  type: string
+guest_os_version_all:
+  description: |
+    Operating system version, the valid os_version values are: rhel6.x, rhel7.x,
+    sles11.x, sles12.x, ubuntu16.x, rhcos4.x, all case insensitive, please contact with your
     cloud administrator if you don't know the guest's os version
   in: body
   required: true

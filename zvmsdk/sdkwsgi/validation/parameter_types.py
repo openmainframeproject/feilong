@@ -388,18 +388,22 @@ os_version = {
 ]
 }
 
+disk_type = {
+    'type': 'string',
+    'enum': ['DASD', 'dasd', 'SCSI', 'scsi']
+}
 
 image_meta = {
     'type': 'object',
     'properties': {
         'os_version': os_version,
         # md5 shoule be 32 hexadeciaml numbers
-        'md5sum': {'type': 'string', 'pattern': '^[0-9a-fA-F]{32}$'}
+        'md5sum': {'type': 'string', 'pattern': '^[0-9a-fA-F]{32}$'},
+        'disk_type': disk_type
     },
     'required': ['os_version'],
     'additionalProperties': False
 }
-
 
 command = {
     'type': 'string'
