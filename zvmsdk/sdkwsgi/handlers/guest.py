@@ -282,8 +282,11 @@ class VMAction(object):
     def register_vm(self, userid, body):
         meta = body['meta']
         net_set = body['net_set']
+        port_macs = None
+        if 'port_macs' in body.keys():
+            port_macs = body['port_macs']
         info = self.client.send_request('guest_register',
-                                userid, meta, net_set)
+                                userid, meta, net_set, port_macs)
         return info
 
     @validation.schema(guest.deregister_vm)
