@@ -57,6 +57,9 @@ ROUTE_LIST = (
     ('/volumes/conn/{userid}', {
         'GET': volume.get_volume_connector,
     }),
+    ('/volumes/volume_refresh_bootmap', {
+        'PUT': volume.volume_refresh_bootmap,
+    }),
     ('/guests/{userid}', {
         'DELETE': guest.guest_delete,
         'GET': guest.guest_get,

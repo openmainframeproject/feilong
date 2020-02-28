@@ -106,6 +106,38 @@ class GuestActionsTest(SDKWSGITest):
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_register(self, mock_action,
+                        mock_userid):
+        self.req.body = '{"action": "register_vm",\
+                          "meta": "rhel7",\
+                          "net_set": "1",\
+                          "port_macs": "5abc7819-abec-4deb-9115-2af5da249155"}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_register', FAKE_USERID,
+                                            "rhel7",
+                                            "1",
+                                            "5abc7819-abec-4deb"
+                                            "-9115-2af5da249155")
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_register_no_port_macs(self, mock_action,
+                        mock_userid):
+        self.req.body = '{"action": "register_vm",\
+                          "meta": "rhel7",\
+                          "net_set": "1"}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_register', FAKE_USERID,
+                                            "rhel7",
+                                            "1",
+                                            None)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_deregister(self, mock_action,
                         mock_userid):
         self.req.body = '{"action": "deregister_vm"}'
@@ -331,7 +363,7 @@ class GuestActionsTest(SDKWSGITest):
         guest.guest_action(self.req)
         mock_action.assert_called_once_with('guest_deploy', FAKE_USERID,
             'image1', remotehost='test@host1.x.y', transportfiles='file1',
-            vdev='1000', hostname=None)
+            vdev='1000', hostname=None, skipdiskcopy=False)
 
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_deploy_missing_param(self, mock_userid):
@@ -384,7 +416,8 @@ class GuestActionsTest(SDKWSGITest):
         guest.guest_action(self.req)
         mock_action.assert_called_once_with('guest_deploy', FAKE_USERID,
             'image1', remotehost='test@192.168.99.99',
-            transportfiles='file1', vdev='1000', hostname=None)
+            transportfiles='file1', vdev='1000', hostname=None,
+            skipdiskcopy=False)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
@@ -402,7 +435,8 @@ class GuestActionsTest(SDKWSGITest):
         guest.guest_action(self.req)
         mock_action.assert_called_once_with('guest_deploy', FAKE_USERID,
             'image1', remotehost='test123@test.xyz.com',
-            transportfiles='file1', vdev='1000', hostname=None)
+            transportfiles='file1', vdev='1000', hostname=None,
+            skipdiskcopy=False)
 
     @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_deploy_without_username_in_remotehost(self,
