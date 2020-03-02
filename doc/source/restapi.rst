@@ -353,6 +353,33 @@ Detach volume from a vm in z/VM
 
   No Response
 
+Refresh Volume Bootmap Info
+---------------------------
+
+**PUT /volumes/volume_refresh_bootmap**
+
+Refresh a volume's bootmap info.
+
+.. restapi_parameters:: parameters.yaml
+
+  - fcpchannel: fcp_list
+  - wwpn: wwpn_list
+  - lun: lun
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_refresh_bootmap.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_refresh_bootmap_response.tpl
+   :language: javascript
+
 Get Volume Connector
 --------------------
 
@@ -591,7 +618,7 @@ Create one or more network interfaces on giving guest.
 
   - userid: guest_userid
   - interface: network_interface_info
-  - os_version: guest_os_version
+  - os_version: guest_os_version_all
   - guest_networks: guest_networks_list
   - active: active_flag
 
@@ -888,6 +915,7 @@ Register guest to be managed by z/VM Cloud Connector.
   - action: action_register_guest
   - meta: guest_register_meta
   - net_set: guest_register_net_set  
+  - port: guest_register_port_macs
 
 * Request sample:
 
@@ -1318,7 +1346,7 @@ Get the list of image info in image repository.
 
   - output: image_info
   - imagename: image_name
-  - imageosdistro: guest_os_version
+  - imageosdistro: guest_os_version_all
   - md5sum: image_md5sum
   - disk_size_units: root_disk_size_image
   - image_size_in_bytes: physical_disk_size_image

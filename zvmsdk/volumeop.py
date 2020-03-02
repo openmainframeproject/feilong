@@ -85,6 +85,10 @@ class VolumeOperatorAPI(object):
     def detach_volume_from_instance(self, connection_info):
         self._volume_manager.detach(connection_info)
 
+    def volume_refresh_bootmap(self, fcpchannel, wwpn, lun):
+        return self._volume_manager.volume_refresh_bootmap(fcpchannel,
+                                                           wwpn, lun)
+
     def get_volume_connector(self, assigner_id):
         return self._volume_manager.get_volume_connector(assigner_id)
 
@@ -581,6 +585,15 @@ class FCPVolumeManager(object):
         # TODO: other exceptions?
 
         LOG.info('Attaching device to %s is done.' % assigner_id)
+
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun):
+        """ Refresh a volume's bootmap info.
+
+        :param list of fcpchannels
+        :param list of wwpns
+        :param string lun
+        """
+        return self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun)
 
     def attach(self, connection_info):
         """Attach a volume to a guest
