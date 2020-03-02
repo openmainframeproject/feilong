@@ -367,6 +367,7 @@ Refresh a volume's bootmap info.
   - fcpchannel: fcp_list
   - wwpn: wwpn_list
   - lun: lun
+  - skipzipl: skipzipl
 
 * Request sample:
 

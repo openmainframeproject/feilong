@@ -275,7 +275,8 @@ class SDKAPITestCase(base.SDKTestCase):
         wwpn = ['5005076802100c1b', '5005076802200c1b']
         lun = '01000000000000'
         self.api.volume_refresh_bootmap(fcpchannel, wwpn, lun)
-        mock_attach.assert_called_once_with(fcpchannel, wwpn, lun)
+        mock_attach.assert_called_once_with(fcpchannel, wwpn, lun,
+                                            skipzipl=False)
 
     @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI."
                 "detach_volume_from_instance")
