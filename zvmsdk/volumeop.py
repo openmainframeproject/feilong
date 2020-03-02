@@ -556,7 +556,7 @@ class FCPVolumeManager(object):
 
     def _attach(self, fcp, assigner_id, target_wwpns, target_lun,
                 multipath, os_version, mount_point, path_count,
-                boot_from_volume):
+                is_root_volume):
         """Attach a volume
 
         First, we need translate fcp into local wwpn, then
@@ -568,7 +568,7 @@ class FCPVolumeManager(object):
         # but no assinger_id in contructor
         self.fcp_mgr.init_fcp(assigner_id)
         new = self.fcp_mgr.add_fcp_for_assigner(path_count, fcp, assigner_id)
-        if boot_from_volume:
+        if is_root_volume:
             LOG.info('Attaching device to %s is done.' % assigner_id)
             return
         try:
@@ -623,10 +623,10 @@ class FCPVolumeManager(object):
             multipath = False
         os_version = connection_info['os_version']
         mount_point = connection_info['mount_point']
-        boot_from_volume = connection_info.get('boot_from_volume', False)
+        is_root_volume = connection_info.get('is_root_volume', False)
 
         # TODO: check exist in db?
-        if boot_from_volume is False and \
+        if is_root_volume is False and \
                 not zvmutils.check_userid_exist(assigner_id):
             LOG.error("User directory '%s' does not exist." % assigner_id)
             raise exception.SDKObjectNotExistError(
@@ -637,7 +637,7 @@ class FCPVolumeManager(object):
             for i in range(path_count):
                 self._attach(fcp[i].lower(), assigner_id, target_wwpns,
                              target_lun, multipath, os_version, mount_point,
-                             path_count, boot_from_volume)
+                             path_count, is_root_volume)
 
     def _undedicate_fcp(self, fcp, assigner_id):
         self._smtclient.undedicate_device(assigner_id, fcp)
@@ -649,11 +649,11 @@ class FCPVolumeManager(object):
                                       mount_point, connections)
 
     def _detach(self, fcp, assigner_id, target_wwpns, target_lun,
-                multipath, os_version, mount_point, boot_from_volume):
+                multipath, os_version, mount_point, is_root_volume):
         """Detach a volume from a guest"""
         LOG.info('Start to detach device from %s' % assigner_id)
         connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
-        if boot_from_volume:
+        if is_root_volume:
             LOG.info('Detaching device to %s is done.' % assigner_id)
             return
 
@@ -692,8 +692,8 @@ class FCPVolumeManager(object):
         else:
             multipath = False
 
-        boot_from_volume = connection_info.get('boot_from_volume', False)
-        if boot_from_volume is False and \
+        is_root_volume = connection_info.get('is_root_volume', False)
+        if is_root_volume is False and \
                 not zvmutils.check_userid_exist(assigner_id):
             LOG.error("Guest '%s' does not exist" % assigner_id)
             raise exception.SDKObjectNotExistError(
@@ -704,7 +704,7 @@ class FCPVolumeManager(object):
             for i in range(path_count):
                 self._detach(fcp[i].lower(), assigner_id, target_wwpns,
                              target_lun, multipath, os_version, mount_point,
-                             boot_from_volume)
+                             is_root_volume)
 
     def get_volume_connector(self, assigner_id):
         """Get connector information of the instance for attaching to volumes.

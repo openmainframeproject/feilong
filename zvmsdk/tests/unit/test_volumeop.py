@@ -568,7 +568,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     def test_root_volume_attach(self, mock_dedicate, mock_add_disk, mock_check,
                                 mock_fcp_info):
 
-        connection_info = {'platform': 'x86_64',
+        connection_info = {'platform': 's390x',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
                            'multipath': 'false',
@@ -578,7 +578,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'zvm_fcp': ['c123', 'd123'],
                            'mount_point': '/dev/sdz',
                            'assigner_id': 'user1',
-                           'boot_from_volume': True}
+                           'is_root_volume': True}
         fcp_list = ['opnstk1: FCP device number: C123',
                     'opnstk1:   Status: Free',
                     'opnstk1:   NPIV world wide port number: 20076D8500005182',
@@ -798,7 +798,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     def test_root_volume_detach(self, mock_undedicate, mock_remove_disk, mock_check,
                                 mock_fcp_info):
 
-        connection_info = {'platform': 'x86_64',
+        connection_info = {'platform': 's390x',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
                            'multipath': 'True',
@@ -808,7 +808,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'zvm_fcp': ['183c', '283c'],
                            'mount_point': '/dev/sdz',
                            'assigner_id': 'user1',
-                           'boot_from_volume': True}
+                           'is_root_volume': True}
         fcp_list = ['opnstk1: FCP device number: 183C',
                     'opnstk1:   Status: Free',
                     'opnstk1:   NPIV world wide port number: 20076D8500005182',

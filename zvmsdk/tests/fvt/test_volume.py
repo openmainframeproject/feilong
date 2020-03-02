@@ -166,7 +166,7 @@ class VolumeTestCase(base.ZVMConnectorBaseTestCase):
                            'target_wwpn': CONF.tests.target_wwpn,
                            'target_lun': CONF.tests.target_lun,
                            'mount_point': CONF.tests.mount_point,
-                           'boot_from_volume': True}
+                           'is_root_volume': True}
         # attach volume
         resp = self.client.volume_attach(connection_info)
         time.sleep(10)
