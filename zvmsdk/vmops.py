@@ -295,7 +295,8 @@ class VMOps(object):
                 self.set_hostname(userid, hostname, os_version)
         else:
             self._smtclient.guest_deploy_rhcos(userid, image_name,
-                            transportfiles, remotehost, vdev, hostname)
+                            transportfiles, remotehost, vdev, hostname,
+                            skipdiskcopy)
 
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):

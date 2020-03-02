@@ -105,4 +105,4 @@ class HandlersVolumeTest(unittest.TestCase):
         volume.volume_refresh_bootmap(self.req)
         mock_detach.assert_called_once_with(
             'volume_refresh_bootmap',
-            fcpchannels, wwpns, lun)
+            fcpchannels, wwpns, lun, False)

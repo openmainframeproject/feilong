@@ -85,9 +85,10 @@ class VolumeOperatorAPI(object):
     def detach_volume_from_instance(self, connection_info):
         self._volume_manager.detach(connection_info)
 
-    def volume_refresh_bootmap(self, fcpchannel, wwpn, lun):
+    def volume_refresh_bootmap(self, fcpchannel, wwpn, lun, skipzipl=False):
         return self._volume_manager.volume_refresh_bootmap(fcpchannel,
-                                                           wwpn, lun)
+                                                           wwpn, lun,
+                                                           skipzipl=skipzipl)
 
     def get_volume_connector(self, assigner_id):
         return self._volume_manager.get_volume_connector(assigner_id)
@@ -590,14 +591,16 @@ class FCPVolumeManager(object):
 
         LOG.info('Attaching device to %s is done.' % assigner_id)
 
-    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun):
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, skipzipl=False):
         """ Refresh a volume's bootmap info.
 
         :param list of fcpchannels
         :param list of wwpns
         :param string lun
+        :param boolean skipzipl: whether ship zipl, only return physical wwpns
         """
-        return self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun)
+        return self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun,
+                                                      skipzipl=skipzipl)
 
     def attach(self, connection_info):
         """Attach a volume to a guest

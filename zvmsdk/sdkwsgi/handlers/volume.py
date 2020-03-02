@@ -60,9 +60,9 @@ class VolumeAction(object):
         conn = self.client.send_request('get_volume_connector', userid)
         return conn
 
-    def volume_refresh_bootmap(self, fcpchannel, wwpn, lun):
+    def volume_refresh_bootmap(self, fcpchannel, wwpn, lun, skipzipl):
         info = self.client.send_request('volume_refresh_bootmap',
-                                        fcpchannel, wwpn, lun)
+                                        fcpchannel, wwpn, lun, skipzipl)
         return info
 
 
@@ -113,13 +113,14 @@ def volume_detach(req):
 @tokens.validate
 def volume_refresh_bootmap(req):
 
-    def _volume_refresh_bootmap(req, fcpchannel, wwpn, lun):
+    def _volume_refresh_bootmap(req, fcpchannel, wwpn, lun, skipzipl):
         action = get_action()
-        return action.volume_refresh_bootmap(fcpchannel, wwpn, lun)
+        return action.volume_refresh_bootmap(fcpchannel, wwpn, lun, skipzipl)
 
     body = util.extract_json(req.body)
     info = _volume_refresh_bootmap(req, body['info']['fcpchannel'],
-                                   body['info']['wwpn'], body['info']['lun'])
+                                   body['info']['wwpn'], body['info']['lun'],
+                                   body['info'].get('skipzipl', False))
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
