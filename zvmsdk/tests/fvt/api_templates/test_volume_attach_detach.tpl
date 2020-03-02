@@ -10,6 +10,7 @@
         "os_version": "redhat7",
         "multipath": True,
         "mount_point": "/dev/sdz",
+        "boot_from_volume": False
       }
   }
 }
