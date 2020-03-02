@@ -103,7 +103,7 @@ class NetworkOPS(object):
 
     def network_configuration(self, userid, os_version, network_info,
                               active=False):
-        if os_version.lower().startswith('rhcos'):
+        if self._smtclient.is_rhcos(os_version):
             linuxdist = self._dist_manager.get_linux_dist(os_version)()
             linuxdist.create_coreos_parameter(network_info, userid)
         else:

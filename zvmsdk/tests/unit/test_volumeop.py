@@ -504,6 +504,14 @@ class TestFCPVolumeManager(base.SDKTestCase):
         finally:
             self.db_op.delete('b83c')
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.volume_refresh_bootmap")
+    def test_volume_refresh_bootmap(self, mock_volume_refresh_bootmap):
+        fcpchannels = ['5d71']
+        wwpns = ['5005076802100c1b', '5005076802200c1b']
+        lun = '0000000000000000'
+        res = self.volumeops.volume_refresh_bootmap(fcpchannels, wwpns, lun)
+        mock_volume_refresh_bootmap.assert_has_calls(res)
+
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disk")
