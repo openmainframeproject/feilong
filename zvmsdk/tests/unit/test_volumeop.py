@@ -596,6 +596,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
 
         try:
             self.volumeops.attach(connection_info)
+            self.assertFalse(mock_dedicate.called)
+            self.assertFalse(mock_add_disk.called)
         finally:
             self.db_op.delete('c123')
             self.db_op.delete('d123')
@@ -831,6 +833,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
 
         try:
             self.volumeops.detach(connection_info)
+            self.assertFalse(mock_undedicate.called)
+            self.assertFalse(mock_remove_disk.called)
         finally:
             self.db_op.delete('183c')
             self.db_op.delete('283c')
