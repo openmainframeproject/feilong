@@ -654,7 +654,7 @@ class FCPVolumeManager(object):
         LOG.info('Start to detach device from %s' % assigner_id)
         connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
         if is_root_volume:
-            LOG.info('Detaching device to %s is done.' % assigner_id)
+            LOG.info('Detaching device from %s is done.' % assigner_id)
             return
 
         try:
@@ -673,7 +673,7 @@ class FCPVolumeManager(object):
                                multipath, os_version, mount_point, new)
             raise exception.SDKBaseException(msg=errmsg)
 
-        LOG.info('Detaching device to %s is done.' % assigner_id)
+        LOG.info('Detaching device from %s is done.' % assigner_id)
 
     def detach(self, connection_info):
         """Detach a volume from a guest
