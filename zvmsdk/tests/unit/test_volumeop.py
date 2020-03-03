@@ -565,6 +565,47 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.utils.check_userid_exist")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disk")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
+    def test_root_volume_attach(self, mock_dedicate, mock_add_disk, mock_check,
+                                mock_fcp_info):
+
+        connection_info = {'platform': 's390x',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': 'false',
+                           'target_wwpn': ['20076D8500005182',
+                                           '20076D8500005183'],
+                           'target_lun': '2222',
+                           'zvm_fcp': ['c123', 'd123'],
+                           'mount_point': '/dev/sdz',
+                           'assigner_id': 'user1',
+                           'is_root_volume': True}
+        fcp_list = ['opnstk1: FCP device number: C123',
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: 20076D8500005182',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: 20076D8500005181',
+                    'opnstk1: FCP device number: D123',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: 20076D8500005183',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: 20076D8500005185']
+        mock_fcp_info.return_value = fcp_list
+        self.db_op = database.FCPDbOperator()
+        self.db_op.new('c123', 0)
+        self.db_op.new('d123', 1)
+
+        try:
+            self.volumeops.attach(connection_info)
+            self.assertFalse(mock_dedicate.called)
+            self.assertFalse(mock_add_disk.called)
+        finally:
+            self.db_op.delete('c123')
+            self.db_op.delete('d123')
+
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disk")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
     def test_attach_no_dedicate(self, mock_dedicate, mock_add_disk,
                                 mock_check, mock_fcp_info):
 
@@ -748,6 +789,52 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                                          wwpns,
                                                          '2222', True, 'rhel7',
                                                          '/dev/sdz', 0)])
+        finally:
+            self.db_op.delete('183c')
+            self.db_op.delete('283c')
+
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disk")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
+    def test_root_volume_detach(self, mock_undedicate, mock_remove_disk, mock_check,
+                                mock_fcp_info):
+
+        connection_info = {'platform': 's390x',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': 'True',
+                           'target_wwpn': ['20076D8500005182',
+                                           '20076D8500005183'],
+                           'target_lun': '2222',
+                           'zvm_fcp': ['183c', '283c'],
+                           'mount_point': '/dev/sdz',
+                           'assigner_id': 'user1',
+                           'is_root_volume': True}
+        fcp_list = ['opnstk1: FCP device number: 183C',
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: 20076D8500005182',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: 20076D8500005181',
+                    'opnstk1: FCP device number: 283C',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: 20076D8500005183',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: 20076D8500005185']
+        mock_fcp_info.return_value = fcp_list
+        mock_check.return_value = True
+        self.db_op = database.FCPDbOperator()
+        self.db_op.new('183c', 0)
+        self.db_op.assign('183c', 'USER1')
+
+        self.db_op.new('283c', 1)
+        # assign will set the connections to 1
+        self.db_op.assign('283c', 'USER1')
+
+        try:
+            self.volumeops.detach(connection_info)
+            self.assertFalse(mock_undedicate.called)
+            self.assertFalse(mock_remove_disk.called)
         finally:
             self.db_op.delete('183c')
             self.db_op.delete('283c')
