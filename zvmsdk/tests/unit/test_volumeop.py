@@ -590,6 +590,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: 20076D8500005185']
         mock_fcp_info.return_value = fcp_list
+        base.set_conf('volume', 'fcp_list', 'c123')
+        base.set_conf('volume', 'fcp_list', 'd123')
         self.db_op = database.FCPDbOperator()
         self.db_op.new('c123', 0)
         self.db_op.new('d123', 1)
@@ -823,6 +825,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'opnstk1:   Physical world wide port number: 20076D8500005185']
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
+        base.set_conf('volume', 'fcp_list', '183c')
+        base.set_conf('volume', 'fcp_list', '283c')
         self.db_op = database.FCPDbOperator()
         self.db_op.new('183c', 0)
         self.db_op.assign('183c', 'USER1')
