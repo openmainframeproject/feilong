@@ -1084,6 +1084,12 @@ mount_point:
   in: body
   required: false
   type: string
+root_volume:
+  description: |
+    Volume is bootable or not
+  in: body
+  required: false
+  type: bool
 disk_list_output:
   description: |
     A list of created disks info for the guest

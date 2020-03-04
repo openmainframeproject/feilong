@@ -303,6 +303,7 @@ Attach volume to a vm in z/VM
   - os_version: guest_os_version
   - multipath: guest_multipath
   - mount_point: mount_point
+  - is_root_volume: root_volume
 
 
 * Request sample:
@@ -338,6 +339,7 @@ Detach volume from a vm in z/VM
   - os_version: guest_os_version
   - multipath: guest_multipath
   - mount_point: mount_point
+  - is_root_volume: root_volume
 
 
 * Request sample:
