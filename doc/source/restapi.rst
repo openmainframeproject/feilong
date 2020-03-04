@@ -578,6 +578,42 @@ Get running information of guest.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_info.tpl
    :language: javascript
 
+
+Get Guest adapters info
+--------------
+
+**GET /guests/{userid}/adapters**
+
+Get adapters information of running guest.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: adapters_info_output
+  - lan_owner: guest_userid
+  - lan_name: vswitch_name
+  - adapter_address: vdev_number
+  - adapter_status: adapter_status
+  - mac_address: mac_address
+  - mac_ip_address: ip_address
+  - mac_ip_version: ip_version
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_adapters_info.tpl
+   :language: javascript
+
 Create Guest nic
 ----------------
 
