@@ -580,7 +580,7 @@ Get running information of guest.
 
 
 Get Guest adapters info
---------------
+-----------------------
 
 **GET /guests/{userid}/adapters**
 
