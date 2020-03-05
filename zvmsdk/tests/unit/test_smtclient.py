@@ -582,6 +582,46 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(self._smtclient._get_image_disk_type(image_info),
                          None)
 
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_adapters_info(self, request):
+        userid = 'FakeID'
+        data = [
+            "adapter_count=1",
+            "adapter_address=1000",
+            "port_type=0",
+            "extended_port_status=00",
+            "adapter_type=2",
+            "network_device_count=3",
+            "adapter_status=02",
+            "lan_owner=SYSTEM",
+            "lan_name=VSC12345",
+            "device_options=C1000000",
+            "router_status=00",
+            "mac_count=3",
+            "mac_address=01005E000001",
+            "mac_address_type=01",
+            "mac_status=00",
+            "mac_address=0255365D4857",
+            "mac_address_type=00",
+            "mac_status=00",
+            "mac_ip_version=4",
+            "mac_ip_address=9.123.123.123",
+            "mac_address=333300000001",
+            "mac_address_type=01",
+            "mac_status=00",
+            "mac_info_end",
+            "adapter_info_end"]
+        request.return_value = {'response': data}
+        rd = ' '.join((
+            "SMAPI %s API Virtual_Network_Adapter_Query_Extended" % userid,
+            "--operands",
+            "-k 'image_device_number=*'"))
+        ret = self._smtclient.get_adapters_info('FakeID')
+        request.assert_called_once_with(rd)
+        self.assertEqual(ret[0]['mac_ip_address'], '9.123.123.123')
+        self.assertEqual(ret[0]['mac_ip_version'], '4')
+        self.assertEqual(ret[0]['mac_address'], '02:55:36:5D:48:57')
+
     @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_grant_user_to_vswitch(self, request, userid):

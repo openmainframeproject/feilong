@@ -95,6 +95,14 @@ class VMOps(object):
                 'num_cpu': self._get_cpu_num_from_user_dict(dict_info),
                 'cpu_time_us': 0}
 
+    def get_adapters_info(self, userid):
+        adapters_info = self._smtclient.get_adapters_info(userid)
+        if not adapters_info:
+            msg = 'Get network information failed on: %s' % userid
+            LOG.error(msg)
+            raise exception.SDKInternalError(msg=msg, modID='guest')
+        return {'adapters': adapters_info}
+
     def instance_metadata(self, instance, content, extra_md):
         pass
 
