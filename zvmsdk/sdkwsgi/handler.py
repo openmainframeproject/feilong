@@ -67,6 +67,9 @@ ROUTE_LIST = (
     ('/guests/{userid}/action', {
         'POST': guest.guest_action,
     }),
+    ('/guests/{userid}/power_state_real', {
+        'GET': guest.guest_get_power_state_real,
+    }),
     ('/guests/{userid}/info', {
         'GET': guest.guest_get_info,
     }),
