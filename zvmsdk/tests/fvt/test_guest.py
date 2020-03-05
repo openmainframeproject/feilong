@@ -607,6 +607,11 @@ class GuestHandlerTestCase(GuestHandlerBase):
         result = self._smtclient.execute_cmd(userid, 'hostname')
         self.assertIn('deploy_fvt', str(result))
 
+        resp = self.client.guest_get_power_state_real(userid)
+        self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_guest_get_power_state_real',
+                                   resp.content)
+
         resp = self.client.guest_get_definition_info(userid)
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_guest_get', resp.content)
