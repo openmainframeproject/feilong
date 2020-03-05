@@ -16,6 +16,7 @@
 import os
 import mock
 import tempfile
+import subprocess
 
 from smtLayer import smt
 
@@ -525,7 +526,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
 
-    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_image_get_os_distro(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
@@ -539,7 +540,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(self._smtclient.image_get_os_distro(image_info),
                          'RHCOS4')
 
-    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_get_image_disk_type_dasd(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
@@ -553,7 +554,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(self._smtclient._get_image_disk_type(image_info),
                          'ECKD')
 
-    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_get_image_disk_type_scsi(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
@@ -567,7 +568,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertEqual(self._smtclient._get_image_disk_type(image_info),
                          'SCSI')
 
-    @mock.patch.object(smtclient.SMTClient, 'image_query')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     def test_get_image_disk_type_failed(self, image_info):
         image_info.return_value = [{'image_size_in_bytes': '3072327680',
                                     'disk_size_units': '3339:CYL',
@@ -580,6 +581,46 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                     'type': 'rootonly'}]
         self.assertEqual(self._smtclient._get_image_disk_type(image_info),
                          None)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_adapters_info(self, request):
+        userid = 'FakeID'
+        data = [
+            "adapter_count=1",
+            "adapter_address=1000",
+            "port_type=0",
+            "extended_port_status=00",
+            "adapter_type=2",
+            "network_device_count=3",
+            "adapter_status=02",
+            "lan_owner=SYSTEM",
+            "lan_name=VSC12345",
+            "device_options=C1000000",
+            "router_status=00",
+            "mac_count=3",
+            "mac_address=01005E000001",
+            "mac_address_type=01",
+            "mac_status=00",
+            "mac_address=0255365D4857",
+            "mac_address_type=00",
+            "mac_status=00",
+            "mac_ip_version=4",
+            "mac_ip_address=9.123.123.123",
+            "mac_address=333300000001",
+            "mac_address_type=01",
+            "mac_status=00",
+            "mac_info_end",
+            "adapter_info_end"]
+        request.return_value = {'response': data}
+        rd = ' '.join((
+            "SMAPI %s API Virtual_Network_Adapter_Query_Extended" % userid,
+            "--operands",
+            "-k 'image_device_number=*'"))
+        ret = self._smtclient.get_adapters_info('FakeID')
+        request.assert_called_once_with(rd)
+        self.assertEqual(ret[0]['mac_ip_address'], '9.123.123.123')
+        self.assertEqual(ret[0]['mac_ip_version'], '4')
+        self.assertEqual(ret[0]['mac_address'], '02:55:36:5D:48:57')
 
     @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
@@ -1076,6 +1117,19 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                      real_device_address='1000 1003')
         request.assert_called_with(rd)
 
+    @mock.patch.object(zvmutils, 'execute')
+    def test_refresh_bootmap_return_value(self, execute):
+        fcpchannels = ['5d71']
+        wwpns = ['5005076802100c1b', '5005076802200c1b']
+        lun = '0000000000000000'
+        execute.side_effect = [(0, "")]
+        self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun)
+        refresh_bootmap_cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap',
+                               '--fcpchannel=5d71',
+                               '--wwpn=5005076802100c1b,5005076802200c1b',
+                               '--lun=0000000000000000']
+        execute.assert_called_once_with(refresh_bootmap_cmd)
+
     @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_set_vswitch_with_errorcode(self, request, get_smt_userid):
@@ -1413,6 +1467,31 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                           self._smtclient.delete_userid, 'fuser1')
         request.assert_called_once_with(rd)
 
+    @mock.patch.object(subprocess, 'check_output')
+    def test_get_disk_size_units_rhcos(self, check):
+        image_path = 'test_path'
+        check.return_value = '3072327680'
+        size = self._smtclient._get_disk_size_units_rhcos(image_path)
+        self.assertEqual(size, '4168:CYL')
+
+    @mock.patch.object(subprocess, 'check_output')
+    def test_get_disk_size_units_rhcos_execute_error(self, check):
+        image_path = 'test_path'
+        check.return_value = "fdisk error"
+        self.assertRaises(exception.SDKImageOperationError,
+                          self._smtclient._get_disk_size_units_rhcos,
+                          image_path)
+
+        check.side_effect = subprocess.CalledProcessError(1, "fake error")
+        self.assertRaises(exception.SDKImageOperationError,
+                          self._smtclient._get_disk_size_units_rhcos,
+                          image_path)
+
+        check.side_effect = Exception("fake error")
+        self.assertRaises(exception.SDKInternalError,
+                          self._smtclient._get_disk_size_units_rhcos,
+                          image_path)
+
     @mock.patch.object(os, 'rename')
     @mock.patch.object(database.ImageDbOperator, 'image_add_record')
     @mock.patch.object(smtclient.SMTClient, '_get_image_size')
@@ -1449,7 +1528,48 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                     'c73ce117eef8077c3420bfc8f473ac2f',
                                     '3338:CYL',
                                     '512000',
-                                    'rootonly')
+                                    'rootonly',
+                                    comments=None)
+
+    @mock.patch.object(os, 'rename')
+    @mock.patch.object(database.ImageDbOperator, 'image_add_record')
+    @mock.patch.object(smtclient.SMTClient, '_get_image_size')
+    @mock.patch.object(smtclient.SMTClient, '_get_disk_size_units_rhcos')
+    @mock.patch.object(smtclient.SMTClient, '_get_md5sum')
+    @mock.patch.object(smtclient.FilesystemBackend, 'image_import')
+    @mock.patch.object(zvmutils.PathUtils,
+                       'create_import_image_repository')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    def test_image_import_rhcos(self, image_query, create_path, image_import,
+                          get_md5sum, disk_size_units, image_size,
+                          image_add_record, rename):
+        image_name = 'testimage'
+        url = 'file:///tmp/testdummyimg'
+        image_meta = {'os_version': 'rhcos4.2',
+                      'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f',
+                      'disk_type': 'DASD'}
+        import_image_fpath = '/home/netboot/rhcos4.2/testimage/testdummyimg'
+        final_image_fpath = '/home/netboot/rhcos4.2/testimage/0100'
+        image_query.return_value = []
+        create_path.return_value = '/home/netboot/rhcos4.2/testimage'
+        get_md5sum.return_value = 'c73ce117eef8077c3420bfc8f473ac2f'
+        disk_size_units.return_value = '3338:CYL'
+        image_size.return_value = '512000'
+        self._smtclient.image_import(image_name, url, image_meta)
+        image_query.assert_called_once_with(image_name)
+        image_import.assert_called_once_with(image_name, url,
+                                             import_image_fpath,
+                                             remote_host=None)
+        get_md5sum.assert_called_once_with(import_image_fpath)
+        disk_size_units.assert_called_once_with(final_image_fpath)
+        image_size.assert_called_once_with(final_image_fpath)
+        image_add_record.assert_called_once_with(image_name,
+                                    'rhcos4.2',
+                                    'c73ce117eef8077c3420bfc8f473ac2f',
+                                    '3338:CYL',
+                                    '512000',
+                                    'rootonly',
+                                    comments="{'disk_type': 'DASD'}")
 
     @mock.patch.object(smtclient.SMTClient, '_get_image_path_by_name')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
@@ -1490,6 +1610,25 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self.assertRaises(exception.SDKImageOperationError,
                           self._smtclient._get_image_last_access_time,
                           image_name)
+
+    @mock.patch.object(zvmutils.PathUtils,
+                       'create_import_image_repository')
+    @mock.patch.object(database.ImageDbOperator, 'image_query_record')
+    def test_image_import_rhcos_nodisktype(self, image_query, create_path):
+        image_name = 'testimage'
+        url = 'file:///tmp/testdummyimg'
+        image_meta = {'os_version': 'rhcos4.2',
+                      'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f'}
+        self.assertRaises(exception.SDKImageOperationError,
+                  self._smtclient.image_import,
+                  image_name, url, image_meta)
+
+        image_meta = {'os_version': 'rhcos4.2',
+                      'md5sum': 'c73ce117eef8077c3420bfc8f473ac2f',
+                      'disk_type': 'error'}
+        self.assertRaises(exception.SDKImageOperationError,
+                  self._smtclient.image_import,
+                  image_name, url, image_meta)
 
     @mock.patch.object(smtclient.SMTClient, '_get_image_last_access_time')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
@@ -1564,7 +1703,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
             'image_name': u'testimage',
             'image_path': u'file:///path/to/exported/image',
             'os_version': u'rhel6.5',
-            'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f'
+            'md5sum': u'c73ce117eef8077c3420bfc8f473ac2f',
+            'comments': None
         }
         real_return = self._smtclient.image_export(image_name, dest_url,
                                                 remote_host=remote_host)
@@ -3003,3 +3143,20 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                    mock.call(userid, online_mem_cmd),
                                    mock.call(userid, revert_standby_cmd)])
         revert.assert_called_once_with(userid, sample_direct)
+
+    def test_guest_deploy_rhcos_no_ignition(self):
+        userid = 'testuid'
+        image_name = "test_image"
+        transportfiles = None
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smtclient.guest_deploy_rhcos, userid,
+                          image_name, transportfiles)
+
+    def test_is_rhcos(self):
+        os_version = "rhel"
+        output = self._smtclient.is_rhcos(os_version)
+        self.assertFalse(output)
+
+        os_version = "rhcos4.2"
+        output = self._smtclient.is_rhcos(os_version)
+        self.assertTrue(output)

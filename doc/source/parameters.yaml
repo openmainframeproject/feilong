@@ -435,7 +435,7 @@ action_register_guest:
   type: string
 guest_register_meta:
   description: |
-    The metadata of the vm to be relocated.
+    The metadata of the vm to be registered.
   in: body
   required: true
   type: string
@@ -446,6 +446,12 @@ guest_register_net_set:
   in: body
   required: true
   type: string
+guest_register_port_macs:
+  description: |
+    The dict of virtual interface port id and mac id
+  in: body
+  required: false
+  type: dict
 action_deregister_guest:
   description: |
     Take ``deregister_vm`` action on guest.
@@ -587,10 +593,11 @@ image_export_url:
   type: string
 image_metadata:
   description: |
-    The metadata which describes image, the valid keys are os_version and md5sum,
+    The metadata which describes image, the valid keys are os_version, md5sum and disk_type,
     os_version is required key, the valid os_version values are: rhel6.x, rhel7.x,
-    sles11.x, sles12.x, ubuntu16.x, all case insensitive, please contact with your cloud administrator
-    if you don't know the image's os version
+    sles11.x, sles12.x, ubuntu16.x, rhcos4.X, all case insensitive, please contact with your cloud administrator
+    if you don't know the image's os version. disk_type is required if os_version is rhcos4,
+    the valid disk_type values are: DASD, SCSI.
   in: body
   required: true
   type: dict
@@ -644,7 +651,8 @@ export_image_dict:
   type: dict
 transportfiles:
   description: |
-    The files path that used to customize the vm.
+    The files path that used to customize the vm. For RHCOS image, the transportfiles
+    should be the ignition file.
   in: body
   required: false
   type: string
@@ -669,6 +677,15 @@ deploy_hostname:
   in: body
   required: false
   type: string
+deploy_skipdiskcopy:
+  description: |
+    whether to skip the copy of image to disk. Default value if False.
+    If the value is True, the ``image_name`` specified should be the os version.
+    If the value is False, the ``image_name`` specified should be the name of the image
+    to be used to copy to the root disk.
+  in: body
+  required: false
+  type: boolean
 capture_type:
   description: |
     The type of capture\:
@@ -909,6 +926,14 @@ guest_os_version:
   in: body
   required: true
   type: string
+guest_os_version_all:
+  description: |
+    Operating system version, the valid os_version values are: rhel6.x, rhel7.x,
+    sles11.x, sles12.x, ubuntu16.x, rhcos4.x, all case insensitive, please contact with your
+    cloud administrator if you don't know the guest's os version
+  in: body
+  required: true
+  type: string
 guest_networks_list:
   description: |
     Network info list of guest. It has one dictionary that contain some of the below
@@ -1059,6 +1084,12 @@ mount_point:
   in: body
   required: false
   type: string
+root_volume:
+  description: |
+    Volume is bootable or not
+  in: body
+  required: false
+  type: bool
 disk_list_output:
   description: |
     A list of created disks info for the guest
@@ -1093,3 +1124,41 @@ last_access_time:
   in: body
   required: true
   type: float
+fcp_list:
+  description: |
+    FCP devices list.
+  in: body
+  required: true
+  type: string
+wwpn_list:
+  description: |
+    World Wide Port Name IDs.
+  in: body
+  required: true
+  type: string
+lun:
+  description: |
+    Logical Unit Number ID
+  in: body
+  required: true
+  type: string
+adapters_info_output:
+  description: |
+    A list of adapters info for the guest
+    It has one or more dictionary that contain some of the below keys, one dictionary represent for one adapter.
+    each adapter.
+  in: body
+  required: true
+  type: list
+adapter_status:
+  description: |
+    status of adapter, 2 hexadecimal digits. ``02``means normal.
+  in: body
+  required: true
+  type: string
+ip_version:
+  description: |
+    version of IP address, ``4`` means IPV4, ``6``means IPV6.
+  in: body
+  required: true
+  type: string

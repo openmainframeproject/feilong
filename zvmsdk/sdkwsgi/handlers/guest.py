@@ -88,6 +88,11 @@ class VMHandler(object):
         return info
 
     @validation.query_schema(guest.userid_list_query)
+    def get_adapters(self, req, userid):
+        info = self.client.send_request('guest_get_adapters_info', userid)
+        return info
+
+    @validation.query_schema(guest.userid_list_query)
     def get_definition_info(self, req, userid):
         info = self.client.send_request('guest_get_definition_info', userid)
         return info
@@ -282,8 +287,11 @@ class VMAction(object):
     def register_vm(self, userid, body):
         meta = body['meta']
         net_set = body['net_set']
+        port_macs = None
+        if 'port_macs' in body.keys():
+            port_macs = body['port_macs']
         info = self.client.send_request('guest_register',
-                                userid, meta, net_set)
+                                userid, meta, net_set, port_macs)
         return info
 
     @validation.schema(guest.deregister_vm)
@@ -344,13 +352,15 @@ class VMAction(object):
         remotehost = body.get('remotehost', None)
         vdev = body.get('vdev', None)
         hostname = body.get('hostname', None)
+        skipdiskcopy = body.get('skipdiskcopy', False)
 
         request_info = ("action: 'deploy', userid: %(userid)s,"
                         "transportfiles: %(trans)s, remotehost: %(remote)s,"
-                        "vdev: %(vdev)s" %
+                        "vdev: %(vdev)s, skipdiskcopy: %(skipdiskcopy)s" %
                         {'userid': userid, 'trans': transportfiles,
                          'remote': remotehost, 'vdev': vdev,
-                         'hostname': hostname
+                         'hostname': hostname,
+                         'skipdiskcopy': skipdiskcopy,
                          })
 
         info = None
@@ -371,7 +381,8 @@ class VMAction(object):
                                             image_name,
                                             transportfiles=transportfiles,
                                             remotehost=remotehost,
-                                            vdev=vdev, hostname=hostname)
+                                            vdev=vdev, hostname=hostname,
+                                            skipdiskcopy=skipdiskcopy)
         finally:
             try:
                 self.dd_semaphore.release()
@@ -454,6 +465,25 @@ def guest_get_info(req):
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     info = _guest_get_info(req, userid)
+
+    info_json = json.dumps(info)
+    req.response.status = util.get_http_code_from_sdk_return(info,
+        additional_handler=util.handle_not_found)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def guest_get_adapters_info(req):
+
+    def _guest_get_adapters_info(req, userid):
+        action = get_handler()
+        return action.get_adapters(req, userid)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _guest_get_adapters_info(req, userid)
 
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,

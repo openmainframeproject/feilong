@@ -95,6 +95,14 @@ class VMOps(object):
                 'num_cpu': self._get_cpu_num_from_user_dict(dict_info),
                 'cpu_time_us': 0}
 
+    def get_adapters_info(self, userid):
+        adapters_info = self._smtclient.get_adapters_info(userid)
+        if not adapters_info:
+            msg = 'Get network information failed on: %s' % userid
+            LOG.error(msg)
+            raise exception.SDKInternalError(msg=msg, modID='guest')
+        return {'adapters': adapters_info}
+
     def instance_metadata(self, instance, content, extra_md):
         pass
 
@@ -271,12 +279,16 @@ class VMOps(object):
             self._pathutils.clean_temp_folder(tmp_path)
 
     def guest_deploy(self, userid, image_name, transportfiles=None,
-                     remotehost=None, vdev=None, hostname=None):
+                     remotehost=None, vdev=None, hostname=None,
+                     skipdiskcopy=False):
         LOG.info("Begin to deploy image on vm %s", userid)
-        os_version = self._smtclient.image_get_os_distro(image_name)
-        if not os_version.lower().startswith('rhcos'):
+        if not skipdiskcopy:
+            os_version = self._smtclient.image_get_os_distro(image_name)
+        else:
+            os_version = image_name
+        if not self._smtclient.is_rhcos(os_version):
             self._smtclient.guest_deploy(userid, image_name, transportfiles,
-                                         remotehost, vdev)
+                                         remotehost, vdev, skipdiskcopy)
 
             # punch scripts to set hostname
             if (transportfiles is None) and hostname:
