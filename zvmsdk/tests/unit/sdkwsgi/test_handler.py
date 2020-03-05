@@ -217,6 +217,18 @@ class GuestHandlerTest(unittest.TestCase):
             get_info.assert_called_once_with(mock.ANY, '1')
 
     @mock.patch.object(tokens, 'validate')
+    def test_guest_get_user_direct(self, mock_validate):
+        self.env['PATH_INFO'] = '/guests/1/user_direct'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMHandler.'
+                        'get_user_direct') as get_user_direct:
+            get_user_direct.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+
+            get_user_direct.assert_called_once_with(mock.ANY, '1')
+
+    @mock.patch.object(tokens, 'validate')
     def test_guest_get(self, mock_validate):
         self.env['PATH_INFO'] = '/guests/1'
         self.env['REQUEST_METHOD'] = 'GET'
