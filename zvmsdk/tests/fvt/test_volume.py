@@ -157,7 +157,8 @@ class VolumeTestCase(base.ZVMConnectorBaseTestCase):
         self.assertEqual(404, resp.status_code)
 
     @parameterized.expand(TEST_USERID_LIST)
-    def test_attach_detach_bootable_volume(self, case_name, userid, os_version):
+    def test_attach_detach_bootable_volume(self, case_name,
+                                           userid, os_version):
         # prepare connection_info
         connection_info = {'assigner_id': userid,
                            'zvm_fcp': CONF.tests.zvm_fcp,
