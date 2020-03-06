@@ -231,6 +231,14 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._hostops.get_info()
 
+    def host_get_guest_list(self):
+        """list names of all the VMs on the host.
+        :returns: names of the vm on this hypervisor, in a list.
+        """
+        action = "list guests on the host"
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._hostops.guest_list()
+
     def host_diskpool_get_info(self, disk_pool=None):
         """ Retrieve diskpool information.
         :param str disk_pool: the disk pool info. It use ':' to separate

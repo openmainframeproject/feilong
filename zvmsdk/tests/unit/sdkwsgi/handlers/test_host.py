@@ -46,6 +46,13 @@ class HandlersHostTest(unittest.TestCase):
         self.req = FakeReq()
         self.req.headers['X-Auth-Token'] = payload
 
+    @mock.patch.object(host.HostAction, 'get_guest_list')
+    def test_host_get_guest_list(self, mock_get_guest_list):
+        mock_get_guest_list.return_value = ''
+
+        host.host_get_guest_list(self.req)
+        mock_get_guest_list.assert_called_once_with()
+
     @mock.patch.object(host.HostAction, 'get_info')
     def test_host_get_info(self, mock_get_info):
 
