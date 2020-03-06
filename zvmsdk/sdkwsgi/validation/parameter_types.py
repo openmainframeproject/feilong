@@ -489,6 +489,7 @@ connection_info = {
         'os_version': os_version,
         'multipath': boolean,
         'mount_point': {'type': 'string'},
+        'is_root_volume': boolean,
     },
     'required': ['assigner_id', 'zvm_fcp', 'target_wwpn',
                  'target_lun', 'multipath', 'os_version',

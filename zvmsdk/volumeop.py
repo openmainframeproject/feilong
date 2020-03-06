@@ -555,7 +555,8 @@ class FCPVolumeManager(object):
                                       mount_point, new)
 
     def _attach(self, fcp, assigner_id, target_wwpns, target_lun,
-                multipath, os_version, mount_point, path_count):
+                multipath, os_version, mount_point, path_count,
+                is_root_volume):
         """Attach a volume
 
         First, we need translate fcp into local wwpn, then
@@ -567,6 +568,9 @@ class FCPVolumeManager(object):
         # but no assinger_id in contructor
         self.fcp_mgr.init_fcp(assigner_id)
         new = self.fcp_mgr.add_fcp_for_assigner(path_count, fcp, assigner_id)
+        if is_root_volume:
+            LOG.info('Attaching device to %s is done.' % assigner_id)
+            return
         try:
             if new:
                 self._dedicate_fcp(fcp, assigner_id)
@@ -619,9 +623,11 @@ class FCPVolumeManager(object):
             multipath = False
         os_version = connection_info['os_version']
         mount_point = connection_info['mount_point']
+        is_root_volume = connection_info.get('is_root_volume', False)
 
         # TODO: check exist in db?
-        if not zvmutils.check_userid_exist(assigner_id):
+        if is_root_volume is False and \
+                not zvmutils.check_userid_exist(assigner_id):
             LOG.error("User directory '%s' does not exist." % assigner_id)
             raise exception.SDKObjectNotExistError(
                     obj_desc=("Guest '%s'" % assigner_id), modID='volume')
@@ -631,7 +637,7 @@ class FCPVolumeManager(object):
             for i in range(path_count):
                 self._attach(fcp[i].lower(), assigner_id, target_wwpns,
                              target_lun, multipath, os_version, mount_point,
-                             path_count)
+                             path_count, is_root_volume)
 
     def _undedicate_fcp(self, fcp, assigner_id):
         self._smtclient.undedicate_device(assigner_id, fcp)
@@ -643,10 +649,13 @@ class FCPVolumeManager(object):
                                       mount_point, connections)
 
     def _detach(self, fcp, assigner_id, target_wwpns, target_lun,
-                multipath, os_version, mount_point):
+                multipath, os_version, mount_point, is_root_volume):
         """Detach a volume from a guest"""
         LOG.info('Start to detach device from %s' % assigner_id)
         connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
+        if is_root_volume:
+            LOG.info('Detaching device from %s is done.' % assigner_id)
+            return
 
         try:
             self._remove_disk(fcp, assigner_id, target_wwpns, target_lun,
@@ -664,7 +673,7 @@ class FCPVolumeManager(object):
                                multipath, os_version, mount_point, new)
             raise exception.SDKBaseException(msg=errmsg)
 
-        LOG.info('Detaching device to %s is done.' % assigner_id)
+        LOG.info('Detaching device from %s is done.' % assigner_id)
 
     def detach(self, connection_info):
         """Detach a volume from a guest
@@ -682,7 +691,10 @@ class FCPVolumeManager(object):
             multipath = True
         else:
             multipath = False
-        if not zvmutils.check_userid_exist(assigner_id):
+
+        is_root_volume = connection_info.get('is_root_volume', False)
+        if is_root_volume is False and \
+                not zvmutils.check_userid_exist(assigner_id):
             LOG.error("Guest '%s' does not exist" % assigner_id)
             raise exception.SDKObjectNotExistError(
                     obj_desc=("Guest '%s'" % assigner_id), modID='volume')
@@ -691,7 +703,8 @@ class FCPVolumeManager(object):
             path_count = len(fcp)
             for i in range(path_count):
                 self._detach(fcp[i].lower(), assigner_id, target_wwpns,
-                             target_lun, multipath, os_version, mount_point)
+                             target_lun, multipath, os_version, mount_point,
+                             is_root_volume)
 
     def get_volume_connector(self, assigner_id):
         """Get connector information of the instance for attaching to volumes.

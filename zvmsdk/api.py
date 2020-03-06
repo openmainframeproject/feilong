@@ -199,6 +199,20 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_info(userid)
 
+    def guest_get_adapters_info(self, userid):
+        """Get the network information of a virtual machine.
+        this userid may not in zCC.
+
+        :param str userid: the id of the virtual machine
+
+        :returns: Dictionary contains:
+                  ip: (str) the IP address of the virtual machine
+                  mac: (str) the MAC address of the virtual machine
+        """
+        action = "get network info of guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_adapters_info(userid)
+
     def guest_list(self):
         """list names of all the VMs on this host.
 
@@ -216,6 +230,14 @@ class SDKAPI(object):
         action = "get host information"
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._hostops.get_info()
+
+    def host_get_guest_list(self):
+        """list names of all the VMs on the host.
+        :returns: names of the vm on this hypervisor, in a list.
+        """
+        action = "list guests on the host"
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._hostops.guest_list()
 
     def host_diskpool_get_info(self, disk_pool=None):
         """ Retrieve diskpool information.

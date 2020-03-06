@@ -248,8 +248,7 @@ function refreshZIPL {
 
   elif [[ $os == rhel8* ]]; then
     inform "Refresh $os zipl."
-    # Get all kernel conf files except *rescue file.
-    kernel_version_conf_files=`chroot $deviceMountPoint find /boot/loader/entries/ -name '*.conf' | grep -v rescue`
+    kernel_version_conf_files=`chroot $deviceMountPoint find /boot/loader/entries/ -name '*.conf'`
     # The Volume may be contains several kernel version conf files.
     # So every conf file needs to be changed.
     for fcp in ${fcps[@]}

@@ -303,6 +303,7 @@ Attach volume to a vm in z/VM
   - os_version: guest_os_version
   - multipath: guest_multipath
   - mount_point: mount_point
+  - is_root_volume: root_volume
 
 
 * Request sample:
@@ -338,6 +339,7 @@ Detach volume from a vm in z/VM
   - os_version: guest_os_version
   - multipath: guest_multipath
   - mount_point: mount_point
+  - is_root_volume: root_volume
 
 
 * Request sample:
@@ -574,6 +576,42 @@ Get running information of guest.
 * Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_info.tpl
+   :language: javascript
+
+
+Get Guest adapters info
+-----------------------
+
+**GET /guests/{userid}/adapters**
+
+Get adapters information of running guest.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: adapters_info_output
+  - lan_owner: guest_userid
+  - lan_name: vswitch_name
+  - adapter_address: vdev_number
+  - adapter_status: adapter_status
+  - mac_address: mac_address
+  - mac_ip_address: ip_address
+  - mac_ip_version: ip_version
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_adapters_info.tpl
    :language: javascript
 
 Create Guest nic
@@ -1259,6 +1297,34 @@ Delete Guest nic
 
 Host
 ====
+
+Get guests list, info from host (hypervisor) running on.
+
+Get Guests List
+---------------
+
+**GET /host/guests**
+
+List names of all the guests on the host.
+
+* Request:
+
+  None
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: guest_list
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_get_guest_list.tpl
+   :language: javascript
 
 Get info from host (hypervisor) running on.
 
