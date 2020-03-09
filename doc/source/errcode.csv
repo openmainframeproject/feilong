@@ -27,6 +27,7 @@
 300;30;300;1;Database operation failed, error: %(msg)s
 300;30;300;3;Volume %(vol)s has already been attached on instance %(inst)s
 300;30;300;4;Volume %(vol)s is not attached on instance %(inst)s
+300;30;300;5;Refresh bootmap fails, error code: %(errcode)s and reason: %(errmsg)s
 **Operation on Image failed**
 300;40;300;1;Database operation failed, error: %(msg)s
 300;40;300;2;No image schema found for %(schema)s
