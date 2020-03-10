@@ -199,6 +199,12 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_info(userid)
 
+    def guest_get_power_state_real(self, userid):
+        """Returns power state of a virtual machine from hypervisor."""
+        action = "get power state of guest '%s' from hypervisor" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_power_state(userid)
+
     def guest_get_adapters_info(self, userid):
         """Get the network information of a virtual machine.
         this userid may not in zCC.

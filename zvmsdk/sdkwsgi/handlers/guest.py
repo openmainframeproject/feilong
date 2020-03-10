@@ -83,6 +83,11 @@ class VMHandler(object):
         return info
 
     @validation.query_schema(guest.userid_list_query)
+    def get_power_state_real(self, req, userid):
+        info = self.client.send_request('guest_get_power_state_real', userid)
+        return info
+
+    @validation.query_schema(guest.userid_list_query)
     def get_info(self, req, userid):
         info = self.client.send_request('guest_get_info', userid)
         return info
@@ -453,6 +458,25 @@ def get_handler():
     if _VMHANDLER is None:
         _VMHANDLER = VMHandler()
     return _VMHANDLER
+
+
+@util.SdkWsgify
+@tokens.validate
+def guest_get_power_state_real(req):
+
+    def _guest_get_power_state_real(req, userid):
+        action = get_handler()
+        return action.get_power_state_real(req, userid)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _guest_get_power_state_real(req, userid)
+
+    info_json = json.dumps(info)
+    req.response.status = util.get_http_code_from_sdk_return(info,
+        additional_handler=util.handle_not_found)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
 
 
 @util.SdkWsgify
