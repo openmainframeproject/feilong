@@ -1142,3 +1142,23 @@ lun:
   in: body
   required: true
   type: string
+adapters_info_output:
+  description: |
+    A list of adapters info for the guest
+    It has one or more dictionary that contain some of the below keys, one dictionary represent for one adapter.
+    each adapter.
+  in: body
+  required: true
+  type: list
+adapter_status:
+  description: |
+    status of adapter, 2 hexadecimal digits. ``02`` means normal.
+  in: body
+  required: true
+  type: string
+ip_version:
+  description: |
+    version of IP address, ``4`` means IPV4, ``6`` means IPV6.
+  in: body
+  required: true
+  type: string

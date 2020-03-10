@@ -279,6 +279,70 @@ class SMTClient(object):
         pi_dict = self.image_performance_query([userid])
         return pi_dict.get(userid, None)
 
+    def get_adapters_info(self, userid):
+        rd = ' '.join((
+            "SMAPI %s API Virtual_Network_Adapter_Query_Extended" % userid,
+            "--operands",
+            "-k 'image_device_number=*'"))
+        results = None
+        action = "get network info of userid '%s'" % str(userid)
+        with zvmutils.log_and_reraise_smt_request_failed(action):
+            results = self._request(rd)
+        ret = results['response']
+        # TODO: muti NIC support?
+        nic_count = 0
+        for line in ret:
+            if 'adapter_count=' in line:
+                nic_count = int(line.strip().split('=')[-1])
+                break
+
+        if nic_count < 1:
+            msg = 'get_network_info:No NIC found on userid %s' % userid
+            LOG.error(msg)
+            raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                   msg=msg)
+        # save network info into dict by index from 1 to nic_count
+        # Firstly, get adapter information
+        adapters_info = []
+        adapter = dict()
+        for line in ret:
+            if 'adapter_address=' in line:
+                adapter_addr = line.strip().split('=')[-1]
+                adapter['adapter_address'] = adapter_addr
+            if 'adapter_status=' in line:
+                adapter_type = line.strip().split('=')[-1]
+                adapter['adapter_status'] = adapter_type
+            if 'lan_owner=' in line:
+                lan_owner = line.strip().split('=')[-1]
+                adapter['lan_owner'] = lan_owner
+            if 'lan_name=' in line:
+                lan_name = line.strip().split('=')[-1]
+                adapter['lan_name'] = lan_name
+            if 'adapter_info_end' in line:
+                adapters_info.append(adapter)
+                adapter = dict()
+        # Secondly, get mac information of every adapter
+        # assume one adapter only have one mac_ip_address
+        index = 0
+        for line in ret:
+            if 'mac_address=' in line:
+                mac_addr = line.strip().split('=')[-1]
+                pattern = re.compile('.{2}')
+                mac_address = ':'.join(pattern.findall(mac_addr))
+                adapters_info[index]['mac_address'] = mac_address
+            if 'mac_ip_version=' in line:
+                ip_version = line.strip().split('=')[-1]
+                adapters_info[index]['mac_ip_version'] = ip_version
+            if 'mac_ip_address=' in line:
+                # once we found mac_ip_address, assume this is the MAC
+                # we are using, then jump to next adapter
+                mac_ip = line.strip().split('=')[-1]
+                adapters_info[index]['mac_ip_address'] = mac_ip
+                index = index + 1
+                if index == len(adapters_info):
+                    break
+        return adapters_info
+
     def _parse_vswitch_inspect_data(self, rd_list):
         """ Parse the Virtual_Network_Vswitch_Query_Byte_Stats data to get
         inspect data.
@@ -1605,6 +1669,11 @@ class SMTClient(object):
     def get_user_direct(self, userid):
         with zvmutils.log_and_reraise_smt_request_failed():
             results = self._request("getvm %s directory" % userid)
+        return results.get('response', [])
+
+    def get_all_user_direct(self):
+        with zvmutils.log_and_reraise_smt_request_failed():
+            results = self._request("getvm alldirectory")
         return results.get('response', [])
 
     def _delete_nic_active_exception(self, error, userid, vdev):
