@@ -297,6 +297,12 @@ def req_guest_deploy(start_index, *args, **kwargs):
     return url, body
 
 
+def req_guest_get_power_state_real(start_index, *args, **kwargs):
+    url = '/guests/%s/power_state_real'
+    body = None
+    return url, body
+
+
 def req_guest_get_info(start_index, *args, **kwargs):
     url = '/guests/%s/info'
     body = None
@@ -396,11 +402,13 @@ def req_volume_refresh_bootmap(start_index, *args, **kwargs):
     fcpchannel = kwargs.get('fcpchannels', None)
     wwpn = kwargs.get('wwpn', None)
     lun = kwargs.get('lun', None)
+    skipzipl = kwargs.get('skipzipl', False)
     body = {'info':
         {
             "fcpchannel": fcpchannel,
             "wwpn": wwpn,
             "lun": lun,
+            "skipzipl": skipzipl,
         }
     }
     fill_kwargs_in_body(body['info'], **kwargs)
@@ -677,6 +685,11 @@ DATABASE = {
         'args_required': 2,
         'params_path': 1,
         'request': req_guest_deploy},
+    'guest_get_power_state_real': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_get_power_state_real},
     'guest_get_info': {
         'method': 'GET',
         'args_required': 1,

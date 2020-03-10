@@ -36,6 +36,11 @@ class SDKAPITestCase(base.SDKTestCase):
     def test_init_ComputeAPI(self):
         self.assertTrue(isinstance(self.api, api.SDKAPI))
 
+    @mock.patch("zvmsdk.vmops.VMOps.get_power_state")
+    def test_guest_get_power_state_real(self, gstate):
+        self.api.guest_get_power_state_real(self.userid)
+        gstate.assert_called_once_with(self.userid)
+
     @mock.patch("zvmsdk.vmops.VMOps.get_info")
     def test_guest_get_info(self, ginfo):
         self.api.guest_get_info(self.userid)
@@ -275,7 +280,8 @@ class SDKAPITestCase(base.SDKTestCase):
         wwpn = ['5005076802100c1b', '5005076802200c1b']
         lun = '01000000000000'
         self.api.volume_refresh_bootmap(fcpchannel, wwpn, lun)
-        mock_attach.assert_called_once_with(fcpchannel, wwpn, lun)
+        mock_attach.assert_called_once_with(fcpchannel, wwpn, lun,
+                                            skipzipl=False)
 
     @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI."
                 "detach_volume_from_instance")

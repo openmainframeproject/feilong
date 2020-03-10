@@ -86,6 +86,7 @@ function parseArgs {
   isOption -f --fcpchannel "   FCP channel IDs. Support multi fcpchannel, split by ','."
   isOption -w --wwpn "         World Wide Port Name IDs. Support multi wwpn, split by ',' Example: 5005076802400c1b"
   isOption -l --lun "          Logical Unit Number ID. Example: 0000000000000000"
+  isOption -s --skipzipl "     Whether skip ZIPL, if YES, only return physical World Wide Port Name IDs"
 
   if [[ $printHelp ]]; then
     printHelp
@@ -109,6 +110,10 @@ function parseArgs {
       ;;
       -l|--lun=*)
       lun="${i#*=}"
+      shift # past argument=value
+      ;;
+      -s|--skipzipl=*)
+      skipzipl="${i#*=}"
       shift # past argument=value
       ;;
       --default)
@@ -173,6 +178,11 @@ function refreshZIPL {
   if [[ ! -e "$devNode" ]]; then
     printError "devNode ${devNode} doesn't exist. Get fcps: ${fcps[*]} and wwpns: ${wwpns[*]}"
     exit 6
+  fi
+  
+  if [[ $skipzipl = 'YES'  ]]; then
+    inform "WWPNs: ${wwpns[*]}"
+    return
   fi
 
   # Create a mount dir.

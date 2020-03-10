@@ -199,6 +199,12 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_info(userid)
 
+    def guest_get_power_state_real(self, userid):
+        """Returns power state of a virtual machine from hypervisor."""
+        action = "get power state of guest '%s' from hypervisor" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_power_state(userid)
+
     def guest_get_adapters_info(self, userid):
         """Get the network information of a virtual machine.
         this userid may not in zCC.
@@ -1418,14 +1424,16 @@ class SDKAPI(object):
         """
         self._volumeop.attach_volume_to_instance(connection_info)
 
-    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun):
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, skipzipl=False):
         """ Refresh a volume's bootmap info.
 
         :param list of fcpchannels
         :param list of wwpns
         :param string lun
+        :param boolean skipzipl: whether ship zipl, only return physical wwpns
         """
-        return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun)
+        return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun,
+                                                     skipzipl=skipzipl)
 
     def volume_detach(self, connection_info):
         """ Detach a volume from a guest. It's prerequisite to active multipath
