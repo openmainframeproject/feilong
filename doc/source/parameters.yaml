@@ -1162,3 +1162,10 @@ ip_version:
   in: body
   required: true
   type: string
+skipzipl:
+  description: |
+    whether or not to skip the step of refresh bootmap. If true, only return the valid wwpn list.
+    Default value is False.
+  in: body
+  required: false
+  type: bool

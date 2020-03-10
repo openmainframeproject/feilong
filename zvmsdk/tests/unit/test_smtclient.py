@@ -352,6 +352,23 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         guest_update.assert_called_once_with(userid, meta='os_version=RHCOS4')
 
     @mock.patch.object(database.GuestDbOperator, 'update_guest_by_userid')
+    @mock.patch.object(smtclient.SMTClient, '_get_unpackdiskimage_cmd_rhcos')
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_guest_deploy_rhcos_withskip(self, request, execute, unpack,
+                                         guest_update):
+        base.set_conf("zvm", "user_root_vdev", "0100")
+        unpack.return_value = 'command'
+        execute.side_effect = [(0, ""), (0, "")]
+        userid = 'fakeuser'
+        image_name = 'RHCOS4'
+        transportfiles = '/faketran'
+        self._smtclient.guest_deploy_rhcos(userid, image_name, transportfiles,
+                                           skipdiskcopy=True)
+        execute.assert_called_once_with('command')
+        guest_update.assert_called_once_with(userid, meta='os_version=RHCOS4')
+
+    @mock.patch.object(database.GuestDbOperator, 'update_guest_by_userid')
     @mock.patch.object(database.ImageDbOperator, 'image_query_record')
     @mock.patch.object(dist.rhcos4, 'read_coreos_parameter')
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
@@ -416,6 +433,35 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                           '1000',
                           '/var/lib/zvmsdk/images/netboot/RHCOS4/fakeimg/0100',
                           '/var/lib/nova/instances/fake/ignition.file', 'ECKD',
+                          '0.0.1000,0.0.1001,0.0.1002',
+                          '10.10.0.29::10.10.0.1:24:fakehost:enc1000:none:'
+                          '10.10.0.250:'])
+
+    @mock.patch.object(dist.rhcos4, 'read_coreos_parameter')
+    @mock.patch.object(smtclient.SMTClient, '_get_wwpn_lun')
+    def test_get_unpackdiskimage_cmd_rhcos_skipcopy(self, loaddev,
+                                                    coreos_param):
+        coreos_param.return_value = \
+            '10.10.0.29::10.10.0.1:24:FAKEUSER:enc1000:none:10.10.0.250:'
+        loaddev.return_value = ('111111', '000000')
+        hostname = 'fakehost'
+        userid = 'fakeuser'
+        image_name = 'RHCOS4'
+        transportfiles = '/var/lib/nova/instances/fake/ignition.file'
+        image_file = None
+        vdev = '1000'
+        cmd = self._smtclient._get_unpackdiskimage_cmd_rhcos(userid,
+                                                             image_name,
+                                                             transportfiles,
+                                                             vdev,
+                                                             image_file,
+                                                             hostname,
+                                                             True)
+        coreos_param.assert_called_once_with(userid)
+        loaddev.assert_called_once_with(userid)
+        self.assertEqual(cmd, ['sudo', '/opt/zthin/bin/unpackdiskimage',
+                          '1000', '0x111111', '0x000000',
+                          '/var/lib/nova/instances/fake/ignition.file',
                           '0.0.1000,0.0.1001,0.0.1002',
                           '10.10.0.29::10.10.0.1:24:fakehost:enc1000:none:'
                           '10.10.0.250:'])
@@ -1140,6 +1186,22 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                '--fcpchannel=5d71',
                                '--wwpn=5005076802100c1b,5005076802200c1b',
                                '--lun=0000000000000000']
+        execute.assert_called_once_with(refresh_bootmap_cmd)
+
+    @mock.patch.object(zvmutils, 'execute')
+    def test_refresh_bootmap_return_value_withskip(self, execute):
+        fcpchannels = ['5d71']
+        wwpns = ['5005076802100c1b', '5005076802200c1b']
+        lun = '0000000000000000'
+        skipzipl = True
+        execute.side_effect = [(0, "")]
+        self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun,
+                                               skipzipl)
+        refresh_bootmap_cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap',
+                               '--fcpchannel=5d71',
+                               '--wwpn=5005076802100c1b,5005076802200c1b',
+                               '--lun=0000000000000000',
+                               '--skipzipl=YES']
         execute.assert_called_once_with(refresh_bootmap_cmd)
 
     @mock.patch.object(zvmutils, 'get_smt_userid')
