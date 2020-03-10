@@ -23,6 +23,8 @@ from smtLayer.vmUtils import invokeSMCLI
 
 modId = 'GHO'
 version = "1.0.0"
+# maximum I knew is 60019, so make it double
+maximumCyl = 130000
 
 """
 List of subfunction handlers.
@@ -139,6 +141,26 @@ def getDiskPoolNames(rh):
     return rh.results['overallRC']
 
 
+def _getDiskSize(parts):
+    size = 0
+
+    if parts[1][:4] == "3390":
+        size = int(parts[3]) * 737280
+    elif parts[1][:4] == "9336":
+        size = int(parts[3]) * 512
+    else:
+        # now we don't know the type, it might be caused
+        # by SMAPI layer and we got a ??? type
+        # then let's guess the type if > maximumCyl
+        # then think it's a 9336, otherwise, take as 3390
+        if int(parts[3]) > maximumCyl:
+            size = int(parts[3]) * 512
+        else:
+            size = int(parts[3]) * 737280
+
+    return size
+
+
 def getDiskPoolSpace(rh):
     """
     Obtain disk pool space information for all or a specific disk pool.
@@ -189,10 +211,7 @@ def getDiskPoolSpace(rh):
                     if poolName not in totals:
                         totals[poolName] = {"2": 0., "3": 0.}
 
-                    if parts[1][:4] == "3390":
-                        totals[poolName][qType] += int(parts[3]) * 737280
-                    elif parts[1][:4] == "9336":
-                        totals[poolName][qType] += int(parts[3]) * 512
+                    totals[poolName][qType] += _getDiskSize(parts)
             else:
                 # SMAPI API failed.
                 rh.printLn("ES", results['response'])

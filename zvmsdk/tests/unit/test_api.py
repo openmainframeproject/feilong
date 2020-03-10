@@ -41,6 +41,11 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.guest_get_info(self.userid)
         ginfo.assert_called_once_with(self.userid)
 
+    @mock.patch("zvmsdk.vmops.VMOps.get_adapters_info")
+    def test_guest_get_adapters_info(self, adapters_info):
+        self.api.guest_get_adapters_info(self.userid)
+        adapters_info.assert_called_once_with(self.userid)
+
     @mock.patch("zvmsdk.vmops.VMOps.guest_deploy")
     def test_guest_deploy(self, guest_deploy):
         user_id = 'fakevm'
@@ -434,3 +439,8 @@ class SDKAPITestCase(base.SDKTestCase):
         check_exist.assert_called_once_with(self.userid)
         guestdb_del.assert_called_once_with(self.userid)
         networkdb_del.assert_called_once_with(self.userid)
+
+    @mock.patch("zvmsdk.hostops.HOSTOps.guest_list")
+    def test_host_get_guest_list(self, guest_list):
+        self.api.host_get_guest_list()
+        guest_list.assert_called_once_with()
