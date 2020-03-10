@@ -396,11 +396,13 @@ def req_volume_refresh_bootmap(start_index, *args, **kwargs):
     fcpchannel = kwargs.get('fcpchannels', None)
     wwpn = kwargs.get('wwpn', None)
     lun = kwargs.get('lun', None)
+    skipzipl = kwargs.get('skipzipl', False)
     body = {'info':
         {
             "fcpchannel": fcpchannel,
             "wwpn": wwpn,
             "lun": lun,
+            "skipzipl": skipzipl,
         }
     }
     fill_kwargs_in_body(body['info'], **kwargs)
