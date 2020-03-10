@@ -169,6 +169,7 @@ errors = {
                    "get unpackdiskimage cmd failed: %(err)s"),
                13: ("Failed to deploy image to userid: '%(userid)s', "
                    "ignition file is required when deploying RHCOS image"),
+               14: ("Failed to deploy image to userid: '%(userid)s', %(msg)s")
               },
               "Operation on Guest failed"
               ],
