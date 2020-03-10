@@ -111,7 +111,7 @@ class GuestActionsTest(SDKWSGITest):
         self.req.body = '{"action": "register_vm",\
                           "meta": "rhel7",\
                           "net_set": "1",\
-                          "port": "5abc7819-abec-4deb-9115-2af5da249155"}'
+                          "port_macs": "5abc7819-abec-4deb-9115-2af5da249155"}'
         mock_action.return_value = ''
         mock_userid.return_value = FAKE_USERID
         guest.guest_action(self.req)
@@ -120,6 +120,21 @@ class GuestActionsTest(SDKWSGITest):
                                             "1",
                                             "5abc7819-abec-4deb"
                                             "-9115-2af5da249155")
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_register_no_port_macs(self, mock_action,
+                        mock_userid):
+        self.req.body = '{"action": "register_vm",\
+                          "meta": "rhel7",\
+                          "net_set": "1"}'
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_register', FAKE_USERID,
+                                            "rhel7",
+                                            "1",
+                                            None)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
@@ -617,6 +632,15 @@ class HandlersGuestTest(SDKWSGITest):
 
         guest.guest_list(self.req)
         mock_list.assert_called_once_with()
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(guest.VMHandler, 'get_power_state_real')
+    def test_guest_power_state_real(self, mock_get, mock_userid):
+        mock_get.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_get_power_state_real(self.req)
+        mock_get.assert_called_once_with(self.req, FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get_info')

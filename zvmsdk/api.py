@@ -199,6 +199,26 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_info(userid)
 
+    def guest_get_power_state_real(self, userid):
+        """Returns power state of a virtual machine from hypervisor."""
+        action = "get power state of guest '%s' from hypervisor" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_power_state(userid)
+
+    def guest_get_adapters_info(self, userid):
+        """Get the network information of a virtual machine.
+        this userid may not in zCC.
+
+        :param str userid: the id of the virtual machine
+
+        :returns: Dictionary contains:
+                  ip: (str) the IP address of the virtual machine
+                  mac: (str) the MAC address of the virtual machine
+        """
+        action = "get network info of guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_adapters_info(userid)
+
     def guest_list(self):
         """list names of all the VMs on this host.
 
@@ -216,6 +236,14 @@ class SDKAPI(object):
         action = "get host information"
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._hostops.get_info()
+
+    def host_get_guest_list(self):
+        """list names of all the VMs on the host.
+        :returns: names of the vm on this hypervisor, in a list.
+        """
+        action = "list guests on the host"
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._hostops.guest_list()
 
     def host_diskpool_get_info(self, disk_pool=None):
         """ Retrieve diskpool information.
@@ -282,7 +310,8 @@ class SDKAPI(object):
                a dictionary to describe the image info, such as md5sum,
                os_version. For example:
                {'os_version': 'rhel6.2',
-               'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5'}
+               'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5',
+               'disk_type': 'DASD'}
         :param string remote_host:
                 if the image url schema is file, the remote_host is used to
                 indicate where the image comes from, the format is username@IP
@@ -326,6 +355,7 @@ class SDKAPI(object):
         'image_path': the image_path after exported
         'os_version': the os version of the exported image
         'md5sum': the md5sum of the original image
+        'comments': the comments of the original image
         }
         """
         try:
@@ -541,12 +571,15 @@ class SDKAPI(object):
                 switch = nics_info[key]['vswitch']
                 port = None
                 if port_macs is not None:
-                    mac = nics_info[key]['mac']
-                    port = port_macs[mac]
+                    if 'mac' in nics_info[key].keys():
+                        mac = nics_info[key]['mac']
+                        if mac in port_macs.keys():
+                            port = port_macs[mac]
                     if port is None:
-                        LOG.warning("Port not found for mac %s." % mac)
+                        LOG.warning("Port not found for nic %s, %s." %
+                                    (key, port_macs))
                     else:
-                        LOG.info("Port found for mac %s." % mac)
+                        LOG.info("Port found for nic %s." % key)
                 with zvmutils.log_and_reraise_sdkbase_error(action):
                     self._NetworkDbOperator.switch_add_record(
                                 userid, interface, port, switch)
@@ -1390,6 +1423,17 @@ class SDKAPI(object):
                     to work properly.
         """
         self._volumeop.attach_volume_to_instance(connection_info)
+
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, skipzipl=False):
+        """ Refresh a volume's bootmap info.
+
+        :param list of fcpchannels
+        :param list of wwpns
+        :param string lun
+        :param boolean skipzipl: whether ship zipl, only return physical wwpns
+        """
+        return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun,
+                                                     skipzipl=skipzipl)
 
     def volume_detach(self, connection_info):
         """ Detach a volume from a guest. It's prerequisite to active multipath

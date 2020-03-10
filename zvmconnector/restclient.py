@@ -241,8 +241,9 @@ def req_guest_register(start_index, *args, **kwargs):
     url = '/guests/%s/action'
     body = {'action': 'register_vm',
             'meta': args[start_index],
-            'net_set': args[start_index + 1],
-            'port_macs': args[start_index + 2]}
+            'net_set': args[start_index + 1]}
+    if len(args) - start_index == 3:
+        body['port_macs'] = args[start_index + 2]
     return url, body
 
 
@@ -296,8 +297,20 @@ def req_guest_deploy(start_index, *args, **kwargs):
     return url, body
 
 
+def req_guest_get_power_state_real(start_index, *args, **kwargs):
+    url = '/guests/%s/power_state_real'
+    body = None
+    return url, body
+
+
 def req_guest_get_info(start_index, *args, **kwargs):
     url = '/guests/%s/info'
+    body = None
+    return url, body
+
+
+def req_guest_get_adapters_info(start_index, *args, **kwargs):
+    url = '/guests/%s/adapters'
     body = None
     return url, body
 
@@ -384,6 +397,24 @@ def req_volume_detach(start_index, *args, **kwargs):
     return url, body
 
 
+def req_volume_refresh_bootmap(start_index, *args, **kwargs):
+    url = '/volumes/volume_refresh_bootmap'
+    fcpchannel = kwargs.get('fcpchannels', None)
+    wwpn = kwargs.get('wwpn', None)
+    lun = kwargs.get('lun', None)
+    skipzipl = kwargs.get('skipzipl', False)
+    body = {'info':
+        {
+            "fcpchannel": fcpchannel,
+            "wwpn": wwpn,
+            "lun": lun,
+            "skipzipl": skipzipl,
+        }
+    }
+    fill_kwargs_in_body(body['info'], **kwargs)
+    return url, body
+
+
 def req_get_volume_connector(start_index, *args, **kwargs):
     url = '/volumes/conn/%s'
     body = None
@@ -392,6 +423,12 @@ def req_get_volume_connector(start_index, *args, **kwargs):
 
 def req_host_get_info(start_index, *args, **kwargs):
     url = '/host'
+    body = None
+    return url, body
+
+
+def req_host_get_guest_list(start_index, *args, **kwargs):
+    url = '/host/guests'
     body = None
     return url, body
 
@@ -605,6 +642,7 @@ DATABASE = {
     'guest_register': {
         'method': 'POST',
         'args_required': 3,
+        'args_optional': 1,
         'params_path': 1,
         'request': req_guest_register},
     'guest_deregister': {
@@ -647,11 +685,21 @@ DATABASE = {
         'args_required': 2,
         'params_path': 1,
         'request': req_guest_deploy},
+    'guest_get_power_state_real': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_get_power_state_real},
     'guest_get_info': {
         'method': 'GET',
         'args_required': 1,
         'params_path': 1,
         'request': req_guest_get_info},
+    'guest_get_adapters_info': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_get_adapters_info},
     'guest_create_nic': {
         'method': 'POST',
         'args_required': 1,
@@ -712,6 +760,11 @@ DATABASE = {
         'args_required': 1,
         'params_path': 0,
         'request': req_volume_detach},
+    'volume_refresh_bootmap': {
+        'method': 'PUT',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_volume_refresh_bootmap},
     'get_volume_connector': {
         'method': 'GET',
         'args_required': 1,
@@ -722,6 +775,11 @@ DATABASE = {
         'args_required': 0,
         'params_path': 0,
         'request': req_host_get_info},
+    'host_get_guest_list': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_host_get_guest_list},
     'host_diskpool_get_info': {
         'method': 'GET',
         'args_required': 0,
@@ -835,10 +893,13 @@ class RESTClient(object):
             raise APINameNotFound(msg)
         # check args count is valid
         count = DATABASE[api_name]['args_required']
+        optional = 0
+        if 'args_optional' in DATABASE[api_name].keys():
+            optional = DATABASE[api_name]['args_optional']
         if len(args) < count:
             msg = "Missing some args,please check:%s." % args
             raise ArgsFormatError(msg)
-        if len(args) > count:
+        if len(args) > count + optional:
             msg = "Too many args,please check:%s." % args
             raise ArgsFormatError(msg)
 

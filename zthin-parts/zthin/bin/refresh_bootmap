@@ -86,6 +86,7 @@ function parseArgs {
   isOption -f --fcpchannel "   FCP channel IDs. Support multi fcpchannel, split by ','."
   isOption -w --wwpn "         World Wide Port Name IDs. Support multi wwpn, split by ',' Example: 5005076802400c1b"
   isOption -l --lun "          Logical Unit Number ID. Example: 0000000000000000"
+  isOption -s --skipzipl "     Whether skip ZIPL, if YES, only return physical World Wide Port Name IDs"
 
   if [[ $printHelp ]]; then
     printHelp
@@ -111,6 +112,10 @@ function parseArgs {
       lun="${i#*=}"
       shift # past argument=value
       ;;
+      -s|--skipzipl=*)
+      skipzipl="${i#*=}"
+      shift # past argument=value
+      ;;
       --default)
       DEFAULT=YES
       shift # past argument with no value
@@ -134,8 +139,8 @@ function checkSanity {
   #   Performs basic checks to ensure that a successful deploy can reasonably
   #   be expected.
   if [[ $device_type = 'fcp' ]]; then
-    if [[ ! $lun || ! $wwpn || ! $lun || ! $fcpchannel ]];then
-        printError "Please specific lun, wwpn or fcpchannel."
+    if [[ ! $lun || ! $fcpchannel ]];then
+        printError "Please specify lun and fcpchannel."
         exit 4
     fi
     # Intentionally non-local variable.
@@ -161,15 +166,23 @@ function refreshZIPL {
   #   1 - If the zipl failed to be executed on target disk
   # @Code:
   # Characters in the IFS are treated individually as sparators.
-  #IFS=',' read -r -a fcps <<< "$fcpchannels"
-  #IFS=',' read -r -a ws <<< "$wwpns"
   # We will mount the devNode so that refresh its ZIPL.
   # We use the first item in fcps and wwpns as the devNode.
-  local devNode=/dev/disk/by-path/ccw-0.0.${fcps[0]}-zfcp-0x${wwpns[0]}:${lun}-part1
+  local fcpChannel=$1       # FCP device channel to connect to disk.
+  local wwpn=$2             # World wide port number.
+  local lun=$3              # Logical unit number.
+  local devNode=/dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-0x${wwpn}:${lun}-part1
+
+  inform "Begin to refreshZIPL."
 
   if [[ ! -e "$devNode" ]]; then
-    printError "devNode ${devNode} doesn't exist."
+    printError "devNode ${devNode} doesn't exist. Get fcps: ${fcps[*]} and wwpns: ${wwpns[*]}"
     exit 6
+  fi
+  
+  if [[ $skipzipl = 'YES'  ]]; then
+    inform "WWPNs: ${wwpns[*]}"
+    return
   fi
 
   # Create a mount dir.
@@ -180,6 +193,7 @@ function refreshZIPL {
   fi
 
   # Try to mount fcp device.
+  inform "devNode is: $devNode point: $deviceMountPoint"
   mount $devNode $deviceMountPoint
   mount -t proc proc $deviceMountPoint/proc
   mount -t sysfs sysfs $deviceMountPoint/sys
@@ -217,12 +231,13 @@ function refreshZIPL {
 
   # Exec zipl command to prepare device for initial problem load
   if [[ $os == rhel7* ]]; then
+    inform "Refresh $os zipl."
     zipl_conf='/etc/zipl.conf'
     for fcp in ${fcps[@]}
     do
       for w in ${wwpns[@]}
       do
-        x+="rd.zfcp=0.0."$fcp,$w,$lun" "
+        x+="rd.zfcp=0.0."$fcp,0x$w,$lun" "
       done
     done
     
@@ -240,17 +255,17 @@ function refreshZIPL {
     
     # Append quote to "parameters=" line
     chroot $deviceMountPoint sed -i "/^[[:space:]]parameters=/ s/$/\"/" $zipl_conf
+
   elif [[ $os == rhel8* ]]; then
-    #machine_id=$(chroot $deviceMountPoint cat /etc/machine-id)
-    # Get all kernel conf files except *rescue file.
-    kernel_version_conf_files=`chroot $deviceMountPoint find /boot/loader/entries/ -name '*.conf' | grep -v rescue`
+    inform "Refresh $os zipl."
+    kernel_version_conf_files=`chroot $deviceMountPoint find /boot/loader/entries/ -name '*.conf'`
     # The Volume may be contains several kernel version conf files.
     # So every conf file needs to be changed.
     for fcp in ${fcps[@]}
     do
       for w in ${wwpns[@]}
       do
-        x+="rd.zfcp=0.0."$fcp,$w,$lun" "
+        x+="rd.zfcp=0.0."$fcp,0x$w,$lun" "
       done
     done
     for confFile in $kernel_version_conf_files; do
@@ -286,12 +301,8 @@ function refreshZIPL {
   umount $deviceMountPoint
   rm -rf $deviceMountPoint
 
-  # Display physical wwpns to stdout
-  for w in ${wwpns[@]}
-  do
-    res+=$w" "
-  done
-  inform "$res"
+  # Return wwpns
+  inform "WWPNs: ${wwpns[*]}"
   return
 } #refreshZIPL
 
@@ -317,35 +328,93 @@ function refreshFCPBootmap {
   IFS=',' read -r -a fcps <<< "$fcpchannels"
   IFS=',' read -r -a ws <<< "$wwpn"
 
+  enable_zfcp_mod=`lsmod | grep zfcp`
+  if [ -z "$enable_zfcp_mod" ];then
+      modprobe zfcp
+  fi
+
+  local zthinUserID=$(vmcp q userid | awk '{printf $1}')
+  inform "zthinUserID is $zthinUserID"
+
   # Try to find which physical wwpns are being used.
-  wwpns=()
   for fcp in "${fcps[@]}"
   do
-    for wwpn in "${ws[@]}"
+    # Try to connect FCP device and online it.
+    /opt/zthin/bin/smcli Image_Device_Dedicate -T $zthinUserID -v $fcp -r $fcp
+    if [[ $? -ne 0 ]]; then
+      printError "Dedicate fails, maybe other machines use this FCP: ${fcp}"
+      exit 3
+    fi
+    /sbin/cio_ignore -r $fcp > /dev/null
+    chccwdevDevice $fcp "online"
+    if [[ $? -ne 0 ]]; then
+      # Online failed
+      rc=4
+    fi
+    host=`lszfcp | grep "$fcp" | cut -d " " -f 2`
+    echo "- - -" > /sys/class/scsi_host/$host/scan
+    # Use sleep command to make sure all files are generated
+    # by chccwdev command.
+    sleep 1
+  done
+
+  # Read and parse "lsluns" output then check command input.
+  # If command inputs, merge "lsluns" output and command input
+  # If not, use "lsluns" parse output directly.
+  wwpns=()
+  wwpn=$(lsluns |grep -E 'at port' | awk -F 'at port' '{print $2}' | sed -e 's/^[ ]*//g' | sed -e 's/\:$//g' | tr ' ' '\n' | sort -u | sed -e 's/[\t]//g' |  tr '\n' ' ')
+  IFS=' ' read -r -a lsluns_wwpns <<< "$wwpn"
+  if [[ ${ws[*]} ]]; then
+    for w in "${lsluns_wwpns[@]}"
     do
-      ww=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
-      f="/dev/disk/by-path/ccw-0.0.${fcp}-zfcp-0x${ww}:${lun}"
-      if [[ -e "$f" ]];then
-        wwpns+=($ww)
+      w=${w##*0x}
+      if [[ "${ws[@]}" =~ "$w" ]]; then
+        wwpns+=($w)
       fi
     done
-  done
+  else
+    for i in "${!lsluns_wwpns[@]}"
+    do
+      x=${lsluns_wwpns[i]##*0x}
+      wwpns[$i]=$x
+    done
+  fi
 
   # Remove duplicates
   wwpns=($(echo "${wwpns[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
 
+  inform "These WWPNs will be operated: ${wwpns[*]}"
+
+  block_devs=()
+  for fcp in "${fcps[@]}"
+  do
+    for wwpn in "${wwpns[@]}"
+    do
+      ww=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
+      if [[ -L /dev/disk/by-path/ccw-0.0.${fcp}-zfcp-0x${ww}:${lun} ]]; then
+        block_dev="/dev/disk/by-path/ccw-0.0.${fcp}-zfcp-0x${ww}:${lun}"
+        block_devs+=($block_dev)
+      fi
+    done
+  done
+
   # Try to connect FCP
-  if [[ ! wwpns[0] ]]; then
-    printError "wwpns[0] is empty. Please check the parameters in command line."
+  if [[ ! $wwpns[0] ]]; then
+    printError "No available WWPN found."
     exit 9
   fi
 
-  connectFcp ${fcps[0]} 0x${wwpns[0]} ${lun}
-  if (( $? )); then
-    printError "Failed to connect disk: ccw-0.0.${fcps[0]}-0x${wwpns[0]}:${lun}."
-    exit 10
-  fi
-  refreshZIPL
+  refreshZIPL ${fcps[0]} ${wwpns[0]} ${lun}
+
+  # Disconnect all FCPs
+  for i in "${!fcps[@]}"
+  do
+    chccwdevDevice ${fcps[$i]} "offline"
+    for j in "${!wwpns[@]}"
+    do
+      disconnectFcp ${fcps[$i]} 0x${wwpns[$j]} ${lun}
+    done
+  done
 } #refreshFCPBootmap
 
 function refreshBootMap {
