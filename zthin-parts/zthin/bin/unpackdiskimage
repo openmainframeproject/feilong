@@ -70,16 +70,24 @@ function parseArgs {
     getPositionalArg 5 diskType
     getPositionalArg 6 nicID
     getPositionalArg 7 ipConfig
+
+    # Set fcp channel and make channel lower case
+    if [[ $diskType = 'SCSI' ]]; then
+      fcpChannel=$(echo ${channelID} | tr '[:upper:]' '[:lower:]')
+    fi
   elif [[ ${#args[@]} == 6 ]]; then
     getPositionalArg 1 fcpChannel
-    getPositionalArg 2 imageFile
-    getPositionalArg 3 ignitionUrl
-    getPositionalArg 4 diskType
+    getPositionalArg 2 wwpn
+    getPositionalArg 3 lun
+    getPositionalArg 4 ignitionUrl
     getPositionalArg 5 nicID
     getPositionalArg 6 ipConfig
-
+    diskType='SCSI'
+    skipcopy='YES'
     # Make channel, WWPN, and LUN lower case
     fcpChannel=$(echo ${fcpChannel} | tr '[:upper:]' '[:lower:]')
+    wwpn=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
+    lun=$(echo ${lun} | tr '[:upper:]' '[:lower:]')
   else
     getPositionalArg 1 userID
     getPositionalArg 2 channelID
@@ -109,7 +117,7 @@ function parseArgs {
     echo 'ERROR: Missing required parameter.'
     printCMDUsage
     exit 1
-  elif [[ ${#args[@]} == 6 && (! $fcpChannel || ! $imageFile || ! $ignitionUrl || ! $diskType || ! $nicID || ! $ipConfig) ]]; then
+  elif [[ ${#args[@]} == 6 && (! $fcpChannel || ! $wwpn || ! $lun || ! $ignitionUrl || ! $nicID || ! $ipConfig) ]]; then
     echo 'ERROR: Missing required parameter.'
     printCMDUsage
     exit 1
@@ -151,7 +159,7 @@ function parseArgs {
     echo "LUN:            \"$lun\""
     echo "IMAGE FILE:     \"$imageFile\""
     echo ""
-  elif [[ ${#args[@]} == 7 ]]; then
+  elif [[ ${#args[@]} == 7 && $diskType = 'ECKD']]; then
     echo "SOURCE USER ID: \"$userID\""
     echo "DISK CHANNEL:   \"$channelID\""
     echo "IMAGE FILE:     \"$imageFile\""
@@ -160,9 +168,18 @@ function parseArgs {
     echo "NIC ID:         \"$nicID\""
     echo "IP config:      \"$ipConfig\""
     echo ""
-  elif [[ ${#args[@]} == 6 ]]; then
+  elif [[ ${#args[@]} == 7 && $diskType = 'SCSI' ]]; then
     echo "FCP CHANNEL:    \"$fcpChannel\""
     echo "IMAGE FILE:     \"$imageFile\""
+    echo "IGNITION URL:   \"$ignitionUrl\""
+    echo "DISK TYPE:      \"$diskType\""
+    echo "NIC ID:         \"$nicID\""
+    echo "IP config:      \"$ipConfig\""
+    echo ""
+  elif [[ ${#args[@]} == 6 ]]; then
+    echo "FCP CHANNEL:    \"$fcpChannel\""
+    echo "WWPN:           \"$wwpn\""
+    echo "LUN:            \"$lun\""
     echo "IGNITION URL:   \"$ignitionUrl\""
     echo "DISK TYPE:      \"$diskType\""
     echo "NIC ID:         \"$nicID\""
@@ -186,7 +203,7 @@ function checkSanity {
   #   be expected.
   # @Code:
   # Make sure the specified image file exists.
-  if [[ ! -f $imageFile ]]; then
+  if [[ $skipcopy != 'YES' && ! -f $imageFile ]]; then
     printError 'The specified image file was not found.'
     exit 3
   fi
@@ -1154,6 +1171,21 @@ EOF
     # @Description:
     #   Deploy the specified SCSI disk image.
     # @Code:
+    if [[ $skipcopy = 'YES' ]]; then
+      connectFcp $fcpChannel $wwpn $lun
+      if (( $? )); then
+        printError "Failed to connect SCSI disk:${fcpChannel}"
+        exit 3
+      fi
+      local DEST_DEV=`ls -al /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} | tr '/' ' ' | awk '{print \$NF}'`
+      DEST_DEV=/dev/$DEST_DEV
+      # Update bootloader records
+      update_zipl_bootloader_fcp
+
+      inform "Install complete"
+      return
+    fi
+
     dedicateFcp $fcpChannel
     if (( $? )); then
       printError "Failed to connect SCSI disk:${fcpChannel}"
@@ -1164,37 +1196,9 @@ EOF
     lun=$(ls /dev/disk/by-path/ |grep -E ccw-0.0.${fcpChannel}-zfcp-|cut -d "-" -f 4 |tail -n 1 |cut -d ":" -f 2)
     local DEST_DEV=`ls -al /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} | tr '/' ' ' | awk '{print \$NF}'`
     DEST_DEV=/dev/$DEST_DEV
-    # store the imageinfo to a file
-    mkdir -p /tmp/${fcpChannel}
-    sfdisk -d $imageFile >/tmp/${fcpChannel}/image.info
-    (while IFS='\n' read -r line || [ -n "$line" ]
-    do
-        if [[ $line =~ "start=" ]]
-        then
-            # we save the start= and size= here, then dd the partitions later
-            printf "%s:%s\n" \
-                "$(echo $line | cut -d: -f 2 | cut -d, -f 1 | tr -d ' ')" \
-                "$(echo $line | cut -d: -f 2 | cut -d, -f 2 | tr -d ' ')" \
-                >> /tmp/${fcpChannel}/sfdisk_info
-        elif ! [[ $line =~ "label:" || $line =~ "label-id:" || $line =~ "unit:" ]]
-        then
-            continue
-        fi
-        echo $line
-    done < /tmp/${fcpChannel}/image.info
-    ) | sfdisk "${DEST_DEV}"
 
     inform "Copy partition..."
-    while IFS='' read -r line || [ -n "$line" ]
-    do
-        eval ${line%%:*} ${line##*:}
-        dd if=${imageFile} bs=512 iflag=fullblock \
-            of="${DEST_DEV}" status=progress skip=$start seek=$start count=$size
-        if [[ $? -ne 0 ]]; then
-            log "failed to write image to zFCP SCSI disk"
-            exit 1
-        fi
-    done < /tmp/${fcpChannel}/sfdisk_info
+    dd if=${imageFile} bs=512 iflag=fullblock of="${DEST_DEV}" status=progress
 
     # Update bootloader records
     update_zipl_bootloader_fcp
@@ -1266,13 +1270,13 @@ function cleanup {
   fi
 
   # Make sure we've released our connection to the target disk.
-  if [[ $userID ]]; then
+  if [[ $userID && ! $fcpChannel]]; then
     disconnectDisk $userID $channelID 0
     if [[ $diskType ]]; then
       rm -rf /tmp/${userID}
     fi
   else
-    if [[ $diskType ]]; then
+    if [[ $diskType && ! $skipcopy]]; then
       undedicateFcp ${fcpChannel} ${wwpn} ${lun}
       rm -rf /tmp/${fcpChannel}
     else

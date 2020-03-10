@@ -1418,14 +1418,16 @@ class SDKAPI(object):
         """
         self._volumeop.attach_volume_to_instance(connection_info)
 
-    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun):
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, skipzipl=False):
         """ Refresh a volume's bootmap info.
 
         :param list of fcpchannels
         :param list of wwpns
         :param string lun
+        :param boolean skipzipl: whether ship zipl, only return physical wwpns
         """
-        return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun)
+        return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun,
+                                                     skipzipl=skipzipl)
 
     def volume_detach(self, connection_info):
         """ Detach a volume from a guest. It's prerequisite to active multipath
