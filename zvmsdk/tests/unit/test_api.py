@@ -36,6 +36,11 @@ class SDKAPITestCase(base.SDKTestCase):
     def test_init_ComputeAPI(self):
         self.assertTrue(isinstance(self.api, api.SDKAPI))
 
+    @mock.patch("zvmsdk.vmops.VMOps.get_power_state")
+    def test_guest_get_power_state_real(self, gstate):
+        self.api.guest_get_power_state_real(self.userid)
+        gstate.assert_called_once_with(self.userid)
+
     @mock.patch("zvmsdk.vmops.VMOps.get_info")
     def test_guest_get_info(self, ginfo):
         self.api.guest_get_info(self.userid)
