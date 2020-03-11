@@ -652,6 +652,14 @@ class HandlersGuestTest(SDKWSGITest):
         mock_get.assert_called_once_with(self.req, FAKE_USERID)
 
     @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch.object(guest.VMHandler, 'get_user_direct')
+    def test_guest_get_user_direct(self, mock_get, mock_userid):
+        mock_get.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_get_user_direct(self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch.object(guest.VMHandler, 'get_power_state')
     def test_guest_power_state(self, mock_get, mock_userid):
         mock_get.return_value = ''

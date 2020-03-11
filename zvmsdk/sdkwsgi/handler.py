@@ -73,6 +73,9 @@ ROUTE_LIST = (
     ('/guests/{userid}/info', {
         'GET': guest.guest_get_info,
     }),
+    ('/guests/{userid}/user_direct', {
+        'GET': guest.guest_get_user_direct,
+    }),
     ('/guests/{userid}/adapters', {
         'GET': guest.guest_get_adapters_info,
     }),
