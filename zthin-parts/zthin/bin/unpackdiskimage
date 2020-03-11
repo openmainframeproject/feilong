@@ -62,19 +62,6 @@ function parseArgs {
     fcpChannel=$(echo ${fcpChannel} | tr '[:upper:]' '[:lower:]')
     wwpn=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
     lun=$(echo ${lun} | tr '[:upper:]' '[:lower:]')
-  elif [[ ${#args[@]} == 7 ]]; then
-    getPositionalArg 1 userID
-    getPositionalArg 2 channelID
-    getPositionalArg 3 imageFile
-    getPositionalArg 4 ignitionUrl
-    getPositionalArg 5 diskType
-    getPositionalArg 6 nicID
-    getPositionalArg 7 ipConfig
-
-    # Set fcp channel and make channel lower case
-    if [[ $diskType = 'SCSI' ]]; then
-      fcpChannel=$(echo ${channelID} | tr '[:upper:]' '[:lower:]')
-    fi
   elif [[ ${#args[@]} == 6 ]]; then
     getPositionalArg 1 fcpChannel
     getPositionalArg 2 wwpn
@@ -84,6 +71,28 @@ function parseArgs {
     getPositionalArg 6 ipConfig
     diskType='SCSI'
     skipcopy='YES'
+    # Make channel, WWPN, and LUN lower case
+    fcpChannel=$(echo ${fcpChannel} | tr '[:upper:]' '[:lower:]')
+    wwpn=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
+    lun=$(echo ${lun} | tr '[:upper:]' '[:lower:]')
+  elif [[ ${#args[@]} == 7 ]]; then
+    getPositionalArg 1 userID
+    getPositionalArg 2 channelID
+    getPositionalArg 3 imageFile
+    getPositionalArg 4 ignitionUrl
+    getPositionalArg 5 diskType
+    getPositionalArg 6 nicID
+    getPositionalArg 7 ipConfig
+  elif [[ ${#args[@]} == 8 ]]; then
+    getPositionalArg 1 fcpChannel
+    getPositionalArg 2 wwpn
+    getPositionalArg 3 lun
+    getPositionalArg 4 imageFile
+    getPositionalArg 5 ignitionUrl
+    getPositionalArg 6 diskType
+    getPositionalArg 7 nicID
+    getPositionalArg 8 ipConfig
+
     # Make channel, WWPN, and LUN lower case
     fcpChannel=$(echo ${fcpChannel} | tr '[:upper:]' '[:lower:]')
     wwpn=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
@@ -118,6 +127,10 @@ function parseArgs {
     printCMDUsage
     exit 1
   elif [[ ${#args[@]} == 6 && (! $fcpChannel || ! $wwpn || ! $lun || ! $ignitionUrl || ! $nicID || ! $ipConfig) ]]; then
+    echo 'ERROR: Missing required parameter.'
+    printCMDUsage
+    exit 1
+  elif [[ ${#args[@]} == 8 && (! $fcpChannel || ! $wwpn || ! $lun  || ! $imageFile || ! $ignitionUrl || ! $diskType || ! $nicID || ! $ipConfig) ]]; then
     echo 'ERROR: Missing required parameter.'
     printCMDUsage
     exit 1
@@ -159,7 +172,7 @@ function parseArgs {
     echo "LUN:            \"$lun\""
     echo "IMAGE FILE:     \"$imageFile\""
     echo ""
-  elif [[ ${#args[@]} == 7 && $diskType = 'ECKD']]; then
+  elif [[ ${#args[@]} == 7 ]]; then
     echo "SOURCE USER ID: \"$userID\""
     echo "DISK CHANNEL:   \"$channelID\""
     echo "IMAGE FILE:     \"$imageFile\""
@@ -168,8 +181,10 @@ function parseArgs {
     echo "NIC ID:         \"$nicID\""
     echo "IP config:      \"$ipConfig\""
     echo ""
-  elif [[ ${#args[@]} == 7 && $diskType = 'SCSI' ]]; then
+  elif [[ ${#args[@]} == 8 ]]; then
     echo "FCP CHANNEL:    \"$fcpChannel\""
+    echo "WWPN:           \"$wwpn\""
+    echo "LUN:            \"$lun\""
     echo "IMAGE FILE:     \"$imageFile\""
     echo "IGNITION URL:   \"$ignitionUrl\""
     echo "DISK TYPE:      \"$diskType\""
@@ -1169,36 +1184,21 @@ EOF
     : SOURCE: ${BASH_SOURCE}
     : STACK:  ${FUNCNAME[@]}
     # @Description:
-    #   Deploy the specified SCSI disk image.
+    #   According to the requirement, copy the specified SCSI disk image or skip the copy, then update the bootloader records
     # @Code:
-    if [[ $skipcopy = 'YES' ]]; then
-      connectFcp $fcpChannel $wwpn $lun
-      if (( $? )); then
-        printError "Failed to connect SCSI disk:${fcpChannel}"
-        exit 3
-      fi
-      local DEST_DEV=`ls -al /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} | tr '/' ' ' | awk '{print \$NF}'`
-      DEST_DEV=/dev/$DEST_DEV
-      # Update bootloader records
-      update_zipl_bootloader_fcp
-
-      inform "Install complete"
-      return
-    fi
-
-    dedicateFcp $fcpChannel
+    connectFcp $fcpChannel $wwpn $lun
     if (( $? )); then
-      printError "Failed to connect SCSI disk:${fcpChannel}"
+      printError "Failed to connect disk: ccw-0.0.${fcpChannel}-${wwpn}:${lun}."
       exit 3
     fi
-    inform "Get partition info..."
-    wwpn=$(ls /dev/disk/by-path/ |grep -E ccw-0.0.${fcpChannel}-zfcp-|cut -d "-" -f 4 |tail -n 1 |cut -d ":" -f 1)
-    lun=$(ls /dev/disk/by-path/ |grep -E ccw-0.0.${fcpChannel}-zfcp-|cut -d "-" -f 4 |tail -n 1 |cut -d ":" -f 2)
+
     local DEST_DEV=`ls -al /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} | tr '/' ' ' | awk '{print \$NF}'`
     DEST_DEV=/dev/$DEST_DEV
 
-    inform "Copy partition..."
-    dd if=${imageFile} bs=512 iflag=fullblock of="${DEST_DEV}" status=progress
+    if [[ $skipcopy != 'YES' ]]; then 
+        inform "Copy image..."
+        dd if=${imageFile} bs=512 iflag=fullblock of="${DEST_DEV}" status=progress     
+    fi
 
     # Update bootloader records
     update_zipl_bootloader_fcp
@@ -1270,18 +1270,13 @@ function cleanup {
   fi
 
   # Make sure we've released our connection to the target disk.
-  if [[ $userID && ! $fcpChannel]]; then
+  if [[ $userID ]]; then
     disconnectDisk $userID $channelID 0
     if [[ $diskType ]]; then
       rm -rf /tmp/${userID}
     fi
   else
-    if [[ $diskType && ! $skipcopy]]; then
-      undedicateFcp ${fcpChannel} ${wwpn} ${lun}
-      rm -rf /tmp/${fcpChannel}
-    else
-      disconnectFcp ${fcpChannel} ${wwpn} ${lun}
-    fi
+    disconnectFcp ${fcpChannel} ${wwpn} ${lun}
   fi
 
   timestamp=$(date -u --rfc-3339=ns | sed 's/ /-/;s/\.\(...\).*/.\1/')

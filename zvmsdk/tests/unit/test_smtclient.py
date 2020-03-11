@@ -438,6 +438,39 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                           '10.10.0.250:'])
 
     @mock.patch.object(dist.rhcos4, 'read_coreos_parameter')
+    @mock.patch.object(smtclient.SMTClient, '_get_image_disk_type')
+    @mock.patch.object(smtclient.SMTClient, 'image_get_os_distro')
+    @mock.patch.object(smtclient.SMTClient, '_get_wwpn_lun')
+    def test_get_unpackdiskimage_cmd_rhcos_SCSI(self, loaddev, os_version,
+                                                image_disk_type,
+                                                coreos_param):
+        loaddev.return_value = ('111111', '000000')
+        os_version.return_value = 'RHCOS4'
+        image_disk_type.return_value = 'SCSI'
+        coreos_param.return_value = \
+            '10.10.0.29::10.10.0.1:24:FAKEUSER:enc1000:none:10.10.0.250:'
+        hostname = 'fakehost'
+        userid = 'fakeuser'
+        image_name = 'FakeImg'
+        transportfiles = '/var/lib/nova/instances/fake/ignition.file'
+        image_file = '/var/lib/zvmsdk/images/netboot/RHCOS4/fakeimg/0100'
+        vdev = '1000'
+        cmd = self._smtclient._get_unpackdiskimage_cmd_rhcos(userid,
+                                                             image_name,
+                                                             transportfiles,
+                                                             vdev,
+                                                             image_file,
+                                                             hostname)
+        coreos_param.assert_called_once_with(userid)
+        self.assertEqual(cmd, ['sudo', '/opt/zthin/bin/unpackdiskimage',
+                          '1000', '0x111111', '0x000000',
+                          '/var/lib/zvmsdk/images/netboot/RHCOS4/fakeimg/0100',
+                          '/var/lib/nova/instances/fake/ignition.file', 'SCSI',
+                          '0.0.1000,0.0.1001,0.0.1002',
+                          '10.10.0.29::10.10.0.1:24:fakehost:enc1000:none:'
+                          '10.10.0.250:'])
+
+    @mock.patch.object(dist.rhcos4, 'read_coreos_parameter')
     @mock.patch.object(smtclient.SMTClient, '_get_wwpn_lun')
     def test_get_unpackdiskimage_cmd_rhcos_skipcopy(self, loaddev,
                                                     coreos_param):
