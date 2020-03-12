@@ -1215,7 +1215,8 @@ class SMTClient(object):
         # "0.0.1000,0.0.1001,0.0.1002"
         nic_id = self._generate_increasing_nic_id(
             fixed_ip_parameter.split(":")[5].replace("enc", ""))
-        if skipdiskcopy:
+
+        if image_disk_type == 'SCSI':
             (wwpn, lun) = self._get_wwpn_lun(userid)
             if wwpn is None or lun is None:
                 err_msg = ("wwpn and lun is required for FCP devices,"
@@ -1224,8 +1225,13 @@ class SMTClient(object):
                                                        msg=err_msg)
             wwpn = '0x' + wwpn
             lun = '0x' + lun
-            return ['sudo', '/opt/zthin/bin/unpackdiskimage', vdev,
-               wwpn, lun, transportfiles, nic_id, fixed_ip_parameter]
+            if skipdiskcopy:
+                return ['sudo', '/opt/zthin/bin/unpackdiskimage', vdev,
+                        wwpn, lun, transportfiles, nic_id, fixed_ip_parameter]
+            else:
+                return ['sudo', '/opt/zthin/bin/unpackdiskimage', vdev,
+                        wwpn, lun, image_file, transportfiles,
+                        image_disk_type, nic_id, fixed_ip_parameter]
         else:
             return ['sudo', '/opt/zthin/bin/unpackdiskimage', userid, vdev,
                    image_file, transportfiles, image_disk_type, nic_id,
