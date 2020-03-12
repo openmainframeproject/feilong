@@ -38,3 +38,13 @@ class SMTGetHostTestCase(base.SMTTestCase):
         parts = ['v1', '????', 1, 10016]
         size = getHost._getDiskSize(parts)
         self.assertEqual(7384596480, size)
+
+    def test_getDiskPoolSpace9336UnknownWithFlag(self):
+        parts = ['v1', '9336-?', 1, 10000000]
+        size = getHost._getDiskSize(parts)
+        self.assertEqual(5120000000, size)
+
+    def test_getDiskPoolSpace3390UnknownWithFlag(self):
+        parts = ['v1', '3390-?', 1, 10016]
+        size = getHost._getDiskSize(parts)
+        self.assertEqual(7384596480, size)
