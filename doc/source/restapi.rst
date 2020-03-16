@@ -546,6 +546,37 @@ Delete a guest.
   No Response
 
 
+Get Guest power state from hypervisor
+--------------------------------------
+
+**GET /guests/{userid}/power_state_real**
+
+Get power state of the guest from hypervisor directly,
+
+no matter the guest is in zcc database or not.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: power_status_guest
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_power_state_real.tpl
+   :language: javascript
+
+
 Get Guest info
 --------------
 
@@ -577,6 +608,35 @@ Get running information of guest.
 * Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_info.tpl
+   :language: javascript
+
+
+Get Guest user direct
+---------------------
+
+**GET /guests/{userid}/user_direct**
+
+Get the user directory info of the given userid from hypervisor.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: user_direct_guest
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_user_direct.tpl
    :language: javascript
 
 

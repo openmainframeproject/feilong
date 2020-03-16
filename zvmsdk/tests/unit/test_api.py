@@ -36,10 +36,27 @@ class SDKAPITestCase(base.SDKTestCase):
     def test_init_ComputeAPI(self):
         self.assertTrue(isinstance(self.api, api.SDKAPI))
 
+    @mock.patch("zvmsdk.vmops.VMOps.get_power_state")
+    def test_guest_get_power_state_real(self, gstate):
+        self.api.guest_get_power_state_real(self.userid)
+        gstate.assert_called_once_with(self.userid)
+
     @mock.patch("zvmsdk.vmops.VMOps.get_info")
     def test_guest_get_info(self, ginfo):
         self.api.guest_get_info(self.userid)
         ginfo.assert_called_once_with(self.userid)
+
+    @mock.patch("zvmsdk.vmops.VMOps.get_definition_info")
+    def test_guest_get_user_direct_(self, ginfo):
+        ginfo.return_value = {'user_direct':
+                              ['CPU 00 BASE',
+                               'USER USERID1 PASSWORD 4096m ']}
+        expected_value = {'user_direct':
+                          ['CPU 00 BASE',
+                           'USER USERID1 ****** 4096m ']}
+        result = self.api.guest_get_user_direct(self.userid)
+        ginfo.assert_called_once_with(self.userid)
+        self.assertEqual(result, expected_value)
 
     @mock.patch("zvmsdk.vmops.VMOps.get_adapters_info")
     def test_guest_get_adapters_info(self, adapters_info):

@@ -199,6 +199,12 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_info(userid)
 
+    def guest_get_power_state_real(self, userid):
+        """Returns power state of a virtual machine from hypervisor."""
+        action = "get power state of guest '%s' from hypervisor" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_power_state(userid)
+
     def guest_get_adapters_info(self, userid):
         """Get the network information of a virtual machine.
         this userid may not in zCC.
@@ -212,6 +218,34 @@ class SDKAPI(object):
         action = "get network info of guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_adapters_info(userid)
+
+    def guest_get_user_direct(self, userid):
+        """Get user direct of the specified guest vm
+
+        :param str userid: the user id of the guest vm
+        :returns: Dictionary describing user direct and check info result
+        :rtype: dict
+        """
+        action = "get the user direct of guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            inst_info = self._vmops.get_definition_info(userid)
+            user_direct = inst_info['user_direct']
+            item = -1
+            new_info = ""
+            for info in user_direct:
+                item += 1
+                # replace password with ******
+                if info.startswith('USER') or info.startswith('IDENTITY'):
+                    fields = info.split()
+                    for i in range(len(fields)):
+                        if i != 2:
+                            new_info += (fields[i] + ' ')
+                        else:
+                            new_info += ('******' + ' ')
+                    user_direct[item] = new_info
+                    break
+            inst_info['user_direct'] = user_direct
+            return inst_info
 
     def guest_list(self):
         """list names of all the VMs on this host.

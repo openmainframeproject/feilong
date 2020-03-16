@@ -297,8 +297,20 @@ def req_guest_deploy(start_index, *args, **kwargs):
     return url, body
 
 
+def req_guest_get_power_state_real(start_index, *args, **kwargs):
+    url = '/guests/%s/power_state_real'
+    body = None
+    return url, body
+
+
 def req_guest_get_info(start_index, *args, **kwargs):
     url = '/guests/%s/info'
+    body = None
+    return url, body
+
+
+def req_guest_get_user_direct(start_index, *args, **kwargs):
+    url = '/guests/%s/user_direct'
     body = None
     return url, body
 
@@ -679,11 +691,21 @@ DATABASE = {
         'args_required': 2,
         'params_path': 1,
         'request': req_guest_deploy},
+    'guest_get_power_state_real': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_get_power_state_real},
     'guest_get_info': {
         'method': 'GET',
         'args_required': 1,
         'params_path': 1,
         'request': req_guest_get_info},
+    'guest_get_user_direct': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_get_user_direct},
     'guest_get_adapters_info': {
         'method': 'GET',
         'args_required': 1,
