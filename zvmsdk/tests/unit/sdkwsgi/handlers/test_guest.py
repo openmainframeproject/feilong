@@ -366,6 +366,22 @@ class GuestActionsTest(SDKWSGITest):
             vdev='1000', hostname=None, skipdiskcopy=False)
 
     @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_deploy_vdev_None(self, mock_action, mock_userid):
+        self.req.body = """{"action": "deploy",
+                            "image": "image1",
+                            "transportfiles": "file1",
+                            "remotehost": "test@host1.x.y",
+                            "vdev": null}"""
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_deploy', FAKE_USERID,
+            'image1', remotehost='test@host1.x.y', transportfiles='file1',
+            vdev=None, hostname=None, skipdiskcopy=False)
+
+    @mock.patch.object(util, 'wsgi_path_item')
     def test_guest_deploy_missing_param(self, mock_userid):
         self.req.body = """{"action": "deploy",
                             "transportfiles": "file1",
@@ -691,6 +707,27 @@ class HandlersGuestTest(SDKWSGITest):
         nic_id = "514fec03-0d96-4349-a670-d972805fb579"
         mac_addr = "02:00:00:11:22:33"
         body_str = """{"nic": {"vdev": "1234",
+                             "nic_id": "514fec03-0d96-4349-a670-d972805fb579",
+                             "mac_addr": "02:00:00:11:22:33"}
+                      }"""
+        self.req.body = body_str
+        mock_create.return_value = ''
+
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_create_nic(self.req)
+        mock_create.assert_called_once_with('guest_create_nic',
+                                            FAKE_USERID, active=False,
+                                            mac_addr=mac_addr,
+                                            nic_id=nic_id, vdev=vdev)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_create_nic_vdev_None(self, mock_create, mock_userid):
+        vdev = None
+        nic_id = "514fec03-0d96-4349-a670-d972805fb579"
+        mac_addr = "02:00:00:11:22:33"
+        body_str = """{"nic": {"vdev": null,
                              "nic_id": "514fec03-0d96-4349-a670-d972805fb579",
                              "mac_addr": "02:00:00:11:22:33"}
                       }"""
