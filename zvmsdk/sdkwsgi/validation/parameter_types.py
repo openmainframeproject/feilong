@@ -195,6 +195,13 @@ rdev = {
     'pattern': '^[0-9a-fA-F]{,4}$'
 }
 
+vdev_or_None = {
+    'oneOf': [
+        {'type': 'null'},
+        {'type': ['string'], 'minLength': 1, 'maxLength': 4,
+         'pattern': '^[0-9a-fA-F]{,4}$'}
+    ]
+}
 
 vdev = {
     'type': ['string'], 'minLength': 1, 'maxLength': 4,

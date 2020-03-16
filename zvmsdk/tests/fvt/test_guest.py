@@ -620,6 +620,10 @@ class GuestHandlerTestCase(GuestHandlerBase):
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_guest_get_info', resp.content)
 
+        resp = self.client.guest_get_user_direct(userid)
+        self.assertEqual(200, resp.status_code)
+        self.apibase.verify_result('test_guest_get_user_direct', resp.content)
+
         resp = self.client.guest_get_power_state(userid)
         self.assertEqual(200, resp.status_code)
         self.apibase.verify_result('test_guest_get_power_state',
