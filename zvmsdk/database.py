@@ -271,7 +271,7 @@ class NetworkDbOperator(object):
 class FCPDbOperator(object):
 
     def __init__(self):
-        self._module_id = 'FCP'
+        self._module_id = 'volume'
         self._initialize_table()
 
     def _initialize_table(self):
