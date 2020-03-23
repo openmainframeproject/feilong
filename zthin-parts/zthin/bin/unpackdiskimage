@@ -1277,6 +1277,9 @@ function cleanup {
     fi
   else
     disconnectFcp ${fcpChannel} ${wwpn} ${lun}
+    if [[ $diskType ]]; then
+      rm -rf /tmp/${fcpChannel}
+    fi
   fi
 
   timestamp=$(date -u --rfc-3339=ns | sed 's/ /-/;s/\.\(...\).*/.\1/')
