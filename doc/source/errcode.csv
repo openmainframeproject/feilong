@@ -16,6 +16,8 @@
 300;10;300;10;Failed to resize memory of guest: '%(userid)s', error: replace user entry failed with smt error: '%(err)s'.
 300;10;300;11;Failed to live resize memory of guest: '%(userid)s', error: define standby memory failed with smt error: '%(err)s'.
 300;10;300;12;Failed to deploy image to userid: '%(userid)s', get unpackdiskimage cmd failed: %(err)s
+300;10;300;13;Failed to deploy image to userid: '%(userid)s', ignition file is required when deploying RHCOS image
+300;10;300;14;Failed to deploy image to userid: '%(userid)s', %(msg)s
 **Operation on Network failed**
 300;20;300;1;Database operation failed, error: %(msg)s
 300;20;300;2;ZVMSDK network error: %(msg)s
@@ -26,6 +28,7 @@
 300;30;300;1;Database operation failed, error: %(msg)s
 300;30;300;3;Volume %(vol)s has already been attached on instance %(inst)s
 300;30;300;4;Volume %(vol)s is not attached on instance %(inst)s
+300;30;300;5;Refresh bootmap fails, error code: %(errcode)s and reason: %(errmsg)s
 **Operation on Image failed**
 300;40;300;1;Database operation failed, error: %(msg)s
 300;40;300;2;No image schema found for %(schema)s
@@ -44,6 +47,7 @@
 300;40;300;20;The image record of %(img)s does not exist
 300;40;300;21;Image Export error: Failed to copy image file to remote host with reason: %(msg)s
 300;40;300;22;Export image to local file system failed: %(err)s
+300;40;300;23;Image file of %(img)s does not exist, so failed to get its timestamp.
 **Operation on Monitor failed**
 300;50;300;1;Database operation failed, error: %(msg)s
 **REST API Request error**

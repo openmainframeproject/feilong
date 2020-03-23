@@ -103,7 +103,7 @@ class NetworkOPS(object):
 
     def network_configuration(self, userid, os_version, network_info,
                               active=False):
-        if os_version.lower().startswith('rhcos'):
+        if self._smtclient.is_rhcos(os_version):
             linuxdist = self._dist_manager.get_linux_dist(os_version)()
             linuxdist.create_coreos_parameter(network_info, userid)
         else:
@@ -231,7 +231,8 @@ class NetworkOPS(object):
             target_path = file['target_path']
             source_file = file['source_file']
             # potential risk: whether target_path exist
-            command += 'mv ' + source_file + ' ' + target_path + '\n'
+            # using cat does not change the target file selinux file type
+            command += 'cat ' + source_file + ' > ' + target_path + '\n'
 
         command += 'sleep 2\n'
         command += '/bin/bash /tmp/znetconfig.sh\n'

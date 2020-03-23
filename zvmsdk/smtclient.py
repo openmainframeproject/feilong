@@ -14,6 +14,7 @@
 
 import functools
 import hashlib
+import math
 # On SLES12, we found that if you import urllib.parse later
 # than requests, you will find a error like 'not able to load
 # urllib.parse, this is because urllib will be in sys.modules
@@ -30,6 +31,7 @@ import os
 import re
 import six
 import string
+import subprocess
 import tempfile
 
 from smtLayer import smt
@@ -276,6 +278,70 @@ class SMTClient(object):
         """
         pi_dict = self.image_performance_query([userid])
         return pi_dict.get(userid, None)
+
+    def get_adapters_info(self, userid):
+        rd = ' '.join((
+            "SMAPI %s API Virtual_Network_Adapter_Query_Extended" % userid,
+            "--operands",
+            "-k 'image_device_number=*'"))
+        results = None
+        action = "get network info of userid '%s'" % str(userid)
+        with zvmutils.log_and_reraise_smt_request_failed(action):
+            results = self._request(rd)
+        ret = results['response']
+        # TODO: muti NIC support?
+        nic_count = 0
+        for line in ret:
+            if 'adapter_count=' in line:
+                nic_count = int(line.strip().split('=')[-1])
+                break
+
+        if nic_count < 1:
+            msg = 'get_network_info:No NIC found on userid %s' % userid
+            LOG.error(msg)
+            raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                   msg=msg)
+        # save network info into dict by index from 1 to nic_count
+        # Firstly, get adapter information
+        adapters_info = []
+        adapter = dict()
+        for line in ret:
+            if 'adapter_address=' in line:
+                adapter_addr = line.strip().split('=')[-1]
+                adapter['adapter_address'] = adapter_addr
+            if 'adapter_status=' in line:
+                adapter_type = line.strip().split('=')[-1]
+                adapter['adapter_status'] = adapter_type
+            if 'lan_owner=' in line:
+                lan_owner = line.strip().split('=')[-1]
+                adapter['lan_owner'] = lan_owner
+            if 'lan_name=' in line:
+                lan_name = line.strip().split('=')[-1]
+                adapter['lan_name'] = lan_name
+            if 'adapter_info_end' in line:
+                adapters_info.append(adapter)
+                adapter = dict()
+        # Secondly, get mac information of every adapter
+        # assume one adapter only have one mac_ip_address
+        index = 0
+        for line in ret:
+            if 'mac_address=' in line:
+                mac_addr = line.strip().split('=')[-1]
+                pattern = re.compile('.{2}')
+                mac_address = ':'.join(pattern.findall(mac_addr))
+                adapters_info[index]['mac_address'] = mac_address
+            if 'mac_ip_version=' in line:
+                ip_version = line.strip().split('=')[-1]
+                adapters_info[index]['mac_ip_version'] = ip_version
+            if 'mac_ip_address=' in line:
+                # once we found mac_ip_address, assume this is the MAC
+                # we are using, then jump to next adapter
+                mac_ip = line.strip().split('=')[-1]
+                adapters_info[index]['mac_ip_address'] = mac_ip
+                index = index + 1
+                if index == len(adapters_info):
+                    break
+        return adapters_info
 
     def _parse_vswitch_inspect_data(self, rd_list):
         """ Parse the Virtual_Network_Vswitch_Query_Byte_Stats data to get
@@ -646,32 +712,80 @@ class SMTClient(object):
         finally:
             self._pathutils.clean_temp_folder(iucv_path)
 
-    def guest_deploy(self, userid, image_name, transportfiles=None,
-                     remotehost=None, vdev=None):
-        """ Deploy image and punch config driver to target """
-        # (TODO: add the support of multiple disks deploy)
-        msg = ('Start to deploy image %(img)s to guest %(vm)s'
-                % {'img': image_name, 'vm': userid})
-        LOG.info(msg)
-        image_file = '/'.join([self._get_image_path_by_name(image_name),
-                               CONF.zvm.user_root_vdev])
-        # Unpack image file to root disk
-        vdev = vdev or CONF.zvm.user_root_vdev
-        cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', userid, vdev,
-               image_file]
-        with zvmutils.expect_and_reraise_internal_error(modID='guest'):
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, skipzipl=False):
+        """ Refresh bootmap info of specific volume.
+        : param fcpchannels: list of fcpchannels.
+        : param wwpns: list of wwpns.
+        : param lun: string of lun.
+        : return value: list of physical wwpns.
+        """
+        fcps = ','.join(fcpchannels)
+        ws = ','.join(wwpns)
+        fcs = "--fcpchannel=%s" % fcps
+        wwpns = "--wwpn=%s" % ws
+        lun = "--lun=%s" % lun
+        if skipzipl:
+            skipzipl = "--skipzipl=YES"
+            cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap', fcs, wwpns, lun,
+                   skipzipl]
+        else:
+            cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap', fcs, wwpns, lun]
+        LOG.info("Running command: %s", cmd)
+
+        with zvmutils.expect_and_reraise_internal_error(
+             modID='refresh_bootmap'):
             (rc, output) = zvmutils.execute(cmd)
         if rc != 0:
-            err_msg = ("unpackdiskimage failed with return code: %d." % rc)
+            err_msg = ("refresh_bootmap failed with return code: %d." % rc)
             err_output = ""
             output_lines = output.split('\n')
             for line in output_lines:
                 if line.__contains__("ERROR:"):
                     err_output += ("\\n" + line.strip())
             LOG.error(err_msg + err_output)
-            raise exception.SDKGuestOperationError(rs=3, userid=userid,
-                                                   unpack_rc=rc,
-                                                   err=err_output)
+            raise exception.SDKVolumeOperationError(rs=5,
+                                                    errcode=rc,
+                                                    errmsg=output)
+        output_lines = output.split('\n')
+        res = []
+        for line in output_lines:
+            if line.__contains__("WWPNs: "):
+                wwpns = line[7:]
+                # Convert string to list by space
+                res = wwpns.split()
+        return res
+
+    def guest_deploy(self, userid, image_name, transportfiles=None,
+                     remotehost=None, vdev=None, skipdiskcopy=False):
+        """ Deploy image and punch config driver to target """
+        # (TODO: add the support of multiple disks deploy)
+        if skipdiskcopy:
+            msg = ('Start guest_deploy without unpackdiskimage, guest: %(vm)s'
+                   'os_version: %(img)s' % {'img': image_name, 'vm': userid})
+            LOG.info(msg)
+        else:
+            msg = ('Start to deploy image %(img)s to guest %(vm)s'
+                % {'img': image_name, 'vm': userid})
+            LOG.info(msg)
+            image_file = '/'.join([self._get_image_path_by_name(image_name),
+                                   CONF.zvm.user_root_vdev])
+            # Unpack image file to root disk
+            vdev = vdev or CONF.zvm.user_root_vdev
+            cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', userid, vdev,
+                   image_file]
+            with zvmutils.expect_and_reraise_internal_error(modID='guest'):
+                (rc, output) = zvmutils.execute(cmd)
+            if rc != 0:
+                err_msg = ("unpackdiskimage failed with return code: %d." % rc)
+                err_output = ""
+                output_lines = output.split('\n')
+                for line in output_lines:
+                    if line.__contains__("ERROR:"):
+                        err_output += ("\\n" + line.strip())
+                LOG.error(err_msg + err_output)
+                raise exception.SDKGuestOperationError(rs=3, userid=userid,
+                                                       unpack_rc=rc,
+                                                       err=err_output)
 
         # Purge guest reader to clean dirty data
         rd = ("changevm %s purgerdr" % userid)
@@ -720,76 +834,108 @@ class SMTClient(object):
         self.guest_authorize_iucv_client(userid)
         # Update os version in guest metadata
         # TODO: may should append to old metadata, not replace
-        image_info = self._ImageDbOperator.image_query_record(image_name)
-        metadata = 'os_version=%s' % image_info[0]['imageosdistro']
+        if skipdiskcopy:
+            os_version = image_name
+        else:
+            image_info = self._ImageDbOperator.image_query_record(image_name)
+            os_version = image_info[0]['imageosdistro']
+        metadata = 'os_version=%s' % os_version
         self._GuestDbOperator.update_guest_by_userid(userid, meta=metadata)
 
-        msg = ('Deploy image %(img)s to guest %(vm)s disk %(vdev)s'
+        if skipdiskcopy:
+            msg = ('guest_deploy without unpackdiskimage finish successfully, '
+                   'guest: %(vm)s, os_version: %(img)s'
+                   % {'img': image_name, 'vm': userid})
+        else:
+            msg = ('Deploy image %(img)s to guest %(vm)s disk %(vdev)s'
                ' successfully' % {'img': image_name, 'vm': userid,
                                   'vdev': vdev})
         LOG.info(msg)
 
     def guest_deploy_rhcos(self, userid, image_name, transportfiles,
-                           remotehost=None, vdev=None, hostname=None):
-        """ Deploy image and punch config driver to target """
+                           remotehost=None, vdev=None, hostname=None,
+                           skipdiskcopy=False):
+        """ Deploy image"""
         # (TODO: add the support of multiple disks deploy)
-        msg = ('Start to deploy image %(img)s to guest %(vm)s'
+        if transportfiles is None:
+            err_msg = 'Ignition file is required when deploying RHCOS image'
+            LOG.error(err_msg)
+            raise exception.SDKGuestOperationError(rs=13, userid=userid)
+        if skipdiskcopy:
+            msg = ('Start guest_deploy without copy disk, guest: %(vm)s'
+                   'os_version: %(img)s' % {'img': image_name, 'vm': userid})
+            LOG.info(msg)
+            image_file = None
+        else:
+            msg = ('Start to deploy image %(img)s to guest %(vm)s'
                 % {'img': image_name, 'vm': userid})
-        LOG.info(msg)
-        image_file = '/'.join([self._get_image_path_by_name(image_name),
-                               CONF.zvm.user_root_vdev])
+            LOG.info(msg)
+            image_file = '/'.join([self._get_image_path_by_name(image_name),
+                        CONF.zvm.user_root_vdev])
+
         # Unpack image file to root disk
         vdev = vdev or CONF.zvm.user_root_vdev
         tmp_trans_dir = None
 
-        if remotehost:
-            # download igintion file from remote host
-            tmp_trans_dir = tempfile.mkdtemp()
-            local_trans = '/'.join([tmp_trans_dir,
-                                    os.path.basename(transportfiles)])
-            cmd = ["/usr/bin/scp", "-B",
-                   "-P", CONF.zvm.remotehost_sshd_port,
-                   "-o StrictHostKeyChecking=no",
-                   ("%s:%s" % (remotehost, transportfiles)),
-                   local_trans]
+        try:
+            if remotehost:
+                # download igintion file from remote host
+                tmp_trans_dir = tempfile.mkdtemp()
+                local_trans = '/'.join([tmp_trans_dir,
+                                        os.path.basename(transportfiles)])
+                cmd = ["/usr/bin/scp", "-B",
+                       "-P", CONF.zvm.remotehost_sshd_port,
+                       "-o StrictHostKeyChecking=no",
+                       ("%s:%s" % (remotehost, transportfiles)),
+                       local_trans]
+                with zvmutils.expect_and_reraise_internal_error(modID='guest'):
+                    (rc, output) = zvmutils.execute(cmd)
+                if rc != 0:
+                    err_msg = ('copy ignition file with command %(cmd)s '
+                               'failed with output: %(res)s' %
+                               {'cmd': str(cmd), 'res': output})
+                    LOG.error(err_msg)
+                    raise exception.SDKGuestOperationError(rs=4, userid=userid,
+                                                           err_info=err_msg)
+                transportfiles = local_trans
+
+            cmd = self._get_unpackdiskimage_cmd_rhcos(userid, image_name,
+                                                      transportfiles, vdev,
+                                                      image_file, hostname,
+                                                      skipdiskcopy)
             with zvmutils.expect_and_reraise_internal_error(modID='guest'):
                 (rc, output) = zvmutils.execute(cmd)
             if rc != 0:
-                err_msg = ('copy ignition file with command %(cmd)s '
-                           'failed with output: %(res)s' %
-                           {'cmd': str(cmd), 'res': output})
-                LOG.error(err_msg)
-                raise exception.SDKGuestOperationError(rs=4, userid=userid,
-                                                       err_info=err_msg)
-            transportfiles = local_trans
-
-        cmd = self._get_unpackdiskimage_cmd_rhcos(userid, image_name,
-                                                  transportfiles, vdev,
-                                                  image_file, hostname)
-        with zvmutils.expect_and_reraise_internal_error(modID='guest'):
-            (rc, output) = zvmutils.execute(cmd)
-        if rc != 0:
-            err_msg = ("unpackdiskimage failed with return code: %d." % rc)
-            err_output = ""
-            output_lines = output.split('\n')
-            for line in output_lines:
-                if line.__contains__("ERROR:"):
-                    err_output += ("\\n" + line.strip())
-            LOG.error(err_msg + err_output)
-            raise exception.SDKGuestOperationError(rs=3, userid=userid,
-                                                   unpack_rc=rc,
-                                                   err=err_output)
-
-        # remove the temp ignition file
-        if tmp_trans_dir:
-            self._pathutils.clean_temp_folder(tmp_trans_dir)
+                err_msg = ("unpackdiskimage failed with return code: %d." % rc)
+                err_output = ""
+                output_lines = output.split('\n')
+                for line in output_lines:
+                    if line.__contains__("ERROR:"):
+                        err_output += ("\\n" + line.strip())
+                LOG.error(err_msg + err_output)
+                raise exception.SDKGuestOperationError(rs=3, userid=userid,
+                                                       unpack_rc=rc,
+                                                       err=err_output)
+        finally:
+            # remove the temp ignition file
+            if tmp_trans_dir:
+                self._pathutils.clean_temp_folder(tmp_trans_dir)
 
         # Update os version in guest metadata
         # TODO: may should append to old metadata, not replace
-        metadata = 'os_version=%s' % self.image_get_os_distro(image_name)
+        if skipdiskcopy:
+            os_version = image_name
+        else:
+            os_version = self.image_get_os_distro(image_name)
+        metadata = 'os_version=%s' % os_version
         self._GuestDbOperator.update_guest_by_userid(userid, meta=metadata)
 
-        msg = ('Deploy image %(img)s to guest %(vm)s disk %(vdev)s'
+        if skipdiskcopy:
+            msg = ('guest_deploy without copy disk finish successfully, '
+                   'guest: %(vm)s, os_version: %(img)s'
+                   % {'img': image_name, 'vm': userid})
+        else:
+            msg = ('Deploy image %(img)s to guest %(vm)s disk %(vdev)s'
                ' successfully' % {'img': image_name, 'vm': userid,
                                   'vdev': vdev})
         LOG.info(msg)
@@ -1028,16 +1174,21 @@ class SMTClient(object):
 
     def _get_unpackdiskimage_cmd_rhcos(self, userid, image_name,
                                        transportfiles=None, vdev=None,
-                                       image_file=None, hostname=None):
-        os_version = self.image_get_os_distro(image_name)
-        # Query image disk type
-        image_disk_type = self._get_image_disk_type(image_name)
-        if image_disk_type is None:
-            err_msg = ("failed to get image disk type for "
-                       "image '%(image_name)s'."
-                        % {'image_name': image_name})
-            raise exception.SDKGuestOperationError(rs=12, userid=userid,
-                                               err=err_msg)
+                                       image_file=None, hostname=None,
+                                       skipdiskcopy=False):
+        if skipdiskcopy:
+            os_version = image_name
+            image_disk_type = 'SCSI'
+        else:
+            os_version = self.image_get_os_distro(image_name)
+            # Query image disk type
+            image_disk_type = self._get_image_disk_type(image_name)
+            if image_disk_type is None:
+                err_msg = ("failed to get image disk type for "
+                           "image '%(image_name)s'."
+                            % {'image_name': image_name})
+                raise exception.SDKGuestOperationError(rs=12, userid=userid,
+                                                   err=err_msg)
         try:
             # Query vm's disk pool type and image disk type
             from zvmsdk import dist
@@ -1064,9 +1215,27 @@ class SMTClient(object):
         # "0.0.1000,0.0.1001,0.0.1002"
         nic_id = self._generate_increasing_nic_id(
             fixed_ip_parameter.split(":")[5].replace("enc", ""))
-        return ['sudo', '/opt/zthin/bin/unpackdiskimage', userid, vdev,
-               image_file, transportfiles, image_disk_type, nic_id,
-               fixed_ip_parameter]
+
+        if image_disk_type == 'SCSI':
+            (wwpn, lun) = self._get_wwpn_lun(userid)
+            if wwpn is None or lun is None:
+                err_msg = ("wwpn and lun is required for FCP devices,"
+                           " please set LOADDEV for userid %s" % userid)
+                raise exception.SDKGuestOperationError(rs=14, userid=userid,
+                                                       msg=err_msg)
+            wwpn = '0x' + wwpn
+            lun = '0x' + lun
+            if skipdiskcopy:
+                return ['sudo', '/opt/zthin/bin/unpackdiskimage', vdev,
+                        wwpn, lun, transportfiles, nic_id, fixed_ip_parameter]
+            else:
+                return ['sudo', '/opt/zthin/bin/unpackdiskimage', vdev,
+                        wwpn, lun, image_file, transportfiles,
+                        image_disk_type, nic_id, fixed_ip_parameter]
+        else:
+            return ['sudo', '/opt/zthin/bin/unpackdiskimage', userid, vdev,
+                   image_file, transportfiles, image_disk_type, nic_id,
+                   fixed_ip_parameter]
 
     def grant_user_to_vswitch(self, vswitch_name, userid):
         """Set vswitch to grant user."""
@@ -1546,6 +1715,11 @@ class SMTClient(object):
             results = self._request("getvm %s directory" % userid)
         return results.get('response', [])
 
+    def get_all_user_direct(self):
+        with zvmutils.log_and_reraise_smt_request_failed():
+            results = self._request("getvm alldirectory")
+        return results.get('response', [])
+
     def _delete_nic_active_exception(self, error, userid, vdev):
         if ((error.results['rc'] == 204) and (error.results['rs'] == 28)):
             errmsg = error.format_message()
@@ -2012,6 +2186,21 @@ class SMTClient(object):
             LOG.error(msg)
             raise exception.SDKImageOperationError(rs=14, msg=msg)
 
+        if self.is_rhcos(image_os_version):
+            image_disk_type = image_meta.get('disk_type')
+            if ((image_disk_type is None) or
+                ((image_disk_type.upper() != "DASD" and
+                  image_disk_type.upper() != "SCSI"))):
+                msg = ('Disk type is required for RHCOS image import, '
+                       'the value should be DASD or SCSI')
+                LOG.error(msg)
+                raise exception.SDKImageOperationError(rs=14, msg=msg)
+            else:
+                comments = {'disk_type': image_disk_type.upper()}
+                comments = str(comments)
+        else:
+            comments = None
+
         try:
             import_image_fn = urlparse.urlparse(url).path.split('/')[-1]
             import_image_fpath = '/'.join([target_folder, import_image_fn])
@@ -2048,15 +2237,21 @@ class SMTClient(object):
 
             # TODO: put multiple disk image into consideration, update the
             # disk_size_units and image_size db field
-            disk_size_units = self._get_disk_size_units(final_image_fpath)
+            if not self.is_rhcos(image_os_version):
+                disk_size_units = self._get_disk_size_units(final_image_fpath)
+            else:
+                disk_size_units = self._get_disk_size_units_rhcos(
+                                                            final_image_fpath)
             image_size = self._get_image_size(final_image_fpath)
+
             # TODO: update the real_md5sum field to include each disk image
             self._ImageDbOperator.image_add_record(image_name,
                                                    image_os_version,
                                                    real_md5sum,
                                                    disk_size_units,
                                                    image_size,
-                                                   image_type)
+                                                   image_type,
+                                                   comments=comments)
             LOG.info("Image %s is import successfully" % image_name)
         except Exception:
             # Cleanup the image from image repository
@@ -2078,6 +2273,7 @@ class SMTClient(object):
          'image_path': the image_path after exported
          'os_version': the os version of the exported image
          'md5sum': the md5sum of the original image
+         'comments': the comments of the original image
         }
         """
         image_info = self._ImageDbOperator.image_query_record(image_name)
@@ -2109,7 +2305,8 @@ class SMTClient(object):
         export_dict = {'image_name': image_name,
                        'image_path': dest_url,
                        'os_version': image_info[0]['imageosdistro'],
-                       'md5sum': image_info[0]['md5sum']}
+                       'md5sum': image_info[0]['md5sum'],
+                       'comments': image_info[0]['comments']}
         LOG.info("Image %s export successfully" % image_name)
         return export_dict
 
@@ -2145,6 +2342,47 @@ class SMTClient(object):
 
         if 'FBA' not in output and 'CKD' not in output:
             raise exception.SDKImageOperationError(rs=7)
+
+        LOG.debug("The image's root_disk_units is %s" % root_disk_units)
+        return root_disk_units
+
+    def _get_disk_size_units_rhcos(self, image_path):
+        command = "fdisk -b 4096 -l %s | head -2 | awk '{print $5}'" % (
+                                                                image_path)
+
+        rc = 0
+        output = ""
+        try:
+            # shell should be set True because it is a shell command with
+            # pipeline, so can not use utils.execute function here
+            output = subprocess.check_output(command, shell=True,
+                                             stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as err:
+            rc = err.returncode
+            output = err.output
+        except Exception as err:
+            err_msg = ('Command "%s" Error: %s' % (' '.join(command),
+                                                   str(err)))
+            raise exception.SDKInternalError(msg=err_msg)
+
+        if rc or output.strip('1234567890\n'):
+            msg = ("Error happened when executing command fdisk with "
+                   "reason: %s" % output)
+            LOG.error(msg)
+            raise exception.SDKImageOperationError(rs=8)
+
+        image_size = output.split()[0]
+
+        try:
+            cyl = (float(image_size)) / 737280
+            cyl = str(int(math.ceil(cyl)))
+        except Exception:
+            msg = ("Failed to convert %s to a number of cylinders."
+                   % image_size)
+            LOG.error(msg)
+            raise exception.SDKImageOperationError(rs=14, msg=msg)
+        disk_units = "CYL"
+        root_disk_units = ':'.join([str(cyl), disk_units])
 
         LOG.debug("The image's root_disk_units is %s" % root_disk_units)
         return root_disk_units
@@ -2241,8 +2479,41 @@ class SMTClient(object):
         image_path = self._get_image_path_by_name(image_name)
         self._pathutils.clean_temp_folder(image_path)
 
-    def image_query(self, imagename=None):
-        return self._ImageDbOperator.image_query_record(imagename)
+    def _get_image_last_access_time(self, image_name, raise_exception=True):
+        """Get the last access time of the image."""
+        image_file = os.path.join(self._get_image_path_by_name(image_name),
+                                  CONF.zvm.user_root_vdev)
+        if not os.path.exists(image_file):
+            if raise_exception:
+                msg = 'Failed to get time stamp of image:%s' % image_name
+                LOG.error(msg)
+                raise exception.SDKImageOperationError(rs=23, img=image_name)
+            else:
+                # An invalid timestamp
+                return -1
+        atime = os.path.getatime(image_file)
+        return atime
+
+    def image_query(self, image_name=None):
+        image_info = self._ImageDbOperator.image_query_record(image_name)
+        if not image_info:
+            # because database maybe None, so return nothing here
+            return []
+
+        # if image_name is not None, means there is only one record
+        if image_name:
+            last_access_time = self._get_image_last_access_time(
+                                   image_name, raise_exception=False)
+            image_info[0]['last_access_time'] = last_access_time
+        else:
+            for item in image_info:
+                image_name = item['imagename']
+                # set raise_exception to false because one failed
+                # may stop processing all the items in the list
+                last_access_time = self._get_image_last_access_time(
+                                       image_name, raise_exception=False)
+                item['last_access_time'] = last_access_time
+        return image_info
 
     def image_get_root_disk_size(self, image_name):
         """Return the root disk units of the specified image
@@ -2259,7 +2530,7 @@ class SMTClient(object):
         """
         Return the operating system distro of the specified image
         """
-        image_info = self.image_query(image_name)
+        image_info = self._ImageDbOperator.image_query_record(image_name)
         if not image_info:
             raise exception.SDKImageOperationError(rs=20, img=image_name)
         os_distro = image_info[0]['imageosdistro']
@@ -2269,7 +2540,7 @@ class SMTClient(object):
         """
         Return image disk type
         """
-        image_info = self.image_query(image_name)
+        image_info = self._ImageDbOperator.image_query_record(image_name)
         if ((image_info[0]['comments'] is not None) and
             (image_info[0]['comments'].__contains__('disk_type'))):
             image_disk_type = eval(image_info[0]['comments'])['disk_type']
@@ -3438,6 +3709,20 @@ class SMTClient(object):
 
         LOG.info("Live resize memory for guest: '%s' finished successfully."
                  % userid)
+
+    def is_rhcos(self, os_version):
+        return os_version.lower().startswith('rhcos')
+
+    def _get_wwpn_lun(self, userid):
+        user_direct = self.get_user_direct(userid)
+        wwpn = None
+        lun = None
+        for ent in user_direct:
+            if ent.upper().startswith("LOADDEV PORT"):
+                wwpn = ent.split()[2].strip()
+            elif ent.upper().startswith("LOADDEV LUN"):
+                lun = ent.split()[2].strip()
+        return (wwpn, lun)
 
 
 class FilesystemBackend(object):
