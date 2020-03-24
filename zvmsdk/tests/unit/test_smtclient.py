@@ -665,8 +665,17 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_get_adapters_info(self, request):
         userid = 'FakeID'
         data = [
-            "adapter_count=1",
+            "adapter_count=2",
             "adapter_address=1000",
+            "port_type=1",
+            "extended_port_status=00",
+            "adapter_type=2",
+            "network_device_count=3",
+            "adapter_status=00",
+            "device_options=00000000",
+            "router_status=00",
+            "adapter_info_end",
+            "adapter_address=2000",
             "port_type=0",
             "extended_port_status=00",
             "adapter_type=2",
@@ -697,9 +706,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
             "-k 'image_device_number=*'"))
         ret = self._smtclient.get_adapters_info('FakeID')
         request.assert_called_once_with(rd)
-        self.assertEqual(ret[0]['mac_ip_address'], '9.123.123.123')
-        self.assertEqual(ret[0]['mac_ip_version'], '4')
-        self.assertEqual(ret[0]['mac_address'], '02:55:36:5D:48:57')
+        self.assertEqual(ret[1]['mac_ip_address'], '9.123.123.123')
+        self.assertEqual(ret[1]['mac_ip_version'], '4')
+        self.assertEqual(ret[1]['mac_address'], '02:55:36:5D:48:57')
 
     @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
