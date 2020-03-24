@@ -1174,6 +1174,9 @@ int imageCreateDM(int argC, char* argV[], struct _vmApiInternalContext* vmapiCon
 
     if (rc) {
         printAndLogProcessingErrors("Image_Create_DM", rc, vmapiContextP, strMsg, 0);
+    }  else if (output->common.returnCode == 592 && output->operationId) {
+        // Asynchronous operation started. Messages/header handled in this routine
+        rc = queryAsyncOperation(image, output->operationId, "Image_Create_DM", vmapiContextP, strMsg);
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Image_Create_DM", output->common.returnCode,

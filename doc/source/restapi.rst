@@ -688,7 +688,7 @@ Create a virtual nic on giving guest.
 
   - userid: guest_userid
   - nic: nic_set_info
-  - vdev: vdev_number
+  - vdev: vdev_number_orNone
   - nic_id: nic_identifier
   - mac_addr: mac_address
   - active: active_flag
