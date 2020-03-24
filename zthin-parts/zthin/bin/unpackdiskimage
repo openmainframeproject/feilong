@@ -1124,8 +1124,6 @@ function deployDiskImage {
 
     #low-level format the ECKD DASD using dasdfmt, if needed
     inform "Format ${DEST_DEV} and Copy..."
-    type lszdev >/dev/null 2>&1 || { printError "Require lszdev tool, but not installed. Aborting."; exit 3; }
-    DEST_DEV_BUS=$(lszdev --by-node ${DEST_DEV} | tail -n 1  | awk '{print $2}')
     if dasdview -x ${DEST_DEV} |grep 'CDL formatted'
     then
         if [ ! $(fdasd -p ${DEST_DEV} | grep blocks\ per\ track | awk '{print $5}') ]; then
