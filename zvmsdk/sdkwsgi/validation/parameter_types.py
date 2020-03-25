@@ -300,7 +300,7 @@ userid_list_array = {
 
 file_type = {
     'type': 'string',
-    'enum': ['ext2', 'ext3', 'ext4', 'xfs', 'none']
+    'enum': ['ext2', 'ext3', 'ext4', 'xfs', 'swap', 'none']
 }
 
 disk_pool = {
@@ -360,7 +360,6 @@ disk_conf = {
         'additionalProperties': False
     }
 }
-
 
 # For redhat linux, it will match rhelX, rhelX.Y, redhatX, redhatX.Y,
 # where X is 6 or 7, Y is 0 to 9, all case insensitive
