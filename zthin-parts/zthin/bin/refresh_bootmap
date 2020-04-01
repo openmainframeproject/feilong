@@ -172,7 +172,8 @@ function refreshZIPL {
   local wwpn=$2             # World wide port number.
   local lun=$3              # Logical unit number.
   local devNode=/dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-0x${wwpn}:${lun}-part1
-
+  local diskPath=/dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-0x${wwpn}:${lun}
+  
   inform "Begin to refreshZIPL."
 
   if [[ ! -e "$devNode" ]]; then
@@ -195,9 +196,9 @@ function refreshZIPL {
   # Try to mount fcp device.
   inform "devNode is: $devNode point: $deviceMountPoint"
   mount $devNode $deviceMountPoint
-  mount -t proc proc $deviceMountPoint/proc
-  mount -t sysfs sysfs $deviceMountPoint/sys
-  mount -t tmpfs tmpfs $deviceMountPoint/run
+  mount -t proc /proc $deviceMountPoint/proc
+  mount -o bind /sys $deviceMountPoint/sys
+  mount -o bind /run $deviceMountPoint/run
   if [[ $? != 0 ]]; then
     printError "Mount fails."
     exit 8
@@ -232,7 +233,7 @@ function refreshZIPL {
   # Exec zipl command to prepare device for initial problem load
   if [[ $os == rhel7* ]]; then
     inform "Refresh $os zipl."
-    zipl_conf='/etc/zipl.conf'
+    zipl_conf='etc/zipl.conf'
     for fcp in ${fcps[@]}
     do
       for w in ${wwpns[@]}
@@ -242,23 +243,25 @@ function refreshZIPL {
     done
     
     ### Delete all items start with "rd.zfcp="
-    chroot $deviceMountPoint sed -ri 's/rd.zfcp=\S+\s*[[:space:]]//g' $zipl_conf
+    sed -ri 's/rd.zfcp=\S+\s*[[:space:]]//g' ${deviceMountPoint}/$zipl_conf
     
     # Remove quote
-    chroot $deviceMountPoint sed -i 's/\"$//g' $zipl_conf
+    sed -i 's/\"$//g' ${deviceMountPoint}/$zipl_conf
     
     # Remove quote
-    chroot $deviceMountPoint sed -i 's/[ \t]*$//g' $zipl_conf
+    sed -i 's/[ \t]*$//g' ${deviceMountPoint}/$zipl_conf
     
     # Append rd.zfcp= string to "parameters=" line.
-    chroot $deviceMountPoint sed -i "/^[[:space:]]parameters=/ s/$/ $x/" $zipl_conf
+    sed -i "/^[[:space:]]parameters=/ s/$/ $x/" ${deviceMountPoint}/$zipl_conf
     
     # Append quote to "parameters=" line
-    chroot $deviceMountPoint sed -i "/^[[:space:]]parameters=/ s/$/\"/" $zipl_conf
+    sed -i "/^[[:space:]]parameters=/ s/$/\"/" ${deviceMountPoint}/$zipl_conf
 
   elif [[ $os == rhel8* ]]; then
     inform "Refresh $os zipl."
-    kernel_version_conf_files=`chroot $deviceMountPoint find /boot/loader/entries/ -name '*.conf'`
+    kernel_version_conf_files=`find $deviceMountPoint/boot/loader/entries/ -name '*.conf'`
+    wwid=`/usr/lib/udev/scsi_id --whitelisted $diskPath`
+    rootPath="root=\/dev\/disk\/by-id\/dm-uuid-part1-mpath-$wwid "
     # The Volume may be contains several kernel version conf files.
     # So every conf file needs to be changed.
     for fcp in ${fcps[@]}
@@ -270,11 +273,13 @@ function refreshZIPL {
     done
     for confFile in $kernel_version_conf_files; do
        # Delete all items start with "rd.zfcp="
-       chroot $deviceMountPoint sed -ri 's/rd.zfcp=\S+\s*[[:space:]]//g' $confFile
+       sed -ri 's/rd.zfcp=\S+\s*[[:space:]]//g' $confFile
        # Remove trailing space
-       chroot $deviceMountPoint sed -i 's/[ \t]*$//g' $confFile
+       sed -i 's/[ \t]*$//g' $confFile
+       # Update the root file system target path
+       sed -ri "s/root=\S+\s*[[:space:]]/$rootPath/g" $confFile
        # Append rd.zfcp= string to "options root=" line.
-       chroot $deviceMountPoint sed -i "/^options root=/ s/$/ $x/" $confFile
+       sed -i "/^options root=/ s/$/ $x/" $confFile
     done
   elif [[ $os == "" ]]; then
     inform "This is not the root disk, zipl will not be executed on it"
@@ -294,7 +299,9 @@ function refreshZIPL {
     rm -rf $deviceMountPoint
     return 1
   fi
-  #Unmount the target disk
+  # Sync to ensure cached date writen back to target disk
+  blockdev --flushbufs $diskPath > /dev/null
+  # Unmount the target disk
   umount $deviceMountPoint/proc
   umount $deviceMountPoint/sys
   umount $deviceMountPoint/run
