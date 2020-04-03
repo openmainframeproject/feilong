@@ -344,13 +344,6 @@ function resizePartition {
       printError "'e2fsck -f ${lastPartition}' returns rc: $rc, out: $out"
       return 1
     fi
-
-    out=`resize2fs ${lastPartition} 2>&1`
-    rc=$?
-    if (( rc != 0 )); then
-      printError "'resize2fs $lastPartition' returns rc: $rc, out: $out"
-      return 1
-    fi
   else
     inform "(Warning) The file system type $fs is not support to be increased"
   fi
