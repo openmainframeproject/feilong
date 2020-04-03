@@ -593,6 +593,9 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
             results = msgs.msg['0421'][0]
             rh.updateResults(results)
 
+    # Always try to offline and detach the disk
+    # TODO: diskAccessed hard code to True, because try to detach DASD
+    diskAccessed = True
     if diskAccessed:
         # Give up the disk.
         cmd = ["sudo", "/opt/zthin/bin/offlinediskanddetach",
