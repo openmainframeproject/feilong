@@ -281,6 +281,13 @@ def req_guest_live_resize_mem(start_index, *args, **kwargs):
     return url, body
 
 
+def req_guest_grow_root_volume(start_index, *args, **kwargs):
+    url = '/guests/%s/action'
+    body = {'action': 'grow_root_volume',
+            'os_version': args[start_index]}
+    return url, body
+
+
 def req_guest_capture(start_index, *args, **kwargs):
     url = '/guests/%s/action'
     body = {'action': 'capture',
@@ -681,6 +688,11 @@ DATABASE = {
         'args_required': 2,
         'params_path': 1,
         'request': req_guest_resize_mem},
+    'guest_grow_root_volume': {
+        'method': 'POST',
+        'args_required': 2,
+        'params_path': 1,
+        'request': req_guest_grow_root_volume},
     'guest_capture': {
         'method': 'POST',
         'args_required': 2,
