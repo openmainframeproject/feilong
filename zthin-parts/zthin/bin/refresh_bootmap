@@ -169,6 +169,9 @@ function refreshZIPL {
 
   if [[ ! -e "$devNode" ]]; then
     printError "devNode ${devNode} doesn't exist."
+    # If devNode doesn't exist, try to offline the fcp device and disconnect it.
+    chccwdevDevice $fcpChannel "offline"
+    disconnectFcp $fcpChannel 0x${wwpn} ${lun}
     exit 6
   fi
 
@@ -176,6 +179,9 @@ function refreshZIPL {
   deviceMountPoint=$(/usr/bin/mktemp -d /mnt/XXXXX)
   if [[ $? != 0 ]]; then
     printError "Create mount dir fails."
+    # If create dir fails, try to offline the fcp device and disconnect it.
+    chccwdevDevice $fcpChannel "offline"
+    disconnectFcp $fcpChannel 0x${wwpn} ${lun}
     exit 7
   fi
 
@@ -186,6 +192,9 @@ function refreshZIPL {
   mount -t tmpfs tmpfs $deviceMountPoint/run
   if [[ $? != 0 ]]; then
     printError "Mount fails."
+    # If mount fails, try to offline the fcp device and disconnect it.
+    chccwdevDevice $fcpChannel "offline"
+    disconnectFcp $fcpChannel 0x${wwpn} ${lun}
     exit 8
   fi
 
