@@ -66,6 +66,11 @@ class HOSTOps(object):
 
         return host_info
 
+    def guest_list(self):
+        guest_list = self._smtclient.get_all_user_direct()
+        with zvmutils.expect_invalid_resp_data(guest_list):
+            return guest_list
+
     def diskpool_get_info(self, pool):
         dp_info = self._smtclient.get_diskpool_info(pool)
         with zvmutils.expect_invalid_resp_data(dp_info):

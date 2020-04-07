@@ -217,6 +217,18 @@ class GuestHandlerTest(unittest.TestCase):
             get_info.assert_called_once_with(mock.ANY, '1')
 
     @mock.patch.object(tokens, 'validate')
+    def test_guest_get_user_direct(self, mock_validate):
+        self.env['PATH_INFO'] = '/guests/1/user_direct'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        with mock.patch('zvmsdk.sdkwsgi.handlers.guest.VMHandler.'
+                        'get_user_direct') as get_user_direct:
+            get_user_direct.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+
+            get_user_direct.assert_called_once_with(mock.ANY, '1')
+
+    @mock.patch.object(tokens, 'validate')
     def test_guest_get(self, mock_validate):
         self.env['PATH_INFO'] = '/guests/1'
         self.env['REQUEST_METHOD'] = 'GET'
@@ -241,6 +253,19 @@ class GuestHandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             delete_nic.assert_called_once_with('1', '1000', '')
+
+    @mock.patch.object(tokens, 'validate')
+    def test_guest_get_power_state_real(self, mock_validate):
+        self.env['PATH_INFO'] = '/guests/1/power_state_real'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        func = 'zvmsdk.sdkwsgi.handlers.guest.VMHandler'\
+               '.get_power_state_real'
+        with mock.patch(func) as get_power:
+            get_power.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+
+            get_power.assert_called_once_with(mock.ANY, '1')
 
     @mock.patch.object(tokens, 'validate')
     def test_guest_get_power_state(self, mock_validate):
@@ -566,6 +591,13 @@ class HostHandlerNegativeTest(unittest.TestCase):
     def setUp(self):
         self.env = env
 
+    def test_host_get_guest_list_invalid(self):
+        self.env['PATH_INFO'] = '/host1/guest'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        self.assertRaises(webob.exc.HTTPNotFound,
+                          h, self.env, dummy)
+
     def test_host_get_resource_invalid(self):
         self.env['PATH_INFO'] = '/host1'
         self.env['REQUEST_METHOD'] = 'GET'
@@ -592,6 +624,18 @@ class HostHandlerTest(unittest.TestCase):
 
     def setUp(self):
         self.env = env
+
+    @mock.patch.object(tokens, 'validate')
+    def test_host_get_guest_list(self, mock_validate):
+        self.env['PATH_INFO'] = '/host/guests'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        with mock.patch('zvmsdk.sdkwsgi.handlers.host.HostAction'
+                        '.get_guest_list') as get_guest_list:
+            get_guest_list.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+
+            self.assertTrue(get_guest_list.called)
 
     @mock.patch.object(tokens, 'validate')
     def test_host_get_info(self, mock_validate):

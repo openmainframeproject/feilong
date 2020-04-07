@@ -132,6 +132,16 @@ loaddev = {
     'additionalProperties': False
 }
 
+dedicate_vdevs = {
+    'type': 'array',
+    'minItems': 0,
+    'items': {
+        'type': 'string',
+        'pattern': '^[0-9a-fA-F]{,4}$'
+    },
+    'uniqueItems': True
+}
+
 positive_integer = {
     'type': ['integer', 'string'],
     'pattern': '^[0-9]*$', 'minimum': 1
@@ -185,6 +195,13 @@ rdev = {
     'pattern': '^[0-9a-fA-F]{,4}$'
 }
 
+vdev_or_None = {
+    'oneOf': [
+        {'type': 'null'},
+        {'type': ['string'], 'minLength': 1, 'maxLength': 4,
+         'pattern': '^[0-9a-fA-F]{,4}$'}
+    ]
+}
 
 vdev = {
     'type': ['string'], 'minLength': 1, 'maxLength': 4,
@@ -378,18 +395,22 @@ os_version = {
 ]
 }
 
+disk_type = {
+    'type': 'string',
+    'enum': ['DASD', 'dasd', 'SCSI', 'scsi']
+}
 
 image_meta = {
     'type': 'object',
     'properties': {
         'os_version': os_version,
         # md5 shoule be 32 hexadeciaml numbers
-        'md5sum': {'type': 'string', 'pattern': '^[0-9a-fA-F]{32}$'}
+        'md5sum': {'type': 'string', 'pattern': '^[0-9a-fA-F]{32}$'},
+        'disk_type': disk_type
     },
     'required': ['os_version'],
     'additionalProperties': False
 }
-
 
 command = {
     'type': 'string'
@@ -475,6 +496,7 @@ connection_info = {
         'os_version': os_version,
         'multipath': boolean,
         'mount_point': {'type': 'string'},
+        'is_root_volume': boolean,
     },
     'required': ['assigner_id', 'zvm_fcp', 'target_wwpn',
                  'target_lun', 'multipath', 'os_version',

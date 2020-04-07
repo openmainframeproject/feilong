@@ -25,6 +25,11 @@ class SDKHostOpsTestCase(base.SDKTestCase):
     def setUp(self):
         self._hostops = hostops.get_hostops()
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_all_user_direct")
+    def test_guest_list(self, get_all_user_direct):
+        self._hostops.guest_list()
+        get_all_user_direct.assert_called_once_with()
+
     @mock.patch("zvmsdk.hostops.HOSTOps.diskpool_get_info")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_host_info")
     def test_get_host_info(self, get_host_info, diskpool_get_info):
