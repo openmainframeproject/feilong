@@ -464,6 +464,20 @@ class TestFCPManager(base.SDKTestCase):
             self.db_op.delete('c83c')
             self.db_op.delete('c83d')
 
+    def test_get_available_fcp_reserved(self):
+        self.db_op.new('c83c', 0)
+        self.db_op.new('c83d', 1)
+
+        try:
+            self.fcpops.get_available_fcp('user1')
+            res1 = self.db_op.is_reserved('c83c')
+            res2 = self.db_op.is_reserved('c83d')
+            self.assertTrue(res1)
+            self.assertTrue(res2)
+        finally:
+            self.db_op.delete('c83c')
+            self.db_op.delete('c83d')
+
 
 class TestFCPVolumeManager(base.SDKTestCase):
 
@@ -740,6 +754,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                                          wwpns,
                                                          '2222', True, 'rhel7',
                                                          '/dev/sdz', 0)])
+            res1 = self.db_op.is_reserved('183c')
+            res2 = self.db_op.is_reserved('283c')
+            self.assertFalse(res1)
+            self.assertFalse(res2)
         finally:
             self.db_op.delete('183c')
             self.db_op.delete('283c')
