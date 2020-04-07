@@ -330,7 +330,7 @@ int queryAPIFunctionalLevel(int argC, char* argV[], struct _vmApiInternalContext
                     "    and reason code of 0/611.\n"
                     "    For z/VM V6.2, this API will provide a return and reason code of 0/620.\n"
                     "    For z/VM V6.3, this API will provide a return and reason code of 0/630.\n"
-                    "    For z/VM V6.4, this API will provide a return and reason code of 0/640.\n\n"
+                    "    For z/VM V6.4, this API will provide a return and reason code of 0/640.\n"
                     "    For z/VM V7.1, this API will provide a return and reason code of 0/710.\n\n"
                     "  The following options are required:\n"
                     "    -T    This must match an entry in the authorization file\n");
@@ -384,7 +384,7 @@ int queryAPIFunctionalLevel(int argC, char* argV[], struct _vmApiInternalContext
     } else if ((output->common.returnCode == 0) && (output->common.reasonCode == 630 || output->common.reasonCode == 631 || output->common.reasonCode == 632)) {
         DOES_CALLER_WANT_RC_HEADER_SMAPI_RC0_RS(vmapiContextP, output->common.returnCode, output->common.reasonCode) \
         printf("The API functional level is z/VM V6.3\n");
-    } else if ((output->common.returnCode == 0) && ((output->common.reasonCode >= 640 || output->common.reasonCode < 650))) {
+    } else if ((output->common.returnCode == 0) && ((output->common.reasonCode >= 640 && output->common.reasonCode < 710))) {
         DOES_CALLER_WANT_RC_HEADER_SMAPI_RC0_RS(vmapiContextP, output->common.returnCode, output->common.reasonCode) \
         printf("The API functional level is z/VM V6.4\n");
     } else if ((output->common.returnCode == 0) && (output->common.reasonCode >= 710)) {

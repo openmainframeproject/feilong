@@ -155,3 +155,24 @@ class VolumeTestCase(base.ZVMConnectorBaseTestCase):
         self.assertEqual(404, resp.status_code)
         resp = self.client.volume_detach(connection_info)
         self.assertEqual(404, resp.status_code)
+
+    @parameterized.expand(TEST_USERID_LIST)
+    def test_attach_detach_bootable_volume(self, case_name,
+                                           userid, os_version):
+        # prepare connection_info
+        connection_info = {'assigner_id': userid,
+                           'zvm_fcp': CONF.tests.zvm_fcp,
+                           'os_version': os_version,
+                           'multipath': True,
+                           'target_wwpn': CONF.tests.target_wwpn,
+                           'target_lun': CONF.tests.target_lun,
+                           'mount_point': CONF.tests.mount_point,
+                           'is_root_volume': True}
+        # attach volume
+        resp = self.client.volume_attach(connection_info)
+        time.sleep(10)
+        self.assertEqual(200, resp.status_code)
+        # detach volume
+        resp = self.client.volume_detach(connection_info)
+        time.sleep(10)
+        self.assertEqual(200, resp.status_code)

@@ -32,7 +32,7 @@ create = {
                 'ipl_from': parameter_types.ipl_from,
                 'ipl_param': parameter_types.ipl_param,
                 'ipl_loadparam': parameter_types.ipl_loadparam,
-                'dedicate_vdevs': parameter_types.vdev_list,
+                'dedicate_vdevs': parameter_types.dedicate_vdevs,
                 'loaddev': parameter_types.loaddev
             },
             'required': ['userid', 'vcpus', 'memory'],
@@ -62,7 +62,7 @@ create_nic = {
         'nic': {
             'type': 'object',
             'properties': {
-                'vdev': parameter_types.vdev,
+                'vdev': parameter_types.vdev_or_None,
                 'nic_id': parameter_types.nic_id,
                 'mac_addr': parameter_types.mac_address,
                 'active': parameter_types.boolean,
@@ -194,8 +194,9 @@ deploy = {
         'image': parameter_types.name,
         'transportfiles': {'type': ['string']},
         'remotehost': parameter_types.remotehost,
-        'vdev': parameter_types.vdev,
+        'vdev': parameter_types.vdev_or_None,
         'hostname': parameter_types.hostname,
+        'skipdiskcopy': parameter_types.boolean,
     },
     'required': ['image'],
     'additionalProperties': False,
@@ -247,9 +248,10 @@ register_vm = {
     'properties': {
         'meta': {'type': ['string']},
         'net_set': {'type': ['string']},
+        'port': {'type': ['string']},
     },
     'required': ['meta', 'net_set'],
-    'additionalProperties': False
+    'additionalProperties': True
 }
 
 deregister_vm = {
