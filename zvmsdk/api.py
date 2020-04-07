@@ -789,9 +789,10 @@ class SDKAPI(object):
                 # 'format' value check
                 if ('format' in disk.keys()) and (disk['format'].lower() not in
                                                   ('ext2', 'ext3', 'ext4',
-                                                   'xfs', 'none')):
+                                                  'swap', 'xfs', 'none')):
                     errmsg = ("Invalid disk_pool input, supported 'format' "
-                              "includes 'ext2', 'ext3', 'ext4', 'xfs', 'none'")
+                              "includes 'ext2', 'ext3', 'ext4', 'xfs', "
+                              "'swap', 'none'")
                     LOG.error(errmsg)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
 
