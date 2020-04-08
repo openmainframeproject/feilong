@@ -507,7 +507,7 @@ function mount_boot_partition {
     mountpoint=$1
 
     if [ ! -d $mountpoint ]; then
-        log "mountpoint $mountpoint must be a directory"
+        printError "mountpoint $mountpoint must be a directory"
         exit 1
     fi
 
@@ -527,7 +527,7 @@ function mount_boot_partition {
                 let retry=$retry+1
                 continue
             fi
-            log "failed mounting boot partition"
+            printError "failed mounting boot partition"
             exit 1
         fi
         break;
@@ -840,10 +840,10 @@ function deployDiskImage {
                     let retry=$retry+1
                     continue
                 else
-                    log "failed fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+                    printError "failed fetching ignition config from ${ignitionUrl}: ${RETCODE}"
                     exit 1
                 fi
-                log "fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+                inform "fetching ignition config from ${ignitionUrl}: ${RETCODE}"
             else
                 inform "Successfully get the ignition config"
                 break;
@@ -893,10 +893,10 @@ function deployDiskImage {
                     let retry=$retry+1
                     continue
                 else
-                    log "failed fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+                    printError "failed fetching ignition config from ${ignitionUrl}: ${RETCODE}"
                     exit 1
                 fi
-                log "fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+                inform "fetching ignition config from ${ignitionUrl}: ${RETCODE}"
             else
                 inform "Successfully get the ignition config"
                 break;
@@ -1114,6 +1114,13 @@ function deployDiskImage {
     #Wipe any remaining disk labels
     inform "Wiping ${DEST_DEV}"
     wipefs --all --force "${DEST_DEV}"
+    
+    #Check disk type
+    local real_disk_type=($(dasdview -x ${DEST_DEV} |grep 'type' |head -1|awk '{print $3}'))
+    if [[ $real_disk_type != 'ECKD' ]]; then
+        printError "The device type is not ECKD"
+        exit 3
+    fi   
 
     #low-level format the ECKD DASD using dasdfmt, if needed
     inform "Format ${DEST_DEV} and Copy..."
@@ -1122,11 +1129,19 @@ function deployDiskImage {
         if [ ! $(fdasd -p ${DEST_DEV} | grep blocks\ per\ track | awk '{print $5}') ]; then
             inform "Formatting..."
             dasdfmt --blocksize 4096 --disk_layout cdl --mode full -ypv "${DEST_DEV}"
+            if [[ $? -ne 0 ]]; then
+                printError "failed to format RHCOS DASD device"
+                exit 3
+            fi
         fi
     else
         #DEST_DEV is not formatted with z/OS compatible disk layout!
         inform "Formatting..."
         dasdfmt --blocksize 4096 --disk_layout cdl --mode full -ypv "${DEST_DEV}"
+        if [[ $? -ne 0 ]]; then
+            printError "failed to format RHCOS DASD device"
+            exit 3
+        fi
     fi
 
     #Get blocks for per track of target disk
@@ -1147,6 +1162,10 @@ EOF
     # format the ECKD DASD using fdasd program
     inform "Create partitions..."
     fdasd --silent --config /tmp/${userID}/fdasd_conf "${DEST_DEV}"
+    if [[ $? -ne 0 ]]; then
+        printError "failed to set partition for RHCOS DASD device"
+        exit 3
+    fi
 
     # copy the content of each partition
     inform "Coping partitions..."
@@ -1158,8 +1177,8 @@ EOF
             count="$2" \
             seek="$(( $3 * $block_per_tracks ))"
         if [[ $? -ne 0 ]]; then
-            log "failed to write image to ECKD DASD device"
-            exit 1
+            printError "failed to write image to RHCOS DASD device"
+            exit 3
         fi
         shift 4
     done
@@ -1188,7 +1207,11 @@ EOF
 
     if [[ $skipcopy != 'YES' ]]; then 
         inform "Copy image..."
-        dd if=${imageFile} bs=512 iflag=fullblock of="${DEST_DEV}" status=progress     
+        dd if=${imageFile} bs=512 iflag=fullblock of="${DEST_DEV}" status=progress
+        if [[ $? -ne 0 ]]; then
+            printError "failed to write image to RHCOS SCSI device"
+            exit 3
+        fi
     fi
 
     # Update bootloader records
