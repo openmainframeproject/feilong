@@ -354,6 +354,12 @@ class VMAction(object):
 
         return info
 
+    @validation.schema(guest.grow_root_volume)
+    def grow_root_volume(self, userid, body=None):
+        info = self.client.send_request('guest_grow_root_volume', userid,
+                                        body['os_version'])
+        return info
+
     @validation.schema(guest.deploy)
     def deploy(self, userid, body):
         image_name = body['image']
