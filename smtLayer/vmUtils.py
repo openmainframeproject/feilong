@@ -529,53 +529,52 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
     if results['overallRC'] == 0:
         # Install the file system into the disk.
         device = device + "1"       # Point to first partition
-        if fileSystem != 'swap':
-            if fileSystem == 'xfs':
-                cmd = ["sudo", "mkfs.xfs", "-f", device]
-            else:
-                cmd = ["sudo", "mkfs", "-F", "-t", fileSystem, device]
-            strCmd = ' '.join(cmd)
-            rh.printSysLog("Invoking: " + strCmd)
-            try:
-                # Sometimes the device is not ready: sleep and retry
-                try_num = 0
-                for sleep_secs in [0.1, 0.2, 0.3, 0.5, 1, 2, -1]:
-                    try_num += 1
-                    try:
-                        out = subprocess.check_output(cmd,
-                            stderr=subprocess.STDOUT, close_fds=True)
-                        rh.printSysLog("Run `%s` successfully." % strCmd)
-                        break
-                    except CalledProcessError as e:
-                        if sleep_secs > 0:
-                            rh.printSysLog("Num %d try `%s` failed ("
-                                           "retry after %s seconds): "
-                                           "rc=%d msg=%s" % (
+        if fileSystem == 'swap':
+            cmd = ["sudo", "mkswap", device]
+        elif fileSystem == 'xfs':
+            cmd = ["sudo", "mkfs.xfs", "-f", device]
+        else:
+            cmd = ["sudo", "mkfs", "-F", "-t", fileSystem, device]
+        strCmd = ' '.join(cmd)
+        rh.printSysLog("Invoking: " + strCmd)
+        try:
+            # Sometimes the device is not ready: sleep and retry
+            try_num = 0
+            for sleep_secs in [0.1, 0.2, 0.3, 0.5, 1, 2, -1]:
+                try_num += 1
+                try:
+                    out = subprocess.check_output(cmd,
+                                                  stderr=subprocess.STDOUT,
+                                                  close_fds=True)
+                    rh.printSysLog("Run `%s` successfully." % strCmd)
+                    break
+                except CalledProcessError as e:
+                    if sleep_secs > 0:
+                        rh.printSysLog("Num %d try `%s` failed ("
+                                       "retry after %s seconds): "
+                                       "rc=%d msg=%s" % (
                                            try_num, strCmd, sleep_secs,
                                            e.returncode, e.output))
-                            time.sleep(sleep_secs)
-                        else:
-                            raise
+                        time.sleep(sleep_secs)
+                    else:
+                        raise
 
-                if isinstance(out, bytes):
-                    out = bytes.decode(out)
-                rh.printLn("N", "File system: " + fileSystem +
-                    " is installed.")
-            except CalledProcessError as e:
-                rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
-                    e.returncode, e.output))
-                results = msgs.msg['0415'][0]
-                results['rs'] = e.returncode
-                rh.updateResults(results)
-            except Exception as e:
-                # All other exceptions.
-                rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
-                    type(e).__name__, str(e)))
-                results = msgs.msg['0421'][0]
-                rh.updateResults(results)
-        else:
-            rh.printLn("N", "File system type is swap. No need to install " +
-                "a filesystem.")
+            if isinstance(out, bytes):
+                out = bytes.decode(out)
+            rh.printLn("N", "File system: " + fileSystem +
+                       " is installed.")
+        except CalledProcessError as e:
+            rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
+                                                    e.returncode, e.output))
+            results = msgs.msg['0415'][0]
+            results['rs'] = e.returncode
+            rh.updateResults(results)
+        except Exception as e:
+            # All other exceptions.
+            rh.printLn("ES", msgs.msg['0421'][1] % (modId, strCmd,
+                                                    type(e).__name__, str(e)))
+            results = msgs.msg['0421'][0]
+            rh.updateResults(results)
 
     if diskAccessed:
         # Give up the disk.

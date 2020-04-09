@@ -350,6 +350,18 @@ class GuestActionsTest(SDKWSGITest):
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_grow_root_volume(self, mock_action, mock_userid):
+        self.req.body = """{"action": "grow_root_volume",
+                            "os_version": "RHEL7.8"}"""
+        mock_action.return_value = ''
+        mock_userid.return_value = FAKE_USERID
+
+        guest.guest_action(self.req)
+        mock_action.assert_called_once_with('guest_grow_root_volume',
+                                            FAKE_USERID, "RHEL7.8")
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guest_deploy(self, mock_action,
                           mock_userid):
         self.req.body = """{"action": "deploy",

@@ -578,6 +578,12 @@ function setupDisk {
       echo "The disk $xcat_vaddr has been mounted to $xcat_mntdir in format $xcat_filesys successfully"
     fi
 
+    out=`swapon -a`
+    if [[ "$out" ]]; then
+      echo "Failed to swapon swap partition with reason $out"
+    else
+      echo "Swapon the swap partition successfully"
+    fi
   fi
 
   return

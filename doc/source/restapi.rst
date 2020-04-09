@@ -1276,6 +1276,30 @@ Capture guest
 
 * Response contents:
 
+Grow root volume of guest
+-------------------------
+
+**POST /guests/{userid}/action**
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - action: action_grow_root_volume_guest
+  - os_version: guest_os_version
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_grow_root_volume_req.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
 Get Guest power state
 ---------------------
 

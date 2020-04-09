@@ -789,9 +789,10 @@ class SDKAPI(object):
                 # 'format' value check
                 if ('format' in disk.keys()) and (disk['format'].lower() not in
                                                   ('ext2', 'ext3', 'ext4',
-                                                   'xfs', 'none')):
+                                                  'swap', 'xfs', 'none')):
                     errmsg = ("Invalid disk_pool input, supported 'format' "
-                              "includes 'ext2', 'ext3', 'ext4', 'xfs', 'none'")
+                              "includes 'ext2', 'ext3', 'ext4', 'xfs', "
+                              "'swap', 'none'")
                     LOG.error(errmsg)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
 
@@ -1262,6 +1263,20 @@ class SDKAPI(object):
         action = "config disks for userid '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.guest_config_minidisks(userid, disk_info)
+
+    @check_guest_exist()
+    def guest_grow_root_volume(self, userid, os_version):
+        """ Punch script to guest to grow root partition and extend
+            root file system.
+            Note:
+            1. Only multipath SCSI disk is supported.
+            2. Only one partition is supported.
+            3. xfs file system is not supported.
+
+        :param str userid: the user id of the vm
+        :param str os_version: operating system version of the guest
+        """
+        return self._vmops.guest_grow_root_volume(userid, os_version)
 
     def vswitch_set(self, vswitch_name, **kwargs):
         """Change the configuration of an existing virtual switch
