@@ -387,6 +387,12 @@ action_capture_guest:
   in: body
   required: true
   type: string
+action_grow_root_volume_guest:
+  description: |
+    Take ``grow_root_volume`` action on guest.
+  in: body
+  required: true
+  type: string
 action_get_console_guest:
   description: |
     Take ``get_console_output`` action on guest.

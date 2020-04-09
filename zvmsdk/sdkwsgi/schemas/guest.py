@@ -133,6 +133,16 @@ config_minidisks = {
 }
 
 
+grow_root_volume = {
+    'type': 'object',
+    'properties': {
+        'os_version': parameter_types.os_version,
+    },
+    'required': ['os_version'],
+    'additionalProperties': False,
+}
+
+
 create_disks = {
     'type': 'object',
     'properties': {
