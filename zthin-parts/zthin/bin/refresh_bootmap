@@ -154,26 +154,31 @@ function checkSanity {
   fi
 } #checkSanity
 
+function checkMultipath {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Check whether multipath is enabled by checking the multipathd service status
+  #   Set the multipath_enabled variable according to the result.
+  multipath_enabled=0
+  service_output=`systemctl status multipathd | grep "active (running)"`
+  if [[ $? -eq 0 ]]; then
+      inform "multipathd service is active and running."
+      multipath_enabled=1
+  fi
+} #checkMultipath
+
 function refreshZIPL {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
   # @Description:
   #   Retrieves initial information for the IPL from disk
   # @Parameters:
-  # None
+  #   devNode: the path to access the disk
   # @Returns:
-  #   0 - If the zipl is executed successfully on target disk
-  #   1 - If the zipl failed to be executed on target disk
-  # @Code:
-  # Characters in the IFS are treated individually as sparators.
-  # We will mount the devNode so that refresh its ZIPL.
-  # We use the first item in fcps and wwpns as the devNode.
-  local fcpChannel=$1       # FCP device channel to connect to disk.
-  local wwpn=$2             # World wide port number.
-  local lun=$3              # Logical unit number.
-  local devNode=/dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-0x${wwpn}:${lun}-part1
-  local diskPath=/dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-0x${wwpn}:${lun}
-  
+  #   None
+  local devNode=$1
+
   inform "Begin to refreshZIPL."
 
   if [[ ! -e "$devNode" ]]; then
@@ -199,6 +204,7 @@ function refreshZIPL {
   mount -t proc /proc $deviceMountPoint/proc
   mount -o bind /sys $deviceMountPoint/sys
   mount -o bind /run $deviceMountPoint/run
+  mount -o bind /dev $deviceMountPoint/dev
   if [[ $? != 0 ]]; then
     printError "Mount fails."
     exit 8
@@ -229,18 +235,19 @@ function refreshZIPL {
       -e 's/\s.*$//'`
     os=$os$version
   fi
-
+  # Prepare the new rd.zfcp parameter value
+  rd_zfcp=""
+  for fcp in ${fcps[@]}
+  do
+    for w in ${wwpns[@]}
+    do
+      rd_zfcp+="rd.zfcp=0.0."$fcp,0x$w,$lun" "
+    done
+  done
   # Exec zipl command to prepare device for initial problem load
   if [[ $os == rhel7* ]]; then
     inform "Refresh $os zipl."
     zipl_conf='etc/zipl.conf'
-    for fcp in ${fcps[@]}
-    do
-      for w in ${wwpns[@]}
-      do
-        x+="rd.zfcp=0.0."$fcp,0x$w,$lun" "
-      done
-    done
     
     ### Delete all items start with "rd.zfcp="
     sed -ri 's/rd.zfcp=\S+\s*[[:space:]]//g' ${deviceMountPoint}/$zipl_conf
@@ -252,7 +259,7 @@ function refreshZIPL {
     sed -i 's/[ \t]*$//g' ${deviceMountPoint}/$zipl_conf
     
     # Append rd.zfcp= string to "parameters=" line.
-    sed -i "/^[[:space:]]parameters=/ s/$/ $x/" ${deviceMountPoint}/$zipl_conf
+    sed -i "/^[[:space:]]parameters=/ s/$/ $rd_zfcp/" ${deviceMountPoint}/$zipl_conf
     
     # Append quote to "parameters=" line
     sed -i "/^[[:space:]]parameters=/ s/$/\"/" ${deviceMountPoint}/$zipl_conf
@@ -260,26 +267,21 @@ function refreshZIPL {
   elif [[ $os == rhel8* ]]; then
     inform "Refresh $os zipl."
     kernel_version_conf_files=`find $deviceMountPoint/boot/loader/entries/ -name '*.conf'`
-    wwid=`/usr/lib/udev/scsi_id --whitelisted $diskPath`
+    diskPath="/dev/disk/by-path/ccw-0.0.${fcps[0]}-zfcp-0x${wwpns[0]}:${lun}"
+    wwid=`/usr/lib/udev/scsi_id --whitelisted $diskPath 2> /dev/null`
     rootPath="root=\/dev\/disk\/by-id\/dm-uuid-part1-mpath-$wwid "
+    
     # The Volume may be contains several kernel version conf files.
     # So every conf file needs to be changed.
-    for fcp in ${fcps[@]}
-    do
-      for w in ${wwpns[@]}
-      do
-        x+="rd.zfcp=0.0."$fcp,0x$w,$lun" "
-      done
-    done
     for confFile in $kernel_version_conf_files; do
        # Delete all items start with "rd.zfcp="
        sed -ri 's/rd.zfcp=\S+\s*[[:space:]]//g' $confFile
        # Remove trailing space
        sed -i 's/[ \t]*$//g' $confFile
        # Update the root file system target path
-       sed -ri "s/root=\S+\s*[[:space:]]/$rootPath/g" $confFile
+       sed -ri "s/root=\S+\s*[[:space:]]/$rootPath /g" $confFile
        # Append rd.zfcp= string to "options root=" line.
-       sed -i "/^options root=/ s/$/ $x/" $confFile
+       sed -i "/^options root=/ s/$/ $rd_zfcp/" $confFile
     done
   elif [[ $os == "" ]]; then
     inform "This is not the root disk, zipl will not be executed on it"
@@ -295,6 +297,7 @@ function refreshZIPL {
     umount $deviceMountPoint/proc
     umount $deviceMountPoint/sys
     umount $deviceMountPoint/run
+    umount $deviceMountPoint/dev
     umount $deviceMountPoint
     rm -rf $deviceMountPoint
     return 1
@@ -305,6 +308,7 @@ function refreshZIPL {
   umount $deviceMountPoint/proc
   umount $deviceMountPoint/sys
   umount $deviceMountPoint/run
+  umount $deviceMountPoint/dev
   umount $deviceMountPoint
   rm -rf $deviceMountPoint
 
@@ -389,30 +393,29 @@ function refreshFCPBootmap {
 
   # Remove duplicates
   wwpns=($(echo "${wwpns[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
-
-  inform "These WWPNs will be operated: ${wwpns[*]}"
-
-  block_devs=()
-  for fcp in "${fcps[@]}"
-  do
-    for wwpn in "${wwpns[@]}"
-    do
-      ww=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
-      if [[ -L /dev/disk/by-path/ccw-0.0.${fcp}-zfcp-0x${ww}:${lun} ]]; then
-        block_dev="/dev/disk/by-path/ccw-0.0.${fcp}-zfcp-0x${ww}:${lun}"
-        block_devs+=($block_dev)
-      fi
-    done
-  done
-
-  # Try to connect FCP
   if [[ ! $wwpns[0] ]]; then
     printError "No available WWPN found."
     exit 9
   fi
-
-  refreshZIPL ${fcps[0]} ${wwpns[0]} ${lun}
-
+  inform "These WWPNs will be operated: ${wwpns[*]}"
+  
+  # Check whether multipath is enabled by checking the multipathd service
+  checkMultipath
+  
+  # Set devNode according to whether multipath is enabled on the compute node
+  wwid=""
+  if [[ $multipath_enabled == 1 ]]; then
+      diskPath=/dev/disk/by-path/ccw-0.0.${fcps[0]}-zfcp-0x${wwpns[0]}:${lun}
+      wwid=`/usr/lib/udev/scsi_id --whitelisted $diskPath 2> /dev/null`
+      devNode="/dev/disk/by-id/dm-uuid-part1-mpath-$wwid"
+      inform "Multipath is enabled, using multipath devNode: $devNode."
+  else
+      devNode="/dev/disk/by-path/ccw-0.0.${fcps[0]}-zfcp-0x${wwpns[0]}:${lun}-part1"
+      inform "Multipath is not enabled, using single path devNode: $devNode."
+  fi
+  
+  refreshZIPL $devNode
+  
   # Disconnect all FCPs
   for i in "${!fcps[@]}"
   do
@@ -422,6 +425,15 @@ function refreshFCPBootmap {
       disconnectFcp ${fcps[$i]} 0x${wwpns[$j]} ${lun}
     done
   done
+  if [[ $multipath_enabled == 1 ]]; then
+	  inform "Cleaning up multipath bindings and wwids."
+	  # delete the wwid and refresh multipath map
+	  multipath -F -W 1>/dev/null
+	  if [[ -f /etc/multipath/bindings ]]; then
+	      sed -i "/$wwid/d" /etc/multipath/bindings
+	  fi
+  fi
+  
 } #refreshFCPBootmap
 
 function refreshBootMap {
