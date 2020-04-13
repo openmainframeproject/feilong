@@ -595,6 +595,11 @@ class LinuxDist(object):
         template = env.get_template(template_name)
         return template
 
+    def get_extend_partition_cmds(self):
+        template = self.get_template("vmactions", "grow_root_volume.j2")
+        content = template.render()
+        return content
+
 
 class rhel(LinuxDist):
     def _get_network_file_path(self):
