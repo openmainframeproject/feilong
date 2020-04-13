@@ -545,6 +545,9 @@ def check_userid_exist(userid, needLogon=False):
     HCPQVD040E Device XXXX does not exist
     HCPCFC026E Operand missing or invalid
     HCPCQU045E XXXXX not logged on
+
+    Success msgs:
+    HCPCQU361E LOGOFF/FORCE pending for user xxxxxx
     """
     cmd = 'sudo vmcp q %s' % userid
     rc, output = execute(cmd)
@@ -554,7 +557,7 @@ def check_userid_exist(userid, needLogon=False):
         strok = '(^%s)' % userid
     else:
         strfail = '(^HCP\w\w\w003E|^HCP\w\w\w040E|^HCP\w\w\w026E)'
-        strok = '(^%s|^HCP\w\w\w045E)' % userid
+        strok = '(^%s|^HCP\w\w\w045E|^HCP\w\w\w361E)' % userid
 
     if re.search(strfail, output):
         # userid not exist

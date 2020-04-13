@@ -59,6 +59,53 @@ function printCMDUsage {
   echo "${optionHelp}"
 } #printCMDUsage
 
+function cleanup_umountdir_and_disconnect_fcp {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   Umount dir and cleanup all FCP devices.
+  inform "Begin to cleanup umount dir."
+  umount $deviceMountPoint/proc > /dev/null
+  umount $deviceMountPoint/sys > /dev/null
+  umount $deviceMountPoint/run > /dev/null
+  umount $deviceMountPoint/dev > /dev/null
+  umount $deviceMountPoint > /dev/null
+  rm -rf $deviceMountPoint
+  inform "Finish cleanuping umount dir."
+
+  cleanup_fcpdevices
+} # cleanup_umountdir_and_disconnect_fcp
+
+function cleanup_fcpdevices {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  # Disconnect all FCPs
+  inform "Begin to disconnect FCPs"
+  for i in "${!fcps[@]}"
+  do
+    chccwdevDevice ${fcps[$i]} "offline"
+    for j in "${!wwpns[@]}"
+    do
+      disconnectFcp ${fcps[$i]} 0x${wwpns[$j]} ${lun}
+    done
+  done
+
+  inform "Finish disconnecting FCPs."
+  inform "Begin to refresh multipath bindings."
+  # Don't need to judge if the multipath_enabled exist,
+  # if it doesn't exist, the $multipath_enabled will be None.
+  if [[ $multipath_enabled == 1 ]]; then
+    inform "Cleaning up multipath bindings and wwids."
+    # delete the wwid and refresh multipath map
+    multipath -F -W 1>/dev/null
+    if [[ -f /etc/multipath/bindings ]]; then
+        sed -i "/$wwid/d" /etc/multipath/bindings
+    fi
+  fi
+  inform "Finish refreshing multipath bindings."
+} #cleanup_fcpdevices
+
 function printCMDExamples {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
@@ -198,6 +245,9 @@ function refreshZIPL {
     exit 7
   fi
 
+  # Register EXIT sigual for umount dir and disconnect fcp devices
+  trap 'cleanup_umountdir_and_disconnect_fcp' EXIT
+
   # Try to mount fcp device.
   inform "devNode is: $devNode point: $deviceMountPoint"
   mount $devNode $deviceMountPoint
@@ -294,23 +344,10 @@ function refreshZIPL {
   rc=$?
   if (( rc != 0 )); then
     printError "Failed to execute zipl on $os due to $out"
-    umount $deviceMountPoint/proc
-    umount $deviceMountPoint/sys
-    umount $deviceMountPoint/run
-    umount $deviceMountPoint/dev
-    umount $deviceMountPoint
-    rm -rf $deviceMountPoint
     return 1
   fi
   # Sync to ensure cached date writen back to target disk
   blockdev --flushbufs $diskPath > /dev/null
-  # Unmount the target disk
-  umount $deviceMountPoint/proc
-  umount $deviceMountPoint/sys
-  umount $deviceMountPoint/run
-  umount $deviceMountPoint/dev
-  umount $deviceMountPoint
-  rm -rf $deviceMountPoint
 
   # Return wwpns
   inform "WWPNs: ${wwpns[*]}"
@@ -346,6 +383,12 @@ function refreshFCPBootmap {
 
   local zthinUserID=$(vmcp q userid | awk '{printf $1}')
   inform "zthinUserID is $zthinUserID"
+
+  # Check whether multipath is enabled by checking the multipathd service
+  checkMultipath
+
+  # Register EXIT sigual for cleanup FCP devices.
+  trap 'cleanup_fcpdevices' EXIT
 
   # Try to find which physical wwpns are being used.
   for fcp in "${fcps[@]}"
@@ -399,9 +442,6 @@ function refreshFCPBootmap {
   fi
   inform "These WWPNs will be operated: ${wwpns[*]}"
   
-  # Check whether multipath is enabled by checking the multipathd service
-  checkMultipath
-  
   # Set devNode according to whether multipath is enabled on the compute node
   wwid=""
   if [[ $multipath_enabled == 1 ]]; then
@@ -411,29 +451,12 @@ function refreshFCPBootmap {
       inform "Multipath is enabled, using multipath devNode: $devNode."
   else
       devNode="/dev/disk/by-path/ccw-0.0.${fcps[0]}-zfcp-0x${wwpns[0]}:${lun}-part1"
+      # For blockdev command use.
+      diskPath="/dev/disk/by-path/ccw-0.0.${fcps[0]}-zfcp-0x${wwpns[0]}:${lun}"
       inform "Multipath is not enabled, using single path devNode: $devNode."
   fi
   
   refreshZIPL $devNode
-  
-  # Disconnect all FCPs
-  for i in "${!fcps[@]}"
-  do
-    chccwdevDevice ${fcps[$i]} "offline"
-    for j in "${!wwpns[@]}"
-    do
-      disconnectFcp ${fcps[$i]} 0x${wwpns[$j]} ${lun}
-    done
-  done
-  if [[ $multipath_enabled == 1 ]]; then
-	  inform "Cleaning up multipath bindings and wwids."
-	  # delete the wwid and refresh multipath map
-	  multipath -F -W 1>/dev/null
-	  if [[ -f /etc/multipath/bindings ]]; then
-	      sed -i "/$wwid/d" /etc/multipath/bindings
-	  fi
-  fi
-  
 } #refreshFCPBootmap
 
 function refreshBootMap {
@@ -452,6 +475,7 @@ function refreshBootMap {
     exit 11
   fi 
 } #refreshBootMap
+
 
 ###############################################################################
 ### START EXECUTION ###########################################################
