@@ -2595,6 +2595,9 @@ class SMTClient(object):
             fmt = disk.get('format')
             mount_dir = disk.get('mntdir') or ''.join(['/mnt/ephemeral',
                                                        str(vdev)])
+            # the mount point of swap partition is swap
+            if fmt == "swap":
+                mount_dir = "swap"
             disk_parms = self._generate_disk_parmline(vdev, fmt, mount_dir)
             func_name = '/var/lib/zvmsdk/setupDisk'
             self.aemod_handler(userid, func_name, disk_parms)
