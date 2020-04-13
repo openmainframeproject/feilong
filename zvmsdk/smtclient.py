@@ -305,6 +305,8 @@ class SMTClient(object):
         # Firstly, get adapter information
         adapters_info = []
         adapter = dict()
+        # if found IP, no need to continue
+        found_mac = False
         for line in ret:
             if 'adapter_address=' in line:
                 adapter_addr = line.strip().split('=')[-1]
@@ -318,29 +320,25 @@ class SMTClient(object):
             if 'lan_name=' in line:
                 lan_name = line.strip().split('=')[-1]
                 adapter['lan_name'] = lan_name
-            if 'adapter_info_end' in line:
-                adapters_info.append(adapter)
-                adapter = dict()
-        # Secondly, get mac information of every adapter
-        # assume one adapter only have one mac_ip_address
-        index = 0
-        for line in ret:
-            if 'mac_address=' in line:
+            if 'mac_address=' in line and not found_mac:
                 mac_addr = line.strip().split('=')[-1]
                 pattern = re.compile('.{2}')
                 mac_address = ':'.join(pattern.findall(mac_addr))
-                adapters_info[index]['mac_address'] = mac_address
+                adapter['mac_address'] = mac_address
             if 'mac_ip_version=' in line:
                 ip_version = line.strip().split('=')[-1]
-                adapters_info[index]['mac_ip_version'] = ip_version
+                adapter['mac_ip_version'] = ip_version
             if 'mac_ip_address=' in line:
                 # once we found mac_ip_address, assume this is the MAC
                 # we are using, then jump to next adapter
                 mac_ip = line.strip().split('=')[-1]
-                adapters_info[index]['mac_ip_address'] = mac_ip
-                index = index + 1
-                if index == len(adapters_info):
-                    break
+                adapter['mac_ip_address'] = mac_ip
+                found_mac = True
+            if 'adapter_info_end' in line:
+                adapters_info.append(adapter)
+                # clear adapter and process next
+                adapter = dict()
+                found_mac = False
         return adapters_info
 
     def _parse_vswitch_inspect_data(self, rd_list):
