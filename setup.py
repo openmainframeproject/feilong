@@ -29,6 +29,11 @@ setuptools.setup(
     keywords='zvm cloud library',
     install_requires=open('requirements.txt').read(),
     packages=setuptools.find_packages(exclude=["zvmsdk.tests.fvt*"]),
+    package_data={
+        'zvmsdk': [
+            'vmactions/templates/grow_root_volume.j2'
+        ]
+    },
     classifiers=[
         "Intended Audience :: Information Technology",
         "Intended Audience :: System Administrators",
