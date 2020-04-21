@@ -743,7 +743,7 @@ class SMTClient(object):
             LOG.error(err_msg + err_output)
             raise exception.SDKVolumeOperationError(rs=5,
                                                     errcode=rc,
-                                                    errmsg=output)
+                                                    errmsg=err_output)
         output_lines = output.split('\n')
         res = []
         for line in output_lines:
