@@ -393,13 +393,27 @@ function refreshFCPBootmap {
   # Try to find which physical wwpns are being used.
   for fcp in "${fcps[@]}"
   do
-    # Try to connect FCP device and online it.
-    /opt/zthin/bin/smcli Image_Device_Dedicate -T $zthinUserID -v $fcp -r $fcp
-    if [[ $? -ne 0 ]]; then
-      printError "Dedicate fails, maybe other machines use this FCP: ${fcp}"
-      exit 3
-    fi
+    # Ignore fcp device firstly
     /sbin/cio_ignore -r $fcp > /dev/null
+
+    # Convert the fcp device to upper case
+    fcp_device=($(echo "$fcp"| tr 'a-z' 'A-Z'))
+
+    # Execute the vmcp command, don't execute dedicate command
+    # if the fcp device is already dedicate to the compute node,
+    res=`vmcp q fcp | grep FCP| grep "$fcp_device"`
+
+    # The fcp device doesn't dedicate to the compute node so
+    # dedicate it to the compute node.
+    if [[ -z $res ]]; then
+      # Try to connect FCP device and online it.
+      /opt/zthin/bin/smcli Image_Device_Dedicate -T $zthinUserID -v $fcp -r $fcp
+      if [[ $? -ne 0 ]]; then
+        printError "Dedicate fails, maybe other machines use this FCP: ${fcp}"
+        exit 3
+      fi
+    fi
+
     chccwdevDevice $fcp "online"
     if [[ $? -ne 0 ]]; then
       # Online failed
