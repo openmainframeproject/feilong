@@ -513,6 +513,8 @@ class FCPManager(object):
             free_unreserved = self.db.get_fcp_pair()
             for item in free_unreserved:
                 available_list.append(item)
+                # Reserve fcp device
+                self.db.reserve(item)
             if free_unreserved is None:
                 LOG.info("no more fcp to be allocated")
                 return None
@@ -655,6 +657,8 @@ class FCPVolumeManager(object):
                 multipath, os_version, mount_point, is_root_volume):
         """Detach a volume from a guest"""
         LOG.info('Start to detach device from %s' % assigner_id)
+        # Unreserved fcp device
+        self.fcp_mgr.unreserve_fcp(fcp)
         connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
         if is_root_volume:
             LOG.info('Detaching device from %s is done.' % assigner_id)
