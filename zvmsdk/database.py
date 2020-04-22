@@ -103,6 +103,10 @@ def get_fcp_conn():
     _DBLOCK_FCP.acquire()
     try:
         yield _FCP_CONN
+    except exception.SDKBaseException as err:
+        msg = "Got SDK exception in FCP DB operation: %s" % six.text_type(err)
+        LOG.error(msg)
+        raise
     except Exception as err:
         msg = "Execute SQL statements error: %s" % six.text_type(err)
         LOG.error(msg)
