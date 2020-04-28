@@ -517,7 +517,7 @@ class FCPManager(object):
                 # when the vm provision with both root and data volumes
                 # the root and data volume would get the same FCP devices
                 # with the get_volume_connector call.
-                self.db.assign(item, assigner_id)
+                self.db.assign(item, assigner_id, update_connections=False)
                 # Reserve fcp device
                 self.db.reserve(item)
             if free_unreserved is None:
