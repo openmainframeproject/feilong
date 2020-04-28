@@ -1201,9 +1201,14 @@ EOF
     # format the ECKD DASD using fdasd program
     inform "Create partitions..."
     fdasd --silent --config /tmp/${userID}/fdasd_conf "${DEST_DEV}"
-    if [[ $? -ne 0 ]]; then
-        printError "failed to set partition for RHCOS DASD device"
-        exit 3
+    RETCODE=$?
+    if [[ $RETCODE -ne 0 ]]; then
+        if [[ $RETCODE -eq 255 ]]; then
+            inform "Ignore the error while rereading partition table."
+        else
+            printError "failed to set partition for RHCOS DASD device"
+            exit 3
+        fi
     fi
 
     # copy the content of each partition
