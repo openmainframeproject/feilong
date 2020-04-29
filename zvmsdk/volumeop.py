@@ -520,9 +520,6 @@ class FCPManager(object):
                 self.db.assign(item, assigner_id, update_connections=False)
                 # Reserve fcp device
                 self.db.reserve(item)
-            if free_unreserved is None:
-                LOG.info("no more fcp to be allocated")
-                return None
 
             LOG.debug("allocated %s fcp for %s assigner" %
                       (available_list, assigner_id))
@@ -740,27 +737,27 @@ class FCPVolumeManager(object):
         fcp_list = self.fcp_mgr.get_available_fcp(assigner_id)
         if not fcp_list:
             errmsg = "No available FCP device found."
-            LOG.warning(errmsg)
+            LOG.error(errmsg)
             return empty_connector
         wwpns = []
         for fcp_no in fcp_list:
             wwpn = self.fcp_mgr.get_wwpn(fcp_no)
             if not wwpn:
                 errmsg = "FCP device %s has no available WWPN." % fcp_no
-                LOG.warning(errmsg)
+                LOG.error(errmsg)
             else:
                 wwpns.append(wwpn)
 
         if not wwpns:
             errmsg = "No available WWPN found."
-            LOG.warning(errmsg)
+            LOG.error(errmsg)
             return empty_connector
 
         inv_info = self._smtclient.get_host_info()
         zvm_host = inv_info['zvm_host']
         if zvm_host == '':
             errmsg = "zvm host not specified."
-            LOG.warning(errmsg)
+            LOG.error(errmsg)
             return empty_connector
 
         connector = {'zvm_fcp': fcp_list,
