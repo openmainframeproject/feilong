@@ -516,13 +516,12 @@ function mount_boot_partition {
     let retry=0
     while true
     do
-        output=$(lsblk "${DEST_DEV}" --output NAME,LABEL,UUID --pairs | grep 'LABEL="boot"')
-        eval $(echo $output | tr ' ' '\n' | tail -n 1)
-        mount "/dev/disk/by-uuid/${UUID}" "$mountpoint"
+        eval $(lsblk "${DEST_DEV}" -output LABEL,NAME --pairs | grep 'LABEL="boot' | tr ' ' '\n' | tail -n 1)
+        mount "/dev/${NAME}" "$mountpoint"
         RETCODE=$?
-        if [[ -z "$output" ]] || [[ $RETCODE -ne 0 ]]; then
+        if [[ $RETCODE -ne 0 ]]; then
             if [[ $retry -lt 30 ]]; then
-                # retry and sleep to allow udevd to populate /dev/disk/by-uuid
+                # retry and sleep to allow udevd to populate the disk
                 sleep 1
                 let retry=$retry+1
                 continue
@@ -874,6 +873,7 @@ function deployDiskImage {
     sed -e '/options/d' $blsfile > /tmp/$fcpChannel/blsfile
     echo "options $(cat /tmp/$fcpChannel/zipl_prm) " >>/tmp/$fcpChannel/blsfile
     cat /tmp/$fcpChannel/blsfile > $blsfile
+    blockdev --flushbufs ${DEST_DEV} > /dev/null
   } #update_zipl_bootloader_fcp{}
 
   function update_zipl_bootloader_eckd {
@@ -936,6 +936,7 @@ function deployDiskImage {
     sed -e '/options/d' $blsfile > /tmp/$userID/blsfile
     echo "options $(cat /tmp/$userID/zipl_prm) " >>/tmp/$userID/blsfile
     cat /tmp/$userID/blsfile > $blsfile
+    blockdev --flushbufs ${DEST_DEV} > /dev/null
   } #update_zipl_bootloader_eckd{}
 
   function deployFBAptImage {
@@ -1226,6 +1227,8 @@ EOF
         fi
         shift 4
     done
+    
+    blockdev --flushbufs ${DEST_DEV} > /dev/null
 
     # Update bootloader records
     update_zipl_bootloader_eckd
@@ -1257,6 +1260,8 @@ EOF
             exit 3
         fi
     fi
+
+    blockdev --flushbufs ${DEST_DEV} > /dev/null
 
     # Update bootloader records
     update_zipl_bootloader_fcp
