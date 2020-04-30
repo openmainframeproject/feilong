@@ -473,9 +473,12 @@ class FCPDbOperator(object):
                                       "and reserved=0 and path=%s order by "
                                       "fcp_id" % no)
                 fcps = result.fetchall()
+                if not fcps:
+                    break
                 fcp_list.append(fcps[0][0])
-        if not fcp_list:
-            LOG.warning("Warning: Not enough FCPs in fcp pool")
+        if len(fcp_list) < len(path_list):
+            LOG.error("Not enough FCPs in fcp pool")
+            return []
         return fcp_list
 
     def get_all_free_unreserved(self):
