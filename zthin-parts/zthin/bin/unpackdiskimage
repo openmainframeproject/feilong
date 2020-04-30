@@ -516,7 +516,7 @@ function mount_boot_partition {
     let retry=0
     while true
     do
-        eval $(lsblk "${DEST_DEV}" -output LABEL,NAME --pairs | grep 'LABEL="boot' | tr ' ' '\n' | tail -n 1)
+        eval $(lsblk "${DEST_DEV}" --output LABEL,NAME --pairs | grep 'LABEL="boot' | tr ' ' '\n' | tail -n 1)
         mount "/dev/${NAME}" "$mountpoint"
         RETCODE=$?
         if [[ $RETCODE -ne 0 ]]; then
