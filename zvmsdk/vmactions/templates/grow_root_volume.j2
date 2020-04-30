@@ -40,46 +40,54 @@ if [[ $? -ne 0 ]]; then
 fi
 
 # get root partition
-root_fs=`df --output='source' / | tail -n 1 | grep '/dev/mapper/'`
+mpath=`lsblk -s -l -o NAME,MOUNTPOINT | egrep ' /$' | awk '{print $1}'`
 rc=$?
-# sample root_fs
-# on RHEL7: 
-# /dev/mapper/36005076802880052a0000000000009fb1
-# sometimes it will be /dev/mapper/36005076802880052a0000000000009fbp1 (with an additional 'p' before '1')
-# on RHEL8: /dev/mapper/mpathb1
-if [[ $rc -ne 0 || "$root_fs" == "" ]]; then
-    echo "Unable to find a multipath root partition with /dev/mapper/."
+
+# sample mpath
+# on RHEL7 and RHEL8
+# depends on user_friendly_names value in /etc/multipath.conf
+# if value is yes:
+#    mpatha1
+# else value is no (by defalut):
+#    36005076802880052a000000000001069 or
+#    36005076802880052a000000000001069p1 (sometimes with an additional 'p' before '1')
+if [[ $rc -ne 0 || "$mpath" == "" ]]; then
+    echo "Unable to find a multipath root partition with lsblk -s."
     exit 1
 fi
 
-# remove the previous /dev/mapper/ section, mpath value is 36005076802880052a0000000000009fb1 or mpathb1
-mpath=${root_fs#/dev/mapper/}
 # remove the last number 1
 mpath=${mpath%1*}
 
-if [[ -f /etc/multipath/bindings ]]; then
-    mpathx=`grep "$mpath" /etc/multipath/bindings | awk '{print $1}'`
-    if [[ $? -ne 0 || "$mpathx" == "" ]]; then
-        echo "Failed to find multipath bindings of $mpath."
-        if [[ ${mpath:(-1)} == 'p' ]]; then
-            # handling the /dev/mapper/36005076802880052a0000000000009fbp1 case
-            mpath=${mpath%p*}
-            echo "Continue to check bindings of $mpath..."
-            mpathx=`grep "$mpath" /etc/multipath/bindings | awk '{print $1}'`
-            if [[ $? -ne 0 || "$mpathx" == "" ]]; then
-                echo "Abort extending the root partition."
-	        	exit 1
-	        fi
-        else
-	        echo "Abort extending the root partition."
-	        exit 1
-	    fi
+# check bindings which only used if user_friendly_names is yes
+isFriendly=`multipathd show config | awk '/^defaults {/,/user_friendly/' | awk 'END{gsub(/"/,""); print $2}'`
+rc=$?
+if [[ $rc -ne 0 ]]; then
+    echo "user_friendly_names check fail."
+    exit 1
+fi
+if [[ "$isFriendly" == "yes" ]]; then
+    if [[ -f /etc/multipath/bindings ]]; then
+        mpathx=`grep "$mpath" /etc/multipath/bindings | awk '{print $1}'`
+        if [[ $? -ne 0 || "$mpathx" == "" ]]; then
+            echo "Failed to find multipath bindings of $mpath."
+            exit 1
+        fi
+        echo "user_friendly_names: yes"
+    else
+        echo "Failed to get /etc/multipath/bindings."
+        exit 1
     fi
 else
-    # cases when friendly names is not enabled. (RHEL7.8 and RHEL8.1 enabled by default, but not default in RHEL7.7.)
+    # cases when user_friendly_names is no i.e. not enabled. (RHEL7.8 and RHEL8.1 enabled by default, but not default in RHEL7.7.)
     # If no friendly names, the naming would be /dev/mapper/xxxx where xxxx is the scsi wwid.
-    echo "File /etc/multipath/bindings does not exist, assuming 'user_friendly_names' is not enabled in /etc/multipath.conf."
-    mpathx=$mpath
+    echo "user_friendly_names: no"
+    if [[ ${mpath:(-1)} == 'p' ]]; then
+        # handle the 36005076802880052a000000000001069p1 case
+        mpathx=${mpath%p*}
+    else
+        mpathx=$mpath
+    fi
 fi
 echo "root partition path found: $mpathx."
 
@@ -103,7 +111,7 @@ if [[ $partition_count -ne 1 ]]; then
 fi
 
 # Check partition size
-# Sample lsblk: 
+# Sample lsblk:
 # lsblk /dev/mapper/mpathb -l
 # NAME    MAJ:MIN RM SIZE RO TYPE  MOUNTPOINT
 # mpathb  253:0    0  10G  0 mpath
@@ -144,8 +152,20 @@ rc=$?
 # so cann't decide whether this is success or not based on the rc and just print all info out.
 echo "root partition extended. RC: $rc, Output: $out."
 
+# partprobe - inform the OS of partition table changes
+out=`partprobe`
+rc=$?
+if [[ $rc -ne 0 ]]; then
+    echo "Failed to partprobe, RC: $rc, Output: $out."
+    exit 1
+fi
+
 echo "Continue to resize root file system."
 # TODO: xfs is not supported now, should use xfs_growfs cmd to extend for xfs.
+if [[ ${mpath:(-1)} == 'p' ]]; then
+    # handle the 36005076802880052a000000000001069p1 case
+    mpathx=$mpath
+fi
 out=`resize2fs /dev/mapper/${mpathx}1 2>&1`
 rc=$?
 if [[ $rc -ne 0 ]]; then
@@ -169,12 +189,12 @@ else
             if [[ ! ($out =~ "Nothing to do!") ]]; then
                 break # successful - leave loop
             fi
-	    done
-	    if [[ $out =~ "Nothing to do!" ]]; then
-	        echo "Failed to resize root file system!"
-	        exit 1
-	    fi
-	fi
+        done
+        if [[ $out =~ "Nothing to do!" ]]; then
+            echo "Failed to resize root file system!"
+            exit 1
+        fi
+    fi
     echo "Root file system resized successfully."
     exit 0
 fi
