@@ -59,35 +59,11 @@ fi
 # remove the last number 1
 mpath=${mpath%1*}
 
-# check bindings which only used if user_friendly_names is yes
-isFriendly=`multipathd show config | awk '/^defaults {/,/user_friendly/' | awk 'END{gsub(/"/,""); print $2}'`
-rc=$?
-if [[ $rc -ne 0 ]]; then
-    echo "user_friendly_names check fail."
-    exit 1
-fi
-if [[ "$isFriendly" == "yes" ]]; then
-    if [[ -f /etc/multipath/bindings ]]; then
-        mpathx=`grep "$mpath" /etc/multipath/bindings | awk '{print $1}'`
-        if [[ $? -ne 0 || "$mpathx" == "" ]]; then
-            echo "Failed to find multipath bindings of $mpath."
-            exit 1
-        fi
-        echo "user_friendly_names: yes"
-    else
-        echo "Failed to get /etc/multipath/bindings."
-        exit 1
-    fi
+# handle the 36005076802880052a000000000001069p1 case
+if [[ ${mpath:(-1)} == 'p' ]]; then
+    mpathx=${mpath%p*}
 else
-    # cases when user_friendly_names is no i.e. not enabled. (RHEL7.8 and RHEL8.1 enabled by default, but not default in RHEL7.7.)
-    # If no friendly names, the naming would be /dev/mapper/xxxx where xxxx is the scsi wwid.
-    echo "user_friendly_names: no"
-    if [[ ${mpath:(-1)} == 'p' ]]; then
-        # handle the 36005076802880052a000000000001069p1 case
-        mpathx=${mpath%p*}
-    else
-        mpathx=$mpath
-    fi
+    mpathx=$mpath
 fi
 echo "root partition path found: $mpathx."
 
@@ -133,7 +109,7 @@ sds=`ls /sys/devices/virtual/block/$dm_name/slaves`
 success=0
 for sdN in $sds
 do
-    out=`parted -s /dev/$sdN resizepart 1 100%`
+    out=`parted -s /dev/$sdN resizepart 1 100% 2>&1`
     if [[ $? -eq 0 ]]; then
         success=1
     else
@@ -146,18 +122,17 @@ if [[ $success == 0 ]]; then
     exit 1
 fi
 # continue to resize multipath partition
-out=`parted -s /dev/mapper/$mpathx resizepart 1 100%`
+out=`parted -s /dev/mapper/$mpathx resizepart 1 100% 2>&1`
 rc=$?
 # On RHEL8 the parted for mpathx would return 1 even if the partition is resized successfully.
 # so cann't decide whether this is success or not based on the rc and just print all info out.
 echo "root partition extended. RC: $rc, Output: $out."
 
 # partprobe - inform the OS of partition table changes
-out=`partprobe`
+out=`partprobe 2>&1`
 rc=$?
 if [[ $rc -ne 0 ]]; then
     echo "Failed to partprobe, RC: $rc, Output: $out."
-    exit 1
 fi
 
 echo "Continue to resize root file system."
