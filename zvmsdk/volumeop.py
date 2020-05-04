@@ -659,8 +659,15 @@ class FCPVolumeManager(object):
                 multipath, os_version, mount_point, is_root_volume):
         """Detach a volume from a guest"""
         LOG.info('Start to detach device from %s' % assigner_id)
-        # Unreserved fcp device
+        # Unreserve the FCP device firstly.
         self.fcp_mgr.unreserve_fcp(fcp)
+        if not self.db.get_connections_from_assigner(assigner_id):
+            # If spawn a VM fails, it will call the driver's destroy function.
+            # Finally, this function will be called. At this time, connections
+            # is empty because spawn fails. So if the connections is empty
+            # just return is okay.
+            return
+
         connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
         if is_root_volume:
             LOG.info('Detaching device from %s is done.' % assigner_id)
