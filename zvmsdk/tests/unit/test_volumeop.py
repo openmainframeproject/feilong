@@ -344,11 +344,11 @@ class TestFCPManager(base.SDKTestCase):
 
         # find FCP for user and FCP not exist, should allocate them
         try:
-            flag1 = self.fcpops.add_fcp_for_assigner(2, 'a83c', 'dummy1')
-            flag2 = self.fcpops.add_fcp_for_assigner(2, 'a83d', 'dummy2')
+            flag1 = self.fcpops.add_fcp_for_assigner('a83c', 'dummy1')
+            flag2 = self.fcpops.add_fcp_for_assigner('a83d', 'dummy2')
 
-            flag1 = self.fcpops.add_fcp_for_assigner(2, 'a83e', 'dummy1')
-            flag2 = self.fcpops.add_fcp_for_assigner(2, 'a83f', 'dummy2')
+            flag1 = self.fcpops.add_fcp_for_assigner('a83e', 'dummy1')
+            flag2 = self.fcpops.add_fcp_for_assigner('a83f', 'dummy2')
 
             self.assertEqual(True, flag1)
             self.assertEqual(True, flag2)
@@ -410,7 +410,7 @@ class TestFCPManager(base.SDKTestCase):
             self.fcpops.increase_fcp_usage('c83c', 'user1')
 
             fcp_list = self.db_op.get_from_fcp('c83c')
-            expected = [(u'c83c', u'', 1, 1, 0, u'')]
+            expected = [(u'c83c', u'user1', 1, 1, 0, u'')]
             self.assertEqual(expected, fcp_list)
 
             # After usage, we need find c83d now
@@ -422,19 +422,10 @@ class TestFCPManager(base.SDKTestCase):
 
             self.fcpops.increase_fcp_usage('c83c', 'user1')
             fcp_list = self.db_op.get_from_fcp('c83c')
-            expected = [(u'c83c', u'', 2, 1, 0, u'')]
+            expected = [(u'c83c', u'user1', 2, 1, 0, u'')]
             self.assertEqual(expected, fcp_list)
 
             self.fcpops.decrease_fcp_usage('c83c', 'user1')
-            fcp_list = self.db_op.get_from_fcp('c83c')
-            expected = [(u'c83c', u'', 1, 1, 0, u'')]
-            self.assertEqual(expected, fcp_list)
-
-            # add_fcp_for_assigner is designed for multipath
-            # so if multipath is enabled(path_count >= 2),
-            # add_fcp_for_assinger used on an instance exsited in DB,
-            # will not increase the connections
-            self.fcpops.add_fcp_for_assigner(2, 'c83c', 'user1')
             fcp_list = self.db_op.get_from_fcp('c83c')
             expected = [(u'c83c', u'user1', 1, 1, 0, u'')]
             self.assertEqual(expected, fcp_list)
@@ -704,12 +695,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")
-    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._rollback_dedicated_fcp")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
-    @mock.patch("zvmsdk.volumeop.FCPManager.decrease_fcp_usage")
-    @mock.patch("zvmsdk.volumeop.FCPManager.increase_fcp_usage")
-    def test_attach_rollback(self, mock_increase, mock_decrease,
-                             mock_dedicate, mock_undedicate,
+    @mock.patch("zvmsdk.volumeop.FCPManager.add_fcp_for_assigner")
+    def test_attach_rollback(self, mock_fcp_assigner,
+                             mock_dedicate, mock_rollback,
                              mock_check, mock_fcp_info):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
@@ -729,18 +719,18 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     '20076D8500005181']
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
-        mock_increase.return_value = True
+        mock_fcp_assigner.return_value = True
         results = {'rs': 0, 'errno': 0, 'strError': '',
                    'overallRC': 1, 'logEntries': [], 'rc': 0,
                    'response': ['fake response']}
         mock_dedicate.side_effect = exception.SDKSMTRequestFailed(
             results, 'fake error')
-        # return value of decreate must bigger than 1
-        mock_decrease.return_value = 0
         self.assertRaises(exception.SDKBaseException,
                           self.volumeops.attach,
                           connection_info)
-        mock_undedicate.assert_called_once_with('e83c', 'USER1')
+        calls = [mock.call(['e83c'], 'USER1'),
+                 mock.call([], 'USER1')]
+        mock_rollback.assert_has_calls(calls)
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")
