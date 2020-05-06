@@ -592,7 +592,11 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
                                                     type(e).__name__, str(e)))
             results = msgs.msg['0421'][0]
             rh.updateResults(results)
-
+    # TODO: diskAccessed hard code to True, because if linkdiskandbringonline
+    # failed, can not set diskAccessed. will leave DASD undetached.
+    # So always try to disconnect the disk. If this fixed in the future, need
+    # remove this.
+    diskAccessed = True
     if diskAccessed:
         # Give up the disk.
         cmd = ["sudo", "/opt/zthin/bin/offlinediskanddetach",
