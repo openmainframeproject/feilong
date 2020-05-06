@@ -350,11 +350,16 @@ class FCPDbOperator(object):
                          "(?, ?, ?, ?, ?, ?)",
                          (fcp, '', 0, 0, path, ''))
 
-    def assign(self, fcp, assigner_id):
+    def assign(self, fcp, assigner_id, update_connections=True):
         with get_fcp_conn() as conn:
-            conn.execute("UPDATE fcp SET assigner_id=?, connections=? "
-                         "WHERE fcp_id=?",
-                         (assigner_id, 1, fcp))
+            if update_connections:
+                conn.execute("UPDATE fcp SET assigner_id=?, connections=? "
+                             "WHERE fcp_id=?",
+                             (assigner_id, 1, fcp))
+            else:
+                conn.execute("UPDATE fcp SET assigner_id=? "
+                             "WHERE fcp_id=?",
+                             (assigner_id, fcp))
 
     def delete(self, fcp):
         with get_fcp_conn() as conn:
@@ -468,9 +473,12 @@ class FCPDbOperator(object):
                                       "and reserved=0 and path=%s order by "
                                       "fcp_id" % no)
                 fcps = result.fetchall()
+                if not fcps:
+                    break
                 fcp_list.append(fcps[0][0])
-        if not fcp_list:
-            LOG.warning("Warning: Not enough FCPs in fcp pool")
+        if len(fcp_list) < len(path_list):
+            LOG.error("Not enough FCPs in fcp pool")
+            return []
         return fcp_list
 
     def get_all_free_unreserved(self):

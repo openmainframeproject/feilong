@@ -443,9 +443,13 @@ function chccwdevDevice {
   fi
   englishOpt=$turnOn
 
-  # Enable or disable the device
-  chccwdev $opt $device &> /dev/null
+  output=$(chccwdev $opt $device 2>&1)
   local rc=$?
+  res=$(echo $output|grep "not found")
+  if [[ ($rc -ne 0) && $res ]]; then
+    return 1
+  fi
+
   if [[ $rc -ne 0 ]]; then
     inform "Attempt to set device $englishOpt failed and return code is $rc. Retrying..." 1>&2
     # retry, while waiting various durations
@@ -456,6 +460,7 @@ function chccwdevDevice {
       if [[ $rc -eq 0 ]]; then
         break # successful - leave loop
       fi
+
     done
 
     # Set subroutine return code if chccwdev attempts failed
