@@ -469,20 +469,6 @@ class TestFCPManager(base.SDKTestCase):
             self.db_op.delete('c83c')
             self.db_op.delete('c83d')
 
-    def test_get_available_fcp_reserved(self):
-        self.db_op.new('c83c', 0)
-        self.db_op.new('c83d', 1)
-
-        try:
-            self.fcpops.get_available_fcp('user1')
-            res1 = self.db_op.is_reserved('c83c')
-            res2 = self.db_op.is_reserved('c83d')
-            self.assertTrue(res1)
-            self.assertTrue(res2)
-        finally:
-            self.db_op.delete('c83c')
-            self.db_op.delete('c83d')
-
 
 class TestFCPVolumeManager(base.SDKTestCase):
 
@@ -513,7 +499,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
         self.db_op.assign('b83c', 'fakeuser')
 
         try:
-            connections = self.volumeops.get_volume_connector('fakeuser')
+            connections = self.volumeops.get_volume_connector('fakeuser',
+                                                              False)
             expected = {'zvm_fcp': ['b83c'],
                         'wwpns': ['2007123400001234'],
                         'host': 'fakehost'}
@@ -731,7 +718,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                           self.volumeops.attach,
                           connection_info)
         calls = [mock.call(['e83c'], 'USER1'),
-                 mock.call([], 'USER1')]
+                 mock.call([], 'USER1', all_fcp_list=['e83c'])]
         mock_rollback.assert_has_calls(calls)
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
@@ -771,11 +758,6 @@ class TestFCPVolumeManager(base.SDKTestCase):
         self.assertRaises(exception.SDKBaseException,
                           self.volumeops.detach,
                           connection_info)
-        mock_increase.assert_called_once_with('f83c', 'USER1')
-        mock_add_disk.assert_called_once_with('f83c', 'USER1',
-                                              ['20076D8500005182'], '2222',
-                                              False, 'rhel7', '/dev/sdz',
-                                              True)
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")
