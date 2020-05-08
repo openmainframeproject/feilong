@@ -90,8 +90,8 @@ class VolumeOperatorAPI(object):
                                                            wwpn, lun,
                                                            skipzipl=skipzipl)
 
-    def get_volume_connector(self, assigner_id):
-        return self._volume_manager.get_volume_connector(assigner_id)
+    def get_volume_connector(self, assigner_id, reserve):
+        return self._volume_manager.get_volume_connector(assigner_id, reserve)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -464,21 +464,14 @@ class FCPManager(object):
 
         return new
 
-    def add_fcp_for_assigner(self, path_count, fcp, assigner_id=None):
+    def add_fcp_for_assigner(self, fcp, assigner_id=None):
         """Incrase fcp usage of given fcp
-        path_count: how many paths we will use in multipath
         Returns True if it's a new fcp, otherwise return False
         """
         # get the sum of connections belong to assinger_id
-        connections = self.db.get_connections_from_assigner(assigner_id)
+        connections = self.db.get_connections_from_fcp(fcp)
         new = False
-        # TODO: we assume that the connections of every FCP at most is 1,
-        # TODO: so multiattach will not be supported.
-        # Now because support multipath, so if sum connections of one assigner
-        # < path_count, we think not all the FCP devices attached to the
-        # instance. So a new FCP still should be attached to the instance
-        # and the new flag still need set to True.
-        if connections < path_count:
+        if connections == 0:
             # ATTENTION: logically, only new fcp was added
             self.db.assign(fcp, assigner_id)
             new = True
@@ -518,12 +511,16 @@ class FCPManager(object):
                 # the root and data volume would get the same FCP devices
                 # with the get_volume_connector call.
                 self.db.assign(item, assigner_id, update_connections=False)
-                # Reserve fcp device
-                self.db.reserve(item)
 
             LOG.debug("allocated %s fcp for %s assigner" %
                       (available_list, assigner_id))
         else:
+            path_count = self.db.get_path_count()
+            if len(fcp_list) < path_count:
+                # TODO: handle the case when len(fcp_list) < multipath_count
+                LOG.warning("FCPs assigned to %s includes %s, "
+                            "it is less than the path count: %s." %
+                            (assigner_id, fcp_list, path_count))
             # we got it from db, let's reuse it
             for old_fcp in fcp_list:
                 available_list.append(old_fcp[0])
@@ -549,6 +546,7 @@ class FCPVolumeManager(object):
         self.fcp_mgr = FCPManager()
         self.config_api = VolumeConfiguratorAPI()
         self._smtclient = smtclient.get_smtclient()
+        self.db = database.FCPDbOperator()
 
     def _dedicate_fcp(self, fcp, assigner_id):
         self._smtclient.dedicate_device(assigner_id, fcp, fcp, 0)
@@ -558,6 +556,22 @@ class FCPVolumeManager(object):
         self.config_api.config_attach(fcp, assigner_id, target_wwpns,
                                       target_lun, multipath, os_version,
                                       mount_point, new)
+
+    def _rollback_dedicated_fcp(self, fcp_list, assigner_id,
+                                all_fcp_list=None):
+        # fcp param should be a list
+        for fcp in fcp_list:
+            with zvmutils.ignore_errors():
+                LOG.info("Rolling back dedicated FCP: %s" % fcp)
+                connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
+                if connections == 0:
+                    self._undedicate_fcp(fcp, assigner_id)
+        # If attach volume fails, we need to unreserve all FCP devices.
+        if all_fcp_list:
+            for fcp in all_fcp_list:
+                if not self.db.get_connections_from_fcp(fcp):
+                    LOG.info("Unreserve the fcp device %s", fcp)
+                    self.db.unreserve(fcp)
 
     def _attach(self, fcp, assigner_id, target_wwpns, target_lun,
                 multipath, os_version, mount_point, path_count,
@@ -572,10 +586,10 @@ class FCPVolumeManager(object):
         # TODO: init_fcp should be called in contructor function
         # but no assinger_id in contructor
         self.fcp_mgr.init_fcp(assigner_id)
-        new = self.fcp_mgr.add_fcp_for_assigner(path_count, fcp, assigner_id)
+        new = self.fcp_mgr.add_fcp_for_assigner(fcp, assigner_id)
         if is_root_volume:
             LOG.info('Attaching device to %s is done.' % assigner_id)
-            return
+            return new
         try:
             if new:
                 self._dedicate_fcp(fcp, assigner_id)
@@ -583,17 +597,14 @@ class FCPVolumeManager(object):
             self._add_disk(fcp, assigner_id, target_wwpns, target_lun,
                            multipath, os_version, mount_point, new)
         except exception.SDKBaseException as err:
-            errmsg = 'rollback attach because error:' + err.format_message()
+            errmsg = 'Attach failed with error:' + err.format_message()
             LOG.error(errmsg)
-            connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
-            # if connections less than 1, undedicate the device
-            if not connections:
-                with zvmutils.ignore_errors():
-                    self._undedicate_fcp(fcp, assigner_id)
+            self._rollback_dedicated_fcp([fcp], assigner_id)
             raise exception.SDKBaseException(msg=errmsg)
         # TODO: other exceptions?
 
         LOG.info('Attaching device to %s is done.' % assigner_id)
+        return new
 
     def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, skipzipl=False):
         """ Refresh a volume's bootmap info.
@@ -641,10 +652,19 @@ class FCPVolumeManager(object):
         else:
             # TODO: the length of fcp is the count of paths in multipath
             path_count = len(fcp)
+            dedicated_fcp = []
             for i in range(path_count):
-                self._attach(fcp[i].lower(), assigner_id, target_wwpns,
-                             target_lun, multipath, os_version, mount_point,
-                             path_count, is_root_volume)
+                try:
+                    new = self._attach(fcp[i].lower(), assigner_id,
+                                       target_wwpns, target_lun, multipath,
+                                       os_version, mount_point, path_count,
+                                       is_root_volume)
+                    if new and is_root_volume is False:
+                        dedicated_fcp.append(fcp[i])
+                except exception.SDKBaseException:
+                    self._rollback_dedicated_fcp(dedicated_fcp, assigner_id,
+                        all_fcp_list=fcp)
+                    raise
 
     def _undedicate_fcp(self, fcp, assigner_id):
         self._smtclient.undedicate_device(assigner_id, fcp)
@@ -659,9 +679,11 @@ class FCPVolumeManager(object):
                 multipath, os_version, mount_point, is_root_volume):
         """Detach a volume from a guest"""
         LOG.info('Start to detach device from %s' % assigner_id)
-        # Unreserved fcp device
-        self.fcp_mgr.unreserve_fcp(fcp)
         connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
+        # Unreserved fcp device
+        fcp_connections = self.db.get_connections_from_fcp(fcp)
+        if not fcp_connections:
+            self.fcp_mgr.unreserve_fcp(fcp)
         if is_root_volume:
             LOG.info('Detaching device from %s is done.' % assigner_id)
             return
@@ -673,7 +695,7 @@ class FCPVolumeManager(object):
                 self._undedicate_fcp(fcp, assigner_id)
         except (exception.SDKBaseException,
                 exception.SDKSMTRequestFailed) as err:
-            errmsg = 'rollback detach because error:' + err.format_message()
+            errmsg = 'detach failed with error:' + err.format_message()
             LOG.error(errmsg)
             self.fcp_mgr.increase_fcp_usage(fcp, assigner_id)
             with zvmutils.ignore_errors():
@@ -715,7 +737,7 @@ class FCPVolumeManager(object):
                              target_lun, multipath, os_version, mount_point,
                              is_root_volume)
 
-    def get_volume_connector(self, assigner_id):
+    def get_volume_connector(self, assigner_id, reserve):
         """Get connector information of the instance for attaching to volumes.
 
         Connector information is a dictionary representing the ip of the
@@ -741,6 +763,15 @@ class FCPVolumeManager(object):
             return empty_connector
         wwpns = []
         for fcp_no in fcp_list:
+            if reserve:
+                # Reserve fcp device
+                LOG.info("Reserve fcp device %s", fcp_no)
+                self.db.reserve(fcp_no)
+            elif not reserve and \
+                self.db.get_connections_from_fcp(fcp_no) == 0:
+                # Unreserve fcp device
+                LOG.info("Unreserve fcp device %s", fcp_no)
+                self.db.unreserve(fcp_no)
             wwpn = self.fcp_mgr.get_wwpn(fcp_no)
             if not wwpn:
                 errmsg = "FCP device %s has no available WWPN." % fcp_no

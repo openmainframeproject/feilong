@@ -339,6 +339,14 @@ function refreshZIPL {
     inform "The os version is: $os, this is not a supported linux distro"
   fi
 
+  # Remove dirty data in /etc/fstab left by the previous vm deploy
+  # remove lines containing "/mnt/ephemeral" or " swap swap "
+  # TODO: need to update the implementation method when later the ephemeral
+  # mount point maybe changed to user configurable, to not hardcode to /mnt/ephemeralxxx
+  inform "Updating ${deviceMountPoint}/etc/fstab"
+  sed -i '/\/mnt\/ephemeral/d' ${deviceMountPoint}/etc/fstab
+  sed -i '/ swap swap /d' ${deviceMountPoint}/etc/fstab
+
   # Refresh bootmap
   out=`chroot $deviceMountPoint /sbin/zipl 2>&1`
   rc=$?

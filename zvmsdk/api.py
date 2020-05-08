@@ -1423,7 +1423,7 @@ class SDKAPI(object):
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
 
-    def get_volume_connector(self, userid):
+    def get_volume_connector(self, userid, reserve=False):
         """Get connector information of the guest for attaching to volumes.
         This API is for Openstack Cinder driver only now.
 
@@ -1439,8 +1439,9 @@ class SDKAPI(object):
         This information will be used by IBM storwize FC driver in Cinder.
 
         :param str userid: the user id of the guest
+        :param boolean reserve: the flag to reserve FCP device
         """
-        return self._volumeop.get_volume_connector(userid)
+        return self._volumeop.get_volume_connector(userid, reserve)
 
     def volume_attach(self, connection_info):
         """ Attach a volume to a guest. It's prerequisite to active multipath
