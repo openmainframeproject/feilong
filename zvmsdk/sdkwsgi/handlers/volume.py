@@ -56,8 +56,9 @@ class VolumeAction(object):
         return info
 
     @validation.query_schema(volume.get_volume_connector)
-    def get_volume_connector(self, req, userid):
-        conn = self.client.send_request('get_volume_connector', userid)
+    def get_volume_connector(self, req, userid, reserve):
+        conn = self.client.send_request('get_volume_connector',
+                                        userid, reserve)
         return conn
 
     def volume_refresh_bootmap(self, fcpchannel, wwpn, lun, skipzipl):
@@ -131,12 +132,15 @@ def volume_refresh_bootmap(req):
 @util.SdkWsgify
 @tokens.validate
 def get_volume_connector(req):
-    def _get_volume_conn(req, userid):
+    def _get_volume_conn(req, userid, reserve):
         action = get_action()
-        return action.get_volume_connector(req, userid)
+        return action.get_volume_connector(req, userid, reserve)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
-    conn = _get_volume_conn(req, userid)
+    body = util.extract_json(req.body)
+    reserve = body['info']['reserve']
+
+    conn = _get_volume_conn(req, userid, reserve)
     conn_json = json.dumps(conn)
 
     req.response.content_type = 'application/json'

@@ -90,8 +90,8 @@ class VolumeOperatorAPI(object):
                                                            wwpn, lun,
                                                            skipzipl=skipzipl)
 
-    def get_volume_connector(self, assigner_id):
-        return self._volume_manager.get_volume_connector(assigner_id)
+    def get_volume_connector(self, assigner_id, reserve):
+        return self._volume_manager.get_volume_connector(assigner_id, reserve)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -511,8 +511,6 @@ class FCPManager(object):
                 # the root and data volume would get the same FCP devices
                 # with the get_volume_connector call.
                 self.db.assign(item, assigner_id, update_connections=False)
-                # Reserve fcp device
-                self.db.reserve(item)
 
             LOG.debug("allocated %s fcp for %s assigner" %
                       (available_list, assigner_id))
@@ -548,6 +546,7 @@ class FCPVolumeManager(object):
         self.fcp_mgr = FCPManager()
         self.config_api = VolumeConfiguratorAPI()
         self._smtclient = smtclient.get_smtclient()
+        self.db = database.FCPDbOperator()
 
     def _dedicate_fcp(self, fcp, assigner_id):
         self._smtclient.dedicate_device(assigner_id, fcp, fcp, 0)
@@ -558,7 +557,8 @@ class FCPVolumeManager(object):
                                       target_lun, multipath, os_version,
                                       mount_point, new)
 
-    def _rollback_dedicated_fcp(self, fcp_list, assigner_id):
+    def _rollback_dedicated_fcp(self, fcp_list, assigner_id,
+                                all_fcp_list=None):
         # fcp param should be a list
         for fcp in fcp_list:
             with zvmutils.ignore_errors():
@@ -566,6 +566,12 @@ class FCPVolumeManager(object):
                 connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
                 if connections == 0:
                     self._undedicate_fcp(fcp, assigner_id)
+        # If attach volume fails, we need to unreserve all FCP devices.
+        if all_fcp_list:
+            for fcp in all_fcp_list:
+                if not self.db.get_connections_from_fcp(fcp):
+                    LOG.info("Unreserve the fcp device %s", fcp)
+                    self.db.unreserve(fcp)
 
     def _attach(self, fcp, assigner_id, target_wwpns, target_lun,
                 multipath, os_version, mount_point, path_count,
@@ -656,7 +662,8 @@ class FCPVolumeManager(object):
                     if new and is_root_volume is False:
                         dedicated_fcp.append(fcp[i])
                 except exception.SDKBaseException:
-                    self._rollback_dedicated_fcp(dedicated_fcp, assigner_id)
+                    self._rollback_dedicated_fcp(dedicated_fcp, assigner_id,
+                        all_fcp_list=fcp)
                     raise
 
     def _undedicate_fcp(self, fcp, assigner_id):
@@ -672,9 +679,11 @@ class FCPVolumeManager(object):
                 multipath, os_version, mount_point, is_root_volume):
         """Detach a volume from a guest"""
         LOG.info('Start to detach device from %s' % assigner_id)
-        # Unreserved fcp device
-        self.fcp_mgr.unreserve_fcp(fcp)
         connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
+        # Unreserved fcp device
+        fcp_connections = self.db.get_connections_from_fcp(fcp)
+        if not fcp_connections:
+            self.fcp_mgr.unreserve_fcp(fcp)
         if is_root_volume:
             LOG.info('Detaching device from %s is done.' % assigner_id)
             return
@@ -728,7 +737,7 @@ class FCPVolumeManager(object):
                              target_lun, multipath, os_version, mount_point,
                              is_root_volume)
 
-    def get_volume_connector(self, assigner_id):
+    def get_volume_connector(self, assigner_id, reserve):
         """Get connector information of the instance for attaching to volumes.
 
         Connector information is a dictionary representing the ip of the
@@ -754,6 +763,15 @@ class FCPVolumeManager(object):
             return empty_connector
         wwpns = []
         for fcp_no in fcp_list:
+            if reserve:
+                # Reserve fcp device
+                LOG.info("Reserve fcp device %s", fcp_no)
+                self.db.reserve(fcp_no)
+            elif not reserve and \
+                self.db.get_connections_from_fcp(fcp_no) == 0:
+                # Unreserve fcp device
+                LOG.info("Unreserve fcp device %s", fcp_no)
+                self.db.unreserve(fcp_no)
             wwpn = self.fcp_mgr.get_wwpn(fcp_no)
             if not wwpn:
                 errmsg = "FCP device %s has no available WWPN." % fcp_no
