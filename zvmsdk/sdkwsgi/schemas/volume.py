@@ -55,6 +55,16 @@ get_volume_connector = {
     'type': 'object',
     'properties': {
         'userid': parameter_types.userid_list,
+        'info': {
+            'type': 'object',
+            'properties': {
+                'reserve': parameter_types.boolean,
+            },
+            'required': ['info'],
+            'additionalProperties': False,
+        },
+        'additionalProperties': False,
     },
     'additionalProperties': False,
+
 }
