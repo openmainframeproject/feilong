@@ -295,8 +295,8 @@ stop = {
     'type': 'object',
     'properties': {
         'userid': parameter_types.userid,
-        'timeout': parameter_types.positive_integer,
-        'poll_interval': parameter_types.positive_integer,
+        'timeout': parameter_types.non_negative_integer,
+        'poll_interval': parameter_types.non_negative_integer,
     },
     'additionalProperties': False,
 }
