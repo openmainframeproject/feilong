@@ -355,6 +355,21 @@ function refreshZIPL {
   sed -i '/\/mnt\/ephemeral/d' ${deviceMountPoint}/etc/fstab
   sed -i '/ swap swap /d' ${deviceMountPoint}/etc/fstab
 
+  # Remove stale /etc/multipath/bindings and /etc/multipath/wwids
+  # These files may contain the old info of the captured base vm,
+  # which disrupts the volume bindings of the new vm deployed from above captured image, resulting
+  #  a. mpath name inconsistent between 'df' and 'multipath'
+  #  b. in some scenairo, boot-volume extend partition fail due to 'a'
+  # By removing them, they can be recreated later with correct volume bindings
+  # when multipathd start at vm boot time.
+  inform "Move stale multipath bindings and wwids if any"
+  if [[ -r "${deviceMountPoint}/etc/multipath/bindings" ]]; then
+    mv ${deviceMountPoint}/etc/multipath/bindings ${deviceMountPoint}/etc/multipath/bindings.bak
+  fi
+  if [[ -r "${deviceMountPoint}/etc/multipath/wwids" ]]; then
+    mv ${deviceMountPoint}/etc/multipath/wwids ${deviceMountPoint}/etc/multipath/wwids.bak
+  fi
+
   # Refresh bootmap
   out=`chroot $deviceMountPoint /sbin/zipl 2>&1`
   rc=$?
