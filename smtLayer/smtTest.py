@@ -19,6 +19,7 @@ import argparse
 import datetime
 import os
 import re
+import six
 from six import string_types
 import sys
 import subprocess
@@ -1401,8 +1402,8 @@ def runTest(smt, test):
             if 'output' in e:
                 results['response'] = e.output
             else:
-                results['response'] = ('Exception encountered: %s, ' +
-                    "details: %s" % (type(e).__name__, str(e)))
+                results['response'] = ('Exception encountered: ' +
+                    "details: %s" % six.text_type(e))
             if 'returncode' in e:
                 results['overallRC'] = e.returncode
             else:
@@ -1593,8 +1594,8 @@ def driveTestSet(smt, setId, setToTest):
                 if 'output' in e:
                     out = e.output
                 else:
-                    out = ('Exception encountered: %s, ' +
-                        "details: %s" % (type(e).__name__, str(e)))
+                    out = ('Exception encountered: ' +
+                        "details: %s" % six.text_type(e))
                 if 'returncode' in e:
                     shellRC = e.returncode
                 else:
@@ -1732,8 +1733,8 @@ else:
         if 'output' in e:
             out = e.output
         else:
-            out = ('Exception encountered: %s, ' +
-                "details: %s" % (type(e).__name__, str(e)))
+            out = ('Exception encountered: ' +
+                "details: %s" % six.text_type(e))
         if 'returncode' in e:
             eRC = e.returncode
         else:
