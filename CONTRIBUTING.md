@@ -5,7 +5,7 @@ We welcome contributions to python-zvm-sdk!
 
 ### Repository
 The repository for python-zvm-sdk on GitHub:  
-https://github.com/mfcloud/python-zvm-sdk
+https://github.com/openmainframeproject/python-zvm-sdk
 
 ### Reporting bugs
 If you are a user and you find a bug, please submit a [bug](https://bugs.launchpad.net/python-zvm-sdk). Please try to provide sufficient information for someone else to reproduce the issue. One of the project's maintainers should respond to your issue within 24 hours. If not, please bump the issue and request that it be reviewed.
@@ -18,11 +18,11 @@ We are using the [GerritHub](https://review.gerrithub.io/) process to manage cod
 To work on something, whether a new feature or a bugfix:
   1. Clone python-zvm-sdk locally
   ```
-  git clone https://github.com/mfcloud/python-zvm-sdk.git
+  git clone https://github.com/openmainframeproject/python-zvm-sdk.git
   ```
   2. Add the GerritHub repository as a remote as gerrit
   ```
-  git remote add gerrit ssh://<username>@review.gerrithub.io:29418/mfcloud/python-zvm-sdk
+  git remote add gerrit ssh://<username>@review.gerrithub.io:29418/openmainframeproject/python-zvm-sdk
   ```
   Where <username> is your GerritHub username.
   And, you should add the public key of your workstation into your GerritHub SSH public keys.
