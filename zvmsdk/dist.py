@@ -17,6 +17,7 @@ import abc
 import netaddr
 import os
 import six
+from jinja2 import Environment, FileSystemLoader
 
 from zvmsdk import config
 from zvmsdk import exception
@@ -582,6 +583,22 @@ class LinuxDist(object):
                  'echo -n %s > /etc/hostname\n' % hostname,
                  '/bin/hostname %s\n' % hostname]
         return lines
+
+    def get_template(self, module, template_name):
+        relative_path = module + "/templates"
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        template_file_path = os.path.join(base_path, relative_path,
+                                          template_name)
+        template_file_directory = os.path.dirname(template_file_path)
+        template_loader = FileSystemLoader(searchpath=template_file_directory)
+        env = Environment(loader=template_loader)
+        template = env.get_template(template_name)
+        return template
+
+    def get_extend_partition_cmds(self):
+        template = self.get_template("vmactions", "grow_root_volume.j2")
+        content = template.render()
+        return content
 
 
 class rhel(LinuxDist):

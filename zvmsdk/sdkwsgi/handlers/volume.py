@@ -56,9 +56,15 @@ class VolumeAction(object):
         return info
 
     @validation.query_schema(volume.get_volume_connector)
-    def get_volume_connector(self, req, userid):
-        conn = self.client.send_request('get_volume_connector', userid)
+    def get_volume_connector(self, req, userid, reserve):
+        conn = self.client.send_request('get_volume_connector',
+                                        userid, reserve)
         return conn
+
+    def volume_refresh_bootmap(self, fcpchannel, wwpn, lun, skipzipl):
+        info = self.client.send_request('volume_refresh_bootmap',
+                                        fcpchannel, wwpn, lun, skipzipl)
+        return info
 
 
 def get_action():
@@ -106,13 +112,35 @@ def volume_detach(req):
 
 @util.SdkWsgify
 @tokens.validate
-def get_volume_connector(req):
-    def _get_volume_conn(req, userid):
+def volume_refresh_bootmap(req):
+
+    def _volume_refresh_bootmap(req, fcpchannel, wwpn, lun, skipzipl):
         action = get_action()
-        return action.get_volume_connector(req, userid)
+        return action.volume_refresh_bootmap(fcpchannel, wwpn, lun, skipzipl)
+
+    body = util.extract_json(req.body)
+    info = _volume_refresh_bootmap(req, body['info']['fcpchannel'],
+                                   body['info']['wwpn'], body['info']['lun'],
+                                   body['info'].get('skipzipl', False))
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    req.response.status = util.get_http_code_from_sdk_return(info, default=200)
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def get_volume_connector(req):
+    def _get_volume_conn(req, userid, reserve):
+        action = get_action()
+        return action.get_volume_connector(req, userid, reserve)
 
     userid = util.wsgi_path_item(req.environ, 'userid')
-    conn = _get_volume_conn(req, userid)
+    body = util.extract_json(req.body)
+    reserve = body['info']['reserve']
+
+    conn = _get_volume_conn(req, userid, reserve)
     conn_json = json.dumps(conn)
 
     req.response.content_type = 'application/json'

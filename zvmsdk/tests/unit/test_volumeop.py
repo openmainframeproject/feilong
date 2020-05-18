@@ -95,7 +95,6 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
     @mock.patch.object(shutil, "rmtree")
     @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI._create_file")
     @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
-    # @mock.patch("zvmsdk.dist.LinuxDist.get_volume_attach_configuration_cmds")
     @mock.patch("zvmsdk.dist.rhel7.get_volume_attach_configuration_cmds")
     def test_config_attach_active(self, get_attach_cmds, get_dist,
                                   create_file, rmtree, punch_file):
@@ -109,7 +108,7 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
         mount_point = '/dev/sdz'
         config_file = '/tm/userid1xxx/attach_volume.sh'
         config_file_path = '/tm/userid1xxx/'
-        linuxdist = dist.rhel7
+        linuxdist = dist.rhel7()
         get_dist.return_value = linuxdist
         create_file.return_value = (config_file, config_file_path)
         rmtree.return_value = None
@@ -126,7 +125,6 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
     @mock.patch.object(shutil, "rmtree")
     @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI._create_file")
     @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
-    # @mock.patch("zvmsdk.dist.LinuxDist.get_volume_detach_configuration_cmds")
     @mock.patch("zvmsdk.dist.rhel7.get_volume_detach_configuration_cmds")
     def test_config_detach_active(self, get_detach_cmds, get_dist,
                                   create_file, rmtree, punch_file):
@@ -140,7 +138,7 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
         mount_point = '/dev/sdz'
         config_file = '/tm/userid1xxx/attach_volume.sh'
         config_file_path = '/tm/userid1xxx/'
-        linuxdist = dist.rhel7
+        linuxdist = dist.rhel7()
         get_dist.return_value = linuxdist
         create_file.return_value = (config_file, config_file_path)
         rmtree.return_value = None
@@ -227,15 +225,19 @@ class TestFCPManager(base.SDKTestCase):
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     def test_init_fcp_pool(self, mock_get):
         fcp_list = ['opnstk1: FCP device number: B83D',
-            'opnstk1:   Status: Free',
-            'opnstk1:   NPIV world wide port number: 20076D8500005182',
-            'opnstk1:   Channel path ID: 59',
-            'opnstk1:   Physical world wide port number: 20076D8500005181',
-            'opnstk1: FCP device number: B83E',
-            'opnstk1:   Status: Active',
-            'opnstk1:   NPIV world wide port number: 20076D8500005183',
-            'opnstk1:   Channel path ID: 50',
-            'opnstk1:   Physical world wide port number: 20076D8500005185']
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005182',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005181',
+                    'opnstk1: FCP device number: B83E',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005183',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005185']
 
         mock_get.return_value = fcp_list
         fake_userid = 'fakeuser'
@@ -265,35 +267,47 @@ class TestFCPManager(base.SDKTestCase):
     def test_sync_db_fcp_list(self, mock_add, mock_report, mock_get):
 
         fcp_list = ['opnstk1: FCP device number: B83D',
-            'opnstk1:   Status: Free',
-            'opnstk1:   NPIV world wide port number: 20076D8500005182',
-            'opnstk1:   Channel path ID: 59',
-            'opnstk1:   Physical world wide port number: 20076D8500005181',
-            'opnstk1: FCP device number: B83E',
-            'opnstk1:   Status: Active',
-            'opnstk1:   NPIV world wide port number: 20076D8500005183',
-            'opnstk1:   Channel path ID: 50',
-            'opnstk1:   Physical world wide port number: 20076D8500005185',
-            'opnstk1: FCP device number: B83F',
-            'opnstk1:   Status: Active',
-            'opnstk1:   NPIV world wide port number: 20076D8500005183',
-            'opnstk1:   Channel path ID: 50',
-            'opnstk1:   Physical world wide port number: 20076D8500005185',
-            'opnstk1: FCP device number: C83D',
-            'opnstk1:   Status: Active',
-            'opnstk1:   NPIV world wide port number: 20076D8500005183',
-            'opnstk1:   Channel path ID: 50',
-            'opnstk1:   Physical world wide port number: 20076D8500005185',
-            'opnstk1: FCP device number: C83E',
-            'opnstk1:   Status: Active',
-            'opnstk1:   NPIV world wide port number: 20076D8500005183',
-            'opnstk1:   Channel path ID: 50',
-            'opnstk1:   Physical world wide port number: 20076D8500005185',
-            'opnstk1: FCP device number: C83F',
-            'opnstk1:   Status: Active',
-            'opnstk1:   NPIV world wide port number: 20076D8500005187',
-            'opnstk1:   Channel path ID: 50',
-            'opnstk1:   Physical world wide port number: 20076D8500005188']
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005182',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005181',
+                    'opnstk1: FCP device number: B83E',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005183',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005185',
+                    'opnstk1: FCP device number: B83F',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005183',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005185',
+                    'opnstk1: FCP device number: C83D',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005183',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005185',
+                    'opnstk1: FCP device number: C83E',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005183',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005185',
+                    'opnstk1: FCP device number: C83F',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005187',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005188']
 
         mock_get.return_value = fcp_list
         fake_userid = 'fakeuser'
@@ -330,11 +344,11 @@ class TestFCPManager(base.SDKTestCase):
 
         # find FCP for user and FCP not exist, should allocate them
         try:
-            flag1 = self.fcpops.add_fcp_for_assigner(2, 'a83c', 'dummy1')
-            flag2 = self.fcpops.add_fcp_for_assigner(2, 'a83d', 'dummy2')
+            flag1 = self.fcpops.add_fcp_for_assigner('a83c', 'dummy1')
+            flag2 = self.fcpops.add_fcp_for_assigner('a83d', 'dummy2')
 
-            flag1 = self.fcpops.add_fcp_for_assigner(2, 'a83e', 'dummy1')
-            flag2 = self.fcpops.add_fcp_for_assigner(2, 'a83f', 'dummy2')
+            flag1 = self.fcpops.add_fcp_for_assigner('a83e', 'dummy1')
+            flag2 = self.fcpops.add_fcp_for_assigner('a83f', 'dummy2')
 
             self.assertEqual(True, flag1)
             self.assertEqual(True, flag2)
@@ -396,7 +410,7 @@ class TestFCPManager(base.SDKTestCase):
             self.fcpops.increase_fcp_usage('c83c', 'user1')
 
             fcp_list = self.db_op.get_from_fcp('c83c')
-            expected = [(u'c83c', u'', 1, 1, 0, u'')]
+            expected = [(u'c83c', u'user1', 1, 1, 0, u'')]
             self.assertEqual(expected, fcp_list)
 
             # After usage, we need find c83d now
@@ -408,19 +422,10 @@ class TestFCPManager(base.SDKTestCase):
 
             self.fcpops.increase_fcp_usage('c83c', 'user1')
             fcp_list = self.db_op.get_from_fcp('c83c')
-            expected = [(u'c83c', u'', 2, 1, 0, u'')]
+            expected = [(u'c83c', u'user1', 2, 1, 0, u'')]
             self.assertEqual(expected, fcp_list)
 
             self.fcpops.decrease_fcp_usage('c83c', 'user1')
-            fcp_list = self.db_op.get_from_fcp('c83c')
-            expected = [(u'c83c', u'', 1, 1, 0, u'')]
-            self.assertEqual(expected, fcp_list)
-
-            # add_fcp_for_assigner is designed for multipath
-            # so if multipath is enabled(path_count >= 2),
-            # add_fcp_for_assinger used on an instance exsited in DB,
-            # will not increase the connections
-            self.fcpops.add_fcp_for_assigner(2, 'c83c', 'user1')
             fcp_list = self.db_op.get_from_fcp('c83c')
             expected = [(u'c83c', u'user1', 1, 1, 0, u'')]
             self.assertEqual(expected, fcp_list)
@@ -479,10 +484,12 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     def test_get_volume_connector(self, get_fcp_info, get_host_info):
         fcp_info = ['fakehost: FCP device number: B83C',
-            'fakehost:   Status: Free',
-            'fakehost:   NPIV world wide port number: 2007123400001234',
-            'fakehost:   Channel path ID: 59',
-            'fakehost:   Physical world wide port number: 20076D8500005181']
+                    'fakehost:   Status: Free',
+                    'fakehost:   NPIV world wide port number: '
+                    '2007123400001234',
+                    'fakehost:   Channel path ID: 59',
+                    'fakehost:   Physical world wide port number: '
+                    '20076D8500005181']
 
         get_fcp_info.return_value = fcp_info
         get_host_info.return_value = {'zvm_host': 'fakehost'}
@@ -492,7 +499,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
         self.db_op.assign('b83c', 'fakeuser')
 
         try:
-            connections = self.volumeops.get_volume_connector('fakeuser')
+            connections = self.volumeops.get_volume_connector('fakeuser',
+                                                              False)
             expected = {'zvm_fcp': ['b83c'],
                         'wwpns': ['2007123400001234'],
                         'host': 'fakehost'}
@@ -503,6 +511,14 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.assertEqual(expected, fcp_list)
         finally:
             self.db_op.delete('b83c')
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.volume_refresh_bootmap")
+    def test_volume_refresh_bootmap(self, mock_volume_refresh_bootmap):
+        fcpchannels = ['5d71']
+        wwpns = ['5005076802100c1b', '5005076802200c1b']
+        lun = '0000000000000000'
+        res = self.volumeops.volume_refresh_bootmap(fcpchannels, wwpns, lun)
+        mock_volume_refresh_bootmap.assert_has_calls(res)
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")
@@ -522,15 +538,19 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
         fcp_list = ['opnstk1: FCP device number: C123',
-            'opnstk1:   Status: Free',
-            'opnstk1:   NPIV world wide port number: 20076D8500005182',
-            'opnstk1:   Channel path ID: 59',
-            'opnstk1:   Physical world wide port number: 20076D8500005181',
-            'opnstk1: FCP device number: D123',
-            'opnstk1:   Status: Active',
-            'opnstk1:   NPIV world wide port number: 20076D8500005183',
-            'opnstk1:   Channel path ID: 50',
-            'opnstk1:   Physical world wide port number: 20076D8500005185']
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005182',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005181',
+                    'opnstk1: FCP device number: D123',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005183',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005185']
         mock_fcp_info.return_value = fcp_list
         self.db_op = database.FCPDbOperator()
         wwpns = ['20076D8500005182', '20076D8500005183']
@@ -557,6 +577,53 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.utils.check_userid_exist")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disk")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
+    def test_root_volume_attach(self, mock_dedicate, mock_add_disk, mock_check,
+                                mock_fcp_info):
+
+        connection_info = {'platform': 's390x',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': 'false',
+                           'target_wwpn': ['20076D8500005182',
+                                           '20076D8500005183'],
+                           'target_lun': '2222',
+                           'zvm_fcp': ['c123', 'd123'],
+                           'mount_point': '/dev/sdz',
+                           'assigner_id': 'user1',
+                           'is_root_volume': True}
+        fcp_list = ['opnstk1: FCP device number: C123',
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005182',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005181',
+                    'opnstk1: FCP device number: D123',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005183',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005185']
+        mock_fcp_info.return_value = fcp_list
+        base.set_conf('volume', 'fcp_list', 'c123')
+        base.set_conf('volume', 'fcp_list', 'd123')
+        self.db_op = database.FCPDbOperator()
+        self.db_op.new('c123', 0)
+        self.db_op.new('d123', 1)
+
+        try:
+            self.volumeops.attach(connection_info)
+            self.assertFalse(mock_dedicate.called)
+            self.assertFalse(mock_add_disk.called)
+        finally:
+            self.db_op.delete('c123')
+            self.db_op.delete('d123')
+
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disk")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
     def test_attach_no_dedicate(self, mock_dedicate, mock_add_disk,
                                 mock_check, mock_fcp_info):
 
@@ -571,15 +638,19 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
         fcp_list = ['opnstk1: FCP device number: C123',
-            'opnstk1:   Status: Free',
-            'opnstk1:   NPIV world wide port number: 20076D8500005182',
-            'opnstk1:   Channel path ID: 59',
-            'opnstk1:   Physical world wide port number: 20076D8500005181',
-            'opnstk1: FCP device number: D123',
-            'opnstk1:   Status: Active',
-            'opnstk1:   NPIV world wide port number: 20076D8500005183',
-            'opnstk1:   Channel path ID: 50',
-            'opnstk1:   Physical world wide port number: 20076D8500005185']
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005182',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005181',
+                    'opnstk1: FCP device number: D123',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005183',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005185']
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
         wwpns = ['20076D8500005182', '20076D8500005183']
@@ -613,12 +684,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")
-    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._rollback_dedicated_fcp")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._dedicate_fcp")
-    @mock.patch("zvmsdk.volumeop.FCPManager.decrease_fcp_usage")
-    @mock.patch("zvmsdk.volumeop.FCPManager.increase_fcp_usage")
-    def test_attach_rollback(self, mock_increase, mock_decrease,
-                             mock_dedicate, mock_undedicate,
+    @mock.patch("zvmsdk.volumeop.FCPManager.add_fcp_for_assigner")
+    def test_attach_rollback(self, mock_fcp_assigner,
+                             mock_dedicate, mock_rollback,
                              mock_check, mock_fcp_info):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
@@ -630,24 +700,26 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
         fcp_list = ['opnstk1: FCP device number: E83C',
-            'opnstk1:   Status: Free',
-            'opnstk1:   NPIV world wide port number: 20076D8500005182',
-            'opnstk1:   Channel path ID: 59',
-            'opnstk1:   Physical world wide port number: 20076D8500005181']
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005182',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005181']
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
-        mock_increase.return_value = True
+        mock_fcp_assigner.return_value = True
         results = {'rs': 0, 'errno': 0, 'strError': '',
                    'overallRC': 1, 'logEntries': [], 'rc': 0,
                    'response': ['fake response']}
         mock_dedicate.side_effect = exception.SDKSMTRequestFailed(
             results, 'fake error')
-        # return value of decreate must bigger than 1
-        mock_decrease.return_value = 0
         self.assertRaises(exception.SDKBaseException,
                           self.volumeops.attach,
                           connection_info)
-        mock_undedicate.assert_called_once_with('e83c', 'USER1')
+        calls = [mock.call(['e83c'], 'USER1'),
+                 mock.call([], 'USER1', all_fcp_list=['e83c'])]
+        mock_rollback.assert_has_calls(calls)
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")
@@ -668,10 +740,12 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
         fcp_list = ['opnstk1: FCP device number: F83C',
-            'opnstk1:   Status: Free',
-            'opnstk1:   NPIV world wide port number: 20076D8500005182',
-            'opnstk1:   Channel path ID: 59',
-            'opnstk1:   Physical world wide port number: 20076D8500005181']
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005182',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005181']
         mock_fcp_info.return_value = fcp_list
         # this return does not matter
         mock_check.return_value = True
@@ -684,11 +758,6 @@ class TestFCPVolumeManager(base.SDKTestCase):
         self.assertRaises(exception.SDKBaseException,
                           self.volumeops.detach,
                           connection_info)
-        mock_increase.assert_called_once_with('f83c', 'USER1')
-        mock_add_disk.assert_called_once_with('f83c', 'USER1',
-                                              ['20076D8500005182'], '2222',
-                                              False, 'rhel7', '/dev/sdz',
-                                              True)
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")
@@ -708,15 +777,19 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'mount_point': '/dev/sdz',
                            'assigner_id': 'user1'}
         fcp_list = ['opnstk1: FCP device number: 183C',
-            'opnstk1:   Status: Free',
-            'opnstk1:   NPIV world wide port number: 20076D8500005182',
-            'opnstk1:   Channel path ID: 59',
-            'opnstk1:   Physical world wide port number: 20076D8500005181',
-            'opnstk1: FCP device number: 283C',
-            'opnstk1:   Status: Active',
-            'opnstk1:   NPIV world wide port number: 20076D8500005183',
-            'opnstk1:   Channel path ID: 50',
-            'opnstk1:   Physical world wide port number: 20076D8500005185']
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005182',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005181',
+                    'opnstk1: FCP device number: 283C',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005183',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005185']
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
         wwpns = ['20076D8500005182', '20076D8500005183']
@@ -740,6 +813,62 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                                          wwpns,
                                                          '2222', True, 'rhel7',
                                                          '/dev/sdz', 0)])
+            res1 = self.db_op.is_reserved('183c')
+            res2 = self.db_op.is_reserved('283c')
+            self.assertFalse(res1)
+            self.assertFalse(res2)
+        finally:
+            self.db_op.delete('183c')
+            self.db_op.delete('283c')
+
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disk")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
+    def test_root_volume_detach(self, mock_undedicate, mock_remove_disk,
+                                mock_check, mock_fcp_info):
+
+        connection_info = {'platform': 's390x',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': 'True',
+                           'target_wwpn': ['20076D8500005182',
+                                           '20076D8500005183'],
+                           'target_lun': '2222',
+                           'zvm_fcp': ['183c', '283c'],
+                           'mount_point': '/dev/sdz',
+                           'assigner_id': 'user1',
+                           'is_root_volume': True}
+        fcp_list = ['opnstk1: FCP device number: 183C',
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005182',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005181',
+                    'opnstk1: FCP device number: 283C',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005183',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005185']
+        mock_fcp_info.return_value = fcp_list
+        mock_check.return_value = True
+        base.set_conf('volume', 'fcp_list', '183c')
+        base.set_conf('volume', 'fcp_list', '283c')
+        self.db_op = database.FCPDbOperator()
+        self.db_op.new('183c', 0)
+        self.db_op.assign('183c', 'USER1')
+
+        self.db_op.new('283c', 1)
+        # assign will set the connections to 1
+        self.db_op.assign('283c', 'USER1')
+
+        try:
+            self.volumeops.detach(connection_info)
+            self.assertFalse(mock_undedicate.called)
+            self.assertFalse(mock_remove_disk.called)
         finally:
             self.db_op.delete('183c')
             self.db_op.delete('283c')

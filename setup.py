@@ -25,10 +25,15 @@ setuptools.setup(
     author='IBM',
     description='z/VM cloud management library in Python',
     long_description=open('README.md').read(),
-    url='https://github.com/mfcloud/python-zvm-sdk',
+    url='https://github.com/openmainframeproject/python-zvm-sdk',
     keywords='zvm cloud library',
     install_requires=open('requirements.txt').read(),
     packages=setuptools.find_packages(exclude=["zvmsdk.tests.fvt*"]),
+    package_data={
+        'zvmsdk': [
+            'vmactions/templates/grow_root_volume.j2'
+        ]
+    },
     classifiers=[
         "Intended Audience :: Information Technology",
         "Intended Audience :: System Administrators",

@@ -303,6 +303,7 @@ Attach volume to a vm in z/VM
   - os_version: guest_os_version
   - multipath: guest_multipath
   - mount_point: mount_point
+  - is_root_volume: root_volume
 
 
 * Request sample:
@@ -338,6 +339,7 @@ Detach volume from a vm in z/VM
   - os_version: guest_os_version
   - multipath: guest_multipath
   - mount_point: mount_point
+  - is_root_volume: root_volume
 
 
 * Request sample:
@@ -352,6 +354,34 @@ Detach volume from a vm in z/VM
 * Response contents:
 
   No Response
+
+Refresh Volume Bootmap Info
+---------------------------
+
+**PUT /volumes/volume_refresh_bootmap**
+
+Refresh a volume's bootmap info.
+
+.. restapi_parameters:: parameters.yaml
+
+  - fcpchannel: fcp_list
+  - wwpn: wwpn_list
+  - lun: lun
+  - skipzipl: skipzipl
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_refresh_bootmap.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_refresh_bootmap_response.tpl
+   :language: javascript
 
 Get Volume Connector
 --------------------
@@ -516,6 +546,37 @@ Delete a guest.
   No Response
 
 
+Get Guest power state from hypervisor
+--------------------------------------
+
+**GET /guests/{userid}/power_state_real**
+
+Get power state of the guest from hypervisor directly,
+
+no matter the guest is in zcc database or not.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: power_status_guest
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_power_state_real.tpl
+   :language: javascript
+
+
 Get Guest info
 --------------
 
@@ -549,6 +610,71 @@ Get running information of guest.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_info.tpl
    :language: javascript
 
+
+Get Guest user direct
+---------------------
+
+**GET /guests/{userid}/user_direct**
+
+Get the user directory info of the given userid from hypervisor.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: user_direct_guest
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_user_direct.tpl
+   :language: javascript
+
+
+Get Guest adapters info
+-----------------------
+
+**GET /guests/{userid}/adapters**
+
+Get adapters information of running guest.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: adapters_info_output
+  - lan_owner: guest_userid
+  - lan_name: vswitch_name
+  - adapter_address: vdev_number
+  - adapter_status: adapter_status
+  - mac_address: mac_address
+  - mac_ip_address: ip_address
+  - mac_ip_version: ip_version
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_adapters_info.tpl
+   :language: javascript
+
 Create Guest nic
 ----------------
 
@@ -562,7 +688,7 @@ Create a virtual nic on giving guest.
 
   - userid: guest_userid
   - nic: nic_set_info
-  - vdev: vdev_number
+  - vdev: vdev_number_orNone
   - nic_id: nic_identifier
   - mac_addr: mac_address
   - active: active_flag
@@ -591,7 +717,7 @@ Create one or more network interfaces on giving guest.
 
   - userid: guest_userid
   - interface: network_interface_info
-  - os_version: guest_os_version
+  - os_version: guest_os_version_all
   - guest_networks: guest_networks_list
   - active: active_flag
 
@@ -888,6 +1014,7 @@ Register guest to be managed by z/VM Cloud Connector.
   - action: action_register_guest
   - meta: guest_register_meta
   - net_set: guest_register_net_set  
+  - port: guest_register_port_macs
 
 * Request sample:
 
@@ -1149,6 +1276,30 @@ Capture guest
 
 * Response contents:
 
+Grow root volume of guest
+-------------------------
+
+**POST /guests/{userid}/action**
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - action: action_grow_root_volume_guest
+  - os_version: guest_os_version
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_grow_root_volume_req.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
 Get Guest power state
 ---------------------
 
@@ -1231,6 +1382,34 @@ Delete Guest nic
 
 Host
 ====
+
+Get guests list, info from host (hypervisor) running on.
+
+Get Guests List
+---------------
+
+**GET /host/guests**
+
+List names of all the guests on the host.
+
+* Request:
+
+  None
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: guest_list
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_get_guest_list.tpl
+   :language: javascript
 
 Get info from host (hypervisor) running on.
 
@@ -1318,7 +1497,7 @@ Get the list of image info in image repository.
 
   - output: image_info
   - imagename: image_name
-  - imageosdistro: guest_os_version
+  - imageosdistro: guest_os_version_all
   - md5sum: image_md5sum
   - disk_size_units: root_disk_size_image
   - image_size_in_bytes: physical_disk_size_image

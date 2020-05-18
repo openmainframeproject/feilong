@@ -199,6 +199,54 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_info(userid)
 
+    def guest_get_power_state_real(self, userid):
+        """Returns power state of a virtual machine from hypervisor."""
+        action = "get power state of guest '%s' from hypervisor" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_power_state(userid)
+
+    def guest_get_adapters_info(self, userid):
+        """Get the network information of a virtual machine.
+        this userid may not in zCC.
+
+        :param str userid: the id of the virtual machine
+
+        :returns: Dictionary contains:
+                  ip: (str) the IP address of the virtual machine
+                  mac: (str) the MAC address of the virtual machine
+        """
+        action = "get network info of guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_adapters_info(userid)
+
+    def guest_get_user_direct(self, userid):
+        """Get user direct of the specified guest vm
+
+        :param str userid: the user id of the guest vm
+        :returns: Dictionary describing user direct and check info result
+        :rtype: dict
+        """
+        action = "get the user direct of guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            inst_info = self._vmops.get_definition_info(userid)
+            user_direct = inst_info['user_direct']
+            item = -1
+            new_info = ""
+            for info in user_direct:
+                item += 1
+                # replace password with ******
+                if info.startswith('USER') or info.startswith('IDENTITY'):
+                    fields = info.split()
+                    for i in range(len(fields)):
+                        if i != 2:
+                            new_info += (fields[i] + ' ')
+                        else:
+                            new_info += ('******' + ' ')
+                    user_direct[item] = new_info
+                    break
+            inst_info['user_direct'] = user_direct
+            return inst_info
+
     def guest_list(self):
         """list names of all the VMs on this host.
 
@@ -216,6 +264,14 @@ class SDKAPI(object):
         action = "get host information"
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._hostops.get_info()
+
+    def host_get_guest_list(self):
+        """list names of all the VMs on the host.
+        :returns: names of the vm on this hypervisor, in a list.
+        """
+        action = "list guests on the host"
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._hostops.guest_list()
 
     def host_diskpool_get_info(self, disk_pool=None):
         """ Retrieve diskpool information.
@@ -282,7 +338,8 @@ class SDKAPI(object):
                a dictionary to describe the image info, such as md5sum,
                os_version. For example:
                {'os_version': 'rhel6.2',
-               'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5'}
+               'md5sum': ' 46f199c336eab1e35a72fa6b5f6f11f5',
+               'disk_type': 'DASD'}
         :param string remote_host:
                 if the image url schema is file, the remote_host is used to
                 indicate where the image comes from, the format is username@IP
@@ -326,6 +383,7 @@ class SDKAPI(object):
         'image_path': the image_path after exported
         'os_version': the os version of the exported image
         'md5sum': the md5sum of the original image
+        'comments': the comments of the original image
         }
         """
         try:
@@ -434,47 +492,125 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_definition_info(userid, **kwargs)
 
-    def guest_register(self, userid, meta, net_set):
-        """DB operation for migrate vm from another z/VM host in same SSI
+    """Parse the nics' info from the user directory
+    :param user_direct: (str) the user directory info to be parsed
+    """
+    def _parse_nic_info(self, user_direct):
+        nics_info = {}
+        for nic_info in user_direct:
+            if nic_info.startswith('NICDEF'):
+                split_info = nic_info.split()
+                nic_id = split_info[1].strip()
+                count = 2
+                one_nic = nics_info.get(nic_id, {})
+                while count < len(split_info):
+                    if split_info[count] == 'LAN':
+                        one_nic['vswitch'] = split_info[count + 2].strip()
+                        count += 3
+                        continue
+                    elif split_info[count] == 'MACID':
+                        one_nic['mac'] = split_info[count + 1].strip()
+                        count += 2
+                        continue
+                    elif split_info[count] == 'VLAN':
+                        one_nic['vid'] = split_info[count + 1].strip()
+                        count += 2
+                        continue
+                    else:
+                        count += 1
+
+                nics_info[nic_id] = one_nic
+
+        return nics_info
+
+    def guest_register(self, userid, meta, net_set, port_macs=None):
+        """Register vm by inserting or updating DB for e.g. migration and onboarding
         :param userid: (str) the userid of the vm to be relocated or tested
         :param meta: (str) the metadata of the vm to be relocated or tested
         :param net_set: (str) the net_set of the vm, default is 1.
+        :param port_macs: (dir) the virtual interface port id maps with mac id
+                     Format: { macid1 : portid1, macid2 : portid2}.
+                     For example,
+                     {
+                       'EF5091':'6e2ecc4f-14a2-4f33-9f12-5ac4a42f97e7',
+                       '69FCF1':'389dee5e-7b03-405c-b1e8-7c9c235d1425'
+                     }
         """
+        if port_macs is not None and not isinstance(port_macs, dict):
+            msg = ('Invalid input parameter port_macs, expect dict')
+            LOG.error(msg)
+            raise exception.SDKInvalidInputFormat(msg)
+
         userid = userid.upper()
         if not zvmutils.check_userid_exist(userid):
             LOG.error("User directory '%s' does not exist." % userid)
             raise exception.SDKObjectNotExistError(
                     obj_desc=("Guest '%s'" % userid), modID='guest')
         else:
-            action = "list all guests in database which has been migrated."
+            action = "query the guest in database."
             with zvmutils.log_and_reraise_sdkbase_error(action):
-                guests = self._GuestDbOperator.get_migrated_guest_list()
-            if userid in str(guests):
-                """change comments for vm"""
-                comments = self._GuestDbOperator.get_comments_by_userid(
+                guest = self._GuestDbOperator.get_guest_by_userid(userid)
+            if guest is not None:
+                # The below handling is for migration
+                action = "list all guests in database which has been migrated."
+                with zvmutils.log_and_reraise_sdkbase_error(action):
+                    guests = self._GuestDbOperator.get_migrated_guest_list()
+                if userid in str(guests):
+                    """change comments for vm"""
+                    comments = self._GuestDbOperator.get_comments_by_userid(
                                                                     userid)
-                comments['migrated'] = 0
-                action = "update guest '%s' in database" % userid
-                with zvmutils.log_and_reraise_sdkbase_error(action):
-                    self._GuestDbOperator.update_guest_by_userid(userid,
+                    comments['migrated'] = 0
+                    action = "update guest '%s' in database" % userid
+                    with zvmutils.log_and_reraise_sdkbase_error(action):
+                        self._GuestDbOperator.update_guest_by_userid(userid,
                                                     comments=comments)
-            else:
-                """add one record for new vm"""
-                action = "add guest '%s' to database" % userid
-                with zvmutils.log_and_reraise_sdkbase_error(action):
-                    self._GuestDbOperator.add_guest_migrated(userid, meta,
+                    LOG.info("Guest %s comments updated." % userid)
+                # We just return no matter onboarding or migration
+                # since the guest exists
+                return
+
+            # add one record for new vm for both onboarding and migration,
+            # and even others later.
+            action = "add guest '%s' to database" % userid
+            with zvmutils.log_and_reraise_sdkbase_error(action):
+                self._GuestDbOperator.add_guest_registered(userid, meta,
                                                              net_set)
-                action = "add switches of guest '%s' to database" % userid
-                info = self._vmops.get_definition_info(userid)
-                user_direct = info['user_direct']
-                for nic_info in user_direct:
-                    if nic_info.startswith('NICDEF'):
-                        nic_list = nic_info.split()
-                        interface = nic_list[1]
-                        switch = nic_list[6]
-                        with zvmutils.log_and_reraise_sdkbase_error(action):
-                            self._NetworkDbOperator.switch_add_record_migrated(
-                                userid, interface, switch)
+
+            # We need to query and add vswitch to the database.
+            # The result got by get_definition_info is like:
+            # USER ZSJC002F LBYONLY 4096m 64G G
+            # INCLUDE ZCCDFLT
+            # COMMAND DEF STOR RESERVED 61440M
+            # CPU 00 BASE
+            # IPL 0100
+            # LOGONBY IAASADM
+            # MACHINE ESA 32
+            # NICDEF 1000 TYPE QDIO LAN SYSTEM VSC1159B DEVICES 3 MACID EF5091
+            # NICDEF 1000 VLAN 8
+            # NICDEF 1003 TYPE QDIO LAN SYSTEM VSC1159B DEVICES 3 MACID 69FCF1
+            # NICDEF 1003 VLAN 798
+            # MDISK 0100 3390 0001 14564 IAS10D MR
+            action = "add switches of guest '%s' to database" % userid
+            info = self._vmops.get_definition_info(userid)
+            user_direct = info['user_direct']
+            nics_info = self._parse_nic_info(user_direct)
+            for key in nics_info:
+                interface = key
+                switch = nics_info[key]['vswitch']
+                port = None
+                if port_macs is not None:
+                    if 'mac' in nics_info[key].keys():
+                        mac = nics_info[key]['mac']
+                        if mac in port_macs.keys():
+                            port = port_macs[mac]
+                    if port is None:
+                        LOG.warning("Port not found for nic %s, %s." %
+                                    (key, port_macs))
+                    else:
+                        LOG.info("Port found for nic %s." % key)
+                with zvmutils.log_and_reraise_sdkbase_error(action):
+                    self._NetworkDbOperator.switch_add_record(
+                                userid, interface, port, switch)
             LOG.info("Guest %s registered." % userid)
 
     # Deregister the guest (not delete), this function has no relationship with
@@ -653,9 +789,10 @@ class SDKAPI(object):
                 # 'format' value check
                 if ('format' in disk.keys()) and (disk['format'].lower() not in
                                                   ('ext2', 'ext3', 'ext4',
-                                                   'xfs', 'none')):
+                                                  'swap', 'xfs', 'none')):
                     errmsg = ("Invalid disk_pool input, supported 'format' "
-                              "includes 'ext2', 'ext3', 'ext4', 'xfs', 'none'")
+                              "includes 'ext2', 'ext3', 'ext4', 'xfs', "
+                              "'swap', 'none'")
                     LOG.error(errmsg)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
 
@@ -1127,6 +1264,20 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.guest_config_minidisks(userid, disk_info)
 
+    @check_guest_exist()
+    def guest_grow_root_volume(self, userid, os_version):
+        """ Punch script to guest to grow root partition and extend
+            root file system.
+            Note:
+            1. Only multipath SCSI disk is supported.
+            2. Only one partition is supported.
+            3. xfs file system is not supported.
+
+        :param str userid: the user id of the vm
+        :param str os_version: operating system version of the guest
+        """
+        return self._vmops.guest_grow_root_volume(userid, os_version)
+
     def vswitch_set(self, vswitch_name, **kwargs):
         """Change the configuration of an existing virtual switch
 
@@ -1272,7 +1423,7 @@ class SDKAPI(object):
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
 
-    def get_volume_connector(self, userid):
+    def get_volume_connector(self, userid, reserve=False):
         """Get connector information of the guest for attaching to volumes.
         This API is for Openstack Cinder driver only now.
 
@@ -1288,8 +1439,9 @@ class SDKAPI(object):
         This information will be used by IBM storwize FC driver in Cinder.
 
         :param str userid: the user id of the guest
+        :param boolean reserve: the flag to reserve FCP device
         """
-        return self._volumeop.get_volume_connector(userid)
+        return self._volumeop.get_volume_connector(userid, reserve)
 
     def volume_attach(self, connection_info):
         """ Attach a volume to a guest. It's prerequisite to active multipath
@@ -1315,6 +1467,17 @@ class SDKAPI(object):
                     to work properly.
         """
         self._volumeop.attach_volume_to_instance(connection_info)
+
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, skipzipl=False):
+        """ Refresh a volume's bootmap info.
+
+        :param list of fcpchannels
+        :param list of wwpns
+        :param string lun
+        :param boolean skipzipl: whether ship zipl, only return physical wwpns
+        """
+        return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun,
+                                                     skipzipl=skipzipl)
 
     def volume_detach(self, connection_info):
         """ Detach a volume from a guest. It's prerequisite to active multipath

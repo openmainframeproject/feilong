@@ -103,6 +103,10 @@ def get_fcp_conn():
     _DBLOCK_FCP.acquire()
     try:
         yield _FCP_CONN
+    except exception.SDKBaseException as err:
+        msg = "Got SDK exception in FCP DB operation: %s" % six.text_type(err)
+        LOG.error(msg)
+        raise
     except Exception as err:
         msg = "Execute SQL statements error: %s" % six.text_type(err)
         LOG.error(msg)
@@ -271,7 +275,7 @@ class NetworkDbOperator(object):
 class FCPDbOperator(object):
 
     def __init__(self):
-        self._module_id = 'FCP'
+        self._module_id = 'volume'
         self._initialize_table()
 
     def _initialize_table(self):
@@ -346,11 +350,16 @@ class FCPDbOperator(object):
                          "(?, ?, ?, ?, ?, ?)",
                          (fcp, '', 0, 0, path, ''))
 
-    def assign(self, fcp, assigner_id):
+    def assign(self, fcp, assigner_id, update_connections=True):
         with get_fcp_conn() as conn:
-            conn.execute("UPDATE fcp SET assigner_id=?, connections=? "
-                         "WHERE fcp_id=?",
-                         (assigner_id, 1, fcp))
+            if update_connections:
+                conn.execute("UPDATE fcp SET assigner_id=?, connections=? "
+                             "WHERE fcp_id=?",
+                             (assigner_id, 1, fcp))
+            else:
+                conn.execute("UPDATE fcp SET assigner_id=? "
+                             "WHERE fcp_id=?",
+                             (assigner_id, fcp))
 
     def delete(self, fcp):
         with get_fcp_conn() as conn:
@@ -424,7 +433,15 @@ class FCPDbOperator(object):
         with get_fcp_conn() as conn:
             result = conn.execute("SELECT connections FROM fcp WHERE "
                                   "fcp_id=?", (fcp,))
-            connections = result.fetchall()
+            fcp_info = result.fetchall()
+            if not fcp_info:
+                msg = 'FCP with id: %s does not exist in DB.' % fcp
+                LOG.error(msg)
+                obj_desc = "FCP with id: %s" % fcp
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
+            connections = fcp_info[0][0]
+
         return connections
 
     def get_from_assigner(self, assigner_id):
@@ -452,6 +469,14 @@ class FCPDbOperator(object):
 
         return fcp_list
 
+    def get_path_count(self):
+        with get_fcp_conn() as conn:
+            # Get distinct path list in DB
+            result = conn.execute("SELECT DISTINCT path FROM fcp")
+            path_list = result.fetchall()
+
+        return len(path_list)
+
     def get_fcp_pair(self):
         fcp_list = []
         with get_fcp_conn() as conn:
@@ -464,9 +489,12 @@ class FCPDbOperator(object):
                                       "and reserved=0 and path=%s order by "
                                       "fcp_id" % no)
                 fcps = result.fetchall()
+                if not fcps:
+                    break
                 fcp_list.append(fcps[0][0])
-        if not fcp_list:
-            LOG.warning("Warning: Not enough FCPs in fcp pool")
+        if len(fcp_list) < len(path_list):
+            LOG.error("Not enough FCPs in fcp pool")
+            return []
         return fcp_list
 
     def get_all_free_unreserved(self):
@@ -604,9 +632,9 @@ class GuestDbOperator(object):
                                                        modID=self._module_id)
         return guest
 
-    def add_guest_migrated(self, userid, meta, net_set,
+    def add_guest_registered(self, userid, meta, net_set,
                              comments=None):
-        # Add guest which is migrated from other host.
+        # Add guest which is migrated from other host or onboarded.
         guest_id = str(uuid.uuid4())
         with get_guest_conn() as conn:
             conn.execute(

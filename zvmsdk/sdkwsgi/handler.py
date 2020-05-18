@@ -57,6 +57,9 @@ ROUTE_LIST = (
     ('/volumes/conn/{userid}', {
         'GET': volume.get_volume_connector,
     }),
+    ('/volumes/volume_refresh_bootmap', {
+        'PUT': volume.volume_refresh_bootmap,
+    }),
     ('/guests/{userid}', {
         'DELETE': guest.guest_delete,
         'GET': guest.guest_get,
@@ -64,8 +67,17 @@ ROUTE_LIST = (
     ('/guests/{userid}/action', {
         'POST': guest.guest_action,
     }),
+    ('/guests/{userid}/power_state_real', {
+        'GET': guest.guest_get_power_state_real,
+    }),
     ('/guests/{userid}/info', {
         'GET': guest.guest_get_info,
+    }),
+    ('/guests/{userid}/user_direct', {
+        'GET': guest.guest_get_user_direct,
+    }),
+    ('/guests/{userid}/adapters', {
+        'GET': guest.guest_get_adapters_info,
     }),
     ('/guests/{userid}/nic', {
         'POST': guest.guest_create_nic,
@@ -88,6 +100,9 @@ ROUTE_LIST = (
     }),
     ('/host', {
         'GET': host.host_get_info,
+    }),
+    ('/host/guests', {
+        'GET': host.host_get_guest_list,
     }),
     ('/host/diskpool', {
         'GET': host.host_get_disk_info,

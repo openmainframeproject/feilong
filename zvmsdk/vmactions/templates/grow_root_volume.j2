@@ -1,0 +1,175 @@
+#!/bin/bash
+###############################################################################
+# Copyright 2020 IBM Corp.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+#                            #
+###############################################################################
+# COMPONENT: gpartvol.sh                                                      #
+#                                                                             #
+# Grow the root partition on multipath disk of the deployed guest.            #
+###############################################################################
+
+# check multipathd service running
+multipathd_status=`systemctl status multipathd | grep "active (running)"`
+if [[ $? -ne 0 ]]; then
+    echo "multipathd service is inactive, abort extending the root partition."
+    exit 1
+fi
+
+# In some scenario, the df output the wrong multipath name
+echo "Reloading multipath mapping."
+multipath -r &> /dev/null
+
+# check parted tool is installed
+output=`which parted`
+if [[ $? -ne 0 ]]; then
+    echo "parted is not installed, please install this tool in the base image."
+    echo "abort extending the root partition."
+    exit 1
+fi
+
+# get root partition
+mpath=`lsblk -s -l -o NAME,MOUNTPOINT | egrep ' /$' | awk '{print $1}'`
+rc=$?
+
+# sample mpath
+# on RHEL7 and RHEL8
+# depends on user_friendly_names value in /etc/multipath.conf
+# if value is yes:
+#    mpatha1
+# else value is no (by defalut):
+#    36005076802880052a000000000001069 or
+#    36005076802880052a000000000001069p1 (sometimes with an additional 'p' before '1')
+if [[ $rc -ne 0 || "$mpath" == "" ]]; then
+    echo "Unable to find a multipath root partition with lsblk -s."
+    exit 1
+fi
+
+# remove the last number 1
+mpath=${mpath%1*}
+
+# handle the 36005076802880052a000000000001069p1 case
+if [[ ${mpath:(-1)} == 'p' ]]; then
+    mpathx=${mpath%p*}
+else
+    mpathx=$mpath
+fi
+echo "root partition path found: $mpathx."
+
+# Ensure the $mpathx path exists
+if [[ ! -r "/dev/mapper/$mpathx" ]]; then
+    echo "/dev/mapper/$mpathx does not exists, abort extending the root partition."
+    exit 1
+fi
+
+# check partition number
+partition_count=`lsblk /dev/mapper/$mpathx -l | awk 'NR>1 && $6=="part" {print $0}' | wc -l`
+if [[ $? -ne 0 ]]; then
+    echo "Failed to get partition number with lsblk /dev/mapper/$mpathx cmd."
+    echo "Aborting extending the root partition. "
+    exit 1
+fi
+if [[ $partition_count -ne 1 ]]; then
+    echo "Get $partition_count partitions exist on the /dev/mapper/$mpathx."
+    echo "Only one partition is supported on the root volume, aborting extending the root partition."
+    exit 1
+fi
+
+# Check partition size
+# Sample lsblk:
+# lsblk /dev/mapper/mpathb -l
+# NAME    MAJ:MIN RM SIZE RO TYPE  MOUNTPOINT
+# mpathb  253:0    0  10G  0 mpath
+# mpathb1 253:1    0  10G  0 part  /
+part_size=`lsblk /dev/mapper/$mpathx -l | awk 'NR>1 && $6=="part" {print $4}'`
+vol_size=`lsblk /dev/mapper/$mpathx -l | awk 'NR>1 && $6=="mpath" {print $4}'`
+echo "Partition size: $part_size, volume size: $vol_size."
+if [[ "$part_size" == "$vol_size" ]]; then
+    echo "Partition size equals to the root volume size, no need to extend partition."
+    exit 0
+fi
+
+# sample dm_name: dm-0
+dm_name=`readlink /dev/mapper/$mpathx | awk -F'/' '{print $2}'`
+echo "Find root partition on dm path: $dm_name"
+# get the devices name sdx to be used by growpart
+sds=`ls /sys/devices/virtual/block/$dm_name/slaves`
+# grow partition
+success=0
+for sdN in $sds
+do
+    out=`parted -s /dev/$sdN resizepart 1 100% 2>&1`
+    if [[ $? -eq 0 ]]; then
+        success=1
+    else
+        echo "/dev/$sdN resize failed with parted command, error: $out."
+        continue
+    fi
+done
+if [[ $success == 0 ]]; then
+    echo "All slaves of $mpathx failed to be resized, abort extending the root partition."
+    exit 1
+fi
+# continue to resize multipath partition
+out=`parted -s /dev/mapper/$mpathx resizepart 1 100% 2>&1`
+rc=$?
+# On RHEL8 the parted for mpathx would return 1 even if the partition is resized successfully.
+# so cann't decide whether this is success or not based on the rc and just print all info out.
+echo "root partition extended. RC: $rc, Output: $out."
+
+# partprobe - inform the OS of partition table changes
+out=`partprobe 2>&1`
+rc=$?
+if [[ $rc -ne 0 ]]; then
+    echo "Failed to partprobe, RC: $rc, Output: $out."
+fi
+
+echo "Continue to resize root file system."
+# TODO: xfs is not supported now, should use xfs_growfs cmd to extend for xfs.
+if [[ ${mpath:(-1)} == 'p' ]]; then
+    # handle the 36005076802880052a000000000001069p1 case
+    mpathx=$mpath
+fi
+out=`resize2fs /dev/mapper/${mpathx}1 2>&1`
+rc=$?
+if [[ $rc -ne 0 ]]; then
+    echo "Failed to resize root file system, RC: $rc, Output: $out."
+    exit 1
+else
+    # In some scenario, the resize2fs does not recognize the new partition size
+    # Sample: "The filesystem is already 2621184 (4k) blocks long.  Nothing to do!"
+    # So add some retry here.
+    if [[ $out =~ "Nothing to do!" ]]; then
+        echo "Doing some retry for resize2fs."
+        sleepTimes=".001 .01 .1 .5 1 2 3 5 8 15 22 34 60"
+        for seconds in $sleepTimes; do
+            sleep $seconds
+            out=`resize2fs /dev/mapper/${mpathx}1 2>&1`
+            rc=$?
+            if [[ $rc -ne 0 ]]; then
+                echo "Failed to resize root file system, RC: $rc, Output: $out."
+                exit 1
+            fi
+            if [[ ! ($out =~ "Nothing to do!") ]]; then
+                break # successful - leave loop
+            fi
+        done
+        if [[ $out =~ "Nothing to do!" ]]; then
+            echo "Failed to resize root file system!"
+            exit 1
+        fi
+    fi
+    echo "Root file system resized successfully."
+    exit 0
+fi

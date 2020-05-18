@@ -62,6 +62,19 @@ function parseArgs {
     fcpChannel=$(echo ${fcpChannel} | tr '[:upper:]' '[:lower:]')
     wwpn=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
     lun=$(echo ${lun} | tr '[:upper:]' '[:lower:]')
+  elif [[ ${#args[@]} == 6 ]]; then
+    getPositionalArg 1 fcpChannel
+    getPositionalArg 2 wwpn
+    getPositionalArg 3 lun
+    getPositionalArg 4 ignitionUrl
+    getPositionalArg 5 nicID
+    getPositionalArg 6 ipConfig
+    diskType='SCSI'
+    skipcopy='YES'
+    # Make channel, WWPN, and LUN lower case
+    fcpChannel=$(echo ${fcpChannel} | tr '[:upper:]' '[:lower:]')
+    wwpn=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
+    lun=$(echo ${lun} | tr '[:upper:]' '[:lower:]')
   elif [[ ${#args[@]} == 7 ]]; then
     getPositionalArg 1 userID
     getPositionalArg 2 channelID
@@ -70,16 +83,20 @@ function parseArgs {
     getPositionalArg 5 diskType
     getPositionalArg 6 nicID
     getPositionalArg 7 ipConfig
-  elif [[ ${#args[@]} == 6 ]]; then
+  elif [[ ${#args[@]} == 8 ]]; then
     getPositionalArg 1 fcpChannel
-    getPositionalArg 2 imageFile
-    getPositionalArg 3 ignitionUrl
-    getPositionalArg 4 diskType
-    getPositionalArg 5 nicID
-    getPositionalArg 6 ipConfig
+    getPositionalArg 2 wwpn
+    getPositionalArg 3 lun
+    getPositionalArg 4 imageFile
+    getPositionalArg 5 ignitionUrl
+    getPositionalArg 6 diskType
+    getPositionalArg 7 nicID
+    getPositionalArg 8 ipConfig
 
     # Make channel, WWPN, and LUN lower case
     fcpChannel=$(echo ${fcpChannel} | tr '[:upper:]' '[:lower:]')
+    wwpn=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
+    lun=$(echo ${lun} | tr '[:upper:]' '[:lower:]')
   else
     getPositionalArg 1 userID
     getPositionalArg 2 channelID
@@ -109,7 +126,11 @@ function parseArgs {
     echo 'ERROR: Missing required parameter.'
     printCMDUsage
     exit 1
-  elif [[ ${#args[@]} == 6 && (! $fcpChannel || ! $imageFile || ! $ignitionUrl || ! $diskType || ! $nicID || ! $ipConfig) ]]; then
+  elif [[ ${#args[@]} == 6 && (! $fcpChannel || ! $wwpn || ! $lun || ! $ignitionUrl || ! $nicID || ! $ipConfig) ]]; then
+    echo 'ERROR: Missing required parameter.'
+    printCMDUsage
+    exit 1
+  elif [[ ${#args[@]} == 8 && (! $fcpChannel || ! $wwpn || ! $lun  || ! $imageFile || ! $ignitionUrl || ! $diskType || ! $nicID || ! $ipConfig) ]]; then
     echo 'ERROR: Missing required parameter.'
     printCMDUsage
     exit 1
@@ -160,9 +181,20 @@ function parseArgs {
     echo "NIC ID:         \"$nicID\""
     echo "IP config:      \"$ipConfig\""
     echo ""
+  elif [[ ${#args[@]} == 8 ]]; then
+    echo "FCP CHANNEL:    \"$fcpChannel\""
+    echo "WWPN:           \"$wwpn\""
+    echo "LUN:            \"$lun\""
+    echo "IMAGE FILE:     \"$imageFile\""
+    echo "IGNITION URL:   \"$ignitionUrl\""
+    echo "DISK TYPE:      \"$diskType\""
+    echo "NIC ID:         \"$nicID\""
+    echo "IP config:      \"$ipConfig\""
+    echo ""
   elif [[ ${#args[@]} == 6 ]]; then
     echo "FCP CHANNEL:    \"$fcpChannel\""
-    echo "IMAGE FILE:     \"$imageFile\""
+    echo "WWPN:           \"$wwpn\""
+    echo "LUN:            \"$lun\""
     echo "IGNITION URL:   \"$ignitionUrl\""
     echo "DISK TYPE:      \"$diskType\""
     echo "NIC ID:         \"$nicID\""
@@ -186,7 +218,7 @@ function checkSanity {
   #   be expected.
   # @Code:
   # Make sure the specified image file exists.
-  if [[ ! -f $imageFile ]]; then
+  if [[ $skipcopy != 'YES' && ! -f $imageFile ]]; then
     printError 'The specified image file was not found.'
     exit 3
   fi
@@ -310,13 +342,6 @@ function resizePartition {
     #the rhel8 guest VM, so the return value of 8 is ignored.
     if (( rc != 0 && rc != 1 && rc != 2 && rc != 8 )); then
       printError "'e2fsck -f ${lastPartition}' returns rc: $rc, out: $out"
-      return 1
-    fi
-
-    out=`resize2fs ${lastPartition} 2>&1`
-    rc=$?
-    if (( rc != 0 )); then
-      printError "'resize2fs $lastPartition' returns rc: $rc, out: $out"
       return 1
     fi
   else
@@ -482,7 +507,7 @@ function mount_boot_partition {
     mountpoint=$1
 
     if [ ! -d $mountpoint ]; then
-        log "mountpoint $mountpoint must be a directory"
+        printError "mountpoint $mountpoint must be a directory"
         exit 1
     fi
 
@@ -491,18 +516,17 @@ function mount_boot_partition {
     let retry=0
     while true
     do
-        output=$(lsblk "${DEST_DEV}" --output NAME,LABEL,UUID --pairs | grep 'LABEL="boot"')
-        eval $(echo $output | tr ' ' '\n' | tail -n 1)
-        mount "/dev/disk/by-uuid/${UUID}" "$mountpoint"
+        eval $(lsblk "${DEST_DEV}" --output LABEL,NAME --pairs | grep 'LABEL="boot' | tr ' ' '\n' | tail -n 1)
+        mount "/dev/${NAME}" "$mountpoint"
         RETCODE=$?
-        if [[ -z "$output" ]] || [[ $RETCODE -ne 0 ]]; then
+        if [[ $RETCODE -ne 0 ]]; then
             if [[ $retry -lt 30 ]]; then
-                # retry and sleep to allow udevd to populate /dev/disk/by-uuid
+                # retry and sleep to allow udevd to populate the disk
                 sleep 1
                 let retry=$retry+1
                 continue
             fi
-            log "failed mounting boot partition"
+            printError "failed mounting boot partition"
             exit 1
         fi
         break;
@@ -815,10 +839,10 @@ function deployDiskImage {
                     let retry=$retry+1
                     continue
                 else
-                    log "failed fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+                    printError "failed fetching ignition config from ${ignitionUrl}: ${RETCODE}"
                     exit 1
                 fi
-                log "fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+                inform "fetching ignition config from ${ignitionUrl}: ${RETCODE}"
             else
                 inform "Successfully get the ignition config"
                 break;
@@ -828,7 +852,17 @@ function deployDiskImage {
 
     blsfile=$(ls /tmp/$fcpChannel/boot_partition/loader/entries/*.conf)
     #Get zipl config file for parameters
-    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.zfcp=0.0.$fcpChannel,$wwpn,$lun zfcp.allow_lun_scan=0 rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot rd.neednet=1 ip=$ipConfig" > /tmp/$fcpChannel/zipl_prm
+   
+    nameserver1=$(echo $ipConfig| awk -F: '{print $8}')    
+    nameserver2=$(echo $ipConfig| awk -F: '{print $9}')
+    if [ $nameserver1  ]; then 
+        nameserver1='nameserver='${nameserver1}
+    fi
+    if [ $nameserver2  ]; then 
+        nameserver2='nameserver='${nameserver2}
+    fi
+    
+    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.zfcp=0.0.$fcpChannel,$wwpn,$lun zfcp.allow_lun_scan=0 rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipConfig $nameserver1 $nameserver2" > /tmp/$fcpChannel/zipl_prm
     #Run zipl to update bootloader
     zipl --verbose -p /tmp/$fcpChannel/zipl_prm -i $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*vmlinuz*) -r $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*initramfs*) --target /tmp/$fcpChannel/boot_partition
     if [[ $? -ne 0 ]]; then
@@ -836,9 +870,11 @@ function deployDiskImage {
         exit 1
     fi
     #Update BLS config file for reboot
+    sed -i -e 's/ignition.firstboot=1//' /tmp/$fcpChannel/zipl_prm
     sed -e '/options/d' $blsfile > /tmp/$fcpChannel/blsfile
     echo "options $(cat /tmp/$fcpChannel/zipl_prm) " >>/tmp/$fcpChannel/blsfile
     cat /tmp/$fcpChannel/blsfile > $blsfile
+    blockdev --flushbufs ${DEST_DEV} > /dev/null
   } #update_zipl_bootloader_fcp{}
 
   function update_zipl_bootloader_eckd {
@@ -868,10 +904,10 @@ function deployDiskImage {
                     let retry=$retry+1
                     continue
                 else
-                    log "failed fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+                    printError "failed fetching ignition config from ${ignitionUrl}: ${RETCODE}"
                     exit 1
                 fi
-                log "fetching ignition config from ${ignitionUrl}: ${RETCODE}"
+                inform "fetching ignition config from ${ignitionUrl}: ${RETCODE}"
             else
                 inform "Successfully get the ignition config"
                 break;
@@ -881,7 +917,16 @@ function deployDiskImage {
 
     blsfile=$(ls /tmp/$userID/boot_partition/loader/entries/*.conf)
     #Get zipl config file for parameters
-    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.dasd=0.0.$channelID rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot rd.neednet=1 ip=$ipConfig" > /tmp/$userID/zipl_prm
+    nameserver1=$(echo $ipConfig| awk -F: '{print $8}')    
+    nameserver2=$(echo $ipConfig| awk -F: '{print $9}')
+    if [ $nameserver1  ]; then 
+        nameserver1='nameserver='${nameserver1}
+    fi
+    if [ $nameserver2  ]; then 
+        nameserver2='nameserver='${nameserver2}
+    fi
+    
+    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.dasd=0.0.$channelID rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipConfig $nameserver1 $nameserver2" > /tmp/$userID/zipl_prm
     #Run zipl to update bootloader
     zipl --verbose -p /tmp/$userID/zipl_prm -i $(ls /tmp/$userID/boot_partition/ostree/*/*vmlinuz*) -r $(ls /tmp/$userID/boot_partition/ostree/*/*initramfs*) --target /tmp/$userID/boot_partition
     if [[ $? -ne 0 ]]; then
@@ -889,9 +934,11 @@ function deployDiskImage {
         exit 1
     fi
     #Update BLS config file for reboot
+    sed -i -e 's/ignition.firstboot=1//' /tmp/$userID/zipl_prm
     sed -e '/options/d' $blsfile > /tmp/$userID/blsfile
     echo "options $(cat /tmp/$userID/zipl_prm) " >>/tmp/$userID/blsfile
     cat /tmp/$userID/blsfile > $blsfile
+    blockdev --flushbufs ${DEST_DEV} > /dev/null
   } #update_zipl_bootloader_eckd{}
 
   function deployFBAptImage {
@@ -1089,32 +1136,83 @@ function deployDiskImage {
     #Wipe any remaining disk labels
     inform "Wiping ${DEST_DEV}"
     wipefs --all --force "${DEST_DEV}"
+    
+    #Check disk type
+    local real_disk_type=($(dasdview -x ${DEST_DEV} |grep 'type' |head -1|awk '{print $3}'))
+    if [[ $real_disk_type != 'ECKD' ]]; then
+        printError "The device type is not ECKD"
+        exit 3
+    fi   
 
     #low-level format the ECKD DASD using dasdfmt, if needed
     inform "Format ${DEST_DEV} and Copy..."
-    type lszdev >/dev/null 2>&1 || { printError "Require lszdev tool, but not installed. Aborting."; exit 3; }
-    DEST_DEV_BUS=$(lszdev --by-node ${DEST_DEV} | tail -n 1  | awk '{print $2}')
-    if [ "$(< /sys/bus/ccw/devices/${DEST_DEV_BUS}/status)" = "unformatted" ]; then
+    if dasdview -x ${DEST_DEV} |grep 'CDL formatted'
+    then
+        if [ ! $(fdasd -p ${DEST_DEV} | grep blocks\ per\ track | awk '{print $5}') ]; then
+            inform "Formatting..."
+            dasdfmt --blocksize 4096 --disk_layout cdl --mode full -ypv "${DEST_DEV}"
+            if [[ $? -ne 0 ]]; then
+                printError "failed to format RHCOS DASD device"
+                exit 3
+            fi
+        fi
+    else
+        #DEST_DEV is not formatted with z/OS compatible disk layout!
+        inform "Formatting..."
         dasdfmt --blocksize 4096 --disk_layout cdl --mode full -ypv "${DEST_DEV}"
+        if [[ $? -ne 0 ]]; then
+            printError "failed to format RHCOS DASD device"
+            exit 3
+        fi
     fi
 
     #Get blocks for per track of target disk
     block_per_tracks=$(fdasd -p ${DEST_DEV} | grep blocks\ per\ track | awk '{print $5}')
     #the first 2 tracks of the ECKD DASD are reserved
     first_track=2
-    partition_Num=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*[0-9]" | wc -l))
-    boot_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*1" | awk '{print $2,$4}'))
-    root_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*${partition_Num}" | awk '{print $2,$4}'))
+
+    # To check is GPT partition or not, from the 2nd block of source image
+    gptSig=$(hexdump -C -n 8 -s 4096 ${imageFile} | head -n 1)
+    if [[ $gptSig =~ "EFI PART" ]]; then
+        # Per GPT partition schema, the partition entries start from the
+        # beginning of 3rd block(offset 8192), each partition entry with 128
+        # bytes length.
+        # In one partition entry, the first LBA offset 32, length 8 bytes,
+        # the last LBA offset 40, length 8 bytes.
+        inform "The source image has GPT partitions"
+
+        # The first partion entry is boot, start from 8192, first LBA offset 32
+        tempStr=$(hexdump -C -n 16 -s 8224 ${imageFile} | awk '{print $9 $8 $7 $6 $5 $4 $3 $2 $17 $16 $15 $14 $13 $12 $11 $10}')
+        boot_partition=( $((0x${tempStr:0:16})) $((0x${tempStr:16})) )
+
+        # The 4th partion entry is root, start from 8576, first LBA offset 32
+        tempStr=$(hexdump -C -n 16 -s 8608 ${imageFile} | awk '{print $9 $8 $7 $6 $5 $4 $3 $2 $17 $16 $15 $14 $13 $12 $11 $10}')
+        root_partition=( $((0x${tempStr:0:16})) $((0x${tempStr:16})) )
+    else
+        partition_Num=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*[0-9]" | wc -l))
+        boot_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*1" | awk '{print $2,$4}'))
+        root_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*${partition_Num}" | awk '{print $2,$4}'))
+    fi
     boot_partition+=( $first_track $(( (${boot_partition[1]} + $block_per_tracks - 1) / $block_per_tracks )) )
     root_partition+=($(( ${boot_partition[2]} + ${boot_partition[3]} )) "last")
-    cat > "/tmp/fdasd_conf" <<- EOF
+    mkdir -p /tmp/${userID} && touch /tmp/${userID}/fdasd_conf
+    cat > "/tmp/${userID}/fdasd_conf" <<- EOF
 [$first_track,$(( ${root_partition[2]} - 1 )),native]
 [${root_partition[2]},${root_partition[3]},native]
 EOF
 
     # format the ECKD DASD using fdasd program
     inform "Create partitions..."
-    fdasd --silent --config /tmp/fdasd_conf "${DEST_DEV}"
+    fdasd --silent --config /tmp/${userID}/fdasd_conf "${DEST_DEV}"
+    RETCODE=$?
+    if [[ $RETCODE -ne 0 ]]; then
+        if [[ $RETCODE -eq 255 ]]; then
+            inform "Ignore the error while rereading partition table."
+        else
+            printError "failed to set partition for RHCOS DASD device"
+            exit 3
+        fi
+    fi
 
     # copy the content of each partition
     inform "Coping partitions..."
@@ -1126,11 +1224,13 @@ EOF
             count="$2" \
             seek="$(( $3 * $block_per_tracks ))"
         if [[ $? -ne 0 ]]; then
-            log "failed to write image to ECKD DASD device"
-            exit 1
+            printError "failed to write image to RHCOS DASD device"
+            exit 3
         fi
         shift 4
     done
+    
+    blockdev --flushbufs ${DEST_DEV} > /dev/null
 
     # Update bootloader records
     update_zipl_bootloader_eckd
@@ -1143,49 +1243,27 @@ EOF
     : SOURCE: ${BASH_SOURCE}
     : STACK:  ${FUNCNAME[@]}
     # @Description:
-    #   Deploy the specified SCSI disk image.
+    #   According to the requirement, copy the specified SCSI disk image or skip the copy, then update the bootloader records
     # @Code:
-    dedicateFcp $fcpChannel
+    connectFcp $fcpChannel $wwpn $lun
     if (( $? )); then
-      printError "Failed to connect SCSI disk:${fcpChannel}"
+      printError "Failed to connect disk: ccw-0.0.${fcpChannel}-${wwpn}:${lun}."
       exit 3
     fi
-    inform "Get partition info..."
-    wwpn=$(ls /dev/disk/by-path/ |grep -E ccw-0.0.${fcpChannel}-zfcp-|cut -d "-" -f 4 |tail -n 1 |cut -d ":" -f 1)
-    lun=$(ls /dev/disk/by-path/ |grep -E ccw-0.0.${fcpChannel}-zfcp-|cut -d "-" -f 4 |tail -n 1 |cut -d ":" -f 2)
+
     local DEST_DEV=`ls -al /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} | tr '/' ' ' | awk '{print \$NF}'`
     DEST_DEV=/dev/$DEST_DEV
-    # store the imageinfo to a file
-    mkdir -p /tmp/${fcpChannel}
-    sfdisk -d $imageFile >/tmp/${fcpChannel}/image.info
-    (while IFS='\n' read -r line || [ -n "$line" ]
-    do
-        if [[ $line =~ "start=" ]]
-        then
-            # we save the start= and size= here, then dd the partitions later
-            printf "%s:%s\n" \
-                "$(echo $line | cut -d: -f 2 | cut -d, -f 1 | tr -d ' ')" \
-                "$(echo $line | cut -d: -f 2 | cut -d, -f 2 | tr -d ' ')" \
-                >> /tmp/${fcpChannel}/sfdisk_info
-        elif ! [[ $line =~ "label:" || $line =~ "label-id:" || $line =~ "unit:" ]]
-        then
-            continue
-        fi
-        echo $line
-    done < /tmp/${fcpChannel}/image.info
-    ) | sfdisk "${DEST_DEV}"
 
-    inform "Copy partition..."
-    while IFS='' read -r line || [ -n "$line" ]
-    do
-        eval ${line%%:*} ${line##*:}
-        dd if=${imageFile} bs=512 iflag=fullblock \
-            of="${DEST_DEV}" status=progress skip=$start seek=$start count=$size
+    if [[ $skipcopy != 'YES' ]]; then 
+        inform "Copy image..."
+        dd if=${imageFile} bs=512 iflag=fullblock of="${DEST_DEV}" status=progress
         if [[ $? -ne 0 ]]; then
-            log "failed to write image to zFCP SCSI disk"
-            exit 1
+            printError "failed to write image to RHCOS SCSI device"
+            exit 3
         fi
-    done < /tmp/${fcpChannel}/sfdisk_info
+    fi
+
+    blockdev --flushbufs ${DEST_DEV} > /dev/null
 
     # Update bootloader records
     update_zipl_bootloader_fcp
@@ -1263,11 +1341,9 @@ function cleanup {
       rm -rf /tmp/${userID}
     fi
   else
+    disconnectFcp ${fcpChannel} ${wwpn} ${lun}
     if [[ $diskType ]]; then
-      undedicateFcp ${fcpChannel} ${wwpn} ${lun}
       rm -rf /tmp/${fcpChannel}
-    else
-      disconnectFcp ${fcpChannel} ${wwpn} ${lun}
     fi
   fi
 

@@ -15,6 +15,7 @@
 
 import os
 import six
+import shutil
 
 from zvmsdk import config
 from zvmsdk import dist
@@ -94,6 +95,14 @@ class VMOps(object):
                 'mem_kb': 0,
                 'num_cpu': self._get_cpu_num_from_user_dict(dict_info),
                 'cpu_time_us': 0}
+
+    def get_adapters_info(self, userid):
+        adapters_info = self._smtclient.get_adapters_info(userid)
+        if not adapters_info:
+            msg = 'Get network information failed on: %s' % userid
+            LOG.error(msg)
+            raise exception.SDKInternalError(msg=msg, modID='guest')
+        return {'adapters': adapters_info}
 
     def instance_metadata(self, instance, content, extra_md):
         pass
@@ -221,6 +230,26 @@ class VMOps(object):
         else:
             LOG.info("No disk to handle on %s." % userid)
 
+    def guest_grow_root_volume(self, userid, os_version):
+        """ Punch the grow partition script to the target guest. """
+        LOG.debug('Begin to punch grow partition commands to guest: %s',
+                  userid)
+        linuxdist = self._dist_manager.get_linux_dist(os_version)()
+        # get configuration commands
+        config_cmds = linuxdist.get_extend_partition_cmds()
+        # Creating tmp file with these cmds
+        temp_folder = self._pathutils.get_guest_temp_path(userid)
+        file_path = os.path.join(temp_folder, 'gpartvol.sh')
+        LOG.debug('Creating file %s to contain root partition extension '
+                  'commands' % file_path)
+        with open(file_path, "w") as f:
+            f.write(config_cmds)
+        try:
+            self._smtclient.punch_file(userid, file_path, "X")
+        finally:
+            LOG.debug('Removing the folder %s ', temp_folder)
+            shutil.rmtree(temp_folder)
+
     def is_powered_off(self, instance_name):
         """Return True if the instance is powered off."""
         return self._smtclient.get_power_state(instance_name) == 'off'
@@ -278,7 +307,7 @@ class VMOps(object):
             os_version = self._smtclient.image_get_os_distro(image_name)
         else:
             os_version = image_name
-        if not os_version.lower().startswith('rhcos'):
+        if not self._smtclient.is_rhcos(os_version):
             self._smtclient.guest_deploy(userid, image_name, transportfiles,
                                          remotehost, vdev, skipdiskcopy)
 
@@ -287,7 +316,8 @@ class VMOps(object):
                 self.set_hostname(userid, hostname, os_version)
         else:
             self._smtclient.guest_deploy_rhcos(userid, image_name,
-                            transportfiles, remotehost, vdev, hostname)
+                            transportfiles, remotehost, vdev, hostname,
+                            skipdiskcopy)
 
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6):
