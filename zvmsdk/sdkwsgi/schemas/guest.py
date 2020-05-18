@@ -62,7 +62,7 @@ create_nic = {
         'nic': {
             'type': 'object',
             'properties': {
-                'vdev': parameter_types.vdev,
+                'vdev': parameter_types.vdev_or_None,
                 'nic_id': parameter_types.nic_id,
                 'mac_addr': parameter_types.mac_address,
                 'active': parameter_types.boolean,
@@ -133,6 +133,16 @@ config_minidisks = {
 }
 
 
+grow_root_volume = {
+    'type': 'object',
+    'properties': {
+        'os_version': parameter_types.os_version,
+    },
+    'required': ['os_version'],
+    'additionalProperties': False,
+}
+
+
 create_disks = {
     'type': 'object',
     'properties': {
@@ -194,7 +204,7 @@ deploy = {
         'image': parameter_types.name,
         'transportfiles': {'type': ['string']},
         'remotehost': parameter_types.remotehost,
-        'vdev': parameter_types.vdev,
+        'vdev': parameter_types.vdev_or_None,
         'hostname': parameter_types.hostname,
         'skipdiskcopy': parameter_types.boolean,
     },
@@ -285,8 +295,8 @@ stop = {
     'type': 'object',
     'properties': {
         'userid': parameter_types.userid,
-        'timeout': parameter_types.positive_integer,
-        'poll_interval': parameter_types.positive_integer,
+        'timeout': parameter_types.non_negative_integer,
+        'poll_interval': parameter_types.non_negative_integer,
     },
     'additionalProperties': False,
 }

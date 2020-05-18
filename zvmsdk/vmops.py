@@ -15,6 +15,7 @@
 
 import os
 import six
+import shutil
 
 from zvmsdk import config
 from zvmsdk import dist
@@ -228,6 +229,26 @@ class VMOps(object):
             LOG.info("Complete configure disks for vm: %s", userid)
         else:
             LOG.info("No disk to handle on %s." % userid)
+
+    def guest_grow_root_volume(self, userid, os_version):
+        """ Punch the grow partition script to the target guest. """
+        LOG.debug('Begin to punch grow partition commands to guest: %s',
+                  userid)
+        linuxdist = self._dist_manager.get_linux_dist(os_version)()
+        # get configuration commands
+        config_cmds = linuxdist.get_extend_partition_cmds()
+        # Creating tmp file with these cmds
+        temp_folder = self._pathutils.get_guest_temp_path(userid)
+        file_path = os.path.join(temp_folder, 'gpartvol.sh')
+        LOG.debug('Creating file %s to contain root partition extension '
+                  'commands' % file_path)
+        with open(file_path, "w") as f:
+            f.write(config_cmds)
+        try:
+            self._smtclient.punch_file(userid, file_path, "X")
+        finally:
+            LOG.debug('Removing the folder %s ', temp_folder)
+            shutil.rmtree(temp_folder)
 
     def is_powered_off(self, instance_name):
         """Return True if the instance is powered off."""

@@ -14,7 +14,9 @@
 
 
 import mock
+import tempfile
 
+from zvmsdk import dist
 from zvmsdk import exception
 from zvmsdk import vmops
 from zvmsdk.tests.unit import base
@@ -370,3 +372,24 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.live_migrate_vm(userid, destination, parms, action)
         power_state.assert_called_once_with(userid)
         live_migrate_vm.assert_called_once_with(userid, destination)
+
+    @mock.patch('zvmsdk.smtclient.SMTClient.punch_file')
+    @mock.patch('zvmsdk.utils.PathUtils.get_guest_temp_path')
+    @mock.patch.object(dist.rhel7, 'get_extend_partition_cmds')
+    @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
+    def test_guest_grow_root_volume(self, get_dist, get_dist_cmds,
+                                  tmp_path, punch_file):
+        userid = "FAKE_USERID"
+        os_version = "RHEL7.8"
+        get_dist.return_value = dist.rhel7
+        get_dist_cmds.return_value = "fake_cmds"
+        tmp_inst_dir = tempfile.mkdtemp(prefix=userid,
+                                        dir='/tmp')
+        tmp_path.return_value = tmp_inst_dir
+        self.vmops.guest_grow_root_volume(userid, os_version)
+        get_dist.assert_called_once_with(os_version)
+        get_dist_cmds.assert_called_once_with()
+        tmp_path.assert_called_once_with(userid)
+        punch_file.assert_called_once_with(userid,
+                                           ("%s/gpartvol.sh" % tmp_inst_dir),
+                                           "X")

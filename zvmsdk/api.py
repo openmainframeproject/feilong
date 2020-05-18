@@ -219,6 +219,34 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_adapters_info(userid)
 
+    def guest_get_user_direct(self, userid):
+        """Get user direct of the specified guest vm
+
+        :param str userid: the user id of the guest vm
+        :returns: Dictionary describing user direct and check info result
+        :rtype: dict
+        """
+        action = "get the user direct of guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            inst_info = self._vmops.get_definition_info(userid)
+            user_direct = inst_info['user_direct']
+            item = -1
+            new_info = ""
+            for info in user_direct:
+                item += 1
+                # replace password with ******
+                if info.startswith('USER') or info.startswith('IDENTITY'):
+                    fields = info.split()
+                    for i in range(len(fields)):
+                        if i != 2:
+                            new_info += (fields[i] + ' ')
+                        else:
+                            new_info += ('******' + ' ')
+                    user_direct[item] = new_info
+                    break
+            inst_info['user_direct'] = user_direct
+            return inst_info
+
     def guest_list(self):
         """list names of all the VMs on this host.
 
@@ -761,9 +789,10 @@ class SDKAPI(object):
                 # 'format' value check
                 if ('format' in disk.keys()) and (disk['format'].lower() not in
                                                   ('ext2', 'ext3', 'ext4',
-                                                   'xfs', 'none')):
+                                                  'swap', 'xfs', 'none')):
                     errmsg = ("Invalid disk_pool input, supported 'format' "
-                              "includes 'ext2', 'ext3', 'ext4', 'xfs', 'none'")
+                              "includes 'ext2', 'ext3', 'ext4', 'xfs', "
+                              "'swap', 'none'")
                     LOG.error(errmsg)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
 
@@ -1235,6 +1264,20 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._vmops.guest_config_minidisks(userid, disk_info)
 
+    @check_guest_exist()
+    def guest_grow_root_volume(self, userid, os_version):
+        """ Punch script to guest to grow root partition and extend
+            root file system.
+            Note:
+            1. Only multipath SCSI disk is supported.
+            2. Only one partition is supported.
+            3. xfs file system is not supported.
+
+        :param str userid: the user id of the vm
+        :param str os_version: operating system version of the guest
+        """
+        return self._vmops.guest_grow_root_volume(userid, os_version)
+
     def vswitch_set(self, vswitch_name, **kwargs):
         """Change the configuration of an existing virtual switch
 
@@ -1380,7 +1423,7 @@ class SDKAPI(object):
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
 
-    def get_volume_connector(self, userid):
+    def get_volume_connector(self, userid, reserve=False):
         """Get connector information of the guest for attaching to volumes.
         This API is for Openstack Cinder driver only now.
 
@@ -1396,8 +1439,9 @@ class SDKAPI(object):
         This information will be used by IBM storwize FC driver in Cinder.
 
         :param str userid: the user id of the guest
+        :param boolean reserve: the flag to reserve FCP device
         """
-        return self._volumeop.get_volume_connector(userid)
+        return self._volumeop.get_volume_connector(userid, reserve)
 
     def volume_attach(self, connection_info):
         """ Attach a volume to a guest. It's prerequisite to active multipath

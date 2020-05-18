@@ -305,6 +305,8 @@ class SMTClient(object):
         # Firstly, get adapter information
         adapters_info = []
         adapter = dict()
+        # if found IP, no need to continue
+        found_mac = False
         for line in ret:
             if 'adapter_address=' in line:
                 adapter_addr = line.strip().split('=')[-1]
@@ -318,29 +320,25 @@ class SMTClient(object):
             if 'lan_name=' in line:
                 lan_name = line.strip().split('=')[-1]
                 adapter['lan_name'] = lan_name
-            if 'adapter_info_end' in line:
-                adapters_info.append(adapter)
-                adapter = dict()
-        # Secondly, get mac information of every adapter
-        # assume one adapter only have one mac_ip_address
-        index = 0
-        for line in ret:
-            if 'mac_address=' in line:
+            if 'mac_address=' in line and not found_mac:
                 mac_addr = line.strip().split('=')[-1]
                 pattern = re.compile('.{2}')
                 mac_address = ':'.join(pattern.findall(mac_addr))
-                adapters_info[index]['mac_address'] = mac_address
+                adapter['mac_address'] = mac_address
             if 'mac_ip_version=' in line:
                 ip_version = line.strip().split('=')[-1]
-                adapters_info[index]['mac_ip_version'] = ip_version
+                adapter['mac_ip_version'] = ip_version
             if 'mac_ip_address=' in line:
                 # once we found mac_ip_address, assume this is the MAC
                 # we are using, then jump to next adapter
                 mac_ip = line.strip().split('=')[-1]
-                adapters_info[index]['mac_ip_address'] = mac_ip
-                index = index + 1
-                if index == len(adapters_info):
-                    break
+                adapter['mac_ip_address'] = mac_ip
+                found_mac = True
+            if 'adapter_info_end' in line:
+                adapters_info.append(adapter)
+                # clear adapter and process next
+                adapter = dict()
+                found_mac = False
         return adapters_info
 
     def _parse_vswitch_inspect_data(self, rd_list):
@@ -745,7 +743,7 @@ class SMTClient(object):
             LOG.error(err_msg + err_output)
             raise exception.SDKVolumeOperationError(rs=5,
                                                     errcode=rc,
-                                                    errmsg=output)
+                                                    errmsg=err_output)
         output_lines = output.split('\n')
         res = []
         for line in output_lines:
@@ -1215,7 +1213,8 @@ class SMTClient(object):
         # "0.0.1000,0.0.1001,0.0.1002"
         nic_id = self._generate_increasing_nic_id(
             fixed_ip_parameter.split(":")[5].replace("enc", ""))
-        if skipdiskcopy:
+
+        if image_disk_type == 'SCSI':
             (wwpn, lun) = self._get_wwpn_lun(userid)
             if wwpn is None or lun is None:
                 err_msg = ("wwpn and lun is required for FCP devices,"
@@ -1224,8 +1223,13 @@ class SMTClient(object):
                                                        msg=err_msg)
             wwpn = '0x' + wwpn
             lun = '0x' + lun
-            return ['sudo', '/opt/zthin/bin/unpackdiskimage', vdev,
-               wwpn, lun, transportfiles, nic_id, fixed_ip_parameter]
+            if skipdiskcopy:
+                return ['sudo', '/opt/zthin/bin/unpackdiskimage', vdev,
+                        wwpn, lun, transportfiles, nic_id, fixed_ip_parameter]
+            else:
+                return ['sudo', '/opt/zthin/bin/unpackdiskimage', vdev,
+                        wwpn, lun, image_file, transportfiles,
+                        image_disk_type, nic_id, fixed_ip_parameter]
         else:
             return ['sudo', '/opt/zthin/bin/unpackdiskimage', userid, vdev,
                    image_file, transportfiles, image_disk_type, nic_id,
@@ -2589,6 +2593,9 @@ class SMTClient(object):
             fmt = disk.get('format')
             mount_dir = disk.get('mntdir') or ''.join(['/mnt/ephemeral',
                                                        str(vdev)])
+            # the mount point of swap partition is swap
+            if fmt == "swap":
+                mount_dir = "swap"
             disk_parms = self._generate_disk_parmline(vdev, fmt, mount_dir)
             func_name = '/var/lib/zvmsdk/setupDisk'
             self.aemod_handler(userid, func_name, disk_parms)

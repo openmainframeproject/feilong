@@ -281,6 +281,13 @@ def req_guest_live_resize_mem(start_index, *args, **kwargs):
     return url, body
 
 
+def req_guest_grow_root_volume(start_index, *args, **kwargs):
+    url = '/guests/%s/action'
+    body = {'action': 'grow_root_volume',
+            'os_version': args[start_index]}
+    return url, body
+
+
 def req_guest_capture(start_index, *args, **kwargs):
     url = '/guests/%s/action'
     body = {'action': 'capture',
@@ -305,6 +312,12 @@ def req_guest_get_power_state_real(start_index, *args, **kwargs):
 
 def req_guest_get_info(start_index, *args, **kwargs):
     url = '/guests/%s/info'
+    body = None
+    return url, body
+
+
+def req_guest_get_user_direct(start_index, *args, **kwargs):
+    url = '/guests/%s/user_direct'
     body = None
     return url, body
 
@@ -417,7 +430,13 @@ def req_volume_refresh_bootmap(start_index, *args, **kwargs):
 
 def req_get_volume_connector(start_index, *args, **kwargs):
     url = '/volumes/conn/%s'
-    body = None
+    reserve = kwargs.get('reserve', False)
+    body = {'info':
+        {
+            "reserve": reserve
+        }
+    }
+    fill_kwargs_in_body(body['info'], **kwargs)
     return url, body
 
 
@@ -675,6 +694,11 @@ DATABASE = {
         'args_required': 2,
         'params_path': 1,
         'request': req_guest_resize_mem},
+    'guest_grow_root_volume': {
+        'method': 'POST',
+        'args_required': 2,
+        'params_path': 1,
+        'request': req_guest_grow_root_volume},
     'guest_capture': {
         'method': 'POST',
         'args_required': 2,
@@ -695,6 +719,11 @@ DATABASE = {
         'args_required': 1,
         'params_path': 1,
         'request': req_guest_get_info},
+    'guest_get_user_direct': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_guest_get_user_direct},
     'guest_get_adapters_info': {
         'method': 'GET',
         'args_required': 1,

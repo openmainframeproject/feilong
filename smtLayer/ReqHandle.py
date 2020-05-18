@@ -304,12 +304,12 @@ class ReqHandle(object):
            Strings to be logged.
         """
 
-        if zvmsdklog.LOGGER.getloglevel() <= logging.DEBUG:
+        if self.daemon:
+            self.daemon.logger.debug(self.requestId + ": " + logString)
+        elif zvmsdklog.LOGGER.getloglevel() <= logging.DEBUG:
             # print log only when debug is enabled
             if self.daemon == '':
                 self.logger.debug(self.requestId + ": " + logString)
-            else:
-                self.daemon.logger.debug(self.requestId + ": " + logString)
 
         if self.captureLogs is True:
             self.results['logEntries'].append(self.requestId + ": " +

@@ -70,11 +70,6 @@ function parseArgs {
   if [[ -z "$gzipCompression" ]]; then
     gzipCompression=6
   fi
-
-  if [[ -z "$headerLabel" ]]; then
-    headerLabel=0
-    gzipCompression=0
-  fi
   
   # Non-local variables in this function are intentionally non-local.
   isOption -h --help '     Print this help message.'   && printHelp='true'
@@ -87,8 +82,15 @@ function parseArgs {
   if [[ $wwpn != 0x* ]]; then
     unset wwpn
   fi
-  
+
+  getNamedArg --compression compOper 'Compression level, 0-9, only supported when creating images from ECKD or FBA'
+  local oper_not_found=$?
   if [[ -n $wwpn ]]; then
+    headerLabel=0
+    if [[ $oper_not_found -eq 0 ]]; then
+      echo "Warning: --compression option is not supported when creating images from volume, will ignore it and use compression level 0."
+    fi
+    gzipCompression=0
     getPositionalArg 1 fcpChannel
     #getPositionalArg 2 wwpn
     getPositionalArg 3 lun
@@ -99,14 +101,12 @@ function parseArgs {
     wwpn=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
     lun=$(echo ${lun} | tr '[:upper:]' '[:lower:]')
   else
+    if [[ $oper_not_found -eq 0 ]]; then
+      gzipCompression=$compOper
+    fi
     getPositionalArg 1 userID
     getPositionalArg 2 channelID
     getPositionalArg 3 imageFile
-  fi
-  
-  getNamedArg --compression compOper 'Compression level, 0-9'
-  if [[ $? -eq 0 ]]; then
-    gzipCompression=$compOper
   fi
 
   # Handle options that provide info but don't deal with locks or disks

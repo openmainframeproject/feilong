@@ -93,6 +93,11 @@ class VMHandler(object):
         return info
 
     @validation.query_schema(guest.userid_list_query)
+    def get_user_direct(self, req, userid):
+        info = self.client.send_request('guest_get_user_direct', userid)
+        return info
+
+    @validation.query_schema(guest.userid_list_query)
     def get_adapters(self, req, userid):
         info = self.client.send_request('guest_get_adapters_info', userid)
         return info
@@ -349,6 +354,12 @@ class VMAction(object):
 
         return info
 
+    @validation.schema(guest.grow_root_volume)
+    def grow_root_volume(self, userid, body=None):
+        info = self.client.send_request('guest_grow_root_volume', userid,
+                                        body['os_version'])
+        return info
+
     @validation.schema(guest.deploy)
     def deploy(self, userid, body):
         image_name = body['image']
@@ -364,7 +375,6 @@ class VMAction(object):
                         "vdev: %(vdev)s, skipdiskcopy: %(skipdiskcopy)s" %
                         {'userid': userid, 'trans': transportfiles,
                          'remote': remotehost, 'vdev': vdev,
-                         'hostname': hostname,
                          'skipdiskcopy': skipdiskcopy,
                          })
 
@@ -489,6 +499,26 @@ def guest_get_info(req):
 
     userid = util.wsgi_path_item(req.environ, 'userid')
     info = _guest_get_info(req, userid)
+
+    info_json = json.dumps(info)
+    req.response.status = util.get_http_code_from_sdk_return(info,
+        additional_handler=util.handle_not_found)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def guest_get_user_direct(req):
+
+    def _guest_get_user_direct(req, userid):
+        action = get_handler()
+
+        return action.get_user_direct(req, userid)
+
+    userid = util.wsgi_path_item(req.environ, 'userid')
+    info = _guest_get_user_direct(req, userid)
 
     info_json = json.dumps(info)
     req.response.status = util.get_http_code_from_sdk_return(info,

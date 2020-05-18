@@ -235,7 +235,7 @@ size_disk:
   type: string
 format_disk:
   description: |
-    Format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``xfs``, ``none``.
+    Format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``swap``, ``xfs``, ``none``.
     The file system ``none`` means there is no need to create a file system,
     and in turn no format and partition table will be created, this usually
     used for some system such as z/OS.
@@ -296,7 +296,7 @@ disk_mountpoint:
   type: string
 format_disk_required:
   description: |
-    Format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``xfs``.
+    Format of disk, can be ``ext2``, ``ext3``, ``ext4``, ``swap``, ``xfs``.
     The file system ``none`` means there is no need to create a file system,
     and in turn no format and partition table will be created, this usually
     used for some system such as z/OS.
@@ -384,6 +384,12 @@ action_deploy_guest:
 action_capture_guest:
   description: |
     Take ``capture`` action on guest.
+  in: body
+  required: true
+  type: string
+action_grow_root_volume_guest:
+  description: |
+    Take ``grow_root_volume`` action on guest.
   in: body
   required: true
   type: string
@@ -667,13 +673,15 @@ remotehost_transportfiles:
   type: string
 deploy_vdev:
   description: |
-    Device number to which the image will be deployed, 1- to 4- hexadecimal digits.
+    Device number to which the image will be deployed, 1- to 4- hexadecimal 
+    digits. ``null`` is also allowed.
   in: body
   required: false
   type: string
 deploy_hostname:
   description: |
-    hostname of the guest. Will be ignored if ``transportfiles`` specified.
+    hostname of the guest. Will be ignored if ``transportfiles`` 
+    specified. ``null`` is also allowed.
   in: body
   required: false
   type: string
@@ -866,6 +874,12 @@ nic_set_info:
 vdev_number:
   description: |
     nic device number, 1- to 4- hexadecimal digits.
+  in: body
+  required: false
+  type: string
+vdev_number_orNone:
+  description: |
+    nic device number, 1- to 4- hexadecimal digits. ``null`` is also allowed.
   in: body
   required: false
   type: string

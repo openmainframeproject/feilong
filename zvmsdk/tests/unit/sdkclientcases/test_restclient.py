@@ -400,6 +400,22 @@ class RESTClientTestCase(unittest.TestCase):
 
     @mock.patch.object(requests, 'request')
     @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_get_user_direct(self, get_token, request):
+        method = 'GET'
+        url = '/guests/%s/user_direct' % self.fake_userid
+        body = None
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("guest_get_user_direct", self.fake_userid)
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
     def test_guest_get_info_ssl(self, get_token, request):
         method = 'GET'
         url = '/guests/%s/info' % self.fake_userid
@@ -884,6 +900,25 @@ class RESTClientTestCase(unittest.TestCase):
 
         self.client.call("guest_live_resize_mem", self.fake_userid,
                          '4g')
+        request.assert_called_with(method, full_uri,
+                                   data=body, headers=header,
+                                   verify=False)
+
+    @mock.patch.object(requests, 'request')
+    @mock.patch('zvmconnector.restclient.RESTClient._get_token')
+    def test_guest_grow_root_volume(self, get_token, request):
+        method = 'POST'
+        url = '/guests/%s/action' % self.fake_userid
+        body = {'action': 'grow_root_volume',
+                'os_version': 'RHEL7.8'}
+        body = json.dumps(body)
+        header = self.headers
+        full_uri = self.base_url + url
+        request.return_value = self.response
+        get_token.return_value = self._tmp_token()
+
+        self.client.call("guest_grow_root_volume", self.fake_userid,
+                         'RHEL7.8')
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)

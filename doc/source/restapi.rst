@@ -611,6 +611,35 @@ Get running information of guest.
    :language: javascript
 
 
+Get Guest user direct
+---------------------
+
+**GET /guests/{userid}/user_direct**
+
+Get the user directory info of the given userid from hypervisor.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: user_direct_guest
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_get_user_direct.tpl
+   :language: javascript
+
+
 Get Guest adapters info
 -----------------------
 
@@ -659,7 +688,7 @@ Create a virtual nic on giving guest.
 
   - userid: guest_userid
   - nic: nic_set_info
-  - vdev: vdev_number
+  - vdev: vdev_number_orNone
   - nic_id: nic_identifier
   - mac_addr: mac_address
   - active: active_flag
@@ -1239,6 +1268,30 @@ Capture guest
 * Request sample:
 
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_capture_req.tpl
+   :language: javascript
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+Grow root volume of guest
+-------------------------
+
+**POST /guests/{userid}/action**
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - userid: guest_userid
+  - action: action_grow_root_volume_guest
+  - os_version: guest_os_version
+
+* Request sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_guest_grow_root_volume_req.tpl
    :language: javascript
 
 * Response code:
