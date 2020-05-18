@@ -451,18 +451,32 @@ class SDKAPITestCase(base.SDKTestCase):
         guestdb_reg.assert_not_called()
         get_def_info.assert_not_called()
 
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
     @mock.patch("zvmsdk.database.NetworkDbOperator."
                 "switch_delete_record_for_userid")
     @mock.patch("zvmsdk.database.GuestDbOperator.delete_guest_by_userid")
-    @mock.patch("zvmsdk.utils.check_userid_exist")
-    def test_guest_deregister(self, check_exist, guestdb_del, networkdb_del):
-        check_exist.return_value = True
+    def test_guest_deregister(self, guestdb_del, networkdb_del, chk_db):
         guestdb_del.return_value = ''
         networkdb_del.return_value = ''
+        chk_db.return_value = True
         self.api.guest_deregister(self.userid)
-        check_exist.assert_called_once_with(self.userid)
         guestdb_del.assert_called_once_with(self.userid)
         networkdb_del.assert_called_once_with(self.userid)
+        chk_db.assert_called_once_with(self.userid, raise_exc=False)
+
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    @mock.patch("zvmsdk.database.NetworkDbOperator."
+                "switch_delete_record_for_userid")
+    @mock.patch("zvmsdk.database.GuestDbOperator.delete_guest_by_userid")
+    def test_guest_deregister_not_exists(self, guestdb_del,
+                                         networkdb_del, chk_db):
+        guestdb_del.return_value = ''
+        networkdb_del.return_value = ''
+        chk_db.return_value = False
+        self.api.guest_deregister(self.userid)
+        guestdb_del.assert_called_once_with(self.userid)
+        networkdb_del.assert_called_once_with(self.userid)
+        chk_db.assert_called_once_with(self.userid, raise_exc=False)
 
     @mock.patch("zvmsdk.hostops.HOSTOps.guest_list")
     def test_host_get_guest_list(self, guest_list):
