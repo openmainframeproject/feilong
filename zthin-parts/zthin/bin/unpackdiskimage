@@ -870,7 +870,7 @@ function deployDiskImage {
         exit 1
     fi
     #Update BLS config file for reboot
-    sed -i -e 's/ignition.firstboot=1//' /tmp/$userID/zipl_prm
+    sed -i -e 's/ignition.firstboot=1//' /tmp/$fcpChannel/zipl_prm
     sed -e '/options/d' $blsfile > /tmp/$fcpChannel/blsfile
     echo "options $(cat /tmp/$fcpChannel/zipl_prm) " >>/tmp/$fcpChannel/blsfile
     cat /tmp/$fcpChannel/blsfile > $blsfile
