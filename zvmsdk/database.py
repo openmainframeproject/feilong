@@ -14,6 +14,7 @@
 
 
 import contextlib
+import random
 import os
 import six
 import sqlite3
@@ -491,7 +492,8 @@ class FCPDbOperator(object):
                 fcps = result.fetchall()
                 if not fcps:
                     break
-                fcp_list.append(fcps[0][0])
+                index = random.randint(0, len(fcps) - 1)
+                fcp_list.append(fcps[index][0])
         if len(fcp_list) < len(path_list):
             LOG.error("Not enough FCPs in fcp pool")
             return []
