@@ -680,10 +680,6 @@ class FCPVolumeManager(object):
         """Detach a volume from a guest"""
         LOG.info('Start to detach device from %s' % assigner_id)
         connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
-        # Unreserved fcp device
-        fcp_connections = self.db.get_connections_from_fcp(fcp)
-        if not fcp_connections:
-            self.fcp_mgr.unreserve_fcp(fcp)
         if is_root_volume:
             LOG.info('Detaching device from %s is done.' % assigner_id)
             return
@@ -704,6 +700,10 @@ class FCPVolumeManager(object):
                                multipath, os_version, mount_point, new)
             raise exception.SDKBaseException(msg=errmsg)
 
+        # Unreserved fcp device after undedicate all FCP devices
+        if not connections:
+            LOG.info("Unreserve fcp device %s from detach", fcp)
+            self.fcp_mgr.unreserve_fcp(fcp)
         LOG.info('Detaching device from %s is done.' % assigner_id)
 
     def detach(self, connection_info):
@@ -770,7 +770,7 @@ class FCPVolumeManager(object):
             elif not reserve and \
                 self.db.get_connections_from_fcp(fcp_no) == 0:
                 # Unreserve fcp device
-                LOG.info("Unreserve fcp device %s", fcp_no)
+                LOG.info("Unreserve fcp device %s from get connector", fcp_no)
                 self.db.unreserve(fcp_no)
             wwpn = self.fcp_mgr.get_wwpn(fcp_no)
             if not wwpn:
