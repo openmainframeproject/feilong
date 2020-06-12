@@ -1183,3 +1183,9 @@ skipzipl:
   in: body
   required: false
   type: bool
+fcp_reserve:
+  description: |
+    If or not reserve the FCP devices.
+  in: body
+  required: true
+  type: boolean
