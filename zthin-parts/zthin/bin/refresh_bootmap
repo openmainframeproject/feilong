@@ -486,18 +486,34 @@ function refreshFCPBootmap {
     exit 9
   fi
   inform "These WWPNs will be operated: ${wwpns[*]}"
-  
+
+  for i in "${!fcps[@]}"
+  do
+    for j in "${!wwpns[@]}"
+      do
+        x="/dev/disk/by-path/ccw-0.0.${fcps[i]}-zfcp-0x${wwpns[j]}:${lun}"
+        if [[ -e $x ]];then
+          diskPath=$x
+          inform "$diskPath is: $diskPath"
+          break
+        fi
+      done
+  done
+
+  if [[ -z $diskPath ]];then
+    inform "Can not find a proper path for FCP devices: ${fcps[*]} and wwpns: ${wwpns[*]}"
+    exit 10
+  fi
+
   # Set devNode according to whether multipath is enabled on the compute node
   wwid=""
   if [[ $multipath_enabled == 1 ]]; then
-      diskPath=/dev/disk/by-path/ccw-0.0.${fcps[0]}-zfcp-0x${wwpns[0]}:${lun}
       wwid=`/usr/lib/udev/scsi_id --whitelisted $diskPath 2> /dev/null`
       devNode="/dev/disk/by-id/dm-uuid-part1-mpath-$wwid"
       inform "Multipath is enabled, using multipath devNode: $devNode."
   else
       devNode="/dev/disk/by-path/ccw-0.0.${fcps[0]}-zfcp-0x${wwpns[0]}:${lun}-part1"
       # For blockdev command use.
-      diskPath="/dev/disk/by-path/ccw-0.0.${fcps[0]}-zfcp-0x${wwpns[0]}:${lun}"
       inform "Multipath is not enabled, using single path devNode: $devNode."
   fi
   
