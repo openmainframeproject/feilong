@@ -19,6 +19,7 @@ cloud connector:
 - SLES 11.x
 - SLES 12.x
 - Ubuntu 16.04
+- Ubuntu 20.04
 
 Where x is the zLinux's minor release number
 
@@ -283,7 +284,7 @@ Perform the following steps:
 
        systemctl start zvmguestconfigure.service
 
-Configuration of zvmguestconfigure on Ubuntu 16.04
+Configuration of zvmguestconfigure on Ubuntu 16.04 and Ubuntu 20.04
 ..................................................
 
 1. Logon your BYOL, and copy the zvmguestconfigure and zvmguestconfigure.service
@@ -318,6 +319,9 @@ Configuration of zvmguestconfigure on Ubuntu 16.04
        WantedBy=multi-user.target
 
    After that, copy the zvmguestconfigure.service file to /lib/systemd/system.
+
+- If the target Linux machine is Ubuntu 20.04, copy the zvmguestconfigure.service.ubuntu file to: /lib/systemd/system,
+ and rename to zvmguestconfigure.service.
 
 5. Enable the zvmguestconfigure service by issuing:
 
@@ -809,11 +813,13 @@ Installation and Configuration of cloud-init on RHEL 7.x and SLES 12.x
 
         rm -rf /var/lib/cloud
 
-Installation and Configuration of cloud-init on Ubuntu 16.04
+Installation and Configuration of cloud-init on Ubuntu 16.04 and Ubuntu 20.04
 ............................................................
 
 For Ubuntu 16.04, cloud-init0.7.8 or higher is required. The examples in this
 section use cloud-init0.7.8.
+
+For Ubuntu 20.04, cloud-init20.1-10 is installed by default, can ignore below step1-2.
 
 1. Download cloud-init0.7.8 from https://launchpad.net/cloud-init/+download. 
    Untar it with this command:
