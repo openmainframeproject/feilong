@@ -365,6 +365,7 @@ dependencies at http://ibm.biz/cloudinitLoZ.
 The z/VM OpenStack support has been tested with cloud-init 0.7.4 and 0.7.5 for
 RHEL6.x and SLES11.x, 0.7.6 for RHEL7.x and SLES12.x, and 18.4 for SLES15, and 
 18.5 for RHEL8.1, and 0.7.8 for Ubuntu 16.04.
+
 If you are using a different version of cloud-init, you should change your
 specification of the indicated commands accordingly.During cloud-init
 installation, some dependency packages may be required. You can use yum/zypper
