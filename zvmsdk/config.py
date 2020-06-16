@@ -263,7 +263,7 @@ to transfer large consoles, which may not be desirable for performance reasons.
     '''),
     Opt('softstop_timeout',
         section='guest',
-        default=60,
+        default=120,
         opt_type='int',
         help='''
 The maximum time waiting until the guest shut down.
@@ -274,7 +274,7 @@ of softstop, this will help.
     '''),
     Opt('softstop_interval',
         section='guest',
-        default=5,
+        default=10,
         opt_type='int',
         help='''
 The interval time between 2 retries, in seconds.

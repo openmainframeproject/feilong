@@ -395,6 +395,7 @@ Get volume connector for z/VM.
 .. restapi_parameters:: parameters.yaml
 
   - userid: guest_userid
+  - reserve: fcp_reserve
 
 * Response code:
 

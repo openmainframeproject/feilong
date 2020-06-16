@@ -14,6 +14,7 @@
 
 
 import contextlib
+import random
 import os
 import six
 import sqlite3
@@ -433,7 +434,15 @@ class FCPDbOperator(object):
         with get_fcp_conn() as conn:
             result = conn.execute("SELECT connections FROM fcp WHERE "
                                   "fcp_id=?", (fcp,))
-            connections = result.fetchall()
+            fcp_info = result.fetchall()
+            if not fcp_info:
+                msg = 'FCP with id: %s does not exist in DB.' % fcp
+                LOG.error(msg)
+                obj_desc = "FCP with id: %s" % fcp
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
+            connections = fcp_info[0][0]
+
         return connections
 
     def get_from_assigner(self, assigner_id):
@@ -461,6 +470,14 @@ class FCPDbOperator(object):
 
         return fcp_list
 
+    def get_path_count(self):
+        with get_fcp_conn() as conn:
+            # Get distinct path list in DB
+            result = conn.execute("SELECT DISTINCT path FROM fcp")
+            path_list = result.fetchall()
+
+        return len(path_list)
+
     def get_fcp_pair(self):
         fcp_list = []
         with get_fcp_conn() as conn:
@@ -473,9 +490,13 @@ class FCPDbOperator(object):
                                       "and reserved=0 and path=%s order by "
                                       "fcp_id" % no)
                 fcps = result.fetchall()
-                fcp_list.append(fcps[0][0])
-        if not fcp_list:
-            LOG.warning("Warning: Not enough FCPs in fcp pool")
+                if not fcps:
+                    break
+                index = random.randint(0, len(fcps) - 1)
+                fcp_list.append(fcps[index][0])
+        if len(fcp_list) < len(path_list):
+            LOG.error("Not enough FCPs in fcp pool")
+            return []
         return fcp_list
 
     def get_all_free_unreserved(self):

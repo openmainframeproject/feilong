@@ -84,13 +84,21 @@ function cleanup_fcpdevices {
   inform "Begin to disconnect FCPs"
   for i in "${!fcps[@]}"
   do
-    chccwdevDevice ${fcps[$i]} "offline"
-    for j in "${!wwpns[@]}"
-    do
-      disconnectFcp ${fcps[$i]} 0x${wwpns[$j]} ${lun}
-    done
+    if [[ -z "$wwpns" ]];then
+      output=`/opt/zthin/bin/smcli Image_Device_Undedicate -T $zthinUserID -v ${fcps[$i]} 2>&1`
+      if [[ $? != 0 ]]; then
+          inform "Undedicate FCP device ${fcps[$i]} fails, reason: $output"
+      else
+          inform "Undedicate FCP device ${fcps[$i]} successfully."
+      fi
+    else
+      for j in "${!wwpns[@]}"
+      do
+        inform "Disconnect FCP device: ${fcps[$i]}"
+        disconnectFcp ${fcps[$i]} 0x${wwpns[$j]} ${lun}
+      done
+    fi
   done
-
   inform "Finish disconnecting FCPs."
   inform "Begin to refresh multipath bindings."
   # Don't need to judge if the multipath_enabled exist,
@@ -339,6 +347,29 @@ function refreshZIPL {
     inform "The os version is: $os, this is not a supported linux distro"
   fi
 
+  # Remove dirty data in /etc/fstab left by the previous vm deploy
+  # remove lines containing "/mnt/ephemeral" or " swap swap "
+  # TODO: need to update the implementation method when later the ephemeral
+  # mount point maybe changed to user configurable, to not hardcode to /mnt/ephemeralxxx
+  inform "Updating ${deviceMountPoint}/etc/fstab"
+  sed -i '/\/mnt\/ephemeral/d' ${deviceMountPoint}/etc/fstab
+  sed -i '/ swap swap /d' ${deviceMountPoint}/etc/fstab
+
+  # Remove stale /etc/multipath/bindings and /etc/multipath/wwids
+  # These files may contain the old info of the captured base vm,
+  # which disrupts the volume bindings of the new vm deployed from above captured image, resulting
+  #  a. mpath name inconsistent between 'df' and 'multipath'
+  #  b. in some scenairo, boot-volume extend partition fail due to 'a'
+  # By removing them, they can be recreated later with correct volume bindings
+  # when multipathd start at vm boot time.
+  inform "Move stale multipath bindings and wwids if any"
+  if [[ -r "${deviceMountPoint}/etc/multipath/bindings" ]]; then
+    mv ${deviceMountPoint}/etc/multipath/bindings ${deviceMountPoint}/etc/multipath/bindings.bak
+  fi
+  if [[ -r "${deviceMountPoint}/etc/multipath/wwids" ]]; then
+    mv ${deviceMountPoint}/etc/multipath/wwids ${deviceMountPoint}/etc/multipath/wwids.bak
+  fi
+
   # Refresh bootmap
   out=`chroot $deviceMountPoint /sbin/zipl 2>&1`
   rc=$?
@@ -455,18 +486,34 @@ function refreshFCPBootmap {
     exit 9
   fi
   inform "These WWPNs will be operated: ${wwpns[*]}"
-  
+
+  for i in "${!fcps[@]}"
+  do
+    for j in "${!wwpns[@]}"
+      do
+        x="/dev/disk/by-path/ccw-0.0.${fcps[i]}-zfcp-0x${wwpns[j]}:${lun}"
+        if [[ -e $x ]];then
+          diskPath=$x
+          inform "$diskPath is: $diskPath"
+          break
+        fi
+      done
+  done
+
+  if [[ -z $diskPath ]];then
+    inform "Can not find a proper path for FCP devices: ${fcps[*]} and wwpns: ${wwpns[*]}"
+    exit 10
+  fi
+
   # Set devNode according to whether multipath is enabled on the compute node
   wwid=""
   if [[ $multipath_enabled == 1 ]]; then
-      diskPath=/dev/disk/by-path/ccw-0.0.${fcps[0]}-zfcp-0x${wwpns[0]}:${lun}
       wwid=`/usr/lib/udev/scsi_id --whitelisted $diskPath 2> /dev/null`
       devNode="/dev/disk/by-id/dm-uuid-part1-mpath-$wwid"
       inform "Multipath is enabled, using multipath devNode: $devNode."
   else
       devNode="/dev/disk/by-path/ccw-0.0.${fcps[0]}-zfcp-0x${wwpns[0]}:${lun}-part1"
       # For blockdev command use.
-      diskPath="/dev/disk/by-path/ccw-0.0.${fcps[0]}-zfcp-0x${wwpns[0]}:${lun}"
       inform "Multipath is not enabled, using single path devNode: $devNode."
   fi
   
