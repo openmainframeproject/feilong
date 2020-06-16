@@ -386,46 +386,30 @@ function resizeECKD {
   local partitionsCount=`blkid | grep ${devNode} | wc -l`
   if [[ $partitionsCount -gt 1 ]]; then
     inform "Multiple partitions are detected on root disk. The last partition will be extended."
-    partnum=`parted -m ${devNode} print | tail -n 1 | cut -d':' -f1`
-    # Input redirection needed because fdasd does not have a command line parameter for
-    #    u   re-create VTOC re-using existing partition sizes
-    out=`fdasd ${devNode} <<-END
+  fi  
+
+  # Resize the partition to take the whole disk.
+  # Note: We will see a message indicating that "device is not fully formatted".
+  #       We will ignore that because we are redoing the parition to take 
+  #       advantage of the increased size.
+  partnum=`parted -m ${devNode} print | tail -n 1 | cut -d':' -f1`
+  # Input redirection needed because fdasd does not have a command line parameter for
+  #    u   re-create VTOC re-using existing partition sizes
+  out=`fdasd ${devNode} <<-END
 	u
 	y
 	w
 	END`
-    rc=$?
-    if (( rc != 0 )); then
-      printError "When recreating the VTOC, 'fdasd' to  ${devNode} returns rc: $rc, out: $out"
-      return 1
-    fi
-    out=`parted ${devNode} resize $partnum 100%`
-    rc=$?
-    if (( rc != 0 )); then
-      printError "When resizing the dasd, 'parted' to  ${devNode} returns rc: $rc, out: $out"
-      return 1
-    fi
-  else
-    # Resize the partition to take the whole disk.
-    # Note: We will see a message indicating that "device is not fully formatted".
-    #       We will ignore that because we are redoing the parition to take 
-    #       advantage of the increased size.
-    out=`fdasd -a ${devNode}`
-    rc=$?
-    if (( rc != 0 )); then
-      if (( rc == 255 )); then
-        sleep 0.5
-        out=`blockdev --rereadpt ${devNode}`
-        rc=$?
-        if (( rc != 0 )); then
-          printError "When resizing the dasd, 'blockdev --rereadpt' to  ${devNode} returns rc: $rc, out: $out"
-          return 1
-        fi
-      else
-        printError "When resizing the dasd, 'fsdasd -a' to  ${devNode} returns rc: $rc, out: $out"
-        return 1
-      fi
-    fi
+  rc=$?
+  if (( rc != 0 )); then
+    printError "When recreating the VTOC, 'fdasd' to  ${devNode} returns rc: $rc, out: $out"
+    return 1
+  fi
+  out=`parted ${devNode} resizepart $partnum 100%`
+  rc=$?
+  if (( rc != 0 )); then
+    printError "When resizing the dasd, 'parted' to  ${devNode} returns rc: $rc, out: $out"
+    return 1
   fi
 
   # Reset the device by disconnecting and then reconnecting
