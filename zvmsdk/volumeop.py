@@ -346,30 +346,41 @@ class FCPManager(object):
         range_pattern = '[0-9a-fA-F]{1,4}(-[0-9a-fA-F]{1,4})?'
         match_pattern = "^(%(range)s)(;%(range)s;?)*$" % \
                         {'range': range_pattern}
-        if not re.match(match_pattern, fcp_list):
+
+        item_pattern = "(%(range)s)(,%(range)s?)*" % \
+                       {'range': range_pattern}
+
+        multi_match_pattern = "^(%(range)s)(;%(range)s;?)*$" % \
+                       {'range': item_pattern}
+
+        if not re.match(match_pattern, fcp_list) and \
+           not re.match(multi_match_pattern, fcp_list):
             errmsg = ("Invalid FCP address %s") % fcp_list
             raise exception.SDKInternalError(msg=errmsg)
 
         fcp_devices = {}
         path_no = 0
         for _range in fcp_list.split(';'):
-            # remove duplicate entries
-            devices = set()
-            if _range != '':
-                if '-' not in _range:
-                    # single device
-                    fcp_addr = int(_range, 16)
-                    devices.add("%04x" % fcp_addr)
-                else:
-                    # a range of address
-                    (_min, _max) = _range.split('-')
-                    _min = int(_min, 16)
-                    _max = int(_max, 16)
-                    for fcp_addr in range(_min, _max + 1):
+            for item in _range.split(','):
+                # remove duplicate entries
+                devices = set()
+                if item != '':
+                    if '-' not in item:
+                        # single device
+                        fcp_addr = int(item, 16)
                         devices.add("%04x" % fcp_addr)
-                fcp_devices[path_no] = devices
+                    else:
+                        # a range of address
+                        (_min, _max) = item.split('-')
+                        _min = int(_min, 16)
+                        _max = int(_max, 16)
+                        for fcp_addr in range(_min, _max + 1):
+                            devices.add("%04x" % fcp_addr)
+                    if fcp_devices.get(path_no):
+                        fcp_devices[path_no].update(devices)
+                    else:
+                        fcp_devices[path_no] = devices
             path_no = path_no + 1
-
         return fcp_devices
 
     def _report_orphan_fcp(self, fcp):
