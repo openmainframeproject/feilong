@@ -222,6 +222,31 @@ class TestFCPManager(base.SDKTestCase):
         fcp_info = self.fcpops._expand_fcp_list(fcp_list)
         self.assertEqual(expected, fcp_info)
 
+    def test_expand_fcp_list_with_uncontinuous_equal_count(self):
+        fcp_list = "5c70-5c71,5c73-5c74;5d70-5d71,5d73-5d74"
+        expected = {0: set(['5c70', '5c71', '5c73', '5c74']),
+                    1: set(['5d70', '5d71', '5d73', '5d74'])}
+        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
+        self.assertEqual(expected, fcp_info)
+
+    def test_expand_fcp_list_with_4_uncontinuous_equal_count(self):
+        fcp_list = "5c70-5c71,5c73-5c74;5d70-5d71,\
+            5d73-5d74;1111-1112,1113-1114;2211-2212,2213-2214"
+        expected = {0: set(['5c70', '5c71', '5c73', '5c74']),
+                    1: set(['5d70', '5d71', '5d73', '5d74']),
+                    2: set(['1111', '1112', '1113', '1114']),
+                    3: set(['2211', '2212', '2213', '2214']),
+                   }
+        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
+        self.assertEqual(expected, fcp_info)
+
+    def test_expand_fcp_list_with_uncontinuous_not_equal_count(self):
+        fcp_list = "5c73-5c74;5d70-5d71,5d73-5d74"
+        expected = {0: set(['5c73', '5c74']),
+                    1: set(['5d70', '5d71', '5d73', '5d74'])}
+        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
+        self.assertEqual(expected, fcp_info)
+
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     def test_init_fcp_pool(self, mock_get):
         fcp_list = ['opnstk1: FCP device number: B83D',
