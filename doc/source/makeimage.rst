@@ -16,12 +16,16 @@ cloud connector:
 
 - RHEL 6.x
 - RHEL 7.x
+- RHEL 8.1
 - SLES 11.x
 - SLES 12.x
+- SELS 15
 - Ubuntu 16.04
 - Ubuntu 20.04
 
 Where x is the zLinux's minor release number
+
+**Note**: FBA as root disk type is not supported for RHEL 8.1
 
 2. The supported root disk type for capture/deploy are:
 
@@ -269,7 +273,7 @@ Perform the following steps:
 
 - If the target Linux machine is RHEL7.x, copy the zvmguestconfigureconf4z.service file to: /lib/systemd/system
 
-- If the target Linux machine is SLES12.x, copy the zvmguestconfigure.service file to: /usr/lib/systemd/system
+- If the target Linux machine is SLES12.x and SLES15, copy the zvmguestconfigure.service file to: /usr/lib/systemd/system
   and it is recommended that you change the NetworkManager.service to be wicked.service in the zvmguestconfigure.service
 
 5. Enable the zvmguestconfigure service by issuing:
@@ -285,7 +289,7 @@ Perform the following steps:
        systemctl start zvmguestconfigure.service
 
 Configuration of zvmguestconfigure on Ubuntu 16.04 and Ubuntu 20.04
-..................................................
+...................................................................
 
 1. Logon your BYOL, and copy the zvmguestconfigure and zvmguestconfigure.service
    script that are located at <zvmsdk_path>/python-zvm-sdk/tools/share/zvmguestconfigure 
@@ -318,10 +322,9 @@ Configuration of zvmguestconfigure on Ubuntu 16.04 and Ubuntu 20.04
        [Install]
        WantedBy=multi-user.target
 
-   After that, copy the zvmguestconfigure.service file to /lib/systemd/system.
-
-- If the target Linux machine is Ubuntu 20.04, copy the zvmguestconfigure.service.ubuntu file to: /lib/systemd/system,
- and rename to zvmguestconfigure.service.
+   After that, copy the zvmguestconfigure.service file to /lib/systemd/system. If the 
+   target Linux machine is Ubuntu 20.04, copy the zvmguestconfigure.service.ubuntu file 
+   to: /lib/systemd/system, and rename to zvmguestconfigure.service.
 
 5. Enable the zvmguestconfigure service by issuing:
 
@@ -360,7 +363,9 @@ of your Linux distribution. You can find a community-maintained list of
 dependencies at http://ibm.biz/cloudinitLoZ.
 
 The z/VM OpenStack support has been tested with cloud-init 0.7.4 and 0.7.5 for
-RHEL6.x and SLES11.x, 0.7.6 for RHEL7.x and SLES12.x, and 0.7.8 for Ubuntu 16.04.
+RHEL6.x and SLES11.x, 0.7.6 for RHEL7.x and SLES12.x, and 18.4 for SLES15, and 
+18.5 for RHEL8.1, and 0.7.8 for Ubuntu 16.04.
+
 If you are using a different version of cloud-init, you should change your
 specification of the indicated commands accordingly.During cloud-init
 installation, some dependency packages may be required. You can use yum/zypper
@@ -813,8 +818,90 @@ Installation and Configuration of cloud-init on RHEL 7.x and SLES 12.x
 
         rm -rf /var/lib/cloud
 
+Installation and Configuration of cloud-init on RHEL8.1 and SLES15
+..................................................................
+
+Enable the system repositories of the RHEL8.1 and SLES15 to ensure that they can install software via yum and zypper.
+
+1. Install cloud-init by the command:
+
+  a. For the RHEL8.1:
+
+     .. code-block:: text
+
+        yum install cloud-init 
+
+  b. For the SLES15:
+
+     .. code-block:: text
+
+        zypper install cloud-init
+
+2. OpenStack on z/VM uses ConfigDrive as the data source during the
+   installation process. You must add the following lines to the
+   default configuration file, /etc/cloud/cloud.cfg. Remember to disable network 
+   configuration because network configuration is done by zvmguestconfigure.
+
+   .. code-block:: text
+
+       # Example datasource config
+       # datasource:
+       #   Ec2:
+       #
+       # metadata_urls: [ ’blah.com’ ]
+       #
+       # timeout: 5 # (defaults to 50 seconds) 
+       #
+       #     max_wait: 10 # (defaults to 120 seconds)
+       datasource_list: [ ConfigDrive, None ]
+       datasource:
+         ConfigDrive:
+           dsmode: local
+       network: {config: disabled}
+
+   **NOTE:** please pay attention to the indentation, otherwise, cloud-init may not
+   work as expected.
+
+3. Optionally, enable root login by configuring the /etc/cloud/cloud.cfg file:
+
+   .. code-block:: text
+
+       disable_root: false 
+
+4. Enable and start the cloud-init related services by issuing the following commands:
+
+   .. code-block:: text
+
+       systemctl enable cloud-init-local.service
+       systemctl start cloud-init-local.service
+       systemctl enable cloud-init.service
+       systemctl start cloud-init.service
+       systemctl enable cloud-config.service
+       systemctl start cloud-config.service
+       systemctl enable cloud-final.service
+       systemctl start cloud-final.service
+
+   If you experience problems the first time you start cloud-config.service and
+   cloud-final.service, try starting them again.
+
+5. Ensure all cloud-init services are in active status by issuing the following commands:
+
+   .. code-block:: text
+
+       systemctl status cloud-init-local.service
+       systemctl status cloud-init.service
+       systemctl status cloud-config.service
+       systemctl status cloud-final.service 
+
+6. Remove the /var/lib/cloud directory (if it exists), so that cloud-init will
+    not run after a reboot: 
+
+   .. code-block:: text
+
+       rm -rf /var/lib/cloud
+
 Installation and Configuration of cloud-init on Ubuntu 16.04 and Ubuntu 20.04
-............................................................
+.............................................................................
 
 For Ubuntu 16.04, cloud-init0.7.8 or higher is required. The examples in this
 section use cloud-init0.7.8.
