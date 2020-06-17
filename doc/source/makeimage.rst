@@ -289,7 +289,7 @@ Perform the following steps:
        systemctl start zvmguestconfigure.service
 
 Configuration of zvmguestconfigure on Ubuntu 16.04 and Ubuntu 20.04
-..................................................
+...................................................................
 
 1. Logon your BYOL, and copy the zvmguestconfigure and zvmguestconfigure.service
    script that are located at <zvmsdk_path>/python-zvm-sdk/tools/share/zvmguestconfigure 
@@ -322,10 +322,9 @@ Configuration of zvmguestconfigure on Ubuntu 16.04 and Ubuntu 20.04
        [Install]
        WantedBy=multi-user.target
 
-   After that, copy the zvmguestconfigure.service file to /lib/systemd/system.
-
-- If the target Linux machine is Ubuntu 20.04, copy the zvmguestconfigure.service.ubuntu file to: /lib/systemd/system,
- and rename to zvmguestconfigure.service.
+   After that, copy the zvmguestconfigure.service file to /lib/systemd/system. If the 
+   target Linux machine is Ubuntu 20.04, copy the zvmguestconfigure.service.ubuntu file 
+   to: /lib/systemd/system, and rename to zvmguestconfigure.service.
 
 5. Enable the zvmguestconfigure service by issuing:
 
@@ -902,7 +901,7 @@ Enable the system repositories of the RHEL8.1 and SLES15 to ensure that they can
        rm -rf /var/lib/cloud
 
 Installation and Configuration of cloud-init on Ubuntu 16.04 and Ubuntu 20.04
-............................................................
+.............................................................................
 
 For Ubuntu 16.04, cloud-init0.7.8 or higher is required. The examples in this
 section use cloud-init0.7.8.
