@@ -1813,8 +1813,10 @@ class ubuntu(LinuxDist):
 class ubuntu16(ubuntu):
     pass
 
+
 class ubuntu20(ubuntu):
     pass
+
 
 class LinuxDistManager(object):
     def get_linux_dist(self, os_version):
