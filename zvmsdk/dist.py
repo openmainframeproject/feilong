@@ -1864,8 +1864,10 @@ class ubuntu20(ubuntu):
         if first:
             cfg_files.append((network_config_file_name, cfg_str))
         else:
-            cmd_strings = ('echo "%s" >>%s\n' % (cfg_str,
-                                                 network_config_file_name))
+            # TODO: create interface with cmd_strings after VM deployed
+            raise Exception('Ubuntu20 is not supported to create interface'
+                            'after VM deployed.')
+
         return cfg_files, cmd_strings, clean_cmd, net_enable_cmd
 
     def _generate_network_configuration(self, network, vdev):
