@@ -1803,7 +1803,120 @@ class ubuntu16(ubuntu):
 
 
 class ubuntu20(ubuntu):
-    pass
+    def _get_device_filename(self, device_num):
+        return '/etc/netplan/' + str(device_num) + '.yaml'
+
+    def _get_network_file(self):
+        return '/etc/netplan/00-zvmguestconfigure-config.yaml'
+
+    def _get_network_file_path(self):
+        return '/etc/netplan/'
+
+    def get_znetconfig_contents(self):
+        return '\n'.join(('cio_ignore -R',
+                          'znetconf -R -n',
+                          'sleep 2',
+                          'udevadm trigger',
+                          'udevadm settle',
+                          'sleep 2',
+                          'znetconf -A',
+                          'netplan apply',
+                          'cio_ignore -u'))
+
+    def create_network_configuration_files(self, file_path, guest_networks,
+                                           first, active=False):
+        """Generate network configuration files for guest vm
+        :param list guest_networks:  a list of network info for the guest.
+               It has one dictionary that contain some of the below keys for
+               each network, the format is:
+               {'ip_addr': (str) IP address,
+               'dns_addr': (list) dns addresses,
+               'gateway_addr': (str) gateway address,
+               'cidr': (str) cidr format
+               'nic_vdev': (str) VDEV of the nic}
+
+               Example for guest_networks:
+               [{'ip_addr': '192.168.95.10',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.95.1',
+               'cidr': "192.168.95.0/24",
+               'nic_vdev': '1000'},
+               {'ip_addr': '192.168.96.10',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.96.1',
+               'cidr': "192.168.96.0/24",
+               'nic_vdev': '1003}]
+        """
+        cfg_files = []
+        cmd_strings = ''
+        network_config_file_name = self._get_network_file()
+        net_enable_cmd = ''
+        if first:
+            clean_cmd = self._get_clean_command()
+        else:
+            clean_cmd = ''
+
+        for network in guest_networks:
+            base_vdev = network['nic_vdev'].lower()
+            (cfg_str) = self._generate_network_configuration(network,
+                                    base_vdev)
+            LOG.debug('Network configure file content is: %s', cfg_str)
+        if first:
+            cfg_files.append((network_config_file_name, cfg_str))
+        else:
+            cmd_strings = ('echo "%s" >>%s\n' % (cfg_str,
+                                                 network_config_file_name))
+        return cfg_files, cmd_strings, clean_cmd, net_enable_cmd
+
+    def _generate_network_configuration(self, network, vdev):
+        ip_v4 = dns_str = gateway_v4 = ''
+        cidr = ''
+        dns_v4 = []
+        if (('ip_addr' in network.keys()) and
+            (network['ip_addr'] is not None)):
+            ip_v4 = network['ip_addr']
+
+        if (('gateway_addr' in network.keys()) and
+            (network['gateway_addr'] is not None)):
+            gateway_v4 = network['gateway_addr']
+
+        if (('dns_addr' in network.keys()) and
+            (network['dns_addr'] is not None) and
+            (len(network['dns_addr']) > 0)):
+            for dns in network['dns_addr']:
+                dns_str += 'nameserver ' + dns + '\n'
+                dns_v4.append(dns)
+
+        if (('cidr' in network.keys()) and
+            (network['cidr'] is not None)):
+            cidr = network['cidr'].split('/')[1]
+
+        device = self._get_device_name(vdev)
+        if dns_v4:
+            cfg_str = {'network':
+                            {'ethernets':
+                                {device:
+                                    {'addresses': [ip_v4 + '/' + cidr],
+                                     'gateway4': gateway_v4,
+                                     'nameservers':
+                                        {'addresses': dns_v4}
+                                    }
+                                },
+                            'version': 2
+                            }
+                        }
+        else:
+            cfg_str = {'network':
+                            {'ethernets':
+                                {device:
+                                    {'addresses': [ip_v4 + '/' + cidr],
+                                     'gateway4': gateway_v4
+                                    }
+                                },
+                            'version': 2
+                            }
+                        }
+        return cfg_str
 
 
 class LinuxDistManager(object):
