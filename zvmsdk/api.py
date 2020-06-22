@@ -620,19 +620,21 @@ class SDKAPI(object):
         :param userid: (str) the userid of the vm to be deregistered
         """
         userid = userid.upper()
-        if not zvmutils.check_userid_exist(userid):
-            LOG.error("User directory '%s' does not exist." % userid)
-            raise exception.SDKObjectNotExistError(
-                    obj_desc=("Guest '%s'" % userid), modID='guest')
-        else:
-            action = "delete switches of guest '%s' from database" % userid
-            with zvmutils.log_and_reraise_sdkbase_error(action):
-                self._NetworkDbOperator.switch_delete_record_for_userid(userid)
+        # We don't check if the VM exists in the LPAR or zCC DB, just delete it
+        # from DB anyway, cause there could be the case that the VM is deleted
+        # outside of zCC e.g. smcli, and the DB record is still there.
+        if not self._vmops.check_guests_exist_in_db(userid, raise_exc=False):
+            LOG.warning("User directory '%s' does not exist in guest DB."
+                        "But let's still delete it as there is also switch"
+                        " table" % userid)
+        action = "delete switches of guest '%s' from database" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._NetworkDbOperator.switch_delete_record_for_userid(userid)
 
-            action = "delete guest '%s' from database" % userid
-            with zvmutils.log_and_reraise_sdkbase_error(action):
-                self._GuestDbOperator.delete_guest_by_userid(userid)
-            LOG.info("Guest %s deregistered." % userid)
+        action = "delete guest '%s' from database" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._GuestDbOperator.delete_guest_by_userid(userid)
+        LOG.info("Guest %s deregistered." % userid)
 
     @check_guest_exist()
     def guest_live_migrate(self, userid, dest_zcc_userid, destination,
@@ -1423,7 +1425,7 @@ class SDKAPI(object):
         """
         self._networkops.delete_vswitch(vswitch_name, persist)
 
-    def get_volume_connector(self, userid):
+    def get_volume_connector(self, userid, reserve=False):
         """Get connector information of the guest for attaching to volumes.
         This API is for Openstack Cinder driver only now.
 
@@ -1439,8 +1441,9 @@ class SDKAPI(object):
         This information will be used by IBM storwize FC driver in Cinder.
 
         :param str userid: the user id of the guest
+        :param boolean reserve: the flag to reserve FCP device
         """
-        return self._volumeop.get_volume_connector(userid)
+        return self._volumeop.get_volume_connector(userid, reserve)
 
     def volume_attach(self, connection_info):
         """ Attach a volume to a guest. It's prerequisite to active multipath
