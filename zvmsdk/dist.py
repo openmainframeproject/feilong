@@ -1694,24 +1694,41 @@ class ubuntu(LinuxDist):
 
     def _online_fcp_device(self, fcp):
         """ubuntu online fcp"""
-        return ''
+        # cio_ignore
+        cio_ignore = '/sbin/cio_ignore -r %s > /dev/null\n' % fcp
+        # set the fcp online
+        online_dev = '/sbin/chccwdev -e %s > /dev/null\n' % fcp
+        return cio_ignore + online_dev
 
     def _set_sysfs(self, fcp, target_wwpns, target_lun):
         """ubuntu set WWPN and LUN in sysfs"""
-        return ''
+        device = '0.0.%s' % fcp
+        data = {'device': device, 'lun': target_lun}
+        # if NPIV is disable or autoscan is closed, need manual operations
+        unit_add = ('if [[ "$AutoScan" != "Y" || "$NPIV" != "NPIV VPORT" ]]; '
+                    'then\n')
+        unit_add += '    for wwpn in ${ActiveWWPNs[@]}\n'
+        unit_add += '    do\n'
+        unit_add += ('        chzdev -e -a zfcp-lun %(device)s:$wwpn:%(lun)s\n'
+                     % data)
+        unit_add += ('        echo "%(lun)s" > /sys/bus/ccw/drivers/zfcp/'
+                     '%(device)s/$wwpn/unit_add\n' % data)
+        unit_add += '    done\n'
+        unit_add += 'fi\n'
+        return unit_add
 
     def _set_zfcp_config_files(self, fcp, target_lun):
         """ubuntu zfcp configuration """
-        host_config = '/sbin/chzdev zfcp-host %s -e' % fcp
-
         device = '0.0.%s' % fcp
-        target = '%s:$wwpn:%s' % (device, target_lun)
-        disk_config = 'for wwpn in ${ActiveWWPNs[@]}\n'
-        disk_config += 'do\n'
-        disk_config = '    /sbin/chzdev zfcp-lun %s -e\n' % target
-        disk_config += 'done\n'
-        return '\n'.join((host_config,
-                          disk_config))
+        data = {'device': device, 'lun': target_lun}
+        set_zfcp_conf = 'for wwpn in ${ActiveWWPNs[@]}\n'
+        set_zfcp_conf += 'do\n'
+        set_zfcp_conf += ('    echo "%(device)s $wwpn %(lun)s" >> '
+                          '/etc/zfcp.conf\n' % data)
+        set_zfcp_conf += 'done\n'
+        set_zfcp_conf += ('echo "add" >> /sys/bus/ccw/devices/%s/uevent\n'
+                          % device)
+        return set_zfcp_conf
 
     def _check_multipath_tools(self):
         multipath = 'multipath'
