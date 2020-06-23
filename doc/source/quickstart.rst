@@ -159,6 +159,13 @@ SSH onto the BYOL as root user, and then follow the following steps:
        # cd build-zvmsdk
        # /usr/bin/bash buildzthinrpm_rhel master
 
+   If you build server is RHEL8, the build command should be:
+
+   .. code-block:: text
+
+       # cd build-zvmsdk
+       # OS_IS_RHEL8=1 /usr/bin/bash buildzthinrpm_rhel master
+
    If this build finishes successfully, the result rpm will be generated
    in the /root/zthin-build/RPMS/s390x/ directory named in the format
    *zthin-version-snapdate.s390x.rpm* where *version* is the zthin version
