@@ -16,6 +16,7 @@
 import os
 import shutil
 import tarfile
+import yaml
 
 from zvmsdk import config
 from zvmsdk import dist
@@ -174,7 +175,10 @@ class NetworkOPS(object):
                         'source_file': "%s" % key})
             content_dir[key] = contents
             file_name = os.path.join(network_file_path, key)
-            self._add_file(file_name, contents)
+            if 'yaml' in path:
+                self._add_yaml_file(file_name, contents)
+            else:
+                self._add_file(file_name, contents)
 
         self._create_invokeScript(network_file_path, clean_cmd, files_map)
         network_doscript = self._create_network_doscript(network_file_path)
@@ -189,6 +193,10 @@ class NetworkOPS(object):
     def _add_file(self, file_name, data):
         with open(file_name, "w") as f:
             f.write(data)
+
+    def _add_yaml_file(self, file_name, data):
+        stream = file(file_name, 'w')
+        yaml.dump(data, stream)
 
     def _create_znetconfig(self, commands, linuxdist, append_cmd,
                            active=False):
