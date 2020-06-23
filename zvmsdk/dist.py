@@ -1713,7 +1713,7 @@ class ubuntu(LinuxDist):
         target = '%s:$wwpn:%s' % (device, target_lun)
         disk_config = 'for wwpn in ${ActiveWWPNs[@]}\n'
         disk_config += 'do\n'
-        disk_config = '    /sbin/chzdev zfcp-lun %s -e\n' % target
+        disk_config += '    /sbin/chzdev zfcp-lun %s -e\n' % target
         disk_config += 'done\n'
         return '\n'.join((host_config,
                           disk_config))
