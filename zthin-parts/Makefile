@@ -7,6 +7,12 @@ SRC_DIR = zthin/src/
 INCLUDE_DIR = zthin/include/
 ZTHINLIB = "libzthin.so"
 
+ifeq ($(OS_IS_RHEL8),1)
+	LINK_TIRPC = -ltirpc
+else
+	LINK_TIRPC =
+endif
+
 #-----------------------------------------------------------------------
 # Objects for utils
 #-----------------------------------------------------------------------
@@ -989,7 +995,7 @@ syncfileutil.o : $(SRC_DIR)syncfileutil.c
 	gcc -c $(DEBUG) -I$(INCLUDE_DIR) $(SRC_DIR)syncfileutil.c
 
 smcli :smcli.o $(SMCLI_OBJECTS) $(UTILS_OBJECTS) $(ZTHINLIB)
-	gcc -o smcli $(UTILS_OBJECTS) $(SMCLI_OBJECTS)  -L./ -lzthin -ldl
+	gcc -o smcli $(UTILS_OBJECTS) $(SMCLI_OBJECTS)  -L./ -lzthin $(LINK_TIRPC) -ldl
 
 #-----------------------------------------------------------------------
 # Install
