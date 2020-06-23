@@ -430,7 +430,13 @@ def req_volume_refresh_bootmap(start_index, *args, **kwargs):
 
 def req_get_volume_connector(start_index, *args, **kwargs):
     url = '/volumes/conn/%s'
-    body = None
+    reserve = kwargs.get('reserve', False)
+    body = {'info':
+        {
+            "reserve": reserve
+        }
+    }
+    fill_kwargs_in_body(body['info'], **kwargs)
     return url, body
 
 

@@ -1497,6 +1497,11 @@ class sles12(sles):
         return activeIP_str
 
 
+class sles15(sles12):
+    """docstring for sles15"""
+    pass
+
+
 class ubuntu(LinuxDist):
     def create_network_configuration_files(self, file_path, guest_networks,
                                            first, active=False):
@@ -1797,6 +1802,10 @@ class ubuntu16(ubuntu):
     pass
 
 
+class ubuntu20(ubuntu):
+    pass
+
+
 class LinuxDistManager(object):
     def get_linux_dist(self, os_version):
         distro, release = self.parse_dist(os_version)
@@ -1804,8 +1813,8 @@ class LinuxDistManager(object):
 
     def _parse_release(self, os_version, distro, remain):
         supported = {'rhel': ['6', '7', '8'],
-                     'sles': ['11', '12'],
-                     'ubuntu': ['16'],
+                     'sles': ['11', '12', '15'],
+                     'ubuntu': ['16', '20'],
                      'rhcos': ['4']}
         releases = supported[distro]
 

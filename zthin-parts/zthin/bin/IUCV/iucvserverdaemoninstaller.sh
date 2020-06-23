@@ -116,7 +116,7 @@ function installIucvserver {
     COPY_SERVICE_CMD="cp iucvserd.service /lib/systemd/system/"
     REGISTER_SERVICE_CMD="systemctl enable iucvserd.service"
     START_SERVICE_CMD="systemctl start iucvserd.service"
-  elif [[ $os == sles12* ]]; then
+  elif [[ $os == sles12* || $os == sles15* ]]; then
     COPY_SERVICE_CMD="cp iucvserd.service /usr/lib/systemd/system/"
     REGISTER_SERVICE_CMD="systemctl enable iucvserd.service"
     START_SERVICE_CMD="systemctl start iucvserd.service"
