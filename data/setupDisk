@@ -544,7 +544,8 @@ function setupDisk {
       fi
     elif [[ $os == sles* ]]; then
       /sbin/dasd_configure 0.0.$xcat_vaddr 1
-    elif [[ $os == ubuntu16* ]]; then
+    elif [[ $os == ubuntu* ]]; then
+      chzdev -e dasd 0.0.$xcat_vaddr
       touch /etc/sysconfig/hardware/config-ccw-0.0.$xcat_vaddr
     else
       echo "$funcName (Error) failed to permanently online the disk:$xcat_vaddr on os: $os, please check if $os is in the supported distribution list"
