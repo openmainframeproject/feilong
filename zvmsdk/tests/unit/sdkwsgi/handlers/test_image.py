@@ -134,8 +134,22 @@ class HandlersImageTest(unittest.TestCase):
                          "image_meta": {
                          "os_version": "rhel2.2",
                          "md5sum": "12345678912345678912345678912345"
-                         },
-                         "remotehost": "hostname"
+                         }
+                        }
+              }"""
+        self.req.body = body_str
+
+        self.assertRaises(exception.ValidationError, image.image_create,
+                          self.req)
+
+    def test_image_create_invalid_rhcos_os_version(self):
+        body_str = """{"image": {"image_name": "46a4aea3-54b6-4b1c",
+                         "url": "file:///tmp/test.img",
+                         "image_meta": {
+                         "os_version": "rhcos43",
+                         "md5sum": "12345678912345678912345678912345",
+                         "disk_type": "DASD"
+                         }
                         }
               }"""
         self.req.body = body_str
@@ -150,8 +164,7 @@ class HandlersImageTest(unittest.TestCase):
                          "os_version": "rhcos4.2",
                          "md5sum": "12345678912345678912345678912345",
                          "disk_type": "any"
-                         },
-                         "remotehost": "hostname"
+                         }
                         }
               }"""
         self.req.body = body_str
@@ -168,8 +181,7 @@ class HandlersImageTest(unittest.TestCase):
         body_str = """{"image": {"url": "file:///tmp/test.img",
                                  "image_meta": {
                                  "md5sum": "12345678912345678912345678912345"
-                                 },
-                                 "remotehost": "hostname"
+                                 }
                                 }
                       }"""
         self.req.body = body_str
@@ -183,8 +195,7 @@ class HandlersImageTest(unittest.TestCase):
                                  "image_meta": {
                                  "os_version": "rhel7.2",
                                  "md5sum": "2345678912345678912345678912345"
-                                 },
-                                 "remotehost": "hostname"
+                                 }
                                 }
                       }"""
         self.req.body = body_str

@@ -375,7 +375,6 @@ class VMAction(object):
                         "vdev: %(vdev)s, skipdiskcopy: %(skipdiskcopy)s" %
                         {'userid': userid, 'trans': transportfiles,
                          'remote': remotehost, 'vdev': vdev,
-                         'hostname': hostname,
                          'skipdiskcopy': skipdiskcopy,
                          })
 

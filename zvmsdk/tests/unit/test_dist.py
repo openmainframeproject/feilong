@@ -554,6 +554,7 @@ class SLESTestCase(base.SDKTestCase):
         self.dist_manager = dist.LinuxDistManager()
         self.sles11_dist = self.dist_manager.get_linux_dist('sles11')()
         self.sles12_dist = self.dist_manager.get_linux_dist('sles12')()
+        self.sles15_dist = self.dist_manager.get_linux_dist('sles15')()
 
     def test_set_zfcp_config_files(self):
         """ sles """
@@ -610,12 +611,19 @@ class SLESTestCase(base.SDKTestCase):
         ret = self.sles12_dist._set_zfcp_config_files(fcp, target_lun)
         self.assertEqual(ret, expect)
 
+        ret = self.sles15_dist._set_zfcp_config_files(fcp, target_lun)
+        self.assertEqual(ret, expect)
+
     def test_restart_multipath(self):
         ret = self.sles11_dist._restart_multipath()
         start_multipathd = 'systemctl restart multipathd\n'
         self.assertEqual(ret, start_multipathd)
 
         ret = self.sles12_dist._restart_multipath()
+        start_multipathd = 'systemctl restart multipathd\n'
+        self.assertEqual(ret, start_multipathd)
+
+        ret = self.sles15_dist._restart_multipath()
         start_multipathd = 'systemctl restart multipathd\n'
         self.assertEqual(ret, start_multipathd)
 
@@ -634,6 +642,9 @@ class SLESTestCase(base.SDKTestCase):
         self.assertEqual(ret, expect)
 
         ret = self.sles12_dist._set_zfcp_multipath(True)
+        self.assertEqual(ret, expect)
+
+        ret = self.sles15_dist._set_zfcp_multipath(True)
         self.assertEqual(ret, expect)
 
 
