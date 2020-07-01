@@ -1,4 +1,3 @@
 mock>=2.0.0 # BSD
 python-subunit>=1.0.0 # Apache-2.0/BSD
-PyYAML>=3.10 # MIT
 sphinx>=1.6.2,!=1.8.0 # BSD
