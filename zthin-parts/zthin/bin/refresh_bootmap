@@ -243,6 +243,7 @@ function refreshZIPL {
   
   if [[ $skipzipl = 'YES'  ]]; then
     inform "WWPNs: ${wwpns[*]}"
+    inform "FCPs: ${fcps[*]}"
     return
   fi
 
@@ -382,6 +383,9 @@ function refreshZIPL {
 
   # Return wwpns
   inform "WWPNs: ${wwpns[*]}"
+
+  # Return fcps
+  inform "FCPs: ${fcps[*]}"
   return
 } #refreshZIPL
 
@@ -504,6 +508,17 @@ function refreshFCPBootmap {
     inform "Can not find a proper path for FCP devices: ${fcps[*]} and wwpns: ${wwpns[*]}"
     exit 10
   fi
+
+  # Move the proper FCP device to the first position.
+  tmp=${fcps[0]}
+  fcps[0]=${fcps[i]}
+  fcps[$i]=$tmp
+
+  # Move the proper WWPN to the first position.
+  tmp=${wwpns[0]}
+  wwpns[0]=${wwpns[j]}
+  wwpns[$j]=$tmp
+
 
   # Set devNode according to whether multipath is enabled on the compute node
   wwid=""
