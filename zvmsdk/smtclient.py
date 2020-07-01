@@ -715,7 +715,7 @@ class SMTClient(object):
         : param fcpchannels: list of fcpchannels.
         : param wwpns: list of wwpns.
         : param lun: string of lun.
-        : return value: list of physical wwpns.
+        : return value: list of FCP devices and physical wwpns.
         """
         fcps = ','.join(fcpchannels)
         ws = ','.join(wwpns)
@@ -745,13 +745,18 @@ class SMTClient(object):
                                                     errcode=rc,
                                                     errmsg=err_output)
         output_lines = output.split('\n')
-        res = []
+        res_wwpns = []
+        res_fcps = []
         for line in output_lines:
             if line.__contains__("WWPNs: "):
                 wwpns = line[7:]
                 # Convert string to list by space
-                res = wwpns.split()
-        return res
+                res_wwpns = wwpns.split()
+            if line.__contains__("FCPs: "):
+                fcps = line[6:]
+                # Convert string to list by space
+                res_fcps = fcps.split()
+        return res_wwpns, res_fcps
 
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None, skipdiskcopy=False):
