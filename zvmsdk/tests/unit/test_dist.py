@@ -658,15 +658,22 @@ class UBUNTUTestCase(base.SDKTestCase):
         super(UBUNTUTestCase, self).setUp()
         self.dist_manager = dist.LinuxDistManager()
         self.linux_dist = self.dist_manager.get_linux_dist('ubuntu16')()
+        self.ubuntu20_dist = self.dist_manager.get_linux_dist('ubuntu20')()
 
     def test_check_multipath_tools(self):
         multipath = 'multipath'
         ret = self.linux_dist._check_multipath_tools()
         self.assertEqual(ret, multipath)
 
+        ret = self.ubuntu20_dist._check_multipath_tools()
+        self.assertEqual(ret, multipath)
+
     def test_restart_multipath(self):
         reload_map = 'systemctl restart multipath-tools.service\n'
         ret = self.linux_dist._restart_multipath()
+        self.assertEqual(ret, reload_map)
+
+        ret = self.ubuntu20_dist._restart_multipath()
         self.assertEqual(ret, reload_map)
 
     def test_set_zfcp_multipath(self):
@@ -686,6 +693,9 @@ class UBUNTUTestCase(base.SDKTestCase):
         ret = self.linux_dist._set_zfcp_multipath(True)
         self.assertEqual(ret, expect)
 
+        ret = self.ubuntu20_dist._set_zfcp_multipath(True)
+        self.assertEqual(ret, expect)
+
     def test_offline_fcp_device(self):
         """ Ubuntu """
         fcp = '1fc5'
@@ -695,4 +705,66 @@ class UBUNTUTestCase(base.SDKTestCase):
 
         expect = '\n'.join((host_offline,
                             offline_dev))
+        self.assertEqual(ret, expect)
+
+        ret = self.ubuntu20_dist._offline_fcp_device(fcp)
+        self.assertEqual(ret, expect)
+
+    def test_set_zfcp_config_files(self):
+        """ Ubuntu """
+        fcp = '1fc5'
+        target_lun = '0x0026000000000000'
+        device = '0.0.%s' % fcp
+        target = '%s:$wwpn:%s' % (device, target_lun)
+        # add to port(WWPN)
+        disk_config = '/sbin/chzdev zfcp-host %s -e\n' % fcp
+        disk_config += 'for wwpn in ${ActiveWWPNs[@]}\n'
+        disk_config += 'do\n'
+        disk_config += '    /sbin/chzdev zfcp-lun %s -e\n' % target
+        disk_config += 'done\n'
+        expect = disk_config
+
+        ret = self.linux_dist._set_zfcp_config_files(fcp, target_lun)
+        self.assertEqual(ret, expect)
+
+        ret = self.ubuntu20_dist._set_zfcp_config_files(fcp, target_lun)
+        self.assertEqual(ret, expect)
+
+
+class UBUNTU20TestCase(base.SDKTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(UBUNTU20TestCase, cls).setUpClass()
+
+    def setUp(self):
+        super(UBUNTU20TestCase, self).setUp()
+        self.dist_manager = dist.LinuxDistManager()
+        self.linux_dist = self.dist_manager.get_linux_dist('ubuntu20')()
+
+    def test_create_network_configuration_files(self):
+        guest_networks = [{'ip_addr': '192.168.95.10',
+                           'dns_addr': ['9.0.2.1', '9.0.3.1'],
+                           'gateway_addr': '192.168.95.1',
+                           'cidr': "192.168.95.0/24",
+                           'nic_vdev': '1000'}]
+        file_path = '/etc/netplan/'
+        first = True
+        files_and_cmds = self.linux_dist.create_network_configuration_files(
+            file_path, guest_networks, first, active=False)
+        (net_conf_files, net_conf_cmds,
+         clean_cmd, net_enable_cmd) = files_and_cmds
+        ret = net_conf_files[0][1]
+        expect = {'network':
+                        {'ethernets':
+                            {'enc1000':
+                                {'addresses': ['192.168.95.10/24'],
+                                'gateway4': '192.168.95.1',
+                                'nameservers':
+                                    {'addresses': ['9.0.2.1', '9.0.3.1']}
+                                }
+                            },
+                        'version': 2
+                        }
+                    }
         self.assertEqual(ret, expect)
