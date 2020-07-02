@@ -89,7 +89,7 @@ def main(argv):
                 update_token_file(file_path)
                 msg = "token updated, please remeber" +\
                       "to update the token data on client side!"
-                print msg
+                print(msg)
     except getopt.GetoptError:
         print('syntax ERROR!')
         usage()
