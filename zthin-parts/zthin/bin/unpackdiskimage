@@ -765,7 +765,7 @@ function deployDiskImage {
     fi
 
     # Exec zipl command to prepare device for initial problem load
-    if [[ $os == sles12* ]]; then
+    if [[ $os == sles12* || $os == sles15* ]]; then
       out=`chroot $deviceMountPoint /sbin/zipl -c /boot/zipl/config 2>&1`
       rc=$?
       if (( rc != 0 )); then
