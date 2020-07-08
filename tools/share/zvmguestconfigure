@@ -78,7 +78,7 @@ function pullReader {
   #   Return code indicates success if reader was brought online.
   # @Code:
   local funcName="pullReader"
-  /sbin/modprobe vmcp
+  #/sbin/modprobe vmcp
 
   # Online reader
   rc= onlineDevice "000c"
