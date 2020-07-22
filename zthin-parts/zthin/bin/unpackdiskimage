@@ -309,28 +309,8 @@ function resizePartition {
   fi
 
   if [[ $fs == "xfs" ]]; then
-    #Before we can increase a xfs file system, it needs to be mounted first
-    mountdir=`mktemp -d /tmp/XXXXXXXXXX`
-    mount -o nouuid ${lastPartition} $mountdir
-    if (( $? )); then
-      printError "Unable to mount the last partition ${lastPartition} of ${userID}:${channelID} returns rc: $rc, out: $out"
-      rm -rf $mountdir
-      return 1
-    fi
-
-    #Grow the xfs file system
-    out=`xfs_growfs $mountdir 2>&1`
-    rc=$?
-    if (( rc != 0 )); then
-      printError "Unable to increase the xfs file system on last parition ${lastPartition} of ${userID}:${channelID} returns rc: $rc, out: $out"
-      umount $mountdir
-      rm -rf $mountdir
-      return 1
-    fi
-
-    #Unmount the xfs file system
-    umount $mountdir
-    rm -rf $mountdir
+    # the file system will be resized by cloud-init
+    inform "The file system type is XFS."
 
   # Resize the ext filesystem
   elif [[ $fs =~ "ext" ]]; then
