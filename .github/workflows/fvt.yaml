@@ -1,0 +1,23 @@
+name: FVT on s390x
+on:
+  pull_request:
+    branches: [ master ]
+jobs:
+  fvt:
+    name: fvt on s390x
+    runs-on: ubuntu-latest
+    steps:
+    - name: ssh to remote
+      uses: appleboy/ssh-action@master
+      with:
+        host: 10.100.0.160
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        port: 22
+        proxy_host: 47.19.64.85
+        proxy_username: ubuntu
+        proxy_key: ${{ secrets.PROXY_KEY }}
+        proxy_port: 2020
+        script: |
+          whoami
+          ls -la
