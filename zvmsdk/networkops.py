@@ -195,8 +195,8 @@ class NetworkOPS(object):
             f.write(data)
 
     def _add_yaml_file(self, file_name, data):
-        stream = file(file_name, 'w')
-        yaml.dump(data, stream)
+        with open(file_name, "w") as f:
+            yaml.dump(data, f)
 
     def _create_znetconfig(self, commands, linuxdist, append_cmd,
                            active=False):
