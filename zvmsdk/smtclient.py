@@ -2360,6 +2360,7 @@ class SMTClient(object):
             # pipeline, so can not use utils.execute function here
             output = subprocess.check_output(command, shell=True,
                                              stderr=subprocess.STDOUT)
+            output = bytes.decode(output)
         except subprocess.CalledProcessError as err:
             rc = err.returncode
             output = err.output
@@ -2368,7 +2369,7 @@ class SMTClient(object):
                                                    str(err)))
             raise exception.SDKInternalError(msg=err_msg)
 
-        if rc or output.strip('1234567890\n'):
+        if rc or output.strip('1234567890*\n'):
             msg = ("Error happened when executing command fdisk with "
                    "reason: %s" % output)
             LOG.error(msg)
