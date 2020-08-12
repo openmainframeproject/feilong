@@ -295,14 +295,58 @@ function refreshZIPL {
     os=$os$version
   fi
   # Prepare the new rd.zfcp parameter value
+  fcps_len=${#fcps[@]}
+  wwpns_len=${#wwpns[@]}
+  res=$(( $fcps_len * $wwpns_len ))
   rd_zfcp=""
-  for fcp in ${fcps[@]}
-  do
-    for w in ${wwpns[@]}
+
+  # For rhel, the max support items of "rd.zfcp" is 8, so we need to judge the
+  # result of FCP devices multiply WWPN.
+  #
+  # If the result of fcps_len multiply wwpns_len less than 8, we can do a fullmesh of
+  # all FCP devices and WWPNs.
+  if [ $res -le 8 ] # less than and equal 8
+  then
+    for fcp in ${fcps[@]}
     do
-      rd_zfcp+="rd.zfcp=0.0."$fcp,0x$w,$lun" "
+      for w in ${wwpns[@]}
+      do
+        rd_zfcp+="rd.zfcp=0.0."$fcp,0x$w,$lun" "
+      done
     done
-  done
+    inform "Do a fullmesh of FCP devices: ${fcps[*]} and WWPN: ${wwpns[*]} for rd.zfcp: $rd_zfcp"
+  # If the result of fcps_len multiply wwpns_len greater than 8, we need to use
+  # every FCP device and as much as possible to use WWPN.
+  else
+    paths=0
+    fcp_index=0
+    wwpn_index=0
+    while [ $paths -lt 8 ]
+    do
+        if [ $fcp_index -ge $fcps_len ]; then
+          fcp_index=0
+        fi
+
+        if [ $wwpn_index -ge $wwpns_len ]; then
+          wwpn_index=0
+        fi
+
+        x="rd.zfcp=0.0."${fcps[$fcp_index]},0x${wwpns[$wwpn_index]},$lun" "
+
+        if [[ $rd_zfcp =~ $x ]]
+        then # the path already exist in rd_zfcp
+          wwpn_index=$(( $wwpn_index + 1 ))
+          continue
+        else # the path doesn't exist in rd_zfcp
+          rd_zfcp+=$x
+          fcp_index=$(( $fcp_index + 1 ))
+          wwpn_index=$(( $wwpn_index + 1 ))
+        fi
+        paths=$(( $paths + 1 ))
+    done
+    inform "Use as much as possible of FCP devices: ${fcps[*]} and WWPN: ${wwpns[*]} rd.zfcp: $rd_zfcp"
+  fi
+
   # Exec zipl command to prepare device for initial problem load
   if [[ $os == rhel7* ]]; then
     inform "Refresh $os zipl."
@@ -411,6 +455,14 @@ function refreshFCPBootmap {
   IFS=',' read -r -a fcps <<< "$fcpchannels"
   IFS=',' read -r -a ws <<< "$wwpn"
 
+  # Check the count of FCP devices, if greater than 8, report error and exit.
+  fcps_len=${#fcps[@]}
+  if [ $fcps_len -gt 8 ]
+  then
+      inform "ERROR: The FCP channel count $fcps_len is greater than 8." 
+      exit
+  fi
+
   enable_zfcp_mod=`lsmod | grep zfcp`
   if [ -z "$enable_zfcp_mod" ];then
       modprobe zfcp
@@ -490,6 +542,13 @@ function refreshFCPBootmap {
     exit 9
   fi
   inform "These WWPNs will be operated: ${wwpns[*]}"
+
+  # Check the count of WWPN, if greater than 8, warning and don't exit.
+  wwpns_len=${#wwpns[@]}
+  if [ $wwpns_len -gt 8 ]
+  then
+      inform "WARNING: The count of WWPN can't greater than 8."
+  fi
 
   for i in "${!fcps[@]}"
   do
