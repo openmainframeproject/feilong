@@ -459,8 +459,8 @@ function refreshFCPBootmap {
   fcps_len=${#fcps[@]}
   if [ $fcps_len -gt 8 ]
   then
-      inform "ERROR: The FCP channel count $fcps_len is greater than 8." 
-      exit
+      printError "ERROR: The FCP channel count $fcps_len is greater than 8."
+      exit 12
   fi
 
   enable_zfcp_mod=`lsmod | grep zfcp`
