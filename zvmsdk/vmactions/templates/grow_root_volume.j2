@@ -136,40 +136,57 @@ if [[ $rc -ne 0 ]]; then
 fi
 
 echo "Continue to resize root file system."
-# TODO: xfs is not supported now, should use xfs_growfs cmd to extend for xfs.
+# get the root partition device
 if [[ ${mpath:(-1)} == 'p' ]]; then
     # handle the 36005076802880052a000000000001069p1 case
     mpathx=$mpath
 fi
-out=`resize2fs /dev/mapper/${mpathx}1 2>&1`
-rc=$?
-if [[ $rc -ne 0 ]]; then
-    echo "Failed to resize root file system, RC: $rc, Output: $out."
-    exit 1
+# get the root partition type
+root_partition="/dev/mapper/${mpathx}1"
+rootfs_type=`blkid -o export $root_partition | grep TYPE= | awk -F'=' '{print $2}'`
+if [[ $rootfs_type == 'xfs' ]]; then
+	# resize with xfs_growfs
+	out=`xfs_growfs / 2>&1`
+	rc=$?
+	if [[ $rc -ne 0 ]]; then
+	    echo "Failed to resize root file system, RC: $rc, Output: $out."
+	    exit 1
+	else
+		echo "Root file system resized successfully."
+		exit 0
+	fi
 else
-    # In some scenario, the resize2fs does not recognize the new partition size
-    # Sample: "The filesystem is already 2621184 (4k) blocks long.  Nothing to do!"
-    # So add some retry here.
-    if [[ $out =~ "Nothing to do!" ]]; then
-        echo "Doing some retry for resize2fs."
-        sleepTimes=".001 .01 .1 .5 1 2 3 5 8 15 22 34 60"
-        for seconds in $sleepTimes; do
-            sleep $seconds
-            out=`resize2fs /dev/mapper/${mpathx}1 2>&1`
-            rc=$?
-            if [[ $rc -ne 0 ]]; then
-                echo "Failed to resize root file system, RC: $rc, Output: $out."
-                exit 1
-            fi
-            if [[ ! ($out =~ "Nothing to do!") ]]; then
-                break # successful - leave loop
-            fi
-        done
-        if [[ $out =~ "Nothing to do!" ]]; then
-            echo "Failed to resize root file system!"
-            exit 1
-        fi
-    fi
-    echo "Root file system resized successfully."
-    exit 0
+	# ext file system, resize fs with resize2fs
+	out=`resize2fs /dev/mapper/${mpathx}1 2>&1`
+	rc=$?
+	if [[ $rc -ne 0 ]]; then
+	    echo "Failed to resize root file system, RC: $rc, Output: $out."
+	    exit 1
+	else
+	    # In some scenario, the resize2fs does not recognize the new partition size
+	    # Sample: "The filesystem is already 2621184 (4k) blocks long.  Nothing to do!"
+	    # So add some retry here.
+	    if [[ $out =~ "Nothing to do!" ]]; then
+	        echo "Doing some retry for resize2fs."
+	        sleepTimes=".001 .01 .1 .5 1 2 3 5 8 15 22 34 60"
+	        for seconds in $sleepTimes; do
+	            sleep $seconds
+	            out=`resize2fs /dev/mapper/${mpathx}1 2>&1`
+	            rc=$?
+	            if [[ $rc -ne 0 ]]; then
+	                echo "Failed to resize root file system, RC: $rc, Output: $out."
+	                exit 1
+	            fi
+	            if [[ ! ($out =~ "Nothing to do!") ]]; then
+	                break # successful - leave loop
+	            fi
+	        done
+	        if [[ $out =~ "Nothing to do!" ]]; then
+	            echo "Failed to resize root file system!"
+	            exit 1
+	        fi
+	    fi
+	    echo "Root file system resized successfully."
+	    exit 0
+	fi
 fi

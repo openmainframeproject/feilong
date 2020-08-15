@@ -1186,7 +1186,22 @@ EOF
     fdasd --silent --config /tmp/${userID}/fdasd_conf "${DEST_DEV}"
     RETCODE=$?
     if [[ $RETCODE -ne 0 ]]; then
-        if [[ $RETCODE -eq 255 ]]; then
+        local os=""
+        local osRelease="/etc/os-release"
+        if [[ -e $osRelease ]]; then
+            os=`cat $osRelease | grep "^ID=" | sed \
+              -e 's/ID=//' \
+              -e 's/"//g'`
+            version=`cat $osRelease | grep "^VERSION_ID=" | sed \
+              -e 's/VERSION_ID=//' \
+              -e 's/"//g' \
+              -e 's/\.//'`
+            os=$os$version
+        fi
+ 
+        if [[ $os == rhel7* && $RETCODE -eq 255 ]]; then
+            inform "Ignore the error while rereading partition table."
+        elif [[ $os == rhel8* && $RETCODE -eq 1 ]]; then
             inform "Ignore the error while rereading partition table."
         else
             printError "failed to set partition for RHCOS DASD device"

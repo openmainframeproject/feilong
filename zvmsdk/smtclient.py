@@ -583,7 +583,7 @@ class SMTClient(object):
         # disk.
         # when boot from volume, ipl_from should be specified explicitly.
         if (disk_list and 'is_boot_disk' in disk_list[0] and
-            disk_list[0]['is_boot_disk']) or ipl_from:
+                disk_list[0]['is_boot_disk']) or ipl_from:
             # we assume at least one disk exist, which means, is_boot_disk
             # is true for exactly one disk.
             rd += (' --ipl %s' % self._get_ipl_param(ipl_from))
@@ -628,7 +628,9 @@ class SMTClient(object):
 
         # Continue to add disk
         if disk_list:
-            # Add disks for vm
+            # not perform mkfs against root disk
+            if disk_list[0].get('is_boot_disk'):
+                disk_list[0].update({'format': 'none'})
             return self.add_mdisks(userid, disk_list)
 
     def _add_mdisk(self, userid, disk, vdev):
@@ -2360,6 +2362,7 @@ class SMTClient(object):
             # pipeline, so can not use utils.execute function here
             output = subprocess.check_output(command, shell=True,
                                              stderr=subprocess.STDOUT)
+            output = bytes.decode(output)
         except subprocess.CalledProcessError as err:
             rc = err.returncode
             output = err.output
@@ -2368,7 +2371,7 @@ class SMTClient(object):
                                                    str(err)))
             raise exception.SDKInternalError(msg=err_msg)
 
-        if rc or output.strip('1234567890\n'):
+        if rc or output.strip('1234567890*\n'):
             msg = ("Error happened when executing command fdisk with "
                    "reason: %s" % output)
             LOG.error(msg)
