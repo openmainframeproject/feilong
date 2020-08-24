@@ -689,8 +689,13 @@ class FCPVolumeManager(object):
     def _detach(self, fcp, assigner_id, target_wwpns, target_lun,
                 multipath, os_version, mount_point, is_root_volume):
         """Detach a volume from a guest"""
-        LOG.info('Start to detach device from %s' % assigner_id)
-        connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
+        LOG.info('Start to detach device %s from %s' % (fcp, assigner_id))
+        try:
+            connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
+        except exception.SDKObjectNotExistError:
+            connections = 0
+            LOG.warning("The connections of FCP device %s is 0.", fcp)
+
         if is_root_volume:
             LOG.info('Detaching device from %s is done.' % assigner_id)
             return
@@ -702,14 +707,20 @@ class FCPVolumeManager(object):
                 self._undedicate_fcp(fcp, assigner_id)
         except (exception.SDKBaseException,
                 exception.SDKSMTRequestFailed) as err:
-            errmsg = 'detach failed with error:' + err.format_message()
-            LOG.error(errmsg)
-            self.fcp_mgr.increase_fcp_usage(fcp, assigner_id)
-            with zvmutils.ignore_errors():
-                new = (connections == 0)
-                self._add_disk(fcp, assigner_id, target_wwpns, target_lun,
-                               multipath, os_version, mount_point, new)
-            raise exception.SDKBaseException(msg=errmsg)
+            rc = err.results['rc']
+            rs = err.results['rs']
+            if rc == 404 or rc == 204 and rs == 8:
+                # We ignore the already undedicate FCP device exception.
+                LOG.warning("The FCP device %s has already undedicdated", fcp)
+            else:
+                errmsg = 'detach failed with error:' + err.format_message()
+                LOG.error(errmsg)
+                self.fcp_mgr.increase_fcp_usage(fcp, assigner_id)
+                with zvmutils.ignore_errors():
+                    new = (connections == 0)
+                    self._add_disk(fcp, assigner_id, target_wwpns, target_lun,
+                                   multipath, os_version, mount_point, new)
+                raise exception.SDKBaseException(msg=errmsg)
 
         # Unreserved fcp device after undedicate all FCP devices
         if not connections:
