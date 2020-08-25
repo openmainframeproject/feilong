@@ -234,6 +234,7 @@ def getConsole(rh):
             cmd,
             close_fds=True,
             stderr=subprocess.STDOUT)
+        files = bytes.decode(files)
     except subprocess.CalledProcessError as e:
         # Uh oh, vmur list command failed for some reason
         msg = msgs.msg['0408'][1] % (modId, rh.userid,
