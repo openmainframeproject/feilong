@@ -372,6 +372,7 @@ class VMOps(object):
         log_fp = open(log_path, 'rb')
         try:
             log_data, remaining = zvmutils.last_bytes(log_fp, log_size)
+            log_data = bytes.decode(log_data)
         except Exception as err:
             msg = ("Failed to truncate console log, error: %s" %
                    six.text_type(err))
