@@ -429,17 +429,64 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         finally:
             self.db_op.delete('1111')
 
-    def test_get_fcp_pair(self):
-        self.db_op.new('1111', 0)
-        self.db_op.new('1112', 1)
-        self.db_op.new('1113', 2)
+    def test_get_fcp_pair_with_same_index(self):
+        '''
+        get_fcp_pair_with_same_index() only returns
+        two possible values:
+        case 1
+           randomly choose a pair of below combinations:
+           [1a00,1b00] ,[1a01,1b01] ,[1a02,1b02]...
+           rather than below combinations:
+           [1a00,1b02] ,[1a03,1b00]
+           [1a02], [1b03]
+        case 2
+           an empty list(i.e. [])
+           if no expected pair found
+        '''
         try:
-            fcp_list = self.db_op.get_fcp_pair()
-            self.assertEqual(fcp_list, [u'1111', u'1112', '1113'])
+            # test case1
+            self.db_op.new('1a00', 0)
+            self.db_op.new('1a01', 0)
+            self.db_op.new('1a02', 0)
+            self.db_op.new('1a03', 0)
+            self.db_op.new('1a04', 0)
+            self.db_op.new('1a05', 0)
+            self.db_op.new('1b00', 1)
+            self.db_op.new('1b01', 1)
+            self.db_op.new('1b02', 1)
+            self.db_op.new('1b03', 1)
+            self.db_op.new('1b04', 1)
+            self.db_op.increase_usage('1a00')
+            self.db_op.increase_usage('1a00')
+            self.db_op.increase_usage('1a02')
+            self.db_op.increase_usage('1b04')
+            self.db_op.reserve('1a02')
+            self.db_op.reserve('1a04')
+            self.db_op.reserve('1b00')
+            expected_pairs_1 = [['1a01', '1b01'], ['1a03', '1b03']]
+            for i in range(10):
+                fcp_list = self.db_op.get_fcp_pair_with_same_index()
+                self.assertIn(fcp_list, expected_pairs_1)
+            # test case2
+            self.db_op.reserve('1a01')
+            self.db_op.reserve('1b01')
+            self.db_op.reserve('1a03')
+            self.db_op.reserve('1b03')
+            expected_pairs_2 = []
+            fcp_list = self.db_op.get_fcp_pair_with_same_index()
+            self.assertEqual(fcp_list, expected_pairs_2)
         finally:
-            self.db_op.delete('1111')
-            self.db_op.delete('1112')
-            self.db_op.delete('1113')
+            self.db_op.delete('1a00')
+            self.db_op.delete('1a01')
+            self.db_op.delete('1a02')
+            self.db_op.delete('1a03')
+            self.db_op.delete('1a04')
+            self.db_op.delete('1a05')
+            self.db_op.delete('1b00')
+            self.db_op.delete('1b01')
+            self.db_op.delete('1b02')
+            self.db_op.delete('1b03')
+            self.db_op.delete('1b04')
 
     def test_find_and_reserve(self):
         self.db_op.new('1111', 1)
