@@ -2104,9 +2104,15 @@ class SMTClient(object):
                 # guest vm definition not found
                 LOG.debug("The guest %s does not exist." % userid)
                 return
-            else:
-                msg = "SMT error: %s" % err.format_message()
-                raise exception.SDKSMTRequestFailed(err.results, msg)
+
+            # ingore delete VM not finished error
+            if err.results['rc'] == 596 and err.results['rs'] == 6831:
+                # 596/6831 means delete VM not finished yet
+                LOG.warning("The guest %s deleted with 596/6831" % userid)
+                return
+
+            msg = "SMT error: %s" % err.format_message()
+            raise exception.SDKSMTRequestFailed(err.results, msg)
 
     def delete_vm(self, userid):
         self.delete_userid(userid)
