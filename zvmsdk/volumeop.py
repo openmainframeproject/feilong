@@ -514,7 +514,22 @@ class FCPManager(object):
         # get the FCP devices belongs to assigner_id
         fcp_list = self.db.get_from_assigner(assigner_id)
         if not fcp_list:
-            free_unreserved = self.db.get_fcp_pair()
+            if CONF.volume.get_fcp_pair_with_same_index:
+                '''
+                If use get_fcp_pair_with_same_index,
+                then fcp pair is randomly selected from below combinations.
+                [fa00,fb00],[fa01,fb01],[fa02,fb02]
+                '''
+                free_unreserved = self.db.get_fcp_pair_with_same_index()
+            else:
+                '''
+                If use get_fcp_pair,
+                then fcp pair is randomly selected from below combinations.
+                [fa00,fb00],[fa01,fb00],[fa02,fb00]
+                [fa00,fb01],[fa01,fb01],[fa02,fb01]
+                [fa00,fb02],[fa01,fb02],[fa02,fb02]
+                '''
+                free_unreserved = self.db.get_fcp_pair()
             for item in free_unreserved:
                 available_list.append(item)
                 # record the assigner id in the fcp so that
