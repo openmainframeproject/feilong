@@ -478,6 +478,94 @@ class FCPDbOperator(object):
 
         return len(path_list)
 
+    def get_fcp_pair_with_same_index(self):
+        fcp_list = []
+        fcp_pair_map = {}
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT COUNT(path) FROM fcp "
+                                  "WHERE reserved = 0 AND connections = 0 "
+                                  "GROUP BY path")
+            free_count_per_path = result.fetchall()
+            '''
+            count_per_path examples:
+            in normal cases, all path has same count, eg.
+            4 paths: [7, 7, 7, 7]
+            2 paths: [7, 7]
+            we can also handle rare abnormal cases,
+            where path count differs, eg.
+            4 paths: [7, 4, 5, 6]
+            2 paths: [7, 6]
+            '''
+            result = conn.execute("SELECT COUNT(path) FROM fcp "
+                                  "GROUP BY path "
+                                  "ORDER BY path ASC")
+            count_per_path = [a[0] for a in result.fetchall()]
+            # return [] if no free fcp found from at least one path
+            if len(free_count_per_path) < len(count_per_path):
+                return fcp_list
+            '''
+            fcps 2 paths example:
+               fcp  conn reserved
+              ------------------
+            [('1a00', 1, 1),
+             ('1a01', 0, 0),
+             ('1a02', 0, 0),
+             ('1a03', 0, 0),
+             ('1a04', 0, 1),
+             ...
+             ('1b00', 1, 0),
+             ('1b01', 2, 1),
+             ('1b02', 0, 0),
+             ('1b03', 0, 0),
+             ('1b04', 0, 0),
+             ...           ]
+            '''
+            result = conn.execute("SELECT fcp_id, connections, reserved "
+                                  "FROM fcp "
+                                  "ORDER BY path, fcp_id")
+            fcps = result.fetchall()
+        '''
+        get all free fcps from 1st path
+        fcp_pair_map example:
+         idx    fcp_pair
+         ----------------
+        { 1 : ['1a01'],
+          2 : ['1a02'],
+          3 : ['1a03']}
+        '''
+        for i in range(count_per_path[0]):
+            if fcps[i][1] == fcps[i][2] == 0:
+                fcp_pair_map[i] = [fcps[i][0]]
+        '''
+        select out pairs if member count == path count
+        fcp_pair_map example:
+         idx    fcp_pair
+         ----------------------
+        { 2 : ['1a02', '1b02'],
+          3 : ['1a03', '1b03']}
+        '''
+        for idx in fcp_pair_map.copy():
+            s = 0
+            for i, c in enumerate(count_per_path[:-1]):
+                s += c
+                # avoid index out of range for per path in fcps[]
+                if idx < count_per_path[i + 1] and \
+                        fcps[s + idx][1] == fcps[s + idx][2] == 0:
+                    fcp_pair_map[idx].append(fcps[s + idx][0])
+                else:
+                    fcp_pair_map.pop(idx)
+                    break
+        '''
+        saves one pair randomly chosen from fcp_pair_map.values()
+        fcp_list example:
+        ['1a03', '1b03']
+        '''
+        if fcp_pair_map:
+            fcp_list = random.choice(sorted(fcp_pair_map.values()))
+        else:
+            LOG.error("Not enough FCPs in fcp pool")
+        return fcp_list
+
     def get_fcp_pair(self):
         fcp_list = []
         with get_fcp_conn() as conn:

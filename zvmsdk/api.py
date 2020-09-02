@@ -708,7 +708,7 @@ class SDKAPI(object):
                      max_cpu=CONF.zvm.user_default_max_cpu,
                      max_mem=CONF.zvm.user_default_max_memory,
                      ipl_from='', ipl_param='', ipl_loadparam='',
-                     dedicate_vdevs=[], loaddev={}):
+                     dedicate_vdevs=None, loaddev={}):
         """create a vm in z/VM
 
         :param userid: (str) the userid of the vm to be created
@@ -766,6 +766,8 @@ class SDKAPI(object):
                {'portname': str,
                'lun': str}
         """
+        dedicate_vdevs = dedicate_vdevs or []
+
         userid = userid.upper()
         if disk_list:
             for disk in disk_list:

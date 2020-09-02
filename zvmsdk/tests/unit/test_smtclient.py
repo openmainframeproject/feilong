@@ -1574,6 +1574,15 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         request.assert_called_once_with(rd)
 
     @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_delete_userid_too_slow(self, request):
+        rd = 'deletevm fuser1 directory'
+        results = {'rc': 596, 'rs': 6831, 'logEntries': ''}
+        request.side_effect = exception.SDKSMTRequestFailed(results,
+                                                               "fake error")
+        self._smtclient.delete_userid('fuser1')
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
     def test_delete_userid_failed(self, request):
         rd = 'deletevm fuser1 directory'
         results = {'rc': 400, 'rs': 104, 'logEntries': ''}
@@ -1586,14 +1595,14 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(subprocess, 'check_output')
     def test_get_disk_size_units_rhcos(self, check):
         image_path = 'test_path'
-        check.return_value = '3072327680'
+        check.return_value = b'3072327680'
         size = self._smtclient._get_disk_size_units_rhcos(image_path)
         self.assertEqual(size, '4168:CYL')
 
     @mock.patch.object(subprocess, 'check_output')
     def test_get_disk_size_units_rhcos_execute_error(self, check):
         image_path = 'test_path'
-        check.return_value = "fdisk error"
+        check.return_value = b"fdisk error"
         self.assertRaises(exception.SDKImageOperationError,
                           self._smtclient._get_disk_size_units_rhcos,
                           image_path)

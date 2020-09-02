@@ -583,7 +583,7 @@ class SMTClient(object):
         # disk.
         # when boot from volume, ipl_from should be specified explicitly.
         if (disk_list and 'is_boot_disk' in disk_list[0] and
-            disk_list[0]['is_boot_disk']) or ipl_from:
+                disk_list[0]['is_boot_disk']) or ipl_from:
             # we assume at least one disk exist, which means, is_boot_disk
             # is true for exactly one disk.
             rd += (' --ipl %s' % self._get_ipl_param(ipl_from))
@@ -628,7 +628,9 @@ class SMTClient(object):
 
         # Continue to add disk
         if disk_list:
-            # Add disks for vm
+            # not perform mkfs against root disk
+            if disk_list[0].get('is_boot_disk'):
+                disk_list[0].update({'format': 'none'})
             return self.add_mdisks(userid, disk_list)
 
     def _add_mdisk(self, userid, disk, vdev):
@@ -715,7 +717,7 @@ class SMTClient(object):
         : param fcpchannels: list of fcpchannels.
         : param wwpns: list of wwpns.
         : param lun: string of lun.
-        : return value: list of physical wwpns.
+        : return value: list of FCP devices and physical wwpns.
         """
         fcps = ','.join(fcpchannels)
         ws = ','.join(wwpns)
@@ -745,13 +747,18 @@ class SMTClient(object):
                                                     errcode=rc,
                                                     errmsg=err_output)
         output_lines = output.split('\n')
-        res = []
+        res_wwpns = []
+        res_fcps = []
         for line in output_lines:
             if line.__contains__("WWPNs: "):
                 wwpns = line[7:]
                 # Convert string to list by space
-                res = wwpns.split()
-        return res
+                res_wwpns = wwpns.split()
+            if line.__contains__("FCPs: "):
+                fcps = line[6:]
+                # Convert string to list by space
+                res_fcps = fcps.split()
+        return res_wwpns, res_fcps
 
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None, skipdiskcopy=False):
@@ -2097,9 +2104,15 @@ class SMTClient(object):
                 # guest vm definition not found
                 LOG.debug("The guest %s does not exist." % userid)
                 return
-            else:
-                msg = "SMT error: %s" % err.format_message()
-                raise exception.SDKSMTRequestFailed(err.results, msg)
+
+            # ingore delete VM not finished error
+            if err.results['rc'] == 596 and err.results['rs'] == 6831:
+                # 596/6831 means delete VM not finished yet
+                LOG.warning("The guest %s deleted with 596/6831" % userid)
+                return
+
+            msg = "SMT error: %s" % err.format_message()
+            raise exception.SDKSMTRequestFailed(err.results, msg)
 
     def delete_vm(self, userid):
         self.delete_userid(userid)
@@ -2355,6 +2368,7 @@ class SMTClient(object):
             # pipeline, so can not use utils.execute function here
             output = subprocess.check_output(command, shell=True,
                                              stderr=subprocess.STDOUT)
+            output = bytes.decode(output)
         except subprocess.CalledProcessError as err:
             rc = err.returncode
             output = err.output
@@ -2363,7 +2377,7 @@ class SMTClient(object):
                                                    str(err)))
             raise exception.SDKInternalError(msg=err_msg)
 
-        if rc or output.strip('1234567890\n'):
+        if rc or output.strip('1234567890*\n'):
             msg = ("Error happened when executing command fdisk with "
                    "reason: %s" % output)
             LOG.error(msg)

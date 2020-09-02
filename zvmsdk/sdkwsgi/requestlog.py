@@ -49,6 +49,10 @@ class RequestLog(object):
             for name, value in headers:
                 if name.lower() == 'content-length':
                     size = value
+            for index, value in enumerate(headers):
+                if value[0] == 'X-Auth-Token':
+                    headers[index] = ('X-Auth-Token', value[1].decode('utf-8'))
+                    break
 
             self._write_log(environ, req_uri, status, size, headers,
                             exc_info)

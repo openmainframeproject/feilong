@@ -309,28 +309,8 @@ function resizePartition {
   fi
 
   if [[ $fs == "xfs" ]]; then
-    #Before we can increase a xfs file system, it needs to be mounted first
-    mountdir=`mktemp -d /tmp/XXXXXXXXXX`
-    mount -o nouuid ${lastPartition} $mountdir
-    if (( $? )); then
-      printError "Unable to mount the last partition ${lastPartition} of ${userID}:${channelID} returns rc: $rc, out: $out"
-      rm -rf $mountdir
-      return 1
-    fi
-
-    #Grow the xfs file system
-    out=`xfs_growfs $mountdir 2>&1`
-    rc=$?
-    if (( rc != 0 )); then
-      printError "Unable to increase the xfs file system on last parition ${lastPartition} of ${userID}:${channelID} returns rc: $rc, out: $out"
-      umount $mountdir
-      rm -rf $mountdir
-      return 1
-    fi
-
-    #Unmount the xfs file system
-    umount $mountdir
-    rm -rf $mountdir
+    # the file system will be resized by cloud-init
+    inform "The file system type is XFS."
 
   # Resize the ext filesystem
   elif [[ $fs =~ "ext" ]]; then
@@ -386,30 +366,46 @@ function resizeECKD {
   local partitionsCount=`blkid | grep ${devNode} | wc -l`
   if [[ $partitionsCount -gt 1 ]]; then
     inform "Multiple partitions are detected on root disk. The last partition will be extended."
-  fi  
-
-  # Resize the partition to take the whole disk.
-  # Note: We will see a message indicating that "device is not fully formatted".
-  #       We will ignore that because we are redoing the parition to take 
-  #       advantage of the increased size.
-  partnum=`parted -m ${devNode} print | tail -n 1 | cut -d':' -f1`
-  # Input redirection needed because fdasd does not have a command line parameter for
-  #    u   re-create VTOC re-using existing partition sizes
-  out=`fdasd ${devNode} <<-END
+    partnum=`parted -m ${devNode} print | tail -n 1 | cut -d':' -f1`
+    # Input redirection needed because fdasd does not have a command line parameter for
+    #    u   re-create VTOC re-using existing partition sizes
+    out=`fdasd ${devNode} <<-END
 	u
 	y
 	w
 	END`
-  rc=$?
-  if (( rc != 0 )); then
-    printError "When recreating the VTOC, 'fdasd' to  ${devNode} returns rc: $rc, out: $out"
-    return 1
-  fi
-  out=`parted ${devNode} resizepart $partnum 100%`
-  rc=$?
-  if (( rc != 0 )); then
-    printError "When resizing the dasd, 'parted' to  ${devNode} returns rc: $rc, out: $out"
-    return 1
+    rc=$?
+    if (( rc != 0 )); then
+      printError "When recreating the VTOC, 'fdasd' to  ${devNode} returns rc: $rc, out: $out"
+      return 1
+    fi
+    out=`parted ${devNode} resize $partnum 100%`
+    rc=$?
+    if (( rc != 0 )); then
+      printError "When resizing the dasd, 'parted' to  ${devNode} returns rc: $rc, out: $out"
+      return 1
+    fi
+  else
+    # Resize the partition to take the whole disk.
+    # Note: We will see a message indicating that "device is not fully formatted".
+    #       We will ignore that because we are redoing the parition to take 
+    #       advantage of the increased size.
+    out=`fdasd -a ${devNode}`
+    rc=$?
+    if (( rc != 0 )); then
+      if (( rc == 255 )); then
+        sleep 0.5
+        out=`blockdev --rereadpt ${devNode}`
+        rc=$?
+        if (( rc != 0 )); then
+          printError "When resizing the dasd, 'blockdev --rereadpt' to  ${devNode} returns rc: $rc, out: $out"
+          return 1
+        fi
+      else
+        printError "When resizing the dasd, 'fsdasd -a' to  ${devNode} returns rc: $rc, out: $out"
+        return 1
+      fi
+    fi
   fi
 
   # Reset the device by disconnecting and then reconnecting
@@ -765,7 +761,7 @@ function deployDiskImage {
     fi
 
     # Exec zipl command to prepare device for initial problem load
-    if [[ $os == sles12* ]]; then
+    if [[ $os == sles12* || $os == sles15* ]]; then
       out=`chroot $deviceMountPoint /sbin/zipl -c /boot/zipl/config 2>&1`
       rc=$?
       if (( rc != 0 )); then
@@ -1190,7 +1186,22 @@ EOF
     fdasd --silent --config /tmp/${userID}/fdasd_conf "${DEST_DEV}"
     RETCODE=$?
     if [[ $RETCODE -ne 0 ]]; then
-        if [[ $RETCODE -eq 255 ]]; then
+        local os=""
+        local osRelease="/etc/os-release"
+        if [[ -e $osRelease ]]; then
+            os=`cat $osRelease | grep "^ID=" | sed \
+              -e 's/ID=//' \
+              -e 's/"//g'`
+            version=`cat $osRelease | grep "^VERSION_ID=" | sed \
+              -e 's/VERSION_ID=//' \
+              -e 's/"//g' \
+              -e 's/\.//'`
+            os=$os$version
+        fi
+ 
+        if [[ $os == rhel7* && $RETCODE -eq 255 ]]; then
+            inform "Ignore the error while rereading partition table."
+        elif [[ $os == rhel8* && $RETCODE -eq 1 ]]; then
             inform "Ignore the error while rereading partition table."
         else
             printError "failed to set partition for RHCOS DASD device"

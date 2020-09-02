@@ -1098,6 +1098,7 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
                            " sleepSecs: " + str(sleepSecs))
 
     results = {}
+    maxQueries = int(maxQueries)
 
     cmd = ["sudo", "/sbin/vmcp", "query", "user", userid]
     strCmd = " ".join(cmd)
@@ -1116,7 +1117,10 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
                 stateFnd = True
                 break
         except CalledProcessError as e:
-            match = re.search('(^HCP\w\w\w045E|^HCP\w\w\w361E)', e.output)
+            out = e.output
+            if isinstance(out, bytes):
+                out = bytes.decode(out)
+            match = re.search('(^HCP\w\w\w045E|^HCP\w\w\w361E)', out)
             if match:
                 # Logged off
                 if desiredState == 'off':
@@ -1124,7 +1128,6 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
                     break
             else:
                 # Abnormal failure
-                out = e.output
                 rh.printLn("ES", msgs.msg['0415'][1] % (modId, strCmd,
                     e.returncode, out))
                 results = msgs.msg['0415'][0]

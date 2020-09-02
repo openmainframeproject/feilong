@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017-2020 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -215,6 +215,13 @@ The length of namelist must no longer than 64.
 The port number of remotehost sshd.
 '''),
     # image options
+    Opt('default_compress_level',
+        section='image',
+        default='6',
+        opt_type='str',
+        help='''
+Default compress level for captured image.
+'''),
     Opt('sdk_image_repository',
         section='image',
         default='/var/lib/zvmsdk/images',
@@ -436,7 +443,33 @@ running SDK is able to read write and execute the directory.
 volume fcp list.
 
 SDK will only use the fcp devices in the scope of this value.
-'''),
+'''
+        ),
+    Opt('get_fcp_pair_with_same_index',
+        section='volume',
+        default='0',
+        opt_type='int',
+        help='''
+fcp pair selection algorithm
+
+fcp_list example:
+fa00-fa02; fb00-fb02
+
+If use get_fcp_pair_with_same_index,
+then fcp pair is randomly selected from below combinations.
+[fa00,fb00],[fa01,fb01],[fa02,fb02]
+
+If use get_fcp_pair,
+then fcp pair is randomly selected from below combinations.
+[fa00,fb00],[fa01,fb00],[fa02,fb00]
+[fa00,fb01],[fa01,fb01],[fa02,fb01]
+[fa00,fb02],[fa01,fb02],[fa02,fb02]
+
+Possible value:
+0 : use get_fcp_pair. this is the default
+1 : use get_fcp_pair_with_same_index
+'''
+      ),
     # tests options
     Opt('images',
         section='tests',
