@@ -1920,6 +1920,15 @@ class ubuntu20(ubuntu):
                         }
         return cfg_str
 
+    def _get_source_devices(self, fcp, target_lun):
+        """ubuntu"""
+        device = '0.0.%s' % fcp
+        target_lun = self._format_lun(target_lun)
+        var_source_device = ('SourceDevices=(`ls /dev/disk/by-path/ | '
+                             'grep "ccw-%s-fc-.*-lun-%s"`)\n'
+                             % (device, target_lun))
+        return var_source_device
+
 
 class LinuxDistManager(object):
     def get_linux_dist(self, os_version):
