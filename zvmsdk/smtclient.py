@@ -2117,6 +2117,9 @@ class SMTClient(object):
     def delete_vm(self, userid):
         self.delete_userid(userid)
 
+        # remove userid from smapi namelist
+        self.namelist_remove(zvmutils.get_namelist(), userid)
+
         # revoke userid from vswitch
         action = "revoke id %s authority from vswitch" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
