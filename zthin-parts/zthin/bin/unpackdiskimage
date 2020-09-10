@@ -379,7 +379,7 @@ function resizeECKD {
       printError "When recreating the VTOC, 'fdasd' to  ${devNode} returns rc: $rc, out: $out"
       return 1
     fi
-    out=`parted ${devNode} resize $partnum 100%`
+    out=`parted ${devNode} resizepart $partnum 100%`
     rc=$?
     if (( rc != 0 )); then
       printError "When resizing the dasd, 'parted' to  ${devNode} returns rc: $rc, out: $out"

@@ -53,10 +53,10 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
         is_reachable.return_value = True
         active_cmds = 'systemctl start zvmguestconfigure.service'
         restart_zvmguestconfigure.return_value = active_cmds
-
+        need_restart = True
         self.configurator.config_attach(fcp, assigner_id, target_wwpns,
                                         target_lun, multipath, os_version,
-                                        mount_point, new)
+                                        mount_point, new, need_restart)
         get_dist.assert_called_once_with(os_version)
         restart_zvmguestconfigure.assert_called_once_with()
         execute_cmd.assert_called_once_with(assigner_id,
@@ -79,10 +79,11 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
         is_reachable.return_value = False
         get_dist.return_value = dist.rhel7
         config_attach.return_value = None
+        need_restart = False
 
         self.configurator.config_attach(fcp, assigner_id, target_wwpns,
                                         target_lun, multipath, os_version,
-                                        mount_point, new)
+                                        mount_point, new, need_restart)
         get_dist.assert_called_once_with(os_version)
 
     def test_config_force_attach(self):
@@ -589,11 +590,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
             mock_add_disk.assert_has_calls([mock.call('c123', 'USER1',
                                                       wwpns,
                                                       '2222', False, 'rhel7',
-                                                      '/dev/sdz', True),
+                                                      '/dev/sdz', True, False),
                                             mock.call('d123', 'USER1',
                                                       wwpns,
                                                       '2222', False, 'rhel7',
-                                                      '/dev/sdz', True)])
+                                                      '/dev/sdz', True, True)])
         finally:
             self.db_op.delete('c123')
             self.db_op.delete('d123')
@@ -695,11 +696,13 @@ class TestFCPVolumeManager(base.SDKTestCase):
             mock_add_disk.assert_has_calls([mock.call('c123', 'USER1',
                                                       wwpns,
                                                       '2222', False, 'rhel7',
-                                                      '/dev/sdz', False),
+                                                      '/dev/sdz', False,
+                                                      False),
                                             mock.call('d123', 'USER1',
                                                       wwpns,
                                                       '2222', False, 'rhel7',
-                                                      '/dev/sdz', False)])
+                                                      '/dev/sdz', False,
+                                                      True)])
 
         finally:
             self.db_op.delete('c123')
@@ -830,11 +833,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
             mock_remove_disk.assert_has_calls([mock.call('183c', 'USER1',
                                                          wwpns,
                                                          '2222', True, 'rhel7',
-                                                         '/dev/sdz', 0),
+                                                         '/dev/sdz', 0, False),
                                                mock.call('283c', 'USER1',
                                                          wwpns,
                                                          '2222', True, 'rhel7',
-                                                         '/dev/sdz', 0)])
+                                                         '/dev/sdz', 0, True)])
             res1 = self.db_op.is_reserved('183c')
             res2 = self.db_op.is_reserved('283c')
             self.assertFalse(res1)
@@ -919,6 +922,6 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.assertFalse(mock_undedicate.called)
             mock_remove_disk.assert_called_once_with('283c', 'USER1', ['1111'],
                                                      '2222', False, 'rhel7',
-                                                     '/dev/sdz', 1)
+                                                     '/dev/sdz', 1, True)
         finally:
             self.db_op.delete('283c')
