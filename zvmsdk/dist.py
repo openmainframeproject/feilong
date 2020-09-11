@@ -1940,9 +1940,38 @@ class ubuntu20(ubuntu):
         return cfg_str
 
     def _get_source_devices(self, fcp, target_lun):
-        """ubuntu"""
+        """ubuntu20
+
+        the parameter 'target_lun' is hex for either v7k or ds8k:
+        for v7k, target_lun[2] == '0' and target_lun[6:] == '0'
+        for ds8k, target_lun[2] == '4'
+
+        in the future, we add support to other storage provider whose lun
+        id may use bits in target_lun[6:], such as, 0x0003040200000000
+
+        when attach v7k volume:
+        1. if the lun id less than 256,
+        the file under /dev/disk/by-path/ will as below,
+        take 'lun id = 0' as example:
+        ccw-0.0.5c03-fc-0x5005076802400c1a-lun-0, the the lun id is decimal.
+
+        2. if the lun id is equal or more than 256,
+        the file under /dev/disk/by-path/ will as below,
+        take 'lun id = 256' as example:
+        ccw-0.0.1a0d-fc-0x500507680b26bac7-lun-0x0100000000000000,
+        the lun id is hex.
+
+        when attach ds8k volume:
+        the file under /dev/disk/by-path/ will as below,
+        take "volume id 140c" as example:
+        ccw-0.0.1a0d-fc-0x5005076306035388-lun-0x4014400c00000000,
+        the lun id is always hex.
+
+        """
         device = '0.0.%s' % fcp
-        target_lun = self._format_lun(target_lun)
+        lun = self._format_lun(target_lun)
+        if all([x == '0' for x in target_lun[6:]]) and lun < 256:
+            target_lun = lun
         var_source_device = ('SourceDevices=(`ls /dev/disk/by-path/ | '
                              'grep "ccw-%s-fc-.*-lun-%s"`)\n'
                              % (device, target_lun))

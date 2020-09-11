@@ -136,3 +136,4 @@ FILE_TYPE = {
     'EXPORT': 'exported'}
 
 SDK_DATA_PATH = '/var/lib/zvmsdk/'
+IUCV_AUTH_USERID_PATH = '/etc/zvmsdk/iucv_authorized_userid'
