@@ -100,20 +100,33 @@ int prepare_commands(char* buffer, int argc, char *argv[])
     int i = 0;
 
     bzero(buffer,BUFFER_SIZE);
-    FILE *fp = popen("sudo vmcp q userid", "r");
-    if (fgets(user_buf,sizeof(user_buf),fp) != NULL)
-    {
-        strcpy(buffer, strtok(user_buf," "));
-        pclose(fp);
+
+    /* try to re-use previous iucv authorized userid at first */
+    FILE *fp = fopen(FILE_PATH_IUCV_AUTH_USERID, "r");
+    if (fp != NULL) {
+        fgets(user_buf, 9, fp);
+        strcpy(buffer, user_buf);
+        fclose(fp);
         fp = NULL;
     }
     else
     {
-        printAndLogIUCVserverReturnCodeReasonCodeoutput(UNAUTHORIZED_ERROR, errno,"ERROR: failed to get userid:", 0);
-        pclose(fp);
-        fp = NULL;
-        return UNAUTHORIZED_ERROR;
+        fp = popen("sudo vmcp q userid", "r");
+        if (fgets(user_buf,sizeof(user_buf),fp) != NULL)
+        {
+            strcpy(buffer, strtok(user_buf," "));
+            pclose(fp);
+            fp = NULL;
+        }
+        else
+        {
+            printAndLogIUCVserverReturnCodeReasonCodeoutput(UNAUTHORIZED_ERROR, errno,"ERROR: failed to get userid:", 0);
+            pclose(fp);
+            fp = NULL;
+            return UNAUTHORIZED_ERROR;
+        }
     }
+
     /* 2. Get the IUCV server's version which exists on zThin
        This is used for IUCV server's upgrade, when the server's version which installed on VM is lower,
        upgrade is needed.

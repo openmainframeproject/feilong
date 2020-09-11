@@ -46,6 +46,7 @@
 #define FILE_SENT_OVER "FILE_SENT_OVER"
 #define FILE_PATH_IUCV_SERVER "/opt/zthin/bin/IUCV/iucvserv"
 #define FILE_PATH_IUCV_FOLDER "/opt/zthin/bin/IUCV"
+#define FILE_PATH_IUCV_AUTH_USERID "/etc/zvmsdk/iucv_authorized_userid"
 #define IUCV_SERVER_NEED_UPGRADE "need_upgrade"
 #define UPGRADE_NEEDED_SYSTEMD "UPGRADE_NEEDED_SYSTEMD"
 #define UPGRADE_NEEDED_SYSTEMV "UPGRADE_NEEDED_SYSTEMV"

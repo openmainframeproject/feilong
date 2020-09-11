@@ -324,7 +324,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         request.assert_has_calls([mock.call(purge_rd), mock.call(punch_rd)])
         mkdtemp.assert_called_with()
         cleantemp.assert_called_with('/tmp/tmpdir')
-        guestauth.assert_called_once_with(userid)
+        guestauth.assert_called_once_with(userid, None)
         guest_update.assert_called_once_with(userid, meta='os_version=fakeos')
 
     @mock.patch.object(database.GuestDbOperator, 'update_guest_by_userid')

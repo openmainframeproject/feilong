@@ -691,7 +691,6 @@ class SMTClient(object):
         :param str guest: the user id of the vm
         :param str client: the user id of the client that can communicate to
                guest using IUCV"""
-
         client = client or zvmutils.get_smt_userid()
 
         iucv_path = "/tmp/" + userid
@@ -836,7 +835,13 @@ class SMTClient(object):
                 # remove the local temp config drive folder
                 self._pathutils.clean_temp_folder(tmp_trans_dir)
         # Authorize iucv client
-        self.guest_authorize_iucv_client(userid)
+        client_id = None
+        # try to re-use previous iucv authorized userid at first
+        if os.path.exists(const.IUCV_AUTH_USERID_PATH):
+            LOG.debug("Re-use previous iucv authorized userid")
+            with open(const.IUCV_AUTH_USERID_PATH) as f:
+                client_id = f.read().strip()
+        self.guest_authorize_iucv_client(userid, client_id)
         # Update os version in guest metadata
         # TODO: may should append to old metadata, not replace
         if skipdiskcopy:
