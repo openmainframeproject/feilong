@@ -1130,6 +1130,8 @@ class sles(LinuxDist):
                     address_read)
         if (dns_v4 is not None) and (len(dns_v4) > 0):
             self.dns_v4 = dns_v4
+        else:
+            self.dns_v4 = None
         return cfg_str
 
     def _get_route_str(self, gateway_v4):
@@ -1503,22 +1505,34 @@ class sles15(sles12):
     """docstring for sles15"""
     def get_znetconfig_contents(self):
         remove_route = 'rm -f %s/ifroute-eth*' % self._get_network_file_path()
-        replace_var = 'NETCONFIG_DNS_STATIC_SERVERS'
-        replace_file = '/etc/sysconfig/network/config'
-        dns_addrs = ' '.join(self.dns_v4)
-        replace_resol = 'sed -ri "s/%s=\S+\s*/%s=\\"%s\\"/g" %s' % (
+        if self.dns_v4:
+            replace_var = 'NETCONFIG_DNS_STATIC_SERVERS'
+            replace_file = '/etc/sysconfig/network/config'
+            dns_addrs = ' '.join(self.dns_v4)
+            replace_resol = 'sed -ri "s/%s=\S+\s*/%s=\\"%s\\"/g" %s' % (
                 replace_var, replace_var, dns_addrs, replace_file)
-        return '\n'.join(('cio_ignore -R',
-                          'znetconf -R -n',
-                          'sleep 2',
-                          remove_route,
-                          replace_resol,
-                          'udevadm trigger',
-                          'udevadm settle',
-                          'sleep 2',
-                          'znetconf -A',
-                          'cio_ignore -u',
-                          'wicked ifreload all'))
+            return '\n'.join(('cio_ignore -R',
+                              'znetconf -R -n',
+                              'sleep 2',
+                              remove_route,
+                              replace_resol,
+                              'udevadm trigger',
+                              'udevadm settle',
+                              'sleep 2',
+                              'znetconf -A',
+                              'cio_ignore -u',
+                              'wicked ifreload all'))
+        else:
+            return '\n'.join(('cio_ignore -R',
+                              'znetconf -R -n',
+                              'sleep 2',
+                              remove_route,
+                              'udevadm trigger',
+                              'udevadm settle',
+                              'sleep 2',
+                              'znetconf -A',
+                              'cio_ignore -u',
+                              'wicked ifreload all'))
 
 
 class ubuntu(LinuxDist):
