@@ -1505,17 +1505,22 @@ class sles15(sles12):
     """docstring for sles15"""
     def get_znetconfig_contents(self):
         remove_route = 'rm -f %s/ifroute-eth*' % self._get_network_file_path()
+        replace_var = 'NETCONFIG_DNS_STATIC_SERVERS'
+        replace_file = '/etc/sysconfig/network/config'
+        remove_dns_cfg = "sed -i '/^\s*%s=\"/d' %s" % (replace_var,
+                replace_file)
+
         if self.dns_v4:
-            replace_var = 'NETCONFIG_DNS_STATIC_SERVERS'
-            replace_file = '/etc/sysconfig/network/config'
             dns_addrs = ' '.join(self.dns_v4)
-            replace_resol = 'sed -ri "s/%s=\S+\s*/%s=\\"%s\\"/g" %s' % (
-                replace_var, replace_var, dns_addrs, replace_file)
+            netconfig_dns = '%s="%s"' % (replace_var, dns_addrs)
+            set_dns = "echo '%s' >> %s" % (netconfig_dns, replace_file)
+
             return '\n'.join(('cio_ignore -R',
                               'znetconf -R -n',
                               'sleep 2',
                               remove_route,
-                              replace_resol,
+                              remove_dns_cfg,
+                              set_dns,
                               'udevadm trigger',
                               'udevadm settle',
                               'sleep 2',
@@ -1527,6 +1532,7 @@ class sles15(sles12):
                               'znetconf -R -n',
                               'sleep 2',
                               remove_route,
+                              remove_dns_cfg,
                               'udevadm trigger',
                               'udevadm settle',
                               'sleep 2',
