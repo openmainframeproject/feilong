@@ -107,6 +107,32 @@ class VolumeConfiguratorAPI(object):
         self._dist_manager = dist.LinuxDistManager()
         self._smtclient = smtclient.get_smtclient()
 
+    def check_IUCV_is_ready(self, assigner_id):
+        # Make sure the iucv channel is ready for communication with VM
+        ready = True
+        try:
+            self._smtclient.execute_cmd(assigner_id, 'pwd')
+        except exception.SDKSMTRequestFailed as err:
+            if 'UNAUTHORIZED_ERROR' in err.format_message():
+                # If unauthorized, we must raise exception
+                errmsg = err.results['response'][0]
+                msg = ('IUCV failed to get authorization from VM %(vm)s with '
+                        'error %(err)s' % {'vm': assigner_id,
+                                           'err': errmsg})
+                LOG.error(msg)
+                raise exception.SDKVolumeOperationError(rs=6,
+                                                        userid=assigner_id,
+                                                        msg=errmsg)
+            else:
+                # In such case, we can continue without raising exception
+                ready = False
+                msg = ('Failed to connect VM %(vm)s with error '
+                       '%(err)s, assume it is OFF status '
+                       'and continue' % {'vm': assigner_id,
+                                         'err': err.results['response'][0]})
+                LOG.debug(msg)
+        return ready
+
     def config_attach(self, fcp, assigner_id, target_wwpns, target_lun,
                       multipath, os_version, mount_point, new,
                       need_restart=True):
@@ -114,8 +140,9 @@ class VolumeConfiguratorAPI(object):
         self.configure_volume_attach(fcp, assigner_id, target_wwpns,
                                      target_lun, multipath, os_version,
                                      mount_point, linuxdist, new)
-        # active mode should restart zvmguestconfigure to execute reader file
-        if need_restart and self._vmop.is_reachable(assigner_id):
+        iucv_is_ready = self.check_IUCV_is_ready(assigner_id)
+        if need_restart and iucv_is_ready:
+            # active mode should restart zvmguestconfigure to run reader file
             active_cmds = linuxdist.create_active_net_interf_cmd()
             self._smtclient.execute_cmd(assigner_id, active_cmds)
 
@@ -126,8 +153,9 @@ class VolumeConfiguratorAPI(object):
         self.configure_volume_detach(fcp, assigner_id, target_wwpns,
                                      target_lun, multipath, os_version,
                                      mount_point, linuxdist, connections)
-        # active mode should restart zvmguestconfigure to execute reader file
-        if need_restart and self._vmop.is_reachable(assigner_id):
+        iucv_is_ready = self.check_IUCV_is_ready(assigner_id)
+        if need_restart and iucv_is_ready:
+            # active mode should restart zvmguestconfigure to run reader file
             active_cmds = linuxdist.create_active_net_interf_cmd()
             self._smtclient.execute_cmd(assigner_id, active_cmds)
 
@@ -481,7 +509,7 @@ class FCPManager(object):
         """Incrase fcp usage of given fcp
         Returns True if it's a new fcp, otherwise return False
         """
-        # get the sum of connections belong to assinger_id
+        # get the sum of connections belong to assigner_id
         connections = self.db.get_connections_from_fcp(fcp)
         new = False
         if connections == 0:
@@ -612,7 +640,7 @@ class FCPVolumeManager(object):
         """
         LOG.info('Start to attach device to %s' % assigner_id)
         # TODO: init_fcp should be called in contructor function
-        # but no assinger_id in contructor
+        # but no assigner_id in contructor
         self.fcp_mgr.init_fcp(assigner_id)
         new = self.fcp_mgr.add_fcp_for_assigner(fcp, assigner_id)
         if is_root_volume:
