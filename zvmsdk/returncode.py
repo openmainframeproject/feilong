@@ -233,6 +233,8 @@ errors = {
                 4: "Volume %(vol)s is not attached on instance %(inst)s",
                 5: "Refresh bootmap fails, error code: %(errcode)s and "
                    "reason: %(errmsg)s",
+                6: "IUCV failed to get authorization from instance "
+                   "%(userid)s with reason %(msg)s",
                 },
                "Operation on Volume failed"
                ],

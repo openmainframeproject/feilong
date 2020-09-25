@@ -35,7 +35,7 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
     @mock.patch.object(dist.rhel7, "create_active_net_interf_cmd")
     @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI."
                 "configure_volume_attach")
-    @mock.patch("zvmsdk.vmops.VMOps.is_reachable")
+    @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI.check_IUCV_is_ready")
     def test_config_attach_reachable(self, is_reachable, config_attach,
                                      restart_zvmguestconfigure, execute_cmd,
                                      get_dist):
@@ -65,7 +65,7 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
     @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
     @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI."
                 "configure_volume_attach")
-    @mock.patch("zvmsdk.vmops.VMOps.is_reachable")
+    @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI.check_IUCV_is_ready")
     def test_config_attach_not_reachable(self, is_reachable, config_attach,
                                          get_dist):
         fcp = 'bfc3'
@@ -85,6 +85,43 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
                                         target_lun, multipath, os_version,
                                         mount_point, new, need_restart)
         get_dist.assert_called_once_with(os_version)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.execute_cmd")
+    def test_check_IUCV_is_ready(self, execute_cmd):
+        assigner_id = 'fakeid'
+        execute_cmd.return_value = ''
+
+        ret = self.configurator.check_IUCV_is_ready(assigner_id)
+        execute_cmd.assert_called_once_with(assigner_id, 'pwd')
+        self.assertEqual(ret, True)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.execute_cmd")
+    def test_check_IUCV_is_ready_not_ready(self, execute_cmd):
+        # case: not ready, but can continue
+        assigner_id = 'fakeid'
+        results = {'rs': 0, 'errno': 0, 'strError': '',
+                   'overallRC': 1, 'logEntries': [], 'rc': 0,
+                   'response': ['fake response']}
+        execute_cmd.side_effect = exception.SDKSMTRequestFailed(
+            results, 'fake error contains other things')
+
+        ret = self.configurator.check_IUCV_is_ready(assigner_id)
+        execute_cmd.assert_called_once_with(assigner_id, 'pwd')
+        self.assertEqual(ret, False)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.execute_cmd")
+    def test_check_IUCV_is_ready_raise_excetion(self, execute_cmd):
+        # case: not ready, must raise exception
+        assigner_id = 'fakeid'
+        results = {'rs': 0, 'errno': 0, 'strError': '',
+                   'overallRC': 1, 'logEntries': [], 'rc': 0,
+                   'response': ['fake response']}
+        execute_cmd.side_effect = exception.SDKSMTRequestFailed(
+            results, 'fake error contains UNAUTHORIZED_ERROR')
+
+        self.assertRaises(exception.SDKVolumeOperationError,
+                          self.configurator.check_IUCV_is_ready,
+                          assigner_id)
 
     def test_config_force_attach(self):
         pass
