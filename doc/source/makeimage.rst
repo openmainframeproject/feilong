@@ -148,19 +148,16 @@ If above commands execute successfully, you may continue to next steps.
 Otherwise, stop here and re-check the configuration.
 
 
-Configuration of activation engine(AE) in zLinux
+Configuration of cloud-init in zLinux
 ------------------------------------------------
 To do useful work with the user data, the zLinux image must be configured to
 run a service that retrieves the user data passed from the z/VM Cloud Connector
-and then takes some actions based on the contents of that data. This service is
-also known as an activation engine (AE).
+and then takes some actions based on the contents of that data. This task can 
+be done by cloud-init.
 
 For zLinux images that deployed by z/VM Cloud Connector, zvmguestconfigure must
-be installed and started as the pre-AE before any other underlying AE.
-Customers can choose their own underlying AE, such as cloud-init, according to
-their requirements. In this document,we use cloud-init as an example when showing
-how to configure an image. These steps of configuration zvmguestconfigure and
-cloud-init are described in subsequent sections.
+be installed and started before cloud-init.
+These steps of configuration zvmguestconfigure and cloud-init are described in subsequent sections.
 
 Configuration of zvmguestconfigure in zLinux
 --------------------------------------------
@@ -168,7 +165,7 @@ The zvmguestconfigure script/service must be installed in the zLinux so it
 can process the request files transmitted by z/VM Cloud Connector to the
 reader of the zLinux as a class X file. zvmguestconfigure also act as the bridge
 between the zLinux and higher layer of zVM Cloud. Take spawning a VM via Openstack
-nova-zvm-driver for example, the image use cloud-init as the underlying AE.
+nova-zvm-driver for example, the image uses cloud-init.
 If customer spawn a new VM with some customized data to initialize
 the VM via nova boot command. The overall work flow of the customized data is
 listed as below:
