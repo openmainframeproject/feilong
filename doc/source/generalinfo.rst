@@ -4,11 +4,11 @@ General info
 Content of this package
 ========================
 
-The zvm cloud connector package (also known as zvm sdk) is a client library
-written in pure Python that interacts with `z/VM`_ SMAPI (System management API)
-of `IBM Z`_ or `LinuxONE`_ machines. The goal of this package is to make the
-z/VM SMAPI easy to be consumed by upper layer programmers and provide a set
-of APIs to be called through RESTful interfaces.
+Feilong (also known as python-zvm-sdk) is a client library written in Python
+that interacts with `z/VM`_ SMAPI (System management API) of `IBM Z`_ or
+`LinuxONE`_ machines. The goal of this package is to make the z/VM SMAPI easy
+to be consumed by upper layer programmers and provide a set of APIs to be
+called through RESTful interfaces.
 
 .. _IBM Z: http://www.ibm.com/systems/z/
 .. _LinuxONE: http://www.ibm.com/systems/linuxone/
@@ -22,10 +22,10 @@ CPU, memory, virtual switches, Storage, and more.
 Version
 =======
 
-This documentation applies to version |release| of the zvm cloud connector package.
+This documentation applies to version |release| of the Feilong package(python-zvm-sdk).
 You can also see that version in the top left corner of this page.
 
-The zvm cloud connector package uses the rules of `Semantic Versioning 2.0.0`_ for 
+The Feilong package(python-zvm-sdk) uses the rules of `Semantic Versioning 2.0.0`_ for 
 its version.
 
 .. _Semantic Versioning 2.0.0: http://semver.org/spec/v2.0.0.html
@@ -55,10 +55,10 @@ Deprecated functionality is marked accordingly in this documentation and in the
 Bug reporting and questions
 ===========================
 If you encounter any problem with this package, please open a bug against
-`cloud connector issue tracker`_ or ask question `cloud connector question`_
+`Feilong issue tracker`_ or ask question `Feilong question`_
 
-.. _cloud connector issue tracker: https://bugs.launchpad.net/python-zvm-sdk/+bug
-.. _cloud connector question: https://answers.launchpad.net/python-zvm-sdk/
+.. _Feilong issue tracker: https://bugs.launchpad.net/python-zvm-sdk/+bug
+.. _Feilong question: https://answers.launchpad.net/python-zvm-sdk/
 
 License
 =======
