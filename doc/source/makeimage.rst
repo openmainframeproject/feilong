@@ -3,14 +3,13 @@ Image and cloud-init Configuration
 
 This section discusses setting up the Linux on System z(zLinux) that is the
 target of the initial image capture, after capturing this zLinux, an image will
-be generated, it can be used to import into z/VM Cloud Connector's image
+be generated, it can be used to import into Feilong's image
 repository or Openstack glance for later deployment.
 
 Image Requirements
 ==================
 
-These are the requirements for an image to be captured and deployed by zVM
-cloud connector:
+These are the requirements for an image to be captured and deployed by Feilong:
 
 1. The supported Linux distributions are:
 
@@ -32,7 +31,7 @@ Where x is the zLinux's minor release number
 - FBA
 - ECKD
 
-**NOTE**: An image deployed via z/VM Cloud Connector must match the disk type
+**NOTE**: An image deployed via Feilong must match the disk type
 configured by disk_pool in /etc/zvmsdk/zvmsdk.conf, only either FBA or ECKD image
 can be deployed in zvmsdk, but not both at the same time. If you wish to switch
 image types, you need to change the disk_pool configuration option and restart
@@ -61,7 +60,7 @@ sdkserver to make the changes take effect.
 
   d. The root disk should have a single partition
 
-  e. z/VM Cloud Connector only support deploy an image to a disk larger or equal than
+  e. Feilong only support deploy an image to a disk larger or equal than
      the source image's root disk size , otherwise, it would result in loss of data.
      The image's root disk size can be got by command.
 
@@ -69,8 +68,8 @@ sdkserver to make the changes take effect.
 
         hexdump -C -n 64 <image_path>
 
-Make a Deployable Image for z/VM Cloud Connector
-================================================
+Make a Deployable Image for Feilong
+===================================
 
 Install Linux on z Systems(zLinux) in a Virtual Machine
 -------------------------------------------------------
@@ -99,12 +98,12 @@ Install Linux on z Systems(zLinux) in a Virtual Machine
 Installation and Configuration of IUCV service in zLinux
 --------------------------------------------------------
 
-z/VM Cloud Connector manages the deployed VM via IUCV channel. IUCV service
+Feilong manages the deployed VM via IUCV channel. IUCV service
 should be configured on zLinux before capture it to make image. Following the below
 steps to install and configure IUCV service.
 
 1. Logon your BYOL(Bring Your Own Linux, which will be used to represent the Linux
-   on which the z/VM Cloud Connector will be run), and copy the following files
+   on which the Feilong will be run), and copy the following files
    to target VM
 
    .. code-block:: text
@@ -149,20 +148,20 @@ Otherwise, stop here and re-check the configuration.
 
 
 Configuration of cloud-init in zLinux
-------------------------------------------------
+-------------------------------------
 To do useful work with the user data, the zLinux image must be configured to
-run a service that retrieves the user data passed from the z/VM Cloud Connector
+run a service that retrieves the user data passed from the Feilong
 and then takes some actions based on the contents of that data. This task can 
 be done by cloud-init.
 
-For zLinux images that deployed by z/VM Cloud Connector, zvmguestconfigure must
+For zLinux images that deployed by Feilong, zvmguestconfigure must
 be installed and started before cloud-init.
 These steps of configuration zvmguestconfigure and cloud-init are described in subsequent sections.
 
 Configuration of zvmguestconfigure in zLinux
 --------------------------------------------
 The zvmguestconfigure script/service must be installed in the zLinux so it
-can process the request files transmitted by z/VM Cloud Connector to the
+can process the request files transmitted by Feilong to the
 reader of the zLinux as a class X file. zvmguestconfigure also act as the bridge
 between the zLinux and higher layer of zVM Cloud. Take spawning a VM via Openstack
 nova-zvm-driver for example, the image uses cloud-init.
@@ -173,7 +172,7 @@ listed as below:
 1. Openstack nova-zvm-driver generate the cfgdrive.iso file which is iso9660 format
    and with label 'config-2', this file is used to customize the target VM
 
-2. nova-zvm-driver then call z/VM Cloud Connector to punch the cfgdrive.iso file to
+2. nova-zvm-driver then call Feilong to punch the cfgdrive.iso file to
    target VM's reader
 
 3. When target VM start up, the installed zvmguestconfigure will download cfgdrive.iso
@@ -183,7 +182,7 @@ listed as below:
    via command ``blkid -t TYPE=iso9660 -o device``, then consume the data provided
    by cfgdrive.iso to customize the VM
 
-The z/VM Cloud Connector supports initiating changes to zLinux while it is shut
+The Feilong supports initiating changes to zLinux while it is shut
 down or the virtual machine is logged off.The changes to zLinux are implemented
 using zvmguestconfigure that is run when Linux is booted the next time. The steps
 of how to install zvmguestconfigure is described in subsequence sections.
@@ -1013,10 +1012,10 @@ Where:
 <image_location> is the image's store location
 
 
-Import the Images to z/VM Cloud Connector
-=========================================
+Import the Images to Feilong
+============================
 
-If you want to import the image to z/VM Cloud Connector, you can use REST API.
+If you want to import the image to Feilong, you can use REST API.
 Type the following command:
 
 .. code-block:: text

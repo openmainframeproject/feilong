@@ -1,7 +1,7 @@
 Error Codes and Messages
 ************************
 
-This is a reference to z/VM Cloud Connector API error codes
+This is a reference to Feilong API error codes
 and messages.
 
 .. csv-table::
