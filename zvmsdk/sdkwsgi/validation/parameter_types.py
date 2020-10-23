@@ -563,3 +563,9 @@ hostname = {
          'pattern': '^[a-zA-Z0-9-._]*$'}
     ]
 }
+
+vlan_id_or_minus_1 = {
+    'type': 'integer',
+    'minimum': -1,
+    'maximum': 4094,
+}

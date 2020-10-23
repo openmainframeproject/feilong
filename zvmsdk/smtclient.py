@@ -33,6 +33,7 @@ import six
 import string
 import subprocess
 import tempfile
+import time
 
 from smtLayer import smt
 
@@ -1668,13 +1669,22 @@ class SMTClient(object):
             mac = ''.join(mac_addr.split(':'))[6:]
             requestData += ' -k mac_id=%s' % mac
 
-        try:
-            self._request(requestData)
-        except exception.SDKSMTRequestFailed as err:
-            LOG.error("Failed to create nic %s for user %s in "
-                      "the guest's user direct, error: %s" %
-                      (vdev, userid, err.format_message()))
-            self._create_nic_inactive_exception(err, userid, vdev)
+        retry = 1
+        for secs in [1, 3, 5, 8, -1]:
+            try:
+                self._request(requestData)
+            except exception.SDKSMTRequestFailed as err:
+                if (err.results['rc'] == 400 and
+                    err.results['rs'] == 12 and
+                    retry < 5):
+                    LOG.info("The VM is locked, will retry")
+                    time.sleep(secs)
+                    retry += 1
+                else:
+                    LOG.error("Failed to create nic %s for user %s in "
+                              "the guest's user direct, error: %s" %
+                              (vdev, userid, err.format_message()))
+                    self._create_nic_inactive_exception(err, userid, vdev)
 
         if active:
             if mac_addr is not None:
@@ -1912,27 +1922,6 @@ class SMTClient(object):
         if active:
             self._is_active(userid)
 
-        msg = ('Start to couple nic device %(vdev)s of guest %(vm)s '
-               'with vswitch %(vsw)s'
-                % {'vdev': vdev, 'vm': userid, 'vsw': vswitch_name})
-        LOG.info(msg)
-        requestData = ' '.join((
-            'SMAPI %s' % userid,
-            "API Virtual_Network_Adapter_Connect_Vswitch_DM",
-            "--operands",
-            "-v %s" % vdev,
-            "-n %s" % vswitch_name))
-
-        try:
-            self._request(requestData)
-        except exception.SDKSMTRequestFailed as err:
-            LOG.error("Failed to couple nic %s to vswitch %s for user %s "
-                      "in the guest's user direct, error: %s" %
-                      (vdev, vswitch_name, userid, err.format_message()))
-            self._couple_inactive_exception(err, userid, vdev, vswitch_name)
-
-        # the inst must be active, or this call will failed
-        if active:
             requestData = ' '.join((
                 'SMAPI %s' % userid,
                 'API Virtual_Network_Adapter_Connect_Vswitch',
@@ -1987,7 +1976,7 @@ class SMTClient(object):
         LOG.info(msg)
 
     def couple_nic_to_vswitch(self, userid, nic_vdev,
-                              vswitch_name, active=False):
+                              vswitch_name, active=False, vlan_id=-1):
         """Couple nic to vswitch."""
         if active:
             msg = ("both in the user direct of guest %s and on "
@@ -1996,6 +1985,46 @@ class SMTClient(object):
             msg = "in the user direct of guest %s" % userid
         LOG.debug("Connect nic %s to switch %s %s",
                   nic_vdev, vswitch_name, msg)
+
+        # previously we use Virtual_Network_Adapter_Connect_Vswitch_DM
+        # but due to limitation in SMAPI, we have to create such user
+        # direct by our own due to no way to add VLAN ID
+
+        msg = ('Start to couple nic device %(vdev)s of guest %(vm)s '
+               'with vswitch %(vsw)s with vlan %(vlan_id)s:'
+                % {'vdev': nic_vdev, 'vm': userid, 'vsw': vswitch_name,
+                   'vlan_id': vlan_id})
+        LOG.info(msg)
+
+        user_direct = self.get_user_direct(userid)
+        new_user_direct = []
+        nicdef = "NICDEF %s" % nic_vdev
+        for ent in user_direct:
+            if len(ent) > 0:
+                if ent.upper().startswith(nicdef):
+                    # vlan_id < 0 means no VLAN ID given
+                    if vlan_id < 0:
+                        v = " LAN SYSTEM %s" % vswitch_name
+                    else:
+                        v = " LAN SYSTEM %s VLAN %s" % (vswitch_name, vlan_id)
+
+                    ent = ent + v
+
+                new_user_direct.append(ent)
+
+        try:
+            self._lock_user_direct(userid)
+        except exception.SDKSMTRequestFailed as e:
+            raise exception.SDKGuestOperationError(rs=9, userid=userid,
+                                                   err=e.format_message())
+        # Replace user directory
+        try:
+            self._replace_user_direct(userid, new_user_direct)
+        except exception.SDKSMTRequestFailed as e:
+            raise exception.SDKGuestOperationError(rs=10,
+                                                   userid=userid,
+                                                   err=e.format_message())
+
         self._couple_nic(userid, nic_vdev, vswitch_name, active=active)
 
     def _uncouple_active_exception(self, error, userid, vdev):

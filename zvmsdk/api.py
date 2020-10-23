@@ -953,16 +953,18 @@ class SDKAPI(object):
 
     @check_guest_exist()
     def guest_nic_couple_to_vswitch(self, userid, nic_vdev,
-                                    vswitch_name, active=False):
+                                    vswitch_name, active=False, vlan_id=-1):
         """ Couple nic device to specified vswitch.
 
         :param str userid: the user's name who owns the nic
         :param str nic_vdev: nic device number, 1- to 4- hexadecimal digits
         :param str vswitch_name: the name of the vswitch
         :param bool active: whether make the change on active guest system
+        :param str vlan_id: the VLAN ID of the NIC
         """
         self._networkops.couple_nic_to_vswitch(userid, nic_vdev,
-                                               vswitch_name, active=active)
+                                               vswitch_name, active=active,
+                                               vlan_id=vlan_id)
 
     @check_guest_exist()
     def guest_nic_uncouple_from_vswitch(self, userid, nic_vdev,

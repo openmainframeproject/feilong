@@ -1346,6 +1346,7 @@ Couple or uncouple nic with vswitch on the guest.
   - couple: couple_action
   - active: active_flag
   - vswitch: vswitch_name_body_opt
+  - vlan_id: vlan_id
 
 * Request sample:
 

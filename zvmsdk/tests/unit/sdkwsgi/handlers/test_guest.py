@@ -1046,7 +1046,7 @@ class HandlersGuestTest(SDKWSGITest):
         guest.guest_couple_uncouple_nic(self.req)
         mock_couple.assert_called_once_with('guest_nic_couple_to_vswitch',
                                             FAKE_USERID, "1000", "vsw1",
-                                            active=False)
+                                            active=False, vlan_id=-1)
 
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     @mock.patch.object(util, 'wsgi_path_item')

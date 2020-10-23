@@ -979,7 +979,7 @@ user_vlan_id:
   type: dict
 vlan_id:
   description: |
-    The VLAN ID. This can be any of the value between 1-4094.
+    The VLAN ID. This can be any of the value between -1 or 1-4094.
   in: body
   required: true
   type: integer
