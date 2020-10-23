@@ -60,8 +60,12 @@ class HOSTOps(object):
             host_info['hypervisor_version'] = version
             host_info['hypervisor_hostname'] = inv_info['hypervisor_name']
             host_info['ipl_time'] = inv_info['ipl_time']
-        diskpool_name = CONF.zvm.disk_pool.split(':')[1]
-        dp_info = self.diskpool_get_info(diskpool_name)
+        disk_pool = CONF.zvm.disk_pool
+        if disk_pool is None:
+            dp_info = {'disk_total': 0, 'disk_used': 0, 'disk_available': 0}
+        else:
+            diskpool_name = disk_pool.split(':')[1]
+            dp_info = self.diskpool_get_info(diskpool_name)
         host_info.update(dp_info)
 
         return host_info
