@@ -16,6 +16,7 @@
 import os
 import mock
 import tempfile
+import time
 import subprocess
 
 from smtLayer import smt
@@ -1396,6 +1397,35 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         request.assert_any_call(rd1)
         request.assert_any_call(rd2)
 
+    @mock.patch.object(time, "sleep")
+    @mock.patch.object(smtclient.SMTClient, '_create_nic_inactive_exception')
+    @mock.patch.object(database.NetworkDbOperator, 'switch_add_record')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    def test_private_create_nic_active_retry(self, power_state, request,
+                                             add_record, cnie, ts):
+        results = {'rc': 400, 'rs': 12, 'logEntries': ''}
+        request.side_effect = exception.SDKSMTRequestFailed(results,
+                                                               "fake error")
+        power_state.return_value = 'on'
+        self._smtclient._create_nic("fakenode", "fake_vdev",
+                                     nic_id="fake_nic",
+                                     mac_addr='11:22:33:44:55:66',
+                                     active=False)
+        add_record.assert_called_once_with("fakenode", "fake_vdev",
+                                            port="fake_nic")
+        cnie.assert_called_once_with(mock.ANY, 'fakenode', 'fake_vdev')
+        rd1 = ' '.join((
+            'SMAPI fakenode API Virtual_Network_Adapter_Create_Extended_DM',
+            "--operands",
+            "-k image_device_number=fake_vdev",
+            "-k adapter_type=QDIO",
+            "-k mac_id=445566"))
+
+        request.assert_any_call(rd1)
+        self.assertEqual(5, request.call_count)
+        self.assertEqual(4, ts.call_count)
+
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_get_user_direct(self, req):
         req.return_value = {'response': 'OK'}
@@ -1441,15 +1471,43 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self._smtclient.delete_nic(userid, vdev, True)
         undedicate_nic.assert_called_with(userid, vdev, active=True)
 
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_lock_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
     @mock.patch.object(smtclient.SMTClient, '_couple_nic')
-    def test_couple_nic_to_vswitch(self, couple_nic):
+    def test_couple_nic_to_vswitch_no_vlan(self, couple_nic, replace,
+                                   lock, get_user):
+        replace_data = ["USER ABC", "NICDEF 1000 LAN SYSTEM VS1"]
+        get_user.return_value = ["USER ABC", "NICDEF 1000"]
         self._smtclient.couple_nic_to_vswitch("fake_userid",
-                                               "fakevdev",
-                                               "fake_VS_name",
-                                               True)
+                                               "1000",
+                                               "VS1",
+                                               active=True)
+        lock.assert_called_with("fake_userid")
+        replace.assert_called_with("fake_userid", replace_data)
         couple_nic.assert_called_with("fake_userid",
-                                      "fakevdev",
-                                      "fake_VS_name",
+                                      "1000",
+                                      "VS1",
+                                      active=True)
+
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_lock_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_couple_nic')
+    def test_couple_nic_to_vswitch_vlan(self, couple_nic, replace,
+                                   lock, get_user):
+        replace_data = ["USER ABC", "NICDEF 1000 LAN SYSTEM VS1 VLAN 55"]
+        get_user.return_value = ["USER ABC", "NICDEF 1000"]
+        self._smtclient.couple_nic_to_vswitch("fake_userid",
+                                               "1000",
+                                               "VS1",
+                                               active=True,
+                                               vlan_id=55)
+        lock.assert_called_with("fake_userid")
+        replace.assert_called_with("fake_userid", replace_data)
+        couple_nic.assert_called_with("fake_userid",
+                                      "1000",
+                                      "VS1",
                                       active=True)
 
     @mock.patch.object(smtclient.SMTClient, '_uncouple_nic')
@@ -1471,13 +1529,6 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         vdev = 'FakeVdev'
         vswitch_name = 'FakeVS'
 
-        requestData1 = ' '.join((
-            'SMAPI FakeID',
-            "API Virtual_Network_Adapter_Connect_Vswitch_DM",
-            "--operands",
-            "-v FakeVdev",
-            "-n FakeVS"))
-
         requestData2 = ' '.join((
             'SMAPI FakeID',
             "API Virtual_Network_Adapter_Connect_Vswitch",
@@ -1488,7 +1539,6 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self._smtclient._couple_nic(userid, vdev, vswitch_name,
                                      active=True)
         update_switch.assert_called_with(userid, vdev, vswitch_name)
-        request.assert_any_call(requestData1)
         request.assert_any_call(requestData2)
 
     @mock.patch.object(database.NetworkDbOperator,

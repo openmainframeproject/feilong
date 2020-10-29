@@ -186,6 +186,7 @@ nic_couple_uncouple = {
                 'couple': parameter_types.boolean,
                 'active': parameter_types.boolean,
                 'vswitch': parameter_types.vswitch_name,
+                'vlan_id': parameter_types.vlan_id_or_minus_1,
             },
             # FIXME: vswitch should be required when it's couple
             'required': ['couple'],
