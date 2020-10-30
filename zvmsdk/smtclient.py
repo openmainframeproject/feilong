@@ -1673,6 +1673,7 @@ class SMTClient(object):
         for secs in [1, 3, 5, 8, -1]:
             try:
                 self._request(requestData)
+                break
             except exception.SDKSMTRequestFailed as err:
                 if (err.results['rc'] == 400 and
                     err.results['rs'] == 12 and
