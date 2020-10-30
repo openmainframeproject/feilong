@@ -1394,6 +1394,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
             "--operands",
             "-k image_device_number=fake_vdev",
             "-k adapter_type=QDIO"))
+
+        # make sure only those 2 APIs called, no retry triggered
+        self.assertEqual(2, request.call_count)
         request.assert_any_call(rd1)
         request.assert_any_call(rd2)
 
