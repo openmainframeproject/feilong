@@ -220,10 +220,13 @@ class VMHandler(object):
 
         couple = util.bool_from_string(info['couple'], strict=True)
 
+        # vlan_id is for couple operation only, uncouple ignore it
+        vlan_id = info.get('vlan_id', -1)
+
         if couple:
             info = self.client.send_request('guest_nic_couple_to_vswitch',
                                             userid, vdev, info['vswitch'],
-                                            active=active)
+                                            active=active, vlan_id=vlan_id)
         else:
             info = self.client.send_request('guest_nic_uncouple_from_vswitch',
                                             userid, vdev,

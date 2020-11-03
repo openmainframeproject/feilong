@@ -53,9 +53,10 @@ class NetworkOPS(object):
         return self._smtclient.get_vswitch_list()
 
     def couple_nic_to_vswitch(self, userid, nic_vdev,
-                              vswitch_name, active=False):
+                              vswitch_name, active=False, vlan_id=-1):
         self._smtclient.couple_nic_to_vswitch(userid, nic_vdev,
-                                               vswitch_name, active=active)
+                                              vswitch_name, active=active,
+                                              vlan_id=vlan_id)
 
     def uncouple_nic_from_vswitch(self, userid, nic_vdev,
                                   active=False):
