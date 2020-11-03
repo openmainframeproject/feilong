@@ -122,7 +122,8 @@ Possible values:
         section='zvm'),
     Opt('disk_pool',
         section='zvm',
-        required=True,
+        default=None,
+        required=False,
         help='''
 zVM disk pool and type for root/ephemeral disks.
 
