@@ -3,31 +3,35 @@ Image and cloud-init Configuration
 
 This section discusses setting up the Linux on System z(zLinux) that is the
 target of the initial image capture, after capturing this zLinux, an image will
-be generated, it can be used to import into z/VM Cloud Connector's image
+be generated, it can be used to import into Feilong's image
 repository or Openstack glance for later deployment.
 
 Image Requirements
 ==================
 
-These are the requirements for an image to be captured and deployed by zVM
-cloud connector:
+These are the requirements for an image to be captured and deployed by Feilong:
 
 1. The supported Linux distributions are:
 
 - RHEL 6.x
 - RHEL 7.x
+- RHEL 8.1
 - SLES 11.x
 - SLES 12.x
+- SELS 15
 - Ubuntu 16.04
+- Ubuntu 20.04
 
 Where x is the zLinux's minor release number
+
+**Note**: FBA as root disk type is not supported for RHEL 8.1
 
 2. The supported root disk type for capture/deploy are:
 
 - FBA
 - ECKD
 
-**NOTE**: An image deployed via z/VM Cloud Connector must match the disk type
+**NOTE**: An image deployed via Feilong must match the disk type
 configured by disk_pool in /etc/zvmsdk/zvmsdk.conf, only either FBA or ECKD image
 can be deployed in zvmsdk, but not both at the same time. If you wish to switch
 image types, you need to change the disk_pool configuration option and restart
@@ -56,7 +60,7 @@ sdkserver to make the changes take effect.
 
   d. The root disk should have a single partition
 
-  e. z/VM Cloud Connector only support deploy an image to a disk larger or equal than
+  e. Feilong only support deploy an image to a disk larger or equal than
      the source image's root disk size , otherwise, it would result in loss of data.
      The image's root disk size can be got by command.
 
@@ -64,8 +68,8 @@ sdkserver to make the changes take effect.
 
         hexdump -C -n 64 <image_path>
 
-Make a Deployable Image for z/VM Cloud Connector
-================================================
+Make a Deployable Image for Feilong
+===================================
 
 Install Linux on z Systems(zLinux) in a Virtual Machine
 -------------------------------------------------------
@@ -94,12 +98,12 @@ Install Linux on z Systems(zLinux) in a Virtual Machine
 Installation and Configuration of IUCV service in zLinux
 --------------------------------------------------------
 
-z/VM Cloud Connector manages the deployed VM via IUCV channel. IUCV service
+Feilong manages the deployed VM via IUCV channel. IUCV service
 should be configured on zLinux before capture it to make image. Following the below
 steps to install and configure IUCV service.
 
 1. Logon your BYOL(Bring Your Own Linux, which will be used to represent the Linux
-   on which the z/VM Cloud Connector will be run), and copy the following files
+   on which the Feilong will be run), and copy the following files
    to target VM
 
    .. code-block:: text
@@ -143,27 +147,24 @@ If above commands execute successfully, you may continue to next steps.
 Otherwise, stop here and re-check the configuration.
 
 
-Configuration of activation engine(AE) in zLinux
-------------------------------------------------
+Configuration of cloud-init in zLinux
+-------------------------------------
 To do useful work with the user data, the zLinux image must be configured to
-run a service that retrieves the user data passed from the z/VM Cloud Connector
-and then takes some actions based on the contents of that data. This service is
-also known as an activation engine (AE).
+run a service that retrieves the user data passed from the Feilong
+and then takes some actions based on the contents of that data. This task can 
+be done by cloud-init.
 
-For zLinux images that deployed by z/VM Cloud Connector, zvmguestconfigure must
-be installed and started as the pre-AE before any other underlying AE.
-Customers can choose their own underlying AE, such as cloud-init, according to
-their requirements. In this document,we use cloud-init as an example when showing
-how to configure an image. These steps of configuration zvmguestconfigure and
-cloud-init are described in subsequent sections.
+For zLinux images that deployed by Feilong, zvmguestconfigure must
+be installed and started before cloud-init.
+These steps of configuration zvmguestconfigure and cloud-init are described in subsequent sections.
 
 Configuration of zvmguestconfigure in zLinux
 --------------------------------------------
 The zvmguestconfigure script/service must be installed in the zLinux so it
-can process the request files transmitted by z/VM Cloud Connector to the
+can process the request files transmitted by Feilong to the
 reader of the zLinux as a class X file. zvmguestconfigure also act as the bridge
 between the zLinux and higher layer of zVM Cloud. Take spawning a VM via Openstack
-nova-zvm-driver for example, the image use cloud-init as the underlying AE.
+nova-zvm-driver for example, the image uses cloud-init.
 If customer spawn a new VM with some customized data to initialize
 the VM via nova boot command. The overall work flow of the customized data is
 listed as below:
@@ -171,7 +172,7 @@ listed as below:
 1. Openstack nova-zvm-driver generate the cfgdrive.iso file which is iso9660 format
    and with label 'config-2', this file is used to customize the target VM
 
-2. nova-zvm-driver then call z/VM Cloud Connector to punch the cfgdrive.iso file to
+2. nova-zvm-driver then call Feilong to punch the cfgdrive.iso file to
    target VM's reader
 
 3. When target VM start up, the installed zvmguestconfigure will download cfgdrive.iso
@@ -181,7 +182,7 @@ listed as below:
    via command ``blkid -t TYPE=iso9660 -o device``, then consume the data provided
    by cfgdrive.iso to customize the VM
 
-The z/VM Cloud Connector supports initiating changes to zLinux while it is shut
+The Feilong supports initiating changes to zLinux while it is shut
 down or the virtual machine is logged off.The changes to zLinux are implemented
 using zvmguestconfigure that is run when Linux is booted the next time. The steps
 of how to install zvmguestconfigure is described in subsequence sections.
@@ -268,7 +269,7 @@ Perform the following steps:
 
 - If the target Linux machine is RHEL7.x, copy the zvmguestconfigureconf4z.service file to: /lib/systemd/system
 
-- If the target Linux machine is SLES12.x, copy the zvmguestconfigure.service file to: /usr/lib/systemd/system
+- If the target Linux machine is SLES12.x and SLES15, copy the zvmguestconfigure.service file to: /usr/lib/systemd/system
   and it is recommended that you change the NetworkManager.service to be wicked.service in the zvmguestconfigure.service
 
 5. Enable the zvmguestconfigure service by issuing:
@@ -283,8 +284,8 @@ Perform the following steps:
 
        systemctl start zvmguestconfigure.service
 
-Configuration of zvmguestconfigure on Ubuntu 16.04
-..................................................
+Configuration of zvmguestconfigure on Ubuntu 16.04 and Ubuntu 20.04
+...................................................................
 
 1. Logon your BYOL, and copy the zvmguestconfigure and zvmguestconfigure.service
    script that are located at <zvmsdk_path>/python-zvm-sdk/tools/share/zvmguestconfigure 
@@ -317,7 +318,9 @@ Configuration of zvmguestconfigure on Ubuntu 16.04
        [Install]
        WantedBy=multi-user.target
 
-   After that, copy the zvmguestconfigure.service file to /lib/systemd/system.
+   After that, copy the zvmguestconfigure.service file to /lib/systemd/system. If the 
+   target Linux machine is Ubuntu 20.04, copy the zvmguestconfigure.service.ubuntu file 
+   to: /lib/systemd/system, and rename to zvmguestconfigure.service.
 
 5. Enable the zvmguestconfigure service by issuing:
 
@@ -356,7 +359,9 @@ of your Linux distribution. You can find a community-maintained list of
 dependencies at http://ibm.biz/cloudinitLoZ.
 
 The z/VM OpenStack support has been tested with cloud-init 0.7.4 and 0.7.5 for
-RHEL6.x and SLES11.x, 0.7.6 for RHEL7.x and SLES12.x, and 0.7.8 for Ubuntu 16.04.
+RHEL6.x and SLES11.x, 0.7.6 for RHEL7.x and SLES12.x, and 18.4 for SLES15, and 
+18.5 for RHEL8.1, and 0.7.8 for Ubuntu 16.04.
+
 If you are using a different version of cloud-init, you should change your
 specification of the indicated commands accordingly.During cloud-init
 installation, some dependency packages may be required. You can use yum/zypper
@@ -809,11 +814,95 @@ Installation and Configuration of cloud-init on RHEL 7.x and SLES 12.x
 
         rm -rf /var/lib/cloud
 
-Installation and Configuration of cloud-init on Ubuntu 16.04
-............................................................
+Installation and Configuration of cloud-init on RHEL8.1 and SLES15
+..................................................................
+
+Enable the system repositories of the RHEL8.1 and SLES15 to ensure that they can install software via yum and zypper.
+
+1. Install cloud-init by the command:
+
+  a. For the RHEL8.1:
+
+     .. code-block:: text
+
+        yum install cloud-init 
+
+  b. For the SLES15:
+
+     .. code-block:: text
+
+        zypper install cloud-init
+
+2. OpenStack on z/VM uses ConfigDrive as the data source during the
+   installation process. You must add the following lines to the
+   default configuration file, /etc/cloud/cloud.cfg. Remember to disable network 
+   configuration because network configuration is done by zvmguestconfigure.
+
+   .. code-block:: text
+
+       # Example datasource config
+       # datasource:
+       #   Ec2:
+       #
+       # metadata_urls: [ ’blah.com’ ]
+       #
+       # timeout: 5 # (defaults to 50 seconds) 
+       #
+       #     max_wait: 10 # (defaults to 120 seconds)
+       datasource_list: [ ConfigDrive, None ]
+       datasource:
+         ConfigDrive:
+           dsmode: local
+       network: {config: disabled}
+
+   **NOTE:** please pay attention to the indentation, otherwise, cloud-init may not
+   work as expected.
+
+3. Optionally, enable root login by configuring the /etc/cloud/cloud.cfg file:
+
+   .. code-block:: text
+
+       disable_root: false 
+
+4. Enable and start the cloud-init related services by issuing the following commands:
+
+   .. code-block:: text
+
+       systemctl enable cloud-init-local.service
+       systemctl start cloud-init-local.service
+       systemctl enable cloud-init.service
+       systemctl start cloud-init.service
+       systemctl enable cloud-config.service
+       systemctl start cloud-config.service
+       systemctl enable cloud-final.service
+       systemctl start cloud-final.service
+
+   If you experience problems the first time you start cloud-config.service and
+   cloud-final.service, try starting them again.
+
+5. Ensure all cloud-init services are in active status by issuing the following commands:
+
+   .. code-block:: text
+
+       systemctl status cloud-init-local.service
+       systemctl status cloud-init.service
+       systemctl status cloud-config.service
+       systemctl status cloud-final.service 
+
+6. Remove the /var/lib/cloud directory (if it exists), so that cloud-init will
+    not run after a reboot: 
+
+   .. code-block:: text
+
+       rm -rf /var/lib/cloud
+
+Installation and Configuration of cloud-init on Ubuntu 16.04 and Ubuntu 20.04
+.............................................................................
 
 For Ubuntu 16.04, cloud-init0.7.8 or higher is required. The examples in this
 section use cloud-init0.7.8.
+
+For Ubuntu 20.04, cloud-init20.1-10 is installed by default, can ignore below step1-2.
 
 1. Download cloud-init0.7.8 from https://launchpad.net/cloud-init/+download. 
    Untar it with this command:
@@ -923,10 +1012,10 @@ Where:
 <image_location> is the image's store location
 
 
-Import the Images to z/VM Cloud Connector
-=========================================
+Import the Images to Feilong
+============================
 
-If you want to import the image to z/VM Cloud Connector, you can use REST API.
+If you want to import the image to Feilong, you can use REST API.
 Type the following command:
 
 .. code-block:: text

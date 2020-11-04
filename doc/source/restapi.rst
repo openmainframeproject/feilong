@@ -1,13 +1,13 @@
 RESTful APIs
 ************
 
-This is a reference for the z/VM Cloud Connector RESTful API.
+This is a reference for the Feilong RESTful API.
 
 Response Data Definition
 ========================
 
 The following table gives a reference of general response data definition
-of each z/VM Cloud Connector RESTful API. In case of encountering an error,
+of each Feilong RESTful API. In case of encountering an error,
 those information will be helpful to report bug/issue.
 
 .. restapi_parameters:: parameters.yaml
@@ -27,7 +27,7 @@ Version
 =======
 Lists version of this API.
 
-Get zvm cloud connector version
+Get Feilong version
 -------------------------------
 
 **GET /**
@@ -98,7 +98,7 @@ List Guests
 
 **GET /guests**
 
-List names of all the guests created by z/VM Cloud Connector.
+List names of all the guests created by Feilong.
 
 * Request:
 
@@ -395,6 +395,7 @@ Get volume connector for z/VM.
 .. restapi_parameters:: parameters.yaml
 
   - userid: guest_userid
+  - reserve: fcp_reserve
 
 * Response code:
 
@@ -1004,7 +1005,7 @@ Guest register
 
 **POST /guests/{userid}/action**
 
-Register guest to be managed by z/VM Cloud Connector.
+Register guest to be managed by Feilong.
 
 * Request:
 
@@ -1032,7 +1033,7 @@ Guest deregister
 
 **POST /guests/{userid}/action**
 
-Deregister guest to be managed by z/VM Cloud Connector.
+Deregister guest to be managed by Feilong.
 
 * Request:
 
@@ -1081,7 +1082,7 @@ Live resize CPUs of guest.
 .. note::
 
    - Currently only increasing CPU count is supported, decreasing is not supported.
-   - The guest to be live resized must be active and managed by z/VM Cloud Connector.
+   - The guest to be live resized must be active and managed by Feilong.
    - If live resize finished successfully, both the active CPU number and the number of
      defined CPUs in user directory would be updated to the requested so that the CPU
      count would persist even after the guest is restarted.
@@ -1094,7 +1095,7 @@ Live resize CPUs of guest.
    - To live resize a guest, the guest must have maximum CPU count defined in user
      directory entry with "MACHINE ESA xx" where 'xx' is the maximum CPU count. The
      resize CPU count can't exceed the maximum CPU count.
-   - For guests created by z/VM Cloud Connector after version 1.2.0, the maximum CPU
+   - For guests created by Feilong after version 1.2.0, the maximum CPU
      count is defined when the guest is created. The maximum CPU count is set by the configuration
      "user_default_max_cpu" in [zvm] section and can be overriden by the parameter "max_cpu" when
      creating the guest. e.g, the following configuration would define the default maximum CPU count
@@ -1166,7 +1167,7 @@ Live resize memory of guest.
 .. note::
 
    - Currently only increasing memory size is supported, decreasing is not supported.
-   - The guest to be live resized must be active and managed by z/VM Cloud Connector.
+   - The guest to be live resized must be active and managed by Feilong.
    - If live resize finished successfully, both the active memory and the initial memory
      defined in user directory would be updated to the requested size so that the change
      would persist even after the guest is restarted.
@@ -1345,6 +1346,7 @@ Couple or uncouple nic with vswitch on the guest.
   - couple: couple_action
   - active: active_flag
   - vswitch: vswitch_name_body_opt
+  - vlan_id: vlan_id
 
 * Request sample:
 
@@ -1832,14 +1834,14 @@ Files
 =====
 Imports and exports raw file data.
 
-These operations may be restricted to z/VM Cloud Connector administrators.
+These operations may be restricted to Feilong administrators.
 
 Import file
 -----------
 
 **PUT /files**
 
-Import binary file data to z/VM Cloud Connector. Internal use Only.Please set
+Import binary file data to Feilong. Internal use Only.Please set
 the Content-Type of the request header to application/octet-stream. The body
 contains the binary data.
 
@@ -1878,7 +1880,7 @@ Export file
 
 **POST /files**
 
-Export file from zVM Cloud Connector, internal use only.
+Export file from Feilong, internal use only.
 
 * Request:
 

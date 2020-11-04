@@ -43,25 +43,25 @@ ret_output:
   type: dict
 min_version_sdk:
   description: |
-    Min version of zvm cloud connector. 
+    Min version of Feilong. 
   in: header
   required: true
   type: string
 max_version_sdk:
   description: |
-    Max version of zvm cloud connector.
+    Max version of Feilong.
   in: header
   required: true
   type: string
 api_version_sdk:
   description: |
-    API version of zvm cloud connector.
+    API version of Feilong.
   in: header
   required: true
   type: string
 version_sdk:
   description: |
-    Version of zvm cloud connector.
+    Version of Feilong.
   in: header
   required: true
   type: string
@@ -979,7 +979,7 @@ user_vlan_id:
   type: dict
 vlan_id:
   description: |
-    The VLAN ID. This can be any of the value between 1-4094.
+    The VLAN ID. This can be any of the value between -1 or 1-4094.
   in: body
   required: true
   type: integer
@@ -1033,7 +1033,7 @@ file_import_output:
   type: dict
 file_import_dest_url:
   description: |
-    The location of file after imported on z/VM Cloud Connector.For example,
+    The location of file after imported on Feilong. For example,
     'file:///var/lib/zvmsdk/files/imported/be919b98-8408-11e8-b9fe-020001000053'
   in: body
   required: true
@@ -1183,3 +1183,9 @@ skipzipl:
   in: body
   required: false
   type: bool
+fcp_reserve:
+  description: |
+    If or not reserve the FCP devices.
+  in: body
+  required: true
+  type: boolean

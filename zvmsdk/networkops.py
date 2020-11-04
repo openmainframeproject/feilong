@@ -16,6 +16,7 @@
 import os
 import shutil
 import tarfile
+import yaml
 
 from zvmsdk import config
 from zvmsdk import dist
@@ -52,9 +53,10 @@ class NetworkOPS(object):
         return self._smtclient.get_vswitch_list()
 
     def couple_nic_to_vswitch(self, userid, nic_vdev,
-                              vswitch_name, active=False):
+                              vswitch_name, active=False, vlan_id=-1):
         self._smtclient.couple_nic_to_vswitch(userid, nic_vdev,
-                                               vswitch_name, active=active)
+                                              vswitch_name, active=active,
+                                              vlan_id=vlan_id)
 
     def uncouple_nic_from_vswitch(self, userid, nic_vdev,
                                   active=False):
@@ -174,7 +176,10 @@ class NetworkOPS(object):
                         'source_file': "%s" % key})
             content_dir[key] = contents
             file_name = os.path.join(network_file_path, key)
-            self._add_file(file_name, contents)
+            if 'yaml' in path:
+                self._add_yaml_file(file_name, contents)
+            else:
+                self._add_file(file_name, contents)
 
         self._create_invokeScript(network_file_path, clean_cmd, files_map)
         network_doscript = self._create_network_doscript(network_file_path)
@@ -189,6 +194,10 @@ class NetworkOPS(object):
     def _add_file(self, file_name, data):
         with open(file_name, "w") as f:
             f.write(data)
+
+    def _add_yaml_file(self, file_name, data):
+        with open(file_name, 'w') as stream:
+            yaml.dump(data, stream)
 
     def _create_znetconfig(self, commands, linuxdist, append_cmd,
                            active=False):

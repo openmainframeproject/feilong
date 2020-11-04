@@ -1128,6 +1128,10 @@ class sles(LinuxDist):
         cfg_str += "STARTMODE=\'onboot\'\n"
         cfg_str += ("NAME=\'OSA Express Network card (%s)\'\n" %
                     address_read)
+        if (dns_v4 is not None) and (len(dns_v4) > 0):
+            self.dns_v4 = dns_v4
+        else:
+            self.dns_v4 = None
         return cfg_str
 
     def _get_route_str(self, gateway_v4):
@@ -1497,6 +1501,46 @@ class sles12(sles):
         return activeIP_str
 
 
+class sles15(sles12):
+    """docstring for sles15"""
+    def get_znetconfig_contents(self):
+        remove_route = 'rm -f %s/ifroute-eth*' % self._get_network_file_path()
+        replace_var = 'NETCONFIG_DNS_STATIC_SERVERS'
+        replace_file = '/etc/sysconfig/network/config'
+        remove_dns_cfg = "sed -i '/^\s*%s=\"/d' %s" % (replace_var,
+                replace_file)
+
+        if self.dns_v4:
+            dns_addrs = ' '.join(self.dns_v4)
+            netconfig_dns = '%s="%s"' % (replace_var, dns_addrs)
+            set_dns = "echo '%s' >> %s" % (netconfig_dns, replace_file)
+
+            return '\n'.join(('cio_ignore -R',
+                              'znetconf -R -n',
+                              'sleep 2',
+                              remove_route,
+                              remove_dns_cfg,
+                              set_dns,
+                              'udevadm trigger',
+                              'udevadm settle',
+                              'sleep 2',
+                              'znetconf -A',
+                              'cio_ignore -u',
+                              'wicked ifreload all'))
+        else:
+            return '\n'.join(('cio_ignore -R',
+                              'znetconf -R -n',
+                              'sleep 2',
+                              remove_route,
+                              remove_dns_cfg,
+                              'udevadm trigger',
+                              'udevadm settle',
+                              'sleep 2',
+                              'znetconf -A',
+                              'cio_ignore -u',
+                              'wicked ifreload all'))
+
+
 class ubuntu(LinuxDist):
     def create_network_configuration_files(self, file_path, guest_networks,
                                            first, active=False):
@@ -1708,7 +1752,7 @@ class ubuntu(LinuxDist):
         target = '%s:$wwpn:%s' % (device, target_lun)
         disk_config = 'for wwpn in ${ActiveWWPNs[@]}\n'
         disk_config += 'do\n'
-        disk_config = '    /sbin/chzdev zfcp-lun %s -e\n' % target
+        disk_config += '    /sbin/chzdev zfcp-lun %s -e\n' % target
         disk_config += 'done\n'
         return '\n'.join((host_config,
                           disk_config))
@@ -1797,6 +1841,163 @@ class ubuntu16(ubuntu):
     pass
 
 
+class ubuntu20(ubuntu):
+    def _get_device_filename(self, device_num):
+        return '/etc/netplan/' + str(device_num) + '.yaml'
+
+    def _get_network_file(self):
+        return '/etc/netplan/00-zvmguestconfigure-config.yaml'
+
+    def _get_network_file_path(self):
+        return '/etc/netplan/'
+
+    def get_znetconfig_contents(self):
+        return '\n'.join(('cio_ignore -R',
+                          'znetconf -R -n',
+                          'sleep 2',
+                          'udevadm trigger',
+                          'udevadm settle',
+                          'sleep 2',
+                          'znetconf -A',
+                          'netplan apply',
+                          'cio_ignore -u'))
+
+    def create_network_configuration_files(self, file_path, guest_networks,
+                                           first, active=False):
+        """Generate network configuration files for guest vm
+        :param list guest_networks:  a list of network info for the guest.
+               It has one dictionary that contain some of the below keys for
+               each network, the format is:
+               {'ip_addr': (str) IP address,
+               'dns_addr': (list) dns addresses,
+               'gateway_addr': (str) gateway address,
+               'cidr': (str) cidr format
+               'nic_vdev': (str) VDEV of the nic}
+
+               Example for guest_networks:
+               [{'ip_addr': '192.168.95.10',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.95.1',
+               'cidr': "192.168.95.0/24",
+               'nic_vdev': '1000'},
+               {'ip_addr': '192.168.96.10',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.96.1',
+               'cidr': "192.168.96.0/24",
+               'nic_vdev': '1003}]
+        """
+        cfg_files = []
+        cmd_strings = ''
+        network_config_file_name = self._get_network_file()
+        net_enable_cmd = ''
+        if first:
+            clean_cmd = self._get_clean_command()
+        else:
+            clean_cmd = ''
+
+        for network in guest_networks:
+            base_vdev = network['nic_vdev'].lower()
+            (cfg_str) = self._generate_network_configuration(network,
+                                    base_vdev)
+            LOG.debug('Network configure file content is: %s', cfg_str)
+        if first:
+            cfg_files.append((network_config_file_name, cfg_str))
+        else:
+            # TODO: create interface with cmd_strings after VM deployed
+            raise Exception('Ubuntu20 is not supported to create interface'
+                            'after VM deployed.')
+
+        return cfg_files, cmd_strings, clean_cmd, net_enable_cmd
+
+    def _generate_network_configuration(self, network, vdev):
+        ip_v4 = dns_str = gateway_v4 = ''
+        cidr = ''
+        dns_v4 = []
+        if (('ip_addr' in network.keys()) and
+            (network['ip_addr'] is not None)):
+            ip_v4 = network['ip_addr']
+
+        if (('gateway_addr' in network.keys()) and
+            (network['gateway_addr'] is not None)):
+            gateway_v4 = network['gateway_addr']
+
+        if (('dns_addr' in network.keys()) and
+            (network['dns_addr'] is not None) and
+            (len(network['dns_addr']) > 0)):
+            for dns in network['dns_addr']:
+                dns_str += 'nameserver ' + dns + '\n'
+                dns_v4.append(dns)
+
+        if (('cidr' in network.keys()) and
+            (network['cidr'] is not None)):
+            cidr = network['cidr'].split('/')[1]
+
+        device = self._get_device_name(vdev)
+        if dns_v4:
+            cfg_str = {'network':
+                            {'ethernets':
+                                {device:
+                                    {'addresses': [ip_v4 + '/' + cidr],
+                                     'gateway4': gateway_v4,
+                                     'nameservers':
+                                        {'addresses': dns_v4}
+                                    }
+                                },
+                            'version': 2
+                            }
+                        }
+        else:
+            cfg_str = {'network':
+                            {'ethernets':
+                                {device:
+                                    {'addresses': [ip_v4 + '/' + cidr],
+                                     'gateway4': gateway_v4
+                                    }
+                                },
+                            'version': 2
+                            }
+                        }
+        return cfg_str
+
+    def _get_source_devices(self, fcp, target_lun):
+        """ubuntu20
+
+        the parameter 'target_lun' is hex for either v7k or ds8k:
+        for v7k, target_lun[2] == '0' and target_lun[6:] == '0'
+        for ds8k, target_lun[2] == '4'
+
+        in the future, we add support to other storage provider whose lun
+        id may use bits in target_lun[6:], such as, 0x0003040200000000
+
+        when attach v7k volume:
+        1. if the lun id less than 256,
+        the file under /dev/disk/by-path/ will as below,
+        take 'lun id = 0' as example:
+        ccw-0.0.5c03-fc-0x5005076802400c1a-lun-0, the the lun id is decimal.
+
+        2. if the lun id is equal or more than 256,
+        the file under /dev/disk/by-path/ will as below,
+        take 'lun id = 256' as example:
+        ccw-0.0.1a0d-fc-0x500507680b26bac7-lun-0x0100000000000000,
+        the lun id is hex.
+
+        when attach ds8k volume:
+        the file under /dev/disk/by-path/ will as below,
+        take "volume id 140c" as example:
+        ccw-0.0.1a0d-fc-0x5005076306035388-lun-0x4014400c00000000,
+        the lun id is always hex.
+
+        """
+        device = '0.0.%s' % fcp
+        lun = self._format_lun(target_lun)
+        if all([x == '0' for x in target_lun[6:]]) and lun < 256:
+            target_lun = lun
+        var_source_device = ('SourceDevices=(`ls /dev/disk/by-path/ | '
+                             'grep "ccw-%s-fc-.*-lun-%s"`)\n'
+                             % (device, target_lun))
+        return var_source_device
+
+
 class LinuxDistManager(object):
     def get_linux_dist(self, os_version):
         distro, release = self.parse_dist(os_version)
@@ -1804,8 +2005,8 @@ class LinuxDistManager(object):
 
     def _parse_release(self, os_version, distro, remain):
         supported = {'rhel': ['6', '7', '8'],
-                     'sles': ['11', '12'],
-                     'ubuntu': ['16'],
+                     'sles': ['11', '12', '15'],
+                     'ubuntu': ['16', '20'],
                      'rhcos': ['4']}
         releases = supported[distro]
 

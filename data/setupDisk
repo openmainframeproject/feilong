@@ -527,10 +527,12 @@ function setupDisk {
     xcat_vaddr=`echo $xcat_vaddr | tr '[A-Z]' '[a-z]'`
 
     # Online the device
-    rc= onlineDevice $xcat_vaddr
-    if (( rc != 0 )); then
-      echo "$funcName (Error) fail to online the disk $xcat_vaddr"
-      return
+    # When the distro is sles15, the following /sbin/dasd_configure will online and configure device
+    if [[ $os != sles15* ]]; then
+      onlineDevice $xcat_vaddr
+      if (( $? != 0 )); then
+        echo "$funcName (Error) fail to online the disk $xcat_vaddr"
+      fi
     fi
 
     # Configure the added dasd to be persistent
@@ -542,6 +544,8 @@ function setupDisk {
       fi
     elif [[ $os == sles* ]]; then
       /sbin/dasd_configure 0.0.$xcat_vaddr 1
+    elif [[ $os == ubuntu20* ]]; then
+      chzdev -e dasd 0.0.$xcat_vaddr
     elif [[ $os == ubuntu16* ]]; then
       touch /etc/sysconfig/hardware/config-ccw-0.0.$xcat_vaddr
     else

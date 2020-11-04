@@ -33,6 +33,7 @@ import six
 import string
 import subprocess
 import tempfile
+import time
 
 from smtLayer import smt
 
@@ -166,9 +167,22 @@ class SMTClient(object):
         :disks: A list dictionary to describe disk info, for example:
                 disk: [{'size': '1g',
                        'format': 'ext3',
-                       'disk_pool': 'ECKD:eckdpool1'}]
+                       'disk_pool': 'ECKD:eckdpool1'},
+                       {'size': '1g',
+                       'format': 'ext3'}]
 
         """
+
+        # Firstly, check disk_pool in disk_list, if disk_pool not specified
+        # and not configured(the default vaule is None), report error
+        # report error
+        for idx, disk in enumerate(disk_list):
+            disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+            disk['disk_pool'] = disk_pool
+            if disk_pool is None:
+                msg = ('disk_pool not configured for sdkserver.')
+                LOG.error(msg)
+                raise exception.SDKGuestOperationError(rs=2, msg=msg)
 
         for idx, disk in enumerate(disk_list):
             if 'vdev' in disk:
@@ -177,12 +191,8 @@ class SMTClient(object):
             else:
                 vdev = self.generate_disk_vdev(start_vdev=start_vdev,
                                                offset=idx)
-
             self._add_mdisk(userid, disk, vdev)
             disk['vdev'] = vdev
-
-            if disk.get('disk_pool') is None:
-                disk['disk_pool'] = CONF.zvm.disk_pool
 
             sizeUpper = disk.get('size').strip().upper()
             sizeUnit = sizeUpper[-1]
@@ -583,7 +593,7 @@ class SMTClient(object):
         # disk.
         # when boot from volume, ipl_from should be specified explicitly.
         if (disk_list and 'is_boot_disk' in disk_list[0] and
-            disk_list[0]['is_boot_disk']) or ipl_from:
+                disk_list[0]['is_boot_disk']) or ipl_from:
             # we assume at least one disk exist, which means, is_boot_disk
             # is true for exactly one disk.
             rd += (' --ipl %s' % self._get_ipl_param(ipl_from))
@@ -628,7 +638,9 @@ class SMTClient(object):
 
         # Continue to add disk
         if disk_list:
-            # Add disks for vm
+            # not perform mkfs against root disk
+            if disk_list[0].get('is_boot_disk'):
+                disk_list[0].update({'format': 'none'})
             return self.add_mdisks(userid, disk_list)
 
     def _add_mdisk(self, userid, disk, vdev):
@@ -641,6 +653,11 @@ class SMTClient(object):
         size = disk['size']
         fmt = disk.get('format', 'ext4')
         disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+        # Check disk_pool, if it's None, report error
+        if disk_pool is None:
+            msg = ('disk_pool not configured for sdkserver.')
+            LOG.error(msg)
+            raise exception.SDKGuestOperationError(rs=2, msg=msg)
         [diskpool_type, diskpool_name] = disk_pool.split(':')
 
         if (diskpool_type.upper() == 'ECKD'):
@@ -689,7 +706,6 @@ class SMTClient(object):
         :param str guest: the user id of the vm
         :param str client: the user id of the client that can communicate to
                guest using IUCV"""
-
         client = client or zvmutils.get_smt_userid()
 
         iucv_path = "/tmp/" + userid
@@ -715,7 +731,7 @@ class SMTClient(object):
         : param fcpchannels: list of fcpchannels.
         : param wwpns: list of wwpns.
         : param lun: string of lun.
-        : return value: list of physical wwpns.
+        : return value: list of FCP devices and physical wwpns.
         """
         fcps = ','.join(fcpchannels)
         ws = ','.join(wwpns)
@@ -745,13 +761,18 @@ class SMTClient(object):
                                                     errcode=rc,
                                                     errmsg=err_output)
         output_lines = output.split('\n')
-        res = []
+        res_wwpns = []
+        res_fcps = []
         for line in output_lines:
             if line.__contains__("WWPNs: "):
                 wwpns = line[7:]
                 # Convert string to list by space
-                res = wwpns.split()
-        return res
+                res_wwpns = wwpns.split()
+            if line.__contains__("FCPs: "):
+                fcps = line[6:]
+                # Convert string to list by space
+                res_fcps = fcps.split()
+        return res_wwpns, res_fcps
 
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None, skipdiskcopy=False):
@@ -829,7 +850,13 @@ class SMTClient(object):
                 # remove the local temp config drive folder
                 self._pathutils.clean_temp_folder(tmp_trans_dir)
         # Authorize iucv client
-        self.guest_authorize_iucv_client(userid)
+        client_id = None
+        # try to re-use previous iucv authorized userid at first
+        if os.path.exists(const.IUCV_AUTH_USERID_PATH):
+            LOG.debug("Re-use previous iucv authorized userid")
+            with open(const.IUCV_AUTH_USERID_PATH) as f:
+                client_id = f.read().strip()
+        self.guest_authorize_iucv_client(userid, client_id)
         # Update os version in guest metadata
         # TODO: may should append to old metadata, not replace
         if skipdiskcopy:
@@ -1656,13 +1683,23 @@ class SMTClient(object):
             mac = ''.join(mac_addr.split(':'))[6:]
             requestData += ' -k mac_id=%s' % mac
 
-        try:
-            self._request(requestData)
-        except exception.SDKSMTRequestFailed as err:
-            LOG.error("Failed to create nic %s for user %s in "
-                      "the guest's user direct, error: %s" %
-                      (vdev, userid, err.format_message()))
-            self._create_nic_inactive_exception(err, userid, vdev)
+        retry = 1
+        for secs in [1, 3, 5, 8, -1]:
+            try:
+                self._request(requestData)
+                break
+            except exception.SDKSMTRequestFailed as err:
+                if (err.results['rc'] == 400 and
+                    err.results['rs'] == 12 and
+                    retry < 5):
+                    LOG.info("The VM is locked, will retry")
+                    time.sleep(secs)
+                    retry += 1
+                else:
+                    LOG.error("Failed to create nic %s for user %s in "
+                              "the guest's user direct, error: %s" %
+                              (vdev, userid, err.format_message()))
+                    self._create_nic_inactive_exception(err, userid, vdev)
 
         if active:
             if mac_addr is not None:
@@ -1900,27 +1937,6 @@ class SMTClient(object):
         if active:
             self._is_active(userid)
 
-        msg = ('Start to couple nic device %(vdev)s of guest %(vm)s '
-               'with vswitch %(vsw)s'
-                % {'vdev': vdev, 'vm': userid, 'vsw': vswitch_name})
-        LOG.info(msg)
-        requestData = ' '.join((
-            'SMAPI %s' % userid,
-            "API Virtual_Network_Adapter_Connect_Vswitch_DM",
-            "--operands",
-            "-v %s" % vdev,
-            "-n %s" % vswitch_name))
-
-        try:
-            self._request(requestData)
-        except exception.SDKSMTRequestFailed as err:
-            LOG.error("Failed to couple nic %s to vswitch %s for user %s "
-                      "in the guest's user direct, error: %s" %
-                      (vdev, vswitch_name, userid, err.format_message()))
-            self._couple_inactive_exception(err, userid, vdev, vswitch_name)
-
-        # the inst must be active, or this call will failed
-        if active:
             requestData = ' '.join((
                 'SMAPI %s' % userid,
                 'API Virtual_Network_Adapter_Connect_Vswitch',
@@ -1975,7 +1991,7 @@ class SMTClient(object):
         LOG.info(msg)
 
     def couple_nic_to_vswitch(self, userid, nic_vdev,
-                              vswitch_name, active=False):
+                              vswitch_name, active=False, vlan_id=-1):
         """Couple nic to vswitch."""
         if active:
             msg = ("both in the user direct of guest %s and on "
@@ -1984,6 +2000,46 @@ class SMTClient(object):
             msg = "in the user direct of guest %s" % userid
         LOG.debug("Connect nic %s to switch %s %s",
                   nic_vdev, vswitch_name, msg)
+
+        # previously we use Virtual_Network_Adapter_Connect_Vswitch_DM
+        # but due to limitation in SMAPI, we have to create such user
+        # direct by our own due to no way to add VLAN ID
+
+        msg = ('Start to couple nic device %(vdev)s of guest %(vm)s '
+               'with vswitch %(vsw)s with vlan %(vlan_id)s:'
+                % {'vdev': nic_vdev, 'vm': userid, 'vsw': vswitch_name,
+                   'vlan_id': vlan_id})
+        LOG.info(msg)
+
+        user_direct = self.get_user_direct(userid)
+        new_user_direct = []
+        nicdef = "NICDEF %s" % nic_vdev
+        for ent in user_direct:
+            if len(ent) > 0:
+                if ent.upper().startswith(nicdef):
+                    # vlan_id < 0 means no VLAN ID given
+                    if vlan_id < 0:
+                        v = " LAN SYSTEM %s" % vswitch_name
+                    else:
+                        v = " LAN SYSTEM %s VLAN %s" % (vswitch_name, vlan_id)
+
+                    ent = ent + v
+
+                new_user_direct.append(ent)
+
+        try:
+            self._lock_user_direct(userid)
+        except exception.SDKSMTRequestFailed as e:
+            raise exception.SDKGuestOperationError(rs=9, userid=userid,
+                                                   err=e.format_message())
+        # Replace user directory
+        try:
+            self._replace_user_direct(userid, new_user_direct)
+        except exception.SDKSMTRequestFailed as e:
+            raise exception.SDKGuestOperationError(rs=10,
+                                                   userid=userid,
+                                                   err=e.format_message())
+
         self._couple_nic(userid, nic_vdev, vswitch_name, active=active)
 
     def _uncouple_active_exception(self, error, userid, vdev):
@@ -2097,12 +2153,21 @@ class SMTClient(object):
                 # guest vm definition not found
                 LOG.debug("The guest %s does not exist." % userid)
                 return
-            else:
-                msg = "SMT error: %s" % err.format_message()
-                raise exception.SDKSMTRequestFailed(err.results, msg)
+
+            # ingore delete VM not finished error
+            if err.results['rc'] == 596 and err.results['rs'] == 6831:
+                # 596/6831 means delete VM not finished yet
+                LOG.warning("The guest %s deleted with 596/6831" % userid)
+                return
+
+            msg = "SMT error: %s" % err.format_message()
+            raise exception.SDKSMTRequestFailed(err.results, msg)
 
     def delete_vm(self, userid):
         self.delete_userid(userid)
+
+        # remove userid from smapi namelist
+        self.namelist_remove(zvmutils.get_namelist(), userid)
 
         # revoke userid from vswitch
         action = "revoke id %s authority from vswitch" % userid
@@ -2355,6 +2420,7 @@ class SMTClient(object):
             # pipeline, so can not use utils.execute function here
             output = subprocess.check_output(command, shell=True,
                                              stderr=subprocess.STDOUT)
+            output = bytes.decode(output)
         except subprocess.CalledProcessError as err:
             rc = err.returncode
             output = err.output
@@ -2363,7 +2429,7 @@ class SMTClient(object):
                                                    str(err)))
             raise exception.SDKInternalError(msg=err_msg)
 
-        if rc or output.strip('1234567890\n'):
+        if rc or output.strip('1234567890*\n'):
             msg = ("Error happened when executing command fdisk with "
                    "reason: %s" % output)
             LOG.error(msg)

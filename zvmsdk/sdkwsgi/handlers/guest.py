@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017-2020 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -220,10 +220,13 @@ class VMHandler(object):
 
         couple = util.bool_from_string(info['couple'], strict=True)
 
+        # vlan_id is for couple operation only, uncouple ignore it
+        vlan_id = info.get('vlan_id', -1)
+
         if couple:
             info = self.client.send_request('guest_nic_couple_to_vswitch',
                                             userid, vdev, info['vswitch'],
-                                            active=active)
+                                            active=active, vlan_id=vlan_id)
         else:
             info = self.client.send_request('guest_nic_uncouple_from_vswitch',
                                             userid, vdev,
@@ -416,7 +419,8 @@ class VMAction(object):
         image_name = body['image']
 
         capture_type = body.get('capture_type', 'rootonly')
-        compress_level = body.get('compress_level', 6)
+        compress_level = body.get('compress_level',
+                                  CONF.image.default_compress_level)
 
         request_info = ("action: 'capture', userid: %(userid)s,"
                         "image name: %(image)s, capture type: %(cap)s,"

@@ -211,13 +211,11 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.get_definition_info("fake_user_id", nic_coupled='1000')
         get_user_direct.assert_called_with("fake_user_id")
 
-    @mock.patch("zvmsdk.smtclient.SMTClient.namelist_remove")
     @mock.patch("zvmsdk.smtclient.SMTClient.delete_vm")
-    def test_delete_vm(self, delete_vm, namelistremove):
+    def test_delete_vm(self, delete_vm):
         userid = 'userid'
         self.vmops.delete_vm(userid)
         delete_vm.assert_called_once_with(userid)
-        namelistremove.assert_called_once_with('TSTNLIST', userid)
 
     @mock.patch("zvmsdk.smtclient.SMTClient.execute_cmd")
     def test_execute_cmd(self, execute_cmd):

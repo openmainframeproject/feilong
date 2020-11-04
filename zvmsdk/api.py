@@ -279,12 +279,15 @@ class SDKAPI(object):
         disk pool type and pool name, eg "ECKD:eckdpool" or "FBA:fbapool"
         :returns: Dictionary describing disk pool usage info
         """
-        # disk_pool must be assigned. disk_pool default to None because
+        # disk_pool is optional. disk_pool default to None because
         # it is more convenient for users to just type function name when
-        # they want to get the disk pool info of CONF.zvm.disk_pool
+        # they want to get the disk pool info of CONF.zvm.disk_pool.
+        # The default value of CONF.zvm.disk_pool is None, if it's configured,
+        # the format must be "ECKD:eckdpool" or "FBA:fbapool".
+        disk_pool = disk_pool or CONF.zvm.disk_pool
         if disk_pool is None:
-            disk_pool = CONF.zvm.disk_pool
-
+            # Return 0 directly if disk_pool not configured
+            return {'disk_total': 0, 'disk_used': 0, 'disk_available': 0}
         if ':' not in disk_pool:
             msg = ('Invalid input parameter disk_pool, expect ":" in'
                    'disk_pool, eg. ECKD:eckdpool')
@@ -620,19 +623,21 @@ class SDKAPI(object):
         :param userid: (str) the userid of the vm to be deregistered
         """
         userid = userid.upper()
-        if not zvmutils.check_userid_exist(userid):
-            LOG.error("User directory '%s' does not exist." % userid)
-            raise exception.SDKObjectNotExistError(
-                    obj_desc=("Guest '%s'" % userid), modID='guest')
-        else:
-            action = "delete switches of guest '%s' from database" % userid
-            with zvmutils.log_and_reraise_sdkbase_error(action):
-                self._NetworkDbOperator.switch_delete_record_for_userid(userid)
+        # We don't check if the VM exists in the LPAR or zCC DB, just delete it
+        # from DB anyway, cause there could be the case that the VM is deleted
+        # outside of zCC e.g. smcli, and the DB record is still there.
+        if not self._vmops.check_guests_exist_in_db(userid, raise_exc=False):
+            LOG.warning("User directory '%s' does not exist in guest DB."
+                        "But let's still delete it as there is also switch"
+                        " table" % userid)
+        action = "delete switches of guest '%s' from database" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._NetworkDbOperator.switch_delete_record_for_userid(userid)
 
-            action = "delete guest '%s' from database" % userid
-            with zvmutils.log_and_reraise_sdkbase_error(action):
-                self._GuestDbOperator.delete_guest_by_userid(userid)
-            LOG.info("Guest %s deregistered." % userid)
+        action = "delete guest '%s' from database" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._GuestDbOperator.delete_guest_by_userid(userid)
+        LOG.info("Guest %s deregistered." % userid)
 
     @check_guest_exist()
     def guest_live_migrate(self, userid, dest_zcc_userid, destination,
@@ -706,7 +711,7 @@ class SDKAPI(object):
                      max_cpu=CONF.zvm.user_default_max_cpu,
                      max_mem=CONF.zvm.user_default_max_memory,
                      ipl_from='', ipl_param='', ipl_loadparam='',
-                     dedicate_vdevs=[], loaddev={}):
+                     dedicate_vdevs=None, loaddev={}):
         """create a vm in z/VM
 
         :param userid: (str) the userid of the vm to be created
@@ -737,12 +742,18 @@ class SDKAPI(object):
                'disk_pool': 'ECKD:eckdpool1'},
                {'size': '200000',
                'disk_pool': 'FBA:fbapool1',
-               'format': 'ext3'}]
+               'format': 'ext3'},
+               {'size': '1g',
+                'format': 'ext3'}]
                In this case it will create one disk 0100(in case the vdev
                for root disk is 0100) with size 1g from ECKD disk pool
                eckdpool1 for guest , then set IPL 0100 in guest's user
                directory, and it will create 0101 with 200000 blocks from
-               FBA disk pool fbapool1, and formated with ext3.
+               FBA disk pool fbapool1, and formated with ext3. As for the third
+               case, if the disk_pool isn't configured in configure file, the
+               default value is None, the disk_pool here is None, report error.
+               If it's configured, such as ECKD:eckdpool2, it will
+               create 0102 with size 1g from ECKD diskpool eckdpool2 for guest.
         :param user_profile: (str) the profile for the guest
         :param max_cpu: (int) the maximum number of virtual cpu this user can
                define. The value should be a decimal value between 1 and 64.
@@ -764,6 +775,8 @@ class SDKAPI(object):
                {'portname': str,
                'lun': str}
         """
+        dedicate_vdevs = dedicate_vdevs or []
+
         userid = userid.upper()
         if disk_list:
             for disk in disk_list:
@@ -778,8 +791,14 @@ class SDKAPI(object):
                               'for each disk.')
                     LOG.error(errmsg)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
-                # 'disk_pool' format check
+                # check disk_pool
                 disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+                if disk_pool is None:
+                    errmsg = ("Invalid disk_pool input, disk_pool should be"
+                              " configured for sdkserver.")
+                    LOG.error(errmsg)
+                    raise exception.SDKInvalidInputFormat(msg=errmsg)
+                # 'disk_pool' format check
                 if ':' not in disk_pool or (disk_pool.split(':')[0].upper()
                     not in ['ECKD', 'FBA']):
                     errmsg = ("Invalid disk_pool input, it should be in format"
@@ -917,18 +936,38 @@ class SDKAPI(object):
                'disk_pool': 'ECKD:eckdpool1'},
                {'size': '200000',
                'disk_pool': 'FBA:fbapool1',
-               'format': 'ext3'}]
+               'format': 'ext3'},
+               {'size': '1g',
+                'format': 'ext3'}]
                In this case it will create one disk 0100(in case the vdev
                for root disk is 0100) with size 1g from ECKD disk pool
                eckdpool1 for guest , then set IPL 0100 in guest's user
                directory, and it will create 0101 with 200000 blocks from
-               FBA disk pool fbapool1, and formated with ext3.
+               FBA disk pool fbapool1, and formated with ext3. As for the third
+               case, if the disk_pool isn't configured in configure file, the
+               default value is None, the disk_pool here is None, report error.
+               If it's configured, such as ECKD:eckdpool2, it will
+               create 0102 with size 1g from ECKD diskpool eckdpool2 for guest.
         """
         if disk_list == [] or disk_list is None:
             # nothing to do
             LOG.debug("No disk specified when calling guest_create_disks, "
                       "nothing happened")
             return
+
+        for disk in disk_list:
+            if not isinstance(disk, dict):
+                errmsg = ('Invalid "disk_list" input, it should be a '
+                          'dictionary. Details could be found in doc.')
+                LOG.error(errmsg)
+                raise exception.SDKInvalidInputFormat(msg=errmsg)
+            # check disk_pool
+            disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+            if disk_pool is None:
+                errmsg = ("Invalid disk_pool input, it should be configured"
+                          " for sdkserver.")
+                LOG.error(errmsg)
+                raise exception.SDKInvalidInputFormat(msg=errmsg)
 
         action = "create disks '%s' for guest '%s'" % (str(disk_list), userid)
         with zvmutils.log_and_reraise_sdkbase_error(action):
@@ -949,16 +988,18 @@ class SDKAPI(object):
 
     @check_guest_exist()
     def guest_nic_couple_to_vswitch(self, userid, nic_vdev,
-                                    vswitch_name, active=False):
+                                    vswitch_name, active=False, vlan_id=-1):
         """ Couple nic device to specified vswitch.
 
         :param str userid: the user's name who owns the nic
         :param str nic_vdev: nic device number, 1- to 4- hexadecimal digits
         :param str vswitch_name: the name of the vswitch
         :param bool active: whether make the change on active guest system
+        :param str vlan_id: the VLAN ID of the NIC
         """
         self._networkops.couple_nic_to_vswitch(userid, nic_vdev,
-                                               vswitch_name, active=active)
+                                               vswitch_name, active=active,
+                                               vlan_id=vlan_id)
 
     @check_guest_exist()
     def guest_nic_uncouple_from_vswitch(self, userid, nic_vdev,

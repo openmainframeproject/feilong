@@ -258,9 +258,6 @@ class VMOps(object):
         """Delete z/VM userid for the instance."""
         LOG.info("Begin to delete vm %s", userid)
         self._smtclient.delete_vm(userid)
-
-        # remove userid from smapi namelist
-        self._smtclient.namelist_remove(self._namelist, userid)
         LOG.info("Complete delete vm %s", userid)
 
     def execute_cmd(self, userid, cmdStr):
@@ -372,6 +369,7 @@ class VMOps(object):
         log_fp = open(log_path, 'rb')
         try:
             log_data, remaining = zvmutils.last_bytes(log_fp, log_size)
+            log_data = bytes.decode(log_data)
         except Exception as err:
             msg = ("Failed to truncate console log, error: %s" %
                    six.text_type(err))

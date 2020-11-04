@@ -110,6 +110,23 @@ class SDKAPITestCase(base.SDKTestCase):
                                   '', '', '', [], {})
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
+    def test_guest_create_with_no_disk_pool(self, create_vm):
+        disk_list = [{'size': '1g', 'is_boot_disk': True,
+                      'disk_pool': 'ECKD: eckdpool1'},
+                     {'size': '1g', 'format': 'ext3'}]
+        vcpus = 1
+        memory = 1024
+        user_profile = 'profile'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'disk_pool', None)
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_create, self.userid, vcpus,
+                          memory, disk_list, user_profile,
+                          max_cpu, max_mem)
+        create_vm.assert_not_called()
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_default_max_cpu_memory(self, create_vm):
         vcpus = 1
         memory = 1024
@@ -232,6 +249,16 @@ class SDKAPITestCase(base.SDKTestCase):
         disk_list = [{'size': '1g'}]
         self.api.guest_create_disks(self.userid, disk_list)
         cds.assert_called_once_with(self.userid, disk_list)
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_disks")
+    def test_guest_add_disks_no_disk_pool(self, cds):
+        disk_list = [{'size': '1g', 'is_boot_disk': True,
+                      'disk_pool': 'ECKD: eckdpool1'},
+                     {'size': '1g', 'format': 'ext3'}]
+        base.set_conf('zvm', 'disk_pool', None)
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.api.guest_create_disks, self.userid, disk_list)
+        cds.ssert_not_called()
 
     @mock.patch("zvmsdk.vmops.VMOps.create_disks")
     def test_guest_add_disks_nothing_to_do(self, cds):
@@ -451,20 +478,43 @@ class SDKAPITestCase(base.SDKTestCase):
         guestdb_reg.assert_not_called()
         get_def_info.assert_not_called()
 
-    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
     @mock.patch("zvmsdk.database.NetworkDbOperator."
                 "switch_delete_record_for_userid")
     @mock.patch("zvmsdk.database.GuestDbOperator.delete_guest_by_userid")
-    def test_guest_deregister(self, guestdb_del, networkdb_del, chk_usr):
+    def test_guest_deregister(self, guestdb_del, networkdb_del, chk_db):
         guestdb_del.return_value = ''
         networkdb_del.return_value = ''
-        chk_usr.return_value = True
+        chk_db.return_value = True
         self.api.guest_deregister(self.userid)
         guestdb_del.assert_called_once_with(self.userid)
         networkdb_del.assert_called_once_with(self.userid)
-        chk_usr.assert_called_once_with(self.userid)
+        chk_db.assert_called_once_with(self.userid, raise_exc=False)
+
+    @mock.patch("zvmsdk.vmops.VMOps.check_guests_exist_in_db")
+    @mock.patch("zvmsdk.database.NetworkDbOperator."
+                "switch_delete_record_for_userid")
+    @mock.patch("zvmsdk.database.GuestDbOperator.delete_guest_by_userid")
+    def test_guest_deregister_not_exists(self, guestdb_del,
+                                         networkdb_del, chk_db):
+        guestdb_del.return_value = ''
+        networkdb_del.return_value = ''
+        chk_db.return_value = False
+        self.api.guest_deregister(self.userid)
+        guestdb_del.assert_called_once_with(self.userid)
+        networkdb_del.assert_called_once_with(self.userid)
+        chk_db.assert_called_once_with(self.userid, raise_exc=False)
 
     @mock.patch("zvmsdk.hostops.HOSTOps.guest_list")
     def test_host_get_guest_list(self, guest_list):
         self.api.host_get_guest_list()
         guest_list.assert_called_once_with()
+
+    @mock.patch("zvmsdk.hostops.HOSTOps.diskpool_get_info")
+    def test_host_diskpool_get_info(self, dp_info):
+        base.set_conf('zvm', 'disk_pool', None)
+        results = self.api.host_diskpool_get_info()
+        self.assertEqual(results['disk_total'], 0)
+        self.assertEqual(results['disk_available'], 0)
+        self.assertEqual(results['disk_used'], 0)
+        dp_info.ssert_not_called()

@@ -35,7 +35,7 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
     @mock.patch.object(dist.rhel7, "create_active_net_interf_cmd")
     @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI."
                 "configure_volume_attach")
-    @mock.patch("zvmsdk.vmops.VMOps.is_reachable")
+    @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI.check_IUCV_is_ready")
     def test_config_attach_reachable(self, is_reachable, config_attach,
                                      restart_zvmguestconfigure, execute_cmd,
                                      get_dist):
@@ -53,10 +53,10 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
         is_reachable.return_value = True
         active_cmds = 'systemctl start zvmguestconfigure.service'
         restart_zvmguestconfigure.return_value = active_cmds
-
+        need_restart = True
         self.configurator.config_attach(fcp, assigner_id, target_wwpns,
                                         target_lun, multipath, os_version,
-                                        mount_point, new)
+                                        mount_point, new, need_restart)
         get_dist.assert_called_once_with(os_version)
         restart_zvmguestconfigure.assert_called_once_with()
         execute_cmd.assert_called_once_with(assigner_id,
@@ -65,7 +65,7 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
     @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
     @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI."
                 "configure_volume_attach")
-    @mock.patch("zvmsdk.vmops.VMOps.is_reachable")
+    @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI.check_IUCV_is_ready")
     def test_config_attach_not_reachable(self, is_reachable, config_attach,
                                          get_dist):
         fcp = 'bfc3'
@@ -79,11 +79,49 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
         is_reachable.return_value = False
         get_dist.return_value = dist.rhel7
         config_attach.return_value = None
+        need_restart = False
 
         self.configurator.config_attach(fcp, assigner_id, target_wwpns,
                                         target_lun, multipath, os_version,
-                                        mount_point, new)
+                                        mount_point, new, need_restart)
         get_dist.assert_called_once_with(os_version)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.execute_cmd")
+    def test_check_IUCV_is_ready(self, execute_cmd):
+        assigner_id = 'fakeid'
+        execute_cmd.return_value = ''
+
+        ret = self.configurator.check_IUCV_is_ready(assigner_id)
+        execute_cmd.assert_called_once_with(assigner_id, 'pwd')
+        self.assertEqual(ret, True)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.execute_cmd")
+    def test_check_IUCV_is_ready_not_ready(self, execute_cmd):
+        # case: not ready, but can continue
+        assigner_id = 'fakeid'
+        results = {'rs': 0, 'errno': 0, 'strError': '',
+                   'overallRC': 1, 'logEntries': [], 'rc': 0,
+                   'response': ['fake response']}
+        execute_cmd.side_effect = exception.SDKSMTRequestFailed(
+            results, 'fake error contains other things')
+
+        ret = self.configurator.check_IUCV_is_ready(assigner_id)
+        execute_cmd.assert_called_once_with(assigner_id, 'pwd')
+        self.assertEqual(ret, False)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.execute_cmd")
+    def test_check_IUCV_is_ready_raise_excetion(self, execute_cmd):
+        # case: not ready, must raise exception
+        assigner_id = 'fakeid'
+        results = {'rs': 0, 'errno': 0, 'strError': '',
+                   'overallRC': 1, 'logEntries': [], 'rc': 0,
+                   'response': ['fake response']}
+        execute_cmd.side_effect = exception.SDKSMTRequestFailed(
+            results, 'fake error contains UNAUTHORIZED_ERROR')
+
+        self.assertRaises(exception.SDKVolumeOperationError,
+                          self.configurator.check_IUCV_is_ready,
+                          assigner_id)
 
     def test_config_force_attach(self):
         pass
@@ -219,6 +257,31 @@ class TestFCPManager(base.SDKTestCase):
                     1: set(['1f11', '1f12', '1f13']),
                     2: set(['1f17', '1f18', '1f19', '1f1a']),
                     3: set(['1f02'])}
+        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
+        self.assertEqual(expected, fcp_info)
+
+    def test_expand_fcp_list_with_uncontinuous_equal_count(self):
+        fcp_list = "5c70-5c71,5c73-5c74;5d70-5d71,5d73-5d74"
+        expected = {0: set(['5c70', '5c71', '5c73', '5c74']),
+                    1: set(['5d70', '5d71', '5d73', '5d74'])}
+        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
+        self.assertEqual(expected, fcp_info)
+
+    def test_expand_fcp_list_with_4_uncontinuous_equal_count(self):
+        fcp_list = "5c70-5c71,5c73-5c74;5d70-5d71,\
+            5d73-5d74;1111-1112,1113-1114;2211-2212,2213-2214"
+        expected = {0: set(['5c70', '5c71', '5c73', '5c74']),
+                    1: set(['5d70', '5d71', '5d73', '5d74']),
+                    2: set(['1111', '1112', '1113', '1114']),
+                    3: set(['2211', '2212', '2213', '2214']),
+                   }
+        fcp_info = self.fcpops._expand_fcp_list(fcp_list)
+        self.assertEqual(expected, fcp_info)
+
+    def test_expand_fcp_list_with_uncontinuous_not_equal_count(self):
+        fcp_list = "5c73-5c74;5d70-5d71,5d73-5d74"
+        expected = {0: set(['5c73', '5c74']),
+                    1: set(['5d70', '5d71', '5d73', '5d74'])}
         fcp_info = self.fcpops._expand_fcp_list(fcp_list)
         self.assertEqual(expected, fcp_info)
 
@@ -564,11 +627,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
             mock_add_disk.assert_has_calls([mock.call('c123', 'USER1',
                                                       wwpns,
                                                       '2222', False, 'rhel7',
-                                                      '/dev/sdz', True),
+                                                      '/dev/sdz', True, False),
                                             mock.call('d123', 'USER1',
                                                       wwpns,
                                                       '2222', False, 'rhel7',
-                                                      '/dev/sdz', True)])
+                                                      '/dev/sdz', True, True)])
         finally:
             self.db_op.delete('c123')
             self.db_op.delete('d123')
@@ -670,11 +733,13 @@ class TestFCPVolumeManager(base.SDKTestCase):
             mock_add_disk.assert_has_calls([mock.call('c123', 'USER1',
                                                       wwpns,
                                                       '2222', False, 'rhel7',
-                                                      '/dev/sdz', False),
+                                                      '/dev/sdz', False,
+                                                      False),
                                             mock.call('d123', 'USER1',
                                                       wwpns,
                                                       '2222', False, 'rhel7',
-                                                      '/dev/sdz', False)])
+                                                      '/dev/sdz', False,
+                                                      True)])
 
         finally:
             self.db_op.delete('c123')
@@ -805,11 +870,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
             mock_remove_disk.assert_has_calls([mock.call('183c', 'USER1',
                                                          wwpns,
                                                          '2222', True, 'rhel7',
-                                                         '/dev/sdz', 0),
+                                                         '/dev/sdz', 0, False),
                                                mock.call('283c', 'USER1',
                                                          wwpns,
                                                          '2222', True, 'rhel7',
-                                                         '/dev/sdz', 0)])
+                                                         '/dev/sdz', 0, True)])
             res1 = self.db_op.is_reserved('183c')
             res2 = self.db_op.is_reserved('283c')
             self.assertFalse(res1)
@@ -894,6 +959,6 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.assertFalse(mock_undedicate.called)
             mock_remove_disk.assert_called_once_with('283c', 'USER1', ['1111'],
                                                      '2222', False, 'rhel7',
-                                                     '/dev/sdz', 1)
+                                                     '/dev/sdz', 1, True)
         finally:
             self.db_op.delete('283c')

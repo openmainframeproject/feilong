@@ -2,13 +2,13 @@ Quick Start
 ***********
 
 This is the document that describes the installation, configuration,
-and basic usages of z/VM Cloud Connector.
+and basic usages of Feilong.
 
 Pre-requirements
 ================
 
-1. z/VM Cloud Connector depends on the under-layer z/VM SMAPI support to manage
-the z/VM objects. For the z/VM Cloud Connector to work normally, the managed z/VM
+1. Feilong depends on the under-layer z/VM SMAPI support to manage
+the z/VM objects. For the Feilong to work normally, the managed z/VM
 system should be updated to the latest level with APARs listed in the 
 `z/VM service Information`_ installed.
 
@@ -18,7 +18,7 @@ system should be updated to the latest level with APARs listed in the
    please make sure you applied http://www-01.ibm.com/support/docview.wss?uid=isg1VM66120
    if z/VM 6.4 is used.
 
-2. z/VM Cloud Connector has to be installed inside a Linux running on z/VM.
+2. Feilong has to be installed inside a Linux running on z/VM.
 Currently supported distros include the most current supported versions:
 
   - SUSE Linux Enterprise Server 12.x
@@ -29,9 +29,9 @@ Currently supported distros include the most current supported versions:
   on other Linux distros.
 
   From now on, BYOL (Bring Your Own Linux) will be used to represent
-  the Linux on which the z/VM Cloud Connector will be run.
+  the Linux on which the Feilong will be run.
 
-  For the z/VM Cloud Connector to run, the BYOL must have enough free disk space (>100M).
+  For the Feilong to run, the BYOL must have enough free disk space (>100M).
   And besides that, the following updates need to be made to the BYOL.
 
 Preparation on BYOL
@@ -45,8 +45,8 @@ Preparation on BYOL
 
 .. note::
    It is recommend to consider increase the SMAPI long call server and DIRMAINT
-   DATAMOVE machine if heavy concurrent workload is going to be run through z/VM
-   Cloud connector. See `z/VM Systems Management Application Programming`_ for how to make it.
+   DATAMOVE machine if heavy concurrent workload is going to be run through Feilong.
+   See `z/VM Systems Management Application Programming`_ for how to make it.
 
 2. Update BYOL definition for spawning guests.
 
@@ -58,7 +58,7 @@ Preparation on BYOL
        OPTION LNKNOPAS
 
    If under RACF, RACF command need to be executed like below while the ``BYOL``
-   is the name of the virtual machine which is going to run cloud connector.
+   is the name of the virtual machine which is going to run Feilong service.
 
    .. code-block:: text
 
@@ -136,14 +136,14 @@ Installation
 z/VM zthin install
 ------------------
 
-zthin is a library written in C that works as part of the z/VM Cloud Connectorworking.
+zthin is a library written in C that works as part of the Feilong.
 It mainly focuses on socket connection from BYOL to z/VM SMAPI(System Management API).
-z/VM Cloud Connector requires zthin as the backend to communicate with z/VM SMAPI,
-thus it needs to be installed before installing z/VM Cloud Connector.
+Feilong requires zthin as the backend to communicate with z/VM SMAPI,
+thus it needs to be installed before installing Feilong.
 
 SSH onto the BYOL as root user, and then follow the following steps:
 
-1. Clone z/VM Cloud Connector build project from github
+1. Clone Feilong build project from github
 
    .. code-block:: text
 
@@ -158,6 +158,13 @@ SSH onto the BYOL as root user, and then follow the following steps:
 
        # cd build-zvmsdk
        # /usr/bin/bash buildzthinrpm_rhel master
+
+   If you build server is RHEL8, the build command should be:
+
+   .. code-block:: text
+
+       # cd build-zvmsdk
+       # OS_IS_RHEL8=1 /usr/bin/bash buildzthinrpm_rhel master
 
    If this build finishes successfully, the result rpm will be generated
    in the /root/zthin-build/RPMS/s390x/ directory named in the format
@@ -193,7 +200,7 @@ SSH onto the BYOL as root user, and then follow the following steps:
 z/VM SDK install
 ----------------
 
-z/VM SDK is the upper transition layer of z/VM Cloud Connector. It implements the
+z/VM SDK is the upper transition layer of Feilong. It implements the
 supported SDK APIs by communicating with the zthin backend.
 
 1. **Through RPM/DEB**
@@ -348,7 +355,7 @@ For the details of all configuration options, please refer to
 Setup for z/VM SDK Daemon
 =========================
 
-The z/VM Cloud Connector is designed to be run inside a daemon. The daemon server is bond to
+The Feilong is designed to be run inside a daemon. The daemon server is bond to
 the configured socket for receiving requests and then call the requested SDK API.
 
 The daemon server would be run with user 'zvmsdk' and group 'zvmsdk', the following user and folder
@@ -364,7 +371,7 @@ setup should be made on BYOL for the z/VM SDK daemon to run.
 
 * Configure sudo access for 'zvmsdk' user (optional)
 
-  If z/VM Cloud Connector is installed from source code ``python setup.py install`` or from package install
+  If Feilong is installed from source code ``python setup.py install`` or from package install
   such as deb or rpm, then you can skip this step as it's already done during install stage.
 
   The z/VM SDK Daemon relies on some privileged commands for the management of the z/VM host, so you

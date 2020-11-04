@@ -56,11 +56,19 @@ class SDKHostOpsTestCase(base.SDKTestCase):
             }
         host_info = self._hostops.get_info()
         get_host_info.assert_called_once_with()
+        base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         diskpool = CONF.zvm.disk_pool.split(':')[1]
         diskpool_get_info.assert_called_once_with(diskpool)
         self.assertEqual(host_info['vcpus'], 10)
         self.assertEqual(host_info['hypervisor_version'], 610)
         self.assertEqual(host_info['disk_total'], 406105)
+
+        # Test disk_pool is None
+        base.set_conf('zvm', 'disk_pool', None)
+        host_info = self._hostops.get_info()
+        self.assertEqual(host_info['disk_total'], 0)
+        self.assertEqual(host_info['disk_used'], 0)
+        self.assertEqual(host_info['disk_available'], 0)
 
     @mock.patch("zvmsdk.smtclient.SMTClient.get_diskpool_info")
     def test_get_diskpool_info(self, get_diskpool_info):

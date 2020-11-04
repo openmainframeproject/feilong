@@ -42,10 +42,11 @@ class SDKNetworkOpsTestCase(base.SDKTestCase):
     def test_couple_nic_to_vswitch(self, couple_nic_to_vswitch):
         self.networkops.couple_nic_to_vswitch("fake_userid", "nic_vdev",
                                               "fake_VS_name",
-                                              True)
+                                              active=True, vlan_id=5)
         couple_nic_to_vswitch.assert_called_with("fake_userid",
                                                  "nic_vdev",
                                                  "fake_VS_name",
+                                                 vlan_id=5,
                                                  active=True)
 
     @mock.patch('zvmsdk.smtclient.SMTClient.uncouple_nic_from_vswitch')

@@ -381,16 +381,16 @@ os_version = {
  '^((r|R)(e|E)(d|D)(h|H)(a|A)(t|T))(6|7){1}([.][0-9])?$'},
 {'type': 'string',
  'pattern':
- '^((s|S)(l|L)(e|E)(s|E))(11|12){1}(([.]|((s|S)(p|P)))[0-9])?$'},
+ '^((s|S)(l|L)(e|E)(s|S))(11|12|15){1}(([.]|((s|S)(p|P)))[0-9])?$'},
 {'type': 'string',
  'pattern':
- '^((s|S)(u|U)(s|S)(e|E))(11|12){1}(([.]|((s|S)(p|P)))[0-9])?$'},
+ '^((s|S)(u|U)(s|S)(e|E))(11|12|15){1}(([.]|((s|S)(p|P)))[0-9])?$'},
 {'type': 'string',
  'pattern':
- '^((u|U)(b|B)(u|U)(n|N)(t|T)(u|U))(16){1}([.][0-9]{2})?([.][0-9])?$'},
+ '^((u|U)(b|B)(u|U)(n|N)(t|T)(u|U))(16|20){1}([.][0-9]{2})?([.][0-9])?$'},
  {'type': 'string',
  'pattern':
- '^((r|R)(h|H)(c|C)(o|O)(s|S))(4){1}?$'}
+ '^((r|R)(h|H)(c|C)(o|O)(s|S))(4){1}([.][0-9])?$'}
 ]
 }
 
@@ -562,4 +562,10 @@ hostname = {
         {'type': 'string', 'minLength': 1, 'maxLength': 255,
          'pattern': '^[a-zA-Z0-9-._]*$'}
     ]
+}
+
+vlan_id_or_minus_1 = {
+    'type': 'integer',
+    'minimum': -1,
+    'maximum': 4094,
 }

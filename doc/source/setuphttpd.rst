@@ -3,12 +3,12 @@
 Setup web server for running RESTful API
 ****************************************
 
-Each z/VM Cloud Connector API is exposed through a RESTful interface, higher level
+Each Feilong API is exposed through a RESTful interface, higher level
 systems can manage z/VM by consuming these RESTful APIs directly.
 
-This document describes how to setup web server for hosting the z/VM Cloud Connector RESTful APIs.
+This document describes how to setup web server for hosting the Feilong RESTful APIs.
 
-The recommended deployment for z/VM Cloud Connector is to have a real web server such as
+The recommended deployment for Feilong is to have a real web server such as
 Apache HTTPD or nginx handle the HTTP connections and proxy requests to the independent
 z/VM SDK server running under a wsgi container such as uwsgi. 
 
@@ -34,7 +34,7 @@ References:
 To work around this issue, you have the a few choices:
 
 * Install uwsgi of version >= 2.0.13. (eg, you can choose to use pip to install uwsgi and specify the version)
-* Use the mod-wsgi module of apache2 instead of uwsgi, you can refer to :ref:`Steps to deploy z/VM Cloud Connector into Apache with mod_wsgi`
+* Use the mod-wsgi module of apache2 instead of uwsgi, you can refer to :ref:`Steps to deploy Feilong into Apache with mod_wsgi`
   for the detailed setup.
 
 
@@ -64,18 +64,18 @@ so apache server can connect port 35000 and communicate with it
 .. literalinclude:: ../../data/uwsgi-zvmsdk.conf
 
 
-Start z/VM Cloud Connector in uwsgi
+Start Feilong in uwsgi
 -----------------------------------
 
 * Create a uwsgi service
 
-  Use following sample to create a uwsgi service for running the z/VM Cloud Connector.
+  Use following sample to create a uwsgi service for running the Feilong.
   For RHEL7.2, put this file as /usr/lib/systemd/system/zvmsdk-wsgi.service.
 
   .. code-block:: text
 
       [Unit]
-      Description=z/VM Cloud Connector uwsgi
+      Description=Feilong uwsgi
       After=syslog.target network.target httpd.service
 
       [Service]
@@ -107,7 +107,7 @@ Start z/VM Cloud Connector in uwsgi
   .. code-block:: text
 
       [root@0822rhel7 ~]# systemctl status zvmsdk-wsgi.service
-      ● zvmsdk-wsgi.service - z/VM Cloud Connector uwsgi
+      ● zvmsdk-wsgi.service - Feilong uwsgi
          Loaded: loaded (/usr/lib/systemd/system/zvmsdk-wsgi.service; disabled; vendor preset: disabled)
          Active: active (running) since Tue 2017-11-21 21:58:06 EST; 13min ago
        Main PID: 7227 (uwsgi)
@@ -152,7 +152,7 @@ Start z/VM Cloud Connector in uwsgi
 Configure Apache
 ----------------
 
-Use the following sample as a start for apache to proxy requests to z/VM Cloud Connector
+Use the following sample as a start for apache to proxy requests to Feilong
 wsgi service, copy the content to  /etc/httpd/conf.d/zvmsdk.conf and update the file to match
 your system and requirements.
 
@@ -208,7 +208,7 @@ Token Usage
 ============
 
 When you sending requests, you can use token authenticaion to enhance security of the connection between client and server.
-z/VM Cloud Connector use admin-token to authicate the safety of the connection instead of username&password.
+Feilong use admin-token to authicate the safety of the connection instead of username&password.
 In other words, admin-token is what you can think as a combination of traditional username&password.
 
 On client side, users should use this admin-token to request for a temporary token first. Then users can use
@@ -297,9 +297,9 @@ Setup Client Side
      {"rs": 0, "overallRC": 0, "modID": null, "rc": 0, "output": {"min_version": "1.0", "version": "1.0", "max_version": "1.0"}, "errmsg": ""}
 
 
-.. _`Steps to deploy z/VM Cloud Connector into Apache with mod_wsgi`:
+.. _`Steps to deploy Feilong into Apache with mod_wsgi`:
 
-Steps to deploy z/VM Cloud Connector into Apache with mod_wsgi
+Steps to deploy Feilong into Apache with mod_wsgi
 ==============================================================
 
 * Install packages
@@ -309,7 +309,7 @@ Steps to deploy z/VM Cloud Connector into Apache with mod_wsgi
 
 * Configure Apache
 
-  Create a vhost for z/VM Cloud Connector in Apache. Copy the following content to
+  Create a vhost for Feilong in Apache. Copy the following content to
   /etc/apache2/sites-available/zvmsdk_wsgi.conf and update the file to match your system and requirements.
 
   Then execute command "a2ensite zvmsdk_wsgi" to enable the site.
@@ -342,5 +342,5 @@ Steps to deploy z/VM Cloud Connector into Apache with mod_wsgi
 
       #systemctl start apache2.service
 
-  Now the z/VM Cloud Connector has been deployed into apache2 with mod_wsgi, please continue to follow the
+  Now the Feilong has been deployed into apache2 with mod_wsgi, please continue to follow the
   :ref:`Verification` to verify the configuration and setup token.
