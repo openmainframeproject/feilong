@@ -235,8 +235,26 @@ function refreshZIPL {
   local devNode=$1
 
   inform "Begin to refreshZIPL."
-
+  # if flag == 0, means devNode not exit; if ==1, means found
+  flag=1
   if [[ ! -e "$devNode" ]]; then
+    flag=0
+    # wait max 10 seconds to let devNode ready
+    maxTime=10
+    while [ $maxTime -gt 0 ]
+    do
+      if [[ -e $devNode ]]; then
+        flag=1
+        break
+      fi
+      echo "Sleep 2 seconds to wait devNode:$devNode"
+      sleep 2
+      ((maxTime-=2))
+    done
+  fi
+  # if not found, inform error
+  echo "Get flag value:$flag"
+  if [[ $flag == 0 ]]; then
     printError "devNode ${devNode} doesn't exist. Get fcps: ${fcps[*]} and wwpns: ${wwpns[*]}"
     exit 6
   fi
