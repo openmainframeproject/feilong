@@ -2016,17 +2016,16 @@ class SMTClient(object):
         nicdef = "NICDEF %s" % nic_vdev
         for ent in user_direct:
             if len(ent) > 0:
+                new_user_direct.append(ent)
                 if ent.upper().startswith(nicdef):
                     # vlan_id < 0 means no VLAN ID given
+                    v = nicdef
                     if vlan_id < 0:
-                        v = " LAN SYSTEM %s" % vswitch_name
+                        v += " LAN SYSTEM %s" % vswitch_name
                     else:
-                        v = " LAN SYSTEM %s VLAN %s" % (vswitch_name, vlan_id)
+                        v += " LAN SYSTEM %s VLAN %s" % (vswitch_name, vlan_id)
 
-                    ent = ent + v
-
-                new_user_direct.append(ent)
-
+                    new_user_direct.append(v)
         try:
             self._lock_user_direct(userid)
         except exception.SDKSMTRequestFailed as e:

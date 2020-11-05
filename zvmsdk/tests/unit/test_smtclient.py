@@ -1488,8 +1488,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, '_couple_nic')
     def test_couple_nic_to_vswitch_no_vlan(self, couple_nic, replace,
                                    lock, get_user):
-        replace_data = ["USER ABC", "NICDEF 1000 LAN SYSTEM VS1"]
-        get_user.return_value = ["USER ABC", "NICDEF 1000"]
+        replace_data = ["USER ABC", "NICDEF 1000 DEVICE 3",
+                        "NICDEF 1000 LAN SYSTEM VS1"]
+        get_user.return_value = ["USER ABC", "NICDEF 1000 DEVICE 3"]
         self._smtclient.couple_nic_to_vswitch("fake_userid",
                                                "1000",
                                                "VS1",
@@ -1507,8 +1508,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, '_couple_nic')
     def test_couple_nic_to_vswitch_vlan(self, couple_nic, replace,
                                    lock, get_user):
-        replace_data = ["USER ABC", "NICDEF 1000 LAN SYSTEM VS1 VLAN 55"]
-        get_user.return_value = ["USER ABC", "NICDEF 1000"]
+        replace_data = ["USER ABC", "NICDEF 1000 DEVICE 3",
+                        "NICDEF 1000 LAN SYSTEM VS1 VLAN 55"]
+        get_user.return_value = ["USER ABC", "NICDEF 1000 DEVICE 3"]
         self._smtclient.couple_nic_to_vswitch("fake_userid",
                                                "1000",
                                                "VS1",
