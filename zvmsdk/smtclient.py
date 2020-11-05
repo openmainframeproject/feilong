@@ -167,9 +167,22 @@ class SMTClient(object):
         :disks: A list dictionary to describe disk info, for example:
                 disk: [{'size': '1g',
                        'format': 'ext3',
-                       'disk_pool': 'ECKD:eckdpool1'}]
+                       'disk_pool': 'ECKD:eckdpool1'},
+                       {'size': '1g',
+                       'format': 'ext3'}]
 
         """
+
+        # Firstly, check disk_pool in disk_list, if disk_pool not specified
+        # and not configured(the default vaule is None), report error
+        # report error
+        for idx, disk in enumerate(disk_list):
+            disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+            disk['disk_pool'] = disk_pool
+            if disk_pool is None:
+                msg = ('disk_pool not configured for sdkserver.')
+                LOG.error(msg)
+                raise exception.SDKGuestOperationError(rs=2, msg=msg)
 
         for idx, disk in enumerate(disk_list):
             if 'vdev' in disk:
@@ -178,12 +191,8 @@ class SMTClient(object):
             else:
                 vdev = self.generate_disk_vdev(start_vdev=start_vdev,
                                                offset=idx)
-
             self._add_mdisk(userid, disk, vdev)
             disk['vdev'] = vdev
-
-            if disk.get('disk_pool') is None:
-                disk['disk_pool'] = CONF.zvm.disk_pool
 
             sizeUpper = disk.get('size').strip().upper()
             sizeUnit = sizeUpper[-1]
@@ -644,6 +653,11 @@ class SMTClient(object):
         size = disk['size']
         fmt = disk.get('format', 'ext4')
         disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+        # Check disk_pool, if it's None, report error
+        if disk_pool is None:
+            msg = ('disk_pool not configured for sdkserver.')
+            LOG.error(msg)
+            raise exception.SDKGuestOperationError(rs=2, msg=msg)
         [diskpool_type, diskpool_name] = disk_pool.split(':')
 
         if (diskpool_type.upper() == 'ECKD'):
@@ -2002,17 +2016,16 @@ class SMTClient(object):
         nicdef = "NICDEF %s" % nic_vdev
         for ent in user_direct:
             if len(ent) > 0:
+                new_user_direct.append(ent)
                 if ent.upper().startswith(nicdef):
                     # vlan_id < 0 means no VLAN ID given
+                    v = nicdef
                     if vlan_id < 0:
-                        v = " LAN SYSTEM %s" % vswitch_name
+                        v += " LAN SYSTEM %s" % vswitch_name
                     else:
-                        v = " LAN SYSTEM %s VLAN %s" % (vswitch_name, vlan_id)
+                        v += " LAN SYSTEM %s VLAN %s" % (vswitch_name, vlan_id)
 
-                    ent = ent + v
-
-                new_user_direct.append(ent)
-
+                    new_user_direct.append(v)
         try:
             self._lock_user_direct(userid)
         except exception.SDKSMTRequestFailed as e:

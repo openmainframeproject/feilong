@@ -258,6 +258,14 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self._smtclient._add_mdisk(userid, disk, vdev),
         request.assert_called_once_with(rd)
 
+    def test_add_mdisk_no_disk_pool(self):
+        vdev = '0101'
+        disk = {'size': '1g',
+                'format': 'ext3'}
+        base.set_conf('zvm', 'disk_pool', None)
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smtclient._add_mdisk, 'fakeuser', disk, vdev)
+
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_add_mdisk_format_none(self, request):
         userid = 'fakeuser'
@@ -1480,8 +1488,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, '_couple_nic')
     def test_couple_nic_to_vswitch_no_vlan(self, couple_nic, replace,
                                    lock, get_user):
-        replace_data = ["USER ABC", "NICDEF 1000 LAN SYSTEM VS1"]
-        get_user.return_value = ["USER ABC", "NICDEF 1000"]
+        replace_data = ["USER ABC", "NICDEF 1000 DEVICE 3",
+                        "NICDEF 1000 LAN SYSTEM VS1"]
+        get_user.return_value = ["USER ABC", "NICDEF 1000 DEVICE 3"]
         self._smtclient.couple_nic_to_vswitch("fake_userid",
                                                "1000",
                                                "VS1",
@@ -1499,8 +1508,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, '_couple_nic')
     def test_couple_nic_to_vswitch_vlan(self, couple_nic, replace,
                                    lock, get_user):
-        replace_data = ["USER ABC", "NICDEF 1000 LAN SYSTEM VS1 VLAN 55"]
-        get_user.return_value = ["USER ABC", "NICDEF 1000"]
+        replace_data = ["USER ABC", "NICDEF 1000 DEVICE 3",
+                        "NICDEF 1000 LAN SYSTEM VS1 VLAN 55"]
+        get_user.return_value = ["USER ABC", "NICDEF 1000 DEVICE 3"]
         self._smtclient.couple_nic_to_vswitch("fake_userid",
                                                "1000",
                                                "VS1",
@@ -1917,6 +1927,15 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         self._smtclient.add_mdisks(userid, disk_list)
         add_mdisk.assert_any_call(userid, disk_list[0], '0100')
         add_mdisk.assert_any_call(userid, disk_list[1], '0101')
+
+    def test_add_mdisks_no_disk_pool(self):
+        disk_list = [{'size': '1g',
+                      'is_boot_disk': True,
+                      'disk_pool': 'ECKD:eckdpool1'},
+                     {'size': '200000',
+                      'format': 'ext3'}]
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smtclient.add_mdisks, 'fakeuser', disk_list)
 
     @mock.patch.object(smtclient.SMTClient, '_add_mdisk')
     def test_add_mdisks_with_1dev(self, add_mdisk):
