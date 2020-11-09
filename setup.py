@@ -33,7 +33,9 @@ setuptools.setup(
         'zvmsdk': [
             'vmactions/templates/grow_root_volume.j2',
             'volumeops/templates/rhel7_attach_volume.j2',
-            'volumeops/templates/rhel7_detach_volume.j2'
+            'volumeops/templates/rhel7_detach_volume.j2',
+            'volumeops/templates/rhel8_attach_volume.j2',
+            'volumeops/templates/rhel8_detach_volume.j2'
         ]
     },
     classifiers=[
