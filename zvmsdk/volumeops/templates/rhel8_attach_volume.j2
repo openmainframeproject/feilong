@@ -43,6 +43,8 @@ AutoLunScan=`cat /sys/module/zfcp/parameters/allow_lun_scan`
 if [[ "$AutoLunScan" != "Y" || "$NPIV" != "NPIV VPORT" ]]; then
     for wwpn in $ActiveWWPNs
     do
+        # chzdev only exist in rhel version8.0+
+        chzdev -e -a zfcp-lun 0.0.$fcp:$wwpn:$lun
         echo "$lun" > /sys/bus/ccw/drivers/zfcp/0.0.$fcp/$wwpn/unit_add
     done
 fi

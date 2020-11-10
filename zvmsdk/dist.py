@@ -970,6 +970,24 @@ class rhel8(rhel7):
                              self._get_all_device_filename())
         return '\nrm -f %s\n' % files
 
+    def get_volume_attach_configuration_cmds(self, fcp, target_wwpn,
+                                             target_lun, multipath,
+                                             mount_point, new):
+        template = self.get_template("volumeops", "rhel8_attach_volume.j2")
+        target_filename = mount_point.replace('/dev/', '')
+        content = template.render(fcp=fcp, lun=target_lun,
+                                  target_filename=target_filename)
+        return content
+
+    def get_volume_detach_configuration_cmds(self, fcp, target_wwpn,
+                                             target_lun, multipath,
+                                             mount_point, connections):
+        template = self.get_template("volumeops", "rhel8_detach_volume.j2")
+        target_filename = mount_point.replace('/dev/', '')
+        content = template.render(fcp=fcp, lun=target_lun,
+                                  target_filename=target_filename)
+        return content
+
 
 class rhcos(LinuxDist):
     def create_coreos_parameter(self, network_info, userid):
