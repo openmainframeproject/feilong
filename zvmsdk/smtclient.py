@@ -2035,6 +2035,22 @@ class SMTClient(object):
         try:
             self._replace_user_direct(userid, new_user_direct)
         except exception.SDKSMTRequestFailed as e:
+            rd = ("SMAPI %s API Image_Unlock_DM " % userid)
+            try:
+                self._request(rd)
+            except exception.SDKSMTRequestFailed as err2:
+                # ignore 'not locked' error
+                if ((err2.results['rc'] == 400) and (
+                    err2.results['rs'] == 24)):
+                    LOG.debug("Guest '%s' unlocked successfully." % userid)
+                    pass
+                else:
+                    # just print error and ignore this unlock error
+                    msg = ("Unlock definition of guest '%s' failed "
+                           "with SMT error: %s" %
+                           (userid, err2.format_message()))
+                    LOG.error(msg)
+
             raise exception.SDKGuestOperationError(rs=10,
                                                    userid=userid,
                                                    err=e.format_message())
