@@ -59,6 +59,7 @@ AutoScan=`cat /sys/module/zfcp/parameters/allow_lun_scan`
 if [[ "$AutoScan" != "Y" ]]; then
     for wwpn in $ActiveWWPNs
     do
+        chzdev -d zfcp-lun 0.0.$fcp:$wwpn:$lun
         echo "$lun" > /sys/bus/ccw/drivers/zfcp/0.0.$fcp/$wwpn/unit_remove
     done
 fi
