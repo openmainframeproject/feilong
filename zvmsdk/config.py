@@ -99,9 +99,11 @@ When an ESM is installed, this parameter only governs when the ESM
 defers to CP's processing.
 
 Usage note:
-    The default is an empty string (''). When the string is empty, you can't
-    log on to your instances using the 3270 protocol; When a
-    non-empty string is provided, blank chars will be used as delimiter,
+    The default is empty string with nothing set i.e.
+    default_admin_userid=
+    '' is an invalid value and it will cause VM deploying failed.
+    Thus, DO NOT set default_admin_userid=''.
+    When a non-empty string is provided, blank chars will be used as delimiter,
     you can use LOGONBY xxx command to log on the guest using the corresponding
     admin userid's password.
 
@@ -113,8 +115,7 @@ Usage note:
 Possible values:
     A maximum of 8 blank-delimited strings. Each non-blank string must be a
     valid z/VM userid.
-    e.g  '' is a valid value.
-         'oper1 oper2' is a valid value.
+    e.g  'oper1 oper2' is a valid value.
          'o1 o2 o3 o4 o5 o6 o7 o8 o9' is NOT a valid value.
     '''),
     # FIXME: remove this option when switch to smt
