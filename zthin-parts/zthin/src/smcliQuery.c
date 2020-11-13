@@ -331,7 +331,8 @@ int queryAPIFunctionalLevel(int argC, char* argV[], struct _vmApiInternalContext
                     "    For z/VM V6.2, this API will provide a return and reason code of 0/620.\n"
                     "    For z/VM V6.3, this API will provide a return and reason code of 0/630.\n"
                     "    For z/VM V6.4, this API will provide a return and reason code of 0/640.\n"
-                    "    For z/VM V7.1, this API will provide a return and reason code of 0/710.\n\n"
+                    "    For z/VM V7.1, this API will provide a return and reason code of 0/710.\n"
+                    "    For z/VM V7.2, this API will provide a return and reason code of 0/720.\n\n"
                     "  The following options are required:\n"
                     "    -T    This must match an entry in the authorization file\n");
                 printRCheaderHelp();
@@ -387,10 +388,12 @@ int queryAPIFunctionalLevel(int argC, char* argV[], struct _vmApiInternalContext
     } else if ((output->common.returnCode == 0) && ((output->common.reasonCode >= 640 && output->common.reasonCode < 710))) {
         DOES_CALLER_WANT_RC_HEADER_SMAPI_RC0_RS(vmapiContextP, output->common.returnCode, output->common.reasonCode) \
         printf("The API functional level is z/VM V6.4\n");
-    } else if ((output->common.returnCode == 0) && (output->common.reasonCode >= 710)) {
+    } else if ((output->common.returnCode == 0) && ((output->common.reasonCode >= 710 && output->common.reasonCode < 720))) {
         DOES_CALLER_WANT_RC_HEADER_SMAPI_RC0_RS(vmapiContextP, output->common.returnCode, output->common.reasonCode) \
         printf("The API functional level is z/VM V7.1\n");
-
+    } else if ((output->common.returnCode == 0) && (output->common.reasonCode >= 720)) {
+        DOES_CALLER_WANT_RC_HEADER_SMAPI_RC0_RS(vmapiContextP, output->common.returnCode, output->common.reasonCode) \
+        printf("The API functional level is z/VM V7.2\n");
     } else {
         // Handle SMAPI return code and reason code
         rc = printAndLogSmapiReturnCodeReasonCodeDescription("Query_API_Functional_Level", output->common.returnCode,
