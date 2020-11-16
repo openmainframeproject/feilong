@@ -38,7 +38,8 @@ Access Passcode: #D%&32U5
   - Would like to look at integrating work with Vinnie by end of year
   - Johan will ask Nick to check in code so others can review
 - Vinnie and intern checked into OMP summer intern github repo
-  - Vinnie will send link to the github repo
+  - Link to github repo which contains source code
+      - https://github.com/openmainframeproject-internship/Feilong---Ansible-Module
   - Not ready to check into Feilong but would like code review
 - Speak with with IBM Cloud Infrastructure Center offering manager about promoting Feilong
   - Mike F will do this
