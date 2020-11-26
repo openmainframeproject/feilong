@@ -73,7 +73,8 @@ keyOpsList = {
         '--iplLoadparam': ['iplLoadparam', 1, 2],
         '--dedicate': ['dedicate', 1, 2],
         '--loadportname': ['loadportname', 1, 2],
-        '--loadlun': ['loadlun', 1, 2]},
+        '--loadlun': ['loadlun', 1, 2],
+        '--vdisk': ['vdisk', 1, 2]},
     'HELP': {},
     'VERSION': {},
      }
@@ -151,6 +152,18 @@ def createVM(rh):
         # add a DEDICATE statement for each vdev
         for vdev in vdevs:
             dirLines.append("DEDICATE %s %s" % (vdev, vdev))
+
+    if 'vdisk' in rh.parms:
+        v = rh.parms['vdisk'].split(':')
+        sizeUpper = v[1].strip().upper()
+        sizeUnit = sizeUpper[-1]
+        # blocks = size / 512, as we are using M,
+        # it means 1024*1024 / 512 = 2048
+        if sizeUnit == 'M':
+            blocks = int(sizeUpper[0:len(sizeUpper) - 1]) * 2048
+        else:
+            blocks = int(sizeUpper[0:len(sizeUpper) - 1]) * 2097152
+        dirLines.append("MDISK %s FB-512 V-DISK %s MWV" % (v[0], blocks))
 
     # Construct the temporary file for the USER entry.
     fd, tempFile = mkstemp()

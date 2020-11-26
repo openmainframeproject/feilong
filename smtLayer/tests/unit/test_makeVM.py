@@ -59,3 +59,25 @@ class SMTMakeVMTestCase(base.SMTTestCase):
         gap = makeVM.getReservedMemSize(rh, '512m', '9999G')
         self.assertEqual(gap, '9998G')
         self.assertEqual(rh.results['overallRC'], 0)
+
+    @mock.patch("os.write")
+    def test_create_VM_swap_1G(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1G', 'maxMemSize': '1G',
+                 'privClasses': 'G', 'vdisk': '0102:1G'}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\nCPU 00 BASE\n'
+                                    b'MDISK 0102 FB-512 V-DISK 2097152 MWV\n')
+
+    @mock.patch("os.write")
+    def test_create_VM_swap_256M(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1G', 'maxMemSize': '1G',
+                 'privClasses': 'G', 'vdisk': '0102:256M'}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\nCPU 00 BASE\n'
+                                    b'MDISK 0102 FB-512 V-DISK 524288 MWV\n')
