@@ -805,8 +805,8 @@ class SDKAPI(object):
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
 
                 # check disk_pool
+                disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
                 if not swap_only:
-                    disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
                     if disk_pool is None:
                         errmsg = ("Invalid disk_pool input, disk_pool should"
                                   " be configured for sdkserver.")
@@ -817,6 +817,17 @@ class SDKAPI(object):
                         not in ['ECKD', 'FBA']):
                         errmsg = ("Invalid disk_pool input, its format must be"
                                   " ECKD:eckdpoolname or FBA:fbapoolname")
+                        LOG.error(errmsg)
+                        raise exception.SDKInvalidInputFormat(msg=errmsg)
+                else:
+                    # in this case, it's swap only, and we will check whether
+                    # no VDISK is allowed, if not allow, then return error
+                    if disk_pool is None and CONF.zvm.swap_force_mdisk:
+                        errmsg = ("Invalid disk_pool input, disk_pool should"
+                                  " be configured for sdkserver and use"
+                                  " VDISK as swap disk is not configured."
+                                  " check CONF.zvm.swap_force_mdisk for"
+                                  " additional information.")
                         LOG.error(errmsg)
                         raise exception.SDKInvalidInputFormat(msg=errmsg)
 
