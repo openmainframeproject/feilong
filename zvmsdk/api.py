@@ -779,6 +779,15 @@ class SDKAPI(object):
 
         userid = userid.upper()
         if disk_list:
+
+            # special case for swap disk, for boot from volume, might add swap
+            # disk but not disk pool given, then we use vdisk instead
+            swap_only = False
+            if len(disk_list) == 1:
+                disk = disk_list[0]
+                if 'format' in disk and disk['format'].lower() == 'swap':
+                    swap_only = True
+
             for disk in disk_list:
                 if not isinstance(disk, dict):
                     errmsg = ('Invalid "disk_list" input, it should be a '
@@ -791,20 +800,23 @@ class SDKAPI(object):
                               'for each disk.')
                     LOG.error(errmsg)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
+
                 # check disk_pool
-                disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
-                if disk_pool is None:
-                    errmsg = ("Invalid disk_pool input, disk_pool should be"
-                              " configured for sdkserver.")
-                    LOG.error(errmsg)
-                    raise exception.SDKInvalidInputFormat(msg=errmsg)
-                # 'disk_pool' format check
-                if ':' not in disk_pool or (disk_pool.split(':')[0].upper()
-                    not in ['ECKD', 'FBA']):
-                    errmsg = ("Invalid disk_pool input, it should be in format"
-                              " ECKD:eckdpoolname or FBA:fbapoolname")
-                    LOG.error(errmsg)
-                    raise exception.SDKInvalidInputFormat(msg=errmsg)
+                if not swap_only:
+                    disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+                    if disk_pool is None:
+                        errmsg = ("Invalid disk_pool input, disk_pool should"
+                                  " be configured for sdkserver.")
+                        LOG.error(errmsg)
+                        raise exception.SDKInvalidInputFormat(msg=errmsg)
+                    # 'disk_pool' format check
+                    if ':' not in disk_pool or (disk_pool.split(':')[0].upper()
+                        not in ['ECKD', 'FBA']):
+                        errmsg = ("Invalid disk_pool input, its format must be"
+                                  " ECKD:eckdpoolname or FBA:fbapoolname")
+                        LOG.error(errmsg)
+                        raise exception.SDKInvalidInputFormat(msg=errmsg)
+
                 # 'format' value check
                 if ('format' in disk.keys()) and (disk['format'].lower() not in
                                                   ('ext2', 'ext3', 'ext4',
