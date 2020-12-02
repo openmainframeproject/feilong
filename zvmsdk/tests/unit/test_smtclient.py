@@ -151,9 +151,173 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         max_mem = '4G'
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby "lbyuser1 lbyuser2" --ipl 0100')
+        self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
+                                   max_cpu, max_mem, '', '', '', [], {})
+        request.assert_called_with(rd)
+        add_mdisks.assert_called_with(user_id, disk_list)
+        add_guest.assert_called_with(user_id)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_swap_has_diskpool(self, add_guest, request, add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '1g',
+                      'is_boot_disk': True,
+                      'disk_pool': 'ECKD:eckdpool1',
+                      'format': 'ext3'},
+                     {'size': '1g',
+                      'format': 'swap'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--logonby "lbyuser1 lbyuser2" --ipl 0100')
+        self._smtclient.create_vm(user_id, cpu, memory, disk_list,
+                                  profile, max_cpu, max_mem, '',
+                                  '', '', [], {})
+        request.assert_called_with(rd)
+        add_mdisks.assert_called_with(user_id, disk_list)
+        add_guest.assert_called_with(user_id)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_multi_no_diskpool(self, add_guest, request, add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '1g',
+                      'is_boot_disk': True,
+                      'disk_pool': 'ECKD:eckdpool1',
+                      'format': 'ext3'},
+                     {'size': '1g',
+                      'disk_pool': 'ECKD:eckdpool1',
+                      'format': 'ext3'},
+                     {'size': '1g',
+                      'format': 'swap'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', None)
+        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--logonby "lbyuser1 lbyuser2" --ipl 0100')
+        self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
+                                  max_cpu, max_mem, '', '', '', [], {})
+        request.assert_called_with(rd)
+        add_mdisks.assert_called_with(user_id, disk_list)
+        add_guest.assert_called_with(user_id)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_swap_no_diskpool_512M(self, add_guest, request,
+                                             add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '512M',
+                      'format': 'swap'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', None)
+        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--logonby "lbyuser1 lbyuser2" --vdisk 0100:512M')
+        r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
+                                      max_cpu, max_mem, '', '', '', [], {})
+        request.assert_called_with(rd)
+        add_mdisks.assert_not_called()
+        add_guest.assert_called_with(user_id)
+        expected = [{'size': '512M', 'format': 'swap', 'vdev': '0100'}]
+        self.assertEqual(expected, r)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_swap_no_diskpool_1G(self, add_guest, request,
+                                           add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '1G',
+                      'format': 'swap'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', None)
+        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--logonby "lbyuser1 lbyuser2" --vdisk 0100:1G')
+        r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
+                                      max_cpu, max_mem, '', '', '', [], {})
+        request.assert_called_with(rd)
+        add_mdisks.assert_not_called()
+        add_guest.assert_called_with(user_id)
+
+        expected = [{'size': '1G', 'format': 'swap', 'vdev': '0100'}]
+        self.assertEqual(expected, r)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_root_no_diskpool_no_disk(self, add_guest, request,
+                                                add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = []
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', None)
+        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--logonby "lbyuser1 lbyuser2"')
+        self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
+                                   max_cpu, max_mem, '', '', '', [], {})
+        request.assert_called_with(rd)
+        add_mdisks.assert_not_called()
+        add_guest.assert_called_with(user_id)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_root_no_diskpool(self, add_guest, request, add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '1g',
+                      'format': 'ext3'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', None)
+        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--logonby "lbyuser1 lbyuser2"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                    max_cpu, max_mem, '', '', '', [], {})
         request.assert_called_with(rd)
@@ -176,6 +340,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         max_mem = '4G'
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby "lbyuser1 lbyuser2" --ipl cms')
@@ -200,6 +365,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         max_mem = '4G'
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         ipl_from = '5c71'
         dedicate_vdevs = ['5c71', '5d71']
         loaddev = {'portname': '5005076802400c1b',
@@ -214,6 +380,37 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                    dedicate_vdevs, loaddev)
         request.assert_called_with(rd)
         add_mdisks.assert_called_with(user_id, disk_list)
+        add_guest.assert_called_with(user_id)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_boot_from_volume_only(self, add_guest, request,
+                                             add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = []
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
+        ipl_from = '5c71'
+        dedicate_vdevs = ['5c71', '5d71']
+        loaddev = {'portname': '5005076802400c1b',
+                   'lun': '0000000000000000'}
+        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--logonby "lbyuser1 lbyuser2" --ipl 5c71 '
+              '--dedicate "5c71 5d71" --loadportname 5005076802400c1b '
+              '--loadlun 0000000000000000')
+        self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
+                                   max_cpu, max_mem, ipl_from, '', '',
+                                   dedicate_vdevs, loaddev)
+        request.assert_called_with(rd)
+        add_mdisks.assert_not_called()
         add_guest.assert_called_with(user_id)
 
     @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
@@ -234,6 +431,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         ipl_loadparam = 'load=1'
         base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
         base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', 'ECKD:TESTPOOL')
         rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
               '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
               '--logonby "lbyuser1 lbyuser2" --ipl cms --iplParam dummy '

@@ -113,7 +113,8 @@ class SDKAPITestCase(base.SDKTestCase):
     def test_guest_create_with_no_disk_pool(self, create_vm):
         disk_list = [{'size': '1g', 'is_boot_disk': True,
                       'disk_pool': 'ECKD: eckdpool1'},
-                     {'size': '1g', 'format': 'ext3'}]
+                     {'size': '1g', 'format': 'ext3'},
+                     {'size': '1g', 'format': 'swap'}]
         vcpus = 1
         memory = 1024
         user_profile = 'profile'
@@ -125,6 +126,19 @@ class SDKAPITestCase(base.SDKTestCase):
                           memory, disk_list, user_profile,
                           max_cpu, max_mem)
         create_vm.assert_not_called()
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
+    def test_guest_create_with_no_disk_pool_swap_only(self, create_vm):
+        disk_list = [{'size': '1g', 'format': 'swap'}]
+        vcpus = 1
+        memory = 1024
+        user_profile = 'profile'
+        base.set_conf('zvm', 'disk_pool', None)
+        self.api.guest_create(self.userid, vcpus, memory, disk_list,
+                              user_profile)
+        create_vm.assert_called_once_with(self.userid, vcpus, memory,
+                                          disk_list, user_profile, 32, '64G',
+                                          '', '', '', [], {})
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_default_max_cpu_memory(self, create_vm):

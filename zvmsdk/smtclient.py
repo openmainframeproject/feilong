@@ -614,6 +614,32 @@ class SMTClient(object):
             if 'lun' in loaddev:
                 rd += ' --loadlun %s' % loaddev['lun']
 
+        # now, we need consider swap only case, customer using boot
+        # from volume but no disk pool provided, we allow to create
+        # swap disk from vdisk by default, when we come to this logic
+        # we are very sure that if no disk pool, there is only one
+        # disk in disk_list and that's swap
+        vdisk = None
+
+        # this is swap only case, which means, you only create a swap
+        # disk (len disk_list is 1) and no other disks
+        if len(disk_list) == 1:
+            disk = disk_list[0]
+            if 'format' in disk and disk['format'].lower() == 'swap':
+                disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+                if disk_pool is None:
+                    # if it's vdisk, then create user direct directly
+                    vd = disk.get('vdev') or self.generate_disk_vdev(offset=0)
+                    disk['vdev'] = vd
+                    sizeUpper = disk['size'].strip().upper()
+                    sizeUnit = sizeUpper[-1]
+                    if sizeUnit != 'M' and sizeUnit != 'G':
+                        errmsg = ("%s must has 'M' or 'G' suffix" % sizeUpper)
+                        raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+                    rd += ' --vdisk %s:%s' % (vd, sizeUpper)
+                    vdisk = disk
+
         action = "create userid '%s'" % userid
 
         try:
@@ -636,12 +662,17 @@ class SMTClient(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._GuestDbOperator.add_guest(userid)
 
-        # Continue to add disk
-        if disk_list:
+        # Continue to add disk, if vdisk is None, it means
+        # it's not vdisk routine and we need add disks
+        if vdisk is None and disk_list:
             # not perform mkfs against root disk
             if disk_list[0].get('is_boot_disk'):
                 disk_list[0].update({'format': 'none'})
             return self.add_mdisks(userid, disk_list)
+
+        # we must return swap disk in order to make guest config
+        # handle other remaining jobs
+        return disk_list
 
     def _add_mdisk(self, userid, disk, vdev):
         """Create one disk for userid
