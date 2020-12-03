@@ -3430,6 +3430,31 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         active_mem = self._smtclient._get_active_memory(userid)
         self.assertEqual(active_mem, 4096)
 
+    @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
+    def test_get_active_memory_different_lsmem_output(self, execute_cmd):
+        userid = 'testuid'
+        sample_lsmem = [u'RANGE                           SIZE   \
+                        STATE REMOVABLE  BLOCK',
+                        u'0x0000000000000000-0x000000000fffffff  256M  \
+                        online        no      0',
+                        u'0x0000000010000000-0x000000004fffffff    1G  \
+                        online       yes    1-4',
+                        u'0x0000000050000000-0x000000008fffffff    1G  \
+                        online        no    5-8',
+                        u'0x0000000090000000-0x00000000cfffffff    1G  \
+                        online       yes   9-12'
+                        u'0x00000000d0000000-0x00000000ffffffff  768M  \
+                        online        no  13-15'
+                        u'0x0000000100000000-0x0000000fffffffff   60G \
+                        offline         - 16-255'
+                        u'Memory block size:       256M',
+                        u'Total online memory:      32G',
+                        u'Total offline memory:     32G'
+                        ]
+        execute_cmd.return_value = sample_lsmem
+        active_mem = self._smtclient._get_active_memory(userid)
+        self.assertEqual(active_mem, 32768)
+
     @mock.patch.object(smtclient.SMTClient, '_get_active_memory')
     @mock.patch.object(smtclient.SMTClient, 'resize_memory')
     def test_live_resize_memory_less(self, resize_mem, get_active_mem):
