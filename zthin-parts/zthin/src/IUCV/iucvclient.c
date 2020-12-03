@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <sys/types.h>
 #include "../IUCV/iucvclient.h"
 
 
@@ -111,7 +112,12 @@ int prepare_commands(char* buffer, int argc, char *argv[])
     }
     else
     {
-        fp = popen("sudo vmcp q userid", "r");
+        if (getuid() == 0) {
+            fp = popen("/sbin/vmcp q userid", "r");
+        } else {
+            fp = popen("sudo /sbin/vmcp q userid", "r");
+        }
+
         if (fgets(user_buf,sizeof(user_buf),fp) != NULL)
         {
             strcpy(buffer, strtok(user_buf," "));
