@@ -169,7 +169,9 @@ errors = {
                    "get unpackdiskimage cmd failed: %(err)s"),
                13: ("Failed to deploy image to userid: '%(userid)s', "
                    "ignition file is required when deploying RHCOS image"),
-               14: ("Failed to deploy image to userid: '%(userid)s', %(msg)s")
+               14: ("Failed to deploy image to userid: '%(userid)s', %(msg)s"),
+               15: ("Failed to live resize cpus of guest: '%(userid)s', "
+                   "error: enable new defined cpus failed: '%(err)s'.")
               },
               "Operation on Guest failed"
               ],

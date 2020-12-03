@@ -3533,6 +3533,26 @@ class SMTClient(object):
                       "make the defined cpus online." % (userid, msg))
             raise exception.SDKGuestOperationError(rs=8, userid=userid,
                                                    err=msg)
+
+        uname_out = self.execute_cmd(userid, "uname -a")
+        if uname_out and len(uname_out) >= 1:
+            distro = uname_out[0]
+        else:
+            distro = ''
+        if 'ubuntu' in distro or 'Ubuntu' in distro \
+                or 'UBUNTU' in distro:
+            try:
+                # need use chcpu -e <cpu-list> to make cpu online for Ubuntu
+                online_cmd = "chcpu -e " + ','.join(active_new)
+                self.execute_cmd(userid, online_cmd)
+            except exception.SDKSMTRequestFailed as err:
+                msg = err.format_message()
+                LOG.error("Enable cpus for guest: '%s' failed with error: %s. "
+                          "No rollback is done and you may need to check the "
+                          "status and restart the guest to make the defined "
+                          "cpus online." % (userid, msg))
+                raise exception.SDKGuestOperationError(rs=15, userid=userid,
+                                                       err=msg)
         LOG.info("Live resize cpus for guest: '%s' finished successfully."
                  % userid)
 
