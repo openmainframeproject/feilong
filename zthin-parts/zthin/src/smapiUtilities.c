@@ -34,6 +34,7 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <stdbool.h>
 #include "vmapiQuery.h"
 #include "smPublic.h"
@@ -3157,7 +3158,11 @@ int getSmapiLevel(struct _vmApiInternalContext* vmapiContextP, char * image, int
         /* If passed in target image is null then use this userid */
         targetId = image;
         if (strlen(image) == 0) {
-            fp = popen("sudo /sbin/vmcp q userid", "r");
+            if (getuid() == 0) {
+                fp = popen("/sbin/vmcp q userid", "r");
+            } else {
+                fp = popen("sudo /sbin/vmcp q userid", "r");
+            }
             if (fp == NULL) {
                 printAndLogProcessingErrors("getSmapiLevel", PROCESSING_ERROR, vmapiContextP, "", 0);
                 printf("ERROR: Failed to identify the user");
