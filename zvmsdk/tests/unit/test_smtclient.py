@@ -3081,6 +3081,76 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         request.assert_not_called()
 
     @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
+    @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
+    @mock.patch.object(smtclient.SMTClient, '_get_active_cpu_addrs')
+    def test_live_resize_cpus_redhat(self, get_active, resize, get_avail,
+                              exec_cmd, request):
+        userid = 'testuid'
+        count = 4
+        get_active.return_value = ['00', '01']
+        resize.return_value = (1, ['02', '03'], 32)
+        avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
+                     '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
+                     '12', '13', '14', '15', '16', '17', '18', '19',
+                     '1A', '1B', '1C', '1D', '1E', '1F']
+        get_avail.return_value = avail_lst
+        exec_cmd.side_effect = [[''],
+                                [''],
+                                ['Linux rhel82-ext4-eckd 4.18.0-193.el8.'
+                                 's390x #1 SMP Fri Mar 27 14:43:09 UTC'
+                                 ' 2020 s390x s390x s390x GNU/Linux ']]
+        self._smtclient.live_resize_cpus(userid, count)
+        get_active.assert_called_once_with(userid)
+        resize.assert_called_once_with(userid, count)
+        get_avail.assert_called_once_with(['00', '01'], 32)
+        cmd_def_cpu = "vmcp def cpu 02 03"
+        cmd_rescan_cpu = "chcpu -r"
+        cmd_uname = "uname -a"
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
+                                   mock.call(userid, cmd_rescan_cpu),
+                                   mock.call(userid, cmd_uname)])
+        request.assert_not_called()
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
+    @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
+    @mock.patch.object(smtclient.SMTClient, 'resize_cpus')
+    @mock.patch.object(smtclient.SMTClient, '_get_active_cpu_addrs')
+    def test_live_resize_cpus_ubuntu(self, get_active, resize, get_avail,
+                              exec_cmd, request):
+        userid = 'testuid'
+        count = 4
+        get_active.return_value = ['00', '01']
+        resize.return_value = (1, ['02', '03'], 32)
+        avail_lst = ['02', '03', '04', '05', '06', '07', '08', '09',
+                     '0A', '0B', '0C', '0D', '0E', '0F', '10', '11',
+                     '12', '13', '14', '15', '16', '17', '18', '19',
+                     '1A', '1B', '1C', '1D', '1E', '1F']
+        get_avail.return_value = avail_lst
+        exec_cmd.side_effect = [[''],
+                                  [''],
+                                  ['Linux ubuntu20-ext4-eckd 5.4.0-37-generic'
+                                   ' #41-Ubuntu SMP Wed Jun 3 17:53:50 UTC '
+                                   '2020 s390x s390x s390x GNU/Linux'],
+                                  ['']]
+        self._smtclient.live_resize_cpus(userid, count)
+        get_active.assert_called_once_with(userid)
+        resize.assert_called_once_with(userid, count)
+        get_avail.assert_called_once_with(['00', '01'], 32)
+
+        cmd_def_cpu = "vmcp def cpu 02 03"
+        cmd_rescan_cpu = "chcpu -r"
+        cmd_uname = "uname -a"
+        cmd_chcpu = "chcpu -e 02,03"
+        exec_cmd.assert_has_calls([mock.call(userid, cmd_def_cpu),
+                                   mock.call(userid, cmd_rescan_cpu),
+                                   mock.call(userid, cmd_uname),
+                                   mock.call(userid, cmd_chcpu)])
+        request.assert_not_called()
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(smtclient.SMTClient, '_get_available_cpu_addrs')
     @mock.patch.object(smtclient.SMTClient, '_get_defined_cpu_addrs')
     def test_resize_cpus_equal_count(self, get_defined,
