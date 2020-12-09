@@ -27,12 +27,16 @@ output=$(multipath -f $map_name 2>&1)
 exit_code=$?
 
 # error output not empty, means error happened
+# and the error 'in use' and 'must provode a map name'
+# of multipath -f will return same exit code 1
+# so diff them, we will ingore the error of 'must provide a map name'
 if [ "$output" ]; then
-    if [ "$(echo $output | grep -i 'in use')" ]; then
+    if [ "$(echo $output | grep -i 'must provide a map name')" ]; then
+        echo "ignore error on FCP $fcp and Lun $lun:$output"
+        exit_code=0
+    elif [ "$(echo $output | grep -i 'in use')" ]; then
         echo "FCP $fcp and Lun $lun is use:$output"
         exit_code=1
-    elif [ "$(echo $output | grep -i 'must provide a map name')" ]; then
-        echo "ignore error on FCP $fcp and Lun $lun:$output"
     else
         echo "unknown error on FCP $fcp and Lun $lun:$output"
         exit_code=2
@@ -41,7 +45,7 @@ fi
 
 echo "exit code for multipath -f: $exit_code"
 # if above code didn't succeed, exit now.
-if [[ $exit_code != 0  ]]; then
+if [[ $exit_code != 0 ]]; then
     exit $exit_code
 fi
 
