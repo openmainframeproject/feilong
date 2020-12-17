@@ -447,6 +447,7 @@ function chccwdevDevice {
   local rc=$?
   res=$(echo $output|grep "not found")
   if [[ ($rc -ne 0) && $res ]]; then
+    inform "Attempt to set device $device $englishOpt: device $device not found."
     return 1
   fi
 
@@ -467,7 +468,11 @@ function chccwdevDevice {
     if [[ $rc -ne 0 ]]; then
       warn "Error setting device $device $englishOpt: $retCode"
       local retCode=1
+    else
+      inform "set device $device $englishOpt successfully."
     fi
+  else
+    inform "set device $device $englishOpt successfully."
   fi
 
   # Settle udev whether or not the change was successful
@@ -808,12 +813,13 @@ function disconnectFcp {
   fi
 
   # Offline the FCP channel
-  if [[ -b /dev/disk/by-path/0.0.${fcpChannel} ]]; then
-    chccwdevDevice ${fcpChannel} "offline"
-    if [[ $? -ne 0 ]]; then
-      # Offline failed
-      rc=1
-    fi
+  inform "Trying to offline the FCP: ${fcpChannel}."
+  chccwdevDevice ${fcpChannel} "offline"
+  if [[ $? -ne 0 ]]; then
+    # Offline failed
+    rc=1
+  else
+	inform "Successfully set FCP: ${fcpChannel} to offline."
   fi
 
   # Undedicate FCP channel to zthin
@@ -823,7 +829,7 @@ function disconnectFcp {
   if [[ $res == *$image_no_exist* ]]; then
     inform "FCP device $fcpChannel has already detached."
   elif [[ $res -eq 0 ]]; then
-    :
+    inform "Successfully detach FCP ${fcpChannel} from userid $zthinUserID."
   else
     printError "An error was encountered while disconnecting dedicated device because $res."
     rc=2
@@ -885,12 +891,10 @@ function undedicateFcp {
   fi
 
   # Offline the FCP channel
-  if [[ -b /dev/disk/by-path/0.0.${fcpChannel} ]]; then
-    chccwdevDevice ${fcpChannel} "offline"
-    if [[ $? -ne 0 ]]; then
+  chccwdevDevice ${fcpChannel} "offline"
+  if [[ $? -ne 0 ]]; then
       # Offline failed
       rc=1
-    fi
   fi
 
   # Undedicate FCP channel to zthin
