@@ -4477,10 +4477,10 @@ int imageSCSICharacteristicsDefineDM(int argC, char* argV[], struct _vmApiIntern
     int rc;
     int option;
     char * image = NULL;
-    char * bootProgram = NULL;
-    char * logicalBlock = NULL;
-    char * lun = NULL;
-    char * portName = NULL;
+    char * bootProgram = "";
+    char * logicalBlock = "";
+    char * lun = "";
+    char * portName = "";
     int scpType = -1;
     char * scpData = NULL;
     vmApiImageScsiCharacteristicsDefineDmOutput* output;
@@ -4582,7 +4582,7 @@ int imageSCSICharacteristicsDefineDM(int argC, char* argV[], struct _vmApiIntern
                 return 1;
         }
 
-    if (!image || !bootProgram || !logicalBlock || !lun || !portName || (scpType < 0) ) {      
+    if (!image || (scpType < 0)) {
         DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
         printf("ERROR: Missing required options\n");
         return 1;
