@@ -85,6 +85,8 @@ function cleanup_fcpdevices {
   for i in "${!fcps[@]}"
   do
     if [[ -z "$wwpns" ]];then
+      inform "Setting FCP device ${fcps[$i]} offline."
+      chccwdevDevice ${fcps[$i]} "offline"
       output=`/opt/zthin/bin/smcli Image_Device_Undedicate -T $zthinUserID -v ${fcps[$i]} 2>&1`
       if [[ $? != 0 ]]; then
           inform "Undedicate FCP device ${fcps[$i]} fails, reason: $output"
