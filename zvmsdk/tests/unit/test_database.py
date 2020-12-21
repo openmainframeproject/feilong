@@ -391,6 +391,33 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.delete('1111')
             self.db_op.delete('1112')
 
+    def test_get_allocated_fcps_from_assigner(self):
+        self.db_op.new('1111', 0)
+        self.db_op.new('1112', 1)
+
+        try:
+            self.db_op.assign('1111', 'user1', update_connections=False)
+            self.db_op.assign('1112', 'user1', update_connections=False)
+
+            fcp_list = self.db_op.get_allocated_fcps_from_assigner('user1')
+            self.assertEqual(0, len(fcp_list))
+
+            self.db_op.assign('1111', 'user2', update_connections=True)
+            fcp_list = self.db_op.get_allocated_fcps_from_assigner('user2')
+            self.assertEqual(1, len(fcp_list))
+
+            self.db_op.assign('1112', 'user2', update_connections=False)
+            self.db_op.reserve('1112')
+            fcp_list = self.db_op.get_allocated_fcps_from_assigner('user2')
+            self.assertEqual(2, len(fcp_list))
+
+            fcp = fcp_list[0]
+            self.assertEqual('1111', fcp[0])
+            self.assertEqual('user2', fcp[1])
+        finally:
+            self.db_op.delete('1111')
+            self.db_op.delete('1112')
+
     def test_get_from_fcp(self):
         self.db_op.new('1111', 0)
         self.db_op.new('1112', 2)

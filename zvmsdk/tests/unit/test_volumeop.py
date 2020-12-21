@@ -559,7 +559,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
         base.set_conf('volume', 'fcp_list', 'b83c')
         # assign FCP
         self.db_op.new('b83c', 0)
+        # set connections to 1 and assigner_id to b83c
         self.db_op.assign('b83c', 'fakeuser')
+        # set reserved to 1
+        self.db_op.reserve('b83c')
 
         try:
             connections = self.volumeops.get_volume_connector('fakeuser',
@@ -570,7 +573,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.assertEqual(expected, connections)
 
             fcp_list = self.db_op.get_from_fcp('b83c')
-            expected = [(u'b83c', u'fakeuser', 1, 0, 0, u'')]
+            expected = [(u'b83c', u'fakeuser', 1, 1, 0, u'')]
             self.assertEqual(expected, fcp_list)
         finally:
             self.db_op.delete('b83c')
