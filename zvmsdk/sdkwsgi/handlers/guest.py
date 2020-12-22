@@ -243,6 +243,7 @@ class VMAction(object):
         self.dd_semaphore = threading.BoundedSemaphore(
             value=CONF.wsgi.max_concurrent_deploy_capture)
 
+    @validation.schema(guest.start)
     def start(self, userid, body):
         info = self.client.send_request('guest_start', userid)
 

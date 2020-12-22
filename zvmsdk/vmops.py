@@ -114,10 +114,24 @@ class VMOps(object):
         """Reachable through IUCV communication channel."""
         return self._smtclient.get_guest_connection_status(userid)
 
-    def guest_start(self, userid):
+    def wait_for_reachable(self, userid, timeout=CONF.guest.reachable_timeout):
+        """Return until guest reachable or timeout."""
+        def _check_reachable():
+            if not self.is_reachable(userid):
+                raise exception.SDKRetryException()
+        zvmutils.looping_call(_check_reachable, 5, 0, 5, timeout,
+                              exception.SDKRetryException)
+
+    def guest_start(self, userid, timeout=0):
         """"Power on z/VM instance."""
         LOG.info("Begin to power on vm %s", userid)
         self._smtclient.guest_start(userid)
+        if timeout > 0:
+            self.wait_for_reachable(userid, timeout)
+            if not self.is_reachable(userid):
+                msg = "guest does not reachable"
+                raise exception.SDKGuestOperationError(rs=16, userid=userid,
+                                                       msg=msg)
         LOG.info("Complete power on vm %s", userid)
 
     def guest_stop(self, userid, **kwargs):
