@@ -18,6 +18,8 @@
 300;10;300;12;Failed to deploy image to userid: '%(userid)s', get unpackdiskimage cmd failed: %(err)s
 300;10;300;13;Failed to deploy image to userid: '%(userid)s', ignition file is required when deploying RHCOS image
 300;10;300;14;Failed to deploy image to userid: '%(userid)s', %(msg)s
+300;10;300;15;Failed to live resize cpus of guest: '%(userid)s', error: enable new defined cpus failed: '%(err)s'.
+300;10;300;16;Failed to start the guest: '%(userid)s', %(msg)s
 **Operation on Network failed**
 300;20;300;1;Database operation failed, error: %(msg)s
 300;20;300;2;ZVMSDK network error: %(msg)s

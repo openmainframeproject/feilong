@@ -270,6 +270,16 @@ Console logs might be transferred to sdk user, this option controls how
 large each file can be. A smaller size may mean more calls will be needed
 to transfer large consoles, which may not be desirable for performance reasons.
     '''),
+    Opt('reachable_timeout',
+        section='guest',
+        default=180,
+        opt_type='int',
+        help='''
+The maximum time waiting until the guest reachable after started.
+
+When starting a guest, specify the timeout value will check the guest status
+untils it becames reachable or timeout.
+    '''),
     Opt('softstop_timeout',
         section='guest',
         default=120,

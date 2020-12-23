@@ -291,6 +291,14 @@ nic_DB_info = {
     'additionalProperties': False,
 }
 
+start = {
+    'type': 'object',
+    'properties': {
+        'userid': parameter_types.userid,
+        'timeout': parameter_types.non_negative_integer,
+    },
+    'additionalProperties': False,
+}
 
 stop = {
     'type': 'object',
