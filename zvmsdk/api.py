@@ -81,16 +81,19 @@ class SDKAPI(object):
         self._NetworkDbOperator = database.NetworkDbOperator()
 
     @check_guest_exist()
-    def guest_start(self, userid):
+    def guest_start(self, userid, timeout=0):
         """Power on a virtual machine.
 
         :param str userid: the id of the virtual machine to be power on
+        :param int timeout: the timeout of waiting virtual machine reachable
+                            default as 0, which mean not wait for virtual
+                            machine reachable status
 
         :returns: None
         """
         action = "start guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            self._vmops.guest_start(userid)
+            self._vmops.guest_start(userid, timeout)
 
     @check_guest_exist()
     def guest_stop(self, userid, **kwargs):

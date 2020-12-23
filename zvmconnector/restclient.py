@@ -180,6 +180,7 @@ def req_guests_get_nic_info(start_index, *args, **kwargs):
 def req_guest_start(start_index, *args, **kwargs):
     url = '/guests/%s/action'
     body = {'action': 'start'}
+    fill_kwargs_in_body(body, **kwargs)
     return url, body
 
 
