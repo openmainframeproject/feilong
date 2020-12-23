@@ -542,8 +542,10 @@ class FCPManager(object):
         available_list = []
         # first check whether this userid already has a FCP device
         # get the FCP devices belongs to assigner_id
-        fcp_list = self.db.get_from_assigner(assigner_id)
+        fcp_list = self.db.get_allocated_fcps_from_assigner(assigner_id)
         if not fcp_list:
+            LOG.info("There is no allocated fcps for %s, will allocate "
+                     "new ones." % assigner_id)
             if CONF.volume.get_fcp_pair_with_same_index:
                 '''
                 If use get_fcp_pair_with_same_index,
@@ -568,9 +570,11 @@ class FCPManager(object):
                 # with the get_volume_connector call.
                 self.db.assign(item, assigner_id, update_connections=False)
 
-            LOG.debug("allocated %s fcp for %s assigner" %
+            LOG.info("allocated %s fcp for %s assigner" %
                       (available_list, assigner_id))
         else:
+            LOG.info("Found allocated fcps %s for %s, will reuse them."
+                     % (fcp_list, assigner_id))
             path_count = self.db.get_path_count()
             if len(fcp_list) < path_count:
                 # TODO: handle the case when len(fcp_list) < multipath_count
