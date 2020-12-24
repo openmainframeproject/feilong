@@ -99,8 +99,7 @@ When an ESM is installed, this parameter only governs when the ESM
 defers to CP's processing.
 
 Usage note:
-    The default is empty string with nothing set i.e.
-    default_admin_userid=
+    The default is empty string with nothing set.
     '' is an invalid value and it will cause VM deploying failed.
     Thus, DO NOT set default_admin_userid=''.
     When a non-empty string is provided, blank chars will be used as delimiter,
