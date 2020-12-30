@@ -255,3 +255,7 @@ class SDKFunctionNotImplementError(SDKBaseException):
         results['strError'] = errormsg
         super(SDKFunctionNotImplementError, self).__init__(results=results,
                                                       message=errormsg)
+
+
+class SDKRetryException(SDKBaseException):
+    pass

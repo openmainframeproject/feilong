@@ -201,18 +201,20 @@ class TestFCP(base.SDKTestCase):
                 'opnstk1:   Physical world wide port number: 20076D8500005181']
         fcp = volumeop.FCP(info)
         self.assertEqual('B83D', fcp._dev_no.upper())
+        self.assertEqual('free', fcp._dev_status)
         self.assertIsNone(fcp._npiv_port)
         self.assertEqual('59', fcp._chpid.upper())
         self.assertEqual('20076D8500005181', fcp._physical_port.upper())
 
     def test_parse_npiv(self):
         info = ['opnstk1: FCP device number: B83D',
-                'opnstk1:   Status: Free',
+                'opnstk1:   Status: Active',
                 'opnstk1:   NPIV world wide port number: 20076D8500005182',
                 'opnstk1:   Channel path ID: 59',
                 'opnstk1:   Physical world wide port number: 20076D8500005181']
         fcp = volumeop.FCP(info)
         self.assertEqual('B83D', fcp._dev_no.upper())
+        self.assertEqual('active', fcp._dev_status)
         self.assertEqual('20076D8500005182', fcp._npiv_port.upper())
         self.assertEqual('59', fcp._chpid.upper())
         self.assertEqual('20076D8500005181', fcp._physical_port.upper())
@@ -324,6 +326,36 @@ class TestFCPManager(base.SDKTestCase):
         self.assertEqual('20076D8500005185', physical)
         self.assertEqual('50', self.fcpops._fcp_pool['b83e']._chpid.upper())
 
+    @mock.patch("zvmsdk.database.FCPDbOperator.new")
+    def test_add_fcp_free(self, db_new):
+        # case1, status is free
+        info = ['opnstk1: FCP device number: 1234',
+                'opnstk1:   Status: Free',
+                'opnstk1:   NPIV world wide port number: 20076D8500005182',
+                'opnstk1:   Channel path ID: 59',
+                'opnstk1:   Physical world wide port number: 20076D8500005181']
+        try:
+            self.fcpops._fcp_pool['1234'] = volumeop.FCP(info)
+            self.fcpops._add_fcp('1234', 0)
+            db_new.assert_called_once_with('1234', 0)
+        finally:
+            self.db_op.delete('1234')
+            self.fcpops._fcp_pool.pop('1234')
+
+    @mock.patch("zvmsdk.database.FCPDbOperator.new")
+    def test_add_fcp_active(self, db_new):
+        info = ['opnstk1: FCP device number: 1234',
+                'opnstk1:   Status: Active',
+                'opnstk1:   NPIV world wide port number: 20076D8500005182',
+                'opnstk1:   Channel path ID: 59',
+                'opnstk1:   Physical world wide port number: 20076D8500005181']
+        try:
+            self.fcpops._fcp_pool['1234'] = volumeop.FCP(info)
+            self.fcpops._add_fcp('1234', 1)
+            self.assertFalse(db_new.called)
+        finally:
+            self.fcpops._fcp_pool.pop('1234')
+
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.volumeop.FCPManager._report_orphan_fcp")
     @mock.patch("zvmsdk.volumeop.FCPManager._add_fcp")
@@ -397,6 +429,13 @@ class TestFCPManager(base.SDKTestCase):
             self.db_op.delete('c83d')
             self.db_op.delete('c83e')
             self.db_op.delete('c83f')
+
+    @mock.patch("zvmsdk.volumeop.FCPManager._list_fcp_details")
+    def test_get_all_fcp_info(self, list_details):
+        list_details.return_value = []
+        self.fcpops._get_all_fcp_info('dummy1')
+        list_details.assert_has_calls([mock.call('dummy1', 'free'),
+                                       mock.call('dummy1', 'active')])
 
     def test_add_fcp_for_assigner(self):
         # create 2 FCP
@@ -559,7 +598,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
         base.set_conf('volume', 'fcp_list', 'b83c')
         # assign FCP
         self.db_op.new('b83c', 0)
+        # set connections to 1 and assigner_id to b83c
         self.db_op.assign('b83c', 'fakeuser')
+        # set reserved to 1
+        self.db_op.reserve('b83c')
 
         try:
             connections = self.volumeops.get_volume_connector('fakeuser',
@@ -570,7 +612,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.assertEqual(expected, connections)
 
             fcp_list = self.db_op.get_from_fcp('b83c')
-            expected = [(u'b83c', u'fakeuser', 1, 0, 0, u'')]
+            expected = [(u'b83c', u'fakeuser', 1, 1, 0, u'')]
             self.assertEqual(expected, fcp_list)
         finally:
             self.db_op.delete('b83c')

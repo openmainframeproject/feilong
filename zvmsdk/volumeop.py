@@ -219,6 +219,7 @@ class VolumeConfiguratorAPI(object):
 class FCP(object):
     def __init__(self, init_info):
         self._dev_no = None
+        self._dev_status = None
         self._npiv_port = None
         self._chpid = None
         self._physical_port = None
@@ -235,6 +236,11 @@ class FCP(object):
     def _get_dev_number_from_line(info_line):
         dev_no = info_line.split(':')[-1].strip().lower()
         return dev_no if dev_no else None
+
+    @staticmethod
+    def _get_dev_status_from_line(info_line):
+        dev_status = info_line.split(':')[-1].strip().lower()
+        return dev_status if dev_status else None
 
     @staticmethod
     def _get_chpid_from_line(info_line):
@@ -255,12 +261,16 @@ class FCP(object):
         """
         if isinstance(init_info, list) and (len(init_info) == 5):
             self._dev_no = self._get_dev_number_from_line(init_info[0])
+            self._dev_status = self._get_dev_status_from_line(init_info[1])
             self._npiv_port = self._get_wwpn_from_line(init_info[2])
             self._chpid = self._get_chpid_from_line(init_info[3])
             self._physical_port = self._get_wwpn_from_line(init_info[4])
 
     def get_dev_no(self):
         return self._dev_no
+
+    def get_dev_status(self):
+        return self._dev_status
 
     def get_npiv_port(self):
         return self._npiv_port
@@ -424,7 +434,11 @@ class FCPManager(object):
         try:
             LOG.info("fcp %s found in CONF.volume.fcp_list, add it to db" %
                      fcp)
-            self.db.new(fcp, path)
+            if self._fcp_pool[fcp].get_dev_status() == 'free':
+                self.db.new(fcp, path)
+            else:
+                LOG.warning("fcp %s was not added into database because it is "
+                            "not in Free status." % fcp)
         except Exception:
             LOG.info("failed to add fcp %s into db", fcp)
 
@@ -542,8 +556,10 @@ class FCPManager(object):
         available_list = []
         # first check whether this userid already has a FCP device
         # get the FCP devices belongs to assigner_id
-        fcp_list = self.db.get_from_assigner(assigner_id)
+        fcp_list = self.db.get_allocated_fcps_from_assigner(assigner_id)
         if not fcp_list:
+            LOG.info("There is no allocated fcps for %s, will allocate "
+                     "new ones." % assigner_id)
             if CONF.volume.get_fcp_pair_with_same_index:
                 '''
                 If use get_fcp_pair_with_same_index,
@@ -568,9 +584,11 @@ class FCPManager(object):
                 # with the get_volume_connector call.
                 self.db.assign(item, assigner_id, update_connections=False)
 
-            LOG.debug("allocated %s fcp for %s assigner" %
+            LOG.info("allocated %s fcp for %s assigner" %
                       (available_list, assigner_id))
         else:
+            LOG.info("Found allocated fcps %s for %s, will reuse them."
+                     % (fcp_list, assigner_id))
             path_count = self.db.get_path_count()
             if len(fcp_list) < path_count:
                 # TODO: handle the case when len(fcp_list) < multipath_count

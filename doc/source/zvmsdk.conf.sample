@@ -39,6 +39,16 @@
 
 
 # 
+# The maximum time waiting until the guest reachable after started.
+# 
+# When starting a guest, specify the timeout value will check the guest status
+# untils it becames reachable or timeout.
+#     
+# This param is optional
+#reachable_timeout=180
+
+
+# 
 # The interval time between 2 retries, in seconds.
 # 
 # This will take effect only when you set softstop_retries item.
@@ -302,9 +312,10 @@
 # defers to CP's processing.
 # 
 # Usage note:
-#     The default is an empty string (''). When the string is empty, you can't
-#     log on to your instances using the 3270 protocol; When a
-#     non-empty string is provided, blank chars will be used as delimiter,
+#     The default is empty string with nothing set.
+#     '' is an invalid value and it will cause VM deploying failed.
+#     Thus, DO NOT set default_admin_userid=''.
+#     When a non-empty string is provided, blank chars will be used as delimiter,
 #     you can use LOGONBY xxx command to log on the guest using the corresponding
 #     admin userid's password.
 # 
@@ -316,8 +327,7 @@
 # Possible values:
 #     A maximum of 8 blank-delimited strings. Each non-blank string must be a
 #     valid z/VM userid.
-#     e.g  '' is a valid value.
-#          'oper1 oper2' is a valid value.
+#     e.g  'oper1 oper2' is a valid value.
 #          'o1 o2 o3 o4 o5 o6 o7 o8 o9' is NOT a valid value.
 #     
 # This param is optional
@@ -363,7 +373,7 @@
 #     ECKD:diskpo1
 #     FBA:testpool
 #     
-# This param is required
+# This param is optional
 #disk_pool=None
 
 

@@ -171,7 +171,8 @@ errors = {
                    "ignition file is required when deploying RHCOS image"),
                14: ("Failed to deploy image to userid: '%(userid)s', %(msg)s"),
                15: ("Failed to live resize cpus of guest: '%(userid)s', "
-                   "error: enable new defined cpus failed: '%(err)s'.")
+                   "error: enable new defined cpus failed: '%(err)s'."),
+               16: ("Failed to start the guest: '%(userid)s', %(msg)s")
               },
               "Operation on Guest failed"
               ],
