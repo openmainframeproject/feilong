@@ -1530,7 +1530,7 @@ class SDKAPI(object):
         :param list of fcpchannels
         :param list of wwpns
         :param string lun
-        :param boolean skipzipl: whether ship zipl, only return physical wwpns
+        :param boolean skipzipl: whether ship zipl, only return valid paths
         """
         return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun,
                                                      skipzipl=skipzipl)
