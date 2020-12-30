@@ -1151,28 +1151,11 @@ function deployDiskImage {
     #the first 2 tracks of the ECKD DASD are reserved
     first_track=2
 
-    # To check is GPT partition or not, from the 2nd block of source image
-    gptSig=$(hexdump -C -n 8 -s 4096 ${imageFile} | head -n 1)
-    if [[ $gptSig =~ "EFI PART" ]]; then
-        # Per GPT partition schema, the partition entries start from the
-        # beginning of 3rd block(offset 8192), each partition entry with 128
-        # bytes length.
-        # In one partition entry, the first LBA offset 32, length 8 bytes,
-        # the last LBA offset 40, length 8 bytes.
-        inform "The source image has GPT partitions"
-
-        # The first partion entry is boot, start from 8192, first LBA offset 32
-        tempStr=$(hexdump -C -n 16 -s 8224 ${imageFile} | awk '{print $9 $8 $7 $6 $5 $4 $3 $2 $17 $16 $15 $14 $13 $12 $11 $10}')
-        boot_partition=( $((0x${tempStr:0:16})) $((0x${tempStr:16})) )
-
-        # The 4th partion entry is root, start from 8576, first LBA offset 32
-        tempStr=$(hexdump -C -n 16 -s 8608 ${imageFile} | awk '{print $9 $8 $7 $6 $5 $4 $3 $2 $17 $16 $15 $14 $13 $12 $11 $10}')
-        root_partition=( $((0x${tempStr:0:16})) $((0x${tempStr:16})) )
-    else
-        partition_Num=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*[0-9]" | wc -l))
-        boot_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*1" | awk '{print $2,$4}'))
-        root_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*${partition_Num}" | awk '{print $2,$4}'))
-    fi
+    # Get boot partition and root partition of target disk
+    inform "Get boot and root partitions..."
+    inform "(Warning) It is recommended to use 2.32.1 and later version fdisk which we have tested to work well."
+    boot_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*[0-9]" | head -n 1 | awk '{print $2,$4}'))
+    root_partition=($(fdisk -b 4096 -l ${imageFile} | grep "${imageFile}p*[0-9]" | tail -n 1 | head -n 2 | awk '{print $2,$4}'))
     boot_partition+=( $first_track $(( (${boot_partition[1]} + $block_per_tracks - 1) / $block_per_tracks )) )
     root_partition+=($(( ${boot_partition[2]} + ${boot_partition[3]} )) "last")
     mkdir -p /tmp/${userID} && touch /tmp/${userID}/fdasd_conf
