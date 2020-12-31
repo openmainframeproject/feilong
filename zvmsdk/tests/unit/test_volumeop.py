@@ -559,17 +559,49 @@ class TestFCPManager(base.SDKTestCase):
         fcp = self.fcpops.find_and_reserve_fcp('user1')
         self.assertIsNone(fcp)
 
-    def test_get_available_fcp(self):
-        self.db_op.new('c83c', 0)
-        self.db_op.new('c83d', 1)
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_from_assigner")
+    def test_get_available_fcp_reserve_false(self, get_from_assigner):
+        """test reserve == False.
+        no matter what connections is, the output will be same."""
+        base.set_conf('volume', 'get_fcp_pair_with_same_index', 0)
+        # case1: get_from_assigner return []
+        get_from_assigner.return_value = []
+        result = self.fcpops.get_available_fcp('user1', False)
+        self.assertEqual([], result)
+        # case2: get_from_assigner return ['1234', '5678']
+        get_from_assigner.return_value = [('1234', '', 0, 0, 0, ''),
+                                          ('5678', '', 0, 0, 0, '')]
+        result = self.fcpops.get_available_fcp('user1', False)
+        expected = ['1234', '5678']
+        self.assertEqual(expected, result)
 
-        try:
-            result = self.fcpops.get_available_fcp('user1')
-            expected = ['c83c', 'c83d']
-            self.assertEqual(expected, result)
-        finally:
-            self.db_op.delete('c83c')
-            self.db_op.delete('c83d')
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_path_count")
+    @mock.patch("zvmsdk.database.FCPDbOperator.assign")
+    @mock.patch("zvmsdk.database.FCPDbOperator.get_fcp_pair")
+    @mock.patch("zvmsdk.database.FCPDbOperator."
+                "get_allocated_fcps_from_assigner")
+    def test_get_available_fcp_reserve_true(self, get_allocated,
+                                            get_fcp_pair, assign,
+                                            get_path_count):
+        """test reserve == True"""
+        base.set_conf('volume', 'get_fcp_pair_with_same_index', 0)
+        # case1: get_allocated return []
+        get_allocated.return_value = []
+        get_fcp_pair.return_value = ['1234', '5678']
+        expected = ['1234', '5678']
+        result = self.fcpops.get_available_fcp('user1', True)
+        assign.assert_has_calls([mock.call('1234', 'user1',
+                                           update_connections=False),
+                                 mock.call('5678', 'user1',
+                                           update_connections=False)])
+        self.assertEqual(expected, result)
+        # case2: get_allocated return ['c83c', 'c83d']
+        get_allocated.return_value = [('c83c', 'user1', 0, 0, 0, ''),
+                                      ('c83d', 'user1', 0, 0, 0, '')]
+        get_path_count.return_value = 2
+        result = self.fcpops.get_available_fcp('user1', True)
+        expected = ['c83c', 'c83d']
+        self.assertEqual(expected, result)
 
 
 class TestFCPVolumeManager(base.SDKTestCase):
