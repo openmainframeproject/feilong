@@ -258,4 +258,4 @@ class SDKFunctionNotImplementError(SDKBaseException):
 
 
 class SDKRetryException(SDKBaseException):
-    pass
+    msg_fmt = 'Retry exception'

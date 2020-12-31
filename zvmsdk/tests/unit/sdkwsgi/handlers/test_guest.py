@@ -77,7 +77,7 @@ class GuestActionsTest(SDKWSGITest):
         mock_userid.return_value = FAKE_USERID
 
         guest.guest_action(self.req)
-        mock_action.assert_called_once_with('guest_start', FAKE_USERID)
+        mock_action.assert_called_once_with('guest_start', FAKE_USERID, 0)
 
     @mock.patch.object(util, 'wsgi_path_item')
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
