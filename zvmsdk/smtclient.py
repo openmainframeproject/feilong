@@ -762,7 +762,8 @@ class SMTClient(object):
         : param fcpchannels: list of fcpchannels.
         : param wwpns: list of wwpns.
         : param lun: string of lun.
-        : return value: list of FCP devices and physical wwpns.
+        : return value: dict with FCP as key and list of wwpns this FCP can
+                        access as value.
         """
         fcps = ','.join(fcpchannels)
         ws = ','.join(wwpns)
@@ -792,18 +793,18 @@ class SMTClient(object):
                                                     errcode=rc,
                                                     errmsg=err_output)
         output_lines = output.split('\n')
-        res_wwpns = []
-        res_fcps = []
+        paths_dict = {}
         for line in output_lines:
-            if line.__contains__("WWPNs: "):
-                wwpns = line[7:]
-                # Convert string to list by space
-                res_wwpns = wwpns.split()
-            if line.__contains__("FCPs: "):
-                fcps = line[6:]
-                # Convert string to list by space
-                res_fcps = fcps.split()
-        return res_wwpns, res_fcps
+            if line.__contains__("RESULT PATHS: "):
+                paths_str = line[14:]
+                # paths_str format: "FCP1:W1 W2,FCP2:W3 W4"
+                # convert paths string into a dict
+                paths_list = paths_str.split(',')
+                for path in paths_list:
+                    fcp, wwpn = path.split(':')
+                    wwpn_list = wwpn.split(' ')
+                    paths_dict[fcp] = wwpn_list
+        return paths_dict
 
     def guest_deploy(self, userid, image_name, transportfiles=None,
                      remotehost=None, vdev=None, skipdiskcopy=False):

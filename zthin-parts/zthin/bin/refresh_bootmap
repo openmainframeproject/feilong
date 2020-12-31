@@ -211,6 +211,25 @@ function checkSanity {
   fi
 } #checkSanity
 
+function printLogs {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+  # @Description:
+  #   print logs essential to debug issues before exiting with errors
+  # lszfcp -HD
+  lszfcp_output=$(lszfcp -HD 2>&1)
+  inform "lszfcp output: ${lszfcp_output}."
+  # lsluns
+  lsluns_output=$(lsluns 2>&1)
+  inform "lsluns output: ${lsluns_output}."
+  # ls /dev/disk/by-path
+  disk_by_path_folder=$(ls /dev/disk/by-path/)
+  inform "/dev/disk/by-path/ folder content: ${disk_by_path_folder}."
+  # multipath -ll
+  multipath_output=$(multipath -ll 2>&1)
+  inform "multipath output: ${multipath_output}."
+} #printLogs
+
 function checkMultipath {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
@@ -224,6 +243,39 @@ function checkMultipath {
       multipath_enabled=1
   fi
 } #checkMultipath
+
+function truncaterdzfcp {
+	: SOURCE: ${BASH_SOURCE}
+	: STACK:  ${FUNCNAME[@]}
+	# @Description:
+	#   select 8 paths from all the valid paths to get the rd.zfcp kernel command line
+	#   select combinations based on the rule: 
+	#   each FCP should be covered by at least one path in rd.zfcp so that all the FCPs
+	#   will be automatically online when vm is started
+    rd_zfcp=""
+    wwpn_idx=0
+    selected_paths=0
+    valid_fcps=$(echo ${!paths_dict[*]})
+	while [[ $selected_paths -lt 8 ]]
+	do
+		inform "checking with wwpn_index: $wwpn_idx."
+		# for each fcp, get the wwpn corresponding to wwpn_idx
+		for fcp in ${valid_fcps[@]}
+		do
+			wwpns=(${paths_dict[$fcp]})
+			if [[ $wwpn_idx -lt ${#wwpns[@]} ]]; then
+				wwpn=${wwpns[$wwpn_idx]}
+				rd_zfcp+="rd.zfcp=0.0."$fcp,0x$wwpn,$lun" "
+				((selected_paths=$selected_paths+1))
+			fi
+			# break when 8 paths found
+			if [[ $selected_paths -eq 8 ]]; then
+				break
+			fi
+		done
+		((wwpn_idx=$wwpn_idx+1))
+	done
+}
 
 function refreshZIPL {
   : SOURCE: ${BASH_SOURCE}
@@ -240,19 +292,21 @@ function refreshZIPL {
 
   if [[ ! -e "$devNode" ]]; then
     printError "devNode ${devNode} doesn't exist. Get fcps: ${fcps[*]} and wwpns: ${wwpns[*]}"
+    printLogs
     exit 6
   fi
-  
+
   if [[ $skipzipl = 'YES'  ]]; then
-    inform "WWPNs: ${wwpns[*]}"
-    inform "FCPs: ${fcps[*]}"
+    # this is the part of return info for upper layer(smtclient)
+    inform "RESULT PATHS: $valid_paths_str"
     return
   fi
 
   # Create a mount dir.
   deviceMountPoint=$(/usr/bin/mktemp -d /mnt/XXXXX)
-  if [[ $? != 0 ]]; then
-    printError "Create mount dir fails."
+  rc=$?
+  if [[ $rc -ne 0 ]]; then
+    printError "Create mount dir fails, rc: $rc."
     exit 7
   fi
 
@@ -262,16 +316,22 @@ function refreshZIPL {
   # Try to mount fcp device.
   inform "devNode is: $devNode point: $deviceMountPoint"
   mount $devNode $deviceMountPoint
+  rc=$?
+  if [[ $rc -ne 0 ]]; then
+    printError "Mount devNode fails. rc: $rc."
+    exit 8
+  fi
   mount -t proc /proc $deviceMountPoint/proc
   mount -o bind /sys $deviceMountPoint/sys
   mount -o bind /run $deviceMountPoint/run
   mount -o bind /dev $deviceMountPoint/dev
-  if [[ $? != 0 ]]; then
-    printError "Mount fails."
+  rc=$?
+  if [[ $rc -ne 0 ]]; then
+    printError "Mount bind fails. rc: $rc."
     exit 8
   fi
 
-  #Get target os version
+  # Get target os version
   local osRelease="$deviceMountPoint/etc/os-release"
   local slesRelease="$deviceMountPoint/etc/SuSE-release"
   local rhelRelease="$deviceMountPoint/etc/redhat-release"
@@ -296,58 +356,15 @@ function refreshZIPL {
       -e 's/\s.*$//'`
     os=$os$version
   fi
-  # Prepare the new rd.zfcp parameter value
-  fcps_len=${#fcps[@]}
-  wwpns_len=${#wwpns[@]}
-  res=$(( $fcps_len * $wwpns_len ))
-  rd_zfcp=""
-
-  # For rhel, the max support items of "rd.zfcp" is 8, so we need to judge the
-  # result of FCP devices multiply WWPN.
-  #
-  # If the result of fcps_len multiply wwpns_len less than 8, we can do a fullmesh of
-  # all FCP devices and WWPNs.
-  if [ $res -le 8 ] # less than and equal 8
-  then
-    for fcp in ${fcps[@]}
-    do
-      for w in ${wwpns[@]}
-      do
-        rd_zfcp+="rd.zfcp=0.0."$fcp,0x$w,$lun" "
-      done
-    done
-    inform "Do a fullmesh of FCP devices: ${fcps[*]} and WWPN: ${wwpns[*]} for rd.zfcp: $rd_zfcp"
-  # If the result of fcps_len multiply wwpns_len greater than 8, we need to use
-  # every FCP device and as much as possible to use WWPN.
-  else
-    paths=0
-    fcp_index=0
-    wwpn_index=0
-    while [ $paths -lt 8 ]
-    do
-        if [ $fcp_index -ge $fcps_len ]; then
-          fcp_index=0
-        fi
-
-        if [ $wwpn_index -ge $wwpns_len ]; then
-          wwpn_index=0
-        fi
-
-        x="rd.zfcp=0.0."${fcps[$fcp_index]},0x${wwpns[$wwpn_index]},$lun" "
-
-        if [[ $rd_zfcp =~ $x ]]
-        then # the path already exist in rd_zfcp
-          wwpn_index=$(( $wwpn_index + 1 ))
-          continue
-        else # the path doesn't exist in rd_zfcp
-          rd_zfcp+=$x
-          fcp_index=$(( $fcp_index + 1 ))
-          wwpn_index=$(( $wwpn_index + 1 ))
-        fi
-        paths=$(( $paths + 1 ))
-    done
-    inform "Use as much as possible of FCP devices: ${fcps[*]} and WWPN: ${wwpns[*]} rd.zfcp: $rd_zfcp"
+  # Prepare the new rd.zfcp parameter value 
+  # Due to the kernel command line length limitation of RHEL, we will limit the rd.zfcp
+  # items count to 8. so if the valid paths count is greater than 8, we need to do truncation.
+  # otherwise we can use the rd_zfcp string we get while finding the valid paths.
+  if [[ $paths_count -gt 8 ]]; then
+  	inform "valid paths count $paths_count is greater than 8, do truncation to get the rd.zfcp parameter."
+  	truncaterdzfcp
   fi
+  inform "Final rd.zfcp value is: $rd_zfcp."
 
   # Exec zipl command to prepare device for initial problem load
   if [[ $os == rhel7* ]]; then
@@ -372,10 +389,8 @@ function refreshZIPL {
   elif [[ $os == rhel8* ]]; then
     inform "Refresh $os zipl."
     kernel_version_conf_files=`find $deviceMountPoint/boot/loader/entries/ -name '*.conf'`
-    diskPath="/dev/disk/by-path/ccw-0.0.${fcps[0]}-zfcp-0x${wwpns[0]}:${lun}"
     wwid=`/usr/lib/udev/scsi_id --whitelisted $diskPath 2> /dev/null`
     rootPath="root=\/dev\/disk\/by-id\/dm-uuid-part1-mpath-$wwid "
-    
     # The Volume may be contains several kernel version conf files.
     # So every conf file needs to be changed.
     for confFile in $kernel_version_conf_files; do
@@ -420,18 +435,16 @@ function refreshZIPL {
   # Refresh bootmap
   out=`chroot $deviceMountPoint /sbin/zipl 2>&1`
   rc=$?
-  if (( rc != 0 )); then
-    printError "Failed to execute zipl on $os due to $out"
+  if [[ $rc -ne 0 ]]; then
+    printError "Failed to execute zipl on $os due to $out."
     return 1
   fi
   # Sync to ensure cached date writen back to target disk
   blockdev --flushbufs $diskPath > /dev/null
 
-  # Return wwpns
-  inform "WWPNs: ${wwpns[*]}"
+  # Return valid paths
+  inform "RESULT PATHS: $valid_paths_str"
 
-  # Return fcps
-  inform "FCPs: ${fcps[*]}"
   return
 } #refreshZIPL
 
@@ -541,6 +554,8 @@ function refreshFCPBootmap {
   wwpns=($(echo "${wwpns[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
   if [[ ! $wwpns[0] ]]; then
     printError "No available WWPN found."
+    lsluns_output=$(lsluns 2>&1)
+    inform "lsluns output: ${lsluns_output}."
     exit 9
   fi
   inform "These WWPNs will be operated: ${wwpns[*]}"
@@ -552,34 +567,71 @@ function refreshFCPBootmap {
       inform "WARNING: The count of WWPN can't greater than 8."
   fi
 
-  for i in "${!fcps[@]}"
+  # check and record all the valid path (combinations of FCP and WWPN)
+  # the paths_dict will be in the format: (["FCP1"]="W1 W2" ["FCP2"]="W3 W4")
+  declare -A paths_dict
+  paths_count=0
+  rd_zfcp=""
+  # the first_fcp and first_wwpn will be used in single path scenario (multipathd service not running)
+  first_fcp=""
+  first_wwpn=""
+  for fcp in "${fcps[@]}"
   do
-    for j in "${!wwpns[@]}"
+    for wwpn in "${wwpns[@]}"
       do
-        x="/dev/disk/by-path/ccw-0.0.${fcps[i]}-zfcp-0x${wwpns[j]}:${lun}"
+        x="/dev/disk/by-path/ccw-0.0.${fcp}-zfcp-0x${wwpn}:${lun}"
         if [[ -e $x ]];then
-          diskPath=$x
-          inform "$diskPath is: $diskPath"
-          break
+          if [[ -z $diskPath ]]; then
+            # set diskPath to the first found valid path
+            # this diskPath will only be used to access volume when multipathd service
+            # is not started. Otherwise it will normally be used to find the multipath disk.
+            diskPath=$x
+            first_fcp=$fcp
+            first_wwpn=$wwpn
+          fi
+          inform "found valid path: $x."
+          # add the paths to the dict
+          if [[ -z ${paths_dict["$fcp"]} ]]; then
+             paths_dict+=([$fcp]="$wwpn")
+          else
+             old_value=${paths_dict["$fcp"]}
+             new_value=${old_value}" "$wwpn
+             paths_dict[$fcp]=$new_value
+          fi
+          # increase paths_count
+          ((paths_count=$paths_count+1))
+          # add this (fcp, wwpn) combinations into the rd_zfcp string which will be used to
+          # set the kernel command line in zipl.conf to refresh zipl
+          rd_zfcp+="rd.zfcp=0.0."$fcp,0x$wwpn,$lun" "
         fi
       done
   done
 
-  if [[ -z $diskPath ]];then
-    inform "Can not find a proper path for FCP devices: ${fcps[*]} and wwpns: ${wwpns[*]}"
+  # check whether there is valid paths found
+  if [[ -z $diskPath ]]; then
+    printError "No valid paths found for FCP devices: ${fcps[*]} and wwpns: ${wwpns[*]}"
+    printLogs
     exit 10
   fi
 
-  # Move the proper FCP device to the first position.
-  tmp=${fcps[0]}
-  fcps[0]=${fcps[i]}
-  fcps[$i]=$tmp
-
-  # Move the proper WWPN to the first position.
-  tmp=${wwpns[0]}
-  wwpns[0]=${wwpns[j]}
-  wwpns[$j]=$tmp
-
+  # get the valid paths string to return to upper layer
+  # format: "FCP1:W1 W2,FCP2:W3 W4"
+  # print the valid path count and details
+  inform "$paths_count valid paths found."
+  valid_paths_str=""
+  for fcp in $(echo ${!paths_dict[*]})
+  do
+	wwpns=${paths_dict[$fcp]}
+	if [[ -z $valid_paths_str ]]; then
+	    valid_paths_str=$fcp":"$wwpns
+    else
+        valid_paths_str+=","$fcp":"$wwpns
+    fi
+  done
+  # sample:
+  # valid paths string is: 1a1b:500507680b21bac6 500507680b21bac7 500507680b22bac6 500507680b22bac7,
+  # 1b1b:500507680b21bac6 500507680b21bac7 500507680b22bac6 500507680b22bac7
+  inform "valid paths string is: $valid_paths_str."
 
   # Set devNode according to whether multipath is enabled on the compute node
   wwid=""
@@ -588,7 +640,8 @@ function refreshFCPBootmap {
       devNode="/dev/disk/by-id/dm-uuid-part1-mpath-$wwid"
       inform "Multipath is enabled, using multipath devNode: $devNode."
   else
-      devNode="/dev/disk/by-path/ccw-0.0.${fcps[0]}-zfcp-0x${wwpns[0]}:${lun}-part1"
+      # use the first fcp and wwpn found in valid paths
+      devNode="/dev/disk/by-path/ccw-0.0.${first_fcp}-zfcp-0x${first_wwpn}:${lun}-part1"
       # For blockdev command use.
       inform "Multipath is not enabled, using single path devNode: $devNode."
   fi
