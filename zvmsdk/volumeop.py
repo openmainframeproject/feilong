@@ -548,16 +548,32 @@ class FCPManager(object):
     def is_reserved(self, fcp):
         self.db.is_reserved(fcp)
 
-    def get_available_fcp(self, assigner_id):
+    def get_available_fcp(self, assigner_id, reserve):
         """get all the fcps not reserved, choose one from path0
            and choose another from path1, compose a pair to return.
            result will only have two FCP IDs, looks like [0011, 0021]
         """
         available_list = []
+        if not reserve:
+            # go here, means try to detach volumes, cinder still need the info
+            # of the FCPs belongs to assigner to do some cleanup jobs
+            fcp_list = self.db.get_from_assigner(assigner_id)
+            LOG.info("Got available fcp_list %s in Unreserve mode from %s."
+                     % (fcp_list, assigner_id))
+            # in this case, we just return the fcp_list
+            # no need to allocated new ones if fcp_list is empty
+            for old_fcp in fcp_list:
+                available_list.append(old_fcp[0])
+            return available_list
+
+        # go here, means try to attach volumes
         # first check whether this userid already has a FCP device
         # get the FCP devices belongs to assigner_id
         fcp_list = self.db.get_allocated_fcps_from_assigner(assigner_id)
+        LOG.info("Got available fcp_list %s in Reserve mode from %s."
+                 % (fcp_list, assigner_id))
         if not fcp_list:
+            # allocate new ones if fcp_list is empty
             LOG.info("There is no allocated fcps for %s, will allocate "
                      "new ones." % assigner_id)
             if CONF.volume.get_fcp_pair_with_same_index:
@@ -587,13 +603,14 @@ class FCPManager(object):
             LOG.info("allocated %s fcp for %s assigner" %
                       (available_list, assigner_id))
         else:
+            # reuse the old ones if fcp_list is not empty
             LOG.info("Found allocated fcps %s for %s, will reuse them."
                      % (fcp_list, assigner_id))
             path_count = self.db.get_path_count()
-            if len(fcp_list) < path_count:
+            if len(fcp_list) != path_count:
                 # TODO: handle the case when len(fcp_list) < multipath_count
                 LOG.warning("FCPs assigned to %s includes %s, "
-                            "it is less than the path count: %s." %
+                            "it is not equal to the path count: %s." %
                             (assigner_id, fcp_list, path_count))
             # we got it from db, let's reuse it
             for old_fcp in fcp_list:
@@ -854,7 +871,7 @@ class FCPVolumeManager(object):
         # init fcp pool
         self.fcp_mgr.init_fcp(assigner_id)
         # fcp = self.fcp_mgr.find_and_reserve_fcp(assigner_id)
-        fcp_list = self.fcp_mgr.get_available_fcp(assigner_id)
+        fcp_list = self.fcp_mgr.get_available_fcp(assigner_id, reserve)
         if not fcp_list:
             errmsg = "No available FCP device found."
             LOG.error(errmsg)
