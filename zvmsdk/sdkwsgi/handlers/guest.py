@@ -245,7 +245,8 @@ class VMAction(object):
 
     @validation.schema(guest.start)
     def start(self, userid, body):
-        info = self.client.send_request('guest_start', userid)
+        timeout = body.get('timeout', 0)
+        info = self.client.send_request('guest_start', userid, timeout)
 
         return info
 
