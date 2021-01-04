@@ -497,7 +497,11 @@ function mount_boot_partition {
     while true
     do
         eval $(lsblk "${DEST_DEV}" --output LABEL,NAME --pairs | grep 'LABEL="boot' | tr ' ' '\n' | tail -n 1)
-        mount "/dev/${NAME}" "$mountpoint"
+        if [[ ${NAME} =~ "mpath" ]]; then
+            mount "/dev/mapper/${NAME}" "$mountpoint"
+        else
+            mount "/dev/${NAME}" "$mountpoint"
+        fi
         RETCODE=$?
         if [[ $RETCODE -ne 0 ]]; then
             if [[ $retry -lt 30 ]]; then
