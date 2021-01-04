@@ -209,6 +209,16 @@ SMAPI servers.
 
 The length of namelist must no longer than 64.
 '''),
+    Opt('swap_force_mdisk',
+        section='zvm',
+        default=False,
+        help='''
+For swap disk to create from mdisk instead of vdisk.
+In boot from volume case, there might be no disk pool at all, then
+the only choice is to use vdisk (or using FCP LUN which is complicated),
+if customer doesn't want vdisk, then set this value to `True` so
+VDISK will not be used and in turn it will fail check.
+'''),
     Opt('remotehost_sshd_port',
         section='zvm',
         default='22',
