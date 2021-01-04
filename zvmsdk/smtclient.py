@@ -2207,6 +2207,12 @@ class SMTClient(object):
                 LOG.warning("The guest %s deleted with 596/6831" % userid)
                 return
 
+            # ignore delete VM with VDISK format error
+            # DirMaint does not support formatting TDISK or VDISK extents.
+            if err.results['rc'] == 596 and err.results['rs'] == 3543:
+                LOG.debug("The guest %s deleted with 596/3543" % userid)
+                return
+
             msg = "SMT error: %s" % err.format_message()
             raise exception.SDKSMTRequestFailed(err.results, msg)
 
