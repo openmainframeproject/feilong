@@ -288,18 +288,18 @@ function refreshZIPL {
   #   None
   local devNode=$1
 
+  if [[ $skipzipl = 'YES'  ]]; then
+    # this is the part of return info for upper layer(smtclient)
+    inform "RESULT PATHS: $valid_paths_str"
+    return
+  fi
+
   inform "Begin to refreshZIPL."
 
   if [[ ! -e "$devNode" ]]; then
     printError "devNode ${devNode} doesn't exist. Get fcps: ${fcps[*]} and wwpns: ${wwpns[*]}"
     printLogs
     exit 6
-  fi
-
-  if [[ $skipzipl = 'YES'  ]]; then
-    # this is the part of return info for upper layer(smtclient)
-    inform "RESULT PATHS: $valid_paths_str"
-    return
   fi
 
   # Create a mount dir.
