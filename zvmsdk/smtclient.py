@@ -51,6 +51,8 @@ LOG = log.LOG
 
 _LOCK = threading.Lock()
 CHUNKSIZE = 4096
+# make maximum reserved memory value as 248G, 253952M
+MAX_STOR_RESERVED = 253952
 
 _SMT_CLIENT = None
 
@@ -3679,6 +3681,10 @@ class SMTClient(object):
             # get the new reserved memory size
             new_reserved = max_mem - size
 
+            # when new reserved memory value > 248G, make is as 248G
+            # otherwise RHEL can't start
+            if new_reserved > MAX_STOR_RESERVED:
+                new_reserved = MAX_STOR_RESERVED
             # prepare the new user entry content
             entry_str = ""
             for ent in user_direct:
@@ -3790,6 +3796,18 @@ class SMTClient(object):
                                              userid=userid,
                                              active=active_size,
                                              req=size)
+        # The maximum increased memory size in one live resizing can't
+        # exceed 248G
+        increase_size = size - active_size
+        if increase_size > MAX_STOR_RESERVED:
+            LOG.error("Live memory resize for guest '%s' cann't be done. "
+                      "The memory size to be increased: '%im' is greater "
+                      " than the maximum reserved memory size: '%im'." %
+                      (userid, increase_size, MAX_STOR_RESERVED))
+            raise exception.SDKConflictError(modID='guest', rs=21,
+                                             userid=userid,
+                                             inc=increase_size,
+                                             max=MAX_STOR_RESERVED)
 
         # Static resize memory. (increase/decrease memory from user directory)
         (action, defined_mem, max_mem,
@@ -3806,7 +3824,6 @@ class SMTClient(object):
             return
         else:
             # Do live resize. update memory size
-            increase_size = size - active_size
             # Step1: Define new standby storage
             cmd_str = ("vmcp def storage standby %sM" % increase_size)
             try:

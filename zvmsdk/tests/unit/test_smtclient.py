@@ -3386,6 +3386,34 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, '_get_defined_memory')
     @mock.patch.object(smtclient.SMTClient, '_lock_user_direct')
     @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
+    def test_resize_memory_max_stor_reserved(self, replace_def,
+                                             lock_def, get_def):
+        userid = 'testuid'
+        size = '4096M'
+        sample_definition = [u'USER TESTUID LBYONLY 1024M 256G G',
+                             u'INCLUDE OSDFLT',
+                             u'COMMAND DEF STOR RESERVED 253952M',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_def.return_value = (1024, 262144, 253952, sample_definition)
+        (action, defined_mem, max_mem, user_direct) = \
+            self._smtclient.resize_memory(userid, size)
+        self.assertEqual(action, 1)
+        get_def.assert_called_once_with(userid)
+        lock_def.assert_called_once_with(userid)
+        new_entry = ("USER TESTUID LBYONLY 4096M 256G G\n"
+                     "INCLUDE OSDFLT\n"
+                     "COMMAND DEF STOR RESERVED 253952M\n"
+                     "CPU 00 BASE\n"
+                     "IPL 0100\n"
+                     "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
+        replace_def.assert_called_once_with(userid, new_entry)
+
+    @mock.patch.object(smtclient.SMTClient, '_get_defined_memory')
+    @mock.patch.object(smtclient.SMTClient, '_lock_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
     def test_resize_memory_lock_failed(self, replace_def, lock_def, get_def):
         userid = 'testuid'
         size = '2g'
@@ -3665,6 +3693,28 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                    mock.call(userid, online_mem_cmd),
                                    mock.call(userid, revert_standby_cmd)])
         revert.assert_called_once_with(userid, sample_direct)
+
+    @mock.patch.object(smtclient.SMTClient, '_get_active_memory')
+    @mock.patch.object(smtclient.SMTClient, 'resize_memory')
+    @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
+    def test_live_resize_memory_exceed_max_stor_reserved(self, exec_cmd,
+                                                         resize_mem,
+                                                         get_active_mem):
+        userid = 'testuid'
+        req_mem = "252g"
+        get_active_mem.return_value = 2048
+        sample_direct = [u'USER TESTUID LBYONLY 258048M 256G G',
+                         u'INCLUDE OSDFLT',
+                         u'COMMAND DEF STOR RESERVED 4096M',
+                         u'CPU 00 BASE',
+                         u'IPL 0100',
+                         u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                         u'']
+        resize_mem.return_value = (1, 258048, 262144, sample_direct)
+        self.assertRaises(exception.SDKConflictError,
+                          self._smtclient.live_resize_memory, userid,
+                          req_mem)
+        resize_mem.assert_not_called()
 
     def test_guest_deploy_rhcos_no_ignition(self):
         userid = 'testuid'
