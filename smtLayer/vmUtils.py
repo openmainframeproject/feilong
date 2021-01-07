@@ -452,7 +452,7 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
         # Delete the existing partition in case the disk already
         # has a partition in it.
         cmd = "sudo /sbin/fdisk " + device + " << EOF\nd\nw\nEOF"
-        rh.printSysLog("Invoking: sudo /sbin/fdsik " + device +
+        rh.printSysLog("Invoking: sudo /sbin/fdisk " + device +
             " << EOF\\nd\\nw\\nEOF ")
         try:
             out = subprocess.check_output(cmd,

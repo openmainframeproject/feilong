@@ -314,6 +314,10 @@ errors = {
                   20: ("Failed to resize memory of guest: '%(userid)s', "
                       "error: the requested memory size: '%(req)im' exceeds "
                       "the maximum memory size defined: '%(max)im'."),
+                  21: ("Failed to live resize memory of guest: %(userid)s, "
+                      "error: the memory size to be increased: '%(inc)im' "
+                      "is greater than the maximum reserved memory size: "
+                      "'%(max)im'."),
                   },
                  "The operated object status conflict"
                  ],

@@ -23,6 +23,8 @@ from smtLayer.vmUtils import invokeSMCLI
 
 modId = 'MVM'
 version = "1.0.0"
+# make maximum reserved memory value as 248G, 253952M
+MAX_STOR_RESERVED = 253952
 
 """
 List of subfunction handlers.
@@ -457,6 +459,11 @@ def getReservedMemSize(rh, mem, maxMem):
     # So we will use 'M' as suffix unless the gap size exceeds 9999999
     # then convert to Gb.
     gapSize = maxMemMb - memMb
+
+    # make max reserved memory value as 248G
+    if gapSize > MAX_STOR_RESERVED:
+        gapSize = MAX_STOR_RESERVED
+
     if gapSize > 9999999:
         gapSize = gapSize / 1024
         gap = "%iG" % gapSize
