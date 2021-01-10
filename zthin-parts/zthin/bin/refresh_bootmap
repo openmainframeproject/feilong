@@ -225,6 +225,9 @@ function printLogs {
   # ls /dev/disk/by-path
   disk_by_path_folder=$(ls /dev/disk/by-path/)
   inform "/dev/disk/by-path/ folder content: ${disk_by_path_folder}."
+  # ls /dev/disk/by-id
+  disk_by_id_folder=$(ls /dev/disk/by-id/)
+  inform "/dev/disk/by-id/ folder content: ${disk_by_id_folder}."
   # multipath -ll
   multipath_output=$(multipath -ll 2>&1)
   inform "multipath output: ${multipath_output}."
@@ -297,9 +300,23 @@ function refreshZIPL {
   inform "Begin to refreshZIPL."
 
   if [[ ! -e "$devNode" ]]; then
-    printError "devNode ${devNode} doesn't exist. Get fcps: ${fcps[*]} and wwpns: ${wwpns[*]}"
-    printLogs
-    exit 6
+    inform "devNode file ${devNode} not exist yet. Retrying..."
+    sleepTimes=".001 .01 .1 .5 1 2 3 5 8 15 22 34 60 90 120"
+    # retry, while waiting various durations
+    for seconds in $sleepTimes; do
+      sleep $seconds
+      inform "Retrying with interval as ${seconds} seconds"
+      if [[ -e "$devNode" ]]; then
+        # successful - leave loop
+        break
+      fi
+    done
+    # print error log if retry fails
+    if [[ ! -e "$devNode" ]]; then
+      printError "devNode ${devNode} doesn't exist. Get fcps: ${fcps[*]} and wwpns: ${wwpns[*]}"
+      printLogs
+      exit 6
+    fi
   fi
 
   # Create a mount dir.
