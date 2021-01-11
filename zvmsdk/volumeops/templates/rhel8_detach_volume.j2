@@ -45,9 +45,9 @@ fi
 
 echo "exit code for multipath -f: $exit_code"
 # if above code didn't succeed, exit now.
-if [[ $exit_code != 0 ]]; then
-    exit $exit_code
-fi
+#if [[ $exit_code != 0 ]]; then
+#    exit $exit_code
+#fi
 
 # flush IO for devices
 RealPath=`readlink -f /dev/disk/by-path/$SourceDevice`
