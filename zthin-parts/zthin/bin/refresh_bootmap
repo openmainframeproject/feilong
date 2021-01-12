@@ -80,6 +80,35 @@ function cleanup_fcpdevices {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
   # @Description:
+  inform "Finish disconnecting FCPs."
+  inform "Begin to refresh multipath bindings."
+  # Don't need to judge if the multipath_enabled exist,
+  # if it doesn't exist, the $multipath_enabled will be None.
+  if [[ $multipath_enabled == 1 ]]; then
+    inform "Cleaning up multipath bindings and wwids."
+    # delete the wwid and refresh multipath map
+    map_name=$(multipath -l $wwid -v 1)
+    rc=$?
+    if [[ ( $rc -eq 0 ) && ( "$map_name" != "" ) ]]; then
+        inform "multipath wwid: $wwid, map name: $map_name."
+        wwid_out=`multipath -w $map_name 2>&1`
+        rc1=$?
+        flush_out=`multipath -f $map_name 2>&1`
+        rc2=$?
+        if [[ ( $rc1 -ne 0 ) || ( $rc2 -ne 0 ) ]]; then
+            inform "Failed to cleanup $map_name. wwid rc1: $rc1, output: $wwid_out. 
+            flush rc2: $rc2, output: $flush_out."
+        else
+            inform "multipath $map_name flushed successfully."
+        fi
+    else
+        inform "Failed to get the multipath map name or map name is null for wwid: $wwid. rc is $rc."
+    fi
+    if [[ -f /etc/multipath/bindings ]]; then
+        sed -i "/$wwid/d" /etc/multipath/bindings
+    fi
+  fi
+  inform "Finish refreshing multipath bindings."
   # Disconnect all FCPs
   inform "Begin to disconnect FCPs"
   for i in "${!fcps[@]}"
@@ -101,19 +130,6 @@ function cleanup_fcpdevices {
       done
     fi
   done
-  inform "Finish disconnecting FCPs."
-  inform "Begin to refresh multipath bindings."
-  # Don't need to judge if the multipath_enabled exist,
-  # if it doesn't exist, the $multipath_enabled will be None.
-  if [[ $multipath_enabled == 1 ]]; then
-    inform "Cleaning up multipath bindings and wwids."
-    # delete the wwid and refresh multipath map
-    multipath -F -W 1>/dev/null
-    if [[ -f /etc/multipath/bindings ]]; then
-        sed -i "/$wwid/d" /etc/multipath/bindings
-    fi
-  fi
-  inform "Finish refreshing multipath bindings."
 } #cleanup_fcpdevices
 
 function printCMDExamples {
