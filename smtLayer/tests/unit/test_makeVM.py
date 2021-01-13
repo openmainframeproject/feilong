@@ -93,3 +93,37 @@ class SMTMakeVMTestCase(base.SMTTestCase):
         makeVM.createVM(rh)
         write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\nCPU 00 BASE\n'
                                     b'MDISK 0102 FB-512 V-DISK 524288 MWV\n')
+
+    @mock.patch("os.write")
+    def test_create_VM_STOR_RESERVED_positive(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1G', 'maxMemSize': '4G',
+                 'privClasses': 'G', 'setReservedMem': ''}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1G 4G G\nCPU 00 BASE\n'
+                                    b'COMMAND DEF STOR RESERVED 3072M\n')
+
+    @mock.patch("os.write")
+    def test_create_VM_STOR_RESERVED_0M(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1G', 'maxMemSize': '1G',
+                 'privClasses': 'G', 'setReservedMem': ''}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\nCPU 00 BASE\n'
+                                    b'COMMAND DEF STOR RESERVED 0M\n')
+
+    @mock.patch("os.write")
+    def test_create_VM_STOR_RESERVED_0M_diff_unit(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1024M', 'maxMemSize': '1G',
+                 'privClasses': 'G', 'setReservedMem': ''}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1024M 1G G\n'
+                                    b'CPU 00 BASE\n'
+                                    b'COMMAND DEF STOR RESERVED 0M\n')
