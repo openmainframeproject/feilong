@@ -1323,7 +1323,32 @@ function cleanup {
       rm -rf /tmp/${userID}
     fi
   else
+    multipath_enabled=0
+    service_output=`systemctl status multipathd | grep "active (running)"`
+    if [[ $? -eq 0 ]]; then
+      inform "multipathd service is active and running."
+      multipath_enabled=1
+    fi
+
+    if [[ $multipath_enabled == 1 ]]; then
+      fcp_disk_path=/dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun}
+      wwid=`/usr/lib/udev/scsi_id --whitelisted ${fcp_disk_path} 2> /dev/null`
+      map_name=$(multipath -l $wwid -v 1)
+
+      inform "Cleaning up multipath bindings and wwids: ${map_name} ${wwid}"
+      # delete the wwid and refresh multipath map
+      multipath -w ${map_name} 1>/dev/null
+      multipath -f ${map_name} 1>/dev/null
+      if [[ -f /etc/multipath/bindings ]]; then
+        sed -i "/${wwid}/d" /etc/multipath/bindings
+      fi
+      inform "Finish refreshing multipath bindings: ${fcp_disk_path}"
+    fi
+
+    # disconnect FCP
     disconnectFcp ${fcpChannel} ${wwpn} ${lun}
+
+
     if [[ $diskType ]]; then
       rm -rf /tmp/${fcpChannel}
     fi
