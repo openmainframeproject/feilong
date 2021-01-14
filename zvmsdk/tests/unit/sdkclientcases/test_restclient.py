@@ -498,8 +498,8 @@ class RESTClientTestCase(unittest.TestCase):
         url = '/guests/%s/nic/%s' % (self.fake_userid, '123')
         body = {'info': {'couple': True,
                          'vswitch': 'vswitch1',
-                         'active': False,
-                         'vlan_id': 1234}}
+                         'vlan_id': 1234,
+                         'active': False}}
         body = json.dumps(body)
         header = self.headers
         full_uri = self.base_url + url
@@ -507,7 +507,7 @@ class RESTClientTestCase(unittest.TestCase):
         get_token.return_value = self._tmp_token()
 
         self.client.call("guest_nic_couple_to_vswitch", self.fake_userid,
-                         '123', 'vswitch1', active=False, vlan_id=1234)
+                         '123', 'vswitch1', vlan_id=1234, active=False)
         request.assert_called_with(method, full_uri,
                                    data=body, headers=header,
                                    verify=False)
