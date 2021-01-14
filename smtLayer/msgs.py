@@ -278,7 +278,7 @@ msg = {
         # UserResp: Correct the disk size to specify a valid value
         #   and reissue the command.
     '0205': [{'overallRC': 4, 'rc': 4, 'rs': 205},
-            "ULT%s0204E memory size did not end with suffix 'G' or 'M'.",
+            "ULT%s0205E memory size did not end with suffix 'G' or 'M'.",
             ('MVM')],
         # Explain: An error was encountered while handling memory size.
         #   The size did not end with a valid magnitude character
@@ -287,7 +287,7 @@ msg = {
         # UserResp: Correct the memory size to specify a valid value
         #   and reissue the command.
     '0206': [{'overallRC': 4, 'rc': 4, 'rs': 206},
-            "ULT%s0204E Max memory size %s specified is less than " +
+            "ULT%s0206E Max memory size %s specified is less than " +
             "initial memory size %s.",
             ('MVM', 'MAX_MEM_SIZE', 'INIT_MEM_SIZE')],
         # Explain: An error was encountered while handling memory size.
@@ -296,7 +296,15 @@ msg = {
         # SysAct: Processing of the subfunction terminates.
         # UserResp: Correct the memory size to specify a valid value
         #   and reissue the command.
-    # 0207-0299: Available
+    '0207': [{'overallRC': 4, 'rc': 4, 'rs': 207},
+            "ULT%s0207E VDISK Size (swap disk) is greater than 2G.",
+            ('MVM')],
+        # Explain: An error was encountered while handling swap disk
+        #   The swap disk size can't be greater than 2G
+        # SysAct: Processing of the subfunction terminates.
+        # UserResp: Correct the swap size to specify a valid value
+        #   and reissue the command.
+    # 0208-0299: Available
 
     # SMCLI and SMAPI related messages.
     '0300': [{'overallRC': 8},    # dict is not used.

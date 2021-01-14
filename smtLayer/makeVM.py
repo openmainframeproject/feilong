@@ -25,6 +25,8 @@ modId = 'MVM'
 version = "1.0.0"
 # make maximum reserved memory value as 248G, 253952M
 MAX_STOR_RESERVED = 253952
+# max vidks blocks can't exceed 4194296
+MAX_VDISK_BLOCKS = 4194296
 
 """
 List of subfunction handlers.
@@ -170,6 +172,22 @@ def createVM(rh):
             blocks = int(sizeUpper[0:len(sizeUpper) - 1]) * 2048
         else:
             blocks = int(sizeUpper[0:len(sizeUpper) - 1]) * 2097152
+
+        if blocks > 4194304:
+            # not support exceed 2G disk size
+            msg = msgs.msg['0207'][1] % (modId)
+            rh.printLn("ES", msg)
+            rh.updateResults(msgs.msg['0207'][0])
+            rh.printSysLog("Exit makeVM.createVM, rc: " +
+                           str(rh.results['overallRC']))
+            return rh.results['overallRC']
+
+        # https://www.ibm.com/support/knowledgecenter/SSB27U_6.4.0/
+        # com.ibm.zvm.v640.hcpb7/defvdsk.htm#defvdsk
+        # the maximum number of VDISK blocks is 4194296
+        if blocks > MAX_VDISK_BLOCKS:
+            blocks = MAX_VDISK_BLOCKS
+
         dirLines.append("MDISK %s FB-512 V-DISK %s MWV" % (v[0], blocks))
 
     # Construct the temporary file for the USER entry.
