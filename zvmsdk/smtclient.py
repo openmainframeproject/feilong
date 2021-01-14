@@ -639,6 +639,18 @@ class SMTClient(object):
                         errmsg = ("%s must has 'M' or 'G' suffix" % sizeUpper)
                         raise exception.SDKInvalidInputFormat(msg=errmsg)
 
+                    if sizeUnit == 'M':
+                        size = int(sizeUpper[:-1])
+                        if size > 2048:
+                            errmsg = ("%s is great than 2048M" % sizeUpper)
+                            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+                    if sizeUnit == 'G':
+                        size = int(sizeUpper[:-1])
+                        if size > 2:
+                            errmsg = ("%s is great than 2G" % sizeUpper)
+                            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
                     rd += ' --vdisk %s:%s' % (vd, sizeUpper)
                     vdisk = disk
 

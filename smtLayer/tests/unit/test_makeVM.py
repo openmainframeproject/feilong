@@ -84,6 +84,38 @@ class SMTMakeVMTestCase(base.SMTTestCase):
                                     b'MDISK 0102 FB-512 V-DISK 2097152 MWV\n')
 
     @mock.patch("os.write")
+    def test_create_VM_swap_2G(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1G', 'maxMemSize': '1G',
+                 'privClasses': 'G', 'vdisk': '0102:2G'}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\nCPU 00 BASE\n'
+                                    b'MDISK 0102 FB-512 V-DISK 4194296 MWV\n')
+
+    @mock.patch("os.write")
+    def test_create_VM_swap_2048M(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1G', 'maxMemSize': '1G',
+                 'privClasses': 'G', 'vdisk': '0102:2048M'}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\nCPU 00 BASE\n'
+                                    b'MDISK 0102 FB-512 V-DISK 4194296 MWV\n')
+
+    @mock.patch("os.write")
+    def test_create_VM_swap_4096M(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1G', 'maxMemSize': '1G',
+                 'privClasses': 'G', 'vdisk': '0102:4096M'}
+        rh.parms = parms
+        rs = makeVM.createVM(rh)
+        self.assertEqual(4, rs)
+
+    @mock.patch("os.write")
     def test_create_VM_swap_256M(self, write):
         rh = ReqHandle.ReqHandle(captureLogs=False,
                                  smt=mock.Mock())
