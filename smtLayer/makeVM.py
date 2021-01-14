@@ -25,6 +25,8 @@ modId = 'MVM'
 version = "1.0.0"
 # make maximum reserved memory value as 248G, 253952M
 MAX_STOR_RESERVED = 253952
+# max vidks blocks can't exceed 4194296
+MAX_VDISK_BLOCKS = 4194296
 
 """
 List of subfunction handlers.
@@ -132,14 +134,19 @@ def createVM(rh):
 
     priMem = rh.parms['priMemSize'].upper()
     maxMem = rh.parms['maxMemSize'].upper()
-    if 'setReservedMem' in rh.parms and (priMem != maxMem):
+    if 'setReservedMem' in rh.parms:
         reservedSize = getReservedMemSize(rh, priMem, maxMem)
         if rh.results['overallRC'] != 0:
             rh.printSysLog("Exit makeVM.createVM, rc: " +
                    str(rh.results['overallRC']))
             return rh.results['overallRC']
-        if reservedSize != '0M':
-            dirLines.append("COMMAND DEF STOR RESERVED %s" % reservedSize)
+        # Even reservedSize is 0M, still write the line "COMMAND DEF
+        # STOR RESERVED 0M" in direct entry, in case cold resize of
+        # memory decreases the defined memory, then reserved memory
+        # size would be > 0, this line in direct entry need be updated.
+        # If no such line defined in user direct, resizing would report
+        # error due to it can't get the original reserved memory value.
+        dirLines.append("COMMAND DEF STOR RESERVED %s" % reservedSize)
 
     if 'loadportname' in rh.parms:
         wwpn = rh.parms['loadportname'].replace("0x", "")
@@ -165,6 +172,22 @@ def createVM(rh):
             blocks = int(sizeUpper[0:len(sizeUpper) - 1]) * 2048
         else:
             blocks = int(sizeUpper[0:len(sizeUpper) - 1]) * 2097152
+
+        if blocks > 4194304:
+            # not support exceed 2G disk size
+            msg = msgs.msg['0207'][1] % (modId)
+            rh.printLn("ES", msg)
+            rh.updateResults(msgs.msg['0207'][0])
+            rh.printSysLog("Exit makeVM.createVM, rc: " +
+                           str(rh.results['overallRC']))
+            return rh.results['overallRC']
+
+        # https://www.ibm.com/support/knowledgecenter/SSB27U_6.4.0/
+        # com.ibm.zvm.v640.hcpb7/defvdsk.htm#defvdsk
+        # the maximum number of VDISK blocks is 4194296
+        if blocks > MAX_VDISK_BLOCKS:
+            blocks = MAX_VDISK_BLOCKS
+
         dirLines.append("MDISK %s FB-512 V-DISK %s MWV" % (v[0], blocks))
 
     # Construct the temporary file for the USER entry.

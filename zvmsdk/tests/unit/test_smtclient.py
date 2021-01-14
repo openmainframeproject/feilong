@@ -279,6 +279,104 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
     @mock.patch.object(smtclient.SMTClient, '_request')
     @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_swap_no_diskpool_2048M(self, add_guest, request,
+                                             add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '2048M',
+                      'format': 'swap'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', None)
+        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--logonby "lbyuser1 lbyuser2" --vdisk 0100:2048M')
+        r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
+                                      max_cpu, max_mem, '', '', '', [], {})
+        request.assert_called_with(rd)
+        add_mdisks.assert_not_called()
+        add_guest.assert_called_with(user_id)
+        expected = [{'size': '2048M', 'format': 'swap', 'vdev': '0100'}]
+        self.assertEqual(expected, r)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_swap_no_diskpool_2G(self, add_guest, request,
+                                             add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '2G',
+                      'format': 'swap'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', None)
+        rd = ('makevm fakeuser directory LBYONLY 1024m G --cpus 2 '
+              '--profile osdflt --maxCPU 10 --maxMemSize 4G --setReservedMem '
+              '--logonby "lbyuser1 lbyuser2" --vdisk 0100:2G')
+        r = self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
+                                      max_cpu, max_mem, '', '', '', [], {})
+        request.assert_called_with(rd)
+        add_mdisks.assert_not_called()
+        add_guest.assert_called_with(user_id)
+        expected = [{'size': '2G', 'format': 'swap', 'vdev': '0100'}]
+        self.assertEqual(expected, r)
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_swap_no_diskpool_4G(self, add_guest, request,
+                                             add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '4G',
+                      'format': 'swap'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', None)
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self._smtclient.create_vm, user_id, cpu, memory,
+                          disk_list, profile, max_cpu, max_mem,
+                          '', '', '', [], {})
+        add_mdisks.assert_not_called()
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
+    def test_create_vm_swap_no_diskpool_4096M(self, add_guest, request,
+                                             add_mdisks):
+        user_id = 'fakeuser'
+        cpu = 2
+        memory = 1024
+        disk_list = [{'size': '4096M',
+                      'format': 'swap'}]
+        profile = 'osdflt'
+        max_cpu = 10
+        max_mem = '4G'
+        base.set_conf('zvm', 'default_admin_userid', 'lbyuser1 lbyuser2')
+        base.set_conf('zvm', 'user_root_vdev', '0100')
+        base.set_conf('zvm', 'disk_pool', None)
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self._smtclient.create_vm, user_id, cpu, memory,
+                          disk_list, profile, max_cpu, max_mem,
+                          '', '', '', [], {})
+        add_mdisks.assert_not_called()
+
+    @mock.patch.object(smtclient.SMTClient, 'add_mdisks')
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(database.GuestDbOperator, 'add_guest')
     def test_create_vm_root_no_diskpool_no_disk(self, add_guest, request,
                                                 add_mdisks):
         user_id = 'fakeuser'
