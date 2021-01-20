@@ -808,7 +808,8 @@ class FCPVolumeManager(object):
                 with zvmutils.ignore_errors():
                     new = (connections == 0)
                     self._add_disk(fcp, assigner_id, target_wwpns, target_lun,
-                                   multipath, os_version, mount_point, new)
+                                   multipath, os_version, mount_point, new,
+                                   need_restart)
                 raise exception.SDKBaseException(msg=errmsg)
 
         # Unreserved fcp device after undedicate all FCP devices
