@@ -53,23 +53,24 @@ class SMTMakeVMTestCase(base.SMTTestCase):
         self.assertEqual(gap, '0M')
         self.assertEqual(rh.results['overallRC'], 0)
 
+    # default maximum reserved memory is 128G=131072M
     def test_getReservedMemSize_max_reserved(self):
         rh = ReqHandle.ReqHandle(captureLogs=False,
                                  smt=mock.Mock())
         gap = makeVM.getReservedMemSize(rh, '512m', '256G')
-        self.assertEqual(gap, '253952M')
+        self.assertEqual(gap, '131072M')
         self.assertEqual(rh.results['overallRC'], 0)
 
-    # As maxmimum reserved memory is 248G=253952M,
+    # As default maximum reserved memory is 128G,
     # which can't exceed 9999999M, so this case will
-    # return 253952M. If future the 248G limit is not
-    # there, recover this case.
+    # return 131072M. If future the maximum reserved
+    # memory limit is not there, recover this case.
     def test_getReservedMemSize_gap_G(self):
         rh = ReqHandle.ReqHandle(captureLogs=False,
                                  smt=mock.Mock())
         gap = makeVM.getReservedMemSize(rh, '512m', '9999G')
         # self.assertEqual(gap, '9998G')
-        self.assertEqual(gap, '253952M')
+        self.assertEqual(gap, '131072M')
         self.assertEqual(rh.results['overallRC'], 0)
 
     @mock.patch("os.write")

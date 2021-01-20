@@ -118,8 +118,9 @@
 4;1;4;202;ULTGUT0202E NUM_BLOCKS is not an integer size of blocks.
 4;1;4;203;ULTGUT0203E Failed to convert DISK_SIZE to a number of cylinders.
 4;1;4;204;ULTGUT0204E DISK_SIZE is not an integer size of cylinders.
-4;1;4;205;ULTMVM0204E memory size did not end with suffix 'G' or 'M'.
-4;1;4;206;ULTMVM0204E Max memory size MAX_MEM_SIZE specified is less than initial memory size INIT_MEM_SIZE.
+4;1;4;205;ULTMVM0205E memory size did not end with suffix 'G' or 'M'.
+4;1;4;206;ULTMVM0206E Max memory size MAX_MEM_SIZE specified is less than initial memory size INIT_MEM_SIZE.
+4;1;4;207;ULTMVM0207E VDISK Size (swap disk) is greater than 2G.
 4;1;4;400;ULTGUT0400E The worker script SCRIPT_NAME does not exist.
 4;1;7;401;ULTGUT0401E Failed to punch FILE_LOCATION file to guest: USERID, out: OUTPUT
 4;1;5;402;ULTGUT0402E No information was found for the specified pool(s): DISK_POOL

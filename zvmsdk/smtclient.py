@@ -51,8 +51,6 @@ LOG = log.LOG
 
 _LOCK = threading.Lock()
 CHUNKSIZE = 4096
-# make maximum reserved memory value as 248G, 253952M
-MAX_STOR_RESERVED = 253952
 
 _SMT_CLIENT = None
 
@@ -3692,9 +3690,12 @@ class SMTClient(object):
             action = 1
             # get the new reserved memory size
             new_reserved = max_mem - size
+            # get maximum reserved memory value
+            MAX_STOR_RESERVED = int(zvmutils.convert_to_mb(
+                        CONF.zvm.user_default_max_reserved_memory))
 
-            # when new reserved memory value > 248G, make is as 248G
-            # otherwise RHEL can't start
+            # when new reserved memory value > the MAX_STOR_RESERVED,
+            # make is as the MAX_STOR_RESERVED value
             if new_reserved > MAX_STOR_RESERVED:
                 new_reserved = MAX_STOR_RESERVED
             # prepare the new user entry content
@@ -3808,8 +3809,11 @@ class SMTClient(object):
                                              userid=userid,
                                              active=active_size,
                                              req=size)
+        # get maximum reserved memory value
+        MAX_STOR_RESERVED = int(zvmutils.convert_to_mb(
+                        CONF.zvm.user_default_max_reserved_memory))
         # The maximum increased memory size in one live resizing can't
-        # exceed 248G
+        # exceed MAX_STOR_RESERVED
         increase_size = size - active_size
         if increase_size > MAX_STOR_RESERVED:
             LOG.error("Live memory resize for guest '%s' cann't be done. "
