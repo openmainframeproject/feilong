@@ -846,7 +846,7 @@ function deployDiskImage {
         nameserver2='nameserver='${nameserver2}
     fi
     
-    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.zfcp=0.0.$fcpChannel,$wwpn,$lun zfcp.allow_lun_scan=0 rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipConfig $nameserver1 $nameserver2" > /tmp/$fcpChannel/zipl_prm
+    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.zfcp=0.0.$fcpChannel,$wwpn,$lun rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipConfig $nameserver1 $nameserver2" > /tmp/$fcpChannel/zipl_prm
     #Run zipl to update bootloader
     zipl --verbose -p /tmp/$fcpChannel/zipl_prm -i $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*vmlinuz*) -r $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*initramfs*) --target /tmp/$fcpChannel/boot_partition
     if [[ $? -ne 0 ]]; then
