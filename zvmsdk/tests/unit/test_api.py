@@ -138,7 +138,7 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.guest_create(self.userid, vcpus, memory, disk_list,
                               user_profile)
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
-                                          disk_list, user_profile, 32, '64G',
+                                          disk_list, user_profile, 32, '128G',
                                           '', '', '', [], {})
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
@@ -183,7 +183,7 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.guest_create(self.userid, vcpus, memory, disk_list,
                               user_profile)
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
-                                          disk_list, user_profile, 32, '64G',
+                                          disk_list, user_profile, 32, '128G',
                                           '', '', '', [], {})
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_query")

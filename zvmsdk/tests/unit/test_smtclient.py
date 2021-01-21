@@ -3484,18 +3484,80 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, '_get_defined_memory')
     @mock.patch.object(smtclient.SMTClient, '_lock_user_direct')
     @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
-    def test_resize_memory_max_stor_reserved(self, replace_def,
-                                             lock_def, get_def):
+    def test_resize_memory_conf_max_stor_reserved_in_G(self,
+                                            replace_def,
+                                            lock_def, get_def):
         userid = 'testuid'
-        size = '4096M'
-        sample_definition = [u'USER TESTUID LBYONLY 1024M 256G G',
+        size = '32768M'
+        base.set_conf('zvm', 'user_default_max_reserved_memory', '64G')
+        sample_definition = [u'USER TESTUID LBYONLY 65536M 128G G',
                              u'INCLUDE OSDFLT',
-                             u'COMMAND DEF STOR RESERVED 253952M',
+                             u'COMMAND DEF STOR RESERVED 65536M',
                              u'CPU 00 BASE',
                              u'IPL 0100',
                              u'MDISK 0100 3390 5501 5500 OMB1BA MR',
                              u'']
-        get_def.return_value = (1024, 262144, 253952, sample_definition)
+        get_def.return_value = (1024, 131072, 65536, sample_definition)
+        (action, defined_mem, max_mem, user_direct) = \
+            self._smtclient.resize_memory(userid, size)
+        self.assertEqual(action, 1)
+        get_def.assert_called_once_with(userid)
+        lock_def.assert_called_once_with(userid)
+        new_entry = ("USER TESTUID LBYONLY 32768M 128G G\n"
+                     "INCLUDE OSDFLT\n"
+                     "COMMAND DEF STOR RESERVED 65536M\n"
+                     "CPU 00 BASE\n"
+                     "IPL 0100\n"
+                     "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
+        replace_def.assert_called_once_with(userid, new_entry)
+
+    @mock.patch.object(smtclient.SMTClient, '_get_defined_memory')
+    @mock.patch.object(smtclient.SMTClient, '_lock_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
+    def test_resize_memory_conf_max_stor_reserved_in_M(self,
+                                            replace_def,
+                                            lock_def, get_def):
+        userid = 'testuid'
+        size = '32768M'
+        base.set_conf('zvm', 'user_default_max_reserved_memory', '65536M')
+        sample_definition = [u'USER TESTUID LBYONLY 65536M 128G G',
+                             u'INCLUDE OSDFLT',
+                             u'COMMAND DEF STOR RESERVED 65536M',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_def.return_value = (1024, 131072, 65536, sample_definition)
+        (action, defined_mem, max_mem, user_direct) = \
+            self._smtclient.resize_memory(userid, size)
+        self.assertEqual(action, 1)
+        get_def.assert_called_once_with(userid)
+        lock_def.assert_called_once_with(userid)
+        new_entry = ("USER TESTUID LBYONLY 32768M 128G G\n"
+                     "INCLUDE OSDFLT\n"
+                     "COMMAND DEF STOR RESERVED 65536M\n"
+                     "CPU 00 BASE\n"
+                     "IPL 0100\n"
+                     "MDISK 0100 3390 5501 5500 OMB1BA MR\n")
+        replace_def.assert_called_once_with(userid, new_entry)
+
+    @mock.patch.object(smtclient.SMTClient, '_get_defined_memory')
+    @mock.patch.object(smtclient.SMTClient, '_lock_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
+    def test_resize_memory_default_max_stor_reserved(self,
+                                            replace_def,
+                                            lock_def, get_def):
+        userid = 'testuid'
+        size = '4096M'
+        base.set_conf('zvm', 'user_default_max_reserved_memory', '128G')
+        sample_definition = [u'USER TESTUID LBYONLY 1024M 256G G',
+                             u'INCLUDE OSDFLT',
+                             u'COMMAND DEF STOR RESERVED 131072M',
+                             u'CPU 00 BASE',
+                             u'IPL 0100',
+                             u'MDISK 0100 3390 5501 5500 OMB1BA MR',
+                             u'']
+        get_def.return_value = (1024, 262144, 131072, sample_definition)
         (action, defined_mem, max_mem, user_direct) = \
             self._smtclient.resize_memory(userid, size)
         self.assertEqual(action, 1)
@@ -3503,7 +3565,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         lock_def.assert_called_once_with(userid)
         new_entry = ("USER TESTUID LBYONLY 4096M 256G G\n"
                      "INCLUDE OSDFLT\n"
-                     "COMMAND DEF STOR RESERVED 253952M\n"
+                     "COMMAND DEF STOR RESERVED 131072M\n"
                      "CPU 00 BASE\n"
                      "IPL 0100\n"
                      "MDISK 0100 3390 5501 5500 OMB1BA MR\n")

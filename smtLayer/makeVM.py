@@ -21,10 +21,12 @@ from smtLayer import generalUtils
 from smtLayer import msgs
 from smtLayer.vmUtils import invokeSMCLI
 
+from zvmsdk import config
+from zvmsdk import utils as zvmutils
+
 modId = 'MVM'
 version = "1.0.0"
-# make maximum reserved memory value as 248G, 253952M
-MAX_STOR_RESERVED = 253952
+
 # max vidks blocks can't exceed 4194296
 MAX_VDISK_BLOCKS = 4194296
 
@@ -483,7 +485,9 @@ def getReservedMemSize(rh, mem, maxMem):
     # then convert to Gb.
     gapSize = maxMemMb - memMb
 
-    # make max reserved memory value as 248G
+    # get make max reserved memory value
+    MAX_STOR_RESERVED = int(zvmutils.convert_to_mb(
+                        config.CONF.zvm.user_default_max_reserved_memory))
     if gapSize > MAX_STOR_RESERVED:
         gapSize = MAX_STOR_RESERVED
 
