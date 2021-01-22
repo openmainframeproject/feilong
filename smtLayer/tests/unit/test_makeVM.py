@@ -26,7 +26,7 @@ class SMTMakeVMTestCase(base.SMTTestCase):
         rh = mock.Mock()
         rh.results = {'overallRC': 0, 'rc': 0, 'rs': 0}
         gap = makeVM.getReservedMemSize(rh, '1024M', '128g')
-        self.assertEqual(gap, '130048M')
+        self.assertEqual(gap, '65536M')
 
     def test_getReservedMemSize_invalid_suffix(self):
         rh = ReqHandle.ReqHandle(captureLogs=False,
@@ -58,7 +58,7 @@ class SMTMakeVMTestCase(base.SMTTestCase):
         rh = ReqHandle.ReqHandle(captureLogs=False,
                                  smt=mock.Mock())
         gap = makeVM.getReservedMemSize(rh, '512m', '256G')
-        self.assertEqual(gap, '131072M')
+        self.assertEqual(gap, '65536M')
         self.assertEqual(rh.results['overallRC'], 0)
 
     # As default maximum reserved memory is 128G,
@@ -70,7 +70,7 @@ class SMTMakeVMTestCase(base.SMTTestCase):
                                  smt=mock.Mock())
         gap = makeVM.getReservedMemSize(rh, '512m', '9999G')
         # self.assertEqual(gap, '9998G')
-        self.assertEqual(gap, '131072M')
+        self.assertEqual(gap, '65536M')
         self.assertEqual(rh.results['overallRC'], 0)
 
     @mock.patch("os.write")
