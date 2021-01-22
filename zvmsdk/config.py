@@ -188,7 +188,7 @@ The number must be a decimal value between 1 and 64.
 '''),
     Opt('user_default_max_memory',
         section='zvm',
-        default='128G',
+        default='64G',
         help='''
 The default maximum size of memory the user can define.
 This value is used as the default value for maximum memory size when
@@ -201,7 +201,7 @@ The value should be adjusted based on your system capacity.
 '''),
     Opt('user_default_max_reserved_memory',
         section='zvm',
-        default='128G',
+        default='64G',
         help='''
 The default maximum size of reserved memory in a vm's direct entry.
 This value is used as the default value for maximum reserved memory
