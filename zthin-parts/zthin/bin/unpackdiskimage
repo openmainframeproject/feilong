@@ -580,7 +580,7 @@ function deployDiskImage {
           exit 3
         fi
       else
-        printError "Target disk is too small for specified image."
+        printError "Target disk is too small for specified image, required:$targetDiskSize cylinders, given:$diskSize cylinders"
         exit 3
       fi
 
@@ -1011,7 +1011,7 @@ function deployDiskImage {
           exit 3
         fi
       else
-        printError "Target disk is too small for specified image."
+        printError "Target disk is too small for specified image, required:$targetDiskSize blocks, given:$diskSize blocks"
         exit 3
       fi
 
@@ -1097,7 +1097,7 @@ function deployDiskImage {
         exit 3
       fi
     else
-      printError "Target disk is too small for specified image."
+      printError "Target disk is too small for specified image, required:$targetDiskSize bytes, given:$diskSize bytes"
       exit 3
     fi
   } #deployFCPImage{}
