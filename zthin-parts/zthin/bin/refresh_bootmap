@@ -86,6 +86,8 @@ function cleanup_fcpdevices {
   # if it doesn't exist, the $multipath_enabled will be None.
   if [[ $multipath_enabled == 1 ]]; then
     inform "Cleaning up multipath bindings and wwids."
+    multipath_output=$(multipath -ll 2>&1)
+    inform "multipath output: ${multipath_output}."
     # delete the wwid and refresh multipath map
     map_name=$(multipath -l $wwid -v 1)
     rc=$?
@@ -107,6 +109,10 @@ function cleanup_fcpdevices {
     if [[ -f /etc/multipath/bindings ]]; then
         sed -i "/$wwid/d" /etc/multipath/bindings
     fi
+    lszfcp_output=$(lszfcp -HD 2>&1)
+    inform "lszfcp output: ${lszfcp_output}"
+    multipath_output=$(multipath -ll 2>&1)
+    inform "multipath output: ${multipath_output}."
   fi
   inform "Finish refreshing multipath bindings."
   # Disconnect all FCPs
