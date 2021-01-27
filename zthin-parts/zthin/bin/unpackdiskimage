@@ -1336,6 +1336,8 @@ function cleanup {
 
       # discover mpath before flush
       multipath
+      multipath_output=$(multipath -ll 2>&1)
+      inform "multipath output: ${multipath_output}."
       map_name=$(multipath -l $wwid -v 1)
 
       inform "Cleaning up multipath bindings and wwids: ${map_name} ${wwid}"
@@ -1345,6 +1347,10 @@ function cleanup {
       if [[ -f /etc/multipath/bindings ]]; then
         sed -i "/${wwid}/d" /etc/multipath/bindings
       fi
+      lszfcp_output=$(lszfcp -HD 2>&1)
+      inform "lszfcp output: ${lszfcp_output}"
+      multipath_output=$(multipath -ll 2>&1)
+      inform "multipath output: ${multipath_output}."
       inform "Finish refreshing multipath bindings: ${fcp_disk_path}"
     fi
 
