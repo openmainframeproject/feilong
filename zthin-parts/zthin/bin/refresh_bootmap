@@ -95,13 +95,64 @@ function cleanup_fcpdevices {
         inform "multipath wwid: $wwid, map name: $map_name."
         wwid_out=`multipath -w $map_name 2>&1`
         rc1=$?
-        flush_out=`multipath -f $map_name 2>&1`
+        # add retry according to multipath -h:
+        # -R num: number of times to retry removes of in-use devices 
+        flush_out=`multipath -R 3 -f $map_name 2>&1`
         rc2=$?
         if [[ ( $rc1 -ne 0 ) || ( $rc2 -ne 0 ) ]]; then
             inform "Failed to cleanup $map_name. wwid rc1: $rc1, output: $wwid_out. 
             flush rc2: $rc2, output: $flush_out."
         else
             inform "multipath $map_name flushed successfully."
+        fi
+        # cleanup multipath leftover if any
+        if [[ ( $rc2 -ne 0 ) ]]; then
+            inform 'start: clean multipath leftover'
+            cmd_out=$(dmsetup info)
+            inform "dmsetup info output: ${cmd_out}."
+            # check whether any path exists for current multipath device
+            # path_num examples:
+            #   0: if no path
+            #   1: if 1 path exists
+            #   2: if 2 paths exist
+            path_num=$(multipathd show map $map_name json | grep -c '"dev"')
+            # delete paths if any
+            if [[ ( $path_num -ne 0 ) ]]; then
+                # leftover_paths examples:
+                #   sda    : if 1 path exists
+                #   sda sdb: if 2 paths exist
+                leftover_paths=$(multipathd show map $map_name json | awk '/\"dev\"/ {split($3,a,"\""); print a[2]}')
+                inform "leftover_paths output: ${leftover_paths}."
+                for p in ${leftover_paths[@]}
+                do
+                    echo offline > /sys/block/$p/device/state
+                    echo 1 > /sys/block/$p/device/delete
+                    inform 'path $p deleted'
+                done
+            fi
+            # delete multipath device itself
+            # first, try multipath -f. 
+            cmd_out=$(multipath -f $map_name 2>&1)
+            # if multipath device already gone after deleting paths above,
+            # then rc is 0
+            rc=$?
+            inform "multipath -f output: ${cmd_out}."
+            if [[ ( $rc -ne 0 ) ]]; then
+                # second, try dmsetup suspend/remove
+                cmd_out=$(dmsetup suspend $map_name 2>&1)
+                inform "dmsetup suspend output: ${cmd_out}."
+                cmd_out=$(dmsetup remove $map_name -f 2>&1)
+                rc=$?
+                inform "dmsetup remove output: ${cmd_out}."
+                if [[ ( $rc -ne 0 ) ]]; then
+                    # third, try multipath -f again
+                    cmd_out=$(multipath -f $map_name 2>&1)
+                    inform "multipath -f output: ${cmd_out}."
+                fi
+            fi
+            inform 'end: clean multipath leftover'
+            cmd_out=$(dmsetup info)
+            inform "dmsetup info output: ${cmd_out}." 
         fi
     else
         inform "Failed to get the multipath map name or map name is null for wwid: $wwid. rc is $rc."
