@@ -40,7 +40,7 @@ CONF = config.CONF
 LOG = log.LOG
 
 
-def execute(cmd):
+def execute(cmd, timeout=None):
     """ execute command, return rc and output string.
     The cmd argument can be a string or a list composed of
     the command name and each of its argument.
@@ -54,7 +54,8 @@ def execute(cmd):
     output = ""
     try:
         output = subprocess.check_output(cmd, close_fds=True,
-                                         stderr=subprocess.STDOUT)
+                                         stderr=subprocess.STDOUT,
+                                         timeout=timeout)
     except subprocess.CalledProcessError as err:
         rc = err.returncode
         output = err.output
