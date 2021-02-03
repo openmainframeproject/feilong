@@ -792,7 +792,7 @@ class SMTClient(object):
 
         with zvmutils.expect_and_reraise_internal_error(
              modID='refresh_bootmap'):
-            (rc, output) = zvmutils.execute(cmd)
+            (rc, output) = zvmutils.execute(cmd, timeout=600)
         if rc != 0:
             err_msg = ("refresh_bootmap failed with return code: %d." % rc)
             err_output = ""

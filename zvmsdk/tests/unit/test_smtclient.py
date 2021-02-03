@@ -1533,7 +1533,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                '--fcpchannel=5d71',
                                '--wwpn=5005076802100c1b,5005076802200c1b',
                                '--lun=0000000000000000']
-        execute.assert_called_once_with(refresh_bootmap_cmd)
+        execute.assert_called_once_with(refresh_bootmap_cmd, timeout=600)
 
     @mock.patch.object(zvmutils, 'execute')
     def test_refresh_bootmap_return_value_withskip(self, execute):
@@ -1549,7 +1549,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                '--wwpn=5005076802100c1b,5005076802200c1b',
                                '--lun=0000000000000000',
                                '--skipzipl=YES']
-        execute.assert_called_once_with(refresh_bootmap_cmd)
+        execute.assert_called_once_with(refresh_bootmap_cmd, timeout=600)
 
     @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
