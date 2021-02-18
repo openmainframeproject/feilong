@@ -369,8 +369,9 @@ disk_conf = {
 # For ubuntu linux, it will match ubuntuX, ubuntuX.Y, ubuntuX.Y.Z,
 # where X is 16, Y is 01 to 10, Z is 0 to 9, such as ubuntu16.04.3,
 # all case insensitive
-# For red hat cores linux, it will match rhcosX, where X is 4,
-# such as rhcos4, all case insensitive
+# For red hat cores linux, it will match rhcosX, rhcosX.Y and rhcosX.Y.Z,
+# where X is 4, such as rhcos4, rhcos4.6, rhcos4.6.8,
+# all case insensitive
 os_version = {
 'oneOf': [
 {'type': 'string',
@@ -390,7 +391,7 @@ os_version = {
  '^((u|U)(b|B)(u|U)(n|N)(t|T)(u|U))(16|20){1}([.][0-9]{2})?([.][0-9])?$'},
  {'type': 'string',
  'pattern':
- '^((r|R)(h|H)(c|C)(o|O)(s|S))(4){1}([.][0-9])?$'}
+ '^((r|R)(h|H)(c|C)(o|O)(s|S))(4){1}([.][0-9]{1,2})?([.][0-9]{1,2})?$'}
 ]
 }
 
