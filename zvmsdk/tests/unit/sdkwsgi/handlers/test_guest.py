@@ -850,6 +850,250 @@ class HandlersGuestTest(SDKWSGITest):
             vdev,
             active=False)
 
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_create_network_interface_with_correct_rhcos_version(self,
+                                                       mock_interface,
+                                                       mock_userid):
+        os_version = 'rhcos4'
+        guest_networks = [{'ip_addr': '192.168.12.34',
+                           'dns_addr': ['9.1.2.3'],
+                           'gateway_addr': '192.168.95.1',
+                           'cidr': '192.168.95.0/24',
+                           'nic_vdev': '1000',
+                           'mac_addr': '02:00:00:12:34:56'}]
+        bstr = """{"interface": {"os_version": "rhcos4",
+                                 "guest_networks": [
+                                     {"ip_addr": "192.168.12.34",
+                                      "dns_addr": ["9.1.2.3"],
+                                      "gateway_addr": "192.168.95.1",
+                                      "cidr": "192.168.95.0/24",
+                                      "nic_vdev": "1000",
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        guest.guest_create_network_interface(self.req)
+        mock_interface.assert_called_once_with(
+            'guest_create_network_interface',
+            FAKE_USERID,
+            os_version=os_version,
+            guest_networks=guest_networks,
+            active=False)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_create_network_interface_with_correct_rhcos_version_1(self,
+                                                       mock_interface,
+                                                       mock_userid):
+        os_version = 'rhcos4.6'
+        guest_networks = [{'ip_addr': '192.168.12.34',
+                           'dns_addr': ['9.1.2.3'],
+                           'gateway_addr': '192.168.95.1',
+                           'cidr': '192.168.95.0/24',
+                           'nic_vdev': '1000',
+                           'mac_addr': '02:00:00:12:34:56'}]
+        bstr = """{"interface": {"os_version": "rhcos4.6",
+                                 "guest_networks": [
+                                     {"ip_addr": "192.168.12.34",
+                                      "dns_addr": ["9.1.2.3"],
+                                      "gateway_addr": "192.168.95.1",
+                                      "cidr": "192.168.95.0/24",
+                                      "nic_vdev": "1000",
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        guest.guest_create_network_interface(self.req)
+        mock_interface.assert_called_once_with(
+            'guest_create_network_interface',
+            FAKE_USERID,
+            os_version=os_version,
+            guest_networks=guest_networks,
+            active=False)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_create_network_interface_with_correct_rhcos_version_2(self,
+                                                       mock_interface,
+                                                       mock_userid):
+        os_version = 'rhcos4.6.8'
+        guest_networks = [{'ip_addr': '192.168.12.34',
+                           'dns_addr': ['9.1.2.3'],
+                           'gateway_addr': '192.168.95.1',
+                           'cidr': '192.168.95.0/24',
+                           'nic_vdev': '1000',
+                           'mac_addr': '02:00:00:12:34:56'}]
+        bstr = """{"interface": {"os_version": "rhcos4.6.8",
+                                 "guest_networks": [
+                                     {"ip_addr": "192.168.12.34",
+                                      "dns_addr": ["9.1.2.3"],
+                                      "gateway_addr": "192.168.95.1",
+                                      "cidr": "192.168.95.0/24",
+                                      "nic_vdev": "1000",
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        guest.guest_create_network_interface(self.req)
+        mock_interface.assert_called_once_with(
+            'guest_create_network_interface',
+            FAKE_USERID,
+            os_version=os_version,
+            guest_networks=guest_networks,
+            active=False)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_create_network_interface_with_correct_rhcos_version_3(self,
+                                                       mock_interface,
+                                                       mock_userid):
+        os_version = 'rhcos4.11.11'
+        guest_networks = [{'ip_addr': '192.168.12.34',
+                           'dns_addr': ['9.1.2.3'],
+                           'gateway_addr': '192.168.95.1',
+                           'cidr': '192.168.95.0/24',
+                           'nic_vdev': '1000',
+                           'mac_addr': '02:00:00:12:34:56'}]
+        bstr = """{"interface": {"os_version": "rhcos4.11.11",
+                                 "guest_networks": [
+                                     {"ip_addr": "192.168.12.34",
+                                      "dns_addr": ["9.1.2.3"],
+                                      "gateway_addr": "192.168.95.1",
+                                      "cidr": "192.168.95.0/24",
+                                      "nic_vdev": "1000",
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        guest.guest_create_network_interface(self.req)
+        mock_interface.assert_called_once_with(
+            'guest_create_network_interface',
+            FAKE_USERID,
+            os_version=os_version,
+            guest_networks=guest_networks,
+            active=False)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_create_network_interface_with_correct_rhcos_version_4(self,
+                                                       mock_interface,
+                                                       mock_userid):
+        os_version = 'rhcos4.6.11'
+        guest_networks = [{'ip_addr': '192.168.12.34',
+                           'dns_addr': ['9.1.2.3'],
+                           'gateway_addr': '192.168.95.1',
+                           'cidr': '192.168.95.0/24',
+                           'nic_vdev': '1000',
+                           'mac_addr': '02:00:00:12:34:56'}]
+        bstr = """{"interface": {"os_version": "rhcos4.6.11",
+                                 "guest_networks": [
+                                     {"ip_addr": "192.168.12.34",
+                                      "dns_addr": ["9.1.2.3"],
+                                      "gateway_addr": "192.168.95.1",
+                                      "cidr": "192.168.95.0/24",
+                                      "nic_vdev": "1000",
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        guest.guest_create_network_interface(self.req)
+        mock_interface.assert_called_once_with(
+            'guest_create_network_interface',
+            FAKE_USERID,
+            os_version=os_version,
+            guest_networks=guest_networks,
+            active=False)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_create_network_interface_with_wrong_rhcos_version(self,
+                                                       mock_interface,
+                                                       mock_userid):
+        bstr = """{"interface": {"os_version": "rhcos4.",
+                                 "guest_networks": [
+                                     {"ip_addr": "192.168.12.34",
+                                      "dns_addr": ["9.1.2.3"],
+                                      "gateway_addr": "192.168.95.1",
+                                      "cidr": "192.168.95.0/24",
+                                      "nic_vdev": "1000",
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        self.assertRaises(exception.ValidationError,
+                       guest.guest_create_network_interface,
+                       self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_create_network_interface_with_wrong_rhcos_version_1(self,
+                                                       mock_interface,
+                                                       mock_userid):
+        bstr = """{"interface": {"os_version": "rhcos4.a",
+                                 "guest_networks": [
+                                     {"ip_addr": "192.168.12.34",
+                                      "dns_addr": ["9.1.2.3"],
+                                      "gateway_addr": "192.168.95.1",
+                                      "cidr": "192.168.95.0/24",
+                                      "nic_vdev": "1000",
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        self.assertRaises(exception.ValidationError,
+                       guest.guest_create_network_interface,
+                       self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_create_network_interface_with_wrong_rhcos_version_2(self,
+                                                       mock_interface,
+                                                       mock_userid):
+        bstr = """{"interface": {"os_version": "rhcos4.6.a",
+                                 "guest_networks": [
+                                     {"ip_addr": "192.168.12.34",
+                                      "dns_addr": ["9.1.2.3"],
+                                      "gateway_addr": "192.168.95.1",
+                                      "cidr": "192.168.95.0/24",
+                                      "nic_vdev": "1000",
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        self.assertRaises(exception.ValidationError,
+                       guest.guest_create_network_interface,
+                       self.req)
+
+    @mock.patch.object(util, 'wsgi_path_item')
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_create_network_interface_with_wrong_rhcos_version_3(self,
+                                                       mock_interface,
+                                                       mock_userid):
+        bstr = """{"interface": {"os_version": "rhcos4.111.111",
+                                 "guest_networks": [
+                                     {"ip_addr": "192.168.12.34",
+                                      "dns_addr": ["9.1.2.3"],
+                                      "gateway_addr": "192.168.95.1",
+                                      "cidr": "192.168.95.0/24",
+                                      "nic_vdev": "1000",
+                                      "mac_addr": "02:00:00:12:34:56"}]}}"""
+        self.req.body = bstr
+        mock_userid.return_value = FAKE_USERID
+        mock_interface.return_value = ''
+
+        self.assertRaises(exception.ValidationError,
+                       guest.guest_create_network_interface,
+                       self.req)
+
     @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
     def test_guests_get_nic_info(self, mock_interface):
         self.req.GET = {}
