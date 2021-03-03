@@ -451,7 +451,7 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
     if results['overallRC'] == 0 and diskType == "9336":
         # Delete the existing partition in case the disk already
         # has a partition in it.
-        cmd = "sudo /sbin/fdisk " + device + " << EOF\nd\nw\nEOF"
+        cmd = "sudo /sbin/fdisk " + device + " << EOF\ng\nw\nEOF"
         rh.printSysLog("Invoking: sudo /sbin/fdisk " + device +
             " << EOF\\nd\\nw\\nEOF ")
         try:
