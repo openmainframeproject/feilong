@@ -895,6 +895,10 @@ class TestFCPVolumeManager(base.SDKTestCase):
         self.assertRaises(exception.SDKBaseException,
                           self.volumeops.detach,
                           connection_info)
+        mock_add_disk.assert_called_once_with('f83c', 'USER1',
+                                              ['20076D8500005182'], '2222',
+                                              False, 'rhel7', '/dev/sdz', True,
+                                              True)
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")

@@ -580,7 +580,7 @@ function deployDiskImage {
           exit 3
         fi
       else
-        printError "Target disk is too small for specified image."
+        printError "Target disk is too small for specified image, required:$targetDiskSize cylinders, given:$diskSize cylinders"
         exit 3
       fi
 
@@ -846,7 +846,7 @@ function deployDiskImage {
         nameserver2='nameserver='${nameserver2}
     fi
     
-    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.zfcp=0.0.$fcpChannel,$wwpn,$lun zfcp.allow_lun_scan=0 rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipConfig $nameserver1 $nameserver2" > /tmp/$fcpChannel/zipl_prm
+    echo "$(grep options $blsfile | cut -d' ' -f2-) rd.zfcp=0.0.$fcpChannel,$wwpn,$lun rd.znet=qeth,$nicID,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipConfig $nameserver1 $nameserver2" > /tmp/$fcpChannel/zipl_prm
     #Run zipl to update bootloader
     zipl --verbose -p /tmp/$fcpChannel/zipl_prm -i $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*vmlinuz*) -r $(ls /tmp/$fcpChannel/boot_partition/ostree/*/*initramfs*) --target /tmp/$fcpChannel/boot_partition
     if [[ $? -ne 0 ]]; then
@@ -1011,7 +1011,7 @@ function deployDiskImage {
           exit 3
         fi
       else
-        printError "Target disk is too small for specified image."
+        printError "Target disk is too small for specified image, required:$targetDiskSize blocks, given:$diskSize blocks"
         exit 3
       fi
 
@@ -1097,7 +1097,7 @@ function deployDiskImage {
         exit 3
       fi
     else
-      printError "Target disk is too small for specified image."
+      printError "Target disk is too small for specified image, required:$targetDiskSize bytes, given:$diskSize bytes"
       exit 3
     fi
   } #deployFCPImage{}
@@ -1323,7 +1323,41 @@ function cleanup {
       rm -rf /tmp/${userID}
     fi
   else
+    multipath_enabled=0
+    service_output=`systemctl status multipathd | grep "active (running)"`
+    if [[ $? -eq 0 ]]; then
+      inform "multipathd service is active and running."
+      multipath_enabled=1
+    fi
+
+    if [[ $multipath_enabled == 1 ]]; then
+      fcp_disk_path=/dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun}
+      wwid=`/usr/lib/udev/scsi_id --whitelisted ${fcp_disk_path} 2> /dev/null`
+
+      # discover mpath before flush
+      multipath
+      multipath_output=$(multipath -ll 2>&1)
+      inform "multipath output: ${multipath_output}."
+      map_name=$(multipath -l $wwid -v 1)
+
+      inform "Cleaning up multipath bindings and wwids: ${map_name} ${wwid}"
+      # delete the wwid and refresh multipath map
+      multipath -w ${map_name} 1>/dev/null
+      multipath -f ${map_name} 1>/dev/null
+      if [[ -f /etc/multipath/bindings ]]; then
+        sed -i "/${wwid}/d" /etc/multipath/bindings
+      fi
+      lszfcp_output=$(lszfcp -HD 2>&1)
+      inform "lszfcp output: ${lszfcp_output}"
+      multipath_output=$(multipath -ll 2>&1)
+      inform "multipath output: ${multipath_output}."
+      inform "Finish refreshing multipath bindings: ${fcp_disk_path}"
+    fi
+
+    # disconnect FCP
     disconnectFcp ${fcpChannel} ${wwpn} ${lun}
+
+
     if [[ $diskType ]]; then
       rm -rf /tmp/${fcpChannel}
     fi

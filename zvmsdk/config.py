@@ -199,6 +199,19 @@ values such as 4096.8M or 32.5G are not supported.
 
 The value should be adjusted based on your system capacity.
 '''),
+    Opt('user_default_max_reserved_memory',
+        section='zvm',
+        default='64G',
+        help='''
+The default maximum size of reserved memory in a vm's direct entry.
+This value is used as the default value for maximum reserved memory
+size for a guest.
+The value can be specified by 1-4 bits of number suffixed by either
+M (Megabytes) or G (Gigabytes) and the number must be a whole number,
+values such as 4096.8M or 32.5G are not supported.
+
+The value should be adjusted based on your system capacity.
+'''),
     Opt('namelist',
         section='zvm',
         help='''
@@ -633,6 +646,10 @@ class ConfigOpts(object):
                 if (k2 == "user_default_max_memory") and (
                     v2['default'] is not None):
                     self._check_user_default_max_memory(v2['default'])
+                # check user_default_max_reserved_memory
+                if (k2 == "user_default_max_reserved_memory") and (
+                    v2['default'] is not None):
+                    self._check_user_default_max_reserved_memory(v2['default'])
                 # check user_default_max_cpu
                 if (k2 == "user_default_max_cpu") and (
                     v2['default'] is not None):
@@ -650,6 +667,14 @@ class ConfigOpts(object):
         if (suffix not in ['G', 'M']) or (len(size) > 4) or (
             size.strip('0123456789') != ''):
             raise OptFormatError("zvm", "user_default_max_memory", value)
+
+    def _check_user_default_max_reserved_memory(self, value):
+        suffix = value[-1].upper()
+        size = value[:-1]
+        if (suffix not in ['G', 'M']) or (len(size) > 4) or (
+            size.strip('0123456789') != ''):
+            raise OptFormatError("zvm", "user_default_max_reserved_memory",
+                                  value)
 
     def _check_user_default_max_cpu(self, value):
         if (value < 1) or (value > 64):

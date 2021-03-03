@@ -51,8 +51,6 @@ LOG = log.LOG
 
 _LOCK = threading.Lock()
 CHUNKSIZE = 4096
-# make maximum reserved memory value as 248G, 253952M
-MAX_STOR_RESERVED = 253952
 
 _SMT_CLIENT = None
 
@@ -639,6 +637,18 @@ class SMTClient(object):
                         errmsg = ("%s must has 'M' or 'G' suffix" % sizeUpper)
                         raise exception.SDKInvalidInputFormat(msg=errmsg)
 
+                    if sizeUnit == 'M':
+                        size = int(sizeUpper[:-1])
+                        if size > 2048:
+                            errmsg = ("%s is great than 2048M" % sizeUpper)
+                            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+                    if sizeUnit == 'G':
+                        size = int(sizeUpper[:-1])
+                        if size > 2:
+                            errmsg = ("%s is great than 2G" % sizeUpper)
+                            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
                     rd += ' --vdisk %s:%s' % (vd, sizeUpper)
                     vdisk = disk
 
@@ -782,7 +792,7 @@ class SMTClient(object):
 
         with zvmutils.expect_and_reraise_internal_error(
              modID='refresh_bootmap'):
-            (rc, output) = zvmutils.execute(cmd)
+            (rc, output) = zvmutils.execute(cmd, timeout=600)
         if rc != 0:
             err_msg = ("refresh_bootmap failed with return code: %d." % rc)
             err_output = ""
@@ -3680,9 +3690,12 @@ class SMTClient(object):
             action = 1
             # get the new reserved memory size
             new_reserved = max_mem - size
+            # get maximum reserved memory value
+            MAX_STOR_RESERVED = int(zvmutils.convert_to_mb(
+                        CONF.zvm.user_default_max_reserved_memory))
 
-            # when new reserved memory value > 248G, make is as 248G
-            # otherwise RHEL can't start
+            # when new reserved memory value > the MAX_STOR_RESERVED,
+            # make is as the MAX_STOR_RESERVED value
             if new_reserved > MAX_STOR_RESERVED:
                 new_reserved = MAX_STOR_RESERVED
             # prepare the new user entry content
@@ -3796,8 +3809,11 @@ class SMTClient(object):
                                              userid=userid,
                                              active=active_size,
                                              req=size)
+        # get maximum reserved memory value
+        MAX_STOR_RESERVED = int(zvmutils.convert_to_mb(
+                        CONF.zvm.user_default_max_reserved_memory))
         # The maximum increased memory size in one live resizing can't
-        # exceed 248G
+        # exceed MAX_STOR_RESERVED
         increase_size = size - active_size
         if increase_size > MAX_STOR_RESERVED:
             LOG.error("Live memory resize for guest '%s' cann't be done. "

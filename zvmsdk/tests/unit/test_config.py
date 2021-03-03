@@ -52,6 +52,25 @@ class ZVMConfigTestCases(base.SDKTestCase):
         self.assertRaises(config.OptFormatError,
                           CONFOPTS._check_user_default_max_memory, '12345M')
 
+    def test_check_user_default_max_reserved_memory(self):
+        CONFOPTS._check_user_default_max_reserved_memory('30G')
+        CONFOPTS._check_user_default_max_reserved_memory('1234M')
+
+    def test_check_user_default_max_reserved_err1(self):
+        self.assertRaises(config.OptFormatError,
+                          CONFOPTS._check_user_default_max_reserved_memory,
+                          '12.0G')
+
+    def test_check_user_default_max_reserved_memory_err2(self):
+        self.assertRaises(config.OptFormatError,
+                          CONFOPTS._check_user_default_max_reserved_memory,
+                          '12')
+
+    def test_check_user_default_max_reserved_memory_err3(self):
+        self.assertRaises(config.OptFormatError,
+                          CONFOPTS._check_user_default_max_reserved_memory,
+                          '12345M')
+
     def test_check_user_default_max_cpu(self):
         CONFOPTS._check_user_default_max_cpu(1)
 

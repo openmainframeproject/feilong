@@ -17,6 +17,7 @@ import abc
 import re
 import shutil
 import six
+import threading
 import os
 
 from zvmsdk import config
@@ -637,6 +638,7 @@ class FCPVolumeManager(object):
         self.fcp_mgr = FCPManager()
         self.config_api = VolumeConfiguratorAPI()
         self._smtclient = smtclient.get_smtclient()
+        self._lock = threading.RLock()
         self.db = database.FCPDbOperator()
 
     def _dedicate_fcp(self, fcp, assigner_id):
@@ -706,8 +708,14 @@ class FCPVolumeManager(object):
         :param string lun
         :param boolean skipzipl: whether ship zipl, only return physical wwpns
         """
-        return self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun,
-                                                      skipzipl=skipzipl)
+        ret = None
+        with zvmutils.acquire_lock(self._lock):
+            LOG.debug('Enter lock scope of volume_refresh_bootmap.')
+            ret = self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns,
+                                                         lun,
+                                                         skipzipl=skipzipl)
+        LOG.debug('Exit lock of volume_refresh_bootmap with ret %s.' % ret)
+        return ret
 
     def attach(self, connection_info):
         """Attach a volume to a guest
@@ -808,7 +816,8 @@ class FCPVolumeManager(object):
                 with zvmutils.ignore_errors():
                     new = (connections == 0)
                     self._add_disk(fcp, assigner_id, target_wwpns, target_lun,
-                                   multipath, os_version, mount_point, new)
+                                   multipath, os_version, mount_point, new,
+                                   need_restart)
                 raise exception.SDKBaseException(msg=errmsg)
 
         # Unreserved fcp device after undedicate all FCP devices

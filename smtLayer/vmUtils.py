@@ -459,6 +459,8 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
                 stderr=subprocess.STDOUT,
                 close_fds=True,
                 shell=True)
+            rh.printSysLog("Run `%s` success with output: %s"
+                           % (cmd, out))
             if isinstance(out, bytes):
                 out = bytes.decode(out)
         except CalledProcessError as e:
@@ -489,7 +491,8 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
                         stderr=subprocess.STDOUT,
                         close_fds=True,
                         shell=True)
-                    rh.printSysLog("Run `%s` successfully." % cmd)
+                    rh.printSysLog("Run `%s` success with output: %s"
+                                   % (cmd, out))
                     break
                 except CalledProcessError as e:
                     if sleep_secs > 0:

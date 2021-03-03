@@ -396,13 +396,13 @@
 #remotehost_sshd_port=22
 
 
-#
+# 
 # For swap disk to create from mdisk instead of vdisk.
 # In boot from volume case, there might be no disk pool at all, then
 # the only choice is to use vdisk (or using FCP LUN which is complicated),
 # if customer doesn't want vdisk, then set this value to `True` so
 # VDISK will not be used and in turn it will fail check.
-#
+# 
 # This param is optional
 #swap_force_mdisk=False
 
@@ -430,6 +430,20 @@
 # 
 # This param is optional
 #user_default_max_memory=64G
+
+
+# 
+# The default maximum size of reserved memory in a vm's direct entry.
+# This value is used as the default value for maximum reserved memory
+# size for a guest.
+# The value can be specified by 1-4 bits of number suffixed by either
+# M (Megabytes) or G (Gigabytes) and the number must be a whole number,
+# values such as 4096.8M or 32.5G are not supported.
+# 
+# The value should be adjusted based on your system capacity.
+# 
+# This param is optional
+#user_default_max_reserved_memory=64G
 
 
 # This param is optional

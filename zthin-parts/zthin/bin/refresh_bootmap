@@ -67,7 +67,7 @@ function cleanup_umountdir_and_disconnect_fcp {
   inform "Begin to cleanup umount dir."
   umount $deviceMountPoint/proc > /dev/null
   umount $deviceMountPoint/sys > /dev/null
-  umount $deviceMountPoint/run > /dev/null
+  # umount $deviceMountPoint/run > /dev/null
   umount $deviceMountPoint/dev > /dev/null
   umount $deviceMountPoint > /dev/null
   rm -rf $deviceMountPoint
@@ -80,6 +80,92 @@ function cleanup_fcpdevices {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
   # @Description:
+  inform "Finish disconnecting FCPs."
+  inform "Begin to refresh multipath bindings."
+  # Don't need to judge if the multipath_enabled exist,
+  # if it doesn't exist, the $multipath_enabled will be None.
+  if [[ $multipath_enabled == 1 ]]; then
+    inform "Cleaning up multipath bindings and wwids."
+    multipath_output=$(multipath -ll 2>&1)
+    inform "multipath output: ${multipath_output}."
+    # delete the wwid and refresh multipath map
+    map_name=$(multipath -l $wwid -v 1)
+    rc=$?
+    if [[ ( $rc -eq 0 ) && ( "$map_name" != "" ) ]]; then
+        inform "multipath wwid: $wwid, map name: $map_name."
+        wwid_out=`multipath -w $map_name 2>&1`
+        rc1=$?
+        # add retry according to multipath -h:
+        # -R num: number of times to retry removes of in-use devices 
+        flush_out=`multipath -R 3 -f $map_name 2>&1`
+        rc2=$?
+        if [[ ( $rc1 -ne 0 ) || ( $rc2 -ne 0 ) ]]; then
+            inform "Failed to cleanup $map_name. wwid rc1: $rc1, output: $wwid_out. 
+            flush rc2: $rc2, output: $flush_out."
+        else
+            inform "multipath $map_name flushed successfully."
+        fi
+        # cleanup multipath leftover if any
+        if [[ ( $rc2 -ne 0 ) ]]; then
+            inform 'start: clean multipath leftover'
+            cmd_out=$(dmsetup info)
+            inform "dmsetup info output: ${cmd_out}."
+            # check whether any path exists for current multipath device
+            # path_num examples:
+            #   0: if no path
+            #   1: if 1 path exists
+            #   2: if 2 paths exist
+            path_num=$(multipathd show map $map_name json | grep -c '"dev"')
+            # delete paths if any
+            if [[ ( $path_num -ne 0 ) ]]; then
+                # leftover_paths examples:
+                #   sda    : if 1 path exists
+                #   sda sdb: if 2 paths exist
+                leftover_paths=$(multipathd show map $map_name json | awk '/\"dev\"/ {split($3,a,"\""); print a[2]}')
+                inform "leftover_paths output: ${leftover_paths}."
+                for p in ${leftover_paths[@]}
+                do
+                    echo offline > /sys/block/$p/device/state
+                    echo 1 > /sys/block/$p/device/delete
+                    inform 'path $p deleted'
+                done
+            fi
+            # delete multipath device itself
+            # first, try multipath -f. 
+            cmd_out=$(multipath -f $map_name 2>&1)
+            # if multipath device already gone after deleting paths above,
+            # then rc is 0
+            rc=$?
+            inform "multipath -f output: ${cmd_out}."
+            if [[ ( $rc -ne 0 ) ]]; then
+                # second, try dmsetup suspend/remove
+                cmd_out=$(dmsetup suspend $map_name 2>&1)
+                inform "dmsetup suspend output: ${cmd_out}."
+                cmd_out=$(dmsetup remove $map_name -f 2>&1)
+                rc=$?
+                inform "dmsetup remove output: ${cmd_out}."
+                if [[ ( $rc -ne 0 ) ]]; then
+                    # third, try multipath -f again
+                    cmd_out=$(multipath -f $map_name 2>&1)
+                    inform "multipath -f output: ${cmd_out}."
+                fi
+            fi
+            inform 'end: clean multipath leftover'
+            cmd_out=$(dmsetup info)
+            inform "dmsetup info output: ${cmd_out}." 
+        fi
+    else
+        inform "Failed to get the multipath map name or map name is null for wwid: $wwid. rc is $rc."
+    fi
+    if [[ -f /etc/multipath/bindings ]]; then
+        sed -i "/$wwid/d" /etc/multipath/bindings
+    fi
+    lszfcp_output=$(lszfcp -HD 2>&1)
+    inform "lszfcp output: ${lszfcp_output}"
+    multipath_output=$(multipath -ll 2>&1)
+    inform "multipath output: ${multipath_output}."
+  fi
+  inform "Finish refreshing multipath bindings."
   # Disconnect all FCPs
   inform "Begin to disconnect FCPs"
   for i in "${!fcps[@]}"
@@ -101,19 +187,6 @@ function cleanup_fcpdevices {
       done
     fi
   done
-  inform "Finish disconnecting FCPs."
-  inform "Begin to refresh multipath bindings."
-  # Don't need to judge if the multipath_enabled exist,
-  # if it doesn't exist, the $multipath_enabled will be None.
-  if [[ $multipath_enabled == 1 ]]; then
-    inform "Cleaning up multipath bindings and wwids."
-    # delete the wwid and refresh multipath map
-    multipath -F -W 1>/dev/null
-    if [[ -f /etc/multipath/bindings ]]; then
-        sed -i "/$wwid/d" /etc/multipath/bindings
-    fi
-  fi
-  inform "Finish refreshing multipath bindings."
 } #cleanup_fcpdevices
 
 function printCMDExamples {
@@ -225,6 +298,9 @@ function printLogs {
   # ls /dev/disk/by-path
   disk_by_path_folder=$(ls /dev/disk/by-path/)
   inform "/dev/disk/by-path/ folder content: ${disk_by_path_folder}."
+  # ls /dev/disk/by-id
+  disk_by_id_folder=$(ls /dev/disk/by-id/)
+  inform "/dev/disk/by-id/ folder content: ${disk_by_id_folder}."
   # multipath -ll
   multipath_output=$(multipath -ll 2>&1)
   inform "multipath output: ${multipath_output}."
@@ -297,9 +373,23 @@ function refreshZIPL {
   inform "Begin to refreshZIPL."
 
   if [[ ! -e "$devNode" ]]; then
-    printError "devNode ${devNode} doesn't exist. Get fcps: ${fcps[*]} and wwpns: ${wwpns[*]}"
-    printLogs
-    exit 6
+    inform "devNode file ${devNode} not exist yet. Retrying..."
+    sleepTimes=".001 .01 .1 .5 1 2 3 5 8 15 22 34 60 90 120"
+    # retry, while waiting various durations
+    for seconds in $sleepTimes; do
+      sleep $seconds
+      inform "Retrying with interval as ${seconds} seconds"
+      if [[ -e "$devNode" ]]; then
+        # successful - leave loop
+        break
+      fi
+    done
+    # print error log if retry fails
+    if [[ ! -e "$devNode" ]]; then
+      printError "devNode ${devNode} doesn't exist. Get fcps: ${fcps[*]} and wwpns: ${wwpns[*]}"
+      printLogs
+      exit 6
+    fi
   fi
 
   # Create a mount dir.
@@ -323,7 +413,7 @@ function refreshZIPL {
   fi
   mount -t proc /proc $deviceMountPoint/proc
   mount -o bind /sys $deviceMountPoint/sys
-  mount -o bind /run $deviceMountPoint/run
+  # mount -o bind /run $deviceMountPoint/run
   mount -o bind /dev $deviceMountPoint/dev
   rc=$?
   if [[ $rc -ne 0 ]]; then
