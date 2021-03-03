@@ -566,6 +566,17 @@ class HandlersGuestTest(SDKWSGITest):
         mock_create.assert_called_once_with('guest_create', 'name1',
                                             1, 1)
 
+    @mock.patch('zvmconnector.connector.ZVMConnector.send_request')
+    def test_guest_create_with_profile(self, mock_create):
+        body_str = '''{"guest": {"userid": "name1", "vcpus": 1, "memory": 1,
+                                 "user_profile": "profile1"}}'''
+        self.req.body = body_str
+        mock_create.return_value = ''
+
+        guest.guest_create(self.req)
+        mock_create.assert_called_once_with('guest_create', 'name1',
+                                            1, 1, user_profile="profile1")
+
     def test_guest_create_invalid_userid(self):
         body_str = '{"guest": {"userid": ""}}'
         self.req.body = body_str

@@ -67,7 +67,7 @@ function cleanup_umountdir_and_disconnect_fcp {
   inform "Begin to cleanup umount dir."
   umount $deviceMountPoint/proc > /dev/null
   umount $deviceMountPoint/sys > /dev/null
-  umount $deviceMountPoint/run > /dev/null
+  # umount $deviceMountPoint/run > /dev/null
   umount $deviceMountPoint/dev > /dev/null
   umount $deviceMountPoint > /dev/null
   rm -rf $deviceMountPoint
@@ -413,7 +413,7 @@ function refreshZIPL {
   fi
   mount -t proc /proc $deviceMountPoint/proc
   mount -o bind /sys $deviceMountPoint/sys
-  mount -o bind /run $deviceMountPoint/run
+  # mount -o bind /run $deviceMountPoint/run
   mount -o bind /dev $deviceMountPoint/dev
   rc=$?
   if [[ $rc -ne 0 ]]; then
