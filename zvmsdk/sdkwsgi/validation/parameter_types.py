@@ -257,6 +257,15 @@ userid = {
 }
 
 
+userid_or_None = {
+    'oneOf': [
+        {'type': 'null'},
+        {'type': ['string'], 'minLength': 1,
+         'maxLength': 8, 'pattern': '^(\w{,8})$'}
+    ]
+}
+
+
 vswitch_name = {
     'type': ['string'], 'minLength': 1, 'maxLength': 8
 }
