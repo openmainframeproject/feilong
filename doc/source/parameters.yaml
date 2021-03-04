@@ -135,7 +135,7 @@ guest_info:
   type: dict
 user_profile_guest:
   description: |
-    Profile of guest.
+    Profile of guest, ``null`` is also allowed.
   in: body
   required: false
   type: string

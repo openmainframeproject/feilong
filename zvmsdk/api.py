@@ -710,7 +710,7 @@ class SDKAPI(object):
                                             parms, lgr_action)
 
     def guest_create(self, userid, vcpus, memory, disk_list=None,
-                     user_profile=CONF.zvm.user_profile,
+                     user_profile='',
                      max_cpu=CONF.zvm.user_default_max_cpu,
                      max_mem=CONF.zvm.user_default_max_memory,
                      ipl_from='', ipl_param='', ipl_loadparam='',
@@ -852,6 +852,9 @@ class SDKAPI(object):
                               'dictionary. Details could be found in doc.')
             LOG.error(errmsg)
             raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+        if not user_profile or len(user_profile) == 0:
+            user_profile = CONF.zvm.user_profile
 
         action = "create guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
