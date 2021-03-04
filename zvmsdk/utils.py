@@ -59,6 +59,9 @@ def execute(cmd, timeout=None):
     except subprocess.CalledProcessError as err:
         rc = err.returncode
         output = err.output
+    except (subprocess.TimeoutExpired,
+            PermissionError) as err:
+        raise err
     except Exception as err:
         err_msg = ('Command "%s" Error: %s' % (' '.join(cmd), str(err)))
         raise exception.SDKInternalError(msg=err_msg)
