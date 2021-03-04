@@ -25,7 +25,7 @@ create = {
                 'vcpus': parameter_types.positive_integer,
                 'memory': parameter_types.positive_integer,
                 # profile is similar to userid
-                'user_profile': parameter_types.userid,
+                'user_profile': parameter_types.userid_or_None,
                 'disk_list': parameter_types.disk_list,
                 'max_cpu': parameter_types.max_cpu,
                 'max_mem': parameter_types.max_mem,
