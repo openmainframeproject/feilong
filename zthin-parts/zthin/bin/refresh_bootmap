@@ -353,6 +353,52 @@ function truncaterdzfcp {
 	done
 }
 
+function probePartition {
+    : SOURCE: ${BASH_SOURCE}
+    : STACK:  ${FUNCNAME[@]}
+    # @Description:
+    #   Run partprobe to try to find the partition
+    # @Parameters:
+    #   None
+    # @Returns:
+    #   None
+    # ls /dev/disk/by-path
+
+    # get the devPath under /dev/mapper
+    map_name=$(multipath -l $wwid -v 1)
+    rc=$?
+    if [[ ( $rc -eq 0 ) && ( "$map_name" != "" ) ]]; then
+        devPath="/dev/mapper/$map_name"
+    else
+        inform "Failed to get map_name before partprobe, exit partprobe"
+        return
+    fi
+
+    disk_by_path_folder=$(ls /dev/disk/by-path/)
+    inform "Before partprobe, /dev/disk/by-path/ folder content: ${disk_by_path_folder}."
+    # ls /dev/disk/by-id
+    disk_by_id_folder=$(ls /dev/disk/by-id/)
+    inform "Before partprobe, /dev/disk/by-id/ folder content: ${disk_by_id_folder}."
+    # ls /dev/mapper/
+    disk_mapper_folder=$(ls /dev/mapper/)
+    inform "Before partprobe, /dev/mapper/ folder content: ${disk_mapper_folder}."
+
+    # probe partition
+    probe_partition=$(/usr/sbin/partprobe $devPath 2> /dev/null)
+    rc=$?
+    inform "Manually run command partprobe on $devPath of wwid $wwid with return code: $rc"
+
+    # ls /dev/disk/by-path
+    disk_by_path_folder=$(ls /dev/disk/by-path/)
+    inform "After partprobe, /dev/disk/by-path/ folder content: ${disk_by_path_folder}."
+    # ls /dev/disk/by-id
+    disk_by_id_folder=$(ls /dev/disk/by-id/)
+    inform "After partprobe, /dev/disk/by-id/ folder content: ${disk_by_id_folder}."
+    # ls /dev/mapper/
+    disk_mapper_folder=$(ls /dev/mapper/)
+    inform "After partprobe, /dev/mapper/ folder content: ${disk_mapper_folder}."
+}
+
 function refreshZIPL {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
@@ -373,9 +419,15 @@ function refreshZIPL {
   inform "Begin to refreshZIPL."
 
   if [[ ! -e "$devNode" ]]; then
-    inform "devNode file ${devNode} not exist yet. Retrying..."
-    sleepTimes=".001 .01 .1 .5 1 2 3 5 8 15 22 34 60 90 120"
+    # first, run partprobe to refresh partition table if multipath is enabled
+    if [[ $multipath_enabled == 1 ]]; then
+        inform "multipath is enabled, so probe partition on dev of wwid: $wwid"
+        probePartition
+    fi
     # retry, while waiting various durations
+    inform "devNode file ${devNode} not exist yet. Retrying..."
+    sleepTimes=".001 .01 .1 .5 1 2 3 5 8 15"
+
     for seconds in $sleepTimes; do
       sleep $seconds
       inform "Retrying with interval as ${seconds} seconds"
