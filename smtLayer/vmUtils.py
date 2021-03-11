@@ -1116,6 +1116,9 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
                 stderr=subprocess.STDOUT)
             if isinstance(out, bytes):
                 out = bytes.decode(out)
+
+            rh.printSysLog("Query user output: " + out)
+
             if desiredState == 'on':
                 stateFnd = True
                 break
@@ -1123,6 +1126,9 @@ def waitForVMState(rh, userid, desiredState, maxQueries=90, sleepSecs=5):
             out = e.output
             if isinstance(out, bytes):
                 out = bytes.decode(out)
+
+            rh.printSysLog("Query user output: " + out)
+
             match = re.search('(^HCP\w\w\w045E|^HCP\w\w\w361E)', out)
             if match:
                 # Logged off
