@@ -664,7 +664,26 @@ function refreshFCPBootmap {
       rc=4
     fi
     host=`lszfcp | grep "$fcp" | cut -d " " -f 2`
-    echo "- - -" > /sys/class/scsi_host/$host/scan
+    # see if NPIV is enable or not
+    NPIV=`cat /sys/bus/ccw/drivers/zfcp/0.0.$fcp/$host/fc_host/$host/port_type`
+    AutoLunScan=`cat /sys/module/zfcp/parameters/allow_lun_scan`
+    # If auto-discovery of LUNs is disabled on s390 platforms
+    # luns need to be added to the configuration through
+    # the unit_add interface
+    if [[ "$AutoLunScan" != "Y" || "$NPIV" != "NPIV VPORT" ]]; then
+      # the number WWPNs is generated dynamically
+      # so we need to get them from the filesystem
+      inform "allow_lun_scan is disabled, use unit_add to discovery luns"
+      ActiveWWPNs=$(ls /sys/bus/ccw/drivers/zfcp/0.0.$fcp/ | grep 0x)
+      inform "ActiveWWPNs: $ActiveWWPNs"
+      for wwpn in ${ActiveWWPNs[@]}
+      do
+          echo "$lun" > /sys/bus/ccw/drivers/zfcp/0.0.$fcp/$wwpn/unit_add
+      done
+    else
+      inform "scan the scsi host to discovery luns"
+      echo "- - -" > /sys/class/scsi_host/$host/scan
+    fi
     # Use sleep command to make sure all files are generated
     # by chccwdev command.
     sleep 1
