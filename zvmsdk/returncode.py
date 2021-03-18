@@ -238,6 +238,7 @@ errors = {
                    "reason: %(errmsg)s",
                 6: "IUCV failed to get authorization from instance "
                    "%(userid)s with reason %(msg)s",
+                7: "Refresh bootmap timeout with reason %(msg)s",
                 },
                "Operation on Volume failed"
                ],
