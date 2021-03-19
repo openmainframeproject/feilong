@@ -559,7 +559,8 @@ class TestFCPManager(base.SDKTestCase):
         fcp = self.fcpops.find_and_reserve_fcp('user1')
         self.assertIsNone(fcp)
 
-    @mock.patch("zvmsdk.database.FCPDbOperator.get_from_assigner")
+    @mock.patch("zvmsdk.database.FCPDbOperator."
+                "get_reserved_fcps_from_assigner")
     def test_get_available_fcp_reserve_false(self, get_from_assigner):
         """test reserve == False.
         no matter what connections is, the output will be same."""
