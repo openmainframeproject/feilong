@@ -107,6 +107,9 @@ ROUTE_LIST = (
     ('/host/diskpool', {
         'GET': host.host_get_disk_info,
     }),
+    ('/host/diskpool_volumes', {
+        'GET': host.host_get_diskpool_volumes,
+    }),
     ('/images', {
         'POST': image.image_create,
         'GET': image.image_query

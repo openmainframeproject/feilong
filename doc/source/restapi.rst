@@ -1471,6 +1471,34 @@ Get disk pool information on the host.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_disk_info.tpl
    :language: javascript
 
+Get host disk pool volume names
+-------------------------------
+
+**GET /host/diskpool_volumes**
+
+Get volume list of the diskpool on the host.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - poolname: disk_pool
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - diskpool_volumes: diskpool_volumes
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_disk_volumes.tpl
+   :language: javascript
+
 Image(s)
 ========
 

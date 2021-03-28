@@ -453,6 +453,17 @@ def req_host_get_guest_list(start_index, *args, **kwargs):
     return url, body
 
 
+def req_host_get_diskpool_volumes(start_index, *args, **kwargs):
+    url = '/host/diskpool_volumes'
+    poolname = kwargs.get('disk_pool', None)
+    append = ''
+    if poolname is not None:
+        append += "?poolname=%s" % poolname
+    url += append
+    body = None
+    return url, body
+
+
 def req_host_diskpool_get_info(start_index, *args, **kwargs):
     url = '/host/diskpool'
     poolname = kwargs.get('disk_pool', None)
@@ -810,6 +821,11 @@ DATABASE = {
         'args_required': 0,
         'params_path': 0,
         'request': req_host_get_guest_list},
+    'host_get_diskpool_volumes': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_host_get_diskpool_volumes},
     'host_diskpool_get_info': {
         'method': 'GET',
         'args_required': 0,

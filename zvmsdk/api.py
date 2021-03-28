@@ -268,6 +268,40 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._hostops.get_info()
 
+    def host_get_diskpool_volumes(self, disk_pool=None):
+        """ Retrieve diskpool volumes.
+        :param str disk_pool: the disk pool info. It use ':' to separate
+        disk pool type and pool name, eg "ECKD:eckdpool" or "FBA:fbapool"
+        :returns: Dictionary describing disk pool usage info
+        """
+        # disk_pool is optional. disk_pool default to None because
+        # it is more convenient for users to just type function name when
+        # they want to get the disk pool info of CONF.zvm.disk_pool.
+        # The default value of CONF.zvm.disk_pool is None, if it's configured,
+        # the format must be "ECKD:eckdpool" or "FBA:fbapool".
+        disk_pool = disk_pool or CONF.zvm.disk_pool
+        if disk_pool is None:
+            errmsg = ("Invalid disk_pool input None, disk_pool should be"
+                      " configured for sdkserver.")
+            LOG.error(errmsg)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
+        if ':' not in disk_pool:
+            msg = ('Invalid input parameter disk_pool, expect ":" in'
+                   'disk_pool, eg. ECKD:eckdpool')
+            LOG.error(msg)
+            raise exception.SDKInvalidInputFormat(msg)
+        diskpool_type = disk_pool.split(':')[0].upper()
+        diskpool_name = disk_pool.split(':')[1].upper()
+        if diskpool_type not in ('ECKD', 'FBA'):
+            msg = ('Invalid disk pool type found in disk_pool, expect'
+                   'disk_pool like ECKD:eckdpool or FBA:fbapool')
+            LOG.error(msg)
+            raise exception.SDKInvalidInputFormat(msg)
+
+        action = "get information of disk pool: '%s'" % disk_pool
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._hostops.diskpool_get_volumes(diskpool_name)
+
     def host_get_guest_list(self):
         """list names of all the VMs on the host.
         :returns: names of the vm on this hypervisor, in a list.
