@@ -80,11 +80,10 @@ function cleanup_fcpdevices {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
   # @Description:
-  inform "Finish disconnecting FCPs."
   inform "Begin to refresh multipath bindings."
   # Don't need to judge if the multipath_enabled exist,
   # if it doesn't exist, the $multipath_enabled will be None.
-  if [[ $multipath_enabled == 1 ]]; then
+  if [[ ( $multipath_enabled == 1 ) && ( "$wwid" != "" ) ]]; then
     inform "Cleaning up multipath bindings and wwids."
     multipath_output=$(multipath -ll 2>&1)
     inform "multipath output: ${multipath_output}."
@@ -166,27 +165,35 @@ function cleanup_fcpdevices {
     inform "multipath output: ${multipath_output}."
   fi
   inform "Finish refreshing multipath bindings."
+
   # Disconnect all FCPs
-  inform "Begin to disconnect FCPs"
-  for i in "${!fcps[@]}"
+  inform "Begin to remove LUN"
+  # loop to do unit_remove to each (fcp, wwpn) in valid_dict and check lun existence
+  # as the unit_add is done with the combinations from valid_dict, so does unit_remove
+  for fcp in ${!valid_dict[*]}
   do
-    if [[ -z "$wwpns" ]];then
-      inform "Setting FCP device ${fcps[$i]} offline."
-      chccwdevDevice ${fcps[$i]} "offline"
-      output=`/opt/zthin/bin/smcli Image_Device_Undedicate -T $zthinUserID -v ${fcps[$i]} 2>&1`
-      if [[ $? != 0 ]]; then
-          inform "Undedicate FCP device ${fcps[$i]} fails, reason: $output"
-      else
-          inform "Undedicate FCP device ${fcps[$i]} successfully."
-      fi
-    else
-      for j in "${!wwpns[@]}"
+      wwpns=(${valid_dict[$fcp]})
+      inform "Removing LUN: $lun from FCP: $fcp and WWPNs: ${wwpns[*]}."
+      for wwpn in "${wwpns[@]}"
       do
-        inform "Disconnect FCP device: ${fcps[$i]}"
-        disconnectFcp ${fcps[$i]} 0x${wwpns[$j]} ${lun}
+          # unit_remove for the path
+          removeLun $fcp 0x${wwpn} ${lun}
+          rc=$?
+          if [[ -d /sys/bus/ccw/devices/0.0.${fcp}/0x${wwpn}/${lun} ]]; then
+              printError "Failed to remove disk on fcp: $fcp and wwpn: $wwpn, rc is $rc."
+          fi
       done
-    fi
   done
+
+  inform "Begin to offline and undedicate FCP devices"
+  # For offline and undedicate FCP, it should be done for all the inputed FCP devices
+  for fcp in "${INPUT_FCPS[@]}"
+  do
+      # dedicate and online FCP device
+      inform "Setting FCP device $fcp offline."
+      offlineUndedicateFcp $fcp 
+  done
+  inform "Finish disconnecting FCP devices."
 } #cleanup_fcpdevices
 
 function printCMDExamples {
@@ -438,7 +445,7 @@ function refreshZIPL {
     done
     # print error log if retry fails
     if [[ ! -e "$devNode" ]]; then
-      printError "devNode ${devNode} doesn't exist. Get fcps: ${fcps[*]} and wwpns: ${wwpns[*]}"
+      printError "devNode ${devNode} doesn't exist."
       printLogs
       exit 6
     fi
@@ -601,6 +608,7 @@ function refreshFCPBootmap {
   local rc
   local errorFile
 
+  # all the input values don't have the prefix 0x
   fcpchannels=$(echo ${fcpchannel} | tr '[:upper:]' '[:lower:]')
   lun=$(echo ${lun} | tr '[:upper:]' '[:lower:]')
   wwpn=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
@@ -609,11 +617,14 @@ function refreshFCPBootmap {
   lun=0x$lun
 
   # Split fcpchannels and wwpn by ","
-  IFS=',' read -r -a fcps <<< "$fcpchannels"
-  IFS=',' read -r -a ws <<< "$wwpn"
+  IFS=',' read -r -a INPUT_FCPS <<< "$fcpchannels"
+  IFS=',' read -r -a INPUT_WWPNS <<< "$wwpn"
+  
+  # print the parameters value
+  inform "RefreshFCPBootmap begins. FCP: ${INPUT_FCPS[*]}, WWPNs: ${INPUT_WWPNS[*]}, LUN: $lun."
 
   # Check the count of FCP devices, if greater than 8, report error and exit.
-  fcps_len=${#fcps[@]}
+  fcps_len=${#INPUT_FCPS[@]}
   if [ $fcps_len -gt 8 ]
   then
       printError "ERROR: The FCP channel count $fcps_len is greater than 8."
@@ -635,81 +646,54 @@ function refreshFCPBootmap {
   trap 'cleanup_fcpdevices' EXIT
 
   # Try to find which physical wwpns are being used.
-  for fcp in "${fcps[@]}"
+  for fcp in "${INPUT_FCPS[@]}"
   do
-    # Ignore fcp device firstly
-    /sbin/cio_ignore -r $fcp > /dev/null
-
-    # Convert the fcp device to upper case
-    fcp_device=($(echo "$fcp"| tr 'a-z' 'A-Z'))
-
-    # Execute the vmcp command, don't execute dedicate command
-    # if the fcp device is already dedicate to the compute node,
-    res=`vmcp q fcp | grep FCP| grep "$fcp_device"`
-
-    # The fcp device doesn't dedicate to the compute node so
-    # dedicate it to the compute node.
-    if [[ -z $res ]]; then
-      # Try to connect FCP device and online it.
-      /opt/zthin/bin/smcli Image_Device_Dedicate -T $zthinUserID -v $fcp -r $fcp
-      if [[ $? -ne 0 ]]; then
-        printError "Dedicate fails, maybe other machines use this FCP: ${fcp}"
+    # dedicate and online FCP device
+    dedicateOnlineFcp $fcp
+    rc=$?
+    if [[ $rc -ne 0 ]]; then
+        printError "Failed to dedicate or online FCP: $fcp, rc is $rc."
         exit 3
-      fi
     fi
-
-    chccwdevDevice $fcp "online"
-    if [[ $? -ne 0 ]]; then
-      # Online failed
-      rc=4
-    fi
-    host=`lszfcp | grep "$fcp" | cut -d " " -f 2`
-    echo "- - -" > /sys/class/scsi_host/$host/scan
-    # Use sleep command to make sure all files are generated
-    # by chccwdev command.
-    sleep 1
   done
 
-  # Read and parse "lsluns" output then check command input.
-  # If command inputs, merge "lsluns" output and command input
-  # If not, use "lsluns" parse output directly.
-  wwpns=()
-  wwpn=$(lsluns |grep -E 'at port' | awk -F 'at port' '{print $2}' | sed -e 's/^[ ]*//g' | sed -e 's/\:$//g' | tr ' ' '\n' | sort -u | sed -e 's/[\t]//g' |  tr '\n' ' ')
-  IFS=' ' read -r -a lsluns_wwpns <<< "$wwpn"
-  if [[ ${ws[*]} ]]; then
-    for w in "${lsluns_wwpns[@]}"
-    do
-      w=${w##*0x}
-      if [[ "${ws[@]}" =~ "$w" ]]; then
-        wwpns+=($w)
-      fi
-    done
-  else
-    for i in "${!lsluns_wwpns[@]}"
-    do
-      x=${lsluns_wwpns[i]##*0x}
-      wwpns[$i]=$x
-    done
-  fi
+  # use the `lszfcp -P` cmd to get the valid combinations of (fcp,wwpn)
+  # sample output:
+  #[root@112-cmp-ydy ~]# lszfcp -P
+  # 0.0.1c04/0x5005076306105388 rport-0:0-0
+  # 0.0.1c04/0x5005076306035388 rport-0:0-1
+  # 0.0.1c04/0x500507680b22bac7 rport-0:0-10
+  # 0.0.1c04/0x500507680d760027 rport-0:0-2
+  
+  # sample lszfcp_output:
+  # 0.0.1c04 0x5005076306105388
+  # 0.0.1c04 0x5005076306035388
+  # 0.0.1c04 0x500507680b22bac7
+  # 0.0.1c04 0x500507680d760027
+  lszfcp_output=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
+  declare -A valid_dict
+  # check whether each combination of input fcp and input wwpn is in the lszfcp_output
+  # the valid_dict will contain all the valid combinations of inputed fcps and wwpns in the format:
+  # (["FCP1"]="W1 W2" ["FCP2"]="W3 W4")
+  for fcp in "${INPUT_FCPS[@]}"
+  do
+      for wwpn in "${INPUT_WWPNS[@]}"
+      do
+          fcp_wwpn_str="0.0.${fcp} 0x${wwpn}"
+          if [[ $lszfcp_output =~ $fcp_wwpn_str ]]; then
+              # add this combination into valid_dict
+              if [[ -z ${valid_dict[$fcp]} ]]; then
+                  valid_dict+=([$fcp]="$wwpn")
+              else
+                  old_value=${valid_dict[$fcp]}
+                  new_value=${old_value}" "$wwpn
+                  valid_dict[$fcp]=$new_value
+              fi
+          fi
+      done
+  done
 
-  # Remove duplicates
-  wwpns=($(echo "${wwpns[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
-  if [[ ! $wwpns[0] ]]; then
-    printError "No available WWPN found."
-    lsluns_output=$(lsluns 2>&1)
-    inform "lsluns output: ${lsluns_output}."
-    exit 9
-  fi
-  inform "These WWPNs will be operated: ${wwpns[*]}"
-
-  # Check the count of WWPN, if greater than 8, warning and don't exit.
-  wwpns_len=${#wwpns[@]}
-  if [ $wwpns_len -gt 8 ]
-  then
-      inform "WARNING: The count of WWPN can't greater than 8."
-  fi
-
-  # check and record all the valid path (combinations of FCP and WWPN)
+  # check and record all the existing path (combinations of FCP and WWPN)
   # the paths_dict will be in the format: (["FCP1"]="W1 W2" ["FCP2"]="W3 W4")
   declare -A paths_dict
   paths_count=0
@@ -717,41 +701,52 @@ function refreshFCPBootmap {
   # the first_fcp and first_wwpn will be used in single path scenario (multipathd service not running)
   first_fcp=""
   first_wwpn=""
-  for fcp in "${fcps[@]}"
+  disk_path=""
+  
+  # loop to do unit_add to each (fcp, wwpn) in valid_dict and check lun existence
+  for fcp in ${!valid_dict[*]}
   do
-    for wwpn in "${wwpns[@]}"
+      wwpns=(${valid_dict[$fcp]})
+      inform "valid target ports found on FCP: $fcp are: ${wwpns[*]}."
+      for wwpn in "${wwpns[@]}"
       do
-        x="/dev/disk/by-path/ccw-0.0.${fcp}-zfcp-0x${wwpn}:${lun}"
-        if [[ -e $x ]];then
-          if [[ -z $diskPath ]]; then
-            # set diskPath to the first found valid path
-            # this diskPath will only be used to access volume when multipathd service
-            # is not started. Otherwise it will normally be used to find the multipath disk.
-            diskPath=$x
-            first_fcp=$fcp
-            first_wwpn=$wwpn
-          fi
-          inform "found valid path: $x."
-          # add the paths to the dict
-          if [[ -z ${paths_dict["$fcp"]} ]]; then
-             paths_dict+=([$fcp]="$wwpn")
+          # 1. do connectdisk which will do unit_add
+          addLun $fcp 0x${wwpn} ${lun}
+          rc=$?
+          if [[ $rc -ne 0 ]]; then
+              printError "Failed to connect disk on fcp: $fcp and wwpn: $wwpn, rc is $rc."
           else
-             old_value=${paths_dict["$fcp"]}
-             new_value=${old_value}" "$wwpn
-             paths_dict[$fcp]=$new_value
+              path="/dev/disk/by-path/ccw-0.0.${fcp}-zfcp-0x${wwpn}:${lun}"
+              if [[ -z $diskPath ]]; then
+                  # set diskPath to the first found valid path
+                  # this diskPath will only be used to access volume when multipathd service
+                  # is not started. Otherwise it will normally be used to find the multipath disk.
+                  diskPath=$path
+                  first_fcp=$fcp
+                  first_wwpn=$wwpn
+              fi
+              inform "found valid path: $path."
+              # add the paths to the dict
+              if [[ -z ${paths_dict["$fcp"]} ]]; then
+                  paths_dict+=([$fcp]="$wwpn")
+              else
+                  old_value=${paths_dict["$fcp"]}
+                  new_value=${old_value}" "$wwpn
+                  paths_dict[$fcp]=$new_value
+              fi
+              # the /dev/disk/by-path/ccw-0.0.${fcp}-zfcp-0x${wwpn}:${lun) existence is checked in addLUN
+              # increase paths_count
+              ((paths_count=$paths_count+1))
+              # add this (fcp, wwpn) combinations into the rd_zfcp string which will be used to
+              # set the kernel command line in zipl.conf to refresh zipl
+              rd_zfcp+="rd.zfcp=0.0."$fcp,0x$wwpn,$lun" "
           fi
-          # increase paths_count
-          ((paths_count=$paths_count+1))
-          # add this (fcp, wwpn) combinations into the rd_zfcp string which will be used to
-          # set the kernel command line in zipl.conf to refresh zipl
-          rd_zfcp+="rd.zfcp=0.0."$fcp,0x$wwpn,$lun" "
-        fi
       done
   done
 
   # check whether there is valid paths found
   if [[ -z $diskPath ]]; then
-    printError "No valid paths found for FCP devices: ${fcps[*]} and wwpns: ${wwpns[*]}"
+    printError "No valid paths found between FCP devices: ${INPUT_FCPS[*]} and wwpns: ${INPUT_WWPNS[*]}"
     printLogs
     exit 10
   fi
