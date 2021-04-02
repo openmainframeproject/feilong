@@ -488,7 +488,7 @@ class FCPManager(object):
 
         fcp will be returned, or None indicate no fcp
         """
-        fcp_list = self.db.get_from_assigner(assigner_id)
+        fcp_list = self.db.get_allocated_fcps_from_assigner(assigner_id)
         if not fcp_list:
             new_fcp = self.db.find_and_reserve()
             if new_fcp is None:
@@ -558,7 +558,7 @@ class FCPManager(object):
         if not reserve:
             # go here, means try to detach volumes, cinder still need the info
             # of the FCPs belongs to assigner to do some cleanup jobs
-            fcp_list = self.db.get_from_assigner(assigner_id)
+            fcp_list = self.db.get_reserved_fcps_from_assigner(assigner_id)
             LOG.info("Got available fcp_list %s in Unreserve mode from %s."
                      % (fcp_list, assigner_id))
             # in this case, we just return the fcp_list
@@ -675,13 +675,13 @@ class FCPVolumeManager(object):
         dedicate fcp to the user if it's needed, after that
         call smt layer to call linux command
         """
-        LOG.info('Start to attach device to %s' % assigner_id)
+        LOG.info('Start to attach device %s to %s' % (fcp, assigner_id))
         # TODO: init_fcp should be called in contructor function
         # but no assigner_id in contructor
         self.fcp_mgr.init_fcp(assigner_id)
         new = self.fcp_mgr.add_fcp_for_assigner(fcp, assigner_id)
         if is_root_volume:
-            LOG.info('Attaching device to %s is done.' % assigner_id)
+            LOG.info('Attaching device %s to %s is done.' % (fcp, assigner_id))
             return new
         try:
             if new:
@@ -697,7 +697,7 @@ class FCPVolumeManager(object):
             raise exception.SDKBaseException(msg=errmsg)
         # TODO: other exceptions?
 
-        LOG.info('Attaching device to %s is done.' % assigner_id)
+        LOG.info('Attaching device %s to %s is done.' % (fcp, assigner_id))
         return new
 
     def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, skipzipl=False):
@@ -793,7 +793,8 @@ class FCPVolumeManager(object):
             LOG.warning("The connections of FCP device %s is 0.", fcp)
 
         if is_root_volume:
-            LOG.info('Detaching device from %s is done.' % assigner_id)
+            LOG.info('Detaching device %s from %s is '
+                     'done.' % (fcp, assigner_id))
             return
 
         try:
@@ -820,11 +821,7 @@ class FCPVolumeManager(object):
                                    need_restart)
                 raise exception.SDKBaseException(msg=errmsg)
 
-        # Unreserved fcp device after undedicate all FCP devices
-        if not connections:
-            LOG.info("Unreserve fcp device %s from detach", fcp)
-            self.fcp_mgr.unreserve_fcp(fcp)
-        LOG.info('Detaching device from %s is done.' % assigner_id)
+        LOG.info('Detaching device %s from %s is done.' % (fcp, assigner_id))
 
     def detach(self, connection_info):
         """Detach a volume from a guest
@@ -918,6 +915,6 @@ class FCPVolumeManager(object):
         connector = {'zvm_fcp': fcp_list,
                      'wwpns': wwpns,
                      'host': zvm_host}
-        LOG.debug('get_volume_connector returns %s for %s' %
+        LOG.info('get_volume_connector returns %s for %s' %
                   (connector, assigner_id))
         return connector

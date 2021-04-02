@@ -449,16 +449,17 @@ class FCPDbOperator(object):
         with get_fcp_conn() as conn:
 
             result = conn.execute("SELECT * FROM fcp WHERE assigner_id=? "
-                                  "and (connections<>0 or reserved<>0) order "
-                                  "by fcp_id ASC", (assigner_id,))
+                                  "AND (connections<>0 OR reserved<>0) "
+                                  "ORDER BY fcp_id ASC", (assigner_id,))
             fcp_list = result.fetchall()
         return fcp_list
 
-    def get_from_assigner(self, assigner_id):
+    def get_reserved_fcps_from_assigner(self, assigner_id):
         with get_fcp_conn() as conn:
 
             result = conn.execute("SELECT * FROM fcp WHERE assigner_id=? "
-                                  "order by fcp_id ASC", (assigner_id,))
+                                  "AND reserved <> 0 "
+                                  "ORDER BY fcp_id ASC", (assigner_id,))
             fcp_list = result.fetchall()
 
         return fcp_list
