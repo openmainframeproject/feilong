@@ -374,26 +374,28 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.delete('1113')
             self.db_op.delete('1114')
 
-    def test_get_from_assigner(self):
+    def test_get_reserved_fcps_from_assigner(self):
         self.db_op.new('1111', 0)
         self.db_op.new('1112', 1)
 
         try:
-            # case1: connections == 0
+            # case1: connections == 0 and reserve == 0
             self.db_op.assign('1111', 'user1', update_connections=False)
             self.db_op.assign('1112', 'user2', update_connections=False)
-            fcp_list = self.db_op.get_from_assigner('user2')
+            fcp_list = self.db_op.get_reserved_fcps_from_assigner('user2')
+            self.assertEqual(0, len(fcp_list))
+            # case2: reserve != 0 and connections == 0
+            self.db_op.reserve('1112')
+            fcp_list = self.db_op.get_reserved_fcps_from_assigner('user2')
             self.assertEqual(1, len(fcp_list))
             fcp = fcp_list[0]
             self.assertEqual('1112', fcp[0])
             self.assertEqual('user2', fcp[1])
-            # case2: connections != 0
+            # case3: connections != 0 and reserve == 0
+            self.db_op.unreserve('1112')
             self.db_op.assign('1111', 'user1')
-            fcp_list = self.db_op.get_from_assigner('user1')
-            self.assertEqual(1, len(fcp_list))
-            fcp = fcp_list[0]
-            self.assertEqual('1111', fcp[0])
-            self.assertEqual('user1', fcp[1])
+            fcp_list = self.db_op.get_reserved_fcps_from_assigner('user1')
+            self.assertEqual(0, len(fcp_list))
         finally:
             self.db_op.delete('1111')
             self.db_op.delete('1112')
