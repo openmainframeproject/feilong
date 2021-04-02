@@ -789,10 +789,18 @@ class SMTClient(object):
         else:
             cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap', fcs, wwpns, lun]
         LOG.info("Running command: %s", cmd)
-
-        with zvmutils.expect_and_reraise_internal_error(
-             modID='refresh_bootmap'):
+        try:
             (rc, output) = zvmutils.execute(cmd, timeout=600)
+        except subprocess.TimeoutExpired as err:
+            err_msg = err.format_message()
+            raise exception.SDKVolumeOperationError(rs=7, msg=err_msg)
+        except PermissionError:
+            # because zvmsdk user dont have permission to kill background
+            # process so if the excute timeout, will raise PermissionError
+            # we also treat it as timeout exception
+            err_msg = ("Running command: %s timed out." % cmd)
+            raise exception.SDKVolumeOperationError(rs=7, msg=err_msg)
+
         if rc != 0:
             err_msg = ("refresh_bootmap failed with return code: %d." % rc)
             err_output = ""
