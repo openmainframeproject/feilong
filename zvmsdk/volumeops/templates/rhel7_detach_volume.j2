@@ -44,10 +44,10 @@ if [ "$output" ]; then
 fi
 
 echo "exit code for multipath -f: $exit_code"
-# if above code didn't succeed, exit now.
-#if [[ $exit_code != 0 ]]; then
-#    exit $exit_code
-#fi
+#if above code didn't succeed, exit now.
+if [[ $exit_code != 0 ]]; then
+    exit $exit_code
+fi
 
 
 # flush IO for devices
@@ -62,7 +62,7 @@ echo 1 > /sys/block/$SdxName/device/delete
 # the unit_remove interface
 AutoScan=`cat /sys/module/zfcp/parameters/allow_lun_scan`
 if [[ "$AutoScan" != "Y" ]]; then
-    for wwpn in $ActiveWWPNs
+    for wwpn in ${ActiveWWPNs[@]}
     do
         echo "$lun" > /sys/bus/ccw/drivers/zfcp/0.0.$fcp/$wwpn/unit_remove
     done
