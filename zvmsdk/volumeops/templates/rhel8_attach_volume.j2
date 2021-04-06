@@ -41,7 +41,7 @@ NPIV=`cat /sys/bus/ccw/drivers/zfcp/0.0.$fcp/$HostName/fc_host/$HostName/port_ty
 # the unit_add interface
 AutoLunScan=`cat /sys/module/zfcp/parameters/allow_lun_scan`
 if [[ "$AutoLunScan" != "Y" || "$NPIV" != "NPIV VPORT" ]]; then
-    for wwpn in $ActiveWWPNs
+    for wwpn in ${ActiveWWPNs[@]}
     do
         # chzdev only exist in rhel version8.0+
         chzdev -e -a zfcp-lun 0.0.$fcp:$wwpn:$lun
@@ -61,19 +61,51 @@ else
     udevsettle
 fi
 
+# send an iSCSI scan request with given host and optionally the ctl 
+# the ctl means, c: channel,default to -
+#                t: target, default to -
+#                l: lun, default to -
+all_hosts=(`ls /sys/class/scsi_host/`)
+for host in ${all_hosts[@]}
+do
+    echo "- - -" > /sys/class/scsi_host/$host/scan
+done
+
 # wait for the devices ready
-SourceDevices=(`ls /dev/disk/by-path/ | grep "ccw-0.0.$fcp-zfcp-.*:$lun"`)
-SourceDevice="/dev/disk/by-path/${SourceDevices[0]}"
-if [[ ! -e $SourceDevice ]]; then
-    maxTime=20
-    while [ $maxTime -gt 0]
-    do
-      if [[ -e $SourceDevice ]]; then
+FoundDiskPath=0
+# timeout set to 60 seconds
+Timeout=60
+while [ $FoundDiskPath -eq 0 ]
+do
+    # if timeout less or equal 0 seconds, means no time left
+    if [ $Timeout -le 0 ]; then
+        echo "waiting for devices ready timed out after 60 seconds."
         break
-      fi
-      sleep 2
-      ((maxTime-=2))
+    fi
+    # loop all the WWPNs to found the alive device
+    for j in ${ActiveWWPNs[@]}
+    do
+        x="/dev/disk/by-path/ccw-0.0.$fcp-zfcp-$j:$lun"
+        # the x would be like:
+        # ccw-0.0.1d13-zfcp-0x5005076306035388:0x4014400400000000
+        echo "try disk path:$x"
+        if [ -e $x ]; then
+            diskPath=$x
+            FoundDiskPath=1
+            echo "Found disk path is: $diskPath"
+            break
+        fi
     done
+    # if devices still not ready, wait another 5 seconds and retry
+    if [ $FoundDiskPath -eq 0 ]; then
+        sleep 5
+        Timeout=$((Timeout-=5))
+        echo "sleep 5 seconds to wait the devices ready, timeout left: $Timeout"
+    fi
+done
+if [ $FoundDiskPath -ne 1 ]; then
+    echo "error happens during attachment because the device file not found, will exit with code 1."
+    exit 1
 fi
 
 # ensure multipathd service is up
@@ -90,17 +122,8 @@ else
     echo "dm-multipath mode is already enabled"
 fi
 
-# send an iSCSI scan request with given host and optionally the ctl 
-# the ctl means, c: channel,default to -
-#                t: target, default to -
-#                l: lun, default to -
-for host in `ls /sys/class/scsi_host/`
-do
-    echo "- - -" > /sys/class/scsi_host/$host/scan
-done
-
 # read the WWN from page 0x83 value for a SCSI device
-WWID=`/lib/udev/scsi_id --page 0x83 --whitelisted /dev/disk/by-path/${SourceDevices[0]}`
+WWID=`/lib/udev/scsi_id --page 0x83 --whitelisted $diskPath`
 
 # the symlink name that user specified
 TargetFile="$target_filename"

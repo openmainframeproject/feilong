@@ -134,6 +134,24 @@ class VolumeConfiguratorAPI(object):
                 LOG.debug(msg)
         return ready
 
+    def _get_status_code_from_systemctl(self, assigner_id, command):
+        """get the status code from systemctl status
+        for example, if systemctl status output:
+        Main PID: 28406 (code=exited, status=0/SUCCESS)
+
+        this function will return the 3 behind status=
+        """
+        output = self._smtclient.execute_cmd_direct(assigner_id, command)
+        exit_code = 0
+        for line in output['response']:
+            if 'Main PID' in line:
+                # the status code start with = and before /FAILURE
+                pattern = '(?<=status=)([0-9]+)'
+                ret = re.search(pattern, line)
+                exit_code = int(ret.group(1))
+                break
+        return exit_code
+
     def config_attach(self, fcp, assigner_id, target_wwpns, target_lun,
                       multipath, os_version, mount_point, new,
                       need_restart=True):
@@ -145,7 +163,27 @@ class VolumeConfiguratorAPI(object):
         if need_restart and iucv_is_ready:
             # active mode should restart zvmguestconfigure to run reader file
             active_cmds = linuxdist.create_active_net_interf_cmd()
-            self._smtclient.execute_cmd(assigner_id, active_cmds)
+            ret = self._smtclient.execute_cmd_direct(assigner_id, active_cmds)
+            LOG.debug('attach scripts return values: %s' % ret)
+            if ret['rc'] != 0:
+                # get exit code by systemctl status
+                get_status_cmd = 'systemctl status zvmguestconfigure.service'
+                exit_code = self._get_status_code_from_systemctl(
+                                        assigner_id, get_status_cmd)
+                if exit_code == 1:
+                    errmsg = ('attach scripts execution failed because the '
+                              'device %s did not show up in the target '
+                              'virtual machine %s , please check its '
+                              'connections or settings.' % (fcp, assigner_id))
+                else:
+                    errmsg = ('attach scripts execution on fcp %s in the'
+                              'target virtual machine %s failed '
+                              'with unknow reason, exit code is: %s'
+                              % (fcp, assigner_id, exit_code))
+                LOG.error(errmsg)
+                raise exception.SDKVolumeOperationError(rs=8,
+                                                        userid=assigner_id,
+                                                        msg=errmsg)
 
     def config_detach(self, fcp, assigner_id, target_wwpns, target_lun,
                       multipath, os_version, mount_point, connections,
@@ -158,7 +196,25 @@ class VolumeConfiguratorAPI(object):
         if need_restart and iucv_is_ready:
             # active mode should restart zvmguestconfigure to run reader file
             active_cmds = linuxdist.create_active_net_interf_cmd()
-            self._smtclient.execute_cmd(assigner_id, active_cmds)
+            ret = self._smtclient.execute_cmd_direct(assigner_id, active_cmds)
+            LOG.debug('detach scripts return values: %s' % ret)
+            if ret['rc'] != 0:
+                get_status_cmd = 'systemctl status zvmguestconfigure.service'
+                exit_code = self._get_status_code_from_systemctl(
+                                        assigner_id, get_status_cmd)
+                if exit_code == 1:
+                    errmsg = ('detach scripts execution failed because the '
+                              'device %s in the target virtual machine %s '
+                              'is in use.' % (fcp, assigner_id))
+                else:
+                    errmsg = ('detach scripts execution on fcp %s in the'
+                              'target virtual machine %s failed '
+                              'with unknow reason, exit code is: %s'
+                              % (fcp, assigner_id, exit_code))
+                LOG.error(errmsg)
+                raise exception.SDKVolumeOperationError(rs=9,
+                                                        userid=assigner_id,
+                                                        msg=errmsg)
 
     def _create_file(self, assigner_id, file_name, data):
         temp_folder = self._smtclient.get_guest_temp_path(assigner_id)
