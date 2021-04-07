@@ -33,6 +33,8 @@
 300;30;300;5;Refresh bootmap fails, error code: %(errcode)s and reason: %(errmsg)s
 300;30;300;6;IUCV failed to get authorization from instance %(userid)s with reason %(msg)s
 300;30;300;7;Refresh bootmap timeout with reason %(msg)s
+300;30;300;8;Failed to attach volume to instance %(userid)s with reason %(msg)s
+300;30;300;9;Failed to detach volume from instance %(userid)s with reason %(msg)s
 **Operation on Image failed**
 300;40;300;1;Database operation failed, error: %(msg)s
 300;40;300;2;No image schema found for %(schema)s

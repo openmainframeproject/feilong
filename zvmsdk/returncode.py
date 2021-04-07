@@ -239,6 +239,10 @@ errors = {
                 6: "IUCV failed to get authorization from instance "
                    "%(userid)s with reason %(msg)s",
                 7: "Refresh bootmap timeout with reason %(msg)s",
+                8: "Failed to attach volume to instance "
+                   "%(userid)s with reason %(msg)s",
+                9: "Failed to detach volume from instance "
+                   "%(userid)s with reason %(msg)s",
                 },
                "Operation on Volume failed"
                ],
