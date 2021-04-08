@@ -30,13 +30,115 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
         super(TestVolumeConfiguratorAPI, cls).setUpClass()
         cls.configurator = volumeop.VolumeConfiguratorAPI()
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.execute_cmd_direct")
+    def test_get_status_code_from_systemctl(self, execute_cmd):
+        line1 = ('(Error) ULTVMU0316E On CBM54008, command sent through IUCV '
+                 'failed. cmd: systemctl status zvmguestconfigure, rc: 8, rs: '
+                 '3, out: zvmguestconfigure.service - Activation engine '
+                 'for configuring zLinux os when it start up')
+        line2 = ('Loaded: loaded (/etc/systemd/system/zvmguest configure.'
+                 'service; enabled; vendor preset: disabled)')
+        line3 = ('   Active: failed (Result: exit-code) since Thu '
+                 '2020-12-17 05:19:09 EST; 8s ago')
+        line4 = ('  Process: 187837 ExecStart=/usr/bin/zvmguestcon'
+                 'figure start (code=exited, status=1/FAILURE)')
+        # from this line on, we wont process them
+        line5 = ' Main PID: 187837 (code=exited, status=1/FAILURE)'
+        line6 = ('Dec 17 05:19:09 rhel82-bfv.boeblingen.de.ibm.com '
+                 'zvmguestconfigure[187837]: remove WWPN 0x500507680b22bac6 '
+                 'in zfcp.conf')
+        line7 = ('Dec 17 05:19:09 rhel82-bfv.boeblingen.de.ibm.com '
+                 'zvmguestconfigure[187837]: remove WWPN 0x500507680b22bac7 '
+                 'in zfcp.conf')
+        line8 = ('Dec 17 05:19:09 rhel82-bfv.boeblingen.de.ibm.com '
+                 'zvmguestconfigure[187837]: remove WWPN 0x500507680d060027 '
+                 'in zfcp.conf')
+        line9 = ('Dec 17 05:19:09 rhel82-bfv.boeblingen.de.ibm.com '
+                 'zvmguestconfigure[187837]: remove WWPN 0x500507680d120027 '
+                 'in zfcp.conf')
+        line10 = ('Dec 17 05:19:09 rhel82-bfv.boeblingen.de.ibm.com '
+                  'zvmguestconfigure[187837]: remove WWPN 0x500507680d760027 '
+                  'in zfcp.conf')
+        line11 = ('ERROR: Dec 17 05:19:09 rhel82-bfv.boeblingen.de.ibm.com '
+                  'zvmguestconfigure[187837]: remove WWPN 0x500507680d820027 '
+                  'in zfcp.conf')
+        line12 = ('Dec 17 05:19:09 rhel82-bfv.boeblingen.de.ibm.com '
+                  'zvmguestconfigure[187837]: zvmguestconfigure has '
+                  'successfully processed the reader files with exit_code: 1.')
+        line13 = ("Dec 17 05:19:09 rhel82-bfv.boeblingen.de.ibm.com systemd[1]"
+                  ": zvmguestconfigure.service: Main process exited, "
+                  "code=exited, status=1/FAILURE")
+        line14 = ("Dec 17 05:19:09 rhel82-bfv.boeblingen.de.ibm.com systemd[1]"
+                  ": zvmguestconfigure.service: Failed with result "
+                  "'exit-code'.")
+        line15 = ('Dec 17 05:19:09 rhel82-bfv.boeblingen.de.ibm.com systemd[1]'
+                  ': Failed to start Activation engine for configuring zLinux '
+                  'os when it start up.')
+        line16 = 'Return code 8, Reason code 3.'
+        output = {'overallRC': 2, 'rc': 8, 'rs': 3, 'errno': 0, 'strError': '',
+                  'response': [line1, line2, line3, line4, line5, '', line6,
+                               line7, line8, line9, line10, line11, line12,
+                               line13, line14, line15, '', line16],
+                  'logEntries': []}
+        execute_cmd.return_value = output
+        assigner_id = 'userid1'
+        command = 'fake command'
+        code = self.configurator._get_status_code_from_systemctl(assigner_id,
+                                                                 command)
+        self.assertEqual(code, 1)
+
     @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
-    @mock.patch("zvmsdk.smtclient.SMTClient.execute_cmd")
+    @mock.patch("zvmsdk.smtclient.SMTClient.execute_cmd_direct")
     @mock.patch.object(dist.rhel7, "create_active_net_interf_cmd")
+    @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI."
+                "_get_status_code_from_systemctl")
+    @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI."
+                "configure_volume_attach")
+    @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI.check_IUCV_is_ready")
+    def test_config_attach_reachable_but_exception(self, is_reachable,
+                                                   config_attach,
+                                                   get_status_code,
+                                                   restart_zvmguestconfigure,
+                                                   execute_cmd, get_dist):
+        """config_attach has almost same logic with config_detach
+        so only write UT cases of config_attach"""
+        fcp = 'bfc3'
+        assigner_id = 'userid1'
+        target_wwpns = ['1111', '1112']
+        target_lun = '2222'
+        multipath = True
+        new = True
+        os_version = 'rhel7'
+        mount_point = '/dev/sdz'
+
+        get_dist.return_value = dist.rhel7
+        config_attach.return_value = None
+        is_reachable.return_value = True
+        get_status_code.return_value = 1
+        execute_cmd.return_value = {'rc': 3}
+        active_cmds = 'systemctl start zvmguestconfigure.service'
+        restart_zvmguestconfigure.return_value = active_cmds
+        need_restart = True
+        self.assertRaises(exception.SDKVolumeOperationError,
+                          self.configurator.config_attach,
+                          fcp, assigner_id, target_wwpns,
+                          target_lun, multipath,
+                          os_version, mount_point, new,
+                          need_restart)
+        get_dist.assert_called_once_with(os_version)
+        restart_zvmguestconfigure.assert_called_once_with()
+        execute_cmd.assert_called_once_with(assigner_id, active_cmds)
+
+    @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
+    @mock.patch("zvmsdk.smtclient.SMTClient.execute_cmd_direct")
+    @mock.patch.object(dist.rhel7, "create_active_net_interf_cmd")
+    @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI."
+                "_get_status_code_from_systemctl")
     @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI."
                 "configure_volume_attach")
     @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI.check_IUCV_is_ready")
     def test_config_attach_reachable(self, is_reachable, config_attach,
+                                     get_status_code,
                                      restart_zvmguestconfigure, execute_cmd,
                                      get_dist):
         fcp = 'bfc3'
@@ -51,6 +153,8 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
         get_dist.return_value = dist.rhel7
         config_attach.return_value = None
         is_reachable.return_value = True
+        get_status_code.return_value = 1
+        execute_cmd.return_value = {'rc': 0}
         active_cmds = 'systemctl start zvmguestconfigure.service'
         restart_zvmguestconfigure.return_value = active_cmds
         need_restart = True
@@ -559,7 +663,8 @@ class TestFCPManager(base.SDKTestCase):
         fcp = self.fcpops.find_and_reserve_fcp('user1')
         self.assertIsNone(fcp)
 
-    @mock.patch("zvmsdk.database.FCPDbOperator.get_from_assigner")
+    @mock.patch("zvmsdk.database.FCPDbOperator."
+                "get_reserved_fcps_from_assigner")
     def test_get_available_fcp_reserve_false(self, get_from_assigner):
         """test reserve == False.
         no matter what connections is, the output will be same."""

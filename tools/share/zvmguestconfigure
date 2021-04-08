@@ -78,6 +78,7 @@ function pullReader {
   #   Return code indicates success if reader was brought online.
   # @Code:
   local funcName="pullReader"
+  exit_code=0
   #/sbin/modprobe vmcp
 
   # Online reader
@@ -125,6 +126,7 @@ function pullReader {
       # Receiving shell
       rc=$(/usr/sbin/vmur re -f $spoolid $file)
       /bin/bash $file
+      exit_code=$?
       rm $file
     # Handle the cfgdrive.iso that punched by openstack nova-zvm-driver
     elif [[ $type == "iso" ]]; then
@@ -140,7 +142,7 @@ function pullReader {
       echo "zvmguestconfigure funcName (Error) Failed to download record $spoolid"
     fi
   done
-  return 0
+  return $exit_code
 }
 
 function setupIso {
@@ -184,6 +186,8 @@ function setupIso {
 ############################################################################
 # Main Code Section
 ############################################################################
+declare -x exit_code
+exit_code=0
 case "$1" in
   start)
     echo "zvmguestconfigure is starting"
@@ -194,7 +198,8 @@ case "$1" in
 
     if [[ -n "$authorizedSenders" ]]; then
       pullReader
-      echo "zvmguestconfigure has successfully processed the reader files."
+      exit_code=$?
+      echo "zvmguestconfigure has successfully processed the reader files with exit code: $exit_code."
     else
       echo "zvmguestconfigure is disabled from accepting configuration reader files."
     fi
@@ -219,3 +224,5 @@ case "$1" in
   ;;
 
 esac
+
+exit $exit_code
