@@ -114,10 +114,11 @@ def createVM(rh):
     if 'maxCPU' in rh.parms:
         dirLines.append("MACHINE ESA %i" % rh.parms['maxCPU'])
 
-    dirLines.append("CPU 00 BASE")
+    dirLines.append("COMMAND SET VCONFIG MODE LINUX")
+    dirLines.append("COMMAND DEFINE CPU 00 TYPE IFL")
     if 'cpuCnt' in rh.parms:
         for i in range(1, rh.parms['cpuCnt']):
-            dirLines.append("CPU %0.2X" % i)
+            dirLines.append("COMMAND DEFINE CPU %0.2X TYPE IFL" % i)
 
     if 'ipl' in rh.parms:
         ipl_string = "IPL %s " % rh.parms['ipl']

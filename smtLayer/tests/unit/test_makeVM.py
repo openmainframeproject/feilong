@@ -74,6 +74,22 @@ class SMTMakeVMTestCase(base.SMTTestCase):
         self.assertEqual(rh.results['overallRC'], 0)
 
     @mock.patch("os.write")
+    def test_create_VM_cpu_4(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1G', 'maxMemSize': '1G',
+                 'privClasses': 'G', 'vdisk': '0102:1G', 'cpuCnt': 4}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\n'
+                                    b'COMMAND SET VCONFIG MODE LINUX\n'
+                                    b'COMMAND DEFINE CPU 00 TYPE IFL\n'
+                                    b'COMMAND DEFINE CPU 01 TYPE IFL\n'
+                                    b'COMMAND DEFINE CPU 02 TYPE IFL\n'
+                                    b'COMMAND DEFINE CPU 03 TYPE IFL\n'
+                                    b'MDISK 0102 FB-512 V-DISK 2097152 MWV\n')
+
+    @mock.patch("os.write")
     def test_create_VM_swap_1G(self, write):
         rh = ReqHandle.ReqHandle(captureLogs=False,
                                  smt=mock.Mock())
@@ -81,7 +97,9 @@ class SMTMakeVMTestCase(base.SMTTestCase):
                  'privClasses': 'G', 'vdisk': '0102:1G'}
         rh.parms = parms
         makeVM.createVM(rh)
-        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\nCPU 00 BASE\n'
+        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\n'
+                                    b'COMMAND SET VCONFIG MODE LINUX\n'
+                                    b'COMMAND DEFINE CPU 00 TYPE IFL\n'
                                     b'MDISK 0102 FB-512 V-DISK 2097152 MWV\n')
 
     @mock.patch("os.write")
@@ -92,7 +110,9 @@ class SMTMakeVMTestCase(base.SMTTestCase):
                  'privClasses': 'G', 'vdisk': '0102:2G'}
         rh.parms = parms
         makeVM.createVM(rh)
-        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\nCPU 00 BASE\n'
+        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\n'
+                                    b'COMMAND SET VCONFIG MODE LINUX\n'
+                                    b'COMMAND DEFINE CPU 00 TYPE IFL\n'
                                     b'MDISK 0102 FB-512 V-DISK 4194296 MWV\n')
 
     @mock.patch("os.write")
@@ -103,7 +123,9 @@ class SMTMakeVMTestCase(base.SMTTestCase):
                  'privClasses': 'G', 'vdisk': '0102:2048M'}
         rh.parms = parms
         makeVM.createVM(rh)
-        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\nCPU 00 BASE\n'
+        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\n'
+                                    b'COMMAND SET VCONFIG MODE LINUX\n'
+                                    b'COMMAND DEFINE CPU 00 TYPE IFL\n'
                                     b'MDISK 0102 FB-512 V-DISK 4194296 MWV\n')
 
     @mock.patch("os.write")
@@ -124,7 +146,9 @@ class SMTMakeVMTestCase(base.SMTTestCase):
                  'privClasses': 'G', 'vdisk': '0102:256M'}
         rh.parms = parms
         makeVM.createVM(rh)
-        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\nCPU 00 BASE\n'
+        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\n'
+                                    b'COMMAND SET VCONFIG MODE LINUX\n'
+                                    b'COMMAND DEFINE CPU 00 TYPE IFL\n'
                                     b'MDISK 0102 FB-512 V-DISK 524288 MWV\n')
 
     @mock.patch("os.write")
@@ -135,7 +159,9 @@ class SMTMakeVMTestCase(base.SMTTestCase):
                  'privClasses': 'G', 'setReservedMem': ''}
         rh.parms = parms
         makeVM.createVM(rh)
-        write.assert_called_with(mock.ANY, b'USER  pwd 1G 4G G\nCPU 00 BASE\n'
+        write.assert_called_with(mock.ANY, b'USER  pwd 1G 4G G\n'
+                                    b'COMMAND SET VCONFIG MODE LINUX\n'
+                                    b'COMMAND DEFINE CPU 00 TYPE IFL\n'
                                     b'COMMAND DEF STOR RESERVED 3072M\n')
 
     @mock.patch("os.write")
@@ -146,7 +172,9 @@ class SMTMakeVMTestCase(base.SMTTestCase):
                  'privClasses': 'G', 'setReservedMem': ''}
         rh.parms = parms
         makeVM.createVM(rh)
-        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\nCPU 00 BASE\n'
+        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\n'
+                                    b'COMMAND SET VCONFIG MODE LINUX\n'
+                                    b'COMMAND DEFINE CPU 00 TYPE IFL\n'
                                     b'COMMAND DEF STOR RESERVED 0M\n')
 
     @mock.patch("os.write")
@@ -158,5 +186,6 @@ class SMTMakeVMTestCase(base.SMTTestCase):
         rh.parms = parms
         makeVM.createVM(rh)
         write.assert_called_with(mock.ANY, b'USER  pwd 1024M 1G G\n'
-                                    b'CPU 00 BASE\n'
+                                    b'COMMAND SET VCONFIG MODE LINUX\n'
+                                    b'COMMAND DEFINE CPU 00 TYPE IFL\n'
                                     b'COMMAND DEF STOR RESERVED 0M\n')

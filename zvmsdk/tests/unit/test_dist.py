@@ -14,6 +14,7 @@
 import mock
 import os
 
+from jinja2 import Template
 from zvmsdk import dist
 from zvmsdk import smtclient
 from zvmsdk.tests.unit import base
@@ -326,24 +327,10 @@ class RHEL7TestCase(base.SDKTestCase):
         self.assertEqual('DNS1="9.0.2.1"', cfg_str[11])
         self.assertEqual('DNS2="9.0.3.1"', cfg_str[12])
 
-    @mock.patch('zvmsdk.dist.LinuxDist.create_mount_point')
-    @mock.patch('zvmsdk.dist.rhel._set_zfcp_multipath')
-    @mock.patch('zvmsdk.dist.LinuxDist.wait_for_file_ready')
-    @mock.patch('zvmsdk.dist.LinuxDist.settle_file_system')
-    @mock.patch('zvmsdk.dist.rhel7._set_zfcp_config_files')
-    @mock.patch('zvmsdk.dist.rhel7._set_sysfs')
-    @mock.patch('zvmsdk.dist.LinuxDist._check_auto_scan')
-    @mock.patch('zvmsdk.dist.LinuxDist._check_npiv_enabled')
-    @mock.patch('zvmsdk.dist.LinuxDist._get_active_wwpns')
-    @mock.patch('zvmsdk.dist.rhel._online_fcp_device')
-    @mock.patch('zvmsdk.dist.LinuxDist.modprobe_zfcp_module')
-    def test_get_volume_attach_configuration_cmds(self, check_module,
-                                                  online_device, active_wwpns,
-                                                  check_npiv, check_scan,
-                                                  set_sysfs, zfcp_config,
-                                                  settle, wait_file,
-                                                  zfcp_multipath,
-                                                  create_mount_point):
+    @mock.patch('jinja2.Template.render')
+    @mock.patch('zvmsdk.dist.LinuxDist.get_template')
+    def test_get_volume_attach_configuration_cmds(self, get_template,
+                                                  template_render):
 
         """ RHEL7 """
         fcp = '1fc5'
@@ -351,44 +338,22 @@ class RHEL7TestCase(base.SDKTestCase):
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
-        check_module.return_value = 'fake_ret'
-        online_device.return_value = 'fake_ret'
-        zfcp_config.return_value = 'fake_ret'
-        zfcp_multipath.return_value = 'fake_ret'
-        create_mount_point.return_value = 'fake_ret'
-        active_wwpns.return_value = 'fake_ret'
-        check_npiv.return_value = 'fake_ret'
-        check_scan.return_value = 'fake_ret'
-        set_sysfs.return_value = 'fake_ret'
-        settle.return_value = 'fake_ret'
-        wait_file.return_value = 'fake_ret'
+        get_template.return_value = Template('fake template {{fcp}}')
         self.linux_dist.get_volume_attach_configuration_cmds(fcp, wwpns, lun,
                                                              multipath,
                                                              mount_point, True)
-        # check_module.assert_called_once_with()
-        # online_device.assert_called_once_with(fcp)
-        # active_wwpns.assert_called_once_with(fcp)
-        # check_npiv.assert_called_once_with(fcp)
-        # check_scan.assert_called_once_with()
-        # set_sysfs.assert_called_once_with(fcp, wwpns, lun)
-        # zfcp_config.assert_called_once_with(fcp, lun)
-        # settle.assert_called_once_with()
-        # wait_file.assert_called_once_with(fcp, lun)
-        # zfcp_multipath.assert_called_once_with(True)
-        # create_mount_point.assert_called_once_with(fcp, wwpns,
-        #                                            lun, mount_point,
-        #                                            multipath)
+        # check function called assertions
+        get_template.assert_called_once_with("volumeops",
+                                             "rhel7_attach_volume.j2")
+        template_render.assert_called_once_with(fcp='1fc5',
+                                                lun='0x0026000000000000',
+                                                target_filename='sdz')
 
-    @mock.patch('zvmsdk.dist.LinuxDist.remove_mount_point')
-    @mock.patch('zvmsdk.dist.rhel7._restart_multipath')
-    @mock.patch('zvmsdk.dist.rhel._offline_fcp_device')
-    @mock.patch('zvmsdk.dist.rhel._delete_zfcp_config_records')
-    @mock.patch('zvmsdk.dist.LinuxDist._disconnect_volume')
-    def test_get_volume_detach_configuration_cmds_1(self, disconnect_volume,
-                                                  delete_zfcp_records,
-                                                  offline_device,
-                                                  restart_multipath,
-                                                  remove_mount_point):
+    @mock.patch('jinja2.Template.render')
+    @mock.patch('zvmsdk.dist.LinuxDist.get_template')
+    def test_get_volume_detach_configuration_cmds_1(self,
+                                                    get_template,
+                                                    template_render):
 
         """ RHEL7 """
         fcp = '1fc5'
@@ -396,30 +361,22 @@ class RHEL7TestCase(base.SDKTestCase):
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
-        offline_device.return_value = 'fake_ret'
-        restart_multipath.return_value = 'fake_ret'
-        remove_mount_point.return_value = 'fake_ret'
-        delete_zfcp_records.return_value = 'fake_ret'
-        disconnect_volume.return_value = 'fake_ret'
+        get_template.return_value = Template('fake template {{fcp}}')
         # connections == 2
         self.linux_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
                                                              multipath,
                                                              mount_point, 2)
-        # disconnect_volume.assert_called_once_with(fcp, lun, True)
-        # delete_zfcp_records.assert_called_once_with(fcp, lun)
-        # remove_mount_point.assert_called_once_with(mount_point, wwpns,
-        #                                            lun, multipath)
+        get_template.assert_called_once_with("volumeops",
+                                             "rhel7_detach_volume.j2")
+        template_render.assert_called_once_with(fcp='1fc5',
+                                                lun='0x0026000000000000',
+                                                target_filename='sdz')
 
-    @mock.patch('zvmsdk.dist.LinuxDist.remove_mount_point')
-    @mock.patch('zvmsdk.dist.rhel7._restart_multipath')
-    @mock.patch('zvmsdk.dist.rhel._offline_fcp_device')
-    @mock.patch('zvmsdk.dist.rhel._delete_zfcp_config_records')
-    @mock.patch('zvmsdk.dist.LinuxDist._disconnect_volume')
-    def test_get_volume_detach_configuration_cmds_2(self, disconnect_volume,
-                                                  delete_zfcp_records,
-                                                  offline_device,
-                                                  restart_multipath,
-                                                  remove_mount_point):
+    @mock.patch('jinja2.Template.render')
+    @mock.patch('zvmsdk.dist.LinuxDist.get_template')
+    def test_get_volume_detach_configuration_cmds_2(self,
+                                                    get_template,
+                                                    template_render):
 
         """ RHEL7 """
         fcp = '1fc5'
@@ -427,22 +384,16 @@ class RHEL7TestCase(base.SDKTestCase):
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
-        offline_device.return_value = 'fake_ret'
-        restart_multipath.return_value = 'fake_ret'
-        remove_mount_point.return_value = 'fake_ret'
-        delete_zfcp_records.return_value = 'fake_ret'
-        disconnect_volume.return_value = 'fake_ret'
-
+        get_template.return_value = Template('fake template {{fcp}}')
         # connections < 1
         self.linux_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
                                                              multipath,
                                                              mount_point, 0)
-        # disconnect_volume.assert_called_once_with(fcp, lun, True)
-        # delete_zfcp_records.assert_called_once_with(fcp, lun)
-        # offline_device.assert_called_once_with(fcp)
-        # restart_multipath.assert_called_once_with()
-        # remove_mount_point.assert_called_once_with(mount_point, wwpns,
-        #                                            lun, multipath)
+        get_template.assert_called_once_with("volumeops",
+                                             "rhel7_detach_volume.j2")
+        template_render.assert_called_once_with(fcp='1fc5',
+                                                lun='0x0026000000000000',
+                                                target_filename='sdz')
 
     def test_set_zfcp_config_files(self):
         """ RHEL7, same to rhel6"""
@@ -503,6 +454,51 @@ class RHEL8TestCase(base.SDKTestCase):
         self.assertEqual('IPADDR="192.168.95.10"', cfg_str[4])
         self.assertEqual('DNS1="9.0.2.1"', cfg_str[11])
         self.assertEqual('DNS2="9.0.3.1"', cfg_str[12])
+
+    @mock.patch('jinja2.Template.render')
+    @mock.patch('zvmsdk.dist.LinuxDist.get_template')
+    def test_get_volume_attach_configuration_cmds(self, get_template,
+                                                  template_render):
+
+        """ RHEL8 """
+        fcp = '1fc5'
+        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        lun = '0x0026000000000000'
+        multipath = True
+        mount_point = '/dev/sdz'
+        get_template.return_value = Template('fake template {{fcp}}')
+        self.linux_dist.get_volume_attach_configuration_cmds(fcp, wwpns, lun,
+                                                             multipath,
+                                                             mount_point, True)
+        # check function called assertions
+        get_template.assert_called_once_with("volumeops",
+                                             "rhel8_attach_volume.j2")
+        template_render.assert_called_once_with(fcp='1fc5',
+                                                lun='0x0026000000000000',
+                                                target_filename='sdz')
+
+    @mock.patch('jinja2.Template.render')
+    @mock.patch('zvmsdk.dist.LinuxDist.get_template')
+    def test_get_volume_detach_configuration_cmds_1(self,
+                                                    get_template,
+                                                    template_render):
+
+        """ RHEL8 """
+        fcp = '1fc5'
+        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        lun = '0x0026000000000000'
+        multipath = True
+        mount_point = '/dev/sdz'
+        get_template.return_value = Template('fake template {{fcp}}')
+        # connections == 2
+        self.linux_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
+                                                             multipath,
+                                                             mount_point, 2)
+        get_template.assert_called_once_with("volumeops",
+                                             "rhel8_detach_volume.j2")
+        template_render.assert_called_once_with(fcp='1fc5',
+                                                lun='0x0026000000000000',
+                                                target_filename='sdz')
 
 
 class RHCOS4TestCase(base.SDKTestCase):
@@ -647,6 +643,78 @@ class SLESTestCase(base.SDKTestCase):
         ret = self.sles15_dist._set_zfcp_multipath(True)
         self.assertEqual(ret, expect)
 
+    @mock.patch('jinja2.Template.render')
+    @mock.patch('zvmsdk.dist.LinuxDist.get_template')
+    def test_get_volume_attach_configuration_cmds(self, get_template,
+                                                  template_render):
+
+        """ SLES """
+        fcp = '1fc5'
+        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        lun = '0x0026000000000000'
+        multipath = True
+        mount_point = '/dev/sdz'
+        get_template.return_value = Template('fake template {{fcp}}')
+        self.sles15_dist.get_volume_attach_configuration_cmds(fcp, wwpns, lun,
+                                                             multipath,
+                                                             mount_point, True)
+        # check function called assertions
+        get_template.assert_called_once_with("volumeops",
+                                             "sles_attach_volume.j2")
+        template_render.assert_called_once_with(fcp='1fc5',
+                                                lun='0x0026000000000000',
+                                                target_filename='sdz')
+
+    @mock.patch('jinja2.Template.render')
+    @mock.patch('zvmsdk.dist.LinuxDist.get_template')
+    def test_get_volume_detach_configuration_cmds_1(self,
+                                                    get_template,
+                                                    template_render):
+
+        """ SLES """
+        fcp = '1fc5'
+        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        lun = '0x0026000000000000'
+        multipath = True
+        mount_point = '/dev/sdz'
+        get_template.return_value = Template('fake template {{fcp}}')
+        # connections == 2
+        self.sles15_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
+                                                             multipath,
+                                                             mount_point, 2)
+        get_template.assert_called_once_with(
+            "volumeops",
+            "sles_detach_volume.j2")
+        template_render.assert_called_once_with(fcp='1fc5',
+                                                lun='0x0026000000000000',
+                                                target_filename='sdz',
+                                                is_last_volume=0)
+
+    @mock.patch('jinja2.Template.render')
+    @mock.patch('zvmsdk.dist.LinuxDist.get_template')
+    def test_get_volume_detach_configuration_cmds_2(self,
+                                                    get_template,
+                                                    template_render):
+
+        """ SLES """
+        fcp = '1fc5'
+        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        lun = '0x0026000000000000'
+        multipath = True
+        mount_point = '/dev/sdz'
+        get_template.return_value = Template('fake template {{fcp}}')
+        # connections == 0 and is_last_volume shoud be 1
+        self.sles15_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
+                                                             multipath,
+                                                             mount_point, 0)
+        get_template.assert_called_once_with(
+            "volumeops",
+            "sles_detach_volume.j2")
+        template_render.assert_called_once_with(fcp='1fc5',
+                                                lun='0x0026000000000000',
+                                                target_filename='sdz',
+                                                is_last_volume=1)
+
 
 class UBUNTUTestCase(base.SDKTestCase):
 
@@ -768,3 +836,77 @@ class UBUNTU20TestCase(base.SDKTestCase):
                         }
                     }
         self.assertEqual(ret, expect)
+
+    @mock.patch('jinja2.Template.render')
+    @mock.patch('zvmsdk.dist.LinuxDist.get_template')
+    def test_get_volume_attach_configuration_cmds(self, get_template,
+                                                  template_render):
+
+        """ UBUNTU """
+        fcp = '1fc5'
+        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        lun = '0x0026000000000000'
+        multipath = True
+        mount_point = '/dev/sdz'
+        get_template.return_value = Template('fake template {{fcp}}')
+        self.linux_dist.get_volume_attach_configuration_cmds(fcp, wwpns, lun,
+                                                             multipath,
+                                                             mount_point, True)
+        # check function called assertions
+        get_template.assert_called_once_with("volumeops",
+                                             "ubuntu_attach_volume.j2")
+        template_render.assert_called_once_with(fcp='1fc5',
+                                                lun='0x0026000000000000',
+                                                lun_id=38,
+                                                target_filename='sdz')
+
+    @mock.patch('jinja2.Template.render')
+    @mock.patch('zvmsdk.dist.LinuxDist.get_template')
+    def test_get_volume_detach_configuration_cmds_1(self,
+                                                    get_template,
+                                                    template_render):
+
+        """ UBUNTU """
+        fcp = '1fc5'
+        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        lun = '0x0100000000000000'
+        multipath = True
+        mount_point = '/dev/sdz'
+        get_template.return_value = Template('fake template {{fcp}}')
+        # connections == 2
+        self.linux_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
+                                                             multipath,
+                                                             mount_point, 2)
+        get_template.assert_called_once_with(
+                "volumeops",
+                "ubuntu_detach_volume.j2")
+        template_render.assert_called_once_with(fcp='1fc5',
+                                                lun='0x0100000000000000',
+                                                lun_id='0x0100000000000000',
+                                                target_filename='sdz',
+                                                is_last_volume=0)
+
+    @mock.patch('jinja2.Template.render')
+    @mock.patch('zvmsdk.dist.LinuxDist.get_template')
+    def test_get_volume_detach_configuration_cmds_2(self,
+                                                    get_template,
+                                                    template_render):
+
+        """ UBUNTU """
+        fcp = '1fc5'
+        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        lun = '0x0100000000000000'
+        multipath = True
+        mount_point = '/dev/sdz'
+        get_template.return_value = Template('fake template {{fcp}}')
+        # connections == 0
+        self.linux_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
+                                                             multipath,
+                                                             mount_point, 0)
+        get_template.assert_called_once_with("volumeops",
+                                             "ubuntu_detach_volume.j2")
+        template_render.assert_called_once_with(fcp='1fc5',
+                                                lun='0x0100000000000000',
+                                                lun_id='0x0100000000000000',
+                                                target_filename='sdz',
+                                                is_last_volume=1)
