@@ -936,6 +936,7 @@ class rhel7(rhel):
     def get_volume_attach_configuration_cmds(self, fcp, target_wwpn,
                                              target_lun, multipath,
                                              mount_point, new):
+        """rhel7"""
         template = self.get_template("volumeops", "rhel7_attach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
         content = template.render(fcp=fcp, lun=target_lun,
@@ -945,6 +946,7 @@ class rhel7(rhel):
     def get_volume_detach_configuration_cmds(self, fcp, target_wwpn,
                                              target_lun, multipath,
                                              mount_point, connections):
+        """rhel7"""
         template = self.get_template("volumeops", "rhel7_detach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
         content = template.render(fcp=fcp, lun=target_lun,
@@ -973,6 +975,7 @@ class rhel8(rhel7):
     def get_volume_attach_configuration_cmds(self, fcp, target_wwpn,
                                              target_lun, multipath,
                                              mount_point, new):
+        """rhel8 attach script generation"""
         template = self.get_template("volumeops", "rhel8_attach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
         content = template.render(fcp=fcp, lun=target_lun,
@@ -982,6 +985,7 @@ class rhel8(rhel7):
     def get_volume_detach_configuration_cmds(self, fcp, target_wwpn,
                                              target_lun, multipath,
                                              mount_point, connections):
+        """rhel8 detach script generation"""
         template = self.get_template("volumeops", "rhel8_detach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
         content = template.render(fcp=fcp, lun=target_lun,
@@ -1453,6 +1457,34 @@ class sles(LinuxDist):
                              % (device, target_lun))
         return var_source_device
 
+    def get_volume_attach_configuration_cmds(self, fcp, target_wwpn,
+                                             target_lun, multipath,
+                                             mount_point, new):
+        """sles attach script generation"""
+        template = self.get_template("volumeops", "sles_attach_volume.j2")
+        target_filename = mount_point.replace('/dev/', '')
+        # TODO: also consider is first attach or not
+        content = template.render(fcp=fcp, lun=target_lun,
+                                  target_filename=target_filename)
+        return content
+
+    def get_volume_detach_configuration_cmds(self, fcp, target_wwpn,
+                                             target_lun, multipath,
+                                             mount_point, connections):
+        """sles detach script generation"""
+        if connections > 0:
+            # if this volume is the last volume
+            # we need to know it and offline the FCP devices
+            is_last_volume = 0
+        else:
+            is_last_volume = 1
+        template = self.get_template("volumeops", "sles_detach_volume.j2")
+        target_filename = mount_point.replace('/dev/', '')
+        content = template.render(fcp=fcp, lun=target_lun,
+                                  target_filename=target_filename,
+                                  is_last_volume=is_last_volume)
+        return content
+
 
 class sles11(sles):
     def get_znetconfig_contents(self):
@@ -1853,6 +1885,66 @@ class ubuntu(LinuxDist):
                              'grep "ccw-%s-zfcp-.*:%s"`)\n'
                              % (device, target_lun))
         return var_source_device
+
+    def get_volume_attach_configuration_cmds(self, fcp, target_wwpn,
+                                             target_lun, multipath,
+                                             mount_point, new):
+        """ubuntu attach script generation"""
+        template = self.get_template("volumeops", "ubuntu_attach_volume.j2")
+        target_filename = mount_point.replace('/dev/', '')
+        # the parameter 'target_lun' is hex for either v7k or ds8k:
+        # for v7k, target_lun[2] == '0' and target_lun[6:] == '0'
+        # for ds8k, target_lun[2] == '4'
+
+        # in the future, we add support to other storage provider whose lun
+        # id may use bits in target_lun[6:], such as, 0x0003040200000000
+
+        # when attach v7k volume:
+        #   1. if the lun id less than 256,
+        #   the file under /dev/disk/by-path/ will as below,
+        #   take 'lun id = 0' as example:
+        #   ccw-0.0.5c03-fc-0x5005076802400c1a-lun-0,the the lun id is decimal.
+        #   2. if the lun id is equal or more than 256,
+        #   the file under /dev/disk/by-path/ will as below,
+        #   take 'lun id = 256' as example:
+        #   ccw-0.0.1a0d-fc-0x500507680b26bac7-lun-0x0100000000000000,
+        #   the lun id is hex.
+        # when attach ds8k volume:
+        #   the file under /dev/disk/by-path/ will as below,
+        #   take "volume id 140c" as example:
+        #   ccw-0.0.1a0d-fc-0x5005076306035388-lun-0x4014400c00000000,
+        #   the lun id is always hex.
+        lun = self._format_lun(target_lun)
+        if all([x == '0' for x in target_lun[6:]]) and lun < 256:
+            lun_id = lun
+        else:
+            lun_id = target_lun
+        # TODO: also consider is first attach or not
+        content = template.render(fcp=fcp, lun=target_lun, lun_id=lun_id,
+                                  target_filename=target_filename)
+        return content
+
+    def get_volume_detach_configuration_cmds(self, fcp, target_wwpn,
+                                             target_lun, multipath,
+                                             mount_point, connections):
+        """ubuntu detach script generation"""
+        if connections > 0:
+            # if this volume is the last volume
+            # we need to know it and offline the FCP devices
+            is_last_volume = 0
+        else:
+            is_last_volume = 1
+        template = self.get_template("volumeops", "ubuntu_detach_volume.j2")
+        target_filename = mount_point.replace('/dev/', '')
+        lun = self._format_lun(target_lun)
+        if all([x == '0' for x in target_lun[6:]]) and lun < 256:
+            lun_id = lun
+        else:
+            lun_id = target_lun
+        content = template.render(fcp=fcp, lun=target_lun, lun_id=lun_id,
+                                  target_filename=target_filename,
+                                  is_last_volume=is_last_volume)
+        return content
 
 
 class ubuntu16(ubuntu):
