@@ -75,6 +75,43 @@ do
     echo "scan request to host $host sent."
 done
 
+# wait for the devices ready
+FoundDiskPath=0
+# timeout set to 60 seconds
+Timeout=60
+while [ $FoundDiskPath -eq 0 ]
+do
+    # if timeout less or equal 0 seconds, means no time left
+    if [ $Timeout -le 0 ]; then
+        echo "waiting for devices ready timed out after 60 seconds."
+        break
+    fi
+    # loop all the WWPNs to found the alive device
+    for j in ${ActiveWWPNs[@]}
+    do
+        x="/dev/disk/by-path/ccw-0.0.$fcp-zfcp-$j:$lun"
+        # the x would be like:
+        # ccw-0.0.1d13-zfcp-0x5005076306035388:0x4014400400000000
+        echo "try disk path:$x"
+        if [ -e $x ]; then
+            diskPath=$x
+            FoundDiskPath=1
+            echo "Found disk path is: $diskPath"
+            break
+        fi
+    done
+    # if devices still not ready, wait another 5 seconds and retry
+    if [ $FoundDiskPath -eq 0 ]; then
+        sleep 5
+        Timeout=$((Timeout-=5))
+        echo "sleep 5 seconds to wait the devices ready, timeout left: $Timeout"
+    fi
+done
+if [ $FoundDiskPath -ne 1 ]; then
+    echo "error happens during attachment because the device file not found, will exit with code 1."
+    exit 1
+fi
+
 # ensure multipathd service is up
 enable_multipath_mod=`lsmod | grep dm_multipath`
 if [ -z "$enable_multipath_mod" ];then
@@ -89,9 +126,7 @@ else
     echo "dm-multipath mode is already enabled"
 fi
 
-SourceDevice=(`ls /dev/disk/by-path/ | grep "ccw-0.0.$fcp-zfcp-.*:$lun"`)
-
-WWID=`/lib/udev/scsi_id --page 0x83 --whitelisted /dev/disk/by-path/$SourceDevice`
+WWID=`/lib/udev/scsi_id --page 0x83 --whitelisted $diskPath`
 echo "Get WWID in sles attach script: $WWID"
 
 ConfigLib="/lib/udev/rules.d/56-zfcp.rules"
