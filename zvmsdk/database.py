@@ -121,6 +121,9 @@ def _init_db_conn(db_file):
     if not os.path.exists(db_dir):
         os.makedirs(db_dir, _DIR_MODE)
     database = os.path.join(db_dir, db_file)
+    if not os.path.exists(database):
+        err = "Initialize database failed because %s not exist." % database
+        raise exception.SDKDatabaseException(msg=err)
     return sqlite3.connect(database,
                            check_same_thread=False,
                            isolation_level=None)
