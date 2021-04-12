@@ -35,7 +35,10 @@ setuptools.setup(
             'volumeops/templates/rhel7_attach_volume.j2',
             'volumeops/templates/rhel7_detach_volume.j2',
             'volumeops/templates/rhel8_attach_volume.j2',
-            'volumeops/templates/rhel8_detach_volume.j2'
+            'volumeops/templates/sles_attach_volume.j2',
+            'volumeops/templates/sles_detach_volume.j2',
+            'volumeops/templates/ubuntu_attach_volume.j2',
+            'volumeops/templates/ubuntu_detach_volume.j2'
         ]
     },
     classifiers=[
