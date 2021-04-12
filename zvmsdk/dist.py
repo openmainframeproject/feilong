@@ -202,293 +202,18 @@ class LinuxDist(object):
         """
         return "echo 'root:%s' | chpasswd" % admin_password
 
-    def modprobe_zfcp_module(self):
-        # modprobe zfcp module
-        modprobe = 'modprobe zfcp\n'
-        return modprobe
-
     @abc.abstractmethod
-    def _get_source_devices(self, fcp, target_lun):
-        # A sample path for rhel/sles is like:
-        #   '/dev/disk/by-path/ccw-0.0.1fb3-zfcp-0x5005076801102991:0x0021000000000000'.
-        # On Ubuntu it's like:
-        #   '/dev/disk/by-path/ccw-0.0.1fb3-fc-0x5005076801102991-lun-33'
-        pass
-
-    def _get_wwids(self):
-        # ATTENTIONS: should call _get_source_devices before call this
-        # var_wwid_line = ('wwid_line=`/sbin/udevadm info --query=all --name'
-        #                  '=$SourceDevice | egrep -a -i \"ID_SERIAL=\"`')
-        wwids = 'declare -a WWIDs\n'
-        wwids += 'LEN=${#SourceDevices[@]}\n'
-        wwids += 'for ((i=0;i<$LEN;i++)) do\n'
-        wwids += ('    WWIDs[i]=`/lib/udev/scsi_id --page 0x83 '
-                  '--whitelisted /dev/disk/by-path/${SourceDevices[i]}`\n')
-        wwids += 'done\n'
-        return wwids
-
-    def _get_rules_config_file_path(self):
-        config_file_lib = '/lib/udev/rules.d/56-zfcp.rules'
-        find_config = 'ConfigLib="%s"\n' % config_file_lib
-        find_config += 'if [ -e "$ConfigLib" ]\n'
-        find_config += 'then\n'
-        find_config += '    ConfigFile="/lib/udev/rules.d/56-zfcp.rules"\n'
-        find_config += 'else\n'
-        find_config += '    ConfigFile="/etc/udev/rules.d/56-zfcp.rules"\n'
-        find_config += 'fi\n'
-        # TODO: if /etc/xxx not exist?
-        return find_config
-
-    def _add_udev_rules(self, mount_point, target_lun, multipath):
-        # TODO: mount_point format check?
-        # get var value of TargetFile, WWPN, LUN
-        target_filename = mount_point.replace('/dev/', '')
-        var_target_file = 'TargetFile="%s"\n' % target_filename
-        var_lun = 'LUN="%s"\n' % target_lun
-        # find the right path of config file
-        var_config_file = self._get_rules_config_file_path()
-        # add rules
-        if multipath:
-            # KERNEL: device name in kernel
-            # ENV: environment variable
-            # SYMLINK: create symbol link for device under /dev
-            var_link_items = 'for WWID in ${WWIDs[@]}\n'
-            var_link_items += 'do\n'
-            link_item = ('KERNEL==\\"dm-*\\", '
-                         'ENV{DM_UUID}==\\"mpath-$WWID\\", '
-                         'SYMLINK+=\\"$TargetFile\\"')
-            var_link_items += '    LinkItem="%s"\n' % link_item
-            var_link_items += '    echo -e $LinkItem >> $ConfigFile\n'
-            var_link_items += 'done\n'
-        else:
-            var_link_items = 'for WWPN in ${ActiveWWPNs[@]}\n'
-            var_link_items += 'do\n'
-            link_item = ('KERNEL==\\"sd*\\", ATTRS{wwpn}==\\"$WWPN\\", '
-                         'ATTRS{fcp_lun}==\\"$LUN\\", '
-                         'SYMLINK+=\\"$TargetFile%n\\"')
-            var_link_items += '    LinkItem="%s"\n' % link_item
-            var_link_items += '    echo -e $LinkItem >> $ConfigFile\n'
-            var_link_items += 'done\n'
-        add_rules_cmd = ''.join((var_target_file,
-                                 var_lun,
-                                 var_config_file,
-                                 var_link_items))
-        return add_rules_cmd
-
-    def _remove_udev_rules(self, mount_point, multipath):
-        # TODO: mount_point format check?
-        # get file name
-        target_filename = mount_point.replace('/dev/', '')
-        var_target_file = 'TargetFile="%s"\n' % target_filename
-        # find the right path of config file
-        var_config_file = self._get_rules_config_file_path()
-        # remove rules
-        if multipath:
-            remove_rules_cmd = ('sed -i -e /SYMLINK+=\\"$TargetFile\\"/d '
-                                '$ConfigFile\n')
-        else:
-            remove_rules_cmd = ('sed -i -e '
-                                '/SYMLINK+=\\"$TargetFile%n\\"/d '
-                                '$ConfigFile\n')
-        cmds = ''.join((var_target_file,
-                        var_config_file,
-                        remove_rules_cmd))
-        return cmds
-
-    def _reload_rules_config_file(self, multipath):
-        # reload the rules by sending reload signal to systemd-udevd
-        reload_cmd = 'udevadm control --reload'
-        # trigger uevent with the device path in /sys
-        if multipath:
-            create_symlink_cmd = 'udevadm trigger --sysname-match=dm-*'
-        else:
-            create_symlink_cmd = 'udevadm trigger --sysname-match=sd*'
-        return '\n'.join((reload_cmd,
-                          create_symlink_cmd))
-
-    def create_mount_point(self, fcp, target_wwpns,
-                          target_lun, mount_point, multipath):
-        # get WWID
-        var_wwids = self._get_wwids()
-        # add rules into config file
-        add_rules = self._add_udev_rules(mount_point, target_lun, multipath)
-        # reload the rules
-        reload_rules = self._reload_rules_config_file(multipath)
-        return ''.join((var_wwids,
-                        add_rules,
-                        reload_rules))
-
-    def remove_mount_point(self, mount_point, target_wwpns, target_lun,
-                           multipath):
-        # remove rules
-        remove_rules = self._remove_udev_rules(mount_point, multipath)
-        # reload the rules
-        reload_rules = self._reload_rules_config_file(multipath)
-        return '\n'.join((remove_rules,
-                          reload_rules))
-
-    def settle_file_system(self):
-        # Settle the file system so when we are done
-        # the device is fully available
-        settle = 'if [[ $(which udevadm 2> /dev/null) != \'\' ]]; then\n'
-        settle += '    udevadm settle\n'
-        settle += 'else\n'
-        settle += '    udevsettle\n'
-        settle += 'fi\n'
-        return settle
-
-    def wait_for_file_ready(self, fcp, target_lun):
-        # Sometimes the file takes longer to appear.
-        # We will wait up to 3 minutes.
-        var_src_dev = self._get_source_devices(fcp, target_lun)
-        # we just check one of the SourceDevices to save time
-        scripts = 'SourceDevice="/dev/disk/by-path/${SourceDevices[0]}"\n'
-        scripts += 'if [[ ! -e $SourceDevice ]]; then\n'
-        scripts += '    maxTime=20\n'
-        scripts += '    while [ $maxTime -gt 0]\n'
-        scripts += '    do\n'
-        scripts += '      if [[ -e $SourceDevice ]]; then\n'
-        scripts += '        break\n'
-        scripts += '      fi\n'
-        scripts += '      sleep 2\n'
-        scripts += '      ((maxTime-=2))\n'
-        scripts += '    done\n'
-        scripts += 'fi\n'
-        return '\n'.join((var_src_dev,
-                          scripts))
-
-    def _check_npiv_enabled(self, fcp):
-        # get hostname of FCP
-        npiv_enabled = ('HostName=`lszfcp | grep "%s" | '
-                        'cut -d " " -f 2`\n' % fcp)
-        # if $NPIV=='NPIV VPORT' , that means NPIV is enabled
-        npiv_enabled += ('NPIV=`cat /sys/bus/ccw/drivers/zfcp/0.0.%s/'
-                         '$HostName/fc_host/$HostName/port_type`\n' % fcp)
-        return npiv_enabled
-
-    def _check_auto_scan(self):
-        # if $AutoScan=='Y', that means NPIV enabled
-        scan = 'AutoScan=`cat /sys/module/zfcp/parameters/allow_lun_scan`\n'
-        return scan
-
-    def _get_active_wwpns(self, fcp):
-        device = '0.0.%s' % fcp
-        wwpn_active = 'declare -a ActiveWWPNs\n'
-        wwpn_active += ('ActiveWWPNs=(`ls /sys/bus/ccw/drivers/zfcp'
-                        '/%s/ | grep "0x"`)\n' % device)
-        return wwpn_active
-
     def get_volume_attach_configuration_cmds(self, fcp, target_wwpns,
                                              target_lun, multipath,
                                              mount_point, new):
-        fcp = fcp.lower()
-        target_lun = target_lun.lower()
-        target_wwpns = [x.lower() for x in target_wwpns]
-        shell_cmds = ''
-        # because the target_wwpns driver gave us contain inactive ones
-        # so we do NOT use them, we discovery the WWPNs ourselves
-        if new:
-            shell_cmds += self.modprobe_zfcp_module()
-            shell_cmds += self._online_fcp_device(fcp)
-        shell_cmds += self._get_active_wwpns(fcp)
-        shell_cmds += self._check_npiv_enabled(fcp)
-        shell_cmds += self._check_auto_scan()
-        shell_cmds += self._set_sysfs(fcp, target_wwpns, target_lun)
-        shell_cmds += self._set_zfcp_config_files(fcp, target_lun)
-        shell_cmds += self.settle_file_system()
-        shell_cmds += self.wait_for_file_ready(fcp, target_lun)
-        # TODO:rollback??
-        if multipath:
-            shell_cmds += self._set_zfcp_multipath(new)
-        if mount_point != '':
-            shell_cmds += self.create_mount_point(fcp, target_wwpns,
-                                                  target_lun, mount_point,
-                                                  multipath)
-        return '\n'.join(('#!/bin/bash', shell_cmds))
+        "generate punch script for attachment configuration"
+        pass
 
-    def _disconnect_volume(self, fcp, target_lun, multipath):
-        """remove one lun and /dev/sdX from os"""
-        get_src_dev = self._get_source_devices(fcp, target_lun)
-        # WWID should be like 36005076802880052a0000000000000e5
-        get_wwids = self._get_wwids()
-        # get wwpns, _delete_zfcp_config_records will use it
-        get_wwpns = self._get_active_wwpns(fcp)
-        # TODO:not multipath?
-        flush_devices = ''
-        if multipath:
-            flush_devices += 'for WWID in ${WWIDs[@]}\n'
-            flush_devices += 'do\n'
-            flush_devices += '    multipath -f $WWID\n'
-            flush_devices += 'done\n'
-            # realpath should be like /dev/sdX
-            flush_devices += 'for SourceDevice in ${SourceDevices[@]}\n'
-            flush_devices += 'do\n'
-            flush_devices += ('    RealPath=`readlink -f /dev/disk/by-path/'
-                              '$SourceDevice`\n')
-            flush_devices += '    blockdev --flushbufs $RealPath > /dev/null\n'
-            flush_devices += ('    SdxName=`echo "$RealPath" | '
-                              'cut -d "/" -f 3`\n')
-            flush_devices += '    echo 1 > /sys/block/$SdxName/device/delete\n'
-            flush_devices += 'done\n'
-        return '\n'.join((get_src_dev,
-                          get_wwids,
-                          get_wwpns,
-                          flush_devices))
-
+    @abc.abstractmethod
     def get_volume_detach_configuration_cmds(self, fcp, target_wwpns,
                                              target_lun, multipath,
                                              mount_point, connections):
-        fcp = fcp.lower()
-        target_lun = target_lun.lower()
-        target_wwpns = [x.lower() for x in target_wwpns]
-        shell_cmds = ''
-        shell_cmds += self._disconnect_volume(fcp, target_lun, multipath)
-        shell_cmds += self._delete_zfcp_config_records(fcp, target_lun)
-        # if connections >=1, no need to remove FCP devices
-        if connections < 1:
-            shell_cmds += self._offline_fcp_device(fcp)
-        if multipath:
-            if connections < 1:
-                shell_cmds += self._restart_multipath()
-        if mount_point != '':
-            shell_cmds += self.remove_mount_point(mount_point, target_wwpns,
-                                                  target_lun, multipath)
-        return '\n'.join(('#!/bin/bash', shell_cmds))
-
-    @abc.abstractmethod
-    def _online_fcp_device(self, fcp):
-        pass
-
-    @abc.abstractmethod
-    def _offline_fcp_device(self, fcp):
-        pass
-
-    @abc.abstractmethod
-    def _delete_zfcp_config_records(self, fcp, target_lun):
-        pass
-
-    @abc.abstractmethod
-    def _set_sysfs(self, fcp, target_wwpns, target_lun):
-        pass
-
-    @abc.abstractmethod
-    def _set_zfcp_config_files(self, fcp, target_lun):
-        pass
-
-    @abc.abstractmethod
-    def _restart_multipath(self):
-        pass
-
-    @abc.abstractmethod
-    def _rescan_multipath(self):
-        pass
-
-    @abc.abstractmethod
-    def _set_zfcp_multipath(self, new):
-        pass
-
-    @abc.abstractmethod
-    def _config_to_persistent(self, multipath):
+        "generate punch script for detachment configuration"
         pass
 
     @abc.abstractmethod
@@ -605,11 +330,6 @@ class rhel(LinuxDist):
     def _get_network_file_path(self):
         return '/etc/sysconfig/network-scripts/'
 
-    def assemble_zfcp_srcdev(self, fcp, wwpn, lun):
-        path = '/dev/disk/by-path/ccw-0.0.%(fcp)s-zfcp-0x%(wwpn)s:0x%(lun)s'
-        srcdev = path % {'fcp': fcp, 'wwpn': wwpn, 'lun': lun}
-        return srcdev
-
     def _get_cfg_str(self, device, broadcast_v4, gateway_v4, ip_v4,
                      netmask_v4, address_read, subchannels, dns_v4):
         cfg_str = 'DEVICE=\"' + device + '\"\n'
@@ -662,68 +382,6 @@ class rhel(LinuxDist):
     def _delete_vdev_info(self, vdev):
         return ''
 
-    def _online_fcp_device(self, fcp):
-        """rhel online zfcp. sampe to all rhel distro."""
-        # cio_ignore
-        cio_ignore = '/sbin/cio_ignore -r %s > /dev/null\n' % fcp
-        # set the fcp online
-        online_dev = '/sbin/chccwdev -e %s > /dev/null\n' % fcp
-        return cio_ignore + online_dev
-
-    def _offline_fcp_device(self, fcp):
-        """rhel offline zfcp. sampe to all rhel distro."""
-        offline_dev = 'chccwdev -d %s\n' % fcp
-        return offline_dev
-
-    def _delete_zfcp_config_records(self, fcp, target_lun):
-        """rhel unconfigure wwpn and lun. sampe to all rhel distro."""
-        device = '0.0.%s' % fcp
-        data = {'lun': target_lun, 'device': device,
-                'zfcpConf': '/etc/zfcp.conf'}
-        delete_records_cmd = 'for WWPN in ${ActiveWWPNs[@]}\n'
-        delete_records_cmd += 'do\n'
-        delete_records_cmd += ('    sed -i -e '
-                              '\"/%(device)s $WWPN %(lun)s/d\" '
-                              '%(zfcpConf)s\n' % data)
-        delete_records_cmd += 'done\n'
-        return delete_records_cmd
-
-    def _set_zfcp_multipath(self, new):
-        """sampe to all rhel distro"""
-        # update multipath configuration
-        # new==True means this is first attachment
-        if new:
-            modprobe = 'modprobe dm-multipath'
-            conf_file = '#blacklist {\n'
-            conf_file += '#\tdevnode \\"*\\"\n'
-            conf_file += '#}\n'
-            conf_cmd = 'echo -e "%s" > /etc/multipath.conf' % conf_file
-            mpathconf = 'mpathconf'
-            restart = self._restart_multipath()
-            return '\n'.join((modprobe,
-                              conf_cmd,
-                              mpathconf,
-                              'sleep 2',
-                              restart,
-                              'sleep 2\n'))
-        else:
-            rescan = self._rescan_multipath()
-            return rescan
-
-    def _config_to_persistent(self):
-        """rhel"""
-        pass
-
-    def _get_source_devices(self, fcp, target_lun):
-        """rhel"""
-        device = '0.0.%s' % fcp
-        # var_source_device = ('SourceDevice="/dev/disk/by-path/ccw-%(device)s'
-        #                      '-zfcp-%(wwpn)s:%(lun)s"\n' % data)
-        var_source_device = ('SourceDevices=(`ls /dev/disk/by-path/ | '
-                             'grep "ccw-%s-zfcp-.*:%s"`)\n'
-                             % (device, target_lun))
-        return var_source_device
-
 
 class rhel6(rhel):
     def get_znetconfig_contents(self):
@@ -774,60 +432,28 @@ class rhel6(rhel):
                              self._get_all_device_filename())
         return '\nrm -f %s\n' % files
 
-    def _restart_multipath(self):
-        """rhel6"""
-        restart_multipathd = 'service multipathd restart\n'
-        return restart_multipathd
-
-    def _rescan_multipath(self):
-        """rhel6"""
-        rescan = 'for host in `ls /sys/class/scsi_host/`\n'
-        rescan += 'do\n'
-        rescan += '    echo "- - -" > /sys/class/scsi_host/$host/scan\n'
-        rescan += 'done\n'
-        return rescan
-
-    def _set_sysfs(self, fcp, target_wwpns, target_lun):
-        """rhel6 set WWPN and LUN in sysfs"""
-        device = '0.0.%s' % fcp
-        data = {'device': device, 'lun': target_lun}
-        port_add = ''
-        for target_wwpn in target_wwpns:
-            port_add += 'echo "%s" > ' % target_wwpn
-            port_add += '/sys/bus/ccw/drivers/zfcp/%s/port_add' % device
-        # if NPIV is disable or autoscan is closed, need manual operations
-        unit_add = ('if [[ "$AutoScan" != "Y" || "$NPIV" != "NPIV VPORT" ]]; '
-                    'then\n')
-        unit_add += '    for wwpn in ${ActiveWWPNs[@]}\n'
-        unit_add += '    do\n'
-        unit_add += ('        chzdev -e -a zfcp-lun %(device)s:$wwpn:'
-                     '%(lun)s\n' % data)
-        unit_add += ('        echo "%(lun)s" > /sys/bus/ccw/drivers/zfcp/'
-                     '%(device)s/$wwpn/unit_add\n' % data)
-        unit_add += '    done\n'
-        unit_add += 'fi\n'
-        return '\n'.join((port_add,
-                          unit_add))
-
-    def _set_zfcp_config_files(self, fcp, target_lun):
-        """rhel6 set WWPN and LUN in configuration files"""
-        device = '0.0.%s' % fcp
-        data = {'device': device, 'lun': target_lun}
-        set_zfcp_conf = 'for wwpn in ${ActiveWWPNs[@]}\n'
-        set_zfcp_conf += 'do\n'
-        set_zfcp_conf += ('    echo "%(device)s $wwpn %(lun)s" >> '
-                          '/etc/zfcp.conf\n' % data)
-        set_zfcp_conf += 'done\n'
-        set_zfcp_conf += ('echo "add" >> /sys/bus/ccw/devices/%s/uevent\n'
-                          % device)
-        return set_zfcp_conf
-
     def generate_set_hostname_script(self, hostname):
         lines = ['#!/bin/bash\n',
                  'sed -i "s/^HOSTNAME=.*/HOSTNAME=%s/" '
                     '/etc/sysconfig/network\n' % hostname,
                  '/bin/hostname %s\n' % hostname]
         return lines
+
+    def get_volume_attach_configuration_cmds(self, fcp, target_wwpns,
+                                             target_lun, multipath,
+                                             mount_point, new):
+        "generate punch script for attachment configuration"
+        func_name = 'get_volume_attach_configuration_cmds'
+        raise exception.SDKFunctionNotImplementError(func=func_name,
+                                                     modID='volume')
+
+    def get_volume_detach_configuration_cmds(self, fcp, target_wwpns,
+                                             target_lun, multipath,
+                                             mount_point, connections):
+        "generate punch script for detachment configuration"
+        func_name = 'get_volume_attach_configuration_cmds'
+        raise exception.SDKFunctionNotImplementError(func=func_name,
+                                                     modID='volume')
 
 
 class rhel7(rhel):
@@ -889,49 +515,6 @@ class rhel7(rhel):
         files = os.path.join(self._get_network_file_path(),
                              self._get_all_device_filename())
         return '\nrm -f %s\n' % files
-
-    def _set_sysfs(self, fcp, target_wwpns, target_lun):
-        """rhel7 set WWPN and LUN in sysfs"""
-        device = '0.0.%s' % fcp
-        data = {'device': device, 'lun': target_lun}
-        # if NPIV is disable or autoscan is closed, need manual operations
-        unit_add = ('if [[ "$AutoScan" != "Y" || "$NPIV" != "NPIV VPORT" ]]; '
-                    'then\n')
-        unit_add += '    for wwpn in ${ActiveWWPNs[@]}\n'
-        unit_add += '    do\n'
-        unit_add += ('        chzdev -e -a zfcp-lun %(device)s:$wwpn:%(lun)s\n'
-                     % data)
-        unit_add += ('        echo "%(lun)s" > /sys/bus/ccw/drivers/zfcp/'
-                     '%(device)s/$wwpn/unit_add\n' % data)
-        unit_add += '    done\n'
-        unit_add += 'fi\n'
-        return unit_add
-
-    def _set_zfcp_config_files(self, fcp, target_lun):
-        """rhel7 set WWPN and LUN in configuration files"""
-        device = '0.0.%s' % fcp
-        data = {'device': device, 'lun': target_lun}
-        set_zfcp_conf = 'for wwpn in ${ActiveWWPNs[@]}\n'
-        set_zfcp_conf += 'do\n'
-        set_zfcp_conf += ('    echo "%(device)s $wwpn %(lun)s" >> '
-                          '/etc/zfcp.conf\n' % data)
-        set_zfcp_conf += 'done\n'
-        set_zfcp_conf += ('echo "add" >> /sys/bus/ccw/devices/%s/uevent\n'
-                          % device)
-        return set_zfcp_conf
-
-    def _restart_multipath(self):
-        """rhel7"""
-        restart_multipathd = 'systemctl restart multipathd.service\n'
-        return restart_multipathd
-
-    def _rescan_multipath(self):
-        """rhel7"""
-        rescan = 'for host in `ls /sys/class/scsi_host/`\n'
-        rescan += 'do\n'
-        rescan += '    echo "- - -" > /sys/class/scsi_host/$host/scan\n'
-        rescan += 'done\n'
-        return rescan
 
     def get_volume_attach_configuration_cmds(self, fcp, target_wwpn,
                                              target_lun, multipath,
@@ -1045,6 +628,22 @@ class rhcos(LinuxDist):
         self._smtclient.clean_temp_folder(tmp_path)
         return fixed_ip_parameter
 
+    def get_volume_attach_configuration_cmds(self, fcp, target_wwpns,
+                                             target_lun, multipath,
+                                             mount_point, new):
+        "generate punch script for attachment configuration"
+        func_name = 'get_volume_attach_configuration_cmds'
+        raise exception.SDKFunctionNotImplementError(func=func_name,
+                                                     modID='volume')
+
+    def get_volume_detach_configuration_cmds(self, fcp, target_wwpns,
+                                             target_lun, multipath,
+                                             mount_point, connections):
+        "generate punch script for detachment configuration"
+        func_name = 'get_volume_attach_configuration_cmds'
+        raise exception.SDKFunctionNotImplementError(func=func_name,
+                                                     modID='volume')
+
     def _append_udev_info(self, cmd_str, cfg_files, file_name_route,
                       route_cfg_str, udev_cfg_str, first=False):
         pass
@@ -1052,14 +651,7 @@ class rhcos(LinuxDist):
     def _append_udev_rules_file(self, cfg_files, base_vdev):
         pass
 
-    def _config_to_persistent(self):
-        """rhcos"""
-        pass
-
     def _delete_vdev_info(self, vdev):
-        pass
-
-    def _delete_zfcp_config_records(self, fcp, target_lun):
         pass
 
     def _enable_network_interface(self, device, ip, broadcast):
@@ -1090,34 +682,10 @@ class rhcos(LinuxDist):
     def _get_route_str(self, gateway_v4):
         pass
 
-    def _get_source_devices(self, fcp, target_lun):
-        pass
-
     def _get_udev_configuration(self, device, dev_channel):
         pass
 
     def _get_udev_rules(self, channel_read, channel_write, channel_data):
-        pass
-
-    def _offline_fcp_device(self, fcp):
-        pass
-
-    def _online_fcp_device(self, fcp):
-        pass
-
-    def _rescan_multipath(self):
-        pass
-
-    def _restart_multipath(self):
-        pass
-
-    def _set_sysfs(self, fcp, target_wwpns, target_lun):
-        pass
-
-    def _set_zfcp_config_files(self, fcp, target_lun):
-        pass
-
-    def _set_zfcp_multipath(self, new):
         pass
 
     def create_active_net_interf_cmd(self):
@@ -1286,11 +854,6 @@ class sles(LinuxDist):
                 % {'image': image, 'ramdisk': ramdisk, 'root': root,
                    'fcp': fcp, 'wwpn': wwpn, 'lun': lun}]
 
-    def assemble_zfcp_srcdev(self, fcp, wwpn, lun):
-        path = '/dev/disk/by-path/ccw-0.0.%(fcp)s-zfcp-0x%(wwpn)s:0x%(lun)s'
-        srcdev = path % {'fcp': fcp, 'wwpn': wwpn, 'lun': lun}
-        return srcdev
-
     def _enable_network_interface(self, device, ip, broadcast):
         return ''
 
@@ -1315,147 +878,6 @@ class sles(LinuxDist):
         cmd += "sed -i '/%s/d' %s\n" % (address,
                                         '/boot/zipl/active_devices.txt')
         return cmd
-
-    def _online_fcp_device(self, fcp):
-        """sles online fcp"""
-        # cio_ignore
-        cio_ignore = '/sbin/cio_ignore -r %s > /dev/null\n' % fcp
-        # set the fcp online
-        online_dev = '/sbin/chccwdev -e %s > /dev/null\n' % fcp
-        return cio_ignore + online_dev
-
-    def _set_sysfs(self, fcp, target_wwpns, target_lun):
-        """sles set WWPN and LUN in sysfs"""
-        device = '0.0.%s' % fcp
-        data = {'device': device, 'lun': target_lun}
-        # if NPIV is disable or autoscan is closed, need manual operations
-        unit_add = ('if [[ "$AutoScan" != "Y" || "$NPIV" != "NPIV VPORT" ]]; '
-                    'then\n')
-        unit_add += '    for wwpn in ${ActiveWWPNs[@]}\n'
-        unit_add += '    do\n'
-        unit_add += ('        chzdev -e -a zfcp-lun %(device)s:$wwpn:%(lun)s\n'
-                     % data)
-        unit_add += ('        echo "%(lun)s" > /sys/bus/ccw/drivers/zfcp/'
-                     '%(device)s/$wwpn/unit_add\n' % data)
-        unit_add += '    done\n'
-        unit_add += 'fi\n'
-        return unit_add
-
-    def _set_zfcp_config_files(self, fcp, target_lun):
-        """sles set WWPN and LUN in configuration files"""
-        device = '0.0.%s' % fcp
-        # host config
-        host_config = '/sbin/zfcp_host_configure %s 1' % device
-        # disk config
-        disk_config = 'for wwpn in ${ActiveWWPNs[@]}\n'
-        disk_config += 'do\n'
-        disk_config += '    /sbin/zfcp_disk_configure ' +\
-                      '%(device)s $wwpn %(lun)s 1\n' %\
-                      {'device': device, 'lun': target_lun}
-        disk_config += 'done\n'
-        create_config = 'touch /etc/udev/rules.d/51-zfcp-%s.rules' % device
-        # check if the file already contains the zFCP channel
-        check_channel = ('out=`cat "/etc/udev/rules.d/51-zfcp-%s.rules" '
-                         '| egrep -i "ccw/%s]online"`\n' % (device, device))
-        check_channel += 'if [[ ! $out ]]; then\n'
-        check_channel += ('  echo "ACTION==\\"add\\", SUBSYSTEM==\\"ccw\\", '
-                          'KERNEL==\\"%(device)s\\", IMPORT{program}=\\"'
-                          'collect %(device)s %%k %(device)s zfcp\\""'
-                          '| tee -a /etc/udev/rules.d/51-zfcp-%(device)s.rules'
-                          '\n' % {'device': device})
-        check_channel += ('  echo "ACTION==\\"add\\", SUBSYSTEM==\\"drivers\\"'
-                          ', KERNEL==\\"zfcp\\", IMPORT{program}=\\"'
-                          'collect %(device)s %%k %(device)s zfcp\\""'
-                          '| tee -a /etc/udev/rules.d/51-zfcp-%(device)s.rules'
-                          '\n' % {'device': device})
-        check_channel += ('  echo "ACTION==\\"add\\", '
-                          'ENV{COLLECT_%(device)s}==\\"0\\", '
-                          'ATTR{[ccw/%(device)s]online}=\\"1\\""'
-                          '| tee -a /etc/udev/rules.d/51-zfcp-%(device)s.rules'
-                          '\n' % {'device': device})
-        check_channel += 'fi\n'
-        check_channel += 'for wwpn in ${ActiveWWPNs[@]}\n'
-        check_channel += 'do\n'
-        check_channel += ('    echo "ACTION==\\"add\\", KERNEL==\\"rport-*\\",'
-                          ' ATTR{port_name}==\\"$wwpn\\", '
-                          'SUBSYSTEMS==\\"ccw\\", KERNELS==\\"%(device)s\\",'
-                          'ATTR{[ccw/%(device)s]$wwpn/unit_add}='
-                          '\\"%(lun)s\\""'
-                          '| tee -a /etc/udev/rules.d/51-zfcp-%(device)s.rules'
-                          '\n' % {'device': device, 'lun': target_lun})
-        check_channel += 'done\n'
-        return '\n'.join((host_config,
-                          'sleep 1',
-                          disk_config,
-                          'sleep 1',
-                          create_config,
-                          check_channel))
-
-    def _restart_multipath(self):
-        """sles restart multipath"""
-        # reload device mapper
-        reload_map = 'systemctl restart multipathd\n'
-        return reload_map
-
-    def _rescan_multipath(self):
-        """sles rescan multipath"""
-        # TODO: sles is different with rhel or not?
-        rescan = 'for host in `ls /sys/class/scsi_host/`\n'
-        rescan += 'do\n'
-        rescan += '    echo "- - -" > /sys/class/scsi_host/$host/scan\n'
-        rescan += 'done\n'
-        return rescan
-
-    def _set_zfcp_multipath(self, new):
-        """sles"""
-        # modprobe DM multipath kernel module
-        # new==True means this is first attachment
-        if new:
-            modprobe = 'modprobe dm_multipath'
-            conf_file = '#blacklist {\n'
-            conf_file += '#\tdevnode \\"*\\"\n'
-            conf_file += '#}\n'
-            conf_cmd = 'echo -e "%s" > /etc/multipath.conf' % conf_file
-            restart = self._restart_multipath()
-            return '\n'.join((modprobe,
-                              conf_cmd,
-                              restart))
-        else:
-            rescan = self._rescan_multipath()
-            return rescan
-
-    def _offline_fcp_device(self, fcp):
-        """sles offline zfcp. sampe to all rhel distro."""
-        # host config
-        device = '0.0.%s' % fcp
-        host_config = '/sbin/zfcp_host_configure %s 0\n' % device
-        return host_config
-
-    def _delete_zfcp_config_records(self, fcp, target_lun):
-        """sles unconfigure wwpn and lun. sampe to all rhel distro."""
-        device = '0.0.%s' % fcp
-        # disk config
-        disk_config = 'for WWPN in ${ActiveWWPNs[@]}\n'
-        disk_config += 'do\n'
-        disk_config += '    /sbin/zfcp_disk_configure ' +\
-                      '%(device)s $WWPN %(lun)s 0\n' %\
-                      {'device': device, 'lun': target_lun}
-        disk_config += 'done\n'
-        return disk_config
-
-    def _config_to_persistent(self):
-        """sles"""
-        pass
-
-    def _get_source_devices(self, fcp, target_lun):
-        """sles"""
-        device = '0.0.%s' % fcp
-        # var_source_device = ('SourceDevice="/dev/disk/by-path/ccw-%(device)s'
-        #                      '-zfcp-%(wwpn)s:%(lun)s"\n' % data)
-        var_source_device = ('SourceDevices=(`ls /dev/disk/by-path/ | '
-                             'grep "ccw-%s-zfcp-.*:%s"`)\n'
-                             % (device, target_lun))
-        return var_source_device
 
     def get_volume_attach_configuration_cmds(self, fcp, target_wwpn,
                                              target_lun, multipath,
@@ -1786,105 +1208,14 @@ class ubuntu(LinuxDist):
         cmd = '\nrm -f %s\n' % files
         return cmd
 
-    def _online_fcp_device(self, fcp):
-        """ubuntu online fcp"""
-        return ''
-
-    def _set_sysfs(self, fcp, target_wwpns, target_lun):
-        """ubuntu set WWPN and LUN in sysfs"""
-        return ''
-
-    def _set_zfcp_config_files(self, fcp, target_lun):
-        """ubuntu zfcp configuration """
-        host_config = '/sbin/chzdev zfcp-host %s -e' % fcp
-
-        device = '0.0.%s' % fcp
-        target = '%s:$wwpn:%s' % (device, target_lun)
-        disk_config = 'for wwpn in ${ActiveWWPNs[@]}\n'
-        disk_config += 'do\n'
-        disk_config += '    /sbin/chzdev zfcp-lun %s -e\n' % target
-        disk_config += 'done\n'
-        return '\n'.join((host_config,
-                          disk_config))
-
     def _check_multipath_tools(self):
         multipath = 'multipath'
         return multipath
-
-    def _restart_multipath(self):
-        """ubuntu"""
-        # restart multipathd
-        reload_map = 'systemctl restart multipath-tools.service\n'
-        return reload_map
-
-    def _rescan_multipath(self):
-        """ubuntu rescan multipath"""
-        # TODO: ubuntu is different with rhel or not?
-        rescan = 'for host in `ls /sys/class/scsi_host/`\n'
-        rescan += 'do\n'
-        rescan += '    echo "- - -" > /sys/class/scsi_host/$host/scan\n'
-        rescan += 'done\n'
-        return rescan
-
-    def _set_zfcp_multipath(self, new):
-        """ubuntu multipath setup
-        multipath-tools and multipath-tools-boot must be set.
-        Now only when the find_multpaths set to 'no', can the multipath
-        command has output. maybe a bug?
-        """
-        # new==True means this is first attachment
-        if new:
-            modprobe = self._check_multipath_tools()
-            conf_file = '#blacklist {\n'
-            conf_file += '#\tdevnode \\"*\\"\n'
-            conf_file += '#}\n'
-            conf_file = 'defaults {\n'
-            conf_file += '\tfind_multipaths no\n'
-            conf_file += '}\n'
-            conf_cmd = 'echo -e "%s" > /etc/multipath.conf' % conf_file
-            restart = self._restart_multipath()
-            return '\n'.join((modprobe,
-                              conf_cmd,
-                              restart))
-        else:
-            rescan = self._rescan_multipath()
-            return rescan
-
-    def _offline_fcp_device(self, fcp):
-        """ubuntu offline zfcp."""
-        host_offline = '/sbin/chzdev zfcp-host %s -d' % fcp
-        offline_dev = 'chccwdev -d %s' % fcp
-        return '\n'.join((host_offline,
-                          offline_dev))
-
-    def _delete_zfcp_config_records(self, fcp, target_lun):
-        """ubuntu unconfigure wwpn and lun."""
-        device = '0.0.%s' % fcp
-        target = '%s:$WWPN:%s' % (device, target_lun)
-        disk_offline = 'for WWPN in ${ActiveWWPNs[@]}\n'
-        disk_offline += 'do\n'
-        disk_offline += '    /sbin/chzdev zfcp-lun %s -d\n' % target
-        disk_offline += 'done\n'
-        return disk_offline
-
-    def _config_to_persistent(self):
-        """ubuntu"""
-        pass
 
     def _format_lun(self, lun):
         """ubuntu"""
         target_lun = int(lun[2:6], 16)
         return target_lun
-
-    def _get_source_devices(self, fcp, target_lun):
-        """ubuntu"""
-        device = '0.0.%s' % fcp
-        # var_source_device = ('SourceDevice="/dev/disk/by-path/ccw-%(device)s'
-        #                      '-zfcp-%(wwpn)s:%(lun)s"\n' % data)
-        var_source_device = ('SourceDevices=(`ls /dev/disk/by-path/ | '
-                             'grep "ccw-%s-zfcp-.*:%s"`)\n'
-                             % (device, target_lun))
-        return var_source_device
 
     def get_volume_attach_configuration_cmds(self, fcp, target_wwpn,
                                              target_lun, multipath,
@@ -2068,44 +1399,6 @@ class ubuntu20(ubuntu):
                             }
                         }
         return cfg_str
-
-    def _get_source_devices(self, fcp, target_lun):
-        """ubuntu20
-
-        the parameter 'target_lun' is hex for either v7k or ds8k:
-        for v7k, target_lun[2] == '0' and target_lun[6:] == '0'
-        for ds8k, target_lun[2] == '4'
-
-        in the future, we add support to other storage provider whose lun
-        id may use bits in target_lun[6:], such as, 0x0003040200000000
-
-        when attach v7k volume:
-        1. if the lun id less than 256,
-        the file under /dev/disk/by-path/ will as below,
-        take 'lun id = 0' as example:
-        ccw-0.0.5c03-fc-0x5005076802400c1a-lun-0, the the lun id is decimal.
-
-        2. if the lun id is equal or more than 256,
-        the file under /dev/disk/by-path/ will as below,
-        take 'lun id = 256' as example:
-        ccw-0.0.1a0d-fc-0x500507680b26bac7-lun-0x0100000000000000,
-        the lun id is hex.
-
-        when attach ds8k volume:
-        the file under /dev/disk/by-path/ will as below,
-        take "volume id 140c" as example:
-        ccw-0.0.1a0d-fc-0x5005076306035388-lun-0x4014400c00000000,
-        the lun id is always hex.
-
-        """
-        device = '0.0.%s' % fcp
-        lun = self._format_lun(target_lun)
-        if all([x == '0' for x in target_lun[6:]]) and lun < 256:
-            target_lun = lun
-        var_source_device = ('SourceDevices=(`ls /dev/disk/by-path/ | '
-                             'grep "ccw-%s-fc-.*-lun-%s"`)\n'
-                             % (device, target_lun))
-        return var_source_device
 
 
 class LinuxDistManager(object):
