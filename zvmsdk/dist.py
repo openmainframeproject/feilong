@@ -947,10 +947,17 @@ class rhel7(rhel):
                                              target_lun, multipath,
                                              mount_point, connections):
         """rhel7"""
+        if connections > 0:
+            # if this volume is the last volume
+            # we need to know it and offline the FCP devices
+            is_last_volume = 0
+        else:
+            is_last_volume = 1
         template = self.get_template("volumeops", "rhel7_detach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
         content = template.render(fcp=fcp, lun=target_lun,
-                                  target_filename=target_filename)
+                                  target_filename=target_filename,
+                                  is_last_volume=is_last_volume)
         return content
 
 
@@ -986,10 +993,17 @@ class rhel8(rhel7):
                                              target_lun, multipath,
                                              mount_point, connections):
         """rhel8 detach script generation"""
+        if connections > 0:
+            # if this volume is the last volume
+            # we need to know it and offline the FCP devices
+            is_last_volume = 0
+        else:
+            is_last_volume = 1
         template = self.get_template("volumeops", "rhel8_detach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
         content = template.render(fcp=fcp, lun=target_lun,
-                                  target_filename=target_filename)
+                                  target_filename=target_filename,
+                                  is_last_volume=is_last_volume)
         return content
 
 
