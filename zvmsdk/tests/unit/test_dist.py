@@ -58,19 +58,19 @@ class RHEL7TestCase(base.SDKTestCase):
                                                   template_render):
 
         """ RHEL7 """
-        fcp = '1fc5'
+        fcp_list = ['1fc5', '2fc5']
         wwpns = ['0x5005076812341234', '0x5005076812345678']
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
         get_template.return_value = Template('fake template {{fcp}}')
-        self.linux_dist.get_volume_attach_configuration_cmds(fcp, wwpns, lun,
-                                                             multipath,
-                                                             mount_point, True)
+        self.linux_dist.get_volume_attach_configuration_cmds(fcp_list, wwpns,
+                                                             lun, multipath,
+                                                             mount_point)
         # check function called assertions
         get_template.assert_called_once_with("volumeops",
                                              "rhel7_attach_volume.j2")
-        template_render.assert_called_once_with(fcp='1fc5',
+        template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz')
 
@@ -81,19 +81,19 @@ class RHEL7TestCase(base.SDKTestCase):
                                                     template_render):
 
         """ RHEL7 """
-        fcp = '1fc5'
+        fcp_list = ['1fc5', '2fc5']
         wwpns = ['0x5005076812341234', '0x5005076812345678']
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
         get_template.return_value = Template('fake template {{fcp}}')
         # connections == 2
-        self.linux_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
-                                                             multipath,
+        self.linux_dist.get_volume_detach_configuration_cmds(fcp_list, wwpns,
+                                                             lun, multipath,
                                                              mount_point, 2)
         get_template.assert_called_once_with("volumeops",
                                              "rhel7_detach_volume.j2")
-        template_render.assert_called_once_with(fcp='1fc5',
+        template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz',
                                                 is_last_volume=0)
@@ -105,19 +105,19 @@ class RHEL7TestCase(base.SDKTestCase):
                                                     template_render):
 
         """ RHEL7 """
-        fcp = '1fc5'
+        fcp_list = ['1fc5', '2fc5']
         wwpns = ['0x5005076812341234', '0x5005076812345678']
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
         get_template.return_value = Template('fake template {{fcp}}')
         # connections < 1
-        self.linux_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
-                                                             multipath,
+        self.linux_dist.get_volume_detach_configuration_cmds(fcp_list, wwpns,
+                                                             lun, multipath,
                                                              mount_point, 0)
         get_template.assert_called_once_with("volumeops",
                                              "rhel7_detach_volume.j2")
-        template_render.assert_called_once_with(fcp='1fc5',
+        template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz',
                                                 is_last_volume=1)
@@ -165,19 +165,19 @@ class RHEL8TestCase(base.SDKTestCase):
                                                   template_render):
 
         """ RHEL8 """
-        fcp = '1fc5'
+        fcp_list = ['1fc5', '2fc5']
         wwpns = ['0x5005076812341234', '0x5005076812345678']
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
         get_template.return_value = Template('fake template {{fcp}}')
-        self.linux_dist.get_volume_attach_configuration_cmds(fcp, wwpns, lun,
-                                                             multipath,
-                                                             mount_point, True)
+        self.linux_dist.get_volume_attach_configuration_cmds(fcp_list, wwpns,
+                                                             lun, multipath,
+                                                             mount_point)
         # check function called assertions
         get_template.assert_called_once_with("volumeops",
                                              "rhel8_attach_volume.j2")
-        template_render.assert_called_once_with(fcp='1fc5',
+        template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz')
 
@@ -188,19 +188,19 @@ class RHEL8TestCase(base.SDKTestCase):
                                                     template_render):
 
         """ RHEL8 """
-        fcp = '1fc5'
+        fcp_list = ['1fc5', '2fc5']
         wwpns = ['0x5005076812341234', '0x5005076812345678']
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
         get_template.return_value = Template('fake template {{fcp}}')
         # connections == 2
-        self.linux_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
-                                                             multipath,
+        self.linux_dist.get_volume_detach_configuration_cmds(fcp_list, wwpns,
+                                                             lun, multipath,
                                                              mount_point, 2)
         get_template.assert_called_once_with("volumeops",
                                              "rhel8_detach_volume.j2")
-        template_render.assert_called_once_with(fcp='1fc5',
+        template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz',
                                                 is_last_volume=0)
@@ -212,19 +212,19 @@ class RHEL8TestCase(base.SDKTestCase):
                                                     template_render):
 
         """ RHEL8 """
-        fcp = '1fc5'
+        fcp_list = ['1fc5', '2fc5']
         wwpns = ['0x5005076812341234', '0x5005076812345678']
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
         get_template.return_value = Template('fake template {{fcp}}')
         # connections == 0
-        self.linux_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
-                                                             multipath,
+        self.linux_dist.get_volume_detach_configuration_cmds(fcp_list, wwpns,
+                                                             lun, multipath,
                                                              mount_point, 0)
         get_template.assert_called_once_with("volumeops",
                                              "rhel8_detach_volume.j2")
-        template_render.assert_called_once_with(fcp='1fc5',
+        template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz',
                                                 is_last_volume=1)
@@ -287,19 +287,19 @@ class SLESTestCase(base.SDKTestCase):
                                                   template_render):
 
         """ SLES """
-        fcp = '1fc5'
+        fcp_list = ['1fc5', '2fc5']
         wwpns = ['0x5005076812341234', '0x5005076812345678']
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
         get_template.return_value = Template('fake template {{fcp}}')
-        self.sles15_dist.get_volume_attach_configuration_cmds(fcp, wwpns, lun,
-                                                             multipath,
-                                                             mount_point, True)
+        self.sles15_dist.get_volume_attach_configuration_cmds(fcp_list, wwpns,
+                                                              lun, multipath,
+                                                              mount_point)
         # check function called assertions
         get_template.assert_called_once_with("volumeops",
                                              "sles_attach_volume.j2")
-        template_render.assert_called_once_with(fcp='1fc5',
+        template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz')
 
@@ -310,20 +310,20 @@ class SLESTestCase(base.SDKTestCase):
                                                     template_render):
 
         """ SLES """
-        fcp = '1fc5'
+        fcp_list = ['1fc5', '2fc5']
         wwpns = ['0x5005076812341234', '0x5005076812345678']
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
         get_template.return_value = Template('fake template {{fcp}}')
         # connections == 2
-        self.sles15_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
-                                                             multipath,
-                                                             mount_point, 2)
+        self.sles15_dist.get_volume_detach_configuration_cmds(fcp_list, wwpns,
+                                                              lun, multipath,
+                                                              mount_point, 2)
         get_template.assert_called_once_with(
             "volumeops",
             "sles_detach_volume.j2")
-        template_render.assert_called_once_with(fcp='1fc5',
+        template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz',
                                                 is_last_volume=0)
@@ -335,20 +335,20 @@ class SLESTestCase(base.SDKTestCase):
                                                     template_render):
 
         """ SLES """
-        fcp = '1fc5'
+        fcp_list = ['1fc5', '2fc5']
         wwpns = ['0x5005076812341234', '0x5005076812345678']
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
         get_template.return_value = Template('fake template {{fcp}}')
         # connections == 0 and is_last_volume shoud be 1
-        self.sles15_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
-                                                             multipath,
-                                                             mount_point, 0)
+        self.sles15_dist.get_volume_detach_configuration_cmds(fcp_list, wwpns,
+                                                              lun, multipath,
+                                                              mount_point, 0)
         get_template.assert_called_once_with(
             "volumeops",
             "sles_detach_volume.j2")
-        template_render.assert_called_once_with(fcp='1fc5',
+        template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz',
                                                 is_last_volume=1)
@@ -411,19 +411,19 @@ class UBUNTU20TestCase(base.SDKTestCase):
                                                   template_render):
 
         """ UBUNTU """
-        fcp = '1fc5'
+        fcp_list = ['1fc5', '2fc5']
         wwpns = ['0x5005076812341234', '0x5005076812345678']
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
         get_template.return_value = Template('fake template {{fcp}}')
-        self.linux_dist.get_volume_attach_configuration_cmds(fcp, wwpns, lun,
-                                                             multipath,
-                                                             mount_point, True)
+        self.linux_dist.get_volume_attach_configuration_cmds(fcp_list, wwpns,
+                                                             lun, multipath,
+                                                             mount_point)
         # check function called assertions
         get_template.assert_called_once_with("volumeops",
                                              "ubuntu_attach_volume.j2")
-        template_render.assert_called_once_with(fcp='1fc5',
+        template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
                                                 lun='0x0026000000000000',
                                                 lun_id=38,
                                                 target_filename='sdz')
@@ -435,20 +435,20 @@ class UBUNTU20TestCase(base.SDKTestCase):
                                                     template_render):
 
         """ UBUNTU """
-        fcp = '1fc5'
+        fcp_list = ['1fc5', '2fc5']
         wwpns = ['0x5005076812341234', '0x5005076812345678']
         lun = '0x0100000000000000'
         multipath = True
         mount_point = '/dev/sdz'
         get_template.return_value = Template('fake template {{fcp}}')
         # connections == 2
-        self.linux_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
-                                                             multipath,
+        self.linux_dist.get_volume_detach_configuration_cmds(fcp_list, wwpns,
+                                                             lun, multipath,
                                                              mount_point, 2)
         get_template.assert_called_once_with(
                 "volumeops",
                 "ubuntu_detach_volume.j2")
-        template_render.assert_called_once_with(fcp='1fc5',
+        template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
                                                 lun='0x0100000000000000',
                                                 lun_id='0x0100000000000000',
                                                 target_filename='sdz',
@@ -461,19 +461,19 @@ class UBUNTU20TestCase(base.SDKTestCase):
                                                     template_render):
 
         """ UBUNTU """
-        fcp = '1fc5'
+        fcp_list = ['1fc5', '2fc5']
         wwpns = ['0x5005076812341234', '0x5005076812345678']
         lun = '0x0100000000000000'
         multipath = True
         mount_point = '/dev/sdz'
         get_template.return_value = Template('fake template {{fcp}}')
         # connections == 0
-        self.linux_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
-                                                             multipath,
+        self.linux_dist.get_volume_detach_configuration_cmds(fcp_list, wwpns,
+                                                             lun, multipath,
                                                              mount_point, 0)
         get_template.assert_called_once_with("volumeops",
                                              "ubuntu_detach_volume.j2")
-        template_render.assert_called_once_with(fcp='1fc5',
+        template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
                                                 lun='0x0100000000000000',
                                                 lun_id='0x0100000000000000',
                                                 target_filename='sdz',

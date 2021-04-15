@@ -118,8 +118,8 @@ class VolumeConfiguratorAPI(object):
                 # If unauthorized, we must raise exception
                 errmsg = err.results['response'][0]
                 msg = ('IUCV failed to get authorization from VM %(vm)s with '
-                        'error %(err)s' % {'vm': assigner_id,
-                                           'err': errmsg})
+                       'error %(err)s' % {'vm': assigner_id,
+                                          'err': errmsg})
                 LOG.error(msg)
                 raise exception.SDKVolumeOperationError(rs=6,
                                                         userid=assigner_id,
@@ -152,15 +152,17 @@ class VolumeConfiguratorAPI(object):
                 break
         return exit_code
 
-    def config_attach(self, fcp, assigner_id, target_wwpns, target_lun,
-                      multipath, os_version, mount_point, new,
-                      need_restart=True):
+    def config_attach(self, fcp_list, assigner_id, target_wwpns, target_lun,
+                      multipath, os_version, mount_point):
+        LOG.info("Begin to configure volume (WWPN:%s, LUN:%s) on the "
+                 "target machine %s with FCP devices "
+                 "%s." % (target_wwpns, target_lun, assigner_id, fcp_list))
         linuxdist = self._dist_manager.get_linux_dist(os_version)()
-        self.configure_volume_attach(fcp, assigner_id, target_wwpns,
+        self.configure_volume_attach(fcp_list, assigner_id, target_wwpns,
                                      target_lun, multipath, os_version,
-                                     mount_point, linuxdist, new)
+                                     mount_point, linuxdist)
         iucv_is_ready = self.check_IUCV_is_ready(assigner_id)
-        if need_restart and iucv_is_ready:
+        if iucv_is_ready:
             # active mode should restart zvmguestconfigure to run reader file
             active_cmds = linuxdist.create_active_net_interf_cmd()
             ret = self._smtclient.execute_cmd_direct(assigner_id, active_cmds)
@@ -169,31 +171,39 @@ class VolumeConfiguratorAPI(object):
                 # get exit code by systemctl status
                 get_status_cmd = 'systemctl status zvmguestconfigure.service'
                 exit_code = self._get_status_code_from_systemctl(
-                                        assigner_id, get_status_cmd)
+                    assigner_id, get_status_cmd)
                 if exit_code == 1:
-                    errmsg = ('attach scripts execution failed because the '
-                              'device %s did not show up in the target '
-                              'virtual machine %s , please check its '
-                              'connections or settings.' % (fcp, assigner_id))
+                    errmsg = ('attach script execution failed because the '
+                              'volume (WWPN:%s, LUN:%s) did not show up in '
+                              'the target machine %s , please check its '
+                              'connections.' % (target_wwpns, target_lun,
+                                                assigner_id))
                 else:
-                    errmsg = ('attach scripts execution on fcp %s in the'
-                              'target virtual machine %s failed '
-                              'with unknow reason, exit code is: %s'
-                              % (fcp, assigner_id, exit_code))
+                    errmsg = ('attach script execution in the target machine '
+                              '%s for volume (WWPN:%s, LUN:%s) '
+                              'failed with unknown reason, exit code is: %s.'
+                              % (assigner_id, target_wwpns, target_lun,
+                                 exit_code))
                 LOG.error(errmsg)
                 raise exception.SDKVolumeOperationError(rs=8,
                                                         userid=assigner_id,
                                                         msg=errmsg)
+        LOG.info("Configuration of volume (WWPN:%s, LUN:%s) on the "
+                 "target machine %s with FCP devices "
+                 "%s is done." % (target_wwpns, target_lun, assigner_id,
+                                  fcp_list))
 
-    def config_detach(self, fcp, assigner_id, target_wwpns, target_lun,
-                      multipath, os_version, mount_point, connections,
-                      need_restart=True):
+    def config_detach(self, fcp_list, assigner_id, target_wwpns, target_lun,
+                      multipath, os_version, mount_point, connections):
+        LOG.info("Begin to deconfigure volume (WWPN:%s, LUN:%s) on the "
+                 "target machine %s with FCP devices "
+                 "%s." % (target_wwpns, target_lun, assigner_id, fcp_list))
         linuxdist = self._dist_manager.get_linux_dist(os_version)()
-        self.configure_volume_detach(fcp, assigner_id, target_wwpns,
+        self.configure_volume_detach(fcp_list, assigner_id, target_wwpns,
                                      target_lun, multipath, os_version,
                                      mount_point, linuxdist, connections)
         iucv_is_ready = self.check_IUCV_is_ready(assigner_id)
-        if need_restart and iucv_is_ready:
+        if iucv_is_ready:
             # active mode should restart zvmguestconfigure to run reader file
             active_cmds = linuxdist.create_active_net_interf_cmd()
             ret = self._smtclient.execute_cmd_direct(assigner_id, active_cmds)
@@ -201,20 +211,24 @@ class VolumeConfiguratorAPI(object):
             if ret['rc'] != 0:
                 get_status_cmd = 'systemctl status zvmguestconfigure.service'
                 exit_code = self._get_status_code_from_systemctl(
-                                        assigner_id, get_status_cmd)
+                    assigner_id, get_status_cmd)
                 if exit_code == 1:
                     errmsg = ('detach scripts execution failed because the '
                               'device %s in the target virtual machine %s '
-                              'is in use.' % (fcp, assigner_id))
+                              'is in use.' % (fcp_list, assigner_id))
                 else:
-                    errmsg = ('detach scripts execution on fcp %s in the'
+                    errmsg = ('detach scripts execution on fcp %s in the '
                               'target virtual machine %s failed '
                               'with unknow reason, exit code is: %s'
-                              % (fcp, assigner_id, exit_code))
+                              % (fcp_list, assigner_id, exit_code))
                 LOG.error(errmsg)
                 raise exception.SDKVolumeOperationError(rs=9,
                                                         userid=assigner_id,
                                                         msg=errmsg)
+        LOG.info("Deconfiguration of volume (WWPN:%s, LUN:%s) on the "
+                 "target machine %s with FCP devices "
+                 "%s is done." % (target_wwpns, target_lun, assigner_id,
+                                  fcp_list))
 
     def _create_file(self, assigner_id, file_name, data):
         temp_folder = self._smtclient.get_guest_temp_path(assigner_id)
@@ -223,14 +237,14 @@ class VolumeConfiguratorAPI(object):
             f.write(data)
         return file_path, temp_folder
 
-    def configure_volume_attach(self, fcp, assigner_id, target_wwpns,
+    def configure_volume_attach(self, fcp_list, assigner_id, target_wwpns,
                                 target_lun, multipath, os_version,
-                                mount_point, linuxdist, new):
+                                mount_point, linuxdist):
         """new==True means this is first attachment"""
         # get configuration commands
         config_cmds = linuxdist.get_volume_attach_configuration_cmds(
-                          fcp, target_wwpns, target_lun, multipath,
-                          mount_point, new)
+            fcp_list, target_wwpns, target_lun, multipath,
+            mount_point)
         LOG.debug('Got volume attachment configuation cmds for %s,'
                   'the content is:%s'
                   % (assigner_id, config_cmds))
@@ -248,13 +262,13 @@ class VolumeConfiguratorAPI(object):
             LOG.debug('Removing the folder %s ', config_file_path)
             shutil.rmtree(config_file_path)
 
-    def configure_volume_detach(self, fcp, assigner_id, target_wwpns,
+    def configure_volume_detach(self, fcp_list, assigner_id, target_wwpns,
                                 target_lun, multipath, os_version,
                                 mount_point, linuxdist, connections):
         # get configuration commands
         config_cmds = linuxdist.get_volume_detach_configuration_cmds(
-                          fcp, target_wwpns, target_lun, multipath,
-                          mount_point, connections)
+            fcp_list, target_wwpns, target_lun, multipath,
+            mount_point, connections)
         LOG.debug('Got volume detachment configuation cmds for %s,'
                   'the content is:%s'
                   % (assigner_id, config_cmds))
@@ -404,10 +418,10 @@ class FCPManager(object):
                               "NPIV_port: %(NPIV_port)s, "
                               "CHPID: %(CHPID)s, "
                               "physical_port: %(physical_port)s} !") % {
-                               'dev_no': fcp.get_dev_no(),
-                               'NPIV_port': fcp.get_npiv_port(),
-                               'CHPID': fcp.get_chpid(),
-                               'physical_port': fcp.get_physical_port()}
+                                  'dev_no': fcp.get_dev_no(),
+                                  'NPIV_port': fcp.get_npiv_port(),
+                                  'CHPID': fcp.get_chpid(),
+                                  'physical_port': fcp.get_physical_port()}
                     LOG.warning(errmsg)
             else:
                 # normal, FCP not used by cloud connector at all
@@ -727,11 +741,11 @@ class FCPVolumeManager(object):
     def _dedicate_fcp(self, fcp, assigner_id):
         self._smtclient.dedicate_device(assigner_id, fcp, fcp, 0)
 
-    def _add_disk(self, fcp, assigner_id, target_wwpns, target_lun,
-                  multipath, os_version, mount_point, new, need_restart):
-        self.config_api.config_attach(fcp, assigner_id, target_wwpns,
+    def _add_disks(self, fcp_list, assigner_id, target_wwpns, target_lun,
+                   multipath, os_version, mount_point,):
+        self.config_api.config_attach(fcp_list, assigner_id, target_wwpns,
                                       target_lun, multipath, os_version,
-                                      mount_point, new, need_restart)
+                                      mount_point)
 
     def _rollback_dedicated_fcp(self, fcp_list, assigner_id,
                                 all_fcp_list=None):
@@ -749,39 +763,63 @@ class FCPVolumeManager(object):
                     LOG.info("Unreserve the fcp device %s", fcp)
                     self.db.unreserve(fcp)
 
-    def _attach(self, fcp, assigner_id, target_wwpns, target_lun,
+    def _attach(self, fcp_list, assigner_id, target_wwpns, target_lun,
                 multipath, os_version, mount_point, path_count,
-                is_root_volume, need_restart):
+                is_root_volume):
         """Attach a volume
 
         First, we need translate fcp into local wwpn, then
         dedicate fcp to the user if it's needed, after that
         call smt layer to call linux command
         """
-        LOG.info('Start to attach device %s to %s' % (fcp, assigner_id))
+        LOG.info("Start to attach volume to FCP devices "
+                 "%s on machine %s." % (fcp_list, assigner_id))
+
         # TODO: init_fcp should be called in contructor function
         # but no assigner_id in contructor
         self.fcp_mgr.init_fcp(assigner_id)
-        new = self.fcp_mgr.add_fcp_for_assigner(fcp, assigner_id)
+        # fcp_status is like { '1a10': 'True', '1b10', 'False' }
+        # True or False means it is first attached or not
+        # We use this bool value to determine dedicate or not
+        fcp_status = {}
+        for fcp in fcp_list:
+            fcp_status[fcp] = self.fcp_mgr.add_fcp_for_assigner(fcp,
+                                                                assigner_id)
         if is_root_volume:
-            LOG.info('Attaching device %s to %s is done.' % (fcp, assigner_id))
-            return new
+            LOG.info("Is root volume, adding FCP records %s to %s is "
+                     "done." % (fcp_list, assigner_id))
+            # FCP devices for root volume will be defined in user directory
+            return []
+
+        LOG.debug("The status of fcp devices before "
+                  "dedicating them to %s is: %s." % (assigner_id, fcp_status))
+
         try:
-            if new:
-                self._dedicate_fcp(fcp, assigner_id)
-
-            self._add_disk(fcp, assigner_id, target_wwpns, target_lun,
-                           multipath, os_version, mount_point, new,
-                           need_restart)
+            # dedicate the new FCP devices to the userid
+            for fcp in fcp_list:
+                if fcp_status[fcp]:
+                    # only dedicate the ones first attached
+                    LOG.info("Start to dedicate FCP %s to "
+                             "%s." % (fcp, assigner_id))
+                    self._dedicate_fcp(fcp, assigner_id)
+                    LOG.info("FCP %s dedicated to %s is "
+                             "done." % (fcp, assigner_id))
+                else:
+                    LOG.info("This is not the first volume for FCP %s, "
+                             "skip dedicating FCP device." % fcp)
+            # online and configure volumes in target userid
+            self._add_disks(fcp_list, assigner_id, target_wwpns,
+                            target_lun, multipath, os_version,
+                            mount_point)
         except exception.SDKBaseException as err:
-            errmsg = 'Attach failed with error:' + err.format_message()
+            errmsg = ("Dedicate FCP devices failed with "
+                      "error:" + err.format_message())
             LOG.error(errmsg)
-            self._rollback_dedicated_fcp([fcp], assigner_id)
+            self._rollback_dedicated_fcp(fcp_list, assigner_id,
+                                         all_fcp_list=fcp_list)
             raise exception.SDKBaseException(msg=errmsg)
-        # TODO: other exceptions?
-
-        LOG.info('Attaching device %s to %s is done.' % (fcp, assigner_id))
-        return new
+        LOG.info("Attaching volume to FCP devices %s on machine %s is "
+                 "done." % (fcp_list, assigner_id))
 
     def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, skipzipl=False):
         """ Refresh a volume's bootmap info.
@@ -835,57 +873,57 @@ class FCPVolumeManager(object):
         else:
             # TODO: the length of fcp is the count of paths in multipath
             path_count = len(fcp)
-            dedicated_fcp = []
-            need_restart = False
-            for i in range(path_count):
-                # To avoid restart zvmguestconfigure service too often,
-                # only restart it when the last fcp is attached
-                if i == path_count - 1:
-                    need_restart = True
-                try:
-                    new = self._attach(fcp[i].lower(), assigner_id,
-                                       target_wwpns, target_lun, multipath,
-                                       os_version, mount_point, path_count,
-                                       is_root_volume, need_restart)
-                    if new and is_root_volume is False:
-                        dedicated_fcp.append(fcp[i])
-                except exception.SDKBaseException:
-                    self._rollback_dedicated_fcp(dedicated_fcp, assigner_id,
-                        all_fcp_list=fcp)
-                    raise
+            # transfer to lower cases
+            fcp_list = [x.lower() for x in fcp]
+            self._attach(fcp_list, assigner_id,
+                         target_wwpns, target_lun,
+                         multipath, os_version,
+                         mount_point, path_count,
+                         is_root_volume)
 
     def _undedicate_fcp(self, fcp, assigner_id):
         self._smtclient.undedicate_device(assigner_id, fcp)
 
-    def _remove_disk(self, fcp, assigner_id, target_wwpns, target_lun,
-                     multipath, os_version, mount_point, connections,
-                     need_restart):
-        self.config_api.config_detach(fcp, assigner_id, target_wwpns,
+    def _remove_disks(self, fcp_list, assigner_id, target_wwpns, target_lun,
+                      multipath, os_version, mount_point, connections):
+        self.config_api.config_detach(fcp_list, assigner_id, target_wwpns,
                                       target_lun, multipath, os_version,
-                                      mount_point, connections, need_restart)
+                                      mount_point, connections)
 
-    def _detach(self, fcp, assigner_id, target_wwpns, target_lun,
-                multipath, os_version, mount_point, is_root_volume,
-                need_restart):
+    def _detach(self, fcp_list, assigner_id, target_wwpns, target_lun,
+            multipath, os_version, mount_point, is_root_volume):
         """Detach a volume from a guest"""
-        LOG.info('Start to detach device %s from %s' % (fcp, assigner_id))
+        LOG.info("Start to detach volume on machine %s from "
+                 "FCP devices %s" % (assigner_id, fcp_list))
+        # fcp_connections is like {'1a10': 0, '1b10': 3}
+        # the values are the connections colume value in database
+        fcp_connections = {}
         try:
-            connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
+            for fcp in fcp_list:
+                connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
+                fcp_connections[fcp] = connections
         except exception.SDKObjectNotExistError:
             connections = 0
             LOG.warning("The connections of FCP device %s is 0.", fcp)
 
         if is_root_volume:
-            LOG.info('Detaching device %s from %s is '
-                     'done.' % (fcp, assigner_id))
+            LOG.info("Is root volume, deleting FCP records %s from %s is "
+                     "done." % (fcp_list, assigner_id))
             return
 
         try:
-            self._remove_disk(fcp, assigner_id, target_wwpns, target_lun,
-                              multipath, os_version, mount_point, connections,
-                              need_restart)
-            if not connections:
-                self._undedicate_fcp(fcp, assigner_id)
+            self._remove_disks(fcp_list, assigner_id, target_wwpns, target_lun,
+                               multipath, os_version, mount_point, connections)
+            for fcp in fcp_list:
+                if not fcp_connections[fcp]:
+                    LOG.info("Start to undedicate FCP %s from "
+                             "%s." % (fcp, assigner_id))
+                    self._undedicate_fcp(fcp, assigner_id)
+                    LOG.info("FCP %s undedicated from %s is "
+                             "done." % (fcp, assigner_id))
+                else:
+                    LOG.info("Found still have volumes on FCP %s, "
+                             "skip undedicating FCP device." % fcp)
         except (exception.SDKBaseException,
                 exception.SDKSMTRequestFailed) as err:
             rc = err.results['rc']
@@ -894,17 +932,18 @@ class FCPVolumeManager(object):
                 # We ignore the already undedicate FCP device exception.
                 LOG.warning("The FCP device %s has already undedicdated", fcp)
             else:
-                errmsg = 'detach failed with error:' + err.format_message()
+                errmsg = "detach failed with error:" + err.format_message()
                 LOG.error(errmsg)
-                self.fcp_mgr.increase_fcp_usage(fcp, assigner_id)
+                for fcp in fcp_list:
+                    # rollback the connections data before remove disks
+                    self.fcp_mgr.increase_fcp_usage(fcp, assigner_id)
                 with zvmutils.ignore_errors():
-                    new = (connections == 0)
-                    self._add_disk(fcp, assigner_id, target_wwpns, target_lun,
-                                   multipath, os_version, mount_point, new,
-                                   need_restart)
+                    self._add_disks(fcp_list, assigner_id,
+                                    target_wwpns, target_lun,
+                                    multipath, os_version, mount_point)
                 raise exception.SDKBaseException(msg=errmsg)
-
-        LOG.info('Detaching device %s from %s is done.' % (fcp, assigner_id))
+        LOG.info("Detaching volume on machine %s from FCP devices %s is "
+                 "done." % (assigner_id, fcp_list))
 
     def detach(self, connection_info):
         """Detach a volume from a guest
@@ -930,16 +969,12 @@ class FCPVolumeManager(object):
             raise exception.SDKObjectNotExistError(
                     obj_desc=("Guest '%s'" % assigner_id), modID='volume')
         else:
-            path_count = len(fcp)
-            need_restart = False
-            for i in range(path_count):
-                # To avoid restart zvmguestconfigure service too often,
-                # only restart it when the last fcp is detached
-                if i == path_count - 1:
-                    need_restart = True
-                self._detach(fcp[i].lower(), assigner_id, target_wwpns,
-                             target_lun, multipath, os_version, mount_point,
-                             is_root_volume, need_restart)
+            # transfer to lower cases
+            fcp_list = [x.lower() for x in fcp]
+            self._detach(fcp_list, assigner_id,
+                         target_wwpns, target_lun,
+                         multipath, os_version, mount_point,
+                         is_root_volume)
 
     def get_volume_connector(self, assigner_id, reserve):
         """Get connector information of the instance for attaching to volumes.
