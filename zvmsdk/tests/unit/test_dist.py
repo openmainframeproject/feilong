@@ -95,7 +95,8 @@ class RHEL7TestCase(base.SDKTestCase):
                                              "rhel7_detach_volume.j2")
         template_render.assert_called_once_with(fcp='1fc5',
                                                 lun='0x0026000000000000',
-                                                target_filename='sdz')
+                                                target_filename='sdz',
+                                                is_last_volume=0)
 
     @mock.patch('jinja2.Template.render')
     @mock.patch('zvmsdk.dist.LinuxDist.get_template')
@@ -118,7 +119,8 @@ class RHEL7TestCase(base.SDKTestCase):
                                              "rhel7_detach_volume.j2")
         template_render.assert_called_once_with(fcp='1fc5',
                                                 lun='0x0026000000000000',
-                                                target_filename='sdz')
+                                                target_filename='sdz',
+                                                is_last_volume=1)
 
     def test_set_zfcp_config_files(self):
         """ RHEL7, same to rhel6"""
@@ -200,7 +202,32 @@ class RHEL8TestCase(base.SDKTestCase):
                                              "rhel8_detach_volume.j2")
         template_render.assert_called_once_with(fcp='1fc5',
                                                 lun='0x0026000000000000',
-                                                target_filename='sdz')
+                                                target_filename='sdz',
+                                                is_last_volume=0)
+
+    @mock.patch('jinja2.Template.render')
+    @mock.patch('zvmsdk.dist.LinuxDist.get_template')
+    def test_get_volume_detach_configuration_cmds_2(self,
+                                                    get_template,
+                                                    template_render):
+
+        """ RHEL8 """
+        fcp = '1fc5'
+        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        lun = '0x0026000000000000'
+        multipath = True
+        mount_point = '/dev/sdz'
+        get_template.return_value = Template('fake template {{fcp}}')
+        # connections == 0
+        self.linux_dist.get_volume_detach_configuration_cmds(fcp, wwpns, lun,
+                                                             multipath,
+                                                             mount_point, 0)
+        get_template.assert_called_once_with("volumeops",
+                                             "rhel8_detach_volume.j2")
+        template_render.assert_called_once_with(fcp='1fc5',
+                                                lun='0x0026000000000000',
+                                                target_filename='sdz',
+                                                is_last_volume=1)
 
 
 class RHCOS4TestCase(base.SDKTestCase):
