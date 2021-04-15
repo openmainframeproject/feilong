@@ -4,6 +4,9 @@
 fcp="{{ fcp }}"
 lun="{{ lun }}"
 target_filename="{{ target_filename }}"
+is_last_volume="{{ is_last_volume }}"
+
+echo "Enter RHEL7 detach script with parameters: FCP:$fcp, LUN:$lun, target_filename:$target_filename, is_last_volume: $is_last_volume."
 
 # the device path
 SourceDevice=(`ls /dev/disk/by-path/ | grep "ccw-0.0.$fcp-zfcp-.*:$lun"`)
@@ -66,6 +69,12 @@ if [[ "$AutoScan" != "Y" ]]; then
     do
         echo "$lun" > /sys/bus/ccw/drivers/zfcp/0.0.$fcp/$wwpn/unit_remove
     done
+fi
+
+# if is last volume, then should offline the FCP
+if [ $is_last_volume -eq 1 ]; then
+    echo "this is last volume, will offline fcp device $fcp"
+    /sbin/chccwdev -d $fcp > /dev/null
 fi
 
 # remove configuration items in zfcp.conf
