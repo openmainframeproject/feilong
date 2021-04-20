@@ -541,6 +541,63 @@ class TestFCPManager(base.SDKTestCase):
         list_details.assert_has_calls([mock.call('dummy1', 'free'),
                                        mock.call('dummy1', 'active')])
 
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    def test_get_wwpn_for_fcp_not_in_conf(self, mock_fcp_info):
+        fcp_list = ['opnstk1: FCP device number: 183C',
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: 20076D8500005182',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005181',
+                    'opnstk1: FCP device number: 283C',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: ',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005185']
+        mock_fcp_info.return_value = fcp_list
+        all_fcp_pool = self.fcpops.get_all_fcp_pool('fakeuser')
+        self.assertEqual(2, len(all_fcp_pool))
+        self.assertTrue('183c' in all_fcp_pool)
+        self.assertTrue('283c' in all_fcp_pool)
+        # note b83f is not in all_fcp_pool
+        self.assertFalse('b83f' in all_fcp_pool)
+
+        npiv = all_fcp_pool['183c']._npiv_port.upper()
+        physical = all_fcp_pool['183c']._physical_port.upper()
+        self.assertEqual('20076D8500005182', npiv)
+        self.assertEqual('20076D8500005181', physical)
+        self.assertEqual('59', all_fcp_pool['183c']._chpid.upper())
+
+        npiv = all_fcp_pool['283c']._npiv_port
+        physical = all_fcp_pool['283c']._physical_port.upper()
+        self.assertEqual(None, npiv)
+        self.assertEqual('20076D8500005185', physical)
+        self.assertEqual('50', all_fcp_pool['283c']._chpid.upper())
+
+        wwpn = self.fcpops.get_wwpn_for_fcp_not_in_conf(all_fcp_pool,
+                                                        '183c').upper()
+        self.assertEqual('20076D8500005182', wwpn)
+        wwpn = self.fcpops.get_wwpn_for_fcp_not_in_conf(all_fcp_pool,
+                                                        '283c').upper()
+        self.assertEqual('20076D8500005185', wwpn)
+
+    @mock.patch("zvmsdk.database.FCPDbOperator.delete")
+    @mock.patch("zvmsdk.database.FCPDbOperator.is_reserved")
+    def test_report_orphan_fcp_unreserved(self, is_reserved, db_delete):
+        # self.db_op.new('x001', 0)
+        is_reserved.return_value = False
+        self.fcpops._report_orphan_fcp('x001')
+        self.assertTrue(db_delete.called)
+
+    @mock.patch("zvmsdk.database.FCPDbOperator.delete")
+    @mock.patch("zvmsdk.database.FCPDbOperator.is_reserved")
+    def test_report_orphan_fcp_reserved(self, is_reserved, db_delete):
+        # self.db_op.new('x001', 0)
+        is_reserved.return_value = True
+        self.fcpops._report_orphan_fcp('x001')
+        self.assertFalse(db_delete.called)
+
     def test_add_fcp_for_assigner(self):
         # create 2 FCP
         self.db_op.new('a83c', 0)
@@ -796,6 +853,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
         mock_fcp_info.return_value = fcp_list
         self.db_op = database.FCPDbOperator()
         wwpns = ['20076D8500005182', '20076D8500005183']
+        self.db_op.delete('c123')
+        self.db_op.delete('d123')
         self.db_op.new('c123', 0)
         self.db_op.new('d123', 1)
 
@@ -846,8 +905,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005185']
         mock_fcp_info.return_value = fcp_list
-        base.set_conf('volume', 'fcp_list', 'c123')
-        base.set_conf('volume', 'fcp_list', 'd123')
+        base.set_conf('volume', 'fcp_list', 'c123;d123')
+        # base.set_conf('volume', 'fcp_list', 'd123')
         self.db_op = database.FCPDbOperator()
         self.db_op.new('c123', 0)
         self.db_op.new('d123', 1)
