@@ -485,6 +485,9 @@ class FCPManager(object):
         LOG.warning("WARNING: fcp %s found in db but not in "
                     "CONF.volume.fcp_list which is %s" %
                     (fcp, CONF.volume.fcp_list))
+        if not self.db.is_reserved(fcp):
+            self.db.delete(fcp)
+            LOG.info("Remove %s from fcp db" % fcp)
 
     def _add_fcp(self, fcp, path):
         """add fcp to db if it's not in db but in fcp list and init it"""
@@ -677,6 +680,30 @@ class FCPManager(object):
 
     def get_wwpn(self, fcp_no):
         fcp = self._fcp_pool.get(fcp_no)
+        if not fcp:
+            return None
+        npiv = fcp.get_npiv_port()
+        physical = fcp.get_physical_port()
+        if npiv:
+            return npiv
+        if physical:
+            return physical
+        return None
+
+    def get_all_fcp_pool(self, assigner_id):
+        all_fcp_info = self._get_all_fcp_info(assigner_id)
+        all_fcp_pool = {}
+        lines_per_item = 5
+        num_fcps = len(all_fcp_info) // lines_per_item
+        for n in range(0, num_fcps):
+            fcp_init_info = all_fcp_info[(5 * n):(5 * (n + 1))]
+            fcp = FCP(fcp_init_info)
+            dev_no = fcp.get_dev_no()
+            all_fcp_pool[dev_no] = fcp
+        return all_fcp_pool
+
+    def get_wwpn_for_fcp_not_in_conf(self, all_fcp_pool, fcp_no):
+        fcp = all_fcp_pool.get(fcp_no)
         if not fcp:
             return None
         npiv = fcp.get_npiv_port()
@@ -939,6 +966,8 @@ class FCPVolumeManager(object):
             LOG.error(errmsg)
             return empty_connector
         wwpns = []
+        wwpn = None
+        all_fcp_pool = {}
         for fcp_no in fcp_list:
             if reserve:
                 # Reserve fcp device
@@ -949,7 +978,13 @@ class FCPVolumeManager(object):
                 # Unreserve fcp device
                 LOG.info("Unreserve fcp device %s from get connector", fcp_no)
                 self.db.unreserve(fcp_no)
-            wwpn = self.fcp_mgr.get_wwpn(fcp_no)
+            if self.fcp_mgr._fcp_pool.get(fcp_no):
+                wwpn = self.fcp_mgr.get_wwpn(fcp_no)
+            else:
+                if not all_fcp_pool:
+                    all_fcp_pool = self.fcp_mgr.get_all_fcp_pool(assigner_id)
+                wwpn = self.fcp_mgr.get_wwpn_for_fcp_not_in_conf(all_fcp_pool,
+                                                                 fcp_no)
             if not wwpn:
                 errmsg = "FCP device %s has no available WWPN." % fcp_no
                 LOG.error(errmsg)
