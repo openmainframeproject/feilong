@@ -710,6 +710,8 @@ function refreshFCPBootmap {
   enable_zfcp_mod=`lsmod | grep zfcp`
   if [ -z "$enable_zfcp_mod" ];then
       modprobe zfcp
+      # disable allow_lun_scan
+      echo N > /sys/module/zfcp/parameters/allow_lun_scan
   fi
 
   local zthinUserID=$(vmcp q userid | awk '{printf $1}')
