@@ -203,14 +203,14 @@ class LinuxDist(object):
         return "echo 'root:%s' | chpasswd" % admin_password
 
     @abc.abstractmethod
-    def get_volume_attach_configuration_cmds(self, fcp, target_wwpns,
+    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
-                                             mount_point, new):
+                                             mount_point):
         "generate punch script for attachment configuration"
         pass
 
     @abc.abstractmethod
-    def get_volume_detach_configuration_cmds(self, fcp, target_wwpns,
+    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
                                              mount_point, connections):
         "generate punch script for detachment configuration"
@@ -439,19 +439,19 @@ class rhel6(rhel):
                  '/bin/hostname %s\n' % hostname]
         return lines
 
-    def get_volume_attach_configuration_cmds(self, fcp, target_wwpns,
+    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
-                                             mount_point, new):
+                                             mount_point):
         "generate punch script for attachment configuration"
         func_name = 'get_volume_attach_configuration_cmds'
         raise exception.SDKFunctionNotImplementError(func=func_name,
                                                      modID='volume')
 
-    def get_volume_detach_configuration_cmds(self, fcp, target_wwpns,
+    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
                                              mount_point, connections):
         "generate punch script for detachment configuration"
-        func_name = 'get_volume_attach_configuration_cmds'
+        func_name = 'get_volume_detach_configuration_cmds'
         raise exception.SDKFunctionNotImplementError(func=func_name,
                                                      modID='volume')
 
@@ -516,17 +516,18 @@ class rhel7(rhel):
                              self._get_all_device_filename())
         return '\nrm -f %s\n' % files
 
-    def get_volume_attach_configuration_cmds(self, fcp, target_wwpn,
+    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpn,
                                              target_lun, multipath,
-                                             mount_point, new):
+                                             mount_point):
         """rhel7"""
+        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "rhel7_attach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp=fcp, lun=target_lun,
+        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
                                   target_filename=target_filename)
         return content
 
-    def get_volume_detach_configuration_cmds(self, fcp, target_wwpn,
+    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpn,
                                              target_lun, multipath,
                                              mount_point, connections):
         """rhel7"""
@@ -536,9 +537,10 @@ class rhel7(rhel):
             is_last_volume = 0
         else:
             is_last_volume = 1
+        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "rhel7_detach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp=fcp, lun=target_lun,
+        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
                                   target_filename=target_filename,
                                   is_last_volume=is_last_volume)
         return content
@@ -562,17 +564,18 @@ class rhel8(rhel7):
                              self._get_all_device_filename())
         return '\nrm -f %s\n' % files
 
-    def get_volume_attach_configuration_cmds(self, fcp, target_wwpn,
+    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpn,
                                              target_lun, multipath,
-                                             mount_point, new):
+                                             mount_point):
         """rhel8 attach script generation"""
+        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "rhel8_attach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp=fcp, lun=target_lun,
+        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
                                   target_filename=target_filename)
         return content
 
-    def get_volume_detach_configuration_cmds(self, fcp, target_wwpn,
+    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpn,
                                              target_lun, multipath,
                                              mount_point, connections):
         """rhel8 detach script generation"""
@@ -582,9 +585,10 @@ class rhel8(rhel7):
             is_last_volume = 0
         else:
             is_last_volume = 1
+        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "rhel8_detach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp=fcp, lun=target_lun,
+        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
                                   target_filename=target_filename,
                                   is_last_volume=is_last_volume)
         return content
@@ -642,19 +646,19 @@ class rhcos(LinuxDist):
         self._smtclient.clean_temp_folder(tmp_path)
         return fixed_ip_parameter
 
-    def get_volume_attach_configuration_cmds(self, fcp, target_wwpns,
+    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
-                                             mount_point, new):
+                                             mount_point):
         "generate punch script for attachment configuration"
         func_name = 'get_volume_attach_configuration_cmds'
         raise exception.SDKFunctionNotImplementError(func=func_name,
                                                      modID='volume')
 
-    def get_volume_detach_configuration_cmds(self, fcp, target_wwpns,
+    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpns,
                                              target_lun, multipath,
                                              mount_point, connections):
         "generate punch script for detachment configuration"
-        func_name = 'get_volume_attach_configuration_cmds'
+        func_name = 'get_volume_detach_configuration_cmds'
         raise exception.SDKFunctionNotImplementError(func=func_name,
                                                      modID='volume')
 
@@ -893,18 +897,19 @@ class sles(LinuxDist):
                                         '/boot/zipl/active_devices.txt')
         return cmd
 
-    def get_volume_attach_configuration_cmds(self, fcp, target_wwpn,
+    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpn,
                                              target_lun, multipath,
-                                             mount_point, new):
+                                             mount_point):
         """sles attach script generation"""
+        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "sles_attach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        # TODO: also consider is first attach or not
-        content = template.render(fcp=fcp, lun=target_lun,
+        # TODO(bill): also consider is first attach or not
+        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
                                   target_filename=target_filename)
         return content
 
-    def get_volume_detach_configuration_cmds(self, fcp, target_wwpn,
+    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpn,
                                              target_lun, multipath,
                                              mount_point, connections):
         """sles detach script generation"""
@@ -914,9 +919,10 @@ class sles(LinuxDist):
             is_last_volume = 0
         else:
             is_last_volume = 1
+        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "sles_detach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
-        content = template.render(fcp=fcp, lun=target_lun,
+        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
                                   target_filename=target_filename,
                                   is_last_volume=is_last_volume)
         return content
@@ -1231,10 +1237,11 @@ class ubuntu(LinuxDist):
         target_lun = int(lun[2:6], 16)
         return target_lun
 
-    def get_volume_attach_configuration_cmds(self, fcp, target_wwpn,
+    def get_volume_attach_configuration_cmds(self, fcp_list, target_wwpn,
                                              target_lun, multipath,
-                                             mount_point, new):
+                                             mount_point):
         """ubuntu attach script generation"""
+        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "ubuntu_attach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
         # the parameter 'target_lun' is hex for either v7k or ds8k:
@@ -1264,12 +1271,13 @@ class ubuntu(LinuxDist):
             lun_id = lun
         else:
             lun_id = target_lun
-        # TODO: also consider is first attach or not
-        content = template.render(fcp=fcp, lun=target_lun, lun_id=lun_id,
+        # TODO(bill): also consider is first attach or not
+        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
+                                  lun_id=lun_id,
                                   target_filename=target_filename)
         return content
 
-    def get_volume_detach_configuration_cmds(self, fcp, target_wwpn,
+    def get_volume_detach_configuration_cmds(self, fcp_list, target_wwpn,
                                              target_lun, multipath,
                                              mount_point, connections):
         """ubuntu detach script generation"""
@@ -1279,6 +1287,7 @@ class ubuntu(LinuxDist):
             is_last_volume = 0
         else:
             is_last_volume = 1
+        fcp_list_str = ' '.join(fcp_list)
         template = self.get_template("volumeops", "ubuntu_detach_volume.j2")
         target_filename = mount_point.replace('/dev/', '')
         lun = self._format_lun(target_lun)
@@ -1286,7 +1295,8 @@ class ubuntu(LinuxDist):
             lun_id = lun
         else:
             lun_id = target_lun
-        content = template.render(fcp=fcp, lun=target_lun, lun_id=lun_id,
+        content = template.render(fcp_list=fcp_list_str, lun=target_lun,
+                                  lun_id=lun_id,
                                   target_filename=target_filename,
                                   is_last_volume=is_last_volume)
         return content
