@@ -68,3 +68,12 @@ class HandlersHostTest(unittest.TestCase):
         self.req.GET['poolname'] = 'disk1'
         host.host_get_disk_info(self.req)
         self.assertTrue(mock_get_disk_info.called)
+
+    @mock.patch.object(host.HostAction, 'get_diskpool_volumes')
+    def test_host_get_disk_volumes(self, mock_get_disk_vols):
+
+        mock_get_disk_vols.return_value = ''
+        self.req.GET = {}
+        self.req.GET['poolname'] = 'disk1'
+        host.host_get_diskpool_volumes(self.req)
+        self.assertTrue(mock_get_disk_vols.called)

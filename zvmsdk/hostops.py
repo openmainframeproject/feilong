@@ -75,6 +75,11 @@ class HOSTOps(object):
         with zvmutils.expect_invalid_resp_data(guest_list):
             return guest_list
 
+    def diskpool_get_volumes(self, pool_name):
+        diskpool_volume_list = self._smtclient.get_diskpool_volumes(pool_name)
+        with zvmutils.expect_invalid_resp_data(diskpool_volume_list):
+            return diskpool_volume_list
+
     def diskpool_get_info(self, pool):
         dp_info = self._smtclient.get_diskpool_info(pool)
         with zvmutils.expect_invalid_resp_data(dp_info):

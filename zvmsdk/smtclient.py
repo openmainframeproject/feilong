@@ -1807,6 +1807,13 @@ class SMTClient(object):
             results = self._request("getvm alldirectory")
         return results.get('response', [])
 
+    def get_diskpool_volumes(self, pool):
+        with zvmutils.log_and_reraise_smt_request_failed():
+            results = self._request("gethost diskpoolvolumes %s" % pool)
+        diskpool_volumes = zvmutils.translate_response_to_dict(
+            '\n'.join(results['response']), const.DISKPOOL_VOLUME_KEYWORDS)
+        return diskpool_volumes
+
     def _delete_nic_active_exception(self, error, userid, vdev):
         if ((error.results['rc'] == 204) and (error.results['rs'] == 28)):
             errmsg = error.format_message()

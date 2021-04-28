@@ -47,6 +47,12 @@ class HostAction(object):
         return info
 
     @validation.query_schema(image.diskpool)
+    def get_diskpool_volumes(self, req, poolname):
+        info = self.client.send_request('host_get_diskpool_volumes',
+                                        disk_pool=poolname)
+        return info
+
+    @validation.query_schema(image.diskpool)
     def diskpool_get_info(self, req, poolname):
         info = self.client.send_request('host_diskpool_get_info',
                                         disk_pool=poolname)
@@ -85,6 +91,25 @@ def host_get_guest_list(req):
         return action.get_guest_list()
 
     info = _host_get_guest_list()
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    req.response.status = util.get_http_code_from_sdk_return(info)
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def host_get_diskpool_volumes(req):
+
+    def _host_get_diskpool_volumes(req, poolname):
+        action = get_action()
+        return action.get_diskpool_volumes(req, poolname)
+
+    poolname = None
+    if 'poolname' in req.GET:
+        poolname = req.GET['poolname']
+    info = _host_get_diskpool_volumes(req, poolname)
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'

@@ -661,6 +661,19 @@ class HostHandlerTest(unittest.TestCase):
 
             get_disk_info.assert_called_once_with(mock.ANY, None)
 
+    @mock.patch.object(tokens, 'validate')
+    def test_host_get_diskpool_volumes(self, mock_validate):
+        self.env['PATH_INFO'] = '/host/diskpool_volumes'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.'\
+                   'get_diskpool_volumes'
+        with mock.patch(function) as get_diskpool_volumes:
+            get_diskpool_volumes.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+
+            get_diskpool_volumes.assert_called_once_with(mock.ANY, None)
+
 
 class VswitchHandlerNegativeTest(unittest.TestCase):
 
