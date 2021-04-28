@@ -34,6 +34,7 @@ Each subfunction contains a list that has:
 """
 subfuncHandler = {
     'DISKPOOLNAMES': ['help', lambda rh: getDiskPoolNames(rh)],
+    'DISKPOOLVOLUMES': ['help', lambda rh: getDiskPoolVolumes(rh)],
     'DISKPOOLSPACE': ['help', lambda rh: getDiskPoolSpace(rh)],
     'FCPDEVICES': ['help', lambda rh: getFcpDevices(rh)],
     'GENERAL': ['help', lambda rh: getGeneralInfo(rh)],
@@ -52,6 +53,9 @@ information for the positional operands:
 """
 posOpsList = {
     'DISKPOOLSPACE': [
+                          ['Disk Pool Name', 'poolName', False, 2]
+                     ],
+    'DISKPOOLVOLUMES': [
                           ['Disk Pool Name', 'poolName', False, 2]
                      ]
     }
@@ -137,6 +141,49 @@ def getDiskPoolNames(rh):
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit getHost.getDiskPoolNames, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
+
+
+def getDiskPoolVolumes(rh):
+    """
+    Obtain the list of volumes for the disk_pools on the hypervisor.
+
+    Input:
+       Request Handle with the following properties:
+          function    - 'GETHOST'
+          subfunction - 'DISKPOOLVOLUMES'
+
+    Output:
+       Request Handle updated with the results.
+       Return code - 0: ok, non-zero: error
+    """
+    rh.printSysLog("Enter getHost.getDiskPoolVolumes")
+
+    if 'poolName' not in rh.parms:
+        poolNames = ["*"]
+    else:
+        if isinstance(rh.parms['poolName'], list):
+            poolNames = rh.parms['poolName']
+        else:
+            poolNames = [rh.parms['poolName']]
+
+    parms = ["-q", "1", "-e", "3", "-T", "dummy", "-n", " ".join(poolNames)]
+    results = invokeSMCLI(rh, "Image_Volume_Space_Query_DM", parms)
+    if results['overallRC'] == 0:
+        for line in results['response'].splitlines():
+            poolVolumes = line.strip().split()
+            poolVolumes.pop(0)
+            poolVolumes = ' '.join(poolVolumes)
+            # Create output string
+            outstr = 'Diskpool Volumes:' + poolVolumes
+            rh.printLn("N", outstr)
+    else:
+        # SMAPI API failed.
+        rh.printLn("ES", results['response'])
+        rh.updateResults(results)    # Use results from invokeSMCLI
+
+    rh.printSysLog("Exit getHost.getDiskPoolVolumes, rc: " +
         str(rh.results['overallRC']))
     return rh.results['overallRC']
 

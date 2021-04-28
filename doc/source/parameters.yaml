@@ -541,6 +541,12 @@ disk_info_used:
   in: body
   required: true
   type: int
+diskpool_volumes:
+  description: |
+    The volume list of the diskpool
+  in: body
+  required: true
+  type: string
 image_info:
   description: |
     The image info for specific image or all images, each image has one dict

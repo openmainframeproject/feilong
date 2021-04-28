@@ -44,6 +44,10 @@ DISKPOOL_KEYWORDS = {
     "disk_available": "Free:",
     }
 
+DISKPOOL_VOLUME_KEYWORDS = {
+    "diskpool_volumes": "Diskpool Volumes:",
+    }
+
 SET_VSWITCH_KEYWORDS = ["grant_userid", "user_vlan_id",
                         "revoke_userid", "real_device_address",
                         "port_name", "controller_name",

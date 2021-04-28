@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import mock
+import six
 
 from zvmsdk import api
 from zvmsdk import exception
@@ -572,6 +573,23 @@ class SDKAPITestCase(base.SDKTestCase):
     def test_host_get_guest_list(self, guest_list):
         self.api.host_get_guest_list()
         guest_list.assert_called_once_with()
+
+    @mock.patch("zvmsdk.hostops.HOSTOps.diskpool_get_volumes")
+    def test_host_get_diskpool_volumes(self, diskpool_vols):
+        base.set_conf('zvm', 'disk_pool', None)
+        disk_pool = 'ECKD:IAS1PL'
+        result = self.api.host_get_diskpool_volumes(disk_pool)
+        diskpool_vols.assert_called_once_with('IAS1PL')
+        # Test disk_pool is None
+        disk_pool = None
+        try:
+            self.api.host_get_diskpool_volumes(disk_pool)
+        except Exception as exc:
+            errmsg = ("Invalid disk_pool input None, disk_pool should be"
+                      " configured for sdkserver.")
+            result = errmsg in six.text_type(exc)
+            self.assertEqual(result, True)
+            pass
 
     @mock.patch("zvmsdk.hostops.HOSTOps.diskpool_get_info")
     def test_host_diskpool_get_info(self, dp_info):

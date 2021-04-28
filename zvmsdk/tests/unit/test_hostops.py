@@ -82,3 +82,12 @@ class SDKHostOpsTestCase(base.SDKTestCase):
         self.assertEqual(dp_info['disk_total'], 406105)
         self.assertEqual(dp_info['disk_used'], 367263)
         self.assertEqual(dp_info['disk_available'], 38)
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_diskpool_volumes")
+    def test_diskpool_get_volumes(self, get_diskpool_vols):
+        get_diskpool_vols.return_value = {
+            'diskpool_volumes': 'IAS100 IAS101',
+            }
+        diskpool_vols = self._hostops.diskpool_get_volumes("fakepool")
+        get_diskpool_vols.assert_called_once_with("fakepool")
+        self.assertEqual(diskpool_vols['diskpool_volumes'], 'IAS100 IAS101')
