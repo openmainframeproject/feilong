@@ -496,9 +496,10 @@ class FCPManager(object):
 
     def _report_orphan_fcp(self, fcp):
         """check there is record in db but not in FCP configuration"""
-        LOG.warning("WARNING: fcp %s found in db but not in "
-                    "CONF.volume.fcp_list which is %s" %
-                    (fcp, CONF.volume.fcp_list))
+        LOG.warning("WARNING: fcp %s found in db but we can not use it "
+                    "because it is not in CONF.volume.fcp_list %s or "
+                    "it did not belongs to free status FCPs %s." %
+                    (fcp, CONF.volume.fcp_list, self._fcp_pool.keys()))
         if not self.db.is_reserved(fcp):
             self.db.delete(fcp)
             LOG.info("Remove %s from fcp db" % fcp)
