@@ -1,6 +1,6 @@
 # GetVM functions for Systems Management Ultra Thin Layer
 #
-# Copyright 2017 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -566,24 +566,24 @@ def showOperandLines(rh):
     return
 
 
-def extract_fcp_data(raw_data, status):
+def extract_fcp_data(rh, raw_data, status):
     """
     extract data from smcli System_WWPN_Query output.
     Input:
         raw data returned from smcli
     Output:
-        data extracted would be like:
-    'status:Free \n
-     fcp_dev_no:1D2F\n
-     physical_wwpn:C05076E9928051D1\n
-     channel_path_id:8B\n
-     npiv_wwpn': 'NONE'\n
+        data extracted would be a string like:
 
-     status:Free\n
-     fcp_dev_no:1D29\n
-     physical_wwpn:C05076E9928051D1\n
-     channel_path_id:8B\n
-     npiv_wwpn:NONE
+     'FCP device number: 1B0E\n
+       Status: Active\n
+       NPIV world wide port number: C05076DE330005EA\n
+       Channel path ID: 27\n
+       Physical world wide port number:C05076DE33002E41\n
+     FCP device number: 1B0F\n
+       Status: Active\n
+       NPIV world wide port number: C05076DE330005EB\n
+       Channel path ID: 27\n
+       Physical world wide port number:C05076DE33002E41\n'
     """
     raw_data = raw_data.split('\n')
 
@@ -595,9 +595,25 @@ def extract_fcp_data(raw_data, status):
             continue
         else:
             data.append(i)
-    # process data into one list of dicts
+    # put matched data into one list of strings
     results = []
     for i in range(0, len(data), 5):
+        if (i + 5) > len(data):
+            # sometimes the SMCLI output:
+            #
+            # FCP device number: 1B0F
+            # Status: Active
+            # NPIV world wide port number: C05076DE330005EA
+            # Channel path ID: 27
+            # Physical world wide port number:
+            # Owner: turns
+            #
+            # which are more than 5 lines
+            # we still do not know the reason, but we need handle this
+            msg = ("extract_fcp_data interrupt because abnormal formatted "
+                   "output %s.", data)
+            rh.printLn("WS", msg)
+            break
         temp = data[i + 1].split(':')[-1].strip()
         # only return results match the status
         if temp.lower() == status.lower():
@@ -638,7 +654,7 @@ def fcpinfo(rh):
 
     if results['overallRC'] == 0:
         # extract data from smcli return
-        ret = extract_fcp_data(results['response'], rh.parms['status'])
+        ret = extract_fcp_data(rh, results['response'], rh.parms['status'])
         # write the ret into results['response']
         rh.printLn("N", ret)
     else:
