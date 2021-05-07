@@ -441,6 +441,30 @@ def req_get_volume_connector(start_index, *args, **kwargs):
     return url, body
 
 
+def req_get_all_fcp_usage(start_index, *args, **kwargs):
+    url = '/volumes/fcp'
+    userid = kwargs.get('userid', None)
+    if userid:
+        url += "?userid=%s" % userid
+    body = None
+    return url, body
+
+
+def req_get_fcp_usage(start_index, *args, **kwargs):
+    url = '/volumes/fcp/%s'
+    body = None
+    return url, body
+
+
+def req_set_fcp_usage(start_index, *args, **kwargs):
+    url = '/volumes/fcp/%s'
+    body = {'info': {'userid': args[start_index],
+                     'reserved': args[start_index + 1],
+                     'connections': args[start_index + 2]}}
+    fill_kwargs_in_body(body['info'], **kwargs)
+    return url, body
+
+
 def req_host_get_info(start_index, *args, **kwargs):
     url = '/host'
     body = None
@@ -811,6 +835,21 @@ DATABASE = {
         'args_required': 1,
         'params_path': 1,
         'request': req_get_volume_connector},
+    'get_all_fcp_usage': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_get_all_fcp_usage},
+    'get_fcp_usage': {
+        'method': 'GET',
+        'args_required': 1,
+        'params_path': 1,
+        'request': req_get_fcp_usage},
+    'set_fcp_usage': {
+        'method': 'PUT',
+        'args_required': 4,
+        'params_path': 1,
+        'request': req_set_fcp_usage},
     'host_get_info': {
         'method': 'GET',
         'args_required': 0,
