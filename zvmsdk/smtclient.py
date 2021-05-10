@@ -1018,7 +1018,7 @@ class SMTClient(object):
         LOG.info(msg)
 
     def guest_capture(self, userid, image_name, capture_type='rootonly',
-                      compress_level=6):
+                      compress_level=6, capture_device_assign=None):
         if capture_type == "alldisks":
             func = ('Capture guest with type: %s' % capture_type)
             msg = ('%s is not supported in current release' % func)
@@ -1031,62 +1031,86 @@ class SMTClient(object):
                                           'type': capture_type})
         LOG.info(msg)
 
-        self._check_power_state(userid, 'capture')
-        # Make sure the iucv channel is ready for communication on source vm
-        try:
-            self.execute_cmd(userid, 'pwd')
-        except exception.SDKSMTRequestFailed as err:
-            msg = ('Failed to check iucv status on capture source vm '
-                   '%(vm)s with error %(err)s' % {'vm': userid,
-                                        'err': err.results['response'][0]})
-            LOG.error(msg)
-            raise exception.SDKGuestOperationError(rs=5, userid=userid,
-                                                   msg=msg)
-        # Get the os version of the vm
-        try:
-            os_version = self._guest_get_os_version(userid)
-        except exception.SDKSMTRequestFailed as err:
-            msg = ('Failed to execute command on capture source vm %(vm)s'
-                   'to get os version with error %(err)s' % {'vm': userid,
-                                        'err': err.results['response'][0]})
-            LOG.error(msg)
-            raise exception.SDKGuestOperationError(rs=5, userid=userid,
-                                                   msg=msg)
-        except Exception as err:
-            msg = ('Error happened when parsing os version on source vm '
-                   '%(vm)s with error: %(err)s' % {'vm': userid,
-                                                   'err': six.text_type(err)})
-            LOG.error(msg)
-            raise exception.SDKGuestOperationError(rs=5, userid=userid,
-                                                   msg=msg)
-        msg = ('The os version of capture source vm %(vm)s is %(version)s' %
-               {'vm': userid,
-                'version': os_version})
-        LOG.info(msg)
-        # Find the root device according to the capture type
-        try:
-            capture_devices = self._get_capture_devices(userid, capture_type)
-        except exception.SDKSMTRequestFailed as err:
-            msg = ('Failed to execute command on source vm %(vm)s to get the '
-                   'devices for capture with error %(err)s' % {'vm': userid,
-                                        'err': err.results['response'][0]})
-            LOG.error(msg)
-            raise exception.SDKGuestOperationError(rs=5, userid=userid,
-                                                   msg=msg)
-        except Exception as err:
-            msg = ('Internal error happened when getting the devices for '
-                   'capture on source vm %(vm)s with error %(err)s' %
-                   {'vm': userid,
-                    'err': six.text_type(err)})
-            LOG.error(msg)
-            raise exception.SDKGuestOperationError(rs=5, userid=userid,
-                                                   msg=msg)
-        except exception.SDKGuestOperationError:
-            raise
+        # self._check_power_state(userid, 'capture')
+        reachable = self.get_guest_connection_status(userid)
+        if reachable:
+            # Make sure iucv channel is ready for communication on source vm
+            try:
+                self.execute_cmd(userid, 'pwd')
+            except exception.SDKSMTRequestFailed as err:
+                msg = ('Failed to check iucv status on capture source vm '
+                       '%(vm)s with error %(err)s'
+                       % {'vm': userid, 'err': err.results['response'][0]})
+                LOG.error(msg)
+                raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                       msg=msg)
+            # Get the os version of the vm
+            try:
+                os_version = self._guest_get_os_version(userid)
+            except exception.SDKSMTRequestFailed as err:
+                msg = ('Failed to execute command on capture source vm %(vm)s'
+                       'to get os version with error %(err)s'
+                       % {'vm': userid, 'err': err.results['response'][0]})
+                LOG.error(msg)
+                raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                       msg=msg)
+            except Exception as err:
+                msg = ('Error happened when parsing os version on source vm '
+                       '%(vm)s with error: %(err)s'
+                       % {'vm': userid, 'err': six.text_type(err)})
+                LOG.error(msg)
+                raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                       msg=msg)
+            msg = ('The capture source vm os version %(vm)s is %(version)s'
+                   % {'vm': userid, 'version': os_version})
+            LOG.info(msg)
+            # Find the root device according to the capture type
+            try:
+                capture_devices = self._get_capture_devices(userid,
+                                                            capture_type)
+            except exception.SDKSMTRequestFailed as err:
+                msg = ('Failed to execute command on source vm %(vm)s to get '
+                       'devices for capture with error %(err)s'
+                       % {'vm': userid, 'err': err.results['response'][0]})
+                LOG.error(msg)
+                raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                       msg=msg)
+            except Exception as err:
+                msg = ('Internal error happened when getting the devices for '
+                       'capture on source vm %(vm)s with error %(err)s' %
+                       {'vm': userid, 'err': six.text_type(err)})
+                LOG.error(msg)
+                raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                       msg=msg)
+            except exception.SDKGuestOperationError:
+                raise
 
-        # Shutdown the vm before capture
-        self.guest_softstop(userid)
-
+            # Shutdown the vm before capture
+            self.guest_softstop(userid)
+        else:
+            os_version = 'UNKNOWN'
+            # Capture_device_assign as assign capture disk.
+            # Input should be string to identity disk.
+            # use force_capture_disk value first if
+            # force_capture_disk=xxxx in zvmsdk.conf.
+            if CONF.zvm.force_capture_disk:
+                capture_devices = [str(CONF.zvm.force_capture_disk)]
+            else:
+                if capture_device_assign:
+                    capture_devices = [str(capture_device_assign)]
+                else:
+                    direct_info = self.get_user_direct(userid)
+                    disk_info =\
+                        [x for x in direct_info if x.startswith('MDISK')]
+                    capture_devices = \
+                        [x.split(' ')[1].strip(' ') for x in disk_info]
+            if not capture_devices:
+                msg = ('Error happened when getting the devices for '
+                       'get vm disk information on source vm %(vm)s '
+                       % {'vm': userid})
+                LOG.error(msg)
+                raise exception.SDKGuestOperationError(rs=5, userid=userid,
+                                                       msg=msg)
         # Prepare directory for writing image file
         image_temp_dir = '/'.join((CONF.image.sdk_image_repository,
                                    const.IMAGE_TYPE['CAPTURE'],

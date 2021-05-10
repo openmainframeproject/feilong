@@ -504,6 +504,14 @@ Possible value:
 1 : use get_fcp_pair_with_same_index
 '''
       ),
+ Opt('force_capture_disk',
+        section='zvm',
+        opt_type='str',
+        default=None,
+        help='''
+The disk info used to identity disk to capture when z/VM guest if power off.
+'''
+        ),
     # tests options
     Opt('images',
         section='tests',
