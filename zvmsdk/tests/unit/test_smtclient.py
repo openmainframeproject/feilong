@@ -2481,6 +2481,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         result = self._smtclient._guest_get_os_version(userid)
         self.assertEqual(result, 'ubuntu16.04')
 
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
     @mock.patch.object(database.ImageDbOperator, 'image_add_record')
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
     @mock.patch.object(smtclient.SMTClient, '_get_image_size')
@@ -2492,15 +2493,234 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     @mock.patch.object(smtclient.SMTClient, '_get_capture_devices')
     @mock.patch.object(smtclient.SMTClient, '_guest_get_os_version')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
-    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
-    def test_guest_capture_good_path(self, get_power_state, execcmd,
+    @mock.patch.object(smtclient.SMTClient, 'get_guest_connection_status')
+    def test_guest_capture_good_path_poweroff(self, guest_connection_status,
+                                     execcmd,
+                                     get_os_version, get_capture_devices,
+                                     softstop, mkdir, execute, md5sum,
+                                     disk_size_units, imagesize, rm_folder,
+                                     image_add_record, get_user_direct):
+        userid = 'fakeid'
+        image_name = 'fakeimage'
+        get_user_direct.return_value = ['USER TEST1234 LBYONLY 4096m 64G G',
+                                        'COMMAND SET VCONFIG MODE LINUX',
+                                        'COMMAND DEFINE CPU 00 TYPE IFL',
+                                        'MDISK 0100 3390 0001 14564 IAS114 MR']
+        execcmd.return_value = ['/']
+        image_temp_dir = '/'.join([CONF.image.sdk_image_repository,
+                                   'staging',
+                                   'UNKNOWN',
+                                   image_name])
+        image_file_path = '/'.join((image_temp_dir, '0100'))
+        cmd1 = ['sudo', '/opt/zthin/bin/creatediskimage', userid, '0100',
+                image_file_path, '--compression', '6']
+        execute.side_effect = [(0, ''),
+                               (0, '')]
+        image_final_dir = '/'.join((CONF.image.sdk_image_repository,
+                                    'netboot',
+                                    'UNKNOWN',
+                                    image_name))
+        image_final_path = '/'.join((image_final_dir,
+                                     '0100'))
+        cmd2 = ['mv', image_file_path, image_final_path]
+        md5sum.return_value = '547396211b558490d31e0de8e15eef0c'
+        disk_size_units.return_value = '1000:CYL'
+        imagesize.return_value = '1024000'
+        guest_connection_status.return_value = False
+
+        self._smtclient.guest_capture(userid, image_name)
+
+        guest_connection_status.assert_called_with(userid)
+        execcmd.assert_not_called()
+        get_os_version.assert_not_called()
+        get_capture_devices.assert_not_called()
+        softstop.assert_not_called()
+
+        execute.assert_has_calls([mock.call(cmd1), mock.call(cmd2)])
+        mkdir.assert_has_calls([mock.call(image_temp_dir)],
+                               [mock.call(image_final_dir)])
+        rm_folder.assert_called_once_with(image_temp_dir)
+        md5sum.assert_called_once_with(image_final_path)
+        disk_size_units.assert_called_once_with(image_final_path)
+        imagesize.assert_called_once_with(image_final_path)
+        image_add_record.assert_called_once_with(image_name, 'UNKNOWN',
+            '547396211b558490d31e0de8e15eef0c', '1000:CYL', '1024000',
+            'rootonly')
+        get_user_direct.assert_called_once_with(userid)
+
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    @mock.patch.object(database.ImageDbOperator, 'image_add_record')
+    @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
+    @mock.patch.object(smtclient.SMTClient, '_get_image_size')
+    @mock.patch.object(smtclient.SMTClient, '_get_disk_size_units')
+    @mock.patch.object(smtclient.SMTClient, '_get_md5sum')
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
+    @mock.patch.object(smtclient.SMTClient, 'guest_softstop')
+    @mock.patch.object(smtclient.SMTClient, '_get_capture_devices')
+    @mock.patch.object(smtclient.SMTClient, '_guest_get_os_version')
+    @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
+    @mock.patch.object(smtclient.SMTClient, 'get_guest_connection_status')
+    def test_guest_capture_poweroff_with_force_disk(self,
+                                                    guest_connection_status,
+                                                    execcmd,
+                                                    get_os_version,
+                                                    get_capture_devices,
+                                                    softstop,
+                                                    mkdir,
+                                                    execute,
+                                                    md5sum,
+                                                    disk_size_units,
+                                                    imagesize,
+                                                    rm_folder,
+                                                    image_add_record,
+                                                    get_user_direct):
+        CONF.zvm.force_capture_disk = '0100'
+        userid = 'fakeid'
+        image_name = 'fakeimage'
+        get_user_direct.return_value = ['USER TEST1234 LBYONLY 4096m 64G G',
+                                        'COMMAND SET VCONFIG MODE LINUX',
+                                        'COMMAND DEFINE CPU 00 TYPE IFL',
+                                        'MDISK 0100 3390 0001 14564 IAS114 MR']
+        execcmd.return_value = ['/']
+        image_temp_dir = '/'.join([CONF.image.sdk_image_repository,
+                                   'staging',
+                                   'UNKNOWN',
+                                   image_name])
+        image_file_path = '/'.join((image_temp_dir, '0100'))
+        cmd1 = ['sudo', '/opt/zthin/bin/creatediskimage', userid, '0100',
+                image_file_path, '--compression', '6']
+        execute.side_effect = [(0, ''),
+                               (0, '')]
+        image_final_dir = '/'.join((CONF.image.sdk_image_repository,
+                                    'netboot',
+                                    'UNKNOWN',
+                                    image_name))
+        image_final_path = '/'.join((image_final_dir,
+                                     '0100'))
+        cmd2 = ['mv', image_file_path, image_final_path]
+        md5sum.return_value = '547396211b558490d31e0de8e15eef0c'
+        disk_size_units.return_value = '1000:CYL'
+        imagesize.return_value = '1024000'
+        guest_connection_status.return_value = False
+
+        self._smtclient.guest_capture(userid, image_name)
+
+        guest_connection_status.assert_called_with(userid)
+        execcmd.assert_not_called()
+        get_os_version.assert_not_called()
+        get_capture_devices.assert_not_called()
+        softstop.assert_not_called()
+        get_user_direct.assert_not_called()
+        execute.assert_has_calls([mock.call(cmd1), mock.call(cmd2)])
+        mkdir.assert_has_calls([mock.call(image_temp_dir)],
+                               [mock.call(image_final_dir)])
+        rm_folder.assert_called_once_with(image_temp_dir)
+        md5sum.assert_called_once_with(image_final_path)
+        disk_size_units.assert_called_once_with(image_final_path)
+        imagesize.assert_called_once_with(image_final_path)
+        image_add_record.assert_called_once_with(image_name, 'UNKNOWN',
+            '547396211b558490d31e0de8e15eef0c', '1000:CYL', '1024000',
+            'rootonly')
+
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    @mock.patch.object(database.ImageDbOperator, 'image_add_record')
+    @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
+    @mock.patch.object(smtclient.SMTClient, '_get_image_size')
+    @mock.patch.object(smtclient.SMTClient, '_get_disk_size_units')
+    @mock.patch.object(smtclient.SMTClient, '_get_md5sum')
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
+    @mock.patch.object(smtclient.SMTClient, 'guest_softstop')
+    @mock.patch.object(smtclient.SMTClient, '_get_capture_devices')
+    @mock.patch.object(smtclient.SMTClient, '_guest_get_os_version')
+    @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
+    @mock.patch.object(smtclient.SMTClient, 'get_guest_connection_status')
+    def test_guest_capture_poweroff_with_device_ass(self,
+                                                    guest_connection_status,
+                                                    execcmd,
+                                                    get_os_version,
+                                                    get_capture_devices,
+                                                    softstop,
+                                                    mkdir,
+                                                    execute,
+                                                    md5sum,
+                                                    disk_size_units,
+                                                    imagesize,
+                                                    rm_folder,
+                                                    image_add_record,
+                                                    get_user_direct):
+
+        userid = 'fakeid'
+        image_name = 'fakeimage'
+        get_user_direct.return_value = ['USER TEST1234 LBYONLY 4096m 64G G',
+                                        'COMMAND SET VCONFIG MODE LINUX',
+                                        'COMMAND DEFINE CPU 00 TYPE IFL',
+                                        'MDISK 0100 3390 0001 14564 IAS114 MR']
+        execcmd.return_value = ['/']
+        image_temp_dir = '/'.join([CONF.image.sdk_image_repository,
+                                   'staging',
+                                   'UNKNOWN',
+                                   image_name])
+        image_file_path = '/'.join((image_temp_dir, '0100'))
+        cmd1 = ['sudo', '/opt/zthin/bin/creatediskimage', userid, '0100',
+                image_file_path, '--compression', '6']
+        execute.side_effect = [(0, ''),
+                               (0, '')]
+        image_final_dir = '/'.join((CONF.image.sdk_image_repository,
+                                    'netboot',
+                                    'UNKNOWN',
+                                    image_name))
+        image_final_path = '/'.join((image_final_dir,
+                                     '0100'))
+        cmd2 = ['mv', image_file_path, image_final_path]
+        md5sum.return_value = '547396211b558490d31e0de8e15eef0c'
+        disk_size_units.return_value = '1000:CYL'
+        imagesize.return_value = '1024000'
+        guest_connection_status.return_value = False
+        self._smtclient.guest_capture(userid,
+                                      image_name,
+                                      capture_device_assign='0100')
+        guest_connection_status.assert_called_with(userid)
+        execcmd.assert_not_called()
+        get_os_version.assert_not_called()
+        get_capture_devices.assert_not_called()
+        softstop.assert_not_called()
+        get_user_direct.assert_not_called()
+        execute.assert_has_calls([mock.call(cmd1), mock.call(cmd2)])
+        mkdir.assert_has_calls([mock.call(image_temp_dir)],
+                               [mock.call(image_final_dir)])
+        rm_folder.assert_called_once_with(image_temp_dir)
+        md5sum.assert_called_once_with(image_final_path)
+        disk_size_units.assert_called_once_with(image_final_path)
+        imagesize.assert_called_once_with(image_final_path)
+        image_add_record.assert_called_once_with(image_name, 'UNKNOWN',
+                                                 '547396211b558490d31e0'
+                                                 'de8e15eef0c',
+                                                 '1000:CYL',
+                                                 '1024000',
+                                                 'rootonly')
+
+    @mock.patch.object(database.ImageDbOperator, 'image_add_record')
+    @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
+    @mock.patch.object(smtclient.SMTClient, '_get_image_size')
+    @mock.patch.object(smtclient.SMTClient, '_get_disk_size_units')
+    @mock.patch.object(smtclient.SMTClient, '_get_md5sum')
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
+    @mock.patch.object(smtclient.SMTClient, 'guest_softstop')
+    @mock.patch.object(smtclient.SMTClient, '_get_capture_devices')
+    @mock.patch.object(smtclient.SMTClient, '_guest_get_os_version')
+    @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
+    @mock.patch.object(smtclient.SMTClient, 'get_guest_connection_status')
+    def test_guest_capture_good_path_poweron(self, guest_connection_status,
+                                     execcmd,
                                      get_os_version, get_capture_devices,
                                      softstop, mkdir, execute, md5sum,
                                      disk_size_units, imagesize, rm_folder,
                                      image_add_record):
         userid = 'fakeid'
         image_name = 'fakeimage'
-        get_power_state.return_value = 'on'
         execcmd.return_value = ['/']
         get_os_version.return_value = 'rhel7.0'
         get_capture_devices.return_value = ['0100']
@@ -2523,10 +2743,10 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         md5sum.return_value = '547396211b558490d31e0de8e15eef0c'
         disk_size_units.return_value = '1000:CYL'
         imagesize.return_value = '1024000'
-
+        guest_connection_status.return_value = True
         self._smtclient.guest_capture(userid, image_name)
 
-        get_power_state.assert_called_with(userid)
+        guest_connection_status.assert_called_with(userid)
         execcmd.assert_called_once_with(userid, 'pwd')
         get_os_version.assert_called_once_with(userid)
         get_capture_devices.assert_called_once_with(userid, 'rootonly')
@@ -2545,12 +2765,11 @@ class SDKSMTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(smtclient.SMTClient, '_guest_get_os_version')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
-    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
-    def test_guest_capture_error_path(self, get_power_state, execcmd,
-                                      get_os_version):
+    @mock.patch.object(smtclient.SMTClient, 'get_guest_connection_status')
+    def test_guest_capture_error_path(self, guest_connection_status,
+                                      execcmd, get_os_version):
         userid = 'fakeid'
         image_name = 'fakeimage'
-        get_power_state.return_value = 'on'
         result = {'rs': 101, 'errno': 0, 'strError': '',
                   'overallRC': 2,
                   'rc': 4,
@@ -2559,12 +2778,12 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                'rc: 4, rs: 101, out: ERROR: ERROR connecting'
                                ' socket:', 'Network is unreachable', 'Return'
                                ' code 4, Reason code 101.']}
-
+        guest_connection_status.return_value = True
         execcmd.side_effect = exception.SDKSMTRequestFailed(result, 'err')
         self.assertRaises(exception.SDKGuestOperationError,
                           self._smtclient.guest_capture, userid,
                           image_name)
-        get_power_state.assert_called_once_with(userid)
+        guest_connection_status.assert_called_with(userid)
         execcmd.assert_called_once_with(userid, 'pwd')
         get_os_version.assert_not_called()
 
