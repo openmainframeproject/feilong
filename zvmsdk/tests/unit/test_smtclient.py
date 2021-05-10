@@ -1443,6 +1443,18 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         smt_req.assert_called_once_with('getHost diskpoolspace pool')
         self.assertDictEqual(dp_info, expect)
 
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_diskpool_volumes(self, smt_req):
+        resp = {'Diskpool Volumes:' 'IAS100 IAS200'}
+        smt_req.return_value = {'rs': 0, 'errno': 0, 'strError': '',
+                                 'overallRC': 0, 'logEntries': [], 'rc': 0,
+                                 'response': resp}
+        expect = {'diskpool_volumes': 'IAS100 IAS200'}
+        diskpool_vols = self._smtclient.get_diskpool_volumes('fakepool')
+
+        smt_req.assert_called_once_with('gethost diskpoolvolumes fakepool')
+        self.assertDictEqual(diskpool_vols, expect)
+
     @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
     def test_get_vswitch_list(self, request, get_smt_userid):
