@@ -1,4 +1,4 @@
-# Copyright 2017 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -105,4 +105,4 @@ class HandlersVolumeTest(unittest.TestCase):
         volume.volume_refresh_bootmap(self.req)
         mock_detach.assert_called_once_with(
             'volume_refresh_bootmap',
-            fcpchannels, wwpns, lun, False)
+            fcpchannels, wwpns, lun, '', [])

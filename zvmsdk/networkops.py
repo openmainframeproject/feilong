@@ -1,4 +1,4 @@
-# Copyright 2017,2020 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -107,7 +107,7 @@ class NetworkOPS(object):
                               active=False):
         if self._smtclient.is_rhcos(os_version):
             linuxdist = self._dist_manager.get_linux_dist(os_version)()
-            linuxdist.create_coreos_parameter(network_info, userid)
+            linuxdist.create_coreos_parameter_temp_file(network_info, userid)
         else:
             network_file_path = self._smtclient.get_guest_temp_path(userid)
             LOG.debug('Creating folder %s to contain network configuration '

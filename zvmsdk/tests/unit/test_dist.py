@@ -1,4 +1,4 @@
-# Copyright 2017,2020 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -255,7 +255,8 @@ class RHCOS4TestCase(base.SDKTestCase):
                         'nic_id': 'adca70f3-8509-44d4-92d4-2c1c14b3f25e'}]
         userid = "FakeID"
         guest_path.return_value = "/tmp/FakeID"
-        res = self.linux_dist.create_coreos_parameter(network_info, userid)
+        res = self.linux_dist.create_coreos_parameter_temp_file(network_info,
+                                                                userid)
         self.assertEqual(res, True)
 
     @mock.patch.object(smtclient.SMTClient, 'get_guest_path')
