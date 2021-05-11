@@ -1,4 +1,4 @@
-# Copyright 2017 IBM Corp.
+# Copyright 2017, 2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -587,6 +587,22 @@ class SDKAPITestCase(base.SDKTestCase):
         except Exception as exc:
             errmsg = ("Invalid disk_pool input None, disk_pool should be"
                       " configured for sdkserver.")
+            result = errmsg in six.text_type(exc)
+            self.assertEqual(result, True)
+            pass
+
+    @mock.patch("zvmsdk.hostops.HOSTOps.get_volume_info")
+    def test_host_get_volume_info(self, volume_info):
+        volume = 'VOLUM1'
+        result = self.api.host_get_volume_info(volume)
+        volume_info.assert_called_once_with(volume)
+        # Test volume is None
+        volume = None
+        try:
+            self.api.host_get_volume_info(volume)
+        except Exception as exc:
+            errmsg = ("Invalid volume input None, volume"
+                      " must be specified.")
             result = errmsg in six.text_type(exc)
             self.assertEqual(result, True)
             pass

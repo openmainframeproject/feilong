@@ -1,4 +1,4 @@
-# Copyright 2017,2020 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -1447,13 +1447,31 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_get_diskpool_volumes(self, smt_req):
         resp = {'Diskpool Volumes:' 'IAS100 IAS200'}
         smt_req.return_value = {'rs': 0, 'errno': 0, 'strError': '',
-                                 'overallRC': 0, 'logEntries': [], 'rc': 0,
-                                 'response': resp}
+                                'overallRC': 0, 'logEntries': [], 'rc': 0,
+                                'response': resp}
         expect = {'diskpool_volumes': 'IAS100 IAS200'}
         diskpool_vols = self._smtclient.get_diskpool_volumes('fakepool')
 
         smt_req.assert_called_once_with('gethost diskpoolvolumes fakepool')
         self.assertDictEqual(diskpool_vols, expect)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_volume_info(self, smt_req):
+        resp = ['volume name: IASFBA', 'volume_type:9336-ET',
+            'volume_size:564718',
+            'volume_name: IAS1CM', 'volume_type:3390-09',
+            'volume_size:60102']
+        smt_req.return_value = {'rs': 0, 'errno': 0, 'strError': '',
+                                'overallRC': 0, 'logEntries': [], 'rc': 0,
+                                'response': resp}
+        expect = {'IASFBA': {'volume_type': '9336-ET',
+            'volume_size': '564718'},
+            'IAS1CM': {'volume_type': '3390-09',
+            'volume_size': '60102'}}
+        volume_info = self._smtclient.get_volume_info()
+
+        smt_req.assert_called_once_with('gethost volumeinfo')
+        self.assertDictEqual(volume_info, expect)
 
     @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')

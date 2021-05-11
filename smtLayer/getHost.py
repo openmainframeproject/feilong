@@ -1,6 +1,6 @@
 # GetHost functions for Systems Management Ultra Thin Layer
 #
-# Copyright 2017 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -35,6 +35,7 @@ Each subfunction contains a list that has:
 subfuncHandler = {
     'DISKPOOLNAMES': ['help', lambda rh: getDiskPoolNames(rh)],
     'DISKPOOLVOLUMES': ['help', lambda rh: getDiskPoolVolumes(rh)],
+    'VOLUMEINFO': ['help', lambda rh: getVolumeInfo(rh)],
     'DISKPOOLSPACE': ['help', lambda rh: getDiskPoolSpace(rh)],
     'FCPDEVICES': ['help', lambda rh: getFcpDevices(rh)],
     'GENERAL': ['help', lambda rh: getGeneralInfo(rh)],
@@ -71,6 +72,7 @@ command as a key.  Each keyword has a dictionary that lists:
 keyOpsList = {
     'DISKPOOLNAMES': {'--showparms': ['showParms', 0, 0]},
     'DISKPOOLSPACE': {'--showparms': ['showParms', 0, 0]},
+    'VOLUMEINFO': {'--showparms': ['showParms', 0, 0]},
     'FCPDEVICES': {'--showparms': ['showParms', 0, 0]},
     'GENERAL': {'--showparms': ['showParms', 0, 0]},
     'HELP': {'--showparms': ['showParms', 0, 0]},
@@ -184,6 +186,54 @@ def getDiskPoolVolumes(rh):
         rh.updateResults(results)    # Use results from invokeSMCLI
 
     rh.printSysLog("Exit getHost.getDiskPoolVolumes, rc: " +
+        str(rh.results['overallRC']))
+    return rh.results['overallRC']
+
+
+def getVolumeInfo(rh):
+    """
+    Obtain the description info of the volume on the hypervisor.
+
+    Input:
+       Request Handle with the following properties:
+          function    - 'GETHOST'
+          subfunction - 'VOLUMEINFO'
+
+    Output:
+       Request Handle updated with the results.
+       Return code - 0: ok, non-zero: error
+    """
+    rh.printSysLog("Enter getHost.getVolumeInfo")
+
+    if 'volumeName' not in rh.parms:
+        volumeName = ["*"]
+    else:
+        if isinstance(rh.parms['volumeName'], list):
+            volumeName = rh.parms['volumeName']
+        else:
+            volumeName = [rh.parms['volumeName']]
+
+    parms = ["-q", "1", "-e", "1", "-T", "dummy", "-n", " ".join(volumeName)]
+    results = invokeSMCLI(rh, "Image_Volume_Space_Query_DM", parms)
+    if results['overallRC'] == 0:
+        for line in results['response'].splitlines():
+            volumeInfo = line.strip().split()
+            volumeName = volumeInfo[0]
+            volumeType = volumeInfo[1]
+            volumeSize = volumeInfo[2]
+            # Create output string
+            outstr1 = 'volume_name:' + volumeName
+            outstr2 = 'volume_type:' + volumeType
+            outstr3 = 'volume_size:' + volumeSize
+            rh.printLn("N", outstr1)
+            rh.printLn("N", outstr2)
+            rh.printLn("N", outstr3)
+    else:
+        # SMAPI API failed.
+        rh.printLn("ES", results['response'])
+        rh.updateResults(results)    # Use results from invokeSMCLI
+
+    rh.printSysLog("Exit getHost.getVolumeInfo, rc: " +
         str(rh.results['overallRC']))
     return rh.results['overallRC']
 
