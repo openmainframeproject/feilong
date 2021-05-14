@@ -506,12 +506,24 @@ Possible value:
       ),
  Opt('force_capture_disk',
         section='zvm',
+        required=False,
         opt_type='str',
         default=None,
         help='''
-The disk info used to identity disk to capture when z/VM guest if power off.
-'''
-        ),
+Virtual device number for capture function.
+
+This value identity the virtual device number for capture
+image when z/VM guest is power off.
+
+Possible values:
+    An string value identify disk number like '0100'.
+    If this value has been configured, capture image function will use
+    this value as disk info to capture with first priority when z/VM
+    guest is power off.
+    This value don't work if z/VM guest status is power on.
+Sample root disk in user directory:
+    MDISK 0100 <disktype> <start> <end> <volumelabel> <readwrite>
+'''),
     # tests options
     Opt('images',
         section='tests',
