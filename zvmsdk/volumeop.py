@@ -916,7 +916,7 @@ class FCPVolumeManager(object):
             self._remove_disks(fcp_list, assigner_id, target_wwpns, target_lun,
                                multipath, os_version, mount_point, connections)
             for fcp in fcp_list:
-                if not fcp_connections[fcp]:
+                if not fcp_connections.get(fcp, 0):
                     LOG.info("Start to undedicate FCP %s from "
                              "%s." % (fcp, assigner_id))
                     self._undedicate_fcp(fcp, assigner_id)
