@@ -1144,6 +1144,21 @@ last_access_time:
   in: body
   required: true
   type: float
+fcp_id:
+  description: |
+    ID of FCP device.
+  in: path
+  required: true
+  type: string
+fcp_usage:
+  description: |
+    FCP usage, contains 3 values [userid, reserved, connections].
+    ``userid`` is the userid this fcp belongs to.
+    ``reserved`` is 0 or 1, represent the fcp is been used or not.
+    ``connections`` is non-negative value, means the count of volumes on this FCP.
+  in: body
+  required: true
+  type: list
 fcp_list:
   description: |
     FCP devices list.
@@ -1195,3 +1210,16 @@ fcp_reserve:
   in: body
   required: true
   type: boolean
+fcp_reserved:
+  description: |
+    If value is 1, means this FCP device is using by one userid.
+    If value is 0, means this FCP device can be operated.
+  in: body
+  required: true
+  type: integer
+fcp_connections:
+  description: |
+    The count of volumes on this FCP device.
+  in: body
+  required: true
+  type: integer

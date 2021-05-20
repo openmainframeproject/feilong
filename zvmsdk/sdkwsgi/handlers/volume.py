@@ -61,6 +61,23 @@ class VolumeAction(object):
                                         userid, reserve)
         return conn
 
+    @validation.query_schema(volume.get_all_fcp_usage)
+    def get_all_fcp_usage(self, req, userid):
+        return self.client.send_request('get_all_fcp_usage', userid)
+
+    @validation.query_schema(volume.get_fcp_usage)
+    def get_fcp_usage(self, req, fcp):
+        return self.client.send_request('get_fcp_usage', fcp)
+
+    @validation.schema(volume.set_fcp_usage)
+    def set_fcp_usage(self, fcp, body=None):
+        userid = body['info']['userid']
+        reserved = body['info']['reserved']
+        connections = body['info']['connections']
+        return self.client.send_request('set_fcp_usage',
+                                        fcp, userid, reserved,
+                                        connections)
+
     def volume_refresh_bootmap(self, fcpchannel, wwpn, lun, skipzipl):
         info = self.client.send_request('volume_refresh_bootmap',
                                         fcpchannel, wwpn, lun, skipzipl)
@@ -146,4 +163,60 @@ def get_volume_connector(req):
     req.response.content_type = 'application/json'
     req.response.body = utils.to_utf8(conn_json)
     req.response.status = util.get_http_code_from_sdk_return(conn, default=200)
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def get_fcp_usage(req):
+    def _get_fcp_usage(req, fcp):
+        action = get_action()
+        return action.get_fcp_usage(req, fcp)
+
+    fcp = util.wsgi_path_item(req.environ, 'fcp_id')
+    ret = _get_fcp_usage(req, fcp)
+
+    ret_json = json.dumps(ret)
+    req.response.status = util.get_http_code_from_sdk_return(ret,
+                    additional_handler=util.handle_not_found)
+    req.response.content_type = 'application/json'
+    req.response.body = utils.to_utf8(ret_json)
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def set_fcp_usage(req):
+    def _set_fcp_usage(req, fcp):
+        action = get_action()
+        body = util.extract_json(req.body)
+        return action.set_fcp_usage(fcp, body=body)
+    fcp = util.wsgi_path_item(req.environ, 'fcp_id')
+
+    ret = _set_fcp_usage(req, fcp)
+    ret_json = json.dumps(ret)
+    req.response.body = utils.to_utf8(ret_json)
+    req.response.content_type = 'application/json'
+    req.response.status = 200
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def get_all_fcp_usage(req):
+    def _get_all_fcp_usage(req, userid):
+        action = get_action()
+        return action.get_all_fcp_usage(req, userid)
+
+    if 'userid' in req.GET.keys():
+        userid = req.GET['userid']
+    else:
+        userid = None
+    ret = _get_all_fcp_usage(req, userid)
+
+    ret_json = json.dumps(ret)
+    req.response.status = util.get_http_code_from_sdk_return(ret,
+                    additional_handler=util.handle_not_found)
+    req.response.content_type = 'application/json'
+    req.response.body = utils.to_utf8(ret_json)
     return req.response

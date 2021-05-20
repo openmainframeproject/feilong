@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -366,6 +366,68 @@ class FCPDbOperator(object):
         with get_fcp_conn() as conn:
             conn.execute("DELETE FROM fcp "
                          "WHERE fcp_id=?", (fcp,))
+
+    def get_all_fcps_of_assigner(self, assigner_id):
+        ret = {}
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT fcp_id, reserved, connections FROM "
+                                  "fcp WHERE assigner_id=?", (assigner_id,))
+            fcp_info = result.fetchall()
+            if not fcp_info:
+                msg = 'No FCPs found belongs to userid %s.' % assigner_id
+                LOG.error(msg)
+                obj_desc = "FCPs belongs to %s" % assigner_id
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
+            for item in fcp_info:
+                # 'fcp_id': (userid, reserved, connections)
+                ret[item[0]] = (assigner_id, item[1], item[2])
+        return ret
+
+    def get_all_fcps(self):
+        ret = {}
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT fcp_id, assigner_id, reserved, "
+                                  "connections FROM fcp")
+            fcp_info = result.fetchall()
+
+            if not fcp_info:
+                msg = 'No FCPs found in database.'
+                LOG.error(msg)
+                obj_desc = "FCPs in database"
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
+            for item in fcp_info:
+                # 'fcp_id': (reserved, connections)
+                ret[item[0]] = (item[1], item[2], item[3])
+        return ret
+
+    def get_usage_of_fcp(self, fcp):
+        connections = 0
+        reserved = 0
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT assigner_id, reserved, connections "
+                                  "FROM fcp WHERE fcp_id=?", (fcp,))
+            fcp_info = result.fetchall()
+            if not fcp_info:
+                msg = 'FCP with id: %s does not exist in DB.' % fcp
+                LOG.error(msg)
+                obj_desc = "FCP with id: %s" % fcp
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
+            assigner_id = fcp_info[0][0]
+            reserved = fcp_info[0][1]
+            connections = fcp_info[0][2]
+
+        return assigner_id, reserved, connections
+
+    def update_usage_of_fcp(self, fcp, assigner_id, reserved, connections):
+        with get_fcp_conn() as conn:
+            conn.execute("UPDATE fcp SET assigner_id=?, reserved=?, "
+                         "connections=? WHERE fcp_id=?", (assigner_id,
+                                                          reserved,
+                                                          connections,
+                                                          fcp))
 
     def increase_usage(self, fcp):
         with get_fcp_conn() as conn:

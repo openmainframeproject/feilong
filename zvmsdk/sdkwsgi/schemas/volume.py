@@ -51,6 +51,50 @@ detach = {
 }
 
 
+get_fcp_usage = {
+    'type': 'object',
+    'properties': {
+        'fcp_id': parameter_types.fcp_id,
+    },
+    'required': ['fcp_id'],
+    'additionalProperties': False,
+}
+
+
+get_all_fcp_usage = {
+    'type': 'object',
+    'properties': {
+        'userid': parameter_types.userid_list_array,
+    },
+    'additionalProperties': False,
+}
+
+
+set_fcp_usage = {
+    'type': 'object',
+    'properties': {
+        'info': {
+            'type': 'object',
+            'properties': {
+                'userid': parameter_types.userid,
+                'reserved': {
+                    'type': ['integer'],
+                    'minimum': 0,
+                    'maximum': 1,
+                },
+                'connections': {
+                    'type': ['integer'],
+                },
+            },
+            'required': ['reserved', 'connections'],
+            'additionalProperties': False,
+        }
+    },
+    'required': ['info'],
+    'additionalProperties': False,
+}
+
+
 get_volume_connector = {
     'type': 'object',
     'properties': {

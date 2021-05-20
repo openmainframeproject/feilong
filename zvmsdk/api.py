@@ -66,6 +66,25 @@ def check_guest_exist(check_index=0):
     return outer
 
 
+def check_fcp_exist(check_index=0):
+    """Check FCP exist in database.
+
+    :param check_index: The parameter index of fcp, default as 1
+
+    """
+
+    def outer(f):
+        @six.wraps(f)
+        def inner(self, *args, **kw):
+            fcp = args[check_index]
+
+            self._volumeop.check_fcp_exist_in_db(fcp)
+
+            return f(self, *args, **kw)
+        return inner
+    return outer
+
+
 class SDKAPI(object):
     """Compute action interfaces."""
 
@@ -1546,6 +1565,51 @@ class SDKAPI(object):
         :param boolean reserve: the flag to reserve FCP device
         """
         return self._volumeop.get_volume_connector(userid, reserve)
+
+    def get_all_fcp_usage(self, userid=None):
+        """API for getting all the FCP usage for specified userid.
+
+        :param str userid: the user id of the guest. if userid is None,
+                           will return all the fcp usage in database.
+
+        :returns: dict describing reserved,connections values of the FCP
+                  in database. For example:
+                  {
+                      '1a11': ['userid', 0, 1],
+                      '1b11': ['fakeid', 1, 3],
+                      '1c11': ['fakeid', 1, 2],
+                      '1d11': ['fakeid', 1, 0]
+                  }
+                  the keys are the fcp IDs, the value is a list contains
+                  [userid, reserved, connections] values.
+        """
+        return self._volumeop.get_all_fcp_usage(userid)
+
+    @check_fcp_exist()
+    def get_fcp_usage(self, fcp):
+        """API for getting FCP usage in database manually.
+
+        :param str userid: the user id of the guest
+        :param str fcp: the fcp ID of FCP device
+
+        :returns: list describing reserved,connections values of the FCP
+                  in database. For example, ['fakeid', 1, 3] means the
+                  userid is fakeid, reserved value is 1, and connections is 3.
+        """
+        return self._volumeop.get_fcp_usage(fcp)
+
+    @check_fcp_exist()
+    def set_fcp_usage(self, fcp, userid, reserved, connections):
+        """API for setting FCP usage in database manually.
+
+        :param str userid: the user id of the guest
+        :param str fcp: the fcp ID of FCP device
+        :param int reserved: the value set to reserved value of FCP database
+        :param int connections: the value set to connections value of
+                                FCP database
+        """
+        return self._volumeop.set_fcp_usage(userid, fcp, reserved,
+                                            connections)
 
     def volume_attach(self, connection_info):
         """ Attach a volume to a guest. It's prerequisite to active multipath

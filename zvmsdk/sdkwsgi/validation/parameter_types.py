@@ -480,6 +480,13 @@ fcp = {
 
 }
 
+fcp_id = {
+    'type': 'string',
+    'minLength': 4,
+    'maxLength': 4,
+    'pattern': '^[0-9a-fA-F]{4}$'
+}
+
 wwpn = {
     'type': 'array',
     'items': {
@@ -564,7 +571,7 @@ max_cpu = {
 max_mem = {
     'type': 'string',
     'pattern': '^[1-9][0-9]{0,3}[m|M|g|G]$'
-    }
+}
 
 hostname = {
     'oneOf': [

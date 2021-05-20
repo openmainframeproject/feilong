@@ -1182,3 +1182,56 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                                      '/dev/sdz', 1)
         finally:
             self.db_op.delete('283c')
+
+    def test_get_all_fcp_usage(self):
+        self.db_op = database.FCPDbOperator()
+        self.db_op.new('283c', 0)
+        self.db_op.new('383c', 0)
+        # set reserved to 1
+        self.db_op.reserve('283c')
+        self.db_op.assign('283c', 'user1')
+        # set connections to 2
+        self.db_op.increase_usage('283c')
+        try:
+            ret = self.volumeops.get_all_fcp_usage()
+            self.assertEqual(len(ret.keys()), 2)
+            self.assertTrue('283c' in ret.keys() and '383c' in ret.keys())
+            ret = self.volumeops.get_all_fcp_usage(assigner_id='user1')
+            self.assertTrue('283c' in ret.keys() and '383c' not in ret.keys())
+        finally:
+            self.db_op.delete('283c')
+            self.db_op.delete('383c')
+
+    def test_get_fcp_usage(self):
+        self.db_op = database.FCPDbOperator()
+        self.db_op.new('283c', 0)
+        # set reserved to 1
+        self.db_op.reserve('283c')
+        self.db_op.assign('283c', 'user1')
+        # set connections to 2
+        self.db_op.increase_usage('283c')
+        try:
+            userid, reserved, conns = self.volumeops.get_fcp_usage('283c')
+            self.assertEqual(userid, 'user1')
+            self.assertEqual(reserved, 1)
+            self.assertEqual(conns, 2)
+        finally:
+            self.db_op.delete('283c')
+
+    def test_set_fcp_usage(self):
+        self.db_op = database.FCPDbOperator()
+        self.db_op.new('283c', 0)
+        # set reserved to 1
+        self.db_op.reserve('283c')
+        self.db_op.assign('283c', 'user1')
+        # set connections to 2
+        self.db_op.increase_usage('283c')
+        try:
+            # change reserved to 0 and connections to 3
+            self.volumeops.set_fcp_usage('283c', 'user2', 0, 3)
+            userid, reserved, conns = self.volumeops.get_fcp_usage('283c')
+            self.assertEqual(userid, 'user2')
+            self.assertEqual(reserved, 0)
+            self.assertEqual(conns, 3)
+        finally:
+            self.db_op.delete('283c')

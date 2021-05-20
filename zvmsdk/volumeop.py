@@ -94,6 +94,19 @@ class VolumeOperatorAPI(object):
     def get_volume_connector(self, assigner_id, reserve):
         return self._volume_manager.get_volume_connector(assigner_id, reserve)
 
+    def check_fcp_exist_in_db(self, fcp, raise_exec=True):
+        return self._volume_manager.check_fcp_exist_in_db(fcp, raise_exec)
+
+    def get_all_fcp_usage(self, assigner_id=None):
+        return self._volume_manager.get_all_fcp_usage(assigner_id)
+
+    def get_fcp_usage(self, fcp):
+        return self._volume_manager.get_fcp_usage(fcp)
+
+    def set_fcp_usage(self, assigner_id, fcp, reserved, connections):
+        return self._volume_manager.set_fcp_usage(fcp, assigner_id,
+                                                  reserved, connections)
+
 
 @six.add_metaclass(abc.ABCMeta)
 class VolumeConfiguratorAPI(object):
@@ -912,6 +925,13 @@ class FCPVolumeManager(object):
                      "done." % (fcp_list, assigner_id))
             return
 
+        # when detaching volumes, if userid not exist, no need to
+        # raise exception. we stop here after the database operations done.
+        if not zvmutils.check_userid_exist(assigner_id):
+            LOG.warning("Found %s not exist when trying to detach volumes "
+                        "from it.", assigner_id)
+            return
+
         try:
             self._remove_disks(fcp_list, assigner_id, target_wwpns, target_lun,
                                multipath, os_version, mount_point, connections)
@@ -964,18 +984,12 @@ class FCPVolumeManager(object):
             multipath = False
 
         is_root_volume = connection_info.get('is_root_volume', False)
-        if is_root_volume is False and \
-                not zvmutils.check_userid_exist(assigner_id):
-            LOG.error("Guest '%s' does not exist" % assigner_id)
-            raise exception.SDKObjectNotExistError(
-                    obj_desc=("Guest '%s'" % assigner_id), modID='volume')
-        else:
-            # transfer to lower cases
-            fcp_list = [x.lower() for x in fcp]
-            self._detach(fcp_list, assigner_id,
-                         target_wwpns, target_lun,
-                         multipath, os_version, mount_point,
-                         is_root_volume)
+        # transfer to lower cases
+        fcp_list = [x.lower() for x in fcp]
+        self._detach(fcp_list, assigner_id,
+                     target_wwpns, target_lun,
+                     multipath, os_version, mount_point,
+                     is_root_volume)
 
     def get_volume_connector(self, assigner_id, reserve):
         """Get connector information of the instance for attaching to volumes.
@@ -1045,3 +1059,40 @@ class FCPVolumeManager(object):
         LOG.info('get_volume_connector returns %s for %s' %
                   (connector, assigner_id))
         return connector
+
+    def check_fcp_exist_in_db(self, fcp, raise_exec=True):
+        all_fcps_raw = self.db.get_all()
+        all_fcps = []
+        for item in all_fcps_raw:
+            all_fcps.append(item[0].lower())
+        if fcp not in all_fcps:
+            if raise_exec:
+                LOG.error("fcp %s not exist in db!", fcp)
+                raise exception.SDKObjectNotExistError(
+                    obj_desc=("FCP '%s'" % fcp), modID='volume')
+            else:
+                LOG.warning("fcp %s not exist in db!", fcp)
+                return False
+        else:
+            return True
+
+    def get_all_fcp_usage(self, assigner_id=None):
+        if assigner_id:
+            ret = self.db.get_all_fcps_of_assigner(assigner_id)
+            LOG.info("Got all fcp usage of userid %s: %s" % (assigner_id, ret))
+        else:
+            # if userid is None, get usage of all the fcps
+            ret = self.db.get_all_fcps()
+            LOG.info("Got all fcp usage: %s" % ret)
+        return ret
+
+    def get_fcp_usage(self, fcp):
+        userid, reserved, connections = self.db.get_usage_of_fcp(fcp)
+        LOG.info("Got userid:%s, reserved:%s, connections:%s of "
+                 "FCP:%s" % (userid, reserved, connections, fcp))
+        return userid, reserved, connections
+
+    def set_fcp_usage(self, fcp, assigner_id, reserved, connections):
+        self.db.update_usage_of_fcp(fcp, assigner_id, reserved, connections)
+        LOG.info("Set usage of fcp %s to userid:%s, reserved:%s, "
+                 "connections:%s." % (fcp, assigner_id, reserved, connections))
