@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -116,6 +116,9 @@ ROUTE_LIST = (
     }),
     ('/host/diskpool_volumes', {
         'GET': host.host_get_diskpool_volumes,
+    }),
+    ('/host/volume', {
+        'GET': host.host_get_volume_info,
     }),
     ('/images', {
         'POST': image.image_create,

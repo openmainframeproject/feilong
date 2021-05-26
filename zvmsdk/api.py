@@ -317,9 +317,25 @@ class SDKAPI(object):
             LOG.error(msg)
             raise exception.SDKInvalidInputFormat(msg)
 
-        action = "get information of disk pool: '%s'" % disk_pool
+        action = "get the volumes of disk pool: '%s'" % disk_pool
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._hostops.diskpool_get_volumes(diskpool_name)
+
+    def host_get_volume_info(self, volume=None):
+        """ Retrieve volume information.
+        :param str volume: the volume name to identify the DASD device.
+        It's 1 to 6 hexadecimal characters.
+        :returns: Dictionary describing the volume description info
+        """
+        volume_name = volume
+        if volume_name is None:
+            errmsg = ("Invalid volume input None, volume must be specified.")
+            LOG.error(errmsg)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
+
+        action = "get information of the volume: '%s'" % volume_name
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._hostops.get_volume_info(volume_name.upper())
 
     def host_get_guest_list(self):
         """list names of all the VMs on the host.

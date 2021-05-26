@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -62,7 +62,6 @@ class HandlersHostTest(unittest.TestCase):
 
     @mock.patch.object(host.HostAction, 'diskpool_get_info')
     def test_host_get_disk_info(self, mock_get_disk_info):
-
         mock_get_disk_info.return_value = ''
         self.req.GET = {}
         self.req.GET['poolname'] = 'disk1'
@@ -71,9 +70,16 @@ class HandlersHostTest(unittest.TestCase):
 
     @mock.patch.object(host.HostAction, 'get_diskpool_volumes')
     def test_host_get_disk_volumes(self, mock_get_disk_vols):
-
         mock_get_disk_vols.return_value = ''
         self.req.GET = {}
         self.req.GET['poolname'] = 'disk1'
         host.host_get_diskpool_volumes(self.req)
         self.assertTrue(mock_get_disk_vols.called)
+
+    @mock.patch.object(host.HostAction, 'get_volume_info')
+    def test_host_get_volume_info(self, mock_get_vol):
+        mock_get_vol.return_value = ''
+        self.req.GET = {}
+        self.req.GET['volumename'] = 'volum1'
+        host.host_get_volume_info(self.req)
+        self.assertTrue(mock_get_vol.called)

@@ -478,6 +478,27 @@ def generate_iucv_authfile(fn, client):
         f.writelines(lines)
 
 
+def translate_response_data_to_expect_dict(results, step):
+    """
+    Translate SMT response to a python dictionary
+    ['volume name: IASFBA', 'volume_type:9336-ET', 'volume_size:564718',
+     'volume_name: IAS1CM', 'volume_type:3390-09', 'volume_size:60102']
+     translate to:
+     {'IASFBA': {'volume_type': '9336-ET', 'volume_size': '564718'},
+      'IAS1CM': {'volume_type': '3390-09', 'volume_size': '60102'}}
+    :results: the SMT response in list format
+    :step: count list members converted to one member of the directory
+    """
+    data = {}
+    for i in range(0, len(results), step):
+        volume_name = results[i].split(':')[1].strip()
+        data[volume_name] = {}
+        for k in range(1, step):
+            key, value = results[i + k].split(':')
+            data[volume_name][key] = value
+    return data
+
+
 @wrap_invalid_resp_data_error
 def translate_response_to_dict(rawdata, dirt):
     """Translate SMT response to a python dictionary.

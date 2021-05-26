@@ -1,4 +1,4 @@
-# Copyright 2017,2020 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -1837,6 +1837,14 @@ class SMTClient(object):
         diskpool_volumes = zvmutils.translate_response_to_dict(
             '\n'.join(results['response']), const.DISKPOOL_VOLUME_KEYWORDS)
         return diskpool_volumes
+
+    def get_volume_info(self):
+        with zvmutils.log_and_reraise_smt_request_failed():
+            results = self._request("gethost volumeinfo")
+        with zvmutils.expect_invalid_resp_data(results):
+            volume_info = zvmutils.translate_response_data_to_expect_dict(
+                results['response'], 3)
+        return volume_info
 
     def _delete_nic_active_exception(self, error, userid, vdev):
         if ((error.results['rc'] == 204) and (error.results['rs'] == 28)):
