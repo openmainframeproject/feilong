@@ -422,16 +422,6 @@ function probePartition {
     #   None
     # ls /dev/disk/by-path
 
-    # get the devPath under /dev/mapper
-    map_name=$(multipath -l $wwid -v 1)
-    rc=$?
-    if [[ ( $rc -eq 0 ) && ( "$map_name" != "" ) ]]; then
-        devPath="/dev/mapper/$map_name"
-    else
-        inform "Failed to get map_name before partprobe, exit partprobe"
-        return
-    fi
-
     disk_by_path_folder=$(ls /dev/disk/by-path/)
     inform "Before partprobe, /dev/disk/by-path/ folder content: ${disk_by_path_folder}."
     # ls /dev/disk/by-id
@@ -441,10 +431,21 @@ function probePartition {
     disk_mapper_folder=$(ls /dev/mapper/)
     inform "Before partprobe, /dev/mapper/ folder content: ${disk_mapper_folder}."
 
-    # probe partition
-    probe_partition=$(/usr/sbin/partprobe $devPath 2> /dev/null)
+    # get the devPath under /dev/mapper
+    map_name=$(multipath -l $wwid -v 1)
     rc=$?
-    inform "Manually run command partprobe on $devPath of wwid $wwid with return code: $rc"
+    # probe partition
+    if [[ ( $rc -eq 0 ) && ( "$map_name" != "" ) ]]; then
+        devPath="/dev/mapper/$map_name"
+        probe_partition=$(/usr/sbin/partprobe $devPath 2> /dev/null)
+        rc=$?
+        inform "Manually run command partprobe on $devPath of wwid $wwid with return code: $rc"
+    else
+        inform "Failed to get map_name before partprobe, call partprobe without parameters."
+        probe_partition=$(/usr/sbin/partprobe 2> /dev/null)
+        rc=$?
+        inform "Manually run command partprobe without parameters return code: $rc"
+    fi
 
     # ls /dev/disk/by-path
     disk_by_path_folder=$(ls /dev/disk/by-path/)
