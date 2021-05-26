@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -89,6 +89,17 @@ class ValidationError(SDKBaseException):
 class ZVMUnauthorized(SDKBaseException):
     msg_fmt = 'Not authorized to execute'
     code = 401
+
+
+class ZVMNotFound(SDKBaseException):
+    def __init__(self, msg, modID='zvmsdk'):
+        rc = returncode.errors['notExist']
+        results = rc[0]
+        results['modID'] = returncode.ModRCs[modID]
+        results['rs'] = 1
+        errormsg = rc[2][2] % {'msg': msg}
+        super(ZVMNotFound, self).__init__(results=results,
+                                          message=errormsg)
 
 
 class SDKDatabaseException(SDKBaseException):

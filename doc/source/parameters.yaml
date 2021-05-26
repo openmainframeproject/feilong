@@ -547,6 +547,24 @@ diskpool_volumes:
   in: body
   required: true
   type: string
+volume:
+  description: |
+    The name of the volume
+  in: path
+  required: true
+  type: string
+volume_type:
+  description: |
+    The type of the volume
+  in: body
+  required: true
+  type: string
+volume_size:
+  description: |
+    The disk size of the volume
+  in: body
+  required: true
+  type: int
 image_info:
   description: |
     The image info for specific image or all images, each image has one dict

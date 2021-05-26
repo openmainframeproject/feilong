@@ -1,4 +1,4 @@
-# Copyright 2017 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -34,9 +34,9 @@ def get_hostops():
 
 
 class HOSTOps(object):
-
     def __init__(self):
         self._smtclient = smtclient.get_smtclient()
+        self._volume_infos = {}
 
     def get_info(self):
         inv_info = self._smtclient.get_host_info()
@@ -79,6 +79,34 @@ class HOSTOps(object):
         diskpool_volume_list = self._smtclient.get_diskpool_volumes(pool_name)
         with zvmutils.expect_invalid_resp_data(diskpool_volume_list):
             return diskpool_volume_list
+
+    def get_volume_info(self, volume_name):
+        update_needed = False
+        with zvmutils.expect_invalid_resp_data():
+            if self._volume_infos is not None:
+                volume_info = self._volume_infos.get(volume_name)
+                if not volume_info:
+                    update_needed = True
+                else:
+                    return volume_info
+            else:
+                update_needed = True
+            if update_needed:
+                # results of get_volume_info() is the format like:
+                # {'IAS100': { 'volume_type': '3390-54',
+                # 'volume_size': '60102'},
+                # 'IAS101': { 'volume_type': '3390-09',
+                # 'volume_size': '60102'}}
+                self._volume_infos = self._smtclient.get_volume_info()
+                volume_info = self._volume_infos.get(volume_name)
+                if not volume_info:
+                    msg = ("Not found the volume info for the"
+                           " volume %(volume)s: make sure the volume"
+                           " is in the disk_pool configured for sdkserver.") \
+                          % {'volume': volume_name}
+                    raise exception.ZVMNotFound(msg=msg)
+                else:
+                    return volume_info
 
     def diskpool_get_info(self, pool):
         dp_info = self._smtclient.get_diskpool_info(pool)

@@ -1,4 +1,4 @@
-# Copyright 2017,2020 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 # Copyright 2013 NEC Corporation.
 # All rights reserved.
 #
@@ -310,6 +310,16 @@ userid_list_array = {
 file_type = {
     'type': 'string',
     'enum': ['ext2', 'ext3', 'ext4', 'xfs', 'swap', 'none']
+}
+
+volume_list = {
+    'maxItems': 1,
+    'items': {
+        'type': 'string',
+        'minLength': 1,
+        'pattern': '^(\w{,6})$',
+    },
+    'type': 'array'
 }
 
 disk_pool = {

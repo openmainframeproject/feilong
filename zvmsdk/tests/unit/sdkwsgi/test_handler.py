@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -673,6 +673,19 @@ class HostHandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             get_diskpool_volumes.assert_called_once_with(mock.ANY, None)
+
+    @mock.patch.object(tokens, 'validate')
+    def test_host_get_volume_info(self, mock_validate):
+        self.env['PATH_INFO'] = '/host/volume'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        function = 'zvmsdk.sdkwsgi.handlers.host.HostAction.'\
+                   'get_volume_info'
+        with mock.patch(function) as get_volume_info:
+            get_volume_info.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+
+            get_volume_info.assert_called_once_with(mock.ANY, None)
 
 
 class VswitchHandlerNegativeTest(unittest.TestCase):

@@ -1,4 +1,4 @@
-# Copyright 2017 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -13,9 +13,11 @@
 #    under the License.
 
 import mock
+import six
 
 from zvmsdk import config
 from zvmsdk import hostops
+from zvmsdk import exception
 from zvmsdk.tests.unit import base
 
 CONF = config.CONF
@@ -91,3 +93,28 @@ class SDKHostOpsTestCase(base.SDKTestCase):
         diskpool_vols = self._hostops.diskpool_get_volumes("fakepool")
         get_diskpool_vols.assert_called_once_with("fakepool")
         self.assertEqual(diskpool_vols['diskpool_volumes'], 'IAS100 IAS101')
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_volume_info")
+    def test_get_volume_info(self, get_vol_infos):
+        self._hostops._volume_infos = None
+        get_vol_infos.return_value = {'IASFBA': {'volume_type': '9336-ET',
+            'volume_size': '564718'},
+            'IAS1CM': {'volume_type': '3390-09',
+            'volume_size': '60102'}}
+        volume_info = self._hostops.get_volume_info('IAS1CM')
+        get_vol_infos.assert_called_once_with()
+        self.assertEqual(volume_info['volume_type'], '3390-09')
+        self.assertEqual(volume_info['volume_size'], '60102')
+        # Test cache is not None
+        self._hostops._volume_infos = get_vol_infos.return_value
+        volume_info = self._hostops.get_volume_info('IASFBA')
+        self.assertEqual(volume_info['volume_type'], '9336-ET')
+        self.assertEqual(volume_info['volume_size'], '564718')
+        # Test cache not None, but volume not in the disk_pool
+        try:
+            volume_info = self._hostops.get_volume_info('IASFBB')
+        except exception.ZVMNotFound as exc:
+            exc = six.text_type(exc)
+            if "Not found the volume info in " in exc:
+                pass
+        self.assertEqual(2, get_vol_infos.call_count)
