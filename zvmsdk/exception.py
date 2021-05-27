@@ -97,7 +97,7 @@ class ZVMNotFound(SDKBaseException):
         results = rc[0]
         results['modID'] = returncode.ModRCs[modID]
         results['rs'] = 1
-        errormsg = rc[2][2] % {'msg': msg}
+        errormsg = rc[1][2] % {'msg': msg}
         super(ZVMNotFound, self).__init__(results=results,
                                           message=errormsg)
 
