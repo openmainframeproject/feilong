@@ -80,7 +80,8 @@ keyOpsList = {
         '--dedicate': ['dedicate', 1, 2],
         '--loadportname': ['loadportname', 1, 2],
         '--loadlun': ['loadlun', 1, 2],
-        '--vdisk': ['vdisk', 1, 2]},
+        '--vdisk': ['vdisk', 1, 2],
+        '--account': ['account', 1, 2]},
     'HELP': {},
     'VERSION': {},
      }
@@ -113,6 +114,9 @@ def createVM(rh):
 
     if 'maxCPU' in rh.parms:
         dirLines.append("MACHINE ESA %i" % rh.parms['maxCPU'])
+
+    if 'account' in rh.parms:
+        dirLines.append("ACCOUNT %s" % rh.parms['account'])
 
     dirLines.append("COMMAND SET VCONFIG MODE LINUX")
     dirLines.append("COMMAND DEFINE CPU 00 TYPE IFL")
