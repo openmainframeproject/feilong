@@ -243,6 +243,8 @@ errors = {
                    "%(userid)s with reason %(msg)s",
                 9: "Failed to detach volume from instance "
                    "%(userid)s with reason %(msg)s",
+                10: "Failed to refresh bootmap for RHCOS: "
+                    "transportfiles are required",
                 },
                "Operation on Volume failed"
                ],

@@ -1,4 +1,4 @@
-# Copyright 2017,2020 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -595,15 +595,15 @@ class rhel8(rhel7):
 
 
 class rhcos(LinuxDist):
-    def create_coreos_parameter(self, network_info, userid):
-        # Create the coreos parameters for ZCC, includes ignitionUrl, diskType,
-        # nicID and ipConfig, then save them in a temp file
+    def create_coreos_parameter(self, network_info, userid=''):
         try:
+            # TODO: fix the limitation that assuming the first nic configured
             vif = network_info[0]
             ip_addr = vif['ip_addr']
             gateway_addr = vif['gateway_addr']
             netmask = vif['cidr'].split("/")[-1]
-            nic_name = "enc" + vif['nic_vdev']
+            nic_name = "enc" + vif.get('nic_vdev', CONF.zvm.default_nic_vdev)
+            hostname = vif.get('hostname', userid) or "localhost"
             # update dns name server info if they're defined in subnet
             _dns = ["", ""]
             if 'dns_addr' in vif.keys():
@@ -617,8 +617,18 @@ class rhcos(LinuxDist):
             # ip=<client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>
             # :<interface>:none[:[<dns1>][:<dns2>]]
             result = "%s::%s:%s:%s:%s:none:%s:%s" % (ip_addr, gateway_addr,
-                                                     netmask, userid, nic_name,
-                                                     _dns[0], _dns[1])
+                        netmask, hostname, nic_name, _dns[0], _dns[1])
+            return result
+        except Exception as err:
+            LOG.error("Failed to create coreos parameter for userid '%s',"
+                      "error: %s" % (userid, err))
+            raise
+
+    def create_coreos_parameter_temp_file(self, network_info, userid):
+        # Create the coreos parameters for ZCC, includes ignitionUrl, diskType,
+        # nicID and ipConfig, then save them in a temp file
+        try:
+            result = self.create_coreos_parameter(network_info, userid)
             tmp_path = self._smtclient.get_guest_path(userid.upper())
             LOG.debug("Created coreos fixed ip parameter: %(result)s, "
                       "writing them to tempfile: %(tmp_path)s/fixed_ip_param"

@@ -1,4 +1,4 @@
-# Copyright 2017, 2021 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -390,7 +390,7 @@ class SDKAPITestCase(base.SDKTestCase):
         lun = '01000000000000'
         self.api.volume_refresh_bootmap(fcpchannel, wwpn, lun)
         mock_attach.assert_called_once_with(fcpchannel, wwpn, lun,
-                                            skipzipl=False)
+                                    transportfiles=None, guest_networks=None)
 
     @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI."
                 "detach_volume_from_instance")
