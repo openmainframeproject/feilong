@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -1652,16 +1652,46 @@ class SDKAPI(object):
         """
         self._volumeop.attach_volume_to_instance(connection_info)
 
-    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, skipzipl=False):
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun,
+                               transportfiles=None, guest_networks=None):
         """ Refresh a volume's bootmap info.
 
         :param list of fcpchannels
         :param list of wwpns
         :param string lun
-        :param boolean skipzipl: whether ship zipl, only return valid paths
+        :param transportfiles: (str) the files that used to customize the vm
+        :param list guest_networks: a list of network info for the guest.
+               It has one dictionary that contain some of the below keys for
+               each network, the format is:
+               {'ip_addr': (str) IP address or None,
+               'dns_addr': (list) dns addresses or None,
+               'gateway_addr': (str) gateway address or None,
+               'cidr': (str) cidr format,
+               'nic_vdev': (str)nic VDEV, 1- to 4- hexadecimal digits or None,
+               'nic_id': (str) nic identifier or None,
+               'mac_addr': (str) mac address or None, it is only be used when
+               changing the guest's user direct. Format should be
+               xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit
+               'osa_device': (str) OSA address or None,
+               'hostname': (str) Optional. The hostname of the guest}
+
+               Example for guest_networks:
+               [{'ip_addr': '192.168.95.10',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.95.1',
+               'cidr': "192.168.95.0/24",
+               'nic_vdev': '1000',
+               'mac_addr': '02:00:00:12:34:56',
+               'hostname': 'instance-00001'},
+               {'ip_addr': '192.168.96.10',
+               'dns_addr': ['9.0.2.1', '9.0.3.1'],
+               'gateway_addr': '192.168.96.1',
+               'cidr': "192.168.96.0/24",
+               'nic_vdev': '1003}]
         """
         return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun,
-                                                     skipzipl=skipzipl)
+                                                transportfiles=transportfiles,
+                                                guest_networks=guest_networks)
 
     def volume_detach(self, connection_info):
         """ Detach a volume from a guest. It's prerequisite to active multipath
@@ -1709,7 +1739,8 @@ class SDKAPI(object):
                'mac_addr': (str) mac address or None, it is only be used when
                changing the guest's user direct. Format should be
                xx:xx:xx:xx:xx:xx, and x is a hexadecimal digit
-               'osa_device': (str) OSA address or None}
+               'osa_device': (str) OSA address or None,
+               'hostname': (str) Optional. The hostname of the vm.}
 
                Example for guest_networks:
                [{'ip_addr': '192.168.95.10',
@@ -1717,7 +1748,8 @@ class SDKAPI(object):
                'gateway_addr': '192.168.95.1',
                'cidr': "192.168.95.0/24",
                'nic_vdev': '1000',
-               'mac_addr': '02:00:00:12:34:56'},
+               'mac_addr': '02:00:00:12:34:56',
+               'hostname': 'instance-00001'},
                {'ip_addr': '192.168.96.10',
                'dns_addr': ['9.0.2.1', '9.0.3.1'],
                'gateway_addr': '192.168.96.1',

@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -78,9 +78,11 @@ class VolumeAction(object):
                                         fcp, userid, reserved,
                                         connections)
 
-    def volume_refresh_bootmap(self, fcpchannel, wwpn, lun, skipzipl):
+    def volume_refresh_bootmap(self, fcpchannel, wwpn, lun,
+                               transportfiles, guest_networks):
         info = self.client.send_request('volume_refresh_bootmap',
-                                        fcpchannel, wwpn, lun, skipzipl)
+                                        fcpchannel, wwpn, lun,
+                                        transportfiles, guest_networks)
         return info
 
 
@@ -131,14 +133,17 @@ def volume_detach(req):
 @tokens.validate
 def volume_refresh_bootmap(req):
 
-    def _volume_refresh_bootmap(req, fcpchannel, wwpn, lun, skipzipl):
+    def _volume_refresh_bootmap(req, fcpchannel, wwpn, lun,
+                                transportfiles, guest_networks):
         action = get_action()
-        return action.volume_refresh_bootmap(fcpchannel, wwpn, lun, skipzipl)
+        return action.volume_refresh_bootmap(fcpchannel, wwpn, lun,
+                                             transportfiles, guest_networks)
 
     body = util.extract_json(req.body)
     info = _volume_refresh_bootmap(req, body['info']['fcpchannel'],
                                    body['info']['wwpn'], body['info']['lun'],
-                                   body['info'].get('skipzipl', False))
+                                   body['info'].get('transportfiles', ""),
+                                   body['info'].get('guest_networks', []))
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'

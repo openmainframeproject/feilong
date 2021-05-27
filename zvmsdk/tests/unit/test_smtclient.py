@@ -1570,15 +1570,12 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         fcpchannels = ['5d71']
         wwpns = ['5005076802100c1b', '5005076802200c1b']
         lun = '0000000000000000'
-        skipzipl = True
         execute.side_effect = [(0, "")]
-        self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun,
-                                               skipzipl)
+        self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun)
         refresh_bootmap_cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap',
                                '--fcpchannel=5d71',
                                '--wwpn=5005076802100c1b,5005076802200c1b',
-                               '--lun=0000000000000000',
-                               '--skipzipl=YES']
+                               '--lun=0000000000000000']
         execute.assert_called_once_with(refresh_bootmap_cmd, timeout=600)
 
     @mock.patch.object(zvmutils, 'get_smt_userid')

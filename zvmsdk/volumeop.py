@@ -1,4 +1,4 @@
-#    Copyright 2017 IBM Corp.
+#    Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -86,10 +86,11 @@ class VolumeOperatorAPI(object):
     def detach_volume_from_instance(self, connection_info):
         self._volume_manager.detach(connection_info)
 
-    def volume_refresh_bootmap(self, fcpchannel, wwpn, lun, skipzipl=False):
-        return self._volume_manager.volume_refresh_bootmap(fcpchannel,
-                                                           wwpn, lun,
-                                                           skipzipl=skipzipl)
+    def volume_refresh_bootmap(self, fcpchannel, wwpn, lun,
+                               transportfiles='', guest_networks=None):
+        return self._volume_manager.volume_refresh_bootmap(fcpchannel, wwpn,
+                                            lun, transportfiles=transportfiles,
+                                            guest_networks=guest_networks)
 
     def get_volume_connector(self, assigner_id, reserve):
         return self._volume_manager.get_volume_connector(assigner_id, reserve)
@@ -835,20 +836,14 @@ class FCPVolumeManager(object):
         LOG.info("Attaching volume to FCP devices %s on machine %s is "
                  "done." % (fcp_list, assigner_id))
 
-    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, skipzipl=False):
-        """ Refresh a volume's bootmap info.
-
-        :param list of fcpchannels
-        :param list of wwpns
-        :param string lun
-        :param boolean skipzipl: whether ship zipl, only return physical wwpns
-        """
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun,
+                               transportfiles=None, guest_networks=None):
         ret = None
         with zvmutils.acquire_lock(self._lock):
             LOG.debug('Enter lock scope of volume_refresh_bootmap.')
             ret = self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns,
-                                                         lun,
-                                                         skipzipl=skipzipl)
+                                        lun, transportfiles=transportfiles,
+                                        guest_networks=guest_networks)
         LOG.debug('Exit lock of volume_refresh_bootmap with ret %s.' % ret)
         return ret
 
