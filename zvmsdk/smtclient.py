@@ -769,25 +769,34 @@ class SMTClient(object):
         finally:
             self._pathutils.clean_temp_folder(iucv_path)
 
-    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, skipzipl=False):
-        """ Refresh bootmap info of specific volume.
-        : param fcpchannels: list of fcpchannels.
-        : param wwpns: list of wwpns.
-        : param lun: string of lun.
-        : return value: dict with FCP as key and list of wwpns this FCP can
-                        access as value.
-        """
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun,
+                               transportfiles=None, guest_networks=None):
+        guest_networks = guest_networks or []
         fcps = ','.join(fcpchannels)
         ws = ','.join(wwpns)
         fcs = "--fcpchannel=%s" % fcps
         wwpns = "--wwpn=%s" % ws
         lun = "--lun=%s" % lun
-        if skipzipl:
-            skipzipl = "--skipzipl=YES"
-            cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap', fcs, wwpns, lun,
-                   skipzipl]
-        else:
-            cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap', fcs, wwpns, lun]
+        cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap', fcs, wwpns, lun]
+
+        if guest_networks:
+            # prepare additional parameters for RHCOS BFV
+            if not transportfiles:
+                err_msg = 'Ignition file is required when deploying RHCOS'
+                LOG.error(err_msg)
+                raise exception.SDKVolumeOperationError(rs=10)
+
+            # get NIC ID
+            from zvmsdk import dist
+            _dist_manager = dist.LinuxDistManager()
+            linuxdist = _dist_manager.get_linux_dist("rhcos4")()
+            ip_config = linuxdist.create_coreos_parameter(guest_networks)
+            nic_id = self._generate_increasing_nic_id(
+                                ip_config.split(":")[5].replace("enc", ""))
+
+            cmd += ["--ignitionurl=%s" % transportfiles, "--nicid=%s" % nic_id,
+                    "--ipconfig=%s" % ip_config]
+
         LOG.info("Running command: %s", cmd)
         try:
             (rc, output) = zvmutils.execute(cmd, timeout=600)
