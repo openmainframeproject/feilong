@@ -516,7 +516,7 @@ void printSmapiDescriptionAndLogError(const char * APIname, int rc, int rs, stru
     } else if (rc == 408 && rs == 16) {
         sprintf(errMsg, "Image disk sharing not allowed by target image definition\n");
     } else if (rc == 408 && rs == 24) {
-        sprintf(errMsg, "Requested image disk space not available\n");
+        sprintf(errMsg, "Not enough free disk available. If it's ECKD disk, also might be the maximum free space among all DASDs in the storage pool is less than required space\n");
     } else if (rc == 408 && rs == 28) {
         sprintf(errMsg, "Image disk does not have required password\n");
     } else if (rc == 408 && rs == 32) {
