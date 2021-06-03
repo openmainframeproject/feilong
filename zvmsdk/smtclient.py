@@ -576,7 +576,7 @@ class SMTClient(object):
 
     def create_vm(self, userid, cpu, memory, disk_list, profile,
                   max_cpu, max_mem, ipl_from, ipl_param, ipl_loadparam,
-                  dedicate_vdevs, loaddev):
+                  dedicate_vdevs, loaddev, account):
         """ Create VM and add disks if specified. """
         rd = ('makevm %(uid)s directory LBYONLY %(mem)im %(pri)s '
               '--cpus %(cpu)i --profile %(prof)s --maxCPU %(max_cpu)i '
@@ -607,6 +607,9 @@ class SMTClient(object):
 
         if dedicate_vdevs:
             rd += ' --dedicate "%s"' % " ".join(dedicate_vdevs)
+
+        if account:
+            rd += ' --account "%s"' % account
 
         if loaddev:
             if 'portname' in loaddev:
@@ -1041,6 +1044,7 @@ class SMTClient(object):
         LOG.info(msg)
 
         # self._check_power_state(userid, 'capture')
+        restart_flag = False
         reachable = self.get_guest_connection_status(userid)
         if reachable:
             # Make sure iucv channel is ready for communication on source vm
@@ -1096,6 +1100,8 @@ class SMTClient(object):
 
             # Shutdown the vm before capture
             self.guest_softstop(userid)
+            # keep restart flag used after capture.
+            restart_flag = True
         else:
             os_version = 'UNKNOWN'
             # Capture_device_assign as assign capture disk.
@@ -1120,6 +1126,13 @@ class SMTClient(object):
                 LOG.error(msg)
                 raise exception.SDKGuestOperationError(rs=5, userid=userid,
                                                        msg=msg)
+            # if VM power on, the VM need be perform stop and start
+            power_state = self.get_power_state(userid)
+            if power_state == 'on':
+                # Shutdown the vm before capture
+                self.guest_stop(userid)
+                restart_flag = True
+
         # Prepare directory for writing image file
         image_temp_dir = '/'.join((CONF.image.sdk_image_repository,
                                    const.IMAGE_TYPE['CAPTURE'],
@@ -1185,6 +1198,10 @@ class SMTClient(object):
         self._ImageDbOperator.image_add_record(image_name, os_version,
             real_md5sum, disk_size_units, image_size,
             capture_type)
+        if restart_flag:
+            LOG.info('Try start %s for capture completed successfully.'
+                     % userid)
+            self.guest_start(userid)
         LOG.info('Image %s is captured and imported to image repository '
                  'successfully' % image_name)
 

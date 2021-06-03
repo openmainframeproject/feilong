@@ -33,7 +33,8 @@ create = {
                 'ipl_param': parameter_types.ipl_param,
                 'ipl_loadparam': parameter_types.ipl_loadparam,
                 'dedicate_vdevs': parameter_types.dedicate_vdevs,
-                'loaddev': parameter_types.loaddev
+                'loaddev': parameter_types.loaddev,
+                'account': parameter_types.account
             },
             'required': ['userid', 'vcpus', 'memory'],
             'additionalProperties': False,
