@@ -576,7 +576,7 @@ class SMTClient(object):
 
     def create_vm(self, userid, cpu, memory, disk_list, profile,
                   max_cpu, max_mem, ipl_from, ipl_param, ipl_loadparam,
-                  dedicate_vdevs, loaddev):
+                  dedicate_vdevs, loaddev, account):
         """ Create VM and add disks if specified. """
         rd = ('makevm %(uid)s directory LBYONLY %(mem)im %(pri)s '
               '--cpus %(cpu)i --profile %(prof)s --maxCPU %(max_cpu)i '
@@ -607,6 +607,9 @@ class SMTClient(object):
 
         if dedicate_vdevs:
             rd += ' --dedicate "%s"' % " ".join(dedicate_vdevs)
+
+        if account:
+            rd += ' --account "%s"' % account
 
         if loaddev:
             if 'portname' in loaddev:
