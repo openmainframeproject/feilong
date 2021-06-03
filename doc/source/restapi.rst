@@ -367,7 +367,8 @@ Refresh a volume's bootmap info.
   - fcpchannel: fcp_list
   - wwpn: wwpn_list
   - lun: lun
-  - skipzipl: skipzipl
+  - transportfiles: transportfiles
+  - guest_networks: guest_networks
 
 * Request sample:
 
@@ -1576,6 +1577,35 @@ Get volume list of the diskpool on the host.
 * Response sample:
 
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_disk_volumes.tpl
+   :language: javascript
+
+Get host volume info
+-------------------------------
+
+**GET /host/volume**
+
+Get the volume info on the host.
+
+* Request:
+
+.. restapi_parameters:: parameters.yaml
+
+  - volumename: volume
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - volume_type: volume_type
+  - volume_size: volume_size
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_volume.tpl
    :language: javascript
 
 Image(s)

@@ -1,4 +1,4 @@
-# Copyright 2017,2020 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 # Copyright 2013 NEC Corporation.
 # All rights reserved.
 #
@@ -312,6 +312,16 @@ file_type = {
     'enum': ['ext2', 'ext3', 'ext4', 'xfs', 'swap', 'none']
 }
 
+volume_list = {
+    'maxItems': 1,
+    'items': {
+        'type': 'string',
+        'minLength': 1,
+        'pattern': '^(\w{,6})$',
+    },
+    'type': 'array'
+}
+
 disk_pool = {
     'type': 'string',
     'pattern': '^\w+:\w+$'
@@ -425,6 +435,14 @@ command = {
     'type': 'string'
 }
 
+hostname = {
+    'oneOf': [
+        {'type': 'null'},
+        {'type': 'string', 'minLength': 1, 'maxLength': 255,
+         'pattern': '^[a-zA-Z0-9-._]*$'}
+    ]
+}
+
 network_list = {
     'type': 'array',
     'items': {
@@ -438,7 +456,8 @@ network_list = {
             'cidr': cidr,
             'nic_vdev': vdev,
             'nic_id': {'type': 'string'},
-            'osa_device': vdev},
+            'osa_device': vdev,
+            'hostname': hostname},
         'dependencies': {
             'ip_addr': ['cidr']
         }
@@ -571,14 +590,6 @@ max_cpu = {
 max_mem = {
     'type': 'string',
     'pattern': '^[1-9][0-9]{0,3}[m|M|g|G]$'
-}
-
-hostname = {
-    'oneOf': [
-        {'type': 'null'},
-        {'type': 'string', 'minLength': 1, 'maxLength': 255,
-         'pattern': '^[a-zA-Z0-9-._]*$'}
-    ]
 }
 
 vlan_id_or_minus_1 = {

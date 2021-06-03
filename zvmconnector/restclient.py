@@ -1,4 +1,4 @@
-# Copyright 2017 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -416,13 +416,15 @@ def req_volume_refresh_bootmap(start_index, *args, **kwargs):
     fcpchannel = kwargs.get('fcpchannels', None)
     wwpn = kwargs.get('wwpn', None)
     lun = kwargs.get('lun', None)
-    skipzipl = kwargs.get('skipzipl', False)
+    transportfiles = kwargs.get('transportfiles', '')
+    guest_networks = kwargs.get('guest_networks', [])
     body = {'info':
         {
             "fcpchannel": fcpchannel,
             "wwpn": wwpn,
             "lun": lun,
-            "skipzipl": skipzipl,
+            "transportfiles": transportfiles,
+            "guest_networks": guest_networks,
         }
     }
     fill_kwargs_in_body(body['info'], **kwargs)
@@ -494,6 +496,17 @@ def req_host_diskpool_get_info(start_index, *args, **kwargs):
     append = ''
     if poolname is not None:
         append += "?poolname=%s" % poolname
+    url += append
+    body = None
+    return url, body
+
+
+def req_host_get_volume_info(start_index, *args, **kwargs):
+    url = '/host/volume'
+    volumename = kwargs.get('volume', None)
+    append = ''
+    if volumename is not None:
+        append += "?volumename=%s" % volumename
     url += append
     body = None
     return url, body
@@ -870,6 +883,11 @@ DATABASE = {
         'args_required': 0,
         'params_path': 0,
         'request': req_host_diskpool_get_info},
+    'host_get_volume_info': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_host_get_volume_info},
     'image_import': {
         'method': 'POST',
         'args_required': 3,

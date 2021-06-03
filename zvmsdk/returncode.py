@@ -1,4 +1,4 @@
-# Copyright 2017,2020 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -243,6 +243,8 @@ errors = {
                    "%(userid)s with reason %(msg)s",
                 9: "Failed to detach volume from instance "
                    "%(userid)s with reason %(msg)s",
+                10: "Failed to refresh bootmap for RHCOS: "
+                    "transportfiles are required",
                 },
                "Operation on Volume failed"
                ],
@@ -270,7 +272,8 @@ errors = {
 # 'modID' would be set to each module rc when raise the exception
 # 'rs' is always 1
     'notExist': [{'overallRC': 404, 'modID': None, 'rc': 404},
-                 {1: "%(obj_desc)s does not exist."},
+                 {1: "%(obj_desc)s does not exist.",
+                  2: "Not found error: '%(msg)s'"},
                  "The operated object does not exist"
                  ],
 # Conflict Error (The to-be-updated object status conflict)

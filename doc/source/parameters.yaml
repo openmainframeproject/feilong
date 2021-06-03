@@ -547,6 +547,24 @@ diskpool_volumes:
   in: body
   required: true
   type: string
+volume:
+  description: |
+    The name of the volume
+  in: path
+  required: true
+  type: string
+volume_type:
+  description: |
+    The type of the volume
+  in: body
+  required: true
+  type: string
+volume_size:
+  description: |
+    The disk size of the volume
+  in: body
+  required: true
+  type: int
 image_info:
   description: |
     The image info for specific image or all images, each image has one dict
@@ -664,7 +682,7 @@ export_image_dict:
 transportfiles:
   description: |
     The files path that used to customize the vm. For RHCOS image, the transportfiles
-    should be the ignition file.
+    should be the ignition file and it's required.
   in: body
   required: false
   type: string
@@ -971,6 +989,25 @@ guest_networks_list:
   in: body
   required: true
   type: list
+guest_networks:
+  description: |
+    Required only if refresh volume bootmap for RHCOS.
+    Network info list of guest. It has one dictionary that contain some of the below
+    keys for each interface. All the keys are optional \:
+
+    - ``ip_addr``: the IP address of the interface, ``cidr`` is required if ip address
+      is set
+    - ``dns_addr``: dns addresses list
+    - ``gateway_addr``: gateway address
+    - ``cidr``: cidr format
+    - ``nic_vdev``: nic device number, 1- to 4- hexadecimal digits
+    - ``mac_addr``: mac address
+    - ``nic_id``: nic identifier
+    - ``osa_device``: OSA device number, 1- to 4- hexadecimal digits
+    - ``hostname``: the hostname of the guest
+  in: body
+  required: false
+  type: list
 vswitch_info:
   description: |
     The vswitch update info.
@@ -1197,13 +1234,6 @@ ip_version:
   in: body
   required: true
   type: string
-skipzipl:
-  description: |
-    whether or not to skip the step of refresh bootmap. If true, only return the valid wwpn list.
-    Default value is False.
-  in: body
-  required: false
-  type: bool
 fcp_reserve:
   description: |
     If or not reserve the FCP devices.

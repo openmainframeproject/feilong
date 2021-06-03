@@ -1,4 +1,4 @@
-# Copyright 2017,2020 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -1447,13 +1447,31 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_get_diskpool_volumes(self, smt_req):
         resp = {'Diskpool Volumes:' 'IAS100 IAS200'}
         smt_req.return_value = {'rs': 0, 'errno': 0, 'strError': '',
-                                 'overallRC': 0, 'logEntries': [], 'rc': 0,
-                                 'response': resp}
+                                'overallRC': 0, 'logEntries': [], 'rc': 0,
+                                'response': resp}
         expect = {'diskpool_volumes': 'IAS100 IAS200'}
         diskpool_vols = self._smtclient.get_diskpool_volumes('fakepool')
 
         smt_req.assert_called_once_with('gethost diskpoolvolumes fakepool')
         self.assertDictEqual(diskpool_vols, expect)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_volume_info(self, smt_req):
+        resp = ['volume name: IASFBA', 'volume_type:9336-ET',
+            'volume_size:564718',
+            'volume_name: IAS1CM', 'volume_type:3390-09',
+            'volume_size:60102']
+        smt_req.return_value = {'rs': 0, 'errno': 0, 'strError': '',
+                                'overallRC': 0, 'logEntries': [], 'rc': 0,
+                                'response': resp}
+        expect = {'IASFBA': {'volume_type': '9336-ET',
+            'volume_size': '564718'},
+            'IAS1CM': {'volume_type': '3390-09',
+            'volume_size': '60102'}}
+        volume_info = self._smtclient.get_volume_info()
+
+        smt_req.assert_called_once_with('gethost volumeinfo')
+        self.assertDictEqual(volume_info, expect)
 
     @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
@@ -1552,15 +1570,12 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         fcpchannels = ['5d71']
         wwpns = ['5005076802100c1b', '5005076802200c1b']
         lun = '0000000000000000'
-        skipzipl = True
         execute.side_effect = [(0, "")]
-        self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun,
-                                               skipzipl)
+        self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun)
         refresh_bootmap_cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap',
                                '--fcpchannel=5d71',
                                '--wwpn=5005076802100c1b,5005076802200c1b',
-                               '--lun=0000000000000000',
-                               '--skipzipl=YES']
+                               '--lun=0000000000000000']
         execute.assert_called_once_with(refresh_bootmap_cmd, timeout=600)
 
     @mock.patch.object(zvmutils, 'get_smt_userid')

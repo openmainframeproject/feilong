@@ -1,4 +1,4 @@
-# Copyright 2017,2018 IBM Corp.
+# Copyright 2017,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -24,6 +24,7 @@ from zvmsdk.sdkwsgi import util
 from zvmsdk import utils
 from zvmsdk.sdkwsgi import validation
 from zvmsdk.sdkwsgi.schemas import image
+from zvmsdk.sdkwsgi.schemas import host
 
 
 _HOSTACTION = None
@@ -50,6 +51,12 @@ class HostAction(object):
     def get_diskpool_volumes(self, req, poolname):
         info = self.client.send_request('host_get_diskpool_volumes',
                                         disk_pool=poolname)
+        return info
+
+    @validation.query_schema(host.volume)
+    def get_volume_info(self, req, volumename):
+        info = self.client.send_request('host_get_volume_info',
+                                        volume=volumename)
         return info
 
     @validation.query_schema(image.diskpool)
@@ -110,6 +117,25 @@ def host_get_diskpool_volumes(req):
     if 'poolname' in req.GET:
         poolname = req.GET['poolname']
     info = _host_get_diskpool_volumes(req, poolname)
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    req.response.status = util.get_http_code_from_sdk_return(info)
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def host_get_volume_info(req):
+
+    def _host_get_volume_info(req, volumename):
+        action = get_action()
+        return action.get_volume_info(req, volumename)
+
+    volumename = None
+    if 'volumename' in req.GET:
+        volumename = req.GET['volumename']
+    info = _host_get_volume_info(req, volumename)
     info_json = json.dumps(info)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'

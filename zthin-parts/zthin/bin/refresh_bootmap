@@ -1,6 +1,6 @@
 #!/bin/bash
 ###############################################################################
-# Copyright 2020 IBM Corp.
+# Copyright 2020,2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -257,7 +257,9 @@ function parseArgs {
   isOption -f --fcpchannel "   FCP channel IDs. Support multi fcpchannel, split by ','."
   isOption -w --wwpn "         World Wide Port Name IDs. Support multi wwpn, split by ',' Example: 5005076802400c1b"
   isOption -l --lun "          Logical Unit Number ID. Example: 0000000000000000"
-  isOption -s --skipzipl "     Whether skip ZIPL, if YES, only return physical World Wide Port Name IDs"
+  isOption -i --ignitionurl "  (RHCOS only) The URL or local path that points to RHCOS ignition file"
+  isOption -n --nicid "        (RHCOS only) The nic ID. Example: 0.0.1000,0.0.1001,0.0.1002"
+  isOption -p --ipconfig "     (RHCOS only) The network configuration info. In format of <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none[:[<dns1>][:<dns2>]]"
 
   if [[ $printHelp ]]; then
     printHelp
@@ -283,8 +285,16 @@ function parseArgs {
       lun="${i#*=}"
       shift # past argument=value
       ;;
-      -s|--skipzipl=*)
-      skipzipl="${i#*=}"
+      -i|--ignitionurl=*)
+      ignitionurl="${i#*=}"
+      shift # past argument=value
+      ;;
+      -n|--nicid=*)
+      nicid="${i#*=}"
+      shift # past argument=value
+      ;;
+      -p|--ipconfig=*)
+      ipconfig="${i#*=}"
       shift # past argument=value
       ;;
       --default)
@@ -322,6 +332,13 @@ function checkSanity {
   else
     printError "Unknown device type."
     exit 5
+  fi
+  if [[ ignitionurl || nicid || ipconfig ]]; then
+    # ignitionurl, nicid and ipconfig are required for RHCOS BFV
+    if [[ ! ignitionurl || ! nicid || ! ipconfig ]]; then
+        printError "Please specify ignitionurl, nicid and ipconfig."
+        exit 6
+    fi
   fi
 } #checkSanity
 
@@ -405,16 +422,6 @@ function probePartition {
     #   None
     # ls /dev/disk/by-path
 
-    # get the devPath under /dev/mapper
-    map_name=$(multipath -l $wwid -v 1)
-    rc=$?
-    if [[ ( $rc -eq 0 ) && ( "$map_name" != "" ) ]]; then
-        devPath="/dev/mapper/$map_name"
-    else
-        inform "Failed to get map_name before partprobe, exit partprobe"
-        return
-    fi
-
     disk_by_path_folder=$(ls /dev/disk/by-path/)
     inform "Before partprobe, /dev/disk/by-path/ folder content: ${disk_by_path_folder}."
     # ls /dev/disk/by-id
@@ -424,10 +431,21 @@ function probePartition {
     disk_mapper_folder=$(ls /dev/mapper/)
     inform "Before partprobe, /dev/mapper/ folder content: ${disk_mapper_folder}."
 
-    # probe partition
-    probe_partition=$(/usr/sbin/partprobe $devPath 2> /dev/null)
+    # get the devPath under /dev/mapper
+    map_name=$(multipath -l $wwid -v 1)
     rc=$?
-    inform "Manually run command partprobe on $devPath of wwid $wwid with return code: $rc"
+    # probe partition
+    if [[ ( $rc -eq 0 ) && ( "$map_name" != "" ) ]]; then
+        devPath="/dev/mapper/$map_name"
+        probe_partition=$(/usr/sbin/partprobe $devPath 2> /dev/null)
+        rc=$?
+        inform "Manually run command partprobe on $devPath of wwid $wwid with return code: $rc"
+    else
+        inform "Failed to get map_name before partprobe, call partprobe without parameters."
+        probe_partition=$(/usr/sbin/partprobe 2> /dev/null)
+        rc=$?
+        inform "Manually run command partprobe without parameters return code: $rc"
+    fi
 
     # ls /dev/disk/by-path
     disk_by_path_folder=$(ls /dev/disk/by-path/)
@@ -439,6 +457,128 @@ function probePartition {
     disk_mapper_folder=$(ls /dev/mapper/)
     inform "After partprobe, /dev/mapper/ folder content: ${disk_mapper_folder}."
 }
+
+function mount_boot_partition_rhcos {
+    # The location of the mountpoint
+    mountpoint=$1
+
+    if [ ! -d $mountpoint ]; then
+        printError "mountpoint $mountpoint must be a directory"
+        exit 17
+    fi
+
+    # Get the boot partition
+    set -o pipefail
+    let retry=0
+    while true
+    do
+        eval $(lsblk "${DEST_DEV}" --output LABEL,NAME --pairs | grep 'LABEL="boot' | tr ' ' '\n' | tail -n 1)
+        if [[ ${NAME} =~ "mpath" ]]; then
+            mount "/dev/mapper/${NAME}" "$mountpoint"
+        else
+            mount "/dev/${NAME}" "$mountpoint"
+        fi
+        RETCODE=$?
+        if [[ $RETCODE -ne 0 ]]; then
+            if [[ $retry -lt 30 ]]; then
+                # retry and sleep to allow udevd to populate the disk
+                sleep 1
+                let retry=$retry+1
+                continue
+            fi
+            printError "failed mounting boot partition"
+            exit 17
+        fi
+        break;
+    done
+    set +o pipefail
+} #mount_boot_partition_rhcos{}
+
+function update_zipl_bootloader_rhcos {
+    inform "Updating zipl"
+
+    if [[ $paths_count -gt 8 ]]; then
+      inform "valid paths count $paths_count is greater than 8, do truncation to get the rd.zfcp parameter."
+      truncaterdzfcp
+    fi
+    inform "Final rd.zfcp value is: $rd_zfcp."
+
+    # Create a mount dir.
+    rhcosTempDir=$(/usr/bin/mktemp -d /tmp/XXXXX)
+    rc=$?
+    if [[ $rc -ne 0 ]]; then
+      printError "Create mount dir fails, rc: $rc."
+      exit 7
+    fi
+    deviceMountPoint=$rhcosTempDir/boot_partition
+    mkdir -p $deviceMountPoint
+
+    # Register EXIT signal for umount dir and disconnect fcp devices
+    trap 'cleanup_umountdir_and_disconnect_fcp' EXIT
+
+    mount_boot_partition_rhcos $deviceMountPoint
+
+    #Get ignition config file
+    mkdir -p "$deviceMountPoint/ignition"
+    if [ -f "$ignitionurl" ]; then
+        inform "$ignitionurl is FILE"
+        cat $ignitionurl > $deviceMountPoint/ignition/config.ign 2>/dev/null
+    else
+        inform "$ignitionurl is URL"
+        let retry=0
+        while true
+        do
+            curl -Lf $ignitionurl >$deviceMountPoint/ignition/config.ign 2>/dev/null
+            RETCODE=$?
+            if [ $RETCODE -ne 0 ]
+            then
+                if [[ $RETCODE -eq 22 && $retry -lt 5 ]]
+                then
+                    # Network isn't up yet, sleep for a sec and retry
+                    sleep 1
+                    let retry=$retry+1
+                    continue
+                else
+                    printError "failed fetching ignition config from ${ignitionurl}: ${RETCODE}"
+                    exit 17
+                fi
+                inform "fetching ignition config from ${ignitionurl}: ${RETCODE}"
+            else
+                inform "Successfully get the ignition config"
+                break;
+            fi
+        done
+    fi
+
+    blsfile=$(ls $deviceMountPoint/loader/entries/*.conf)
+    #Get zipl config file for parameters
+   
+    nameserver1=$(echo $ipconfig| awk -F: '{print $8}')    
+    nameserver2=$(echo $ipconfig| awk -F: '{print $9}')
+    if [ $nameserver1  ]; then 
+        nameserver1='nameserver='${nameserver1}
+    fi
+    if [ $nameserver2  ]; then 
+        nameserver2='nameserver='${nameserver2}
+    fi
+
+    echo "$(grep options $blsfile | cut -d' ' -f2-) zfcp.allow_lun_scan=0 rw $rd_zfcp rd.znet=qeth,$nicid,layer2=1,portno=0 ignition.firstboot=1 rd.neednet=1 ip=$ipconfig $nameserver1 $nameserver2" > $rhcosTempDir/zipl_prm
+    ziplstr=`cat $rhcosTempDir/zipl_prm`
+    inform "zipl param string: $ziplstr"
+
+    #Run zipl to update bootloader
+    zipl --verbose -p $rhcosTempDir/zipl_prm -i $(ls $deviceMountPoint/ostree/*/*vmlinuz*) -r $(ls $deviceMountPoint/ostree/*/*initramfs*) --target $deviceMountPoint
+    if [[ $? -ne 0 ]]; then
+        printError "failed updating bootloder"
+        exit 17
+    fi
+    #Update BLS config file for reboot
+    sed -i -e 's/ignition.firstboot=1//' $rhcosTempDir/zipl_prm
+    sed -e '/options/d' $blsfile > $rhcosTempDir/blsfile
+    echo "options $(cat $rhcosTempDir/zipl_prm) " >> $rhcosTempDir/blsfile
+    cat $rhcosTempDir/blsfile > $blsfile
+    blockdev --flushbufs ${DEST_DEV} > /dev/null
+} #update_zipl_bootloader_rhcos{}
 
 function refreshZIPL {
   : SOURCE: ${BASH_SOURCE}
@@ -453,14 +593,16 @@ function refreshZIPL {
   zipl_conf='etc/zipl.conf'
   zipl_postfix='_zipl_postfix'
   BLS_dir='boot/loader/entries'
-
-  if [[ $skipzipl = 'YES'  ]]; then
-    # this is the part of return info for upper layer(smtclient)
-    inform "RESULT PATHS: $valid_paths_str"
-    return
-  fi
-
   inform "Begin to refreshZIPL."
+
+  if [[ $ignitionurl ]]; then
+      # refresh bootmap for RHCOS
+      DEST_DEV="/dev/disk/by-path/ccw-0.0.${first_fcp}-zfcp-0x${first_wwpn}:${lun}"
+      inform "refreshing bootmap for RHCOS"
+      update_zipl_bootloader_rhcos
+      inform "RESULT PATHS: $valid_paths_str"
+      exit 0
+  fi
 
   if [[ ! -e "$devNode" ]]; then
     # first, run partprobe to refresh partition table if multipath is enabled
@@ -860,7 +1002,7 @@ function refreshFCPBootmap {
       # For blockdev command use.
       inform "Multipath is not enabled, using single path devNode: $devNode."
   fi
-  
+
   refreshZIPL $devNode
 } #refreshFCPBootmap
 
