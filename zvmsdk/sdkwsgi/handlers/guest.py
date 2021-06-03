@@ -71,6 +71,8 @@ class VMHandler(object):
             kwargs_list['dedicate_vdevs'] = guest['dedicate_vdevs']
         if 'loaddev' in guest_keys:
             kwargs_list['loaddev'] = guest['loaddev']
+        if 'account' in guest_keys:
+            kwargs_list['account'] = guest['account']
 
         info = self.client.send_request('guest_create', userid, vcpus,
                                         memory, **kwargs_list)
