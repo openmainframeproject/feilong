@@ -69,13 +69,10 @@ do
     # If auto-discovery of LUNs is disabled on s390 platforms
     # luns need to be added to the configuration through
     # the unit_add interface
-    AutoLunScan=`cat /sys/module/zfcp/parameters/allow_lun_scan`
-    if [[ "$AutoLunScan" != "Y" ]]; then
-        for WWPN in ${ActiveWWPNs[@]}
-        do
-            /sbin/chzdev -d zfcp-lun 0.0.$fcp:$WWPN:$lun
-        done
-    fi
+    for WWPN in ${ActiveWWPNs[@]}
+    do
+        /sbin/chzdev -d zfcp-lun 0.0.$fcp:$WWPN:$lun --force
+    done
     
     # if is last volume, then should offline the FCP
     if [ $is_last_volume -eq 1 ]; then
