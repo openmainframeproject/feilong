@@ -104,7 +104,7 @@ name = {
 }
 
 account = {
-    'type': 'string', 'minLength': 1, 'maxLength': 128,
+    'type': 'string', 'minLength': 0, 'maxLength': 128,
 }
 
 ipl_from = {
