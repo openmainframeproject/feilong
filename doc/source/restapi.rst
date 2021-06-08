@@ -148,6 +148,7 @@ Create a vm in z/VM
   - ipl_loadparam: guest_ipl_loadparam
   - dedicate_vdevs: guest_dedicate_vdevs
   - loaddev: guest_loaddev
+  - account: guest_account
 
 
 * Request sample:
