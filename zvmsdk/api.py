@@ -652,37 +652,28 @@ class SDKAPI(object):
                                                              net_set)
 
             # We need to query and add vswitch to the database.
-            # The result got by get_definition_info is like:
-            # USER ZSJC002F LBYONLY 4096m 64G G
-            # INCLUDE ZCCDFLT
-            # COMMAND DEF STOR RESERVED 61440M
-            # CPU 00 BASE
-            # IPL 0100
-            # LOGONBY IAASADM
-            # MACHINE ESA 32
-            # NICDEF 1000 TYPE QDIO LAN SYSTEM VSC1159B DEVICES 3 MACID EF5091
-            # NICDEF 1000 VLAN 8
-            # NICDEF 1003 TYPE QDIO LAN SYSTEM VSC1159B DEVICES 3 MACID 69FCF1
-            # NICDEF 1003 VLAN 798
-            # MDISK 0100 3390 0001 14564 IAS10D MR
             action = "add switches of guest '%s' to database" % userid
-            info = self._vmops.get_definition_info(userid)
-            user_direct = info['user_direct']
-            nics_info = self._parse_nic_info(user_direct)
-            for key in nics_info:
-                interface = key
-                switch = nics_info[key]['vswitch']
+            # The result of get_adpaters_info
+            # [{'adapter_address': '1000', 'adapter_status': '02',
+            #   'lan_owner': 'SYSTEM', 'lan_name': 'VSC11590',
+            #   'mac_address': '02:55:36:00:00:10', 'mac_ip_version': '4',
+            #   'mac_ip_address': '9.152.85.95'}]
+            adapters_info = self._smtclient.get_adapters_info(userid)
+            for adapter in adapters_info:
+                interface = adapter.get('adapter_address')
+                switch = adapter.get('lan_name')
                 port = None
                 if port_macs is not None:
-                    if 'mac' in nics_info[key].keys():
-                        mac = nics_info[key]['mac']
+                    if adapter.get('mac_address'):
+                        mac = ''.join(
+                            adapter.get('mac_address').split(':'))[6:].upper()
                         if mac in port_macs.keys():
                             port = port_macs[mac]
                     if port is None:
                         LOG.warning("Port not found for nic %s, %s." %
-                                    (key, port_macs))
+                                    (interface, port_macs))
                     else:
-                        LOG.info("Port found for nic %s." % key)
+                        LOG.info("Port found for nic %s." % interface)
                 with zvmutils.log_and_reraise_sdkbase_error(action):
                     self._NetworkDbOperator.switch_add_record(
                                 userid, interface, port, switch)
