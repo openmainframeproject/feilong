@@ -48,8 +48,8 @@ if [ "$output" ]; then
         echo "ignore error on WWID $WWID and Lun $lun:$output"
         exit_code=0
     elif [ "$(echo $output | grep -i 'in use')" ]; then
-        echo "device with WWID $WWID and Lun $lun is use:$output"
-        exit_code=1
+        echo "Warning:device $map_name with WWID $WWID and Lun $lun is use, the detachment will continue."
+        exit_code=0
     else
         echo "unknown error on device with WWID $WWID and Lun $lun:$output"
         exit_code=2
