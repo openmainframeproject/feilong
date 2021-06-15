@@ -74,6 +74,32 @@ class SMTMakeVMTestCase(base.SMTTestCase):
         self.assertEqual(rh.results['overallRC'], 0)
 
     @mock.patch("os.write")
+    def test_create_VM_profile(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1G', 'maxMemSize': '1G',
+                 'privClasses': 'G', 'profName': "Profile1"}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\n'
+                                    b'INCLUDE PROFILE1\n'
+                                    b'COMMAND SET VCONFIG MODE LINUX\n'
+                                    b'COMMAND DEFINE CPU 00 TYPE IFL\n')
+
+    @mock.patch("os.write")
+    def test_create_VM_account(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1G', 'maxMemSize': '1G',
+                 'privClasses': 'G', 'account': "acc acc1 acc2 dummy"}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1G 1G G\n'
+                                    b'ACCOUNT ACC ACC1 ACC2 DUMMY\n'
+                                    b'COMMAND SET VCONFIG MODE LINUX\n'
+                                    b'COMMAND DEFINE CPU 00 TYPE IFL\n')
+
+    @mock.patch("os.write")
     def test_create_VM_cpu_4(self, write):
         rh = ReqHandle.ReqHandle(captureLogs=False,
                                  smt=mock.Mock())
