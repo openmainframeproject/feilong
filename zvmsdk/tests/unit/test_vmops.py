@@ -67,12 +67,14 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         vdevs = ['1234']
         loaddev = {'portname': '5678', 'lun': '0000000000000000'}
         account = "dummy dummy"
+        comment_list = ['comment1', 'comment2 is here']
         self.vmops.create_vm(userid, cpu, memory, disk_list, user_profile,
                              max_cpu, max_mem, '', '', '', vdevs, loaddev,
-                             account)
+                             account, comment_list)
         create_vm.assert_called_once_with(userid, cpu, memory, disk_list,
                                           user_profile, max_cpu, max_mem,
-                                          '', '', '', vdevs, loaddev, account)
+                                          '', '', '', vdevs, loaddev, account,
+                                          comment_list)
         namelistadd.assert_called_once_with('TSTNLIST', userid)
 
     @mock.patch("zvmsdk.smtclient.SMTClient.process_additional_minidisks")
