@@ -103,6 +103,9 @@ def get_fcp_conn():
 
     _DBLOCK_FCP.acquire()
     try:
+        # execute one SQL to test if _FCP_CONN is operational
+        _FCP_CONN.execute("SELECT FROM fcp WHERE assigner_id=?",
+                          ('test',))
         yield _FCP_CONN
     except exception.SDKBaseException as err:
         msg = "Got SDK exception in FCP DB operation: %s" % six.text_type(err)
