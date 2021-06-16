@@ -110,13 +110,13 @@ def createVM(rh):
          rh.parms['maxMemSize'] + " " + rh.parms['privClasses'])
 
     if 'profName' in rh.parms:
-        dirLines.append("INCLUDE " + rh.parms['profName'])
+        dirLines.append("INCLUDE " + rh.parms['profName'].upper())
 
     if 'maxCPU' in rh.parms:
         dirLines.append("MACHINE ESA %i" % rh.parms['maxCPU'])
 
     if 'account' in rh.parms:
-        dirLines.append("ACCOUNT %s" % rh.parms['account'])
+        dirLines.append("ACCOUNT %s" % rh.parms['account'].upper())
 
     dirLines.append("COMMAND SET VCONFIG MODE LINUX")
     dirLines.append("COMMAND DEFINE CPU 00 TYPE IFL")
