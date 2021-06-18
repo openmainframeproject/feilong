@@ -44,6 +44,18 @@ class SDKVMOpsTestCase(base.SDKTestCase):
         self.vmops.guest_start('cbi00063')
         guest_start.assert_called_once_with('cbi00063')
 
+    @mock.patch('zvmsdk.vmops.VMOps.is_reachable')
+    @mock.patch('zvmsdk.vmops.VMOps.wait_for_reachable')
+    @mock.patch("zvmsdk.smtclient.SMTClient.guest_start")
+    def test_guest_start_timeout(self, guest_start, wait, is_up):
+        is_up.return_value = False
+        timeout = 10
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self.vmops.guest_start, 'cbi00063', timeout)
+        guest_start.assert_called_once_with('cbi00063')
+        wait.assert_called_once_with('cbi00063', timeout)
+        is_up.assert_called_once_with('cbi00063')
+
     @mock.patch("zvmsdk.smtclient.SMTClient.guest_pause")
     def test_guest_pause(self, guest_pause):
         self.vmops.guest_pause('cbi00063')
