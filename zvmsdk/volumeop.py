@@ -538,17 +538,20 @@ class FCPManager(object):
         fcp_db_list = self.db.get_all()
 
         for fcp_rec in fcp_db_list:
-            if not fcp_rec[0].lower() in self._fcp_pool:
+            if not fcp_rec[0].lower() in self._fcp_pool.keys():
                 self._report_orphan_fcp(fcp_rec[0])
         # firt loop is for getting the path No
         for path, fcp_list in self._fcp_path_mapping.items():
             for fcp in fcp_list:
-                if fcp.lower() in self._fcp_pool:
+                if fcp.lower() in self._fcp_pool.keys():
                     res = self.db.get_from_fcp(fcp)
                     # if not found this record, a [] will be returned
                     if len(res) == 0:
-                        # now only support 2 paths
                         self._add_fcp(fcp, path)
+                    else:
+                        old_path = res[0][4]
+                        if old_path != path:
+                            self.db.update_path_of_fcp(fcp, path)
 
     def _list_fcp_details(self, userid, status):
         return self._smtclient.get_fcp_info_by_status(userid, status)
