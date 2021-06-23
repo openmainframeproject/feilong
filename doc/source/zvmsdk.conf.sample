@@ -243,6 +243,16 @@
 #get_fcp_pair_with_same_index=0
 
 
+# 
+# The timeout value for waiting refresh_bootmap execution, in seconds.
+# 
+# The default value is 600 seconds, if the execution of refresh_bootmap
+# reached the timeout, the process of refresh_bootmap will be stopped.
+# 
+# This param is optional
+#refresh_bootmap_timeout=600
+
+
 [wsgi]
 
 # 
