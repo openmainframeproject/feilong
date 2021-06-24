@@ -2525,6 +2525,35 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         result = self._smtclient._guest_get_os_version(userid)
         self.assertEqual(result, 'ubuntu16.04')
 
+    @mock.patch.object(database.GuestDbOperator,
+                       'get_guest_metadata_with_userid')
+    def test_get_os_version_from_userid_with_os_info(self, db_list):
+        db_list.return_value = [(u'os_version=rhel8.3', u'')]
+        userid = 'TEST1'
+        os_version = self._smtclient.get_os_version_from_userid(userid)
+        db_list.assert_called_with(userid)
+        self.assertEqual('RHEL8.3', os_version)
+
+    @mock.patch.object(database.GuestDbOperator,
+                       'get_guest_metadata_with_userid')
+    def test_get_os_version_from_userid_without_os_info(self, db_list):
+        db_list.return_value = [(u'comm1', u'0')]
+        userid = 'TEST0'
+        os_version = self._smtclient.get_os_version_from_userid(userid)
+        db_list.assert_called_with(userid)
+        self.assertEqual('UNKNOWN', os_version)
+
+    @mock.patch.object(database.GuestDbOperator,
+                       'get_guest_metadata_with_userid')
+    def test_get_os_version_from_userid_exception(self, db_list):
+        msg = 'test'
+        db_list.side_effect = exception.SDKGuestOperationError(rs=1, msg=msg)
+        userid = 'test123'
+        self.assertRaises(exception.SDKGuestOperationError,
+                          self._smtclient.get_os_version_from_userid, userid)
+        db_list.assert_called_with(userid)
+
+    @mock.patch.object(smtclient.SMTClient, 'get_os_version_from_userid')
     @mock.patch.object(smtclient.SMTClient, 'get_power_state')
     @mock.patch.object(smtclient.SMTClient, 'guest_start')
     @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
@@ -2547,7 +2576,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
             guest_stop, mkdir, execute, md5sum,
             disk_size_units, imagesize, rm_folder,
             image_add_record, get_user_direct,
-            guest_start, get_power_state):
+            guest_start, get_power_state, get_os_mock):
         userid = 'fakeid'
         image_name = 'fakeimage'
         get_user_direct.return_value = ['USER TEST1234 LBYONLY 4096m 64G G',
@@ -2576,6 +2605,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         imagesize.return_value = '1024000'
         guest_connection_status.return_value = False
         get_power_state.return_value = 'on'
+        get_os_mock.return_value = 'UNKNOWN'
 
         self._smtclient.guest_capture(userid, image_name)
 
@@ -2598,7 +2628,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_user_direct.assert_called_once_with(userid)
         guest_start.assert_called_once_with(userid)
         get_power_state.assert_called_once_with(userid)
+        get_os_mock.assert_called_once_with(userid)
 
+    @mock.patch.object(smtclient.SMTClient, 'get_os_version_from_userid')
     @mock.patch.object(smtclient.SMTClient, 'get_power_state')
     @mock.patch.object(smtclient.SMTClient, 'guest_start')
     @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
@@ -2620,7 +2652,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                      guest_stop, mkdir, execute, md5sum,
                                      disk_size_units, imagesize, rm_folder,
                                      image_add_record, get_user_direct,
-                                     guest_start, get_power_state):
+                                     guest_start, get_power_state,
+                                              get_os_mock):
         userid = 'fakeid'
         image_name = 'fakeimage'
         get_user_direct.return_value = ['USER TEST1234 LBYONLY 4096m 64G G',
@@ -2649,7 +2682,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         imagesize.return_value = '1024000'
         guest_connection_status.return_value = False
         get_power_state.return_value = 'off'
-
+        get_os_mock.return_value = 'UNKNOWN'
         self._smtclient.guest_capture(userid, image_name)
 
         guest_connection_status.assert_called_with(userid)
@@ -2671,7 +2704,93 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         get_user_direct.assert_called_once_with(userid)
         get_power_state.assert_called_once_with(userid)
         guest_start.assert_not_called()
+        get_os_mock.assert_called_once_with(userid)
 
+    @mock.patch.object(smtclient.SMTClient, 'get_os_version_from_userid')
+    @mock.patch.object(smtclient.SMTClient, 'get_power_state')
+    @mock.patch.object(smtclient.SMTClient, 'guest_start')
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    @mock.patch.object(database.ImageDbOperator, 'image_add_record')
+    @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
+    @mock.patch.object(smtclient.SMTClient, '_get_image_size')
+    @mock.patch.object(smtclient.SMTClient, '_get_disk_size_units')
+    @mock.patch.object(smtclient.SMTClient, '_get_md5sum')
+    @mock.patch.object(zvmutils, 'execute')
+    @mock.patch.object(zvmutils.PathUtils, 'mkdir_if_not_exist')
+    @mock.patch.object(smtclient.SMTClient, 'guest_stop')
+    @mock.patch.object(smtclient.SMTClient, '_get_capture_devices')
+    @mock.patch.object(smtclient.SMTClient, '_guest_get_os_version')
+    @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
+    @mock.patch.object(smtclient.SMTClient, 'get_guest_connection_status')
+    def test_guest_capture_good_path_poweroff_os(self,
+                                                 guest_connection_status,
+                                                 execcmd,
+                                                 get_os_version,
+                                                 get_capture_devices,
+                                                 guest_stop, mkdir,
+                                                 execute, md5sum,
+                                                 disk_size_units,
+                                                 imagesize, rm_folder,
+                                                 image_add_record,
+                                                 get_user_direct,
+                                                 guest_start,
+                                                 get_power_state,
+                                                 get_os_mock):
+        userid = 'fakeid'
+        image_name = 'fakeimage'
+        get_user_direct.return_value = ['USER TEST1234 LBYONLY 4096m 64G G',
+                                        'COMMAND SET VCONFIG MODE LINUX',
+                                        'COMMAND DEFINE CPU 00 TYPE IFL',
+                                        'MDISK 0100 3390 0001 14564 IAS114 MR']
+        execcmd.return_value = ['/']
+        image_temp_dir = '/'.join([CONF.image.sdk_image_repository,
+                                   'staging',
+                                   'RHEL8.3',
+                                   image_name])
+        image_file_path = '/'.join((image_temp_dir, '0100'))
+        cmd1 = ['sudo', '/opt/zthin/bin/creatediskimage', userid, '0100',
+                image_file_path, '--compression', '6']
+        execute.side_effect = [(0, ''),
+                               (0, '')]
+        image_final_dir = '/'.join((CONF.image.sdk_image_repository,
+                                    'netboot',
+                                    'RHEL8.3',
+                                    image_name))
+        image_final_path = '/'.join((image_final_dir,
+                                     '0100'))
+        cmd2 = ['mv', image_file_path, image_final_path]
+        md5sum.return_value = '547396211b558490d31e0de8e15eef0c'
+        disk_size_units.return_value = '1000:CYL'
+        imagesize.return_value = '1024000'
+        guest_connection_status.return_value = False
+        get_power_state.return_value = 'off'
+        get_os_mock.return_value = 'RHEL8.3'
+        self._smtclient.guest_capture(userid, image_name)
+
+        guest_connection_status.assert_called_with(userid)
+        execcmd.assert_not_called()
+        get_os_version.assert_not_called()
+        get_capture_devices.assert_not_called()
+        guest_stop.assert_not_called()
+
+        execute.assert_has_calls([mock.call(cmd1), mock.call(cmd2)])
+        mkdir.assert_has_calls([mock.call(image_temp_dir)],
+                               [mock.call(image_final_dir)])
+        rm_folder.assert_called_once_with(image_temp_dir)
+        md5sum.assert_called_once_with(image_final_path)
+        disk_size_units.assert_called_once_with(image_final_path)
+        imagesize.assert_called_once_with(image_final_path)
+        image_add_record.assert_called_once_with(image_name, 'RHEL8.3',
+                                                 '547396211b558490d31e'
+                                                 '0de8e15eef0c',
+                                                 '1000:CYL', '1024000',
+                                                 'rootonly')
+        get_user_direct.assert_called_once_with(userid)
+        get_power_state.assert_called_once_with(userid)
+        guest_start.assert_not_called()
+        get_os_mock.assert_called_once_with(userid)
+
+    @mock.patch.object(smtclient.SMTClient, 'get_os_version_from_userid')
     @mock.patch.object(smtclient.SMTClient, 'get_power_state')
     @mock.patch.object(smtclient.SMTClient, 'guest_start')
     @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
@@ -2702,7 +2821,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                                     image_add_record,
                                                     get_user_direct,
                                                     guest_start,
-                                                    get_power_state):
+                                                    get_power_state,
+                                                    get_os_mock):
         CONF.zvm.force_capture_disk = '0100'
         userid = 'fakeid'
         image_name = 'fakeimage'
@@ -2732,7 +2852,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         imagesize.return_value = '1024000'
         guest_connection_status.return_value = False
         get_power_state.return_value = 'off'
-
+        get_os_mock.return_value = 'UNKNOWN'
         self._smtclient.guest_capture(userid, image_name)
 
         guest_connection_status.assert_called_with(userid)
@@ -2753,7 +2873,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
             'rootonly')
         guest_start.assert_not_called()
         get_power_state.assert_called_with(userid)
+        get_os_mock.assert_called_with(userid)
 
+    @mock.patch.object(smtclient.SMTClient, 'get_os_version_from_userid')
     @mock.patch.object(smtclient.SMTClient, 'get_power_state')
     @mock.patch.object(smtclient.SMTClient, 'guest_start')
     @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
@@ -2784,7 +2906,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                                     image_add_record,
                                                     get_user_direct,
                                                     guest_start,
-                                                    get_power_state):
+                                                    get_power_state,
+                                                    get_os_mock):
 
         userid = 'fakeid'
         image_name = 'fakeimage'
@@ -2814,6 +2937,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         imagesize.return_value = '1024000'
         guest_connection_status.return_value = False
         get_power_state.return_value = 'off'
+        get_os_mock.return_value = 'UNKNOWN'
         self._smtclient.guest_capture(userid,
                                       image_name,
                                       capture_device_assign='0100')
@@ -2838,7 +2962,9 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                                  'rootonly')
         guest_start.assert_not_called()
         get_power_state.assert_called_with(userid)
+        get_os_mock.assert_called_with(userid)
 
+    @mock.patch.object(smtclient.SMTClient, 'get_os_version_from_userid')
     @mock.patch.object(smtclient.SMTClient, 'guest_start')
     @mock.patch.object(database.ImageDbOperator, 'image_add_record')
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
@@ -2857,7 +2983,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                      get_os_version, get_capture_devices,
                                      softstop, mkdir, execute, md5sum,
                                      disk_size_units, imagesize, rm_folder,
-                                     image_add_record, guest_start):
+                                     image_add_record, guest_start,
+                                     get_os_mock):
         userid = 'fakeid'
         image_name = 'fakeimage'
         execcmd.return_value = ['/']
@@ -2902,12 +3029,14 @@ class SDKSMTClientTestCases(base.SDKTestCase):
             '547396211b558490d31e0de8e15eef0c', '1000:CYL', '1024000',
             'rootonly')
         guest_start.assert_called_once_with(userid)
+        get_os_mock.assert_not_called()
 
+    @mock.patch.object(smtclient.SMTClient, 'get_os_version_from_userid')
     @mock.patch.object(smtclient.SMTClient, '_guest_get_os_version')
     @mock.patch.object(smtclient.SMTClient, 'execute_cmd')
     @mock.patch.object(smtclient.SMTClient, 'get_guest_connection_status')
     def test_guest_capture_error_path(self, guest_connection_status,
-                                      execcmd, get_os_version):
+                                      execcmd, get_os_version, get_os_mock):
         userid = 'fakeid'
         image_name = 'fakeimage'
         result = {'rs': 101, 'errno': 0, 'strError': '',
@@ -2926,6 +3055,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         guest_connection_status.assert_called_with(userid)
         execcmd.assert_called_once_with(userid, 'pwd')
         get_os_version.assert_not_called()
+        get_os_mock.assert_not_called()
 
     @mock.patch.object(database.GuestDbOperator,
                        'get_guest_by_userid')

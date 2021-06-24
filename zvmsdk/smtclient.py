@@ -1030,6 +1030,21 @@ class SMTClient(object):
                                   'vdev': vdev})
         LOG.info(msg)
 
+    def get_os_version_from_userid(self, userid):
+        """Get the os_verison of guests from userid.
+        return os_version or UNKNOWN"""
+        action = "get guests os_version from userid."
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            guests_in_db = self._GuestDbOperator.\
+                get_guest_metadata_with_userid(userid)
+        # db query return metadata in tuple (metadata)
+        os_version = 'UNKNOWN'
+        for g in guests_in_db:
+            if 'os_version='.upper() in g[0].upper():
+                os_version = g[0].upper().strip().split('=')[1]
+            break
+        return os_version
+
     def guest_capture(self, userid, image_name, capture_type='rootonly',
                       compress_level=6, capture_device_assign=None):
         if capture_type == "alldisks":
@@ -1104,7 +1119,7 @@ class SMTClient(object):
             # keep restart flag used after capture.
             restart_flag = True
         else:
-            os_version = 'UNKNOWN'
+            os_version = self.get_os_version_from_userid(userid)
             # Capture_device_assign as assign capture disk.
             # Input should be string to identity disk.
             # use force_capture_disk value first if
