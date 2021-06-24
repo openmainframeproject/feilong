@@ -429,6 +429,11 @@ class FCPDbOperator(object):
                                                           connections,
                                                           fcp))
 
+    def update_path_of_fcp(self, fcp, path):
+        with get_fcp_conn() as conn:
+            conn.execute("UPDATE fcp SET path=? WHERE "
+                         "fcp_id=?", (path, fcp))
+
     def increase_usage(self, fcp):
         with get_fcp_conn() as conn:
             result = conn.execute("SELECT * FROM fcp WHERE "
