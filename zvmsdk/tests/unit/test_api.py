@@ -42,6 +42,22 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.guest_get_power_state_real(self.userid)
         gstate.assert_called_once_with(self.userid)
 
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.vmops.VMOps.get_power_state")
+    def test_guest_get_power_state(self, gstate, chk_uid):
+        chk_uid.return_value = True
+        self.api.guest_get_power_state(self.userid)
+        chk_uid.assert_called_once_with(self.userid)
+        gstate.assert_called_once_with(self.userid)
+
+        chk_uid.reset_mock()
+        gstate.reset_mock()
+        chk_uid.return_value = False
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.api.guest_get_power_state, self.userid)
+        chk_uid.assert_called_once_with(self.userid)
+        gstate.assert_not_called()
+
     @mock.patch("zvmsdk.vmops.VMOps.get_info")
     def test_guest_get_info(self, ginfo):
         self.api.guest_get_info(self.userid)
