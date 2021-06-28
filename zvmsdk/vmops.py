@@ -129,7 +129,8 @@ class VMOps(object):
         if timeout > 0:
             self.wait_for_reachable(userid, timeout)
             if not self.is_reachable(userid):
-                msg = "guest does not reachable"
+                msg = ("compute node is not able to connect to the virtual "
+                       "machine in %d seconds" % timeout)
                 raise exception.SDKGuestOperationError(rs=16, userid=userid,
                                                        msg=msg)
         LOG.info("Complete power on vm %s", userid)

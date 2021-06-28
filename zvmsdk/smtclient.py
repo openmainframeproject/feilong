@@ -813,7 +813,8 @@ class SMTClient(object):
 
         LOG.info("Running command: %s", cmd)
         try:
-            (rc, output) = zvmutils.execute(cmd, timeout=600)
+            (rc, output) = zvmutils.execute(cmd,
+                               timeout=CONF.volume.refresh_bootmap_timeout)
         except subprocess.TimeoutExpired as err:
             err_msg = err.format_message()
             raise exception.SDKVolumeOperationError(rs=7, msg=err_msg)

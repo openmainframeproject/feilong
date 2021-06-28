@@ -857,6 +857,12 @@ function refreshZIPL {
     inform "Successed to execute zipl on $os. Output: $out_zipl"
   fi
   
+  # disable lvmetad service for RHEL 7
+  # RHEL 8 does not have lvmetad
+  if [[ ($os == rhel7*) && (-f ${deviceMountPoint}/etc/lvm/lvm.conf) ]]; then
+      sed -i 's/use_lvmetad = 1/use_lvmetad = 0/g' ${deviceMountPoint}/etc/lvm/lvm.conf
+  fi
+
   # Sync to ensure cached date writen back to target disk
   blockdev --flushbufs $diskPath > /dev/null
 
