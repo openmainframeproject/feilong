@@ -81,7 +81,8 @@ keyOpsList = {
         '--loadportname': ['loadportname', 1, 2],
         '--loadlun': ['loadlun', 1, 2],
         '--vdisk': ['vdisk', 1, 2],
-        '--account': ['account', 1, 2]},
+        '--account': ['account', 1, 2],
+        '--comment': ['comment', 1, 2]},
     'HELP': {},
     'VERSION': {},
      }
@@ -196,6 +197,11 @@ def createVM(rh):
             blocks = MAX_VDISK_BLOCKS
 
         dirLines.append("MDISK %s FB-512 V-DISK %s MWV" % (v[0], blocks))
+
+    if 'comment' in rh.parms:
+        for comment in rh.parms['comment'].split("$@$@$"):
+            if comment:
+                dirLines.append("* %s" % comment.upper())
 
     # Construct the temporary file for the USER entry.
     fd, tempFile = mkstemp()

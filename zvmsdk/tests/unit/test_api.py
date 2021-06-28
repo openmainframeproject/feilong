@@ -124,7 +124,7 @@ class SDKAPITestCase(base.SDKTestCase):
                               user_profile, max_cpu, max_mem)
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                   disk_list, user_profile, max_cpu, max_mem,
-                                  '', '', '', [], {}, '')
+                                  '', '', '', [], {}, '', None)
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_account(self, create_vm):
@@ -141,7 +141,24 @@ class SDKAPITestCase(base.SDKTestCase):
                               account=account)
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                   disk_list, user_profile, max_cpu, max_mem,
-                                  '', '', '', [], {}, account)
+                                  '', '', '', [], {}, account, None)
+
+    @mock.patch("zvmsdk.vmops.VMOps.create_vm")
+    def test_guest_create_with_comment(self, create_vm):
+        vcpus = 1
+        memory = 1024
+        disk_list = []
+        user_profile = 'profile'
+        max_cpu = 10
+        max_mem = '4G'
+        comment_list = ["dummy account", "this is a test"]
+
+        self.api.guest_create(self.userid, vcpus, memory, disk_list,
+                              user_profile, max_cpu, max_mem,
+                              comment_list=comment_list)
+        create_vm.assert_called_once_with(self.userid, vcpus, memory,
+                                  disk_list, user_profile, max_cpu, max_mem,
+                                  '', '', '', [], {}, '', comment_list)
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_default_profile(self, create_vm):
@@ -157,7 +174,7 @@ class SDKAPITestCase(base.SDKTestCase):
                               user_profile, max_cpu, max_mem)
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                   disk_list, 'abc', max_cpu, max_mem,
-                                  '', '', '', [], {}, '')
+                                  '', '', '', [], {}, '', None)
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_with_no_disk_pool(self, create_vm):
@@ -189,7 +206,7 @@ class SDKAPITestCase(base.SDKTestCase):
                               user_profile)
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                           disk_list, user_profile, 32, '64G',
-                                          '', '', '', [], {}, '')
+                                          '', '', '', [], {}, '', None)
 
     @mock.patch("zvmsdk.vmops.VMOps.create_vm")
     def test_guest_create_no_disk_pool_force_mdisk(self, create_vm):
@@ -234,7 +251,7 @@ class SDKAPITestCase(base.SDKTestCase):
                               user_profile)
         create_vm.assert_called_once_with(self.userid, vcpus, memory,
                                           disk_list, user_profile, 32, '64G',
-                                          '', '', '', [], {}, '')
+                                          '', '', '', [], {}, '', None)
 
     @mock.patch("zvmsdk.imageops.ImageOps.image_query")
     def test_image_query(self, image_query):

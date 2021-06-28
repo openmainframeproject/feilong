@@ -149,6 +149,7 @@ Create a vm in z/VM
   - dedicate_vdevs: guest_dedicate_vdevs
   - loaddev: guest_loaddev
   - account: guest_account
+  - comment_list: guest_comment_list
 
 
 * Request sample:
