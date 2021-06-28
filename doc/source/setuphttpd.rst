@@ -172,7 +172,7 @@ at port 35000
 
     LoadModule proxy_uwsgi_module modules/mod_proxy_uwsgi.so
 
-    Listen 8080
+    Listen 127.0.0.1:8080
 
     <VirtualHost *:8080>
        ProxyPass / uwsgi://127.0.0.1:35000/
@@ -316,7 +316,7 @@ Steps to deploy Feilong into Apache with mod_wsgi
 
   .. code-block:: text
 
-      Listen 8080
+      Listen 127.0.0.1:8080
       <VirtualHost *:8080>
           WSGIDaemonProcess zvmsdkwsgi user=zvmsdk group=zvmsdk processes=2 threads=5
               WSGIProcessGroup zvmsdkwsgi
