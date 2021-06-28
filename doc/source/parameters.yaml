@@ -139,6 +139,12 @@ guest_account:
   in: body
   required: false
   type: string
+guest_comment_list:
+  description: |
+    comment of the user direct.
+  in: body
+  required: false
+  type: list
 user_profile_guest:
   description: |
     Profile of guest, ``null`` is also allowed.

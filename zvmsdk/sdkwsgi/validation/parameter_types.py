@@ -356,6 +356,13 @@ disk_list = {
     }
 }
 
+comment_list = {
+    'type': 'array',
+    'items': {
+        'type': 'string'
+    }
+}
+
 live_migrate_parms = {
     'type': 'object',
     'properties': {
