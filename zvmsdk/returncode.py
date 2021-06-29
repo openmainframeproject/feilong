@@ -273,7 +273,10 @@ errors = {
 # 'rs' is always 1
     'notExist': [{'overallRC': 404, 'modID': None, 'rc': 404},
                  {1: "%(obj_desc)s does not exist.",
-                  2: "Not found error: '%(msg)s'"},
+                  2: "Not found error: '%(msg)s'",
+                  3: ("%(obj_desc)s does not exist in directory "
+                      "although it is in DB. The guest could have been "
+                      "deleted out of z/VM Cloud Connector.")},
                  "The operated object does not exist"
                  ],
 # Conflict Error (The to-be-updated object status conflict)

@@ -1399,6 +1399,8 @@ Get power state of the guest.
 * Response code:
 
   HTTP status code 200 on success.
+  HTTP status code 404 if guest is not in zcc database
+  or it is in zcc database but its user directory does not exist.
 
 * Response contents:
 

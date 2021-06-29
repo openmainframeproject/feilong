@@ -62,6 +62,7 @@
 **The operated object does not exist**
 404;None;404;1;%(obj_desc)s does not exist.
 404;None;404;2;Not found error: '%(msg)s'
+404;None;404;3;%(obj_desc)s does not exist in directory although it is in DB. The guest could have been deleted out of z/VM Cloud Connector.
 **The operated object status conflict**
 409;None;409;1;Guest '%(userid)s' is not in active status.
 409;None;409;2;Failed to live resize cpus of guest: '%(userid)s', error: current active cpu count: '%(active)i' is greater than requested count: '%(req)i'.
