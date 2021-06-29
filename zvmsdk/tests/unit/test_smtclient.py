@@ -481,7 +481,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
               '--account "dummy account aaa"')
         self._smtclient.create_vm(user_id, cpu, memory, disk_list, profile,
                                   max_cpu, max_mem, 'cms', '', '', [], {},
-                                  account, [])
+                                  account, None)
         request.assert_called_with(rd)
         add_mdisks.assert_called_with(user_id, disk_list)
         add_guest.assert_called_with(user_id)

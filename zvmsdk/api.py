@@ -200,6 +200,12 @@ class SDKAPI(object):
     @check_guest_exist()
     def guest_get_power_state(self, userid):
         """Returns power state."""
+        if not zvmutils.check_userid_exist(userid.upper()):
+            LOG.error("User directory of '%s' does not exist "
+                      "although it is in DB. The guest could have been "
+                      "deleted out of z/VM Cloud Connector." % userid)
+            raise exception.SDKObjectNotExistError(
+                    obj_desc=("Guest '%s'" % userid), modID='guest', rs=3)
         action = "get power state of guest '%s'" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_power_state(userid)

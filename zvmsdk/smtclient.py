@@ -612,13 +612,15 @@ class SMTClient(object):
             rd += ' --account "%s"' % account
 
         comments = ''
-        for comment in comment_list:
-            comments += comment
-            # This s a dummy spliter and will be used for split
-            # the comment, for example, input comment is
-            # comment1,comment2, it will be constructed into
-            # comment1$@$@$comment2 and send to smtLayer to handle
-            comments += '$@$@$'
+        if comment_list is not None:
+            for comment in comment_list:
+                comments += comment
+                # This s a dummy spliter and will be used for split
+                # the comment, for example, input comment is
+                # comment1,comment2, it will be constructed into
+                # comment1$@$@$comment2 and send to smtLayer to handle
+                comments += '$@$@$'
+
         if comments:
             rd += ' --comment "%s"' % comments
 
