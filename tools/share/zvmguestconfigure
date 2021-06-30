@@ -161,17 +161,20 @@ function setupIso {
 
   # If the ISO filesystem exists then create loop back device pointing
   # to the ISO9660 image
-  first_mv=false
   if [[ -e $iso ]]; then
     mv $iso $iso4cloudinit
-    first_mv=true
   fi
   
   # Setup the iso device only once
-  if [[ -e $iso4cloudinit && $first_mv == true ]]; then
-    nextLoopDev=`/sbin/losetup -f`
-    if [[ -n $nextLoopDev ]]; then
-      /sbin/losetup $nextLoopDev $iso4cloudinit
+  if [[ -e $iso4cloudinit ]]; then
+    # check whether a device with config-2 label already exists
+    output=`blkid -L "config-2" -odevice`
+    # Setup the loop device only when the device does not exist
+    if [[ $? -ne 0 ]]; then
+      nextLoopDev=`/sbin/losetup -f`
+      if [[ -n $nextLoopDev ]]; then
+        /sbin/losetup $nextLoopDev $iso4cloudinit
+      fi
     fi
   fi
 
