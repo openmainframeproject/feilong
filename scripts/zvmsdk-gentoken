@@ -87,7 +87,7 @@ def main(argv):
                 else:
                     file_path = args[0]
                 update_token_file(file_path)
-                msg = "token updated, please remeber" +\
+                msg = "token updated, please remember " +\
                       "to update the token data on client side!"
                 print(msg)
     except getopt.GetoptError:
