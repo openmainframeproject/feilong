@@ -34,7 +34,8 @@ create = {
                 'ipl_loadparam': parameter_types.ipl_loadparam,
                 'dedicate_vdevs': parameter_types.dedicate_vdevs,
                 'loaddev': parameter_types.loaddev,
-                'account': parameter_types.account
+                'account': parameter_types.account,
+                'comments': parameter_types.comment_list
             },
             'required': ['userid', 'vcpus', 'memory'],
             'additionalProperties': False,

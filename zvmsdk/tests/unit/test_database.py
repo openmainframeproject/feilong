@@ -579,6 +579,16 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         finally:
             self.db_op.delete('1111')
 
+    def test_update_path_of_fcp(self):
+        self.db_op.new('2222', 0)
+        try:
+            self.db_op.assign('2222', 'auser')
+            self.db_op.update_path_of_fcp('2222', 1)
+            res = self.db_op.get_from_fcp('2222')
+            self.assertEqual(1, res[0][4])
+        finally:
+            self.db_op.delete('2222')
+
 
 class GuestDbOperatorTestCase(base.SDKTestCase):
     @classmethod

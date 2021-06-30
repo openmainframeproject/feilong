@@ -452,6 +452,45 @@ class TestFCPManager(base.SDKTestCase):
         finally:
             self.fcpops._fcp_pool.pop('1234')
 
+    @mock.patch("zvmsdk.database.FCPDbOperator.update_path_of_fcp")
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    @mock.patch("zvmsdk.volumeop.FCPManager._add_fcp")
+    def test_sync_db_fcp_list_path_update(self, mock_add, mock_get,
+                                          update_path):
+
+        fcp_list = ['opnstk1: FCP device number: B83D',
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005182',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005181',
+                    'opnstk1: FCP device number: C83D',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005183',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005188']
+
+        mock_get.return_value = fcp_list
+        fake_userid = 'fakeuser'
+        # new fcp_list is: b83d-b83f;c83d-c83f
+        self.fcpops._init_fcp_pool('b83d;c83d', fake_userid)
+        # old fcp_list is: a83d-a83f;b83d-b83f
+        self.db_op.new('a83d', 0)
+        self.db_op.new('b83d', 1)
+
+        try:
+            self.fcpops._sync_db_fcp_list()
+            # the path id of c83d will be changed
+            update_path.assert_has_calls([mock.call('b83d', 0)])
+            # c83d is not in DB
+            mock_add.assert_has_calls([mock.call('c83d', 1)])
+        finally:
+            self.db_op.delete('a83d')
+            self.db_op.delete('b83d')
+
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.volumeop.FCPManager._report_orphan_fcp")
     @mock.patch("zvmsdk.volumeop.FCPManager._add_fcp")

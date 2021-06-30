@@ -186,12 +186,12 @@ class SDKConflictError(SDKBaseException):
 
 
 class SDKObjectNotExistError(SDKBaseException):
-    def __init__(self, obj_desc, modID='zvmsdk'):
+    def __init__(self, obj_desc, modID='zvmsdk', rs=1):
         rc = returncode.errors['notExist']
         results = rc[0]
         results['modID'] = returncode.ModRCs[modID]
-        results['rs'] = 1
-        errormsg = rc[1][1] % {'obj_desc': obj_desc}
+        results['rs'] = rs
+        errormsg = rc[1][rs] % {'obj_desc': obj_desc}
         super(SDKObjectNotExistError, self).__init__(results=results,
                                                      message=errormsg)
 
