@@ -836,6 +836,13 @@ class GuestDbOperator(object):
             conn.execute(
                 "DELETE FROM guests WHERE userid=?", (userid,))
 
+    def get_guest_metadata_with_userid(self, userid):
+        with get_guest_conn() as conn:
+            res = conn.execute("SELECT metadata FROM guests "
+                               "WHERE userid=?", (userid,))
+            guests = res.fetchall()
+        return guests
+
     def update_guest_by_id(self, uuid, userid=None, meta=None, net_set=None,
                            comments=None):
         if ((userid is None) and (meta is None) and

@@ -663,6 +663,28 @@ class GuestDbOperatorTestCase(base.SDKTestCase):
         guests = self.db_op.get_guest_list()
         self.assertListEqual([], guests)
 
+    @mock.patch.object(uuid, 'uuid4')
+    def test_get_guest_metadata_with_userid_exist(self, get_uuid):
+        meta = 'os_version=rhel8.3'
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        self.db_op.add_guest(self.userid, meta=meta)
+        # Delete
+        guest = self.db_op.get_guest_metadata_with_userid(self.userid)
+        self.assertListEqual([(u'os_version=rhel8.3',)], guest)
+        self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
+        guests = self.db_op.get_guest_metadata_with_userid(self.userid)
+        self.assertListEqual([], guests)
+
+    @mock.patch.object(uuid, 'uuid4')
+    def test_get_guest_metadata_with_userid_no_exist(self, get_uuid):
+        meta = u''
+        get_uuid.return_value = u'ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c'
+        self.db_op.add_guest(self.userid, meta=meta)
+        guest = self.db_op.get_guest_metadata_with_userid(self.userid)
+        self.assertListEqual([(u'',)], guest)
+        # Delete
+        self.db_op.delete_guest_by_id('ad8f352e-4c9e-4335-aafa-4f4eb2fcc77c')
+
     def test_delete_guest_by_userid_not_exist(self):
         self.db_op.delete_guest_by_id(self.userid)
 
