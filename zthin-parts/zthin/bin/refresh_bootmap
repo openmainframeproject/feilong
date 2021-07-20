@@ -263,7 +263,7 @@ function cleanup_fcpdevices {
   inform "Finish refreshing multipath bindings."
 
   # Disconnect all FCPs
-  inform "Begin to remove LUN"
+  inform "Begin to remove LUN."
   # loop to do unit_remove to each (fcp, wwpn) in valid_dict and check lun existence
   # as the unit_add is done with the combinations from valid_dict, so does unit_remove
   for fcp in ${!valid_dict[*]}
@@ -280,6 +280,7 @@ function cleanup_fcpdevices {
           fi
       done
   done
+  inform "Finish removing LUN."
 
   inform "Begin to offline and undedicate FCP devices"
   # For offline and undedicate FCP, it should be done for all the inputed FCP devices
@@ -290,6 +291,52 @@ function cleanup_fcpdevices {
       offlineUndedicateFcp $fcp 
   done
   inform "Finish disconnecting FCP devices."
+  
+  # In some case, though the `multipath -f` reported the multipath device is flushed successfully, multipathd will continue to add new path
+  # into the mpath device making the mpath device showing up again and the LVs on it then automatically be activated.
+  # So, we add the check of mpath existence again here and do the deactivate of LVs and flush mpath device, to avoid leftover issue.
+  inform "Checking mpath device's existence again."
+  devmapper_content=$(ls /dev/mapper/)
+  inform "/dev/mapper/ folder content: $devmapper_content."
+  if [[ ( "$map_name" != "" ) && ( -e /dev/mapper/${map_name} ) ]]; then
+      inform "Checking LVM on volume."
+      # Step 1: check whether the volume contains lvm. If yes, then remove the LVs.
+      if [[ "$vgs_str" != "" ]]; then
+          # re-use the previously found vg name because under the leftover scenario, the vg name cann't be detected any more
+          vg_name=$(echo $vgs_str | sed 's/[ \t]*//g')
+          if [[ $vg_name != "" ]]; then
+              inform "checking volume group: $vg_name."
+              # find all LVs on this volume group
+              devices=$(dmsetup info | grep "Name:" | awk -F: '{print $2}')
+              for dev in $devices
+              do
+                  stripped_dev=$(echo $dev | sed 's/[ \t]*//g')
+                  if [[ "${stripped_dev}" =~ ^${vg_name}-.* ]]; then
+                      inform "find LV: ${stripped_dev}."
+                      suspend_out=$(dmsetup suspend ${stripped_dev} 2>&1)
+                      inform "dmsetup suspend output: ${suspend_out}."
+                      cmd_out=$(dmsetup remove ${stripped_dev} 2>&1)
+                      rc=$?
+                      if [[ $rc -eq 0 ]]; then
+                          inform "successfully removed LV: ${stripped_dev}."
+                      else
+                          inform "dmsetup remove failed. RC: $rc, output: ${cmd_out}."
+                      fi
+                  fi
+              done
+          fi
+      fi
+      # Step 2: try flush multipath again.
+      inform "Try to flush $map_name again."
+      cmd_out=$(multipath -f $map_name 2>&1)
+      rc=$?
+      if [[ $rc -eq 0 ]]; then
+          inform "Successfully flushed $map_name."
+      else
+          inform "Failed to flush $map_name. RC: $rc, output: ${cmd_out}."
+      fi
+  fi
+
   inform "Log information before EXIT."
   lszfcp_output=$(lszfcp -HD 2>&1)
   inform "lszfcp output: ${lszfcp_output}"
