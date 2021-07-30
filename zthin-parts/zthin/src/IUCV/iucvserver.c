@@ -33,7 +33,7 @@ int check_client_authorization(int newsockfd, char *req_userid)
     int len = 0;
     char client_userid[16], err_msg[BUFFER_SIZE];
     /* authorized file is copied for opencloud when IUCV initialized*/
-    fp = fopen(PATH_FOR_AUTHORIZED_USERID,"r+");
+    fp = fopen(PATH_FOR_AUTHORIZED_USERID,"r");
     if ( NULL == fp)
     {
         /* all the message sent to client, should start with UNAUTHORIZED_ERROR: reason.#errno*/
