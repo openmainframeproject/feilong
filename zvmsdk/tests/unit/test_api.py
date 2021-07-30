@@ -620,14 +620,8 @@ class SDKAPITestCase(base.SDKTestCase):
         diskpool_vols.assert_called_once_with('IAS1PL')
         # Test disk_pool is None
         disk_pool = None
-        try:
-            self.api.host_get_diskpool_volumes(disk_pool)
-        except Exception as exc:
-            errmsg = ("Invalid disk_pool input None, disk_pool should be"
-                      " configured for sdkserver.")
-            result = errmsg in six.text_type(exc)
-            self.assertEqual(result, True)
-            pass
+        result = self.api.host_get_diskpool_volumes(disk_pool)
+        self.assertEqual(result, {})
 
     @mock.patch("zvmsdk.hostops.HOSTOps.get_volume_info")
     def test_host_get_volume_info(self, volume_info):
