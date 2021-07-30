@@ -306,10 +306,8 @@ class SDKAPI(object):
         # the format must be "ECKD:eckdpool" or "FBA:fbapool".
         disk_pool = disk_pool or CONF.zvm.disk_pool
         if disk_pool is None:
-            errmsg = ("Invalid disk_pool input None, disk_pool should be"
-                      " configured for sdkserver.")
-            LOG.error(errmsg)
-            raise exception.SDKInvalidInputFormat(msg=errmsg)
+            # Support disk_pool not configured, return empty list
+            return {}
         if ':' not in disk_pool:
             msg = ('Invalid input parameter disk_pool, expect ":" in'
                    'disk_pool, eg. ECKD:eckdpool')
