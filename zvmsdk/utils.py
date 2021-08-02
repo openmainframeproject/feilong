@@ -423,7 +423,7 @@ def log_and_reraise_smt_request_failed(action=None):
         if action is not None:
             msg = "Failed to %s. " % action
         msg += "SMT error: %s" % err.format_message()
-        LOG.error(msg)
+        LOG.info(msg)
         raise exception.SDKSMTRequestFailed(err.results, msg)
 
 
