@@ -650,8 +650,8 @@ class FCPManager(object):
             # go here, means try to detach volumes, cinder still need the info
             # of the FCPs belongs to assigner to do some cleanup jobs
             fcp_list = self.db.get_reserved_fcps_from_assigner(assigner_id)
-            LOG.info("Got available fcp_list %s in Unreserve mode from %s."
-                     % (fcp_list, assigner_id))
+            LOG.info("Got fcp records %s belonging to instance %s in "
+                     "Unreserve mode." % (fcp_list, assigner_id))
             # in this case, we just return the fcp_list
             # no need to allocated new ones if fcp_list is empty
             for old_fcp in fcp_list:
@@ -662,8 +662,8 @@ class FCPManager(object):
         # first check whether this userid already has a FCP device
         # get the FCP devices belongs to assigner_id
         fcp_list = self.db.get_allocated_fcps_from_assigner(assigner_id)
-        LOG.info("Got available fcp_list %s in Reserve mode from %s."
-                 % (fcp_list, assigner_id))
+        LOG.info("Got available fcp records %s for instance %s in "
+                 "Reserve mode." % (fcp_list, assigner_id))
         if not fcp_list:
             # allocate new ones if fcp_list is empty
             LOG.info("There is no allocated fcps for %s, will allocate "
@@ -1024,7 +1024,8 @@ class FCPVolumeManager(object):
             elif not reserve and \
                 self.db.get_connections_from_fcp(fcp_no) == 0:
                 # Unreserve fcp device
-                LOG.info("Unreserve fcp device %s from get connector", fcp_no)
+                LOG.info("Unreserve fcp device %s from "
+                         "instance %s." % (fcp_no, assigner_id))
                 self.db.unreserve(fcp_no)
             if self.fcp_mgr._fcp_pool.get(fcp_no):
                 wwpn = self.fcp_mgr.get_wwpn(fcp_no)
