@@ -958,12 +958,6 @@ class SMTClient(object):
                                                        unpack_rc=rc,
                                                        err=err_output)
 
-        # Purge guest reader to clean dirty data
-        rd = ("changevm %s purgerdr" % userid)
-        action = "purge reader of '%s'" % userid
-        with zvmutils.log_and_reraise_smt_request_failed(action):
-            self._request(rd)
-
         # Punch transport files if specified
         if transportfiles:
             # Copy transport file to local
