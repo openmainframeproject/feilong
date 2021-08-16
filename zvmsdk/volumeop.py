@@ -256,8 +256,10 @@ class VolumeConfiguratorAPI(object):
                                 mount_point, linuxdist):
         """new==True means this is first attachment"""
         # get configuration commands
+        fcp_list_str = ' '.join(fcp_list)
+        target_wwpns_str = ' '.join(target_wwpns)
         config_cmds = linuxdist.get_volume_attach_configuration_cmds(
-            fcp_list, target_wwpns, target_lun, multipath,
+            fcp_list_str, target_wwpns_str, target_lun, multipath,
             mount_point)
         LOG.debug('Got volume attachment configuation cmds for %s,'
                   'the content is:%s'
@@ -280,8 +282,10 @@ class VolumeConfiguratorAPI(object):
                                 target_lun, multipath, os_version,
                                 mount_point, linuxdist, connections):
         # get configuration commands
+        fcp_list_str = ' '.join(fcp_list)
+        target_wwpns_str = ' '.join(target_wwpns)
         config_cmds = linuxdist.get_volume_detach_configuration_cmds(
-            fcp_list, target_wwpns, target_lun, multipath,
+            fcp_list_str, target_wwpns_str, target_lun, multipath,
             mount_point, connections)
         LOG.debug('Got volume detachment configuation cmds for %s,'
                   'the content is:%s'
@@ -862,7 +866,7 @@ class FCPVolumeManager(object):
         all the above assume the storage side info is given by caller
         """
         fcp = connection_info['zvm_fcp']
-        target_wwpns = connection_info['target_wwpn']
+        wwpns = connection_info['target_wwpn']
         target_lun = connection_info['target_lun']
         assigner_id = connection_info['assigner_id']
         assigner_id = assigner_id.upper()
@@ -887,6 +891,7 @@ class FCPVolumeManager(object):
             path_count = len(fcp)
             # transfer to lower cases
             fcp_list = [x.lower() for x in fcp]
+            target_wwpns = [wwpn.lower() for wwpn in wwpns]
             self._attach(fcp_list, assigner_id,
                          target_wwpns, target_lun,
                          multipath, os_version,
@@ -968,7 +973,7 @@ class FCPVolumeManager(object):
         """Detach a volume from a guest
         """
         fcp = connection_info['zvm_fcp']
-        target_wwpns = connection_info['target_wwpn']
+        wwpns = connection_info['target_wwpn']
         target_lun = connection_info['target_lun']
         assigner_id = connection_info['assigner_id']
         assigner_id = assigner_id.upper()
@@ -984,6 +989,7 @@ class FCPVolumeManager(object):
         is_root_volume = connection_info.get('is_root_volume', False)
         # transfer to lower cases
         fcp_list = [x.lower() for x in fcp]
+        target_wwpns = [wwpn.lower() for wwpn in wwpns]
         self._detach(fcp_list, assigner_id,
                      target_wwpns, target_lun,
                      multipath, os_version, mount_point,
