@@ -82,7 +82,8 @@ keyOpsList = {
         '--loadlun': ['loadlun', 1, 2],
         '--vdisk': ['vdisk', 1, 2],
         '--account': ['account', 1, 2],
-        '--comment': ['comment', 1, 2]},
+        '--comment': ['comment', 1, 2],
+        '--commandSchedule': ['commandSchedule', 1, 2]},
     'HELP': {},
     'VERSION': {},
      }
@@ -124,6 +125,10 @@ def createVM(rh):
     if 'cpuCnt' in rh.parms:
         for i in range(1, rh.parms['cpuCnt']):
             dirLines.append("COMMAND DEFINE CPU %0.2X TYPE IFL" % i)
+
+    if 'commandSchedule' in rh.parms:
+        v = rh.parms['commandSchedule']
+        dirLines.append("COMMAND SCHEDULE * WITHIN POOL %s" % v)
 
     if 'ipl' in rh.parms:
         ipl_string = "IPL %s " % rh.parms['ipl']
