@@ -779,7 +779,7 @@ class SDKAPI(object):
                      max_mem=CONF.zvm.user_default_max_memory,
                      ipl_from='', ipl_param='', ipl_loadparam='',
                      dedicate_vdevs=None, loaddev={}, account='',
-                     comment_list=None):
+                     comment_list=None, cschedule=''):
         """create a vm in z/VM
 
         :param userid: (str) the userid of the vm to be created
@@ -846,6 +846,7 @@ class SDKAPI(object):
         https://www.ibm.com/docs/en/zvm/6.4?topic=SSB27U_6.4.0/
                 com.ibm.zvm.v640.hcpa5/daccoun.htm#daccoun
         :param comment_list: (array) a list of comment string
+        :param cschedule: a command input for schedule cpu pool
         """
         dedicate_vdevs = dedicate_vdevs or []
 
@@ -931,7 +932,7 @@ class SDKAPI(object):
                                          user_profile, max_cpu, max_mem,
                                          ipl_from, ipl_param, ipl_loadparam,
                                          dedicate_vdevs, loaddev, account,
-                                         comment_list)
+                                         comment_list, cschedule)
 
     @check_guest_exist()
     def guest_live_resize_cpus(self, userid, cpu_cnt):
