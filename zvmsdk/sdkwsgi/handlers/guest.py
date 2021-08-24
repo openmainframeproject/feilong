@@ -73,6 +73,8 @@ class VMHandler(object):
             kwargs_list['loaddev'] = guest['loaddev']
         if 'account' in guest_keys:
             kwargs_list['account'] = guest['account']
+        if 'cschedule' in guest_keys:
+            kwargs_list['cschedule'] = guest['cschedule']
 
         info = self.client.send_request('guest_create', userid, vcpus,
                                         memory, **kwargs_list)

@@ -35,7 +35,8 @@ create = {
                 'dedicate_vdevs': parameter_types.dedicate_vdevs,
                 'loaddev': parameter_types.loaddev,
                 'account': parameter_types.account,
-                'comments': parameter_types.comment_list
+                'comments': parameter_types.comment_list,
+                'cschedule': parameter_types.cpupool
             },
             'required': ['userid', 'vcpus', 'memory'],
             'additionalProperties': False,
