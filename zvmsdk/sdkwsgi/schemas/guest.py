@@ -36,7 +36,8 @@ create = {
                 'loaddev': parameter_types.loaddev,
                 'account': parameter_types.account,
                 'comments': parameter_types.comment_list,
-                'cschedule': parameter_types.cpupool
+                'cschedule': parameter_types.cpupool,
+                'cshare': parameter_types.share
             },
             'required': ['userid', 'vcpus', 'memory'],
             'additionalProperties': False,
