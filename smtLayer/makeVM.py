@@ -83,7 +83,8 @@ keyOpsList = {
         '--vdisk': ['vdisk', 1, 2],
         '--account': ['account', 1, 2],
         '--comment': ['comment', 1, 2],
-        '--commandSchedule': ['commandSchedule', 1, 2]},
+        '--commandSchedule': ['commandSchedule', 1, 2],
+        '--commandSetShare': ['commandSetShare', 1, 2]},
     'HELP': {},
     'VERSION': {},
      }
@@ -129,6 +130,10 @@ def createVM(rh):
     if 'commandSchedule' in rh.parms:
         v = rh.parms['commandSchedule']
         dirLines.append("COMMAND SCHEDULE * WITHIN POOL %s" % v)
+
+    if 'commandSetShare' in rh.parms:
+        v = rh.parms['commandSetShare']
+        dirLines.append("COMMAND SET SHARE &USERID %s" % v)
 
     if 'ipl' in rh.parms:
         ipl_string = "IPL %s " % rh.parms['ipl']

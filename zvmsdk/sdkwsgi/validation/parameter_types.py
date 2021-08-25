@@ -269,6 +269,14 @@ cpupool = {
 }
 
 
+share = {
+    'type': ['string'],
+    'minLength': 1,
+    'maxLength': 64,
+    'pattern': '^(\w{,64})$'
+}
+
+
 userid_or_None = {
     'oneOf': [
         {'type': 'null'},
