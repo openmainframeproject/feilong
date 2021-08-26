@@ -250,7 +250,8 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
                                                   target_wwpns, target_lun,
                                                   multipath, os_version,
                                                   mount_point, linuxdist)
-        get_attach_cmds.assert_called_once_with(fcp_list, target_wwpns,
+        get_attach_cmds.assert_called_once_with(' '.join(fcp_list),
+                                                ' '.join(target_wwpns),
                                                 target_lun, multipath,
                                                 mount_point)
         punch_file.assert_called_once_with(assigner_id, config_file, 'X')
@@ -281,7 +282,8 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
                                                   multipath, os_version,
                                                   mount_point, linuxdist,
                                                   connections)
-        get_detach_cmds.assert_called_once_with(fcp_list, target_wwpns,
+        get_detach_cmds.assert_called_once_with(' '.join(fcp_list),
+                                                ' '.join(target_wwpns),
                                                 target_lun, multipath,
                                                 mount_point, connections)
         punch_file.assert_called_once_with(assigner_id, config_file, 'X')
@@ -883,7 +885,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     '20076D8500005185']
         mock_fcp_info.return_value = fcp_list
         self.db_op = database.FCPDbOperator()
-        wwpns = ['20076D8500005182', '20076D8500005183']
+        wwpns = ['20076d8500005182', '20076d8500005183']
         self.db_op.delete('c123')
         self.db_op.delete('d123')
         self.db_op.new('c123', 0)
@@ -979,7 +981,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     '20076D8500005185']
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
-        wwpns = ['20076D8500005182', '20076D8500005183']
+        wwpns = ['20076d8500005182', '20076d8500005183']
         self.db_op = database.FCPDbOperator()
         self.db_op.new('c123', 0)
         # assign will set connections to 1
@@ -1081,7 +1083,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                           connection_info)
         # because no fcp dedicated
         mock_add_disk.assert_called_once_with(['f83c'], 'USER1',
-                                              ['20076D8500005182'], '2222',
+                                              ['20076d8500005182'], '2222',
                                               False, 'rhel7', '/dev/sdz')
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
@@ -1116,7 +1118,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     '20076D8500005185']
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
-        wwpns = ['20076D8500005182', '20076D8500005183']
+        wwpns = ['20076d8500005182', '20076d8500005183']
         self.db_op = database.FCPDbOperator()
         self.db_op.new('183c', 0)
         self.db_op.assign('183c', 'USER1')

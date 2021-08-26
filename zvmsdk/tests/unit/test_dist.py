@@ -58,8 +58,8 @@ class RHEL7TestCase(base.SDKTestCase):
                                                   template_render):
 
         """ RHEL7 """
-        fcp_list = ['1fc5', '2fc5']
-        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        fcp_list = '1fc5 2fc5'
+        wwpns = '0x5005076812341234 0x5005076812345678'
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
@@ -71,6 +71,7 @@ class RHEL7TestCase(base.SDKTestCase):
         get_template.assert_called_once_with("volumeops",
                                              "rhel7_attach_volume.j2")
         template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
+                                                wwpns=wwpns,
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz')
 
@@ -81,8 +82,8 @@ class RHEL7TestCase(base.SDKTestCase):
                                                     template_render):
 
         """ RHEL7 """
-        fcp_list = ['1fc5', '2fc5']
-        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        fcp_list = '1fc5 2fc5'
+        wwpns = '0x5005076812341234 0x5005076812345678'
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
@@ -94,6 +95,7 @@ class RHEL7TestCase(base.SDKTestCase):
         get_template.assert_called_once_with("volumeops",
                                              "rhel7_detach_volume.j2")
         template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
+                                                wwpns=wwpns,
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz',
                                                 is_last_volume=0)
@@ -105,8 +107,8 @@ class RHEL7TestCase(base.SDKTestCase):
                                                     template_render):
 
         """ RHEL7 """
-        fcp_list = ['1fc5', '2fc5']
-        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        fcp_list = '1fc5 2fc5'
+        wwpns = '0x5005076812341234 0x5005076812345678'
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
@@ -118,6 +120,7 @@ class RHEL7TestCase(base.SDKTestCase):
         get_template.assert_called_once_with("volumeops",
                                              "rhel7_detach_volume.j2")
         template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
+                                                wwpns=wwpns,
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz',
                                                 is_last_volume=1)
@@ -165,8 +168,8 @@ class RHEL8TestCase(base.SDKTestCase):
                                                   template_render):
 
         """ RHEL8 """
-        fcp_list = ['1fc5', '2fc5']
-        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        fcp_list = '1fc5 2fc5'
+        wwpns = '0x5005076812341234 0x5005076812345678'
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
@@ -178,6 +181,7 @@ class RHEL8TestCase(base.SDKTestCase):
         get_template.assert_called_once_with("volumeops",
                                              "rhel8_attach_volume.j2")
         template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
+                                                wwpns=wwpns,
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz')
 
@@ -188,8 +192,8 @@ class RHEL8TestCase(base.SDKTestCase):
                                                     template_render):
 
         """ RHEL8 """
-        fcp_list = ['1fc5', '2fc5']
-        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        fcp_list = '1fc5 2fc5'
+        wwpns = '0x5005076812341234 0x5005076812345678'
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
@@ -201,6 +205,7 @@ class RHEL8TestCase(base.SDKTestCase):
         get_template.assert_called_once_with("volumeops",
                                              "rhel8_detach_volume.j2")
         template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
+                                                wwpns=wwpns,
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz',
                                                 is_last_volume=0)
@@ -212,8 +217,8 @@ class RHEL8TestCase(base.SDKTestCase):
                                                     template_render):
 
         """ RHEL8 """
-        fcp_list = ['1fc5', '2fc5']
-        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        fcp_list = '1fc5 2fc5'
+        wwpns = '0x5005076812341234 0x5005076812345678'
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
@@ -225,6 +230,7 @@ class RHEL8TestCase(base.SDKTestCase):
         get_template.assert_called_once_with("volumeops",
                                              "rhel8_detach_volume.j2")
         template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
+                                                wwpns=wwpns,
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz',
                                                 is_last_volume=1)
@@ -288,8 +294,8 @@ class SLESTestCase(base.SDKTestCase):
                                                   template_render):
 
         """ SLES """
-        fcp_list = ['1fc5', '2fc5']
-        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        fcp_list = '1fc5 2fc5'
+        wwpns = '0x5005076812341234 0x5005076812345678'
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
@@ -301,6 +307,7 @@ class SLESTestCase(base.SDKTestCase):
         get_template.assert_called_once_with("volumeops",
                                              "sles_attach_volume.j2")
         template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
+                                                wwpns=wwpns,
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz')
 
@@ -311,8 +318,8 @@ class SLESTestCase(base.SDKTestCase):
                                                     template_render):
 
         """ SLES """
-        fcp_list = ['1fc5', '2fc5']
-        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        fcp_list = '1fc5 2fc5'
+        wwpns = '0x5005076812341234 0x5005076812345678'
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
@@ -325,6 +332,7 @@ class SLESTestCase(base.SDKTestCase):
             "volumeops",
             "sles_detach_volume.j2")
         template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
+                                                wwpns=wwpns,
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz',
                                                 is_last_volume=0)
@@ -336,8 +344,8 @@ class SLESTestCase(base.SDKTestCase):
                                                     template_render):
 
         """ SLES """
-        fcp_list = ['1fc5', '2fc5']
-        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        fcp_list = '1fc5 2fc5'
+        wwpns = '0x5005076812341234 0x5005076812345678'
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
@@ -350,6 +358,7 @@ class SLESTestCase(base.SDKTestCase):
             "volumeops",
             "sles_detach_volume.j2")
         template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
+                                                wwpns=wwpns,
                                                 lun='0x0026000000000000',
                                                 target_filename='sdz',
                                                 is_last_volume=1)
@@ -412,8 +421,8 @@ class UBUNTU20TestCase(base.SDKTestCase):
                                                   template_render):
 
         """ UBUNTU """
-        fcp_list = ['1fc5', '2fc5']
-        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        fcp_list = '1fc5 2fc5'
+        wwpns = '0x5005076812341234 0x5005076812345678'
         lun = '0x0026000000000000'
         multipath = True
         mount_point = '/dev/sdz'
@@ -425,6 +434,7 @@ class UBUNTU20TestCase(base.SDKTestCase):
         get_template.assert_called_once_with("volumeops",
                                              "ubuntu_attach_volume.j2")
         template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
+                                                wwpns=wwpns,
                                                 lun='0x0026000000000000',
                                                 lun_id=38,
                                                 target_filename='sdz')
@@ -436,8 +446,8 @@ class UBUNTU20TestCase(base.SDKTestCase):
                                                     template_render):
 
         """ UBUNTU """
-        fcp_list = ['1fc5', '2fc5']
-        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        fcp_list = '1fc5 2fc5'
+        wwpns = '0x5005076812341234 0x5005076812345678'
         lun = '0x0100000000000000'
         multipath = True
         mount_point = '/dev/sdz'
@@ -450,6 +460,7 @@ class UBUNTU20TestCase(base.SDKTestCase):
                 "volumeops",
                 "ubuntu_detach_volume.j2")
         template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
+                                                wwpns=wwpns,
                                                 lun='0x0100000000000000',
                                                 lun_id='0x0100000000000000',
                                                 target_filename='sdz',
@@ -462,8 +473,8 @@ class UBUNTU20TestCase(base.SDKTestCase):
                                                     template_render):
 
         """ UBUNTU """
-        fcp_list = ['1fc5', '2fc5']
-        wwpns = ['0x5005076812341234', '0x5005076812345678']
+        fcp_list = '1fc5 2fc5'
+        wwpns = '0x5005076812341234 0x5005076812345678'
         lun = '0x0100000000000000'
         multipath = True
         mount_point = '/dev/sdz'
@@ -475,6 +486,7 @@ class UBUNTU20TestCase(base.SDKTestCase):
         get_template.assert_called_once_with("volumeops",
                                              "ubuntu_detach_volume.j2")
         template_render.assert_called_once_with(fcp_list='1fc5 2fc5',
+                                                wwpns=wwpns,
                                                 lun='0x0100000000000000',
                                                 lun_id='0x0100000000000000',
                                                 target_filename='sdz',
