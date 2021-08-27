@@ -786,6 +786,11 @@ function refreshZIPL {
   sed -i '/\/mnt\/ephemeral/d' ${deviceMountPoint}/etc/fstab
   sed -i '/ swap swap /d' ${deviceMountPoint}/etc/fstab
 
+  # Remove dirty data in /etc/zfcp.conf left in image
+  if [[ -r "${deviceMountPoint}/etc/zfcp.conf" ]]; then
+      inform "Purge contents in ${deviceMountPoint}/etc/zfcp.conf"
+      echo "" > ${deviceMountPoint}/etc/zfcp.conf
+  fi
   # Remove stale /etc/multipath/bindings and /etc/multipath/wwids
   # These files may contain the old info of the captured base vm,
   # which disrupts the volume bindings of the new vm deployed from above captured image, resulting
