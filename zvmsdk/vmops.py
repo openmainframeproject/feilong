@@ -191,7 +191,7 @@ class VMOps(object):
     def create_vm(self, userid, cpu, memory, disk_list,
                   user_profile, max_cpu, max_mem, ipl_from,
                   ipl_param, ipl_loadparam, dedicate_vdevs, loaddev, account,
-                  comment_list, cschedule):
+                  comment_list, cschedule, cshare):
         """Create z/VM userid into user directory for a z/VM instance."""
         LOG.info("Creating the user directory for vm %s", userid)
 
@@ -200,7 +200,7 @@ class VMOps(object):
                                    max_cpu, max_mem, ipl_from,
                                    ipl_param, ipl_loadparam,
                                    dedicate_vdevs, loaddev, account,
-                                   comment_list, cschedule)
+                                   comment_list, cschedule, cshare)
 
         # add userid into smapi namelist
         self._smtclient.namelist_add(self._namelist, userid)
