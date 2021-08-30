@@ -49,7 +49,7 @@ FoundDiskPath=0
 for fcp in ${!valid_dict[@]}
 do
     ActiveWWPNs=(${valid_dict[$fcp]})
-    echo "Got WWPNs: ${ActiveWWPNs[@]} for FCP device: $fcp"
+    echo "To find active disk path of LUN $lun, got WWPNs: ${ActiveWWPNs[@]} belonging to FCP device: $fcp."
 
     # loop all the WWPNs to found the alive device
     for j in ${ActiveWWPNs[@]}
@@ -115,15 +115,15 @@ fi
 for fcp in ${!valid_dict[@]}
 do
     ActiveWWPNs=(${valid_dict[$fcp]})
-    
-    # If auto-discovery of LUNs is disabled on s390 platforms
-    # luns need to be removed from the configuration through
-    # the unit_remove interface
+    echo "To remove LUN $lun from file system, got WWPNs: ${ActiveWWPNs[@]} belonging to FCP device $fcp."
+
+    # remove FCP LUNs and their SCSI devices
     for wwpn in ${ActiveWWPNs[@]}
     do
         chzdev -d zfcp-lun 0.0.$fcp:$wwpn:$lun --force
     done
 
+    # remove udev rules
     for wwpn in ${ActiveWWPNs[@]}
     do
         sed -i -e "/ATTR{\[ccw\/0.0.$fcp\]$wwpn\/unit_add}=\"$lun\"/d" /etc/udev/rules.d/51-zfcp-0.0.$fcp.rules
