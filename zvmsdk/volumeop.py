@@ -1025,14 +1025,23 @@ class FCPVolumeManager(object):
         for fcp_no in fcp_list:
             if reserve:
                 # Reserve fcp device
-                LOG.info("Reserve fcp device %s", fcp_no)
+                LOG.info("Reserve fcp device %s for "
+                         "instance %s." % (fcp_no, assigner_id))
                 self.db.reserve(fcp_no)
+                _userid, _reserved, _conns = self.get_fcp_usage(fcp_no)
+                LOG.info("After reserve, fcp usage of %s"
+                         "is (assigner_id: %s, reserved:%s, connections: %s)."
+                         % (fcp_no, _userid, _reserved, _conns))
             elif not reserve and \
                 self.db.get_connections_from_fcp(fcp_no) == 0:
                 # Unreserve fcp device
                 LOG.info("Unreserve fcp device %s from "
                          "instance %s." % (fcp_no, assigner_id))
                 self.db.unreserve(fcp_no)
+                _userid, _reserved, _conns = self.get_fcp_usage(fcp_no)
+                LOG.info("After unreserve, fcp usage of %s "
+                         "is (assigner_id: %s, reserved:%s, connections: %s)."
+                         % (fcp_no, _userid, _reserved, _conns))
             if self.fcp_mgr._fcp_pool.get(fcp_no):
                 wwpn = self.fcp_mgr.get_wwpn(fcp_no)
             else:
