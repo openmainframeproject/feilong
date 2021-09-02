@@ -601,6 +601,20 @@ def installFS(rh, vaddr, mode, fileSystem, diskType):
     # remove this.
     diskAccessed = True
     if diskAccessed:
+        # flush disk buffer before offline the disk.
+        cmd = ["sudo", "/usr/sbin/blockdev", "--flushbufs", device]
+        strCmd = ' '.join(cmd)
+        rh.printSysLog("Invoking: " + strCmd)
+        try:
+            out = subprocess.check_output(cmd, close_fds=True)
+            if isinstance(out, bytes):
+                out = bytes.decode(out)
+        except Exception as e:
+            # log worning and ignore the exception
+            wmesg = "Executing %(cmd)s failed: %(exp)s" % {'cmd': strCmd,
+                    'exp': str(e)}
+            rh.printLn("WS", wmesg)
+
         # Give up the disk.
         cmd = ["sudo", "/opt/zthin/bin/offlinediskanddetach",
                rh.userid,
