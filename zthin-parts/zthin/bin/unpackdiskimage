@@ -150,7 +150,7 @@ function parseArgs {
     fi
   fi
 
-  timestamp=$(date -u --rfc-3339=ns | sed 's/ /-/;s/\.\(...\).*/.\1/')
+  timestamp=$(date -u --rfc-3339=ns | sed 's/ /-/;s/\.\(...\).*/.\1/' | sed 's/:/_/g')
   logFile=/var/log/zthin/unpackdiskimage_trace_${timestamp}.txt
   if [[ $debug ]]; then
     exec 2> >(tee -a $logFile)
