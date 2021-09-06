@@ -77,6 +77,8 @@ class VMHandler(object):
             kwargs_list['cschedule'] = guest['cschedule']
         if 'cshare' in guest_keys:
             kwargs_list['cshare'] = guest['cshare']
+        if 'rdomain' in guest_keys:
+            kwargs_list['rdomain'] = guest['rdomain']
 
         info = self.client.send_request('guest_create', userid, vcpus,
                                         memory, **kwargs_list)

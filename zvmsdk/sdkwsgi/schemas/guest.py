@@ -37,7 +37,8 @@ create = {
                 'account': parameter_types.account,
                 'comments': parameter_types.comment_list,
                 'cschedule': parameter_types.cpupool,
-                'cshare': parameter_types.share
+                'cshare': parameter_types.share,
+                'rdomain': parameter_types.rdomain
             },
             'required': ['userid', 'vcpus', 'memory'],
             'additionalProperties': False,
