@@ -866,6 +866,17 @@ class SMTClient(object):
                      remotehost=None, vdev=None, skipdiskcopy=False):
         """ Deploy image and punch config driver to target """
         # (TODO: add the support of multiple disks deploy)
+        image_file = '/'.join([self._get_image_path_by_name(image_name),
+                               CONF.zvm.user_root_vdev])
+        # Run 'hexdump -C -n 64 redhat84_eckd_iso_new_zvmguestconfigure.img' to
+        # parse the image header
+        cmd = ['/usr/bin/hexdump', '-C', '-n', '64', image_file]
+        with zvmutils.expect_and_reraise_internal_error(modID='guest'):
+            (rc, output) = zvmutils.execute(cmd)
+            msg = ('Image header info in guest_deploy: rc: %d, header: %s'
+                   % (rc, output))
+            LOG.info(msg)
+
         if skipdiskcopy:
             msg = ('Start guest_deploy without unpackdiskimage, guest: %(vm)s'
                    'os_version: %(img)s' % {'img': image_name, 'vm': userid})
@@ -874,8 +885,6 @@ class SMTClient(object):
             msg = ('Start to deploy image %(img)s to guest %(vm)s'
                 % {'img': image_name, 'vm': userid})
             LOG.info(msg)
-            image_file = '/'.join([self._get_image_path_by_name(image_name),
-                                   CONF.zvm.user_root_vdev])
             # Unpack image file to root disk
             vdev = vdev or CONF.zvm.user_root_vdev
             cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', userid, vdev,
