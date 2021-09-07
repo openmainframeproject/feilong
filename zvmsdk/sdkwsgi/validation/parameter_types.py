@@ -276,11 +276,20 @@ share = {
     'pattern': '^(\w{,64})$'
 }
 
+
 rdomain = {
     'type': ['string'],
     'minLength': 1,
     'maxLength': 8,
     'pattern': '^(\w{,8})$'
+}
+
+
+pcif = {
+    'type': ['string'],
+    'minLength': 1,
+    'maxLength': 9,
+    'pattern': '^(\w{,9})$'
 }
 
 
