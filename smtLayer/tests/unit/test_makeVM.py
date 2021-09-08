@@ -272,3 +272,17 @@ class SMTMakeVMTestCase(base.SMTTestCase):
                                 b'COMMAND SET VCONFIG MODE LINUX\n'
                                 b'COMMAND DEFINE CPU 00 TYPE IFL\n'
                                 b'COMMAND SET VMRELOCATE * DOMAIN Z15ONLY\n')
+
+    @mock.patch("os.write")
+    def test_create_with_pcif(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1024M', 'maxMemSize': '1G',
+                 'privClasses': 'G',
+                 'commandPcif': '100:200'}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1024M 1G G\n'
+                                b'COMMAND SET VCONFIG MODE LINUX\n'
+                                b'COMMAND DEFINE CPU 00 TYPE IFL\n'
+                                b'COMMAND ATTACH PCIF 100 * AS 200\n')

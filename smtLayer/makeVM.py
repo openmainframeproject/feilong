@@ -85,7 +85,8 @@ keyOpsList = {
         '--comment': ['comment', 1, 2],
         '--commandSchedule': ['commandSchedule', 1, 2],
         '--commandSetShare': ['commandSetShare', 1, 2],
-        '--commandRelocationDomain': ['commandRDomain', 1, 2]},
+        '--commandRelocationDomain': ['commandRDomain', 1, 2],
+        '--commandPcif': ['commandSchedule', 1, 2]},
     'HELP': {},
     'VERSION': {},
      }
@@ -139,6 +140,11 @@ def createVM(rh):
     if 'commandRDomain' in rh.parms:
         v = rh.parms['commandRDomain']
         dirLines.append("COMMAND SET VMRELOCATE * DOMAIN %s" % v)
+
+    if 'commandPcif' in rh.parms:
+        v = rh.parms['commandPcif']
+        s = v.split(':')
+        dirLines.append("COMMAND ATTACH PCIF %s * AS %s" % (s[0], s[1]))
 
     if 'ipl' in rh.parms:
         ipl_string = "IPL %s " % rh.parms['ipl']
