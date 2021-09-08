@@ -588,7 +588,10 @@ class SMTClient(object):
                'max_cpu': max_cpu, 'max_mem': max_mem})
 
         if CONF.zvm.default_admin_userid:
-            rd += (' --logonby "%s"' % CONF.zvm.default_admin_userid)
+            ids = CONF.zvm.default_admin_userid.split(' ')
+            id_str = ':'.join(ids)
+
+            rd += (' --logonby %s' % id_str)
 
         # when use dasd as root disk, the disk_list[0] would be the boot
         # disk.
