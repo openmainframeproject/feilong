@@ -38,7 +38,8 @@ create = {
                 'comments': parameter_types.comment_list,
                 'cschedule': parameter_types.cpupool,
                 'cshare': parameter_types.share,
-                'rdomain': parameter_types.rdomain
+                'rdomain': parameter_types.rdomain,
+                'pcif': parameter_types.pcif
             },
             'required': ['userid', 'vcpus', 'memory'],
             'additionalProperties': False,
