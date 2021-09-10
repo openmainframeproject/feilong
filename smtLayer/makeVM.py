@@ -158,8 +158,8 @@ def createVM(rh):
         dirLines.append(ipl_string)
 
     if 'byUsers' in rh.parms:
-        for user in rh.parms['byUsers']:
-            dirLines.append("LOGONBY " + user)
+        users = ' '.join(rh.parms['byUsers'])
+        dirLines.append("LOGONBY " + users)
 
     priMem = rh.parms['priMemSize'].upper()
     maxMem = rh.parms['maxMemSize'].upper()
@@ -360,7 +360,7 @@ def parseCmdline(rh):
 
     if 'byUsers' in rh.parms:
         users = []
-        for user in rh.parms['byUsers'].split(' '):
+        for user in rh.parms['byUsers'].split(':'):
             users.append(user)
         rh.parms['byUsers'] = []
         rh.parms['byUsers'].extend(users)
