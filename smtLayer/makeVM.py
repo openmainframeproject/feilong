@@ -86,7 +86,8 @@ keyOpsList = {
         '--commandSchedule': ['commandSchedule', 1, 2],
         '--commandSetShare': ['commandSetShare', 1, 2],
         '--commandRelocationDomain': ['commandRDomain', 1, 2],
-        '--commandPcif': ['commandSchedule', 1, 2]},
+        '--commandPcif': ['commandSchedule', 1, 2],
+        '--cryptodomains': ['cryptodomains', 1, 2]},
     'HELP': {},
     'VERSION': {},
      }
@@ -160,6 +161,15 @@ def createVM(rh):
     if 'byUsers' in rh.parms:
         for user in rh.parms['byUsers']:
             dirLines.append("LOGONBY " + user)
+
+    if 'cryptodomains' in rh.parms:
+        cds = rh.parms['cryptodomains'].split('|')
+        for cd in cds:
+            aps = cd.split(":")
+            l = "CRYPTO DOMAIN %s APDEDICATE " % aps[0]
+            del aps[0]
+            l += ' '.join(aps)
+            dirLines.append(l)
 
     priMem = rh.parms['priMemSize'].upper()
     maxMem = rh.parms['maxMemSize'].upper()

@@ -286,3 +286,19 @@ class SMTMakeVMTestCase(base.SMTTestCase):
                                 b'COMMAND SET VCONFIG MODE LINUX\n'
                                 b'COMMAND DEFINE CPU 00 TYPE IFL\n'
                                 b'COMMAND ATTACH PCIF 100 * AS 200\n')
+
+    @mock.patch("os.write")
+    def test_create_with_cryptodomain(self, write):
+        rh = ReqHandle.ReqHandle(captureLogs=False,
+                                 smt=mock.Mock())
+        parms = {'pw': 'pwd', 'priMemSize': '1024M', 'maxMemSize': '1G',
+                 'privClasses': 'G',
+                 'cryptodomains': '6:0:1|7:2|9:0:2:4'}
+        rh.parms = parms
+        makeVM.createVM(rh)
+        write.assert_called_with(mock.ANY, b'USER  pwd 1024M 1G G\n'
+                                b'COMMAND SET VCONFIG MODE LINUX\n'
+                                b'COMMAND DEFINE CPU 00 TYPE IFL\n'
+                                b'CRYPTO DOMAIN 6 APDEDICATE 0 1\n'
+                                b'CRYPTO DOMAIN 7 APDEDICATE 2\n'
+                                b'CRYPTO DOMAIN 9 APDEDICATE 0 2 4\n')
