@@ -131,7 +131,9 @@ int vmRelocate(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
                     "                value - The maximum quiesce time(in seconds)a virtual machine\n"
                     "                        may be stopped during a relocation attempt. The range\n"
                     "                        for this  value is 1-99999999. The default is NOLIMIT\n"
-                    "                        if immediate=YES is specified, or 10 seconds if not.\n\n");
+                    "                        if immediate=YES is specified, or 10 seconds if not.\n\n"
+                    "Sample usage:\n"
+                    "          smcli VMRELOCATE -T SSI20015 -k destination=boeiaas6 -k action=MOVE\n");
                 printRCheaderHelp();
                 return 0;
                 break;
@@ -155,7 +157,7 @@ int vmRelocate(int argC, char* argV[], struct _vmApiInternalContext* vmapiContex
                 return 1;
         }
 
-    if ( !targetIdentifier || (!destSpecified && !cancelSpecified) )  {
+    if ( !targetIdentifier || (!destSpecified && !cancelSpecified) || entryCount <=1)  {
         DOES_CALLER_WANT_RC_HEADER_SYNTAX_ERROR(vmapiContextP);
         printf("\nERROR: Missing required options\n");
         return 1;
