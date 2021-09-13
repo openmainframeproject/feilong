@@ -1046,6 +1046,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
         calls = [mock.call(['e83c'], 'USER1', all_fcp_list=['e83c'])]
         mock_rollback.assert_has_calls(calls)
 
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager.get_fcp_usage")
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")
     @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disks")
@@ -1054,7 +1055,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     @mock.patch("zvmsdk.volumeop.FCPManager.decrease_fcp_usage")
     def test_detach_rollback(self, mock_decrease, mock_remove_disk,
                              mock_increase, mock_add_disk, mock_check,
-                             mock_fcp_info):
+                             mock_fcp_info, get_fcp_usage):
         connection_info = {'platform': 'x86_64',
                            'ip': '1.2.3.4',
                            'os_version': 'rhel7',
@@ -1071,6 +1072,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 59',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005181']
+        get_fcp_usage.return_value = ('user1', 0, 0)
         mock_fcp_info.return_value = fcp_list
         # this return does not matter
         mock_check.return_value = True
@@ -1087,6 +1089,68 @@ class TestFCPVolumeManager(base.SDKTestCase):
         mock_add_disk.assert_called_once_with(['f83c'], 'USER1',
                                               ['20076d8500005182'], '2222',
                                               False, 'rhel7', '/dev/sdz')
+
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager.get_fcp_usage")
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._add_disks")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disks")
+    def test_detach_need_rollback(self, mock_remove_disk, mock_add_disk,
+                                  mock_check, mock_fcp_info, get_fcp_usage):
+        """Test need_rollback dict was set correctly.
+        """
+        connection_info = {'platform': 'x86_64',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': 'False',
+                           'target_wwpn': ['20076D8500005181',
+                                           '20076D8500005182'],
+                           'target_lun': '2222',
+                           'zvm_fcp': ['f83c', 'f84c'],
+                           'mount_point': '/dev/sdz',
+                           'assigner_id': 'user1'}
+        fcp_list = ['opnstk1: FCP device number: F83C',
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005181',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005181',
+                    'opnstk1: FCP device number: F84C',
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: '
+                    '20076D8500005182',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005182']
+        # increase connections of f83c to 1
+        # left connections of f84c to 0
+        self.db_op.new('f83c', 0)
+        self.db_op.new('f84c', 1)
+        self.db_op.increase_usage('f83c')
+        try:
+            get_fcp_usage.return_value = ('use1', 0, 0)
+            mock_fcp_info.return_value = fcp_list
+            # this return does not matter
+            mock_check.return_value = True
+            results = {'rs': 0, 'errno': 0, 'strError': '',
+                       'overallRC': 1, 'logEntries': [], 'rc': 0,
+                       'response': ['fake response']}
+            mock_remove_disk.side_effect = exception.SDKSMTRequestFailed(
+                results, 'fake error')
+            self.assertRaises(exception.SDKBaseException,
+                              self.volumeops.detach,
+                              connection_info)
+            # get_fcp_usage should only called once on f83c
+            get_fcp_usage.assert_called_once_with('f83c')
+            # because no fcp dedicated
+            mock_add_disk.assert_called_once_with(['f83c', 'f84c'], 'USER1',
+                                                  ['20076d8500005181',
+                                                   '20076d8500005182'], '2222',
+                                                  False, 'rhel7', '/dev/sdz')
+        finally:
+            self.db_op.delete('f83c')
+            self.db_op.delete('f84c')
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.utils.check_userid_exist")
@@ -1163,6 +1227,56 @@ class TestFCPVolumeManager(base.SDKTestCase):
                            'mount_point': '/dev/sdz',
                            'assigner_id': 'user1',
                            'is_root_volume': True}
+        fcp_list = ['opnstk1: FCP device number: 183C',
+                    'opnstk1:   Status: Free',
+                    'opnstk1:   NPIV world wide port number: 20076D8500005182',
+                    'opnstk1:   Channel path ID: 59',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005181',
+                    'opnstk1: FCP device number: 283C',
+                    'opnstk1:   Status: Active',
+                    'opnstk1:   NPIV world wide port number: 20076D8500005183',
+                    'opnstk1:   Channel path ID: 50',
+                    'opnstk1:   Physical world wide port number: '
+                    '20076D8500005185']
+        mock_fcp_info.return_value = fcp_list
+        mock_check.return_value = True
+        base.set_conf('volume', 'fcp_list', '183c')
+        base.set_conf('volume', 'fcp_list', '283c')
+        self.db_op = database.FCPDbOperator()
+        self.db_op.new('183c', 0)
+        self.db_op.assign('183c', 'USER1')
+
+        self.db_op.new('283c', 1)
+        # assign will set the connections to 1
+        self.db_op.assign('283c', 'USER1')
+
+        try:
+            self.volumeops.detach(connection_info)
+            self.assertFalse(mock_undedicate.called)
+            self.assertFalse(mock_remove_disk.called)
+        finally:
+            self.db_op.delete('183c')
+            self.db_op.delete('283c')
+
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    @mock.patch("zvmsdk.utils.check_userid_exist")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._remove_disks")
+    @mock.patch("zvmsdk.volumeop.FCPVolumeManager._undedicate_fcp")
+    def test_update_connections_only_detach(self, mock_undedicate,
+            mock_remove_disk, mock_check, mock_fcp_info):
+
+        connection_info = {'platform': 's390x',
+                           'ip': '1.2.3.4',
+                           'os_version': 'rhel7',
+                           'multipath': 'True',
+                           'target_wwpn': ['20076D8500005182',
+                                           '20076D8500005183'],
+                           'target_lun': '2222',
+                           'zvm_fcp': ['183c', '283c'],
+                           'mount_point': '/dev/sdz',
+                           'assigner_id': 'user1',
+                           'update_connections_only': True}
         fcp_list = ['opnstk1: FCP device number: 183C',
                     'opnstk1:   Status: Free',
                     'opnstk1:   NPIV world wide port number: 20076D8500005182',
