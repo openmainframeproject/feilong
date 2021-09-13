@@ -390,8 +390,6 @@ function resizeECKD {
     # Note: We will see a message indicating that "device is not fully formatted".
     #       We will ignore that because we are redoing the parition to take 
     #       advantage of the increased size.
-    # Add dasdview to debug, currently zCC only supports CDL disk layout.
-    dasdview -x ${devNode}
     out=`fdasd -a ${devNode}`
     rc=$?
     if (( rc != 0 )); then

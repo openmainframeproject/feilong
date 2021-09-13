@@ -15,7 +15,6 @@
 
 import os
 import mock
-from mock import call
 import tempfile
 import time
 import subprocess
@@ -844,7 +843,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_guest_deploy(self, get_image_path, request, execute, mkdtemp,
                           cleantemp, guestauth, image_query, guest_update):
         base.set_conf("zvm", "user_root_vdev", "0100")
-        execute.side_effect = [(0, ""), (0, ""), (0, "")]
+        execute.side_effect = [(0, ""), (0, "")]
         mkdtemp.return_value = '/tmp/tmpdir'
         image_query.return_value = [{'imageosdistro': 'fakeos'}]
         userid = 'fakeuser'
@@ -1070,13 +1069,10 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                            self._smtclient.guest_deploy, userid, image_name,
                            transportfiles)
         get_image_path.assert_called_once_with(image_name)
-        imagefile = '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100'
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
-                      imagefile]
-        execute.assert_has_calls([call(['/usr/bin/hexdump',
-                                  '-C', '-n', '64', imagefile]),
-                                  call(unpack_cmd)])
+                     '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100']
+        execute.assert_called_once_with(unpack_cmd)
 
     @mock.patch.object(zvmutils.PathUtils, 'clean_temp_folder')
     @mock.patch.object(tempfile, 'mkdtemp')
@@ -1088,7 +1084,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         base.set_conf("zvm", "user_root_vdev", "0100")
         cp_error = ("/usr/bin/cp: cannot stat '/faketran': "
                     "No such file or directory\n")
-        execute.side_effect = [(0, "hexdump"), (0, ""), (1, cp_error)]
+        execute.side_effect = [(0, ""), (1, cp_error)]
         mkdtemp.return_value = '/tmp/tmpdir'
         userid = 'fakeuser'
         image_name = 'fakeimg'
@@ -1122,7 +1118,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         fake_smt_results = {'rs': 8, 'errno': 0, 'strError': 'Failed',
                              'overallRC': 3, 'rc': 400, 'logEntries': '',
                              'response': ['(Error) output and error info']}
-        execute.side_effect = [(0, ""), (0, ""), (0, "")]
+        execute.side_effect = [(0, ""), (0, "")]
         request.side_effect = [None,
                                exception.SDKSMTRequestFailed(
                                    fake_smt_results, 'fake error')]
