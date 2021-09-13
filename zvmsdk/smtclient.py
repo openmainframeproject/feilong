@@ -887,6 +887,12 @@ class SMTClient(object):
             LOG.info(msg)
             image_file = '/'.join([self._get_image_path_by_name(image_name),
                                    CONF.zvm.user_root_vdev])
+            cmd = ['/usr/bin/hexdump', '-C', '-n', '64', image_file]
+            with zvmutils.expect_and_reraise_internal_error(modID='guest'):
+                (rc, output) = zvmutils.execute(cmd)
+                msg = ('Image header info in guest_deploy: rc: %d, header:\n%s'
+                       % (rc, output))
+                LOG.info(msg)
             # Unpack image file to root disk
             vdev = vdev or CONF.zvm.user_root_vdev
             cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', userid, vdev,
