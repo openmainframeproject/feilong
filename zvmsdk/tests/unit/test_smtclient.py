@@ -1073,7 +1073,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         imagefile = '/var/lib/zvmsdk/images/netboot/rhel7/fakeimg/0100'
         unpack_cmd = ['sudo', '/opt/zthin/bin/unpackdiskimage', 'fakeuser',
                       '0100',
-                      imagefile]
+                     imagefile]
         execute.assert_has_calls([call(['/usr/bin/hexdump',
                                   '-C', '-n', '64', imagefile]),
                                   call(unpack_cmd)])
