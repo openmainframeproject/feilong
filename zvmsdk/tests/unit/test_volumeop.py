@@ -835,6 +835,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                                               False)
             expected = {'zvm_fcp': ['b83c'],
                         'wwpns': ['2007123400001234'],
+                        'phy_to_virt_initiators': {'2007123400001234':
+                            '20076d8500005181'},
                         'host': 'fakehost'}
             self.assertEqual(expected, connections)
 

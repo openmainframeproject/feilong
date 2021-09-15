@@ -750,6 +750,13 @@ class FCPManager(object):
             return physical
         return None
 
+    def get_physical_wwpn(self, fcp_no):
+        fcp = self._fcp_pool.get(fcp_no)
+        if not fcp:
+            return None
+        physical = fcp.get_physical_port()
+        return physical
+
 
 # volume manager for FCP protocol
 class FCPVolumeManager(object):
@@ -1005,11 +1012,13 @@ class FCPVolumeManager(object):
             {
                 'zvm_fcp': [fcp]
                 'wwpns': [wwpn]
+                'phy_to_virt_initiators':{virt:physical}
                 'host': host
             }
         """
 
-        empty_connector = {'zvm_fcp': [], 'wwpns': [], 'host': ''}
+        empty_connector = {'zvm_fcp': [], 'wwpns': [], 'host': '',
+                           'phy_to_virt_initiators': {}}
 
         # init fcp pool
         self.fcp_mgr.init_fcp(assigner_id)
@@ -1020,6 +1029,7 @@ class FCPVolumeManager(object):
             LOG.error(errmsg)
             return empty_connector
         wwpns = []
+        phy_virt_wwpn_map = {}
         wwpn = None
         all_fcp_pool = {}
         for fcp_no in fcp_list:
@@ -1054,6 +1064,13 @@ class FCPVolumeManager(object):
                 LOG.error(errmsg)
             else:
                 wwpns.append(wwpn)
+            # We use initiator to build up zones on fabric, for NPIV, the
+            # virtual ports are not yet logged in when we creating zones.
+            # so we will generate the physical virtual initiator mapping
+            # to determine the proper zoning on the fabric.
+            # Refer to #7039 for details about avoid creating zones on
+            # the fabric to which there is no fcp connected.
+            phy_virt_wwpn_map[wwpn] = self.fcp_mgr.get_physical_wwpn(fcp_no)
 
         if not wwpns:
             errmsg = "No available WWPN found."
@@ -1069,6 +1086,7 @@ class FCPVolumeManager(object):
 
         connector = {'zvm_fcp': fcp_list,
                      'wwpns': wwpns,
+                     'phy_to_virt_initiators': phy_virt_wwpn_map,
                      'host': zvm_host}
         LOG.info('get_volume_connector returns %s for %s' %
                   (connector, assigner_id))
