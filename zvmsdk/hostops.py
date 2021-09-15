@@ -19,6 +19,7 @@ from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import smtclient
 from zvmsdk import utils as zvmutils
+from zvmsdk import volumeop
 
 
 _HOSTOPS = None
@@ -37,6 +38,22 @@ class HOSTOps(object):
     def __init__(self):
         self._smtclient = smtclient.get_smtclient()
         self._volume_infos = {}
+
+    def _get_fcp_info(self):
+        _volumeop = volumeop.get_volumeop()
+
+        ret = _volumeop.get_all_fcp_usage()
+
+        # {'1a09': ['INS0003E', 1, 1], '1a0c': ['INS00009', 1, 2]}
+        # is output of the foramt
+        free = 0
+        used = 0
+        for key in ret:
+            if ret[key][1] == 0 and ret[key][2] == 0:
+                free += 1
+            else:
+                used += 1
+        return {'free': free, 'used': used}
 
     def get_info(self):
         inv_info = self._smtclient.get_host_info()
@@ -60,6 +77,8 @@ class HOSTOps(object):
             host_info['hypervisor_version'] = version
             host_info['hypervisor_hostname'] = inv_info['hypervisor_name']
             host_info['ipl_time'] = inv_info['ipl_time']
+            host_info['fcp'] = self._get_fcp_info()
+
         disk_pool = CONF.zvm.disk_pool
         if disk_pool is None:
             dp_info = {'disk_total': 0, 'disk_used': 0, 'disk_available': 0}
