@@ -101,6 +101,10 @@ class VolumeOperatorAPI(object):
     def get_all_fcp_usage(self, assigner_id=None):
         return self._volume_manager.get_all_fcp_usage(assigner_id)
 
+    def get_all_fcp_usage_grouped_by_path(self, assigner_id=None):
+        return self._volume_manager.get_all_fcp_usage_grouped_by_path(
+                assigner_id)
+
     def get_fcp_usage(self, fcp):
         return self._volume_manager.get_fcp_usage(fcp)
 
@@ -1140,14 +1144,55 @@ class FCPVolumeManager(object):
             return True
 
     def get_all_fcp_usage(self, assigner_id=None):
+        """Get all fcp information grouped by FCP id.
+        Every item under one FCP is like:
+            [userid, reserved, connections, path].
+        For example, the return value format should be:
+        {
+          '1a00': ('userid1', 1, 2, 0),
+          '1a01': ('userid2', 1, 1, 0),
+          '1b00': ('userid1', 1, 2, 1),
+          '1b01': ('userid2', 1, 1, 1)
+        }
+        """
+        ret = self.db.get_all_fcps_of_assigner(assigner_id)
         if assigner_id:
-            ret = self.db.get_all_fcps_of_assigner(assigner_id)
             LOG.info("Got all fcp usage of userid %s: %s" % (assigner_id, ret))
         else:
             # if userid is None, get usage of all the fcps
-            ret = self.db.get_all_fcps()
             LOG.info("Got all fcp usage: %s" % ret)
-        return ret
+        # transfer records into dict grouped by FCP id
+        fcp_id_mapping = {}
+        for item in ret:
+            fcp_id = item[0]
+            fcp_id_mapping[fcp_id] = item
+        return fcp_id_mapping
+
+    def get_all_fcp_usage_grouped_by_path(self, assigner_id=None):
+        """Get all fcp information grouped by path id.
+        Every item under one path format:i
+            [fcp_id, userid, reserved, connections, path].
+        For example, the return value format should be:
+        {
+          0: [ (u'1a00', 'userid1', 1, 2, 0), (u'1a01', 'userid2', 1, 1, 0) ],
+          1: [ (u'1b00', 'userid1', 1, 2, 1), (u'1b01', 'userid2', 1, 1, 1) ]
+        }
+        """
+        # get FCP records from database
+        ret = self.db.get_all_fcps_of_assigner(assigner_id)
+        if assigner_id:
+            LOG.info("Got all fcp usage of userid %s: %s" % (assigner_id, ret))
+        else:
+            # if userid is None, get usage of all the fcps
+            LOG.info("Got all fcp usage: %s" % ret)
+        # transfer records into dict grouped by path id
+        path_fcp_mapping = {}
+        for item in ret:
+            path_id = item[4]
+            if not path_fcp_mapping.get(path_id, None):
+                path_fcp_mapping[path_id] = []
+            path_fcp_mapping[path_id].append(item)
+        return path_fcp_mapping
 
     def get_fcp_usage(self, fcp):
         userid, reserved, connections = self.db.get_usage_of_fcp(fcp)

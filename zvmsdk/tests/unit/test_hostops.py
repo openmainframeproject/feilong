@@ -32,9 +32,12 @@ class SDKHostOpsTestCase(base.SDKTestCase):
         self._hostops.guest_list()
         get_all_user_direct.assert_called_once_with()
 
+    @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI."
+                "get_all_fcp_usage_grouped_by_path")
     @mock.patch("zvmsdk.hostops.HOSTOps.diskpool_get_info")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_host_info")
-    def test_get_host_info(self, get_host_info, diskpool_get_info):
+    def test_get_host_info(self, get_host_info, diskpool_get_info,
+                           get_all_fcp_usage):
         get_host_info.return_value = {
             "zcc_userid": "FAKEUSER",
             "zvm_host": "FAKENODE",
@@ -118,3 +121,28 @@ class SDKHostOpsTestCase(base.SDKTestCase):
             if "Not found the volume info in " in exc:
                 pass
         self.assertEqual(2, get_vol_infos.call_count)
+
+    @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI."
+                "get_all_fcp_usage_grouped_by_path")
+    def test_get_fcp_info(self, mock_get):
+        mock_get.return_value = {0: [('1a09', 'INS0003E', 1, 1, 0),
+                                     ('1a0c', 'INS00009', 1, 2, 0)],
+                                 1: [('1b10', 'INS00009', 0, 0, 1),
+                                     ('1b11', '', 0, 0, 1)]}
+        ret = self._hostops._get_fcp_info()
+        expected = {'total': 2, 'used': 2}
+        self.assertEqual(expected, ret)
+
+        mock_get.return_value = {0: [('1a09', 'INS0003E', 0, 0, 0),
+                                     ('1a0c', 'INS00009', 1, 2, 0)],
+                                 1: [('1b10', 'INS00009', 0, 0, 1),
+                                     ('1b11', '', 0, 0, 1)]}
+        ret = self._hostops._get_fcp_info()
+        expected = {'total': 2, 'used': 1}
+        self.assertEqual(expected, ret)
+
+        mock_get.side_effect = exception.SDKObjectNotExistError(
+                obj_desc="fake", modID="volume")
+        ret = self._hostops._get_fcp_info()
+        expected = {'total': 0, 'used': 0}
+        self.assertEqual(expected, ret)

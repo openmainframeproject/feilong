@@ -1340,24 +1340,75 @@ class TestFCPVolumeManager(base.SDKTestCase):
         finally:
             self.db_op.delete('283c')
 
+    def test_get_all_fcp_usage_empty(self):
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.volumeops.get_all_fcp_usage)
+
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.volumeops.get_all_fcp_usage,
+                          'dummy')
+
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.volumeops.get_all_fcp_usage_grouped_by_path)
+
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.volumeops.get_all_fcp_usage_grouped_by_path,
+                          'dummy')
+
     def test_get_all_fcp_usage(self):
         self.db_op = database.FCPDbOperator()
         self.db_op.new('283c', 0)
         self.db_op.new('383c', 0)
+        self.db_op.new('483c', 1)
         # set reserved to 1
         self.db_op.reserve('283c')
+        # set connections to 1 and set userid
         self.db_op.assign('283c', 'user1')
         # set connections to 2
         self.db_op.increase_usage('283c')
         try:
             ret = self.volumeops.get_all_fcp_usage()
-            self.assertEqual(len(ret.keys()), 2)
-            self.assertTrue('283c' in ret.keys() and '383c' in ret.keys())
-            ret = self.volumeops.get_all_fcp_usage(assigner_id='user1')
-            self.assertTrue('283c' in ret.keys() and '383c' not in ret.keys())
+            self.assertEqual(len(ret), 3)
+            self.assertTrue('283c' in ret and
+                            '383c' in ret and
+                            '483c in ret')
+            ret = self.volumeops.get_all_fcp_usage(
+                    assigner_id='user1')
+            self.assertEqual(len(ret), 1)
+            self.assertTrue('283c' in ret and '383c' not in ret)
         finally:
             self.db_op.delete('283c')
             self.db_op.delete('383c')
+            self.db_op.delete('483c')
+
+    def test_get_all_fcp_usage_grouped_by_path(self):
+        self.db_op = database.FCPDbOperator()
+        self.db_op.new('283c', 0)
+        self.db_op.new('383c', 0)
+        self.db_op.new('483c', 1)
+        # set reserved to 1
+        self.db_op.reserve('283c')
+        # set connections to 1 and set userid
+        self.db_op.assign('283c', 'user1')
+        # set connections to 2
+        self.db_op.increase_usage('283c')
+        path0 = 0
+        path1 = 1
+        try:
+            ret = self.volumeops.get_all_fcp_usage_grouped_by_path()
+            self.assertEqual(len(ret), 2)
+            self.assertEqual(len(ret[path0]), 2)
+            self.assertEqual(len(ret[path1]), 1)
+            self.assertTrue('283c' in ret[path0][0] or '283c' in ret[path0][1])
+            self.assertTrue('483c' in ret[path1][0])
+            ret = self.volumeops.get_all_fcp_usage_grouped_by_path(
+                    assigner_id='user1')
+            self.assertTrue('283c' in ret[path0][0] and
+                            '383c' not in ret[path0][0])
+        finally:
+            self.db_op.delete('283c')
+            self.db_op.delete('383c')
+            self.db_op.delete('483c')
 
     def test_get_fcp_usage(self):
         self.db_op = database.FCPDbOperator()
