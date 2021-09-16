@@ -568,6 +568,14 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         finally:
             self.db_op.delete('1111')
 
+    def test_decrease_usage_of_not_exist_fcp(self):
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.db_op.decrease_usage, 'xxxx')
+
+    def test_increase_usage_of_not_exist_fcp(self):
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.db_op.increase_usage, 'xxxx')
+
     def test_increase_usage_by_assigner(self):
         self.db_op.new('1111', 0)
         try:
