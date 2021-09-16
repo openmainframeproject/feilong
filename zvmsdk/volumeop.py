@@ -915,24 +915,45 @@ class FCPVolumeManager(object):
                                       mount_point, connections)
 
     def _detach(self, fcp_list, assigner_id, target_wwpns, target_lun,
-            multipath, os_version, mount_point, is_root_volume):
+            multipath, os_version, mount_point, is_root_volume,
+            update_connections_only):
         """Detach a volume from a guest"""
         LOG.info("Start to detach volume on machine %s from "
                  "FCP devices %s" % (assigner_id, fcp_list))
         # fcp_connections is like {'1a10': 0, '1b10': 3}
         # the values are the connections colume value in database
         fcp_connections = {}
-        try:
-            for fcp in fcp_list:
+        # need_rollback is like {'1a10': False, '1b10': True}
+        # if need_rollback set to True, we need rollback
+        # when some actions failed
+        need_rollback = {}
+        for fcp in fcp_list:
+            # need_rollback default to True
+            need_rollback[fcp] = True
+            try:
                 connections = self.fcp_mgr.decrease_fcp_usage(fcp, assigner_id)
-                fcp_connections[fcp] = connections
-        except exception.SDKObjectNotExistError:
-            connections = 0
-            LOG.warning("The connections of FCP device %s is 0.", fcp)
+            except exception.SDKObjectNotExistError:
+                connections = 0
+                # if the connections already are 0 before decreasing it,
+                # there might be something wrong, no need to rollback
+                # because rollback increase connections and the FCPs
+                # are not available anymore
+                need_rollback[fcp] = False
+                LOG.warning("The connections of FCP device %s is 0.", fcp)
+            fcp_connections[fcp] = connections
 
-        if is_root_volume:
-            LOG.info("Is root volume, deleting FCP records %s from %s is "
-                     "done." % (fcp_list, assigner_id))
+        # If is root volume we only need update database record
+        # because the dedicate is done by volume_refresh_bootmap
+        # If update_connections set to True, means upper layer want
+        # to update database record only. For example, try to delete
+        # the instance, then no need to waste time on undedicate
+        if is_root_volume or update_connections_only:
+            if update_connections_only:
+                LOG.info("Update connections only, deleting FCP records %s "
+                         "from %s is done." % (fcp_list, assigner_id))
+            else:
+                LOG.info("Is root volume, deleting FCP records %s from %s is "
+                         "done." % (fcp_list, assigner_id))
             return
 
         # when detaching volumes, if userid not exist, no need to
@@ -966,8 +987,16 @@ class FCPVolumeManager(object):
                 errmsg = "detach failed with error:" + err.format_message()
                 LOG.error(errmsg)
                 for fcp in fcp_list:
-                    # rollback the connections data before remove disks
-                    self.fcp_mgr.increase_fcp_usage(fcp, assigner_id)
+                    if need_rollback.get(fcp, True):
+                        # rollback the connections data before remove disks
+                        LOG.info("Rollback usage of fcp %s on instance %s."
+                                 % (fcp, assigner_id))
+                        self.fcp_mgr.increase_fcp_usage(fcp, assigner_id)
+                        _userid, _reserved, _conns = self.get_fcp_usage(fcp)
+                        LOG.info("After rollback, fcp usage of %s "
+                                 "is (assigner_id: %s, reserved:%s, "
+                                 "connections: %s)."
+                                 % (fcp, _userid, _reserved, _conns))
                 with zvmutils.ignore_errors():
                     self._add_disks(fcp_list, assigner_id,
                                     target_wwpns, target_lun,
@@ -994,13 +1023,15 @@ class FCPVolumeManager(object):
             multipath = False
 
         is_root_volume = connection_info.get('is_root_volume', False)
+        update_connections_only = connection_info.get(
+                'update_connections_only', False)
         # transfer to lower cases
         fcp_list = [x.lower() for x in fcp]
         target_wwpns = [wwpn.lower() for wwpn in wwpns]
         self._detach(fcp_list, assigner_id,
                      target_wwpns, target_lun,
                      multipath, os_version, mount_point,
-                     is_root_volume)
+                     is_root_volume, update_connections_only)
 
     def get_volume_connector(self, assigner_id, reserve):
         """Get connector information of the instance for attaching to volumes.
@@ -1039,7 +1070,7 @@ class FCPVolumeManager(object):
                          "instance %s." % (fcp_no, assigner_id))
                 self.db.reserve(fcp_no)
                 _userid, _reserved, _conns = self.get_fcp_usage(fcp_no)
-                LOG.info("After reserve, fcp usage of %s"
+                LOG.info("After reserve, fcp usage of %s "
                          "is (assigner_id: %s, reserved:%s, connections: %s)."
                          % (fcp_no, _userid, _reserved, _conns))
             elif not reserve and \
@@ -1120,8 +1151,8 @@ class FCPVolumeManager(object):
 
     def get_fcp_usage(self, fcp):
         userid, reserved, connections = self.db.get_usage_of_fcp(fcp)
-        LOG.info("Got userid:%s, reserved:%s, connections:%s of "
-                 "FCP:%s" % (userid, reserved, connections, fcp))
+        LOG.debug("Got userid:%s, reserved:%s, connections:%s of "
+                  "FCP:%s" % (userid, reserved, connections, fcp))
         return userid, reserved, connections
 
     def set_fcp_usage(self, fcp, assigner_id, reserved, connections):
