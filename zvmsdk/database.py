@@ -439,6 +439,12 @@ class FCPDbOperator(object):
             result = conn.execute("SELECT * FROM fcp WHERE "
                                   "fcp_id=?", (fcp,))
             fcp_list = result.fetchall()
+            if not fcp_list:
+                msg = 'FCP with id: %s does not exist in DB.' % fcp
+                LOG.error(msg)
+                obj_desc = "FCP with id: %s" % fcp
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
             connections = fcp_list[0][2]
             connections += 1
 
@@ -451,6 +457,12 @@ class FCPDbOperator(object):
             result = conn.execute("SELECT * FROM fcp WHERE "
                                   "fcp_id=?", (fcp,))
             fcp_list = result.fetchall()
+            if not fcp_list:
+                msg = 'FCP with id: %s does not exist in DB.' % fcp
+                LOG.error(msg)
+                obj_desc = "FCP with id: %s" % fcp
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
             connections = fcp_list[0][2]
             connections += 1
 
@@ -464,6 +476,12 @@ class FCPDbOperator(object):
             result = conn.execute("SELECT * FROM fcp WHERE "
                                   "fcp_id=?", (fcp,))
             fcp_list = result.fetchall()
+            if not fcp_list:
+                msg = 'FCP with id: %s does not exist in DB.' % fcp
+                LOG.error(msg)
+                obj_desc = "FCP with id: %s" % fcp
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
             connections = fcp_list[0][2]
             if connections == 0:
                 msg = 'FCP with id: %s no connections in DB.' % fcp
