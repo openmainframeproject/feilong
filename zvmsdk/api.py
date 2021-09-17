@@ -747,14 +747,6 @@ class SDKAPI(object):
                 LOG.error(errmsg)
                 raise exception.SDKMissingRequiredInput(msg=errmsg)
 
-            # Add authorization for new zcc.
-            cmd = ('echo -n %s > /etc/iucv_authorized_userid\n' %
-                                                    dest_zcc_userid)
-            rc = self._smtclient.execute_cmd(userid, cmd)
-            if rc != 0:
-                err_msg = ("Add authorization for new zcc failed")
-                LOG.error(err_msg)
-
             # Live_migrate the guest
             operation = "Move guest '%s' to SSI '%s'" % (userid, destination)
             with zvmutils.log_and_reraise_sdkbase_error(operation):
@@ -766,6 +758,15 @@ class SDKAPI(object):
             with zvmutils.log_and_reraise_sdkbase_error(action):
                 self._GuestDbOperator.update_guest_by_userid(userid,
                                                     comments=comments)
+            # Add authorization for new zcc.
+            # This should be done after migration succeeds.
+            cmd = ('echo -n %s > /etc/iucv_authorized_userid\n' %
+                                                    dest_zcc_userid)
+            rc = self._smtclient.execute_cmd(userid, cmd)
+            if rc != 0:
+                err_msg = ("Add authorization for new zcc failed")
+                LOG.error(err_msg)
+
         if lgr_action.lower() == 'test':
             operation = "Test move guest '%s' to SSI '%s'" % (userid,
                                                     destination)
