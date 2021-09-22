@@ -524,9 +524,9 @@ class SMTClient(object):
               {'uid': userid, 'dest': destination})
 
         if 'maxtotal' in parms:
-            rd += ('--maxtotal ' + str(parms['maxTotal']))
+            rd += ('--maxtotal ' + str(parms['maxtotal']))
         if 'maxquiesce' in parms:
-            rd += ('--maxquiesce ' + str(parms['maxquiesce']))
+            rd += (' --maxquiesce ' + str(parms['maxquiesce']))
         if 'immediate' in parms:
             rd += " --immediate"
         if 'forcearch' in parms:
