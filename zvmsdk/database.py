@@ -367,40 +367,37 @@ class FCPDbOperator(object):
             conn.execute("DELETE FROM fcp "
                          "WHERE fcp_id=?", (fcp,))
 
-    def get_all_fcps_of_assigner(self, assigner_id):
-        ret = {}
+    def get_all_fcps_of_assigner(self, assigner_id=None):
+        """Get dict of all fcp records of specified assigner.
+        If assigner is None, will get all fcp records.
+        Format of return is like :
+        [
+          (fcp_id, userid, reserved, connections, path),
+          (u'283c', u'user1', 1, 2, 0),
+          (u'483c', u'user2', 0, 0, 1)
+        ]
+        """
+        fcp_info = []
         with get_fcp_conn() as conn:
-            result = conn.execute("SELECT fcp_id, reserved, connections FROM "
-                                  "fcp WHERE assigner_id=?", (assigner_id,))
+            if assigner_id:
+                result = conn.execute("SELECT fcp_id, assigner_id, reserved, "
+                        "connections, path FROM fcp WHERE "
+                        "assigner_id=?", (assigner_id,))
+            else:
+                result = conn.execute("SELECT fcp_id, assigner_id, reserved, "
+                        "connections, path FROM fcp")
             fcp_info = result.fetchall()
             if not fcp_info:
-                msg = 'No FCPs found belongs to userid %s.' % assigner_id
+                if assigner_id:
+                    msg = 'No FCPs found belongs to userid %s.' % assigner_id
+                    obj_desc = "FCP belongs to userid: %s" % assigner_id
+                else:
+                    msg = 'No FCPs found in database.'
+                    obj_desc = "FCP records in database"
                 LOG.error(msg)
-                obj_desc = "FCPs belongs to %s" % assigner_id
                 raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
                                                        modID=self._module_id)
-            for item in fcp_info:
-                # 'fcp_id': (userid, reserved, connections)
-                ret[item[0]] = (assigner_id, item[1], item[2])
-        return ret
-
-    def get_all_fcps(self):
-        ret = {}
-        with get_fcp_conn() as conn:
-            result = conn.execute("SELECT fcp_id, assigner_id, reserved, "
-                                  "connections FROM fcp")
-            fcp_info = result.fetchall()
-
-            if not fcp_info:
-                msg = 'No FCPs found in database.'
-                LOG.error(msg)
-                obj_desc = "FCPs in database"
-                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
-                                                       modID=self._module_id)
-            for item in fcp_info:
-                # 'fcp_id': (reserved, connections)
-                ret[item[0]] = (item[1], item[2], item[3])
-        return ret
+        return fcp_info
 
     def get_usage_of_fcp(self, fcp):
         connections = 0

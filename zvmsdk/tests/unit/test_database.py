@@ -597,6 +597,31 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         finally:
             self.db_op.delete('2222')
 
+    def test_get_all_fcps_exception(self):
+        self.assertRaises(exception.SDKObjectNotExistError,
+                          self.db_op.get_all_fcps_of_assigner,
+                          None)
+
+    def test_get_all_fcps(self):
+        """Test case when assigner_id = None.
+        """
+        self.db_op.new('1111', 0)
+        self.db_op.new('2222', 1)
+        try:
+            res = self.db_op.get_all_fcps_of_assigner()
+            # Format of return is like:
+            # [(fcp_id, userid, reserved, connections, path), (...)].
+            self.assertEqual(len(res), 2)
+            # connections == 0
+            self.assertEqual(res[0][3], 0)
+            # path of 1111 is 0
+            self.assertEqual(res[0][4], 0)
+            # path of 2222 is 1
+            self.assertEqual(res[1][4], 1)
+        finally:
+            self.db_op.delete('1111')
+            self.db_op.delete('2222')
+
 
 class GuestDbOperatorTestCase(base.SDKTestCase):
     @classmethod
