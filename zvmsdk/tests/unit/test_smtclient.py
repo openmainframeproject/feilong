@@ -2240,6 +2240,15 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         request.assert_called_once_with(rd)
 
     @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_delete_userid_with_service_machine_error(self, request):
+        rd = 'deletevm fuser1 directory'
+        results = {'rc': 596, 'rs': 2119, 'logEntries': ''}
+        request.side_effect = exception.SDKSMTRequestFailed(results,
+                                                               "fake error")
+        self._smtclient.delete_userid('fuser1')
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
     def test_delete_userid_failed(self, request):
         rd = 'deletevm fuser1 directory'
         results = {'rc': 400, 'rs': 104, 'logEntries': ''}

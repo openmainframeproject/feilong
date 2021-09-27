@@ -2354,6 +2354,15 @@ class SMTClient(object):
                 LOG.debug("The guest %s deleted with 596/3543" % userid)
                 return
 
+            # The CP or CMS command shown resulted in a non-zero
+            # return code. This message is frequently preceded by
+            # a DMK, HCP, or DMS error message that describes the cause
+            # https://www-01.ibm.com/servers/resourcelink/svc0302a.nsf/
+            # pages/zVMV7R2gc246282/$file/hcpk2_v7r2.pdf
+            if err.results['rc'] == 596 and err.results['rs'] == 2119:
+                LOG.debug("The guest %s deleted with 596/2119" % userid)
+                return
+
             msg = "SMT error: %s" % err.format_message()
             raise exception.SDKSMTRequestFailed(err.results, msg)
 
