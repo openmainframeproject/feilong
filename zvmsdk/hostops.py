@@ -67,19 +67,19 @@ class HOSTOps(object):
                     free += 1
                 else:
                     used += 1
-            fcp_info[path] = {'total': free + used, 'used': used}
-        # if the count of total is different in every path
-        # return the minimum total count
-        min_total = 0
-        # if the count of used is different in every path
-        # return the maximum used count
-        max_used = 0
+            fcp_info[path] = {'total': free + used, 'used': used, 'free': free}
+        # find the path that has max free FCPs
+        # then return its total and used FCPs as return value
+        final_total = 0
+        final_used = 0
+        max_free = 0
         for record in fcp_info.values():
-            if min_total <= 0 or record['total'] < min_total:
-                min_total = record['total']
-            if max_used <= 0 or record['used'] > max_used:
-                max_used = record['used']
-        return {'total': min_total, 'used': max_used}
+            # ONLY consider the path that has available FCPs(free > 0)
+            if record['free'] and (max_free <= 0 or max_free < record['free']):
+                max_free = record['free']
+                final_total = record['total']
+                final_used = record['used']
+        return {'total': final_total, 'used': final_used}
 
     def get_info(self):
         inv_info = self._smtclient.get_host_info()
