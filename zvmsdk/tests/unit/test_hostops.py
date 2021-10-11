@@ -130,13 +130,13 @@ class SDKHostOpsTestCase(base.SDKTestCase):
                                  1: [('1b10', 'INS00009', 0, 0, 1),
                                      ('1b11', '', 0, 0, 1)]}
         ret = self._hostops._get_fcp_info()
-        expected = {'total': 2, 'used': 0}
+        expected = {'total': 2, 'used': 2}
         self.assertEqual(expected, ret)
 
         mock_get.return_value = {0: [('1a09', 'INS0003E', 0, 0, 0),
                                      ('1a0c', 'INS00009', 1, 2, 0)],
-                                 1: [('1b10', 'INS00009', 0, 1, 1),
-                                     ('1b11', '', 0, 1, 1)]}
+                                 1: [('1b10', 'INS00009', 0, 0, 1),
+                                     ('1b11', '', 0, 0, 1)]}
         ret = self._hostops._get_fcp_info()
         expected = {'total': 2, 'used': 1}
         self.assertEqual(expected, ret)
