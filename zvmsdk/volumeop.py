@@ -388,8 +388,10 @@ class FCPManager(object):
         self._fcp_path_mapping = {}
         self.db = database.FCPDbOperator()
         self._smtclient = smtclient.get_smtclient()
+        # initialize FCP database
+        self.init_fcp()
 
-    def init_fcp(self, assigner_id):
+    def init_fcp(self, assigner_id=None):
         """init_fcp to init the FCP managed by this host"""
         # TODO master_fcp_list (zvm_zhcp_fcp_list) really need?
         fcp_list = CONF.volume.fcp_list
@@ -398,8 +400,11 @@ class FCPManager(object):
                       "no volume functions available")
             LOG.info(errmsg)
             return
-
-        self._init_fcp_pool(fcp_list, assigner_id)
+        if assigner_id:
+            self._init_fcp_pool(fcp_list, assigner_id)
+        else:
+            smt_userid = zvmutils.get_smt_userid()
+            self._init_fcp_pool(fcp_list, smt_userid)
         self._sync_db_fcp_list()
 
     def _init_fcp_pool(self, fcp_list, assigner_id):
@@ -808,8 +813,6 @@ class FCPVolumeManager(object):
         LOG.info("Start to attach volume to FCP devices "
                  "%s on machine %s." % (fcp_list, assigner_id))
 
-        # TODO: init_fcp should be called in contructor function
-        # but no assigner_id in contructor
         self.fcp_mgr.init_fcp(assigner_id)
         # fcp_status is like { '1a10': 'True', '1b10', 'False' }
         # True or False means it is first attached or not
