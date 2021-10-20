@@ -264,11 +264,11 @@ function cleanup_fcpdevices {
 
   # Disconnect all FCPs
   inform "Begin to remove LUN."
-  # loop to do unit_remove to each (fcp, wwpn) in valid_dict and check lun existence
-  # as the unit_add is done with the combinations from valid_dict, so does unit_remove
-  for fcp in ${!valid_dict[*]}
+  # loop to do unit_remove to each (fcp, wwpn) in valid_paths_dict and check lun existence
+  # as the unit_add is done with the combinations from valid_paths_dict, so does unit_remove
+  for fcp in ${!valid_paths_dict[*]}
   do
-      wwpns=(${valid_dict[$fcp]})
+      wwpns=(${valid_paths_dict[$fcp]})
       inform "Removing LUN: $lun from FCP: $fcp and WWPNs: ${wwpns[*]}."
       for wwpn in "${wwpns[@]}"
       do
@@ -517,17 +517,17 @@ function truncaterdzfcp {
     rd_zfcp=""
     wwpn_idx=0
     selected_paths=0
-    valid_fcps=$(echo ${!paths_dict[*]})
+    valid_fcps=$(echo ${!valid_paths_dict[*]})
 	while [[ $selected_paths -lt 8 ]]
 	do
 		inform "checking with wwpn_index: $wwpn_idx."
 		# for each fcp, get the wwpn corresponding to wwpn_idx
 		for fcp in ${valid_fcps[@]}
 		do
-			wwpns=(${paths_dict[$fcp]})
+			wwpns=(${valid_paths_dict[$fcp]})
 			if [[ $wwpn_idx -lt ${#wwpns[@]} ]]; then
 				wwpn=${wwpns[$wwpn_idx]}
-				rd_zfcp+="rd.zfcp=0.0."$fcp,0x$wwpn,$lun" "
+				rd_zfcp+="rd.zfcp=0.0.$fcp,0x$wwpn,$lun "
 				((selected_paths=$selected_paths+1))
 			fi
 			# break when 8 paths found
@@ -835,8 +835,8 @@ function refreshZIPL {
   # Due to the kernel command line length limitation of RHEL, we will limit the rd.zfcp
   # items count to 8. so if the valid paths count is greater than 8, we need to do truncation.
   # otherwise we can use the rd_zfcp string we get while finding the valid paths.
-  if [[ $paths_count -gt 8 ]]; then
-  	inform "valid paths count $paths_count is greater than 8, do truncation to get the rd.zfcp parameter."
+  if [[ $valid_paths_count -gt 8 ]]; then
+  	inform "valid paths count $valid_paths_count is greater than 8, do truncation to get the rd.zfcp parameter."
   	truncaterdzfcp
   fi
   inform "Final rd.zfcp value is: $rd_zfcp."
@@ -1030,9 +1030,11 @@ function refreshFCPBootmap {
   # 0.0.1c04 0x500507680b22bac7
   # 0.0.1c04 0x500507680d760027
   lszfcp_output=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
-  declare -A valid_dict
+  declare -A valid_paths_dict
+  valid_paths_count=0
+  rd_zfcp=""
   # check whether each combination of input fcp and input wwpn is in the lszfcp_output
-  # the valid_dict will contain all the valid combinations of inputed fcps and wwpns in the format:
+  # the valid_paths_dict will contain all the valid combinations of inputed fcps and wwpns in the format:
   # (["FCP1"]="W1 W2" ["FCP2"]="W3 W4")
   for fcp in "${INPUT_FCPS[@]}"
   do
@@ -1040,32 +1042,35 @@ function refreshFCPBootmap {
       do
           fcp_wwpn_str="0.0.${fcp} 0x${wwpn}"
           if [[ $lszfcp_output =~ $fcp_wwpn_str ]]; then
-              # add this combination into valid_dict
-              if [[ -z ${valid_dict[$fcp]} ]]; then
-                  valid_dict+=([$fcp]="$wwpn")
+              # add this combination into valid paths
+              if [[ -z ${valid_paths_dict[$fcp]} ]]; then
+                  valid_paths_dict+=([$fcp]="$wwpn")
               else
-                  old_value=${valid_dict[$fcp]}
+                  old_value=${valid_paths_dict[$fcp]}
                   new_value=${old_value}" "$wwpn
-                  valid_dict[$fcp]=$new_value
+                  valid_paths_dict[$fcp]=$new_value
               fi
+              # increase valid_paths_count
+              ((valid_paths_count=$valid_paths_count+1))
+              # add this (fcp, wwpn) combinations into the rd_zfcp string which will be used to
+              # set the kernel command line in zipl.conf to refresh zipl
+              rd_zfcp+="rd.zfcp=0.0.$fcp,0x$wwpn,$lun "
           fi
       done
   done
 
-  # check and record all the existing path (combinations of FCP and WWPN)
-  # the paths_dict will be in the format: (["FCP1"]="W1 W2" ["FCP2"]="W3 W4")
-  declare -A paths_dict
-  paths_count=0
-  rd_zfcp=""
+  # check and record all the path that show up after unit_add (combinations of FCP and WWPN)
+  # the available_paths_dict will be in the format: (["FCP1"]="W1 W2" ["FCP2"]="W3 W4")
+  declare -A available_paths_dict
   # the first_fcp and first_wwpn will be used in single path scenario (multipathd service not running)
   first_fcp=""
   first_wwpn=""
   disk_path=""
   
-  # loop to do unit_add to each (fcp, wwpn) in valid_dict and check lun existence
-  for fcp in ${!valid_dict[*]}
+  # loop to do unit_add to each (fcp, wwpn) in valid_paths_dict and check lun existence
+  for fcp in ${!valid_paths_dict[*]}
   do
-      wwpns=(${valid_dict[$fcp]})
+      wwpns=(${valid_paths_dict[$fcp]})
       inform "valid target ports found on FCP: $fcp are: ${wwpns[*]}."
       for wwpn in "${wwpns[@]}"
       do
@@ -1073,7 +1078,7 @@ function refreshFCPBootmap {
           addLun $fcp 0x${wwpn} ${lun}
           rc=$?
           if [[ $rc -ne 0 ]]; then
-              printError "Failed to connect disk on fcp: $fcp and wwpn: $wwpn, rc is $rc."
+              printError "Failed to add disk on fcp: $fcp and wwpn: $wwpn, rc is $rc."
           else
               path="/dev/disk/by-path/ccw-0.0.${fcp}-zfcp-0x${wwpn}:${lun}"
               if [[ -z $diskPath ]]; then
@@ -1084,28 +1089,23 @@ function refreshFCPBootmap {
                   first_fcp=$fcp
                   first_wwpn=$wwpn
               fi
-              inform "found valid path: $path."
+              inform "Successfully added disk path: $path."
               # add the paths to the dict
-              if [[ -z ${paths_dict["$fcp"]} ]]; then
-                  paths_dict+=([$fcp]="$wwpn")
+              if [[ -z ${available_paths_dict["$fcp"]} ]]; then
+                  available_paths_dict+=([$fcp]="$wwpn")
               else
-                  old_value=${paths_dict["$fcp"]}
+                  old_value=${available_paths_dict["$fcp"]}
                   new_value=${old_value}" "$wwpn
-                  paths_dict[$fcp]=$new_value
+                  available_paths_dict[$fcp]=$new_value
               fi
               # the /dev/disk/by-path/ccw-0.0.${fcp}-zfcp-0x${wwpn}:${lun) existence is checked in addLUN
-              # increase paths_count
-              ((paths_count=$paths_count+1))
-              # add this (fcp, wwpn) combinations into the rd_zfcp string which will be used to
-              # set the kernel command line in zipl.conf to refresh zipl
-              rd_zfcp+="rd.zfcp=0.0."$fcp,0x$wwpn,$lun" "
           fi
       done
   done
 
   # check whether there is valid paths found
   if [[ -z $diskPath ]]; then
-    printError "No valid paths found between FCP devices: ${INPUT_FCPS[*]} and wwpns: ${INPUT_WWPNS[*]}"
+    printError "No avaialble disk found between FCP devices: ${INPUT_FCPS[*]} and wwpns: ${INPUT_WWPNS[*]}"
     printLogs
     exit 10
   fi
@@ -1113,11 +1113,11 @@ function refreshFCPBootmap {
   # get the valid paths string to return to upper layer
   # format: "FCP1:W1 W2,FCP2:W3 W4"
   # print the valid path count and details
-  inform "$paths_count valid paths found."
+  inform "$valid_paths_count valid paths found."
   valid_paths_str=""
-  for fcp in $(echo ${!paths_dict[*]})
+  for fcp in $(echo ${!valid_paths_dict[*]})
   do
-	wwpns=${paths_dict[$fcp]}
+	wwpns=${valid_paths_dict[$fcp]}
 	if [[ -z $valid_paths_str ]]; then
 	    valid_paths_str=$fcp":"$wwpns
     else

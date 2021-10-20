@@ -12,3 +12,4 @@
 build/*
 dist/*
 doc/build/*
+.DS_Store

@@ -593,14 +593,14 @@ function addLun {
   fi
   rc=$?
   if [[ $rc -ne 0 ]]; then
-      printError "An error was encountered while attaching the disk. rc is $rc."
+      printError "An error was encountered while unit_add the disk. rc is $rc."
   fi
 
   echo add > /sys/bus/ccw/devices/0.0.${fcpChannel}/uevent
   which udevadm &> /dev/null && udevadm settle || udevsettle
 
-  # Wait 10s in total until disk shows up 
-  for i in 0.1 0.2 0.2 0.5 1 1 1 2 2 2
+  # Wait 30s in total until disk shows up 
+  for i in 0.1 0.2 0.2 0.5 1 1 1 2 2 2 5 5 10
   do
       if [[ -b /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} ]]; then
           break
@@ -609,7 +609,7 @@ function addLun {
   done
 
   if [[ ! -b /dev/disk/by-path/ccw-0.0.${fcpChannel}-zfcp-${wwpn}:${lun} ]]; then
-      printError "An error was encountered while locating disk."
+      printError "The lun ${lun} does not show up on fcp:${fcpChannel} and wwpn: ${wwpn}."
       overall_rc=1
   fi
 
