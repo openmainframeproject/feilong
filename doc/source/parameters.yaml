@@ -529,6 +529,12 @@ host_info:
   in: body
   required: true
   type: dict
+host_userid:
+  description: |
+    The text of host userid.
+  in: body
+  required: true
+  type: string
 disk_pool:
   description: |
     The pool name to get pool information from

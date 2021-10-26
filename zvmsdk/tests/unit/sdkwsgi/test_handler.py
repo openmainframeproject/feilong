@@ -619,6 +619,13 @@ class HostHandlerNegativeTest(unittest.TestCase):
         self.assertRaises(webob.exc.HTTPNotFound,
                           h, self.env, dummy)
 
+    def test_host_get_userid_invalid(self):
+        self.env['PATH_INFO'] = '/host1/userid'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        self.assertRaises(webob.exc.HTTPNotFound,
+                          h, self.env, dummy)
+
 
 class HostHandlerTest(unittest.TestCase):
 
@@ -768,3 +775,15 @@ class VswitchHandlerTest(unittest.TestCase):
             h(self.env, dummy)
 
             update.assert_called_once_with('vsw1', body={})
+
+    @mock.patch.object(tokens, 'validate')
+    def test_host_get_userid(self, mock_validate):
+        self.env['PATH_INFO'] = '/host/userid'
+        self.env['REQUEST_METHOD'] = 'GET'
+        h = handler.SdkHandler()
+        with mock.patch('zvmsdk.sdkwsgi.handlers.host.HostAction'
+                        '.get_userid') as get_userid:
+            get_userid.return_value = {'overallRC': 0}
+            h(self.env, dummy)
+
+            self.assertTrue(get_userid.called)

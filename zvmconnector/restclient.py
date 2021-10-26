@@ -512,6 +512,12 @@ def req_host_get_volume_info(start_index, *args, **kwargs):
     return url, body
 
 
+def req_host_get_userid(start_index, *args, **kwargs):
+    url = '/host/userid'
+    body = None
+    return url, body
+
+
 def req_image_import(start_index, *args, **kwargs):
     url = '/images'
     body = {'image': {'image_name': args[start_index],
@@ -888,6 +894,11 @@ DATABASE = {
         'args_required': 0,
         'params_path': 0,
         'request': req_host_get_volume_info},
+    'host_get_userid': {
+        'method': 'GET',
+        'args_required': 0,
+        'params_path': 0,
+        'request': req_host_get_userid},
     'image_import': {
         'method': 'POST',
         'args_required': 3,

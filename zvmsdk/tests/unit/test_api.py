@@ -725,3 +725,10 @@ class SDKAPITestCase(base.SDKTestCase):
         self.assertEqual(results['disk_available'], 0)
         self.assertEqual(results['disk_used'], 0)
         dp_info.ssert_not_called()
+
+    @mock.patch("zvmsdk.utils.get_smt_userid")
+    def test_host_get_userid(self, mock_get_su):
+        mock_get_su.return_value = 'mock_userid'
+        ret = self.api.host_get_userid()
+        self.assertEqual(ret, 'mock_userid')
+        mock_get_su.assert_called_once_with()

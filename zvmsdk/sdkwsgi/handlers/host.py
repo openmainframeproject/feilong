@@ -65,6 +65,10 @@ class HostAction(object):
                                         disk_pool=poolname)
         return info
 
+    def get_userid(self):
+        userid = self.client.send_request('host_get_userid')
+        return userid
+
 
 def get_action():
     global _HOSTACTION
@@ -159,5 +163,21 @@ def host_get_disk_info(req):
     req.response.status = util.get_http_code_from_sdk_return(info,
         additional_handler=util.handle_not_found)
     req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def host_get_userid(req):
+
+    def _host_get_userid():
+        action = get_action()
+        return action.get_userid()
+
+    userid = _host_get_userid()
+    userid_json = json.dumps(userid)
+    req.response.status = util.get_http_code_from_sdk_return(userid)
+    req.response.body = utils.to_utf8(userid_json)
     req.response.content_type = 'application/json'
     return req.response

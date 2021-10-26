@@ -1612,6 +1612,34 @@ Get the volume info on the host.
 .. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_volume.tpl
    :language: javascript
 
+Get the userid of the host
+
+Get Host Userid
+---------------
+
+**GET /host/userid**
+
+Get the userid of the host.
+
+* Request:
+
+  None
+
+* Response code:
+
+  HTTP status code 200 on success.
+
+* Response contents:
+
+.. restapi_parameters:: parameters.yaml
+
+  - output: host_userid
+
+* Response sample:
+
+.. literalinclude:: ../../zvmsdk/tests/fvt/api_templates/test_host_get_userid.tpl
+   :language: javascript
+
 Image(s)
 ========
 

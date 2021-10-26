@@ -1905,3 +1905,9 @@ class SDKAPI(object):
         self._networkops.delete_nic(userid, vdev, active=active)
         self._networkops.delete_network_configuration(userid, os_version,
                                                       vdev, active=active)
+
+    def host_get_userid(self):
+        """Returns host's userid."""
+        action = "get host userid"
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return zvmutils.get_smt_userid()

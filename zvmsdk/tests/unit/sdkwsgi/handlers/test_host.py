@@ -83,3 +83,11 @@ class HandlersHostTest(unittest.TestCase):
         self.req.GET['volumename'] = 'volum1'
         host.host_get_volume_info(self.req)
         self.assertTrue(mock_get_vol.called)
+
+    @mock.patch.object(host.HostAction, 'get_userid')
+    def test_host_get_userid(self, mock_get_userid):
+        mock_id = 'id1'
+        mock_get_userid.return_value = mock_id
+        ret = host.host_get_userid(self.req)
+        self.assertEqual(ret.body.decode('utf-8').replace('"', ''), mock_id)
+        mock_get_userid.assert_called_once_with()
