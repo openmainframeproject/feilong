@@ -364,8 +364,8 @@ function printCMDExamples {
   #   printCMDDescription{} in "zthinshellutils".
   # @Code:
   echo "Example:
-  ./refresh_bootmap.sh --fcpchannel="5d71" --wwpn="5005076802100C1B" --lun=0000000000000000
-  ./refresh_bootmap.sh --fcpchannel="5d71,5d72" --wwpn="5005076802100C1B,5005076802200C1B,5005076802300C1B,5005076802400C1B,5005076802400C1A,5005076802300C1A,5005076802200C1A,5005076802100C1A" --lun=0000000000000000" 
+  ./refresh_bootmap.sh --fcpchannel="5d71" --wwpn="5005076802100C1B" --lun="0000000000000000" --wwid="600507640083826de00000000000605b"
+  ./refresh_bootmap.sh --fcpchannel="5d71,5d72" --wwpn="5005076802100C1B,5005076802200C1B,5005076802300C1B,5005076802400C1B,5005076802400C1A,5005076802300C1A,5005076802200C1A,5005076802100C1A" --lun="0000000000000000" --wwid="600507640083826de00000000000605b""
 } #printCMDDescription
 
 function parseArgs {
@@ -382,6 +382,7 @@ function parseArgs {
   isOption -f --fcpchannel "   FCP channel IDs. Support multi fcpchannel, split by ','."
   isOption -w --wwpn "         World Wide Port Name IDs. Support multi wwpn, split by ',' Example: 5005076802400c1b"
   isOption -l --lun "          Logical Unit Number ID. Example: 0000000000000000"
+  isOption -d --wwid "         WWID of the volume, Example: 600507640083826de00000000000605b"
   isOption -i --ignitionurl "  (RHCOS only) The URL or local path that points to RHCOS ignition file"
   isOption -n --nicid "        (RHCOS only) The nic ID. Example: 0.0.1000,0.0.1001,0.0.1002"
   isOption -p --ipconfig "     (RHCOS only) The network configuration info. In format of <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none[:[<dns1>][:<dns2>]]"
@@ -408,6 +409,10 @@ function parseArgs {
       ;;
       -l|--lun=*)
       lun="${i#*=}"
+      shift # past argument=value
+      ;;
+      -d|--wwid=*)
+      wwid="${i#*=}"
       shift # past argument=value
       ;;
       -i|--ignitionurl=*)
@@ -560,19 +565,21 @@ function probePartition {
     inform "Before partprobe, /dev/mapper/ folder content: ${disk_mapper_folder}."
 
     # get the devPath under /dev/mapper
-    map_name=$(multipath -l $wwid -v 1)
-    rc=$?
-    # probe partition
-    if [[ ( $rc -eq 0 ) && ( "$map_name" != "" ) ]]; then
-        devPath="/dev/mapper/$map_name"
-        probe_partition=$(/usr/sbin/partprobe $devPath 2> /dev/null)
+    if [[ "$wwid" != "" ]]; then
+        map_name=$(multipath -l $wwid -v 1)
         rc=$?
-        inform "Manually run command partprobe on $devPath of wwid $wwid with return code: $rc"
-    else
-        inform "Failed to get map_name before partprobe, call partprobe without parameters."
-        probe_partition=$(/usr/sbin/partprobe 2> /dev/null)
-        rc=$?
-        inform "Manually run command partprobe without parameters return code: $rc"
+        # probe partition
+        if [[ ( $rc -eq 0 ) && ( "$map_name" != "" ) ]]; then
+            devPath="/dev/mapper/$map_name"
+            probe_partition=$(/usr/sbin/partprobe $devPath 2> /dev/null)
+            rc=$?
+            inform "Manually run command partprobe on $devPath of wwid $wwid with return code: $rc"
+        else
+            inform "Failed to get map_name before partprobe, call partprobe without parameters."
+            probe_partition=$(/usr/sbin/partprobe 2> /dev/null)
+            rc=$?
+            inform "Manually run command partprobe without parameters return code: $rc"
+        fi
     fi
 
     # ls /dev/disk/by-path
@@ -884,7 +891,10 @@ function refreshZIPL {
         if [[ ${BLS_file_count} -eq 0 ]]; then
           inform "No BLS files found in ${deviceMountPoint}/${BLS_dir}"
         else
-          wwid=`/usr/lib/udev/scsi_id --whitelisted $diskPath 2> /dev/null`
+          if [[ -z "$wwid" ]]; then
+              wwid=`/usr/lib/udev/scsi_id --whitelisted $diskPath 2> /dev/null`
+              inform "The volume wwid is $wwid."
+          fi
           rootPath="root=\/dev\/disk\/by-id\/dm-uuid-part1-mpath-$wwid "
           # Delete all items start with "rd.zfcp="
           sed -ri 's/rd.zfcp=\S+\s*[[:space:]]//g' ${deviceMountPoint}/${BLS_dir}/*.conf
@@ -969,16 +979,23 @@ function refreshFCPBootmap {
   fcpchannels=$(echo ${fcpchannel} | tr '[:upper:]' '[:lower:]')
   lun=$(echo ${lun} | tr '[:upper:]' '[:lower:]')
   wwpn=$(echo ${wwpn} | tr '[:upper:]' '[:lower:]')
+  wwid=$(echo ${wwid} | tr '[:upper:]' '[:lower:]')
 
   # Add 0x to lun
   lun=0x$lun
+  # The disk path in Linux layer will have a '3' as prefix as shown in following example:
+  # /dev/disk/by-id/dm-uuid-part1-mpath-3600507640083826de00000000000605b 
+  # so, append a '3' as a prefix to the input wwid
+  if [[ "$wwid" != "" ]]; then
+      wwid="3"$wwid
+  fi
 
   # Split fcpchannels and wwpn by ","
   IFS=',' read -r -a INPUT_FCPS <<< "$fcpchannels"
   IFS=',' read -r -a INPUT_WWPNS <<< "$wwpn"
   
   # print the parameters value
-  inform "RefreshFCPBootmap begins. FCP: ${INPUT_FCPS[*]}, WWPNs: ${INPUT_WWPNS[*]}, LUN: $lun."
+  inform "RefreshFCPBootmap begins. FCP: ${INPUT_FCPS[*]}, WWPNs: ${INPUT_WWPNS[*]}, LUN: $lun, WWID: $wwid."
 
   # Check the count of FCP devices, if greater than 8, report error and exit.
   fcps_len=${#INPUT_FCPS[@]}
@@ -1129,10 +1146,11 @@ function refreshFCPBootmap {
   # 1b1b:500507680b21bac6 500507680b21bac7 500507680b22bac6 500507680b22bac7
   inform "valid paths string is: $valid_paths_str."
 
-  # Set devNode according to whether multipath is enabled on the compute node
-  wwid=""
   if [[ $multipath_enabled == 1 ]]; then
-      wwid=`/usr/lib/udev/scsi_id --whitelisted $diskPath 2> /dev/null`
+      if [[ -z "$wwid" ]]; then
+          wwid=`/usr/lib/udev/scsi_id --whitelisted $diskPath 2> /dev/null`
+          inform "The volume wwid is $wwid."
+      fi
       devNode="/dev/disk/by-id/dm-uuid-part1-mpath-$wwid"
       inform "Multipath is enabled, using multipath devNode: $devNode."
   else

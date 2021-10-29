@@ -806,7 +806,7 @@ class SMTClient(object):
         finally:
             self._pathutils.clean_temp_folder(iucv_path)
 
-    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun,
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, wwid='',
                                transportfiles=None, guest_networks=None):
         guest_networks = guest_networks or []
         fcps = ','.join(fcpchannels)
@@ -814,7 +814,8 @@ class SMTClient(object):
         fcs = "--fcpchannel=%s" % fcps
         wwpns = "--wwpn=%s" % ws
         lun = "--lun=%s" % lun
-        cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap', fcs, wwpns, lun]
+        wwid = "--wwid=%s" % wwid
+        cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap', fcs, wwpns, lun, wwid]
 
         if guest_networks:
             # prepare additional parameters for RHCOS BFV

@@ -1661,12 +1661,14 @@ class SDKAPI(object):
         self._volumeop.attach_volume_to_instance(connection_info)
 
     def volume_refresh_bootmap(self, fcpchannels, wwpns, lun,
+                               wwid='',
                                transportfiles=None, guest_networks=None):
         """ Refresh a volume's bootmap info.
 
         :param list of fcpchannels
         :param list of wwpns
         :param string lun
+        :param wwid: (str) the wwid of the target volume
         :param transportfiles: (str) the files that used to customize the vm
         :param list guest_networks: a list of network info for the guest.
                It has one dictionary that contain some of the below keys for
@@ -1698,6 +1700,7 @@ class SDKAPI(object):
                'nic_vdev': '1003}]
         """
         return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun,
+                                                wwid=wwid,
                                                 transportfiles=transportfiles,
                                                 guest_networks=guest_networks)
 
