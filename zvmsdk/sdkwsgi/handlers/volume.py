@@ -78,10 +78,10 @@ class VolumeAction(object):
                                         fcp, userid, reserved,
                                         connections)
 
-    def volume_refresh_bootmap(self, fcpchannel, wwpn, lun,
+    def volume_refresh_bootmap(self, fcpchannel, wwpn, lun, wwid,
                                transportfiles, guest_networks):
         info = self.client.send_request('volume_refresh_bootmap',
-                                        fcpchannel, wwpn, lun,
+                                        fcpchannel, wwpn, lun, wwid,
                                         transportfiles, guest_networks)
         return info
 
@@ -133,15 +133,16 @@ def volume_detach(req):
 @tokens.validate
 def volume_refresh_bootmap(req):
 
-    def _volume_refresh_bootmap(req, fcpchannel, wwpn, lun,
+    def _volume_refresh_bootmap(req, fcpchannel, wwpn, lun, wwid,
                                 transportfiles, guest_networks):
         action = get_action()
-        return action.volume_refresh_bootmap(fcpchannel, wwpn, lun,
+        return action.volume_refresh_bootmap(fcpchannel, wwpn, lun, wwid,
                                              transportfiles, guest_networks)
 
     body = util.extract_json(req.body)
     info = _volume_refresh_bootmap(req, body['info']['fcpchannel'],
                                    body['info']['wwpn'], body['info']['lun'],
+                                   body['info'].get('wwid', ""),
                                    body['info'].get('transportfiles', ""),
                                    body['info'].get('guest_networks', []))
     info_json = json.dumps(info)

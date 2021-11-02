@@ -87,9 +87,11 @@ class VolumeOperatorAPI(object):
         self._volume_manager.detach(connection_info)
 
     def volume_refresh_bootmap(self, fcpchannel, wwpn, lun,
+                               wwid='',
                                transportfiles='', guest_networks=None):
         return self._volume_manager.volume_refresh_bootmap(fcpchannel, wwpn,
-                                            lun, transportfiles=transportfiles,
+                                            lun, wwid=wwid,
+                                            transportfiles=transportfiles,
                                             guest_networks=guest_networks)
 
     def get_volume_connector(self, assigner_id, reserve):
@@ -855,12 +857,14 @@ class FCPVolumeManager(object):
                  "done." % (fcp_list, assigner_id))
 
     def volume_refresh_bootmap(self, fcpchannels, wwpns, lun,
+                               wwid='',
                                transportfiles=None, guest_networks=None):
         ret = None
         with zvmutils.acquire_lock(self._lock):
             LOG.debug('Enter lock scope of volume_refresh_bootmap.')
             ret = self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns,
-                                        lun, transportfiles=transportfiles,
+                                        lun, wwid=wwid,
+                                        transportfiles=transportfiles,
                                         guest_networks=guest_networks)
         LOG.debug('Exit lock of volume_refresh_bootmap with ret %s.' % ret)
         return ret
