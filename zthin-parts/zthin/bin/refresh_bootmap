@@ -632,8 +632,8 @@ function mount_boot_partition_rhcos {
 function update_zipl_bootloader_rhcos {
     inform "Updating zipl"
 
-    if [[ $paths_count -gt 8 ]]; then
-      inform "valid paths count $paths_count is greater than 8, do truncation to get the rd.zfcp parameter."
+    if [[ $valid_paths_count -gt 8 ]]; then
+      inform "valid paths count $valid_paths_count is greater than 8, do truncation to get the rd.zfcp parameter."
       truncaterdzfcp
     fi
     inform "Final rd.zfcp value is: $rd_zfcp."
