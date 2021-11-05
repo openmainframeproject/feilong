@@ -855,12 +855,20 @@ function refreshZIPL {
       printError "Failed to execute zipl on $os due to ${deviceMountPoint}/${zipl_conf} not exist."
       exit 13
     else
+      # Get root path with wwid, instead of using the UUID
+      if [[ -z "$wwid" ]]; then
+          wwid=`/usr/lib/udev/scsi_id --whitelisted $diskPath 2> /dev/null`
+          inform "The volume wwid is $wwid."
+      fi
+      rootPath="root=\/dev\/disk\/by-id\/dm-uuid-part1-mpath-$wwid "
       # Delete all items start with "rd.zfcp="
       sed -ri 's/rd.zfcp=\S+\s*[[:space:]]//g' ${deviceMountPoint}/${zipl_conf}
       # Remove quote
       sed -i 's/\"$//g' ${deviceMountPoint}/${zipl_conf}
       # Remove trailing space
       sed -i 's/[ \t]*$//g' ${deviceMountPoint}/${zipl_conf}
+      # Update the root file system target path
+      sed -ri "s/root=\S+\s*[[:space:]]/$rootPath /g" ${deviceMountPoint}/${zipl_conf}
       # Append rd.zfcp= string to "parameters=" line.
       sed -i "/^[[:space:]]parameters=/ s/$/ $rd_zfcp/" ${deviceMountPoint}/${zipl_conf}
       # Append quote to "parameters=" line
@@ -891,11 +899,6 @@ function refreshZIPL {
         if [[ ${BLS_file_count} -eq 0 ]]; then
           inform "No BLS files found in ${deviceMountPoint}/${BLS_dir}"
         else
-          if [[ -z "$wwid" ]]; then
-              wwid=`/usr/lib/udev/scsi_id --whitelisted $diskPath 2> /dev/null`
-              inform "The volume wwid is $wwid."
-          fi
-          rootPath="root=\/dev\/disk\/by-id\/dm-uuid-part1-mpath-$wwid "
           # Delete all items start with "rd.zfcp="
           sed -ri 's/rd.zfcp=\S+\s*[[:space:]]//g' ${deviceMountPoint}/${BLS_dir}/*.conf
           # Remove trailing space
