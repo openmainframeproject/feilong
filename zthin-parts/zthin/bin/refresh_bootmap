@@ -298,8 +298,10 @@ function cleanup_fcpdevices {
   inform "Checking mpath device's existence again."
   devmapper_content=$(ls /dev/mapper/)
   inform "/dev/mapper/ folder content: $devmapper_content."
-  if [[ ( "$map_name" != "" ) && ( -e /dev/mapper/${map_name} ) ]]; then
-      inform "Checking LVM on volume."
+  multipath_output=$(multipath -ll 2>&1)
+  inform "multipath output: ${multipath_output}."
+  if [[ "$map_name" != "" ]]; then
+      inform "Checking $map_name existence again."
       # Step 1: check whether the volume contains lvm. If yes, then remove the LVs.
       if [[ "$vgs_str" != "" ]]; then
           # re-use the previously found vg name because under the leftover scenario, the vg name cann't be detected any more
