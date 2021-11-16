@@ -481,12 +481,12 @@ SDK will only use the fcp devices in the scope of this value.
         ),
     Opt('refresh_bootmap_timeout',
         section='volume',
-        default=600,
+        default=1200,
         opt_type='int',
         help='''
 The timeout value for waiting refresh_bootmap execution, in seconds.
 
-The default value is 600 seconds, if the execution of refresh_bootmap
+The default value is 1200 seconds, if the execution of refresh_bootmap
 reached the timeout, the process of refresh_bootmap will be stopped.
 '''
         ),

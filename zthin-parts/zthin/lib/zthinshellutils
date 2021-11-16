@@ -596,9 +596,6 @@ function addLun {
       printError "An error was encountered while unit_add the disk. rc is $rc."
   fi
 
-  echo add > /sys/bus/ccw/devices/0.0.${fcpChannel}/uevent
-  which udevadm &> /dev/null && udevadm settle || udevsettle
-
   # Wait 30s in total until disk shows up 
   for i in 0.1 0.2 0.2 0.5 1 1 1 2 2 2 5 5 10
   do
