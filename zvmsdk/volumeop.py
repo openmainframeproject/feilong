@@ -1058,7 +1058,14 @@ class FCPVolumeManager(object):
 
         empty_connector = {'zvm_fcp': [], 'wwpns': [], 'host': '',
                            'phy_to_virt_initiators': {}}
-
+        # get lpar name of the userid, if no host name got, raise exception
+        zvm_host = zvmutils.get_lpar_name()
+        if zvm_host == '':
+            errmsg = "failed to get zvm host."
+            LOG.error(errmsg)
+            raise exception.SDKVolumeOperationError(rs=11,
+                                                    userid=assigner_id,
+                                                    msg=errmsg)
         # init fcp pool
         self.fcp_mgr.init_fcp(assigner_id)
         # fcp = self.fcp_mgr.find_and_reserve_fcp(assigner_id)
@@ -1071,26 +1078,8 @@ class FCPVolumeManager(object):
         phy_virt_wwpn_map = {}
         wwpn = None
         all_fcp_pool = {}
+        # get wwpns of fcp devices
         for fcp_no in fcp_list:
-            if reserve:
-                # Reserve fcp device
-                LOG.info("Reserve fcp device %s for "
-                         "instance %s." % (fcp_no, assigner_id))
-                self.db.reserve(fcp_no)
-                _userid, _reserved, _conns = self.get_fcp_usage(fcp_no)
-                LOG.info("After reserve, fcp usage of %s "
-                         "is (assigner_id: %s, reserved:%s, connections: %s)."
-                         % (fcp_no, _userid, _reserved, _conns))
-            elif not reserve and \
-                self.db.get_connections_from_fcp(fcp_no) == 0:
-                # Unreserve fcp device
-                LOG.info("Unreserve fcp device %s from "
-                         "instance %s." % (fcp_no, assigner_id))
-                self.db.unreserve(fcp_no)
-                _userid, _reserved, _conns = self.get_fcp_usage(fcp_no)
-                LOG.info("After unreserve, fcp usage of %s "
-                         "is (assigner_id: %s, reserved:%s, connections: %s)."
-                         % (fcp_no, _userid, _reserved, _conns))
             if self.fcp_mgr._fcp_pool.get(fcp_no):
                 wwpn = self.fcp_mgr.get_wwpn(fcp_no)
             else:
@@ -1116,12 +1105,27 @@ class FCPVolumeManager(object):
             LOG.error(errmsg)
             return empty_connector
 
-        inv_info = self._smtclient.get_host_info()
-        zvm_host = inv_info['zvm_host']
-        if zvm_host == '':
-            errmsg = "zvm host not specified."
-            LOG.error(errmsg)
-            return empty_connector
+        # reserve or unreserve FCP record in database
+        for fcp_no in fcp_list:
+            if reserve:
+                # Reserve fcp device
+                LOG.info("Reserve fcp device %s for "
+                         "instance %s." % (fcp_no, assigner_id))
+                self.db.reserve(fcp_no)
+                _userid, _reserved, _conns = self.get_fcp_usage(fcp_no)
+                LOG.info("After reserve, fcp usage of %s "
+                         "is (assigner_id: %s, reserved:%s, connections: %s)."
+                         % (fcp_no, _userid, _reserved, _conns))
+            elif not reserve and \
+                self.db.get_connections_from_fcp(fcp_no) == 0:
+                # Unreserve fcp device
+                LOG.info("Unreserve fcp device %s from "
+                         "instance %s." % (fcp_no, assigner_id))
+                self.db.unreserve(fcp_no)
+                _userid, _reserved, _conns = self.get_fcp_usage(fcp_no)
+                LOG.info("After unreserve, fcp usage of %s "
+                         "is (assigner_id: %s, reserved:%s, connections: %s)."
+                         % (fcp_no, _userid, _reserved, _conns))
 
         connector = {'zvm_fcp': fcp_list,
                      'wwpns': wwpns,
