@@ -372,20 +372,20 @@ class FCPDbOperator(object):
         If assigner is None, will get all fcp records.
         Format of return is like :
         [
-          (fcp_id, userid, reserved, connections, path),
-          (u'283c', u'user1', 1, 2, 0),
+          (fcp_id, userid, connections, reserved, path),
+          (u'283c', u'user1', 2, 1, 0),
           (u'483c', u'user2', 0, 0, 1)
         ]
         """
         fcp_info = []
         with get_fcp_conn() as conn:
             if assigner_id:
-                result = conn.execute("SELECT fcp_id, assigner_id, reserved, "
-                        "connections, path FROM fcp WHERE "
+                result = conn.execute("SELECT fcp_id, assigner_id, "
+                        "connections, reserved, path FROM fcp WHERE "
                         "assigner_id=?", (assigner_id,))
             else:
-                result = conn.execute("SELECT fcp_id, assigner_id, reserved, "
-                        "connections, path FROM fcp")
+                result = conn.execute("SELECT fcp_id, assigner_id, "
+                        "connections, reserved, path FROM fcp")
             fcp_info = result.fetchall()
             if not fcp_info:
                 if assigner_id:

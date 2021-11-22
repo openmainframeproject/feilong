@@ -610,10 +610,10 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         try:
             res = self.db_op.get_all_fcps_of_assigner()
             # Format of return is like:
-            # [(fcp_id, userid, reserved, connections, path), (...)].
+            # [(fcp_id, userid, connections, reserved, path), (...)].
             self.assertEqual(len(res), 2)
             # connections == 0
-            self.assertEqual(res[0][3], 0)
+            self.assertEqual(res[0][2], 0)
             # path of 1111 is 0
             self.assertEqual(res[0][4], 0)
             # path of 2222 is 1
