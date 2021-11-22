@@ -1157,9 +1157,9 @@ class FCPVolumeManager(object):
             [userid, reserved, connections, path].
         For example, the return value format should be:
         {
-          '1a00': ('userid1', 1, 2, 0),
+          '1a00': ('userid1', 2, 1, 0),
           '1a01': ('userid2', 1, 1, 0),
-          '1b00': ('userid1', 1, 2, 1),
+          '1b00': ('userid1', 2, 1, 1),
           '1b01': ('userid2', 1, 1, 1)
         }
         """
@@ -1182,8 +1182,8 @@ class FCPVolumeManager(object):
             [fcp_id, userid, reserved, connections, path].
         For example, the return value format should be:
         {
-          0: [ (u'1a00', 'userid1', 1, 2, 0), (u'1a01', 'userid2', 1, 1, 0) ],
-          1: [ (u'1b00', 'userid1', 1, 2, 1), (u'1b01', 'userid2', 1, 1, 1) ]
+          0: [ (u'1a00', 'userid1', 2, 1, 0), (u'1a01', 'userid2', 1, 1, 0) ],
+          1: [ (u'1b00', 'userid1', 2, 1, 1), (u'1b01', 'userid2', 1, 1, 1) ]
         }
         """
         # get FCP records from database
