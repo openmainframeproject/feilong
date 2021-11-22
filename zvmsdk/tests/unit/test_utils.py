@@ -13,6 +13,7 @@
 #    under the License.
 
 import mock
+import subprocess
 
 import zvmsdk.utils as zvmutils
 from zvmsdk.tests.unit import base
@@ -36,3 +37,8 @@ class ZVMUtilsTestCases(base.SDKTestCase):
         gsu.return_value = 'TESTUSER'
         self.assertEqual('NLSTUSER', zvmutils.get_namelist())
         base.set_conf('zvm', 'namelist', 'TSTNLIST')
+
+    @mock.patch.object(subprocess, 'check_output')
+    def test_get_lpar_name(self, vmcp_query):
+        vmcp_query.return_value = b"IAAS01EF AT BOEM5401"
+        self.assertEqual("BOEM5401", zvmutils.get_lpar_name())
