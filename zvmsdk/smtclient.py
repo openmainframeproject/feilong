@@ -815,7 +815,9 @@ class SMTClient(object):
         wwpns = "--wwpn=%s" % ws
         lun = "--lun=%s" % lun
         wwid = "--wwid=%s" % wwid
-        cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap', fcs, wwpns, lun, wwid]
+        paths = "--minfcp=%s" % CONF.volume.min_fcp_paths_count
+        cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap', fcs, wwpns,
+               lun, wwid, paths]
 
         if guest_networks:
             # prepare additional parameters for RHCOS BFV
@@ -854,7 +856,7 @@ class SMTClient(object):
             err_output = ""
             output_lines = output.split('\n')
             for line in output_lines:
-                if line.__contains__("ERROR:"):
+                if line.__contains__("Exit MSG:"):
                     err_output += ("\\n" + line.strip())
             LOG.error(err_msg + err_output)
             raise exception.SDKVolumeOperationError(rs=5,

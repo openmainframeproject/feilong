@@ -562,6 +562,8 @@ function dedicateOnlineFcp {
   if [[ $? -ne 0 ]]; then
       printError "An error was encountered while connecting to the dedicate device. Response:\n$out"
       return 1
+  else
+      inform "Dedicate FCP device: ${fcpChannel} successfully."
   fi
 
   # Online the FCP channel
