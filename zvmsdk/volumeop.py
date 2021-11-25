@@ -867,16 +867,6 @@ class FCPVolumeManager(object):
                                         transportfiles=transportfiles,
                                         guest_networks=guest_networks)
         LOG.debug('Exit lock of volume_refresh_bootmap with ret %s.' % ret)
-        # if some fcps passed to refreshbootmap but not in the returned valid
-        # path string, then it will not be defined in the vm definition.
-        # We should mark these unusable FCPs as free in ZCC database.
-        for fcp in fcpchannels:
-            if fcp not in ret:
-                LOG.warning("FCP: %s is not in the valid path list returned "
-                            "by refreshbootmap, marking it as free in DB."
-                            % fcp)
-                # mark FCP as free
-                self.db.unreserve(fcp)
         return ret
 
     def attach(self, connection_info):
