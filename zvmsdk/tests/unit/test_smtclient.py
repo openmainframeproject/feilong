@@ -1793,6 +1793,7 @@ class SDKSMTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(zvmutils, 'execute')
     def test_refresh_bootmap_return_value(self, execute):
+        base.set_conf('volume', 'min_fcp_paths_count', 2)
         fcpchannels = ['5d71']
         wwpns = ['5005076802100c1b', '5005076802200c1b']
         lun = '0000000000000000'
@@ -1804,11 +1805,13 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                '--fcpchannel=5d71',
                                '--wwpn=5005076802100c1b,5005076802200c1b',
                                '--lun=0000000000000000',
-                               '--wwid=600507640083826de00000000000605b']
+                               '--wwid=600507640083826de00000000000605b',
+                               '--minfcp=2']
         execute.assert_called_once_with(refresh_bootmap_cmd, timeout=1200)
 
     @mock.patch.object(zvmutils, 'execute')
     def test_refresh_bootmap_return_value_withskip(self, execute):
+        base.set_conf('volume', 'min_fcp_paths_count', 2)
         fcpchannels = ['5d71']
         wwpns = ['5005076802100c1b', '5005076802200c1b']
         lun = '0000000000000000'
@@ -1820,7 +1823,8 @@ class SDKSMTClientTestCases(base.SDKTestCase):
                                '--fcpchannel=5d71',
                                '--wwpn=5005076802100c1b,5005076802200c1b',
                                '--lun=0000000000000000',
-                               '--wwid=600507640083826de00000000000605b']
+                               '--wwid=600507640083826de00000000000605b',
+                               '--minfcp=2']
         execute.assert_called_once_with(refresh_bootmap_cmd, timeout=1200)
 
     @mock.patch.object(zvmutils, 'get_smt_userid')

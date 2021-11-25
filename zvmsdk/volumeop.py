@@ -672,8 +672,8 @@ class FCPManager(object):
         # first check whether this userid already has a FCP device
         # get the FCP devices belongs to assigner_id
         fcp_list = self.db.get_allocated_fcps_from_assigner(assigner_id)
-        LOG.info("Got available fcp records %s for instance %s in "
-                 "Reserve mode." % (fcp_list, assigner_id))
+        LOG.info("Previously allocated records %s for instance %s." %
+                 (fcp_list, assigner_id))
         if not fcp_list:
             # allocate new ones if fcp_list is empty
             LOG.info("There is no allocated fcps for %s, will allocate "
@@ -702,7 +702,7 @@ class FCPManager(object):
                 # with the get_volume_connector call.
                 self.db.assign(item, assigner_id, update_connections=False)
 
-            LOG.info("allocated %s fcp for %s assigner" %
+            LOG.info("Newly allocated %s fcp for %s assigner" %
                       (available_list, assigner_id))
         else:
             # reuse the old ones if fcp_list is not empty
@@ -711,7 +711,7 @@ class FCPManager(object):
             path_count = self.db.get_path_count()
             if len(fcp_list) != path_count:
                 # TODO: handle the case when len(fcp_list) < multipath_count
-                LOG.warning("FCPs assigned to %s includes %s, "
+                LOG.warning("FCPs previously assigned to %s includes %s, "
                             "it is not equal to the path count: %s." %
                             (assigner_id, fcp_list, path_count))
             # we got it from db, let's reuse it
@@ -867,6 +867,16 @@ class FCPVolumeManager(object):
                                         transportfiles=transportfiles,
                                         guest_networks=guest_networks)
         LOG.debug('Exit lock of volume_refresh_bootmap with ret %s.' % ret)
+        # if some fcps passed to refreshbootmap but not in the returned valid
+        # path string, then it will not be defined in the vm definition.
+        # We should mark these unusable FCPs as free in ZCC database.
+        for fcp in fcpchannels:
+            if fcp not in ret:
+                LOG.warning("FCP: %s is not in the valid path list returned "
+                            "by refreshbootmap, marking it as free in DB."
+                            % fcp)
+                # mark FCP as free
+                self.db.unreserve(fcp)
         return ret
 
     def attach(self, connection_info):

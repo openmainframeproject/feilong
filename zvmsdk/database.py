@@ -594,6 +594,12 @@ class FCPDbOperator(object):
             count_per_path = [a[0] for a in result.fetchall()]
             # return [] if no free fcp found from at least one path
             if len(free_count_per_path) < len(count_per_path):
+                # For get_fcp_pair with same index, we will not check the
+                # CONF.volume.min_fcp_paths_count, the returned fcp count
+                # should always equal to the total paths count
+                LOG.error("Available paths count: %s, total paths count: "
+                          "%s." %
+                          (len(free_count_per_path), len(count_per_path)))
                 return fcp_list
             '''
             fcps 2 paths example:
@@ -671,13 +677,29 @@ class FCPDbOperator(object):
                                       "fcp_id" % no)
                 fcps = result.fetchall()
                 if not fcps:
-                    break
+                    # continue to find whether other paths has available FCP
+                    continue
                 index = random.randint(0, len(fcps) - 1)
                 fcp_list.append(fcps[index][0])
-        if len(fcp_list) < len(path_list):
-            LOG.error("Not enough FCPs in fcp pool")
-            return []
-        return fcp_list
+        # Start to check whether the available count >= min_fcp_paths_count
+        allocated_paths = len(fcp_list)
+        total_paths = len(path_list)
+        if allocated_paths < total_paths:
+            LOG.info("Not all paths have available FCP devices. "
+                     "The count of paths having available FCP: %d is less "
+                     "than total paths: %d. "
+                     "The configured minimum FCP paths count is: %d." %
+                     (allocated_paths, total_paths,
+                      CONF.volume.min_fcp_paths_count))
+            if allocated_paths >= CONF.volume.min_fcp_paths_count:
+                LOG.warning("Return the FCPs from the available paths to "
+                            "continue.")
+                return fcp_list
+            else:
+                LOG.error("Not enough FCPs available, return empty list.")
+                return []
+        else:
+            return fcp_list
 
     def get_all_free_unreserved(self):
         with get_fcp_conn() as conn:
