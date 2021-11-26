@@ -1053,11 +1053,12 @@ class FCPVolumeManager(object):
                 'wwpns': [wwpn]
                 'phy_to_virt_initiators':{virt:physical}
                 'host': host
+                'fcp_paths': fcp_list_paths_count
             }
         """
 
         empty_connector = {'zvm_fcp': [], 'wwpns': [], 'host': '',
-                           'phy_to_virt_initiators': {}}
+                           'phy_to_virt_initiators': {}, 'fcp_paths': 0}
         # get lpar name of the userid, if no host name got, raise exception
         zvm_host = zvmutils.get_lpar_name()
         if zvm_host == '':
@@ -1127,10 +1128,13 @@ class FCPVolumeManager(object):
                          "is (assigner_id: %s, reserved:%s, connections: %s)."
                          % (fcp_no, _userid, _reserved, _conns))
 
+        # return the total path count
+        fcp_paths = self.db.get_path_count()
         connector = {'zvm_fcp': fcp_list,
                      'wwpns': wwpns,
                      'phy_to_virt_initiators': phy_virt_wwpn_map,
-                     'host': zvm_host}
+                     'host': zvm_host,
+                     'fcp_paths': fcp_paths}
         LOG.info('get_volume_connector returns %s for %s' %
                   (connector, assigner_id))
         return connector

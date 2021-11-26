@@ -1033,7 +1033,8 @@ function refreshFCPBootmap {
 
   # Dedicate and online each FCP device. Record the number of available FCP devices
   onlinefcpscount=0
-  onlinefcps=""
+  onlinefailed=""
+  onlinesuccess=""
   for fcp in "${INPUT_FCPS[@]}"
   do
     # dedicate and online FCP device
@@ -1041,9 +1042,10 @@ function refreshFCPBootmap {
     rc=$?
     if [[ $rc -ne 0 ]]; then
         printError "Failed to dedicate or online FCP: $fcp, rc is $rc."
+        onlinefailed+="$fcp "
     else
         ((onlinefcpscount=$onlinefcpscount+1))
-        onlinefcps+="$fcp "
+        onlinesuccess+="$fcp "
     fi
   done
 
@@ -1064,7 +1066,7 @@ function refreshFCPBootmap {
 
   # if the number of online fcp is less than the min FCP number, exit
   if [[ $onlinefcpscount -lt $minfcp ]]; then
-      printError "Exit MSG: The number of online FCP devices: $onlinefcpscount is less than the required minimum FCP path count: $minfcp."
+      printError "Exit MSG: Failed to online FCP devices( $onlinefailed) and the number of online FCP devices( $onlinesuccess) is less than the required minimum FCP path count: $minfcp."
       exit 1
   else
       inform "The number of online FCP devices: $onlinefcpscount satisfies the required minimum FCP path count: $minfcp."
