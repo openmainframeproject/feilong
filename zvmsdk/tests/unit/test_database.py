@@ -597,27 +597,49 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         finally:
             self.db_op.delete('2222')
 
+    def test_update_comment_of_fcp(self):
+        self.db_op.new('2222', 0)
+        try:
+            new_comment = {'state': 'offline'}
+            self.db_op.update_comment_of_fcp('2222', new_comment)
+            self.assertDictEqual(self.db_op.get_comment_of_fcp('2222'),
+                                 new_comment)
+            new_comment = {'owner': 'fakeuser'}
+            self.db_op.update_comment_of_fcp('2222', new_comment)
+            self.assertDictEqual(self.db_op.get_comment_of_fcp('2222'),
+                                 {'owner': 'fakeuser'})
+        finally:
+            self.db_op.delete('2222')
+
     def test_get_all_fcps_exception(self):
         self.assertRaises(exception.SDKObjectNotExistError,
                           self.db_op.get_all_fcps_of_assigner,
                           None)
 
     def test_get_all_fcps(self):
-        """Test case when assigner_id = None.
+        """Test case when assigner_id specified or not.
         """
         self.db_op.new('1111', 0)
         self.db_op.new('2222', 1)
         try:
+            # case 1, the assigner not specified
             res = self.db_op.get_all_fcps_of_assigner()
             # Format of return is like:
-            # [(fcp_id, userid, connections, reserved, path), (...)].
+            # [(fcp_id, userid, connections, reserved, path, comment), (...)].
             self.assertEqual(len(res), 2)
+            self.assertEqual(len(res[0]), 6)
             # connections == 0
             self.assertEqual(res[0][2], 0)
             # path of 1111 is 0
             self.assertEqual(res[0][4], 0)
             # path of 2222 is 1
             self.assertEqual(res[1][4], 1)
+            # case 2, assigner_id
+            self.db_op.assign('1111', 'fakeuser')
+            res = self.db_op.get_all_fcps_of_assigner(assigner_id='fakeuser')
+            self.assertEqual(len(res), 1)
+            self.assertEqual(len(res[0]), 6)
+            self.assertEqual(res[0][1], 'fakeuser')
         finally:
             self.db_op.delete('1111')
             self.db_op.delete('2222')

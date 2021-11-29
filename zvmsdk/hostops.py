@@ -20,7 +20,6 @@ from zvmsdk import exception
 from zvmsdk import log
 from zvmsdk import smtclient
 from zvmsdk import utils as zvmutils
-from zvmsdk import volumeop
 
 
 _HOSTOPS = None
@@ -42,48 +41,6 @@ class HOSTOps(object):
         self._volumes = None
         self.cache_expiration = time.time()
         self.disk_pool = None
-
-    def _get_fcp_info(self):
-        _volumeop = volumeop.get_volumeop()
-
-        try:
-            ret = _volumeop.get_all_fcp_usage_grouped_by_path()
-        except exception.SDKObjectNotExistError:
-            LOG.warning("When getting host info, no fcp records found in "
-                        "database and ignore the exception.")
-            ret = []
-        # format of the output ret is like:
-        # {
-        #   path_id : [ ('fcp id', 'userid', connections, reserved, path) ],
-        #   0: [ ('1a00', 'userid1', 2, 1, 0), ('1a01', 'userid2', 1, 1, 0) ],
-        #   1: [ ('1b00', 'userid1', 2, 1, 1), ('1b01', 'userid2', 1, 1, 1) ]
-        # }
-
-        fcp_info = {}
-        # get total and used numbers for every path
-        for path in ret:
-            free = 0
-            used = 0
-            for item in ret[path]:
-                if item[2] == 0 and item[3] == 0:
-                    # if both reserved and connections is 0
-                    # take it as free
-                    free += 1
-                else:
-                    used += 1
-            fcp_info[path] = {'total': free + used, 'used': used}
-        # if the count of total is different in every path
-        # return the minimum total count
-        min_total = 0
-        # if the count of used is different in every path
-        # return the maximum used count
-        max_used = 0
-        for record in fcp_info.values():
-            if min_total <= 0 or record['total'] < min_total:
-                min_total = record['total']
-            if max_used <= 0 or record['used'] > max_used:
-                max_used = record['used']
-        return {'total': min_total, 'used': max_used}
 
     def get_info(self):
         inv_info = self._smtclient.get_host_info()
@@ -107,7 +64,6 @@ class HOSTOps(object):
             host_info['hypervisor_version'] = version
             host_info['hypervisor_hostname'] = inv_info['hypervisor_name']
             host_info['ipl_time'] = inv_info['ipl_time']
-            host_info['fcp'] = self._get_fcp_info()
 
         disk_pool = CONF.zvm.disk_pool
         if disk_pool is None:
