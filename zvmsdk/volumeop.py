@@ -672,8 +672,8 @@ class FCPManager(object):
         # first check whether this userid already has a FCP device
         # get the FCP devices belongs to assigner_id
         fcp_list = self.db.get_allocated_fcps_from_assigner(assigner_id)
-        LOG.info("Got available fcp records %s for instance %s in "
-                 "Reserve mode." % (fcp_list, assigner_id))
+        LOG.info("Previously allocated records %s for instance %s." %
+                 (fcp_list, assigner_id))
         if not fcp_list:
             # allocate new ones if fcp_list is empty
             LOG.info("There is no allocated fcps for %s, will allocate "
@@ -702,7 +702,7 @@ class FCPManager(object):
                 # with the get_volume_connector call.
                 self.db.assign(item, assigner_id, update_connections=False)
 
-            LOG.info("allocated %s fcp for %s assigner" %
+            LOG.info("Newly allocated %s fcp for %s assigner" %
                       (available_list, assigner_id))
         else:
             # reuse the old ones if fcp_list is not empty
@@ -711,7 +711,7 @@ class FCPManager(object):
             path_count = self.db.get_path_count()
             if len(fcp_list) != path_count:
                 # TODO: handle the case when len(fcp_list) < multipath_count
-                LOG.warning("FCPs assigned to %s includes %s, "
+                LOG.warning("FCPs previously assigned to %s includes %s, "
                             "it is not equal to the path count: %s." %
                             (assigner_id, fcp_list, path_count))
             # we got it from db, let's reuse it
@@ -1053,12 +1053,20 @@ class FCPVolumeManager(object):
                 'wwpns': [wwpn]
                 'phy_to_virt_initiators':{virt:physical}
                 'host': host
+                'fcp_paths': fcp_list_paths_count
             }
         """
 
         empty_connector = {'zvm_fcp': [], 'wwpns': [], 'host': '',
-                           'phy_to_virt_initiators': {}}
-
+                           'phy_to_virt_initiators': {}, 'fcp_paths': 0}
+        # get lpar name of the userid, if no host name got, raise exception
+        zvm_host = zvmutils.get_lpar_name()
+        if zvm_host == '':
+            errmsg = "failed to get zvm host."
+            LOG.error(errmsg)
+            raise exception.SDKVolumeOperationError(rs=11,
+                                                    userid=assigner_id,
+                                                    msg=errmsg)
         # init fcp pool
         self.fcp_mgr.init_fcp(assigner_id)
         # fcp = self.fcp_mgr.find_and_reserve_fcp(assigner_id)
@@ -1071,26 +1079,8 @@ class FCPVolumeManager(object):
         phy_virt_wwpn_map = {}
         wwpn = None
         all_fcp_pool = {}
+        # get wwpns of fcp devices
         for fcp_no in fcp_list:
-            if reserve:
-                # Reserve fcp device
-                LOG.info("Reserve fcp device %s for "
-                         "instance %s." % (fcp_no, assigner_id))
-                self.db.reserve(fcp_no)
-                _userid, _reserved, _conns = self.get_fcp_usage(fcp_no)
-                LOG.info("After reserve, fcp usage of %s "
-                         "is (assigner_id: %s, reserved:%s, connections: %s)."
-                         % (fcp_no, _userid, _reserved, _conns))
-            elif not reserve and \
-                self.db.get_connections_from_fcp(fcp_no) == 0:
-                # Unreserve fcp device
-                LOG.info("Unreserve fcp device %s from "
-                         "instance %s." % (fcp_no, assigner_id))
-                self.db.unreserve(fcp_no)
-                _userid, _reserved, _conns = self.get_fcp_usage(fcp_no)
-                LOG.info("After unreserve, fcp usage of %s "
-                         "is (assigner_id: %s, reserved:%s, connections: %s)."
-                         % (fcp_no, _userid, _reserved, _conns))
             if self.fcp_mgr._fcp_pool.get(fcp_no):
                 wwpn = self.fcp_mgr.get_wwpn(fcp_no)
             else:
@@ -1116,17 +1106,35 @@ class FCPVolumeManager(object):
             LOG.error(errmsg)
             return empty_connector
 
-        inv_info = self._smtclient.get_host_info()
-        zvm_host = inv_info['zvm_host']
-        if zvm_host == '':
-            errmsg = "zvm host not specified."
-            LOG.error(errmsg)
-            return empty_connector
+        # reserve or unreserve FCP record in database
+        for fcp_no in fcp_list:
+            if reserve:
+                # Reserve fcp device
+                LOG.info("Reserve fcp device %s for "
+                         "instance %s." % (fcp_no, assigner_id))
+                self.db.reserve(fcp_no)
+                _userid, _reserved, _conns = self.get_fcp_usage(fcp_no)
+                LOG.info("After reserve, fcp usage of %s "
+                         "is (assigner_id: %s, reserved:%s, connections: %s)."
+                         % (fcp_no, _userid, _reserved, _conns))
+            elif not reserve and \
+                self.db.get_connections_from_fcp(fcp_no) == 0:
+                # Unreserve fcp device
+                LOG.info("Unreserve fcp device %s from "
+                         "instance %s." % (fcp_no, assigner_id))
+                self.db.unreserve(fcp_no)
+                _userid, _reserved, _conns = self.get_fcp_usage(fcp_no)
+                LOG.info("After unreserve, fcp usage of %s "
+                         "is (assigner_id: %s, reserved:%s, connections: %s)."
+                         % (fcp_no, _userid, _reserved, _conns))
 
+        # return the total path count
+        fcp_paths = self.db.get_path_count()
         connector = {'zvm_fcp': fcp_list,
                      'wwpns': wwpns,
                      'phy_to_virt_initiators': phy_virt_wwpn_map,
-                     'host': zvm_host}
+                     'host': zvm_host,
+                     'fcp_paths': fcp_paths}
         LOG.info('get_volume_connector returns %s for %s' %
                   (connector, assigner_id))
         return connector
@@ -1153,9 +1161,9 @@ class FCPVolumeManager(object):
             [userid, reserved, connections, path].
         For example, the return value format should be:
         {
-          '1a00': ('userid1', 1, 2, 0),
+          '1a00': ('userid1', 2, 1, 0),
           '1a01': ('userid2', 1, 1, 0),
-          '1b00': ('userid1', 1, 2, 1),
+          '1b00': ('userid1', 2, 1, 1),
           '1b01': ('userid2', 1, 1, 1)
         }
         """
@@ -1178,8 +1186,8 @@ class FCPVolumeManager(object):
             [fcp_id, userid, reserved, connections, path].
         For example, the return value format should be:
         {
-          0: [ (u'1a00', 'userid1', 1, 2, 0), (u'1a01', 'userid2', 1, 1, 0) ],
-          1: [ (u'1b00', 'userid1', 1, 2, 1), (u'1b01', 'userid2', 1, 1, 1) ]
+          0: [ (u'1a00', 'userid1', 2, 1, 0), (u'1a01', 'userid2', 1, 1, 0) ],
+          1: [ (u'1b00', 'userid1', 2, 1, 1), (u'1b01', 'userid2', 1, 1, 1) ]
         }
         """
         # get FCP records from database

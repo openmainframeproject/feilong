@@ -809,9 +809,9 @@ class TestFCPVolumeManager(base.SDKTestCase):
 
     # tearDownClass deleted to work around bug of 'no such table:fcp'
 
-    @mock.patch("zvmsdk.smtclient.SMTClient.get_host_info")
+    @mock.patch("zvmsdk.utils.get_lpar_name")
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
-    def test_get_volume_connector(self, get_fcp_info, get_host_info):
+    def test_get_volume_connector(self, get_fcp_info, get_lpar_name):
         fcp_info = ['fakehost: FCP device number: B83C',
                     'fakehost:   Status: Free',
                     'fakehost:   NPIV world wide port number: '
@@ -821,7 +821,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     '20076D8500005181']
 
         get_fcp_info.return_value = fcp_info
-        get_host_info.return_value = {'zvm_host': 'fakehost'}
+        get_lpar_name.return_value = "fakehost"
         base.set_conf('volume', 'fcp_list', 'b83c')
         # assign FCP
         self.db_op.new('b83c', 0)
@@ -837,7 +837,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
                         'wwpns': ['2007123400001234'],
                         'phy_to_virt_initiators': {'2007123400001234':
                             '20076d8500005181'},
-                        'host': 'fakehost'}
+                        'host': 'fakehost',
+                        'fcp_paths': 1}
             self.assertEqual(expected, connections)
 
             fcp_list = self.db_op.get_from_fcp('b83c')

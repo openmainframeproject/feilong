@@ -298,8 +298,10 @@ function cleanup_fcpdevices {
   inform "Checking mpath device's existence again."
   devmapper_content=$(ls /dev/mapper/)
   inform "/dev/mapper/ folder content: $devmapper_content."
-  if [[ ( "$map_name" != "" ) && ( -e /dev/mapper/${map_name} ) ]]; then
-      inform "Checking LVM on volume."
+  multipath_output=$(multipath -ll 2>&1)
+  inform "multipath output: ${multipath_output}."
+  if [[ "$map_name" != "" ]]; then
+      inform "Checking $map_name existence again."
       # Step 1: check whether the volume contains lvm. If yes, then remove the LVs.
       if [[ "$vgs_str" != "" ]]; then
           # re-use the previously found vg name because under the leftover scenario, the vg name cann't be detected any more
@@ -364,8 +366,8 @@ function printCMDExamples {
   #   printCMDDescription{} in "zthinshellutils".
   # @Code:
   echo "Example:
-  ./refresh_bootmap.sh --fcpchannel="5d71" --wwpn="5005076802100C1B" --lun="0000000000000000" --wwid="600507640083826de00000000000605b"
-  ./refresh_bootmap.sh --fcpchannel="5d71,5d72" --wwpn="5005076802100C1B,5005076802200C1B,5005076802300C1B,5005076802400C1B,5005076802400C1A,5005076802300C1A,5005076802200C1A,5005076802100C1A" --lun="0000000000000000" --wwid="600507640083826de00000000000605b""
+  ./refresh_bootmap.sh --fcpchannel="5d71" --wwpn="5005076802100C1B" --lun="0000000000000000" --wwid="600507640083826de00000000000605b" --minfcp="1"
+  ./refresh_bootmap.sh --fcpchannel="5d71,5d72" --wwpn="5005076802100C1B,5005076802200C1B,5005076802300C1B,5005076802400C1B,5005076802400C1A,5005076802300C1A,5005076802200C1A,5005076802100C1A" --lun="0000000000000000" --wwid="600507640083826de00000000000605b" --minfcp="2""
 } #printCMDDescription
 
 function parseArgs {
@@ -383,6 +385,7 @@ function parseArgs {
   isOption -w --wwpn "         World Wide Port Name IDs. Support multi wwpn, split by ',' Example: 5005076802400c1b"
   isOption -l --lun "          Logical Unit Number ID. Example: 0000000000000000"
   isOption -d --wwid "         WWID of the volume, Example: 600507640083826de00000000000605b"
+  isOption -m --minfcp "      The minimum acceptable FCP count should be defined to the target vm."
   isOption -i --ignitionurl "  (RHCOS only) The URL or local path that points to RHCOS ignition file"
   isOption -n --nicid "        (RHCOS only) The nic ID. Example: 0.0.1000,0.0.1001,0.0.1002"
   isOption -p --ipconfig "     (RHCOS only) The network configuration info. In format of <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<interface>:none[:[<dns1>][:<dns2>]]"
@@ -415,6 +418,10 @@ function parseArgs {
       wwid="${i#*=}"
       shift # past argument=value
       ;;
+      -m|--minfcp=*)
+      minfcp="${i#*=}"
+      shift # past argument=value
+      ;;
       -i|--ignitionurl=*)
       ignitionurl="${i#*=}"
       shift # past argument=value
@@ -432,7 +439,7 @@ function parseArgs {
       shift # past argument with no value
       ;;
       *)
-      printError "Unknow option: $i." 
+      printError "Exit MSG: Unknow option: $i." 
       exit 3
       ;;
   esac
@@ -451,7 +458,7 @@ function checkSanity {
   #   be expected.
   if [[ $device_type = 'fcp' ]]; then
     if [[ ! $lun || ! $fcpchannel ]];then
-        printError "Please specify lun and fcpchannel."
+        printError "Exit MSG: Please specify lun and fcpchannel."
         exit 4
     fi
     # Intentionally non-local variable.
@@ -460,13 +467,13 @@ function checkSanity {
     # We don't support fba now.
     :
   else
-    printError "Unknown device type."
+    printError "Exit MSG: Unknown device type."
     exit 5
   fi
   if [[ ignitionurl || nicid || ipconfig ]]; then
     # ignitionurl, nicid and ipconfig are required for RHCOS BFV
     if [[ ! ignitionurl || ! nicid || ! ipconfig ]]; then
-        printError "Please specify ignitionurl, nicid and ipconfig."
+        printError "Exit MSG: Please specify ignitionurl, nicid and ipconfig."
         exit 6
     fi
   fi
@@ -598,7 +605,7 @@ function mount_boot_partition_rhcos {
     mountpoint=$1
 
     if [ ! -d $mountpoint ]; then
-        printError "mountpoint $mountpoint must be a directory"
+        printError "Exit MSG: mountpoint $mountpoint must be a directory."
         exit 17
     fi
 
@@ -621,7 +628,7 @@ function mount_boot_partition_rhcos {
                 let retry=$retry+1
                 continue
             fi
-            printError "failed mounting boot partition"
+            printError "Exit MSG: failed mounting boot partition"
             exit 17
         fi
         break;
@@ -642,7 +649,7 @@ function update_zipl_bootloader_rhcos {
     rhcosTempDir=$(/usr/bin/mktemp -d /tmp/XXXXX)
     rc=$?
     if [[ $rc -ne 0 ]]; then
-      printError "Create mount dir fails, rc: $rc."
+      printError "Exit MSG: Create mount dir fails, rc: $rc."
       exit 7
     fi
     deviceMountPoint=$rhcosTempDir/boot_partition
@@ -674,7 +681,7 @@ function update_zipl_bootloader_rhcos {
                     let retry=$retry+1
                     continue
                 else
-                    printError "failed fetching ignition config from ${ignitionurl}: ${RETCODE}"
+                    printError "Exit MSG: failed fetching ignition config from ${ignitionurl}: ${RETCODE}"
                     exit 17
                 fi
                 inform "fetching ignition config from ${ignitionurl}: ${RETCODE}"
@@ -704,7 +711,7 @@ function update_zipl_bootloader_rhcos {
     #Run zipl to update bootloader
     zipl --verbose -p $rhcosTempDir/zipl_prm -i $(ls $deviceMountPoint/ostree/*/*vmlinuz*) -r $(ls $deviceMountPoint/ostree/*/*initramfs*) --target $deviceMountPoint
     if [[ $? -ne 0 ]]; then
-        printError "failed updating bootloder"
+        printError "Exit MSG: failed updating bootloder"
         exit 17
     fi
     #Update BLS config file for reboot
@@ -759,7 +766,7 @@ function refreshZIPL {
     done
     # print error log if retry fails
     if [[ ! -e "$devNode" ]]; then
-      printError "devNode ${devNode} doesn't exist."
+      printError "Exit MSG: devNode ${devNode} doesn't exist."
       printLogs
       exit 6
     fi
@@ -769,7 +776,7 @@ function refreshZIPL {
   deviceMountPoint=$(/usr/bin/mktemp -d /tmp/XXXXX)
   rc=$?
   if [[ $rc -ne 0 ]]; then
-    printError "Create mount dir fails, rc: $rc."
+    printError "Exit MSG: Create mount dir fails, rc: $rc."
     exit 7
   fi
 
@@ -781,7 +788,7 @@ function refreshZIPL {
   mount $devNode ${deviceMountPoint}
   rc=$?
   if [[ $rc -ne 0 ]]; then
-    printError "Mount devNode fails. rc: $rc."
+    printError "Exit MSG: Mount devNode fails. rc: $rc."
     exit 8
   fi
 
@@ -852,7 +859,7 @@ function refreshZIPL {
   if [[ ($os == rhel7*) || ($os == rhel8*) ]]; then
     inform "Refresh $os zipl."
     if [[ ! -e ${deviceMountPoint}/${zipl_conf} ]]; then
-      printError "Failed to execute zipl on $os due to ${deviceMountPoint}/${zipl_conf} not exist."
+      printError "Exit MSG: Failed to execute zipl on $os due to ${deviceMountPoint}/${zipl_conf} not exist."
       exit 13
     else
       # Get root path with wwid, instead of using the UUID
@@ -877,7 +884,7 @@ function refreshZIPL {
       # Create a copy of zipl_conf to be used by zipl command later
       out=`/usr/bin/cp -a ${deviceMountPoint}/${zipl_conf} ${deviceMountPoint}/${zipl_conf}${zipl_postfix} 2>&1`
       if [[ $? -ne 0 ]]; then
-        printError "Failed to create a copy of zipl_conf due to ${out}."
+        printError "Exit MSG: Failed to create a copy of zipl_conf due to ${out}."
         exit 14
       fi
       # Add ${deviceMountPoint} as prefix of "target=|image=|randisk=" to the copy of zipl_conf
@@ -911,13 +918,13 @@ function refreshZIPL {
           # Create a copy of BLS_dir to be used by zipl command later
           out=`mkdir ${deviceMountPoint}/${BLS_dir}${zipl_postfix} 2>&1`
           if [[ ! -d ${deviceMountPoint}/${BLS_dir}${zipl_postfix} ]]; then
-            printError "Failed to create a copy of BLS_dir due to ${out}"
+            printError "Exit MSG: Failed to create a copy of BLS_dir due to ${out}"
             exit 15
           fi
           # Copy BLS files to the copy of BLS_dir
           out=`/usr/bin/cp -a ${deviceMountPoint}/${BLS_dir}/*.conf ${deviceMountPoint}/${BLS_dir}${zipl_postfix} 2>&1`
           if [[ $? -ne 0 ]]; then
-            printError "Failed to copy BLS files to ${BLS_dir}${zipl_postfix} due to ${out}."
+            printError "Exit MSG: Failed to copy BLS files to ${BLS_dir}${zipl_postfix} due to ${out}."
             exit 16
           fi
           # Add ${deviceMountPoint} as prefix of "linux | initrd" to BLS files of the copy of BLS_dir
@@ -946,7 +953,7 @@ function refreshZIPL {
 
   # Check zipl result
   if [[ $rc_zipl -ne 0 ]]; then
-    printError "Failed to execute zipl on $os due to $out_zipl."
+    printError "Exit MSG: Failed to execute zipl on $os due to $out_zipl."
     return 1
   else
     inform "Successed to execute zipl on $os. Output: $out_zipl"
@@ -998,13 +1005,13 @@ function refreshFCPBootmap {
   IFS=',' read -r -a INPUT_WWPNS <<< "$wwpn"
   
   # print the parameters value
-  inform "RefreshFCPBootmap begins. FCP: ${INPUT_FCPS[*]}, WWPNs: ${INPUT_WWPNS[*]}, LUN: $lun, WWID: $wwid."
+  inform "RefreshFCPBootmap begins. FCP: ${INPUT_FCPS[*]}, WWPNs: ${INPUT_WWPNS[*]}, LUN: $lun, WWID: $wwid, minfcp: $minfcp."
 
   # Check the count of FCP devices, if greater than 8, report error and exit.
   fcps_len=${#INPUT_FCPS[@]}
   if [ $fcps_len -gt 8 ]
   then
-      printError "ERROR: The FCP channel count $fcps_len is greater than 8."
+      printError "Exit MSG: The FCP channel count $fcps_len is greater than 8."
       exit 12
   fi
 
@@ -1024,7 +1031,10 @@ function refreshFCPBootmap {
   # Register EXIT sigual for cleanup FCP devices.
   trap 'cleanup_fcpdevices' EXIT
 
-  # Try to find which physical wwpns are being used.
+  # Dedicate and online each FCP device. Record the number of available FCP devices
+  onlinefcpscount=0
+  onlinefailed=""
+  onlinesuccess=""
   for fcp in "${INPUT_FCPS[@]}"
   do
     # dedicate and online FCP device
@@ -1032,9 +1042,35 @@ function refreshFCPBootmap {
     rc=$?
     if [[ $rc -ne 0 ]]; then
         printError "Failed to dedicate or online FCP: $fcp, rc is $rc."
-        exit 3
+        onlinefailed+="$fcp "
+    else
+        ((onlinefcpscount=$onlinefcpscount+1))
+        onlinesuccess+="$fcp "
     fi
   done
+
+  # Print info of each FCP
+  for fcp in "${INPUT_FCPS[@]}"
+  do
+      # print the output of `systool -c fc_host` for debug
+      host=$(lszfcp | grep -i $fcp | awk -F' ' '{print $2}')
+      if [[ -n "$host" ]]; then
+          port_state=$(systool -c fc_host -v $host | grep port_state | awk -F'"' '{print $2}')
+          inform "Port state of fcp: $fcp is: $port_state."
+          host_info=$(systool -c fc_host -v $host)
+          inform "Port detail info of fcp: $fcp is: $host_info."
+      else
+          inform "Failed to find host of fcp: $fcp from the lszfcp output, cann't get port state."
+      fi
+  done
+
+  # if the number of online fcp is less than the min FCP number, exit
+  if [[ $onlinefcpscount -lt $minfcp ]]; then
+      printError "Exit MSG: Failed to online FCP devices( $onlinefailed) and the number of online FCP devices( $onlinesuccess) is less than the required minimum FCP path count: $minfcp."
+      exit 1
+  else
+      inform "The number of online FCP devices: $onlinefcpscount satisfies the required minimum FCP path count: $minfcp."
+  fi
 
   # use the `lszfcp -P` cmd to get the valid combinations of (fcp,wwpn)
   # sample output:
@@ -1050,6 +1086,7 @@ function refreshFCPBootmap {
   # 0.0.1c04 0x500507680b22bac7
   # 0.0.1c04 0x500507680d760027
   lszfcp_output=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
+  inform "Output of 'lszfcp -P': $lszfcp_output."
   declare -A valid_paths_dict
   valid_paths_count=0
   rd_zfcp=""
@@ -1058,6 +1095,7 @@ function refreshFCPBootmap {
   # (["FCP1"]="W1 W2" ["FCP2"]="W3 W4")
   for fcp in "${INPUT_FCPS[@]}"
   do
+      # match accessable target wwpns of this fcp
       for wwpn in "${INPUT_WWPNS[@]}"
       do
           fcp_wwpn_str="0.0.${fcp} 0x${wwpn}"
@@ -1079,6 +1117,17 @@ function refreshFCPBootmap {
       done
   done
 
+  # Usable FCP: Only the FCPs that we can find a valid target WWPN via the `lszfcp -P` can be defined
+  # to VM.
+  # Check whether the count of usable FCPs are bigger than the minimum FCP count
+  #
+  usable_fcps=(${!valid_paths_dict[*]})
+  if [[ ${#usable_fcps[@]} -lt $minfcp ]]; then
+      printError "Exit MSG: Allocated FCPs include: ${INPUT_FCPS[@]}, but the number of usable FCPs(${usable_fcp[@]]}) is less than required minimum FCP count: $minfcp."
+      exit 9
+  fi
+
+  # 
   # check and record all the path that show up after unit_add (combinations of FCP and WWPN)
   # the available_paths_dict will be in the format: (["FCP1"]="W1 W2" ["FCP2"]="W3 W4")
   declare -A available_paths_dict
@@ -1125,7 +1174,7 @@ function refreshFCPBootmap {
 
   # check whether there is valid paths found
   if [[ -z $diskPath ]]; then
-    printError "No avaialble disk found between FCP devices: ${INPUT_FCPS[*]} and wwpns: ${INPUT_WWPNS[*]}"
+    printError "Exit MSG: No avaialble disk found between FCP devices: ${INPUT_FCPS[*]} and wwpns: ${INPUT_WWPNS[*]}"
     printLogs
     exit 10
   fi
@@ -1178,7 +1227,7 @@ function refreshBootMap {
   elif [[ $format = 'FBA' ]]; then
     :
   else
-    printError "Device type not recognised."
+    printError "Exit MSG: Device type not recognised."
     exit 11
   fi 
 } #refreshBootMap

@@ -54,9 +54,9 @@ class HOSTOps(object):
             ret = []
         # format of the output ret is like:
         # {
-        #   path_id : [ ('fcp id', 'userid', reserved, connections, path) ],
-        #   0: [ ('1a00', 'userid1', 1, 2, 0), ('1a01', 'userid2', 1, 1, 0) ],
-        #   1: [ ('1b00', 'userid1', 1, 2, 1), ('1b01', 'userid2', 1, 1, 1) ]
+        #   path_id : [ ('fcp id', 'userid', connections, reserved, path) ],
+        #   0: [ ('1a00', 'userid1', 2, 1, 0), ('1a01', 'userid2', 1, 1, 0) ],
+        #   1: [ ('1b00', 'userid1', 2, 1, 1), ('1b01', 'userid2', 1, 1, 1) ]
         # }
 
         fcp_info = {}

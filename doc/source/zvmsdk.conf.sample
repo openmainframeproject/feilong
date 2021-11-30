@@ -244,13 +244,26 @@
 
 
 # 
+# The minimum number of FCP paths that should be defined to a vm when attaching
+#  a data volume to a vm or BFV (deploying a vm from SCSI image).
+# 
+# The default value would be the path count of the current fcp_list.
+# 
+# If there is no this count of FCP paths available, the attach volume or BFV
+#  would fail.
+# 
+# This param is optional
+#min_fcp_paths_count=None
+
+
+# 
 # The timeout value for waiting refresh_bootmap execution, in seconds.
 # 
-# The default value is 600 seconds, if the execution of refresh_bootmap
+# The default value is 1200 seconds, if the execution of refresh_bootmap
 # reached the timeout, the process of refresh_bootmap will be stopped.
 # 
 # This param is optional
-#refresh_bootmap_timeout=600
+#refresh_bootmap_timeout=1200
 
 
 [wsgi]

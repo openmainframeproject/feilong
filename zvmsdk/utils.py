@@ -453,6 +453,21 @@ def get_smt_userid():
         raise exception.SDKInternalError(msg=msg)
 
 
+def get_lpar_name():
+    """Get the name of the LPAR that this vm is on."""
+    cmd = ["sudo", "/sbin/vmcp", "query userid"]
+    try:
+        userid = subprocess.check_output(cmd,
+                                         close_fds=True,
+                                         stderr=subprocess.STDOUT)
+        userid = bytes.decode(userid)
+        userid = userid.split()[-1]
+        return userid
+    except Exception as err:
+        msg = ("Failed to get the LPAR name for the smt server: %s") % err
+        raise exception.SDKInternalError(msg=msg)
+
+
 def get_namelist():
     """Generate namelist.
 
