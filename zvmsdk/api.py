@@ -314,7 +314,6 @@ class SDKAPI(object):
             LOG.error(msg)
             raise exception.SDKInvalidInputFormat(msg)
         diskpool_type = disk_pool.split(':')[0].upper()
-        diskpool_name = disk_pool.split(':')[1].upper()
         if diskpool_type not in ('ECKD', 'FBA'):
             msg = ('Invalid disk pool type found in disk_pool, expect'
                    'disk_pool like ECKD:eckdpool or FBA:fbapool')
@@ -323,7 +322,7 @@ class SDKAPI(object):
 
         action = "get the volumes of disk pool: '%s'" % disk_pool
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            return self._hostops.diskpool_get_volumes(diskpool_name)
+            return self._hostops.diskpool_get_volumes(disk_pool)
 
     def host_get_volume_info(self, volume=None):
         """ Retrieve volume information.
