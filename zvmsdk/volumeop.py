@@ -100,12 +100,11 @@ class VolumeOperatorAPI(object):
     def check_fcp_exist_in_db(self, fcp, raise_exec=True):
         return self._volume_manager.check_fcp_exist_in_db(fcp, raise_exec)
 
-    def get_all_fcp_usage(self, assigner_id=None):
-        return self._volume_manager.get_all_fcp_usage(assigner_id)
-
-    def get_all_fcp_usage_grouped_by_path(self, assigner_id=None):
-        return self._volume_manager.get_all_fcp_usage_grouped_by_path(
-                assigner_id)
+    def get_all_fcp_usage(self, assigner_id=None, statistics=True,
+                          sync_with_zvm=False):
+        return self._volume_manager.get_all_fcp_usage(
+                assigner_id, statistics=statistics,
+                sync_with_zvm=sync_with_zvm)
 
     def get_fcp_usage(self, fcp):
         return self._volume_manager.get_fcp_usage(fcp)
@@ -1157,56 +1156,196 @@ class FCPVolumeManager(object):
         else:
             return True
 
-    def get_all_fcp_usage(self, assigner_id=None):
-        """Get all fcp information grouped by FCP id.
-        Every item under one FCP is like:
-            [userid, reserved, connections, path].
-        For example, the return value format should be:
-        {
-          '1a00': ('userid1', 2, 1, 0),
-          '1a01': ('userid2', 1, 1, 0),
-          '1b00': ('userid1', 2, 1, 1),
-          '1b01': ('userid2', 1, 1, 1)
-        }
-        """
-        ret = self.db.get_all_fcps_of_assigner(assigner_id)
-        if assigner_id:
-            LOG.info("Got all fcp usage of userid %s: %s" % (assigner_id, ret))
-        else:
-            # if userid is None, get usage of all the fcps
-            LOG.info("Got all fcp usage: %s" % ret)
-        # transfer records into dict grouped by FCP id
-        fcp_id_mapping = {}
-        for item in ret:
-            fcp_id = item[0]
-            fcp_id_mapping[fcp_id] = item
-        return fcp_id_mapping
+    def _update_raw_fcp_usage(self, raw_usage_by_path, item):
+        path_id = item[4]
+        if not raw_usage_by_path.get(path_id, None):
+            raw_usage_by_path[path_id] = []
+        # append item to raw usage
+        raw_usage_by_path[path_id].append(item)
+        return raw_usage_by_path
 
-    def get_all_fcp_usage_grouped_by_path(self, assigner_id=None):
-        """Get all fcp information grouped by path id.
-        Every item under one path format:i
-            [fcp_id, userid, reserved, connections, path].
-        For example, the return value format should be:
+    def _update_statistics_usage(self, statistics_usage, item):
+        """Tranform raw usage in FCP database into statistic data.
+        """
+        # get state record in "comment" column of database
+        # get statistic data about: available, allocated, notfound
+        # unallocated_but_active, allocated_but_free
+        fcp_id, _userid, connections, reserved, path_id, comment = item
+        if comment:
+            state = item[5].get("state", "").lower()
+        else:
+            state = ""
+        if not statistics_usage.get(path_id, None):
+            statistics_usage[path_id] = {"available": [],
+                                         "allocated": [],
+                                         "unallocated_but_active": [],
+                                         "allocated_but_free": [],
+                                         "notfound": [],
+                                         "offline": []}
+        # case G: (state = notfound)
+        # this FCP in database but not found in z/VM
+        if state == "notfound":
+            statistics_usage[path_id]["notfound"].append(fcp_id)
+            LOG.warning("When getting statistics, found state of FCP record "
+                        "%s is notfound in database ." % str(item))
+        # case H: (state = offline)
+        # this FCP in database but offline in z/VM
+        if state == "offline":
+            statistics_usage[path_id]["offline"].append(fcp_id)
+            LOG.warning("When getting statistics, found state of FCP record "
+                        "%s is offline in database." % str(item))
+        # found this FCP in z/VM
+        if connections == 0:
+            if reserved == 0:
+                # case A: (reserve=0 and conn=0 and state=free)
+                # this FCP is available for use
+                if state == "free":
+                    statistics_usage[path_id]["available"].append(fcp_id)
+                    LOG.debug("When getting statistics, found an available "
+                              "FCP record %s in database." % str(item))
+                # case E: (conn=0 and reserve=0 and state=active)
+                # this FCP is available in database but its state
+                # is active in smcli output
+                if state == "active":
+                    statistics_usage[path_id]["unallocated_but_active"].\
+                        append(fcp_id)
+                    LOG.warning("When getting statistics, found a FCP record "
+                                "%s available in database but its state is "
+                                "active, it may be occupied by a userid "
+                                "outside of this ZCC." % str(item))
+            else:
+                # reserver == 1
+                # case C: (reserve=1 and conn=0)
+                # the fcp should be in task or a bug happen
+                LOG.warning("When getting statistics, found a FCP record %s "
+                            "may be in tasking." % str(item))
+        else:
+            # connections != 0
+            if reserved == 0:
+                # case D: (reserve = 0 and conn != 0)
+                # must have a bug result in this
+                LOG.warning("When getting statistics, found a FCP record %s "
+                            "unreserved in database but its connections "
+                            "is not 0." % str(item))
+            else:
+                # case B: (reserve=1 and conn!=0)
+                # ZCC allocated this to a userid
+                statistics_usage[path_id]["allocated"].append(fcp_id)
+                LOG.debug("When getting statistics, found an allocated "
+                          "FCP record: %s." % str(item))
+            # case F: (conn!=0 and state=free)
+            if state == "free":
+                statistics_usage[path_id]["allocated_but_free"].append(
+                    fcp_id)
+                LOG.warning("When getting statistics, found a FCP record %s "
+                            "allocated by ZCC but its state is "
+                            "free." % str(item))
+        return statistics_usage
+
+    def get_all_fcp_usage(self, assigner_id=None, statistics=True,
+                          sync_with_zvm=False):
+        """Get all fcp information grouped by FCP id.
+        :param assigner_id: (str) if is None, will get all fcps info in db.
+        :param statistics: (boolean) if is True, will get statistics data
+            of all FCPs
+        :param sync_with_zvm: (boolean) if is True, will call SMCLI command
+            to sync the FCP state in the database
+        :return: (dict) the raw and statistic data of all FCP devices
+        The return data example:
         {
-          0: [ (u'1a00', 'userid1', 2, 1, 0), (u'1a01', 'userid2', 1, 1, 0) ],
-          1: [ (u'1b00', 'userid1', 2, 1, 1), (u'1b01', 'userid2', 1, 1, 1) ]
+            "raw": {
+                  # (fcp_id, userid, connections, reserved, path, comment),
+                  0 : (
+                    (u'283c',  u'user1', 2, 1, 0, {'state': 'active'}),
+                    (u'183c',  u'', 0, 0, 0,{'state': 'notfound'}),
+                  ),
+                  1 : (
+                    (u'383c',  u'user3', 0, 0, 1, {'state': 'active',
+                                                   'owner': 'userid'}),
+                    (u'483c',  u'user2', 0, 0, 1, {'state': 'free'}),
+                  )
+                  ...
+            },
+            "statistics": {
+                0: {
+                    # case A: (reserve = 0 and conn = 0 and state = free)
+                    # FCP is available and in free status
+                    "available": ('1a00','1a05',...)
+
+                    # case B: (reserve = 1 and conn != 0)
+                    # nomral in-use FCP
+                    "allocated": ('1a00','1a05',...)
+
+                    # case C: (reserve = 1, conn = 0)
+                    # the fcp should be in task or a bug cause this situation
+                    # will log about this
+
+                    # case D: (reserve = 0 and conn != 0)
+                    # should be a bug result in this situation
+                    # will log about this
+
+                    # case E: (reserve = 0, conn = 0, state = active)
+                    # occupied by outside userid
+                    'unallocated_but_active': ('1b04','1b05')
+
+                    # case F: (conn != 0, state = free)
+                    # we allocated it in db but the FCP status is free
+                    # this is an situation not expected
+                    "allocated_but_free": ('1a00','1a05',...)
+
+                    # case G: (state = notfound)
+                    # not found in smcli
+                    "notfound": ('1a00','1a05',...)
+
+                    # case H: (state = offline)
+                    # not found in smcli
+                    "notfound": ('1a00','1a05',...)
+                },
+                1: {
+                    ...
+                }
+            }
         }
         """
-        # get FCP records from database
-        ret = self.db.get_all_fcps_of_assigner(assigner_id)
+        ret = {}
+        # sync the state of FCP devices by calling smcli
+        if sync_with_zvm:
+            # TODO
+            LOG.info("Begin to sync state of FCP devices with zvm ...")
+            LOG.info("Sync FCP state done.")
+
+        # get raw query results from database
+        try:
+            raw_usage = self.db.get_all_fcps_of_assigner(assigner_id)
+        except exception.SDKObjectNotExistError:
+            LOG.warning("When getting fcp usage, no fcp records found in "
+                        "database and ignore the exception.")
+            raw_usage = []
+
         if assigner_id:
-            LOG.info("Got all fcp usage of userid %s: %s" % (assigner_id, ret))
+            statistics = False
+            LOG.debug("Got all fcp usage of userid %s: "
+                      "%s" % (assigner_id, raw_usage))
         else:
             # if userid is None, get usage of all the fcps
-            LOG.info("Got all fcp usage: %s" % ret)
-        # transfer records into dict grouped by path id
-        path_fcp_mapping = {}
-        for item in ret:
-            path_id = item[4]
-            if not path_fcp_mapping.get(path_id, None):
-                path_fcp_mapping[path_id] = []
-            path_fcp_mapping[path_id].append(item)
-        return path_fcp_mapping
+            LOG.debug("Got all fcp usage: %s" % raw_usage)
+
+        # transfer records into dict grouped by path ID
+        raw_usage_by_path = {}
+        statistics_usage = {}
+        for item in raw_usage:
+            # get raw fcp usage
+            self._update_raw_fcp_usage(raw_usage_by_path, item)
+            # get fcp statistics usage
+            if statistics:
+                self._update_statistics_usage(statistics_usage, item)
+        # storage usage into return value
+        LOG.debug("Got raw FCP usage: %s" % raw_usage_by_path)
+        ret["raw"] = raw_usage_by_path
+        if statistics:
+            LOG.info("Got statistic FCP usage: %s" % statistics_usage)
+            ret["statistics"] = statistics_usage
+        return ret
 
     def get_fcp_usage(self, fcp):
         userid, reserved, connections = self.db.get_usage_of_fcp(fcp)

@@ -372,22 +372,21 @@ class FCPDbOperator(object):
         If assigner is None, will get all fcp records.
         Format of return is like :
         [
-          (fcp_id, userid, connections, reserved, path),
-          (u'283c', u'user1', 2, 1, 0),
-          (u'483c', u'user2', 0, 0, 1)
+          (fcp_id, userid, connections, reserved, path, comment),
+          (u'283c', u'user1', 2, 1, 0, {'state': 'active', 'owner': 'user1'}),
+          (u'483c', u'user2', 0, 0, 1, {'state': 'free'})
         ]
         """
-        fcp_info = []
         with get_fcp_conn() as conn:
             if assigner_id:
                 result = conn.execute("SELECT fcp_id, assigner_id, "
-                        "connections, reserved, path FROM fcp WHERE "
-                        "assigner_id=?", (assigner_id,))
+                        "connections, reserved, path, comment FROM "
+                        "fcp WHERE assigner_id=?", (assigner_id,))
             else:
                 result = conn.execute("SELECT fcp_id, assigner_id, "
-                        "connections, reserved, path FROM fcp")
-            fcp_info = result.fetchall()
-            if not fcp_info:
+                        "connections, reserved, path, comment FROM fcp")
+            results = result.fetchall()
+            if not results:
                 if assigner_id:
                     msg = 'No FCPs found belongs to userid %s.' % assigner_id
                     obj_desc = "FCP belongs to userid: %s" % assigner_id
@@ -397,6 +396,14 @@ class FCPDbOperator(object):
                 LOG.error(msg)
                 raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
                                                        modID=self._module_id)
+            else:
+                # transfer comment str to dict format
+                fcp_info = []
+                for item in results:
+                    item = list(item)
+                    if item[5]:
+                        item[5] = eval(item[5])
+                    fcp_info.append(tuple(item))
         return fcp_info
 
     def get_usage_of_fcp(self, fcp):
@@ -425,6 +432,39 @@ class FCPDbOperator(object):
                                                           reserved,
                                                           connections,
                                                           fcp))
+
+    def get_comment_of_fcp(self, fcp):
+        """Get the comment content, transfer into dict and return.
+        """
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT comment "
+                                  "FROM fcp WHERE fcp_id=?", (fcp,))
+            current_comment = result.fetchall()
+            if not current_comment or current_comment[0][0] == '':
+                current_comment = {}
+            else:
+                # transfer from str to dict
+                current_comment = eval(current_comment[0][0])
+        return current_comment
+
+    def update_comment_of_fcp(self, fcp, comment_dict):
+        """Update the cotent of comment.
+        :param fcp: (str) the FCP ID string
+        :param comment_dict: (dict) the dict to describe the FCP status
+            this api will transfer this into string and store into db
+        The comment in database should be a string like:
+            "{'state': 'active', 'owner': 'iaas0001'}"
+        """
+        # the input parameter comment_dict must be a dict
+        if not isinstance(comment_dict, dict):
+            msg = ("Failed to update comment of FCP %s because input "
+                   "comment %s is not a dict type." % (fcp, comment_dict))
+            raise exception.SDKInternalError(msg=msg, modID=self._module_id)
+        new_comment = str(comment_dict)
+        # storage the new comment into database
+        with get_fcp_conn() as conn:
+            conn.execute("UPDATE fcp SET comment=? "
+                         "WHERE fcp_id=?", (new_comment, fcp))
 
     def update_path_of_fcp(self, fcp, path):
         with get_fcp_conn() as conn:
