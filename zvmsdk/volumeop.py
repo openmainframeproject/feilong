@@ -1051,7 +1051,7 @@ class FCPVolumeManager(object):
                 'zvm_fcp': [fcp]
                 'wwpns': [wwpn]
                 'phy_to_virt_initiators':{virt:physical}
-                'host': host
+                'host': LPARname_userid
                 'fcp_paths': fcp_list_paths_count
             }
         """
@@ -1129,10 +1129,12 @@ class FCPVolumeManager(object):
 
         # return the total path count
         fcp_paths = self.db.get_path_count()
+        # return the lparname+userid as host
+        ret_host = zvm_host + '_' + assigner_id
         connector = {'zvm_fcp': fcp_list,
                      'wwpns': wwpns,
                      'phy_to_virt_initiators': phy_virt_wwpn_map,
-                     'host': zvm_host,
+                     'host': ret_host,
                      'fcp_paths': fcp_paths}
         LOG.info('get_volume_connector returns %s for %s' %
                   (connector, assigner_id))
