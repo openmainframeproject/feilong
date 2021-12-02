@@ -1573,14 +1573,15 @@ class SDKAPI(object):
         """Get connector information of the guest for attaching to volumes.
         This API is for Openstack Cinder driver only now.
 
-        Connector information is a dictionary representing the ip of the
-        machine that will be making the connection, the name of the iscsi
-        initiator and the hostname of the machine as follows::
+        Connector information is a dictionary representing the
+        machine that will be making the connection as follows::
 
             {
                 'zvm_fcp': fcp
                 'wwpns': [wwpn]
                 'host': host
+                'phy_to_virt_initiators': {},
+                'fcp_paths': 0
             }
         This information will be used by IBM storwize FC driver in Cinder.
 

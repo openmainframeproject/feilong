@@ -837,7 +837,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
                         'wwpns': ['2007123400001234'],
                         'phy_to_virt_initiators': {'2007123400001234':
                             '20076d8500005181'},
-                        'host': 'fakehost',
+                        'host': 'fakehost_fakeuser',
                         'fcp_paths': 1}
             self.assertEqual(expected, connections)
 
