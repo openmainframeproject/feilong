@@ -2592,6 +2592,27 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         request.assert_called_once_with(requestData)
 
     @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_fcp_info_by_status(self, request):
+        fake_userid = 'FakeID'
+        requestData = "getvm FakeID fcpinfo all YES"
+        fcp_info = ['FCP device number: 5C01',
+                    'Status: Active',
+                    'NPIV world wide port number: C05076DDF7001111',
+                    'Channel path ID: 55',
+                    'Physical world wide port number: C05076DDF7001111',
+                    'Owner: BJCB0007',
+                    'FCP device number: 5C02',
+                    'Status: Free',
+                    'NPIV world wide port number: C05076DDF7002222',
+                    'Channel path ID: 55',
+                    'Physical world wide port number: C05076DDF7002222',
+                    'Owner: NONE']
+        request.return_value = {'overallRC': 0,
+                                'response': fcp_info}
+        self._smtclient.get_fcp_info_by_status(fake_userid)
+        request.assert_called_once_with(requestData)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
     def test_undedicate_device(self, request):
         fake_userid = 'FakeID'
         vaddr = 'vaddr'

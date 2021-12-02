@@ -20,6 +20,8 @@ ZVM_USER_DEFAULT_PRIVILEGE = 'G'
 CONFIG_DRIVE_FORMAT = 'tgz'
 DEFAULT_EPH_DISK_FMT = 'ext3'
 DISK_FUNC_NAME = 'setupDisk'
+# the count of lines that one FCP info has
+FCP_INFO_LINES_PER_ITEM = 6
 
 RINV_HOST_KEYWORDS = {
     "zcc_userid": "ZCC USERID:",

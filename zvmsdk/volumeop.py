@@ -21,6 +21,7 @@ import threading
 import os
 
 from zvmsdk import config
+from zvmsdk import constants
 from zvmsdk import database
 from zvmsdk import dist
 from zvmsdk import exception
@@ -318,6 +319,7 @@ class FCP(object):
         self._chpid = None
         self._physical_port = None
         self._assigned_id = None
+        self._owner = None
 
         self._parse(init_info)
 
@@ -341,6 +343,11 @@ class FCP(object):
         chpid = info_line.split(':')[-1].strip().upper()
         return chpid if chpid else None
 
+    @staticmethod
+    def _get_owner_from_line(info_line):
+        owner = info_line.split(':')[-1].strip().upper()
+        return owner if owner else None
+
     def _parse(self, init_info):
         """Initialize a FCP device object from several lines of string
            describing properties of the FCP device.
@@ -353,12 +360,14 @@ class FCP(object):
            The format comes from the response of xCAT, do not support
            arbitrary format.
         """
-        if isinstance(init_info, list) and (len(init_info) == 5):
+        lines_per_item = constants.FCP_INFO_LINES_PER_ITEM
+        if isinstance(init_info, list) and (len(init_info) == lines_per_item):
             self._dev_no = self._get_dev_number_from_line(init_info[0])
             self._dev_status = self._get_dev_status_from_line(init_info[1])
             self._npiv_port = self._get_wwpn_from_line(init_info[2])
             self._chpid = self._get_chpid_from_line(init_info[3])
             self._physical_port = self._get_wwpn_from_line(init_info[4])
+            self._owner = self._get_owner_from_line(init_info[5])
 
     def get_dev_no(self):
         return self._dev_no
@@ -374,6 +383,9 @@ class FCP(object):
 
     def get_chpid(self):
         return self._chpid
+
+    def get_owner(self):
+        return self._owner
 
     def is_valid(self):
         # FIXME: add validation later
@@ -432,13 +444,15 @@ class FCPManager(object):
         for path, fcp_set in self._fcp_path_mapping.items():
             complete_fcp_set = complete_fcp_set | fcp_set
         fcp_info = self._get_all_fcp_info(assigner_id)
-        lines_per_item = 5
+        lines_per_item = constants.FCP_INFO_LINES_PER_ITEM
         # after process, _fcp_pool should be a list include FCP ojects
         # whose FCP ID are from CONF.volume.fcp_list and also should be
         # found in fcp_info
         num_fcps = len(fcp_info) // lines_per_item
         for n in range(0, num_fcps):
-            fcp_init_info = fcp_info[(5 * n):(5 * (n + 1))]
+            start_line = lines_per_item * n
+            end_line = lines_per_item * (n + 1)
+            fcp_init_info = fcp_info[start_line:end_line]
             fcp = FCP(fcp_init_info)
             dev_no = fcp.get_dev_no()
             if dev_no in complete_fcp_set:
@@ -575,19 +589,8 @@ class FCPManager(object):
                         if old_path != path:
                             self.db.update_path_of_fcp(fcp, path)
 
-    def _list_fcp_details(self, userid, status):
-        return self._smtclient.get_fcp_info_by_status(userid, status)
-
-    def _get_all_fcp_info(self, assigner_id):
-        fcp_info = []
-        free_fcp_info = self._list_fcp_details(assigner_id, 'free')
-        active_fcp_info = self._list_fcp_details(assigner_id, 'active')
-
-        if free_fcp_info:
-            fcp_info.extend(free_fcp_info)
-
-        if active_fcp_info:
-            fcp_info.extend(active_fcp_info)
+    def _get_all_fcp_info(self, assigner_id, status=None):
+        fcp_info = self._smtclient.get_fcp_info_by_status(assigner_id, status)
 
         return fcp_info
 
@@ -746,11 +749,13 @@ class FCPManager(object):
 
     def get_all_fcp_pool(self, assigner_id):
         all_fcp_info = self._get_all_fcp_info(assigner_id)
+        lines_per_item = constants.FCP_INFO_LINES_PER_ITEM
         all_fcp_pool = {}
-        lines_per_item = 5
         num_fcps = len(all_fcp_info) // lines_per_item
         for n in range(0, num_fcps):
-            fcp_init_info = all_fcp_info[(5 * n):(5 * (n + 1))]
+            start_line = lines_per_item * n
+            end_line = lines_per_item * (n + 1)
+            fcp_init_info = all_fcp_info[start_line:end_line]
             fcp = FCP(fcp_init_info)
             dev_no = fcp.get_dev_no()
             all_fcp_pool[dev_no] = fcp

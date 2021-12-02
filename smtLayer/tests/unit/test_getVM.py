@@ -27,6 +27,7 @@ class SMTGetVMTestCase(base.SMTTestCase):
                          'NPIV world wide port number: C05076DE330005EA',
                          'Channel path ID: 27',
                          'Physical world wide port number: C05076DE33002E41',
+                         'Owner: NONE',
                          'FCP device number: 1B0F',
                          'Status: Free',
                          'NPIV world wide port number: C05076DE330005EB',
@@ -35,4 +36,4 @@ class SMTGetVMTestCase(base.SMTTestCase):
                          'Owner: turns', '']
         raw_data = '\n'.join(fake_response)
         ret = getVM.extract_fcp_data(rh, raw_data, 'free')
-        self.assertEqual(ret, '\n'.join(fake_response[0:10]))
+        self.assertEqual(ret, '\n'.join(fake_response[0:12]))

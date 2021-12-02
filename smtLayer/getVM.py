@@ -569,6 +569,8 @@ def showOperandLines(rh):
 def extract_fcp_data(rh, raw_data, status):
     """
     extract data from smcli System_WWPN_Query output.
+    we always specify OWNER=YES.
+
     Input:
         raw data returned from smcli
     Output:
@@ -579,11 +581,13 @@ def extract_fcp_data(rh, raw_data, status):
        NPIV world wide port number: C05076DE330005EA\n
        Channel path ID: 27\n
        Physical world wide port number:C05076DE33002E41\n
+       Owner: TEST0008\n
      FCP device number: 1B0F\n
        Status: Active\n
        NPIV world wide port number: C05076DE330005EB\n
        Channel path ID: 27\n
        Physical world wide port number:C05076DE33002E41\n'
+       Owner: NONE\n
     """
     raw_data = raw_data.split('\n')
 
@@ -597,8 +601,9 @@ def extract_fcp_data(rh, raw_data, status):
             data.append(i)
     # put matched data into one list of strings
     results = []
-    for i in range(0, len(data), 5):
-        if (i + 5) > len(data):
+    lines_per_item = 6
+    for i in range(0, len(data), lines_per_item):
+        if (i + lines_per_item) > len(data):
             # sometimes the SMCLI output:
             #
             # FCP device number: 1B0F
@@ -616,8 +621,8 @@ def extract_fcp_data(rh, raw_data, status):
             break
         temp = data[i + 1].split(':')[-1].strip()
         # only return results match the status
-        if temp.lower() == status.lower():
-            results.extend(data[i:i + 5])
+        if status.lower() == "all" or temp.lower() == status.lower():
+            results.extend(data[i:i + lines_per_item])
 
     return '\n'.join(results)
 
@@ -639,7 +644,7 @@ def fcpinfo(rh):
     """
     rh.printSysLog("Enter changeVM.dedicate")
 
-    parms = ["-T", rh.userid]
+    parms = ["-T", rh.userid, "-k OWNER=YES"]
 
     hideList = []
     results = invokeSMCLI(rh,
