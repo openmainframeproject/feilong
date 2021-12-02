@@ -1342,21 +1342,15 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.db_op.delete('283c')
 
     def test_get_all_fcp_usage_empty(self):
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.volumeops.get_all_fcp_usage)
+        empty_usage1 = {'raw': {}}
+        empty_usage2 = {'raw': {}, 'statistics': {}}
+        ret1 = self.volumeops.get_all_fcp_usage('dummy')
+        ret2 = self.volumeops.get_all_fcp_usage()
+        self.assertDictEqual(ret1, empty_usage1)
+        self.assertDictEqual(ret2, empty_usage2)
 
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.volumeops.get_all_fcp_usage,
-                          'dummy')
-
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.volumeops.get_all_fcp_usage_grouped_by_path)
-
-        self.assertRaises(exception.SDKObjectNotExistError,
-                          self.volumeops.get_all_fcp_usage_grouped_by_path,
-                          'dummy')
-
-    def test_get_all_fcp_usage(self):
+    def test_get_all_fcp_usage_raw(self):
+        """Test the raw usage will be set correctly."""
         self.db_op = database.FCPDbOperator()
         self.db_op.new('283c', 0)
         self.db_op.new('383c', 0)
@@ -1369,47 +1363,127 @@ class TestFCPVolumeManager(base.SDKTestCase):
         self.db_op.increase_usage('283c')
         try:
             ret = self.volumeops.get_all_fcp_usage()
-            self.assertEqual(len(ret), 3)
-            self.assertTrue('283c' in ret and
-                            '383c' in ret and
-                            '483c in ret')
+            # case 1: RAW usage content not empty
+            #         but statistics is empty
+            raw_usage = ret['raw']
+            statistic_usage = ret['statistics']
+            # there are 2 FCPs on path 0
+            self.assertEqual(len(raw_usage[0]), 2)
+            # there is 1 FCP on path 1
+            self.assertEqual(len(raw_usage[1]), 1)
+            # path 0 status verify
+            self.assertTrue('283c' in raw_usage[0][0] or
+                            '383c' in raw_usage[0][1])
+            # path 1 status verify
+            self.assertTrue('483c' in raw_usage[1][0])
+            expected_statistics = {0: {'available': [],
+                                       'allocated': ['283c'],
+                                       'unallocated_but_active': [],
+                                       'allocated_but_free': [],
+                                       'notfound': [],
+                                       'offline': []},
+                                   1: {'available': [],
+                                       'allocated': [],
+                                       'unallocated_but_active': [],
+                                       'allocated_but_free': [],
+                                       'notfound': [],
+                                       'offline': []}}
+            self.assertDictEqual(expected_statistics, statistic_usage)
+            # case 2: userid was specified
+            statistic_usage = ret['statistics']
             ret = self.volumeops.get_all_fcp_usage(
                     assigner_id='user1')
+            raw_usage = ret['raw']
+            self.assertNotIn('statistics', ret)
             self.assertEqual(len(ret), 1)
-            self.assertTrue('283c' in ret and '383c' not in ret)
+            self.assertTrue('283c' in raw_usage[0][0])
         finally:
             self.db_op.delete('283c')
             self.db_op.delete('383c')
             self.db_op.delete('483c')
 
-    def test_get_all_fcp_usage_grouped_by_path(self):
+    def test_get_all_fcp_usage_statistics(self):
+        """Test the raw usage will be set correctly."""
         self.db_op = database.FCPDbOperator()
+        self.db_op.new('183c', 0)
         self.db_op.new('283c', 0)
         self.db_op.new('383c', 0)
-        self.db_op.new('483c', 1)
-        # set reserved to 1
-        self.db_op.reserve('283c')
-        # set connections to 1 and set userid
-        self.db_op.assign('283c', 'user1')
-        # set connections to 2
-        self.db_op.increase_usage('283c')
-        path0 = 0
-        path1 = 1
+        self.db_op.new('483c', 0)
+        self.db_op.new('583c', 1)
+        self.db_op.new('683c', 1)
+        self.db_op.new('783c', 1)
+        self.db_op.new('883c', 1)
+        comment_state_free = {'state': 'free'}
+        comment_owner_active = {'owner': 'fakeuser', 'state': 'active'}
+        comment_state_offline = {'state': 'offline'}
+        comment_state_notfound = {'state': 'notfound'}
         try:
-            ret = self.volumeops.get_all_fcp_usage_grouped_by_path()
-            self.assertEqual(len(ret), 2)
-            self.assertEqual(len(ret[path0]), 2)
-            self.assertEqual(len(ret[path1]), 1)
-            self.assertTrue('283c' in ret[path0][0] or '283c' in ret[path0][1])
-            self.assertTrue('483c' in ret[path1][0])
-            ret = self.volumeops.get_all_fcp_usage_grouped_by_path(
-                    assigner_id='user1')
-            self.assertTrue('283c' in ret[path0][0] and
-                            '383c' not in ret[path0][0])
+            # case A: (reserve = 0 and conn = 0 and state = free)
+            self.db_op.update_comment_of_fcp('183c', comment_state_free)
+            self.db_op.update_comment_of_fcp('183c', comment_state_free)
+            # B: (reserve = 1 and conn != 0)
+            self.db_op.reserve('283c')
+            self.db_op.increase_usage('283c')
+            # C: (reserve = 1, conn = 0)
+            self.db_op.reserve('383c')
+            # D: (reserve = 0 and conn != 0)
+            self.db_op.increase_usage('483c')
+            # E: (reserve = 0, conn = 0, state = active)
+            self.db_op.update_comment_of_fcp('583c', comment_owner_active)
+            # F: (conn != 0, state = free)
+            self.db_op.increase_usage('683c')
+            self.db_op.update_comment_of_fcp('683c', comment_state_free)
+            # G: (state = notfound)
+            self.db_op.update_comment_of_fcp('783c', comment_state_notfound)
+            # H: (state = offline)
+            self.db_op.update_comment_of_fcp('883c', comment_state_offline)
+            # extra case 1: B + G
+            self.db_op.update_comment_of_fcp('283c', comment_state_notfound)
+            # extra case 2: C + H
+            self.db_op.update_comment_of_fcp('383c', comment_state_offline)
+            # extra case 3: D + G
+            self.db_op.update_comment_of_fcp('483c', comment_state_notfound)
+            ret = self.volumeops.get_all_fcp_usage()
+            statistic_usage = ret['statistics']
+            expected_usage = {0: {"available": ['183c'],
+                                  "allocated": ['283c'],
+                                  "unallocated_but_active": [],
+                                  "allocated_but_free": [],
+                                  "notfound": ['283c', '483c'],
+                                  "offline": ['383c']},
+                              1: {"available": [],
+                                  "allocated": [],
+                                  "unallocated_but_active": ['583c'],
+                                  "allocated_but_free": ['683c'],
+                                  "notfound": ['783c'],
+                                  "offline": ['883c']}}
+            # path 1 status
+            self.assertIn('183c', statistic_usage[0]['available'])
+            self.assertIn('283c', statistic_usage[0]['allocated'])
+            self.assertEqual([], statistic_usage[0]['unallocated_but_active'])
+            self.assertEqual([], statistic_usage[0]['allocated_but_free'])
+            self.assertIn('283c', statistic_usage[0]['notfound'])
+            self.assertIn('483c', statistic_usage[0]['notfound'])
+            self.assertIn('383c', statistic_usage[0]['offline'])
+            # path 2 status
+            self.assertEqual([], statistic_usage[1]['available'])
+            self.assertEqual([], statistic_usage[1]['allocated'])
+            self.assertIn('583c',
+                          statistic_usage[1]['unallocated_but_active'])
+            self.assertIn('683c', statistic_usage[1]['allocated_but_free'])
+            self.assertIn('783c', statistic_usage[1]['notfound'])
+            self.assertIn('883c', statistic_usage[1]['offline'])
+            # overall status
+            self.assertDictEqual(statistic_usage, expected_usage)
         finally:
+            self.db_op.delete('183c')
             self.db_op.delete('283c')
             self.db_op.delete('383c')
             self.db_op.delete('483c')
+            self.db_op.delete('583c')
+            self.db_op.delete('683c')
+            self.db_op.delete('783c')
+            self.db_op.delete('883c')
 
     def test_get_fcp_usage(self):
         self.db_op = database.FCPDbOperator()

@@ -1589,7 +1589,8 @@ class SDKAPI(object):
         """
         return self._volumeop.get_volume_connector(userid, reserve)
 
-    def get_all_fcp_usage(self, userid=None):
+    def get_all_fcp_usage(self, userid=None, statistics=True,
+                          sync_with_zvm=False):
         """API for getting all the FCP usage for specified userid.
 
         :param str userid: the user id of the guest. if userid is None,
@@ -1606,7 +1607,8 @@ class SDKAPI(object):
                   the keys are the fcp IDs, the value is a list contains
                   [userid, reserved, connections] values.
         """
-        return self._volumeop.get_all_fcp_usage(userid)
+        return self._volumeop.get_all_fcp_usage(userid, statistics=statistics,
+                                                sync_with_zvm=sync_with_zvm)
 
     @check_fcp_exist()
     def get_fcp_usage(self, fcp):
