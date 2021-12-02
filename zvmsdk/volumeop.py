@@ -389,6 +389,15 @@ class FCPManager(object):
         self._fcp_path_mapping = {}
         self.db = database.FCPDbOperator()
         self._smtclient = smtclient.get_smtclient()
+        # Sync FCP DB
+        self.sync_db()
+
+    def sync_db(self):
+        """Sync FCP DB with FCP list and ZVM"""
+        # First, sync with FCP list
+        self._sync_db_with_fcp_list()
+        # Second, sync with ZVM
+        self._sync_db_with_zvm()
 
     def init_fcp(self, assigner_id):
         """init_fcp to init the FCP managed by this host"""
@@ -457,9 +466,14 @@ class FCPManager(object):
         each fcp devices in the list string. A fcp list is composed of fcp
         device addresses, range indicator '-', and split indicator ';'.
 
-        For example, if fcp_list is
-        "0011-0013;0015;0017-0018", expand_fcp_list(fcp_list) will return
-        [0011, 0012, 0013, 0015, 0017, 0018].
+        For example,
+        if fcp_list is "0011-0013;0015;0017-0018",
+        then the function will return
+        {
+          0: {'0011' ,'0012', '0013'}
+          1: {'0015'}
+          2: {'0017', '0018'}
+        }
 
         ATTENTION: To support multipath, we expect fcp_list should be like
         "0011-0014;0021-0024", "0011-0014" should have been on same physical
@@ -469,12 +483,11 @@ class FCPManager(object):
         When attach, we will choose one WWPN from path0 group, and choose
         another one from path1 group. Then we will attach this pair of WWPNs
         together to the guest as a way to implement multipath.
-
         """
         LOG.debug("Expand FCP list %s" % fcp_list)
 
         if not fcp_list:
-            return set()
+            return dict()
         fcp_list = fcp_list.strip()
         fcp_list = fcp_list.replace(' ', '')
         range_pattern = '[0-9a-fA-F]{1,4}(-[0-9a-fA-F]{1,4})?'
@@ -761,6 +774,147 @@ class FCPManager(object):
             return None
         physical = fcp.get_physical_port()
         return physical
+
+    def get_fcp_dict_in_fcp_list(self, fcp_list):
+        """Return a dict of all FCPs in fcp_list
+
+        example (key=FCP, value=path):
+        {
+            '1a06': 0,
+            '1a09': 0,
+            '1a07': 0,
+
+            '1b05': 1,
+            '1b06': 1,
+            '1b0a': 1,
+        }
+        """
+
+        """
+        expanded_fcps example (key=path, value=FCPs):
+        {
+            0: {'1a06', '1a09', '1a07'},
+            1: {'1b05', '1b06', '1b0a'},
+        }
+        """
+        expanded_fcps = self._expand_fcp_list(fcp_list)
+        fcp_dict_in_fcp_list = {
+            fcp: path for path, fcps in expanded_fcps.items() for fcp in fcps}
+        return fcp_dict_in_fcp_list
+
+    def get_fcp_dict_in_db(self):
+        """Return a dict of all FCPs in FCP_DB
+
+        example (key=FCP)
+        {
+            '1a06': ('1a06', 'C2WDL003', 1, 1, 0, ''),
+            '1b08': ('1b08', 'C2WDL003', 1, 1, 1, ''),
+            '1c08': ('1c08', 'C2WDL003', 1, 1, 2, ''),
+            '1a09': ('1a09', '', 0, 0, 0, '')
+        }
+        """
+
+        try:
+            # Get all FCPs found in DB.
+            fcp_in_db = self.db.get_all_fcps_of_assigner()
+        except exception.SDKObjectNotExistError:
+            fcp_in_db = list()
+
+        fcp_dict_in_db = {fcp[0]: fcp for fcp in fcp_in_db}
+        return fcp_dict_in_db
+
+    def get_fcp_dict_in_zvm(self):
+        """Return a dict of all FCPs in ZVM
+
+        fcp_dict_in_zvm example (key=FCP):
+        {
+            '1a06': <zvmsdk.volumeop.FCP object at 0x3ff94f74128>,
+            '1a07': <zvmsdk.volumeop.FCP object at 0x3ff94f74160>,
+            '1b06': <zvmsdk.volumeop.FCP object at 0x3ff94f74588>,
+            '1b07': <zvmsdk.volumeop.FCP object at 0x3ff94f74710>
+        }
+        """
+        # Get the userid of smt server
+        smt_userid = zvmutils.get_smt_userid()
+        # Return a dict of all FCPs in ZVM
+        fcp_dict_in_zvm = self.get_all_fcp_pool(smt_userid)
+        return fcp_dict_in_zvm
+
+    def _sync_db_with_fcp_list(self):
+        """Sync FCP DB with FCP list"""
+
+        LOG.info("Enter: Sync FCP DB with FCP list.")
+
+        # Get a dict of all FCPs in fcp_list
+        fcp_list = CONF.volume.fcp_list
+        fcp_dict_in_fcp_list = self.get_fcp_dict_in_fcp_list(fcp_list)
+
+        # Get a dict of all FCPs in FCP DB
+        fcp_dict_in_db = self.get_fcp_dict_in_db()
+        LOG.info("fcp_dict_in_db: {}".format(fcp_dict_in_db))
+
+        # Divide FCPs into three sets
+        inter_set = set(fcp_dict_in_fcp_list) & set(fcp_dict_in_db)
+        del_fcp_set = set(fcp_dict_in_db) - inter_set
+        add_fcp_set = set(fcp_dict_in_fcp_list) - inter_set
+        LOG.info("FCPs remain unchanged: {}".format(inter_set))
+        LOG.info("FCPs to be removed: {}".format(del_fcp_set))
+        LOG.info("FCPs to be added: {}".format(add_fcp_set))
+
+        # Update path of existing FCP if path changed
+        for fcp in inter_set:
+            old_path = fcp_dict_in_db[fcp][4]
+            new_path = fcp_dict_in_fcp_list[fcp]
+            if old_path != new_path:
+                self.db.update_path_of_fcp(fcp, new_path)
+                LOG.warn("FCP {} path changed from {} to {}.".format(
+                    fcp, old_path, new_path))
+        # Delete FCP from DB if connections=0 and reserve=0
+        for fcp in del_fcp_set:
+            reserve = fcp_dict_in_db[fcp][3]
+            connections = fcp_dict_in_db[fcp][2]
+            if connections == 0 and reserve == 0:
+                self.db.delete(fcp)
+                LOG.info("FCP {} removed.".format(fcp))
+            else:
+                LOG.warn("Ignore the request of "
+                         "deleting in-use FCP {}.".format(fcp))
+        # Add new FCP into DB
+        for fcp in add_fcp_set:
+            path = fcp_dict_in_fcp_list[fcp]
+            self.db.new(fcp, path)
+            LOG.info("FCP {} added.".format(fcp))
+
+        LOG.info("Exit: Sync FCP DB with FCP list.")
+
+    def _sync_db_with_zvm(self):
+        """Sync FCP DB with the FCP info queried from zVM"""
+
+        LOG.info("Enter: Sync FCP DB with FCP info queried from zVM.")
+
+        # Get a dict of all FCPs in ZVM
+        fcp_dict_in_zvm = self.get_fcp_dict_in_zvm()
+
+        # Get a dict of all FCPs in FCP DB
+        fcp_dict_in_db = self.get_fcp_dict_in_db()
+        LOG.info("fcp_dict_in_db: {}".format(fcp_dict_in_db))
+
+        # Update DB column of comment based on the info queried from zVM
+        for fcp in fcp_dict_in_db:
+            comment_dict = dict()
+            if fcp in fcp_dict_in_zvm:
+                # Possible state returned by ZVM:
+                # 'active', 'free' or 'offline'
+                fcp_state = fcp_dict_in_zvm[fcp].get_dev_status()
+                comment_dict['state'] = fcp_state
+                if fcp_state == 'offline':
+                    LOG.warn("FCP {} offline.".format(fcp))
+            else:
+                LOG.warn("FCP {} not found in ZVM.".format(fcp))
+                comment_dict['state'] = 'notfound'
+            self.db.update_comment_of_fcp(fcp, comment_dict)
+
+        LOG.info("Exit: Sync FCP DB with FCP info queried from zVM.")
 
 
 # volume manager for FCP protocol

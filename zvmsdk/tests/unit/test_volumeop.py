@@ -15,6 +15,7 @@
 
 import mock
 import shutil
+from mock import call, Mock
 
 from zvmsdk import database
 from zvmsdk import dist
@@ -321,6 +322,7 @@ class TestFCP(base.SDKTestCase):
 class TestFCPManager(base.SDKTestCase):
 
     @classmethod
+    @mock.patch("zvmsdk.volumeop.FCPManager.sync_db", mock.Mock())
     def setUpClass(cls):
         super(TestFCPManager, cls).setUpClass()
         cls.fcpops = volumeop.FCPManager()
@@ -798,10 +800,193 @@ class TestFCPManager(base.SDKTestCase):
         expected = ['c83c', 'c83d']
         self.assertEqual(expected, result)
 
+    def test_get_fcp_dict_in_fcp_list(self):
+
+        fcp_list = "1a01-1a03,1a06;1b01,1b03-1b05"
+        expected_fcp_dict = {
+            '1a01': 0, '1a02': 0, '1a03': 0, '1a06': 0,
+            '1b01': 1, '1b03': 1, '1b04': 1, '1b05': 1,
+        }
+        fcp_dict = self.fcpops.get_fcp_dict_in_fcp_list(fcp_list)
+        self.assertEqual(fcp_dict, expected_fcp_dict)
+
+    def test_get_fcp_dict_in_db(self):
+
+        expected_fcp_dict = {
+            '1a01': ('1a01', '', 1, 1, 0, ''),
+            '1a02': ('1a02', '', 2, 1, 0, ''),
+            '1b01': ('1b01', '', 1, 1, 1, ''),
+            '1b03': ('1b03', '', 0, 0, 1, '')
+        }
+        try:
+            self.db_op.new('1a01', 0)
+            self.db_op.new('1a02', 0)
+            self.db_op.new('1b01', 1)
+            self.db_op.new('1b03', 1)
+            self.db_op.increase_usage('1a01')
+            self.db_op.reserve('1a01')
+            self.db_op.increase_usage('1a02')
+            self.db_op.increase_usage('1a02')
+            self.db_op.reserve('1a02')
+            self.db_op.increase_usage('1b01')
+            self.db_op.reserve('1b01')
+            fcp_dict = self.fcpops.get_fcp_dict_in_db()
+            self.assertEqual(fcp_dict, expected_fcp_dict)
+        finally:
+            self.db_op.delete('1a01')
+            self.db_op.delete('1a02')
+            self.db_op.delete('1b01')
+            self.db_op.delete('1b03')
+
+    @mock.patch("zvmsdk.utils.get_smt_userid", mock.Mock())
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    def test_get_fcp_dict_in_zvm(self, mock_zvm_fcp_info):
+
+        raw_fcp_info_from_zvm = [
+            'opnstk1: FCP device number: 1A01',
+            'opnstk1:   Status: Free',
+            'opnstk1:   NPIV world wide port number: 20076D8500005182',
+            'opnstk1:   Channel path ID: 59',
+            'opnstk1:   Physical world wide port number: '
+            '20076D8500005181',
+            'opnstk1: FCP device number: 1B03',
+            'opnstk1:   Status: Active',
+            'opnstk1:   NPIV world wide port number: ',
+            'opnstk1:   Channel path ID: 50',
+            'opnstk1:   Physical world wide port number: '
+            '20076D8500005185']
+        mock_zvm_fcp_info.return_value = raw_fcp_info_from_zvm
+        expected_fcp_dict_keys = {
+            '1a01', '1b03'}
+        fcp_dict = self.fcpops.get_fcp_dict_in_zvm()
+        self.assertEqual(expected_fcp_dict_keys, set(fcp_dict.keys()))
+        self.assertTrue(
+            all([isinstance(v, volumeop.FCP)
+                for v in list(fcp_dict.values())]))
+
+    @mock.patch("zvmsdk.database.FCPDbOperator.new")
+    @mock.patch("zvmsdk.database.FCPDbOperator.delete")
+    @mock.patch("zvmsdk.database.FCPDbOperator.update_path_of_fcp")
+    @mock.patch("zvmsdk.volumeop.FCPManager.get_fcp_dict_in_fcp_list")
+    @mock.patch("zvmsdk.volumeop.FCPManager.get_fcp_dict_in_db")
+    def test_sync_db_with_fcp_list(self,
+                                   fcp_dict_in_db, fcp_dict_in_fcp_list,
+                                   fcp_update_path, fcp_delete, fcp_new):
+
+        fcp_dict_in_db.return_value = {
+            # inter_set:
+            '1a01': ('1a01', '', 1, 1, 0, ''),
+            '1a02': ('1a02', '', 2, 1, 2, ''),
+            '1a03': ('1a03', '', 2, 1, 3, ''),
+            # del_fcp_set
+            '1b05': ('1a05', '', 0, 1, 3, ''),
+            '1b06': ('1a06', '', 1, 1, 3, ''),
+            '1b01': ('1b01', '', 0, 0, 2, ''),
+            '1b03': ('1b03', '', 0, 0, 1, '')
+        }
+        fcp_dict_in_fcp_list.return_value = {
+            # inter_set:
+            '1a01': 0,
+            '1a02': 3,
+            '1a03': 2,
+            # add_fcp_set
+            '1a04': 0,
+            '1b04': 1,
+        }
+        self.fcpops._sync_db_with_fcp_list()
+        # Update FCP path if path changed
+        expected_calls = [call('1a02', 3), call('1a03', 2)]
+        fcp_update_path.call_count == 2
+        fcp_update_path.assert_has_calls(expected_calls, any_order=True)
+        # Delete FCP from DB if connections=0 and reserve=0
+        expected_calls = [call('1b01'), call('1b03')]
+        fcp_delete.call_count == 2
+        fcp_delete.assert_has_calls(expected_calls, any_order=True)
+        # Add new FCP into DB
+        expected_calls = [call('1a04', 0), call('1b04', 1)]
+        fcp_new.call_count == 2
+        fcp_new.assert_has_calls(expected_calls, any_order=True)
+
+    @mock.patch("zvmsdk.utils.get_smt_userid", Mock())
+    @mock.patch("zvmsdk.database.FCPDbOperator.update_comment_of_fcp")
+    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
+    @mock.patch("zvmsdk.volumeop.FCPManager.get_fcp_dict_in_db")
+    def test_sync_db_with_zvm(self, fcp_dict_in_db,
+                              mock_zvm_fcp_info, fcp_update_comment):
+
+        fcp_dict_in_db.return_value = {
+            # inter_set:
+            '1a01': ('1a01', '', 1, 1, 0, ''),
+            '1a02': ('1a02', '', 2, 1, 2, ''),
+            '1a03': ('1a03', '', 2, 1, 3, ''),
+            # del_fcp_set
+            '1b05': ('1a05', '', 0, 1, 3, ''),
+            '1b06': ('1a06', '', 1, 1, 3, ''),
+            '1b01': ('1b01', '', 0, 0, 2, ''),
+            '1b03': ('1b03', '', 0, 0, 1, '')
+        }
+        raw_fcp_info_from_zvm = [
+            'opnstk1: FCP device number: 1A01',
+            'opnstk1:   Status: Free',
+            'opnstk1:   NPIV world wide port number: 20076D8500005182',
+            'opnstk1:   Channel path ID: 59',
+            'opnstk1:   Physical world wide port number: '
+            '20076D8500005181',
+            'opnstk1: FCP device number: 1A02',
+            'opnstk1:   Status: Offline',
+            'opnstk1:   NPIV world wide port number: 20076D8500005183',
+            'opnstk1:   Channel path ID: 50',
+            'opnstk1:   Physical world wide port number: '
+            '20076D8500005185',
+            'opnstk1: FCP device number: 1A03',
+            'opnstk1:   Status: Active',
+            'opnstk1:   NPIV world wide port number: 20076D8500005184',
+            'opnstk1:   Channel path ID: 59',
+            'opnstk1:   Physical world wide port number: '
+            '20076D8500005181',
+            'opnstk1: FCP device number: 1B03',
+            'opnstk1:   Status: Active',
+            'opnstk1:   NPIV world wide port number: 20076D8500005185',
+            'opnstk1:   Channel path ID: 50',
+            'opnstk1:   Physical world wide port number: '
+            '20076D8500005185',
+            'opnstk1: FCP device number: 1B01',
+            'opnstk1:   Status: Free',
+            'opnstk1:   NPIV world wide port number: 20076D8500005186',
+            'opnstk1:   Channel path ID: 59',
+            'opnstk1:   Physical world wide port number: '
+            '20076D8500005181',
+            'opnstk1: FCP device number: 1B06',
+            'opnstk1:   Status: Offline',
+            'opnstk1:   NPIV world wide port number: 20076D8500005187',
+            'opnstk1:   Channel path ID: 50',
+            'opnstk1:   Physical world wide port number: '
+            '20076D8500005185'
+        ]
+        mock_zvm_fcp_info.return_value = raw_fcp_info_from_zvm
+        self.fcpops._sync_db_with_zvm()
+        # Update FCP path if path changed
+        expected_calls = [
+            # Free FCP
+            call('1a01', {'state': 'free'}),
+            call('1b01', {'state': 'free'}),
+            # Active FCP
+            call('1a03', {'state': 'active'}),
+            call('1b03', {'state': 'active'}),
+            # Offline FCP
+            call('1a02', {'state': 'offline'}),
+            call('1b06', {'state': 'offline'}),
+            # NotFound FCP
+            call('1b05', {'state': 'notfound'})
+        ]
+        fcp_update_comment.call_count == 7
+        fcp_update_comment.assert_has_calls(expected_calls, any_order=True)
+
 
 class TestFCPVolumeManager(base.SDKTestCase):
 
     @classmethod
+    @mock.patch("zvmsdk.volumeop.FCPManager.sync_db", mock.Mock())
     def setUpClass(cls):
         super(TestFCPVolumeManager, cls).setUpClass()
         cls.volumeops = volumeop.FCPVolumeManager()

@@ -32,6 +32,9 @@ class SDKAPITestCase(base.SDKTestCase):
     def setUp(self):
         super(SDKAPITestCase, self).setUp()
         vmops.VMOps.check_guests_exist_in_db = mock.MagicMock()
+        patcher = mock.patch('zvmsdk.volumeop.FCPManager.sync_db')
+        self.addCleanup(patcher.stop)
+        self.mock_sync_db = patcher.start()
         self.api = api.SDKAPI()
 
     def test_init_ComputeAPI(self):
