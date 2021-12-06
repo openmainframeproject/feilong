@@ -712,7 +712,8 @@ class SDKAPI(object):
         from one z/VM system to another within an SSI cluster.
 
         :param userid: (str) the userid of the vm to be relocated or tested
-        :param dest_zcc_userid: (str) the userid of zcc on destination
+        :param dest_zcc_userid: (str) the userid of zcc on destination.
+               If None, no any userid is set into the guest.
         :param destination: (str) the system ID of the z/VM system to which
                the specified vm will be relocated or tested.
         :param parms: (dict) a dictionary of options for relocation.
@@ -740,11 +741,10 @@ class SDKAPI(object):
 
         """
         if lgr_action.lower() == 'move':
-            if dest_zcc_userid == '':
-                errmsg = ("'dest_zcc_userid' is required if the value of "
-                          "'lgr_action' equals 'move'.")
-                LOG.error(errmsg)
-                raise exception.SDKMissingRequiredInput(msg=errmsg)
+            if dest_zcc_userid is None or dest_zcc_userid.strip() == '':
+                msg = "dest_zcc_userid is empty so it will not be set " \
+                      "during LGR."
+                LOG.info(msg)
 
             # Live_migrate the guest
             operation = "Move guest '%s' to SSI '%s'" % (userid, destination)
@@ -759,12 +759,15 @@ class SDKAPI(object):
                                                     comments=comments)
             # Add authorization for new zcc.
             # This should be done after migration succeeds.
-            cmd = ('echo -n %s > /etc/iucv_authorized_userid\n' %
-                                                    dest_zcc_userid)
-            rc = self._smtclient.execute_cmd(userid, cmd)
-            if rc != 0:
-                err_msg = ("Add authorization for new zcc failed")
-                LOG.error(err_msg)
+            # If the dest_zcc_userid is empty, nothing will be done because
+            # this should be a onboarded guest and no permission to do it.
+            if dest_zcc_userid is not None and dest_zcc_userid.strip() != '':
+                cmd = ('echo -n %s > /etc/iucv_authorized_userid\n' %
+                                                        dest_zcc_userid)
+                rc = self._smtclient.execute_cmd(userid, cmd)
+                if rc != 0:
+                    err_msg = ("Add authorization for new zcc failed")
+                    LOG.error(err_msg)
 
         if lgr_action.lower() == 'test':
             operation = "Test move guest '%s' to SSI '%s'" % (userid,
