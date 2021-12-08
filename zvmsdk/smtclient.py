@@ -243,19 +243,24 @@ class SMTClient(object):
         with zvmutils.log_and_reraise_smt_request_failed(action):
             self._request(rd)
 
-    def get_fcp_info_by_status(self, userid, status):
+    def get_fcp_info_by_status(self, userid, status=None):
 
         """get fcp information by the status.
 
-        :userid: The name of the image to query fcp info
-        :status: The status of target fcps. eg:'active', 'free' or 'offline'.
+        :userid: (str) The name of the image to query fcp info
+        :status: (str) If status is None, will return the FCP devices
+            of all statuses. If status specified, will only return the
+            FCP devices of this status.
+            The status must be 'active', 'free' or 'offline'.
+        :returns: (list) a list of string lines that the command output.
         """
-        results = self._get_fcp_info_by_status(userid, status)
-        return results
-
-    def _get_fcp_info_by_status(self, userid, status):
         action = 'fcpinfo'
-        rd = ' '.join(['getvm', userid, action, status])
+        if status is None:
+            # if status is None, will transfer status to all
+            # to let smtLayer return the FCPs of all the statuses
+            status = "all"
+        # always set -k OWNER=YES
+        rd = ' '.join(['getvm', userid, action, status, "YES"])
         action = "query fcp info of '%s'" % userid
         with zvmutils.log_and_reraise_smt_request_failed(action):
             results = self._request(rd)

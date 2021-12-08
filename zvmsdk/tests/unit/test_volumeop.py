@@ -297,26 +297,30 @@ class TestFCP(base.SDKTestCase):
                 'opnstk1:   Status: Free',
                 'opnstk1:   NPIV world wide port number: NONE',
                 'opnstk1:   Channel path ID: 59',
-                'opnstk1:   Physical world wide port number: 20076D8500005181']
+                'opnstk1:   Physical world wide port number: 20076D8500005181',
+                'Owner: NONE']
         fcp = volumeop.FCP(info)
         self.assertEqual('B83D', fcp._dev_no.upper())
         self.assertEqual('free', fcp._dev_status)
         self.assertIsNone(fcp._npiv_port)
         self.assertEqual('59', fcp._chpid.upper())
         self.assertEqual('20076D8500005181', fcp._physical_port.upper())
+        self.assertEqual('NONE', fcp.get_owner().upper())
 
     def test_parse_npiv(self):
         info = ['opnstk1: FCP device number: B83D',
                 'opnstk1:   Status: Active',
                 'opnstk1:   NPIV world wide port number: 20076D8500005182',
                 'opnstk1:   Channel path ID: 59',
-                'opnstk1:   Physical world wide port number: 20076D8500005181']
+                'opnstk1:   Physical world wide port number: 20076D8500005181',
+                'Owner: UNIT0001']
         fcp = volumeop.FCP(info)
         self.assertEqual('B83D', fcp._dev_no.upper())
         self.assertEqual('active', fcp._dev_status)
         self.assertEqual('20076D8500005182', fcp._npiv_port.upper())
         self.assertEqual('59', fcp._chpid.upper())
         self.assertEqual('20076D8500005181', fcp._physical_port.upper())
+        self.assertEqual('UNIT0001', fcp.get_owner().upper())
 
 
 class TestFCPManager(base.SDKTestCase):
@@ -396,13 +400,15 @@ class TestFCPManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 59',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005181',
+                    'Owner: NONE',
                     'opnstk1: FCP device number: B83E',
                     'opnstk1:   Status: Active',
                     'opnstk1:   NPIV world wide port number: '
                     '20076D8500005183',
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: '
-                    '20076D8500005185']
+                    '20076D8500005185',
+                    'Owner: UNIT0001']
 
         mock_get.return_value = fcp_list
         fake_userid = 'fakeuser'
@@ -433,7 +439,8 @@ class TestFCPManager(base.SDKTestCase):
                 'opnstk1:   Status: Free',
                 'opnstk1:   NPIV world wide port number: 20076D8500005182',
                 'opnstk1:   Channel path ID: 59',
-                'opnstk1:   Physical world wide port number: 20076D8500005181']
+                'opnstk1:   Physical world wide port number: 20076D8500005181',
+                'Owner: UNIT0001']
         try:
             self.fcpops._fcp_pool['1234'] = volumeop.FCP(info)
             self.fcpops._add_fcp('1234', 0)
@@ -448,7 +455,8 @@ class TestFCPManager(base.SDKTestCase):
                 'opnstk1:   Status: Active',
                 'opnstk1:   NPIV world wide port number: 20076D8500005182',
                 'opnstk1:   Channel path ID: 59',
-                'opnstk1:   Physical world wide port number: 20076D8500005181']
+                'opnstk1:   Physical world wide port number: 20076D8500005181',
+                'Owner: UNIT0001']
         try:
             self.fcpops._fcp_pool['1234'] = volumeop.FCP(info)
             self.fcpops._add_fcp('1234', 1)
@@ -469,13 +477,15 @@ class TestFCPManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 59',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005181',
+                    'Owner: NONE',
                     'opnstk1: FCP device number: C83D',
                     'opnstk1:   Status: Active',
                     'opnstk1:   NPIV world wide port number: '
                     '20076D8500005183',
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: '
-                    '20076D8500005188']
+                    '20076D8500005188',
+                    'Owner: UNIT0001']
 
         mock_get.return_value = fcp_list
         fake_userid = 'fakeuser'
@@ -507,6 +517,7 @@ class TestFCPManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 59',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005181',
+                    'Owner: NONE',
                     'opnstk1: FCP device number: B83E',
                     'opnstk1:   Status: Active',
                     'opnstk1:   NPIV world wide port number: '
@@ -514,6 +525,7 @@ class TestFCPManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005185',
+                    'Owner: UNIT0001',
                     'opnstk1: FCP device number: B83F',
                     'opnstk1:   Status: Active',
                     'opnstk1:   NPIV world wide port number: '
@@ -521,6 +533,7 @@ class TestFCPManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005185',
+                    'Owner: UNIT0002',
                     'opnstk1: FCP device number: C83D',
                     'opnstk1:   Status: Active',
                     'opnstk1:   NPIV world wide port number: '
@@ -528,6 +541,7 @@ class TestFCPManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005185',
+                    'Owner: UNIT0002',
                     'opnstk1: FCP device number: C83E',
                     'opnstk1:   Status: Active',
                     'opnstk1:   NPIV world wide port number: '
@@ -535,13 +549,15 @@ class TestFCPManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005185',
+                    'Owner: UNIT0003',
                     'opnstk1: FCP device number: C83F',
                     'opnstk1:   Status: Active',
                     'opnstk1:   NPIV world wide port number: '
                     '20076D8500005187',
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: '
-                    '20076D8500005188']
+                    '20076D8500005188',
+                    'Owner: UNIT0004']
 
         mock_get.return_value = fcp_list
         fake_userid = 'fakeuser'
@@ -569,12 +585,11 @@ class TestFCPManager(base.SDKTestCase):
             self.db_op.delete('c83e')
             self.db_op.delete('c83f')
 
-    @mock.patch("zvmsdk.volumeop.FCPManager._list_fcp_details")
-    def test_get_all_fcp_info(self, list_details):
-        list_details.return_value = []
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_fcp_info_by_status")
+    def test_get_all_fcp_info(self, get_fcp_info):
+        get_fcp_info.return_value = []
         self.fcpops._get_all_fcp_info('dummy1')
-        list_details.assert_has_calls([mock.call('dummy1', 'free'),
-                                       mock.call('dummy1', 'active')])
+        get_fcp_info.assert_called_once_with('dummy1', None)
 
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     def test_get_wwpn_for_fcp_not_in_conf(self, mock_fcp_info):
@@ -584,12 +599,14 @@ class TestFCPManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 59',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005181',
+                    'Owner: NONE',
                     'opnstk1: FCP device number: 283C',
                     'opnstk1:   Status: Active',
                     'opnstk1:   NPIV world wide port number: ',
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: '
-                    '20076D8500005185']
+                    '20076D8500005185',
+                    'Owner: UNIT0001']
         mock_fcp_info.return_value = fcp_list
         all_fcp_pool = self.fcpops.get_all_fcp_pool('fakeuser')
         self.assertEqual(2, len(all_fcp_pool))
@@ -849,12 +866,14 @@ class TestFCPManager(base.SDKTestCase):
             'opnstk1:   Channel path ID: 59',
             'opnstk1:   Physical world wide port number: '
             '20076D8500005181',
+            'Owner: NONE',
             'opnstk1: FCP device number: 1B03',
             'opnstk1:   Status: Active',
             'opnstk1:   NPIV world wide port number: ',
             'opnstk1:   Channel path ID: 50',
             'opnstk1:   Physical world wide port number: '
-            '20076D8500005185']
+            '20076D8500005185',
+            'Owner: UNIT0001']
         mock_zvm_fcp_info.return_value = raw_fcp_info_from_zvm
         expected_fcp_dict_keys = {
             '1a01', '1b03'}
@@ -932,36 +951,42 @@ class TestFCPManager(base.SDKTestCase):
             'opnstk1:   Channel path ID: 59',
             'opnstk1:   Physical world wide port number: '
             '20076D8500005181',
+            'Owner: NONE',
             'opnstk1: FCP device number: 1A02',
             'opnstk1:   Status: Offline',
             'opnstk1:   NPIV world wide port number: 20076D8500005183',
             'opnstk1:   Channel path ID: 50',
             'opnstk1:   Physical world wide port number: '
             '20076D8500005185',
+            'Owner: NONE',
             'opnstk1: FCP device number: 1A03',
             'opnstk1:   Status: Active',
             'opnstk1:   NPIV world wide port number: 20076D8500005184',
             'opnstk1:   Channel path ID: 59',
             'opnstk1:   Physical world wide port number: '
             '20076D8500005181',
+            'Owner: UNIT0001',
             'opnstk1: FCP device number: 1B03',
             'opnstk1:   Status: Active',
             'opnstk1:   NPIV world wide port number: 20076D8500005185',
             'opnstk1:   Channel path ID: 50',
             'opnstk1:   Physical world wide port number: '
             '20076D8500005185',
+            'Owner: UNIT0001',
             'opnstk1: FCP device number: 1B01',
             'opnstk1:   Status: Free',
             'opnstk1:   NPIV world wide port number: 20076D8500005186',
             'opnstk1:   Channel path ID: 59',
             'opnstk1:   Physical world wide port number: '
             '20076D8500005181',
+            'Owner: NONE',
             'opnstk1: FCP device number: 1B06',
             'opnstk1:   Status: Offline',
             'opnstk1:   NPIV world wide port number: 20076D8500005187',
             'opnstk1:   Channel path ID: 50',
             'opnstk1:   Physical world wide port number: '
-            '20076D8500005185'
+            '20076D8500005185',
+            'Owner: UNIT0002'
         ]
         mock_zvm_fcp_info.return_value = raw_fcp_info_from_zvm
         self.fcpops._sync_db_with_zvm()
@@ -1003,7 +1028,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     '2007123400001234',
                     'fakehost:   Channel path ID: 59',
                     'fakehost:   Physical world wide port number: '
-                    '20076D8500005181']
+                    '20076D8500005181',
+                    'Owner: NONE']
 
         get_fcp_info.return_value = fcp_info
         get_lpar_name.return_value = "fakehost"
@@ -1064,13 +1090,15 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 59',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005181',
+                    'Owner: NONE',
                     'opnstk1: FCP device number: D123',
                     'opnstk1:   Status: Active',
                     'opnstk1:   NPIV world wide port number: '
                     '20076D8500005183',
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: '
-                    '20076D8500005185']
+                    '20076D8500005185',
+                    'Owner: UNIT0001']
         mock_fcp_info.return_value = fcp_list
         self.db_op = database.FCPDbOperator()
         wwpns = ['20076d8500005182', '20076d8500005183']
@@ -1115,12 +1143,14 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 59',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005181',
+                    'Owner: NONE',
                     'opnstk1: FCP device number: D123',
                     'opnstk1:   Status: Active',
                     'opnstk1:   NPIV world wide port number: 20076D8500005183',
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: '
-                    '20076D8500005185']
+                    '20076D8500005185',
+                    'Owner: UNIT0001']
         mock_fcp_info.return_value = fcp_list
         base.set_conf('volume', 'fcp_list', 'c123;d123')
         # base.set_conf('volume', 'fcp_list', 'd123')
@@ -1160,13 +1190,15 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 59',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005181',
+                    'Owner: NONE',
                     'opnstk1: FCP device number: D123',
                     'opnstk1:   Status: Active',
                     'opnstk1:   NPIV world wide port number: '
                     '20076D8500005183',
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: '
-                    '20076D8500005185']
+                    '20076D8500005185',
+                    'Owner: UNIT0001']
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
         wwpns = ['20076d8500005182', '20076d8500005183']
@@ -1217,7 +1249,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     '20076D8500005182',
                     'opnstk1:   Channel path ID: 59',
                     'opnstk1:   Physical world wide port number: '
-                    '20076D8500005181']
+                    '20076D8500005181',
+                    'Owner: NONE']
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
         mock_fcp_assigner.return_value = True
@@ -1257,7 +1290,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     '20076D8500005182',
                     'opnstk1:   Channel path ID: 59',
                     'opnstk1:   Physical world wide port number: '
-                    '20076D8500005181']
+                    '20076D8500005181',
+                    'Owner: NONE']
         get_fcp_usage.return_value = ('user1', 0, 0)
         mock_fcp_info.return_value = fcp_list
         # this return does not matter
@@ -1302,13 +1336,15 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 59',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005181',
+                    'Owner: NONE',
                     'opnstk1: FCP device number: F84C',
                     'opnstk1:   Status: Free',
                     'opnstk1:   NPIV world wide port number: '
                     '20076D8500005182',
                     'opnstk1:   Channel path ID: 59',
                     'opnstk1:   Physical world wide port number: '
-                    '20076D8500005182']
+                    '20076D8500005182',
+                    'Owner: NONE']
         # increase connections of f83c to 1
         # left connections of f84c to 0
         self.db_op.new('f83c', 0)
@@ -1361,13 +1397,15 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 59',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005181',
+                    'Owner: NONE',
                     'opnstk1: FCP device number: 283C',
                     'opnstk1:   Status: Active',
                     'opnstk1:   NPIV world wide port number: '
                     '20076D8500005183',
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: '
-                    '20076D8500005185']
+                    '20076D8500005185',
+                    'Owner: UNIT0001']
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
         wwpns = ['20076d8500005182', '20076d8500005183']
@@ -1419,12 +1457,14 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 59',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005181',
+                    'Owner: NONE',
                     'opnstk1: FCP device number: 283C',
                     'opnstk1:   Status: Active',
                     'opnstk1:   NPIV world wide port number: 20076D8500005183',
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: '
-                    '20076D8500005185']
+                    '20076D8500005185',
+                    'Owner: UNIT0001']
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
         base.set_conf('volume', 'fcp_list', '183c')
@@ -1469,12 +1509,14 @@ class TestFCPVolumeManager(base.SDKTestCase):
                     'opnstk1:   Channel path ID: 59',
                     'opnstk1:   Physical world wide port number: '
                     '20076D8500005181',
+                    'Owner: NONE',
                     'opnstk1: FCP device number: 283C',
                     'opnstk1:   Status: Active',
                     'opnstk1:   NPIV world wide port number: 20076D8500005183',
                     'opnstk1:   Channel path ID: 50',
                     'opnstk1:   Physical world wide port number: '
-                    '20076D8500005185']
+                    '20076D8500005185',
+                    'Owner: UNIT0001']
         mock_fcp_info.return_value = fcp_list
         mock_check.return_value = True
         base.set_conf('volume', 'fcp_list', '183c')
