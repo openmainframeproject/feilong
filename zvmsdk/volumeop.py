@@ -1469,10 +1469,7 @@ class FCPVolumeManager(object):
         ret = {}
         # sync the state of FCP devices by calling smcli
         if sync_with_zvm:
-            # TODO
-            LOG.info("Begin to sync state of FCP devices with zvm ...")
-            LOG.info("Sync FCP state done.")
-
+            self.fcp_mgr._sync_db_with_zvm()
         # get raw query results from database
         try:
             raw_usage = self.db.get_all_fcps_of_assigner(assigner_id)
