@@ -627,7 +627,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             # Format of return is like:
             # [(fcp_id, userid, connections, reserved, path, comment), (...)].
             self.assertEqual(len(res), 2)
-            self.assertEqual(len(res[0]), 6)
+            self.assertEqual(len(res[0]), 8)
             # connections == 0
             self.assertEqual(res[0][2], 0)
             # path of 1111 is 0
@@ -638,7 +638,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.assign('1111', 'fakeuser')
             res = self.db_op.get_all_fcps_of_assigner(assigner_id='fakeuser')
             self.assertEqual(len(res), 1)
-            self.assertEqual(len(res[0]), 6)
+            self.assertEqual(len(res[0]), 8)
             self.assertEqual(res[0][1], 'fakeuser')
         finally:
             self.db_op.delete('1111')

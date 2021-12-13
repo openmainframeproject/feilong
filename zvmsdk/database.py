@@ -287,7 +287,9 @@ class FCPDbOperator(object):
             'connections    integer,',  # 0 means no assigner
             'reserved       integer,',  # 0 for not reserved
             'path           integer,',  # 0 or path0, 1 for path1
-            'comment        varchar(128))'))
+            'comment        varchar(128),',
+            'wwpn_npiv      varchar(16) COLLATE NOCASE,',
+            'wwpn_phy       varchar(16) COLLATE NOCASE)'))
         with get_fcp_conn() as conn:
             conn.execute(sql)
 
@@ -345,6 +347,7 @@ class FCPDbOperator(object):
             return fcp
 
     def new(self, fcp, path):
+        # TODO(cao biao): need update or not when add columns?
         with get_fcp_conn() as conn:
             conn.execute("INSERT INTO fcp (fcp_id, assigner_id, "
                          "connections, reserved, path, comment) VALUES "
@@ -372,19 +375,24 @@ class FCPDbOperator(object):
         If assigner is None, will get all fcp records.
         Format of return is like :
         [
-          (fcp_id, userid, connections, reserved, path, comment),
-          (u'283c', u'user1', 2, 1, 0, {'state': 'active', 'owner': 'user1'}),
-          (u'483c', u'user2', 0, 0, 1, {'state': 'free'})
+          (fcp_id, userid, connections, reserved, path, comment,
+           wwpn_npiv, wwpn_phy),
+          (u'283c', u'user1', 2, 1, 0, {'state': 'active', 'owner': 'user1'},
+           'c05076ddf7000002', 'c05076ddf7001d81'),
+          (u'483c', u'user2', 0, 0, 1, {'state': 'free'},
+           'c05076ddf7000001', 'c05076ddf7001d82')
         ]
         """
         with get_fcp_conn() as conn:
             if assigner_id:
                 result = conn.execute("SELECT fcp_id, assigner_id, "
-                        "connections, reserved, path, comment FROM "
-                        "fcp WHERE assigner_id=?", (assigner_id,))
+                                      "connections, reserved, path, comment, "
+                                      "wwpn_npiv, wwpn_phy FROM fcp WHERE "
+                                      "assigner_id=?", (assigner_id,))
             else:
                 result = conn.execute("SELECT fcp_id, assigner_id, "
-                        "connections, reserved, path, comment FROM fcp")
+                                      "connections, reserved, path, comment, "
+                                      "wwpn_npiv, wwpn_phy FROM fcp")
             results = result.fetchall()
             if not results:
                 if assigner_id:
@@ -749,6 +757,27 @@ class FCPDbOperator(object):
             fcp_list = result.fetchall()
 
         return fcp_list
+
+    def get_wwpns_of_fcp(self, fcp):
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT wwpn_npiv, wwpn_phy FROM fcp "
+                                  "WHERE fcp_id=?", (fcp,))
+            wwpns_info = result.fetchall()
+            if not wwpns_info:
+                msg = 'WWPNs of fcp %s does not exist in DB.' % fcp
+                LOG.error(msg)
+                obj_desc = "WWPNs of FCP %s" % fcp
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
+            wwpn_npiv = wwpns_info[0][0]
+            wwpn_phy = wwpns_info[0][1]
+        return wwpn_npiv, wwpn_phy
+
+    def update_wwpns_of_fcp(self, fcp, wwpn_npiv, wwpn_phy):
+        with get_fcp_conn() as conn:
+            conn.execute("UPDATE fcp SET wwpn_npiv=?, wwpn_phy=? "
+                         "WHERE fcp_id=?",
+                         (wwpn_npiv, wwpn_phy, fcp))
 
 
 class ImageDbOperator(object):
