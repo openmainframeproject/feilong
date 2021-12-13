@@ -804,9 +804,9 @@ class TestFCPManager(base.SDKTestCase):
         get_fcp_pair.return_value = ['1234', '5678']
         expected = ['1234', '5678']
         result = self.fcpops.get_available_fcp('user1', True)
-        assign.assert_has_calls([mock.call('1234', 'user1',
+        assign.assert_has_calls([mock.call('1234', 'USER1',
                                            update_connections=False),
-                                 mock.call('5678', 'user1',
+                                 mock.call('5678', 'USER1',
                                            update_connections=False)])
         self.assertEqual(expected, result)
         # case2: get_allocated return ['c83c', 'c83d']
