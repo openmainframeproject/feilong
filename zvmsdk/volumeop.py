@@ -715,6 +715,7 @@ class FCPManager(object):
                 # when the vm provision with both root and data volumes
                 # the root and data volume would get the same FCP devices
                 # with the get_volume_connector call.
+                assigner_id = assigner_id.upper()
                 self.db.assign(item, assigner_id, update_connections=False)
 
             LOG.info("Newly allocated %s fcp for %s assigner" %
