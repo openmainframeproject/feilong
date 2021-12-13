@@ -1712,6 +1712,11 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.db_op.delete('783c')
             self.db_op.delete('883c')
 
+    @mock.patch("zvmsdk.volumeop.FCPManager._sync_db_with_zvm")
+    def test_get_all_fcp_usage_sync_with_zvm(self, mock_sync_db_with_zvm):
+        self.volumeops.get_all_fcp_usage(sync_with_zvm=True)
+        mock_sync_db_with_zvm.assert_called_once()
+
     def test_get_fcp_usage(self):
         self.db_op = database.FCPDbOperator()
         self.db_op.new('283c', 0)
