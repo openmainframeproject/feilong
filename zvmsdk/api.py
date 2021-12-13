@@ -757,11 +757,21 @@ class SDKAPI(object):
             with zvmutils.log_and_reraise_sdkbase_error(action):
                 self._GuestDbOperator.update_guest_by_userid(userid,
                                                     comments=comments)
+
+            # Skip IUCV authorization for RHCOS guests
+            is_rhcos = 'rhcos' in self._GuestDbOperator.get_guest_by_userid(
+                            userid)[2].lower()
+            if is_rhcos:
+                LOG.debug("Skip IUCV authorization when migrating RHCOS "
+                          "guests: %s" % userid)
+
             # Add authorization for new zcc.
             # This should be done after migration succeeds.
             # If the dest_zcc_userid is empty, nothing will be done because
             # this should be a onboarded guest and no permission to do it.
-            if dest_zcc_userid is not None and dest_zcc_userid.strip() != '':
+            if (dest_zcc_userid is not None and
+                    dest_zcc_userid.strip() != '' and
+                    not is_rhcos):
                 cmd = ('echo -n %s > /etc/iucv_authorized_userid\n' %
                                                         dest_zcc_userid)
                 rc = self._smtclient.execute_cmd(userid, cmd)
