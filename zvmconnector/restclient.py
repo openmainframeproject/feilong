@@ -245,6 +245,9 @@ def req_guest_register(start_index, *args, **kwargs):
             'net_set': args[start_index + 1]}
     if len(args) - start_index == 3:
         body['port_macs'] = args[start_index + 2]
+    if len(args) - start_index == 4:
+        body['port_macs'] = args[start_index + 2]
+        body['migration'] = args[start_index + 3]
     return url, body
 
 
@@ -718,7 +721,7 @@ DATABASE = {
     'guest_register': {
         'method': 'POST',
         'args_required': 3,
-        'args_optional': 1,
+        'args_optional': 2,
         'params_path': 1,
         'request': req_guest_register},
     'guest_deregister': {

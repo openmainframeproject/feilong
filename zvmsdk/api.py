@@ -15,6 +15,7 @@
 
 import netaddr
 import six
+import json
 
 from zvmsdk import config
 from zvmsdk import constants
@@ -601,7 +602,7 @@ class SDKAPI(object):
 
         return nics_info
 
-    def guest_register(self, userid, meta, net_set, port_macs=None):
+    def guest_register(self, userid, meta, net_set, port_macs=None, migration=False):
         """Register vm by inserting or updating DB for e.g. migration and onboarding
         :param userid: (str) the userid of the vm to be relocated or tested
         :param meta: (str) the metadata of the vm to be relocated or tested
@@ -613,6 +614,7 @@ class SDKAPI(object):
                        'EF5091':'6e2ecc4f-14a2-4f33-9f12-5ac4a42f97e7',
                        '69FCF1':'389dee5e-7b03-405c-b1e8-7c9c235d1425'
                      }
+        :param migration: (Boolean) mark if it is a migration operation
         """
         if port_macs is not None and not isinstance(port_macs, dict):
             msg = ('Invalid input parameter port_macs, expect dict')
@@ -643,6 +645,26 @@ class SDKAPI(object):
                         self._GuestDbOperator.update_guest_by_userid(userid,
                                                     comments=comments)
                     LOG.info("Guest %s comments updated." % userid)
+
+                    # update comments for switch table.
+                    switch_records = self._NetworkDbOperator.switch_select_record_for_userid(
+                                                                                    userid)
+                    if len(switch_records) > 0:
+                        for switch in switch_records:
+                            comments = switch.get('comments')
+                            if comments is not None:
+                                comments = json.loads(comments)
+                                comments['migrated'] = 0
+                            else:
+                                comments = {"migrated": 0}
+                            interface = switch.get('interface')
+                            action = "update switch %s for guest '%s' in database" \
+                                    %( interface, userid)
+                            with zvmutils.log_and_reraise_sdkbase_error(action):
+                                self._NetworkDbOperator.update_comment_of_switch(
+                                    userid, interface, comments)
+                            LOG.info("Switch %s for guest '%s' in database." % (interface, userid))
+
                 # We just return no matter onboarding or migration
                 # since the guest exists
                 return
@@ -650,9 +672,12 @@ class SDKAPI(object):
             # add one record for new vm for both onboarding and migration,
             # and even others later.
             action = "add guest '%s' to database" % userid
+            comments = None
+            if migration:
+                comments = '{"migrated": 0}'
             with zvmutils.log_and_reraise_sdkbase_error(action):
                 self._GuestDbOperator.add_guest_registered(userid, meta,
-                                                             net_set)
+                                                             net_set, comments)
 
             # We need to query and add vswitch to the database.
             action = "add switches of guest '%s' to database" % userid
@@ -677,9 +702,14 @@ class SDKAPI(object):
                                     (interface, port_macs))
                     else:
                         LOG.info("Port found for nic %s." % interface)
+                comments = None
+                if migration:
+                    comments = '{"migrated": 0}'
+
                 with zvmutils.log_and_reraise_sdkbase_error(action):
                     self._NetworkDbOperator.switch_add_record(
-                                userid, interface, port, switch)
+                                    userid, interface, port, switch, comments)
+
             LOG.info("Guest %s registered." % userid)
 
     # Deregister the guest (not delete), this function has no relationship with
@@ -757,6 +787,23 @@ class SDKAPI(object):
             with zvmutils.log_and_reraise_sdkbase_error(action):
                 self._GuestDbOperator.update_guest_by_userid(userid,
                                                     comments=comments)
+            # update comments for switch table
+            switch_records = self._NetworkDbOperator.switch_select_record_for_userid(userid)
+            if len(switch_records) > 0:
+                for switch in switch_records:
+                    comments = switch.get('comments')
+                    if comments is not None:
+                        comments = json.loads(comments)
+                        comments['migrated'] = 1
+                    else:
+                        comments = {"migrated": 1}
+                    interface = switch.get('interface')
+                    action = "update switch %s for guest '%s' in database" \
+                            %( interface, userid)
+                    with zvmutils.log_and_reraise_sdkbase_error(action):
+                        self._NetworkDbOperator.update_comment_of_switch(
+                                userid, interface, comments)
+                        LOG.info("Switch %s for guest '%s' updated in database." % (interface, userid))
 
             # Skip IUCV authorization for RHCOS guests
             is_rhcos = 'rhcos' in self._GuestDbOperator.get_guest_by_userid(

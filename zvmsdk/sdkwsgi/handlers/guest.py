@@ -315,8 +315,11 @@ class VMAction(object):
         port_macs = None
         if 'port_macs' in body.keys():
             port_macs = body['port_macs']
+        migration = None
+        if 'migration' in body.keys():
+            migration = body['migration']
         info = self.client.send_request('guest_register',
-                                userid, meta, net_set, port_macs)
+                                userid, meta, net_set, port_macs, migration)
         return info
 
     @validation.schema(guest.deregister_vm)

@@ -266,6 +266,7 @@ register_vm = {
         'meta': {'type': ['string']},
         'net_set': {'type': ['string']},
         'port': {'type': ['string']},
+        'migration': parameter_types.boolean,
     },
     'required': ['meta', 'net_set'],
     'additionalProperties': True

@@ -272,6 +272,26 @@ class NetworkDbOperator(object):
 
         return self._parse_switch_record(switch_list)
 
+    def update_comment_of_switch(self, userid, interface, comment_dict):
+        """Update the content of comment.
+        :param userid: (str) the userid
+        :param interface: (str) the interface number
+        :param comment_dict: (dict) the dict to describe the interface status
+            this api will transfer this into string and store into db
+        The comment in database should be a string like:
+            '{"migrated": 0}'
+        """
+        # the input parameter comment_dict must be a dict
+        if not isinstance(comment_dict, dict):
+            msg = ("Failed to update comments of interface %s because input "
+                   "comment %s is not a dict type." % (interface, comment_dict))
+            raise exception.SDKInternalError(msg=msg, modID=self._module_id)
+        new_comment = json.dumps(comment_dict)
+        # storage the new comment into database
+        with get_network_conn() as conn:
+            conn.execute("UPDATE switch SET comments=? "
+                         "WHERE userid=? and interface=?", (new_comment, userid, interface))
+
 
 class FCPDbOperator(object):
 
