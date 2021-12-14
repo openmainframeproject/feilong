@@ -320,7 +320,6 @@ class FCP(object):
         self._physical_port = None
         self._assigned_id = None
         self._owner = None
-
         self._parse(init_info)
 
     @staticmethod
@@ -903,7 +902,6 @@ class FCPManager(object):
 
         # Get a dict of all FCPs in FCP DB
         fcp_dict_in_db = self.get_fcp_dict_in_db()
-        LOG.info("fcp_dict_in_db: {}".format(fcp_dict_in_db))
 
         # Update DB column of comment based on the info queried from zVM
         for fcp in fcp_dict_in_db:
@@ -915,11 +913,19 @@ class FCPManager(object):
                 comment_dict['state'] = fcp_state
                 if fcp_state == 'offline':
                     LOG.warn("FCP {} offline.".format(fcp))
+                # Possbile FCP owner returned by ZVM:
+                # VM userid: if the FCP is attached to a VM
+                # A String "NONE": if the FCP is not attached
+                fcp_owner = fcp_dict_in_zvm[fcp].get_owner()
+                comment_dict['owner'] = fcp_owner
             else:
                 LOG.warn("FCP {} not found in ZVM.".format(fcp))
                 comment_dict['state'] = 'notfound'
             self.db.update_comment_of_fcp(fcp, comment_dict)
 
+        # LOG
+        fcp_dict_in_db = self.get_fcp_dict_in_db()
+        LOG.info("fcp_dict_in_db: {}".format(fcp_dict_in_db))
         LOG.info("Exit: Sync FCP DB with FCP info queried from zVM.")
 
 
@@ -1328,13 +1334,16 @@ class FCPVolumeManager(object):
         """Tranform raw usage in FCP database into statistic data.
         """
         # get state record in "comment" column of database
-        # get statistic data about: available, allocated, notfound
-        # unallocated_but_active, allocated_but_free
-        fcp_id, _userid, connections, reserved, path_id, comment = item
+        # get statistic data about:
+        #   available, allocated, notfound,
+        #   unallocated_but_active, allocated_but_free
+        fcp_id, assigner_id, connections, reserved, path_id, comment = item
         if comment:
-            state = item[5].get("state", "").lower()
+            state = comment.get("state", "").lower()
+            owner = comment.get("owner", "")
         else:
             state = ""
+            owner = ""
         if not statistics_usage.get(path_id, None):
             statistics_usage[path_id] = {"available": [],
                                          "allocated": [],
@@ -1346,8 +1355,8 @@ class FCPVolumeManager(object):
         # this FCP in database but not found in z/VM
         if state == "notfound":
             statistics_usage[path_id]["notfound"].append(fcp_id)
-            LOG.warning("When getting statistics, found state of FCP record "
-                        "%s is notfound in database ." % str(item))
+            LOG.warning("When getting statistics, found a FCP record "
+                        "%s with state as notfound in database ." % str(item))
         # case H: (state = offline)
         # this FCP in database but offline in z/VM
         if state == "offline":
@@ -1368,7 +1377,7 @@ class FCPVolumeManager(object):
                 # is active in smcli output
                 if state == "active":
                     statistics_usage[path_id]["unallocated_but_active"].\
-                        append(fcp_id)
+                        append((fcp_id, owner))
                     LOG.warning("When getting statistics, found a FCP record "
                                 "%s available in database but its state is "
                                 "active, it may be occupied by a userid "
@@ -1400,6 +1409,11 @@ class FCPVolumeManager(object):
                 LOG.warning("When getting statistics, found a FCP record %s "
                             "allocated by ZCC but its state is "
                             "free." % str(item))
+            # case I: ((conn != 0) & assigner_id != owner)
+            elif assigner_id != owner:
+                LOG.warning("When getting statistics, found a FCP record %s "
+                            "allocated by ZCC but its assigner differs "
+                            "from owner." % str(item))
         return statistics_usage
 
     def get_all_fcp_usage(self, assigner_id=None, statistics=True,
@@ -1416,13 +1430,15 @@ class FCPVolumeManager(object):
             "raw": {
                   # (fcp_id, userid, connections, reserved, path, comment),
                   0 : (
-                    (u'283c',  u'user1', 2, 1, 0, {'state': 'active'}),
+                    (u'283c',  u'user1', 2, 1, 0, {'state': 'active',
+                                                   'owner: 'ABCD0001'}),
                     (u'183c',  u'', 0, 0, 0,{'state': 'notfound'}),
                   ),
                   1 : (
                     (u'383c',  u'user3', 0, 0, 1, {'state': 'active',
-                                                   'owner': 'userid'}),
-                    (u'483c',  u'user2', 0, 0, 1, {'state': 'free'}),
+                                                   'owner': 'ABCD0001'}),
+                    (u'483c',  u'user2', 0, 0, 1, {'state': 'free',
+                                                   'owner': 'NONE'}),
                   )
                   ...
             },
@@ -1445,8 +1461,9 @@ class FCPVolumeManager(object):
                     # will log about this
 
                     # case E: (reserve = 0, conn = 0, state = active)
-                    # occupied by outside userid
-                    'unallocated_but_active': ('1b04','1b05')
+                    # FCP occupied out-of-band
+                    'unallocated_but_active': [('1b04','owner1'),
+                                               ('1b05','owner2')]
 
                     # case F: (conn != 0, state = free)
                     # we allocated it in db but the FCP status is free
@@ -1458,8 +1475,12 @@ class FCPVolumeManager(object):
                     "notfound": ('1a00','1a05',...)
 
                     # case H: (state = offline)
-                    # not found in smcli
-                    "notfound": ('1a00','1a05',...)
+                    # offline in smcli
+                    "offline": ('1a00','1a05',...)
+
+                    # case I: ((conn != 0) & assigner_id != owner)
+                    # assigner_id-in-DB differ from smcli-returned-owner
+                    # will log about this
                 },
                 1: {
                     ...

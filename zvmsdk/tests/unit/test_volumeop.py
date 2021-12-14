@@ -993,14 +993,14 @@ class TestFCPManager(base.SDKTestCase):
         # Update FCP path if path changed
         expected_calls = [
             # Free FCP
-            call('1a01', {'state': 'free'}),
-            call('1b01', {'state': 'free'}),
+            call('1a01', {'state': 'free', 'owner': 'NONE'}),
+            call('1b01', {'state': 'free', 'owner': 'NONE'}),
             # Active FCP
-            call('1a03', {'state': 'active'}),
-            call('1b03', {'state': 'active'}),
+            call('1a03', {'state': 'active', 'owner': 'UNIT0001'}),
+            call('1b03', {'state': 'active', 'owner': 'UNIT0001'}),
             # Offline FCP
-            call('1a02', {'state': 'offline'}),
-            call('1b06', {'state': 'offline'}),
+            call('1a02', {'state': 'offline', 'owner': 'NONE'}),
+            call('1b06', {'state': 'offline', 'owner': 'UNIT0002'}),
             # NotFound FCP
             call('1b05', {'state': 'notfound'})
         ]
@@ -1680,7 +1680,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                   "offline": ['383c']},
                               1: {"available": [],
                                   "allocated": [],
-                                  "unallocated_but_active": ['583c'],
+                                  "unallocated_but_active": [
+                                      ('583c', 'fakeuser')],
                                   "allocated_but_free": ['683c'],
                                   "notfound": ['783c'],
                                   "offline": ['883c']}}
@@ -1695,7 +1696,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
             # path 2 status
             self.assertEqual([], statistic_usage[1]['available'])
             self.assertEqual([], statistic_usage[1]['allocated'])
-            self.assertIn('583c',
+            self.assertIn(('583c', 'fakeuser'),
                           statistic_usage[1]['unallocated_but_active'])
             self.assertIn('683c', statistic_usage[1]['allocated_but_free'])
             self.assertIn('783c', statistic_usage[1]['notfound'])
