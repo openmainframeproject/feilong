@@ -2118,6 +2118,25 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         replace.assert_called_with("fake_userid", replace_data)
         request.assert_called_with("SMAPI fake_userid API Image_Unlock_DM ")
 
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_lock_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_couple_nic')
+    def test_couple_nic_to_vswitch_not_actually_called(self, couple_nic,
+                                    replace, lock, get_user, request):
+        # If user direct NICDEF <vdev> already LAN SYSTEM <switch_name>,
+        # skip the Image_Replace_DM and couple nic actions
+        get_user.return_value = ["USER ABC",
+                                 "NICDEF 1000 DEVICE 3 LAN SYSTEM VS1"]
+
+        request.return_value = {'overallRC': 0}
+        self._smtclient.couple_nic_to_vswitch("fake_userid", "1000",
+                                        "VS1", active=True, vlan_id=55)
+        lock.assert_not_called()
+        replace.assert_not_called()
+        couple_nic.assert_not_called()
+
     @mock.patch.object(smtclient.SMTClient, '_uncouple_nic')
     def test_uncouple_nic_from_vswitch(self, uncouple_nic):
         self._smtclient.uncouple_nic_from_vswitch("fake_userid",
