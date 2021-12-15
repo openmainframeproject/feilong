@@ -1569,12 +1569,17 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.db_op.delete('283c')
 
     def test_get_all_fcp_usage_empty(self):
+        empty_usage0 = {}
         empty_usage1 = {'raw': {}}
-        empty_usage2 = {'raw': {}, 'statistics': {}}
+        empty_usage2 = {'statistics': {}}
+        ret0 = self.volumeops.get_all_fcp_usage(statistics=False)
         ret1 = self.volumeops.get_all_fcp_usage('dummy')
         ret2 = self.volumeops.get_all_fcp_usage()
+        ret3 = self.volumeops.get_all_fcp_usage('dummy', raw=False)
+        self.assertDictEqual(ret0, empty_usage0)
         self.assertDictEqual(ret1, empty_usage1)
         self.assertDictEqual(ret2, empty_usage2)
+        self.assertDictEqual(ret3, empty_usage1)
 
     def test_get_all_fcp_usage_raw(self):
         """Test the raw usage will be set correctly."""
@@ -1589,9 +1594,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
         # set connections to 2
         self.db_op.increase_usage('283c')
         try:
-            ret = self.volumeops.get_all_fcp_usage()
-            # case 1: RAW usage content not empty
-            #         but statistics is empty
+            ret = self.volumeops.get_all_fcp_usage(raw=True)
+            # case 1: specify raw=true and let statistics keep default value
             raw_usage = ret['raw']
             statistic_usage = ret['statistics']
             # there are 2 FCPs on path 0
@@ -1617,7 +1621,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
                                        'offline': []}}
             self.assertDictEqual(expected_statistics, statistic_usage)
             # case 2: userid was specified
-            statistic_usage = ret['statistics']
+            # in this case, the raw should set to true and
+            # statistics set to false
             ret = self.volumeops.get_all_fcp_usage(
                     assigner_id='user1')
             raw_usage = ret['raw']
@@ -1670,7 +1675,9 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.db_op.update_comment_of_fcp('383c', comment_state_offline)
             # extra case 3: D + G
             self.db_op.update_comment_of_fcp('483c', comment_state_notfound)
-            ret = self.volumeops.get_all_fcp_usage()
+            ret = self.volumeops.get_all_fcp_usage(statistics=True, raw=False)
+            # raw data should not in ret value
+            self.assertNotIn('raw', ret)
             statistic_usage = ret['statistics']
             expected_usage = {0: {"available": ['183c'],
                                   "allocated": ['283c'],
