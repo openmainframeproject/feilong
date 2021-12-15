@@ -101,10 +101,10 @@ class VolumeOperatorAPI(object):
     def check_fcp_exist_in_db(self, fcp, raise_exec=True):
         return self._volume_manager.check_fcp_exist_in_db(fcp, raise_exec)
 
-    def get_all_fcp_usage(self, assigner_id=None, statistics=True,
+    def get_all_fcp_usage(self, assigner_id=None, raw=False, statistics=True,
                           sync_with_zvm=False):
         return self._volume_manager.get_all_fcp_usage(
-                assigner_id, statistics=statistics,
+                assigner_id, raw=raw, statistics=statistics,
                 sync_with_zvm=sync_with_zvm)
 
     def get_fcp_usage(self, fcp):
@@ -1416,10 +1416,11 @@ class FCPVolumeManager(object):
                             "from owner." % str(item))
         return statistics_usage
 
-    def get_all_fcp_usage(self, assigner_id=None, statistics=True,
+    def get_all_fcp_usage(self, assigner_id=None, raw=False, statistics=True,
                           sync_with_zvm=False):
         """Get all fcp information grouped by FCP id.
         :param assigner_id: (str) if is None, will get all fcps info in db.
+        :param raw: (boolean) if is True, will get raw fcp usage data
         :param statistics: (boolean) if is True, will get statistics data
             of all FCPs
         :param sync_with_zvm: (boolean) if is True, will call SMCLI command
@@ -1502,6 +1503,7 @@ class FCPVolumeManager(object):
 
         if assigner_id:
             statistics = False
+            raw = True
             LOG.debug("Got all fcp usage of userid %s: "
                       "%s" % (assigner_id, raw_usage))
         else:
@@ -1513,13 +1515,15 @@ class FCPVolumeManager(object):
         statistics_usage = {}
         for item in raw_usage:
             # get raw fcp usage
-            self._update_raw_fcp_usage(raw_usage_by_path, item)
+            if raw:
+                self._update_raw_fcp_usage(raw_usage_by_path, item)
             # get fcp statistics usage
             if statistics:
                 self._update_statistics_usage(statistics_usage, item)
         # storage usage into return value
-        LOG.debug("Got raw FCP usage: %s" % raw_usage_by_path)
-        ret["raw"] = raw_usage_by_path
+        if raw:
+            LOG.debug("Got raw FCP usage: %s" % raw_usage_by_path)
+            ret["raw"] = raw_usage_by_path
         if statistics:
             LOG.info("Got statistic FCP usage: %s" % statistics_usage)
             ret["statistics"] = statistics_usage

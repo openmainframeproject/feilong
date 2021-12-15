@@ -505,6 +505,7 @@ class SDKAPITestCase(base.SDKTestCase):
     def test_get_all_fcp_usage(self, mock_get_all_usage):
         self.api.get_all_fcp_usage()
         mock_get_all_usage.assert_called_once_with(None,
+                                                   raw=False,
                                                    statistics=True,
                                                    sync_with_zvm=False)
 

@@ -448,12 +448,14 @@ def req_get_volume_connector(start_index, *args, **kwargs):
 def req_get_all_fcp_usage(start_index, *args, **kwargs):
     url = '/volumes/fcp'
     userid = kwargs.get('userid', None)
+    raw = kwargs.get('raw', False)
     statistics = kwargs.get('statistics', True)
     sync_with_zvm = kwargs.get('sync_with_zvm', False)
     if userid:
         url += "?userid=%s&" % userid
     else:
         url += "?"
+    url += "raw=%s&" % raw
     url += "statistics=%s&" % statistics
     url += "sync_with_zvm=%s" % sync_with_zvm
     body = None
