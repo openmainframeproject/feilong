@@ -2199,6 +2199,14 @@ class SMTClient(object):
             if len(ent) > 0:
                 new_user_direct.append(ent)
                 if ent.upper().startswith(nicdef):
+                    # If NIC already coupled with this vswitch,
+                    # return and skip following actions,
+                    # such as migrating VM
+                    if ("LAN SYSTEM %s" % vswitch_name) in ent:
+                        LOG.info("NIC %s already coupled to vswitch %s, "
+                                 "skip couple action."
+                                 % (nic_vdev, vswitch_name))
+                        return
                     # vlan_id < 0 means no VLAN ID given
                     v = nicdef
                     if vlan_id < 0:
