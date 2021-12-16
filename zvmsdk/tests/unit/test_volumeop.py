@@ -669,11 +669,11 @@ class TestFCPManager(base.SDKTestCase):
             self.assertEqual(True, flag2)
 
             fcp_list = self.db_op.get_from_fcp('a83c')
-            expected = [(u'a83c', u'dummy1', 1, 0, 0, u'')]
+            expected = [(u'a83c', u'dummy1', 1, 0, 0, u'', None, None)]
             self.assertEqual(expected, fcp_list)
 
             fcp_list = self.db_op.get_from_fcp('a83d')
-            expected = [(u'a83d', u'dummy2', 1, 0, 0, u'')]
+            expected = [(u'a83d', u'dummy2', 1, 0, 0, u'', None, None)]
             self.assertEqual(expected, fcp_list)
 
             connections = self.db_op.get_connections_from_assigner('dummy1')
@@ -702,11 +702,11 @@ class TestFCPManager(base.SDKTestCase):
             self.assertEqual('b83d', fcp2)
 
             fcp_list = self.db_op.get_from_fcp('b83c')
-            expected = [(u'b83c', u'', 0, 1, 0, u'')]
+            expected = [(u'b83c', u'', 0, 1, 0, u'', None, None)]
             self.assertEqual(expected, fcp_list)
 
             fcp_list = self.db_op.get_from_fcp('b83d')
-            expected = [(u'b83d', u'', 0, 1, 0, u'')]
+            expected = [(u'b83d', u'', 0, 1, 0, u'', None, None)]
             self.assertEqual(expected, fcp_list)
         finally:
             self.db_op.delete('b83c')
@@ -725,41 +725,41 @@ class TestFCPManager(base.SDKTestCase):
             self.fcpops.increase_fcp_usage('c83c', 'user1')
 
             fcp_list = self.db_op.get_from_fcp('c83c')
-            expected = [(u'c83c', u'user1', 1, 1, 0, u'')]
+            expected = [(u'c83c', u'user1', 1, 1, 0, u'', None, None)]
             self.assertEqual(expected, fcp_list)
 
             # After usage, we need find c83d now
             fcp2 = self.fcpops.find_and_reserve_fcp('user2')
             self.assertEqual('c83d', fcp2)
             fcp_list = self.db_op.get_from_fcp('c83d')
-            expected = [(u'c83d', u'', 0, 1, 0, u'')]
+            expected = [(u'c83d', u'', 0, 1, 0, u'', None, None)]
             self.assertEqual(expected, fcp_list)
 
             self.fcpops.increase_fcp_usage('c83c', 'user1')
             fcp_list = self.db_op.get_from_fcp('c83c')
-            expected = [(u'c83c', u'user1', 2, 1, 0, u'')]
+            expected = [(u'c83c', u'user1', 2, 1, 0, u'', None, None)]
             self.assertEqual(expected, fcp_list)
 
             self.fcpops.decrease_fcp_usage('c83c', 'user1')
             fcp_list = self.db_op.get_from_fcp('c83c')
-            expected = [(u'c83c', u'user1', 1, 1, 0, u'')]
+            expected = [(u'c83c', u'user1', 1, 1, 0, u'', None, None)]
             self.assertEqual(expected, fcp_list)
 
             self.fcpops.decrease_fcp_usage('c83c')
             fcp_list = self.db_op.get_from_fcp('c83c')
-            expected = [(u'c83c', u'user1', 0, 1, 0, u'')]
+            expected = [(u'c83c', u'user1', 0, 1, 0, u'', None, None)]
             self.assertEqual(expected, fcp_list)
 
             # unreserve makes this fcp free
             self.fcpops.unreserve_fcp('c83c')
             fcp_list = self.db_op.get_from_fcp('c83c')
-            expected = [(u'c83c', u'user1', 0, 0, 0, u'')]
+            expected = [(u'c83c', u'user1', 0, 0, 0, u'', None, None)]
             self.assertEqual(expected, fcp_list)
 
             fcp3 = self.fcpops.find_and_reserve_fcp('user3')
             self.assertEqual('c83c', fcp3)
             fcp_list = self.db_op.get_from_fcp('c83c')
-            expected = [(u'c83c', u'user1', 0, 1, 0, u'')]
+            expected = [(u'c83c', u'user1', 0, 1, 0, u'', None, None)]
             self.assertEqual(expected, fcp_list)
         finally:
             self.db_op.delete('c83c')
@@ -830,10 +830,11 @@ class TestFCPManager(base.SDKTestCase):
     def test_get_fcp_dict_in_db(self):
 
         expected_fcp_dict = {
-            '1a01': ('1a01', '', 1, 1, 0, ''),
-            '1a02': ('1a02', '', 2, 1, 0, ''),
-            '1b01': ('1b01', '', 1, 1, 1, ''),
-            '1b03': ('1b03', '', 0, 0, 1, '')
+            '1a01': ('1a01', '', 1, 1, 0, '', '20076D8500005182',
+                     '20076D8500005181'),
+            '1a02': ('1a02', '', 2, 1, 0, '', None, None),
+            '1b01': ('1b01', '', 1, 1, 1, '', None, None),
+            '1b03': ('1b03', '', 0, 0, 1, '', None, None)
         }
         try:
             self.db_op.new('1a01', 0)
@@ -847,6 +848,8 @@ class TestFCPManager(base.SDKTestCase):
             self.db_op.reserve('1a02')
             self.db_op.increase_usage('1b01')
             self.db_op.reserve('1b01')
+            self.db_op.update_wwpns_of_fcp('1a01', '20076D8500005182',
+                                           '20076D8500005181')
             fcp_dict = self.fcpops.get_fcp_dict_in_db()
             self.assertEqual(fcp_dict, expected_fcp_dict)
         finally:
@@ -927,22 +930,26 @@ class TestFCPManager(base.SDKTestCase):
         fcp_new.assert_has_calls(expected_calls, any_order=True)
 
     @mock.patch("zvmsdk.utils.get_smt_userid", Mock())
+    @mock.patch("zvmsdk.database.FCPDbOperator.update_wwpns_of_fcp")
     @mock.patch("zvmsdk.database.FCPDbOperator.update_comment_of_fcp")
     @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
     @mock.patch("zvmsdk.volumeop.FCPManager.get_fcp_dict_in_db")
     def test_sync_db_with_zvm(self, fcp_dict_in_db,
-                              mock_zvm_fcp_info, fcp_update_comment):
+                              mock_zvm_fcp_info, fcp_update_comment,
+                              fcp_update_wwpns):
 
         fcp_dict_in_db.return_value = {
             # inter_set:
-            '1a01': ('1a01', '', 1, 1, 0, ''),
-            '1a02': ('1a02', '', 2, 1, 2, ''),
-            '1a03': ('1a03', '', 2, 1, 3, ''),
+            '1a01': ('1a01', '', 1, 1, 0, '', '20076D8500005182',
+                     '20076D8500005181'),
+            '1a02': ('1a02', '', 2, 1, 2, '', None, None),
+            '1a03': ('1a03', '', 2, 1, 3, '', None, None),
             # del_fcp_set
-            '1b05': ('1a05', '', 0, 1, 3, ''),
-            '1b06': ('1a06', '', 1, 1, 3, ''),
-            '1b01': ('1b01', '', 0, 0, 2, ''),
-            '1b03': ('1b03', '', 0, 0, 1, '')
+            '1b05': ('1a05', '', 0, 1, 3, '', None, None),
+            '1b06': ('1a06', '', 1, 1, 3, '', '20076D8500005187',
+                     '20076D8500005185'),
+            '1b01': ('1b01', '', 0, 0, 2, '', None, None),
+            '1b03': ('1b03', '', 0, 0, 1, '', None, None)
         }
         raw_fcp_info_from_zvm = [
             'opnstk1: FCP device number: 1A01',
@@ -1006,6 +1013,19 @@ class TestFCPManager(base.SDKTestCase):
         ]
         fcp_update_comment.call_count == 7
         fcp_update_comment.assert_has_calls(expected_calls, any_order=True)
+        # wwpns of 1a01 and 1b05 was set and 1b05 not exist in zvm
+        expected_wwpns_calls = [
+            # Free FCP
+            call('1b01', '20076d8500005186', '20076d8500005181'),
+            # Active FCP
+            call('1a03', '20076d8500005184', '20076d8500005181'),
+            call('1b03', '20076d8500005185', '20076d8500005185'),
+            # Offline FCP
+            call('1a02', '20076d8500005183', '20076d8500005185'),
+        ]
+        fcp_update_wwpns.call_count == 6
+        fcp_update_wwpns.assert_has_calls(expected_wwpns_calls,
+                                          any_order=True)
 
 
 class TestFCPVolumeManager(base.SDKTestCase):
@@ -1020,18 +1040,7 @@ class TestFCPVolumeManager(base.SDKTestCase):
     # tearDownClass deleted to work around bug of 'no such table:fcp'
 
     @mock.patch("zvmsdk.utils.get_lpar_name")
-    @mock.patch("zvmsdk.volumeop.FCPManager._get_all_fcp_info")
-    def test_get_volume_connector(self, get_fcp_info, get_lpar_name):
-        fcp_info = ['fakehost: FCP device number: B83C',
-                    'fakehost:   Status: Free',
-                    'fakehost:   NPIV world wide port number: '
-                    '2007123400001234',
-                    'fakehost:   Channel path ID: 59',
-                    'fakehost:   Physical world wide port number: '
-                    '20076D8500005181',
-                    'Owner: NONE']
-
-        get_fcp_info.return_value = fcp_info
+    def test_get_volume_connector(self, get_lpar_name):
         get_lpar_name.return_value = "fakehost"
         base.set_conf('volume', 'fcp_list', 'b83c')
         # assign FCP
@@ -1040,6 +1049,9 @@ class TestFCPVolumeManager(base.SDKTestCase):
         self.db_op.assign('b83c', 'fakeuser')
         # set reserved to 1
         self.db_op.reserve('b83c')
+        # set wwpns value
+        self.db_op.update_wwpns_of_fcp('b83c', '2007123400001234',
+                                       '20076d8500005181')
 
         try:
             connections = self.volumeops.get_volume_connector('fakeuser',
@@ -1053,7 +1065,8 @@ class TestFCPVolumeManager(base.SDKTestCase):
             self.assertEqual(expected, connections)
 
             fcp_list = self.db_op.get_from_fcp('b83c')
-            expected = [(u'b83c', u'fakeuser', 1, 1, 0, u'')]
+            expected = [(u'b83c', u'fakeuser', 1, 1, 0, u'',
+                         '2007123400001234', '20076d8500005181')]
             self.assertEqual(expected, fcp_list)
         finally:
             self.db_op.delete('b83c')

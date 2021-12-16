@@ -922,6 +922,13 @@ class FCPManager(object):
                 LOG.warn("FCP {} not found in ZVM.".format(fcp))
                 comment_dict['state'] = 'notfound'
             self.db.update_comment_of_fcp(fcp, comment_dict)
+            # NOTE(cao biao): we assume the WWPN of FCP will not change
+            # Hence, only update wwpns if wwpn_npiv column in database not set
+            # and fcp exists in zvm
+            if not fcp_dict_in_db[fcp][6] and fcp in fcp_dict_in_zvm:
+                wwpn_npiv = fcp_dict_in_zvm[fcp].get_npiv_port()
+                wwpn_phy = fcp_dict_in_zvm[fcp].get_physical_port()
+                self.db.update_wwpns_of_fcp(fcp, wwpn_npiv, wwpn_phy)
 
         # LOG
         fcp_dict_in_db = self.get_fcp_dict_in_db()
@@ -1232,44 +1239,47 @@ class FCPVolumeManager(object):
             raise exception.SDKVolumeOperationError(rs=11,
                                                     userid=assigner_id,
                                                     msg=errmsg)
-        # init fcp pool
-        self.fcp_mgr.init_fcp(assigner_id)
-        # fcp = self.fcp_mgr.find_and_reserve_fcp(assigner_id)
+
+        # TODO(cao biao): now we have wwpns in database, so we can consider
+        # let get_available_fcp return all the FCP info include wwpns,
+        # then no need to query database again when get wwpns
+        # we even can do reserve or unreserve operations together
         fcp_list = self.fcp_mgr.get_available_fcp(assigner_id, reserve)
         if not fcp_list:
             errmsg = "No available FCP device found."
             LOG.error(errmsg)
             return empty_connector
+
+        # get wwpns of fcp devices
         wwpns = []
         phy_virt_wwpn_map = {}
-        wwpn = None
-        all_fcp_pool = {}
-        # get wwpns of fcp devices
         for fcp_no in fcp_list:
-            if self.fcp_mgr._fcp_pool.get(fcp_no):
-                wwpn = self.fcp_mgr.get_wwpn(fcp_no)
-            else:
-                if not all_fcp_pool:
-                    all_fcp_pool = self.fcp_mgr.get_all_fcp_pool(assigner_id)
-                wwpn = self.fcp_mgr.get_wwpn_for_fcp_not_in_conf(all_fcp_pool,
-                                                                 fcp_no)
-            if not wwpn:
-                errmsg = "FCP device %s has no available WWPN." % fcp_no
+            wwpn_npiv, wwpn_phy = self.db.get_wwpns_of_fcp(fcp_no)
+            if not wwpn_npiv:
+                # wwpn of fcp not found in smcli, try to get it from db
+                errmsg = ("NPIV WWPN of FCP device %s not found in "
+                          "database." % fcp_no)
                 LOG.error(errmsg)
+                raise exception.SDKVolumeOperationError(rs=11,
+                                                        userid=assigner_id,
+                                                        msg=errmsg)
             else:
-                wwpns.append(wwpn)
+                wwpns.append(wwpn_npiv)
             # We use initiator to build up zones on fabric, for NPIV, the
             # virtual ports are not yet logged in when we creating zones.
             # so we will generate the physical virtual initiator mapping
             # to determine the proper zoning on the fabric.
             # Refer to #7039 for details about avoid creating zones on
             # the fabric to which there is no fcp connected.
-            phy_virt_wwpn_map[wwpn] = self.fcp_mgr.get_physical_wwpn(fcp_no)
-
-        if not wwpns:
-            errmsg = "No available WWPN found."
-            LOG.error(errmsg)
-            return empty_connector
+            if not wwpn_phy:
+                errmsg = ("Physical WWPN of FCP device %s not found in "
+                          "database." % fcp_no)
+                LOG.error(errmsg)
+                raise exception.SDKVolumeOperationError(rs=11,
+                                                        userid=assigner_id,
+                                                        msg=errmsg)
+            else:
+                phy_virt_wwpn_map[wwpn_npiv] = wwpn_phy
 
         # reserve or unreserve FCP record in database
         for fcp_no in fcp_list:
@@ -1333,11 +1343,11 @@ class FCPVolumeManager(object):
     def _update_statistics_usage(self, statistics_usage, item):
         """Tranform raw usage in FCP database into statistic data.
         """
-        # get state record in "comment" column of database
         # get statistic data about:
         #   available, allocated, notfound,
         #   unallocated_but_active, allocated_but_free
-        fcp_id, assigner_id, connections, reserved, path_id, comment = item
+        fcp_id, assigner_id, connections, reserved,\
+                path_id, comment, _, _ = item
         if comment:
             state = comment.get("state", "").lower()
             owner = comment.get("owner", "")
@@ -1429,17 +1439,22 @@ class FCPVolumeManager(object):
         The return data example:
         {
             "raw": {
-                  # (fcp_id, userid, connections, reserved, path, comment),
+                  # (fcp_id, userid, connections, reserved, path,
+                  #  comment, wwpn_npiv, wwpn_phy),
                   0 : (
-                    (u'283c',  u'user1', 2, 1, 0, {'state': 'active',
-                                                   'owner: 'ABCD0001'}),
-                    (u'183c',  u'', 0, 0, 0,{'state': 'notfound'}),
+                    (u'283c',  u'user1', 2, 1, 0,
+                     {'state': 'active','owner: 'ABCD0001'},
+                     'c05076ddf7003bf4','c05076ddf7001181'),
+                    (u'183c',  u'', 0, 0, 0, {'state': 'notfound'},
+                     'c05076ddf7004321', 'c05076ddf7001181'),
                   ),
                   1 : (
-                    (u'383c',  u'user3', 0, 0, 1, {'state': 'active',
-                                                   'owner': 'ABCD0001'}),
-                    (u'483c',  u'user2', 0, 0, 1, {'state': 'free',
-                                                   'owner': 'NONE'}),
+                    (u'383c',  u'user3', 0, 0, 1,
+                     {'state': 'active', 'owner': 'ABCD0001'}),
+                     'c05076ddf7001234', 'c05076ddf7001182'
+                    (u'483c',  u'user2', 0, 0, 1,
+                     {'state': 'free', 'owner': 'NONE'}),
+                     'c05076ddf7004322', 'c05076ddf7001182'
                   )
                   ...
             },
