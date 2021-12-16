@@ -1793,29 +1793,39 @@ class SDKSMTClientTestCases(base.SDKTestCase):
 
     @mock.patch.object(zvmutils, 'execute')
     def test_refresh_bootmap_return_value(self, execute):
+        base.set_conf('volume', 'min_fcp_paths_count', 2)
         fcpchannels = ['5d71']
         wwpns = ['5005076802100c1b', '5005076802200c1b']
         lun = '0000000000000000'
+        wwid = '600507640083826de00000000000605b'
         execute.side_effect = [(0, "")]
-        self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun)
+        self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun,
+                                               wwid=wwid)
         refresh_bootmap_cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap',
                                '--fcpchannel=5d71',
                                '--wwpn=5005076802100c1b,5005076802200c1b',
-                               '--lun=0000000000000000']
-        execute.assert_called_once_with(refresh_bootmap_cmd, timeout=600)
+                               '--lun=0000000000000000',
+                               '--wwid=600507640083826de00000000000605b',
+                               '--minfcp=2']
+        execute.assert_called_once_with(refresh_bootmap_cmd, timeout=1200)
 
     @mock.patch.object(zvmutils, 'execute')
     def test_refresh_bootmap_return_value_withskip(self, execute):
+        base.set_conf('volume', 'min_fcp_paths_count', 2)
         fcpchannels = ['5d71']
         wwpns = ['5005076802100c1b', '5005076802200c1b']
         lun = '0000000000000000'
+        wwid = '600507640083826de00000000000605b'
         execute.side_effect = [(0, "")]
-        self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun)
+        self._smtclient.volume_refresh_bootmap(fcpchannels, wwpns, lun,
+                                               wwid=wwid)
         refresh_bootmap_cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap',
                                '--fcpchannel=5d71',
                                '--wwpn=5005076802100c1b,5005076802200c1b',
-                               '--lun=0000000000000000']
-        execute.assert_called_once_with(refresh_bootmap_cmd, timeout=600)
+                               '--lun=0000000000000000',
+                               '--wwid=600507640083826de00000000000605b',
+                               '--minfcp=2']
+        execute.assert_called_once_with(refresh_bootmap_cmd, timeout=1200)
 
     @mock.patch.object(zvmutils, 'get_smt_userid')
     @mock.patch.object(smtclient.SMTClient, '_request')
@@ -2108,6 +2118,25 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         replace.assert_called_with("fake_userid", replace_data)
         request.assert_called_with("SMAPI fake_userid API Image_Unlock_DM ")
 
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    @mock.patch.object(smtclient.SMTClient, 'get_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_lock_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_replace_user_direct')
+    @mock.patch.object(smtclient.SMTClient, '_couple_nic')
+    def test_couple_nic_to_vswitch_not_actually_called(self, couple_nic,
+                                    replace, lock, get_user, request):
+        # If user direct NICDEF <vdev> already LAN SYSTEM <switch_name>,
+        # skip the Image_Replace_DM and couple nic actions
+        get_user.return_value = ["USER ABC",
+                                 "NICDEF 1000 DEVICE 3 LAN SYSTEM VS1"]
+
+        request.return_value = {'overallRC': 0}
+        self._smtclient.couple_nic_to_vswitch("fake_userid", "1000",
+                                        "VS1", active=True, vlan_id=55)
+        lock.assert_not_called()
+        replace.assert_not_called()
+        couple_nic.assert_not_called()
+
     @mock.patch.object(smtclient.SMTClient, '_uncouple_nic')
     def test_uncouple_nic_from_vswitch(self, uncouple_nic):
         self._smtclient.uncouple_nic_from_vswitch("fake_userid",
@@ -2234,6 +2263,15 @@ class SDKSMTClientTestCases(base.SDKTestCase):
     def test_delete_userid_with_vdisk_warning(self, request):
         rd = 'deletevm fuser1 directory'
         results = {'rc': 596, 'rs': 3543, 'logEntries': ''}
+        request.side_effect = exception.SDKSMTRequestFailed(results,
+                                                               "fake error")
+        self._smtclient.delete_userid('fuser1')
+        request.assert_called_once_with(rd)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_delete_userid_with_service_machine_error(self, request):
+        rd = 'deletevm fuser1 directory'
+        results = {'rc': 596, 'rs': 2119, 'logEntries': ''}
         request.side_effect = exception.SDKSMTRequestFailed(results,
                                                                "fake error")
         self._smtclient.delete_userid('fuser1')
@@ -2570,6 +2608,27 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         request.return_value = {'overallRC': 0}
         self._smtclient.dedicate_device(fake_userid, vaddr,
                                                   raddr, mode)
+        request.assert_called_once_with(requestData)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_get_fcp_info_by_status(self, request):
+        fake_userid = 'FakeID'
+        requestData = "getvm FakeID fcpinfo all YES"
+        fcp_info = ['FCP device number: 5C01',
+                    'Status: Active',
+                    'NPIV world wide port number: C05076DDF7001111',
+                    'Channel path ID: 55',
+                    'Physical world wide port number: C05076DDF7001111',
+                    'Owner: BJCB0007',
+                    'FCP device number: 5C02',
+                    'Status: Free',
+                    'NPIV world wide port number: C05076DDF7002222',
+                    'Channel path ID: 55',
+                    'Physical world wide port number: C05076DDF7002222',
+                    'Owner: NONE']
+        request.return_value = {'overallRC': 0,
+                                'response': fcp_info}
+        self._smtclient.get_fcp_info_by_status(fake_userid)
         request.assert_called_once_with(requestData)
 
     @mock.patch.object(smtclient.SMTClient, '_request')

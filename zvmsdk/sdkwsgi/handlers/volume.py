@@ -62,8 +62,11 @@ class VolumeAction(object):
         return conn
 
     @validation.query_schema(volume.get_all_fcp_usage)
-    def get_all_fcp_usage(self, req, userid):
-        return self.client.send_request('get_all_fcp_usage', userid)
+    def get_all_fcp_usage(self, req, userid, raw, statistics, sync_with_zvm):
+        return self.client.send_request('get_all_fcp_usage', userid,
+                                        raw=raw,
+                                        statistics=statistics,
+                                        sync_with_zvm=sync_with_zvm)
 
     @validation.query_schema(volume.get_fcp_usage)
     def get_fcp_usage(self, req, fcp):
@@ -78,10 +81,10 @@ class VolumeAction(object):
                                         fcp, userid, reserved,
                                         connections)
 
-    def volume_refresh_bootmap(self, fcpchannel, wwpn, lun,
+    def volume_refresh_bootmap(self, fcpchannel, wwpn, lun, wwid,
                                transportfiles, guest_networks):
         info = self.client.send_request('volume_refresh_bootmap',
-                                        fcpchannel, wwpn, lun,
+                                        fcpchannel, wwpn, lun, wwid,
                                         transportfiles, guest_networks)
         return info
 
@@ -133,15 +136,16 @@ def volume_detach(req):
 @tokens.validate
 def volume_refresh_bootmap(req):
 
-    def _volume_refresh_bootmap(req, fcpchannel, wwpn, lun,
+    def _volume_refresh_bootmap(req, fcpchannel, wwpn, lun, wwid,
                                 transportfiles, guest_networks):
         action = get_action()
-        return action.volume_refresh_bootmap(fcpchannel, wwpn, lun,
+        return action.volume_refresh_bootmap(fcpchannel, wwpn, lun, wwid,
                                              transportfiles, guest_networks)
 
     body = util.extract_json(req.body)
     info = _volume_refresh_bootmap(req, body['info']['fcpchannel'],
                                    body['info']['wwpn'], body['info']['lun'],
+                                   body['info'].get('wwid', ""),
                                    body['info'].get('transportfiles', ""),
                                    body['info'].get('guest_networks', []))
     info_json = json.dumps(info)
@@ -209,15 +213,33 @@ def set_fcp_usage(req):
 @util.SdkWsgify
 @tokens.validate
 def get_all_fcp_usage(req):
-    def _get_all_fcp_usage(req, userid):
+    def _get_all_fcp_usage(req, userid, raw, statistics, sync_with_zvm):
         action = get_action()
-        return action.get_all_fcp_usage(req, userid)
+        return action.get_all_fcp_usage(req, userid, raw, statistics,
+                                        sync_with_zvm)
 
     if 'userid' in req.GET.keys():
         userid = req.GET['userid']
     else:
         userid = None
-    ret = _get_all_fcp_usage(req, userid)
+    raw = req.GET.get('raw', 'false')
+    if raw.lower() == 'true':
+        raw = True
+    else:
+        raw = False
+
+    statistics = req.GET.get('statistics', 'true')
+    if statistics.lower() == 'true':
+        statistics = True
+    else:
+        statistics = False
+
+    sync_with_zvm = req.GET.get('sync_with_zvm', 'false')
+    if sync_with_zvm.lower() == 'true':
+        sync_with_zvm = True
+    else:
+        sync_with_zvm = False
+    ret = _get_all_fcp_usage(req, userid, raw, statistics, sync_with_zvm)
 
     ret_json = json.dumps(ret)
     req.response.status = util.get_http_code_from_sdk_return(ret,

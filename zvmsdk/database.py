@@ -287,7 +287,9 @@ class FCPDbOperator(object):
             'connections    integer,',  # 0 means no assigner
             'reserved       integer,',  # 0 for not reserved
             'path           integer,',  # 0 or path0, 1 for path1
-            'comment        varchar(128))'))
+            'comment        varchar(128),',
+            'wwpn_npiv      varchar(16) COLLATE NOCASE,',
+            'wwpn_phy       varchar(16) COLLATE NOCASE)'))
         with get_fcp_conn() as conn:
             conn.execute(sql)
 
@@ -345,6 +347,7 @@ class FCPDbOperator(object):
             return fcp
 
     def new(self, fcp, path):
+        # TODO(cao biao): need update or not when add columns?
         with get_fcp_conn() as conn:
             conn.execute("INSERT INTO fcp (fcp_id, assigner_id, "
                          "connections, reserved, path, comment) VALUES "
@@ -367,40 +370,49 @@ class FCPDbOperator(object):
             conn.execute("DELETE FROM fcp "
                          "WHERE fcp_id=?", (fcp,))
 
-    def get_all_fcps_of_assigner(self, assigner_id):
-        ret = {}
+    def get_all_fcps_of_assigner(self, assigner_id=None):
+        """Get dict of all fcp records of specified assigner.
+        If assigner is None, will get all fcp records.
+        Format of return is like :
+        [
+          (fcp_id, userid, connections, reserved, path, comment,
+           wwpn_npiv, wwpn_phy),
+          (u'283c', u'user1', 2, 1, 0, {'state': 'active', 'owner': 'user1'},
+           'c05076ddf7000002', 'c05076ddf7001d81'),
+          (u'483c', u'user2', 0, 0, 1, {'state': 'free'},
+           'c05076ddf7000001', 'c05076ddf7001d82')
+        ]
+        """
         with get_fcp_conn() as conn:
-            result = conn.execute("SELECT fcp_id, reserved, connections FROM "
-                                  "fcp WHERE assigner_id=?", (assigner_id,))
-            fcp_info = result.fetchall()
-            if not fcp_info:
-                msg = 'No FCPs found belongs to userid %s.' % assigner_id
+            if assigner_id:
+                result = conn.execute("SELECT fcp_id, assigner_id, "
+                                      "connections, reserved, path, comment, "
+                                      "wwpn_npiv, wwpn_phy FROM fcp WHERE "
+                                      "assigner_id=?", (assigner_id,))
+            else:
+                result = conn.execute("SELECT fcp_id, assigner_id, "
+                                      "connections, reserved, path, comment, "
+                                      "wwpn_npiv, wwpn_phy FROM fcp")
+            results = result.fetchall()
+            if not results:
+                if assigner_id:
+                    msg = 'No FCPs found belongs to userid %s.' % assigner_id
+                    obj_desc = "FCP belongs to userid: %s" % assigner_id
+                else:
+                    msg = 'No FCPs found in database.'
+                    obj_desc = "FCP records in database"
                 LOG.error(msg)
-                obj_desc = "FCPs belongs to %s" % assigner_id
                 raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
                                                        modID=self._module_id)
-            for item in fcp_info:
-                # 'fcp_id': (userid, reserved, connections)
-                ret[item[0]] = (assigner_id, item[1], item[2])
-        return ret
-
-    def get_all_fcps(self):
-        ret = {}
-        with get_fcp_conn() as conn:
-            result = conn.execute("SELECT fcp_id, assigner_id, reserved, "
-                                  "connections FROM fcp")
-            fcp_info = result.fetchall()
-
-            if not fcp_info:
-                msg = 'No FCPs found in database.'
-                LOG.error(msg)
-                obj_desc = "FCPs in database"
-                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
-                                                       modID=self._module_id)
-            for item in fcp_info:
-                # 'fcp_id': (reserved, connections)
-                ret[item[0]] = (item[1], item[2], item[3])
-        return ret
+            else:
+                # transfer comment str to dict format
+                fcp_info = []
+                for item in results:
+                    item = list(item)
+                    if item[5]:
+                        item[5] = eval(item[5])
+                    fcp_info.append(tuple(item))
+        return fcp_info
 
     def get_usage_of_fcp(self, fcp):
         connections = 0
@@ -429,6 +441,39 @@ class FCPDbOperator(object):
                                                           connections,
                                                           fcp))
 
+    def get_comment_of_fcp(self, fcp):
+        """Get the comment content, transfer into dict and return.
+        """
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT comment "
+                                  "FROM fcp WHERE fcp_id=?", (fcp,))
+            current_comment = result.fetchall()
+            if not current_comment or current_comment[0][0] == '':
+                current_comment = {}
+            else:
+                # transfer from str to dict
+                current_comment = eval(current_comment[0][0])
+        return current_comment
+
+    def update_comment_of_fcp(self, fcp, comment_dict):
+        """Update the cotent of comment.
+        :param fcp: (str) the FCP ID string
+        :param comment_dict: (dict) the dict to describe the FCP status
+            this api will transfer this into string and store into db
+        The comment in database should be a string like:
+            "{'state': 'active', 'owner': 'iaas0001'}"
+        """
+        # the input parameter comment_dict must be a dict
+        if not isinstance(comment_dict, dict):
+            msg = ("Failed to update comment of FCP %s because input "
+                   "comment %s is not a dict type." % (fcp, comment_dict))
+            raise exception.SDKInternalError(msg=msg, modID=self._module_id)
+        new_comment = str(comment_dict)
+        # storage the new comment into database
+        with get_fcp_conn() as conn:
+            conn.execute("UPDATE fcp SET comment=? "
+                         "WHERE fcp_id=?", (new_comment, fcp))
+
     def update_path_of_fcp(self, fcp, path):
         with get_fcp_conn() as conn:
             conn.execute("UPDATE fcp SET path=? WHERE "
@@ -439,6 +484,12 @@ class FCPDbOperator(object):
             result = conn.execute("SELECT * FROM fcp WHERE "
                                   "fcp_id=?", (fcp,))
             fcp_list = result.fetchall()
+            if not fcp_list:
+                msg = 'FCP with id: %s does not exist in DB.' % fcp
+                LOG.error(msg)
+                obj_desc = "FCP with id: %s" % fcp
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
             connections = fcp_list[0][2]
             connections += 1
 
@@ -451,6 +502,12 @@ class FCPDbOperator(object):
             result = conn.execute("SELECT * FROM fcp WHERE "
                                   "fcp_id=?", (fcp,))
             fcp_list = result.fetchall()
+            if not fcp_list:
+                msg = 'FCP with id: %s does not exist in DB.' % fcp
+                LOG.error(msg)
+                obj_desc = "FCP with id: %s" % fcp
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
             connections = fcp_list[0][2]
             connections += 1
 
@@ -464,6 +521,12 @@ class FCPDbOperator(object):
             result = conn.execute("SELECT * FROM fcp WHERE "
                                   "fcp_id=?", (fcp,))
             fcp_list = result.fetchall()
+            if not fcp_list:
+                msg = 'FCP with id: %s does not exist in DB.' % fcp
+                LOG.error(msg)
+                obj_desc = "FCP with id: %s" % fcp
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
             connections = fcp_list[0][2]
             if connections == 0:
                 msg = 'FCP with id: %s no connections in DB.' % fcp
@@ -579,6 +642,12 @@ class FCPDbOperator(object):
             count_per_path = [a[0] for a in result.fetchall()]
             # return [] if no free fcp found from at least one path
             if len(free_count_per_path) < len(count_per_path):
+                # For get_fcp_pair with same index, we will not check the
+                # CONF.volume.min_fcp_paths_count, the returned fcp count
+                # should always equal to the total paths count
+                LOG.error("Available paths count: %s, total paths count: "
+                          "%s." %
+                          (len(free_count_per_path), len(count_per_path)))
                 return fcp_list
             '''
             fcps 2 paths example:
@@ -656,13 +725,29 @@ class FCPDbOperator(object):
                                       "fcp_id" % no)
                 fcps = result.fetchall()
                 if not fcps:
-                    break
+                    # continue to find whether other paths has available FCP
+                    continue
                 index = random.randint(0, len(fcps) - 1)
                 fcp_list.append(fcps[index][0])
-        if len(fcp_list) < len(path_list):
-            LOG.error("Not enough FCPs in fcp pool")
-            return []
-        return fcp_list
+        # Start to check whether the available count >= min_fcp_paths_count
+        allocated_paths = len(fcp_list)
+        total_paths = len(path_list)
+        if allocated_paths < total_paths:
+            LOG.info("Not all paths have available FCP devices. "
+                     "The count of paths having available FCP: %d is less "
+                     "than total paths: %d. "
+                     "The configured minimum FCP paths count is: %d." %
+                     (allocated_paths, total_paths,
+                      CONF.volume.min_fcp_paths_count))
+            if allocated_paths >= CONF.volume.min_fcp_paths_count:
+                LOG.warning("Return the FCPs from the available paths to "
+                            "continue.")
+                return fcp_list
+            else:
+                LOG.error("Not enough FCPs available, return empty list.")
+                return []
+        else:
+            return fcp_list
 
     def get_all_free_unreserved(self):
         with get_fcp_conn() as conn:
@@ -672,6 +757,27 @@ class FCPDbOperator(object):
             fcp_list = result.fetchall()
 
         return fcp_list
+
+    def get_wwpns_of_fcp(self, fcp):
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT wwpn_npiv, wwpn_phy FROM fcp "
+                                  "WHERE fcp_id=?", (fcp,))
+            wwpns_info = result.fetchall()
+            if not wwpns_info:
+                msg = 'WWPNs of fcp %s does not exist in DB.' % fcp
+                LOG.error(msg)
+                obj_desc = "WWPNs of FCP %s" % fcp
+                raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
+                                                       modID=self._module_id)
+            wwpn_npiv = wwpns_info[0][0]
+            wwpn_phy = wwpns_info[0][1]
+        return wwpn_npiv, wwpn_phy
+
+    def update_wwpns_of_fcp(self, fcp, wwpn_npiv, wwpn_phy):
+        with get_fcp_conn() as conn:
+            conn.execute("UPDATE fcp SET wwpn_npiv=?, wwpn_phy=? "
+                         "WHERE fcp_id=?",
+                         (wwpn_npiv, wwpn_phy, fcp))
 
 
 class ImageDbOperator(object):

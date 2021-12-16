@@ -96,13 +96,15 @@ class HandlersVolumeTest(unittest.TestCase):
         fcpchannels = ['5d71']
         wwpns = ['5005076802100c1b', '5005076802200c1b']
         lun = '0000000000000000'
+        wwid = '600507640083826de00000000000605b'
         info = {"fcpchannel": fcpchannels,
                 "wwpn": wwpns,
-                "lun": lun}
+                "lun": lun,
+                "wwid": wwid}
         body_str = {"info": info}
         self.req.body = json.dumps(body_str)
 
         volume.volume_refresh_bootmap(self.req)
         mock_detach.assert_called_once_with(
             'volume_refresh_bootmap',
-            fcpchannels, wwpns, lun, '', [])
+            fcpchannels, wwpns, lun, wwid, '', [])

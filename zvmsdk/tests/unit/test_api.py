@@ -32,6 +32,9 @@ class SDKAPITestCase(base.SDKTestCase):
     def setUp(self):
         super(SDKAPITestCase, self).setUp()
         vmops.VMOps.check_guests_exist_in_db = mock.MagicMock()
+        patcher = mock.patch('zvmsdk.volumeop.FCPManager.sync_db')
+        self.addCleanup(patcher.stop)
+        self.mock_sync_db = patcher.start()
         self.api = api.SDKAPI()
 
     def test_init_ComputeAPI(self):
@@ -498,6 +501,14 @@ class SDKAPITestCase(base.SDKTestCase):
         self.api.vswitch_grant_user("testvsw", self.userid)
         guv.assert_called_once_with("testvsw", self.userid)
 
+    @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI.get_all_fcp_usage")
+    def test_get_all_fcp_usage(self, mock_get_all_usage):
+        self.api.get_all_fcp_usage()
+        mock_get_all_usage.assert_called_once_with(None,
+                                                   raw=False,
+                                                   statistics=True,
+                                                   sync_with_zvm=False)
+
     @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI.attach_volume_to_instance")
     def test_volume_attach(self, mock_attach):
         connection_info = {'platform': 'x86_64',
@@ -516,8 +527,9 @@ class SDKAPITestCase(base.SDKTestCase):
         fcpchannel = ['5d71']
         wwpn = ['5005076802100c1b', '5005076802200c1b']
         lun = '01000000000000'
-        self.api.volume_refresh_bootmap(fcpchannel, wwpn, lun)
-        mock_attach.assert_called_once_with(fcpchannel, wwpn, lun,
+        wwid = '600507640083826de00000000000605b'
+        self.api.volume_refresh_bootmap(fcpchannel, wwpn, lun, wwid)
+        mock_attach.assert_called_once_with(fcpchannel, wwpn, lun, wwid=wwid,
                                     transportfiles=None, guest_networks=None)
 
     @mock.patch("zvmsdk.volumeop.VolumeOperatorAPI."
@@ -695,11 +707,17 @@ class SDKAPITestCase(base.SDKTestCase):
         base.set_conf('zvm', 'disk_pool', None)
         disk_pool = 'ECKD:IAS1PL'
         result = self.api.host_get_diskpool_volumes(disk_pool)
-        diskpool_vols.assert_called_once_with('IAS1PL')
+        diskpool_vols.assert_called_once_with('ECKD:IAS1PL')
         # Test disk_pool is None
         disk_pool = None
-        result = self.api.host_get_diskpool_volumes(disk_pool)
-        self.assertEqual(result, {})
+        try:
+            self.api.host_get_diskpool_volumes(disk_pool)
+        except Exception as exc:
+            errmsg = ("Invalid disk_pool input None, disk_pool should be"
+                      " configured for sdkserver.")
+            result = errmsg in six.text_type(exc)
+            self.assertEqual(result, True)
+            pass
 
     @mock.patch("zvmsdk.hostops.HOSTOps.get_volume_info")
     def test_host_get_volume_info(self, volume_info):

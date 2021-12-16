@@ -243,19 +243,24 @@ class SMTClient(object):
         with zvmutils.log_and_reraise_smt_request_failed(action):
             self._request(rd)
 
-    def get_fcp_info_by_status(self, userid, status):
+    def get_fcp_info_by_status(self, userid, status=None):
 
         """get fcp information by the status.
 
-        :userid: The name of the image to query fcp info
-        :status: The status of target fcps. eg:'active', 'free' or 'offline'.
+        :userid: (str) The name of the image to query fcp info
+        :status: (str) If status is None, will return the FCP devices
+            of all statuses. If status specified, will only return the
+            FCP devices of this status.
+            The status must be 'active', 'free' or 'offline'.
+        :returns: (list) a list of string lines that the command output.
         """
-        results = self._get_fcp_info_by_status(userid, status)
-        return results
-
-    def _get_fcp_info_by_status(self, userid, status):
         action = 'fcpinfo'
-        rd = ' '.join(['getvm', userid, action, status])
+        if status is None:
+            # if status is None, will transfer status to all
+            # to let smtLayer return the FCPs of all the statuses
+            status = "all"
+        # always set -k OWNER=YES
+        rd = ' '.join(['getvm', userid, action, status, "YES"])
         action = "query fcp info of '%s'" % userid
         with zvmutils.log_and_reraise_smt_request_failed(action):
             results = self._request(rd)
@@ -524,9 +529,9 @@ class SMTClient(object):
               {'uid': userid, 'dest': destination})
 
         if 'maxtotal' in parms:
-            rd += ('--maxtotal ' + str(parms['maxTotal']))
+            rd += ('--maxtotal ' + str(parms['maxtotal']))
         if 'maxquiesce' in parms:
-            rd += ('--maxquiesce ' + str(parms['maxquiesce']))
+            rd += (' --maxquiesce ' + str(parms['maxquiesce']))
         if 'immediate' in parms:
             rd += " --immediate"
         if 'forcearch' in parms:
@@ -806,7 +811,7 @@ class SMTClient(object):
         finally:
             self._pathutils.clean_temp_folder(iucv_path)
 
-    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun,
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, wwid='',
                                transportfiles=None, guest_networks=None):
         guest_networks = guest_networks or []
         fcps = ','.join(fcpchannels)
@@ -814,7 +819,10 @@ class SMTClient(object):
         fcs = "--fcpchannel=%s" % fcps
         wwpns = "--wwpn=%s" % ws
         lun = "--lun=%s" % lun
-        cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap', fcs, wwpns, lun]
+        wwid = "--wwid=%s" % wwid
+        paths = "--minfcp=%s" % CONF.volume.min_fcp_paths_count
+        cmd = ['sudo', '/opt/zthin/bin/refresh_bootmap', fcs, wwpns,
+               lun, wwid, paths]
 
         if guest_networks:
             # prepare additional parameters for RHCOS BFV
@@ -853,7 +861,7 @@ class SMTClient(object):
             err_output = ""
             output_lines = output.split('\n')
             for line in output_lines:
-                if line.__contains__("ERROR:"):
+                if line.__contains__("Exit MSG:"):
                     err_output += ("\\n" + line.strip())
             LOG.error(err_msg + err_output)
             raise exception.SDKVolumeOperationError(rs=5,
@@ -2191,6 +2199,14 @@ class SMTClient(object):
             if len(ent) > 0:
                 new_user_direct.append(ent)
                 if ent.upper().startswith(nicdef):
+                    # If NIC already coupled with this vswitch,
+                    # return and skip following actions,
+                    # such as migrating VM
+                    if ("LAN SYSTEM %s" % vswitch_name) in ent:
+                        LOG.info("NIC %s already coupled to vswitch %s, "
+                                 "skip couple action."
+                                 % (nic_vdev, vswitch_name))
+                        return
                     # vlan_id < 0 means no VLAN ID given
                     v = nicdef
                     if vlan_id < 0:
@@ -2352,6 +2368,15 @@ class SMTClient(object):
             # DirMaint does not support formatting TDISK or VDISK extents.
             if err.results['rc'] == 596 and err.results['rs'] == 3543:
                 LOG.debug("The guest %s deleted with 596/3543" % userid)
+                return
+
+            # The CP or CMS command shown resulted in a non-zero
+            # return code. This message is frequently preceded by
+            # a DMK, HCP, or DMS error message that describes the cause
+            # https://www-01.ibm.com/servers/resourcelink/svc0302a.nsf/
+            # pages/zVMV7R2gc246282/$file/hcpk2_v7r2.pdf
+            if err.results['rc'] == 596 and err.results['rs'] == 2119:
+                LOG.debug("The guest %s deleted with 596/2119" % userid)
                 return
 
             msg = "SMT error: %s" % err.format_message()

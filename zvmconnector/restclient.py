@@ -416,6 +416,7 @@ def req_volume_refresh_bootmap(start_index, *args, **kwargs):
     fcpchannel = kwargs.get('fcpchannels', None)
     wwpn = kwargs.get('wwpn', None)
     lun = kwargs.get('lun', None)
+    wwid = kwargs.get('wwid', '')
     transportfiles = kwargs.get('transportfiles', '')
     guest_networks = kwargs.get('guest_networks', [])
     body = {'info':
@@ -423,6 +424,7 @@ def req_volume_refresh_bootmap(start_index, *args, **kwargs):
             "fcpchannel": fcpchannel,
             "wwpn": wwpn,
             "lun": lun,
+            "wwid": wwid,
             "transportfiles": transportfiles,
             "guest_networks": guest_networks,
         }
@@ -446,8 +448,16 @@ def req_get_volume_connector(start_index, *args, **kwargs):
 def req_get_all_fcp_usage(start_index, *args, **kwargs):
     url = '/volumes/fcp'
     userid = kwargs.get('userid', None)
+    raw = kwargs.get('raw', False)
+    statistics = kwargs.get('statistics', True)
+    sync_with_zvm = kwargs.get('sync_with_zvm', False)
     if userid:
-        url += "?userid=%s" % userid
+        url += "?userid=%s&" % userid
+    else:
+        url += "?"
+    url += "raw=%s&" % raw
+    url += "statistics=%s&" % statistics
+    url += "sync_with_zvm=%s" % sync_with_zvm
     body = None
     return url, body
 

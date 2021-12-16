@@ -53,7 +53,7 @@ create = {
 live_migrate_vm = {
     'type': 'object',
     'properties': {
-        'dest_zcc_userid': parameter_types.userid,
+        'dest_zcc_userid': parameter_types.userid_or_None,
         'destination': parameter_types.userid,
         'parms': parameter_types.live_migrate_parms,
         'operation': parameter_types.name,

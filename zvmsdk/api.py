@@ -314,7 +314,6 @@ class SDKAPI(object):
             LOG.error(msg)
             raise exception.SDKInvalidInputFormat(msg)
         diskpool_type = disk_pool.split(':')[0].upper()
-        diskpool_name = disk_pool.split(':')[1].upper()
         if diskpool_type not in ('ECKD', 'FBA'):
             msg = ('Invalid disk pool type found in disk_pool, expect'
                    'disk_pool like ECKD:eckdpool or FBA:fbapool')
@@ -323,7 +322,7 @@ class SDKAPI(object):
 
         action = "get the volumes of disk pool: '%s'" % disk_pool
         with zvmutils.log_and_reraise_sdkbase_error(action):
-            return self._hostops.diskpool_get_volumes(diskpool_name)
+            return self._hostops.diskpool_get_volumes(disk_pool)
 
     def host_get_volume_info(self, volume=None):
         """ Retrieve volume information.
@@ -713,7 +712,8 @@ class SDKAPI(object):
         from one z/VM system to another within an SSI cluster.
 
         :param userid: (str) the userid of the vm to be relocated or tested
-        :param dest_zcc_userid: (str) the userid of zcc on destination
+        :param dest_zcc_userid: (str) the userid of zcc on destination.
+               If None, no any userid is set into the guest.
         :param destination: (str) the system ID of the z/VM system to which
                the specified vm will be relocated or tested.
         :param parms: (dict) a dictionary of options for relocation.
@@ -741,19 +741,10 @@ class SDKAPI(object):
 
         """
         if lgr_action.lower() == 'move':
-            if dest_zcc_userid == '':
-                errmsg = ("'dest_zcc_userid' is required if the value of "
-                          "'lgr_action' equals 'move'.")
-                LOG.error(errmsg)
-                raise exception.SDKMissingRequiredInput(msg=errmsg)
-
-            # Add authorization for new zcc.
-            cmd = ('echo -n %s > /etc/iucv_authorized_userid\n' %
-                                                    dest_zcc_userid)
-            rc = self._smtclient.execute_cmd(userid, cmd)
-            if rc != 0:
-                err_msg = ("Add authorization for new zcc failed")
-                LOG.error(err_msg)
+            if dest_zcc_userid is None or dest_zcc_userid.strip() == '':
+                msg = "dest_zcc_userid is empty so it will not be set " \
+                      "during LGR."
+                LOG.info(msg)
 
             # Live_migrate the guest
             operation = "Move guest '%s' to SSI '%s'" % (userid, destination)
@@ -766,6 +757,28 @@ class SDKAPI(object):
             with zvmutils.log_and_reraise_sdkbase_error(action):
                 self._GuestDbOperator.update_guest_by_userid(userid,
                                                     comments=comments)
+
+            # Skip IUCV authorization for RHCOS guests
+            is_rhcos = 'rhcos' in self._GuestDbOperator.get_guest_by_userid(
+                            userid)[2].lower()
+            if is_rhcos:
+                LOG.debug("Skip IUCV authorization when migrating RHCOS "
+                          "guests: %s" % userid)
+
+            # Add authorization for new zcc.
+            # This should be done after migration succeeds.
+            # If the dest_zcc_userid is empty, nothing will be done because
+            # this should be a onboarded guest and no permission to do it.
+            if (dest_zcc_userid is not None and
+                    dest_zcc_userid.strip() != '' and
+                    not is_rhcos):
+                cmd = ('echo -n %s > /etc/iucv_authorized_userid\n' %
+                                                        dest_zcc_userid)
+                rc = self._smtclient.execute_cmd(userid, cmd)
+                if rc != 0:
+                    err_msg = ("Add authorization for new zcc failed")
+                    LOG.error(err_msg)
+
         if lgr_action.lower() == 'test':
             operation = "Test move guest '%s' to SSI '%s'" % (userid,
                                                     destination)
@@ -1573,14 +1586,15 @@ class SDKAPI(object):
         """Get connector information of the guest for attaching to volumes.
         This API is for Openstack Cinder driver only now.
 
-        Connector information is a dictionary representing the ip of the
-        machine that will be making the connection, the name of the iscsi
-        initiator and the hostname of the machine as follows::
+        Connector information is a dictionary representing the
+        machine that will be making the connection as follows::
 
             {
                 'zvm_fcp': fcp
                 'wwpns': [wwpn]
                 'host': host
+                'phy_to_virt_initiators': {},
+                'fcp_paths': 0
             }
         This information will be used by IBM storwize FC driver in Cinder.
 
@@ -1589,7 +1603,8 @@ class SDKAPI(object):
         """
         return self._volumeop.get_volume_connector(userid, reserve)
 
-    def get_all_fcp_usage(self, userid=None):
+    def get_all_fcp_usage(self, userid=None, raw=False, statistics=True,
+                          sync_with_zvm=False):
         """API for getting all the FCP usage for specified userid.
 
         :param str userid: the user id of the guest. if userid is None,
@@ -1606,7 +1621,9 @@ class SDKAPI(object):
                   the keys are the fcp IDs, the value is a list contains
                   [userid, reserved, connections] values.
         """
-        return self._volumeop.get_all_fcp_usage(userid)
+        return self._volumeop.get_all_fcp_usage(userid, raw=raw,
+                                                statistics=statistics,
+                                                sync_with_zvm=sync_with_zvm)
 
     @check_fcp_exist()
     def get_fcp_usage(self, fcp):
@@ -1660,12 +1677,14 @@ class SDKAPI(object):
         self._volumeop.attach_volume_to_instance(connection_info)
 
     def volume_refresh_bootmap(self, fcpchannels, wwpns, lun,
+                               wwid='',
                                transportfiles=None, guest_networks=None):
         """ Refresh a volume's bootmap info.
 
         :param list of fcpchannels
         :param list of wwpns
         :param string lun
+        :param wwid: (str) the wwid of the target volume
         :param transportfiles: (str) the files that used to customize the vm
         :param list guest_networks: a list of network info for the guest.
                It has one dictionary that contain some of the below keys for
@@ -1697,6 +1716,7 @@ class SDKAPI(object):
                'nic_vdev': '1003}]
         """
         return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun,
+                                                wwid=wwid,
                                                 transportfiles=transportfiles,
                                                 guest_networks=guest_networks)
 

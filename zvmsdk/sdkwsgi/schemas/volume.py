@@ -65,6 +65,9 @@ get_all_fcp_usage = {
     'type': 'object',
     'properties': {
         'userid': parameter_types.userid_list_array,
+        'raw': parameter_types.single_param(parameter_types.boolean),
+        'statistics': parameter_types.single_param(parameter_types.boolean),
+        'sync_with_zvm': parameter_types.single_param(parameter_types.boolean),
     },
     'additionalProperties': False,
 }
