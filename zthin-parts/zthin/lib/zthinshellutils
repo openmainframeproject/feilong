@@ -325,8 +325,9 @@ function inform {
   local message=$1
   # @Code:
   message=$(echo "$message" | sed 's/\(\S\)\s\s*/\1 /g')
-  logger -p 'local5.info' \
-            "$$.0 $CMDNAME: ${BASH_SOURCE[1]/*\/}: ${FUNCNAME[1]}: ${message}"
+  fullmsg="$$.0 $CMDNAME: ${BASH_SOURCE[1]/*\/}: ${FUNCNAME[1]}: ${message}"
+  size=${#fullmsg}
+  logger -p 'local5.info' --size $size "$fullmsg"
   echo "${message}"
 } #inform{}
 
@@ -342,8 +343,9 @@ function warn {
   local message=$1
   # @Code:
   message=$(echo "$message" | sed 's/\s\s*/ /g')
-  logger -p 'local5.warning' \
-            "$$.0 $CMDNAME: ${BASH_SOURCE[1]/*\/}: ${FUNCNAME[1]}: ${message}"
+  fullmsg="$$.0 $CMDNAME: ${BASH_SOURCE[1]/*\/}: ${FUNCNAME[1]}: ${message}"
+  size=${#fullmsg}
+  logger -p 'local5.warning' --size $size "$fullmsg"
   echo "WARNING: ${message}"
 } #warn{}
 
@@ -359,8 +361,9 @@ function printError {
   local message=$1
   # @Code:
   message=$(echo "$message" | sed 's/\s\s*/ /g')
-  logger -p 'local5.err' \
-            "$$.0 $CMDNAME: ${BASH_SOURCE[1]/*\/}: ${FUNCNAME[1]}: ${message}"
+  fullmsg="$$.0 $CMDNAME: ${BASH_SOURCE[1]/*\/}: ${FUNCNAME[1]}: ${message}"
+  size=${#fullmsg}
+  logger -p 'local5.err' --size $size "$fullmsg"
   echo "ERROR: ${message}"
 } #printError{}
 
