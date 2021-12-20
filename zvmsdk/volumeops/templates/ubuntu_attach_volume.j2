@@ -115,6 +115,14 @@ do
         done
     fi
 
+    # in UBUNTU, system dont need this file
+    # NOTE(cao biao): do we have permisson to create this file?
+    # but we need it when detach volume
+    for wwpn in ${ActiveWWPNs[@]}
+    do
+        echo "0.0.$fcp $wwpn $lun" >> /etc/zfcp_ports.info
+    done
+
     if [[ $(which udevadm 2> /dev/null) != '' ]]; then
         udevadm settle
     else

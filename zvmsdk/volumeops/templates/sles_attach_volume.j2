@@ -102,6 +102,13 @@ do
         done
     fi
 
+    # in SLES, system dont need this file
+    # but we need it when detach volume
+    for wwpn in ${ActiveWWPNs[@]}
+    do
+        echo "0.0.$fcp $wwpn $lun" >> /etc/zfcp_ports.info
+    done
+
     # create udev rules
     sleep 1
     touch /etc/udev/rules.d/51-zfcp-0.0.$fcp.rules

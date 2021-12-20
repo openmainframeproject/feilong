@@ -20,16 +20,25 @@ is_last_volume="{{ is_last_volume }}"
 echo "Enter UBUNTU detach script with parameters: FCP:${fcp_list[@]}, INPUT WWPNS:${input_wwpns[@]}, LUN:$lun, LUN ID: $lun_id, target_filename:$target_filename, is_last_volume: $is_last_volume."
 
 # we need to get the intersection between input wwpns and lszfcp output
-# we need execute this from beginning because if paths were flushed, we get nothing
-lszfcp_output=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
-echo "lszfcp -P output port info: $lszfcp_output ."
+# because lszfcp -P sometimes can not output all the wwpns
+# so if zfcp.conf exists, we change to use WWPNs from zfcp.conf directly
+# if not exist, use lszfcp -P to query wwpns info
+if [ -e /etc/zfcp_ports.info ]; then
+    zfcp_ports_info=`cat /etc/zfcp_ports.info | awk '{print $1,$2}'`
+    echo "port info in zfcp_ports.info: $zfcp_ports_info"
+else
+    zfcp_ports_info=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
+    echo "port info in lszfcp output: $zfcp_ports_info"
+fi
+
 declare -A valid_dict
 for fcp in ${fcp_list[@]}
 do
     for wwpn in ${input_wwpns[@]}
     do
         fcp_wwpn_str="0.0.${fcp} ${wwpn}"
-        if [[ $lszfcp_output =~ $fcp_wwpn_str ]]; then
+        if [[ $zfcp_ports_info =~ $fcp_wwpn_str ]]; then
+            echo "$fcp_wwpn_str matched with content of local ports info."
             # add this combination into valid_dict
             if [[ -z ${valid_dict[$fcp]} ]]; then
                 valid_dict+=([$fcp]="$wwpn")
@@ -49,7 +58,7 @@ do
     valid_fcp_count=$((valid_fcp_count+=1))
 done
 if [[ $valid_fcp_count -eq 0 ]]; then
-    echo "can not found intersection between input wwpns: ${input_wwpns[@]} and lszfcp output: $lszfcp_output"
+    echo "can not found intersection between input wwpns: ${input_wwpns[@]} and port info in system: $zfcp_ports_info"
     exit 3
 fi
 
@@ -139,6 +148,13 @@ do
     if [ $is_last_volume -eq 1 ]; then
         /sbin/chzdev zfcp-host $fcp -d
     fi
+
+    # remove configuration items in zfcp_ports.info
+    for WWPN in ${ActiveWWPNs[@]}
+    do
+        echo "remove WWPN $WWPN for $fcp in zfcp_ports.info"
+        sed -i -e "/0.0.$fcp $WWPN $lun/d" /etc/zfcp_ports.info
+    done
 done
 
 ConfigLib="/lib/udev/rules.d/56-zfcp.rules"
