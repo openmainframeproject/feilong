@@ -770,13 +770,19 @@ class FCPManager(object):
     def _sync_db_with_zvm(self):
         """Sync FCP DB with the FCP info queried from zVM"""
 
-        LOG.info("Enter: Sync FCP DB with FCP info queried from zVM.")
-
-        # Get a dict of all FCPs in ZVM
-        fcp_dict_in_zvm = self.get_fcp_dict_in_zvm()
+        LOG.info("Enter: Sync FCP DB with FCP info queried from z/VM.")
 
         # Get a dict of all FCPs in FCP DB
         fcp_dict_in_db = self.get_fcp_dict_in_db()
+
+        if not fcp_dict_in_db:
+            LOG.info("No FCPs exist in FCP DB. ")
+            LOG.info("Exit: Sync FCP DB with FCP info queried from z/VM.")
+            return
+
+        LOG.info("Querying FCP status on z/VM.")
+        # Get a dict of all FCPs in ZVM
+        fcp_dict_in_zvm = self.get_fcp_dict_in_zvm()
 
         # Update DB column of comment based on the info queried from zVM
         for fcp in fcp_dict_in_db:
@@ -804,13 +810,13 @@ class FCPManager(object):
                     wwpn_phy = fcp_dict_in_zvm[fcp].get_physical_port()
                     self.db.update_wwpns_of_fcp(fcp, wwpn_npiv, wwpn_phy)
             else:
-                LOG.warn("FCP {} not found in ZVM.".format(fcp))
+                LOG.warn("FCP {} not found in z/VM.".format(fcp))
                 comment_dict['state'] = 'notfound'
             self.db.update_comment_of_fcp(fcp, comment_dict)
         # LOG
         fcp_dict_in_db = self.get_fcp_dict_in_db()
         LOG.info("fcp_dict_in_db: {}".format(fcp_dict_in_db))
-        LOG.info("Exit: Sync FCP DB with FCP info queried from zVM.")
+        LOG.info("Exit: Sync FCP DB with FCP info queried from z/VM.")
 
 
 # volume manager for FCP protocol
