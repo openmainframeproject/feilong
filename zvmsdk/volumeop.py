@@ -394,8 +394,6 @@ class FCP(object):
 class FCPManager(object):
 
     def __init__(self):
-        # _fcp_pool store the objects of FCP index by fcp id
-        self._fcp_pool = {}
         # _fcp_path_info store the FCP path mapping index by path no
         self._fcp_path_mapping = {}
         self.db = database.FCPDbOperator()
@@ -409,69 +407,6 @@ class FCPManager(object):
         self._sync_db_with_fcp_list()
         # Second, sync with ZVM
         self._sync_db_with_zvm()
-
-    def init_fcp(self, assigner_id):
-        """init_fcp to init the FCP managed by this host"""
-        # TODO master_fcp_list (zvm_zhcp_fcp_list) really need?
-        fcp_list = CONF.volume.fcp_list
-        if fcp_list == '':
-            errmsg = ("because CONF.volume.fcp_list is empty, "
-                      "no volume functions available")
-            LOG.info(errmsg)
-            return
-
-        self._init_fcp_pool(fcp_list, assigner_id)
-        self._sync_db_fcp_list()
-
-    def _init_fcp_pool(self, fcp_list, assigner_id):
-        """The FCP infomation got from smt(zthin) looks like :
-           host: FCP device number: xxxx
-           host:   Status: Active
-           host:   NPIV world wide port number: xxxxxxxx
-           host:   Channel path ID: xx
-           host:   Physical world wide port number: xxxxxxxx
-           ......
-           host: FCP device number: xxxx
-           host:   Status: Active
-           host:   NPIV world wide port number: xxxxxxxx
-           host:   Channel path ID: xx
-           host:   Physical world wide port number: xxxxxxxx
-
-        """
-        self._fcp_path_mapping = self._expand_fcp_list(fcp_list)
-        complete_fcp_set = set()
-        for path, fcp_set in self._fcp_path_mapping.items():
-            complete_fcp_set = complete_fcp_set | fcp_set
-        fcp_info = self._get_all_fcp_info(assigner_id)
-        lines_per_item = constants.FCP_INFO_LINES_PER_ITEM
-        # after process, _fcp_pool should be a list include FCP ojects
-        # whose FCP ID are from CONF.volume.fcp_list and also should be
-        # found in fcp_info
-        num_fcps = len(fcp_info) // lines_per_item
-        for n in range(0, num_fcps):
-            start_line = lines_per_item * n
-            end_line = lines_per_item * (n + 1)
-            fcp_init_info = fcp_info[start_line:end_line]
-            fcp = FCP(fcp_init_info)
-            dev_no = fcp.get_dev_no()
-            if dev_no in complete_fcp_set:
-                if fcp.is_valid():
-                    self._fcp_pool[dev_no] = fcp
-                else:
-                    errmsg = ("Find an invalid FCP device with properties {"
-                              "dev_no: %(dev_no)s, "
-                              "NPIV_port: %(NPIV_port)s, "
-                              "CHPID: %(CHPID)s, "
-                              "physical_port: %(physical_port)s} !") % {
-                                  'dev_no': fcp.get_dev_no(),
-                                  'NPIV_port': fcp.get_npiv_port(),
-                                  'CHPID': fcp.get_chpid(),
-                                  'physical_port': fcp.get_physical_port()}
-                    LOG.warning(errmsg)
-            else:
-                # normal, FCP not used by cloud connector at all
-                msg = "Found a fcp %s not in fcp_list" % dev_no
-                LOG.debug(msg)
 
     @staticmethod
     def _expand_fcp_list(fcp_list):
@@ -542,51 +477,6 @@ class FCPManager(object):
                         fcp_devices[path_no] = devices
             path_no = path_no + 1
         return fcp_devices
-
-    def _report_orphan_fcp(self, fcp):
-        """check there is record in db but not in FCP configuration"""
-        LOG.warning("WARNING: fcp %s found in db but we can not use it "
-                    "because it is not in CONF.volume.fcp_list %s or "
-                    "it did not belongs to free status FCPs %s." %
-                    (fcp, CONF.volume.fcp_list, self._fcp_pool.keys()))
-        if not self.db.is_reserved(fcp):
-            self.db.delete(fcp)
-            LOG.info("Remove %s from fcp db" % fcp)
-
-    def _add_fcp(self, fcp, path):
-        """add fcp to db if it's not in db but in fcp list and init it"""
-        try:
-            LOG.info("fcp %s found in CONF.volume.fcp_list, add it to db" %
-                     fcp)
-            if self._fcp_pool[fcp].get_dev_status() == 'free':
-                self.db.new(fcp, path)
-            else:
-                LOG.warning("fcp %s was not added into database because it is "
-                            "not in Free status." % fcp)
-        except Exception:
-            LOG.info("failed to add fcp %s into db", fcp)
-
-    def _sync_db_fcp_list(self):
-        """sync db records from given fcp list, for example, you need
-        warn if some FCP already removed while it's still in use,
-        or info about the new FCP added"""
-        fcp_db_list = self.db.get_all()
-
-        for fcp_rec in fcp_db_list:
-            if not fcp_rec[0].lower() in self._fcp_pool.keys():
-                self._report_orphan_fcp(fcp_rec[0])
-        # firt loop is for getting the path No
-        for path, fcp_list in self._fcp_path_mapping.items():
-            for fcp in fcp_list:
-                if fcp.lower() in self._fcp_pool.keys():
-                    res = self.db.get_from_fcp(fcp)
-                    # if not found this record, a [] will be returned
-                    if len(res) == 0:
-                        self._add_fcp(fcp, path)
-                    else:
-                        old_path = res[0][4]
-                        if old_path != path:
-                            self.db.update_path_of_fcp(fcp, path)
 
     def _get_all_fcp_info(self, assigner_id, status=None):
         fcp_info = self._smtclient.get_fcp_info_by_status(assigner_id, status)
@@ -665,9 +555,12 @@ class FCPManager(object):
         self.db.is_reserved(fcp)
 
     def get_available_fcp(self, assigner_id, reserve):
-        """get all the fcps not reserved, choose one from path0
-           and choose another from path1, compose a pair to return.
-           result will only have two FCP IDs, looks like [0011, 0021]
+        """ Return a group of available FCPs, one FCP per path
+            For example,
+            if there are 2 FCP paths,
+            then return a group of 2 FCPs: [1A03, 1B03],
+            where 1A03 is from one path
+            while 1B03 if from the other path
         """
         available_list = []
         if not reserve:
@@ -689,6 +582,9 @@ class FCPManager(object):
         LOG.info("Previously allocated records %s for instance %s." %
                  (fcp_list, assigner_id))
         if not fcp_list:
+            # Sync DB to update FCP state,
+            # so that allocating new FCPs is based on the latest FCP state
+            self._sync_db_with_zvm()
             # allocate new ones if fcp_list is empty
             LOG.info("There is no allocated fcps for %s, will allocate "
                      "new ones." % assigner_id)
@@ -710,7 +606,7 @@ class FCPManager(object):
                 free_unreserved = self.db.get_fcp_pair()
             for item in free_unreserved:
                 available_list.append(item)
-                # record the assigner id in the fcp so that
+                # record the assigner id in the fcp DB so that
                 # when the vm provision with both root and data volumes
                 # the root and data volume would get the same FCP devices
                 # with the get_volume_connector call.
@@ -735,19 +631,17 @@ class FCPManager(object):
 
         return available_list
 
-    def get_wwpn(self, fcp_no):
-        fcp = self._fcp_pool.get(fcp_no)
-        if not fcp:
-            return None
-        npiv = fcp.get_npiv_port()
-        physical = fcp.get_physical_port()
-        if npiv:
-            return npiv
-        if physical:
-            return physical
-        return None
-
     def get_all_fcp_pool(self, assigner_id):
+        """Return a dict of all FCPs in ZVM
+
+        fcp_dict_in_zvm example (key=FCP):
+        {
+            '1a06': <zvmsdk.volumeop.FCP object at 0x3ff94f74128>,
+            '1a07': <zvmsdk.volumeop.FCP object at 0x3ff94f74160>,
+            '1b06': <zvmsdk.volumeop.FCP object at 0x3ff94f74588>,
+            '1b07': <zvmsdk.volumeop.FCP object at 0x3ff94f74710>
+        }
+        """
         all_fcp_info = self._get_all_fcp_info(assigner_id)
         lines_per_item = constants.FCP_INFO_LINES_PER_ITEM
         all_fcp_pool = {}
@@ -760,25 +654,6 @@ class FCPManager(object):
             dev_no = fcp.get_dev_no()
             all_fcp_pool[dev_no] = fcp
         return all_fcp_pool
-
-    def get_wwpn_for_fcp_not_in_conf(self, all_fcp_pool, fcp_no):
-        fcp = all_fcp_pool.get(fcp_no)
-        if not fcp:
-            return None
-        npiv = fcp.get_npiv_port()
-        physical = fcp.get_physical_port()
-        if npiv:
-            return npiv
-        if physical:
-            return physical
-        return None
-
-    def get_physical_wwpn(self, fcp_no):
-        fcp = self._fcp_pool.get(fcp_no)
-        if not fcp:
-            return None
-        physical = fcp.get_physical_port()
-        return physical
 
     def get_fcp_dict_in_fcp_list(self, fcp_list):
         """Return a dict of all FCPs in fcp_list
@@ -812,10 +687,10 @@ class FCPManager(object):
 
         example (key=FCP)
         {
-            '1a06': ('1a06', 'C2WDL003', 1, 1, 0, ''),
-            '1b08': ('1b08', 'C2WDL003', 1, 1, 1, ''),
-            '1c08': ('1c08', 'C2WDL003', 1, 1, 2, ''),
-            '1a09': ('1a09', '', 0, 0, 0, '')
+            '1a06': ('1a06', 'C2WDL003', 1, 1, 0, ...),
+            '1b08': ('1b08', 'C2WDL003', 1, 1, 1, ...),
+            '1c08': ('1c08', 'C2WDL003', 1, 1, 2, ...),
+            '1a09': ('1a09', '', 0, 0, 0, ...)
         }
         """
 
@@ -895,13 +770,19 @@ class FCPManager(object):
     def _sync_db_with_zvm(self):
         """Sync FCP DB with the FCP info queried from zVM"""
 
-        LOG.info("Enter: Sync FCP DB with FCP info queried from zVM.")
-
-        # Get a dict of all FCPs in ZVM
-        fcp_dict_in_zvm = self.get_fcp_dict_in_zvm()
+        LOG.info("Enter: Sync FCP DB with FCP info queried from z/VM.")
 
         # Get a dict of all FCPs in FCP DB
         fcp_dict_in_db = self.get_fcp_dict_in_db()
+
+        if not fcp_dict_in_db:
+            LOG.info("No FCPs exist in FCP DB. ")
+            LOG.info("Exit: Sync FCP DB with FCP info queried from z/VM.")
+            return
+
+        LOG.info("Querying FCP status on z/VM.")
+        # Get a dict of all FCPs in ZVM
+        fcp_dict_in_zvm = self.get_fcp_dict_in_zvm()
 
         # Update DB column of comment based on the info queried from zVM
         for fcp in fcp_dict_in_db:
@@ -918,22 +799,24 @@ class FCPManager(object):
                 # A String "NONE": if the FCP is not attached
                 fcp_owner = fcp_dict_in_zvm[fcp].get_owner()
                 comment_dict['owner'] = fcp_owner
+                # NOTE(cao biao):
+                # we assume the WWPN of FCP will not change
+                # Hence, only update WWPN if
+                # wwpn_npiv column in database is not set
+                # and the FCP exists in z/VM
+                wwpn_npiv = fcp_dict_in_db[fcp][6]
+                if not wwpn_npiv:
+                    wwpn_npiv = fcp_dict_in_zvm[fcp].get_npiv_port()
+                    wwpn_phy = fcp_dict_in_zvm[fcp].get_physical_port()
+                    self.db.update_wwpns_of_fcp(fcp, wwpn_npiv, wwpn_phy)
             else:
-                LOG.warn("FCP {} not found in ZVM.".format(fcp))
+                LOG.warn("FCP {} not found in z/VM.".format(fcp))
                 comment_dict['state'] = 'notfound'
             self.db.update_comment_of_fcp(fcp, comment_dict)
-            # NOTE(cao biao): we assume the WWPN of FCP will not change
-            # Hence, only update wwpns if wwpn_npiv column in database not set
-            # and fcp exists in zvm
-            if not fcp_dict_in_db[fcp][6] and fcp in fcp_dict_in_zvm:
-                wwpn_npiv = fcp_dict_in_zvm[fcp].get_npiv_port()
-                wwpn_phy = fcp_dict_in_zvm[fcp].get_physical_port()
-                self.db.update_wwpns_of_fcp(fcp, wwpn_npiv, wwpn_phy)
-
         # LOG
         fcp_dict_in_db = self.get_fcp_dict_in_db()
         LOG.info("fcp_dict_in_db: {}".format(fcp_dict_in_db))
-        LOG.info("Exit: Sync FCP DB with FCP info queried from zVM.")
+        LOG.info("Exit: Sync FCP DB with FCP info queried from z/VM.")
 
 
 # volume manager for FCP protocol
@@ -982,9 +865,6 @@ class FCPVolumeManager(object):
         LOG.info("Start to attach volume to FCP devices "
                  "%s on machine %s." % (fcp_list, assigner_id))
 
-        # TODO: init_fcp should be called in contructor function
-        # but no assigner_id in contructor
-        self.fcp_mgr.init_fcp(assigner_id)
         # fcp_status is like { '1a10': 'True', '1b10', 'False' }
         # True or False means it is first attached or not
         # We use this bool value to determine dedicate or not
@@ -1095,8 +975,8 @@ class FCPVolumeManager(object):
                                       mount_point, connections)
 
     def _detach(self, fcp_list, assigner_id, target_wwpns, target_lun,
-            multipath, os_version, mount_point, is_root_volume,
-            update_connections_only):
+                multipath, os_version, mount_point, is_root_volume,
+                update_connections_only):
         """Detach a volume from a guest"""
         LOG.info("Start to detach volume on machine %s from "
                  "FCP devices %s" % (assigner_id, fcp_list))
@@ -1216,17 +1096,19 @@ class FCPVolumeManager(object):
     def get_volume_connector(self, assigner_id, reserve):
         """Get connector information of the instance for attaching to volumes.
 
-        Connector information is a dictionary representing the ip of the
-        machine that will be making the connection, the name of the iscsi
-        initiator and the hostname of the machine as follows::
-
-            {
-                'zvm_fcp': [fcp]
-                'wwpns': [wwpn]
-                'phy_to_virt_initiators':{virt:physical}
-                'host': LPARname_userid
-                'fcp_paths': fcp_list_paths_count
+        Connector information is a dictionary representing the Fibre
+        Channel(FC) port(s) that will be making the connection.
+        The properties of FC port(s) are as follows::
+        {
+            'zvm_fcp': [fcp1, fcp2]
+            'wwpns': [npiv_wwpn1, npiv_wwpn2]
+            'phy_to_virt_initiators':{
+                npiv_wwpn1: phy_wwpn1,
+                npiv_wwpn2: phy_wwpn2,
             }
+            'host': LPARname_VMuserid,
+            'fcp_paths': 2            # the count of fcp paths
+        }
         """
 
         empty_connector = {'zvm_fcp': [], 'wwpns': [], 'host': '',
@@ -1234,12 +1116,11 @@ class FCPVolumeManager(object):
         # get lpar name of the userid, if no host name got, raise exception
         zvm_host = zvmutils.get_lpar_name()
         if zvm_host == '':
-            errmsg = "failed to get zvm host."
+            errmsg = "failed to get z/VM LPAR name."
             LOG.error(errmsg)
             raise exception.SDKVolumeOperationError(rs=11,
                                                     userid=assigner_id,
                                                     msg=errmsg)
-
         # TODO(cao biao): now we have wwpns in database, so we can consider
         # let get_available_fcp return all the FCP info include wwpns,
         # then no need to query database again when get wwpns
@@ -1256,7 +1137,7 @@ class FCPVolumeManager(object):
         for fcp_no in fcp_list:
             wwpn_npiv, wwpn_phy = self.db.get_wwpns_of_fcp(fcp_no)
             if not wwpn_npiv:
-                # wwpn of fcp not found in smcli, try to get it from db
+                # wwpn_npiv not found in FCP DB
                 errmsg = ("NPIV WWPN of FCP device %s not found in "
                           "database." % fcp_no)
                 LOG.error(errmsg)
@@ -1305,7 +1186,7 @@ class FCPVolumeManager(object):
 
         # return the total path count
         fcp_paths = self.db.get_path_count()
-        # return the lparname+userid as host
+        # return the LPARname+VMuserid as host
         ret_host = zvm_host + '_' + assigner_id
         connector = {'zvm_fcp': fcp_list,
                      'wwpns': wwpns,
