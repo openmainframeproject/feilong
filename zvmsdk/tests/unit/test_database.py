@@ -1,4 +1,4 @@
-# Copyright 2017 IBM Corp.
+# Copyright 2017, 2021 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -495,22 +495,137 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.increase_usage('1a00')
             self.db_op.increase_usage('1a00')
             self.db_op.increase_usage('1a02')
-            self.db_op.increase_usage('1b04')
             self.db_op.reserve('1a02')
-            self.db_op.reserve('1a04')
             self.db_op.reserve('1b00')
-            expected_pairs_1 = [['1a01', '1b01'], ['1a03', '1b03']]
+            free_comment = {
+                'state': 'free',
+                'owner': 'NONE'
+            }
+            active_comment = {
+                'state': 'active',
+                'owner': 'JACK0004'
+            }
+            free_fcps = (
+                '1a01', '1a03', '1a04',
+                '1b01', '1b03'
+            )
+            active_fcps = (
+                '1a00', '1b04'
+            )
+            for fcp in free_fcps:
+                self.db_op.update_comment_of_fcp(fcp, free_comment)
+            for fcp in active_fcps:
+                self.db_op.update_comment_of_fcp(fcp, active_comment)
+            # expected result
+            expected_pairs_1 = {('1a01', '1b01'), ('1a03', '1b03')}
+            result = set()
             for i in range(10):
                 fcp_list = self.db_op.get_fcp_pair_with_same_index()
-                self.assertIn(fcp_list, expected_pairs_1)
+                result.add(tuple(fcp_list))
+            self.assertEqual(result, expected_pairs_1)
             # test case2
             self.db_op.reserve('1a01')
-            self.db_op.reserve('1b01')
-            self.db_op.reserve('1a03')
             self.db_op.reserve('1b03')
-            expected_pairs_2 = []
-            fcp_list = self.db_op.get_fcp_pair_with_same_index()
-            self.assertEqual(fcp_list, expected_pairs_2)
+            for i in range(10):
+                fcp_list = self.db_op.get_fcp_pair_with_same_index()
+                self.assertEqual(fcp_list, [])
+        finally:
+            self.db_op.delete('1a00')
+            self.db_op.delete('1a01')
+            self.db_op.delete('1a02')
+            self.db_op.delete('1a03')
+            self.db_op.delete('1a04')
+            self.db_op.delete('1a05')
+            self.db_op.delete('1b00')
+            self.db_op.delete('1b01')
+            self.db_op.delete('1b02')
+            self.db_op.delete('1b03')
+            self.db_op.delete('1b04')
+
+    def test_get_fcp_pair(self):
+        '''
+        get_fcp_pair() only returns
+        the following possible values:
+        e.g. When FCP DB contains FCPs from 2 paths
+        case 1
+            randomly choose one available FCP per path:
+            [1a03,1b00] ,[1a02,1b01], [1a02,1b02]...
+            [1a00,1b01] ,[1a01,1b02], ...
+        case 2
+            if CONF.volume.min_fcp_paths_count is enabled,
+            (such as, min_fcp_paths_count = 1)
+            then it may also return a single FCP
+            (such as, [1a02], [1b03], ...)
+        case 3
+           an empty list(i.e. [])
+           if no expected pair found
+        '''
+        try:
+            # test case1
+            self.db_op.new('1a00', 0)
+            self.db_op.new('1a01', 0)
+            self.db_op.new('1a02', 0)
+            self.db_op.new('1a03', 0)
+            self.db_op.new('1a04', 0)
+            self.db_op.new('1a05', 0)
+            self.db_op.new('1b00', 1)
+            self.db_op.new('1b01', 1)
+            self.db_op.new('1b02', 1)
+            self.db_op.new('1b03', 1)
+            self.db_op.new('1b04', 1)
+            self.db_op.increase_usage('1a00')
+            self.db_op.increase_usage('1a00')
+            self.db_op.increase_usage('1a02')
+            self.db_op.reserve('1a02')
+            self.db_op.reserve('1b00')
+            free_comment = {
+                'state': 'free',
+                'owner': 'NONE'
+            }
+            active_comment = {
+                'state': 'active',
+                'owner': 'JACK0004'
+            }
+            free_fcps = (
+                '1a01', '1a03', '1a04',
+                '1b01', '1b03'
+            )
+            active_fcps = (
+                '1a00', '1b04'
+            )
+            for fcp in free_fcps:
+                self.db_op.update_comment_of_fcp(fcp, free_comment)
+            for fcp in active_fcps:
+                self.db_op.update_comment_of_fcp(fcp, active_comment)
+            # expected result
+            expected_pairs_1 = {
+                ('1a01', '1b01'), ('1a01', '1b03'),
+                ('1a03', '1b01'), ('1a03', '1b03'),
+                ('1a04', '1b01'), ('1a04', '1b03')
+            }
+            result = set()
+            for i in range(300):
+                fcp_list = self.db_op.get_fcp_pair()
+                result.add(tuple(fcp_list))
+            self.assertEqual(result, expected_pairs_1)
+            # test case2
+            CONF.volume.min_fcp_paths_count = 1
+            self.db_op.reserve('1a01')
+            self.db_op.reserve('1a03')
+            self.db_op.reserve('1a04')
+            expected_pairs_2 = {('1b01',), ('1b03',)}
+            result = set()
+            for i in range(10):
+                fcp_list = self.db_op.get_fcp_pair()
+                result.add(tuple(fcp_list))
+            self.assertEqual(result, expected_pairs_2)
+            # test case3
+            self.db_op.reserve('1b01')
+            self.db_op.reserve('1b03')
+            # expected result
+            for i in range(10):
+                fcp_list = self.db_op.get_fcp_pair()
+                self.assertEqual(fcp_list, [])
         finally:
             self.db_op.delete('1a00')
             self.db_op.delete('1a01')

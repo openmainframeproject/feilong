@@ -347,12 +347,13 @@ class FCPDbOperator(object):
             return fcp
 
     def new(self, fcp, path):
-        # TODO(cao biao): need update or not when add columns?
+        """Insert a FCP record into Table fcp"""
         with get_fcp_conn() as conn:
             conn.execute("INSERT INTO fcp (fcp_id, assigner_id, "
-                         "connections, reserved, path, comment) VALUES "
-                         "(?, ?, ?, ?, ?, ?)",
-                         (fcp, '', 0, 0, path, ''))
+                         "connections, reserved, path, comment, "
+                         "wwpn_npiv, wwpn_phy) VALUES "
+                         "(?, ?, ?, ?, ?, ?, ?, ?)",
+                         (fcp, '', 0, 0, path, '', '', ''))
 
     def assign(self, fcp, assigner_id, update_connections=True):
         with get_fcp_conn() as conn:
@@ -377,9 +378,9 @@ class FCPDbOperator(object):
         [
           (fcp_id, userid, connections, reserved, path, comment,
            wwpn_npiv, wwpn_phy),
-          (u'283c', u'user1', 2, 1, 0, {'state': 'active', 'owner': 'user1'},
+          ('283c', 'user1', 2, 1, 0, {'state': 'active', 'owner': 'user1'},
            'c05076ddf7000002', 'c05076ddf7001d81'),
-          (u'483c', u'user2', 0, 0, 1, {'state': 'free'},
+          ('483c', 'user2', 0, 0, 1, {'state': 'free', 'owner': 'NONE'},
            'c05076ddf7000001', 'c05076ddf7001d82')
         ]
         """
@@ -409,8 +410,13 @@ class FCPDbOperator(object):
                 fcp_info = []
                 for item in results:
                     item = list(item)
-                    if item[5]:
-                        item[5] = eval(item[5])
+                    comment = item[5]
+                    # Expectedly, comment is a string, such as,
+                    # "{'state': 'xxx', 'owner': 'yyy'}"
+                    if (comment and
+                            comment.startswith('{') and
+                            comment.endswith('}')):
+                        item[5] = eval(comment)
                     fcp_info.append(tuple(item))
         return fcp_info
 
@@ -448,12 +454,16 @@ class FCPDbOperator(object):
             result = conn.execute("SELECT comment "
                                   "FROM fcp WHERE fcp_id=?", (fcp,))
             current_comment = result.fetchall()
-            if not current_comment or current_comment[0][0] == '':
-                current_comment = {}
-            else:
+            # current_comment example
+            # [("{'state': 'free', 'owner': 'NONE'}",)] or []
+            if (len(current_comment) == 1 and
+                    current_comment[0][0].startswith('{') and
+                    current_comment[0][0].endswith('}')):
                 # transfer from str to dict
-                current_comment = eval(current_comment[0][0])
-        return current_comment
+                comment = eval(current_comment[0][0])
+            else:
+                comment = {}
+        return comment
 
     def update_comment_of_fcp(self, fcp, comment_dict):
         """Update the cotent of comment.
@@ -619,11 +629,19 @@ class FCPDbOperator(object):
         return len(path_list)
 
     def get_fcp_pair_with_same_index(self):
+        """ Get a group of available FCPs with the same index,
+            which also need satisfy the following conditions:
+            a. connections = 0
+            b. reserved = 0
+            c. comment includes 'state': 'free'
+        """
         fcp_list = []
         fcp_pair_map = {}
         with get_fcp_conn() as conn:
             result = conn.execute("SELECT COUNT(path) FROM fcp "
-                                  "WHERE reserved = 0 AND connections = 0 "
+                                  "WHERE reserved = 0 "
+                                  "AND connections = 0 "
+                                  "AND comment LIKE \"%state': 'free%\" "
                                   "GROUP BY path")
             free_count_per_path = result.fetchall()
             '''
@@ -642,7 +660,7 @@ class FCPDbOperator(object):
             count_per_path = [a[0] for a in result.fetchall()]
             # return [] if no free fcp found from at least one path
             if len(free_count_per_path) < len(count_per_path):
-                # For get_fcp_pair with same index, we will not check the
+                # For get_fcp_pair_with_same_index, we will not check the
                 # CONF.volume.min_fcp_paths_count, the returned fcp count
                 # should always equal to the total paths count
                 LOG.error("Available paths count: %s, total paths count: "
@@ -653,20 +671,21 @@ class FCPDbOperator(object):
             fcps 2 paths example:
                fcp  conn reserved
               ------------------
-            [('1a00', 1, 1),
-             ('1a01', 0, 0),
-             ('1a02', 0, 0),
-             ('1a03', 0, 0),
-             ('1a04', 0, 1),
+            [('1a00', 1, 1, "{'state': 'active', 'owner': 'user1'}"),
+             ('1a01', 0, 0, "{'state': 'free', 'owner': 'NONE'}"),
+             ('1a02', 0, 0, "{'state': 'free', 'owner': 'NONE'}"),
+             ('1a03', 0, 0, "{'state': 'free', 'owner': 'NONE'}"),
+             ('1a04', 0, 0, "{'state': 'offline', 'owner': 'user3'}"),
              ...
-             ('1b00', 1, 0),
-             ('1b01', 2, 1),
-             ('1b02', 0, 0),
-             ('1b03', 0, 0),
-             ('1b04', 0, 0),
+             ('1b00', 1, 0, "{'state': 'active', 'owner': 'user1'}"),
+             ('1b01', 2, 1, "{'state': 'active', 'owner': 'user2'}"),
+             ('1b02', 0, 0, "{'state': 'free', 'owner': 'NONE'}"),
+             ('1b03', 0, 0, "{'state': 'free', 'owner': 'NONE'}"),
+             ('1b04', 0, 0, "{'state': 'free', 'owner': 'NONE'}"),
              ...           ]
             '''
-            result = conn.execute("SELECT fcp_id, connections, reserved "
+            result = conn.execute("SELECT fcp_id, connections, "
+                                  "reserved, comment "
                                   "FROM fcp "
                                   "ORDER BY path, fcp_id")
             fcps = result.fetchall()
@@ -679,9 +698,20 @@ class FCPDbOperator(object):
           2 : ['1a02'],
           3 : ['1a03']}
         '''
+        # The FCP count of 1st path
         for i in range(count_per_path[0]):
-            if fcps[i][1] == fcps[i][2] == 0:
-                fcp_pair_map[i] = [fcps[i][0]]
+            fcp_no = fcps[i][0]
+            connections = fcps[i][1]
+            reserved = fcps[i][2]
+            comment = fcps[i][3]
+            # Expectedly, comment is a string, such as,
+            # "{'state': 'xxx', 'owner': 'yyy'}"
+            if comment.startswith('{') and comment.endswith('}'):
+                state = eval(comment).get('state', '')
+            else:
+                state = ''
+            if connections == reserved == 0 and state == 'free':
+                fcp_pair_map[i] = [fcp_no]
         '''
         select out pairs if member count == path count
         fcp_pair_map example:
@@ -695,9 +725,18 @@ class FCPDbOperator(object):
             for i, c in enumerate(count_per_path[:-1]):
                 s += c
                 # avoid index out of range for per path in fcps[]
-                if idx < count_per_path[i + 1] and \
-                        fcps[s + idx][1] == fcps[s + idx][2] == 0:
-                    fcp_pair_map[idx].append(fcps[s + idx][0])
+                fcp_no = fcps[s + idx][0]
+                connections = fcps[s + idx][1]
+                reserved = fcps[s + idx][2]
+                comment = fcps[s + idx][3]
+                if comment.startswith('{') and comment.endswith('}'):
+                    state = eval(comment).get('state', '')
+                else:
+                    state = ''
+                if (idx < count_per_path[i + 1] and
+                        connections == reserved == 0 and
+                        state == 'free'):
+                    fcp_pair_map[idx].append(fcp_no)
                 else:
                     fcp_pair_map.pop(idx)
                     break
@@ -709,10 +748,16 @@ class FCPDbOperator(object):
         if fcp_pair_map:
             fcp_list = random.choice(sorted(fcp_pair_map.values()))
         else:
-            LOG.error("Not enough FCPs in fcp pool")
+            LOG.error("Not eligible FCP group found in FCP DB.")
         return fcp_list
 
     def get_fcp_pair(self):
+        """ Get a group of available FCPs,
+            which satisfy the following conditions:
+            a. connections = 0
+            b. reserved = 0
+            c. comment includes 'state': 'free'
+        """
         fcp_list = []
         with get_fcp_conn() as conn:
             # Get distinct path list in DB
@@ -720,9 +765,12 @@ class FCPDbOperator(object):
             path_list = result.fetchall()
             # Get fcp_list of every path
             for no in path_list:
-                result = conn.execute("SELECT * FROM fcp where connections=0 "
-                                      "and reserved=0 and path=%s order by "
-                                      "fcp_id" % no)
+                result = conn.execute("SELECT * FROM fcp "
+                                      "WHERE connections=0 "
+                                      "AND reserved=0 "
+                                      "AND comment LIKE \"%state': 'free%\" "
+                                      "AND path=? ORDER BY "
+                                      "fcp_id", no)
                 fcps = result.fetchall()
                 if not fcps:
                     # continue to find whether other paths has available FCP
