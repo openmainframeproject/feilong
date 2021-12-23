@@ -39,6 +39,23 @@ do
     echo "FCP $fcp is online now"
 done
 
+# Print info of each FCP
+for fcp in ${fcp_list[@]}
+do
+    # print the status of FCP port for debug
+    host=$(lszfcp | grep -i $fcp | awk -F' ' '{print $2}')
+    if [[ -n "$host" ]]; then
+        if [[ -e /sys/class/fc_host/$host/port_state ]]; then
+            port_state=$(cat /sys/class/fc_host/$host/port_state)
+            echo "Port state of fcp: $fcp is: $port_state"
+        else
+            echo "Can not get port statue of fcp $fcp because file /sys/class/fc_host/$host/port_state not exist"
+        fi
+    else
+        echo "Failed to find host of fcp: $fcp from the lszfcp output, cann't get port state"
+    fi
+done
+
 # send an iSCSI scan request with given host and optionally the ctl 
 # the ctl means, c: channel,default to -
 #                t: target, default to -
@@ -66,7 +83,7 @@ do
     do
         fcp_wwpn_str="0.0.${fcp} ${wwpn}"
         if [[ $lszfcp_output =~ $fcp_wwpn_str ]]; then
-            echo "$fcp_wwpn_str matched with content in zfcp.conf"
+            echo "$fcp_wwpn_str matched with content in ouput of lszfcp"
             # add this combination into valid_dict
             if [[ -z ${valid_dict[$fcp]} ]]; then
                 valid_dict+=([$fcp]="$wwpn")

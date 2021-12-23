@@ -9,6 +9,23 @@ is_last_volume="{{ is_last_volume }}"
 
 echo "Enter RHEL8 detach script with parameters: FCP list:${fcp_list[@]}, INPUT WWPNS:${input_wwpns[@]}, LUN:$lun, target_filename:$target_filename, is_last_volume: $is_last_volume."
 
+# Print info of each FCP
+for fcp in ${fcp_list[@]}
+do
+    # print the status of FCP port for debug
+    host=$(lszfcp | grep -i $fcp | awk -F' ' '{print $2}')
+    if [[ -n "$host" ]]; then
+        if [[ -e /sys/class/fc_host/$host/port_state ]]; then
+            port_state=$(cat /sys/class/fc_host/$host/port_state)
+            echo "Port state of fcp: $fcp is: $port_state"
+        else
+            echo "Can not get port statue of fcp $fcp because file /sys/class/fc_host/$host/port_state not exist"
+        fi
+    else
+        echo "Failed to find host of fcp: $fcp from the lszfcp output, cann't get port state"
+    fi
+done
+
 # we need to get the intersection between input wwpns and lszfcp output
 # we need execute this from beginning because if paths were flushed, we get nothing
 lszfcp_output=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
@@ -23,6 +40,7 @@ do
     do
         fcp_wwpn_str="0.0.${fcp} ${wwpn}"
         if [[ $lszfcp_output =~ $fcp_wwpn_str ]]; then
+            echo "$fcp_wwpn_str matched with content in ouput of lszfcp"
             # add this combination into valid_dict
             if [[ -z ${valid_dict[$fcp]} ]]; then
                 valid_dict+=([$fcp]="$wwpn")
@@ -142,8 +160,9 @@ do
     # remove configuration items in zfcp.conf
     for WWPN in ${ActiveWWPNs[@]}
     do
-        echo "remove WWPN $WWPN for $fcp in zfcp.conf"
+        echo "To remove WWPN $WWPN for $fcp in zfcp.conf"
         sed -i -e "/0.0.$fcp $WWPN $lun/d" /etc/zfcp.conf
+        echo "WWPN $WWPN for $fcp in zfcp.conf removed"
     done
 done
 
