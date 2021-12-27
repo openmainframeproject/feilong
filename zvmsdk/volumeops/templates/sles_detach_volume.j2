@@ -9,6 +9,23 @@ is_last_volume="{{ is_last_volume }}"
 
 echo "Enter SLES detach script with parameters: FCP list:${fcp_list[@]}, INPUT WWPNS:${input_wwpns[@]}, LUN:$lun, target_filename:$target_filename, is_last_volume: $is_last_volume."
 
+# Print info of each FCP
+for fcp in ${fcp_list[@]}
+do
+    # print the status of FCP port for debug
+    host=$(lszfcp | grep -i $fcp | awk -F' ' '{print $2}')
+    if [[ -n "$host" ]]; then
+        if [[ -e /sys/class/fc_host/$host/port_state ]]; then
+            port_state=$(cat /sys/class/fc_host/$host/port_state)
+            echo "Port state of fcp: $fcp is: $port_state"
+        else
+            echo "Can not get port statue of fcp $fcp because file /sys/class/fc_host/$host/port_state not exist"
+        fi
+    else
+        echo "Failed to find host of fcp: $fcp from the lszfcp output, cann't get port state"
+    fi
+done
+
 # we need to get the intersection between input wwpns and lszfcp output
 # we need execute this from beginning because if paths were flushed, we get nothing
 lszfcp_output=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
@@ -16,10 +33,13 @@ echo "lszfcp output port info: $lszfcp_output ."
 declare -A valid_dict
 for fcp in ${fcp_list[@]}
 do
+    wwpns_shown_in_sys=`ls /sys/bus/ccw/drivers/zfcp/0.0.$fcp/ | grep "0x"`
+    echo -e "WWPNs shown under /sys/bus/ccw/drivers/zfcp/0.0.$fcp/:\n$wwpns_shown_in_sys"
     for wwpn in ${input_wwpns[@]}
     do
         fcp_wwpn_str="0.0.${fcp} ${wwpn}"
         if [[ $lszfcp_output =~ $fcp_wwpn_str ]]; then
+            echo "$fcp_wwpn_str matched with content in ouput of lszfcp"
             # add this combination into valid_dict
             if [[ -z ${valid_dict[$fcp]} ]]; then
                 valid_dict+=([$fcp]="$wwpn")
@@ -39,7 +59,7 @@ do
     valid_fcp_count=$((valid_fcp_count+=1))
 done
 if [[ $valid_fcp_count -eq 0 ]]; then
-    echo "can not found intersection between input wwpns: ${input_wwpns[@]} and lszfcp output: $lszfcp_output"
+    echo "Can not found intersection between input wwpns: ${input_wwpns[@]} and lszfcp output: $lszfcp_output"
     exit 3
 fi
 
@@ -57,8 +77,9 @@ do
         x="/dev/disk/by-path/ccw-0.0.$fcp-zfcp-$j:$lun"
         # the x would be like:
         # ccw-0.0.1d13-zfcp-0x5005076306035388:0x4014400400000000
-        echo "try disk path:$x"
+        echo "Try to detect disk $x"
         if [ -e $x ]; then
+            echo "Disk $x detected"
             diskPath=$x
             FoundDiskPath=1
             break
@@ -80,13 +101,15 @@ fi
 WWID=$(/lib/udev/scsi_id --page 0x83 --whitelisted $diskPath)
 echo "scsi_id command get WWID:$WWID for device: $diskPath"
 # flush IO for devices
+echo "Begin to flush cache data on $diskPath ..."
 blockdev --flushbufs $diskPath > /dev/null
+echo "Flush cache data on $diskPath was done"
 
 # exit code default to 0, because WWIDs may be empty
 exit_code=0
 
 map_name=$(multipath -l $WWID -v 1)
-echo "get map name: $map_name"
+echo "Got map name: $map_name for WWID: $WWID"
 output=$(multipath -f $map_name 2>&1)
 exit_code=$?
 # error output not empty, means error happened
@@ -105,7 +128,7 @@ if [ "$output" ]; then
         exit_code=2
     fi
 fi
-echo "exit code for multipath -f: $exit_code"
+echo "Exit code for multipath -f: $exit_code"
 #if above code didn't succeed, exit now.
 if [[ $exit_code != 0 ]]; then
     exit $exit_code
@@ -120,7 +143,9 @@ do
     # remove FCP LUNs and their SCSI devices
     for wwpn in ${ActiveWWPNs[@]}
     do
+        echo "Begin to deregister SCSI device 0.0.$fcp:$wwpn:$lun ..."
         chzdev -d zfcp-lun 0.0.$fcp:$wwpn:$lun --force
+        echo "Deregistraion of 0.0.$fcp:$wwpn:$lun was done"
     done
 
     # remove udev rules
@@ -133,8 +158,10 @@ do
     if [ $is_last_volume -eq 1 ]; then
         echo "this is last volume, will offline fcp device $fcp"
         /sbin/chzdev zfcp-host $fcp -d
-        echo "delete udev file: /etc/udev/rules.d/51-zfcp-0.0.$fcp.rules"
+        echo "FCP device $fcp was offline now"
+        echo "To delete udev file /etc/udev/rules.d/51-zfcp-0.0.$fcp.rules"
         rm -f /etc/udev/rules.d/51-zfcp-0.0.$fcp.rules
+        echo "Udev file: /etc/udev/rules.d/51-zfcp-0.0.$fcp.rules deleted"
     fi
 done
 
@@ -149,8 +176,11 @@ else
 fi
 sed -i -e /SYMLINK+=\"$target_filename\"/d $ConfigFile
 
+echo "Begin to reload udev rules ..."
 udevadm control --reload
 udevadm trigger --sysname-match=dm-*
+echo "Undev rules reload done"
 
+echo "Exit RHEL8 detach script"
 exit 0
 
