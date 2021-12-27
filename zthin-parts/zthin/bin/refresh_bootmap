@@ -715,7 +715,7 @@ function update_zipl_bootloader_rhcos {
         exit 17
     fi
     #Update BLS config file for reboot
-    sed -i -e 's/ignition.firstboot=1//' $rhcosTempDir/zipl_prm
+    sed -i -e 's/ignition.firstboot=1.*//' $rhcosTempDir/zipl_prm
     sed -e '/options/d' $blsfile > $rhcosTempDir/blsfile
     echo "options $(cat $rhcosTempDir/zipl_prm) " >> $rhcosTempDir/blsfile
     cat $rhcosTempDir/blsfile > $blsfile

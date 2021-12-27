@@ -11,7 +11,7 @@ echo "Enter RHEL8 attach script with parameters: FCP list:${fcp_list[@]}, INPUT 
 fcp_count=0
 for fcp in ${fcp_list[@]}
 do
-    echo "fcp: $fcp"
+    echo "Got FCP $fcp"
     fcp_count=$((fcp_count+=1))
 done
 
@@ -21,9 +21,11 @@ if [[ $fcp_count -eq 0 ]]; then
 fi
 
 # see if zfcp is enable
+echo "Begin to enable zfcp mode ..."
 enable_zfcp_mod=`lsmod | grep zfcp`
 if [ -z "$enable_zfcp_mod" ];then
     modprobe zfcp
+    echo "zfcp mode enabled successfully"
 else
     echo "zfcp mode is already enabled"
 fi
@@ -31,9 +33,27 @@ fi
 # online fcp devices
 for fcp in ${fcp_list[@]}
 do
-    echo "online fcp $fcp"
+    echo "Begin to online FCP $fcp ..."
     /usr/sbin/cio_ignore -r $fcp > /dev/null
     /usr/sbin/chccwdev -e $fcp > /dev/null
+    echo "FCP $fcp is online now"
+done
+
+# Print info of each FCP
+for fcp in ${fcp_list[@]}
+do
+    # print the status of FCP port for debug
+    host=$(lszfcp | grep -i $fcp | awk -F' ' '{print $2}')
+    if [[ -n "$host" ]]; then
+        if [[ -e /sys/class/fc_host/$host/port_state ]]; then
+            port_state=$(cat /sys/class/fc_host/$host/port_state)
+            echo "Port state of fcp: $fcp is: $port_state"
+        else
+            echo "Can not get port statue of fcp $fcp because file /sys/class/fc_host/$host/port_state not exist"
+        fi
+    else
+        echo "Failed to find host of fcp: $fcp from the lszfcp output, cann't get port state"
+    fi
 done
 
 # send an iSCSI scan request with given host and optionally the ctl 
@@ -43,22 +63,27 @@ done
 all_hosts=(`ls /sys/class/scsi_host/`)
 for host in ${all_hosts[@]}
 do
+    echo "Scan on host $host triggered"
     echo "- - -" > /sys/class/scsi_host/$host/scan
-    echo "scan request to host $host sent."
+    echo "Scan on host $host completed"
 done
 
 # the number WWPNs is generated dynamically
 # so we need to get them from the filesystem
 # and get the intersection between input wwpns and lszfcp output
 lszfcp_output=`lszfcp -P | awk '{print $1}' | awk -F'/' '{print $1,$2}'`
-echo "lszfcp -P output port info: $lszfcp_output ."
+echo -e "lszfcp -P output port info:\n$lszfcp_output "
+
 declare -A valid_dict
 for fcp in ${fcp_list[@]}
 do
+    wwpns_shown_in_sys=`ls /sys/bus/ccw/drivers/zfcp/0.0.$fcp/ | grep "0x"`
+    echo -e "WWPNs shown under /sys/bus/ccw/drivers/zfcp/0.0.$fcp/:\n$wwpns_shown_in_sys"
     for wwpn in ${input_wwpns[@]}
     do
         fcp_wwpn_str="0.0.${fcp} ${wwpn}"
         if [[ $lszfcp_output =~ $fcp_wwpn_str ]]; then
+            echo "$fcp_wwpn_str matched with content in ouput of lszfcp"
             # add this combination into valid_dict
             if [[ -z ${valid_dict[$fcp]} ]]; then
                 valid_dict+=([$fcp]="$wwpn")
@@ -89,14 +114,16 @@ FoundDiskPath=0
 for fcp in ${!valid_dict[@]}
 do
     ActiveWWPNs=(${valid_dict[$fcp]})
-    echo "Got WWPNs: ${ActiveWWPNs[@]} for FCP device: $fcp"
+    echo "Discover WWPNs: ${ActiveWWPNs[@]} for FCP device: $fcp"
 
     # If auto-discovery of Fibre-Channel target ports is
     # disabled on s390 platforms, ports need to be added to
     # the configuration.
     AutoPortScan=`cat /sys/module/zfcp/parameters/no_auto_port_rescan`
     if [[ "$AutoPortScan" != "N" ]]; then
+        echo "Port rescan on FCP $fcp triggered"
         echo 1 > /sys/bus/ccw/drivers/zfcp/0.0.$fcp/port_rescan
+        echo "Port rescan on FCP $fcp done"
     fi
 
     # If auto-discovery of LUNs is disabled on s390 platforms
@@ -107,21 +134,27 @@ do
         for wwpn in ${ActiveWWPNs[@]}
         do
             # chzdev only exist in rhel version8.0+
+            echo "Begin to register SCSI device 0.0.$fcp:$wwpn:$lun ..."
             chzdev -e -a zfcp-lun 0.0.$fcp:$wwpn:$lun
             echo "$lun" > /sys/bus/ccw/drivers/zfcp/0.0.$fcp/$wwpn/unit_add
+            echo "Registration for SCSI device 0.0.$fcp:$wwpn:$lun was done"
         done
     fi
 
     for wwpn in ${ActiveWWPNs[@]}
     do
         echo "0.0.$fcp $wwpn $lun" >> /etc/zfcp.conf
+        echo "0.0.$fcp $wwpn $lun written into zfcp.conf"
     done
 
+    echo "Start to execute udev settle"
     echo "add" >> /sys/bus/ccw/devices/0.0.$fcp/uevent
     if [[ $(which udevadm 2> /dev/null) != '' ]]; then
         udevadm settle
+        echo "Execution of udevadm settle was done"
     else
         udevsettle
+        echo "Execution of udevsettle was done"
     fi
 
     # wait for the devices ready
@@ -131,7 +164,7 @@ do
     do
         # if timeout less or equal 0 seconds, means no time left
         if [ $Timeout -le 0 ]; then
-            echo "waiting for devices ready timed out after 10 seconds."
+            echo "Waiting for devices ready timed out after 10 seconds."
             break
         fi
 
@@ -141,8 +174,9 @@ do
             x="/dev/disk/by-path/ccw-0.0.$fcp-zfcp-$j:$lun"
             # the x would be like:
             # ccw-0.0.1d13-zfcp-0x5005076306035388:0x4014400400000000
-            echo "try disk path:$x"
+            echo "Try to detect disk $x"
             if [ -e $x ]; then
+                echo "Disk $x detected"
                 diskPath=$x
                 FoundDiskPath=1
                 break
@@ -152,7 +186,7 @@ do
         if [ $FoundDiskPath -eq 0 ]; then
             sleep 1
             Timeout=$((Timeout-=1))
-            echo "sleep 1 second to wait the devices ready, timeout left: $Timeout"
+            echo "Sleep 1 second to wait the devices ready, timeout left: $Timeout"
         fi
     done
 done
@@ -160,11 +194,12 @@ done
 if [ $FoundDiskPath -eq 1 ]; then
     echo "The storage device is ready and found disk path: $diskPath."
 else
-    echo "error happens during attachment because the device file of $fcp not found, will exit with code 1."
+    echo "Error happens during attachment because the device file of $fcp not found, will exit with code 1."
     exit 1
 fi
 
 # ensure multipathd service is up
+echo "Begin to enable dm-multipath mode ..."
 enable_multipath_mod=`lsmod | grep dm_multipath`
 if [ -z "$enable_multipath_mod" ];then
     modprobe dm-multipath
@@ -174,6 +209,7 @@ if [ -z "$enable_multipath_mod" ];then
     " > /etc/multipath.conf
     mpathconf
     systemctl restart multipathd.service
+    echo "dm-multipath mode enabled successfully"
 else
     echo "dm-multipath mode is already enabled"
 fi
@@ -203,8 +239,11 @@ else
 fi
 
 # reload udev rules
+echo "Begin to reload udev rules ..."
 udevadm control --reload
 udevadm trigger --sysname-match=dm-*
+echo "Undev rules reload done"
 
+echo "Exit RHEL8 attach script"
 exit 0
 
