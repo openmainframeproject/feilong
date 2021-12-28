@@ -532,6 +532,15 @@ msg = {
         #   and the target system may contain useful information to
         #   identify the failure.  Reinvoke the function after you
         #   correct the problem.
+    '0320': [{'overallRC': 3, 'rc': 64},
+            "ULT%s0320E On %s, command sent through IUCV failed because " +
+            "timeout. cmd: %s, rc: %s, rs: %s, out: %s",
+            ('SMP', 'USERID', 'CMD', 'RC', 'RS', 'OUTPUT')],
+        # Explain: The command that was sent to the target system failed.
+        # SysAct: Processing of the function terminates.
+        # UserResp: Use the information included in the message to
+        #   determine the cause of the failure.  Reinvoke the function
+        #   after you correct the problem.
 
     # General subfunction processing messages
     '0400': [{'overallRC': 4, 'rc': 4, 'rs': 400},

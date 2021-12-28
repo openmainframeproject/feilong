@@ -2427,9 +2427,14 @@ class SMTClient(object):
         ret = results['response']
         return ret
 
-    def execute_cmd_direct(self, userid, cmdStr):
+    def execute_cmd_direct(self, userid, cmdStr, timeout=None):
         """"cmdVM."""
-        requestData = 'cmdVM ' + userid + ' CMD \'' + cmdStr + '\''
+        if not timeout:
+            requestData = 'cmdVM ' + userid + ' CMD \'' + cmdStr + '\''
+        else:
+            requestData = ("cmdVM %s CMD \'%s\' %s" % (userid, cmdStr,
+                                                       timeout))
+
         results = self._smt.request(requestData)
         return results
 

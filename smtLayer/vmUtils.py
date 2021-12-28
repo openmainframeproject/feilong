@@ -77,7 +77,7 @@ def disableEnableDisk(rh, userid, vaddr, option):
     return results
 
 
-def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[]):
+def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[], timeout=None):
     """
     Send a command to a virtual machine using IUCV.
 
@@ -104,13 +104,15 @@ def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[]):
     """
     if len(hideInLog) == 0:
         rh.printSysLog("Enter vmUtils.execCmdThruIUCV, userid: " +
-                       userid + " cmd: " + strCmd)
+                       userid + " cmd: " + strCmd +
+                       " timeout: " + str(timeout))
     else:
         logCmd = strCmd.split(' ')
         for i in hideInLog:
             logCmd[i] = '<hidden>'
         rh.printSysLog("Enter vmUtils.execCmdThruIUCV, userid: " +
-                       userid + " cmd: " + ' '.join(logCmd))
+                       userid + " cmd: " + ' '.join(logCmd) +
+                       " timeout: " + str(timeout))
 
     iucvpath = '/opt/zthin/bin/IUCV/'
     results = {
@@ -129,7 +131,8 @@ def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[]):
         results['response'] = subprocess.check_output(
                 cmd,
                 stderr=subprocess.STDOUT,
-                close_fds=True)
+                close_fds=True,
+                timeout=timeout)
         if isinstance(results['response'], bytes):
             results['response'] = bytes.decode(results['response'])
     except CalledProcessError as e:
@@ -190,7 +193,17 @@ def execCmdThruIUCV(rh, userid, strCmd, hideInLog=[]):
             msg = msgs.msg['0319'][1] % (modId, userid, strCmd,
                 results['rc'], results['rs'], output)
         results['response'] = msg
-
+    except (subprocess.TimeoutExpired,
+            PermissionError) as e:
+        results['overallRC'] = 3
+        # return code
+        results['rc'] = 64
+        # reason code
+        results['rs'] = 408
+        output = str(e)
+        msg = msgs.msg['0320'][1] % (modId, userid, strCmd,
+                results['rc'], results['rs'], output)
+        results['response'] = msg
     except Exception as e:
         # Other exceptions from this system (i.e. not the managed system).
         results = msgs.msg['0421'][0]
