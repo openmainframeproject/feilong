@@ -1924,3 +1924,29 @@ class SDKAPI(object):
         self._networkops.delete_nic(userid, vdev, active=active)
         self._networkops.delete_network_configuration(userid, os_version,
                                                       vdev, active=active)
+
+    def host_get_ssi_info(self):
+        """Get z/VM host SSI information.
+        :returns: If current z/VM host is an SSI cluster member,
+                  returns a list of SSI cluster info, format is:
+                  ['ssi_name = SSI',
+                   'ssi_mode = Stable',
+                   'ssi_pdr = IAS7CM_on_139E',
+                   'cross_system_timeouts = Enabled',
+                   'output.ssiInfoCount = 4', '',
+                   'member_slot = 1',
+                   'member_system_id = BOEIAAS7',
+                   'member_state = Joined',
+                   'member_pdr_heartbeat = 12/28/2021_05:10:21',
+                   'member_received_heartbeat = 12/28/2021_05:10:21',
+                   '',
+                   'member_slot = 2',
+                   'member_system_id = BOEIAAS8',
+                   'member_state = Joined',
+                   'member_pdr_heartbeat = 12/28/2021_05:10:36',
+                   'member_received_heartbeat = 12/28/2021_05:10:36',
+                   '']
+                  otherwise, return [].
+        :rtype: list
+        """
+        return self._hostops.host_get_ssi_info()

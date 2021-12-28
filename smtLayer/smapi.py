@@ -158,6 +158,10 @@ def invokeSmapiApi(rh):
     if 'operands' in rh.parms:
         parms.extend(rh.parms['operands'])
 
+    # SSI_Query does not need any param
+    if rh.parms['apiName'] == 'SSI_Query':
+        parms = []
+
     results = invokeSMCLI(rh, rh.parms['apiName'], parms)
     if results['overallRC'] == 0:
         rh.printLn("N", results['response'])
