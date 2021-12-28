@@ -391,6 +391,79 @@ class TestFCPManager(base.SDKTestCase):
         fcp_info = self.fcpops._expand_fcp_list(fcp_list)
         self.assertEqual(expected, fcp_info)
 
+    @mock.patch("zvmsdk.volumeop.FCPManager."
+                "_verify_fcp_list_in_hex_format", Mock(return_value=True))
+    def test_shrink_fcp_list(self):
+        """Test _shrink_fcp_list"""
+
+        # Case1: only one FCP in the list.
+        fcp_list = ['1A01']
+        expected_fcp_str = '1A01'
+        result = self.fcpops._shrink_fcp_list(fcp_list)
+        self.assertEqual(expected_fcp_str, result)
+
+        # Case 2: all the FCPs are continuous.
+        expected_fcp_str = [
+            '1A01 - 1A0E',      # continuous in last 1 digit
+            '1A0E - 1A2E',      # continuous in last 2 digits
+            '1AEF - 1B1F']      # continuous in last 3 digits
+        expected_fcp_count = [
+            14,       # continuous in last 1 digit
+            33,       # continuous in last 2 digits
+            49]       # continuous in last 3 digits
+        for idx, efs in enumerate(expected_fcp_str):
+            fcp_list = list(
+                self.fcpops._expand_fcp_list(efs)[0])
+            result = self.fcpops._shrink_fcp_list(list(fcp_list))
+            self.assertEqual(efs, result)
+            self.assertEqual(expected_fcp_count[idx], len(fcp_list))
+
+        # Case 3: not all the FCPs are continuous.
+        expected_fcp_str = [
+            '1A01, 1A0E - 1A2E',    # case 3.1
+            '1A0E - 1A2E, 1B01',    # case 3.2
+            '1A05, 1A0E - 1A2E, 1A4A, 1AEF - 1B1F',  # case 3.3
+            '1A0E - 1A2E, 1A4A, 1A5B, 1AEF - 1B1F']  # case 3.4
+        expected_fcp_count = [
+            34,     # case 3.1
+            34,     # case 3.2
+            84,     # case 3.3
+            84      # case 3.4
+        ]
+        for idx, efs in enumerate(expected_fcp_str):
+            fcp_list = list(
+                self.fcpops._expand_fcp_list(efs)[0])
+            result = self.fcpops._shrink_fcp_list(list(fcp_list))
+            self.assertEqual(efs, result)
+            self.assertEqual(expected_fcp_count[idx], len(fcp_list))
+
+        # Case 4: an empty list.
+        fcp_list = []
+        expected_fcp_str = ''
+        result = self.fcpops._shrink_fcp_list(fcp_list)
+        self.assertEqual(expected_fcp_str, result)
+
+    def test_verify_fcp_list_in_hex_format(self):
+        """Test _verify_fcp_list_in_hex_format(fcp_list)"""
+        # case1: not a list object
+        fcp_list = '1A00 - 1A03'
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.fcpops._verify_fcp_list_in_hex_format,
+                          fcp_list)
+        # case2: FCP(1A0) length != 4
+        fcp_list = ['1A00', '1A0']
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.fcpops._verify_fcp_list_in_hex_format,
+                          fcp_list)
+        # case3: FCP(1A0G) not a 4-digit hex
+        fcp_list = ['1A00', '1a0G']
+        self.assertRaises(exception.SDKInvalidInputFormat,
+                          self.fcpops._verify_fcp_list_in_hex_format,
+                          fcp_list)
+        # case4: FCP(1A0R) not a 4-digit hex
+        fcp_list = ['1a00', '1A0F']
+        self.fcpops._verify_fcp_list_in_hex_format(fcp_list)
+
     @mock.patch("zvmsdk.smtclient.SMTClient.get_fcp_info_by_status")
     def test_get_all_fcp_info(self, get_fcp_info):
         get_fcp_info.return_value = []
@@ -1368,18 +1441,18 @@ class TestFCPVolumeManager(base.SDKTestCase):
                             '383c' in raw_usage[0][1])
             # path 1 status verify
             self.assertTrue('483c' in raw_usage[1][0])
-            expected_statistics = {0: {'available': [],
-                                       'allocated': ['283c'],
+            expected_statistics = {0: {'available': '',
+                                       'allocated': '283C',
                                        'unallocated_but_active': [],
-                                       'allocated_but_free': [],
-                                       'notfound': [],
-                                       'offline': []},
-                                   1: {'available': [],
-                                       'allocated': [],
+                                       'allocated_but_free': '',
+                                       'notfound': '',
+                                       'offline': ''},
+                                   1: {'available': '',
+                                       'allocated': '',
                                        'unallocated_but_active': [],
-                                       'allocated_but_free': [],
-                                       'notfound': [],
-                                       'offline': []}}
+                                       'allocated_but_free': '',
+                                       'notfound': '',
+                                       'offline': ''}}
             self.assertDictEqual(expected_statistics, statistic_usage)
             # case 2: userid was specified
             # in this case, the raw should set to true and
@@ -1440,35 +1513,35 @@ class TestFCPVolumeManager(base.SDKTestCase):
             # raw data should not in ret value
             self.assertNotIn('raw', ret)
             statistic_usage = ret['statistics']
-            expected_usage = {0: {"available": ['183c'],
-                                  "allocated": ['283c'],
+            expected_usage = {0: {"available": '183C',
+                                  "allocated": '283C',
                                   "unallocated_but_active": [],
-                                  "allocated_but_free": [],
-                                  "notfound": ['283c', '483c'],
-                                  "offline": ['383c']},
-                              1: {"available": [],
-                                  "allocated": [],
+                                  "allocated_but_free": '',
+                                  "notfound": '283C, 483C',
+                                  "offline": '383C'},
+                              1: {"available": '',
+                                  "allocated": '',
                                   "unallocated_but_active": [
-                                      ('583c', 'fakeuser')],
-                                  "allocated_but_free": ['683c'],
-                                  "notfound": ['783c'],
-                                  "offline": ['883c']}}
+                                      ('583C', 'fakeuser')],
+                                  "allocated_but_free": '683C',
+                                  "notfound": '783C',
+                                  "offline": '883C'}}
             # path 1 status
-            self.assertIn('183c', statistic_usage[0]['available'])
-            self.assertIn('283c', statistic_usage[0]['allocated'])
+            self.assertIn('183C', statistic_usage[0]['available'])
+            self.assertIn('283C', statistic_usage[0]['allocated'])
             self.assertEqual([], statistic_usage[0]['unallocated_but_active'])
-            self.assertEqual([], statistic_usage[0]['allocated_but_free'])
-            self.assertIn('283c', statistic_usage[0]['notfound'])
-            self.assertIn('483c', statistic_usage[0]['notfound'])
-            self.assertIn('383c', statistic_usage[0]['offline'])
+            self.assertEqual('', statistic_usage[0]['allocated_but_free'])
+            self.assertIn('283C', statistic_usage[0]['notfound'])
+            self.assertIn('483C', statistic_usage[0]['notfound'])
+            self.assertIn('383C', statistic_usage[0]['offline'])
             # path 2 status
-            self.assertEqual([], statistic_usage[1]['available'])
-            self.assertEqual([], statistic_usage[1]['allocated'])
-            self.assertIn(('583c', 'fakeuser'),
+            self.assertEqual('', statistic_usage[1]['available'])
+            self.assertEqual('', statistic_usage[1]['allocated'])
+            self.assertIn(('583C', 'fakeuser'),
                           statistic_usage[1]['unallocated_but_active'])
-            self.assertIn('683c', statistic_usage[1]['allocated_but_free'])
-            self.assertIn('783c', statistic_usage[1]['notfound'])
-            self.assertIn('883c', statistic_usage[1]['offline'])
+            self.assertIn('683C', statistic_usage[1]['allocated_but_free'])
+            self.assertIn('783C', statistic_usage[1]['notfound'])
+            self.assertIn('883C', statistic_usage[1]['offline'])
             # overall status
             self.assertDictEqual(statistic_usage, expected_usage)
         finally:
