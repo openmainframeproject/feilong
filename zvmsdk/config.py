@@ -490,6 +490,18 @@ The default value is 1200 seconds, if the execution of refresh_bootmap
 reached the timeout, the process of refresh_bootmap will be stopped.
 '''
         ),
+    Opt('punch_script_execution_timeout',
+        section='volume',
+        default=1800,
+        opt_type='int',
+        help='''
+The timeout value for waiting attach/detach punch scripts
+execution, in seconds.
+
+The default value is 1800 seconds, if the execution of punch scripts
+reached the timeout, the attach/detach will fail.
+'''
+        ),
     Opt('min_fcp_paths_count',
         section='volume',
         opt_type='int',
