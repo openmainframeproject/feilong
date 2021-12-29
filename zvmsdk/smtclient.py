@@ -4063,6 +4063,26 @@ class SMTClient(object):
                 lun = ent.split()[2].strip()
         return (wwpn, lun)
 
+    def host_get_ssi_info(self):
+        msg = ('Start SSI_Query')
+        LOG.info(msg)
+
+        rd = 'SMAPI HYPERVISOR API SSI_Query'
+        try:
+            results = self._request(rd)
+        except exception.SDKSMTRequestFailed as err:
+            if err.results['rc'] == 4 and err.results['rs'] == 3008:
+                # System is not a member of an SSI cluster
+                LOG.debug("Host is not a member of an SSI cluster.")
+                return []
+            msg = "SMT error: %s" % err.format_message()
+            raise exception.SDKSMTRequestFailed(err.results, msg)
+            LOG.error("Failed to query SSI information.")
+        if results['rc'] == 0 and results['rs'] == 0 \
+            and results.get('response'):
+            return results.get('response')
+        return []
+
 
 class FilesystemBackend(object):
     @classmethod
