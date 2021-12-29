@@ -822,11 +822,15 @@ class FCPManager(object):
         try:
             # Get all FCPs found in DB.
             fcp_in_db = self.db.get_all_fcps_of_assigner()
-        except exception.SDKObjectNotExistError as err:
+        except exception.SDKObjectNotExistError:
             fcp_in_db = list()
-            errmsg = ("Get FCPs from DB failed with "
-                      "error:" + err.format_message())
-            LOG.error(errmsg)
+            # this method is called by _sync_db_with_fcp_list
+            # and _sync_db_with_zvm, change this msg to warning
+            # level since no record in db is normal during sync
+            # such as when there is no fcp_list configured
+            msg = ("No fcp records found in database and ignore "
+                   "the exception.")
+            LOG.warning(msg)
 
         fcp_dict_in_db = {fcp[0].lower(): fcp for fcp in fcp_in_db}
         return fcp_dict_in_db
