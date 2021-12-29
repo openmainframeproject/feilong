@@ -19,6 +19,7 @@ import shutil
 import six
 import threading
 import os
+import string
 
 from zvmsdk import config
 from zvmsdk import constants
@@ -185,9 +186,22 @@ class VolumeConfiguratorAPI(object):
         if iucv_is_ready:
             # active mode should restart zvmguestconfigure to run reader file
             active_cmds = linuxdist.create_active_net_interf_cmd()
-            ret = self._smtclient.execute_cmd_direct(assigner_id, active_cmds)
+            ret = self._smtclient.execute_cmd_direct(
+                assigner_id, active_cmds,
+                timeout=CONF.volume.punch_script_execution_timeout)
             LOG.debug('attach scripts return values: %s' % ret)
             if ret['rc'] != 0:
+                # if return code is 64 means timeout
+                # no need to check the exist code of systemctl and return
+                if ret['rc'] == 64:
+                    errmsg = ('attach script execution in the target machine '
+                              '%s for volume (WWPN:%s, LUN:%s) '
+                              'exceed the timeout %s.'
+                              % (assigner_id, target_wwpns, target_lun,
+                                 CONF.volume.punch_script_execution_timeout))
+                    LOG.error(errmsg)
+                    raise exception.SDKVolumeOperationError(
+                        rs=8, userid=assigner_id, msg=errmsg)
                 # get exit code by systemctl status
                 get_status_cmd = 'systemctl status zvmguestconfigure.service'
                 exit_code = self._get_status_code_from_systemctl(
@@ -226,9 +240,22 @@ class VolumeConfiguratorAPI(object):
         if iucv_is_ready:
             # active mode should restart zvmguestconfigure to run reader file
             active_cmds = linuxdist.create_active_net_interf_cmd()
-            ret = self._smtclient.execute_cmd_direct(assigner_id, active_cmds)
+            ret = self._smtclient.execute_cmd_direct(
+                assigner_id, active_cmds,
+                timeout=CONF.volume.punch_script_execution_timeout)
             LOG.debug('detach scripts return values: %s' % ret)
             if ret['rc'] != 0:
+                # if return code is 64 means timeout
+                # no need to check the exist code of systemctl and return
+                if ret['rc'] == 64:
+                    errmsg = ('detach script execution in the target machine '
+                              '%s for volume (WWPN:%s, LUN:%s) '
+                              'exceed the timeout %s.'
+                              % (assigner_id, target_wwpns, target_lun,
+                                 CONF.volume.punch_script_execution_timeout))
+                    LOG.error(errmsg)
+                    raise exception.SDKVolumeOperationError(
+                        rs=9, userid=assigner_id, msg=errmsg)
                 get_status_cmd = 'systemctl status zvmguestconfigure.service'
                 exit_code = self._get_status_code_from_systemctl(
                     assigner_id, get_status_cmd)
@@ -414,7 +441,7 @@ class FCPManager(object):
         each fcp devices in the list string. A fcp list is composed of fcp
         device addresses, range indicator '-', and split indicator ';'.
 
-        For example,
+        Example 1:
         if fcp_list is "0011-0013;0015;0017-0018",
         then the function will return
         {
@@ -422,6 +449,10 @@ class FCPManager(object):
           1: {'0015'}
           2: {'0017', '0018'}
         }
+
+        Example 2:
+        if fcp_list is empty string: '',
+        then the function will return an empty set: {}
 
         ATTENTION: To support multipath, we expect fcp_list should be like
         "0011-0014;0021-0024", "0011-0014" should have been on same physical
@@ -477,6 +508,122 @@ class FCPManager(object):
                         fcp_devices[path_no] = devices
             path_no = path_no + 1
         return fcp_devices
+
+    def _shrink_fcp_list(self, fcp_list):
+        """ Transform a FCP list to a string.
+
+            :param fcp_list: (list) a list object contains FCPs.
+            Case 1: only one FCP in the list.
+                e.g. fcp_list = ['1A01']
+            Case 2: all the FCPs are continuous.
+                e.g. fcp_list =['1A01', '1A02', '1A03']
+            Case 3: not all the FCPs are continuous.
+                e.g. fcp_list = ['1A01', '1A02', '1A03',
+                                '1A05',
+                                '1AFF', '1B00', '1B01',
+                                '1B04']
+            Case 4: an empty list.
+                e.g. fcp_list = []
+
+            :return fcp_str: (str)
+            Case 1: fcp_str = '1A01'
+            Case 2: fcp_str = '1A01 - 1A03'
+            Case 3: fcp_str = '1A01 - 1A03, 1A05,
+                               1AFF - 1B01, 1B04'
+            Case 4: fcp_str = ''
+        """
+
+        def __transform_fcp_list_into_str(local_fcp_list):
+            """ Transform the FCP list into a string
+                by recursively do the transformation
+                against the first continuous range of the list,
+                which is being shortened by list.pop(0) on the fly
+
+                :param local_fcp_list:
+                (list) a list object contains FCPs.
+
+                In Python, hex is stored in the form of strings.
+                Because incrementing is done on integers,
+                we need to convert hex to an integer for doing math.
+            """
+            # Case 1: only one FCP in the list.
+            if len(local_fcp_list) == 1:
+                fcp_section.append(local_fcp_list[0])
+            else:
+                start_fcp = int(local_fcp_list[0], 16)
+                end_fcp = int(local_fcp_list[-1], 16)
+                count = len(local_fcp_list) - 1
+                # Case 2: all the FCPs are continuous.
+                if start_fcp + count == end_fcp:
+                    # e.g. hex(int('1A01',16)) is '0x1a01'
+                    section_str = '{} - {}'.format(
+                        hex(start_fcp)[2:], hex(end_fcp)[2:])
+                    fcp_section.append(section_str)
+                # Case 3: not all the FCPs are continuous.
+                else:
+                    start_fcp = int(local_fcp_list.pop(0), 16)
+                    for idx, fcp in enumerate(list(local_fcp_list)):
+                        next_fcp = int(fcp, 16)
+                        # pop the fcp if it is continuous with the last
+                        # e.g.
+                        # when start_fcp is '1A01',
+                        # pop '1A02' and '1A03'
+                        if start_fcp + idx + 1 == next_fcp:
+                            local_fcp_list.pop(0)
+                            continue
+                        # e.g.
+                        # when start_fcp is '1A01',
+                        # next_fcp '1A05' is NOT continuous with the last
+                        else:
+                            end_fcp = start_fcp + idx
+                            # e.g.
+                            # when start_fcp is '1A01',
+                            # end_fcp is '1A03'
+                            if start_fcp != end_fcp:
+                                # e.g. hex(int('1A01',16)) is '0x1a01'
+                                section_str = '{} - {}'.format(
+                                    hex(start_fcp)[2:], hex(end_fcp)[2:])
+                            # e.g.
+                            # when start_fcp is '1A05',
+                            # end_fcp is '1A05'
+                            else:
+                                section_str = hex(start_fcp)[2:]
+                            fcp_section.append(section_str)
+                            break
+                    # recursively transform if FCP list still not empty
+                    if local_fcp_list:
+                        __transform_fcp_list_into_str(local_fcp_list)
+
+        fcp_section = list()
+        fcp_str = ''
+        if fcp_list:
+            # Verify each FCP is in hex format
+            self._verify_fcp_list_in_hex_format(fcp_list)
+            # sort fcp_list in hex order, e.g.
+            # before sort: ['1E01', '1A02', '1D03']
+            # after sort:  ['1A02', '1D03', '1E01']
+            fcp_list.sort()
+            __transform_fcp_list_into_str(fcp_list)
+            # return a string contains all FCP
+            fcp_str = ', '.join(fcp_section).upper()
+        return fcp_str
+
+    @staticmethod
+    def _verify_fcp_list_in_hex_format(fcp_list):
+        """Verify each FCP in the list is in Hex format
+        :param fcp_list: (list) a list object contains FCPs.
+        """
+        if not isinstance(fcp_list, list):
+            errmsg = ('fcp_list ({}) is not a list object.'
+                      '').format(fcp_list)
+            raise exception.SDKInvalidInputFormat(msg=errmsg)
+        # Verify each FCP should be a 4-digit hex
+        for fcp in fcp_list:
+            if not (len(fcp) == 4 and
+                    all(char in string.hexdigits for char in fcp)):
+                errmsg = ('FCP list {} contains non-hex value.'
+                          '').format(fcp_list)
+                raise exception.SDKInvalidInputFormat(msg=errmsg)
 
     def _get_all_fcp_info(self, assigner_id, status=None):
         fcp_info = self._smtclient.get_fcp_info_by_status(assigner_id, status)
@@ -658,6 +805,7 @@ class FCPManager(object):
     def get_fcp_dict_in_fcp_list(self, fcp_list):
         """Return a dict of all FCPs in fcp_list
 
+        Note: the key of the returned dict is in lowercase.
         example (key=FCP, value=path):
         {
             '1a06': 0,
@@ -679,12 +827,15 @@ class FCPManager(object):
         """
         expanded_fcps = self._expand_fcp_list(fcp_list)
         fcp_dict_in_fcp_list = {
-            fcp: path for path, fcps in expanded_fcps.items() for fcp in fcps}
+            fcp.lower(): path
+            for path, fcps in expanded_fcps.items()
+            for fcp in fcps}
         return fcp_dict_in_fcp_list
 
     def get_fcp_dict_in_db(self):
         """Return a dict of all FCPs in FCP_DB
 
+        Note: the key of the returned dict is in lowercase.
         example (key=FCP)
         {
             '1a06': ('1a06', 'C2WDL003', 1, 1, 0, ...),
@@ -697,15 +848,19 @@ class FCPManager(object):
         try:
             # Get all FCPs found in DB.
             fcp_in_db = self.db.get_all_fcps_of_assigner()
-        except exception.SDKObjectNotExistError:
+        except exception.SDKObjectNotExistError as err:
             fcp_in_db = list()
+            errmsg = ("Get FCPs from DB failed with "
+                      "error:" + err.format_message())
+            LOG.error(errmsg)
 
-        fcp_dict_in_db = {fcp[0]: fcp for fcp in fcp_in_db}
+        fcp_dict_in_db = {fcp[0].lower(): fcp for fcp in fcp_in_db}
         return fcp_dict_in_db
 
     def get_fcp_dict_in_zvm(self):
         """Return a dict of all FCPs in ZVM
 
+        Note: the key of the returned dict is in lowercase.
         fcp_dict_in_zvm example (key=FCP):
         {
             '1a06': <zvmsdk.volumeop.FCP object at 0x3ff94f74128>,
@@ -718,6 +873,8 @@ class FCPManager(object):
         smt_userid = zvmutils.get_smt_userid()
         # Return a dict of all FCPs in ZVM
         fcp_dict_in_zvm = self.get_all_fcp_pool(smt_userid)
+        fcp_dict_in_zvm = {fcp.lower(): fcp_dict_in_zvm[fcp]
+                           for fcp in fcp_dict_in_zvm}
         return fcp_dict_in_zvm
 
     def _sync_db_with_fcp_list(self):
@@ -1229,6 +1386,8 @@ class FCPVolumeManager(object):
         #   unallocated_but_active, allocated_but_free
         fcp_id, assigner_id, connections, reserved,\
                 path_id, comment, _, _ = item
+        # Show upper case for FCP id
+        fcp_id = fcp_id.upper()
         if comment:
             state = comment.get("state", "").lower()
             owner = comment.get("owner", "")
@@ -1316,8 +1475,26 @@ class FCPVolumeManager(object):
             of all FCPs
         :param sync_with_zvm: (boolean) if is True, will call SMCLI command
             to sync the FCP state in the database
-        :return: (dict) the raw and statistic data of all FCP devices
+        :return: (dict) the raw and/or statistic data of all FCP devices
+
         The return data example:
+        Example 1:
+        if FCP DB is empty and raw=True statistics=False assigner_id=None
+        {
+            "raw": {}
+        }
+        Example 2:
+        if FCP DB is empty and raw=False statistics=True assigner_id=None
+        {
+            "statistics": {}
+        }
+        Example 3:
+        if FCP DB is empty and raw=True statistics=True assigner_id=None
+        {
+            "raw": {}, "statistics": {}
+        }
+        Example 4:
+        if FCP DB is NOT empty and raw=True statistics=True assigner_id=None
         {
             "raw": {
                   # (fcp_id, userid, connections, reserved, path,
@@ -1351,11 +1528,11 @@ class FCPVolumeManager(object):
 
                     # case C: (reserve = 1, conn = 0)
                     # the fcp should be in task or a bug cause this situation
-                    # will log about this
+                    # only log about this
 
                     # case D: (reserve = 0 and conn != 0)
                     # should be a bug result in this situation
-                    # will log about this
+                    # only log about this
 
                     # case E: (reserve = 0, conn = 0, state = active)
                     # FCP occupied out-of-band
@@ -1377,7 +1554,7 @@ class FCPVolumeManager(object):
 
                     # case I: ((conn != 0) & assigner_id != owner)
                     # assigner_id-in-DB differ from smcli-returned-owner
-                    # will log about this
+                    # only log about this
                 },
                 1: {
                     ...
@@ -1416,13 +1593,29 @@ class FCPVolumeManager(object):
             # get fcp statistics usage
             if statistics:
                 self._update_statistics_usage(statistics_usage, item)
-        # storage usage into return value
+        # store usage into returned value
         if raw:
-            LOG.debug("Got raw FCP usage: %s" % raw_usage_by_path)
+            LOG.debug("raw FCP usage: %s" % raw_usage_by_path)
             ret["raw"] = raw_usage_by_path
         if statistics:
-            LOG.info("Got statistic FCP usage: %s" % statistics_usage)
+            LOG.info("statistic FCP usage before shrink: %s"
+                     % statistics_usage)
+            # Transform FCP format from list to str
+            for path in statistics_usage:
+                # section is one from
+                # 'allocated', 'available', 'notfound', 'offline'
+                # 'allocated_but_free', 'unallocated_but_active'
+                for section in statistics_usage[path]:
+                    # Do NOT transform unallocated_but_active,
+                    # because its value also contains VM userid.
+                    # e.g. [('1b04','owner1'), ('1b05','owner2')]
+                    if section != 'unallocated_but_active':
+                        fcp_list = statistics_usage[path][section]
+                        statistics_usage[path][section] = (
+                            self.fcp_mgr._shrink_fcp_list(fcp_list))
             ret["statistics"] = statistics_usage
+            LOG.info("statistic FCP usage after shrink: %s"
+                     % statistics_usage)
         return ret
 
     def get_fcp_usage(self, fcp):
