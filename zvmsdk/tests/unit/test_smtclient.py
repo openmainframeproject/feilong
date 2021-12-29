@@ -4662,3 +4662,42 @@ class SDKSMTClientTestCases(base.SDKTestCase):
         os_version = "rhcos4.2"
         output = self._smtclient.is_rhcos(os_version)
         self.assertTrue(output)
+
+    @mock.patch.object(smtclient.SMTClient, '_request')
+    def test_host_get_ssi_info(self, req):
+        res = ['ssi_name = ICIC2SSI',
+                'ssi_mode = Stable', 'ssi_pdr = IAS7CM_on_139E',
+                'cross_system_timeouts = Enabled',
+                'output.ssiInfoCount = 4', '', 'member_slot = 1',
+                'member_system_id = BOEIAAS7', 'member_state = Joined',
+                'member_pdr_heartbeat = 12/28/2021_05:10:21',
+                'member_received_heartbeat = 12/28/2021_05:10:21', '',
+                'member_slot = 2', 'member_system_id = BOEIAAS8',
+                'member_state = Joined',
+                'member_pdr_heartbeat = 12/28/2021_05:10:36',
+                'member_received_heartbeat = 12/28/2021_05:10:36', '']
+        ssi_res = {'overallRC': 0, 'rc': 0, 'rs': 0, 'errno': 0,
+                   'strError': '',
+                   'response': res,
+                   'logEntries': []}
+        not_ssi_res = {'overallRC': 4, 'rc': 4, 'rs': 3008, 'errno': 0,
+                       'strError': 'Failed',
+                       'response': ['not a member of an SSI cluster']}
+        bad_res = {'overallRC': 8, 'rc': 8, 'rs': 3002, 'errno': 0,
+                   'strError': 'Failed',
+                   'response': ['Invalid parameter name']}
+        req.side_effect = [ssi_res,
+                           exception.SDKSMTRequestFailed(not_ssi_res, 'err'),
+                           exception.SDKSMTRequestFailed(bad_res, 'err')]
+
+        # case 1: host in SSI cluster, returns the SSI info
+        result = self._smtclient.host_get_ssi_info()
+        self.assertEqual(result, res)
+
+        # case 2: host no in SSI cluster, returns []
+        result = self._smtclient.host_get_ssi_info()
+        self.assertEqual(result, [])
+
+        # case 3: error
+        self.assertRaises(exception.SDKSMTRequestFailed,
+                          self._smtclient.host_get_ssi_info)

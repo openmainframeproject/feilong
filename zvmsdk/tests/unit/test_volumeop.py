@@ -125,7 +125,8 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
                           os_version, mount_point)
         get_dist.assert_called_once_with(os_version)
         restart_zvmguestconfigure.assert_called_once_with()
-        execute_cmd.assert_called_once_with(assigner_id, active_cmds)
+        execute_cmd.assert_called_once_with(assigner_id, active_cmds,
+                                            timeout=1800)
 
     @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
     @mock.patch("zvmsdk.smtclient.SMTClient.execute_cmd_direct")
@@ -160,7 +161,8 @@ class TestVolumeConfiguratorAPI(base.SDKTestCase):
         get_dist.assert_called_once_with(os_version)
         restart_zvmguestconfigure.assert_called_once_with()
         execute_cmd.assert_called_once_with(assigner_id,
-                                            active_cmds)
+                                            active_cmds,
+                                            timeout=1800)
 
     @mock.patch("zvmsdk.dist.LinuxDistManager.get_linux_dist")
     @mock.patch("zvmsdk.volumeop.VolumeConfiguratorAPI."
