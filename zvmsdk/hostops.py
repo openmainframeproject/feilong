@@ -155,3 +155,6 @@ class HOSTOps(object):
                     raise exception.SDKInternalError(msg=errmsg)
 
         return dp_info
+
+    def host_get_ssi_info(self):
+        return self._smtclient.host_get_ssi_info()
