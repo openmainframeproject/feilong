@@ -470,17 +470,23 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
         get_fcp_pair_with_same_index() only returns
         two possible values:
         case 1
+            an empty list(i.e. [])
+            if no fcp exist in DB
+        case 2
            randomly choose a pair of below combinations:
            [1a00,1b00] ,[1a01,1b01] ,[1a02,1b02]...
            rather than below combinations:
            [1a00,1b02] ,[1a03,1b00]
            [1a02], [1b03]
-        case 2
+        case 3
            an empty list(i.e. [])
            if no expected pair found
         '''
         try:
             # test case1
+            fcp_list = self.db_op.get_fcp_pair_with_same_index()
+            self.assertEqual([], fcp_list)
+            # test case2
             self.db_op.new('1a00', 0)
             self.db_op.new('1a01', 0)
             self.db_op.new('1a02', 0)
@@ -523,7 +529,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
                 fcp_list = self.db_op.get_fcp_pair_with_same_index()
                 result.add(tuple(fcp_list))
             self.assertEqual(result, expected_pairs_1)
-            # test case2
+            # test case3
             self.db_op.reserve('1a01')
             self.db_op.reserve('1b03')
             for i in range(10):

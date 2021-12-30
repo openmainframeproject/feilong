@@ -634,16 +634,24 @@ class FCPDbOperator(object):
             a. connections = 0
             b. reserved = 0
             c. comment includes 'state': 'free'
+
+        :return fcp_list: (list)
+        case 1
+            an empty list(i.e. [])
+            if no fcp exist in DB
+        case 2
+           an empty list(i.e. [])
+           if no expected pair found
+        case 3
+           randomly choose a pair of below combinations:
+           [1a00,1b00] ,[1a01,1b01] ,[1a02,1b02]...
+           rather than below combinations:
+           [1a00,1b02] ,[1a03,1b00]
+           [1a02], [1b03]
         """
         fcp_list = []
         fcp_pair_map = {}
         with get_fcp_conn() as conn:
-            result = conn.execute("SELECT COUNT(path) FROM fcp "
-                                  "WHERE reserved = 0 "
-                                  "AND connections = 0 "
-                                  "AND comment LIKE \"%state': 'free%\" "
-                                  "GROUP BY path")
-            free_count_per_path = result.fetchall()
             '''
             count_per_path examples:
             in normal cases, all path has same count, eg.
@@ -658,7 +666,17 @@ class FCPDbOperator(object):
                                   "GROUP BY path "
                                   "ORDER BY path ASC")
             count_per_path = [a[0] for a in result.fetchall()]
-            # return [] if no free fcp found from at least one path
+            # case1: return [] if no fcp found in FCP DB
+            if not count_per_path:
+                LOG.error("Not enough FCPs available, return empty list.")
+                return fcp_list
+            result = conn.execute("SELECT COUNT(path) FROM fcp "
+                                  "WHERE reserved = 0 "
+                                  "AND connections = 0 "
+                                  "AND comment LIKE \"%state': 'free%\" "
+                                  "GROUP BY path")
+            free_count_per_path = result.fetchall()
+            # case2: return [] if no free fcp found from at least one path
             if len(free_count_per_path) < len(count_per_path):
                 # For get_fcp_pair_with_same_index, we will not check the
                 # CONF.volume.min_fcp_paths_count, the returned fcp count
@@ -741,7 +759,7 @@ class FCPDbOperator(object):
                     fcp_pair_map.pop(idx)
                     break
         '''
-        saves one pair randomly chosen from fcp_pair_map.values()
+        case3: return one group randomly chosen from fcp_pair_map
         fcp_list example:
         ['1a03', '1b03']
         '''
