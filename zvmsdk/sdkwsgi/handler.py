@@ -120,6 +120,9 @@ ROUTE_LIST = (
     ('/host/volume', {
         'GET': host.host_get_volume_info,
     }),
+    ('/host/ssi', {
+        'GET': host.host_get_ssi_info,
+    }),
     ('/images', {
         'POST': image.image_create,
         'GET': image.image_query

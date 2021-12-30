@@ -186,9 +186,22 @@ class VolumeConfiguratorAPI(object):
         if iucv_is_ready:
             # active mode should restart zvmguestconfigure to run reader file
             active_cmds = linuxdist.create_active_net_interf_cmd()
-            ret = self._smtclient.execute_cmd_direct(assigner_id, active_cmds)
+            ret = self._smtclient.execute_cmd_direct(
+                assigner_id, active_cmds,
+                timeout=CONF.volume.punch_script_execution_timeout)
             LOG.debug('attach scripts return values: %s' % ret)
             if ret['rc'] != 0:
+                # if return code is 64 means timeout
+                # no need to check the exist code of systemctl and return
+                if ret['rc'] == 64:
+                    errmsg = ('attach script execution in the target machine '
+                              '%s for volume (WWPN:%s, LUN:%s) '
+                              'exceed the timeout %s.'
+                              % (assigner_id, target_wwpns, target_lun,
+                                 CONF.volume.punch_script_execution_timeout))
+                    LOG.error(errmsg)
+                    raise exception.SDKVolumeOperationError(
+                        rs=8, userid=assigner_id, msg=errmsg)
                 # get exit code by systemctl status
                 get_status_cmd = 'systemctl status zvmguestconfigure.service'
                 exit_code = self._get_status_code_from_systemctl(
@@ -227,9 +240,22 @@ class VolumeConfiguratorAPI(object):
         if iucv_is_ready:
             # active mode should restart zvmguestconfigure to run reader file
             active_cmds = linuxdist.create_active_net_interf_cmd()
-            ret = self._smtclient.execute_cmd_direct(assigner_id, active_cmds)
+            ret = self._smtclient.execute_cmd_direct(
+                assigner_id, active_cmds,
+                timeout=CONF.volume.punch_script_execution_timeout)
             LOG.debug('detach scripts return values: %s' % ret)
             if ret['rc'] != 0:
+                # if return code is 64 means timeout
+                # no need to check the exist code of systemctl and return
+                if ret['rc'] == 64:
+                    errmsg = ('detach script execution in the target machine '
+                              '%s for volume (WWPN:%s, LUN:%s) '
+                              'exceed the timeout %s.'
+                              % (assigner_id, target_wwpns, target_lun,
+                                 CONF.volume.punch_script_execution_timeout))
+                    LOG.error(errmsg)
+                    raise exception.SDKVolumeOperationError(
+                        rs=9, userid=assigner_id, msg=errmsg)
                 get_status_cmd = 'systemctl status zvmguestconfigure.service'
                 exit_code = self._get_status_code_from_systemctl(
                     assigner_id, get_status_cmd)

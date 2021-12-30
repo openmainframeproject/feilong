@@ -65,6 +65,10 @@ class HostAction(object):
                                         disk_pool=poolname)
         return info
 
+    def get_ssi_info(self):
+        info = self.client.send_request('host_get_ssi_info')
+        return info
+
 
 def get_action():
     global _HOSTACTION
@@ -160,4 +164,20 @@ def host_get_disk_info(req):
         additional_handler=util.handle_not_found)
     req.response.body = utils.to_utf8(info_json)
     req.response.content_type = 'application/json'
+    return req.response
+
+
+@util.SdkWsgify
+@tokens.validate
+def host_get_ssi_info(req):
+
+    def _host_get_ssi_info():
+        action = get_action()
+        return action.get_ssi_info()
+
+    info = _host_get_ssi_info()
+    info_json = json.dumps(info)
+    req.response.body = utils.to_utf8(info_json)
+    req.response.content_type = 'application/json'
+    req.response.status = util.get_http_code_from_sdk_return(info)
     return req.response
