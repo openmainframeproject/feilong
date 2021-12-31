@@ -397,14 +397,9 @@ class FCPDbOperator(object):
             results = result.fetchall()
             if not results:
                 if assigner_id:
-                    msg = 'No FCPs found belongs to userid %s.' % assigner_id
                     obj_desc = "FCP belongs to userid: %s" % assigner_id
                 else:
-                    msg = 'No FCPs found in database.'
                     obj_desc = "FCP records in database"
-                # when there is no fcp_list configured, no record from db is
-                # expected so just log a warning for debug insteading an error
-                LOG.warning(msg)
                 raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
                                                        modID=self._module_id)
             else:
