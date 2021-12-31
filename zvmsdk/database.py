@@ -402,7 +402,9 @@ class FCPDbOperator(object):
                 else:
                     msg = 'No FCPs found in database.'
                     obj_desc = "FCP records in database"
-                LOG.error(msg)
+                # when there is no fcp_list configured, no record from db is
+                # expected so just log a warning for debug insteading an error
+                LOG.warning(msg)
                 raise exception.SDKObjectNotExistError(obj_desc=obj_desc,
                                                        modID=self._module_id)
             else:
