@@ -257,6 +257,17 @@
 
 
 # 
+# The timeout value for waiting attach/detach punch scripts
+# execution, in seconds.
+# 
+# The default value is 1800 seconds, if the execution of punch scripts
+# reached the timeout, the attach/detach will fail.
+# 
+# This param is optional
+#punch_script_execution_timeout=1800
+
+
+# 
 # The timeout value for waiting refresh_bootmap execution, in seconds.
 # 
 # The default value is 1200 seconds, if the execution of refresh_bootmap

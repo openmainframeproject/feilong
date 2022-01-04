@@ -102,6 +102,7 @@
 2;1;16;None;ULTSMP0317E File transport failure while processing command for USERID. cmd: CMD, rc: RC, rs: RS, out: OUTPUT
 2;1;32;None;ULTSMP0318E On USERID, IUCV server file was not found. cmd: CMD, rc: RC, rs: RS, out: OUTPUT
 2;1;None;None;ULTSMP0319E Unrecognized IUCV client error encountered while sending a command through IUCV to USERID. cmd: CMD, rc: RC, rs: RS, out: OUTPUT
+3;1;64;None;ULTSMP0320E On USERID, command sent through IUCV failed because timeout. cmd: CMD, rc: RC, rs: RS, out: OUTPUT
 3;1;415;None;ULTGUT0415E Command failed: 'CMD', rc: RC out: OUTPUT
 4;1;4;1;ULTRQH0001E FUNCTION_NAME SUBFUNCTION_NAME subfunction's operand at position OPERAND_POSITION (OPERAND) is not an integer: OPERAND_VALUE
 4;1;4;2;ULTRQH0002E FUNCTION_NAME's SUBFUNCTION_NAME subfunction is missing positional operand (OPERAND) at position OPERAND_POSITION.
