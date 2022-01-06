@@ -1078,7 +1078,7 @@ class FCPVolumeManager(object):
                             target_lun, multipath, os_version,
                             mount_point)
         except exception.SDKBaseException as err:
-            errmsg = ("Dedicate FCP devices failed with "
+            errmsg = ("Attach volume failed with "
                       "error:" + err.format_message())
             LOG.error(errmsg)
             self._rollback_dedicated_fcp(fcp_list, assigner_id,
