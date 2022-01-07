@@ -1,4 +1,4 @@
-# Copyright 2017,2021 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -78,6 +78,15 @@ class HOSTOps(object):
     def guest_list(self):
         guest_list = self._smtclient.get_all_user_direct()
         with zvmutils.expect_invalid_resp_data(guest_list):
+            # If the z/VM is an SSI cluster member, it could get
+            # guests on other z/VMs in the same SSI cluster, need
+            # get rid of these guests.
+            if self._smtclient.host_get_ssi_info():
+                new_guest_list = []
+                for userid in guest_list:
+                    if not zvmutils.check_userid_on_others(userid):
+                        new_guest_list.append(userid)
+                guest_list = new_guest_list
             return guest_list
 
     def _cache_enabled(self):
