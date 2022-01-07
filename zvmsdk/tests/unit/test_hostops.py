@@ -1,4 +1,4 @@
-# Copyright 2017,2021 IBM Corp.
+# Copyright 2017,2022 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -27,10 +27,27 @@ class SDKHostOpsTestCase(base.SDKTestCase):
     def setUp(self):
         self._hostops = hostops.get_hostops()
 
+    @mock.patch("zvmsdk.smtclient.SMTClient.host_get_ssi_info")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_all_user_direct")
-    def test_guest_list(self, get_all_user_direct):
+    def test_guest_list(self, host_get_ssi_info, get_all_user_direct):
+        host_get_ssi_info.return_value = []
         self._hostops.guest_list()
         get_all_user_direct.assert_called_once_with()
+        host_get_ssi_info.assert_called_once()
+
+    @mock.patch("zvmsdk.smtclient.SMTClient.host_get_ssi_info")
+    @mock.patch("zvmsdk.utils.check_userid_on_others")
+    @mock.patch("zvmsdk.smtclient.SMTClient.get_all_user_direct")
+    def test_guest_list_ssi_host(self, host_get_ssi_info,
+                                 check_userid_on_others, get_all_user_direct):
+        res_ssi = ['ssi_name = SSI',
+                   'ssi_mode = Stable',
+                   'ssi_pdr = IAS7CM_on_139E']
+        host_get_ssi_info.return_value = res_ssi
+        self._hostops.guest_list()
+        get_all_user_direct.assert_called_once_with()
+        host_get_ssi_info.assert_called_once()
+        check_userid_on_others.assert_called()
 
     @mock.patch("zvmsdk.hostops.HOSTOps.diskpool_get_info")
     @mock.patch("zvmsdk.smtclient.SMTClient.get_host_info")
