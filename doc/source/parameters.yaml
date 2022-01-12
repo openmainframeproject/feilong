@@ -577,6 +577,13 @@ volume_size:
   in: body
   required: true
   type: int
+host_ssi_info:
+  description: |
+    If the host is an SSI cluster member, it returns a list of SSI cluster
+    information. If current host is not an SSI cluster member, it returns an empty list.
+  in: body
+  required: true
+  type: list
 image_info:
   description: |
     The image info for specific image or all images, each image has one dict
