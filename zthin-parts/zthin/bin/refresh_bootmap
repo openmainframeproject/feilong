@@ -1101,6 +1101,7 @@ function refreshFCPBootmap {
           fcp_wwpn_str="0.0.${fcp} 0x${wwpn}"
           if [[ $lszfcp_output =~ $fcp_wwpn_str ]]; then
               # add this combination into valid paths
+              inform "Found one valid path: ($fcp,0x$wwpn)."
               if [[ -z ${valid_paths_dict[$fcp]} ]]; then
                   valid_paths_dict+=([$fcp]="$wwpn")
               else
@@ -1128,7 +1129,7 @@ function refreshFCPBootmap {
   #
   usable_fcps=(${!valid_paths_dict[*]})
   if [[ ${#usable_fcps[@]} -lt $minfcp ]]; then
-      printError "Exit MSG: Allocated FCPs include: ${INPUT_FCPS[@]}, but the number of usable FCPs(${usable_fcp[@]]}) is less than required minimum FCP count: $minfcp."
+      printError "Exit MSG: Allocated FCPs include: ${INPUT_FCPS[*]}, but the number of usable FCPs(${usable_fcp[*]}) is less than required minimum FCP count: $minfcp."
       exit 9
   fi
 
